@@ -30,7 +30,7 @@ const auto CALLERROR_ERROR_CODE = 2;
 const auto CALLERROR_ERROR_DESCRIPTION = 3;
 const auto CALLERROR_ERROR_DETAILS = 4;
 
-// The different message type ids
+/// \brief Contains the different message type ids
 enum class MessageTypeId
 {
     CALL = 2,
@@ -42,10 +42,14 @@ enum class MessageTypeId
 const auto future_wait_seconds = std::chrono::seconds(5);
 const auto default_heartbeat_interval = 0;
 
+/// \brief Parent structure for all OCPP 1.6 messages supported by this implementation
 struct Message {
+    /// \brief Provides the type of the message
+    /// \returns the message type as a string
     virtual std::string get_type() const = 0;
 };
 
+/// \brief Contains all supported OCPP 1.6 message types
 enum class MessageType
 {
     Authorize,
@@ -107,166 +111,166 @@ enum class MessageType
     InternalError, // not in spec, for internal use
 };
 
-class Conversions {
-public:
-    static const std::string messagetype_to_string(MessageType m) {
-        const std::map<MessageType, std::string> MessageTypeStrings{
-            {MessageType::Authorize, "Authorize"},
-            {MessageType::AuthorizeResponse, "AuthorizeResponse"},
-            {MessageType::BootNotification, "BootNotification"},
-            {MessageType::BootNotificationResponse, "BootNotificationResponse"},
-            {MessageType::CancelReservation, "CancelReservation"},
-            {MessageType::CancelReservationResponse, "CancelReservationResponse"},
-            {MessageType::ChangeAvailability, "ChangeAvailability"},
-            {MessageType::ChangeAvailabilityResponse, "ChangeAvailabilityResponse"},
-            {MessageType::ChangeConfiguration, "ChangeConfiguration"},
-            {MessageType::ChangeConfigurationResponse, "ChangeConfigurationResponse"},
-            {MessageType::ClearCache, "ClearCache"},
-            {MessageType::ClearCacheResponse, "ClearCacheResponse"},
-            {MessageType::ClearChargingProfile, "ClearChargingProfile"},
-            {MessageType::ClearChargingProfileResponse, "ClearChargingProfileResponse"},
-            {MessageType::DataTransfer, "DataTransfer"},
-            {MessageType::DataTransferResponse, "DataTransferResponse"},
-            {MessageType::DiagnosticsStatusNotification, "DiagnosticsStatusNotification"},
-            {MessageType::DiagnosticsStatusNotificationResponse, "DiagnosticsStatusNotificationResponse"},
-            {MessageType::FirmwareStatusNotification, "FirmwareStatusNotification"},
-            {MessageType::FirmwareStatusNotificationResponse, "FirmwareStatusNotificationResponse"},
-            {MessageType::GetCompositeSchedule, "GetCompositeSchedule"},
-            {MessageType::GetCompositeScheduleResponse, "GetCompositeScheduleResponse"},
-            {MessageType::GetConfiguration, "GetConfiguration"},
-            {MessageType::GetConfigurationResponse, "GetConfigurationResponse"},
-            {MessageType::GetDiagnostics, "GetDiagnostics"},
-            {MessageType::GetDiagnosticsResponse, "GetDiagnosticsResponse"},
-            {MessageType::GetLocalListVersion, "GetLocalListVersion"},
-            {MessageType::GetLocalListVersionResponse, "GetLocalListVersionResponse"},
-            {MessageType::Heartbeat, "Heartbeat"},
-            {MessageType::HeartbeatResponse, "HeartbeatResponse"},
-            {MessageType::MeterValues, "MeterValues"},
-            {MessageType::MeterValuesResponse, "MeterValuesResponse"},
-            {MessageType::RemoteStartTransaction, "RemoteStartTransaction"},
-            {MessageType::RemoteStartTransactionResponse, "RemoteStartTransactionResponse"},
-            {MessageType::RemoteStopTransaction, "RemoteStopTransaction"},
-            {MessageType::RemoteStopTransactionResponse, "RemoteStopTransactionResponse"},
-            {MessageType::ReserveNow, "ReserveNow"},
-            {MessageType::ReserveNowResponse, "ReserveNowResponse"},
-            {MessageType::Reset, "Reset"},
-            {MessageType::ResetResponse, "ResetResponse"},
-            {MessageType::SendLocalList, "SendLocalList"},
-            {MessageType::SendLocalListResponse, "SendLocalListResponse"},
-            {MessageType::SetChargingProfile, "SetChargingProfile"},
-            {MessageType::SetChargingProfileResponse, "SetChargingProfileResponse"},
-            {MessageType::StartTransaction, "StartTransaction"},
-            {MessageType::StartTransactionResponse, "StartTransactionResponse"},
-            {MessageType::StatusNotification, "StatusNotification"},
-            {MessageType::StatusNotificationResponse, "StatusNotificationResponse"},
-            {MessageType::StopTransaction, "StopTransaction"},
-            {MessageType::StopTransactionResponse, "StopTransactionResponse"},
-            {MessageType::TriggerMessage, "TriggerMessage"},
-            {MessageType::TriggerMessageResponse, "TriggerMessageResponse"},
-            {MessageType::UnlockConnector, "UnlockConnector"},
-            {MessageType::UnlockConnectorResponse, "UnlockConnectorResponse"},
-            {MessageType::UpdateFirmware, "UpdateFirmware"},
-            {MessageType::UpdateFirmwareResponse, "UpdateFirmwareResponse"},
-        };
-        auto it = MessageTypeStrings.find(m);
-        if (it == MessageTypeStrings.end()) {
-            return "InternalError";
-        }
-        return it->second;
+namespace conversions {
+static const std::string messagetype_to_string(MessageType m) {
+    const std::map<MessageType, std::string> MessageTypeStrings{
+        {MessageType::Authorize, "Authorize"},
+        {MessageType::AuthorizeResponse, "AuthorizeResponse"},
+        {MessageType::BootNotification, "BootNotification"},
+        {MessageType::BootNotificationResponse, "BootNotificationResponse"},
+        {MessageType::CancelReservation, "CancelReservation"},
+        {MessageType::CancelReservationResponse, "CancelReservationResponse"},
+        {MessageType::ChangeAvailability, "ChangeAvailability"},
+        {MessageType::ChangeAvailabilityResponse, "ChangeAvailabilityResponse"},
+        {MessageType::ChangeConfiguration, "ChangeConfiguration"},
+        {MessageType::ChangeConfigurationResponse, "ChangeConfigurationResponse"},
+        {MessageType::ClearCache, "ClearCache"},
+        {MessageType::ClearCacheResponse, "ClearCacheResponse"},
+        {MessageType::ClearChargingProfile, "ClearChargingProfile"},
+        {MessageType::ClearChargingProfileResponse, "ClearChargingProfileResponse"},
+        {MessageType::DataTransfer, "DataTransfer"},
+        {MessageType::DataTransferResponse, "DataTransferResponse"},
+        {MessageType::DiagnosticsStatusNotification, "DiagnosticsStatusNotification"},
+        {MessageType::DiagnosticsStatusNotificationResponse, "DiagnosticsStatusNotificationResponse"},
+        {MessageType::FirmwareStatusNotification, "FirmwareStatusNotification"},
+        {MessageType::FirmwareStatusNotificationResponse, "FirmwareStatusNotificationResponse"},
+        {MessageType::GetCompositeSchedule, "GetCompositeSchedule"},
+        {MessageType::GetCompositeScheduleResponse, "GetCompositeScheduleResponse"},
+        {MessageType::GetConfiguration, "GetConfiguration"},
+        {MessageType::GetConfigurationResponse, "GetConfigurationResponse"},
+        {MessageType::GetDiagnostics, "GetDiagnostics"},
+        {MessageType::GetDiagnosticsResponse, "GetDiagnosticsResponse"},
+        {MessageType::GetLocalListVersion, "GetLocalListVersion"},
+        {MessageType::GetLocalListVersionResponse, "GetLocalListVersionResponse"},
+        {MessageType::Heartbeat, "Heartbeat"},
+        {MessageType::HeartbeatResponse, "HeartbeatResponse"},
+        {MessageType::MeterValues, "MeterValues"},
+        {MessageType::MeterValuesResponse, "MeterValuesResponse"},
+        {MessageType::RemoteStartTransaction, "RemoteStartTransaction"},
+        {MessageType::RemoteStartTransactionResponse, "RemoteStartTransactionResponse"},
+        {MessageType::RemoteStopTransaction, "RemoteStopTransaction"},
+        {MessageType::RemoteStopTransactionResponse, "RemoteStopTransactionResponse"},
+        {MessageType::ReserveNow, "ReserveNow"},
+        {MessageType::ReserveNowResponse, "ReserveNowResponse"},
+        {MessageType::Reset, "Reset"},
+        {MessageType::ResetResponse, "ResetResponse"},
+        {MessageType::SendLocalList, "SendLocalList"},
+        {MessageType::SendLocalListResponse, "SendLocalListResponse"},
+        {MessageType::SetChargingProfile, "SetChargingProfile"},
+        {MessageType::SetChargingProfileResponse, "SetChargingProfileResponse"},
+        {MessageType::StartTransaction, "StartTransaction"},
+        {MessageType::StartTransactionResponse, "StartTransactionResponse"},
+        {MessageType::StatusNotification, "StatusNotification"},
+        {MessageType::StatusNotificationResponse, "StatusNotificationResponse"},
+        {MessageType::StopTransaction, "StopTransaction"},
+        {MessageType::StopTransactionResponse, "StopTransactionResponse"},
+        {MessageType::TriggerMessage, "TriggerMessage"},
+        {MessageType::TriggerMessageResponse, "TriggerMessageResponse"},
+        {MessageType::UnlockConnector, "UnlockConnector"},
+        {MessageType::UnlockConnectorResponse, "UnlockConnectorResponse"},
+        {MessageType::UpdateFirmware, "UpdateFirmware"},
+        {MessageType::UpdateFirmwareResponse, "UpdateFirmwareResponse"},
+    };
+    auto it = MessageTypeStrings.find(m);
+    if (it == MessageTypeStrings.end()) {
+        return "InternalError";
     }
-    static const MessageType string_to_messagetype(std::string s) {
-        const std::map<std::string, MessageType> MessageTypeStrings{
-            {"Authorize", MessageType::Authorize},
-            {"AuthorizeResponse", MessageType::AuthorizeResponse},
-            {"BootNotification", MessageType::BootNotification},
-            {"BootNotificationResponse", MessageType::BootNotificationResponse},
-            {"CancelReservation", MessageType::CancelReservation},
-            {"CancelReservationResponse", MessageType::CancelReservationResponse},
-            {"ChangeAvailability", MessageType::ChangeAvailability},
-            {"ChangeAvailabilityResponse", MessageType::ChangeAvailabilityResponse},
-            {"ChangeConfiguration", MessageType::ChangeConfiguration},
-            {"ChangeConfigurationResponse", MessageType::ChangeConfigurationResponse},
-            {"ClearCache", MessageType::ClearCache},
-            {"ClearCacheResponse", MessageType::ClearCacheResponse},
-            {"ClearChargingProfile", MessageType::ClearChargingProfile},
-            {"ClearChargingProfileResponse", MessageType::ClearChargingProfileResponse},
-            {"DataTransfer", MessageType::DataTransfer},
-            {"DataTransferResponse", MessageType::DataTransferResponse},
-            {"DiagnosticsStatusNotification", MessageType::DiagnosticsStatusNotification},
-            {"DiagnosticsStatusNotificationResponse", MessageType::DiagnosticsStatusNotificationResponse},
-            {"FirmwareStatusNotification", MessageType::FirmwareStatusNotification},
-            {"FirmwareStatusNotificationResponse", MessageType::FirmwareStatusNotificationResponse},
-            {"GetCompositeSchedule", MessageType::GetCompositeSchedule},
-            {"GetCompositeScheduleResponse", MessageType::GetCompositeScheduleResponse},
-            {"GetConfiguration", MessageType::GetConfiguration},
-            {"GetConfigurationResponse", MessageType::GetConfigurationResponse},
-            {"GetDiagnostics", MessageType::GetDiagnostics},
-            {"GetDiagnosticsResponse", MessageType::GetDiagnosticsResponse},
-            {"GetLocalListVersion", MessageType::GetLocalListVersion},
-            {"GetLocalListVersionResponse", MessageType::GetLocalListVersionResponse},
-            {"Heartbeat", MessageType::Heartbeat},
-            {"HeartbeatResponse", MessageType::HeartbeatResponse},
-            {"MeterValues", MessageType::MeterValues},
-            {"MeterValuesResponse", MessageType::MeterValuesResponse},
-            {"RemoteStartTransaction", MessageType::RemoteStartTransaction},
-            {"RemoteStartTransactionResponse", MessageType::RemoteStartTransactionResponse},
-            {"RemoteStopTransaction", MessageType::RemoteStopTransaction},
-            {"RemoteStopTransactionResponse", MessageType::RemoteStopTransactionResponse},
-            {"ReserveNow", MessageType::ReserveNow},
-            {"ReserveNowResponse", MessageType::ReserveNowResponse},
-            {"Reset", MessageType::Reset},
-            {"ResetResponse", MessageType::ResetResponse},
-            {"SendLocalList", MessageType::SendLocalList},
-            {"SendLocalListResponse", MessageType::SendLocalListResponse},
-            {"SetChargingProfile", MessageType::SetChargingProfile},
-            {"SetChargingProfileResponse", MessageType::SetChargingProfileResponse},
-            {"StartTransaction", MessageType::StartTransaction},
-            {"StartTransactionResponse", MessageType::StartTransactionResponse},
-            {"StatusNotification", MessageType::StatusNotification},
-            {"StatusNotificationResponse", MessageType::StatusNotificationResponse},
-            {"StopTransaction", MessageType::StopTransaction},
-            {"StopTransactionResponse", MessageType::StopTransactionResponse},
-            {"TriggerMessage", MessageType::TriggerMessage},
-            {"TriggerMessageResponse", MessageType::TriggerMessageResponse},
-            {"UnlockConnector", MessageType::UnlockConnector},
-            {"UnlockConnectorResponse", MessageType::UnlockConnectorResponse},
-            {"UpdateFirmware", MessageType::UpdateFirmware},
-            {"UpdateFirmwareResponse", MessageType::UpdateFirmwareResponse},
-        };
-        auto it = MessageTypeStrings.find(s);
-        if (it == MessageTypeStrings.end()) {
-            return MessageType::InternalError;
-        }
-        return it->second;
+    return it->second;
+}
+static const MessageType string_to_messagetype(std::string s) {
+    const std::map<std::string, MessageType> MessageTypeStrings{
+        {"Authorize", MessageType::Authorize},
+        {"AuthorizeResponse", MessageType::AuthorizeResponse},
+        {"BootNotification", MessageType::BootNotification},
+        {"BootNotificationResponse", MessageType::BootNotificationResponse},
+        {"CancelReservation", MessageType::CancelReservation},
+        {"CancelReservationResponse", MessageType::CancelReservationResponse},
+        {"ChangeAvailability", MessageType::ChangeAvailability},
+        {"ChangeAvailabilityResponse", MessageType::ChangeAvailabilityResponse},
+        {"ChangeConfiguration", MessageType::ChangeConfiguration},
+        {"ChangeConfigurationResponse", MessageType::ChangeConfigurationResponse},
+        {"ClearCache", MessageType::ClearCache},
+        {"ClearCacheResponse", MessageType::ClearCacheResponse},
+        {"ClearChargingProfile", MessageType::ClearChargingProfile},
+        {"ClearChargingProfileResponse", MessageType::ClearChargingProfileResponse},
+        {"DataTransfer", MessageType::DataTransfer},
+        {"DataTransferResponse", MessageType::DataTransferResponse},
+        {"DiagnosticsStatusNotification", MessageType::DiagnosticsStatusNotification},
+        {"DiagnosticsStatusNotificationResponse", MessageType::DiagnosticsStatusNotificationResponse},
+        {"FirmwareStatusNotification", MessageType::FirmwareStatusNotification},
+        {"FirmwareStatusNotificationResponse", MessageType::FirmwareStatusNotificationResponse},
+        {"GetCompositeSchedule", MessageType::GetCompositeSchedule},
+        {"GetCompositeScheduleResponse", MessageType::GetCompositeScheduleResponse},
+        {"GetConfiguration", MessageType::GetConfiguration},
+        {"GetConfigurationResponse", MessageType::GetConfigurationResponse},
+        {"GetDiagnostics", MessageType::GetDiagnostics},
+        {"GetDiagnosticsResponse", MessageType::GetDiagnosticsResponse},
+        {"GetLocalListVersion", MessageType::GetLocalListVersion},
+        {"GetLocalListVersionResponse", MessageType::GetLocalListVersionResponse},
+        {"Heartbeat", MessageType::Heartbeat},
+        {"HeartbeatResponse", MessageType::HeartbeatResponse},
+        {"MeterValues", MessageType::MeterValues},
+        {"MeterValuesResponse", MessageType::MeterValuesResponse},
+        {"RemoteStartTransaction", MessageType::RemoteStartTransaction},
+        {"RemoteStartTransactionResponse", MessageType::RemoteStartTransactionResponse},
+        {"RemoteStopTransaction", MessageType::RemoteStopTransaction},
+        {"RemoteStopTransactionResponse", MessageType::RemoteStopTransactionResponse},
+        {"ReserveNow", MessageType::ReserveNow},
+        {"ReserveNowResponse", MessageType::ReserveNowResponse},
+        {"Reset", MessageType::Reset},
+        {"ResetResponse", MessageType::ResetResponse},
+        {"SendLocalList", MessageType::SendLocalList},
+        {"SendLocalListResponse", MessageType::SendLocalListResponse},
+        {"SetChargingProfile", MessageType::SetChargingProfile},
+        {"SetChargingProfileResponse", MessageType::SetChargingProfileResponse},
+        {"StartTransaction", MessageType::StartTransaction},
+        {"StartTransactionResponse", MessageType::StartTransactionResponse},
+        {"StatusNotification", MessageType::StatusNotification},
+        {"StatusNotificationResponse", MessageType::StatusNotificationResponse},
+        {"StopTransaction", MessageType::StopTransaction},
+        {"StopTransactionResponse", MessageType::StopTransactionResponse},
+        {"TriggerMessage", MessageType::TriggerMessage},
+        {"TriggerMessageResponse", MessageType::TriggerMessageResponse},
+        {"UnlockConnector", MessageType::UnlockConnector},
+        {"UnlockConnectorResponse", MessageType::UnlockConnectorResponse},
+        {"UpdateFirmware", MessageType::UpdateFirmware},
+        {"UpdateFirmwareResponse", MessageType::UpdateFirmwareResponse},
+    };
+    auto it = MessageTypeStrings.find(s);
+    if (it == MessageTypeStrings.end()) {
+        return MessageType::InternalError;
     }
+    return it->second;
+}
 
-    static const std::string bool_to_string(bool b) {
-        if (b) {
-            return "true";
-        }
-        return "false";
+static const std::string bool_to_string(bool b) {
+    if (b) {
+        return "true";
     }
-    static const bool string_to_bool(const std::string& s) {
-        if (s == "true") {
-            return true;
-        }
-        return false;
-    }
+    return "false";
+}
 
-    static const std::string double_to_string(double d) {
-        return double_to_string(d, 2);
+static const bool string_to_bool(const std::string& s) {
+    if (s == "true") {
+        return true;
     }
+    return false;
+}
 
-    static const std::string double_to_string(double d, int precision) {
-        std::ostringstream str;
-        str.precision(precision);
-        str << std::fixed << d;
-        return str.str();
-    }
-};
+static const std::string double_to_string(double d, int precision) {
+    std::ostringstream str;
+    str.precision(precision);
+    str << std::fixed << d;
+    return str.str();
+}
+
+static const std::string double_to_string(double d) {
+    return conversions::double_to_string(d, 2);
+}
+} // namespace conversions
 
 inline std::ostream& operator<<(std::ostream& os, const MessageType& message_type) {
-    os << Conversions::messagetype_to_string(message_type);
+    os << conversions::messagetype_to_string(message_type);
     return os;
 }
 
@@ -580,6 +584,7 @@ struct CallError {
     }
 };
 
+/// \brief Contains the different connection states of the charge point
 enum ChargePointConnectionState
 {
     Disconnected,

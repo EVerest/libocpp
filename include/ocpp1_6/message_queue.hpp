@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2021 Pionix GmbH and Contributors to EVerest
+// Copyright 2020 - 2022 Pionix GmbH and Contributors to EVerest
 #ifndef OCPP_MESSAGE_QUEUE_HPP
 #define OCPP_MESSAGE_QUEUE_HPP
 
@@ -46,7 +46,7 @@ struct ControlMessage {
 
     ControlMessage(json message) {
         this->message = message.get<json::array_t>();
-        this->messageType = Conversions::string_to_messagetype(message.at(CALL_ACTION));
+        this->messageType = conversions::string_to_messagetype(message.at(CALL_ACTION));
         this->message_attempts = 0;
     }
 
@@ -60,7 +60,7 @@ struct ControlMessage {
 ///
 class MessageQueue {
 private:
-    ChargePointConfiguration* configuration;
+    std::shared_ptr<ChargePointConfiguration> configuration;
     std::thread worker_thread;
     /// message deque for transaction related messages
     std::deque<ControlMessage*> transaction_message_queue;
@@ -83,7 +83,7 @@ private:
     void add_to_transaction_message_queue(ControlMessage* message);
 
 public:
-    MessageQueue(ChargePointConfiguration* configuration, const std::function<bool(json message)>& send_callback);
+    MessageQueue(std::shared_ptr<ChargePointConfiguration> configuration, const std::function<bool(json message)>& send_callback);
 
     ///
     /// \brief pushes a new Call message onto the message queue
@@ -95,7 +95,7 @@ public:
             // according to the spec the "transaction related messages" StartTransaction, StopTransaction and
             // MeterValues have to be delivered in chronological order
 
-            // FIXME: intentionally break this message for testing...
+            // intentionally break this message for testing...
             // message->message[CALL_PAYLOAD]["broken"] = this->createMessageId();
             this->add_to_transaction_message_queue(message);
         } else {

@@ -10,6 +10,7 @@ target_sources(ocpp
     PRIVATE
         ocpp1_6/charge_point.cpp
         ocpp1_6/charge_point_configuration.cpp
+        ocpp1_6/charging_session.cpp
         ocpp1_6/message_queue.cpp
         ocpp1_6/schemas.cpp
         ocpp1_6/types_internal.cpp
