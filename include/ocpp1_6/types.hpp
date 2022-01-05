@@ -658,16 +658,6 @@ inline std::ostream& operator<<(std::ostream& os, const SupportedFeatureProfiles
     return os;
 }
 
-struct ChargePointConnection {
-    std::string charge_point_id;
-    ChargePointConnectionState state;
-};
-
-struct ChargePointRequest {
-    std::string charge_point_id;
-    std::string request;
-};
-
 enum class ChargePointStatusTransition
 {
     A2_UsageInitiated,

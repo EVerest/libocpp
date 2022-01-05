@@ -73,7 +73,7 @@ public:
 /// \brief Contains a ChargePoint implementation compatible with OCPP-J 1.6
 class ChargePoint {
 private:
-    ChargePointConnection connection;
+    ChargePointConnectionState connection_state;
     std::unique_ptr<MessageQueue> message_queue;
     int32_t heartbeat_interval;
     bool initialized;

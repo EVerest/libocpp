@@ -207,8 +207,7 @@ ChargePoint::ChargePoint(std::shared_ptr<ChargePointConfiguration> configuration
     registration_status(RegistrationStatus::Pending) {
 
     this->configuration = configuration;
-    this->connection.charge_point_id = this->configuration->getChargePointId();
-    this->connection.state = ChargePointConnectionState::Disconnected;
+    this->connection_state = ChargePointConnectionState::Disconnected;
     this->charging_sessions = std::make_unique<ChargingSessions>(this->configuration->getNumberOfConnectors());
 
     this->message_queue = std::make_unique<MessageQueue>(this->configuration,
@@ -613,9 +612,9 @@ void ChargePoint::stop() {
 }
 
 void ChargePoint::connected_callback() {
-    switch (this->connection.state) {
+    switch (this->connection_state) {
     case ChargePointConnectionState::Disconnected: {
-        this->connection.state = ChargePointConnectionState::Connected;
+        this->connection_state = ChargePointConnectionState::Connected;
         this->boot_notification();
         break;
     }
@@ -626,7 +625,7 @@ void ChargePoint::connected_callback() {
     }
     default:
         EVLOG(error) << "Connected but not in state 'Disconnected' or 'Booted', something is wrong: "
-                     << this->connection.state;
+                     << this->connection_state;
         break;
     }
 }
@@ -650,7 +649,7 @@ void ChargePoint::message_callback(const std::string& message) {
         return;
     }
 
-    switch (this->connection.state) {
+    switch (this->connection_state) {
     case ChargePointConnectionState::Disconnected: {
         EVLOG(error) << "Received a message in disconnected state, this cannot be correct";
         break;
@@ -763,7 +762,7 @@ void ChargePoint::handleBootNotificationResponse(CallResult<BootNotificationResp
     }
     switch (call_result.msg.status) {
     case RegistrationStatus::Accepted:
-        this->connection.state = ChargePointConnectionState::Booted;
+        this->connection_state = ChargePointConnectionState::Booted;
         // we are allowed to send messages to the central system
         // activate heartbeat
         this->update_heartbeat_interval();
@@ -781,12 +780,12 @@ void ChargePoint::handleBootNotificationResponse(CallResult<BootNotificationResp
 
         break;
     case RegistrationStatus::Pending:
-        this->connection.state = ChargePointConnectionState::Booted;
+        this->connection_state = ChargePointConnectionState::Booted;
         // TODO(kai):, theoretically we are in the Booted state because the central system can send us
         // any message it wants...
         break;
     default:
-        this->connection.state = ChargePointConnectionState::Rejected;
+        this->connection_state = ChargePointConnectionState::Rejected;
         // In this state we are not allowed to send any messages to the central system, even when
         // requested. The first time we are allowed to send a message (a BootNotification) is
         // after boot_time + heartbeat_interval if the msg.interval is 0, or after boot_timer + msg.interval
