@@ -6,6 +6,8 @@
 #include <ocpp1_6/ocpp_types.hpp>
 
 namespace ocpp1_6 {
+
+/// \brief Contains a OCPP 1.6 StopTransaction message
 struct StopTransactionRequest : public Message {
     int32_t meterStop;
     DateTime timestamp;
@@ -76,6 +78,7 @@ struct StopTransactionRequest : public Message {
     }
 };
 
+/// \brief Contains a OCPP 1.6 StopTransactionResponse message
 struct StopTransactionResponse : public Message {
     boost::optional<IdTagInfo> idTagInfo;
 

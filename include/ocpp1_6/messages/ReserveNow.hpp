@@ -6,6 +6,8 @@
 #include <ocpp1_6/ocpp_types.hpp>
 
 namespace ocpp1_6 {
+
+/// \brief Contains a OCPP 1.6 ReserveNow message
 struct ReserveNowRequest : public Message {
     int32_t connectorId;
     DateTime expiryDate;
@@ -57,6 +59,7 @@ struct ReserveNowRequest : public Message {
     }
 };
 
+/// \brief Contains a OCPP 1.6 ReserveNowResponse message
 struct ReserveNowResponse : public Message {
     ReservationStatus status;
 

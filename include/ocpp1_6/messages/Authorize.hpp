@@ -6,6 +6,8 @@
 #include <ocpp1_6/ocpp_types.hpp>
 
 namespace ocpp1_6 {
+
+/// \brief Contains a OCPP 1.6 Authorize message
 struct AuthorizeRequest : public Message {
     CiString20Type idTag;
 
@@ -40,6 +42,7 @@ struct AuthorizeRequest : public Message {
     }
 };
 
+/// \brief Contains a OCPP 1.6 AuthorizeResponse message
 struct AuthorizeResponse : public Message {
     IdTagInfo idTagInfo;
 

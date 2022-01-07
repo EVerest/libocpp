@@ -6,6 +6,8 @@
 #include <ocpp1_6/ocpp_types.hpp>
 
 namespace ocpp1_6 {
+
+/// \brief Contains a OCPP 1.6 CancelReservation message
 struct CancelReservationRequest : public Message {
     int32_t reservationId;
 
@@ -40,6 +42,7 @@ struct CancelReservationRequest : public Message {
     }
 };
 
+/// \brief Contains a OCPP 1.6 CancelReservationResponse message
 struct CancelReservationResponse : public Message {
     CancelReservationStatus status;
 

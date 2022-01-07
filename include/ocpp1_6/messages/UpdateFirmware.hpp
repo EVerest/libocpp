@@ -6,6 +6,8 @@
 #include <ocpp1_6/ocpp_types.hpp>
 
 namespace ocpp1_6 {
+
+/// \brief Contains a OCPP 1.6 UpdateFirmware message
 struct UpdateFirmwareRequest : public Message {
     TODO : std::string with format : uri location;
     DateTime retrieveDate;
@@ -58,6 +60,7 @@ struct UpdateFirmwareRequest : public Message {
     }
 };
 
+/// \brief Contains a OCPP 1.6 UpdateFirmwareResponse message
 struct UpdateFirmwareResponse : public Message {
 
     /// \brief Provides the type of this UpdateFirmwareResponse message as a human readable string

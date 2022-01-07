@@ -6,6 +6,8 @@
 #include <ocpp1_6/ocpp_types.hpp>
 
 namespace ocpp1_6 {
+
+/// \brief Contains a OCPP 1.6 GetCompositeSchedule message
 struct GetCompositeScheduleRequest : public Message {
     int32_t connectorId;
     int32_t duration;
@@ -50,6 +52,7 @@ struct GetCompositeScheduleRequest : public Message {
     }
 };
 
+/// \brief Contains a OCPP 1.6 GetCompositeScheduleResponse message
 struct GetCompositeScheduleResponse : public Message {
     GetCompositeScheduleStatus status;
     boost::optional<int32_t> connectorId;

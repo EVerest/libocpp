@@ -6,6 +6,8 @@
 #include <ocpp1_6/ocpp_types.hpp>
 
 namespace ocpp1_6 {
+
+/// \brief Contains a OCPP 1.6 DiagnosticsStatusNotification message
 struct DiagnosticsStatusNotificationRequest : public Message {
     DiagnosticsStatus status;
 
@@ -40,6 +42,7 @@ struct DiagnosticsStatusNotificationRequest : public Message {
     }
 };
 
+/// \brief Contains a OCPP 1.6 DiagnosticsStatusNotificationResponse message
 struct DiagnosticsStatusNotificationResponse : public Message {
 
     /// \brief Provides the type of this DiagnosticsStatusNotificationResponse message as a human readable string

@@ -21,6 +21,8 @@ class {{ enum_type.name }}(str, Enum):
 #}
 {% for type in types %}
 {% if type.name == action.class_name %}
+
+/// \brief Contains a OCPP 1.6 {{ type.name | replace('Request', '') }} message
 struct {{ type.name }} : public Message {
 {% for property in type.properties %}
     {{ 'boost::optional<' if not property.required -}}

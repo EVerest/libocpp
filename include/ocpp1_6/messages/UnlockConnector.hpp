@@ -6,6 +6,8 @@
 #include <ocpp1_6/ocpp_types.hpp>
 
 namespace ocpp1_6 {
+
+/// \brief Contains a OCPP 1.6 UnlockConnector message
 struct UnlockConnectorRequest : public Message {
     int32_t connectorId;
 
@@ -40,6 +42,7 @@ struct UnlockConnectorRequest : public Message {
     }
 };
 
+/// \brief Contains a OCPP 1.6 UnlockConnectorResponse message
 struct UnlockConnectorResponse : public Message {
     UnlockStatus status;
 

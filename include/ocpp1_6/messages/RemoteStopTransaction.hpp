@@ -6,6 +6,8 @@
 #include <ocpp1_6/ocpp_types.hpp>
 
 namespace ocpp1_6 {
+
+/// \brief Contains a OCPP 1.6 RemoteStopTransaction message
 struct RemoteStopTransactionRequest : public Message {
     int32_t transactionId;
 
@@ -40,6 +42,7 @@ struct RemoteStopTransactionRequest : public Message {
     }
 };
 
+/// \brief Contains a OCPP 1.6 RemoteStopTransactionResponse message
 struct RemoteStopTransactionResponse : public Message {
     RemoteStartStopStatus status;
 

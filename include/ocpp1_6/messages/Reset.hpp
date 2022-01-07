@@ -6,6 +6,8 @@
 #include <ocpp1_6/ocpp_types.hpp>
 
 namespace ocpp1_6 {
+
+/// \brief Contains a OCPP 1.6 Reset message
 struct ResetRequest : public Message {
     ResetType type;
 
@@ -40,6 +42,7 @@ struct ResetRequest : public Message {
     }
 };
 
+/// \brief Contains a OCPP 1.6 ResetResponse message
 struct ResetResponse : public Message {
     ResetStatus status;
 

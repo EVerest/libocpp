@@ -6,6 +6,8 @@
 #include <ocpp1_6/ocpp_types.hpp>
 
 namespace ocpp1_6 {
+
+/// \brief Contains a OCPP 1.6 GetDiagnostics message
 struct GetDiagnosticsRequest : public Message {
     TODO : std::string with format : uri location;
     boost::optional<int32_t> retries;
@@ -68,6 +70,7 @@ struct GetDiagnosticsRequest : public Message {
     }
 };
 
+/// \brief Contains a OCPP 1.6 GetDiagnosticsResponse message
 struct GetDiagnosticsResponse : public Message {
     boost::optional<CiString255Type> fileName;
 

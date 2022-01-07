@@ -6,6 +6,8 @@
 #include <ocpp1_6/ocpp_types.hpp>
 
 namespace ocpp1_6 {
+
+/// \brief Contains a OCPP 1.6 StartTransaction message
 struct StartTransactionRequest : public Message {
     int32_t connectorId;
     CiString20Type idTag;
@@ -57,6 +59,7 @@ struct StartTransactionRequest : public Message {
     }
 };
 
+/// \brief Contains a OCPP 1.6 StartTransactionResponse message
 struct StartTransactionResponse : public Message {
     IdTagInfo idTagInfo;
     int32_t transactionId;

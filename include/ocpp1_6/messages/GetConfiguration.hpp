@@ -6,6 +6,8 @@
 #include <ocpp1_6/ocpp_types.hpp>
 
 namespace ocpp1_6 {
+
+/// \brief Contains a OCPP 1.6 GetConfiguration message
 struct GetConfigurationRequest : public Message {
     boost::optional<std::vector<CiString50Type>> key;
 
@@ -55,6 +57,7 @@ struct GetConfigurationRequest : public Message {
     }
 };
 
+/// \brief Contains a OCPP 1.6 GetConfigurationResponse message
 struct GetConfigurationResponse : public Message {
     boost::optional<std::vector<KeyValue>> configurationKey;
     boost::optional<std::vector<CiString50Type>> unknownKey;

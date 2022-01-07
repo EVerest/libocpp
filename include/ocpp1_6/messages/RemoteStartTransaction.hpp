@@ -6,6 +6,8 @@
 #include <ocpp1_6/ocpp_types.hpp>
 
 namespace ocpp1_6 {
+
+/// \brief Contains a OCPP 1.6 RemoteStartTransaction message
 struct RemoteStartTransactionRequest : public Message {
     CiString20Type idTag;
     boost::optional<int32_t> connectorId;
@@ -54,6 +56,7 @@ struct RemoteStartTransactionRequest : public Message {
     }
 };
 
+/// \brief Contains a OCPP 1.6 RemoteStartTransactionResponse message
 struct RemoteStartTransactionResponse : public Message {
     RemoteStartStopStatus status;
 

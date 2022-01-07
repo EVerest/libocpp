@@ -6,6 +6,8 @@
 #include <ocpp1_6/ocpp_types.hpp>
 
 namespace ocpp1_6 {
+
+/// \brief Contains a OCPP 1.6 MeterValues message
 struct MeterValuesRequest : public Message {
     int32_t connectorId;
     std::vector<MeterValue> meterValue;
@@ -52,6 +54,7 @@ struct MeterValuesRequest : public Message {
     }
 };
 
+/// \brief Contains a OCPP 1.6 MeterValuesResponse message
 struct MeterValuesResponse : public Message {
 
     /// \brief Provides the type of this MeterValuesResponse message as a human readable string

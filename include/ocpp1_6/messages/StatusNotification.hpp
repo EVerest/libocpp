@@ -6,6 +6,8 @@
 #include <ocpp1_6/ocpp_types.hpp>
 
 namespace ocpp1_6 {
+
+/// \brief Contains a OCPP 1.6 StatusNotification message
 struct StatusNotificationRequest : public Message {
     int32_t connectorId;
     ChargePointErrorCode errorCode;
@@ -74,6 +76,7 @@ struct StatusNotificationRequest : public Message {
     }
 };
 
+/// \brief Contains a OCPP 1.6 StatusNotificationResponse message
 struct StatusNotificationResponse : public Message {
 
     /// \brief Provides the type of this StatusNotificationResponse message as a human readable string

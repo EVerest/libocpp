@@ -6,6 +6,8 @@
 #include <ocpp1_6/ocpp_types.hpp>
 
 namespace ocpp1_6 {
+
+/// \brief Contains a OCPP 1.6 DataTransfer message
 struct DataTransferRequest : public Message {
     CiString255Type vendorId;
     boost::optional<CiString50Type> messageId;
@@ -54,6 +56,7 @@ struct DataTransferRequest : public Message {
     }
 };
 
+/// \brief Contains a OCPP 1.6 DataTransferResponse message
 struct DataTransferResponse : public Message {
     DataTransferStatus status;
     boost::optional<std::string> data;

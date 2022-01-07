@@ -6,6 +6,8 @@
 #include <ocpp1_6/ocpp_types.hpp>
 
 namespace ocpp1_6 {
+
+/// \brief Contains a OCPP 1.6 SetChargingProfile message
 struct SetChargingProfileRequest : public Message {
     int32_t connectorId;
     ChargingProfile csChargingProfiles;
@@ -43,6 +45,7 @@ struct SetChargingProfileRequest : public Message {
     }
 };
 
+/// \brief Contains a OCPP 1.6 SetChargingProfileResponse message
 struct SetChargingProfileResponse : public Message {
     ChargingProfileStatus status;
 

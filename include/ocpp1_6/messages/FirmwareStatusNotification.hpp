@@ -6,6 +6,8 @@
 #include <ocpp1_6/ocpp_types.hpp>
 
 namespace ocpp1_6 {
+
+/// \brief Contains a OCPP 1.6 FirmwareStatusNotification message
 struct FirmwareStatusNotificationRequest : public Message {
     FirmwareStatus status;
 
@@ -40,6 +42,7 @@ struct FirmwareStatusNotificationRequest : public Message {
     }
 };
 
+/// \brief Contains a OCPP 1.6 FirmwareStatusNotificationResponse message
 struct FirmwareStatusNotificationResponse : public Message {
 
     /// \brief Provides the type of this FirmwareStatusNotificationResponse message as a human readable string

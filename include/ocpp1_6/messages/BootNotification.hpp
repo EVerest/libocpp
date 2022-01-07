@@ -6,6 +6,8 @@
 #include <ocpp1_6/ocpp_types.hpp>
 
 namespace ocpp1_6 {
+
+/// \brief Contains a OCPP 1.6 BootNotification message
 struct BootNotificationRequest : public Message {
     CiString20Type chargePointVendor;
     CiString20Type chargePointModel;
@@ -92,6 +94,7 @@ struct BootNotificationRequest : public Message {
     }
 };
 
+/// \brief Contains a OCPP 1.6 BootNotificationResponse message
 struct BootNotificationResponse : public Message {
     RegistrationStatus status;
     DateTime currentTime;

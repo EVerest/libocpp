@@ -6,6 +6,8 @@
 #include <ocpp1_6/ocpp_types.hpp>
 
 namespace ocpp1_6 {
+
+/// \brief Contains a OCPP 1.6 ClearChargingProfile message
 struct ClearChargingProfileRequest : public Message {
     boost::optional<int32_t> id;
     boost::optional<int32_t> connectorId;
@@ -66,6 +68,7 @@ struct ClearChargingProfileRequest : public Message {
     }
 };
 
+/// \brief Contains a OCPP 1.6 ClearChargingProfileResponse message
 struct ClearChargingProfileResponse : public Message {
     ClearChargingProfileStatus status;
 

@@ -6,6 +6,8 @@
 #include <ocpp1_6/ocpp_types.hpp>
 
 namespace ocpp1_6 {
+
+/// \brief Contains a OCPP 1.6 Heartbeat message
 struct HeartbeatRequest : public Message {
 
     /// \brief Provides the type of this Heartbeat message as a human readable string
@@ -36,6 +38,7 @@ struct HeartbeatRequest : public Message {
     }
 };
 
+/// \brief Contains a OCPP 1.6 HeartbeatResponse message
 struct HeartbeatResponse : public Message {
     DateTime currentTime;
 

@@ -6,6 +6,8 @@
 #include <ocpp1_6/ocpp_types.hpp>
 
 namespace ocpp1_6 {
+
+/// \brief Contains a OCPP 1.6 ChangeConfiguration message
 struct ChangeConfigurationRequest : public Message {
     CiString50Type key;
     CiString500Type value;
@@ -43,6 +45,7 @@ struct ChangeConfigurationRequest : public Message {
     }
 };
 
+/// \brief Contains a OCPP 1.6 ChangeConfigurationResponse message
 struct ChangeConfigurationResponse : public Message {
     ConfigurationStatus status;
 

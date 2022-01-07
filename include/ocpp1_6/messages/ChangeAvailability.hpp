@@ -6,6 +6,8 @@
 #include <ocpp1_6/ocpp_types.hpp>
 
 namespace ocpp1_6 {
+
+/// \brief Contains a OCPP 1.6 ChangeAvailability message
 struct ChangeAvailabilityRequest : public Message {
     int32_t connectorId;
     AvailabilityType type;
@@ -43,6 +45,7 @@ struct ChangeAvailabilityRequest : public Message {
     }
 };
 
+/// \brief Contains a OCPP 1.6 ChangeAvailabilityResponse message
 struct ChangeAvailabilityResponse : public Message {
     AvailabilityStatus status;
 

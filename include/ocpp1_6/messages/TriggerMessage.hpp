@@ -6,6 +6,8 @@
 #include <ocpp1_6/ocpp_types.hpp>
 
 namespace ocpp1_6 {
+
+/// \brief Contains a OCPP 1.6 TriggerMessage message
 struct TriggerMessageRequest : public Message {
     MessageTrigger requestedMessage;
     boost::optional<int32_t> connectorId;
@@ -47,6 +49,7 @@ struct TriggerMessageRequest : public Message {
     }
 };
 
+/// \brief Contains a OCPP 1.6 TriggerMessageResponse message
 struct TriggerMessageResponse : public Message {
     TriggerMessageStatus status;
 
