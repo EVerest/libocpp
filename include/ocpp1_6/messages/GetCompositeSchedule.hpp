@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2021 Pionix GmbH and Contributors to EVerest
+// Copyright 2020 - 2022 Pionix GmbH and Contributors to EVerest
 #ifndef OCPP1_6_GETCOMPOSITESCHEDULE_HPP
 #define OCPP1_6_GETCOMPOSITESCHEDULE_HPP
 
@@ -11,10 +11,13 @@ struct GetCompositeScheduleRequest : public Message {
     int32_t duration;
     boost::optional<ChargingRateUnit> chargingRateUnit;
 
+    /// \brief Provides the type of this GetCompositeSchedule message as a human readable string
+    /// \returns the message type as a human readable string
     std::string get_type() const {
         return "GetCompositeSchedule";
     }
 
+    /// \brief Conversion from a given GetCompositeScheduleRequest \p k to a given json object \p j
     friend void to_json(json& j, const GetCompositeScheduleRequest& k) {
         // the required parts of the message
         j = json{
@@ -27,6 +30,7 @@ struct GetCompositeScheduleRequest : public Message {
         }
     }
 
+    /// \brief Conversion from a given json object \p j to a given GetCompositeScheduleRequest \p k
     friend void from_json(const json& j, GetCompositeScheduleRequest& k) {
         // the required parts of the message
         k.connectorId = j.at("connectorId");
@@ -38,6 +42,8 @@ struct GetCompositeScheduleRequest : public Message {
         }
     }
 
+    /// \brief Writes the string representation of the given GetCompositeScheduleRequest \p k to the given output stream
+    /// \p os \returns an output stream with the GetCompositeScheduleRequest written to
     friend std::ostream& operator<<(std::ostream& os, const GetCompositeScheduleRequest& k) {
         os << json(k).dump(4);
         return os;
@@ -50,10 +56,13 @@ struct GetCompositeScheduleResponse : public Message {
     boost::optional<DateTime> scheduleStart;
     boost::optional<ChargingSchedule> chargingSchedule;
 
+    /// \brief Provides the type of this GetCompositeScheduleResponse message as a human readable string
+    /// \returns the message type as a human readable string
     std::string get_type() const {
         return "GetCompositeScheduleResponse";
     }
 
+    /// \brief Conversion from a given GetCompositeScheduleResponse \p k to a given json object \p j
     friend void to_json(json& j, const GetCompositeScheduleResponse& k) {
         // the required parts of the message
         j = json{
@@ -71,6 +80,7 @@ struct GetCompositeScheduleResponse : public Message {
         }
     }
 
+    /// \brief Conversion from a given json object \p j to a given GetCompositeScheduleResponse \p k
     friend void from_json(const json& j, GetCompositeScheduleResponse& k) {
         // the required parts of the message
         k.status = conversions::string_to_get_composite_schedule_status(j.at("status"));
@@ -87,6 +97,8 @@ struct GetCompositeScheduleResponse : public Message {
         }
     }
 
+    /// \brief Writes the string representation of the given GetCompositeScheduleResponse \p k to the given output
+    /// stream \p os \returns an output stream with the GetCompositeScheduleResponse written to
     friend std::ostream& operator<<(std::ostream& os, const GetCompositeScheduleResponse& k) {
         os << json(k).dump(4);
         return os;

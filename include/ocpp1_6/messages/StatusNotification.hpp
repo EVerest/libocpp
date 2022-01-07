@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2021 Pionix GmbH and Contributors to EVerest
+// Copyright 2020 - 2022 Pionix GmbH and Contributors to EVerest
 #ifndef OCPP1_6_STATUSNOTIFICATION_HPP
 #define OCPP1_6_STATUSNOTIFICATION_HPP
 
@@ -15,10 +15,13 @@ struct StatusNotificationRequest : public Message {
     boost::optional<CiString255Type> vendorId;
     boost::optional<CiString50Type> vendorErrorCode;
 
+    /// \brief Provides the type of this StatusNotification message as a human readable string
+    /// \returns the message type as a human readable string
     std::string get_type() const {
         return "StatusNotification";
     }
 
+    /// \brief Conversion from a given StatusNotificationRequest \p k to a given json object \p j
     friend void to_json(json& j, const StatusNotificationRequest& k) {
         // the required parts of the message
         j = json{
@@ -41,6 +44,7 @@ struct StatusNotificationRequest : public Message {
         }
     }
 
+    /// \brief Conversion from a given json object \p j to a given StatusNotificationRequest \p k
     friend void from_json(const json& j, StatusNotificationRequest& k) {
         // the required parts of the message
         k.connectorId = j.at("connectorId");
@@ -62,6 +66,8 @@ struct StatusNotificationRequest : public Message {
         }
     }
 
+    /// \brief Writes the string representation of the given StatusNotificationRequest \p k to the given output stream
+    /// \p os \returns an output stream with the StatusNotificationRequest written to
     friend std::ostream& operator<<(std::ostream& os, const StatusNotificationRequest& k) {
         os << json(k).dump(4);
         return os;
@@ -70,22 +76,28 @@ struct StatusNotificationRequest : public Message {
 
 struct StatusNotificationResponse : public Message {
 
+    /// \brief Provides the type of this StatusNotificationResponse message as a human readable string
+    /// \returns the message type as a human readable string
     std::string get_type() const {
         return "StatusNotificationResponse";
     }
 
+    /// \brief Conversion from a given StatusNotificationResponse \p k to a given json object \p j
     friend void to_json(json& j, const StatusNotificationResponse& k) {
         // the required parts of the message
         j = json({});
         // the optional parts of the message
     }
 
+    /// \brief Conversion from a given json object \p j to a given StatusNotificationResponse \p k
     friend void from_json(const json& j, StatusNotificationResponse& k) {
         // the required parts of the message
 
         // the optional parts of the message
     }
 
+    /// \brief Writes the string representation of the given StatusNotificationResponse \p k to the given output stream
+    /// \p os \returns an output stream with the StatusNotificationResponse written to
     friend std::ostream& operator<<(std::ostream& os, const StatusNotificationResponse& k) {
         os << json(k).dump(4);
         return os;

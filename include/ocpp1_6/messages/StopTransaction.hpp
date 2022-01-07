@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2021 Pionix GmbH and Contributors to EVerest
+// Copyright 2020 - 2022 Pionix GmbH and Contributors to EVerest
 #ifndef OCPP1_6_STOPTRANSACTION_HPP
 #define OCPP1_6_STOPTRANSACTION_HPP
 
@@ -14,10 +14,13 @@ struct StopTransactionRequest : public Message {
     boost::optional<Reason> reason;
     boost::optional<std::vector<TransactionData>> transactionData;
 
+    /// \brief Provides the type of this StopTransaction message as a human readable string
+    /// \returns the message type as a human readable string
     std::string get_type() const {
         return "StopTransaction";
     }
 
+    /// \brief Conversion from a given StopTransactionRequest \p k to a given json object \p j
     friend void to_json(json& j, const StopTransactionRequest& k) {
         // the required parts of the message
         j = json{
@@ -40,6 +43,7 @@ struct StopTransactionRequest : public Message {
         }
     }
 
+    /// \brief Conversion from a given json object \p j to a given StopTransactionRequest \p k
     friend void from_json(const json& j, StopTransactionRequest& k) {
         // the required parts of the message
         k.meterStop = j.at("meterStop");
@@ -64,6 +68,8 @@ struct StopTransactionRequest : public Message {
         }
     }
 
+    /// \brief Writes the string representation of the given StopTransactionRequest \p k to the given output stream \p
+    /// os \returns an output stream with the StopTransactionRequest written to
     friend std::ostream& operator<<(std::ostream& os, const StopTransactionRequest& k) {
         os << json(k).dump(4);
         return os;
@@ -73,10 +79,13 @@ struct StopTransactionRequest : public Message {
 struct StopTransactionResponse : public Message {
     boost::optional<IdTagInfo> idTagInfo;
 
+    /// \brief Provides the type of this StopTransactionResponse message as a human readable string
+    /// \returns the message type as a human readable string
     std::string get_type() const {
         return "StopTransactionResponse";
     }
 
+    /// \brief Conversion from a given StopTransactionResponse \p k to a given json object \p j
     friend void to_json(json& j, const StopTransactionResponse& k) {
         // the required parts of the message
         j = json({});
@@ -86,6 +95,7 @@ struct StopTransactionResponse : public Message {
         }
     }
 
+    /// \brief Conversion from a given json object \p j to a given StopTransactionResponse \p k
     friend void from_json(const json& j, StopTransactionResponse& k) {
         // the required parts of the message
 
@@ -95,6 +105,8 @@ struct StopTransactionResponse : public Message {
         }
     }
 
+    /// \brief Writes the string representation of the given StopTransactionResponse \p k to the given output stream \p
+    /// os \returns an output stream with the StopTransactionResponse written to
     friend std::ostream& operator<<(std::ostream& os, const StopTransactionResponse& k) {
         os << json(k).dump(4);
         return os;

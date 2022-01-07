@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2021 Pionix GmbH and Contributors to EVerest
+// Copyright 2020 - 2022 Pionix GmbH and Contributors to EVerest
 #ifndef OCPP1_6_DATATRANSFER_HPP
 #define OCPP1_6_DATATRANSFER_HPP
 
@@ -11,10 +11,13 @@ struct DataTransferRequest : public Message {
     boost::optional<CiString50Type> messageId;
     boost::optional<std::string> data;
 
+    /// \brief Provides the type of this DataTransfer message as a human readable string
+    /// \returns the message type as a human readable string
     std::string get_type() const {
         return "DataTransfer";
     }
 
+    /// \brief Conversion from a given DataTransferRequest \p k to a given json object \p j
     friend void to_json(json& j, const DataTransferRequest& k) {
         // the required parts of the message
         j = json{
@@ -29,6 +32,7 @@ struct DataTransferRequest : public Message {
         }
     }
 
+    /// \brief Conversion from a given json object \p j to a given DataTransferRequest \p k
     friend void from_json(const json& j, DataTransferRequest& k) {
         // the required parts of the message
         k.vendorId = j.at("vendorId");
@@ -42,6 +46,8 @@ struct DataTransferRequest : public Message {
         }
     }
 
+    /// \brief Writes the string representation of the given DataTransferRequest \p k to the given output stream \p os
+    /// \returns an output stream with the DataTransferRequest written to
     friend std::ostream& operator<<(std::ostream& os, const DataTransferRequest& k) {
         os << json(k).dump(4);
         return os;
@@ -52,10 +58,13 @@ struct DataTransferResponse : public Message {
     DataTransferStatus status;
     boost::optional<std::string> data;
 
+    /// \brief Provides the type of this DataTransferResponse message as a human readable string
+    /// \returns the message type as a human readable string
     std::string get_type() const {
         return "DataTransferResponse";
     }
 
+    /// \brief Conversion from a given DataTransferResponse \p k to a given json object \p j
     friend void to_json(json& j, const DataTransferResponse& k) {
         // the required parts of the message
         j = json{
@@ -67,6 +76,7 @@ struct DataTransferResponse : public Message {
         }
     }
 
+    /// \brief Conversion from a given json object \p j to a given DataTransferResponse \p k
     friend void from_json(const json& j, DataTransferResponse& k) {
         // the required parts of the message
         k.status = conversions::string_to_data_transfer_status(j.at("status"));
@@ -77,6 +87,8 @@ struct DataTransferResponse : public Message {
         }
     }
 
+    /// \brief Writes the string representation of the given DataTransferResponse \p k to the given output stream \p os
+    /// \returns an output stream with the DataTransferResponse written to
     friend std::ostream& operator<<(std::ostream& os, const DataTransferResponse& k) {
         os << json(k).dump(4);
         return os;

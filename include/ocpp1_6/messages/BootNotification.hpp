@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2021 Pionix GmbH and Contributors to EVerest
+// Copyright 2020 - 2022 Pionix GmbH and Contributors to EVerest
 #ifndef OCPP1_6_BOOTNOTIFICATION_HPP
 #define OCPP1_6_BOOTNOTIFICATION_HPP
 
@@ -17,10 +17,13 @@ struct BootNotificationRequest : public Message {
     boost::optional<CiString25Type> meterType;
     boost::optional<CiString25Type> meterSerialNumber;
 
+    /// \brief Provides the type of this BootNotification message as a human readable string
+    /// \returns the message type as a human readable string
     std::string get_type() const {
         return "BootNotification";
     }
 
+    /// \brief Conversion from a given BootNotificationRequest \p k to a given json object \p j
     friend void to_json(json& j, const BootNotificationRequest& k) {
         // the required parts of the message
         j = json{
@@ -51,6 +54,7 @@ struct BootNotificationRequest : public Message {
         }
     }
 
+    /// \brief Conversion from a given json object \p j to a given BootNotificationRequest \p k
     friend void from_json(const json& j, BootNotificationRequest& k) {
         // the required parts of the message
         k.chargePointVendor = j.at("chargePointVendor");
@@ -80,6 +84,8 @@ struct BootNotificationRequest : public Message {
         }
     }
 
+    /// \brief Writes the string representation of the given BootNotificationRequest \p k to the given output stream \p
+    /// os \returns an output stream with the BootNotificationRequest written to
     friend std::ostream& operator<<(std::ostream& os, const BootNotificationRequest& k) {
         os << json(k).dump(4);
         return os;
@@ -91,10 +97,13 @@ struct BootNotificationResponse : public Message {
     DateTime currentTime;
     int32_t interval;
 
+    /// \brief Provides the type of this BootNotificationResponse message as a human readable string
+    /// \returns the message type as a human readable string
     std::string get_type() const {
         return "BootNotificationResponse";
     }
 
+    /// \brief Conversion from a given BootNotificationResponse \p k to a given json object \p j
     friend void to_json(json& j, const BootNotificationResponse& k) {
         // the required parts of the message
         j = json{
@@ -105,6 +114,7 @@ struct BootNotificationResponse : public Message {
         // the optional parts of the message
     }
 
+    /// \brief Conversion from a given json object \p j to a given BootNotificationResponse \p k
     friend void from_json(const json& j, BootNotificationResponse& k) {
         // the required parts of the message
         k.status = conversions::string_to_registration_status(j.at("status"));
@@ -115,6 +125,8 @@ struct BootNotificationResponse : public Message {
         // the optional parts of the message
     }
 
+    /// \brief Writes the string representation of the given BootNotificationResponse \p k to the given output stream \p
+    /// os \returns an output stream with the BootNotificationResponse written to
     friend std::ostream& operator<<(std::ostream& os, const BootNotificationResponse& k) {
         os << json(k).dump(4);
         return os;
