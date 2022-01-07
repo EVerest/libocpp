@@ -56,6 +56,7 @@ env = Environment(
 )
 env.filters['snake_case'] = snake_case
 env.globals['timestamp'] = datetime.utcnow
+env.globals['year'] = datetime.utcnow().year
 action_template = env.get_template('action.py.jinja')
 enum_template = env.get_template('enums.py.jinja')
 parsed_types_template = env.get_template('parsed_types.py.jinja')
