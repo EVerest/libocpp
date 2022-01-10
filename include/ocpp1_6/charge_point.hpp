@@ -78,7 +78,8 @@ private:
     int32_t heartbeat_interval;
     bool initialized;
     std::chrono::system_clock::time_point boot_time;
-    std::set<std::string> allowed_message_types;
+    std::set<MessageType> allowed_message_types;
+    std::mutex allowed_message_types_mutex;
     RegistrationStatus registration_status;
     std::shared_ptr<ChargePointConfiguration> configuration;
     std::unique_ptr<Everest::SteadyTimer> heartbeat_timer;
@@ -123,10 +124,11 @@ private:
     /// \brief This function is called after a successful connection to the Websocket
     void connected_callback();
     void message_callback(const std::string& message);
-    bool send(json message);
+    bool allowed_to_send_message(json::array_t message_type);
     template <class T> bool send(Call<T> call);
     template <class T> std::future<EnhancedMessage> send_async(Call<T> call);
     template <class T> bool send(CallResult<T> call_result);
+    bool send(CallError call_error);
     void heartbeat();
     void boot_notification();
     void clock_aligned_meter_values_sample();

@@ -210,8 +210,8 @@ ChargePoint::ChargePoint(std::shared_ptr<ChargePointConfiguration> configuration
     this->connection_state = ChargePointConnectionState::Disconnected;
     this->charging_sessions = std::make_unique<ChargingSessions>(this->configuration->getNumberOfConnectors());
 
-    this->message_queue = std::make_unique<MessageQueue>(this->configuration,
-                                                         [this](json message) -> bool { return this->send(message); });
+    this->message_queue = std::make_unique<MessageQueue>(
+        this->configuration, [this](json message) -> bool { return this->websocket->send(message.dump()); });
 
     this->websocket = std::make_unique<Websocket>(this->configuration);
     this->websocket->register_connected_callback([this]() {
@@ -255,7 +255,7 @@ void ChargePoint::heartbeat() {
     HeartbeatRequest req;
 
     Call<HeartbeatRequest> call(req, this->message_queue->createMessageId());
-    this->send(call);
+    this->send<HeartbeatRequest>(call);
 }
 
 void ChargePoint::boot_notification() {
@@ -272,7 +272,7 @@ void ChargePoint::boot_notification() {
     req.meterType = this->configuration->getMeterType();
 
     Call<BootNotificationRequest> call(req, this->message_queue->createMessageId());
-    this->send(call);
+    this->send<BootNotificationRequest>(call);
 }
 
 void ChargePoint::clock_aligned_meter_values_sample() {
@@ -559,7 +559,7 @@ void ChargePoint::send_meter_value(int32_t connector, MeterValue meter_value) {
     req.meterValue.push_back(meter_value);
 
     Call<MeterValuesRequest> call(req, this->message_queue->createMessageId());
-    this->send(call);
+    this->send<MeterValuesRequest>(call);
 }
 
 void ChargePoint::start() {
@@ -851,7 +851,7 @@ void ChargePoint::handleChangeAvailabilityRequest(Call<ChangeAvailabilityRequest
     }
 
     CallResult<ChangeAvailabilityResponse> call_result(response, call.uniqueId);
-    this->send(call_result);
+    this->send<ChangeAvailabilityResponse>(call_result);
 }
 
 void ChargePoint::handleChangeConfigurationRequest(Call<ChangeConfigurationRequest> call) {
@@ -884,7 +884,7 @@ void ChargePoint::handleChangeConfigurationRequest(Call<ChangeConfigurationReque
     }
 
     CallResult<ChangeConfigurationResponse> call_result(response, call.uniqueId);
-    this->send(call_result);
+    this->send<ChangeConfigurationResponse>(call_result);
 }
 
 void ChargePoint::handleClearCacheRequest(Call<ClearCacheRequest> call) {
@@ -899,7 +899,7 @@ void ChargePoint::handleClearCacheRequest(Call<ClearCacheRequest> call) {
     }
 
     CallResult<ClearCacheResponse> call_result(response, call.uniqueId);
-    this->send(call_result);
+    this->send<ClearCacheResponse>(call_result);
 }
 
 void ChargePoint::handleDataTransferRequest(Call<DataTransferRequest> call) {
@@ -914,7 +914,7 @@ void ChargePoint::handleDataTransferRequest(Call<DataTransferRequest> call) {
     response.status = DataTransferStatus::UnknownVendorId;
 
     CallResult<DataTransferResponse> call_result(response, call.uniqueId);
-    this->send(call_result);
+    this->send<DataTransferResponse>(call_result);
 }
 
 void ChargePoint::handleGetConfigurationRequest(Call<GetConfigurationRequest> call) {
@@ -954,7 +954,7 @@ void ChargePoint::handleGetConfigurationRequest(Call<GetConfigurationRequest> ca
     }
 
     CallResult<GetConfigurationResponse> call_result(response, call.uniqueId);
-    this->send(call_result);
+    this->send<GetConfigurationResponse>(call_result);
 }
 
 void ChargePoint::handleRemoteStartTransactionRequest(Call<RemoteStartTransactionRequest> call) {
@@ -967,14 +967,14 @@ void ChargePoint::handleRemoteStartTransactionRequest(Call<RemoteStartTransactio
         EVLOG(warning) << "RemoteStartTransactionRequest without a connector id is not supported at the moment.";
         response.status = RemoteStartStopStatus::Rejected;
         CallResult<RemoteStartTransactionResponse> call_result(response, call.uniqueId);
-        this->send(call_result);
+        this->send<RemoteStartTransactionResponse>(call_result);
         return;
     }
     int32_t connector = call.msg.connectorId.value();
     if (this->configuration->getConnectorAvailability(connector) == AvailabilityType::Inoperative) {
         response.status = RemoteStartStopStatus::Rejected;
         CallResult<RemoteStartTransactionResponse> call_result(response, call.uniqueId);
-        this->send(call_result);
+        this->send<RemoteStartTransactionResponse>(call_result);
         return;
     }
     if (call.msg.chargingProfile) {
@@ -983,7 +983,7 @@ void ChargePoint::handleRemoteStartTransactionRequest(Call<RemoteStartTransactio
 
     response.status = RemoteStartStopStatus::Accepted;
     CallResult<RemoteStartTransactionResponse> call_result(response, call.uniqueId);
-    this->send(call_result);
+    this->send<RemoteStartTransactionResponse>(call_result);
 
     {
         std::lock_guard<std::mutex> lock(remote_start_transaction_mutex);
@@ -1022,7 +1022,7 @@ void ChargePoint::handleRemoteStopTransactionRequest(Call<RemoteStopTransactionR
     }
 
     CallResult<RemoteStopTransactionResponse> call_result(response, call.uniqueId);
-    this->send(call_result);
+    this->send<RemoteStopTransactionResponse>(call_result);
 
     if (connector > 0) {
         this->charging_sessions->add_stop_energy_wh(
@@ -1044,7 +1044,7 @@ void ChargePoint::handleResetRequest(Call<ResetRequest> call) {
     response.status = ResetStatus::Accepted;
 
     CallResult<ResetResponse> call_result(response, call.uniqueId);
-    this->send(call_result);
+    this->send<ResetResponse>(call_result);
 
     if (call.msg.type == ResetType::Hard) {
         // TODO(kai): implement hard reset, if possible send StopTransaction for any running
@@ -1090,7 +1090,7 @@ void ChargePoint::handleUnlockConnectorRequest(Call<UnlockConnectorRequest> call
     }
 
     CallResult<UnlockConnectorResponse> call_result(response, call.uniqueId);
-    this->send(call_result);
+    this->send<UnlockConnectorResponse>(call_result);
 }
 
 void ChargePoint::handleSetChargingProfileRequest(Call<SetChargingProfileRequest> call) {
@@ -1192,7 +1192,7 @@ void ChargePoint::handleSetChargingProfileRequest(Call<SetChargingProfileRequest
     }
 
     CallResult<SetChargingProfileResponse> call_result(response, call.uniqueId);
-    this->send(call_result);
+    this->send<SetChargingProfileResponse>(call_result);
 }
 
 void ChargePoint::handleGetCompositeScheduleRequest(Call<GetCompositeScheduleRequest> call) {
@@ -1380,7 +1380,7 @@ void ChargePoint::handleGetCompositeScheduleRequest(Call<GetCompositeScheduleReq
     }
 
     CallResult<GetCompositeScheduleResponse> call_result(response, call.uniqueId);
-    this->send(call_result);
+    this->send<GetCompositeScheduleResponse>(call_result);
 }
 
 void ChargePoint::handleClearChargingProfileRequest(Call<ClearChargingProfileRequest> call) {
@@ -1390,36 +1390,31 @@ void ChargePoint::handleClearChargingProfileRequest(Call<ClearChargingProfileReq
     response.status = ClearChargingProfileStatus::Accepted;
 
     CallResult<ClearChargingProfileResponse> call_result(response, call.uniqueId);
-    this->send(call_result);
+    this->send<ClearChargingProfileResponse>(call_result);
 }
 
-template <class T> bool ChargePoint::send(Call<T> call) {
-    this->message_queue->push(call);
-    return true;
-}
-
-template <class T> std::future<EnhancedMessage> ChargePoint::send_async(Call<T> call) {
-    return this->message_queue->push_async(call);
-}
-
-template <class T> bool ChargePoint::send(CallResult<T> call_result) {
-    return this->send(json(call_result));
-}
-
-bool ChargePoint::send(json message) {
-    std::chrono::system_clock::time_point retry_time =
-        this->boot_time + std::chrono::seconds(this->configuration->getHeartbeatInterval());
-    if (this->initialized && this->registration_status == RegistrationStatus::Rejected &&
-        std::chrono::system_clock::now() < retry_time) {
-        using date::operator<<;
-        std::ostringstream oss;
-        oss << "status is rejected and retry time not reached. Messages can be sent again at: " << retry_time;
-        EVLOG(debug) << oss.str();
+bool ChargePoint::allowed_to_send_message(json::array_t message) {
+    auto message_type = conversions::string_to_messagetype(message.at(CALL_ACTION));
+    ;
+    if (!this->initialized) {
+        if (message_type == MessageType::BootNotification) {
+            return true;
+        }
         return false;
     }
-    if (this->initialized && this->registration_status == RegistrationStatus::Pending &&
-        message.at(MESSAGE_TYPE_ID) == MessageTypeId::CALL) {
-        std::string message_type = message.at(CALL_ACTION);
+
+    if (this->registration_status == RegistrationStatus::Rejected) {
+        std::chrono::system_clock::time_point retry_time =
+            this->boot_time + std::chrono::seconds(this->configuration->getHeartbeatInterval());
+        if (std::chrono::system_clock::now() < retry_time) {
+            using date::operator<<;
+            std::ostringstream oss;
+            oss << "status is rejected and retry time not reached. Messages can be sent again at: " << retry_time;
+            EVLOG(debug) << oss.str();
+            return false;
+        }
+    } else if (this->registration_status == RegistrationStatus::Pending) {
+        std::lock_guard<std::mutex> lock(allowed_message_types_mutex);
 
         if (this->allowed_message_types.find(message_type) == this->allowed_message_types.end()) {
             EVLOG(debug) << "registration_status is pending, but message: " << message_type
@@ -1427,8 +1422,27 @@ bool ChargePoint::send(json message) {
             return false;
         }
     }
+    return true;
+}
 
-    return this->websocket->send(message.dump());
+template <class T> bool ChargePoint::send(Call<T> call) {
+    if (this->allowed_to_send_message(json(call))) {
+        this->message_queue->push(call);
+        return true;
+    }
+    return false;
+}
+
+template <class T> std::future<EnhancedMessage> ChargePoint::send_async(Call<T> call) {
+    return this->message_queue->push_async(call);
+}
+
+template <class T> bool ChargePoint::send(CallResult<T> call_result) {
+    return this->websocket->send(json(call_result).dump());
+}
+
+bool ChargePoint::send(CallError call_error) {
+    return this->websocket->send(json(call_error).dump());
 }
 
 void ChargePoint::status_notification(int32_t connector, ChargePointErrorCode errorCode, CiString50Type info,
@@ -1440,7 +1454,7 @@ void ChargePoint::status_notification(int32_t connector, ChargePointErrorCode er
     request.status = status;
     request.timestamp.emplace(timestamp);
     Call<StatusNotificationRequest> call(request, this->message_queue->createMessageId());
-    this->send(call);
+    this->send<StatusNotificationRequest>(call);
 }
 
 void ChargePoint::status_notification(int32_t connector, ChargePointErrorCode errorCode, ChargePointStatus status) {
@@ -1449,7 +1463,7 @@ void ChargePoint::status_notification(int32_t connector, ChargePointErrorCode er
     request.errorCode = errorCode;
     request.status = status;
     Call<StatusNotificationRequest> call(request, this->message_queue->createMessageId());
-    this->send(call);
+    this->send<StatusNotificationRequest>(call);
 }
 
 // public API for Core profile
