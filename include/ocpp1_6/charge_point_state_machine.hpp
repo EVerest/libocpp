@@ -201,7 +201,7 @@ struct ChargePointStateMachine {
 
     std::function<void(ChargePointStatus status)> status_notification_callback;
 
-    ChargePointStateMachine(const std::function<void(ChargePointStatus status)>& status_notification_callback);
+    explicit ChargePointStateMachine(const std::function<void(ChargePointStatus status)>& status_notification_callback);
 };
 
 using ChargePointStateMachineController = fsm::async::PThreadController<ChargePointStateMachine::StateHandleType>;

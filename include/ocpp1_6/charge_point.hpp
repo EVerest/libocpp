@@ -138,7 +138,7 @@ private:
 
 public:
     /// \brief Creates a ChargePoint object with the provided \p configuration
-    ChargePoint(std::shared_ptr<ChargePointConfiguration> configuration);
+    explicit ChargePoint(std::shared_ptr<ChargePointConfiguration> configuration);
 
     /// \brief Starts the ChargePoint, connecting to the Websocket
     void start();

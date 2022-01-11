@@ -93,7 +93,7 @@ public:
     ChargingSession();
 
     /// \brief Creates a charging session with the provided \p authorized_token
-    ChargingSession(std::unique_ptr<AuthorizedToken> authorized_token);
+    explicit ChargingSession(std::unique_ptr<AuthorizedToken> authorized_token);
 
     ~ChargingSession() {
         this->transaction = nullptr;
@@ -182,7 +182,7 @@ private:
 
 public:
     /// \brief Creates and manages charging sessions for the provided \p number_of_connectors
-    ChargingSessions(int32_t number_of_connectors);
+    explicit ChargingSessions(int32_t number_of_connectors);
 
     /// \brief Adds an authorized token, created from the provided \p idTag and \p idTagInfo to any connector that is in
     /// need of a token

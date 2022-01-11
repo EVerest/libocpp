@@ -109,7 +109,7 @@ private:
 
 public:
     /// \brief Creates a new Websocket object with the providede \p configuration
-    Websocket(std::shared_ptr<ChargePointConfiguration> configuration);
+    explicit Websocket(std::shared_ptr<ChargePointConfiguration> configuration);
 
     /// \brief connect to a websocket (TLS or non-TLS depending on the central system uri in the configuration)
     /// \returns true if the websocket is initialized and a connection attempt is made
