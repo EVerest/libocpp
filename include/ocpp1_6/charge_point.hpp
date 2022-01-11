@@ -11,6 +11,7 @@
 #include <everest/timer.hpp>
 
 #include <ocpp1_6/charge_point_configuration.hpp>
+#include <ocpp1_6/charge_point_state_machine.hpp>
 #include <ocpp1_6/charging_session.hpp>
 #include <ocpp1_6/message_queue.hpp>
 #include <ocpp1_6/messages/Authorize.hpp>
@@ -37,39 +38,6 @@
 
 namespace ocpp1_6 {
 
-class ChargePointStateMachine {
-private:
-    std::map<ChargePointStatus, std::map<ChargePointStatusTransition, ChargePointStatus>> status_transitions;
-
-    ChargePointStatus current_state;
-    ChargePointStatus previous_state;
-    std::mutex state_mutex;
-
-    /// sets the previous_state to current_state, updates the current_state with the value from new_state and returns
-    /// this value
-    ChargePointStatus modify_state(ChargePointStatus new_state);
-
-public:
-    ChargePointStateMachine(ChargePointStatus initial_state);
-    /// changes from the current state to a new state via he given transition and returns the new state
-    ChargePointStatus change_state(ChargePointStatusTransition transition);
-    /// if in Faulted state, returns to the previous state and returns it. If not in faulted state does not change the
-    /// current state
-    ChargePointStatus get_current_state();
-
-    ChargePointStatus fault();
-    ChargePointStatus fault_resolved();
-
-    ChargePointStatus finishing();
-
-    ChargePointStatus suspended_ev();
-    ChargePointStatus suspended_evse();
-
-    ChargePointStatus resume_ev();
-
-    ChargePointStatus timeout();
-};
-
 /// \brief Contains a ChargePoint implementation compatible with OCPP-J 1.6
 class ChargePoint {
 private:
@@ -81,6 +49,7 @@ private:
     std::set<MessageType> allowed_message_types;
     std::mutex allowed_message_types_mutex;
     RegistrationStatus registration_status;
+    std::unique_ptr<ChargePointStates> status;
     std::shared_ptr<ChargePointConfiguration> configuration;
     std::unique_ptr<Everest::SteadyTimer> heartbeat_timer;
     std::unique_ptr<Everest::SteadyTimer> boot_notification_timer;
@@ -93,11 +62,10 @@ private:
     std::mutex meter_values_mutex;
     std::map<int32_t, json> power_meter;
     std::map<int32_t, double> max_current_offered;
+    std::map<int32_t, int32_t> number_of_phases_available;
     std::mutex power_meter_mutex;
     std::map<int32_t, AvailabilityType> change_availability_queue; // TODO: move to Connectors
     std::mutex change_availability_mutex;                          // TODO: move to Connectors
-    std::map<int32_t, ChargePointStateMachine*> status;            // TODO: change to libfsm
-    std::mutex status_mutex;                                       // TODO: change to libfsm
     std::unique_ptr<ChargingSessions> charging_sessions;
     std::map<int32_t, ChargingProfile> charge_point_max_profiles;
     std::mutex charge_point_max_profiles_mutex;
@@ -194,6 +162,9 @@ public:
 
     /// \brief Stores the given \p max_current for the given \p connector
     void receive_max_current_offered(int32_t connector, double max_current);
+
+    /// \brief Stores the given \p number_of_phases for the given \p connector
+    void receive_number_of_phases_available(int32_t connector, double number_of_phases);
 
     /// \brief Initiates a new charging session on the given \p connector with the given \p timestamp and \p
     /// energy_Wh_import as start energy

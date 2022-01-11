@@ -12,195 +12,6 @@
 
 namespace ocpp1_6 {
 
-ChargePointStateMachine::ChargePointStateMachine(ChargePointStatus initial_state) :
-    current_state(initial_state), previous_state(initial_state) {
-    this->status_transitions[ChargePointStatus::Available] = {
-        {ChargePointStatusTransition::A2_UsageInitiated, ChargePointStatus::Preparing},
-        {ChargePointStatusTransition::A3_UsageInitiatedWithoutAuthorization, ChargePointStatus::Charging},
-        {ChargePointStatusTransition::A4_UsageInitiatedEVDoesNotStartCharging, ChargePointStatus::SuspendedEV},
-        {ChargePointStatusTransition::A5_UsageInitiatedEVSEDoesNotAllowCharging, ChargePointStatus::SuspendedEVSE},
-        {ChargePointStatusTransition::A7_ReserveNowReservesConnector, ChargePointStatus::Reserved},
-        {ChargePointStatusTransition::A8_ChangeAvailabilityToUnavailable, ChargePointStatus::Unavailable},
-        {ChargePointStatusTransition::A9_FaultDetected, ChargePointStatus::Faulted},
-    };
-    this->status_transitions[ChargePointStatus::Preparing] = {
-        {ChargePointStatusTransition::B1_IntendedUsageIsEnded, ChargePointStatus::Available},
-        {ChargePointStatusTransition::B3_PrerequisitesForChargingMetAndChargingStarts, ChargePointStatus::Charging},
-        {ChargePointStatusTransition::B4_PrerequisitesForChargingMetEVDoesNotStartCharging,
-         ChargePointStatus::SuspendedEV},
-        {ChargePointStatusTransition::B5_PrerequisitesForChargingMetEVSEDoesNotAllowCharging,
-         ChargePointStatus::SuspendedEVSE},
-        {ChargePointStatusTransition::B6_TimedOut, ChargePointStatus::Finishing},
-        {ChargePointStatusTransition::B9_FaultDetected, ChargePointStatus::Faulted},
-    };
-    this->status_transitions[ChargePointStatus::Charging] = {
-        {ChargePointStatusTransition::C1_ChargingSessionEndsNoUserActionRequired, ChargePointStatus::Available},
-        {ChargePointStatusTransition::C4_ChargingStopsUponEVRequest, ChargePointStatus::SuspendedEV},
-        {ChargePointStatusTransition::C5_ChargingStopsUponEVSERequest, ChargePointStatus::SuspendedEVSE},
-        {ChargePointStatusTransition::C6_TransactionStoppedAndUserActionRequired, ChargePointStatus::Finishing},
-        {ChargePointStatusTransition::C8_ChargingSessionEndsNoUserActionRequiredConnectorScheduledToBecomeUnavailable,
-         ChargePointStatus::Unavailable},
-        {ChargePointStatusTransition::C9_FaultDetected, ChargePointStatus::Faulted},
-    };
-    this->status_transitions[ChargePointStatus::SuspendedEV] = {
-        {ChargePointStatusTransition::D1_ChargingSessionEndsNoUserActionRequired, ChargePointStatus::Available},
-        {ChargePointStatusTransition::D3_ChargingResumesUponEVRequest, ChargePointStatus::Charging},
-        {ChargePointStatusTransition::D5_ChargingSuspendedByEVSE, ChargePointStatus::SuspendedEVSE},
-        {ChargePointStatusTransition::D6_TransactionStoppedNoUserActionRequired, ChargePointStatus::Finishing},
-        {ChargePointStatusTransition::D8_ChargingSessionEndsNoUserActionRequiredConnectorScheduledToBecomeUnavailable,
-         ChargePointStatus::Unavailable},
-        {ChargePointStatusTransition::D9_FaultDetected, ChargePointStatus::Faulted},
-    };
-    this->status_transitions[ChargePointStatus::SuspendedEVSE] = {
-        {ChargePointStatusTransition::E1_ChargingSessionEndsNoUserActionRequired, ChargePointStatus::Available},
-        {ChargePointStatusTransition::E3_ChargingResumesEVSERestrictionLifted, ChargePointStatus::Charging},
-        {ChargePointStatusTransition::E4_EVSERestrictionLiftedEVDoesNotStartCharging, ChargePointStatus::SuspendedEV},
-        {ChargePointStatusTransition::E6_TransactionStoppedAndUserActionRequired, ChargePointStatus::Finishing},
-        {ChargePointStatusTransition::E8_ChargingSessionEndsNoUserActionRequiredConnectorScheduledToBecomeUnavailable,
-         ChargePointStatus::Unavailable},
-        {ChargePointStatusTransition::E9_FaultDetected, ChargePointStatus::Faulted},
-    };
-    this->status_transitions[ChargePointStatus::Finishing] = {
-        {ChargePointStatusTransition::F1_AllUserActionsCompleted, ChargePointStatus::Available},
-        {ChargePointStatusTransition::F2_UsersRestartChargingSession, ChargePointStatus::Preparing},
-        {ChargePointStatusTransition::F8_AllUserActionsCompletedConnectorScheduledToBecomeUnavailable,
-         ChargePointStatus::Unavailable},
-        {ChargePointStatusTransition::F9_FaultDetected, ChargePointStatus::Faulted},
-    };
-    this->status_transitions[ChargePointStatus::Reserved] = {
-        {ChargePointStatusTransition::G1_ReservationExpiresOrCancelReservationReceived, ChargePointStatus::Available},
-        {ChargePointStatusTransition::G2_ReservationIdentityPresented, ChargePointStatus::Preparing},
-        {ChargePointStatusTransition::
-             G8_ReservationExpiresOrCancelReservationReceivedConnectorScheduledToBecomeUnavailable,
-         ChargePointStatus::Unavailable},
-        {ChargePointStatusTransition::G9_FaultDetected, ChargePointStatus::Faulted},
-    };
-    this->status_transitions[ChargePointStatus::Unavailable] = {
-        {ChargePointStatusTransition::H1_ConnectorSetAvailableByChangeAvailability, ChargePointStatus::Available},
-        {ChargePointStatusTransition::H2_ConnectorSetAvailableAfterUserInteractedWithChargePoint,
-         ChargePointStatus::Preparing},
-        {ChargePointStatusTransition::H3_ConnectorSetAvailableNoUserActionRequiredToStartCharging,
-         ChargePointStatus::Charging},
-        {ChargePointStatusTransition::H4_ConnectorSetAvailableNoUserActionRequiredEVDoesNotStartCharging,
-         ChargePointStatus::SuspendedEV},
-        {ChargePointStatusTransition::H5_ConnectorSetAvailableNoUserActionRequiredEVSEDoesNotAllowCharging,
-         ChargePointStatus::SuspendedEVSE},
-        {ChargePointStatusTransition::H9_FaultDetected, ChargePointStatus::Faulted},
-    };
-    this->status_transitions[ChargePointStatus::Faulted] = {
-        {ChargePointStatusTransition::I1_ReturnToAvailable, ChargePointStatus::Available},
-        {ChargePointStatusTransition::I2_ReturnToPreparing, ChargePointStatus::Preparing},
-        {ChargePointStatusTransition::I3_ReturnToCharging, ChargePointStatus::Charging},
-        {ChargePointStatusTransition::I4_ReturnToSuspendedEV, ChargePointStatus::SuspendedEV},
-        {ChargePointStatusTransition::I5_ReturnToSuspendedEVSE, ChargePointStatus::SuspendedEVSE},
-        {ChargePointStatusTransition::I6_ReturnToFinishing, ChargePointStatus::Finishing},
-        {ChargePointStatusTransition::I7_ReturnToReserved, ChargePointStatus::Reserved},
-        {ChargePointStatusTransition::I8_ReturnToUnavailable, ChargePointStatus::Unavailable},
-    };
-}
-
-ChargePointStatus ChargePointStateMachine::modify_state(ChargePointStatus new_state) {
-    std::lock_guard<std::mutex> lock(state_mutex);
-    this->previous_state = this->current_state;
-    this->current_state = new_state;
-    return this->current_state;
-}
-
-ChargePointStatus ChargePointStateMachine::change_state(ChargePointStatusTransition transition) {
-    if (this->status_transitions[this->current_state].count(transition) == 0) {
-        return this->fault();
-    }
-    return this->modify_state(this->status_transitions[this->current_state][transition]);
-}
-
-ChargePointStatus ChargePointStateMachine::fault() {
-    auto state = this->current_state;
-    if (state == ChargePointStatus::Faulted) {
-        return state;
-    }
-    return this->modify_state(ChargePointStatus::Faulted);
-}
-
-ChargePointStatus ChargePointStateMachine::fault_resolved() {
-    return this->modify_state(this->previous_state);
-}
-
-ChargePointStatus ChargePointStateMachine::finishing() {
-    auto state = this->current_state;
-    if (state == ChargePointStatus::Preparing) {
-        return this->change_state(ChargePointStatusTransition::B6_TimedOut);
-    }
-    if (state == ChargePointStatus::Charging) {
-        return this->change_state(ChargePointStatusTransition::C6_TransactionStoppedAndUserActionRequired);
-    }
-    if (state == ChargePointStatus::SuspendedEV) {
-        return this->change_state(ChargePointStatusTransition::D6_TransactionStoppedNoUserActionRequired);
-    }
-    if (state == ChargePointStatus::SuspendedEVSE) {
-        return this->change_state(ChargePointStatusTransition::E6_TransactionStoppedAndUserActionRequired);
-    }
-
-    return this->fault(); // FIXME(kai): this might be a bit drastic
-}
-
-ChargePointStatus ChargePointStateMachine::suspended_ev() {
-    auto state = this->current_state;
-    if (state == ChargePointStatus::Available) {
-        return this->change_state(ChargePointStatusTransition::A4_UsageInitiatedEVDoesNotStartCharging);
-    }
-    if (state == ChargePointStatus::Preparing) {
-        return this->change_state(ChargePointStatusTransition::B4_PrerequisitesForChargingMetEVDoesNotStartCharging);
-    }
-    if (state == ChargePointStatus::Charging) {
-        return this->change_state(ChargePointStatusTransition::C4_ChargingStopsUponEVRequest);
-    }
-    if (state == ChargePointStatus::SuspendedEVSE) {
-        return this->change_state(ChargePointStatusTransition::E4_EVSERestrictionLiftedEVDoesNotStartCharging);
-    }
-
-    return this->fault(); // FIXME(kai): this might be a bit drastic
-}
-
-ChargePointStatus ChargePointStateMachine::suspended_evse() {
-    auto state = this->current_state;
-    if (state == ChargePointStatus::Available) {
-        return this->change_state(ChargePointStatusTransition::A5_UsageInitiatedEVSEDoesNotAllowCharging);
-    }
-    if (state == ChargePointStatus::Preparing) {
-        return this->change_state(ChargePointStatusTransition::B5_PrerequisitesForChargingMetEVSEDoesNotAllowCharging);
-    }
-    if (state == ChargePointStatus::Charging) {
-        return this->change_state(ChargePointStatusTransition::C5_ChargingStopsUponEVSERequest);
-    }
-    if (state == ChargePointStatus::SuspendedEV) {
-        return this->change_state(ChargePointStatusTransition::D5_ChargingSuspendedByEVSE);
-    }
-
-    return this->fault(); // FIXME(kai): this might be a bit drastic
-}
-
-ChargePointStatus ChargePointStateMachine::resume_ev() {
-    auto state = this->current_state;
-    if (state == ChargePointStatus::SuspendedEV) {
-        return this->change_state(ChargePointStatusTransition::D3_ChargingResumesUponEVRequest);
-    }
-
-    return this->current_state; // FIXME(kai): is this the expected behavior?
-}
-
-ChargePointStatus ChargePointStateMachine::timeout() {
-    auto state = this->current_state;
-    if (state == ChargePointStatus::Preparing) {
-        return this->change_state(ChargePointStatusTransition::B1_IntendedUsageIsEnded);
-    }
-
-    return this->current_state; // FIXME(kai): is this the expected behavior?
-}
-
-ChargePointStatus ChargePointStateMachine::get_current_state() {
-    return this->current_state;
-}
-
 ChargePoint::ChargePoint(std::shared_ptr<ChargePointConfiguration> configuration) :
     heartbeat_interval(configuration->getHeartbeatInterval()),
     initialized(false),
@@ -237,17 +48,15 @@ ChargePoint::ChargePoint(std::shared_ptr<ChargePointConfiguration> configuration
     this->clock_aligned_meter_values_timer = std::make_unique<Everest::SystemTimer>(
         &this->io_service, [this]() { this->clock_aligned_meter_values_sample(); });
 
-    auto connector_availability = this->configuration->getConnectorAvailability();
-    for (auto connector : connector_availability) {
-        if (connector.second == AvailabilityType::Operative) {
-            this->status[connector.first] = new ChargePointStateMachine(ChargePointStatus::Available);
-        } else {
-            this->status[connector.first] = new ChargePointStateMachine(ChargePointStatus::Unavailable);
-        }
-    }
     this->work = boost::make_shared<boost::asio::io_service::work>(this->io_service);
 
     this->io_service_thread = std::thread([this]() { this->io_service.run(); });
+
+    this->status = std::make_unique<ChargePointStates>(
+        this->configuration->getNumberOfConnectors(),
+        [this](int32_t connector, ChargePointErrorCode errorCode, ChargePointStatus status) {
+            this->status_notification(connector, errorCode, status);
+        });
 }
 
 void ChargePoint::heartbeat() {
@@ -291,7 +100,8 @@ void ChargePoint::clock_aligned_meter_values_sample() {
 
 void ChargePoint::connection_timeout(int32_t connector) {
     if (this->initialized) {
-        this->status_notification(connector, ChargePointErrorCode::NoError, this->status[connector]->timeout());
+        // FIXME(kai): libfsm this->status_notification(connector, ChargePointErrorCode::NoError,
+        // this->status[connector]->timeout());
     }
 }
 
@@ -564,6 +374,13 @@ void ChargePoint::send_meter_value(int32_t connector, MeterValue meter_value) {
 
 void ChargePoint::start() {
     this->websocket->connect();
+    std::vector<AvailabilityType> initial_availability;
+    auto connector_availability = this->configuration->getConnectorAvailability();
+    connector_availability[0] =
+        AvailabilityType::Operative; // FIXME(kai): fix internal representation in charge point states, we need a
+                                     // different kind of state machine for connector 0 anyway (with reduced states)
+    // TODO(kai): call this maybe after the bootnotification was acknowledged? this way it always comes through...
+    this->status->run(connector_availability);
 }
 
 void ChargePoint::stop_all_transactions() {
@@ -773,10 +590,11 @@ void ChargePoint::handleBootNotificationResponse(CallResult<BootNotificationResp
         // activate clock aligned sampling of meter values
         this->update_clock_aligned_meter_values_interval();
 
-        for (auto connector_status : this->status) {
-            this->status_notification(connector_status.first, ChargePointErrorCode::NoError,
-                                      connector_status.second->get_current_state());
-        }
+        // FIXME(kai): libfsm
+        // for (auto connector_status : this->status) {
+        //     this->status_notification(connector_status.first, ChargePointErrorCode::NoError,
+        //                               connector_status.second->get_current_state());
+        // }
 
         break;
     case RegistrationStatus::Pending:
@@ -835,14 +653,9 @@ void ChargePoint::handleChangeAvailabilityRequest(Call<ChangeAvailabilityRequest
                 this->configuration->setConnectorAvailability(connector, call.msg.type);
             if (availability_change_succeeded) {
                 if (call.msg.type == AvailabilityType::Operative) {
-                    this->status[connector]->change_state(
-                        ChargePointStatusTransition::H1_ConnectorSetAvailableByChangeAvailability); // TODO(kai): rework
-                                                                                                    // state transitions
-                    this->status_notification(connector, ChargePointErrorCode::NoError, ChargePointStatus::Available);
+                    this->status->submit_event(connector, Event_H1_ConnectorSetAvailableByChangeAvailability());
                 } else {
-                    this->status[connector]->change_state(
-                        ChargePointStatusTransition::A8_ChangeAvailabilityToUnavailable);
-                    this->status_notification(connector, ChargePointErrorCode::NoError, ChargePointStatus::Unavailable);
+                    this->status->submit_event(connector, Event_A8_ChangeAvailabilityToUnavailable());
                 }
             }
         }
@@ -1551,6 +1364,13 @@ void ChargePoint::receive_max_current_offered(int32_t connector, double max_curr
     this->max_current_offered[connector] = max_current;
 }
 
+void ChargePoint::receive_number_of_phases_available(int32_t connector, double number_of_phases) {
+    std::lock_guard<std::mutex> lock(power_meter_mutex);
+    // TODO(kai): uses power meter mutex because the reading context is similar, think about storing this information in
+    // a unified struct
+    this->number_of_phases_available[connector] = number_of_phases;
+}
+
 bool ChargePoint::start_transaction(int32_t connector) {
     AvailabilityType connector_availability = this->configuration->getConnectorAvailability(connector);
     if (connector_availability == AvailabilityType::Inoperative) {
@@ -1602,8 +1422,8 @@ bool ChargePoint::start_transaction(int32_t connector) {
 
     if (this->configuration->getStopTransactionOnInvalidId() &&
         start_transaction_response.idTagInfo.status != AuthorizationStatus::Accepted) {
-        // FIXME(kai): new fsm
-        this->status_notification(connector, ChargePointErrorCode::NoError, this->status[connector]->suspended_evse());
+        // FIXME(kai): libfsm        this->status_notification(connector, ChargePointErrorCode::NoError,
+        // this->status[connector]->suspended_evse());
         return false;
     }
     if (start_transaction_response.idTagInfo.status == AuthorizationStatus::ConcurrentTx) {
@@ -1655,8 +1475,9 @@ bool ChargePoint::stop_transaction(int32_t connector, Reason reason) {
 
     // TODO(kai): are there other status notifications that should be sent here?
     if (reason == Reason::EVDisconnected) {
-        this->status_notification(connector, ChargePointErrorCode::NoError, std::string("EV side disconnected"),
-                                  this->status[connector]->finishing(), DateTime());
+        // FIXME(kai): libfsm
+        // this->status_notification(connector, ChargePointErrorCode::NoError, std::string("EV side disconnected"),
+        //                           this->status[connector]->finishing(), DateTime());
     }
 
     req.meterStop = std::round(energyWhStamped->energy_Wh); // TODO(kai):: maybe store this in the session/transaction
@@ -1745,37 +1566,40 @@ bool ChargePoint::stop_session(int32_t connector, DateTime timestamp, double ene
 }
 
 bool ChargePoint::start_charging(int32_t connector) {
-    if (this->status[connector]->get_current_state() == ChargePointStatus::SuspendedEV) {
-        if (this->status[connector]->resume_ev() == ChargePointStatus::Charging) {
-            return true;
-        }
-    }
+    // FIXME(kai): libfsm
+    // if (this->status[connector]->get_current_state() == ChargePointStatus::SuspendedEV) {
+    //     if (this->status[connector]->resume_ev() == ChargePointStatus::Charging) {
+    //         return true;
+    //     }
+    // }
     return false;
 }
 
 bool ChargePoint::suspend_charging_ev(int32_t connector) {
-    if (this->status[connector]->suspended_ev() == ChargePointStatus::SuspendedEV) {
-        return true;
-    }
+    // FIXME(kai): libfsm
+    // if (this->status[connector]->suspended_ev() == ChargePointStatus::SuspendedEV) {
+    //     return true;
+    // }
     return false;
 }
 
 bool ChargePoint::suspend_charging_evse(int32_t connector) {
-    if (this->status[connector]->suspended_evse() == ChargePointStatus::SuspendedEVSE) {
-        return true;
-    }
+    // FIXME(kai): libfsm
+    // if (this->status[connector]->suspended_evse() == ChargePointStatus::SuspendedEVSE) {
+    //     return true;
+    // }
     return false;
 }
 
 bool ChargePoint::resume_charging(int32_t connector) {
     // FIXME(kai): implement
-
+    // FIXME(kai): libfsm
     return false;
 }
 
 bool ChargePoint::error(int32_t connector, ChargePointErrorCode error_code) {
     // FIXME(kai): implement
-
+    // FIXME(kai): libfsm
     return false;
 }
 
