@@ -863,6 +863,7 @@ void ChargePoint::handleResetRequest(Call<ResetRequest> call) {
         // TODO(kai): implement hard reset, if possible send StopTransaction for any running
         // transactions This type of reset should restart all hardware!
         this->reset_thread = std::thread([this]() {
+            this->stop_all_transactions(Reason::SoftReset);
             kill(getpid(), SIGINT); // FIXME(kai): this leads to a somewhat dirty reset
         });
     }
@@ -870,6 +871,7 @@ void ChargePoint::handleResetRequest(Call<ResetRequest> call) {
         // TODO(kai): gracefully stop all transactions and send StopTransaction. Restart software
         // afterwards
         this->reset_thread = std::thread([this]() {
+            this->stop_all_transactions(Reason::SoftReset);
             kill(getpid(), SIGINT); // FIXME(kai): this leads to a somewhat dirty reset
         });
     }
