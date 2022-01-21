@@ -718,16 +718,31 @@ void ChargePoint::handleClearCacheRequest(Call<ClearCacheRequest> call) {
 void ChargePoint::handleDataTransferRequest(Call<DataTransferRequest> call) {
     EVLOG(debug) << "Received DataTransferRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
 
-    // TODO(kai): here we can implement vendor specific extensions
-    // TODO(kai): this probably needs a way to register supported extensions and corresponding callbacks
-
     DataTransferResponse response;
 
-    // TODO(kai): for now we reject any message sent this way with an unknown vendor id
-    response.status = DataTransferStatus::UnknownVendorId;
+    auto vendorId = call.msg.vendorId.get();
+    auto messageId = call.msg.messageId.get_value_or(std::string("")).get();
+    std::function<void(const std::string data)> callback;
+    {
+        std::lock_guard<std::mutex> lock(data_transfer_callbacks_mutex);
+        if (this->data_transfer_callbacks.count(vendorId) == 0) {
+            response.status = DataTransferStatus::UnknownVendorId;
+        } else {
+            if (this->data_transfer_callbacks[vendorId].count(messageId) == 0) {
+                response.status = DataTransferStatus::UnknownMessageId;
+            } else {
+                response.status = DataTransferStatus::Accepted;
+                callback = this->data_transfer_callbacks[vendorId][messageId];
+            }
+        }
+    }
 
     CallResult<DataTransferResponse> call_result(response, call.uniqueId);
     this->send<DataTransferResponse>(call_result);
+
+    if (response.status == DataTransferStatus::Accepted) {
+        callback(call.msg.data.get_value_or(std::string("")));
+    }
 }
 
 void ChargePoint::handleGetConfigurationRequest(Call<GetConfigurationRequest> call) {
@@ -1351,6 +1366,12 @@ DataTransferResponse ChargePoint::data_transfer(const CiString255Type& vendorId,
     }
 
     return response;
+}
+
+void ChargePoint::register_data_transfer_callback(const CiString255Type& vendorId, const CiString50Type& messageId,
+                                                  const std::function<void(const std::string data)>& callback) {
+    std::lock_guard<std::mutex> lock(data_transfer_callbacks_mutex);
+    this->data_transfer_callbacks[vendorId.get()][messageId.get()] = callback;
 }
 
 void ChargePoint::receive_power_meter(int32_t connector, json powermeter) {

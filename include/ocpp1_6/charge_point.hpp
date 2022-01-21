@@ -81,6 +81,9 @@ private:
     std::map<MessageId, std::thread> remote_stop_transaction;  // FIXME: this should be done differently
     std::mutex remote_stop_transaction_mutex;                  // FIXME: this should be done differently
 
+    std::map<std::string, std::map<std::string, std::function<void(const std::string data)>>> data_transfer_callbacks;
+    std::mutex data_transfer_callbacks_mutex;
+
     std::thread reset_thread;
 
     // callbacks
@@ -156,6 +159,11 @@ public:
     /// system \returns the DataTransferResponse
     DataTransferResponse data_transfer(const CiString255Type& vendorId, const CiString50Type& messageId,
                                        const std::string data);
+
+    /// registers a \p callback function that can be used to receive a arbitrary data transfer for the given \p vendorId
+    /// and \p messageId
+    void register_data_transfer_callback(const CiString255Type& vendorId, const CiString50Type& messageId,
+                                         const std::function<void(const std::string data)>& callback);
 
     /// \brief Stores the given \p powermeter values for the given \p connector
     void receive_power_meter(int32_t connector, json powermeter);
