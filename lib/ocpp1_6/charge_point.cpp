@@ -1662,4 +1662,7 @@ void ChargePoint::register_unlock_connector_callback(const std::function<bool(in
     this->unlock_connector_callback = callback;
 }
 
+void ChargePoint::register_set_max_current_callback(const std::function<void(int32_t connector, double max_current)>& callback) {
+    this->set_max_current_callback = callback;
+}
 } // namespace ocpp1_6
