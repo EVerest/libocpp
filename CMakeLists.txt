@@ -61,7 +61,13 @@ find_package(OpenSSL REQUIRED)
 add_subdirectory(lib)
 
 # executable code
-add_subdirectory(src)
+option(BUILD_EXAMPLES "Build charge_point and central_system binaries." OFF)
+if(BUILD_EXAMPLES)
+    message("Building libocpp example binaries.")
+    add_subdirectory(src)
+else()
+    message("Not building libocpp example binaries.")
+endif()
 
 # auxillary files
 add_subdirectory(aux)
