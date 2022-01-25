@@ -768,8 +768,8 @@ static const ChargePointConnectionState string_to_charge_point_connection_state(
 }
 } // namespace conversions
 
-/// \brief Writes the string representation of the given \p charge_point_connection_state to the given output stream \p os
-/// \returns an output stream with the ChargePointConnectionState written to
+/// \brief Writes the string representation of the given \p charge_point_connection_state
+/// to the given output stream \p os \returns an output stream with the ChargePointConnectionState written to
 inline std::ostream& operator<<(std::ostream& os, const ChargePointConnectionState& charge_point_connection_state) {
     os << conversions::charge_point_connection_state_to_string(charge_point_connection_state);
     return os;
