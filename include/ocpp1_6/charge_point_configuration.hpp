@@ -230,20 +230,28 @@ public:
 
     // Core Profile end
 
+    // SmartCharging Profile
     int32_t getChargeProfileMaxStackLevel();
     KeyValue getChargeProfileMaxStackLevelKeyValue();
 
+    // SmartCharging Profile
     std::string getChargingScheduleAllowedChargingRateUnit();
     KeyValue getChargingScheduleAllowedChargingRateUnitKeyValue();
+    std::vector<ChargingRateUnit> getChargingScheduleAllowedChargingRateUnitVector();
 
+    // SmartCharging Profile
     int32_t getChargingScheduleMaxPeriods();
     KeyValue getChargingScheduleMaxPeriodsKeyValue();
 
-    bool getConnectorSwitch3to1PhaseSupported();
-    KeyValue getConnectorSwitch3to1PhaseSupportedKeyValue();
+    // SmartCharging Profile - optional
+    boost::optional<bool> getConnectorSwitch3to1PhaseSupported();
+    boost::optional<KeyValue> getConnectorSwitch3to1PhaseSupportedKeyValue();
 
+    // SmartCharging Profile
     int32_t getMaxChargingProfilesInstalled();
     KeyValue getMaxChargingProfilesInstalledKeyValue();
+
+    // SmartCharging Profile end
 
     boost::optional<KeyValue> get(CiString50Type key);
 

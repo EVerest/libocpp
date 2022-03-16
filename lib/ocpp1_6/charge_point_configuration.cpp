@@ -1249,6 +1249,20 @@ KeyValue ChargePointConfiguration::getChargingScheduleAllowedChargingRateUnitKey
     kv.value.emplace(this->getChargingScheduleAllowedChargingRateUnit());
     return kv;
 }
+std::vector<ChargingRateUnit> ChargePointConfiguration::getChargingScheduleAllowedChargingRateUnitVector() {
+    std::vector<std::string> components;
+    auto csv = this->getChargingScheduleAllowedChargingRateUnit();
+    boost::split(components, csv, boost::is_any_of(","));
+    std::vector<ChargingRateUnit> charging_rate_unit_vector;
+    for (auto component : components) {
+        if (component == "Current") {
+            charging_rate_unit_vector.push_back(ChargingRateUnit::A);
+        } else if (component == "Power") {
+            charging_rate_unit_vector.push_back(ChargingRateUnit::W);
+        }
+    }
+    return charging_rate_unit_vector;
+}
 
 int32_t ChargePointConfiguration::getChargingScheduleMaxPeriods() {
     return this->config["SmartCharging"]["ChargingScheduleMaxPeriods"];
@@ -1261,15 +1275,26 @@ KeyValue ChargePointConfiguration::getChargingScheduleMaxPeriodsKeyValue() {
     return kv;
 }
 
-bool ChargePointConfiguration::getConnectorSwitch3to1PhaseSupported() {
-    return this->config["SmartCharging"]["ConnectorSwitch3to1PhaseSupported"];
+boost::optional<bool> ChargePointConfiguration::getConnectorSwitch3to1PhaseSupported() {
+    boost::optional<bool> connector_switch_3_to_1_phase_supported = boost::none;
+    if (this->config["SmartCharging"].contains("ConnectorSwitch3to1PhaseSupported")) {
+        connector_switch_3_to_1_phase_supported.emplace(
+            this->config["SmartCharging"]["ConnectorSwitch3to1PhaseSupported"]);
+    }
+    return connector_switch_3_to_1_phase_supported;
 }
-KeyValue ChargePointConfiguration::getConnectorSwitch3to1PhaseSupportedKeyValue() {
-    ocpp1_6::KeyValue kv;
-    kv.key = "ConnectorSwitch3to1PhaseSupported";
-    kv.readonly = true;
-    kv.value.emplace(conversions::bool_to_string(this->getConnectorSwitch3to1PhaseSupported()));
-    return kv;
+boost::optional<KeyValue> ChargePointConfiguration::getConnectorSwitch3to1PhaseSupportedKeyValue() {
+    boost::optional<KeyValue> connector_switch_3_to_1_phase_supported_kv = boost::none;
+
+    auto connector_switch_3_to_1_phase_supported = this->getConnectorSwitch3to1PhaseSupported();
+    if (connector_switch_3_to_1_phase_supported != boost::none) {
+        ocpp1_6::KeyValue kv;
+        kv.key = "ConnectorSwitch3to1PhaseSupported";
+        kv.readonly = true;
+        kv.value.emplace(conversions::bool_to_string(connector_switch_3_to_1_phase_supported.value()));
+        connector_switch_3_to_1_phase_supported_kv.emplace(kv);
+    }
+    return connector_switch_3_to_1_phase_supported_kv;
 }
 
 int32_t ChargePointConfiguration::getMaxChargingProfilesInstalled() {
@@ -1386,21 +1411,21 @@ boost::optional<KeyValue> ChargePointConfiguration::get(CiString50Type key) {
     if (key == "WebsocketPingInterval") {
         return this->getWebsocketPingIntervalKeyValue();
     }
-    // if (key == "ChargeProfileMaxStackLevel") {
-    //     return this->getChargeProfileMaxStackLevelKeyValue();
-    // }
-    // if (key == "ChargingScheduleAllowedChargingRateUnit") {
-    //     return this->getChargingScheduleAllowedChargingRateUnitKeyValue();
-    // }
-    // if (key == "ChargingScheduleMaxPeriods") {
-    //     return this->getChargingScheduleMaxPeriodsKeyValue();
-    // }
-    // if (key == "ConnectorSwitch3to1PhaseSupported") {
-    //     return this->getConnectorSwitch3to1PhaseSupportedKeyValue();
-    // }
-    // if (key == "MaxChargingProfilesInstalled") {
-    //     return this->getMaxChargingProfilesInstalledKeyValue();
-    // }
+    if (key == "ChargeProfileMaxStackLevel") {
+        return this->getChargeProfileMaxStackLevelKeyValue();
+    }
+    if (key == "ChargingScheduleAllowedChargingRateUnit") {
+        return this->getChargingScheduleAllowedChargingRateUnitKeyValue();
+    }
+    if (key == "ChargingScheduleMaxPeriods") {
+        return this->getChargingScheduleMaxPeriodsKeyValue();
+    }
+    if (key == "ConnectorSwitch3to1PhaseSupported") {
+        return this->getConnectorSwitch3to1PhaseSupportedKeyValue();
+    }
+    if (key == "MaxChargingProfilesInstalled") {
+        return this->getMaxChargingProfilesInstalledKeyValue();
+    }
 
     return boost::none;
 }
