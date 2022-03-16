@@ -928,7 +928,7 @@ void ChargePoint::handleSetChargingProfileRequest(Call<SetChargingProfileRequest
 
     SetChargingProfileResponse response;
     auto number_of_connectors = this->configuration->getNumberOfConnectors();
-    if (call.msg.connectorId > number_of_connectors || call.msg.csChargingProfiles.stackLevel < 0 ||
+    if (call.msg.connectorId > number_of_connectors || call.msg.connectorId < 0 || call.msg.csChargingProfiles.stackLevel < 0 ||
         call.msg.csChargingProfiles.stackLevel > this->configuration->getChargeProfileMaxStackLevel()) {
         response.status = ChargingProfileStatus::Rejected;
     } else {
@@ -944,21 +944,14 @@ void ChargePoint::handleSetChargingProfileRequest(Call<SetChargingProfileRequest
                 if (call.msg.csChargingProfiles.chargingProfileKind == ChargingProfileKindType::Relative) {
                     response.status = ChargingProfileStatus::Rejected;
                 } else {
-                    // FIXME(kai): only allow absolute or recurring profiles here since we do not really know what a
-                    // relative profile in this situation could be relative to
+                    // FIXME(kai): only allow absolute or recurring profiles here
                     if (call.msg.csChargingProfiles.chargingProfileKind == ChargingProfileKindType::Absolute) {
-                        if (!call.msg.csChargingProfiles.chargingSchedule.startSchedule) {
-                            response.status = ChargingProfileStatus::Rejected;
-                        } else {
-                            // we only accept absolute schedules with a start schedule
-                            // TODO: make sure that the start schedule is between validFrom and validTo
-                            std::unique_lock<std::mutex> charge_point_max_profiles_lock(
-                                charge_point_max_profiles_mutex);
-                            this->charge_point_max_profiles[call.msg.csChargingProfiles.stackLevel] =
-                                call.msg.csChargingProfiles;
-                            charge_point_max_profiles_mutex.unlock();
-                            response.status = ChargingProfileStatus::Accepted;
-                        }
+                        // FIXME(kai): hint: without a start schedule this absolute schedule is relative to start of
+                        // charging
+                        std::lock_guard<std::mutex> charge_point_max_profiles_lock(charge_point_max_profiles_mutex);
+                        this->charge_point_max_profiles[call.msg.csChargingProfiles.stackLevel] =
+                            call.msg.csChargingProfiles;
+                        response.status = ChargingProfileStatus::Accepted;
                     } else if (call.msg.csChargingProfiles.chargingProfileKind == ChargingProfileKindType::Recurring) {
                         if (!call.msg.csChargingProfiles.recurrencyKind) {
                             response.status = ChargingProfileStatus::Rejected;
@@ -974,11 +967,9 @@ void ChargePoint::handleSetChargingProfileRequest(Call<SetChargingProfileRequest
                                     << start_schedule << " (midnight today)";
                                 call.msg.csChargingProfiles.chargingSchedule.startSchedule.emplace(start_schedule);
                             }
-                            std::unique_lock<std::mutex> charge_point_max_profiles_lock(
-                                charge_point_max_profiles_mutex);
+                            std::lock_guard<std::mutex> charge_point_max_profiles_lock(charge_point_max_profiles_mutex);
                             this->charge_point_max_profiles[call.msg.csChargingProfiles.stackLevel] =
                                 call.msg.csChargingProfiles;
-                            charge_point_max_profiles_mutex.unlock();
                             response.status = ChargingProfileStatus::Accepted;
                         }
                     }
@@ -990,7 +981,7 @@ void ChargePoint::handleSetChargingProfileRequest(Call<SetChargingProfileRequest
             // connector = 0 applies to all connectors
             // connector > 1 applies only to that connector, if a default profile for connector = 0 is already installed
             // the one for a specific connector overwrites that one!
-            std::unique_lock<std::mutex> tx_default_profiles_lock(tx_default_profiles_mutex);
+            std::lock_guard<std::mutex> tx_default_profiles_lock(tx_default_profiles_mutex);
             if (call.msg.connectorId == 0) {
                 for (int32_t connector = 1; connector < number_of_connectors; connector++) {
                     this->tx_default_profiles[connector][call.msg.csChargingProfiles.stackLevel] =
@@ -1000,7 +991,6 @@ void ChargePoint::handleSetChargingProfileRequest(Call<SetChargingProfileRequest
                 this->tx_default_profiles[call.msg.connectorId][call.msg.csChargingProfiles.stackLevel] =
                     call.msg.csChargingProfiles;
             }
-            tx_default_profiles_mutex.unlock();
             response.status = ChargingProfileStatus::Accepted;
         }
         if (call.msg.csChargingProfiles.chargingProfilePurpose == ChargingProfilePurposeType::TxProfile) {
@@ -1055,7 +1045,7 @@ void ChargePoint::handleGetCompositeScheduleRequest(Call<GetCompositeScheduleReq
             if (call.msg.chargingRateUnit) {
                 composite_schedule.chargingRateUnit = call.msg.chargingRateUnit.value();
             } else {
-                composite_schedule.chargingRateUnit = ChargingRateUnit::W; // TODO default & conversion
+                composite_schedule.chargingRateUnit = ChargingRateUnit::A; // TODO default & conversion
             }
             // charge point max profiles
             std::vector<ChargingProfile> valid_profiles;
@@ -1662,7 +1652,8 @@ void ChargePoint::register_unlock_connector_callback(const std::function<bool(in
     this->unlock_connector_callback = callback;
 }
 
-void ChargePoint::register_set_max_current_callback(const std::function<void(int32_t connector, double max_current)>& callback) {
+void ChargePoint::register_set_max_current_callback(
+    const std::function<void(int32_t connector, double max_current)>& callback) {
     this->set_max_current_callback = callback;
 }
 } // namespace ocpp1_6
