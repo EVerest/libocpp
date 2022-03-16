@@ -1309,6 +1309,7 @@ KeyValue ChargePointConfiguration::getMaxChargingProfilesInstalledKeyValue() {
 }
 
 boost::optional<KeyValue> ChargePointConfiguration::get(CiString50Type key) {
+    // Core Profile
     if (key == "AllowOfflineTxForUnknownId") {
         return this->getAllowOfflineTxForUnknownIdKeyValue();
     }
@@ -1411,20 +1412,25 @@ boost::optional<KeyValue> ChargePointConfiguration::get(CiString50Type key) {
     if (key == "WebsocketPingInterval") {
         return this->getWebsocketPingIntervalKeyValue();
     }
-    if (key == "ChargeProfileMaxStackLevel") {
-        return this->getChargeProfileMaxStackLevelKeyValue();
-    }
-    if (key == "ChargingScheduleAllowedChargingRateUnit") {
-        return this->getChargingScheduleAllowedChargingRateUnitKeyValue();
-    }
-    if (key == "ChargingScheduleMaxPeriods") {
-        return this->getChargingScheduleMaxPeriodsKeyValue();
-    }
-    if (key == "ConnectorSwitch3to1PhaseSupported") {
-        return this->getConnectorSwitch3to1PhaseSupportedKeyValue();
-    }
-    if (key == "MaxChargingProfilesInstalled") {
-        return this->getMaxChargingProfilesInstalledKeyValue();
+
+    // Smart Charging
+    if (this->supported_feature_profiles.count(SupportedFeatureProfiles::SmartCharging))
+    {
+        if (key == "ChargeProfileMaxStackLevel") {
+            return this->getChargeProfileMaxStackLevelKeyValue();
+        }
+        if (key == "ChargingScheduleAllowedChargingRateUnit") {
+            return this->getChargingScheduleAllowedChargingRateUnitKeyValue();
+        }
+        if (key == "ChargingScheduleMaxPeriods") {
+            return this->getChargingScheduleMaxPeriodsKeyValue();
+        }
+        if (key == "ConnectorSwitch3to1PhaseSupported") {
+            return this->getConnectorSwitch3to1PhaseSupportedKeyValue();
+        }
+        if (key == "MaxChargingProfilesInstalled") {
+            return this->getMaxChargingProfilesInstalledKeyValue();
+        }
     }
 
     return boost::none;
