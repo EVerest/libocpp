@@ -55,7 +55,12 @@ DateTimeImpl::DateTimeImpl(const std::string& timepoint_str) {
         in.seekg(0);
         in >> date::parse("%FT%TZ", this->timepoint);
         if (in.fail()) {
-            EVLOG(error) << "timepoint string parsing failed";
+            in.clear();
+            in.seekg(0);
+            in >> date::parse("%FT%T", this->timepoint);
+            if (in.fail()) {
+                EVLOG(error) << "timepoint string parsing failed";
+            }
         }
     }
 }
