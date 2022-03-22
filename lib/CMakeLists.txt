@@ -65,3 +65,9 @@ source_group(
     TREE "${INCLUDE_DIR}"
     PREFIX "Headers"
     FILES ${HEADERS})
+
+target_link_libraries(ocpp
+    PRIVATE
+        date::date
+        date::date-tz
+)
