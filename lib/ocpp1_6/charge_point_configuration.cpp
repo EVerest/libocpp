@@ -157,7 +157,7 @@ ChargePointConfiguration::ChargePointConfiguration(json config, std::string sche
           MessageType::DataTransferResponse, MessageType::GetConfiguration, MessageType::HeartbeatResponse,
           MessageType::MeterValuesResponse, MessageType::RemoteStartTransaction, MessageType::RemoteStopTransaction,
           MessageType::Reset, MessageType::StartTransactionResponse, MessageType::StatusNotificationResponse,
-          MessageType::StopTransactionResponse, MessageType::UnlockConnector}},
+          MessageType::StopTransactionResponse, MessageType::UnlockConnector, MessageType::ReserveNow}},
         {SupportedFeatureProfiles::FirmwareManagement,
          {MessageType::GetDiagnostics, MessageType::DiagnosticsStatusNotificationResponse,
           MessageType::FirmwareStatusNotificationResponse, MessageType::UpdateFirmware}},
