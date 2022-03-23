@@ -20,6 +20,7 @@ ChargePoint::ChargePoint(std::shared_ptr<ChargePointConfiguration> configuration
     this->configuration = configuration;
     this->connection_state = ChargePointConnectionState::Disconnected;
     this->charging_sessions = std::make_unique<ChargingSessions>(this->configuration->getNumberOfConnectors());
+    this->reservations = std::make_unique<Reservations>();
 
     this->message_queue = std::make_unique<MessageQueue>(
         this->configuration, [this](json message) -> bool { return this->websocket->send(message.dump()); });
@@ -1213,11 +1214,13 @@ void ChargePoint::handleClearChargingProfileRequest(Call<ClearChargingProfileReq
 // Definitions:
 // ReserveNow.conf(status):
 // ReserveNow.req(connectorId, expiryDate, idTag, reservationId, [parentIdTag]):
-void ChargePoint::handleReserveNowRequest(Call<ClearChargingProfileRequest> call) {
+void ChargePoint::handleReserveNowRequest(Call<ReserveNowRequest> call) {
     EVLOG(debug) << "Received ReserveNowRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
 
     ReserveNowResponse response;
-    // response.status = ReservationStatus::Accepted;
+    // response.status = this->reservations->reserve_now(call.msg.to_json)
+
+    //ReservationStatus::Accepted;
 
     /**
     // from: ReserveNowResponse
@@ -1238,53 +1241,6 @@ void ChargePoint::handleReserveNowRequest(Call<ClearChargingProfileRequest> call
     this->send<ReserveNowResponse>(call_result);
     //  Store reservationId etc. in SQlite database
 
-    // Connector specified?
-    // Respond with ReserveNow.conf PDU
-
-    // Overwrite existing reservation if its reservationId matches that of the request
-    // Else:
-    //   succeeds in reserving the connector:
-    //        return accepted
-    //   elif occupied:
-    //        return occupied
-    // ReservationId affects response, not IDtag
-    // Return faulted if chargepoint or connector are faulted
-    // Return unavailable if CP or Connector are unavailable
-    // Return rejected if configured not to accept reservations
-
-    // If reserved: refuse charging unless if the incoming idTag or parent idTag match that of the reservation.
-
-    // if ReserveConnectorZeroSupported == True:
-    //     CP supports reservations on connector 0
-    //     hence, can connect to any connector but keep atleast one free
-    // else:
-    //     return False
-
-    // if transaction starts for reserved idTag or reserved connector or any connector when connid == 0:
-    //     terminate charge point
-    //
-    // if expiryDate time is reached:
-    //     terminate charge point
-
-    // if chargepoint or connector are faulted / unavailable:
-    //     terminate charge point
-
-    // If reserved idTag is started:
-    //     the chargepoint sends reservationId in the StartTransaction.req PDU (see start Transaction)
-    //     to notify the central system that the reservation is terminated.
-
-    // when reservation expires:
-    //     terminate the reservation and make connector available
-    //     notify the central system that the reserved connector is now available
-
-    // if authorization cache exists:
-    //     update the cache entry upon receiving reserveNow.conf
-    //     incase it is not already in the Local Authorization List (Authorization Cache)
-
-    // Before starting the transaction:
-    //     Validate the identifier with authorize.req after receiving ReserveNow.req.
-
-    // Evsim_manager
 }
 
 bool ChargePoint::allowed_to_send_message(json::array_t message) {

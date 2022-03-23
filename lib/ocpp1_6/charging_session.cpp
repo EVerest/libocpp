@@ -464,4 +464,9 @@ std::vector<MeterValue> ChargingSessions::get_clock_aligned_meter_values(int32_t
     return this->charging_sessions.at(connector)->get_clock_aligned_meter_values();
 }
 
+Reservations::Reservations() {
+
+}
+
+
 } // namespace ocpp1_6

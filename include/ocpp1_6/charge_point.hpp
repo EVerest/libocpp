@@ -33,6 +33,7 @@
 #include <ocpp1_6/messages/StatusNotification.hpp>
 #include <ocpp1_6/messages/StopTransaction.hpp>
 #include <ocpp1_6/messages/UnlockConnector.hpp>
+#include <ocpp1_6/messages/ReserveNow.hpp>
 #include <ocpp1_6/types.hpp>
 #include <ocpp1_6/websocket.hpp>
 
@@ -67,6 +68,7 @@ private:
     std::map<int32_t, AvailabilityType> change_availability_queue; // TODO: move to Connectors
     std::mutex change_availability_mutex;                          // TODO: move to Connectors
     std::unique_ptr<ChargingSessions> charging_sessions;
+    std::unique_ptr<Reservations> reservations;
     std::map<int32_t, ChargingProfile> charge_point_max_profiles;
     std::mutex charge_point_max_profiles_mutex;
     std::map<int32_t, std::map<int32_t, ChargingProfile>> tx_default_profiles;
@@ -135,6 +137,7 @@ private:
     void handleSetChargingProfileRequest(Call<SetChargingProfileRequest> call);
     void handleGetCompositeScheduleRequest(Call<GetCompositeScheduleRequest> call);
     void handleClearChargingProfileRequest(Call<ClearChargingProfileRequest> call);
+    void handleReserveNowRequest(Call<ReserveNowRequest> call);
 
 public:
     /// \brief Creates a ChargePoint object with the provided \p configuration
