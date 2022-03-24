@@ -269,16 +269,12 @@ public:
     std::vector<MeterValue> get_clock_aligned_meter_values(int32_t connector);
 };
 
-class Reservation {
-private:
+struct ReservationProperties {
     int32_t connectorId;
     DateTime expiryDate;
     CiString20Type idTag;
-
-public:
-    Reservation();
-
-
+    ReservationProperties(int32_t cId, DateTime eDe, CiString20Type iTg) :
+        connectorId(cId), expiryDate(eDe), idTag(iTg) {}
 };
 
 // this manages reservations, while they are tied to a connector, this could still be connector 0 (if the appropriate
@@ -286,18 +282,15 @@ public:
 // there can be some "mobility" when the same reservation (with the identical id) changes to a different one
 class Reservations {
 private:
-    //std::map<int32_t, Reservation> reservations;
-    // int32_t reservationId;
+    std::map<int32_t, ReservationProperties> reservations;
 public:
     Reservations();
 
-    ReservationStatus reserve_now();
-
+    ReservationStatus reserve_now(int32_t reservationId, int32_t connectorId, DateTime expiryDate, CiString20Type idTag);
 
     // Connector specified?
     // Respond with ReserveNow.conf PDU
 
-    // Overwrite existing reservation if its reservationId matches that of the request
     // Else:
     //   succeeds in reserving the connector:
     //        return accepted

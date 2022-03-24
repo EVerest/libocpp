@@ -464,9 +464,19 @@ std::vector<MeterValue> ChargingSessions::get_clock_aligned_meter_values(int32_t
     return this->charging_sessions.at(connector)->get_clock_aligned_meter_values();
 }
 
+
+
 Reservations::Reservations() {
 
 }
 
+ReservationStatus Reservations::reserve_now(int32_t reservationId, int32_t connectorId, DateTime expiryDate, CiString20Type idTag) {
+    auto Properties = std::make_shared<struct ReservationProperties>(connectorId, expiryDate, idTag);
+
+    // Overwrite existing reservation if its reservationId matches that of the request
+    auto pair = std::pair<int32_t, ReservationProperties>(reservationId, *Properties);
+    this->reservations.insert(pair);
+
+}
 
 } // namespace ocpp1_6

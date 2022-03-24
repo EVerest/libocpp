@@ -164,7 +164,7 @@ ChargePointConfiguration::ChargePointConfiguration(json config, std::string sche
         {SupportedFeatureProfiles::LocalAuthListManagement,
          {MessageType::GetLocalListVersion, MessageType::SendLocalList}},
         {SupportedFeatureProfiles::RemoteTrigger, {MessageType::TriggerMessage}},
-        {SupportedFeatureProfiles::Reservation, {MessageType::CancelReservation, MessageType::ReserveNow}},
+        {SupportedFeatureProfiles::Reservation, {MessageType::CancelReservation}},
         {SupportedFeatureProfiles::SmartCharging,
          {MessageType::ClearChargingProfile, MessageType::GetCompositeSchedule, MessageType::SetChargingProfile}}};
 
