@@ -1216,6 +1216,7 @@ void ChargePoint::handleClearChargingProfileRequest(Call<ClearChargingProfileReq
 // ReserveNow.req(connectorId, expiryDate, idTag, reservationId, [parentIdTag]):
 void ChargePoint::handleReserveNowRequest(Call<ReserveNowRequest> call) {
     EVLOG(debug) << "Received ReserveNowRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
+    EVLOG(debug) << "call: " << call;
 
     ReserveNowResponse response;
     // response.status = this->reservations->reserve_now(call.msg.to_json)
