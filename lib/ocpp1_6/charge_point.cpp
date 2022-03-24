@@ -374,13 +374,6 @@ void ChargePoint::send_meter_value(int32_t connector, MeterValue meter_value) {
 
 void ChargePoint::start() {
     this->websocket->connect();
-    std::vector<AvailabilityType> initial_availability;
-    auto connector_availability = this->configuration->getConnectorAvailability();
-    connector_availability[0] =
-        AvailabilityType::Operative; // FIXME(kai): fix internal representation in charge point states, we need a
-                                     // different kind of state machine for connector 0 anyway (with reduced states)
-    // TODO(kai): call this maybe after the bootnotification was acknowledged? this way it always comes through...
-    this->status->run(connector_availability);
 }
 
 void ChargePoint::stop_all_transactions() {
@@ -578,7 +571,7 @@ void ChargePoint::handleBootNotificationResponse(CallResult<BootNotificationResp
         this->configuration->setHeartbeatInterval(call_result.msg.interval);
     }
     switch (call_result.msg.status) {
-    case RegistrationStatus::Accepted:
+    case RegistrationStatus::Accepted:{
         this->connection_state = ChargePointConnectionState::Booted;
         // we are allowed to send messages to the central system
         // activate heartbeat
@@ -595,8 +588,15 @@ void ChargePoint::handleBootNotificationResponse(CallResult<BootNotificationResp
         //     this->status_notification(connector_status.first, ChargePointErrorCode::NoError,
         //                               connector_status.second->get_current_state());
         // }
+        auto connector_availability = this->configuration->getConnectorAvailability();
+        connector_availability[0] =
+        AvailabilityType::Operative; // FIXME(kai): fix internal representation in charge point states, we need a
+                                     // different kind of state machine for connector 0 anyway (with reduced states)
+        this->status->run(connector_availability);
+
 
         break;
+    }
     case RegistrationStatus::Pending:
         this->connection_state = ChargePointConnectionState::Booted;
         // TODO(kai):, theoretically we are in the Booted state because the central system can send us
@@ -1462,8 +1462,6 @@ bool ChargePoint::start_transaction(int32_t connector) {
 }
 
 bool ChargePoint::start_session(int32_t connector, DateTime timestamp, double energy_Wh_import) {
-    EVLOG(critical) << "start session...";
-
     if (!this->charging_sessions->initiate_session(connector)) {
         EVLOG(error) << "Could not initiate charging session on connector '" << connector << "'";
         return false;
