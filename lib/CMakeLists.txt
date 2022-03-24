@@ -12,8 +12,11 @@ target_sources(ocpp
         ocpp1_6/charge_point_configuration.cpp
         ocpp1_6/charge_point_state_machine.cpp
         ocpp1_6/charging_session.cpp
+        ocpp1_6/enums.cpp
         ocpp1_6/message_queue.cpp
+        ocpp1_6/ocpp_types.cpp
         ocpp1_6/schemas.cpp
+        ocpp1_6/types.cpp
         ocpp1_6/types_internal.cpp
         ocpp1_6/websocket.cpp
 )

@@ -58,8 +58,10 @@ env.filters['snake_case'] = snake_case
 env.globals['timestamp'] = datetime.utcnow
 env.globals['year'] = datetime.utcnow().year
 action_template = env.get_template('action.py.jinja')
-enum_template = env.get_template('enums.py.jinja')
-parsed_types_template = env.get_template('parsed_types.py.jinja')
+enums_hpp_template = env.get_template('enums.hpp.jinja')
+enums_cpp_template = env.get_template('enums.cpp.jinja')
+ocpp_types_hpp_template = env.get_template('ocpp_types.hpp.jinja')
+ocpp_types_cpp_template = env.get_template('ocpp_types.cpp.jinja')
 
 # global variables, should go into a class
 parsed_types: List = []
@@ -314,9 +316,19 @@ def parse_schemas(version: str, schema_dir: Path = Path('schemas/json/'),
             raise Exception(
                 'Either response or request is missing for action: ' + key)
 
-    enums_fn = Path(generated_dir, 'enums.hpp')
-    ocpp_types_fn = Path(generated_dir, 'ocpp_types.hpp')
-    messages_dir = generated_dir / 'messages'
+    generated_header_dir = generated_dir / 'include' / 'ocpp1_6'
+    generated_source_dir = generated_dir / 'lib' / 'ocpp1_6'
+
+    if not generated_header_dir.exists():
+        generated_header_dir.mkdir(parents=True)
+    if not generated_source_dir.exists():
+        generated_source_dir.mkdir(parents=True)
+
+    enums_hpp_fn = Path(generated_header_dir, 'enums.hpp')
+    enums_cpp_fn = Path(generated_source_dir, 'enums.cpp')
+    ocpp_types_hpp_fn = Path(generated_header_dir, 'ocpp_types.hpp')
+    ocpp_types_cpp_fn = Path(generated_source_dir, 'ocpp_types.cpp')
+    messages_dir = generated_header_dir / 'messages'
     action_list = dict()
     first = True
     for action, type_of_action in schemas.items():
@@ -368,8 +380,17 @@ def parse_schemas(version: str, schema_dir: Path = Path('schemas/json/'),
                         'is_request': (type_name == 'Request')
                     }
                 }))
-            with open(enums_fn, 'w' if first else 'a+') as out:
-                out.write(enum_template.render({
+            with open(enums_hpp_fn, 'w' if first else 'a+') as out:
+                out.write(enums_hpp_template.render({
+                    'enum_types': parsed_enums,
+                    'first': first,
+                    'action': {
+                        'name': action,
+                        'class_name': action_class_name,
+                    }
+                }))
+            with open(enums_cpp_fn, 'w' if first else 'a+') as out:
+                out.write(enums_cpp_template.render({
                     'enum_types': parsed_enums,
                     'first': first,
                     'action': {
@@ -382,8 +403,17 @@ def parse_schemas(version: str, schema_dir: Path = Path('schemas/json/'),
                 if parsed_type not in parsed_types_unique:
                     parsed_types_unique.append(parsed_type)
                     parsed_types_.append(parsed_type)
-            with open(ocpp_types_fn, 'w' if first else 'a+') as out:
-                out.write(parsed_types_template.render({
+            with open(ocpp_types_hpp_fn, 'w' if first else 'a+') as out:
+                out.write(ocpp_types_hpp_template.render({
+                    'parsed_types': parsed_types_,
+                    'first': first,
+                    'action': {
+                        'name': action,
+                        'class_name': action_class_name,
+                    }
+                }))
+            with open(ocpp_types_cpp_fn, 'w' if first else 'a+') as out:
+                out.write(ocpp_types_cpp_template.render({
                     'parsed_types': parsed_types_,
                     'first': first,
                     'action': {
@@ -393,12 +423,20 @@ def parse_schemas(version: str, schema_dir: Path = Path('schemas/json/'),
                 }))
             first = False
 
-    with open(enums_fn, 'a+') as out:
-        out.write(enum_template.render({
+    with open(enums_hpp_fn, 'a+') as out:
+        out.write(enums_hpp_template.render({
             'last': True
         }))
-    with open(ocpp_types_fn, 'a+') as out:
-        out.write(parsed_types_template.render({
+    with open(enums_cpp_fn, 'a+') as out:
+        out.write(enums_cpp_template.render({
+            'last': True
+        }))
+    with open(ocpp_types_hpp_fn, 'a+') as out:
+        out.write(ocpp_types_hpp_template.render({
+            'last': True
+        }))
+    with open(ocpp_types_cpp_fn, 'a+') as out:
+        out.write(ocpp_types_cpp_template.render({
             'last': True
         }))
 
@@ -406,7 +444,11 @@ def parse_schemas(version: str, schema_dir: Path = Path('schemas/json/'),
     subprocess.run(["sh", "-c", "find {} -regex '.*\\.\\(cpp\\|hpp\\)' -exec clang-format -style=file -i {{}} \\;".format(
         messages_dir)], cwd=messages_dir)
     subprocess.run(["clang-format", "-style=file",  "-i",
-                   enums_fn, ocpp_types_fn], cwd=generated_dir)
+                   enums_hpp_fn, ocpp_types_hpp_fn], cwd=generated_header_dir)
+    subprocess.run(["clang-format", "-style=file",  "-i",
+                   enums_hpp_fn, ocpp_types_cpp_fn], cwd=generated_source_dir)
+    subprocess.run(["clang-format", "-style=file",  "-i",
+                   enums_cpp_fn], cwd=generated_source_dir)
 
 
 if __name__ == "__main__":

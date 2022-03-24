@@ -6,6 +6,7 @@
 #include <chrono>
 #include <condition_variable>
 #include <deque>
+#include <future>
 #include <mutex>
 #include <queue>
 #include <thread>
@@ -13,8 +14,6 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
-
-#include <everest/timer.hpp>
 
 #include <ocpp1_6/charge_point_configuration.hpp>
 #include <ocpp1_6/types.hpp>
@@ -94,7 +93,6 @@ public:
     /// \brief pushes a new \p call message onto the message queue
     template <class T> void push(Call<T> call) {
         auto* message = new ControlMessage(call);
-        EVLOG(debug) << "Adding Call message " << message->messageType << " with uid " << call.uniqueId << " to queue";
         if (this->isTransactionMessage(message)) {
             // according to the spec the "transaction related messages" StartTransaction, StopTransaction and
             // MeterValues have to be delivered in chronological order
@@ -114,7 +112,6 @@ public:
     /// \returns a future from which the CallResult can be extracted
     template <class T> std::future<EnhancedMessage> push_async(Call<T> call) {
         auto* message = new ControlMessage(call);
-        EVLOG(debug) << "Adding Call message " << message->messageType << " with uid " << call.uniqueId << " to queue";
         if (this->isTransactionMessage(message)) {
             // according to the spec the "transaction related messages" StartTransaction, StopTransaction and
             // MeterValues have to be delivered in chronological order

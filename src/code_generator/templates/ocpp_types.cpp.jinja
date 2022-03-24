@@ -1,18 +1,16 @@
 {% if first %}
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - {{year}} Pionix GmbH and Contributors to EVerest
-#ifndef OCPP1_6_OCPP_TYPES_HPP
-#define OCPP1_6_OCPP_TYPES_HPP
-
 #include <map>
 #include <string>
 
 #include <boost/optional.hpp>
-#include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
 
 #include <ocpp1_6/enums.hpp>
 #include <ocpp1_6/types.hpp>
+
+#include <ocpp1_6/ocpp_types.hpp>
 
 namespace ocpp1_6 {
 {% endif %}
@@ -20,16 +18,8 @@ namespace ocpp1_6 {
 {%- for type in parsed_types %}
 {% if not type.name.endswith('Request') and not type.name.endswith('Response') %}
 
-struct {{type.name}} {
-{% for property in type.properties %}
-    {{ 'boost::optional<' if not property.required -}}
-    {{ property.type -}}
-    {{ '>' if not property.required -}}
-    {{ ' ' + property.name + ';' }}
-{% endfor %}
-
     /// \brief Conversion from a given {{ type.name }} \p k to a given json object \p j
-    friend void to_json(json& j, const {{ type.name }}& k) {
+    void to_json(json& j, const {{ type.name }}& k) {
         // the required parts of the message
 {% if type.properties|selectattr('required')|list|length %}
         j = json{
@@ -90,7 +80,7 @@ j["{{property.name}}"] = k.{{property.name}}.value();
     }
 
     /// \brief Conversion from a given json object \p j to a given {{ type.name }} \p k
-    friend void from_json(const json& j, {{ type.name }}& k) {
+    void from_json(const json& j, {{ type.name }}& k) {
         // the required parts of the message
 {% for property in type.properties %}
 {% if property.required %}
@@ -134,16 +124,15 @@ j["{{property.name}}"] = k.{{property.name}}.value();
 
     // \brief Writes the string representation of the given {{ type.name }} \p k to the given output stream \p os
     /// \returns an output stream with the {{ type.name }} written to
-    friend std::ostream& operator<<(std::ostream& os, const {{ type.name }}& k) {
+    std::ostream& operator<<(std::ostream& os, const {{ type.name }}& k) {
         os << json(k).dump(4);
         return os;
     }
-};
+
 {% endif %}
 {% endfor %}
 {%- endif %}
 {% if last %}
 } // namespace ocpp1_6
 
-#endif // OCPP1_6_OCPP_TYPES_HPP
 {% endif %}

@@ -2,6 +2,8 @@
 // Copyright 2020 - 2022 Pionix GmbH and Contributors to EVerest
 #include <ocpp1_6/message_queue.hpp>
 
+#include <everest/logging.hpp>
+
 namespace ocpp1_6 {
 
 MessageQueue::MessageQueue(std::shared_ptr<ChargePointConfiguration> configuration,
