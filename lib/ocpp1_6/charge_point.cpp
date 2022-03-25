@@ -1216,14 +1216,12 @@ void ChargePoint::handleClearChargingProfileRequest(Call<ClearChargingProfileReq
 // ReserveNow.req(connectorId, expiryDate, idTag, reservationId, [parentIdTag]):
 void ChargePoint::handleReserveNowRequest(Call<ReserveNowRequest> call) {
     EVLOG(debug) << "Received ReserveNowRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
-    EVLOG(debug) << "call: " << call;
-    EVLOG(debug) << "call.msg: " << call.msg;
 
-    // Respond with ReserveNow.conf PDU
-    // ReserveNowResponse response;
-    // auto connector_availability = this->configuration->getConnectorAvailability();
-    // response.status = this->reservations->reserve_now(call.msg.to_json);
+    EVLOG(debug) << "call.msg[connectorId]: " << call.msg.connectorId;
 
+    ReserveNowResponse response;
+    auto connector_availability = this->configuration->getConnectorAvailability();
+    response.status = this->reservations->try_reserve_now(call.msg.reservationId, call.msg.connectorId, call.msg.expiryDate, call.msg.idTag, connector_availability);
    
     //ReservationStatus::Accepted;
 
@@ -1242,8 +1240,8 @@ void ChargePoint::handleReserveNowRequest(Call<ReserveNowRequest> call) {
 
     **/
 
-    // CallResult<ReserveNowResponse> call_result(response, call.uniqueId);
-    // this->send<ReserveNowResponse>(call_result);
+    //CallResult<ReserveNowResponse> call_result(response, call.uniqueId);
+    //this->send<ReserveNowResponse>(call_result);
 
 }
 

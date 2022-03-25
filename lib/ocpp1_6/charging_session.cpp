@@ -470,61 +470,109 @@ Reservations::Reservations() {
 
 }
 
-/**
-bool Reservations::check_availability(int32_t connectorId) {
-    if connectorId()    
-    // Connector specified?
-    // if ReserveConnectorZeroSupported == True:
-    //     CP supports reservations on connector 0
-    //     hence, can connect to any connector but keep atleast one free
-    // else:
-    //     return False
-    return true;
+bool Reservations::connector_reserved() {
+
+    this.get_reserved_ids().count(it->first) == 0;
 }
-**/
 
-ReservationStatus Reservations::reserve_now(int32_t reservationId, int32_t connectorId, DateTime expiryDate, CiString20Type idTag) {
+int32_t Reservations::get_unreserved_connector(int32_t query_connector, std::map<int32_t, ocpp1_6::AvailabilityType> availability) {
+    int32_t current_reservations = 0;
+    std::set<int32_t> reserved_connectors = get_reserved_values(TupleElement::connector_id);
 
+    if (query_connector == 0) {
+        int32_t unreserved = 0;
+        for(std::map<int32_t, ocpp1_6::AvailabilityType>::iterator it = availability.begin(); it != availability.end(); ++it) {
+            int32_t current_connector = it->first;
+            ocpp1_6::AvailabilityType current_availability = it->second;
+
+            current_reservations = reserved_connectors.count(current_connector)
+            if (current_reservations == 0 && current_availability AvailabilityType::Operative) {
+                unreserved += 1;
+            } else if ((current_connector != 0 && current_reservations > 1) || current_reservations < 0){
+                return this->error_unexpected_state;
+            }
+        }
+
+        // Account for flexible reservations with connector set to zero
+        unreserved -= reserved_connectors.count(query_connector);
+
+        if (unreserved > 0) {
+            return query_connector;
+        } else if (unreserved == 0) {
+            return this->no_connectors_available;
+        } else {
+            return this->error_unexpected_state;
+        }
+    } else if (query_connector > 0) {
+        current_reservations = get_reserved_values(TupleElement::connector_id).count(query_connector);
+        if (availability[query_connector] == AvailabilityType::Operative && current_reservations == 0) {
+            return query_connector;
+        } else {
+            return this->no_connectors_available;
+        }
+    }
+
+    return this->error_unexpected_state;
+}
+
+std::set<int32_t> Reservations::get_reserved_ids() {
     std::set<int32_t> ids;
     for(std::map<int32_t, std::tuple<int32_t, DateTime, CiString20Type>>::iterator it = this->reservations.begin(); it != this->reservations.end(); ++it) {
         ids.insert(it->first);
     }
+    return ids;
+}
+
+template<typename T>
+std::set<T> Reservations::get_reserved_values(TupleElement element) {
+    std::set<T> value;
+    for(std::map<T, std::tuple<T, DateTime, CiString20Type>>::iterator it = this->reservations.begin(); it != this->reservations.end(); ++it) {
+        value.insert(std::get<element>(it->second));
+    }
+    return value;
+}
+
+
+ReservationStatus Reservations::try_reserve_now(int32_t reservationId, int32_t connectorId, DateTime expiryDate, CiString20Type idTag, std::map<int32_t, ocpp1_6::AvailabilityType> availability) {
+
 
     auto properties = std::make_tuple(connectorId, expiryDate, idTag);    
     auto pair = std::pair<int32_t, std::tuple<int32_t, DateTime, CiString20Type>>(reservationId, properties);
 
-    if (ids.count(reservationId)) {
+    if (this.get_reserved_ids().count(reservationId)) {
+        // Overwrite existing reservation
         this->reservations[reservationId] = properties;
+        // TODO: Change the availabilityType and check the status
         return ReservationStatus::Accepted;
-    }
-        /**    
-    
-     else {
-        if (this.check_availability(connectorId)) {
+    } else {
+        int32_t to_be_reserved = this.get_unreserved_connector(connectorId, availability);
 
+        // Sanity check - perhaps this can be turned into a test case.
+        bool valid_unexpected_output = (to_be_reserved >= 0 && to_be_reserved != connectorId);
+        bool invalid_output = to_be_reserved < -1;
+        if (unexpected_output || invalid_output) {
+            // Unexpected state - faulted
         }
-    }
-        **/
 
-    /**
-     else {
-        if (available) {  // Even if it's reserved for the same ID tag, operative / inoperative
-            this->reservations.insert(pair);
-            // save reservation
-            // return accepted;
+        if (to_be_reserved > 0) {
+            // Create new reservation for connectorId
+            
+        } else if (to_be_reserved == 0) {
+            // Create new flexible reservation for connectorId (0)
+
+        } else if (to_be_reserved == -1) {
+            // No connectors found - unavailable
+
         } else {
-            // return status;
+            // Unexpected state - faulted
         }
     }
-    **/
 
     // unavailable = faulted
 
 
 
     // Else:
-    // Return faulted if chargepoint or connector are faulted
-    // Return unavailable if CP or Connector are unavailable
     // Return rejected if configured not to accept reservations
 
     // If reserved: refuse charging unless if the incoming idTag or parent idTag match that of the reservation.

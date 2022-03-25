@@ -276,6 +276,10 @@ public:
 class Reservations {
 private:
     std::map<int32_t, std::tuple<int32_t, DateTime, CiString20Type>> reservations;
+    enum TupleElement {connector_id = 0, expiry_date=1, id_tag=2};
+    int32_t no_connectors_available = -1;
+    int32_t error_unexpected_state = -2;
+
 public:
     /// \brief Manage reservations
     /// \returns None
@@ -283,11 +287,11 @@ public:
 
     /// \brief Reserves a [specific] connector
     /// \returns ReserverationStatus after having processed the request
-    ReservationStatus reserve_now(int32_t reservationId, int32_t connectorId, DateTime expiryDate, CiString20Type idTag);
+    ReservationStatus try_reserve_now(int32_t reservationId, int32_t connectorId, DateTime expiryDate, CiString20Type idTag, std::map<int32_t, ocpp1_6::AvailabilityType> availability);
 
-    /// \brief check the specified connector is currently available
-    /// \return true if the connector is available, else false; Connector 0 maps to any connector.
-    //bool Reservations::check_availability(int32_t connectorId);
+    /// \brief check the specified connector is currently available and unreserved, search for vacant connector if connecotrId is zero
+    /// \return return the vacant connectorId if found, return -1 if not found
+    bool Reservations::get_unreserved_connector(int32_t query_connector, std::map<int32_t, ocpp1_6::AvailabilityType> availability);
 
 };
 
