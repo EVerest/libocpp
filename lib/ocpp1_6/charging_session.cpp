@@ -482,31 +482,27 @@ int32_t Reservations::get_unreserved_connector(int32_t query_connector, std::map
     int32_t current_reservations = 0;
     // std::set<int32_t> reserved_connectors = get_reserved_values(TupleElement::connector_id);
     std::set<int32_t> reserved_connectors = get_reserved_connectors();
-    
 
     if (query_connector == 0) {
-        int32_t unreserved = 0;
+        int32_t reserved = 0;
+        int32_t number_of_connectors = 0;
         for(std::map<int32_t, ocpp1_6::AvailabilityType>::iterator it = availability.begin(); it != availability.end(); ++it) {
             int32_t current_connector = it->first;
             ocpp1_6::AvailabilityType current_availability = it->second;
 
             current_reservations = reserved_connectors.count(current_connector);
             if (current_reservations == 0 && current_availability == AvailabilityType::Operative) {
-                unreserved += 1;
+                return current_connector;
             } else if ((current_connector != 0 && current_reservations > 1) || current_reservations < 0) {
                 return this->error_unexpected_state;
+            } else {
+                reserved += 1;
             }
+            number_of_connectors += 1;
         }
 
-        // Account for flexible reservations with connector set to zero
-        unreserved -= reserved_connectors.count(query_connector);
-
-        if (unreserved > 0) {
-            return query_connector;
-        } else if (unreserved == 0) {
+        if (number_of_connectors - reserved == 0) {
             return this->no_connectors_available;
-        } else {
-            return this->error_unexpected_state;
         }
     } else if (query_connector > 0) {
         current_reservations = get_reserved_connectors().count(query_connector);
@@ -523,7 +519,8 @@ int32_t Reservations::get_unreserved_connector(int32_t query_connector, std::map
 
 
 
-ReservationStatus Reservations::try_reserve_now(int32_t reservationId, int32_t connectorId, DateTime expiryDate, CiString20Type idTag, std::map<int32_t, ocpp1_6::AvailabilityType> availability) {
+ReservationStatus Reservations::try_reserve_now(int32_t reservationId, int32_t connectorId, DateTime expiryDate, 
+                                                CiString20Type idTag, std::map<int32_t, ocpp1_6::AvailabilityType> availability) {
 
 
     auto properties = std::make_tuple(connectorId, expiryDate, idTag);    
@@ -537,65 +534,20 @@ ReservationStatus Reservations::try_reserve_now(int32_t reservationId, int32_t c
     } else {
         int32_t to_be_reserved = this->get_unreserved_connector(connectorId, availability);
 
-        // Sanity check - perhaps this can be turned into a test case.
-        bool valid_unexpected_output = (to_be_reserved >= 0 && to_be_reserved != connectorId);
-        bool invalid_output = to_be_reserved < -1;
-        if (valid_unexpected_output || invalid_output) {
+        if (to_be_reserved == 0) {
             // Unexpected state - faulted
-        }
-
-        if (to_be_reserved > 0) {
+            // Always select a specific connector, because the evsim managers need to know whether they are responsible for a certain charge procedure or not.
+        } else if (to_be_reserved > 0) {
             // Create new reservation for connectorId
-            
-        } else if (to_be_reserved == 0) {
-            // Create new flexible reservation for connectorId (0)
-
-        } else if (to_be_reserved == -1) {
+            // reserve now enum answer - let the enum drive the cache content...
+        } else if (to_be_reserved == this->no_connectors_available) {
             // No connectors found - unavailable
 
-        } else {
-            // Unexpected state - faulted
         }
     }
 
-    // unavailable = faulted
-
-
-
-    // Else:
-    // Return rejected if configured not to accept reservations
-
-    // If reserved: refuse charging unless if the incoming idTag or parent idTag match that of the reservation.
-
-
-    // if transaction starts for reserved idTag or reserved connector or any connector when connid == 0:
-    //     terminate charge point
-    //
-    // if expiryDate time is reached:
-    //     terminate charge point
-
-    // if chargepoint or connector are faulted / unavailable:
-    //     terminate charge point
-
-    // If reserved idTag is started:
-    //     the chargepoint sends reservationId in the StartTransaction.req PDU (see start Transaction)
-    //     to notify the central system that the reservation is terminated.
-
-    // when reservation expires:
-    //     terminate the reservation and make connector available
-    //     notify the central system that the reserved connector is now available
-
-    // if authorization cache exists:
-    //     update the cache entry upon receiving reserveNow.conf
-    //     incase it is not already in the Local Authorization List (Authorization Cache)
-
-    // Before starting the transaction:
-    //     Validate the identifier with authorize.req after receiving ReserveNow.req.
-
-    // Evsim_manager
-
-        // This point should never be reached
-        return ReservationStatus::Faulted;
-    }
+    // This point should never be reached
+    return ReservationStatus::Faulted;
+}
 
 } // namespace ocpp1_6
