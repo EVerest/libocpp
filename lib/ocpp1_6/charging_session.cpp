@@ -470,14 +470,19 @@ Reservations::Reservations() {
 
 }
 
-bool Reservations::connector_reserved() {
-
-    this.get_reserved_ids().count(it->first) == 0;
+std::set<int32_t> Reservations::get_reserved_ids() {
+    std::set<int32_t> ids;
+    for(std::map<int32_t, std::tuple<int32_t, DateTime, CiString20Type>>::iterator it = this->reservations.begin(); it != this->reservations.end(); ++it) {
+        ids.insert(it->first);
+    }
+    return ids;
 }
 
 int32_t Reservations::get_unreserved_connector(int32_t query_connector, std::map<int32_t, ocpp1_6::AvailabilityType> availability) {
     int32_t current_reservations = 0;
-    std::set<int32_t> reserved_connectors = get_reserved_values(TupleElement::connector_id);
+    // std::set<int32_t> reserved_connectors = get_reserved_values(TupleElement::connector_id);
+    std::set<int32_t> reserved_connectors = get_reserved_connectors();
+    
 
     if (query_connector == 0) {
         int32_t unreserved = 0;
@@ -485,10 +490,10 @@ int32_t Reservations::get_unreserved_connector(int32_t query_connector, std::map
             int32_t current_connector = it->first;
             ocpp1_6::AvailabilityType current_availability = it->second;
 
-            current_reservations = reserved_connectors.count(current_connector)
-            if (current_reservations == 0 && current_availability AvailabilityType::Operative) {
+            current_reservations = reserved_connectors.count(current_connector);
+            if (current_reservations == 0 && current_availability == AvailabilityType::Operative) {
                 unreserved += 1;
-            } else if ((current_connector != 0 && current_reservations > 1) || current_reservations < 0){
+            } else if ((current_connector != 0 && current_reservations > 1) || current_reservations < 0) {
                 return this->error_unexpected_state;
             }
         }
@@ -504,7 +509,7 @@ int32_t Reservations::get_unreserved_connector(int32_t query_connector, std::map
             return this->error_unexpected_state;
         }
     } else if (query_connector > 0) {
-        current_reservations = get_reserved_values(TupleElement::connector_id).count(query_connector);
+        current_reservations = get_reserved_connectors().count(query_connector);
         if (availability[query_connector] == AvailabilityType::Operative && current_reservations == 0) {
             return query_connector;
         } else {
@@ -515,22 +520,7 @@ int32_t Reservations::get_unreserved_connector(int32_t query_connector, std::map
     return this->error_unexpected_state;
 }
 
-std::set<int32_t> Reservations::get_reserved_ids() {
-    std::set<int32_t> ids;
-    for(std::map<int32_t, std::tuple<int32_t, DateTime, CiString20Type>>::iterator it = this->reservations.begin(); it != this->reservations.end(); ++it) {
-        ids.insert(it->first);
-    }
-    return ids;
-}
 
-template<typename T>
-std::set<T> Reservations::get_reserved_values(TupleElement element) {
-    std::set<T> value;
-    for(std::map<T, std::tuple<T, DateTime, CiString20Type>>::iterator it = this->reservations.begin(); it != this->reservations.end(); ++it) {
-        value.insert(std::get<element>(it->second));
-    }
-    return value;
-}
 
 
 ReservationStatus Reservations::try_reserve_now(int32_t reservationId, int32_t connectorId, DateTime expiryDate, CiString20Type idTag, std::map<int32_t, ocpp1_6::AvailabilityType> availability) {
@@ -539,18 +529,18 @@ ReservationStatus Reservations::try_reserve_now(int32_t reservationId, int32_t c
     auto properties = std::make_tuple(connectorId, expiryDate, idTag);    
     auto pair = std::pair<int32_t, std::tuple<int32_t, DateTime, CiString20Type>>(reservationId, properties);
 
-    if (this.get_reserved_ids().count(reservationId)) {
+    if (this->get_reserved_ids().count(reservationId)) {
         // Overwrite existing reservation
         this->reservations[reservationId] = properties;
         // TODO: Change the availabilityType and check the status
         return ReservationStatus::Accepted;
     } else {
-        int32_t to_be_reserved = this.get_unreserved_connector(connectorId, availability);
+        int32_t to_be_reserved = this->get_unreserved_connector(connectorId, availability);
 
         // Sanity check - perhaps this can be turned into a test case.
         bool valid_unexpected_output = (to_be_reserved >= 0 && to_be_reserved != connectorId);
         bool invalid_output = to_be_reserved < -1;
-        if (unexpected_output || invalid_output) {
+        if (valid_unexpected_output || invalid_output) {
             // Unexpected state - faulted
         }
 

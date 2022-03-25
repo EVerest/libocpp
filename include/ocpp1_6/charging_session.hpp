@@ -289,10 +289,30 @@ public:
     /// \returns ReserverationStatus after having processed the request
     ReservationStatus try_reserve_now(int32_t reservationId, int32_t connectorId, DateTime expiryDate, CiString20Type idTag, std::map<int32_t, ocpp1_6::AvailabilityType> availability);
 
+    /**
+    template<typename TupleElementType>
+    std::set<TupleElementType> get_reserved_values(TupleElement element) {
+        std::set<TupleElementType> value;
+        for(std::map<TupleElementType, std::tuple<int32_t, DateTime, CiString20Type>>::iterator it = this->reservations.begin(); it != this->reservations.end(); ++it) {
+            value.insert(std::get<element>(it->second));
+        }
+        return value;
+    }
+    **/
+
+    std::set<int32_t> get_reserved_connectors() {
+        std::set<int32_t> value;
+        for(std::map<int32_t, std::tuple<int32_t, DateTime, CiString20Type>>::iterator it = this->reservations.begin(); it != this->reservations.end(); ++it) {
+            value.insert(std::get<0>(it->second));
+        }
+        return value;
+    };
+
+    std::set<int32_t> get_reserved_ids();
+
     /// \brief check the specified connector is currently available and unreserved, search for vacant connector if connecotrId is zero
     /// \return return the vacant connectorId if found, return -1 if not found
-    bool Reservations::get_unreserved_connector(int32_t query_connector, std::map<int32_t, ocpp1_6::AvailabilityType> availability);
-
+    int32_t get_unreserved_connector(int32_t query_connector, std::map<int32_t, ocpp1_6::AvailabilityType> availability);
 };
 
 } // namespace ocpp1_6
