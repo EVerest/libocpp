@@ -269,71 +269,26 @@ public:
     std::vector<MeterValue> get_clock_aligned_meter_values(int32_t connector);
 };
 
-struct ReservationProperties {
-    int32_t connectorId;
-    DateTime expiryDate;
-    CiString20Type idTag;
-    ReservationProperties(int32_t cId, DateTime eDe, CiString20Type iTg) :
-        connectorId(cId), expiryDate(eDe), idTag(iTg) {}
-};
 
 // this manages reservations, while they are tied to a connector, this could still be connector 0 (if the appropriate
 // config key is set) aka any connector on the charge point a reservation can also be tied to a specific connector, but
 // there can be some "mobility" when the same reservation (with the identical id) changes to a different one
 class Reservations {
 private:
-    std::map<int32_t, ReservationProperties> reservations;
+    std::map<int32_t, std::tuple<int32_t, DateTime, CiString20Type>> reservations;
 public:
+    /// \brief Manage reservations
+    /// \returns None
     Reservations();
 
+    /// \brief Reserves a [specific] connector
+    /// \returns ReserverationStatus after having processed the request
     ReservationStatus reserve_now(int32_t reservationId, int32_t connectorId, DateTime expiryDate, CiString20Type idTag);
 
-    // Connector specified?
-    // Respond with ReserveNow.conf PDU
+    /// \brief check the specified connector is currently available
+    /// \return true if the connector is available, else false; Connector 0 maps to any connector.
+    //bool Reservations::check_availability(int32_t connectorId);
 
-    // Else:
-    //   succeeds in reserving the connector:
-    //        return accepted
-    //   elif occupied:
-    //        return occupied
-    // ReservationId affects response, not IDtag
-    // Return faulted if chargepoint or connector are faulted
-    // Return unavailable if CP or Connector are unavailable
-    // Return rejected if configured not to accept reservations
-
-    // If reserved: refuse charging unless if the incoming idTag or parent idTag match that of the reservation.
-
-    // if ReserveConnectorZeroSupported == True:
-    //     CP supports reservations on connector 0
-    //     hence, can connect to any connector but keep atleast one free
-    // else:
-    //     return False
-
-    // if transaction starts for reserved idTag or reserved connector or any connector when connid == 0:
-    //     terminate charge point
-    //
-    // if expiryDate time is reached:
-    //     terminate charge point
-
-    // if chargepoint or connector are faulted / unavailable:
-    //     terminate charge point
-
-    // If reserved idTag is started:
-    //     the chargepoint sends reservationId in the StartTransaction.req PDU (see start Transaction)
-    //     to notify the central system that the reservation is terminated.
-
-    // when reservation expires:
-    //     terminate the reservation and make connector available
-    //     notify the central system that the reserved connector is now available
-
-    // if authorization cache exists:
-    //     update the cache entry upon receiving reserveNow.conf
-    //     incase it is not already in the Local Authorization List (Authorization Cache)
-
-    // Before starting the transaction:
-    //     Validate the identifier with authorize.req after receiving ReserveNow.req.
-
-    // Evsim_manager
 };
 
 } // namespace ocpp1_6

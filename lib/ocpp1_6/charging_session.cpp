@@ -470,13 +470,94 @@ Reservations::Reservations() {
 
 }
 
-ReservationStatus Reservations::reserve_now(int32_t reservationId, int32_t connectorId, DateTime expiryDate, CiString20Type idTag) {
-    auto Properties = std::make_shared<struct ReservationProperties>(connectorId, expiryDate, idTag);
-
-    // Overwrite existing reservation if its reservationId matches that of the request
-    auto pair = std::pair<int32_t, ReservationProperties>(reservationId, *Properties);
-    this->reservations.insert(pair);
-
+/**
+bool Reservations::check_availability(int32_t connectorId) {
+    if connectorId()    
+    // Connector specified?
+    // if ReserveConnectorZeroSupported == True:
+    //     CP supports reservations on connector 0
+    //     hence, can connect to any connector but keep atleast one free
+    // else:
+    //     return False
+    return true;
 }
+**/
+
+ReservationStatus Reservations::reserve_now(int32_t reservationId, int32_t connectorId, DateTime expiryDate, CiString20Type idTag) {
+
+    std::set<int32_t> ids;
+    for(std::map<int32_t, std::tuple<int32_t, DateTime, CiString20Type>>::iterator it = this->reservations.begin(); it != this->reservations.end(); ++it) {
+        ids.insert(it->first);
+    }
+
+    auto properties = std::make_tuple(connectorId, expiryDate, idTag);    
+    auto pair = std::pair<int32_t, std::tuple<int32_t, DateTime, CiString20Type>>(reservationId, properties);
+
+    if (ids.count(reservationId)) {
+        this->reservations[reservationId] = properties;
+        return ReservationStatus::Accepted;
+    }
+        /**    
+    
+     else {
+        if (this.check_availability(connectorId)) {
+
+        }
+    }
+        **/
+
+    /**
+     else {
+        if (available) {  // Even if it's reserved for the same ID tag, operative / inoperative
+            this->reservations.insert(pair);
+            // save reservation
+            // return accepted;
+        } else {
+            // return status;
+        }
+    }
+    **/
+
+    // unavailable = faulted
+
+
+
+    // Else:
+    // Return faulted if chargepoint or connector are faulted
+    // Return unavailable if CP or Connector are unavailable
+    // Return rejected if configured not to accept reservations
+
+    // If reserved: refuse charging unless if the incoming idTag or parent idTag match that of the reservation.
+
+
+    // if transaction starts for reserved idTag or reserved connector or any connector when connid == 0:
+    //     terminate charge point
+    //
+    // if expiryDate time is reached:
+    //     terminate charge point
+
+    // if chargepoint or connector are faulted / unavailable:
+    //     terminate charge point
+
+    // If reserved idTag is started:
+    //     the chargepoint sends reservationId in the StartTransaction.req PDU (see start Transaction)
+    //     to notify the central system that the reservation is terminated.
+
+    // when reservation expires:
+    //     terminate the reservation and make connector available
+    //     notify the central system that the reserved connector is now available
+
+    // if authorization cache exists:
+    //     update the cache entry upon receiving reserveNow.conf
+    //     incase it is not already in the Local Authorization List (Authorization Cache)
+
+    // Before starting the transaction:
+    //     Validate the identifier with authorize.req after receiving ReserveNow.req.
+
+    // Evsim_manager
+
+        // This point should never be reached
+        return ReservationStatus::Faulted;
+    }
 
 } // namespace ocpp1_6

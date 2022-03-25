@@ -157,14 +157,14 @@ ChargePointConfiguration::ChargePointConfiguration(json config, std::string sche
           MessageType::DataTransferResponse, MessageType::GetConfiguration, MessageType::HeartbeatResponse,
           MessageType::MeterValuesResponse, MessageType::RemoteStartTransaction, MessageType::RemoteStopTransaction,
           MessageType::Reset, MessageType::StartTransactionResponse, MessageType::StatusNotificationResponse,
-          MessageType::StopTransactionResponse, MessageType::UnlockConnector, MessageType::ReserveNow}},
+          MessageType::StopTransactionResponse, MessageType::UnlockConnector}},
         {SupportedFeatureProfiles::FirmwareManagement,
          {MessageType::GetDiagnostics, MessageType::DiagnosticsStatusNotificationResponse,
           MessageType::FirmwareStatusNotificationResponse, MessageType::UpdateFirmware}},
         {SupportedFeatureProfiles::LocalAuthListManagement,
          {MessageType::GetLocalListVersion, MessageType::SendLocalList}},
         {SupportedFeatureProfiles::RemoteTrigger, {MessageType::TriggerMessage}},
-        {SupportedFeatureProfiles::Reservation, {MessageType::CancelReservation}},
+        {SupportedFeatureProfiles::Reservation, {MessageType::CancelReservation, MessageType::ReserveNow}},
         {SupportedFeatureProfiles::SmartCharging,
          {MessageType::ClearChargingProfile, MessageType::GetCompositeSchedule, MessageType::SetChargingProfile}}};
 

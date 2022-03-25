@@ -1214,13 +1214,17 @@ void ChargePoint::handleClearChargingProfileRequest(Call<ClearChargingProfileReq
 // Definitions:
 // ReserveNow.conf(status):
 // ReserveNow.req(connectorId, expiryDate, idTag, reservationId, [parentIdTag]):
-void ChargePoint::handleReserveNowRequest(Call<ReservationRequest> call) {
+void ChargePoint::handleReserveNowRequest(Call<ReserveNowRequest> call) {
     EVLOG(debug) << "Received ReserveNowRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
     EVLOG(debug) << "call: " << call;
+    EVLOG(debug) << "call.msg: " << call.msg;
 
-    ReserveNowResponse response;
-    // response.status = this->reservations->reserve_now(call.msg.to_json)
+    // Respond with ReserveNow.conf PDU
+    // ReserveNowResponse response;
+    // auto connector_availability = this->configuration->getConnectorAvailability();
+    // response.status = this->reservations->reserve_now(call.msg.to_json);
 
+   
     //ReservationStatus::Accepted;
 
     /**
@@ -1238,9 +1242,8 @@ void ChargePoint::handleReserveNowRequest(Call<ReservationRequest> call) {
 
     **/
 
-    CallResult<ReserveNowResponse> call_result(response, call.uniqueId);
-    this->send<ReserveNowResponse>(call_result);
-    //  Store reservationId etc. in SQlite database
+    // CallResult<ReserveNowResponse> call_result(response, call.uniqueId);
+    // this->send<ReserveNowResponse>(call_result);
 
 }
 
