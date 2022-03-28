@@ -34,6 +34,7 @@
 #include <ocpp1_6/messages/StopTransaction.hpp>
 #include <ocpp1_6/messages/UnlockConnector.hpp>
 #include <ocpp1_6/messages/ReserveNow.hpp>
+#include <ocpp1_6/messages/CancelReservation.hpp>
 #include <ocpp1_6/types.hpp>
 #include <ocpp1_6/websocket.hpp>
 
@@ -137,7 +138,14 @@ private:
     void handleSetChargingProfileRequest(Call<SetChargingProfileRequest> call);
     void handleGetCompositeScheduleRequest(Call<GetCompositeScheduleRequest> call);
     void handleClearChargingProfileRequest(Call<ClearChargingProfileRequest> call);
+
+    /// \brief ReserveNow.req(connectorId, expiryDate, idTag, reservationId, [parentIdTag]): tries to perform the reservation and sends a reservation response.
+    /// The reservation response: ReserveNow::Status
     void handleReserveNowRequest(Call<ReserveNowRequest> call);
+
+    /// \brief Receives CancelReservation.req(reservationId)
+    /// The reservation response:  CancelReservationStatus: `Accepted` if the reservationId was found, else `Rejected`
+    void handleCancelReservationRequest(Call<CancelReservationRequest> call);
 
 public:
     /// \brief Creates a ChargePoint object with the provided \p configuration

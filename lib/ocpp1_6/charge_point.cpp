@@ -558,6 +558,10 @@ void ChargePoint::message_callback(const std::string& message) {
             this->handleReserveNowRequest(json_message);
             break;
 
+        case MessageType::CancelReservation:
+            this->handleCancelReservationRequest(json_message);
+            break;
+
         default:
             // TODO(kai): not implemented error?
             break;
@@ -1211,37 +1215,32 @@ void ChargePoint::handleClearChargingProfileRequest(Call<ClearChargingProfileReq
     this->send<ClearChargingProfileResponse>(call_result);
 }
 
-// Definitions:
-// ReserveNow.conf(status):
-// ReserveNow.req(connectorId, expiryDate, idTag, reservationId, [parentIdTag]):
 void ChargePoint::handleReserveNowRequest(Call<ReserveNowRequest> call) {
     EVLOG(debug) << "Received ReserveNowRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
 
     EVLOG(debug) << "call.msg[connectorId]: " << call.msg.connectorId;
 
     ReserveNowResponse response;
-    auto connector_availability = this->configuration->getConnectorAvailability();
-    response.status = this->reservations->try_reserve_now(call.msg.reservationId, call.msg.connectorId, call.msg.expiryDate, call.msg.idTag, connector_availability);
-   
-    //ReservationStatus::Accepted;
+    response.status = this->reservations->reserve_now(call.msg.reservationId, call.msg.connectorId, call.msg.expiryDate, call.msg.idTag, this->configuration);
+    CallResult<ReserveNowResponse> call_result(response, call.uniqueId);
+    this->send<ReserveNowResponse>(call_result);
 
-    /**
-    // from: ReserveNowResponse
-    enum class ReservationStatus
-    {
-        Accepted,
-        Faulted,
-        Occupied,
-        Rejected,
-        Unavailable,
-    };
+    EVLOG(debug) << "CallResult.msg: " << call_result.msg;
 
-    Die ocpp_types.hpp wurde auch autogeneriert, da würde ich nichts drin verändertn. Aber ja du musst dir das mapping von connectorId und reservationId irgendwie hinterlegen. In der charging_session.hpp hab ich das ganze handling für ladesessions, da könnte man das auch mit einbauen. Da gibts auch schon einen winzigen stub für Reservations, das könnte man aber auch in einen eigenen header auslagern
+}
 
-    **/
 
-    //CallResult<ReserveNowResponse> call_result(response, call.uniqueId);
-    //this->send<ReserveNowResponse>(call_result);
+void ChargePoint::handleCancelReservationRequest(Call<CancelReservationRequest> call) {
+    EVLOG(debug) << "Received CancelReservationRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
+
+    EVLOG(debug) << "call.msg: " << call.msg;
+
+    CancelReservationResponse response;
+    response.status = this->reservations->cancel_reservation(call.msg.reservationId, this->configuration);
+    CallResult<CancelReservationResponse> call_result(response, call.uniqueId);
+    this->send<CancelReservationResponse>(call_result);
+
+    EVLOG(debug) << "CallResult.msg: " << call_result.msg;
 
 }
 

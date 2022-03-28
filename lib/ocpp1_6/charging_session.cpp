@@ -480,7 +480,6 @@ std::set<int32_t> Reservations::get_reserved_ids() {
 
 int32_t Reservations::get_unreserved_connector(int32_t query_connector, std::map<int32_t, ocpp1_6::AvailabilityType> availability) {
     int32_t current_reservations = 0;
-    // std::set<int32_t> reserved_connectors = get_reserved_values(TupleElement::connector_id);
     std::set<int32_t> reserved_connectors = get_reserved_connectors();
 
     if (query_connector == 0) {
@@ -517,37 +516,86 @@ int32_t Reservations::get_unreserved_connector(int32_t query_connector, std::map
 }
 
 
+ReservationStatus Reservations::reserve_now(int32_t reservationId, int32_t connectorId, DateTime expiryDate, 
+                                                CiString20Type idTag, std::shared_ptr<ChargePointConfiguration> cpConfiguration) {
 
-
-ReservationStatus Reservations::try_reserve_now(int32_t reservationId, int32_t connectorId, DateTime expiryDate, 
-                                                CiString20Type idTag, std::map<int32_t, ocpp1_6::AvailabilityType> availability) {
-
-
+    // auto connector_availability = this->configuration->getConnectorAvailability(); // std::map<int32_t, ocpp1_6::AvailabilityType> availability
     auto properties = std::make_tuple(connectorId, expiryDate, idTag);    
     auto pair = std::pair<int32_t, std::tuple<int32_t, DateTime, CiString20Type>>(reservationId, properties);
 
     if (this->get_reserved_ids().count(reservationId)) {
         // Overwrite existing reservation
         this->reservations[reservationId] = properties;
-        // TODO: Change the availabilityType and check the status
+        cpConfiguration->setConnectorAvailability(connectorId, AvailabilityType::Inoperative);
+        // TODO: reserve now enum answer - let the enum drive the cache content...
         return ReservationStatus::Accepted;
     } else {
-        int32_t to_be_reserved = this->get_unreserved_connector(connectorId, availability);
+        int32_t to_be_reserved = this->get_unreserved_connector(connectorId, cpConfiguration->getConnectorAvailability());
 
         if (to_be_reserved == 0) {
-            // Unexpected state - faulted
             // Always select a specific connector, because the evsim managers need to know whether they are responsible for a certain charge procedure or not.
+            EVLOG(critical) << "The evsim managers need to know whether they are responcible for a specific charge procedure or not.";
+            return ReservationStatus::Faulted;
         } else if (to_be_reserved > 0) {
             // Create new reservation for connectorId
-            // reserve now enum answer - let the enum drive the cache content...
+            // TODO: reserve now enum answer - let the enum drive the cache content...
+            cpConfiguration->setConnectorAvailability(connectorId, AvailabilityType::Inoperative);
+            this->reservations.insert(pair);
         } else if (to_be_reserved == this->no_connectors_available) {
-            // No connectors found - unavailable
-
+            return ReservationStatus::Occupied;
         }
     }
 
+    /**
+     * 
+    TODO: Check the charge point status and the whether it has been configured to accept reservations.
+    // from: ReserveNowResponse
+    enum class ReservationStatus
+    {
+        Rejected,  // If the chargepoint is configured not to accept reservations
+        Unavailable,  // If the chargepoint or connector are in the unavailable state
+    };
+
+    **/
+
     // This point should never be reached
+    EVLOG(critical) << "Unexpected state: nothing changed.";
     return ReservationStatus::Faulted;
+}
+
+CancelReservationStatus Reservations::cancel_reservation(int32_t reservationId, std::shared_ptr<ChargePointConfiguration> cpConfiguration) {
+    int32_t numReservations = this->get_reserved_ids().count(reservationId);
+    if (numReservations != 1 && numReservations != 0) { // Unexpected state!
+        EVLOG(critical) << "Unexpected state: Number of reservations with the reservation id " << reservationId << " is " << numReservations << ".";
+        return CancelReservationStatus::Rejected;
+    }
+    
+    if (numReservations == 1) {
+        int32_t connectorId = std::get<TupleElement::connector_id>(this->reservations.at(reservationId));
+
+        // assert cpConfiguration->getConnectorAvailability(connectorId) == AvailabilityType::Inoperative
+        if (cpConfiguration->getConnectorAvailability(connectorId) == AvailabilityType::Operative) {
+            EVLOG(critical) << "Connector " << connector_id << " is operative, even though it is still reserved!";
+            return CancelReservationStatus::Rejected;
+        }
+
+        std::map<int32_t, std::tuple<int32_t, DateTime, CiString20Type>>::iterator it;
+        it = this->reservations.find(reservationId);
+        this->reservations.erase(it);
+
+        // assert this->get_reserved_ids().count(reservationId) == 0;
+        if (this->get_reserved_ids().count(reservationId) != 0) {
+            EVLOG(critical) << "Unexpected state: Number of reservations with the reservation id " << reservationId << " is " << numReservations << ".";
+            EVLOG(critical) << "Unexpected state: Number of reservations with the reservation id " << reservationId << " should be 0 after canceling the reservation.";
+            return CancelReservationStatus::Rejected;
+        }
+
+        cpConfiguration->setConnectorAvailability(connectorId, AvailabilityType::Operative);
+        return CancelReservationStatus::Accepted;
+    } else {
+        // Reservation not found    
+        return CancelReservationStatus::Rejected;
+    }
 }
 
 } // namespace ocpp1_6

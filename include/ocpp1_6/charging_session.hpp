@@ -285,9 +285,16 @@ public:
     /// \returns None
     Reservations();
 
-    /// \brief Reserves a [specific] connector
+    /// \brief Attempts to reserve a connector on the charge_point
     /// \returns ReserverationStatus after having processed the request
-    ReservationStatus try_reserve_now(int32_t reservationId, int32_t connectorId, DateTime expiryDate, CiString20Type idTag, std::map<int32_t, ocpp1_6::AvailabilityType> availability);
+    ReservationStatus reserve_now(int32_t reservationId, int32_t connectorId, DateTime expiryDate, CiString20Type idTag, std::shared_ptr<ChargePointConfiguration> cpConfiguration);
+
+    
+    /// \brief Attempts to cancel a reservation on the charge_point
+    /// \returns CancelReservationStatus::Accepted if successful, else CancelReservationStatus::Rejected
+    CancelReservationStatus cancel_reservation(int32_t reservationId, std::shared_ptr<ChargePointConfiguration> cpConfiguration);
+
+
 
     /**
     template<typename TupleElementType>
@@ -313,6 +320,8 @@ public:
     /// \brief check the specified connector is currently available and unreserved, search for vacant connector if connecotrId is zero
     /// \return return the vacant connectorId if found, return -1 if not found
     int32_t get_unreserved_connector(int32_t query_connector, std::map<int32_t, ocpp1_6::AvailabilityType> availability);
+
+
 };
 
 } // namespace ocpp1_6
