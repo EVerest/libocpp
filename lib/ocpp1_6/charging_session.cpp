@@ -478,9 +478,11 @@ std::set<int32_t> Reservations::get_reserved_ids() {
     return ids;
 }
 
-int32_t Reservations::get_unreserved_connector(int32_t query_connector, std::map<int32_t, ocpp1_6::AvailabilityType> availability) {
+int32_t Reservations::get_unreserved_connector(int32_t query_connector, std::map<int32_t, ocpp1_6::AvailabilityType> availability, std::shared_ptr<ChargePointConfiguration> cpConfiguration) {
     int32_t current_reservations = 0;
     std::set<int32_t> reserved_connectors = get_reserved_connectors();
+
+    EVLOG(debug) << "Get unreserved connector";
 
     if (query_connector == 0) {
         int32_t reserved = 0;
@@ -491,8 +493,10 @@ int32_t Reservations::get_unreserved_connector(int32_t query_connector, std::map
 
             current_reservations = reserved_connectors.count(current_connector);
             if (current_reservations == 0 && current_availability == AvailabilityType::Operative) {
+                EVLOG(debug) << "Current connector " << current_connector;
                 return current_connector;
             } else if ((current_connector != 0 && current_reservations > 1) || current_reservations < 0) {
+                EVLOG(debug) << "Unexpected state";
                 return this->error_unexpected_state;
             } else {
                 reserved += 1;
@@ -501,17 +505,28 @@ int32_t Reservations::get_unreserved_connector(int32_t query_connector, std::map
         }
 
         if (number_of_connectors - reserved == 0) {
+            EVLOG(debug) << "No connectors available, query connector: " << query_connector;
             return this->no_connectors_available;
         }
     } else if (query_connector > 0) {
         current_reservations = get_reserved_connectors().count(query_connector);
         if (availability[query_connector] == AvailabilityType::Operative && current_reservations == 0) {
+            EVLOG(debug) << "Found: " << query_connector;
             return query_connector;
+        } else if (availability[query_connector] == AvailabilityType::Inoperative && current_reservations == 0) {
+            // TODO: Critical: Either the connector is genuinely in use, or the device crashed... Did it?
+            EVLOG(debug) << "Persistent storage says that connector is inoperative, but it isn't reserved.";
+            cpConfiguration->setConnectorAvailability(query_connector, AvailabilityType::Operative); // to unbrick the connector
+            return this->no_connectors_available;
         } else {
+            EVLOG(debug) << "No connectors available, query connector: " << query_connector;
+            EVLOG(debug) << "Availability at query connector " << availability[query_connector];
+            EVLOG(debug) << "Current reservations " << current_reservations;
             return this->no_connectors_available;
         }
     }
 
+    EVLOG(debug) << "Unexpected state, nothing happened";
     return this->error_unexpected_state;
 }
 
@@ -524,13 +539,14 @@ ReservationStatus Reservations::reserve_now(int32_t reservationId, int32_t conne
     auto pair = std::pair<int32_t, std::tuple<int32_t, DateTime, CiString20Type>>(reservationId, properties);
 
     if (this->get_reserved_ids().count(reservationId)) {
+
         // Overwrite existing reservation
         this->reservations[reservationId] = properties;
         cpConfiguration->setConnectorAvailability(connectorId, AvailabilityType::Inoperative);
         // TODO: reserve now enum answer - let the enum drive the cache content...
         return ReservationStatus::Accepted;
     } else {
-        int32_t to_be_reserved = this->get_unreserved_connector(connectorId, cpConfiguration->getConnectorAvailability());
+        int32_t to_be_reserved = this->get_unreserved_connector(connectorId, cpConfiguration->getConnectorAvailability(), cpConfiguration);
 
         if (to_be_reserved == 0) {
             // Always select a specific connector, because the evsim managers need to know whether they are responsible for a certain charge procedure or not.
@@ -541,6 +557,7 @@ ReservationStatus Reservations::reserve_now(int32_t reservationId, int32_t conne
             // TODO: reserve now enum answer - let the enum drive the cache content...
             cpConfiguration->setConnectorAvailability(connectorId, AvailabilityType::Inoperative);
             this->reservations.insert(pair);
+            return ReservationStatus::Accepted;
         } else if (to_be_reserved == this->no_connectors_available) {
             return ReservationStatus::Occupied;
         }

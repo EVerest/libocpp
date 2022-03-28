@@ -295,18 +295,7 @@ public:
     CancelReservationStatus cancel_reservation(int32_t reservationId, std::shared_ptr<ChargePointConfiguration> cpConfiguration);
 
 
-
-    /**
-    template<typename TupleElementType>
-    std::set<TupleElementType> get_reserved_values(TupleElement element) {
-        std::set<TupleElementType> value;
-        for(std::map<TupleElementType, std::tuple<int32_t, DateTime, CiString20Type>>::iterator it = this->reservations.begin(); it != this->reservations.end(); ++it) {
-            value.insert(std::get<element>(it->second));
-        }
-        return value;
-    }
-    **/
-
+    // Make generic if we need to access other elements from the tuple as well
     std::set<int32_t> get_reserved_connectors() {
         std::set<int32_t> value;
         for(std::map<int32_t, std::tuple<int32_t, DateTime, CiString20Type>>::iterator it = this->reservations.begin(); it != this->reservations.end(); ++it) {
@@ -319,7 +308,7 @@ public:
 
     /// \brief check the specified connector is currently available and unreserved, search for vacant connector if connecotrId is zero
     /// \return return the vacant connectorId if found, return -1 if not found
-    int32_t get_unreserved_connector(int32_t query_connector, std::map<int32_t, ocpp1_6::AvailabilityType> availability);
+    int32_t get_unreserved_connector(int32_t query_connector, std::map<int32_t, ocpp1_6::AvailabilityType> availability, std::shared_ptr<ChargePointConfiguration> cpConfiguration);
 
 
 };
