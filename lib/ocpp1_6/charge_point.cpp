@@ -1527,8 +1527,10 @@ bool ChargePoint::stop_transaction(int32_t connector, Reason reason) {
         }
     }
 
-    // TODO(kai): unlock connector!
-    // this->unlock_connector(connector);
+    // unlock connector
+    if (this->unlock_connector_callback != nullptr) {
+        this->unlock_connector_callback(connector);
+    }
 
     // perform a queued connector availability change
     bool change_queued = false;
