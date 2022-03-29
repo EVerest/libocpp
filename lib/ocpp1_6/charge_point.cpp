@@ -42,9 +42,6 @@ ChargePoint::ChargePoint(std::shared_ptr<ChargePointConfiguration> configuration
 
     this->heartbeat_timer = std::make_unique<Everest::SteadyTimer>(&this->io_service, [this]() { this->heartbeat(); });
 
-    // this->meter_values_sample_timer =
-    //     new Everest::SteadyTimer(&this->io_service, [this]() { this->meter_values_sample(); });
-
     this->clock_aligned_meter_values_timer = std::make_unique<Everest::SystemTimer>(
         &this->io_service, [this]() { this->clock_aligned_meter_values_sample(); });
 
@@ -113,7 +110,6 @@ void ChargePoint::update_meter_values_sample_interval() {
     // TODO(kai): should we update the meter values for continuous monitoring here too?
     int32_t interval = this->configuration->getMeterValueSampleInterval();
     this->charging_sessions->change_meter_values_sample_intervals(interval);
-    // this->meter_values_sample_timer->interval(std::chrono::seconds(interval));
 }
 
 void ChargePoint::update_clock_aligned_meter_values_interval() {
@@ -401,9 +397,6 @@ void ChargePoint::stop() {
     if (this->heartbeat_timer != nullptr) {
         this->heartbeat_timer->stop();
     }
-    // if (this->meter_values_sample_timer != nullptr) {
-    //     this->meter_values_sample_timer->stop();
-    // }
     if (this->clock_aligned_meter_values_timer != nullptr) {
         this->clock_aligned_meter_values_timer->stop();
     }
@@ -483,7 +476,7 @@ void ChargePoint::message_callback(const std::string& message) {
         switch (enhanced_message.messageType) {
 
         case MessageType::AuthorizeResponse:
-            // this->handleAuthorizeResponse(json_message, enhanced_message.call_message);
+            // handled by authorize_id_tag future
             break;
 
         case MessageType::ChangeAvailability:
@@ -503,7 +496,7 @@ void ChargePoint::message_callback(const std::string& message) {
             break;
 
         case MessageType::DataTransferResponse:
-            // this->handleDataTransferResponse(json_message);
+            // handled by data_transfer future
             break;
 
         case MessageType::GetConfiguration:
@@ -523,11 +516,11 @@ void ChargePoint::message_callback(const std::string& message) {
             break;
 
         case MessageType::StartTransactionResponse:
-            // this->handleStartTransactionResponse(json_message);
+            // handled by start_transaction future
             break;
 
         case MessageType::StopTransactionResponse:
-            // this->handleStopTransactionResponse(json_message);
+            // handled by stop_transaction future
             break;
 
         case MessageType::UnlockConnector:
@@ -576,9 +569,6 @@ void ChargePoint::handleBootNotificationResponse(CallResult<BootNotificationResp
         // we are allowed to send messages to the central system
         // activate heartbeat
         this->update_heartbeat_interval();
-
-        // activate sampling of meter values
-        // this->update_meter_values_sample_interval();
 
         // activate clock aligned sampling of meter values
         this->update_clock_aligned_meter_values_interval();
@@ -1566,7 +1556,6 @@ bool ChargePoint::stop_transaction(int32_t connector, Reason reason) {
 }
 
 bool ChargePoint::stop_session(int32_t connector, DateTime timestamp, double energy_Wh_import) {
-    EVLOG(critical) << "stop session...";
     this->charging_sessions->add_stop_energy_wh(connector,
                                                 std::make_shared<StampedEnergyWh>(timestamp, energy_Wh_import));
     if (!this->stop_transaction(connector, Reason::Local)) {

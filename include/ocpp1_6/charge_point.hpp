@@ -53,9 +53,6 @@ private:
     std::shared_ptr<ChargePointConfiguration> configuration;
     std::unique_ptr<Everest::SteadyTimer> heartbeat_timer;
     std::unique_ptr<Everest::SteadyTimer> boot_notification_timer;
-    // Everest::SteadyTimer* meter_values_sample_timer; // TODO(kai): decide if we need a continuous sampling of meter
-    // values independent of transactions - maybe on connector 0, but that could be done in the chargingsession as
-    // well...
     std::unique_ptr<Everest::SystemTimer> clock_aligned_meter_values_timer;
     std::chrono::time_point<std::chrono::system_clock> clock_aligned_meter_values_time_point;
     std::map<int32_t, std::vector<MeterValue>> meter_values;
