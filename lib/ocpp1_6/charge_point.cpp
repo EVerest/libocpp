@@ -475,8 +475,8 @@ void ChargePoint::message_callback(const std::string& message) {
             if (enhanced_message.messageType == MessageType::BootNotificationResponse) {
                 this->handleBootNotificationResponse(json_message);
             }
-            break;
         }
+        break;
     }
     case ChargePointConnectionState::Booted: {
         // lots of messages are allowed here
