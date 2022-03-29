@@ -87,10 +87,13 @@ private:
     std::thread reset_thread;
 
     // callbacks
-    std::function<void(int32_t connector)> start_charging_callback;
-    std::function<void(int32_t connector)> stop_charging_callback;
+    std::function<bool(int32_t connector)> enable_evse_callback;
+    std::function<bool(int32_t connector)> disable_evse_callback;
+    std::function<bool(int32_t connector)> pause_charging_callback;
+    std::function<bool(int32_t connector)> resume_charging_callback;
+    std::function<bool(int32_t connector)> cancel_charging_callback;
     std::function<bool(int32_t connector)> unlock_connector_callback;
-    std::function<void(int32_t connector, double max_current)> set_max_current_callback;
+    std::function<bool(int32_t connector, double max_current)> set_max_current_callback;
 
     /// \brief This function is called after a successful connection to the Websocket
     void connected_callback();
@@ -214,6 +217,12 @@ public:
     /// \returns true if this state change was possible
     bool permanent_fault(int32_t connector);
 
+    /// \brief registers a \p callback function that can be used to enable the evse
+    void register_enable_evse_callback(const std::function<bool(int32_t connector)>& callback);
+
+    /// \brief registers a \p callback function that can be used to disable the evse
+    void register_disable_evse_callback(const std::function<bool(int32_t connector)>& callback);
+
     /// \brief registers a \p callback function that can be used to pause charging
     void register_pause_charging_callback(const std::function<bool(int32_t connector)>& callback);
 
@@ -235,7 +244,7 @@ public:
     void register_unlock_connector_callback(const std::function<bool(int32_t connector)>& callback);
 
     /// registers a \p callback function that can be used to set a max_current on a given connector
-    void register_set_max_current_callback(const std::function<void(int32_t connector, double max_current)>& callback);
+    void register_set_max_current_callback(const std::function<bool(int32_t connector, double max_current)>& callback);
 
     // FIXME: rework the following API functions, do we want to expose them?
     // insert plug

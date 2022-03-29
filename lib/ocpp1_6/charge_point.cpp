@@ -1626,16 +1626,24 @@ bool ChargePoint::permanent_fault(int32_t connector) {
     return false;
 }
 
+void ChargePoint::register_enable_evse_callback(const std::function<bool(int32_t connector)>& callback) {
+    this->enable_evse_callback = callback;
+}
+
+void ChargePoint::register_disable_evse_callback(const std::function<bool(int32_t connector)>& callback) {
+    this->disable_evse_callback = callback;
+}
+
 void ChargePoint::register_pause_charging_callback(const std::function<bool(int32_t connector)>& callback) {
-    // FIXME(kai): implement
+    this->pause_charging_callback = callback;
 }
 
 void ChargePoint::register_resume_charging_callback(const std::function<bool(int32_t connector)>& callback) {
-    // FIXME(kai): implement
+    this->resume_charging_callback = callback;
 }
 
 void ChargePoint::register_cancel_charging_callback(const std::function<bool(int32_t connector)>& callback) {
-    // FIXME(kai): implement
+    this->cancel_charging_callback = callback;
 }
 
 void ChargePoint::register_reserve_now_callback(
@@ -1652,7 +1660,7 @@ void ChargePoint::register_unlock_connector_callback(const std::function<bool(in
 }
 
 void ChargePoint::register_set_max_current_callback(
-    const std::function<void(int32_t connector, double max_current)>& callback) {
+    const std::function<bool(int32_t connector, double max_current)>& callback) {
     this->set_max_current_callback = callback;
 }
 } // namespace ocpp1_6
