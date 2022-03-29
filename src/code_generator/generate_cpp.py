@@ -446,7 +446,7 @@ def parse_schemas(version: str, schema_dir: Path = Path('schemas/json/'),
     subprocess.run(["clang-format", "-style=file",  "-i",
                    enums_hpp_fn, ocpp_types_hpp_fn], cwd=generated_header_dir)
     subprocess.run(["clang-format", "-style=file",  "-i",
-                   enums_hpp_fn, ocpp_types_cpp_fn], cwd=generated_source_dir)
+                   enums_cpp_fn, ocpp_types_cpp_fn], cwd=generated_source_dir)
     subprocess.run(["clang-format", "-style=file",  "-i",
                    enums_cpp_fn], cwd=generated_source_dir)
 
