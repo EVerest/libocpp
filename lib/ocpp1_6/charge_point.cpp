@@ -642,8 +642,17 @@ void ChargePoint::handleChangeAvailabilityRequest(Call<ChangeAvailabilityRequest
                 this->configuration->setConnectorAvailability(connector, call.msg.type);
             if (availability_change_succeeded) {
                 if (call.msg.type == AvailabilityType::Operative) {
+                    if (this->enable_evse_callback != nullptr) {
+                        // TODO(kai): check return value
+                        this->enable_evse_callback(connector);
+                    }
+
                     this->status->submit_event(connector, Event_H1_ConnectorSetAvailableByChangeAvailability());
                 } else {
+                    if (this->disable_evse_callback != nullptr) {
+                        // TODO(kai): check return value
+                        this->disable_evse_callback(connector);
+                    }
                     this->status->submit_event(connector, Event_A8_ChangeAvailabilityToUnavailable());
                 }
             }
@@ -1542,8 +1551,16 @@ bool ChargePoint::stop_transaction(int32_t connector, Reason reason) {
             EVLOG(info) << oss.str();
 
             if (connector_availability == AvailabilityType::Operative) {
+                if (this->enable_evse_callback != nullptr) {
+                    // TODO(kai): check return value
+                    this->enable_evse_callback(connector);
+                }
                 this->status_notification(connector, ChargePointErrorCode::NoError, ChargePointStatus::Available);
             } else {
+                if (this->disable_evse_callback != nullptr) {
+                    // TODO(kai): check return value
+                    this->disable_evse_callback(connector);
+                }
                 this->status_notification(connector, ChargePointErrorCode::NoError, ChargePointStatus::Unavailable);
             }
         } else {
