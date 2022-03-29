@@ -570,7 +570,12 @@ ReservationStatus Reservations::reserve_now(int32_t reservationId, int32_t conne
     enum class ReservationStatus
     {
         Rejected,  // If the chargepoint is configured not to accept reservations
-        Unavailable,  // If the chargepoint or connector are in the unavailable state
+        // 
+        ---------------------------
+        Unavailable,  // If the chargepoint or connector are in the unavailable state, evsim manager state: disabled? 
+        // Unavailable is persistent in OCPP
+        // AvailabilityType::Inoperable := unavailable
+        // 
     };
 
     **/
