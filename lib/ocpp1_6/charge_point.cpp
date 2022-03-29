@@ -1457,6 +1457,9 @@ bool ChargePoint::start_transaction(int32_t connector) {
 
     // FIXME(kai): new fsm
     // this->status_notification(connector, ChargePointErrorCode::NoError, this->status[connector]->suspended_ev());
+    if (this->resume_charging_callback != nullptr) {
+        this->resume_charging_callback(connector);
+    }
 
     return true;
 }
