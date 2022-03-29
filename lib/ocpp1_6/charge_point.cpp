@@ -571,7 +571,7 @@ void ChargePoint::handleBootNotificationResponse(CallResult<BootNotificationResp
         this->configuration->setHeartbeatInterval(call_result.msg.interval);
     }
     switch (call_result.msg.status) {
-    case RegistrationStatus::Accepted:{
+    case RegistrationStatus::Accepted: {
         this->connection_state = ChargePointConnectionState::Booted;
         // we are allowed to send messages to the central system
         // activate heartbeat
@@ -590,10 +590,9 @@ void ChargePoint::handleBootNotificationResponse(CallResult<BootNotificationResp
         // }
         auto connector_availability = this->configuration->getConnectorAvailability();
         connector_availability[0] =
-        AvailabilityType::Operative; // FIXME(kai): fix internal representation in charge point states, we need a
-                                     // different kind of state machine for connector 0 anyway (with reduced states)
+            AvailabilityType::Operative; // FIXME(kai): fix internal representation in charge point states, we need a
+                                         // different kind of state machine for connector 0 anyway (with reduced states)
         this->status->run(connector_availability);
-
 
         break;
     }
@@ -929,7 +928,8 @@ void ChargePoint::handleSetChargingProfileRequest(Call<SetChargingProfileRequest
     SetChargingProfileResponse response;
     response.status = ChargingProfileStatus::Rejected;
     auto number_of_connectors = this->configuration->getNumberOfConnectors();
-    if (call.msg.connectorId > number_of_connectors || call.msg.connectorId < 0 || call.msg.csChargingProfiles.stackLevel < 0 ||
+    if (call.msg.connectorId > number_of_connectors || call.msg.connectorId < 0 ||
+        call.msg.csChargingProfiles.stackLevel < 0 ||
         call.msg.csChargingProfiles.stackLevel > this->configuration->getChargeProfileMaxStackLevel()) {
         response.status = ChargingProfileStatus::Rejected;
     } else {
