@@ -212,7 +212,7 @@ ChargePointStates::ChargePointStates(
     const std::function<void(int32_t connector, ChargePointErrorCode errorCode, ChargePointStatus status)>&
         status_notification_callback) :
     status_notification_callback(status_notification_callback) {
-    for (size_t connector = 0; connector < number_of_connectors + 1; connector++) {
+    for (int32_t connector = 0; connector < number_of_connectors + 1; connector++) {
         // TODO special state machine for connector 0
         auto state_machine = std::make_shared<ChargePointStateMachine>([this, connector](ChargePointStatus status) {
             this->status_notification_callback(connector, ChargePointErrorCode::NoError, status);
@@ -240,7 +240,7 @@ void ChargePointStates::run(std::map<int32_t, ocpp1_6::AvailabilityType> connect
 }
 
 void ChargePointStates::submit_event(int32_t connector, EventBaseType event) {
-    if (connector > 0 && connector < this->state_machines.size()) {
+    if (connector > 0 && connector < static_cast<int>(this->state_machines.size())) {
         this->state_machines.at(connector)->controller->submit_event(event);
     }
 }

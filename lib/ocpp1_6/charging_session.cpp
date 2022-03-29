@@ -178,14 +178,14 @@ std::vector<MeterValue> ChargingSession::get_clock_aligned_meter_values() {
 }
 
 bool ChargingSessions::valid_connector(int32_t connector) {
-    if (connector < 0 || connector > this->charging_sessions.size()) {
+    if (connector < 0 || connector > static_cast<int32_t>(this->charging_sessions.size())) {
         return false;
     }
     return true;
 }
 
 ChargingSessions::ChargingSessions(int32_t number_of_connectors) : number_of_connectors(number_of_connectors) {
-    for (size_t i = 0; i < number_of_connectors + 1; i++) {
+    for (int32_t i = 0; i < number_of_connectors + 1; i++) {
         this->charging_sessions.push_back(nullptr);
     }
 }

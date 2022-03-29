@@ -87,7 +87,7 @@ void ChargePoint::boot_notification() {
 void ChargePoint::clock_aligned_meter_values_sample() {
     if (this->initialized) {
         EVLOG(debug) << "Sending clock aligned meter values";
-        for (size_t connector = 1; connector < this->configuration->getNumberOfConnectors() + 1; connector++) {
+        for (int32_t connector = 1; connector < this->configuration->getNumberOfConnectors() + 1; connector++) {
             auto meter_value = this->get_latest_meter_value(
                 connector, this->configuration->getMeterValuesAlignedDataVector(), ReadingContext::Sample_Clock);
             this->charging_sessions->add_clock_aligned_meter_value(connector, meter_value);
@@ -927,6 +927,7 @@ void ChargePoint::handleSetChargingProfileRequest(Call<SetChargingProfileRequest
     EVLOG(debug) << "Received SetChargingProfileRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
 
     SetChargingProfileResponse response;
+    response.status = ChargingProfileStatus::Rejected;
     auto number_of_connectors = this->configuration->getNumberOfConnectors();
     if (call.msg.connectorId > number_of_connectors || call.msg.connectorId < 0 || call.msg.csChargingProfiles.stackLevel < 0 ||
         call.msg.csChargingProfiles.stackLevel > this->configuration->getChargeProfileMaxStackLevel()) {

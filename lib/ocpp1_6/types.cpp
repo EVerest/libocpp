@@ -125,6 +125,8 @@ const std::string messagetype_to_string(MessageType m) {
         return "UpdateFirmware";
     case MessageType::UpdateFirmwareResponse:
         return "UpdateFirmwareResponse";
+    case MessageType::InternalError:
+        throw std::out_of_range("No known string conversion for InternalError MessageType");
     }
 
     throw std::out_of_range("No known string conversion for provided enum of type MessageType");
