@@ -240,7 +240,7 @@ void ChargePointStates::run(std::map<int32_t, ocpp1_6::AvailabilityType> connect
 }
 
 void ChargePointStates::submit_event(int32_t connector, EventBaseType event) {
-    if (connector > 0 && connector < static_cast<int>(this->state_machines.size())) {
+    if (connector > 0 && connector < static_cast<int32_t>(this->state_machines.size())) {
         this->state_machines.at(connector)->controller->submit_event(event);
     }
 }
