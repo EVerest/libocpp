@@ -20,11 +20,11 @@ enum class AuthorizationStatus
 namespace conversions {
 /// \brief Converts the given AuthorizationStatus \p e to human readable string
 /// \returns a string representation of the AuthorizationStatus
-const std::string authorization_status_to_string(AuthorizationStatus e);
+std::string authorization_status_to_string(AuthorizationStatus e);
 
 /// \brief Converts the given std::string \p s to AuthorizationStatus
 /// \returns a AuthorizationStatus from a string representation
-const AuthorizationStatus string_to_authorization_status(std::string s);
+AuthorizationStatus string_to_authorization_status(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given AuthorizationStatus \p authorization_status to the given output
@@ -42,11 +42,11 @@ enum class RegistrationStatus
 namespace conversions {
 /// \brief Converts the given RegistrationStatus \p e to human readable string
 /// \returns a string representation of the RegistrationStatus
-const std::string registration_status_to_string(RegistrationStatus e);
+std::string registration_status_to_string(RegistrationStatus e);
 
 /// \brief Converts the given std::string \p s to RegistrationStatus
 /// \returns a RegistrationStatus from a string representation
-const RegistrationStatus string_to_registration_status(std::string s);
+RegistrationStatus string_to_registration_status(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given RegistrationStatus \p registration_status to the given output
@@ -63,11 +63,11 @@ enum class CancelReservationStatus
 namespace conversions {
 /// \brief Converts the given CancelReservationStatus \p e to human readable string
 /// \returns a string representation of the CancelReservationStatus
-const std::string cancel_reservation_status_to_string(CancelReservationStatus e);
+std::string cancel_reservation_status_to_string(CancelReservationStatus e);
 
 /// \brief Converts the given std::string \p s to CancelReservationStatus
 /// \returns a CancelReservationStatus from a string representation
-const CancelReservationStatus string_to_cancel_reservation_status(std::string s);
+CancelReservationStatus string_to_cancel_reservation_status(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given CancelReservationStatus \p cancel_reservation_status to the
@@ -84,11 +84,11 @@ enum class AvailabilityType
 namespace conversions {
 /// \brief Converts the given AvailabilityType \p e to human readable string
 /// \returns a string representation of the AvailabilityType
-const std::string availability_type_to_string(AvailabilityType e);
+std::string availability_type_to_string(AvailabilityType e);
 
 /// \brief Converts the given std::string \p s to AvailabilityType
 /// \returns a AvailabilityType from a string representation
-const AvailabilityType string_to_availability_type(std::string s);
+AvailabilityType string_to_availability_type(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given AvailabilityType \p availability_type to the given output
@@ -106,11 +106,11 @@ enum class AvailabilityStatus
 namespace conversions {
 /// \brief Converts the given AvailabilityStatus \p e to human readable string
 /// \returns a string representation of the AvailabilityStatus
-const std::string availability_status_to_string(AvailabilityStatus e);
+std::string availability_status_to_string(AvailabilityStatus e);
 
 /// \brief Converts the given std::string \p s to AvailabilityStatus
 /// \returns a AvailabilityStatus from a string representation
-const AvailabilityStatus string_to_availability_status(std::string s);
+AvailabilityStatus string_to_availability_status(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given AvailabilityStatus \p availability_status to the given output
@@ -129,11 +129,11 @@ enum class ConfigurationStatus
 namespace conversions {
 /// \brief Converts the given ConfigurationStatus \p e to human readable string
 /// \returns a string representation of the ConfigurationStatus
-const std::string configuration_status_to_string(ConfigurationStatus e);
+std::string configuration_status_to_string(ConfigurationStatus e);
 
 /// \brief Converts the given std::string \p s to ConfigurationStatus
 /// \returns a ConfigurationStatus from a string representation
-const ConfigurationStatus string_to_configuration_status(std::string s);
+ConfigurationStatus string_to_configuration_status(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ConfigurationStatus \p configuration_status to the given output
@@ -150,11 +150,11 @@ enum class ClearCacheStatus
 namespace conversions {
 /// \brief Converts the given ClearCacheStatus \p e to human readable string
 /// \returns a string representation of the ClearCacheStatus
-const std::string clear_cache_status_to_string(ClearCacheStatus e);
+std::string clear_cache_status_to_string(ClearCacheStatus e);
 
 /// \brief Converts the given std::string \p s to ClearCacheStatus
 /// \returns a ClearCacheStatus from a string representation
-const ClearCacheStatus string_to_clear_cache_status(std::string s);
+ClearCacheStatus string_to_clear_cache_status(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ClearCacheStatus \p clear_cache_status to the given output
@@ -172,11 +172,11 @@ enum class ChargingProfilePurposeType
 namespace conversions {
 /// \brief Converts the given ChargingProfilePurposeType \p e to human readable string
 /// \returns a string representation of the ChargingProfilePurposeType
-const std::string charging_profile_purpose_type_to_string(ChargingProfilePurposeType e);
+std::string charging_profile_purpose_type_to_string(ChargingProfilePurposeType e);
 
 /// \brief Converts the given std::string \p s to ChargingProfilePurposeType
 /// \returns a ChargingProfilePurposeType from a string representation
-const ChargingProfilePurposeType string_to_charging_profile_purpose_type(std::string s);
+ChargingProfilePurposeType string_to_charging_profile_purpose_type(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ChargingProfilePurposeType \p charging_profile_purpose_type to
@@ -193,11 +193,11 @@ enum class ClearChargingProfileStatus
 namespace conversions {
 /// \brief Converts the given ClearChargingProfileStatus \p e to human readable string
 /// \returns a string representation of the ClearChargingProfileStatus
-const std::string clear_charging_profile_status_to_string(ClearChargingProfileStatus e);
+std::string clear_charging_profile_status_to_string(ClearChargingProfileStatus e);
 
 /// \brief Converts the given std::string \p s to ClearChargingProfileStatus
 /// \returns a ClearChargingProfileStatus from a string representation
-const ClearChargingProfileStatus string_to_clear_charging_profile_status(std::string s);
+ClearChargingProfileStatus string_to_clear_charging_profile_status(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ClearChargingProfileStatus \p clear_charging_profile_status to
@@ -216,11 +216,11 @@ enum class DataTransferStatus
 namespace conversions {
 /// \brief Converts the given DataTransferStatus \p e to human readable string
 /// \returns a string representation of the DataTransferStatus
-const std::string data_transfer_status_to_string(DataTransferStatus e);
+std::string data_transfer_status_to_string(DataTransferStatus e);
 
 /// \brief Converts the given std::string \p s to DataTransferStatus
 /// \returns a DataTransferStatus from a string representation
-const DataTransferStatus string_to_data_transfer_status(std::string s);
+DataTransferStatus string_to_data_transfer_status(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given DataTransferStatus \p data_transfer_status to the given output
@@ -239,11 +239,11 @@ enum class DiagnosticsStatus
 namespace conversions {
 /// \brief Converts the given DiagnosticsStatus \p e to human readable string
 /// \returns a string representation of the DiagnosticsStatus
-const std::string diagnostics_status_to_string(DiagnosticsStatus e);
+std::string diagnostics_status_to_string(DiagnosticsStatus e);
 
 /// \brief Converts the given std::string \p s to DiagnosticsStatus
 /// \returns a DiagnosticsStatus from a string representation
-const DiagnosticsStatus string_to_diagnostics_status(std::string s);
+DiagnosticsStatus string_to_diagnostics_status(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given DiagnosticsStatus \p diagnostics_status to the given output
@@ -265,11 +265,11 @@ enum class FirmwareStatus
 namespace conversions {
 /// \brief Converts the given FirmwareStatus \p e to human readable string
 /// \returns a string representation of the FirmwareStatus
-const std::string firmware_status_to_string(FirmwareStatus e);
+std::string firmware_status_to_string(FirmwareStatus e);
 
 /// \brief Converts the given std::string \p s to FirmwareStatus
 /// \returns a FirmwareStatus from a string representation
-const FirmwareStatus string_to_firmware_status(std::string s);
+FirmwareStatus string_to_firmware_status(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given FirmwareStatus \p firmware_status to the given output stream \p
@@ -286,11 +286,11 @@ enum class ChargingRateUnit
 namespace conversions {
 /// \brief Converts the given ChargingRateUnit \p e to human readable string
 /// \returns a string representation of the ChargingRateUnit
-const std::string charging_rate_unit_to_string(ChargingRateUnit e);
+std::string charging_rate_unit_to_string(ChargingRateUnit e);
 
 /// \brief Converts the given std::string \p s to ChargingRateUnit
 /// \returns a ChargingRateUnit from a string representation
-const ChargingRateUnit string_to_charging_rate_unit(std::string s);
+ChargingRateUnit string_to_charging_rate_unit(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ChargingRateUnit \p charging_rate_unit to the given output
@@ -307,11 +307,11 @@ enum class GetCompositeScheduleStatus
 namespace conversions {
 /// \brief Converts the given GetCompositeScheduleStatus \p e to human readable string
 /// \returns a string representation of the GetCompositeScheduleStatus
-const std::string get_composite_schedule_status_to_string(GetCompositeScheduleStatus e);
+std::string get_composite_schedule_status_to_string(GetCompositeScheduleStatus e);
 
 /// \brief Converts the given std::string \p s to GetCompositeScheduleStatus
 /// \returns a GetCompositeScheduleStatus from a string representation
-const GetCompositeScheduleStatus string_to_get_composite_schedule_status(std::string s);
+GetCompositeScheduleStatus string_to_get_composite_schedule_status(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given GetCompositeScheduleStatus \p get_composite_schedule_status to
@@ -334,11 +334,11 @@ enum class ReadingContext
 namespace conversions {
 /// \brief Converts the given ReadingContext \p e to human readable string
 /// \returns a string representation of the ReadingContext
-const std::string reading_context_to_string(ReadingContext e);
+std::string reading_context_to_string(ReadingContext e);
 
 /// \brief Converts the given std::string \p s to ReadingContext
 /// \returns a ReadingContext from a string representation
-const ReadingContext string_to_reading_context(std::string s);
+ReadingContext string_to_reading_context(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ReadingContext \p reading_context to the given output stream \p
@@ -355,11 +355,11 @@ enum class ValueFormat
 namespace conversions {
 /// \brief Converts the given ValueFormat \p e to human readable string
 /// \returns a string representation of the ValueFormat
-const std::string value_format_to_string(ValueFormat e);
+std::string value_format_to_string(ValueFormat e);
 
 /// \brief Converts the given std::string \p s to ValueFormat
 /// \returns a ValueFormat from a string representation
-const ValueFormat string_to_value_format(std::string s);
+ValueFormat string_to_value_format(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ValueFormat \p value_format to the given output stream \p os
@@ -396,11 +396,11 @@ enum class Measurand
 namespace conversions {
 /// \brief Converts the given Measurand \p e to human readable string
 /// \returns a string representation of the Measurand
-const std::string measurand_to_string(Measurand e);
+std::string measurand_to_string(Measurand e);
 
 /// \brief Converts the given std::string \p s to Measurand
 /// \returns a Measurand from a string representation
-const Measurand string_to_measurand(std::string s);
+Measurand string_to_measurand(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given Measurand \p measurand to the given output stream \p os
@@ -425,11 +425,11 @@ enum class Phase
 namespace conversions {
 /// \brief Converts the given Phase \p e to human readable string
 /// \returns a string representation of the Phase
-const std::string phase_to_string(Phase e);
+std::string phase_to_string(Phase e);
 
 /// \brief Converts the given std::string \p s to Phase
 /// \returns a Phase from a string representation
-const Phase string_to_phase(std::string s);
+Phase string_to_phase(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given Phase \p phase to the given output stream \p os
@@ -449,11 +449,11 @@ enum class Location
 namespace conversions {
 /// \brief Converts the given Location \p e to human readable string
 /// \returns a string representation of the Location
-const std::string location_to_string(Location e);
+std::string location_to_string(Location e);
 
 /// \brief Converts the given std::string \p s to Location
 /// \returns a Location from a string representation
-const Location string_to_location(std::string s);
+Location string_to_location(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given Location \p location to the given output stream \p os
@@ -485,11 +485,11 @@ enum class UnitOfMeasure
 namespace conversions {
 /// \brief Converts the given UnitOfMeasure \p e to human readable string
 /// \returns a string representation of the UnitOfMeasure
-const std::string unit_of_measure_to_string(UnitOfMeasure e);
+std::string unit_of_measure_to_string(UnitOfMeasure e);
 
 /// \brief Converts the given std::string \p s to UnitOfMeasure
 /// \returns a UnitOfMeasure from a string representation
-const UnitOfMeasure string_to_unit_of_measure(std::string s);
+UnitOfMeasure string_to_unit_of_measure(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given UnitOfMeasure \p unit_of_measure to the given output stream \p
@@ -507,11 +507,11 @@ enum class ChargingProfileKindType
 namespace conversions {
 /// \brief Converts the given ChargingProfileKindType \p e to human readable string
 /// \returns a string representation of the ChargingProfileKindType
-const std::string charging_profile_kind_type_to_string(ChargingProfileKindType e);
+std::string charging_profile_kind_type_to_string(ChargingProfileKindType e);
 
 /// \brief Converts the given std::string \p s to ChargingProfileKindType
 /// \returns a ChargingProfileKindType from a string representation
-const ChargingProfileKindType string_to_charging_profile_kind_type(std::string s);
+ChargingProfileKindType string_to_charging_profile_kind_type(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ChargingProfileKindType \p charging_profile_kind_type to the
@@ -528,11 +528,11 @@ enum class RecurrencyKindType
 namespace conversions {
 /// \brief Converts the given RecurrencyKindType \p e to human readable string
 /// \returns a string representation of the RecurrencyKindType
-const std::string recurrency_kind_type_to_string(RecurrencyKindType e);
+std::string recurrency_kind_type_to_string(RecurrencyKindType e);
 
 /// \brief Converts the given std::string \p s to RecurrencyKindType
 /// \returns a RecurrencyKindType from a string representation
-const RecurrencyKindType string_to_recurrency_kind_type(std::string s);
+RecurrencyKindType string_to_recurrency_kind_type(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given RecurrencyKindType \p recurrency_kind_type to the given output
@@ -549,11 +549,11 @@ enum class RemoteStartStopStatus
 namespace conversions {
 /// \brief Converts the given RemoteStartStopStatus \p e to human readable string
 /// \returns a string representation of the RemoteStartStopStatus
-const std::string remote_start_stop_status_to_string(RemoteStartStopStatus e);
+std::string remote_start_stop_status_to_string(RemoteStartStopStatus e);
 
 /// \brief Converts the given std::string \p s to RemoteStartStopStatus
 /// \returns a RemoteStartStopStatus from a string representation
-const RemoteStartStopStatus string_to_remote_start_stop_status(std::string s);
+RemoteStartStopStatus string_to_remote_start_stop_status(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given RemoteStartStopStatus \p remote_start_stop_status to the given
@@ -573,11 +573,11 @@ enum class ReservationStatus
 namespace conversions {
 /// \brief Converts the given ReservationStatus \p e to human readable string
 /// \returns a string representation of the ReservationStatus
-const std::string reservation_status_to_string(ReservationStatus e);
+std::string reservation_status_to_string(ReservationStatus e);
 
 /// \brief Converts the given std::string \p s to ReservationStatus
 /// \returns a ReservationStatus from a string representation
-const ReservationStatus string_to_reservation_status(std::string s);
+ReservationStatus string_to_reservation_status(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ReservationStatus \p reservation_status to the given output
@@ -594,11 +594,11 @@ enum class ResetType
 namespace conversions {
 /// \brief Converts the given ResetType \p e to human readable string
 /// \returns a string representation of the ResetType
-const std::string reset_type_to_string(ResetType e);
+std::string reset_type_to_string(ResetType e);
 
 /// \brief Converts the given std::string \p s to ResetType
 /// \returns a ResetType from a string representation
-const ResetType string_to_reset_type(std::string s);
+ResetType string_to_reset_type(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ResetType \p reset_type to the given output stream \p os
@@ -615,11 +615,11 @@ enum class ResetStatus
 namespace conversions {
 /// \brief Converts the given ResetStatus \p e to human readable string
 /// \returns a string representation of the ResetStatus
-const std::string reset_status_to_string(ResetStatus e);
+std::string reset_status_to_string(ResetStatus e);
 
 /// \brief Converts the given std::string \p s to ResetStatus
 /// \returns a ResetStatus from a string representation
-const ResetStatus string_to_reset_status(std::string s);
+ResetStatus string_to_reset_status(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ResetStatus \p reset_status to the given output stream \p os
@@ -636,11 +636,11 @@ enum class UpdateType
 namespace conversions {
 /// \brief Converts the given UpdateType \p e to human readable string
 /// \returns a string representation of the UpdateType
-const std::string update_type_to_string(UpdateType e);
+std::string update_type_to_string(UpdateType e);
 
 /// \brief Converts the given std::string \p s to UpdateType
 /// \returns a UpdateType from a string representation
-const UpdateType string_to_update_type(std::string s);
+UpdateType string_to_update_type(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given UpdateType \p update_type to the given output stream \p os
@@ -659,11 +659,11 @@ enum class UpdateStatus
 namespace conversions {
 /// \brief Converts the given UpdateStatus \p e to human readable string
 /// \returns a string representation of the UpdateStatus
-const std::string update_status_to_string(UpdateStatus e);
+std::string update_status_to_string(UpdateStatus e);
 
 /// \brief Converts the given std::string \p s to UpdateStatus
 /// \returns a UpdateStatus from a string representation
-const UpdateStatus string_to_update_status(std::string s);
+UpdateStatus string_to_update_status(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given UpdateStatus \p update_status to the given output stream \p os
@@ -681,11 +681,11 @@ enum class ChargingProfileStatus
 namespace conversions {
 /// \brief Converts the given ChargingProfileStatus \p e to human readable string
 /// \returns a string representation of the ChargingProfileStatus
-const std::string charging_profile_status_to_string(ChargingProfileStatus e);
+std::string charging_profile_status_to_string(ChargingProfileStatus e);
 
 /// \brief Converts the given std::string \p s to ChargingProfileStatus
 /// \returns a ChargingProfileStatus from a string representation
-const ChargingProfileStatus string_to_charging_profile_status(std::string s);
+ChargingProfileStatus string_to_charging_profile_status(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ChargingProfileStatus \p charging_profile_status to the given
@@ -716,11 +716,11 @@ enum class ChargePointErrorCode
 namespace conversions {
 /// \brief Converts the given ChargePointErrorCode \p e to human readable string
 /// \returns a string representation of the ChargePointErrorCode
-const std::string charge_point_error_code_to_string(ChargePointErrorCode e);
+std::string charge_point_error_code_to_string(ChargePointErrorCode e);
 
 /// \brief Converts the given std::string \p s to ChargePointErrorCode
 /// \returns a ChargePointErrorCode from a string representation
-const ChargePointErrorCode string_to_charge_point_error_code(std::string s);
+ChargePointErrorCode string_to_charge_point_error_code(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ChargePointErrorCode \p charge_point_error_code to the given
@@ -744,11 +744,11 @@ enum class ChargePointStatus
 namespace conversions {
 /// \brief Converts the given ChargePointStatus \p e to human readable string
 /// \returns a string representation of the ChargePointStatus
-const std::string charge_point_status_to_string(ChargePointStatus e);
+std::string charge_point_status_to_string(ChargePointStatus e);
 
 /// \brief Converts the given std::string \p s to ChargePointStatus
 /// \returns a ChargePointStatus from a string representation
-const ChargePointStatus string_to_charge_point_status(std::string s);
+ChargePointStatus string_to_charge_point_status(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ChargePointStatus \p charge_point_status to the given output
@@ -774,11 +774,11 @@ enum class Reason
 namespace conversions {
 /// \brief Converts the given Reason \p e to human readable string
 /// \returns a string representation of the Reason
-const std::string reason_to_string(Reason e);
+std::string reason_to_string(Reason e);
 
 /// \brief Converts the given std::string \p s to Reason
 /// \returns a Reason from a string representation
-const Reason string_to_reason(std::string s);
+Reason string_to_reason(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given Reason \p reason to the given output stream \p os
@@ -799,11 +799,11 @@ enum class MessageTrigger
 namespace conversions {
 /// \brief Converts the given MessageTrigger \p e to human readable string
 /// \returns a string representation of the MessageTrigger
-const std::string message_trigger_to_string(MessageTrigger e);
+std::string message_trigger_to_string(MessageTrigger e);
 
 /// \brief Converts the given std::string \p s to MessageTrigger
 /// \returns a MessageTrigger from a string representation
-const MessageTrigger string_to_message_trigger(std::string s);
+MessageTrigger string_to_message_trigger(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given MessageTrigger \p message_trigger to the given output stream \p
@@ -821,11 +821,11 @@ enum class TriggerMessageStatus
 namespace conversions {
 /// \brief Converts the given TriggerMessageStatus \p e to human readable string
 /// \returns a string representation of the TriggerMessageStatus
-const std::string trigger_message_status_to_string(TriggerMessageStatus e);
+std::string trigger_message_status_to_string(TriggerMessageStatus e);
 
 /// \brief Converts the given std::string \p s to TriggerMessageStatus
 /// \returns a TriggerMessageStatus from a string representation
-const TriggerMessageStatus string_to_trigger_message_status(std::string s);
+TriggerMessageStatus string_to_trigger_message_status(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given TriggerMessageStatus \p trigger_message_status to the given
@@ -843,11 +843,11 @@ enum class UnlockStatus
 namespace conversions {
 /// \brief Converts the given UnlockStatus \p e to human readable string
 /// \returns a string representation of the UnlockStatus
-const std::string unlock_status_to_string(UnlockStatus e);
+std::string unlock_status_to_string(UnlockStatus e);
 
 /// \brief Converts the given std::string \p s to UnlockStatus
 /// \returns a UnlockStatus from a string representation
-const UnlockStatus string_to_unlock_status(std::string s);
+UnlockStatus string_to_unlock_status(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given UnlockStatus \p unlock_status to the given output stream \p os

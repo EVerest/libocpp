@@ -109,27 +109,27 @@ enum class MessageType
 namespace conversions {
 /// \brief Converts the given MessageType \p m to std::string
 /// \returns a string representation of the MessageType
-const std::string messagetype_to_string(MessageType m);
+std::string messagetype_to_string(MessageType m);
 
 /// \brief Converts the given std::string \p s to MessageType
 /// \returns a MessageType from a string representation
-const MessageType string_to_messagetype(std::string s);
+MessageType string_to_messagetype(std::string s);
 
 /// \brief Converts the given bool \p b to a string representation of "true" or "false"
 /// \returns a string representation of the given bool
-const std::string bool_to_string(bool b);
+std::string bool_to_string(bool b);
 
 /// \brief Converts the given string \p s to a bool value. "true" is converted into true, anything else to false
 /// \returns a bool from the given string representation
-const bool string_to_bool(const std::string& s);
+bool string_to_bool(const std::string& s);
 
 /// \brief Converts the given double \p d to a string representation with the given \p precision
 /// \returns a string representation of the given double using the given precision
-const std::string double_to_string(double d, int precision);
+std::string double_to_string(double d, int precision);
 
 /// \brief Converts the given double \p d to a string representation with a fixed precision of 2
 /// \returns a string representation of the given double using a fixed precision of 2
-const std::string double_to_string(double d);
+std::string double_to_string(double d);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given \p message_type to the given output stream \p os
@@ -452,11 +452,11 @@ enum ChargePointConnectionState
 namespace conversions {
 /// \brief Converts the given ChargePointConnectionState \p e to std::string
 /// \returns a string representation of the ChargePointConnectionState
-const std::string charge_point_connection_state_to_string(ChargePointConnectionState e);
+std::string charge_point_connection_state_to_string(ChargePointConnectionState e);
 
 /// \brief Converts the given std::string \p s to ChargePointConnectionState
 /// \returns a ChargePointConnectionState from a string representation
-const ChargePointConnectionState string_to_charge_point_connection_state(std::string s);
+ChargePointConnectionState string_to_charge_point_connection_state(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given \p charge_point_connection_state
@@ -476,11 +476,11 @@ enum SupportedFeatureProfiles
 namespace conversions {
 /// \brief Converts the given SupportedFeatureProfiles \p e to std::string
 /// \returns a string representation of the SupportedFeatureProfiles
-const std::string supported_feature_profiles_to_string(SupportedFeatureProfiles e);
+std::string supported_feature_profiles_to_string(SupportedFeatureProfiles e);
 
 /// \brief Converts the given std::string \p s to SupportedFeatureProfiles
 /// \returns a SupportedFeatureProfiles from a string representation
-const SupportedFeatureProfiles string_to_supported_feature_profiles(std::string s);
+SupportedFeatureProfiles string_to_supported_feature_profiles(std::string s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given \p supported_feature_profiles to the given output stream \p os

@@ -11,7 +11,7 @@
 namespace ocpp1_6 {
 
 namespace conversions {
-const std::string messagetype_to_string(MessageType m) {
+std::string messagetype_to_string(MessageType m) {
     switch (m) {
     case MessageType::Authorize:
         return "Authorize";
@@ -132,7 +132,7 @@ const std::string messagetype_to_string(MessageType m) {
     throw std::out_of_range("No known string conversion for provided enum of type MessageType");
 }
 
-const MessageType string_to_messagetype(std::string s) {
+MessageType string_to_messagetype(std::string s) {
     if (s == "Authorize") {
         return MessageType::Authorize;
     }
@@ -305,28 +305,28 @@ const MessageType string_to_messagetype(std::string s) {
     throw std::out_of_range("Provided string " + s + " could not be converted to enum of type MessageType");
 }
 
-const std::string bool_to_string(bool b) {
+std::string bool_to_string(bool b) {
     if (b) {
         return "true";
     }
     return "false";
 }
 
-const bool string_to_bool(const std::string& s) {
+bool string_to_bool(const std::string& s) {
     if (s == "true") {
         return true;
     }
     return false;
 }
 
-const std::string double_to_string(double d, int precision) {
+std::string double_to_string(double d, int precision) {
     std::ostringstream str;
     str.precision(precision);
     str << std::fixed << d;
     return str.str();
 }
 
-const std::string double_to_string(double d) {
+std::string double_to_string(double d) {
     return conversions::double_to_string(d, 2);
 }
 } // namespace conversions
@@ -591,7 +591,7 @@ std::ostream& operator<<(std::ostream& os, const CallError& c) {
 }
 namespace conversions {
 
-const std::string charge_point_connection_state_to_string(ChargePointConnectionState e) {
+std::string charge_point_connection_state_to_string(ChargePointConnectionState e) {
     switch (e) {
     case ChargePointConnectionState::Disconnected:
         return "Disconnected";
@@ -608,7 +608,7 @@ const std::string charge_point_connection_state_to_string(ChargePointConnectionS
     throw std::out_of_range("No known string conversion for provided enum of type ChargePointConnectionState");
 }
 
-const ChargePointConnectionState string_to_charge_point_connection_state(std::string s) {
+ChargePointConnectionState string_to_charge_point_connection_state(std::string s) {
     if (s == "Disconnected") {
         return ChargePointConnectionState::Disconnected;
     }
@@ -638,7 +638,7 @@ std::ostream& operator<<(std::ostream& os, const ChargePointConnectionState& cha
 namespace conversions {
 /// \brief Converts the given SupportedFeatureProfiles \p e to std::string
 /// \returns a string representation of the SupportedFeatureProfiles
-const std::string supported_feature_profiles_to_string(SupportedFeatureProfiles e) {
+std::string supported_feature_profiles_to_string(SupportedFeatureProfiles e) {
     switch (e) {
     case SupportedFeatureProfiles::Core:
         return "Core";
@@ -659,7 +659,7 @@ const std::string supported_feature_profiles_to_string(SupportedFeatureProfiles 
 
 /// \brief Converts the given std::string \p s to SupportedFeatureProfiles
 /// \returns a SupportedFeatureProfiles from a string representation
-const SupportedFeatureProfiles string_to_supported_feature_profiles(std::string s) {
+SupportedFeatureProfiles string_to_supported_feature_profiles(std::string s) {
     if (s == "Core") {
         return SupportedFeatureProfiles::Core;
     }
