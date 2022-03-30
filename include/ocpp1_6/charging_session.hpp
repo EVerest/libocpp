@@ -281,6 +281,8 @@ private:
     int32_t error_unexpected_state = -2;
 
     // Make generic if we need to access other elements from the tuple as well
+    /// \brief iterate through the reservaitions and collect all connector_ids in a set
+    /// \returns a set containing all the connector ids
     std::set<int32_t> get_reserved_connectors() {
         std::set<int32_t> value;
         for(std::map<int32_t, std::tuple<int32_t, DateTime, CiString20Type>>::iterator it = this->reservations.begin(); it != this->reservations.end(); ++it) {

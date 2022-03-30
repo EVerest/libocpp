@@ -518,16 +518,18 @@ int32_t Reservations::get_unreserved_connector(int32_t query_connector, std::map
 ReservationStatus Reservations::reserve_now(int32_t reservationId, int32_t connectorId, DateTime expiryDate, 
                                                 CiString20Type idTag, std::shared_ptr<ChargePointConfiguration> cpConfiguration) {
 
-    // auto connector_availability = this->configuration->getConnectorAvailability(); // std::map<int32_t, ocpp1_6::AvailabilityType> availability
     auto properties = std::make_tuple(connectorId, expiryDate, idTag);    
     auto pair = std::pair<int32_t, std::tuple<int32_t, DateTime, CiString20Type>>(reservationId, properties);
+    int32_t numResIds = this->get_reserved_ids().count(reservationId);
 
-    if (this->get_reserved_ids().count(reservationId)) {
-
+    if (numResIds == 1) {
         // Overwrite existing reservation
         this->reservations[reservationId] = properties;
         // TODO: reserve now enum answer - let the enum drive the cache content...
         return ReservationStatus::Accepted;
+    } else if (numResIds > 1) {
+        EVLOG(critical) << "The reservation id " << reservationId << " is associated with multiple reservations!";
+        return ReservationStatus::Faulted;
     } else {
         int32_t to_be_reserved = this->get_unreserved_connector(connectorId, cpConfiguration->getConnectorAvailability());
 
@@ -536,9 +538,13 @@ ReservationStatus Reservations::reserve_now(int32_t reservationId, int32_t conne
             EVLOG(critical) << "The evsim managers need to know whether they are responcible for a specific charge procedure or not.";
             return ReservationStatus::Faulted;
         } else if (to_be_reserved > 0) {
-            // Create new reservation for connectorId
-            // TODO: reserve now enum answer - let the enum drive the cache content...
-            this->reservations.insert(pair);
+            if (cpConfiguration->getConnectorAvailability(connectorId) == AvailabilityType::Inoperative) {
+                return ReservationStatus::Unavailable;
+            } else {
+                this->reservations.insert(pair);
+                // TODO: reserve now enum answer - let the enum drive the cache content...
+            }
+
             return ReservationStatus::Accepted;
         } else if (to_be_reserved == this->no_connectors_available) {
             return ReservationStatus::Occupied;
@@ -554,10 +560,6 @@ ReservationStatus Reservations::reserve_now(int32_t reservationId, int32_t conne
         Rejected,  // If the chargepoint is configured not to accept reservations
         // 
         ---------------------------
-        Unavailable,  // If the chargepoint or connector are in the unavailable state, evsim manager state: disabled? 
-        // Unavailable is persistent in OCPP
-        // AvailabilityType::Inoperable := unavailable
-        // 
     };
 
     **/
