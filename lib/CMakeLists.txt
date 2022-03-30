@@ -19,6 +19,8 @@ target_sources(ocpp
         ocpp1_6/types.cpp
         ocpp1_6/types_internal.cpp
         ocpp1_6/websocket.cpp
+        ocpp1_6/websocket_plain.cpp
+        ocpp1_6/websocket_tls.cpp
 )
 
 add_subdirectory(ocpp1_6/messages)
