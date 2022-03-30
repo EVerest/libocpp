@@ -18,12 +18,10 @@ target_sources(ocpp
         ocpp1_6/schemas.cpp
         ocpp1_6/types.cpp
         ocpp1_6/types_internal.cpp
-        ocpp1_6/websocket.cpp
-        ocpp1_6/websocket_plain.cpp
-        ocpp1_6/websocket_tls.cpp
 )
 
 add_subdirectory(ocpp1_6/messages)
+add_subdirectory(ocpp1_6/websocket)
 
 target_include_directories(ocpp PUBLIC ${INCLUDE_DIR} ${websocketpp_SOURCE_DIR})
 target_link_libraries(ocpp

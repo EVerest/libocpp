@@ -8,7 +8,6 @@
 #include <ocpp1_6/charge_point.hpp>
 #include <ocpp1_6/charge_point_configuration.hpp>
 #include <ocpp1_6/schemas.hpp>
-#include <ocpp1_6/websocket.hpp>
 
 namespace ocpp1_6 {
 

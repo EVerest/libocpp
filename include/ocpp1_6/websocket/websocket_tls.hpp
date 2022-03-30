@@ -8,6 +8,8 @@
 #include <websocketpp/client.hpp>
 #include <websocketpp/config/asio_client.hpp>
 
+#include <ocpp1_6/websocket/websocket_base.hpp>
+
 class ChargePointConfiguration;
 
 namespace ocpp1_6 {
@@ -22,26 +24,17 @@ using websocketpp::lib::placeholders::_2;
 ///
 /// \brief contains a websocket abstraction that can connect to TLS and non-TLS websocket endpoints
 ///
-class WebsocketTLS {
+class WebsocketTLS : public WebsocketBase {
 private:
     websocketpp::lib::shared_ptr<websocketpp::lib::thread> websocket_thread;
-    std::shared_ptr<ChargePointConfiguration> configuration;
     tls_client wss_client;
     std::string uri;
-    bool shutting_down;
     websocketpp::connection_hdl handle;
     websocketpp::lib::shared_ptr<websocketpp::lib::thread> ws_thread;
     std::mutex reconnect_mutex;
     long reconnect_interval_ms;
     websocketpp::transport::timer_handler reconnect_callback;
     websocketpp::lib::shared_ptr<boost::asio::steady_timer> reconnect_timer;
-    std::function<void()> connected_callback;
-    std::function<void()> disconnected_callback;
-    std::function<void(const std::string& message)> message_callback;
-
-    /// \brief Indicates if the required callbacks are registered and the websocket is not shutting down
-    /// \returns true if the websocket is properly initialized
-    bool initialized();
 
     /// \brief Reconnects the websocket using the reconnect timer, a reason for this reconnect can be provided with the
     /// \p reason parameter
@@ -86,23 +79,14 @@ public:
 
     /// \brief connect to a TLS websocket
     /// \returns true if the websocket is initialized and a connection attempt is made
-    bool connect();
+    bool connect() override;
 
     /// \brief disconnect the websocket
-    void disconnect();
-
-    /// \brief register a \p callback that is called when the websocket is connected successfully
-    void register_connected_callback(const std::function<void()>& callback);
-
-    /// \brief register a \p callback that is called when the websocket is disconnected
-    void register_disconnected_callback(const std::function<void()>& callback);
-
-    /// \brief register a \p callback that is called when the websocket receives a message
-    void register_message_callback(const std::function<void(const std::string& message)>& callback);
+    void disconnect() override;
 
     /// \brief send a \p message over the websocket
     /// \returns true if the message was sent successfully
-    bool send(const std::string& message);
+    bool send(const std::string& message) override;
 };
 
 } // namespace ocpp1_6

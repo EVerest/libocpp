@@ -3,20 +3,15 @@
 #include <everest/logging.hpp>
 
 #include <ocpp1_6/charge_point_configuration.hpp>
-#include <ocpp1_6/websocket_tls.hpp>
+#include <ocpp1_6/websocket/websocket_tls.hpp>
 
 namespace ocpp1_6 {
 
 WebsocketTLS::WebsocketTLS(std::shared_ptr<ChargePointConfiguration> configuration) :
-    shutting_down(false),
-    reconnect_timer(nullptr),
-    connected_callback(nullptr),
-    disconnected_callback(nullptr),
-    message_callback(nullptr) {
+    WebsocketBase(configuration), reconnect_timer(nullptr) {
     this->reconnect_interval_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
                                       std::chrono::seconds(configuration->getWebsocketReconnectInterval()))
                                       .count();
-    this->configuration = configuration;
 }
 
 bool WebsocketTLS::connect() {
@@ -75,15 +70,6 @@ void WebsocketTLS::disconnect() {
 
     this->close_tls(websocketpp::close::status::normal, "");
 }
-void WebsocketTLS::register_connected_callback(const std::function<void()>& callback) {
-    this->connected_callback = callback;
-}
-void WebsocketTLS::register_disconnected_callback(const std::function<void()>& callback) {
-    this->disconnected_callback = callback;
-}
-void WebsocketTLS::register_message_callback(const std::function<void(const std::string& message)>& callback) {
-    this->message_callback = callback;
-}
 
 bool WebsocketTLS::send(const std::string& message) {
     if (!this->initialized()) {
@@ -103,27 +89,6 @@ bool WebsocketTLS::send(const std::string& message) {
     }
 
     EVLOG(debug) << "Sent message over TLS websocket: " << message;
-
-    return true;
-}
-
-bool WebsocketTLS::initialized() {
-    if (this->shutting_down) {
-        EVLOG(error) << "Not properly initialized: websocket already shutdown.";
-        return false;
-    }
-    if (this->connected_callback == nullptr) {
-        EVLOG(error) << "Not properly initialized: please register connected callback.";
-        return false;
-    }
-    if (this->disconnected_callback == nullptr) {
-        EVLOG(error) << "Not properly initialized: please register disconnected callback.";
-        return false;
-    }
-    if (this->message_callback == nullptr) {
-        EVLOG(error) << "Not properly initialized: please register message callback.";
-        return false;
-    }
 
     return true;
 }

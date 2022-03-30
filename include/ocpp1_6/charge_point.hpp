@@ -33,7 +33,7 @@
 #include <ocpp1_6/messages/StopTransaction.hpp>
 #include <ocpp1_6/messages/UnlockConnector.hpp>
 #include <ocpp1_6/types.hpp>
-#include <ocpp1_6/websocket.hpp>
+#include <ocpp1_6/websocket/websocket.hpp>
 
 namespace ocpp1_6 {
 

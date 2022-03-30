@@ -3,20 +3,15 @@
 #include <everest/logging.hpp>
 
 #include <ocpp1_6/charge_point_configuration.hpp>
-#include <ocpp1_6/websocket_plain.hpp>
+#include <ocpp1_6/websocket/websocket_plain.hpp>
 
 namespace ocpp1_6 {
 
 WebsocketPlain::WebsocketPlain(std::shared_ptr<ChargePointConfiguration> configuration) :
-    shutting_down(false),
-    reconnect_timer(nullptr),
-    connected_callback(nullptr),
-    disconnected_callback(nullptr),
-    message_callback(nullptr) {
+    WebsocketBase(configuration), reconnect_timer(nullptr) {
     this->reconnect_interval_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
                                       std::chrono::seconds(configuration->getWebsocketReconnectInterval()))
                                       .count();
-    this->configuration = configuration;
 }
 
 bool WebsocketPlain::connect() {
@@ -64,15 +59,6 @@ void WebsocketPlain::disconnect() {
     EVLOG(info) << "Disconnecting plain websocket...";
     this->close_plain(websocketpp::close::status::normal, "");
 }
-void WebsocketPlain::register_connected_callback(const std::function<void()>& callback) {
-    this->connected_callback = callback;
-}
-void WebsocketPlain::register_disconnected_callback(const std::function<void()>& callback) {
-    this->disconnected_callback = callback;
-}
-void WebsocketPlain::register_message_callback(const std::function<void(const std::string& message)>& callback) {
-    this->message_callback = callback;
-}
 
 bool WebsocketPlain::send(const std::string& message) {
     if (!this->initialized()) {
@@ -92,27 +78,6 @@ bool WebsocketPlain::send(const std::string& message) {
     }
 
     EVLOG(debug) << "Sent message over plain websocket: " << message;
-
-    return true;
-}
-
-bool WebsocketPlain::initialized() {
-    if (this->shutting_down) {
-        EVLOG(error) << "Not properly initialized: websocket already shutdown.";
-        return false;
-    }
-    if (this->connected_callback == nullptr) {
-        EVLOG(error) << "Not properly initialized: please register connected callback.";
-        return false;
-    }
-    if (this->disconnected_callback == nullptr) {
-        EVLOG(error) << "Not properly initialized: please register disconnected callback.";
-        return false;
-    }
-    if (this->message_callback == nullptr) {
-        EVLOG(error) << "Not properly initialized: please register message callback.";
-        return false;
-    }
 
     return true;
 }

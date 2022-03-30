@@ -1,39 +1,40 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2022 Pionix GmbH and Contributors to EVerest
-#ifndef OCPP_WEBSOCKET_HPP
-#define OCPP_WEBSOCKET_HPP
+#ifndef OCPP_WEBSOCKET_BASE_HPP
+#define OCPP_WEBSOCKET_BASE_HPP
 
-#include <thread>
-
-#include <ocpp1_6/websocket_plain.hpp>
-#include <ocpp1_6/websocket_tls.hpp>
+#include <functional>
+#include <memory>
 
 class ChargePointConfiguration;
 
 namespace ocpp1_6 {
 
 ///
-/// \brief contains a websocket abstraction that can connect to TLS and non-TLS websocket endpoints
+/// \brief contains a websocket abstraction
 ///
-class Websocket {
-private:
-    std::shared_ptr<ChargePointConfiguration> configuration;
-    std::unique_ptr<WebsocketPlain> websocket_plain;
-    std::unique_ptr<WebsocketTLS> websocket_tls;
-    std::string uri;
-    bool tls;
+class WebsocketBase {
+protected:
     bool shutting_down;
+    std::shared_ptr<ChargePointConfiguration> configuration;
+    std::function<void()> connected_callback;
+    std::function<void()> disconnected_callback;
+    std::function<void(const std::string& message)> message_callback;
+
+    /// \brief Indicates if the required callbacks are registered and the websocket is not shutting down
+    /// \returns true if the websocket is properly initialized
+    bool initialized();
 
 public:
-    /// \brief Creates a new Websocket object with the providede \p configuration
-    explicit Websocket(std::shared_ptr<ChargePointConfiguration> configuration);
+    /// \brief Creates a new WebsocketBase object with the providede \p configuration
+    explicit WebsocketBase(std::shared_ptr<ChargePointConfiguration> configuration);
 
-    /// \brief connect to a websocket (TLS or non-TLS depending on the central system uri in the configuration)
+    /// \brief connect to a websocket
     /// \returns true if the websocket is initialized and a connection attempt is made
-    bool connect();
+    virtual bool connect() = 0;
 
     /// \brief disconnect the websocket
-    void disconnect();
+    virtual void disconnect() = 0;
 
     /// \brief register a \p callback that is called when the websocket is connected successfully
     void register_connected_callback(const std::function<void()>& callback);
@@ -46,8 +47,8 @@ public:
 
     /// \brief send a \p message over the websocket
     /// \returns true if the message was sent successfully
-    bool send(const std::string& message);
+    virtual bool send(const std::string& message) = 0;
 };
 
 } // namespace ocpp1_6
-#endif // OCPP_WEBSOCKET_HPP
+#endif // OCPP_WEBSOCKET_BASE_HPP
