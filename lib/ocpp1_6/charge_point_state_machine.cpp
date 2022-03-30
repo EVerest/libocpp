@@ -8,19 +8,19 @@ ChargePointStateMachine::ChargePointStateMachine(
     status_notification_callback(status_notification_callback) {
     this->sd_available.transitions = [this](const EventBaseType& ev, TransitionType& trans) {
         switch (ev.id) {
-        case ChargePointStatusTransition::A2_UsageInitiated:
+        case ChargePointStatusTransition::UsageInitiated:
             return trans.set(this->sd_preparing);
-        case ChargePointStatusTransition::A3_UsageInitiatedWithoutAuthorization:
+        case ChargePointStatusTransition::StartCharging:
             return trans.set(this->sd_charging);
-        case ChargePointStatusTransition::A4_UsageInitiatedEVDoesNotStartCharging:
+        case ChargePointStatusTransition::PauseChargingEV:
             return trans.set(this->sd_suspended_ev);
-        case ChargePointStatusTransition::A5_UsageInitiatedEVSEDoesNotAllowCharging:
+        case ChargePointStatusTransition::PauseChargingEVSE:
             return trans.set(this->sd_suspended_evse);
-        case ChargePointStatusTransition::A7_ReserveNowReservesConnector:
+        case ChargePointStatusTransition::ReserveConnector:
             return trans.set(this->sd_reserved);
-        case ChargePointStatusTransition::A8_ChangeAvailabilityToUnavailable:
+        case ChargePointStatusTransition::ChangeAvailabilityToUnavailable:
             return trans.set(this->sd_unavailable);
-        case ChargePointStatusTransition::A9_FaultDetected:
+        case ChargePointStatusTransition::FaultDetected:
             return trans.set(this->sd_faulted);
         default:
             return;
@@ -32,17 +32,17 @@ ChargePointStateMachine::ChargePointStateMachine(
 
     this->sd_preparing.transitions = [this](const EventBaseType& ev, TransitionType& trans) {
         switch (ev.id) {
-        case ChargePointStatusTransition::B1_IntendedUsageIsEnded:
+        case ChargePointStatusTransition::BecomeAvailable:
             return trans.set(this->sd_available);
-        case ChargePointStatusTransition::B3_PrerequisitesForChargingMetAndChargingStarts:
+        case ChargePointStatusTransition::StartCharging:
             return trans.set(this->sd_charging);
-        case ChargePointStatusTransition::B4_PrerequisitesForChargingMetEVDoesNotStartCharging:
+        case ChargePointStatusTransition::PauseChargingEV:
             return trans.set(this->sd_suspended_ev);
-        case ChargePointStatusTransition::B5_PrerequisitesForChargingMetEVSEDoesNotAllowCharging:
+        case ChargePointStatusTransition::PauseChargingEVSE:
             return trans.set(this->sd_suspended_evse);
-        case ChargePointStatusTransition::B6_TimedOut:
+        case ChargePointStatusTransition::TransactionStoppedAndUserActionRequired:
             return trans.set(this->sd_finishing);
-        case ChargePointStatusTransition::B9_FaultDetected:
+        case ChargePointStatusTransition::FaultDetected:
             return trans.set(this->sd_faulted);
         default:
             return;
@@ -54,18 +54,17 @@ ChargePointStateMachine::ChargePointStateMachine(
 
     this->sd_charging.transitions = [this](const EventBaseType& ev, TransitionType& trans) {
         switch (ev.id) {
-        case ChargePointStatusTransition::C1_ChargingSessionEndsNoUserActionRequired:
+        case ChargePointStatusTransition::BecomeAvailable:
             return trans.set(this->sd_available);
-        case ChargePointStatusTransition::C4_ChargingStopsUponEVRequest:
+        case ChargePointStatusTransition::PauseChargingEV:
             return trans.set(this->sd_suspended_ev);
-        case ChargePointStatusTransition::C5_ChargingStopsUponEVSERequest:
+        case ChargePointStatusTransition::PauseChargingEVSE:
             return trans.set(this->sd_suspended_evse);
-        case ChargePointStatusTransition::C6_TransactionStoppedAndUserActionRequired:
+        case ChargePointStatusTransition::TransactionStoppedAndUserActionRequired:
             return trans.set(this->sd_finishing);
-        case ChargePointStatusTransition::
-            C8_ChargingSessionEndsNoUserActionRequiredConnectorScheduledToBecomeUnavailable:
+        case ChargePointStatusTransition::ChangeAvailabilityToUnavailable:
             return trans.set(this->sd_unavailable);
-        case ChargePointStatusTransition::C9_FaultDetected:
+        case ChargePointStatusTransition::FaultDetected:
             return trans.set(this->sd_faulted);
         default:
             return;
@@ -77,18 +76,17 @@ ChargePointStateMachine::ChargePointStateMachine(
 
     this->sd_suspended_ev.transitions = [this](const EventBaseType& ev, TransitionType& trans) {
         switch (ev.id) {
-        case ChargePointStatusTransition::D1_ChargingSessionEndsNoUserActionRequired:
+        case ChargePointStatusTransition::BecomeAvailable:
             return trans.set(this->sd_available);
-        case ChargePointStatusTransition::D3_ChargingResumesUponEVRequest:
+        case ChargePointStatusTransition::StartCharging:
             return trans.set(this->sd_charging);
-        case ChargePointStatusTransition::D5_ChargingSuspendedByEVSE:
+        case ChargePointStatusTransition::PauseChargingEVSE:
             return trans.set(this->sd_suspended_evse);
-        case ChargePointStatusTransition::D6_TransactionStoppedNoUserActionRequired:
+        case ChargePointStatusTransition::TransactionStoppedAndUserActionRequired:
             return trans.set(this->sd_finishing);
-        case ChargePointStatusTransition::
-            D8_ChargingSessionEndsNoUserActionRequiredConnectorScheduledToBecomeUnavailable:
+        case ChargePointStatusTransition::ChangeAvailabilityToUnavailable:
             return trans.set(this->sd_unavailable);
-        case ChargePointStatusTransition::D9_FaultDetected:
+        case ChargePointStatusTransition::FaultDetected:
             return trans.set(this->sd_faulted);
         default:
             return;
@@ -100,18 +98,17 @@ ChargePointStateMachine::ChargePointStateMachine(
 
     this->sd_suspended_evse.transitions = [this](const EventBaseType& ev, TransitionType& trans) {
         switch (ev.id) {
-        case ChargePointStatusTransition::E1_ChargingSessionEndsNoUserActionRequired:
+        case ChargePointStatusTransition::BecomeAvailable:
             return trans.set(this->sd_available);
-        case ChargePointStatusTransition::E3_ChargingResumesEVSERestrictionLifted:
+        case ChargePointStatusTransition::StartCharging:
             return trans.set(this->sd_charging);
-        case ChargePointStatusTransition::E4_EVSERestrictionLiftedEVDoesNotStartCharging:
+        case ChargePointStatusTransition::PauseChargingEV:
             return trans.set(this->sd_suspended_ev);
-        case ChargePointStatusTransition::E6_TransactionStoppedAndUserActionRequired:
+        case ChargePointStatusTransition::TransactionStoppedAndUserActionRequired:
             return trans.set(this->sd_finishing);
-        case ChargePointStatusTransition::
-            E8_ChargingSessionEndsNoUserActionRequiredConnectorScheduledToBecomeUnavailable:
+        case ChargePointStatusTransition::ChangeAvailabilityToUnavailable:
             return trans.set(this->sd_unavailable);
-        case ChargePointStatusTransition::E9_FaultDetected:
+        case ChargePointStatusTransition::FaultDetected:
             return trans.set(this->sd_faulted);
         default:
             return;
@@ -123,13 +120,13 @@ ChargePointStateMachine::ChargePointStateMachine(
 
     this->sd_finishing.transitions = [this](const EventBaseType& ev, TransitionType& trans) {
         switch (ev.id) {
-        case ChargePointStatusTransition::F1_AllUserActionsCompleted:
+        case ChargePointStatusTransition::BecomeAvailable:
             return trans.set(this->sd_available);
-        case ChargePointStatusTransition::F2_UsersRestartChargingSession:
+        case ChargePointStatusTransition::UsageInitiated: // user restarts charging session
             return trans.set(this->sd_preparing);
-        case ChargePointStatusTransition::F8_AllUserActionsCompletedConnectorScheduledToBecomeUnavailable:
+        case ChargePointStatusTransition::ChangeAvailabilityToUnavailable:
             return trans.set(this->sd_unavailable);
-        case ChargePointStatusTransition::F9_FaultDetected:
+        case ChargePointStatusTransition::FaultDetected:
             return trans.set(this->sd_faulted);
         default:
             return;
@@ -141,14 +138,13 @@ ChargePointStateMachine::ChargePointStateMachine(
 
     this->sd_reserved.transitions = [this](const EventBaseType& ev, TransitionType& trans) {
         switch (ev.id) {
-        case ChargePointStatusTransition::G1_ReservationExpiresOrCancelReservationReceived:
+        case ChargePointStatusTransition::BecomeAvailable:
             return trans.set(this->sd_available);
-        case ChargePointStatusTransition::G2_ReservationIdentityPresented:
+        case ChargePointStatusTransition::UsageInitiated:
             return trans.set(this->sd_preparing);
-        case ChargePointStatusTransition::
-            G8_ReservationExpiresOrCancelReservationReceivedConnectorScheduledToBecomeUnavailable:
+        case ChargePointStatusTransition::ChangeAvailabilityToUnavailable:
             return trans.set(this->sd_unavailable);
-        case ChargePointStatusTransition::G9_FaultDetected:
+        case ChargePointStatusTransition::FaultDetected:
             return trans.set(this->sd_faulted);
         default:
             return;
@@ -160,17 +156,17 @@ ChargePointStateMachine::ChargePointStateMachine(
 
     this->sd_unavailable.transitions = [this](const EventBaseType& ev, TransitionType& trans) {
         switch (ev.id) {
-        case ChargePointStatusTransition::H1_ConnectorSetAvailableByChangeAvailability:
+        case ChargePointStatusTransition::BecomeAvailable:
             return trans.set(this->sd_available);
-        case ChargePointStatusTransition::H2_ConnectorSetAvailableAfterUserInteractedWithChargePoint:
+        case ChargePointStatusTransition::UsageInitiated:
             return trans.set(this->sd_preparing);
-        case ChargePointStatusTransition::H3_ConnectorSetAvailableNoUserActionRequiredToStartCharging:
+        case ChargePointStatusTransition::StartCharging:
             return trans.set(this->sd_charging);
-        case ChargePointStatusTransition::H4_ConnectorSetAvailableNoUserActionRequiredEVDoesNotStartCharging:
+        case ChargePointStatusTransition::PauseChargingEV:
             return trans.set(this->sd_suspended_ev);
-        case ChargePointStatusTransition::H5_ConnectorSetAvailableNoUserActionRequiredEVSEDoesNotAllowCharging:
+        case ChargePointStatusTransition::PauseChargingEVSE:
             return trans.set(this->sd_suspended_evse);
-        case ChargePointStatusTransition::H9_FaultDetected:
+        case ChargePointStatusTransition::FaultDetected:
             return trans.set(this->sd_faulted);
         default:
             return;

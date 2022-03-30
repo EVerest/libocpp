@@ -646,13 +646,13 @@ void ChargePoint::handleChangeAvailabilityRequest(Call<ChangeAvailabilityRequest
                         this->enable_evse_callback(connector);
                     }
 
-                    this->status->submit_event(connector, Event_H1_ConnectorSetAvailableByChangeAvailability());
+                    this->status->submit_event(connector, Event_BecomeAvailable());
                 } else {
                     if (this->disable_evse_callback != nullptr) {
                         // TODO(kai): check return value
                         this->disable_evse_callback(connector);
                     }
-                    this->status->submit_event(connector, Event_A8_ChangeAvailabilityToUnavailable());
+                    this->status->submit_event(connector, Event_ChangeAvailabilityToUnavailable());
                 }
             }
         }
@@ -1588,35 +1588,23 @@ bool ChargePoint::stop_session(int32_t connector, DateTime timestamp, double ene
 }
 
 bool ChargePoint::start_charging(int32_t connector) {
-    // FIXME(kai): libfsm
-    // if (this->status[connector]->get_current_state() == ChargePointStatus::SuspendedEV) {
-    //     if (this->status[connector]->resume_ev() == ChargePointStatus::Charging) {
-    //         return true;
-    //     }
-    // }
-    return false;
+    this->status->submit_event(connector, Event_StartCharging());
+    return true;
 }
 
 bool ChargePoint::suspend_charging_ev(int32_t connector) {
-    // FIXME(kai): libfsm
-    // if (this->status[connector]->suspended_ev() == ChargePointStatus::SuspendedEV) {
-    //     return true;
-    // }
-    return false;
+    this->status->submit_event(connector, Event_PauseChargingEV());
+    return true;
 }
 
 bool ChargePoint::suspend_charging_evse(int32_t connector) {
-    // FIXME(kai): libfsm
-    // if (this->status[connector]->suspended_evse() == ChargePointStatus::SuspendedEVSE) {
-    //     return true;
-    // }
-    return false;
+    this->status->submit_event(connector, Event_PauseChargingEVSE());
+    return true;
 }
 
 bool ChargePoint::resume_charging(int32_t connector) {
-    // FIXME(kai): implement
-    // FIXME(kai): libfsm
-    return false;
+    this->status->submit_event(connector, Event_StartCharging());
+    return true;
 }
 
 bool ChargePoint::error(int32_t connector, ChargePointErrorCode error_code) {
