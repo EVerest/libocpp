@@ -10,9 +10,9 @@
 
 #include <ocpp1_6/websocket/websocket_base.hpp>
 
-class ChargePointConfiguration;
-
 namespace ocpp1_6 {
+
+class ChargePointConfiguration;
 
 typedef websocketpp::client<websocketpp::config::asio_tls_client> tls_client;
 typedef websocketpp::lib::shared_ptr<websocketpp::lib::asio::ssl::context> tls_context;

@@ -10,9 +10,9 @@
 
 #include <ocpp1_6/websocket/websocket_base.hpp>
 
-class ChargePointConfiguration;
-
 namespace ocpp1_6 {
+
+class ChargePointConfiguration;
 
 typedef websocketpp::client<websocketpp::config::asio_client> client;
 

@@ -6,9 +6,9 @@
 #include <functional>
 #include <memory>
 
-class ChargePointConfiguration;
-
 namespace ocpp1_6 {
+
+class ChargePointConfiguration;
 
 ///
 /// \brief contains a websocket abstraction

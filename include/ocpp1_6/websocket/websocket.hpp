@@ -8,9 +8,9 @@
 #include <ocpp1_6/websocket/websocket_plain.hpp>
 #include <ocpp1_6/websocket/websocket_tls.hpp>
 
-class ChargePointConfiguration;
-
 namespace ocpp1_6 {
+
+class ChargePointConfiguration;
 
 ///
 /// \brief contains a websocket abstraction that can connect to TLS and non-TLS websocket endpoints

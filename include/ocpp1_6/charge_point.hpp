@@ -10,6 +10,7 @@
 
 #include <everest/timer.hpp>
 
+#include <ocpp1_6/charge_point_configuration.hpp>
 #include <ocpp1_6/charge_point_state_machine.hpp>
 #include <ocpp1_6/charging_session.hpp>
 #include <ocpp1_6/message_queue.hpp>
@@ -36,8 +37,6 @@
 #include <ocpp1_6/websocket/websocket.hpp>
 
 namespace ocpp1_6 {
-
-class ChargePointConfiguration;
 
 /// \brief Contains a ChargePoint implementation compatible with OCPP-J 1.6
 class ChargePoint {

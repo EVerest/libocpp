@@ -15,10 +15,11 @@
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 
-#include <ocpp1_6/charge_point_configuration.hpp>
 #include <ocpp1_6/types.hpp>
 
 namespace ocpp1_6 {
+
+class ChargePointConfiguration;
 
 /// \brief Contains a OCPP message in json form with additional information
 struct EnhancedMessage {
