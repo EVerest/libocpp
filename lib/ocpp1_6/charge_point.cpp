@@ -2,7 +2,6 @@
 // Copyright 2020 - 2022 Pionix GmbH and Contributors to EVerest
 #include <thread>
 
-#include <boost/bind/bind.hpp>
 #include <date/date.h>
 #include <everest/logging.hpp>
 

@@ -1419,8 +1419,7 @@ boost::optional<KeyValue> ChargePointConfiguration::get(CiString50Type key) {
     }
 
     // Smart Charging
-    if (this->supported_feature_profiles.count(SupportedFeatureProfiles::SmartCharging))
-    {
+    if (this->supported_feature_profiles.count(SupportedFeatureProfiles::SmartCharging)) {
         if (key == "ChargeProfileMaxStackLevel") {
             return this->getChargeProfileMaxStackLevelKeyValue();
         }
