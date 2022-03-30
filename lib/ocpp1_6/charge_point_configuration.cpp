@@ -314,7 +314,6 @@ std::vector<MeasurandWithPhase> ChargePointConfiguration::csv_to_measurand_with_
     for (auto m : measurand_with_phase_vector) {
         if (!m.phase) {
             EVLOG(debug) << "measurand without phase: " << m.measurand;
-
         } else {
             EVLOG(debug) << "measurand: " << m.measurand
                          << " with phase: " << ocpp1_6::conversions::phase_to_string(m.phase.value());
@@ -327,7 +326,6 @@ bool ChargePointConfiguration::measurands_supported(std::string csv) {
     auto requested_measurands = this->csv_to_measurand_with_phase_vector(csv);
     // check if the requested measurands are supported, otherwise return false
     for (auto req : requested_measurands) {
-        EVLOG(error) << "requested_measurand: " << conversions::measurand_to_string(req.measurand);
         if (this->supported_measurands.count(req.measurand) == 0) {
             return false;
         }
@@ -335,7 +333,6 @@ bool ChargePointConfiguration::measurands_supported(std::string csv) {
         if (req.phase) {
             auto phase = req.phase.value();
             auto measurand = this->supported_measurands[req.measurand];
-            EVLOG(error) << "  there was specific phase requested...: " << conversions::phase_to_string(phase);
 
             if (std::find(measurand.begin(), measurand.end(), phase) == measurand.end()) {
                 // phase not found, this is an error
@@ -545,7 +542,7 @@ boost::optional<IdTagInfo> ChargePointConfiguration::getAuthorizationCacheEntry(
 
     IdTagInfo idTagInfo;
     std::string auth_status_str = std::string(reinterpret_cast<const char*>(sqlite3_column_text(select_statement, 1)));
-    EVLOG(error) << "auth_status_str: " << auth_status_str;
+
     idTagInfo.status = conversions::string_to_authorization_status(auth_status_str);
     auto expiry_date_ptr = sqlite3_column_text(select_statement, 2);
     if (expiry_date_ptr != nullptr) {

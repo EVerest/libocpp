@@ -191,13 +191,10 @@ ChargingSessions::ChargingSessions(int32_t number_of_connectors) : number_of_con
 }
 
 int32_t ChargingSessions::add_authorized_token(CiString20Type idTag, IdTagInfo idTagInfo) {
-    // EVLOG(error) << "add token thingy";
     return this->add_authorized_token(0, idTag, idTagInfo);
 }
 
 int32_t ChargingSessions::add_authorized_token(int32_t connector, CiString20Type idTag, IdTagInfo idTagInfo) {
-    EVLOG(critical) << "add_authorized_token to connector " << connector;
-
     if (!this->valid_connector(connector)) {
         return -1;
     }
@@ -230,7 +227,6 @@ int32_t ChargingSessions::add_authorized_token(int32_t connector, CiString20Type
                 // do not add a authorized token to a running charging session
                 return -1;
             }
-            EVLOG(info) << "Adding authorized token " << authorized_token->idTag;
             this->charging_sessions.at(connector)->add_authorized_token(std::move(authorized_token));
         }
     }
