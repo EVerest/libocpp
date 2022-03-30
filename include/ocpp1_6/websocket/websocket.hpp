@@ -17,11 +17,8 @@ namespace ocpp1_6 {
 ///
 class Websocket {
 private:
-    std::shared_ptr<ChargePointConfiguration> configuration;
-    std::unique_ptr<WebsocketPlain> websocket_plain;
-    std::unique_ptr<WebsocketTLS> websocket_tls;
+    std::unique_ptr<WebsocketBase> websocket;
     std::string uri;
-    bool tls;
     bool shutting_down;
 
 public:
