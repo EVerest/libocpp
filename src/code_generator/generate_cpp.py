@@ -57,7 +57,9 @@ env = Environment(
 env.filters['snake_case'] = snake_case
 env.globals['timestamp'] = datetime.utcnow
 env.globals['year'] = datetime.utcnow().year
-action_template = env.get_template('action.py.jinja')
+message_hpp_template = env.get_template('message.hpp.jinja')
+message_cpp_template = env.get_template('message.cpp.jinja')
+messages_cmakelists_txt_template = env.get_template('messages.cmakelists.txt.jinja')
 enums_hpp_template = env.get_template('enums.hpp.jinja')
 enums_cpp_template = env.get_template('enums.cpp.jinja')
 ocpp_types_hpp_template = env.get_template('ocpp_types.hpp.jinja')
@@ -72,6 +74,7 @@ current_defs: Dict = {}
 
 format_types = dict()
 format_types['date-time'] = 'DateTime'
+format_types['uri'] = 'std::string' # FIXME(kai): add proper URI type
 
 enum_types = dict()
 
@@ -328,13 +331,17 @@ def parse_schemas(version: str, schema_dir: Path = Path('schemas/json/'),
     enums_cpp_fn = Path(generated_source_dir, 'enums.cpp')
     ocpp_types_hpp_fn = Path(generated_header_dir, 'ocpp_types.hpp')
     ocpp_types_cpp_fn = Path(generated_source_dir, 'ocpp_types.cpp')
-    messages_dir = generated_header_dir / 'messages'
-    action_list = dict()
+    messages_header_dir = generated_header_dir / 'messages'
+    messages_source_dir = generated_source_dir / 'messages'
+    messages_cmakelists_txt_fn = Path(messages_source_dir, 'CMakeLists.txt')
+    message_files = []
     first = True
     for action, type_of_action in schemas.items():
-        action_list[action] = messages_dir
-        if not messages_dir.exists():
-            messages_dir.mkdir(parents=True)
+        message_files.append(action)
+        if not messages_header_dir.exists():
+            messages_header_dir.mkdir(parents=True)
+        if not messages_source_dir.exists():
+            messages_source_dir.mkdir(parents=True)
         writemode = dict()
         writemode['req'] = 'w'
         writemode['res'] = 'a+'
@@ -368,9 +375,21 @@ def parse_schemas(version: str, schema_dir: Path = Path('schemas/json/'),
 
                 sorted_types.insert(insert_at, class_type)
 
-            generated_class_fn = Path(messages_dir, action + '.hpp')
-            with open(generated_class_fn, writemode[type_key]) as out:
-                out.write(action_template.render({
+            generated_class_hpp_fn = Path(messages_header_dir, action + '.hpp')
+            with open(generated_class_hpp_fn, writemode[type_key]) as out:
+                out.write(message_hpp_template.render({
+                    'types': sorted_types,
+                    'enum_types': parsed_enums,
+                    'action': {
+                        'name': action,
+                        'class_name': action_class_name,
+                        'type_key': type_key,
+                        'is_request': (type_name == 'Request')
+                    }
+                }))
+            generated_class_cpp_fn = Path(messages_source_dir, action + '.cpp')
+            with open(generated_class_cpp_fn, writemode[type_key]) as out:
+                out.write(message_cpp_template.render({
                     'types': sorted_types,
                     'enum_types': parsed_enums,
                     'action': {
@@ -423,6 +442,10 @@ def parse_schemas(version: str, schema_dir: Path = Path('schemas/json/'),
                 }))
             first = False
 
+    with open(messages_cmakelists_txt_fn, 'w') as out:
+        out.write(messages_cmakelists_txt_template.render({
+            'messages': message_files
+        }))
     with open(enums_hpp_fn, 'a+') as out:
         out.write(enums_hpp_template.render({
             'last': True
@@ -442,7 +465,9 @@ def parse_schemas(version: str, schema_dir: Path = Path('schemas/json/'),
 
     # clang-format generated files
     subprocess.run(["sh", "-c", "find {} -regex '.*\\.\\(cpp\\|hpp\\)' -exec clang-format -style=file -i {{}} \\;".format(
-        messages_dir)], cwd=messages_dir)
+        messages_header_dir)], cwd=messages_header_dir)
+    subprocess.run(["sh", "-c", "find {} -regex '.*\\.\\(cpp\\|hpp\\)' -exec clang-format -style=file -i {{}} \\;".format(
+        messages_source_dir)], cwd=messages_source_dir)
     subprocess.run(["clang-format", "-style=file",  "-i",
                    enums_hpp_fn, ocpp_types_hpp_fn], cwd=generated_header_dir)
     subprocess.run(["clang-format", "-style=file",  "-i",

@@ -20,6 +20,9 @@ target_sources(ocpp
         ocpp1_6/types_internal.cpp
         ocpp1_6/websocket.cpp
 )
+
+add_subdirectory(ocpp1_6/messages)
+
 target_include_directories(ocpp PUBLIC ${INCLUDE_DIR} ${websocketpp_SOURCE_DIR})
 target_link_libraries(ocpp
     PRIVATE
