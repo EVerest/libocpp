@@ -2,6 +2,7 @@
 // Copyright 2020 - 2022 Pionix GmbH and Contributors to EVerest
 #include <everest/logging.hpp>
 
+#include <ocpp1_6/charge_point_configuration.hpp>
 #include <ocpp1_6/websocket.hpp>
 
 namespace ocpp1_6 {

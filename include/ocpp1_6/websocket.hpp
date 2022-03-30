@@ -8,9 +8,7 @@
 #include <websocketpp/client.hpp>
 #include <websocketpp/config/asio_client.hpp>
 
-#include <everest/timer.hpp>
-
-#include <ocpp1_6/charge_point_configuration.hpp>
+class ChargePointConfiguration;
 
 namespace ocpp1_6 {
 
