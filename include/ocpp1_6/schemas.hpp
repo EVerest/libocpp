@@ -22,8 +22,8 @@ namespace ocpp1_6 {
 /// \brief Contains the json schema validation for the libocpp config
 class Schemas {
 private:
-    std::map<std::string, json> profile_schemas;
-    std::map<std::string, std::shared_ptr<json_validator>> profile_validators;
+    json profile_schema;
+    std::shared_ptr<json_validator> profile_validator;
     boost::filesystem::path profile_schemas_path;
     std::set<boost::filesystem::path> available_schemas_paths;
     const static std::vector<std::string> profiles;
