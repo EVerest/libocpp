@@ -465,7 +465,6 @@ std::vector<MeterValue> ChargingSessions::get_clock_aligned_meter_values(int32_t
 }
 
 
-
 Reservations::Reservations() {
 
 }
@@ -478,7 +477,7 @@ std::set<int32_t> Reservations::get_reserved_ids() {
     return ids;
 }
 
-int32_t Reservations::get_unreserved_connector(int32_t query_connector, std::map<int32_t, ocpp1_6::AvailabilityType> availability, std::shared_ptr<ChargePointConfiguration> cpConfiguration) {
+int32_t Reservations::get_unreserved_connector(int32_t query_connector, std::map<int32_t, ocpp1_6::AvailabilityType> availability) {
     int32_t current_reservations = 0;
     std::set<int32_t> reserved_connectors = get_reserved_connectors();
 
@@ -516,7 +515,7 @@ int32_t Reservations::get_unreserved_connector(int32_t query_connector, std::map
         } else if (availability[query_connector] == AvailabilityType::Inoperative && current_reservations == 0) {
             // TODO: Critical: Either the connector is genuinely in use, or the device crashed... Did it?
             EVLOG(debug) << "Persistent storage says that connector is inoperative, but it isn't reserved.";
-            cpConfiguration->setConnectorAvailability(query_connector, AvailabilityType::Operative); // to unbrick the connector
+            // cpConfiguration->setConnectorAvailability(query_connector, AvailabilityType::Operative); // to unbrick the connector
             return this->no_connectors_available;
         } else {
             EVLOG(debug) << "No connectors available, query connector: " << query_connector;
@@ -546,7 +545,7 @@ ReservationStatus Reservations::reserve_now(int32_t reservationId, int32_t conne
         // TODO: reserve now enum answer - let the enum drive the cache content...
         return ReservationStatus::Accepted;
     } else {
-        int32_t to_be_reserved = this->get_unreserved_connector(connectorId, cpConfiguration->getConnectorAvailability(), cpConfiguration);
+        int32_t to_be_reserved = this->get_unreserved_connector(connectorId, cpConfiguration->getConnectorAvailability());
 
         if (to_be_reserved == 0) {
             // Always select a specific connector, because the evsim managers need to know whether they are responsible for a certain charge procedure or not.

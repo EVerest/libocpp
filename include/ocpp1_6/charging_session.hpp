@@ -280,21 +280,6 @@ private:
     int32_t no_connectors_available = -1;
     int32_t error_unexpected_state = -2;
 
-public:
-    /// \brief Manage reservations
-    /// \returns None
-    Reservations();
-
-    /// \brief Attempts to reserve a connector on the charge_point
-    /// \returns ReserverationStatus after having processed the request
-    ReservationStatus reserve_now(int32_t reservationId, int32_t connectorId, DateTime expiryDate, CiString20Type idTag, std::shared_ptr<ChargePointConfiguration> cpConfiguration);
-
-    
-    /// \brief Attempts to cancel a reservation on the charge_point
-    /// \returns CancelReservationStatus::Accepted if successful, else CancelReservationStatus::Rejected
-    CancelReservationStatus cancel_reservation(int32_t reservationId, std::shared_ptr<ChargePointConfiguration> cpConfiguration);
-
-
     // Make generic if we need to access other elements from the tuple as well
     std::set<int32_t> get_reserved_connectors() {
         std::set<int32_t> value;
@@ -308,8 +293,20 @@ public:
 
     /// \brief check the specified connector is currently available and unreserved, search for vacant connector if connecotrId is zero
     /// \return return the vacant connectorId if found, return -1 if not found
-    int32_t get_unreserved_connector(int32_t query_connector, std::map<int32_t, ocpp1_6::AvailabilityType> availability, std::shared_ptr<ChargePointConfiguration> cpConfiguration);
+    int32_t get_unreserved_connector(int32_t query_connector, std::map<int32_t, ocpp1_6::AvailabilityType> availability);
 
+public:
+    /// \brief Manage reservations
+    /// \returns None
+    Reservations();
+
+    /// \brief Attempts to reserve a connector on the charge_point
+    /// \returns ReserverationStatus after having processed the request
+    ReservationStatus reserve_now(int32_t reservationId, int32_t connectorId, DateTime expiryDate, CiString20Type idTag, std::shared_ptr<ChargePointConfiguration> cpConfiguration);
+    
+    /// \brief Attempts to cancel a reservation on the charge_point
+    /// \returns CancelReservationStatus::Accepted if successful, else CancelReservationStatus::Rejected
+    CancelReservationStatus cancel_reservation(int32_t reservationId, std::shared_ptr<ChargePointConfiguration> cpConfiguration);
 
 };
 
