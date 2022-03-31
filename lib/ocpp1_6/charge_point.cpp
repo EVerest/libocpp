@@ -850,6 +850,7 @@ void ChargePoint::handleRemoteStopTransactionRequest(Call<RemoteStopTransactionR
     this->send<RemoteStopTransactionResponse>(call_result);
 
     if (connector > 0) {
+        this->cancel_charging_callback(connector);
         this->charging_sessions->add_stop_energy_wh(
             connector, std::make_shared<StampedEnergyWh>(DateTime(), this->get_meter_wh(connector)));
         {
