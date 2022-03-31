@@ -718,7 +718,7 @@ void ChargePoint::handleDataTransferRequest(Call<DataTransferRequest> call) {
     DataTransferResponse response;
 
     auto vendorId = call.msg.vendorId.get();
-    auto messageId = call.msg.messageId.get_value_or(std::string("")).get();
+    auto messageId = call.msg.messageId.get_value_or(CiString50Type()).get();
     std::function<void(const std::string data)> callback;
     {
         std::lock_guard<std::mutex> lock(data_transfer_callbacks_mutex);
@@ -1068,7 +1068,7 @@ void ChargePoint::handleGetCompositeScheduleRequest(Call<GetCompositeScheduleReq
                 }
                 if (profile.second.validTo) {
                     // check if this profile is even valid
-                    if (start_time > profile.second.validTo.value()) {
+                    if (start_time > profile.second.validTo.value().to_time_point()) {
                         // profile only valid before the requested dura>tion
                         continue;
                     } else {

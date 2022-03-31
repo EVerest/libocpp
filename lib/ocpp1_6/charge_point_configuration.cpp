@@ -201,52 +201,52 @@ std::string ChargePointConfiguration::getChargePointId() {
 std::string ChargePointConfiguration::getCentralSystemURI() {
     return this->config["Internal"]["CentralSystemURI"];
 }
-boost::optional<std::string> ChargePointConfiguration::getChargeBoxSerialNumber() {
-    boost::optional<std::string> charge_box_serial_number = boost::none;
+boost::optional<CiString25Type> ChargePointConfiguration::getChargeBoxSerialNumber() {
+    boost::optional<CiString25Type> charge_box_serial_number = boost::none;
     if (this->config["Internal"].contains("ChargeBoxSerialNumber")) {
         charge_box_serial_number.emplace(this->config["Internal"]["ChargeBoxSerialNumber"]);
     }
     return charge_box_serial_number;
 }
-std::string ChargePointConfiguration::getChargePointModel() {
-    return this->config["Internal"]["ChargePointModel"];
+CiString20Type ChargePointConfiguration::getChargePointModel() {
+    return CiString20Type(this->config["Internal"]["ChargePointModel"]);
 }
-boost::optional<std::string> ChargePointConfiguration::getChargePointSerialNumber() {
-    boost::optional<std::string> charge_point_serial_number = boost::none;
+boost::optional<CiString25Type> ChargePointConfiguration::getChargePointSerialNumber() {
+    boost::optional<CiString25Type> charge_point_serial_number = boost::none;
     if (this->config["Internal"].contains("ChargePointSerialNumber")) {
         charge_point_serial_number.emplace(this->config["Internal"]["ChargePointSerialNumber"]);
     }
     return charge_point_serial_number;
 }
-std::string ChargePointConfiguration::getChargePointVendor() {
-    return this->config["Internal"]["ChargePointVendor"];
+CiString20Type ChargePointConfiguration::getChargePointVendor() {
+    return CiString20Type(this->config["Internal"]["ChargePointVendor"]);
 }
-std::string ChargePointConfiguration::getFirmwareVersion() {
-    return this->config["Internal"]["FirmwareVersion"];
+CiString50Type ChargePointConfiguration::getFirmwareVersion() {
+    return CiString50Type(this->config["Internal"]["FirmwareVersion"]);
 }
-boost::optional<std::string> ChargePointConfiguration::getICCID() {
-    boost::optional<std::string> iccid = boost::none;
+boost::optional<CiString20Type> ChargePointConfiguration::getICCID() {
+    boost::optional<CiString20Type> iccid = boost::none;
     if (this->config["Internal"].contains("ICCID")) {
         iccid.emplace(this->config["Internal"]["ICCID"]);
     }
     return iccid;
 }
-boost::optional<std::string> ChargePointConfiguration::getIMSI() {
-    boost::optional<std::string> imsi = boost::none;
+boost::optional<CiString20Type> ChargePointConfiguration::getIMSI() {
+    boost::optional<CiString20Type> imsi = boost::none;
     if (this->config["Internal"].contains("IMSI")) {
         imsi.emplace(this->config["Internal"]["IMSI"]);
     }
     return imsi;
 }
-boost::optional<std::string> ChargePointConfiguration::getMeterSerialNumber() {
-    boost::optional<std::string> meter_serial_number = boost::none;
+boost::optional<CiString25Type> ChargePointConfiguration::getMeterSerialNumber() {
+    boost::optional<CiString25Type> meter_serial_number = boost::none;
     if (this->config["Internal"].contains("MeterSerialNumber")) {
         meter_serial_number.emplace(this->config["Internal"]["MeterSerialNumber"]);
     }
     return meter_serial_number;
 }
-boost::optional<std::string> ChargePointConfiguration::getMeterType() {
-    boost::optional<std::string> meter_type = boost::none;
+boost::optional<CiString25Type> ChargePointConfiguration::getMeterType() {
+    boost::optional<CiString25Type> meter_type = boost::none;
     if (this->config["Internal"].contains("MeterType")) {
         meter_type.emplace(this->config["Internal"]["MeterType"]);
     }

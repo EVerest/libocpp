@@ -542,6 +542,16 @@ DateTime::DateTime(std::chrono::time_point<std::chrono::system_clock> timepoint)
 DateTime::DateTime(const std::string& timepoint_str) : DateTimeImpl(timepoint_str) {
 }
 
+DateTime& DateTime::operator=(const std::string& s) {
+    this->from_rfc3339(s);
+    return *this;
+}
+
+DateTime& DateTime::operator=(const char* c) {
+    this->from_rfc3339(std::string(c));
+    return *this;
+}
+
 bool MeasurandWithPhase::operator==(MeasurandWithPhase measurand_with_phase) {
     if (this->measurand == measurand_with_phase.measurand) {
         if (this->phase || measurand_with_phase.phase) {

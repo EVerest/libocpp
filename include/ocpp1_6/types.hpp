@@ -140,10 +140,10 @@ std::ostream& operator<<(std::ostream& os, const MessageType& message_type);
 class CiString20Type : public CiString {
 public:
     /// \brief Creates a case insensitive string from the given string \p data and a maximum length of 20
-    CiString20Type(const std::string& data);
+    explicit CiString20Type(const std::string& data);
 
     /// \brief Creates a case insensitive string from the given json \p data and a maximum length of 20
-    CiString20Type(const json& data);
+    explicit CiString20Type(const json& data);
 
     /// \brief Creates a case insensitive string with a maximum length of 20
     CiString20Type();
@@ -168,10 +168,10 @@ void from_json(const json& j, CiString20Type& k);
 class CiString25Type : public CiString {
 public:
     /// \brief Creates a case insensitive string from the given string \p data and a maximum length of 25
-    CiString25Type(const std::string& data);
+    explicit CiString25Type(const std::string& data);
 
     /// \brief Creates a case insensitive string from the given json \p data and a maximum length of 25
-    CiString25Type(const json& data);
+    explicit CiString25Type(const json& data);
 
     /// \brief Creates a case insensitive string with a maximum length of 20
     CiString25Type();
@@ -196,10 +196,10 @@ void from_json(const json& j, CiString25Type& k);
 class CiString50Type : public CiString {
 public:
     /// \brief Creates a case insensitive string from the given string \p data and a maximum length of 50
-    CiString50Type(const std::string& data);
+    explicit CiString50Type(const std::string& data);
 
     /// \brief Creates a case insensitive string from the given json \p data and a maximum length of 50
-    CiString50Type(const json& data);
+    explicit CiString50Type(const json& data);
     /// \brief Creates a case insensitive string with a maximum length of 50
     CiString50Type();
 
@@ -223,10 +223,10 @@ void from_json(const json& j, CiString50Type& k);
 class CiString255Type : public CiString {
 public:
     /// \brief Creates a case insensitive string from the given string \p data and a maximum length of 255
-    CiString255Type(const std::string& data);
+    explicit CiString255Type(const std::string& data);
 
     /// \brief Creates a case insensitive string from the given json \p data and a maximum length of 255
-    CiString255Type(const json& data);
+    explicit CiString255Type(const json& data);
 
     /// \brief Creates a case insensitive string with a maximum length of 255
     CiString255Type();
@@ -252,10 +252,10 @@ class CiString500Type : public CiString {
 public:
     /// \brief Creates a case insensitive string from the given string \p data and a maximum length of 500
 
-    CiString500Type(const std::string& data);
+    explicit CiString500Type(const std::string& data);
 
     /// \brief Creates a case insensitive string from the given json \p data and a maximum length of 500
-    CiString500Type(const json& data);
+    explicit CiString500Type(const json& data);
 
     /// \brief Creates a case insensitive string with a maximum length of 500
     CiString500Type();
@@ -281,7 +281,7 @@ void from_json(const json& j, CiString500Type& k);
 class MessageId : public CiString {
 public:
     /// \brief Creates a case insensitive MessageId from the given string \p data and a maximum length of 36
-    MessageId(const std::string& data);
+    explicit MessageId(const std::string& data);
 
     /// \brief Creates a case insensitive MessageId with a maximum length of 36
     MessageId();
@@ -315,10 +315,16 @@ public:
     DateTime();
 
     /// \brief Creates a new DateTime object from the given \p timepoint
-    DateTime(std::chrono::time_point<std::chrono::system_clock> timepoint);
+    explicit DateTime(std::chrono::time_point<std::chrono::system_clock> timepoint);
 
     /// \brief Creates a new DateTime object from the given \p timepoint_str
-    DateTime(const std::string& timepoint_str);
+    explicit DateTime(const std::string& timepoint_str);
+
+    /// \brief Assignment operator= that converts a given string \p s into a DateTime
+    DateTime& operator=(const std::string& s);
+
+    /// \brief Assignment operator= that converts a given char* \p c into a DateTime
+    DateTime& operator=(const char* c);
 };
 
 /// \brief Combines a Measurand with an optional Phase
