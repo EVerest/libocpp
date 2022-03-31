@@ -22,7 +22,7 @@ namespace conversions {
         throw std::out_of_range("No known string conversion for provided enum of type {{ enum_type.name }}");
     }
 
-    {{ enum_type.name }} string_to_{{ enum_type.name | snake_case }}(std::string s) {
+    {{ enum_type.name }} string_to_{{ enum_type.name | snake_case }}(const std::string& s) {
         {% for enum in enum_type.enums %}
         if(s == "{{enum}}") {
             return {{ enum_type.name }}::{{ enum.replace('.', '_').replace('-', '_') }};

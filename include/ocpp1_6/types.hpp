@@ -113,7 +113,7 @@ std::string messagetype_to_string(MessageType m);
 
 /// \brief Converts the given std::string \p s to MessageType
 /// \returns a MessageType from a string representation
-MessageType string_to_messagetype(std::string s);
+MessageType string_to_messagetype(const std::string& s);
 
 /// \brief Converts the given bool \p b to a string representation of "true" or "false"
 /// \returns a string representation of the given bool
@@ -462,7 +462,7 @@ std::string charge_point_connection_state_to_string(ChargePointConnectionState e
 
 /// \brief Converts the given std::string \p s to ChargePointConnectionState
 /// \returns a ChargePointConnectionState from a string representation
-ChargePointConnectionState string_to_charge_point_connection_state(std::string s);
+ChargePointConnectionState string_to_charge_point_connection_state(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given \p charge_point_connection_state
@@ -486,7 +486,7 @@ std::string supported_feature_profiles_to_string(SupportedFeatureProfiles e);
 
 /// \brief Converts the given std::string \p s to SupportedFeatureProfiles
 /// \returns a SupportedFeatureProfiles from a string representation
-SupportedFeatureProfiles string_to_supported_feature_profiles(std::string s);
+SupportedFeatureProfiles string_to_supported_feature_profiles(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given \p supported_feature_profiles to the given output stream \p os

@@ -132,7 +132,7 @@ std::string messagetype_to_string(MessageType m) {
     throw std::out_of_range("No known string conversion for provided enum of type MessageType");
 }
 
-MessageType string_to_messagetype(std::string s) {
+MessageType string_to_messagetype(const std::string& s) {
     if (s == "Authorize") {
         return MessageType::Authorize;
     }
@@ -618,7 +618,7 @@ std::string charge_point_connection_state_to_string(ChargePointConnectionState e
     throw std::out_of_range("No known string conversion for provided enum of type ChargePointConnectionState");
 }
 
-ChargePointConnectionState string_to_charge_point_connection_state(std::string s) {
+ChargePointConnectionState string_to_charge_point_connection_state(const std::string& s) {
     if (s == "Disconnected") {
         return ChargePointConnectionState::Disconnected;
     }
@@ -669,7 +669,7 @@ std::string supported_feature_profiles_to_string(SupportedFeatureProfiles e) {
 
 /// \brief Converts the given std::string \p s to SupportedFeatureProfiles
 /// \returns a SupportedFeatureProfiles from a string representation
-SupportedFeatureProfiles string_to_supported_feature_profiles(std::string s) {
+SupportedFeatureProfiles string_to_supported_feature_profiles(const std::string& s) {
     if (s == "Core") {
         return SupportedFeatureProfiles::Core;
     }

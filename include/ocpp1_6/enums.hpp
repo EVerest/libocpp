@@ -24,7 +24,7 @@ std::string authorization_status_to_string(AuthorizationStatus e);
 
 /// \brief Converts the given std::string \p s to AuthorizationStatus
 /// \returns a AuthorizationStatus from a string representation
-AuthorizationStatus string_to_authorization_status(std::string s);
+AuthorizationStatus string_to_authorization_status(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given AuthorizationStatus \p authorization_status to the given output
@@ -46,7 +46,7 @@ std::string registration_status_to_string(RegistrationStatus e);
 
 /// \brief Converts the given std::string \p s to RegistrationStatus
 /// \returns a RegistrationStatus from a string representation
-RegistrationStatus string_to_registration_status(std::string s);
+RegistrationStatus string_to_registration_status(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given RegistrationStatus \p registration_status to the given output
@@ -67,7 +67,7 @@ std::string cancel_reservation_status_to_string(CancelReservationStatus e);
 
 /// \brief Converts the given std::string \p s to CancelReservationStatus
 /// \returns a CancelReservationStatus from a string representation
-CancelReservationStatus string_to_cancel_reservation_status(std::string s);
+CancelReservationStatus string_to_cancel_reservation_status(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given CancelReservationStatus \p cancel_reservation_status to the
@@ -88,7 +88,7 @@ std::string availability_type_to_string(AvailabilityType e);
 
 /// \brief Converts the given std::string \p s to AvailabilityType
 /// \returns a AvailabilityType from a string representation
-AvailabilityType string_to_availability_type(std::string s);
+AvailabilityType string_to_availability_type(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given AvailabilityType \p availability_type to the given output
@@ -110,7 +110,7 @@ std::string availability_status_to_string(AvailabilityStatus e);
 
 /// \brief Converts the given std::string \p s to AvailabilityStatus
 /// \returns a AvailabilityStatus from a string representation
-AvailabilityStatus string_to_availability_status(std::string s);
+AvailabilityStatus string_to_availability_status(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given AvailabilityStatus \p availability_status to the given output
@@ -133,7 +133,7 @@ std::string configuration_status_to_string(ConfigurationStatus e);
 
 /// \brief Converts the given std::string \p s to ConfigurationStatus
 /// \returns a ConfigurationStatus from a string representation
-ConfigurationStatus string_to_configuration_status(std::string s);
+ConfigurationStatus string_to_configuration_status(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ConfigurationStatus \p configuration_status to the given output
@@ -154,7 +154,7 @@ std::string clear_cache_status_to_string(ClearCacheStatus e);
 
 /// \brief Converts the given std::string \p s to ClearCacheStatus
 /// \returns a ClearCacheStatus from a string representation
-ClearCacheStatus string_to_clear_cache_status(std::string s);
+ClearCacheStatus string_to_clear_cache_status(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ClearCacheStatus \p clear_cache_status to the given output
@@ -176,7 +176,7 @@ std::string charging_profile_purpose_type_to_string(ChargingProfilePurposeType e
 
 /// \brief Converts the given std::string \p s to ChargingProfilePurposeType
 /// \returns a ChargingProfilePurposeType from a string representation
-ChargingProfilePurposeType string_to_charging_profile_purpose_type(std::string s);
+ChargingProfilePurposeType string_to_charging_profile_purpose_type(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ChargingProfilePurposeType \p charging_profile_purpose_type to
@@ -197,7 +197,7 @@ std::string clear_charging_profile_status_to_string(ClearChargingProfileStatus e
 
 /// \brief Converts the given std::string \p s to ClearChargingProfileStatus
 /// \returns a ClearChargingProfileStatus from a string representation
-ClearChargingProfileStatus string_to_clear_charging_profile_status(std::string s);
+ClearChargingProfileStatus string_to_clear_charging_profile_status(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ClearChargingProfileStatus \p clear_charging_profile_status to
@@ -220,7 +220,7 @@ std::string data_transfer_status_to_string(DataTransferStatus e);
 
 /// \brief Converts the given std::string \p s to DataTransferStatus
 /// \returns a DataTransferStatus from a string representation
-DataTransferStatus string_to_data_transfer_status(std::string s);
+DataTransferStatus string_to_data_transfer_status(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given DataTransferStatus \p data_transfer_status to the given output
@@ -243,7 +243,7 @@ std::string diagnostics_status_to_string(DiagnosticsStatus e);
 
 /// \brief Converts the given std::string \p s to DiagnosticsStatus
 /// \returns a DiagnosticsStatus from a string representation
-DiagnosticsStatus string_to_diagnostics_status(std::string s);
+DiagnosticsStatus string_to_diagnostics_status(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given DiagnosticsStatus \p diagnostics_status to the given output
@@ -269,7 +269,7 @@ std::string firmware_status_to_string(FirmwareStatus e);
 
 /// \brief Converts the given std::string \p s to FirmwareStatus
 /// \returns a FirmwareStatus from a string representation
-FirmwareStatus string_to_firmware_status(std::string s);
+FirmwareStatus string_to_firmware_status(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given FirmwareStatus \p firmware_status to the given output stream \p
@@ -290,7 +290,7 @@ std::string charging_rate_unit_to_string(ChargingRateUnit e);
 
 /// \brief Converts the given std::string \p s to ChargingRateUnit
 /// \returns a ChargingRateUnit from a string representation
-ChargingRateUnit string_to_charging_rate_unit(std::string s);
+ChargingRateUnit string_to_charging_rate_unit(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ChargingRateUnit \p charging_rate_unit to the given output
@@ -311,7 +311,7 @@ std::string get_composite_schedule_status_to_string(GetCompositeScheduleStatus e
 
 /// \brief Converts the given std::string \p s to GetCompositeScheduleStatus
 /// \returns a GetCompositeScheduleStatus from a string representation
-GetCompositeScheduleStatus string_to_get_composite_schedule_status(std::string s);
+GetCompositeScheduleStatus string_to_get_composite_schedule_status(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given GetCompositeScheduleStatus \p get_composite_schedule_status to
@@ -338,7 +338,7 @@ std::string reading_context_to_string(ReadingContext e);
 
 /// \brief Converts the given std::string \p s to ReadingContext
 /// \returns a ReadingContext from a string representation
-ReadingContext string_to_reading_context(std::string s);
+ReadingContext string_to_reading_context(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ReadingContext \p reading_context to the given output stream \p
@@ -359,7 +359,7 @@ std::string value_format_to_string(ValueFormat e);
 
 /// \brief Converts the given std::string \p s to ValueFormat
 /// \returns a ValueFormat from a string representation
-ValueFormat string_to_value_format(std::string s);
+ValueFormat string_to_value_format(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ValueFormat \p value_format to the given output stream \p os
@@ -400,7 +400,7 @@ std::string measurand_to_string(Measurand e);
 
 /// \brief Converts the given std::string \p s to Measurand
 /// \returns a Measurand from a string representation
-Measurand string_to_measurand(std::string s);
+Measurand string_to_measurand(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given Measurand \p measurand to the given output stream \p os
@@ -429,7 +429,7 @@ std::string phase_to_string(Phase e);
 
 /// \brief Converts the given std::string \p s to Phase
 /// \returns a Phase from a string representation
-Phase string_to_phase(std::string s);
+Phase string_to_phase(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given Phase \p phase to the given output stream \p os
@@ -453,7 +453,7 @@ std::string location_to_string(Location e);
 
 /// \brief Converts the given std::string \p s to Location
 /// \returns a Location from a string representation
-Location string_to_location(std::string s);
+Location string_to_location(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given Location \p location to the given output stream \p os
@@ -489,7 +489,7 @@ std::string unit_of_measure_to_string(UnitOfMeasure e);
 
 /// \brief Converts the given std::string \p s to UnitOfMeasure
 /// \returns a UnitOfMeasure from a string representation
-UnitOfMeasure string_to_unit_of_measure(std::string s);
+UnitOfMeasure string_to_unit_of_measure(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given UnitOfMeasure \p unit_of_measure to the given output stream \p
@@ -511,7 +511,7 @@ std::string charging_profile_kind_type_to_string(ChargingProfileKindType e);
 
 /// \brief Converts the given std::string \p s to ChargingProfileKindType
 /// \returns a ChargingProfileKindType from a string representation
-ChargingProfileKindType string_to_charging_profile_kind_type(std::string s);
+ChargingProfileKindType string_to_charging_profile_kind_type(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ChargingProfileKindType \p charging_profile_kind_type to the
@@ -532,7 +532,7 @@ std::string recurrency_kind_type_to_string(RecurrencyKindType e);
 
 /// \brief Converts the given std::string \p s to RecurrencyKindType
 /// \returns a RecurrencyKindType from a string representation
-RecurrencyKindType string_to_recurrency_kind_type(std::string s);
+RecurrencyKindType string_to_recurrency_kind_type(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given RecurrencyKindType \p recurrency_kind_type to the given output
@@ -553,7 +553,7 @@ std::string remote_start_stop_status_to_string(RemoteStartStopStatus e);
 
 /// \brief Converts the given std::string \p s to RemoteStartStopStatus
 /// \returns a RemoteStartStopStatus from a string representation
-RemoteStartStopStatus string_to_remote_start_stop_status(std::string s);
+RemoteStartStopStatus string_to_remote_start_stop_status(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given RemoteStartStopStatus \p remote_start_stop_status to the given
@@ -577,7 +577,7 @@ std::string reservation_status_to_string(ReservationStatus e);
 
 /// \brief Converts the given std::string \p s to ReservationStatus
 /// \returns a ReservationStatus from a string representation
-ReservationStatus string_to_reservation_status(std::string s);
+ReservationStatus string_to_reservation_status(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ReservationStatus \p reservation_status to the given output
@@ -598,7 +598,7 @@ std::string reset_type_to_string(ResetType e);
 
 /// \brief Converts the given std::string \p s to ResetType
 /// \returns a ResetType from a string representation
-ResetType string_to_reset_type(std::string s);
+ResetType string_to_reset_type(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ResetType \p reset_type to the given output stream \p os
@@ -619,7 +619,7 @@ std::string reset_status_to_string(ResetStatus e);
 
 /// \brief Converts the given std::string \p s to ResetStatus
 /// \returns a ResetStatus from a string representation
-ResetStatus string_to_reset_status(std::string s);
+ResetStatus string_to_reset_status(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ResetStatus \p reset_status to the given output stream \p os
@@ -640,7 +640,7 @@ std::string update_type_to_string(UpdateType e);
 
 /// \brief Converts the given std::string \p s to UpdateType
 /// \returns a UpdateType from a string representation
-UpdateType string_to_update_type(std::string s);
+UpdateType string_to_update_type(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given UpdateType \p update_type to the given output stream \p os
@@ -663,7 +663,7 @@ std::string update_status_to_string(UpdateStatus e);
 
 /// \brief Converts the given std::string \p s to UpdateStatus
 /// \returns a UpdateStatus from a string representation
-UpdateStatus string_to_update_status(std::string s);
+UpdateStatus string_to_update_status(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given UpdateStatus \p update_status to the given output stream \p os
@@ -685,7 +685,7 @@ std::string charging_profile_status_to_string(ChargingProfileStatus e);
 
 /// \brief Converts the given std::string \p s to ChargingProfileStatus
 /// \returns a ChargingProfileStatus from a string representation
-ChargingProfileStatus string_to_charging_profile_status(std::string s);
+ChargingProfileStatus string_to_charging_profile_status(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ChargingProfileStatus \p charging_profile_status to the given
@@ -720,7 +720,7 @@ std::string charge_point_error_code_to_string(ChargePointErrorCode e);
 
 /// \brief Converts the given std::string \p s to ChargePointErrorCode
 /// \returns a ChargePointErrorCode from a string representation
-ChargePointErrorCode string_to_charge_point_error_code(std::string s);
+ChargePointErrorCode string_to_charge_point_error_code(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ChargePointErrorCode \p charge_point_error_code to the given
@@ -748,7 +748,7 @@ std::string charge_point_status_to_string(ChargePointStatus e);
 
 /// \brief Converts the given std::string \p s to ChargePointStatus
 /// \returns a ChargePointStatus from a string representation
-ChargePointStatus string_to_charge_point_status(std::string s);
+ChargePointStatus string_to_charge_point_status(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ChargePointStatus \p charge_point_status to the given output
@@ -778,7 +778,7 @@ std::string reason_to_string(Reason e);
 
 /// \brief Converts the given std::string \p s to Reason
 /// \returns a Reason from a string representation
-Reason string_to_reason(std::string s);
+Reason string_to_reason(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given Reason \p reason to the given output stream \p os
@@ -803,7 +803,7 @@ std::string message_trigger_to_string(MessageTrigger e);
 
 /// \brief Converts the given std::string \p s to MessageTrigger
 /// \returns a MessageTrigger from a string representation
-MessageTrigger string_to_message_trigger(std::string s);
+MessageTrigger string_to_message_trigger(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given MessageTrigger \p message_trigger to the given output stream \p
@@ -825,7 +825,7 @@ std::string trigger_message_status_to_string(TriggerMessageStatus e);
 
 /// \brief Converts the given std::string \p s to TriggerMessageStatus
 /// \returns a TriggerMessageStatus from a string representation
-TriggerMessageStatus string_to_trigger_message_status(std::string s);
+TriggerMessageStatus string_to_trigger_message_status(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given TriggerMessageStatus \p trigger_message_status to the given
@@ -847,7 +847,7 @@ std::string unlock_status_to_string(UnlockStatus e);
 
 /// \brief Converts the given std::string \p s to UnlockStatus
 /// \returns a UnlockStatus from a string representation
-UnlockStatus string_to_unlock_status(std::string s);
+UnlockStatus string_to_unlock_status(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given UnlockStatus \p unlock_status to the given output stream \p os

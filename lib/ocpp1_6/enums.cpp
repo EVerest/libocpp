@@ -25,7 +25,7 @@ std::string authorization_status_to_string(AuthorizationStatus e) {
     throw std::out_of_range("No known string conversion for provided enum of type AuthorizationStatus");
 }
 
-AuthorizationStatus string_to_authorization_status(std::string s) {
+AuthorizationStatus string_to_authorization_status(const std::string& s) {
     if (s == "Accepted") {
         return AuthorizationStatus::Accepted;
     }
@@ -66,7 +66,7 @@ std::string registration_status_to_string(RegistrationStatus e) {
     throw std::out_of_range("No known string conversion for provided enum of type RegistrationStatus");
 }
 
-RegistrationStatus string_to_registration_status(std::string s) {
+RegistrationStatus string_to_registration_status(const std::string& s) {
     if (s == "Accepted") {
         return RegistrationStatus::Accepted;
     }
@@ -99,7 +99,7 @@ std::string cancel_reservation_status_to_string(CancelReservationStatus e) {
     throw std::out_of_range("No known string conversion for provided enum of type CancelReservationStatus");
 }
 
-CancelReservationStatus string_to_cancel_reservation_status(std::string s) {
+CancelReservationStatus string_to_cancel_reservation_status(const std::string& s) {
     if (s == "Accepted") {
         return CancelReservationStatus::Accepted;
     }
@@ -129,7 +129,7 @@ std::string availability_type_to_string(AvailabilityType e) {
     throw std::out_of_range("No known string conversion for provided enum of type AvailabilityType");
 }
 
-AvailabilityType string_to_availability_type(std::string s) {
+AvailabilityType string_to_availability_type(const std::string& s) {
     if (s == "Inoperative") {
         return AvailabilityType::Inoperative;
     }
@@ -161,7 +161,7 @@ std::string availability_status_to_string(AvailabilityStatus e) {
     throw std::out_of_range("No known string conversion for provided enum of type AvailabilityStatus");
 }
 
-AvailabilityStatus string_to_availability_status(std::string s) {
+AvailabilityStatus string_to_availability_status(const std::string& s) {
     if (s == "Accepted") {
         return AvailabilityStatus::Accepted;
     }
@@ -198,7 +198,7 @@ std::string configuration_status_to_string(ConfigurationStatus e) {
     throw std::out_of_range("No known string conversion for provided enum of type ConfigurationStatus");
 }
 
-ConfigurationStatus string_to_configuration_status(std::string s) {
+ConfigurationStatus string_to_configuration_status(const std::string& s) {
     if (s == "Accepted") {
         return ConfigurationStatus::Accepted;
     }
@@ -234,7 +234,7 @@ std::string clear_cache_status_to_string(ClearCacheStatus e) {
     throw std::out_of_range("No known string conversion for provided enum of type ClearCacheStatus");
 }
 
-ClearCacheStatus string_to_clear_cache_status(std::string s) {
+ClearCacheStatus string_to_clear_cache_status(const std::string& s) {
     if (s == "Accepted") {
         return ClearCacheStatus::Accepted;
     }
@@ -266,7 +266,7 @@ std::string charging_profile_purpose_type_to_string(ChargingProfilePurposeType e
     throw std::out_of_range("No known string conversion for provided enum of type ChargingProfilePurposeType");
 }
 
-ChargingProfilePurposeType string_to_charging_profile_purpose_type(std::string s) {
+ChargingProfilePurposeType string_to_charging_profile_purpose_type(const std::string& s) {
     if (s == "ChargePointMaxProfile") {
         return ChargingProfilePurposeType::ChargePointMaxProfile;
     }
@@ -300,7 +300,7 @@ std::string clear_charging_profile_status_to_string(ClearChargingProfileStatus e
     throw std::out_of_range("No known string conversion for provided enum of type ClearChargingProfileStatus");
 }
 
-ClearChargingProfileStatus string_to_clear_charging_profile_status(std::string s) {
+ClearChargingProfileStatus string_to_clear_charging_profile_status(const std::string& s) {
     if (s == "Accepted") {
         return ClearChargingProfileStatus::Accepted;
     }
@@ -335,7 +335,7 @@ std::string data_transfer_status_to_string(DataTransferStatus e) {
     throw std::out_of_range("No known string conversion for provided enum of type DataTransferStatus");
 }
 
-DataTransferStatus string_to_data_transfer_status(std::string s) {
+DataTransferStatus string_to_data_transfer_status(const std::string& s) {
     if (s == "Accepted") {
         return DataTransferStatus::Accepted;
     }
@@ -375,7 +375,7 @@ std::string diagnostics_status_to_string(DiagnosticsStatus e) {
     throw std::out_of_range("No known string conversion for provided enum of type DiagnosticsStatus");
 }
 
-DiagnosticsStatus string_to_diagnostics_status(std::string s) {
+DiagnosticsStatus string_to_diagnostics_status(const std::string& s) {
     if (s == "Idle") {
         return DiagnosticsStatus::Idle;
     }
@@ -421,7 +421,7 @@ std::string firmware_status_to_string(FirmwareStatus e) {
     throw std::out_of_range("No known string conversion for provided enum of type FirmwareStatus");
 }
 
-FirmwareStatus string_to_firmware_status(std::string s) {
+FirmwareStatus string_to_firmware_status(const std::string& s) {
     if (s == "Downloaded") {
         return FirmwareStatus::Downloaded;
     }
@@ -466,7 +466,7 @@ std::string charging_rate_unit_to_string(ChargingRateUnit e) {
     throw std::out_of_range("No known string conversion for provided enum of type ChargingRateUnit");
 }
 
-ChargingRateUnit string_to_charging_rate_unit(std::string s) {
+ChargingRateUnit string_to_charging_rate_unit(const std::string& s) {
     if (s == "A") {
         return ChargingRateUnit::A;
     }
@@ -496,7 +496,7 @@ std::string get_composite_schedule_status_to_string(GetCompositeScheduleStatus e
     throw std::out_of_range("No known string conversion for provided enum of type GetCompositeScheduleStatus");
 }
 
-GetCompositeScheduleStatus string_to_get_composite_schedule_status(std::string s) {
+GetCompositeScheduleStatus string_to_get_composite_schedule_status(const std::string& s) {
     if (s == "Accepted") {
         return GetCompositeScheduleStatus::Accepted;
     }
@@ -539,7 +539,7 @@ std::string reading_context_to_string(ReadingContext e) {
     throw std::out_of_range("No known string conversion for provided enum of type ReadingContext");
 }
 
-ReadingContext string_to_reading_context(std::string s) {
+ReadingContext string_to_reading_context(const std::string& s) {
     if (s == "Interruption.Begin") {
         return ReadingContext::Interruption_Begin;
     }
@@ -587,7 +587,7 @@ std::string value_format_to_string(ValueFormat e) {
     throw std::out_of_range("No known string conversion for provided enum of type ValueFormat");
 }
 
-ValueFormat string_to_value_format(std::string s) {
+ValueFormat string_to_value_format(const std::string& s) {
     if (s == "Raw") {
         return ValueFormat::Raw;
     }
@@ -657,7 +657,7 @@ std::string measurand_to_string(Measurand e) {
     throw std::out_of_range("No known string conversion for provided enum of type Measurand");
 }
 
-Measurand string_to_measurand(std::string s) {
+Measurand string_to_measurand(const std::string& s) {
     if (s == "Energy.Active.Export.Register") {
         return Measurand::Energy_Active_Export_Register;
     }
@@ -763,7 +763,7 @@ std::string phase_to_string(Phase e) {
     throw std::out_of_range("No known string conversion for provided enum of type Phase");
 }
 
-Phase string_to_phase(std::string s) {
+Phase string_to_phase(const std::string& s) {
     if (s == "L1") {
         return Phase::L1;
     }
@@ -823,7 +823,7 @@ std::string location_to_string(Location e) {
     throw std::out_of_range("No known string conversion for provided enum of type Location");
 }
 
-Location string_to_location(std::string s) {
+Location string_to_location(const std::string& s) {
     if (s == "Cable") {
         return Location::Cable;
     }
@@ -892,7 +892,7 @@ std::string unit_of_measure_to_string(UnitOfMeasure e) {
     throw std::out_of_range("No known string conversion for provided enum of type UnitOfMeasure");
 }
 
-UnitOfMeasure string_to_unit_of_measure(std::string s) {
+UnitOfMeasure string_to_unit_of_measure(const std::string& s) {
     if (s == "Wh") {
         return UnitOfMeasure::Wh;
     }
@@ -969,7 +969,7 @@ std::string charging_profile_kind_type_to_string(ChargingProfileKindType e) {
     throw std::out_of_range("No known string conversion for provided enum of type ChargingProfileKindType");
 }
 
-ChargingProfileKindType string_to_charging_profile_kind_type(std::string s) {
+ChargingProfileKindType string_to_charging_profile_kind_type(const std::string& s) {
     if (s == "Absolute") {
         return ChargingProfileKindType::Absolute;
     }
@@ -1002,7 +1002,7 @@ std::string recurrency_kind_type_to_string(RecurrencyKindType e) {
     throw std::out_of_range("No known string conversion for provided enum of type RecurrencyKindType");
 }
 
-RecurrencyKindType string_to_recurrency_kind_type(std::string s) {
+RecurrencyKindType string_to_recurrency_kind_type(const std::string& s) {
     if (s == "Daily") {
         return RecurrencyKindType::Daily;
     }
@@ -1032,7 +1032,7 @@ std::string remote_start_stop_status_to_string(RemoteStartStopStatus e) {
     throw std::out_of_range("No known string conversion for provided enum of type RemoteStartStopStatus");
 }
 
-RemoteStartStopStatus string_to_remote_start_stop_status(std::string s) {
+RemoteStartStopStatus string_to_remote_start_stop_status(const std::string& s) {
     if (s == "Accepted") {
         return RemoteStartStopStatus::Accepted;
     }
@@ -1068,7 +1068,7 @@ std::string reservation_status_to_string(ReservationStatus e) {
     throw std::out_of_range("No known string conversion for provided enum of type ReservationStatus");
 }
 
-ReservationStatus string_to_reservation_status(std::string s) {
+ReservationStatus string_to_reservation_status(const std::string& s) {
     if (s == "Accepted") {
         return ReservationStatus::Accepted;
     }
@@ -1107,7 +1107,7 @@ std::string reset_type_to_string(ResetType e) {
     throw std::out_of_range("No known string conversion for provided enum of type ResetType");
 }
 
-ResetType string_to_reset_type(std::string s) {
+ResetType string_to_reset_type(const std::string& s) {
     if (s == "Hard") {
         return ResetType::Hard;
     }
@@ -1137,7 +1137,7 @@ std::string reset_status_to_string(ResetStatus e) {
     throw std::out_of_range("No known string conversion for provided enum of type ResetStatus");
 }
 
-ResetStatus string_to_reset_status(std::string s) {
+ResetStatus string_to_reset_status(const std::string& s) {
     if (s == "Accepted") {
         return ResetStatus::Accepted;
     }
@@ -1167,7 +1167,7 @@ std::string update_type_to_string(UpdateType e) {
     throw std::out_of_range("No known string conversion for provided enum of type UpdateType");
 }
 
-UpdateType string_to_update_type(std::string s) {
+UpdateType string_to_update_type(const std::string& s) {
     if (s == "Differential") {
         return UpdateType::Differential;
     }
@@ -1201,7 +1201,7 @@ std::string update_status_to_string(UpdateStatus e) {
     throw std::out_of_range("No known string conversion for provided enum of type UpdateStatus");
 }
 
-UpdateStatus string_to_update_status(std::string s) {
+UpdateStatus string_to_update_status(const std::string& s) {
     if (s == "Accepted") {
         return UpdateStatus::Accepted;
     }
@@ -1239,7 +1239,7 @@ std::string charging_profile_status_to_string(ChargingProfileStatus e) {
     throw std::out_of_range("No known string conversion for provided enum of type ChargingProfileStatus");
 }
 
-ChargingProfileStatus string_to_charging_profile_status(std::string s) {
+ChargingProfileStatus string_to_charging_profile_status(const std::string& s) {
     if (s == "Accepted") {
         return ChargingProfileStatus::Accepted;
     }
@@ -1300,7 +1300,7 @@ std::string charge_point_error_code_to_string(ChargePointErrorCode e) {
     throw std::out_of_range("No known string conversion for provided enum of type ChargePointErrorCode");
 }
 
-ChargePointErrorCode string_to_charge_point_error_code(std::string s) {
+ChargePointErrorCode string_to_charge_point_error_code(const std::string& s) {
     if (s == "ConnectorLockFailure") {
         return ChargePointErrorCode::ConnectorLockFailure;
     }
@@ -1386,7 +1386,7 @@ std::string charge_point_status_to_string(ChargePointStatus e) {
     throw std::out_of_range("No known string conversion for provided enum of type ChargePointStatus");
 }
 
-ChargePointStatus string_to_charge_point_status(std::string s) {
+ChargePointStatus string_to_charge_point_status(const std::string& s) {
     if (s == "Available") {
         return ChargePointStatus::Available;
     }
@@ -1455,7 +1455,7 @@ std::string reason_to_string(Reason e) {
     throw std::out_of_range("No known string conversion for provided enum of type Reason");
 }
 
-Reason string_to_reason(std::string s) {
+Reason string_to_reason(const std::string& s) {
     if (s == "EmergencyStop") {
         return Reason::EmergencyStop;
     }
@@ -1520,7 +1520,7 @@ std::string message_trigger_to_string(MessageTrigger e) {
     throw std::out_of_range("No known string conversion for provided enum of type MessageTrigger");
 }
 
-MessageTrigger string_to_message_trigger(std::string s) {
+MessageTrigger string_to_message_trigger(const std::string& s) {
     if (s == "BootNotification") {
         return MessageTrigger::BootNotification;
     }
@@ -1564,7 +1564,7 @@ std::string trigger_message_status_to_string(TriggerMessageStatus e) {
     throw std::out_of_range("No known string conversion for provided enum of type TriggerMessageStatus");
 }
 
-TriggerMessageStatus string_to_trigger_message_status(std::string s) {
+TriggerMessageStatus string_to_trigger_message_status(const std::string& s) {
     if (s == "Accepted") {
         return TriggerMessageStatus::Accepted;
     }
@@ -1599,7 +1599,7 @@ std::string unlock_status_to_string(UnlockStatus e) {
     throw std::out_of_range("No known string conversion for provided enum of type UnlockStatus");
 }
 
-UnlockStatus string_to_unlock_status(std::string s) {
+UnlockStatus string_to_unlock_status(const std::string& s) {
     if (s == "Unlocked") {
         return UnlockStatus::Unlocked;
     }
