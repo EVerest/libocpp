@@ -23,7 +23,7 @@ public:
     CiString(const std::string& data, size_t length);
 
     /// \brief Creates a case insensitive string from the given maximum \p length
-    CiString(size_t length);
+    explicit CiString(size_t length);
 
     /// \brief A CiString without a maximum length is not allowed
     CiString() = delete;

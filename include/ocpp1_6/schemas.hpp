@@ -37,7 +37,7 @@ private:
 
 public:
     /// \brief Creates a new Schemas object looking for the root schema file in relation to the provided \p main_dir
-    Schemas(std::string main_dir);
+    explicit Schemas(std::string main_dir);
 
     /// \brief Provides the config profile schema
     /// \returns the config profile schema as as json object

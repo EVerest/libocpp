@@ -48,7 +48,7 @@ struct ControlMessage {
     DateTime timestamp;                    ///< A timestamp that shows when this message can be sent
 
     /// \brief Creates a new ControlMessage object from the provided \p message
-    ControlMessage(json message) {
+    explicit ControlMessage(json message) {
         this->message = message.get<json::array_t>();
         this->messageType = conversions::string_to_messagetype(message.at(CALL_ACTION));
         this->message_attempts = 0;
