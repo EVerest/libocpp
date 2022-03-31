@@ -158,7 +158,7 @@ public:
     /// \brief Allows the exchange of arbitrary \p data identified by a \p vendorId and \p messageId with a central
     /// system \returns the DataTransferResponse
     DataTransferResponse data_transfer(const CiString255Type& vendorId, const CiString50Type& messageId,
-                                       const std::string data);
+                                       const std::string& data);
 
     /// registers a \p callback function that can be used to receive a arbitrary data transfer for the given \p vendorId
     /// and \p messageId

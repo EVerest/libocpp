@@ -1332,7 +1332,7 @@ AuthorizationStatus ChargePoint::authorize_id_tag(CiString20Type idTag) {
 }
 
 DataTransferResponse ChargePoint::data_transfer(const CiString255Type& vendorId, const CiString50Type& messageId,
-                                                const std::string data) {
+                                                const std::string& data) {
     DataTransferRequest req;
     req.vendorId = vendorId;
     req.messageId = messageId;
