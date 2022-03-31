@@ -538,6 +538,10 @@ void ChargePoint::message_callback(const std::string& message) {
             this->handleClearChargingProfileRequest(json_message);
             break;
 
+        case MessageType::TriggerMessage:
+            this->handleTriggerMessageRequest(json_message);
+            break;
+
         default:
             // TODO(kai): not implemented error?
             break;
@@ -1211,6 +1215,56 @@ void ChargePoint::handleClearChargingProfileRequest(Call<ClearChargingProfileReq
 
     CallResult<ClearChargingProfileResponse> call_result(response, call.uniqueId);
     this->send<ClearChargingProfileResponse>(call_result);
+}
+
+void ChargePoint::handleTriggerMessageRequest(Call<TriggerMessageRequest> call) {
+    EVLOG(debug) << "Received TriggerMessageRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
+
+    TriggerMessageResponse response;
+    response.status = TriggerMessageStatus::Rejected;
+    switch (call.msg.requestedMessage) {
+    case MessageTrigger::BootNotification:
+        response.status = TriggerMessageStatus::Accepted;
+        break;
+    case MessageTrigger::DiagnosticsStatusNotification:
+        response.status = TriggerMessageStatus::NotImplemented;
+        break;
+    case MessageTrigger::FirmwareStatusNotification:
+        response.status = TriggerMessageStatus::NotImplemented;
+        break;
+    case MessageTrigger::Heartbeat:
+        response.status = TriggerMessageStatus::Accepted;
+        break;
+    case MessageTrigger::MeterValues:
+        response.status = TriggerMessageStatus::Accepted;
+        break;
+    case MessageTrigger::StatusNotification:
+        response.status = TriggerMessageStatus::Accepted;
+        break;
+    }
+
+    CallResult<TriggerMessageResponse> call_result(response, call.uniqueId);
+    this->send<TriggerMessageResponse>(call_result);
+
+    auto connector = call.msg.connectorId.value_or(0);
+
+    switch (call.msg.requestedMessage) {
+    case MessageTrigger::BootNotification:
+        this->boot_notification();
+        break;
+    case MessageTrigger::Heartbeat:
+        this->heartbeat();
+        break;
+    case MessageTrigger::MeterValues:
+        this->send_meter_value(
+            connector, this->get_latest_meter_value(connector, this->configuration->getMeterValuesSampledDataVector(),
+                                                    ReadingContext::Trigger));
+        break;
+
+    case MessageTrigger::StatusNotification:
+        this->status_notification(connector, ChargePointErrorCode::NoError, this->status->get_state(connector));
+        break;
+    }
 }
 
 bool ChargePoint::allowed_to_send_message(json::array_t message) {

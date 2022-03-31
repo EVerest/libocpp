@@ -95,9 +95,14 @@ struct ChargePointStateMachine {
     StateHandleType sd_unavailable{{State::Unavailable, "Unavailable"}};
     StateHandleType sd_faulted{{State::Faulted, "Faulted"}};
 
+    // track current state
+    ChargePointStatus state;
+
     std::function<void(ChargePointStatus status)> status_notification_callback;
 
     explicit ChargePointStateMachine(const std::function<void(ChargePointStatus status)>& status_notification_callback);
+
+    ChargePointStatus get_state();
 };
 
 using ChargePointStateMachineController = fsm::async::PThreadController<ChargePointStateMachine::StateHandleType>;
@@ -127,6 +132,8 @@ public:
     void run(std::map<int32_t, ocpp1_6::AvailabilityType> connector_availability);
 
     void submit_event(int32_t connector, EventBaseType event);
+
+    ChargePointStatus get_state(int32_t connector);
 };
 
 } // namespace ocpp1_6

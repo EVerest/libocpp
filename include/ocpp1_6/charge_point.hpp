@@ -32,6 +32,7 @@
 #include <ocpp1_6/messages/StartTransaction.hpp>
 #include <ocpp1_6/messages/StatusNotification.hpp>
 #include <ocpp1_6/messages/StopTransaction.hpp>
+#include <ocpp1_6/messages/TriggerMessage.hpp>
 #include <ocpp1_6/messages/UnlockConnector.hpp>
 #include <ocpp1_6/types.hpp>
 #include <ocpp1_6/websocket/websocket.hpp>
@@ -138,6 +139,9 @@ private:
     void handleSetChargingProfileRequest(Call<SetChargingProfileRequest> call);
     void handleGetCompositeScheduleRequest(Call<GetCompositeScheduleRequest> call);
     void handleClearChargingProfileRequest(Call<ClearChargingProfileRequest> call);
+
+    // RemoteTrigger profile
+    void handleTriggerMessageRequest(Call<TriggerMessageRequest> call);
 
 public:
     /// \brief Creates a ChargePoint object with the provided \p configuration

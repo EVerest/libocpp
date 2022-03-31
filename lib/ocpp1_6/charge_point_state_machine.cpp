@@ -27,6 +27,7 @@ ChargePointStateMachine::ChargePointStateMachine(
         }
     };
     this->sd_available.state_fun = [this](FSMContextType& ctx) {
+        this->state = ChargePointStatus::Available;
         this->status_notification_callback(ChargePointStatus::Available);
     };
 
@@ -49,6 +50,7 @@ ChargePointStateMachine::ChargePointStateMachine(
         }
     };
     this->sd_preparing.state_fun = [this](FSMContextType& ctx) {
+        this->state = ChargePointStatus::Preparing;
         this->status_notification_callback(ChargePointStatus::Preparing);
     };
 
@@ -71,6 +73,7 @@ ChargePointStateMachine::ChargePointStateMachine(
         }
     };
     this->sd_charging.state_fun = [this](FSMContextType& ctx) {
+        this->state = ChargePointStatus::Charging;
         this->status_notification_callback(ChargePointStatus::Charging);
     };
 
@@ -93,6 +96,7 @@ ChargePointStateMachine::ChargePointStateMachine(
         }
     };
     this->sd_suspended_ev.state_fun = [this](FSMContextType& ctx) {
+        this->state = ChargePointStatus::SuspendedEV;
         this->status_notification_callback(ChargePointStatus::SuspendedEV);
     };
 
@@ -115,6 +119,7 @@ ChargePointStateMachine::ChargePointStateMachine(
         }
     };
     this->sd_suspended_evse.state_fun = [this](FSMContextType& ctx) {
+        this->state = ChargePointStatus::SuspendedEVSE;
         this->status_notification_callback(ChargePointStatus::SuspendedEVSE);
     };
 
@@ -133,6 +138,7 @@ ChargePointStateMachine::ChargePointStateMachine(
         }
     };
     this->sd_finishing.state_fun = [this](FSMContextType& ctx) {
+        this->state = ChargePointStatus::Finishing;
         this->status_notification_callback(ChargePointStatus::Finishing);
     };
 
@@ -151,6 +157,7 @@ ChargePointStateMachine::ChargePointStateMachine(
         }
     };
     this->sd_reserved.state_fun = [this](FSMContextType& ctx) {
+        this->state = ChargePointStatus::Reserved;
         this->status_notification_callback(ChargePointStatus::Reserved);
     };
 
@@ -173,6 +180,7 @@ ChargePointStateMachine::ChargePointStateMachine(
         }
     };
     this->sd_unavailable.state_fun = [this](FSMContextType& ctx) {
+        this->state = ChargePointStatus::Unavailable;
         this->status_notification_callback(ChargePointStatus::Unavailable);
     };
 
@@ -199,8 +207,13 @@ ChargePointStateMachine::ChargePointStateMachine(
         }
     };
     this->sd_faulted.state_fun = [this](FSMContextType& ctx) {
+        this->state = ChargePointStatus::Faulted;
         this->status_notification_callback(ChargePointStatus::Faulted);
     };
+}
+
+ChargePointStatus ChargePointStateMachine::get_state() {
+    return this->state;
 }
 
 ChargePointStates::ChargePointStates(
@@ -239,6 +252,15 @@ void ChargePointStates::submit_event(int32_t connector, EventBaseType event) {
     if (connector > 0 && connector < static_cast<int32_t>(this->state_machines.size())) {
         this->state_machines.at(connector)->controller->submit_event(event);
     }
+}
+
+ChargePointStatus ChargePointStates::get_state(int32_t connector) {
+    if (connector > 0 && connector < static_cast<int32_t>(this->state_machines.size())) {
+        return this->state_machines.at(connector)->state_machine->get_state();
+    }else if (connector == 0) {
+        return ChargePointStatus::Available;
+    }
+    return ChargePointStatus::Unavailable;
 }
 
 } // namespace ocpp1_6
