@@ -470,88 +470,101 @@ void ChargePoint::message_callback(const std::string& message) {
         }
         break;
     }
-    case ChargePointConnectionState::Booted: {
-        // lots of messages are allowed here
-        switch (enhanced_message.messageType) {
-
-        case MessageType::AuthorizeResponse:
-            // handled by authorize_id_tag future
-            break;
-
-        case MessageType::ChangeAvailability:
-            this->handleChangeAvailabilityRequest(json_message);
-            break;
-
-        case MessageType::ChangeConfiguration:
-            this->handleChangeConfigurationRequest(json_message);
-            break;
-
-        case MessageType::ClearCache:
-            this->handleClearCacheRequest(json_message);
-            break;
-
-        case MessageType::DataTransfer:
-            this->handleDataTransferRequest(json_message);
-            break;
-
-        case MessageType::DataTransferResponse:
-            // handled by data_transfer future
-            break;
-
-        case MessageType::GetConfiguration:
-            this->handleGetConfigurationRequest(json_message);
-            break;
-
-        case MessageType::RemoteStartTransaction:
-            this->handleRemoteStartTransactionRequest(json_message);
-            break;
-
-        case MessageType::RemoteStopTransaction:
-            this->handleRemoteStopTransactionRequest(json_message);
-            break;
-
-        case MessageType::Reset:
-            this->handleResetRequest(json_message);
-            break;
-
-        case MessageType::StartTransactionResponse:
-            // handled by start_transaction future
-            break;
-
-        case MessageType::StopTransactionResponse:
-            // handled by stop_transaction future
-            break;
-
-        case MessageType::UnlockConnector:
-            this->handleUnlockConnectorRequest(json_message);
-            break;
-
-        case MessageType::SetChargingProfile:
-            this->handleSetChargingProfileRequest(json_message);
-            break;
-
-        case MessageType::GetCompositeSchedule:
-            this->handleGetCompositeScheduleRequest(json_message);
-            break;
-
-        case MessageType::ClearChargingProfile:
-            this->handleClearChargingProfileRequest(json_message);
-            break;
-
-        case MessageType::TriggerMessage:
-            this->handleTriggerMessageRequest(json_message);
-            break;
-
-        default:
-            // TODO(kai): not implemented error?
-            break;
+    case ChargePointConnectionState::Pending: {
+        if (this->registration_status == RegistrationStatus::Pending) {
+            if (enhanced_message.messageType == MessageType::BootNotificationResponse) {
+                this->handleBootNotificationResponse(json_message);
+            } else {
+                this->handle_message(json_message, enhanced_message.messageType);
+            }
         }
-
+        break;
+    }
+    case ChargePointConnectionState::Booted: {
+        this->handle_message(json_message, enhanced_message.messageType);
         break;
     }
 
     default:
         EVLOG(error) << "Reached default statement in on_message, this should not be possible";
+        break;
+    }
+}
+
+void ChargePoint::handle_message(const json& json_message, MessageType message_type) {
+    // lots of messages are allowed here
+    switch (message_type) {
+
+    case MessageType::AuthorizeResponse:
+        // handled by authorize_id_tag future
+        break;
+
+    case MessageType::ChangeAvailability:
+        this->handleChangeAvailabilityRequest(json_message);
+        break;
+
+    case MessageType::ChangeConfiguration:
+        this->handleChangeConfigurationRequest(json_message);
+        break;
+
+    case MessageType::ClearCache:
+        this->handleClearCacheRequest(json_message);
+        break;
+
+    case MessageType::DataTransfer:
+        this->handleDataTransferRequest(json_message);
+        break;
+
+    case MessageType::DataTransferResponse:
+        // handled by data_transfer future
+        break;
+
+    case MessageType::GetConfiguration:
+        this->handleGetConfigurationRequest(json_message);
+        break;
+
+    case MessageType::RemoteStartTransaction:
+        this->handleRemoteStartTransactionRequest(json_message);
+        break;
+
+    case MessageType::RemoteStopTransaction:
+        this->handleRemoteStopTransactionRequest(json_message);
+        break;
+
+    case MessageType::Reset:
+        this->handleResetRequest(json_message);
+        break;
+
+    case MessageType::StartTransactionResponse:
+        // handled by start_transaction future
+        break;
+
+    case MessageType::StopTransactionResponse:
+        // handled by stop_transaction future
+        break;
+
+    case MessageType::UnlockConnector:
+        this->handleUnlockConnectorRequest(json_message);
+        break;
+
+    case MessageType::SetChargingProfile:
+        this->handleSetChargingProfileRequest(json_message);
+        break;
+
+    case MessageType::GetCompositeSchedule:
+        this->handleGetCompositeScheduleRequest(json_message);
+        break;
+
+    case MessageType::ClearChargingProfile:
+        this->handleClearChargingProfileRequest(json_message);
+        break;
+
+    case MessageType::TriggerMessage:
+        this->handleTriggerMessageRequest(json_message);
+        break;
+
+    default:
+        // TODO(kai): not implemented error?
         break;
     }
 }
@@ -576,11 +589,6 @@ void ChargePoint::handleBootNotificationResponse(CallResult<BootNotificationResp
         // activate clock aligned sampling of meter values
         this->update_clock_aligned_meter_values_interval();
 
-        // FIXME(kai): libfsm
-        // for (auto connector_status : this->status) {
-        //     this->status_notification(connector_status.first, ChargePointErrorCode::NoError,
-        //                               connector_status.second->get_current_state());
-        // }
         auto connector_availability = this->configuration->getConnectorAvailability();
         connector_availability[0] =
             AvailabilityType::Operative; // FIXME(kai): fix internal representation in charge point states, we need a
@@ -590,9 +598,12 @@ void ChargePoint::handleBootNotificationResponse(CallResult<BootNotificationResp
         break;
     }
     case RegistrationStatus::Pending:
-        this->connection_state = ChargePointConnectionState::Booted;
-        // TODO(kai):, theoretically we are in the Booted state because the central system can send us
-        // any message it wants...
+        this->connection_state = ChargePointConnectionState::Pending;
+
+        EVLOG(debug) << "BootNotification response is pending, trying again in "
+                     << this->configuration->getHeartbeatInterval() << "s";
+
+        this->boot_notification_timer->timeout(std::chrono::seconds(this->configuration->getHeartbeatInterval()));
         break;
     default:
         this->connection_state = ChargePointConnectionState::Rejected;
@@ -1269,7 +1280,7 @@ void ChargePoint::handleTriggerMessageRequest(Call<TriggerMessageRequest> call) 
 
 bool ChargePoint::allowed_to_send_message(json::array_t message) {
     auto message_type = conversions::string_to_messagetype(message.at(CALL_ACTION));
-    ;
+
     if (!this->initialized) {
         if (message_type == MessageType::BootNotification) {
             return true;
@@ -1288,13 +1299,10 @@ bool ChargePoint::allowed_to_send_message(json::array_t message) {
             return false;
         }
     } else if (this->registration_status == RegistrationStatus::Pending) {
-        std::lock_guard<std::mutex> lock(allowed_message_types_mutex);
-
-        if (this->allowed_message_types.find(message_type) == this->allowed_message_types.end()) {
-            EVLOG(debug) << "registration_status is pending, but message: " << message_type
-                         << " was not requested by central system";
-            return false;
+        if (message_type == MessageType::BootNotification) {
+            return true;
         }
+        return false;
     }
     return true;
 }

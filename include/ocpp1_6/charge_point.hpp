@@ -96,6 +96,7 @@ private:
     /// \brief This function is called after a successful connection to the Websocket
     void connected_callback();
     void message_callback(const std::string& message);
+    void handle_message(const json& json_message, MessageType message_type);
     bool allowed_to_send_message(json::array_t message_type);
     template <class T> bool send(Call<T> call);
     template <class T> std::future<EnhancedMessage> send_async(Call<T> call);
