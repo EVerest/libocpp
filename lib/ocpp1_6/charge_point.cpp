@@ -1254,10 +1254,19 @@ void ChargePoint::handleTriggerMessageRequest(Call<TriggerMessageRequest> call) 
         break;
     }
 
+    auto connector = call.msg.connectorId.value_or(0);
+    bool valid = true;
+    if (connector < 0 || connector > this->configuration->getNumberOfConnectors()) {
+        response.status = TriggerMessageStatus::Rejected;
+        valid = false;
+    }
+
     CallResult<TriggerMessageResponse> call_result(response, call.uniqueId);
     this->send<TriggerMessageResponse>(call_result);
 
-    auto connector = call.msg.connectorId.value_or(0);
+    if (!valid) {
+        return;
+    }
 
     switch (call.msg.requestedMessage) {
     case MessageTrigger::BootNotification:
