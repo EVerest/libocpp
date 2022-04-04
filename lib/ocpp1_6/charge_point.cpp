@@ -825,6 +825,8 @@ void ChargePoint::handleRemoteStartTransactionRequest(Call<RemoteStartTransactio
     CallResult<RemoteStartTransactionResponse> call_result(response, call.uniqueId);
     this->send<RemoteStartTransactionResponse>(call_result);
 
+    this->status->submit_event(connector, Event_UsageInitiated());
+
     {
         std::lock_guard<std::mutex> lock(remote_start_transaction_mutex);
 
@@ -1380,6 +1382,7 @@ AuthorizationStatus ChargePoint::authorize_id_tag(CiString20Type idTag) {
 
         this->configuration->updateAuthorizationCacheEntry(idTag, call_result.msg.idTagInfo);
         auto connector = this->charging_sessions->add_authorized_token(idTag, authorize_response.idTagInfo);
+        this->status->submit_event(connector, Event_UsageInitiated());
         if (connector > 0) {
             this->start_transaction(connector);
         }
@@ -1526,8 +1529,6 @@ bool ChargePoint::start_transaction(int32_t connector) {
     this->charging_sessions->change_meter_values_sample_interval(connector,
                                                                  this->configuration->getMeterValueSampleInterval());
 
-    // FIXME(kai): new fsm
-    // this->status_notification(connector, ChargePointErrorCode::NoError, this->status[connector]->suspended_ev());
     if (this->resume_charging_callback != nullptr) {
         this->resume_charging_callback(connector);
     }
@@ -1540,6 +1541,8 @@ bool ChargePoint::start_session(int32_t connector, DateTime timestamp, double en
         EVLOG(error) << "Could not initiate charging session on connector '" << connector << "'";
         return false;
     }
+
+    this->status->submit_event(connector, Event_UsageInitiated());
 
     this->charging_sessions->add_start_energy_wh(connector,
                                                  std::make_shared<StampedEnergyWh>(timestamp, energy_Wh_import));
