@@ -1221,14 +1221,13 @@ void ChargePoint::handleReserveNowRequest(Call<ReserveNowRequest> call) {
     EVLOG(debug) << "call.msg[connectorId]: " << call.msg.connectorId;
 
     ReserveNowResponse response;
-    response.status = this->reservations->reserve_now(call.msg.reservationId, call.msg.connectorId, call.msg.expiryDate, call.msg.idTag, this->configuration);
+    response.status = this->reservations->reserve_now(call.msg.reservationId, call.msg.connectorId, call.msg.expiryDate,
+                                                      call.msg.idTag, this->configuration, this->reserve_now_callback);
     CallResult<ReserveNowResponse> call_result(response, call.uniqueId);
     this->send<ReserveNowResponse>(call_result);
 
     EVLOG(debug) << "CallResult.msg: " << call_result.msg;
-
 }
-
 
 void ChargePoint::handleCancelReservationRequest(Call<CancelReservationRequest> call) {
     EVLOG(debug) << "Received CancelReservationRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
@@ -1236,12 +1235,12 @@ void ChargePoint::handleCancelReservationRequest(Call<CancelReservationRequest> 
     EVLOG(debug) << "call.msg: " << call.msg;
 
     CancelReservationResponse response;
-    response.status = this->reservations->cancel_reservation(call.msg.reservationId, this->configuration);
+    response.status = this->reservations->cancel_reservation(call.msg.reservationId, this->configuration,
+                                                             this->cancel_reservation_callback);
     CallResult<CancelReservationResponse> call_result(response, call.uniqueId);
     this->send<CancelReservationResponse>(call_result);
 
     EVLOG(debug) << "CallResult.msg: " << call_result.msg;
-
 }
 
 bool ChargePoint::allowed_to_send_message(json::array_t message) {
@@ -1664,12 +1663,16 @@ void ChargePoint::register_cancel_charging_callback(const std::function<bool(int
     // FIXME(kai): implement
 }
 
+// int32_t connector, ocpp1_6::CiString20Type idTag, std::chrono::seconds timeout
 void ChargePoint::register_reserve_now_callback(
-    const std::function<bool(int32_t connector, CiString20Type idTag, std::chrono::seconds timeout)>& callback) {
+    const std::function<bool(int32_t reservation_id, int32_t connector, ocpp1_6::DateTime expiryDate,
+                             ocpp1_6::CiString20Type idTag, std::string parent_id)>& callback) {
+    this->reserve_now_callback = callback;
     // FIXME(kai): implement
 }
 
 void ChargePoint::register_cancel_reservation_callback(const std::function<bool(int32_t connector)>& callback) {
+    this->cancel_reservation_callback = callback;
     // FIXME(kai): implement
 }
 

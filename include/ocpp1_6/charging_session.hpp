@@ -269,14 +269,18 @@ public:
     std::vector<MeterValue> get_clock_aligned_meter_values(int32_t connector);
 };
 
-
 // this manages reservations, while they are tied to a connector, this could still be connector 0 (if the appropriate
 // config key is set) aka any connector on the charge point a reservation can also be tied to a specific connector, but
 // there can be some "mobility" when the same reservation (with the identical id) changes to a different one
 class Reservations {
 private:
     std::map<int32_t, std::tuple<int32_t, DateTime, CiString20Type>> reservations;
-    enum TupleElement {connector_id = 0, expiry_date=1, id_tag=2};
+    enum TupleElement
+    {
+        connector_id = 0,
+        expiry_date = 1,
+        id_tag = 2
+    };
     int32_t no_connectors_available = -1;
     int32_t error_unexpected_state = -2;
 
@@ -285,7 +289,8 @@ private:
     /// \returns a set containing all the connector ids
     std::set<int32_t> get_reserved_connectors() {
         std::set<int32_t> value;
-        for(std::map<int32_t, std::tuple<int32_t, DateTime, CiString20Type>>::iterator it = this->reservations.begin(); it != this->reservations.end(); ++it) {
+        for (std::map<int32_t, std::tuple<int32_t, DateTime, CiString20Type>>::iterator it = this->reservations.begin();
+             it != this->reservations.end(); ++it) {
             value.insert(std::get<0>(it->second));
         }
         return value;
@@ -293,9 +298,10 @@ private:
 
     std::set<int32_t> get_reserved_ids();
 
-    /// \brief check the specified connector is currently available and unreserved, search for vacant connector if connecotrId is zero
-    /// \return return the vacant connectorId if found, return -1 if not found
-    int32_t get_unreserved_connector(int32_t query_connector, std::map<int32_t, ocpp1_6::AvailabilityType> availability);
+    /// \brief check the specified connector is currently available and unreserved, search for vacant connector if
+    /// connecotrId is zero \return return the vacant connectorId if found, return -1 if not found
+    int32_t get_unreserved_connector(int32_t query_connector,
+                                     std::map<int32_t, ocpp1_6::AvailabilityType> availability);
 
 public:
     /// \brief Manage reservations
@@ -304,12 +310,18 @@ public:
 
     /// \brief Attempts to reserve a connector on the charge_point
     /// \returns ReserverationStatus after having processed the request
-    ReservationStatus reserve_now(int32_t reservationId, int32_t connectorId, DateTime expiryDate, CiString20Type idTag, std::shared_ptr<ChargePointConfiguration> cpConfiguration);
-    
+    ReservationStatus
+    reserve_now(int32_t reservationId, int32_t connectorId, DateTime expiryDate, CiString20Type idTag,
+                std::shared_ptr<ChargePointConfiguration> cpConfiguration,
+                std::function<bool(int32_t reservation_id, int32_t connector, ocpp1_6::DateTime expiryDate,
+                                   ocpp1_6::CiString20Type idTag, std::string parent_id)>
+                    reserve_now_callback);
+
     /// \brief Attempts to cancel a reservation on the charge_point
     /// \returns CancelReservationStatus::Accepted if successful, else CancelReservationStatus::Rejected
-    CancelReservationStatus cancel_reservation(int32_t reservationId, std::shared_ptr<ChargePointConfiguration> cpConfiguration);
-
+    CancelReservationStatus cancel_reservation(int32_t reservationId,
+                                               std::shared_ptr<ChargePointConfiguration> cpConfiguration,
+                                               std::function<bool(int32_t connector)> cancel_reservation_callback);
 };
 
 } // namespace ocpp1_6

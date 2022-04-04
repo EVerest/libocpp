@@ -16,6 +16,7 @@
 #include <ocpp1_6/message_queue.hpp>
 #include <ocpp1_6/messages/Authorize.hpp>
 #include <ocpp1_6/messages/BootNotification.hpp>
+#include <ocpp1_6/messages/CancelReservation.hpp>
 #include <ocpp1_6/messages/ChangeAvailability.hpp>
 #include <ocpp1_6/messages/ChangeConfiguration.hpp>
 #include <ocpp1_6/messages/ClearCache.hpp>
@@ -27,14 +28,13 @@
 #include <ocpp1_6/messages/MeterValues.hpp>
 #include <ocpp1_6/messages/RemoteStartTransaction.hpp>
 #include <ocpp1_6/messages/RemoteStopTransaction.hpp>
+#include <ocpp1_6/messages/ReserveNow.hpp>
 #include <ocpp1_6/messages/Reset.hpp>
 #include <ocpp1_6/messages/SetChargingProfile.hpp>
 #include <ocpp1_6/messages/StartTransaction.hpp>
 #include <ocpp1_6/messages/StatusNotification.hpp>
 #include <ocpp1_6/messages/StopTransaction.hpp>
 #include <ocpp1_6/messages/UnlockConnector.hpp>
-#include <ocpp1_6/messages/ReserveNow.hpp>
-#include <ocpp1_6/messages/CancelReservation.hpp>
 #include <ocpp1_6/types.hpp>
 #include <ocpp1_6/websocket.hpp>
 
@@ -90,6 +90,10 @@ private:
     std::function<void(int32_t connector)> start_charging_callback;
     std::function<void(int32_t connector)> stop_charging_callback;
     std::function<bool(int32_t connector)> unlock_connector_callback;
+    std::function<bool(int32_t reservation_id, int32_t connector, ocpp1_6::DateTime expiryDate,
+                       ocpp1_6::CiString20Type idTag, std::string parent_id)>
+        reserve_now_callback;
+    std::function<bool(int32_t connector)> cancel_reservation_callback;
     std::function<void(int32_t connector, double max_current)> set_max_current_callback;
 
     /// \brief This function is called after a successful connection to the Websocket
@@ -139,8 +143,8 @@ private:
     void handleGetCompositeScheduleRequest(Call<GetCompositeScheduleRequest> call);
     void handleClearChargingProfileRequest(Call<ClearChargingProfileRequest> call);
 
-    /// \brief ReserveNow.req(connectorId, expiryDate, idTag, reservationId, [parentIdTag]): tries to perform the reservation and sends a reservation response.
-    /// The reservation response: ReserveNow::Status
+    /// \brief ReserveNow.req(connectorId, expiryDate, idTag, reservationId, [parentIdTag]): tries to perform the
+    /// reservation and sends a reservation response. The reservation response: ReserveNow::Status
     void handleReserveNowRequest(Call<ReserveNowRequest> call);
 
     /// \brief Receives CancelReservation.req(reservationId)
@@ -228,8 +232,13 @@ public:
 
     /// \brief registers a \p callback function that can be used to reserve a connector for a idTag until a timeout is
     /// reached
+    /**
     void register_reserve_now_callback(
         const std::function<bool(int32_t connector, CiString20Type idTag, std::chrono::seconds timeout)>& callback);
+        **/
+    void register_reserve_now_callback(
+        const std::function<bool(int32_t reservation_id, int32_t connector, ocpp1_6::DateTime expiryDate,
+                                 ocpp1_6::CiString20Type idTag, std::string parent_id)>& callback);
 
     /// \brief registers a \p callback function that can be used to cancel a reservation on a connector
     void register_cancel_reservation_callback(const std::function<bool(int32_t connector)>& callback);
