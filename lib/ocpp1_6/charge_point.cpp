@@ -1520,6 +1520,7 @@ bool ChargePoint::start_transaction(int32_t connector) {
         auto meter_value = this->get_latest_meter_value(
             connector, this->configuration->getMeterValuesSampledDataVector(), ReadingContext::Sample_Periodic);
         this->charging_sessions->add_sampled_meter_value(connector, meter_value);
+        this->send_meter_value(connector, meter_value);
     });
     auto transaction =
         std::make_unique<Transaction>(start_transaction_response.transactionId, std::move(meter_values_sample_timer));
