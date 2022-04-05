@@ -275,6 +275,12 @@ public:
 class Reservations {
 private:
     std::map<int32_t, std::tuple<int32_t, DateTime, CiString20Type>> reservations;
+
+    std::function<bool(int32_t connector)> cancel_reservation_callback;
+    std::function<bool(int32_t reservation_id, int32_t connector, ocpp1_6::DateTime expiryDate,
+                       ocpp1_6::CiString20Type idTag, std::string parent_id)>
+        reserve_now_callback;
+
     enum TupleElement
     {
         connector_id = 0,
@@ -296,6 +302,8 @@ private:
         return value;
     };
 
+    /// \brief collect the reservation ids that are currently actively reserving a connector.
+    /// \returns a set containing the collected reservation ids
     std::set<int32_t> get_reserved_ids();
 
     /// \brief check the specified connector is currently available and unreserved, search for vacant connector if
@@ -304,24 +312,33 @@ private:
                                      std::map<int32_t, ocpp1_6::AvailabilityType> availability);
 
 public:
-    /// \brief Manage reservations
+    /// \brief Constructor of this class that manages/caches reservations
     /// \returns None
     Reservations();
 
     /// \brief Attempts to reserve a connector on the charge_point
     /// \returns ReserverationStatus after having processed the request
-    ReservationStatus
-    reserve_now(int32_t reservationId, int32_t connectorId, DateTime expiryDate, CiString20Type idTag,
-                std::shared_ptr<ChargePointConfiguration> cpConfiguration,
-                std::function<bool(int32_t reservation_id, int32_t connector, ocpp1_6::DateTime expiryDate,
-                                   ocpp1_6::CiString20Type idTag, std::string parent_id)>
-                    reserve_now_callback);
+    ReservationStatus reserve_now(int32_t reservationId, int32_t connectorId, DateTime expiryDate, CiString20Type idTag,
+                                  std::shared_ptr<ChargePointConfiguration> cpConfiguration);
 
     /// \brief Attempts to cancel a reservation on the charge_point
     /// \returns CancelReservationStatus::Accepted if successful, else CancelReservationStatus::Rejected
     CancelReservationStatus cancel_reservation(int32_t reservationId,
-                                               std::shared_ptr<ChargePointConfiguration> cpConfiguration,
-                                               std::function<bool(int32_t connector)> cancel_reservation_callback);
+                                               std::shared_ptr<ChargePointConfiguration> cpConfiguration);
+
+    /// \brief Add the reserve now callback function to this object so that it can be used by the object's methods.
+    /// \returns void
+    void set_reserve_now_callback(
+        const std::function<bool(int32_t reservation_id, int32_t connector, ocpp1_6::DateTime expiryDate,
+                                 ocpp1_6::CiString20Type idTag, std::string parent_id)>& reserve_now_callback) {
+        this->reserve_now_callback = reserve_now_callback;
+    };
+
+    /// \brief Add the cancel reservation callback function to this object so that it can be used by the object's methods.
+    /// \returns void
+    void set_cancel_reservation_callback(const std::function<bool(int32_t connector)>& cancel_reservation_callback) {
+        this->cancel_reservation_callback = cancel_reservation_callback;
+    };
 };
 
 } // namespace ocpp1_6

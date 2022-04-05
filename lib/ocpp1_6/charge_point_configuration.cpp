@@ -388,9 +388,13 @@ bool ChargePointConfiguration::setConnectorAvailability(int32_t connectorId, Ava
     return true;
 }
 AvailabilityType ChargePointConfiguration::getConnectorAvailability(int32_t connectorId) {
+    EVLOG(debug) << "ping6.1";
+
     std::ostringstream select_sql;
     std::promise<ocpp1_6::AvailabilityType>* sql_promise = new std::promise<ocpp1_6::AvailabilityType>();
     std::future<ocpp1_6::AvailabilityType> sql_future = sql_promise->get_future();
+
+    EVLOG(debug) << "ping6.2";
 
     select_sql << "SELECT AVAILABILITY FROM CONNECTORS WHERE ID = " << connectorId << ";";
     std::string select_sql_str = select_sql.str();
@@ -405,10 +409,12 @@ AvailabilityType ChargePointConfiguration::getConnectorAvailability(int32_t conn
             return 0;
         },
         (void*)sql_promise, &error);
+    EVLOG(debug) << "ping6.3";
 
     std::chrono::system_clock::time_point sql_wait = std::chrono::system_clock::now() + ocpp1_6::future_wait_seconds;
     std::future_status sql_future_status;
     do {
+        EVLOG(debug) << "ping6.4";
         sql_future_status = sql_future.wait_until(sql_wait);
     } while (sql_future_status == std::future_status::deferred);
     if (sql_future_status == std::future_status::timeout) {
@@ -417,7 +423,9 @@ AvailabilityType ChargePointConfiguration::getConnectorAvailability(int32_t conn
         EVLOG(debug) << "sql future ready";
     }
 
+    EVLOG(debug) << "ping6.4";
     ocpp1_6::AvailabilityType response = sql_future.get();
+    EVLOG(debug) << "ping6.5, " << response;
     return response;
 }
 

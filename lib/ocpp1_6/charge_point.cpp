@@ -1222,7 +1222,7 @@ void ChargePoint::handleReserveNowRequest(Call<ReserveNowRequest> call) {
 
     ReserveNowResponse response;
     response.status = this->reservations->reserve_now(call.msg.reservationId, call.msg.connectorId, call.msg.expiryDate,
-                                                      call.msg.idTag, this->configuration, this->reserve_now_callback);
+                                                      call.msg.idTag, this->configuration);
     CallResult<ReserveNowResponse> call_result(response, call.uniqueId);
     this->send<ReserveNowResponse>(call_result);
 
@@ -1235,8 +1235,7 @@ void ChargePoint::handleCancelReservationRequest(Call<CancelReservationRequest> 
     EVLOG(debug) << "call.msg: " << call.msg;
 
     CancelReservationResponse response;
-    response.status = this->reservations->cancel_reservation(call.msg.reservationId, this->configuration,
-                                                             this->cancel_reservation_callback);
+    response.status = this->reservations->cancel_reservation(call.msg.reservationId, this->configuration);
     CallResult<CancelReservationResponse> call_result(response, call.uniqueId);
     this->send<CancelReservationResponse>(call_result);
 
@@ -1667,12 +1666,20 @@ void ChargePoint::register_cancel_charging_callback(const std::function<bool(int
 void ChargePoint::register_reserve_now_callback(
     const std::function<bool(int32_t reservation_id, int32_t connector, ocpp1_6::DateTime expiryDate,
                              ocpp1_6::CiString20Type idTag, std::string parent_id)>& callback) {
+    EVLOG(critical) << "register_reserve_now - begin";
     this->reserve_now_callback = callback;
+    this->reservations->set_reserve_now_callback(this->reserve_now_callback);
+    EVLOG(critical) << "register_reserve_now - end";
+
     // FIXME(kai): implement
 }
 
 void ChargePoint::register_cancel_reservation_callback(const std::function<bool(int32_t connector)>& callback) {
+    EVLOG(critical) << "register_cancel_reservation - begin";
     this->cancel_reservation_callback = callback;
+    this->reservations->set_cancel_reservation_callback(this->cancel_reservation_callback);
+    EVLOG(critical) << "register_cancel_reservation - end";
+
     // FIXME(kai): implement
 }
 
