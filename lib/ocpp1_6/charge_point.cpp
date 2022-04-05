@@ -1684,6 +1684,11 @@ bool ChargePoint::resume_charging(int32_t connector) {
     return true;
 }
 
+bool ChargePoint::plug_disconnected(int32_t connector) {
+    this->status->submit_event(connector, Event_BecomeAvailable());
+    return true;
+}
+
 bool ChargePoint::error(int32_t connector, ChargePointErrorCode error_code) {
     // FIXME(kai): implement
     // FIXME(kai): libfsm

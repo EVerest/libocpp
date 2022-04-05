@@ -205,8 +205,10 @@ public:
     /// \returns true if this state change was possible
     bool resume_charging(int32_t connector);
 
-    // /// EV/EVSE indicates that charging has finished
-    // bool stop_charging(int32_t connector);
+    /// \brief EV was disconnected
+    /// \returns true if this state change was possible
+    bool plug_disconnected(int32_t connector);
+
     /// EV/EVSE indicates that an error with the given \p error_code occured
     /// \returns true if this state change was possible
     bool error(int32_t connector, ChargePointErrorCode error_code);
@@ -251,8 +253,6 @@ public:
     // FIXME: rework the following API functions, do we want to expose them?
     // insert plug
     // bool plug_connected(int32_t connector);
-    // remove plug
-    // bool plug_disconnected(int32_t connector);
 };
 
 } // namespace ocpp1_6
