@@ -277,7 +277,7 @@ private:
     std::map<int32_t, std::tuple<int32_t, DateTime, CiString20Type>> reservations;
 
     std::function<bool(int32_t connector)> cancel_reservation_callback;
-    std::function<bool(int32_t reservation_id, int32_t connector, ocpp1_6::DateTime expiryDate,
+    std::function<ReservationStatus(int32_t reservation_id, int32_t connector, ocpp1_6::DateTime expiryDate,
                        ocpp1_6::CiString20Type idTag, std::string parent_id)>
         reserve_now_callback;
 
@@ -329,7 +329,7 @@ public:
     /// \brief Add the reserve now callback function to this object so that it can be used by the object's methods.
     /// \returns void
     void set_reserve_now_callback(
-        const std::function<bool(int32_t reservation_id, int32_t connector, ocpp1_6::DateTime expiryDate,
+        const std::function<ReservationStatus(int32_t reservation_id, int32_t connector, ocpp1_6::DateTime expiryDate,
                                  ocpp1_6::CiString20Type idTag, std::string parent_id)>& reserve_now_callback) {
         this->reserve_now_callback = reserve_now_callback;
     };

@@ -1664,22 +1664,16 @@ void ChargePoint::register_cancel_charging_callback(const std::function<bool(int
 
 // int32_t connector, ocpp1_6::CiString20Type idTag, std::chrono::seconds timeout
 void ChargePoint::register_reserve_now_callback(
-    const std::function<bool(int32_t reservation_id, int32_t connector, ocpp1_6::DateTime expiryDate,
+    const std::function<ReservationStatus(int32_t reservation_id, int32_t connector, ocpp1_6::DateTime expiryDate,
                              ocpp1_6::CiString20Type idTag, std::string parent_id)>& callback) {
-    EVLOG(critical) << "register_reserve_now - begin";
     this->reserve_now_callback = callback;
     this->reservations->set_reserve_now_callback(this->reserve_now_callback);
-    EVLOG(critical) << "register_reserve_now - end";
-
     // FIXME(kai): implement
 }
 
 void ChargePoint::register_cancel_reservation_callback(const std::function<bool(int32_t connector)>& callback) {
-    EVLOG(critical) << "register_cancel_reservation - begin";
     this->cancel_reservation_callback = callback;
     this->reservations->set_cancel_reservation_callback(this->cancel_reservation_callback);
-    EVLOG(critical) << "register_cancel_reservation - end";
-
     // FIXME(kai): implement
 }
 
