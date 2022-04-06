@@ -1671,7 +1671,7 @@ void ChargePoint::register_reserve_now_callback(
     // FIXME(kai): implement
 }
 
-void ChargePoint::register_cancel_reservation_callback(const std::function<bool(int32_t connector)>& callback) {
+void ChargePoint::register_cancel_reservation_callback(const std::function<CancelReservationStatus(int32_t connector)>& callback) {
     this->cancel_reservation_callback = callback;
     this->reservations->set_cancel_reservation_callback(this->cancel_reservation_callback);
     // FIXME(kai): implement

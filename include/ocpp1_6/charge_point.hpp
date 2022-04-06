@@ -93,7 +93,7 @@ private:
     std::function<ReservationStatus(int32_t reservation_id, int32_t connector, ocpp1_6::DateTime expiryDate,
                        ocpp1_6::CiString20Type idTag, std::string parent_id)>
         reserve_now_callback;
-    std::function<bool(int32_t connector)> cancel_reservation_callback;
+    std::function<CancelReservationStatus(int32_t connector)> cancel_reservation_callback;
     std::function<void(int32_t connector, double max_current)> set_max_current_callback;
 
     /// \brief This function is called after a successful connection to the Websocket
@@ -241,7 +241,7 @@ public:
                                  ocpp1_6::CiString20Type idTag, std::string parent_id)>& callback);
 
     /// \brief registers a \p callback function that can be used to cancel a reservation on a connector
-    void register_cancel_reservation_callback(const std::function<bool(int32_t connector)>& callback);
+    void register_cancel_reservation_callback(const std::function<CancelReservationStatus(int32_t connector)>& callback);
 
     /// registers a \p callback function that can be used to unlock the connector
     void register_unlock_connector_callback(const std::function<bool(int32_t connector)>& callback);

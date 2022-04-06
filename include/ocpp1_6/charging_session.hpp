@@ -276,7 +276,7 @@ class Reservations {
 private:
     std::map<int32_t, std::tuple<int32_t, DateTime, CiString20Type>> reservations;
 
-    std::function<bool(int32_t connector)> cancel_reservation_callback;
+    std::function<CancelReservationStatus(int32_t connector)> cancel_reservation_callback;
     std::function<ReservationStatus(int32_t reservation_id, int32_t connector, ocpp1_6::DateTime expiryDate,
                        ocpp1_6::CiString20Type idTag, std::string parent_id)>
         reserve_now_callback;
@@ -336,7 +336,7 @@ public:
 
     /// \brief Add the cancel reservation callback function to this object so that it can be used by the object's methods.
     /// \returns void
-    void set_cancel_reservation_callback(const std::function<bool(int32_t connector)>& cancel_reservation_callback) {
+    void set_cancel_reservation_callback(const std::function<CancelReservationStatus(int32_t connector)>& cancel_reservation_callback) {
         this->cancel_reservation_callback = cancel_reservation_callback;
     };
 };

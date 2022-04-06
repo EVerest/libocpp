@@ -595,6 +595,7 @@ Reservations::cancel_reservation(int32_t reservationId, std::shared_ptr<ChargePo
                         << " is " << numReservations << ".";
         EVLOG(critical) << "Unexpected state: Number of reservations with the reservation id " << reservationId
                         << " should be 0 after canceling the reservation.";
+        return CancelReservationStatus::Rejected;
     }
 }
 
