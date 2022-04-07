@@ -327,16 +327,28 @@ public:
 
     /// \brief
     /// \returns
-    template <class ContentType, class TupleElementType>
-    std::set<ContentType> get_reserved_element() {
-        TupleElement key = TupleElement::connector_id;
-
-        std::set<ContentType> elements;
+    std::set<std::string> get_reserved_tag() {
+        std::set<std::string> elements;
         for (reservationsMap::iterator it = this->reservations.begin(); it != this->reservations.end(); ++it) {
-            elements.insert(std::get<TupleElementType>(it->second));
+            std::tuple<int32_t, DateTime, CiString20Type> tpl = it->second;
+            CiString20Type tag = std::get<TupleElement::id_tag>(tpl);
+            std::string stag = tag.get();
+            elements.insert(stag);
         }
         return elements;
     }
+
+/**
+    /// \brief
+    /// \returns
+    std::set<int32_t> get_reserved_connector() {
+        std::set<int32_t> elements;
+        for (reservationsMap::iterator it = this->reservations.begin(); it != this->reservations.end(); ++it) {
+            elements.insert(std::get<TupleElement::connector_id>(it->second));
+        }
+        return elements;
+    }
+    **/
 
 
     template <class ReservationPropertyType>

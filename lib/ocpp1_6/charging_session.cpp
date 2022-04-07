@@ -600,8 +600,8 @@ CancelReservationStatus Reservations::cancel_reservation(int32_t reservationId) 
 }
 
 void Reservations::transaction_started(ocpp1_6::CiString20Type idTag, int32_t connector) {
-    std::set<ocpp1_6::CiString20Type> reserved_id_tags = this->get_reserved_element<ocpp1_6::CiString20Type, TupleElement::id_tag>();
-    std::set<int32_t> reserved_connector_ids = this->get_reserved_element<int32_t, TupleElement::connector_id>();
+    std::set<std::string> reserved_id_tags = this->get_reserved_tag();
+    //std::set<int32_t> reserved_connectors = this->get_reserved_connector();
 
     std::set<int32_t> to_cancel;
     /**
@@ -609,7 +609,7 @@ void Reservations::transaction_started(ocpp1_6::CiString20Type idTag, int32_t co
         this->add_matching_reservation_ids(to_cancel, idTag, TupleElement::id_tag);
     }
 
-    if (reserved_connector_ids.count(connector) == 1) {
+    if (reserved_connectors.count(connector) == 1) {
         this->add_matching_reservation_ids(to_cancel, connector, TupleElement::connector_id);
     }
 
