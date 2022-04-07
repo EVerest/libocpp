@@ -515,9 +515,9 @@ int32_t Reservations::get_unreserved_connector(int32_t query_connector,
     return this->error_unexpected_state;
 }
 
-ReservationStatus
-Reservations::reserve_now(int32_t reservationId, int32_t connectorId, DateTime expiryDate, CiString20Type idTag,
-                          std::shared_ptr<ChargePointConfiguration> cpConfiguration) {
+ReservationStatus Reservations::reserve_now(int32_t reservationId, int32_t connectorId, DateTime expiryDate,
+                                            CiString20Type idTag,
+                                            std::shared_ptr<ChargePointConfiguration> cpConfiguration) {
 
     auto properties = std::make_tuple(connectorId, expiryDate, idTag);
     auto pair = std::pair<int32_t, std::tuple<int32_t, DateTime, CiString20Type>>(reservationId, properties);
@@ -526,7 +526,7 @@ Reservations::reserve_now(int32_t reservationId, int32_t connectorId, DateTime e
     if (numResIds == 1) {
         // Overwrite existing reservation
         ReservationStatus status = this->reserve_now_callback(reservationId, connectorId, expiryDate, idTag,
-                                       std::string("empty parent")); // TODO: expecting an enum
+                                                              std::string("empty parent")); // TODO: expecting an enum
         if (status == ReservationStatus::Accepted) {
             this->reservations[reservationId] = properties;
             return ReservationStatus::Accepted;
@@ -552,7 +552,8 @@ Reservations::reserve_now(int32_t reservationId, int32_t connectorId, DateTime e
             if (connector_availability == AvailabilityType::Inoperative) {
                 return ReservationStatus::Unavailable;
             } else {
-                ReservationStatus status = this->reserve_now_callback(reservationId, connectorId, expiryDate, idTag,
+                ReservationStatus status =
+                    this->reserve_now_callback(reservationId, connectorId, expiryDate, idTag,
                                                std::string("empty parent")); // TODO: expecting an enum
 
                 if (status != ReservationStatus::Accepted) {
@@ -571,8 +572,7 @@ Reservations::reserve_now(int32_t reservationId, int32_t connectorId, DateTime e
     return ReservationStatus::Faulted;
 }
 
-CancelReservationStatus
-Reservations::cancel_reservation(int32_t reservationId, std::shared_ptr<ChargePointConfiguration> cpConfiguration) {
+CancelReservationStatus Reservations::cancel_reservation(int32_t reservationId) {
     int32_t numReservations = this->get_reserved_ids().count(reservationId);
     if (numReservations != 1 && numReservations != 0) { // Unexpected state!
         EVLOG(critical) << "Unexpected state: Number of reservations with the reservation id " << reservationId
@@ -597,6 +597,26 @@ Reservations::cancel_reservation(int32_t reservationId, std::shared_ptr<ChargePo
                         << " should be 0 after canceling the reservation.";
         return CancelReservationStatus::Rejected;
     }
+}
+
+void Reservations::transaction_started(ocpp1_6::CiString20Type idTag, int32_t connector) {
+    std::set<ocpp1_6::CiString20Type> reserved_id_tags = this->get_reserved_element<ocpp1_6::CiString20Type, TupleElement::id_tag>();
+    std::set<int32_t> reserved_connector_ids = this->get_reserved_element<int32_t, TupleElement::connector_id>();
+
+    std::set<int32_t> to_cancel;
+    /**
+    if (reserved_id_tags.count(idTag) == 1) {
+        this->add_matching_reservation_ids(to_cancel, idTag, TupleElement::id_tag);
+    }
+
+    if (reserved_connector_ids.count(connector) == 1) {
+        this->add_matching_reservation_ids(to_cancel, connector, TupleElement::connector_id);
+    }
+
+    for (std::set<int32_t>::iterator it = to_cancel.begin(); it != this->to_cancel.end(); ++it) {
+        this->cancel_reservation(it);
+    }
+    **/
 }
 
 } // namespace ocpp1_6

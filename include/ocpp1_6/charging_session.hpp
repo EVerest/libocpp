@@ -274,11 +274,12 @@ public:
 // there can be some "mobility" when the same reservation (with the identical id) changes to a different one
 class Reservations {
 private:
-    std::map<int32_t, std::tuple<int32_t, DateTime, CiString20Type>> reservations;
+    typedef std::map<int32_t, std::tuple<int32_t, DateTime, CiString20Type>> reservationsMap;
+    reservationsMap reservations;
 
     std::function<CancelReservationStatus(int32_t connector)> cancel_reservation_callback;
     std::function<ReservationStatus(int32_t reservation_id, int32_t connector, ocpp1_6::DateTime expiryDate,
-                       ocpp1_6::CiString20Type idTag, std::string parent_id)>
+                                    ocpp1_6::CiString20Type idTag, std::string parent_id)>
         reserve_now_callback;
 
     enum TupleElement
@@ -295,8 +296,7 @@ private:
     /// \returns a set containing all the connector ids
     std::set<int32_t> get_reserved_connectors() {
         std::set<int32_t> value;
-        for (std::map<int32_t, std::tuple<int32_t, DateTime, CiString20Type>>::iterator it = this->reservations.begin();
-             it != this->reservations.end(); ++it) {
+        for (reservationsMap::iterator it = this->reservations.begin(); it != this->reservations.end(); ++it) {
             value.insert(std::get<0>(it->second));
         }
         return value;
@@ -323,20 +323,50 @@ public:
 
     /// \brief Attempts to cancel a reservation on the charge_point
     /// \returns CancelReservationStatus::Accepted if successful, else CancelReservationStatus::Rejected
-    CancelReservationStatus cancel_reservation(int32_t reservationId,
-                                               std::shared_ptr<ChargePointConfiguration> cpConfiguration);
+    CancelReservationStatus cancel_reservation(int32_t reservationId);
+
+    /// \brief
+    /// \returns
+    template <class ContentType, class TupleElementType>
+    std::set<ContentType> get_reserved_element() {
+        TupleElement key = TupleElement::connector_id;
+
+        std::set<ContentType> elements;
+        for (reservationsMap::iterator it = this->reservations.begin(); it != this->reservations.end(); ++it) {
+            elements.insert(std::get<TupleElementType>(it->second));
+        }
+        return elements;
+    }
+
+
+    template <class ReservationPropertyType>
+    void add_matching_reservation_ids(std::set<int32_t>& reservations_to_cancel,
+                                                    ReservationPropertyType element, TupleElement key) {
+        /**
+        for (reservationsMap::iterator it = this->reservations.begin(); it != this->reservations.end(); ++it) {
+            if (std::get<key>(it->second) == element) {
+                reservations_to_cancel.insert(it->first);
+            }
+        }
+        **/
+    }
+
+    ///
+    void transaction_started(ocpp1_6::CiString20Type idTag, int32_t connector);
 
     /// \brief Add the reserve now callback function to this object so that it can be used by the object's methods.
     /// \returns void
     void set_reserve_now_callback(
         const std::function<ReservationStatus(int32_t reservation_id, int32_t connector, ocpp1_6::DateTime expiryDate,
-                                 ocpp1_6::CiString20Type idTag, std::string parent_id)>& reserve_now_callback) {
+                                              ocpp1_6::CiString20Type idTag, std::string parent_id)>&
+            reserve_now_callback) {
         this->reserve_now_callback = reserve_now_callback;
     };
 
-    /// \brief Add the cancel reservation callback function to this object so that it can be used by the object's methods.
-    /// \returns void
-    void set_cancel_reservation_callback(const std::function<CancelReservationStatus(int32_t connector)>& cancel_reservation_callback) {
+    /// \brief Add the cancel reservation callback function to this object so that it can be used by the object's
+    /// methods. \returns void
+    void set_cancel_reservation_callback(
+        const std::function<CancelReservationStatus(int32_t connector)>& cancel_reservation_callback) {
         this->cancel_reservation_callback = cancel_reservation_callback;
     };
 };
@@ -344,3 +374,30 @@ public:
 } // namespace ocpp1_6
 
 #endif // OCPP1_6_CHARGING_SESSION_HPP
+
+/**
+    reservations is currently in charge_point.hpp
+
+    Check in
+    ocpp1_6::Reservations::reservations to see if a particular connector is reserved.
+    Also need to modify the reservations...
+
+        A reservation SHALL be terminated on the Charge Point when either (1) a transaction is started for the reserved
+    idTag or parent idTag and on the reserved connector or any connector when the reserved connectorId is 0, or
+
+    (2)
+    when the time specified in expiryDate is reached, or
+
+    (3) when the Charge Point or connector are set to Faulted or
+    Unavailable.
+
+    --------------------------------------------------
+
+    If a transaction for the reserved idTag is started, then Charge Point SHALL send the reservationId in the
+    StartTransaction.req PDU (see Start Transaction) to notify the Central System that the reservation is terminated.
+
+
+    When a reservation expires, the Charge Point SHALL terminate the reservation and make the connector
+    available. The Charge Point SHALL send a status notification to notify the Central System that the reserved
+    connector is now available.
+ **/

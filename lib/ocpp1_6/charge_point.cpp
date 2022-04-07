@@ -1235,7 +1235,7 @@ void ChargePoint::handleCancelReservationRequest(Call<CancelReservationRequest> 
     EVLOG(debug) << "call.msg: " << call.msg;
 
     CancelReservationResponse response;
-    response.status = this->reservations->cancel_reservation(call.msg.reservationId, this->configuration);
+    response.status = this->reservations->cancel_reservation(call.msg.reservationId);
     CallResult<CancelReservationResponse> call_result(response, call.uniqueId);
     this->send<CancelReservationResponse>(call_result);
 
@@ -1474,6 +1474,9 @@ bool ChargePoint::start_transaction(int32_t connector) {
         std::make_unique<Transaction>(start_transaction_response.transactionId, std::move(meter_values_sample_timer));
     if (!this->charging_sessions->add_transaction(connector, std::move(transaction))) {
         EVLOG(error) << "could not add_transaction";
+    } else {
+        // TODO: Add parrentID Tag?
+        this->reservations->transaction_started(idTag, connector);
     }
     this->charging_sessions->change_meter_values_sample_interval(connector,
                                                                  this->configuration->getMeterValueSampleInterval());
