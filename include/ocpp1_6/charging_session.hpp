@@ -291,21 +291,6 @@ private:
     int32_t no_connectors_available = -1;
     int32_t error_unexpected_state = -2;
 
-    // Make generic if we need to access other elements from the tuple as well
-    /// \brief iterate through the reservaitions and collect all connector_ids in a set
-    /// \returns a set containing all the connector ids
-    std::set<int32_t> get_reserved_connectors() {
-        std::set<int32_t> value;
-        for (reservationsMap::iterator it = this->reservations.begin(); it != this->reservations.end(); ++it) {
-            value.insert(std::get<0>(it->second));
-        }
-        return value;
-    };
-
-    /// \brief collect the reservation ids that are currently actively reserving a connector.
-    /// \returns a set containing the collected reservation ids
-    std::set<int32_t> get_reserved_ids();
-
     /// \brief check the specified connector is currently available and unreserved, search for vacant connector if
     /// connecotrId is zero \return return the vacant connectorId if found, return -1 if not found
     int32_t get_unreserved_connector(int32_t query_connector,
@@ -325,30 +310,32 @@ public:
     /// \returns CancelReservationStatus::Accepted if successful, else CancelReservationStatus::Rejected
     CancelReservationStatus cancel_reservation(int32_t reservationId);
 
+
+    /// \brief collect the reservation ids that are currently actively reserving a connector.
+    /// \returns a set containing the collected reservation ids
+    std::set<int32_t> get_reserved_ids();
+
+    
     /// \brief
     /// \returns
-    std::set<std::string> get_reserved_tag() {
+    std::set<std::string> get_reserved_id_tags() {
         std::set<std::string> elements;
         for (reservationsMap::iterator it = this->reservations.begin(); it != this->reservations.end(); ++it) {
-            std::tuple<int32_t, DateTime, CiString20Type> tpl = it->second;
-            CiString20Type tag = std::get<TupleElement::id_tag>(tpl);
-            std::string stag = tag.get();
-            elements.insert(stag);
+            elements.insert(std::get<TupleElement::id_tag>(it->second).get());
         }
         return elements;
     }
 
-/**
-    /// \brief
-    /// \returns
-    std::set<int32_t> get_reserved_connector() {
+    // Make generic if we need to access other elements from the tuple as well
+    /// \brief iterate through the reservaitions and collect all connector_ids in a set
+    /// \returns a set containing all the connector ids
+    std::set<int32_t> get_reserved_connectors() {
         std::set<int32_t> elements;
         for (reservationsMap::iterator it = this->reservations.begin(); it != this->reservations.end(); ++it) {
             elements.insert(std::get<TupleElement::connector_id>(it->second));
         }
         return elements;
     }
-    **/
 
 
     template <class ReservationPropertyType>

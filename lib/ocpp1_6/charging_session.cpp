@@ -600,8 +600,8 @@ CancelReservationStatus Reservations::cancel_reservation(int32_t reservationId) 
 }
 
 void Reservations::transaction_started(ocpp1_6::CiString20Type idTag, int32_t connector) {
-    std::set<std::string> reserved_id_tags = this->get_reserved_tag();
-    //std::set<int32_t> reserved_connectors = this->get_reserved_connector();
+    std::set<std::string> reserved_id_tags = this->get_reserved_id_tags();
+    std::set<int32_t> reserved_connectors = this->get_reserved_connectors();
 
     std::set<int32_t> to_cancel;
     /**
