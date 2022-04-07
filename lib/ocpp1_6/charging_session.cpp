@@ -604,19 +604,25 @@ void Reservations::transaction_started(ocpp1_6::CiString20Type idTag, int32_t co
     std::set<int32_t> reserved_connectors = this->get_reserved_connectors();
 
     std::set<int32_t> to_cancel;
-    /**
     if (reserved_id_tags.count(idTag) == 1) {
-        this->add_matching_reservation_ids(to_cancel, idTag, TupleElement::id_tag);
+        for (reservationsMap::iterator it = this->reservations.begin(); it != this->reservations.end(); ++it) {
+            if (std::get<TupleElement::id_tag>(it->second).get() == idTag.get()) {
+                to_cancel.insert(it->first);
+            }
+        }
     }
 
     if (reserved_connectors.count(connector) == 1) {
-        this->add_matching_reservation_ids(to_cancel, connector, TupleElement::connector_id);
+        for (reservationsMap::iterator it = this->reservations.begin(); it != this->reservations.end(); ++it) {
+            if (std::get<TupleElement::connector_id>(it->second) == connector) {
+                to_cancel.insert(it->first);
+            }
+        }        
     }
 
-    for (std::set<int32_t>::iterator it = to_cancel.begin(); it != this->to_cancel.end(); ++it) {
-        this->cancel_reservation(it);
+    for (std::set<int32_t>::iterator it = to_cancel.begin(); it != to_cancel.end(); ++it) {
+        CancelReservationStatus status = this->cancel_reservation(*it);
     }
-    **/
 }
 
 } // namespace ocpp1_6

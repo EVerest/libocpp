@@ -296,25 +296,9 @@ private:
     int32_t get_unreserved_connector(int32_t query_connector,
                                      std::map<int32_t, ocpp1_6::AvailabilityType> availability);
 
-public:
-    /// \brief Constructor of this class that manages/caches reservations
-    /// \returns None
-    Reservations();
-
-    /// \brief Attempts to reserve a connector on the charge_point
-    /// \returns ReserverationStatus after having processed the request
-    ReservationStatus reserve_now(int32_t reservationId, int32_t connectorId, DateTime expiryDate, CiString20Type idTag,
-                                  std::shared_ptr<ChargePointConfiguration> cpConfiguration);
-
-    /// \brief Attempts to cancel a reservation on the charge_point
-    /// \returns CancelReservationStatus::Accepted if successful, else CancelReservationStatus::Rejected
-    CancelReservationStatus cancel_reservation(int32_t reservationId);
-
-
     /// \brief collect the reservation ids that are currently actively reserving a connector.
     /// \returns a set containing the collected reservation ids
     std::set<int32_t> get_reserved_ids();
-
     
     /// \brief
     /// \returns
@@ -337,18 +321,20 @@ public:
         return elements;
     }
 
+public:
+    /// \brief Constructor of this class that manages/caches reservations
+    /// \returns None
+    Reservations();
 
-    template <class ReservationPropertyType>
-    void add_matching_reservation_ids(std::set<int32_t>& reservations_to_cancel,
-                                                    ReservationPropertyType element, TupleElement key) {
-        /**
-        for (reservationsMap::iterator it = this->reservations.begin(); it != this->reservations.end(); ++it) {
-            if (std::get<key>(it->second) == element) {
-                reservations_to_cancel.insert(it->first);
-            }
-        }
-        **/
-    }
+    /// \brief Attempts to reserve a connector on the charge_point
+    /// \returns ReserverationStatus after having processed the request
+    ReservationStatus reserve_now(int32_t reservationId, int32_t connectorId, DateTime expiryDate, CiString20Type idTag,
+                                  std::shared_ptr<ChargePointConfiguration> cpConfiguration);
+
+    /// \brief Attempts to cancel a reservation on the charge_point
+    /// \returns CancelReservationStatus::Accepted if successful, else CancelReservationStatus::Rejected
+    CancelReservationStatus cancel_reservation(int32_t reservationId);
+
 
     ///
     void transaction_started(ocpp1_6::CiString20Type idTag, int32_t connector);
