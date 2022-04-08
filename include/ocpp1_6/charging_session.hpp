@@ -269,25 +269,68 @@ public:
     std::vector<MeterValue> get_clock_aligned_meter_values(int32_t connector);
 };
 
-// this manages reservations, while they are tied to a connector, this could still be connector 0 (if the appropriate
-// config key is set) aka any connector on the charge point a reservation can also be tied to a specific connector, but
-// there can be some "mobility" when the same reservation (with the identical id) changes to a different one
-class Reservations {
+// Manages the reservation map to ensure that we ignore expired reservations.
+class ReservationMapManager {
 private:
-    typedef std::map<int32_t, std::tuple<int32_t, DateTime, CiString20Type>> reservationsMap;
-    reservationsMap reservations;
-
-    std::function<CancelReservationStatus(int32_t connector)> cancel_reservation_callback;
-    std::function<ReservationStatus(int32_t reservation_id, int32_t connector, ocpp1_6::DateTime expiryDate,
-                                    ocpp1_6::CiString20Type idTag, std::string parent_id)>
-        reserve_now_callback;
-
+    typedef std::tuple<int32_t, DateTime, CiString20Type> reservationsTuple;
+    typedef std::map<int32_t, reservationsTuple> reservationsMap;
     enum TupleElement
     {
         connector_id = 0,
         expiry_date = 1,
         id_tag = 2
     };
+
+    reservationsMap reservations;
+
+public:
+    ReservationMapManager(){};
+
+    /// \brief remove any reservations that have expired before passing on the reservations map
+    /// \returns the reservationsMap without any expired reservations in it
+    reservationsMap get() {
+        // TODO: Remove the ones that have expired
+        /**
+        for (reservationsMap::iterator it = res.begin(); it != res.end(); ++it) {
+            elements.insert(std::get<TupleElement::connector_id>(it->second));
+        }
+        **/
+        return this->reservations;
+    };
+
+    void remove(int32_t reservationId) {
+        reservationsMap::iterator it;
+        it = this->reservations.find(reservationId);
+        this->reservations.erase(it);
+    }
+
+    void add(std::pair<int32_t, reservationsTuple> reservation) {
+        this->reservations.insert(reservation);
+    }
+};
+
+// this manages reservations, while they are tied to a connector, this could still be connector 0 (if the appropriate
+// config key is set) aka any connector on the charge point a reservation can also be tied to a specific connector, but
+// there can be some "mobility" when the same reservation (with the identical id) changes to a different one
+class Reservations {
+private:
+    typedef std::tuple<int32_t, DateTime, CiString20Type> reservationsTuple;
+    typedef std::map<int32_t, reservationsTuple> reservationsMap;
+    enum TupleElement
+    {
+        connector_id = 0,
+        expiry_date = 1,
+        id_tag = 2
+    };
+
+    ReservationMapManager reservations;
+
+    std::function<CancelReservationStatus(int32_t connector)> cancel_reservation_callback;
+    std::function<ReservationStatus(int32_t reservation_id, int32_t connector, ocpp1_6::DateTime expiryDate,
+                                    ocpp1_6::CiString20Type idTag, std::string parent_id)>
+        reserve_now_callback;
+
+
     int32_t no_connectors_available = -1;
     int32_t error_unexpected_state = -2;
 
@@ -298,13 +341,21 @@ private:
 
     /// \brief collect the reservation ids that are currently actively reserving a connector.
     /// \returns a set containing the collected reservation ids
-    std::set<int32_t> get_reserved_ids();
-    
+    std::set<int32_t> get_reserved_ids() {
+        std::set<int32_t> ids;
+        reservationsMap res = this->reservations.get();
+        for (reservationsMap::iterator it = res.begin(); it != res.end(); ++it) {
+            ids.insert(it->first);
+        }
+        return ids;
+    }
+
     /// \brief
     /// \returns
     std::set<std::string> get_reserved_id_tags() {
         std::set<std::string> elements;
-        for (reservationsMap::iterator it = this->reservations.begin(); it != this->reservations.end(); ++it) {
+        reservationsMap res = this->reservations.get();
+        for (reservationsMap::iterator it = res.begin(); it != res.end(); ++it) {
             elements.insert(std::get<TupleElement::id_tag>(it->second).get());
         }
         return elements;
@@ -315,7 +366,8 @@ private:
     /// \returns a set containing all the connector ids
     std::set<int32_t> get_reserved_connectors() {
         std::set<int32_t> elements;
-        for (reservationsMap::iterator it = this->reservations.begin(); it != this->reservations.end(); ++it) {
+        reservationsMap res = this->reservations.get();
+        for (reservationsMap::iterator it = res.begin(); it != res.end(); ++it) {
             elements.insert(std::get<TupleElement::connector_id>(it->second));
         }
         return elements;
@@ -324,7 +376,7 @@ private:
 public:
     /// \brief Constructor of this class that manages/caches reservations
     /// \returns None
-    Reservations();
+    Reservations(){};
 
     /// \brief Attempts to reserve a connector on the charge_point
     /// \returns ReserverationStatus after having processed the request
@@ -334,7 +386,6 @@ public:
     /// \brief Attempts to cancel a reservation on the charge_point
     /// \returns CancelReservationStatus::Accepted if successful, else CancelReservationStatus::Rejected
     CancelReservationStatus cancel_reservation(int32_t reservationId);
-
 
     ///
     void transaction_started(ocpp1_6::CiString20Type idTag, int32_t connector);
