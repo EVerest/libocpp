@@ -1221,8 +1221,8 @@ void ChargePoint::handleReserveNowRequest(Call<ReserveNowRequest> call) {
     EVLOG(debug) << "call.msg[connectorId]: " << call.msg.connectorId;
 
     ReserveNowResponse response;
-    response.status = this->reservations->reserve_now(call.msg.reservationId, call.msg.connectorId, call.msg.expiryDate,
-                                                      call.msg.idTag, this->configuration);
+    response.status = this->reserve_now_callback(call.msg.reservationId, call.msg.connectorId, call.msg.expiryDate,
+                                                 call.msg.idTag, std::string("empty parent"));
     CallResult<ReserveNowResponse> call_result(response, call.uniqueId);
     this->send<ReserveNowResponse>(call_result);
 
@@ -1235,7 +1235,7 @@ void ChargePoint::handleCancelReservationRequest(Call<CancelReservationRequest> 
     EVLOG(debug) << "call.msg: " << call.msg;
 
     CancelReservationResponse response;
-    response.status = this->reservations->cancel_reservation(call.msg.reservationId);
+    response.status = this->cancel_reservation_callback(call.msg.reservationId);
     CallResult<CancelReservationResponse> call_result(response, call.uniqueId);
     this->send<CancelReservationResponse>(call_result);
 
@@ -1474,9 +1474,6 @@ bool ChargePoint::start_transaction(int32_t connector) {
         std::make_unique<Transaction>(start_transaction_response.transactionId, std::move(meter_values_sample_timer));
     if (!this->charging_sessions->add_transaction(connector, std::move(transaction))) {
         EVLOG(error) << "could not add_transaction";
-    } else {
-        // TODO: Add parrentID Tag?
-        this->reservations->transaction_started(idTag, connector);
     }
     this->charging_sessions->change_meter_values_sample_interval(connector,
                                                                  this->configuration->getMeterValueSampleInterval());
@@ -1668,15 +1665,14 @@ void ChargePoint::register_cancel_charging_callback(const std::function<bool(int
 // int32_t connector, ocpp1_6::CiString20Type idTag, std::chrono::seconds timeout
 void ChargePoint::register_reserve_now_callback(
     const std::function<ReservationStatus(int32_t reservation_id, int32_t connector, ocpp1_6::DateTime expiryDate,
-                             ocpp1_6::CiString20Type idTag, std::string parent_id)>& callback) {
+                                          ocpp1_6::CiString20Type idTag, std::string parent_id)>& callback) {
     this->reserve_now_callback = callback;
-    this->reservations->set_reserve_now_callback(this->reserve_now_callback);
     // FIXME(kai): implement
 }
 
-void ChargePoint::register_cancel_reservation_callback(const std::function<CancelReservationStatus(int32_t connector)>& callback) {
+void ChargePoint::register_cancel_reservation_callback(
+    const std::function<CancelReservationStatus(int32_t connector)>& callback) {
     this->cancel_reservation_callback = callback;
-    this->reservations->set_cancel_reservation_callback(this->cancel_reservation_callback);
     // FIXME(kai): implement
 }
 
