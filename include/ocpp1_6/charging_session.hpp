@@ -290,11 +290,16 @@ public:
     /// \returns the reservationsMap without any expired reservations in it
     reservationsMap get() {
         // TODO: Remove the ones that have expired
-        /**
-        for (reservationsMap::iterator it = res.begin(); it != res.end(); ++it) {
-            elements.insert(std::get<TupleElement::connector_id>(it->second));
+        std::set<int32_t> to_remove;
+        for (reservationsMap::iterator it = this->reservations.begin(); it != this->reservations.end(); ++it) {
+            if (std::get<TupleElement::expiry_date>(it->second) > std::chrono::system_clock::now()) {
+                to_remove.insert(it->first);
+            }
         }
-        **/
+
+        for (std::set<int32_t>::iterator it = to_remove.begin(); it != to_remove.end(); ++it) {
+            this->remove(*it);
+        }
         return this->reservations;
     };
 
