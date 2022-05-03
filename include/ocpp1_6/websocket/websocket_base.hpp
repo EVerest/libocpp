@@ -6,6 +6,8 @@
 #include <functional>
 #include <memory>
 
+#include <websocketpp/client.hpp>
+
 namespace ocpp1_6 {
 
 class ChargePointConfiguration;
@@ -21,9 +23,19 @@ protected:
     std::function<void()> disconnected_callback;
     std::function<void(const std::string& message)> message_callback;
 
+    websocketpp::lib::shared_ptr<websocketpp::lib::thread> websocket_thread;
+    std::string uri;
+    websocketpp::connection_hdl handle;
+    std::mutex reconnect_mutex;
+    long reconnect_interval_ms;
+    websocketpp::transport::timer_handler reconnect_callback;
+    websocketpp::lib::shared_ptr<boost::asio::steady_timer> reconnect_timer;
+
     /// \brief Indicates if the required callbacks are registered and the websocket is not shutting down
     /// \returns true if the websocket is properly initialized
     bool initialized();
+
+    std::string getAuthorizationHeader();
 
 public:
     /// \brief Creates a new WebsocketBase object with the providede \p configuration
@@ -35,6 +47,9 @@ public:
 
     /// \brief disconnect the websocket
     virtual void disconnect() = 0;
+
+    /// \brief reconnect the websocket
+    virtual void reconnect(std::error_code reason) = 0;
 
     /// \brief register a \p callback that is called when the websocket is connected successfully
     void register_connected_callback(const std::function<void()>& callback);

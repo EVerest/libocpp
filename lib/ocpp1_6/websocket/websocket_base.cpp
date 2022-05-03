@@ -12,7 +12,8 @@ WebsocketBase::WebsocketBase(std::shared_ptr<ChargePointConfiguration> configura
     configuration(configuration),
     connected_callback(nullptr),
     disconnected_callback(nullptr),
-    message_callback(nullptr) {
+    message_callback(nullptr),
+    reconnect_timer(nullptr) {
 }
 
 void WebsocketBase::register_connected_callback(const std::function<void()>& callback) {
@@ -46,6 +47,17 @@ bool WebsocketBase::initialized() {
     }
 
     return true;
+}
+
+std::string WebsocketBase::getAuthorizationHeader() {
+    std::string auth_header = "";
+    auto authorization_key = this->configuration->getAuthorizationKey();
+    if (authorization_key != boost::none) {
+        EVLOG(debug) << "AuthorizationKey present, encoding authentication header";
+        std::string plain_auth_header = this->configuration->getChargePointId() + ":" + authorization_key.value();
+        auth_header = std::string("Basic ") + websocketpp::base64_encode(plain_auth_header);
+    }
+    return auth_header;
 }
 
 } // namespace ocpp1_6

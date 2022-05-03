@@ -7,8 +7,7 @@
 
 namespace ocpp1_6 {
 
-WebsocketPlain::WebsocketPlain(std::shared_ptr<ChargePointConfiguration> configuration) :
-    WebsocketBase(configuration), reconnect_timer(nullptr) {
+WebsocketPlain::WebsocketPlain(std::shared_ptr<ChargePointConfiguration> configuration) : WebsocketBase(configuration) {
     this->reconnect_interval_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
                                       std::chrono::seconds(configuration->getWebsocketReconnectInterval()))
                                       .count();
@@ -38,10 +37,10 @@ bool WebsocketPlain::connect() {
             }
             this->reconnect_timer = nullptr;
         }
-        this->connect_plain();
+        this->connect_plain(this->getAuthorizationHeader());
     };
 
-    this->connect_plain();
+    this->connect_plain(this->getAuthorizationHeader());
     return true;
 }
 
@@ -115,7 +114,7 @@ void WebsocketPlain::reconnect(std::error_code reason) {
     // https://github.com/zaphoyd/websocketpp/blob/master/websocketpp/close.hpp
 }
 
-void WebsocketPlain::connect_plain() {
+void WebsocketPlain::connect_plain(std::string authorization_header) {
     EVLOG(info) << "Connecting to plain websocket at: " << this->uri;
     websocketpp::lib::error_code ec;
 

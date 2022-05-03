@@ -690,6 +690,8 @@ void ChargePoint::handleChangeAvailabilityRequest(Call<ChangeAvailabilityRequest
 }
 
 void ChargePoint::handleChangeConfigurationRequest(Call<ChangeConfigurationRequest> call) {
+
+    // TODO: dont log AuthorizationKey
     EVLOG(debug) << "Received ChangeConfigurationRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
 
     ChangeConfigurationResponse response;
@@ -711,6 +713,15 @@ void ChargePoint::handleChangeConfigurationRequest(Call<ChangeConfigurationReque
                 }
                 if (call.msg.key == "ClockAlignedDataInterval") {
                     this->update_clock_aligned_meter_values_interval();
+                }
+                if (call.msg.key == "AuthorizationKey") {
+                    EVLOG(debug) << "AuthorizationKey is now: " << call.msg.value;
+                    // reconnect websocket with new AuthorizationKey
+                    // TODO: store all queued messages
+                    this->websocket->reconnect(std::error_code());
+
+                    // what if basic auth is not in use? what if client side certificates are in use?
+                    // log change in security log - if we have one yet?!
                 }
             }
         }
@@ -1443,7 +1454,6 @@ AuthorizationStatus ChargePoint::authorize_id_tag(CiString20Type idTag) {
             }
         }
     }
-
     return auth_status;
 }
 

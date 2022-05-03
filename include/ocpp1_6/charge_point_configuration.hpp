@@ -48,6 +48,8 @@ public:
     std::string getSupportedCiphers();
     // move this to a new "Security" profile with the other OCPP 1.6 security extension config options?
     boost::optional<std::string> getAuthorizationKey();
+    void setAuthorizationKey(std::string authorization_key);
+    boost::optional<KeyValue> getAuthorizationKeyKeyValue();
 
     // Internal
     std::set<MessageType> getSupportedMessageTypesSending();

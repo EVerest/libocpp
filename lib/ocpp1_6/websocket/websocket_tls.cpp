@@ -7,8 +7,7 @@
 
 namespace ocpp1_6 {
 
-WebsocketTLS::WebsocketTLS(std::shared_ptr<ChargePointConfiguration> configuration) :
-    WebsocketBase(configuration), reconnect_timer(nullptr) {
+WebsocketTLS::WebsocketTLS(std::shared_ptr<ChargePointConfiguration> configuration) : WebsocketBase(configuration) {
     this->reconnect_interval_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
                                       std::chrono::seconds(configuration->getWebsocketReconnectInterval()))
                                       .count();
@@ -30,17 +29,9 @@ bool WebsocketTLS::connect() {
     this->wss_client.set_tls_init_handler(websocketpp::lib::bind(
         &WebsocketTLS::on_tls_init, this, this->get_hostname(this->uri), websocketpp::lib::placeholders::_1));
 
-    std::string authentication_header = "";
-    auto authorization_key = this->configuration->getAuthorizationKey();
-    if (authorization_key != boost::none) {
-        EVLOG(debug) << "AuthorizationKey present, encoding authentication header";
-        std::string auth_header = this->configuration->getChargePointId() + ":" + authorization_key.value();
-        authentication_header = std::string("Basic ") + websocketpp::base64_encode(auth_header);
-    }
-
     websocket_thread.reset(new websocketpp::lib::thread(&tls_client::run, &this->wss_client));
 
-    this->reconnect_callback = [this, authentication_header](const websocketpp::lib::error_code& ec) {
+    this->reconnect_callback = [this](const websocketpp::lib::error_code& ec) {
         EVLOG(info) << "Reconnecting TLS websocket...";
         {
             std::lock_guard<std::mutex> lk(this->reconnect_mutex);
@@ -49,10 +40,10 @@ bool WebsocketTLS::connect() {
             }
             this->reconnect_timer = nullptr;
         }
-        this->connect_tls(authentication_header);
+        this->connect_tls(this->getAuthorizationHeader());
     };
 
-    this->connect_tls(authentication_header);
+    this->connect_tls(this->getAuthorizationHeader());
     return true;
 }
 
