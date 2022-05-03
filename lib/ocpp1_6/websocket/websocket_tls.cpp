@@ -7,8 +7,7 @@
 
 namespace ocpp1_6 {
 
-WebsocketTLS::WebsocketTLS(std::shared_ptr<ChargePointConfiguration> configuration) :
-    WebsocketBase(configuration), reconnect_timer(nullptr) {
+WebsocketTLS::WebsocketTLS(std::shared_ptr<ChargePointConfiguration> configuration) : WebsocketBase(configuration) {
     this->reconnect_interval_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
                                       std::chrono::seconds(configuration->getWebsocketReconnectInterval()))
                                       .count();
@@ -30,17 +29,9 @@ bool WebsocketTLS::connect() {
     this->wss_client.set_tls_init_handler(websocketpp::lib::bind(
         &WebsocketTLS::on_tls_init, this, this->get_hostname(this->uri), websocketpp::lib::placeholders::_1));
 
-    std::string authentication_header = "";
-    auto authorization_key = this->configuration->getAuthorizationKey();
-    if (authorization_key != boost::none) {
-        EVLOG_debug << "AuthorizationKey present, encoding authentication header";
-        std::string auth_header = this->configuration->getChargePointId() + ":" + authorization_key.value();
-        authentication_header = std::string("Basic ") + websocketpp::base64_encode(auth_header);
-    }
-
     websocket_thread.reset(new websocketpp::lib::thread(&tls_client::run, &this->wss_client));
 
-    this->reconnect_callback = [this, authentication_header](const websocketpp::lib::error_code& ec) {
+    this->reconnect_callback = [this](const websocketpp::lib::error_code& ec) {
         EVLOG_info << "Reconnecting TLS websocket...";
         {
             std::lock_guard<std::mutex> lk(this->reconnect_mutex);
@@ -49,10 +40,10 @@ bool WebsocketTLS::connect() {
             }
             this->reconnect_timer = nullptr;
         }
-        this->connect_tls(authentication_header);
+        this->connect_tls(this->getAuthorizationHeader());
     };
 
-    this->connect_tls(authentication_header);
+    this->connect_tls(this->getAuthorizationHeader());
     return true;
 }
 
@@ -164,7 +155,7 @@ tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connect
                              boost::asio::ssl::context::single_dh_use);
 
         EVLOG_debug << "List of ciphers that will be accepted by this TLS connection: "
-                     << this->configuration->getSupportedCiphers();
+                    << this->configuration->getSupportedCiphers();
 
         // FIXME(kai): the following only applies to TSLv1.2, we should support TLSv1.3 here as well
         // FIXME(kai): use SSL_CTX_set_ciphersuites for TLSv1.3
@@ -237,15 +228,15 @@ void WebsocketTLS::on_close_tls(tls_client* c, websocketpp::connection_hdl hdl) 
     tls_client::connection_ptr con = c->get_con_from_hdl(hdl);
     auto error_code = con->get_ec();
     EVLOG_info << "Closed TLS websocket connection with code: " << error_code << " ("
-                << websocketpp::close::status::get_string(con->get_remote_close_code())
-                << "), reason: " << con->get_remote_close_reason();
+               << websocketpp::close::status::get_string(con->get_remote_close_code())
+               << "), reason: " << con->get_remote_close_reason();
     this->reconnect(error_code);
 }
 void WebsocketTLS::on_fail_tls(tls_client* c, websocketpp::connection_hdl hdl) {
     tls_client::connection_ptr con = c->get_con_from_hdl(hdl);
     auto error_code = con->get_ec();
     EVLOG_error << "Failed to connect to TLS websocket server " << con->get_response_header("Server")
-                 << ", code: " << error_code.value() << ", reason: " << error_code.message();
+                << ", code: " << error_code.value() << ", reason: " << error_code.message();
     this->reconnect(error_code);
 }
 void WebsocketTLS::close_tls(websocketpp::close::status::value code, const std::string& reason) {

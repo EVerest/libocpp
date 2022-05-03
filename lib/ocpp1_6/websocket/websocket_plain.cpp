@@ -7,8 +7,7 @@
 
 namespace ocpp1_6 {
 
-WebsocketPlain::WebsocketPlain(std::shared_ptr<ChargePointConfiguration> configuration) :
-    WebsocketBase(configuration), reconnect_timer(nullptr) {
+WebsocketPlain::WebsocketPlain(std::shared_ptr<ChargePointConfiguration> configuration) : WebsocketBase(configuration) {
     this->reconnect_interval_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
                                       std::chrono::seconds(configuration->getWebsocketReconnectInterval()))
                                       .count();
@@ -38,10 +37,10 @@ bool WebsocketPlain::connect() {
             }
             this->reconnect_timer = nullptr;
         }
-        this->connect_plain();
+        this->connect_plain(this->getAuthorizationHeader());
     };
 
-    this->connect_plain();
+    this->connect_plain(this->getAuthorizationHeader());
     return true;
 }
 
@@ -115,7 +114,7 @@ void WebsocketPlain::reconnect(std::error_code reason) {
     // https://github.com/zaphoyd/websocketpp/blob/master/websocketpp/close.hpp
 }
 
-void WebsocketPlain::connect_plain() {
+void WebsocketPlain::connect_plain(std::string authorization_header) {
     EVLOG_info << "Connecting to plain websocket at: " << this->uri;
     websocketpp::lib::error_code ec;
 
@@ -165,8 +164,8 @@ void WebsocketPlain::on_close_plain(client* c, websocketpp::connection_hdl hdl) 
     client::connection_ptr con = c->get_con_from_hdl(hdl);
     auto error_code = con->get_ec();
     EVLOG_info << "Closed plain websocket connection with code: " << error_code << " ("
-                << websocketpp::close::status::get_string(con->get_remote_close_code())
-                << "), reason: " << con->get_remote_close_reason();
+               << websocketpp::close::status::get_string(con->get_remote_close_code())
+               << "), reason: " << con->get_remote_close_reason();
     this->reconnect(error_code);
 }
 
@@ -174,7 +173,7 @@ void WebsocketPlain::on_fail_plain(client* c, websocketpp::connection_hdl hdl) {
     client::connection_ptr con = c->get_con_from_hdl(hdl);
     auto error_code = con->get_ec();
     EVLOG_error << "Failed to connect to plain websocket server " << con->get_response_header("Server")
-                 << ", code: " << error_code.value() << ", reason: " << error_code.message();
+                << ", code: " << error_code.value() << ", reason: " << error_code.message();
     this->reconnect(error_code);
 }
 

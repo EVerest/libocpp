@@ -25,22 +25,10 @@ using websocketpp::lib::placeholders::_2;
 ///
 class WebsocketPlain : public WebsocketBase {
 private:
-    websocketpp::lib::shared_ptr<websocketpp::lib::thread> websocket_thread;
     client ws_client;
-    std::string uri;
-    websocketpp::connection_hdl handle;
-    websocketpp::lib::shared_ptr<websocketpp::lib::thread> ws_thread;
-    std::mutex reconnect_mutex;
-    long reconnect_interval_ms;
-    websocketpp::transport::timer_handler reconnect_callback;
-    websocketpp::lib::shared_ptr<boost::asio::steady_timer> reconnect_timer;
-
-    /// \brief Reconnects the websocket using the reconnect timer, a reason for this reconnect can be provided with the
-    /// \p reason parameter
-    void reconnect(std::error_code reason);
 
     /// \brief Connect to a plaintext websocket
-    void connect_plain();
+    void connect_plain(std::string authorization_header);
 
     /// \brief Called when a plaintext websocket connection is established, calls the connected callback
     void on_open_plain(client* c, websocketpp::connection_hdl hdl);
@@ -67,6 +55,10 @@ public:
 
     /// \brief disconnect the websocket
     void disconnect() override;
+
+    /// \brief Reconnects the websocket using the reconnect timer, a reason for this reconnect can be provided with the
+    /// \p reason parameter
+    void reconnect(std::error_code reason);
 
     /// \brief send a \p message over the websocket
     /// \returns true if the message was sent successfully

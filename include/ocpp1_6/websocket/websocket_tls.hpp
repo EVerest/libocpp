@@ -26,19 +26,7 @@ using websocketpp::lib::placeholders::_2;
 ///
 class WebsocketTLS : public WebsocketBase {
 private:
-    websocketpp::lib::shared_ptr<websocketpp::lib::thread> websocket_thread;
     tls_client wss_client;
-    std::string uri;
-    websocketpp::connection_hdl handle;
-    websocketpp::lib::shared_ptr<websocketpp::lib::thread> ws_thread;
-    std::mutex reconnect_mutex;
-    long reconnect_interval_ms;
-    websocketpp::transport::timer_handler reconnect_callback;
-    websocketpp::lib::shared_ptr<boost::asio::steady_timer> reconnect_timer;
-
-    /// \brief Reconnects the websocket using the reconnect timer, a reason for this reconnect can be provided with the
-    /// \p reason parameter
-    void reconnect(std::error_code reason);
 
     /// \brief Extracts the hostname from the provided \p uri
     /// FIXME(kai): this only works with a very limited subset of hostnames and should be extended to work spec conform
@@ -83,6 +71,10 @@ public:
 
     /// \brief disconnect the websocket
     void disconnect() override;
+
+    /// \brief Reconnects the websocket using the reconnect timer, a reason for this reconnect can be provided with the
+    /// \p reason parameter
+    void reconnect(std::error_code reason);
 
     /// \brief send a \p message over the websocket
     /// \returns true if the message was sent successfully

@@ -260,13 +260,6 @@ std::string ChargePointConfiguration::getSupportedCiphers() {
     std::vector<std::string> supported_ciphers = this->config["Internal"]["SupportedCiphers"];
     return boost::algorithm::join(supported_ciphers, ":");
 }
-boost::optional<std::string> ChargePointConfiguration::getAuthorizationKey() {
-    boost::optional<std::string> authorization_key = boost::none;
-    if (this->config["Internal"].contains("AuthorizationKey")) {
-        authorization_key.emplace(this->config["Internal"]["AuthorizationKey"]);
-    }
-    return authorization_key;
-}
 
 std::vector<MeasurandWithPhase> ChargePointConfiguration::csv_to_measurand_with_phase_vector(std::string csv) {
     std::vector<std::string> components;
@@ -633,6 +626,31 @@ boost::optional<KeyValue> ChargePointConfiguration::getAuthorizationCacheEnabled
         kv.key = "AuthorizationCacheEnabled";
         kv.readonly = false;
         kv.value.emplace(conversions::bool_to_string(enabled.value()));
+        enabled_kv.emplace(kv);
+    }
+    return enabled_kv;
+}
+
+boost::optional<std::string> ChargePointConfiguration::getAuthorizationKey() {
+    boost::optional<std::string> authorization_key = boost::none;
+    if (this->config["Internal"].contains("AuthorizationKey")) {
+        authorization_key.emplace(this->config["Internal"]["AuthorizationKey"]);
+    }
+    return authorization_key;
+}
+
+void ChargePointConfiguration::setAuthorizationKey(std::string authorization_key) {
+    // TODO: set the key here safely
+}
+
+boost::optional<KeyValue> ChargePointConfiguration::getAuthorizationKeyKeyValue() {
+    boost::optional<KeyValue> enabled_kv = boost::none;
+    auto enabled = this->getAuthorizationKey();
+    if (enabled != boost::none) {
+        ocpp1_6::KeyValue kv;
+        kv.key = "AuthorizationKey";
+        kv.readonly = false;
+        kv.value.emplace(enabled.value());
         enabled_kv.emplace(kv);
     }
     return enabled_kv;
@@ -1318,6 +1336,9 @@ boost::optional<KeyValue> ChargePointConfiguration::get(CiString50Type key) {
     if (key == "AuthorizationCacheEnabled") {
         return this->getAuthorizationCacheEnabledKeyValue();
     }
+    if (key == "AuthorizationKey") {
+        return this->getAuthorizationKeyKeyValue();
+    }
     if (key == "AuthorizeRemoteTxRequests") {
         return this->getAuthorizeRemoteTxRequestsKeyValue();
     }
@@ -1467,6 +1488,12 @@ ConfigurationStatus ChargePointConfiguration::set(CiString50Type key, CiString50
             return ConfigurationStatus::NotSupported;
         }
         this->setAuthorizationCacheEnabled(conversions::string_to_bool(value.get()));
+    }
+    if (key == "AuthorizationKey") {
+        if (this->getAuthorizationKey() == boost::none) {
+            return ConfigurationStatus::NotSupported;
+        }
+        this->setAuthorizationKey(value.get());
     }
     // TODO(kai): Implementations can choose if the is R or RW, at the moment readonly
     // if (key == "AuthorizeRemoteTxRequests") {
