@@ -9,8 +9,7 @@
 namespace ocpp1_6 {
 
 // from: AuthorizeResponse
-enum class AuthorizationStatus
-{
+enum class AuthorizationStatus {
     Accepted,
     Blocked,
     Expired,
@@ -33,8 +32,7 @@ AuthorizationStatus string_to_authorization_status(const std::string& s);
 std::ostream& operator<<(std::ostream& os, const AuthorizationStatus& authorization_status);
 
 // from: BootNotificationResponse
-enum class RegistrationStatus
-{
+enum class RegistrationStatus {
     Accepted,
     Pending,
     Rejected,
@@ -55,8 +53,7 @@ RegistrationStatus string_to_registration_status(const std::string& s);
 std::ostream& operator<<(std::ostream& os, const RegistrationStatus& registration_status);
 
 // from: CancelReservationResponse
-enum class CancelReservationStatus
-{
+enum class CancelReservationStatus {
     Accepted,
     Rejected,
 };
@@ -76,8 +73,7 @@ CancelReservationStatus string_to_cancel_reservation_status(const std::string& s
 std::ostream& operator<<(std::ostream& os, const CancelReservationStatus& cancel_reservation_status);
 
 // from: ChangeAvailabilityRequest
-enum class AvailabilityType
-{
+enum class AvailabilityType {
     Inoperative,
     Operative,
 };
@@ -97,8 +93,7 @@ AvailabilityType string_to_availability_type(const std::string& s);
 std::ostream& operator<<(std::ostream& os, const AvailabilityType& availability_type);
 
 // from: ChangeAvailabilityResponse
-enum class AvailabilityStatus
-{
+enum class AvailabilityStatus {
     Accepted,
     Rejected,
     Scheduled,
@@ -119,8 +114,7 @@ AvailabilityStatus string_to_availability_status(const std::string& s);
 std::ostream& operator<<(std::ostream& os, const AvailabilityStatus& availability_status);
 
 // from: ChangeConfigurationResponse
-enum class ConfigurationStatus
-{
+enum class ConfigurationStatus {
     Accepted,
     Rejected,
     RebootRequired,
@@ -142,8 +136,7 @@ ConfigurationStatus string_to_configuration_status(const std::string& s);
 std::ostream& operator<<(std::ostream& os, const ConfigurationStatus& configuration_status);
 
 // from: ClearCacheResponse
-enum class ClearCacheStatus
-{
+enum class ClearCacheStatus {
     Accepted,
     Rejected,
 };
@@ -163,8 +156,7 @@ ClearCacheStatus string_to_clear_cache_status(const std::string& s);
 std::ostream& operator<<(std::ostream& os, const ClearCacheStatus& clear_cache_status);
 
 // from: ClearChargingProfileRequest
-enum class ChargingProfilePurposeType
-{
+enum class ChargingProfilePurposeType {
     ChargePointMaxProfile,
     TxDefaultProfile,
     TxProfile,
@@ -185,8 +177,7 @@ ChargingProfilePurposeType string_to_charging_profile_purpose_type(const std::st
 std::ostream& operator<<(std::ostream& os, const ChargingProfilePurposeType& charging_profile_purpose_type);
 
 // from: ClearChargingProfileResponse
-enum class ClearChargingProfileStatus
-{
+enum class ClearChargingProfileStatus {
     Accepted,
     Unknown,
 };
@@ -206,8 +197,7 @@ ClearChargingProfileStatus string_to_clear_charging_profile_status(const std::st
 std::ostream& operator<<(std::ostream& os, const ClearChargingProfileStatus& clear_charging_profile_status);
 
 // from: DataTransferResponse
-enum class DataTransferStatus
-{
+enum class DataTransferStatus {
     Accepted,
     Rejected,
     UnknownMessageId,
@@ -229,8 +219,7 @@ DataTransferStatus string_to_data_transfer_status(const std::string& s);
 std::ostream& operator<<(std::ostream& os, const DataTransferStatus& data_transfer_status);
 
 // from: DiagnosticsStatusNotificationRequest
-enum class DiagnosticsStatus
-{
+enum class DiagnosticsStatus {
     Idle,
     Uploaded,
     UploadFailed,
@@ -252,8 +241,7 @@ DiagnosticsStatus string_to_diagnostics_status(const std::string& s);
 std::ostream& operator<<(std::ostream& os, const DiagnosticsStatus& diagnostics_status);
 
 // from: FirmwareStatusNotificationRequest
-enum class FirmwareStatus
-{
+enum class FirmwareStatus {
     Downloaded,
     DownloadFailed,
     Downloading,
@@ -278,8 +266,7 @@ FirmwareStatus string_to_firmware_status(const std::string& s);
 std::ostream& operator<<(std::ostream& os, const FirmwareStatus& firmware_status);
 
 // from: GetCompositeScheduleRequest
-enum class ChargingRateUnit
-{
+enum class ChargingRateUnit {
     A,
     W,
 };
@@ -299,8 +286,7 @@ ChargingRateUnit string_to_charging_rate_unit(const std::string& s);
 std::ostream& operator<<(std::ostream& os, const ChargingRateUnit& charging_rate_unit);
 
 // from: GetCompositeScheduleResponse
-enum class GetCompositeScheduleStatus
-{
+enum class GetCompositeScheduleStatus {
     Accepted,
     Rejected,
 };
@@ -320,8 +306,7 @@ GetCompositeScheduleStatus string_to_get_composite_schedule_status(const std::st
 std::ostream& operator<<(std::ostream& os, const GetCompositeScheduleStatus& get_composite_schedule_status);
 
 // from: MeterValuesRequest
-enum class ReadingContext
-{
+enum class ReadingContext {
     Interruption_Begin,
     Interruption_End,
     Sample_Clock,
@@ -347,8 +332,7 @@ ReadingContext string_to_reading_context(const std::string& s);
 std::ostream& operator<<(std::ostream& os, const ReadingContext& reading_context);
 
 // from: MeterValuesRequest
-enum class ValueFormat
-{
+enum class ValueFormat {
     Raw,
     SignedData,
 };
@@ -368,8 +352,7 @@ ValueFormat string_to_value_format(const std::string& s);
 std::ostream& operator<<(std::ostream& os, const ValueFormat& value_format);
 
 // from: MeterValuesRequest
-enum class Measurand
-{
+enum class Measurand {
     Energy_Active_Export_Register,
     Energy_Active_Import_Register,
     Energy_Reactive_Export_Register,
@@ -409,8 +392,7 @@ Measurand string_to_measurand(const std::string& s);
 std::ostream& operator<<(std::ostream& os, const Measurand& measurand);
 
 // from: MeterValuesRequest
-enum class Phase
-{
+enum class Phase {
     L1,
     L2,
     L3,
@@ -438,8 +420,7 @@ Phase string_to_phase(const std::string& s);
 std::ostream& operator<<(std::ostream& os, const Phase& phase);
 
 // from: MeterValuesRequest
-enum class Location
-{
+enum class Location {
     Cable,
     EV,
     Inlet,
@@ -462,8 +443,7 @@ Location string_to_location(const std::string& s);
 std::ostream& operator<<(std::ostream& os, const Location& location);
 
 // from: MeterValuesRequest
-enum class UnitOfMeasure
-{
+enum class UnitOfMeasure {
     Wh,
     kWh,
     varh,
@@ -498,8 +478,7 @@ UnitOfMeasure string_to_unit_of_measure(const std::string& s);
 std::ostream& operator<<(std::ostream& os, const UnitOfMeasure& unit_of_measure);
 
 // from: RemoteStartTransactionRequest
-enum class ChargingProfileKindType
-{
+enum class ChargingProfileKindType {
     Absolute,
     Recurring,
     Relative,
@@ -520,8 +499,7 @@ ChargingProfileKindType string_to_charging_profile_kind_type(const std::string& 
 std::ostream& operator<<(std::ostream& os, const ChargingProfileKindType& charging_profile_kind_type);
 
 // from: RemoteStartTransactionRequest
-enum class RecurrencyKindType
-{
+enum class RecurrencyKindType {
     Daily,
     Weekly,
 };
@@ -541,8 +519,7 @@ RecurrencyKindType string_to_recurrency_kind_type(const std::string& s);
 std::ostream& operator<<(std::ostream& os, const RecurrencyKindType& recurrency_kind_type);
 
 // from: RemoteStartTransactionResponse
-enum class RemoteStartStopStatus
-{
+enum class RemoteStartStopStatus {
     Accepted,
     Rejected,
 };
@@ -562,8 +539,7 @@ RemoteStartStopStatus string_to_remote_start_stop_status(const std::string& s);
 std::ostream& operator<<(std::ostream& os, const RemoteStartStopStatus& remote_start_stop_status);
 
 // from: ReserveNowResponse
-enum class ReservationStatus
-{
+enum class ReservationStatus {
     Accepted,
     Faulted,
     Occupied,
@@ -586,8 +562,7 @@ ReservationStatus string_to_reservation_status(const std::string& s);
 std::ostream& operator<<(std::ostream& os, const ReservationStatus& reservation_status);
 
 // from: ResetRequest
-enum class ResetType
-{
+enum class ResetType {
     Hard,
     Soft,
 };
@@ -607,8 +582,7 @@ ResetType string_to_reset_type(const std::string& s);
 std::ostream& operator<<(std::ostream& os, const ResetType& reset_type);
 
 // from: ResetResponse
-enum class ResetStatus
-{
+enum class ResetStatus {
     Accepted,
     Rejected,
 };
@@ -628,8 +602,7 @@ ResetStatus string_to_reset_status(const std::string& s);
 std::ostream& operator<<(std::ostream& os, const ResetStatus& reset_status);
 
 // from: SendLocalListRequest
-enum class UpdateType
-{
+enum class UpdateType {
     Differential,
     Full,
 };
@@ -649,8 +622,7 @@ UpdateType string_to_update_type(const std::string& s);
 std::ostream& operator<<(std::ostream& os, const UpdateType& update_type);
 
 // from: SendLocalListResponse
-enum class UpdateStatus
-{
+enum class UpdateStatus {
     Accepted,
     Failed,
     NotSupported,
@@ -672,8 +644,7 @@ UpdateStatus string_to_update_status(const std::string& s);
 std::ostream& operator<<(std::ostream& os, const UpdateStatus& update_status);
 
 // from: SetChargingProfileResponse
-enum class ChargingProfileStatus
-{
+enum class ChargingProfileStatus {
     Accepted,
     Rejected,
     NotSupported,
@@ -694,8 +665,7 @@ ChargingProfileStatus string_to_charging_profile_status(const std::string& s);
 std::ostream& operator<<(std::ostream& os, const ChargingProfileStatus& charging_profile_status);
 
 // from: StatusNotificationRequest
-enum class ChargePointErrorCode
-{
+enum class ChargePointErrorCode {
     ConnectorLockFailure,
     EVCommunicationError,
     GroundFailure,
@@ -729,8 +699,7 @@ ChargePointErrorCode string_to_charge_point_error_code(const std::string& s);
 std::ostream& operator<<(std::ostream& os, const ChargePointErrorCode& charge_point_error_code);
 
 // from: StatusNotificationRequest
-enum class ChargePointStatus
-{
+enum class ChargePointStatus {
     Available,
     Preparing,
     Charging,
@@ -757,8 +726,7 @@ ChargePointStatus string_to_charge_point_status(const std::string& s);
 std::ostream& operator<<(std::ostream& os, const ChargePointStatus& charge_point_status);
 
 // from: StopTransactionRequest
-enum class Reason
-{
+enum class Reason {
     EmergencyStop,
     EVDisconnected,
     HardReset,
@@ -787,8 +755,7 @@ Reason string_to_reason(const std::string& s);
 std::ostream& operator<<(std::ostream& os, const Reason& reason);
 
 // from: TriggerMessageRequest
-enum class MessageTrigger
-{
+enum class MessageTrigger {
     BootNotification,
     DiagnosticsStatusNotification,
     FirmwareStatusNotification,
@@ -812,8 +779,7 @@ MessageTrigger string_to_message_trigger(const std::string& s);
 std::ostream& operator<<(std::ostream& os, const MessageTrigger& message_trigger);
 
 // from: TriggerMessageResponse
-enum class TriggerMessageStatus
-{
+enum class TriggerMessageStatus {
     Accepted,
     Rejected,
     NotImplemented,
@@ -834,8 +800,7 @@ TriggerMessageStatus string_to_trigger_message_status(const std::string& s);
 std::ostream& operator<<(std::ostream& os, const TriggerMessageStatus& trigger_message_status);
 
 // from: UnlockConnectorResponse
-enum class UnlockStatus
-{
+enum class UnlockStatus {
     Unlocked,
     UnlockFailed,
     NotSupported,
@@ -854,6 +819,324 @@ UnlockStatus string_to_unlock_status(const std::string& s);
 /// \brief Writes the string representation of the given UnlockStatus \p unlock_status to the given output stream \p os
 /// \returns an output stream with the UnlockStatus written to
 std::ostream& operator<<(std::ostream& os, const UnlockStatus& unlock_status);
+
+// from: CertificateSignedResponse
+enum class CertificateSignedStatusEnumType {
+    Accepted,
+    Rejected,
+};
+
+namespace conversions {
+/// \brief Converts the given CertificateSignedStatusEnumType \p e to human readable string
+/// \returns a string representation of the CertificateSignedStatusEnumType
+std::string certificate_signed_status_enum_type_to_string(CertificateSignedStatusEnumType e);
+
+/// \brief Converts the given std::string \p s to CertificateSignedStatusEnumType
+/// \returns a CertificateSignedStatusEnumType from a string representation
+CertificateSignedStatusEnumType string_to_certificate_signed_status_enum_type(const std::string& s);
+} // namespace conversions
+
+/// \brief Writes the string representation of the given CertificateSignedStatusEnumType \p
+/// certificate_signed_status_enum_type to the given output stream \p os \returns an output stream with the
+/// CertificateSignedStatusEnumType written to
+std::ostream& operator<<(std::ostream& os, const CertificateSignedStatusEnumType& certificate_signed_status_enum_type);
+
+// from: DeleteCertificateRequest
+enum class HashAlgorithmEnumType {
+    SHA256,
+    SHA384,
+    SHA512,
+};
+
+namespace conversions {
+/// \brief Converts the given HashAlgorithmEnumType \p e to human readable string
+/// \returns a string representation of the HashAlgorithmEnumType
+std::string hash_algorithm_enum_type_to_string(HashAlgorithmEnumType e);
+
+/// \brief Converts the given std::string \p s to HashAlgorithmEnumType
+/// \returns a HashAlgorithmEnumType from a string representation
+HashAlgorithmEnumType string_to_hash_algorithm_enum_type(const std::string& s);
+} // namespace conversions
+
+/// \brief Writes the string representation of the given HashAlgorithmEnumType \p hash_algorithm_enum_type to the given
+/// output stream \p os \returns an output stream with the HashAlgorithmEnumType written to
+std::ostream& operator<<(std::ostream& os, const HashAlgorithmEnumType& hash_algorithm_enum_type);
+
+// from: DeleteCertificateResponse
+enum class DeleteCertificateStatusEnumType {
+    Accepted,
+    Failed,
+    NotFound,
+};
+
+namespace conversions {
+/// \brief Converts the given DeleteCertificateStatusEnumType \p e to human readable string
+/// \returns a string representation of the DeleteCertificateStatusEnumType
+std::string delete_certificate_status_enum_type_to_string(DeleteCertificateStatusEnumType e);
+
+/// \brief Converts the given std::string \p s to DeleteCertificateStatusEnumType
+/// \returns a DeleteCertificateStatusEnumType from a string representation
+DeleteCertificateStatusEnumType string_to_delete_certificate_status_enum_type(const std::string& s);
+} // namespace conversions
+
+/// \brief Writes the string representation of the given DeleteCertificateStatusEnumType \p
+/// delete_certificate_status_enum_type to the given output stream \p os \returns an output stream with the
+/// DeleteCertificateStatusEnumType written to
+std::ostream& operator<<(std::ostream& os, const DeleteCertificateStatusEnumType& delete_certificate_status_enum_type);
+
+// from: ExtendedTriggerMessageRequest
+enum class MessageTriggerEnumType {
+    BootNotification,
+    LogStatusNotification,
+    FirmwareStatusNotification,
+    Heartbeat,
+    MeterValues,
+    SignChargePointCertificate,
+    StatusNotification,
+};
+
+namespace conversions {
+/// \brief Converts the given MessageTriggerEnumType \p e to human readable string
+/// \returns a string representation of the MessageTriggerEnumType
+std::string message_trigger_enum_type_to_string(MessageTriggerEnumType e);
+
+/// \brief Converts the given std::string \p s to MessageTriggerEnumType
+/// \returns a MessageTriggerEnumType from a string representation
+MessageTriggerEnumType string_to_message_trigger_enum_type(const std::string& s);
+} // namespace conversions
+
+/// \brief Writes the string representation of the given MessageTriggerEnumType \p message_trigger_enum_type to the
+/// given output stream \p os \returns an output stream with the MessageTriggerEnumType written to
+std::ostream& operator<<(std::ostream& os, const MessageTriggerEnumType& message_trigger_enum_type);
+
+// from: ExtendedTriggerMessageResponse
+enum class TriggerMessageStatusEnumType {
+    Accepted,
+    Rejected,
+    NotImplemented,
+};
+
+namespace conversions {
+/// \brief Converts the given TriggerMessageStatusEnumType \p e to human readable string
+/// \returns a string representation of the TriggerMessageStatusEnumType
+std::string trigger_message_status_enum_type_to_string(TriggerMessageStatusEnumType e);
+
+/// \brief Converts the given std::string \p s to TriggerMessageStatusEnumType
+/// \returns a TriggerMessageStatusEnumType from a string representation
+TriggerMessageStatusEnumType string_to_trigger_message_status_enum_type(const std::string& s);
+} // namespace conversions
+
+/// \brief Writes the string representation of the given TriggerMessageStatusEnumType \p
+/// trigger_message_status_enum_type to the given output stream \p os \returns an output stream with the
+/// TriggerMessageStatusEnumType written to
+std::ostream& operator<<(std::ostream& os, const TriggerMessageStatusEnumType& trigger_message_status_enum_type);
+
+// from: GetInstalledCertificateIdsRequest
+enum class CertificateUseEnumType {
+    CentralSystemRootCertificate,
+    ManufacturerRootCertificate,
+};
+
+namespace conversions {
+/// \brief Converts the given CertificateUseEnumType \p e to human readable string
+/// \returns a string representation of the CertificateUseEnumType
+std::string certificate_use_enum_type_to_string(CertificateUseEnumType e);
+
+/// \brief Converts the given std::string \p s to CertificateUseEnumType
+/// \returns a CertificateUseEnumType from a string representation
+CertificateUseEnumType string_to_certificate_use_enum_type(const std::string& s);
+} // namespace conversions
+
+/// \brief Writes the string representation of the given CertificateUseEnumType \p certificate_use_enum_type to the
+/// given output stream \p os \returns an output stream with the CertificateUseEnumType written to
+std::ostream& operator<<(std::ostream& os, const CertificateUseEnumType& certificate_use_enum_type);
+
+// from: GetInstalledCertificateIdsResponse
+enum class GetInstalledCertificateStatusEnumType {
+    Accepted,
+    NotFound,
+};
+
+namespace conversions {
+/// \brief Converts the given GetInstalledCertificateStatusEnumType \p e to human readable string
+/// \returns a string representation of the GetInstalledCertificateStatusEnumType
+std::string get_installed_certificate_status_enum_type_to_string(GetInstalledCertificateStatusEnumType e);
+
+/// \brief Converts the given std::string \p s to GetInstalledCertificateStatusEnumType
+/// \returns a GetInstalledCertificateStatusEnumType from a string representation
+GetInstalledCertificateStatusEnumType string_to_get_installed_certificate_status_enum_type(const std::string& s);
+} // namespace conversions
+
+/// \brief Writes the string representation of the given GetInstalledCertificateStatusEnumType \p
+/// get_installed_certificate_status_enum_type to the given output stream \p os \returns an output stream with the
+/// GetInstalledCertificateStatusEnumType written to
+std::ostream& operator<<(std::ostream& os,
+                         const GetInstalledCertificateStatusEnumType& get_installed_certificate_status_enum_type);
+
+// from: GetLogRequest
+enum class LogEnumType {
+    DiagnosticsLog,
+    SecurityLog,
+};
+
+namespace conversions {
+/// \brief Converts the given LogEnumType \p e to human readable string
+/// \returns a string representation of the LogEnumType
+std::string log_enum_type_to_string(LogEnumType e);
+
+/// \brief Converts the given std::string \p s to LogEnumType
+/// \returns a LogEnumType from a string representation
+LogEnumType string_to_log_enum_type(const std::string& s);
+} // namespace conversions
+
+/// \brief Writes the string representation of the given LogEnumType \p log_enum_type to the given output stream \p os
+/// \returns an output stream with the LogEnumType written to
+std::ostream& operator<<(std::ostream& os, const LogEnumType& log_enum_type);
+
+// from: GetLogResponse
+enum class LogStatusEnumType {
+    Accepted,
+    Rejected,
+    AcceptedCanceled,
+};
+
+namespace conversions {
+/// \brief Converts the given LogStatusEnumType \p e to human readable string
+/// \returns a string representation of the LogStatusEnumType
+std::string log_status_enum_type_to_string(LogStatusEnumType e);
+
+/// \brief Converts the given std::string \p s to LogStatusEnumType
+/// \returns a LogStatusEnumType from a string representation
+LogStatusEnumType string_to_log_status_enum_type(const std::string& s);
+} // namespace conversions
+
+/// \brief Writes the string representation of the given LogStatusEnumType \p log_status_enum_type to the given output
+/// stream \p os \returns an output stream with the LogStatusEnumType written to
+std::ostream& operator<<(std::ostream& os, const LogStatusEnumType& log_status_enum_type);
+
+// from: InstallCertificateResponse
+enum class InstallCertificateStatusEnumType {
+    Accepted,
+    Failed,
+    Rejected,
+};
+
+namespace conversions {
+/// \brief Converts the given InstallCertificateStatusEnumType \p e to human readable string
+/// \returns a string representation of the InstallCertificateStatusEnumType
+std::string install_certificate_status_enum_type_to_string(InstallCertificateStatusEnumType e);
+
+/// \brief Converts the given std::string \p s to InstallCertificateStatusEnumType
+/// \returns a InstallCertificateStatusEnumType from a string representation
+InstallCertificateStatusEnumType string_to_install_certificate_status_enum_type(const std::string& s);
+} // namespace conversions
+
+/// \brief Writes the string representation of the given InstallCertificateStatusEnumType \p
+/// install_certificate_status_enum_type to the given output stream \p os \returns an output stream with the
+/// InstallCertificateStatusEnumType written to
+std::ostream& operator<<(std::ostream& os,
+                         const InstallCertificateStatusEnumType& install_certificate_status_enum_type);
+
+// from: LogStatusNotificationRequest
+enum class UploadLogStatusEnumType {
+    BadMessage,
+    Idle,
+    NotSupportedOperation,
+    PermissionDenied,
+    Uploaded,
+    UploadFailure,
+    Uploading,
+};
+
+namespace conversions {
+/// \brief Converts the given UploadLogStatusEnumType \p e to human readable string
+/// \returns a string representation of the UploadLogStatusEnumType
+std::string upload_log_status_enum_type_to_string(UploadLogStatusEnumType e);
+
+/// \brief Converts the given std::string \p s to UploadLogStatusEnumType
+/// \returns a UploadLogStatusEnumType from a string representation
+UploadLogStatusEnumType string_to_upload_log_status_enum_type(const std::string& s);
+} // namespace conversions
+
+/// \brief Writes the string representation of the given UploadLogStatusEnumType \p upload_log_status_enum_type to the
+/// given output stream \p os \returns an output stream with the UploadLogStatusEnumType written to
+std::ostream& operator<<(std::ostream& os, const UploadLogStatusEnumType& upload_log_status_enum_type);
+
+// from: SignCertificateResponse
+enum class GenericStatusEnumType {
+    Accepted,
+    Rejected,
+};
+
+namespace conversions {
+/// \brief Converts the given GenericStatusEnumType \p e to human readable string
+/// \returns a string representation of the GenericStatusEnumType
+std::string generic_status_enum_type_to_string(GenericStatusEnumType e);
+
+/// \brief Converts the given std::string \p s to GenericStatusEnumType
+/// \returns a GenericStatusEnumType from a string representation
+GenericStatusEnumType string_to_generic_status_enum_type(const std::string& s);
+} // namespace conversions
+
+/// \brief Writes the string representation of the given GenericStatusEnumType \p generic_status_enum_type to the given
+/// output stream \p os \returns an output stream with the GenericStatusEnumType written to
+std::ostream& operator<<(std::ostream& os, const GenericStatusEnumType& generic_status_enum_type);
+
+// from: SignedFirmwareStatusNotificationRequest
+enum class FirmwareStatusEnumType {
+    Downloaded,
+    DownloadFailed,
+    Downloading,
+    DownloadScheduled,
+    DownloadPaused,
+    Idle,
+    InstallationFailed,
+    Installing,
+    Installed,
+    InstallRebooting,
+    InstallScheduled,
+    InstallVerificationFailed,
+    InvalidSignature,
+    SignatureVerified,
+};
+
+namespace conversions {
+/// \brief Converts the given FirmwareStatusEnumType \p e to human readable string
+/// \returns a string representation of the FirmwareStatusEnumType
+std::string firmware_status_enum_type_to_string(FirmwareStatusEnumType e);
+
+/// \brief Converts the given std::string \p s to FirmwareStatusEnumType
+/// \returns a FirmwareStatusEnumType from a string representation
+FirmwareStatusEnumType string_to_firmware_status_enum_type(const std::string& s);
+} // namespace conversions
+
+/// \brief Writes the string representation of the given FirmwareStatusEnumType \p firmware_status_enum_type to the
+/// given output stream \p os \returns an output stream with the FirmwareStatusEnumType written to
+std::ostream& operator<<(std::ostream& os, const FirmwareStatusEnumType& firmware_status_enum_type);
+
+// from: SignedUpdateFirmwareResponse
+enum class UpdateFirmwareStatusEnumType {
+    Accepted,
+    Rejected,
+    AcceptedCanceled,
+    InvalidCertificate,
+    RevokedCertificate,
+};
+
+namespace conversions {
+/// \brief Converts the given UpdateFirmwareStatusEnumType \p e to human readable string
+/// \returns a string representation of the UpdateFirmwareStatusEnumType
+std::string update_firmware_status_enum_type_to_string(UpdateFirmwareStatusEnumType e);
+
+/// \brief Converts the given std::string \p s to UpdateFirmwareStatusEnumType
+/// \returns a UpdateFirmwareStatusEnumType from a string representation
+UpdateFirmwareStatusEnumType string_to_update_firmware_status_enum_type(const std::string& s);
+} // namespace conversions
+
+/// \brief Writes the string representation of the given UpdateFirmwareStatusEnumType \p
+/// update_firmware_status_enum_type to the given output stream \p os \returns an output stream with the
+/// UpdateFirmwareStatusEnumType written to
+std::ostream& operator<<(std::ostream& os, const UpdateFirmwareStatusEnumType& update_firmware_status_enum_type);
 } // namespace ocpp1_6
 
 #endif // OCPP1_6_ENUMS_HPP
