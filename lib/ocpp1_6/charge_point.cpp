@@ -1417,11 +1417,15 @@ AuthorizationStatus ChargePoint::authorize_id_tag(CiString20Type idTag) {
 
         auth_status = authorize_response.idTagInfo.status;
 
-        this->configuration->updateAuthorizationCacheEntry(idTag, call_result.msg.idTagInfo);
-        auto connector = this->charging_sessions->add_authorized_token(idTag, authorize_response.idTagInfo);
-        this->status->submit_event(connector, Event_UsageInitiated());
-        if (connector > 0) {
-            this->start_transaction(connector);
+        if (auth_status == AuthorizationStatus::Accepted) {
+            this->configuration->updateAuthorizationCacheEntry(idTag, call_result.msg.idTagInfo);
+            auto connector = this->charging_sessions->add_authorized_token(idTag, authorize_response.idTagInfo);
+            this->status->submit_event(connector, Event_UsageInitiated());
+            if (connector > 0) {
+                this->start_transaction(connector);
+            }
+        } else {
+            return auth_status;
         }
     }
     if (enhanced_message.offline) {
