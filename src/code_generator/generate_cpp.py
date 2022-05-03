@@ -290,7 +290,8 @@ def parse_object(ob_name: str, json_schema: Dict):
 
     ob_dict = {'name': ob_name, 'properties': [], 'depends_on': []}
     parsed_types.insert(0, ob_dict)
-
+    if not 'properties' in json_schema:
+        return
     for prop_name, prop in json_schema['properties'].items():
         if not prop_name.isidentifier() or keyword.iskeyword(prop_name):
             raise Exception(prop_name + ' can\'t be used as an identifier!')
