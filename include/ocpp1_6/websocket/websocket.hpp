@@ -32,8 +32,8 @@ public:
     /// \brief disconnect the websocket
     void disconnect();
 
-    /// \brief reconnects the websocket
-    void reconnect(std::error_code reason);
+    // \brief reconnects the websocket after the delay
+    void reconnect(std::error_code reason, long delay);
 
     /// \brief register a \p callback that is called when the websocket is connected successfully
     void register_connected_callback(const std::function<void()>& callback);

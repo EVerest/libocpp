@@ -17,6 +17,7 @@ class ChargePointConfiguration {
 private:
     json config;
     sqlite3* db;
+    std::string configs_path;
     std::set<SupportedFeatureProfiles> supported_feature_profiles;
     std::map<Measurand, std::vector<Phase>> supported_measurands;
     std::map<SupportedFeatureProfiles, std::set<MessageType>> supported_message_types_from_charge_point;
@@ -28,8 +29,11 @@ private:
     bool measurands_supported(std::string csv);
 
 public:
-    ChargePointConfiguration(json config, std::string schemas_path, std::string database_path);
+    ChargePointConfiguration(json config, std::string configs_path, std::string schemas_path,
+                             std::string database_path);
     void close();
+
+    std::string getConfigsPath();
 
     // Internal config options
     std::string getChargePointId();

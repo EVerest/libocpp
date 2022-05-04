@@ -12,7 +12,10 @@
 #include <ocpp1_6/types.hpp>
 
 namespace ocpp1_6 {
-ChargePointConfiguration::ChargePointConfiguration(json config, std::string schemas_path, std::string database_path) {
+ChargePointConfiguration::ChargePointConfiguration(json config, std::string configs_path, std::string schemas_path,
+                                                   std::string database_path) {
+
+    this->configs_path = configs_path;
     // validate config entries
     Schemas schemas = Schemas(schemas_path);
     auto patch = schemas.get_profile_validator()->validate(config);
@@ -192,6 +195,10 @@ void ChargePointConfiguration::close() {
     } else {
         EVLOG(error) << "Error closing database file: " << ret;
     }
+}
+
+std::string ChargePointConfiguration::getConfigsPath() {
+    return this->configs_path;
 }
 
 // Internal config options
@@ -633,8 +640,8 @@ boost::optional<KeyValue> ChargePointConfiguration::getAuthorizationCacheEnabled
 
 boost::optional<std::string> ChargePointConfiguration::getAuthorizationKey() {
     boost::optional<std::string> authorization_key = boost::none;
-    if (this->config["Internal"].contains("AuthorizationKey")) {
-        authorization_key.emplace(this->config["Internal"]["AuthorizationKey"]);
+    if (this->config["Security"].contains("AuthorizationKey")) {
+        authorization_key.emplace(this->config["Security"]["AuthorizationKey"]);
     }
     return authorization_key;
 }

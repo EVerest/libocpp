@@ -56,9 +56,9 @@ public:
     /// \brief disconnect the websocket
     void disconnect() override;
 
-    /// \brief Reconnects the websocket using the reconnect timer, a reason for this reconnect can be provided with the
+    /// \brief Reconnects the websocket using the delay, a reason for this reconnect can be provided with the
     /// \p reason parameter
-    void reconnect(std::error_code reason);
+    void reconnect(std::error_code reason, long delay);
 
     /// \brief send a \p message over the websocket
     /// \returns true if the message was sent successfully
