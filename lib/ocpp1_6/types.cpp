@@ -403,6 +403,38 @@ void from_json(const json& j, CiString25Type& k) {
     k.set(j);
 }
 
+CiString40Type::CiString40Type(const std::string& data) : CiString(data, 40) {
+}
+
+CiString40Type::CiString40Type(const json& data) : CiString(data.get<std::string>(), 40) {
+}
+
+CiString40Type::CiString40Type() : CiString(40) {
+}
+
+CiString40Type& CiString40Type::operator=(const std::string& s) {
+    this->set(s);
+    return *this;
+}
+
+CiString40Type& CiString40Type::operator=(const char* c) {
+    this->set(std::string(c));
+    return *this;
+}
+
+CiString40Type& CiString40Type::operator=(const json& j) {
+    this->set(j.get<std::string>());
+    return *this;
+}
+
+void to_json(json& j, const CiString40Type& k) {
+    j = json(k.get());
+}
+
+void from_json(const json& j, CiString40Type& k) {
+    k.set(j);
+}
+
 CiString50Type::CiString50Type(const std::string& data) : CiString(data, 50) {
 }
 
@@ -432,6 +464,38 @@ void to_json(json& j, const CiString50Type& k) {
 }
 
 void from_json(const json& j, CiString50Type& k) {
+    k.set(j);
+}
+
+CiString128Type::CiString128Type(const std::string& data) : CiString(data, 128) {
+}
+
+CiString128Type::CiString128Type(const json& data) : CiString(data.get<std::string>(), 128) {
+}
+
+CiString128Type::CiString128Type() : CiString(128) {
+}
+
+CiString128Type& CiString128Type::operator=(const std::string& s) {
+    this->set(s);
+    return *this;
+}
+
+CiString128Type& CiString128Type::operator=(const char* c) {
+    this->set(std::string(c));
+    return *this;
+}
+
+CiString128Type& CiString128Type::operator=(const json& j) {
+    this->set(j.get<std::string>());
+    return *this;
+}
+
+void to_json(json& j, const CiString128Type& k) {
+    j = json(k.get());
+}
+
+void from_json(const json& j, CiString128Type& k) {
     k.set(j);
 }
 
@@ -496,6 +560,134 @@ void to_json(json& j, const CiString500Type& k) {
 }
 
 void from_json(const json& j, CiString500Type& k) {
+    k.set(j);
+}
+
+CiString512Type::CiString512Type(const std::string& data) : CiString(data, 512) {
+}
+
+CiString512Type::CiString512Type(const json& data) : CiString(data.get<std::string>(), 512) {
+}
+
+CiString512Type::CiString512Type() : CiString(512) {
+}
+
+CiString512Type& CiString512Type::operator=(const std::string& s) {
+    this->set(s);
+    return *this;
+}
+
+CiString512Type& CiString512Type::operator=(const char* c) {
+    this->set(std::string(c));
+    return *this;
+}
+
+CiString512Type& CiString512Type::operator=(const json& j) {
+    this->set(j.get<std::string>());
+    return *this;
+}
+
+void to_json(json& j, const CiString512Type& k) {
+    j = json(k.get());
+}
+
+void from_json(const json& j, CiString512Type& k) {
+    k.set(j);
+}
+
+CiString800Type::CiString800Type(const std::string& data) : CiString(data, 800) {
+}
+
+CiString800Type::CiString800Type(const json& data) : CiString(data.get<std::string>(), 800) {
+}
+
+CiString800Type::CiString800Type() : CiString(800) {
+}
+
+CiString800Type& CiString800Type::operator=(const std::string& s) {
+    this->set(s);
+    return *this;
+}
+
+CiString800Type& CiString800Type::operator=(const char* c) {
+    this->set(std::string(c));
+    return *this;
+}
+
+CiString800Type& CiString800Type::operator=(const json& j) {
+    this->set(j.get<std::string>());
+    return *this;
+}
+
+void to_json(json& j, const CiString800Type& k) {
+    j = json(k.get());
+}
+
+void from_json(const json& j, CiString800Type& k) {
+    k.set(j);
+}
+
+CiString5500Type::CiString5500Type(const std::string& data) : CiString(data, 5500) {
+}
+
+CiString5500Type::CiString5500Type(const json& data) : CiString(data.get<std::string>(), 5500) {
+}
+
+CiString5500Type::CiString5500Type() : CiString(5500) {
+}
+
+CiString5500Type& CiString5500Type::operator=(const std::string& s) {
+    this->set(s);
+    return *this;
+}
+
+CiString5500Type& CiString5500Type::operator=(const char* c) {
+    this->set(std::string(c));
+    return *this;
+}
+
+CiString5500Type& CiString5500Type::operator=(const json& j) {
+    this->set(j.get<std::string>());
+    return *this;
+}
+
+void to_json(json& j, const CiString5500Type& k) {
+    j = json(k.get());
+}
+
+void from_json(const json& j, CiString5500Type& k) {
+    k.set(j);
+}
+
+CiString10000Type::CiString10000Type(const std::string& data) : CiString(data, 10000) {
+}
+
+CiString10000Type::CiString10000Type(const json& data) : CiString(data.get<std::string>(), 10000) {
+}
+
+CiString10000Type::CiString10000Type() : CiString(10000) {
+}
+
+CiString10000Type& CiString10000Type::operator=(const std::string& s) {
+    this->set(s);
+    return *this;
+}
+
+CiString10000Type& CiString10000Type::operator=(const char* c) {
+    this->set(std::string(c));
+    return *this;
+}
+
+CiString10000Type& CiString10000Type::operator=(const json& j) {
+    this->set(j.get<std::string>());
+    return *this;
+}
+
+void to_json(json& j, const CiString10000Type& k) {
+    j = json(k.get());
+}
+
+void from_json(const json& j, CiString10000Type& k) {
     k.set(j);
 }
 

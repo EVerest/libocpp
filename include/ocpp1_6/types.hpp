@@ -192,6 +192,34 @@ void to_json(json& j, const CiString25Type& k);
 /// \brief Conversion from a given json object \p j to a given CiString25Type \p k
 void from_json(const json& j, CiString25Type& k);
 
+/// \brief Contains a CaseInsensitive string implementation with a maximum length of 40 printable ASCII characters
+class CiString40Type : public CiString {
+public:
+    /// \brief Creates a case insensitive string from the given string \p data and a maximum length of 40
+    explicit CiString40Type(const std::string& data);
+
+    /// \brief Creates a case insensitive string from the given json \p data and a maximum length of 40
+    explicit CiString40Type(const json& data);
+
+    /// \brief Creates a case insensitive string with a maximum length of 40
+    CiString40Type();
+
+    /// \brief Assignment operator= that converts a given string \p s into a CiString40Type
+    CiString40Type& operator=(const std::string& s);
+
+    /// \brief Assignment operator= that converts a given char* \p c into a CiString40Type
+    CiString40Type& operator=(const char* c);
+
+    /// \brief Assignment operator= that converts a given json \p j into a CiString40Type
+    CiString40Type& operator=(const json& j);
+};
+
+/// \brief Conversion from a given CiString40Type \p k to a given json object \p j
+void to_json(json& j, const CiString40Type& k);
+
+/// \brief Conversion from a given json object \p j to a given CiString40Type \p k
+void from_json(const json& j, CiString40Type& k);
+
 /// \brief Contains a CaseInsensitive string implementation with a maximum length of 50 printable ASCII characters
 class CiString50Type : public CiString {
 public:
@@ -218,6 +246,34 @@ void to_json(json& j, const CiString50Type& k);
 
 /// \brief Conversion from a given json object \p j to a given CiString50Type \p k
 void from_json(const json& j, CiString50Type& k);
+
+/// \brief Contains a CaseInsensitive string implementation with a maximum length of 128 printable ASCII characters
+class CiString128Type : public CiString {
+public:
+    /// \brief Creates a case insensitive string from the given string \p data and a maximum length of 128
+    explicit CiString128Type(const std::string& data);
+
+    /// \brief Creates a case insensitive string from the given json \p data and a maximum length of 128
+    explicit CiString128Type(const json& data);
+
+    /// \brief Creates a case insensitive string with a maximum length of 128
+    CiString128Type();
+
+    /// \brief Assignment operator= that converts a given string \p s into a CiString128Type
+    CiString128Type& operator=(const std::string& s);
+
+    /// \brief Assignment operator= that converts a given char* \p c into a CiString128Type
+    CiString128Type& operator=(const char* c);
+
+    /// \brief Assignment operator= that converts a given json \p j into a CiString128Type
+    CiString128Type& operator=(const json& j);
+};
+
+/// \brief Conversion from a given CiString128Type \p k to a given json object \p j
+void to_json(json& j, const CiString128Type& k);
+
+/// \brief Conversion from a given json object \p j to a given CiString128Type \p k
+void from_json(const json& j, CiString128Type& k);
 
 /// \brief Contains a CaseInsensitive string implementation with a maximum length of 255 printable ASCII characters
 class CiString255Type : public CiString {
@@ -275,6 +331,118 @@ void to_json(json& j, const CiString500Type& k);
 
 /// \brief Conversion from a given json object \p j to a given CiString500Type \p k
 void from_json(const json& j, CiString500Type& k);
+
+/// \brief Contains a CaseInsensitive string implementation with a maximum length of 512 printable ASCII characters
+class CiString512Type : public CiString {
+public:
+    /// \brief Creates a case insensitive string from the given string \p data and a maximum length of 512
+    explicit CiString512Type(const std::string& data);
+
+    /// \brief Creates a case insensitive string from the given json \p data and a maximum length of 512
+    explicit CiString512Type(const json& data);
+
+    /// \brief Creates a case insensitive string with a maximum length of 512
+    CiString512Type();
+
+    /// \brief Assignment operator= that converts a given string \p s into a CiString512Type
+    CiString512Type& operator=(const std::string& s);
+
+    /// \brief Assignment operator= that converts a given char* \p c into a CiString512Type
+    CiString512Type& operator=(const char* c);
+
+    /// \brief Assignment operator= that converts a given json \p j into a CiString512Type
+    CiString512Type& operator=(const json& j);
+};
+
+/// \brief Conversion from a given CiString512Type \p k to a given json object \p j
+void to_json(json& j, const CiString512Type& k);
+
+/// \brief Conversion from a given json object \p j to a given CiString512Type \p k
+void from_json(const json& j, CiString512Type& k);
+
+/// \brief Contains a CaseInsensitive string implementation with a maximum length of 800 printable ASCII characters
+class CiString800Type : public CiString {
+public:
+    /// \brief Creates a case insensitive string from the given string \p data and a maximum length of 800
+    explicit CiString800Type(const std::string& data);
+
+    /// \brief Creates a case insensitive string from the given json \p data and a maximum length of 800
+    explicit CiString800Type(const json& data);
+
+    /// \brief Creates a case insensitive string with a maximum length of 800
+    CiString800Type();
+
+    /// \brief Assignment operator= that converts a given string \p s into a CiString800Type
+    CiString800Type& operator=(const std::string& s);
+
+    /// \brief Assignment operator= that converts a given char* \p c into a CiString800Type
+    CiString800Type& operator=(const char* c);
+
+    /// \brief Assignment operator= that converts a given json \p j into a CiString800Type
+    CiString800Type& operator=(const json& j);
+};
+
+/// \brief Conversion from a given CiString800Type \p k to a given json object \p j
+void to_json(json& j, const CiString800Type& k);
+
+/// \brief Conversion from a given json object \p j to a given CiString800Type \p k
+void from_json(const json& j, CiString800Type& k);
+
+/// \brief Contains a CaseInsensitive string implementation with a maximum length of 5500 printable ASCII characters
+class CiString5500Type : public CiString {
+public:
+    /// \brief Creates a case insensitive string from the given string \p data and a maximum length of 5500
+    explicit CiString5500Type(const std::string& data);
+
+    /// \brief Creates a case insensitive string from the given json \p data and a maximum length of 5500
+    explicit CiString5500Type(const json& data);
+
+    /// \brief Creates a case insensitive string with a maximum length of 5500
+    CiString5500Type();
+
+    /// \brief Assignment operator= that converts a given string \p s into a CiString5500Type
+    CiString5500Type& operator=(const std::string& s);
+
+    /// \brief Assignment operator= that converts a given char* \p c into a CiString5500Type
+    CiString5500Type& operator=(const char* c);
+
+    /// \brief Assignment operator= that converts a given json \p j into a CiString5500Type
+    CiString5500Type& operator=(const json& j);
+};
+
+/// \brief Conversion from a given CiString5500Type \p k to a given json object \p j
+void to_json(json& j, const CiString5500Type& k);
+
+/// \brief Conversion from a given json object \p j to a given CiString5500Type \p k
+void from_json(const json& j, CiString5500Type& k);
+
+/// \brief Contains a CaseInsensitive string implementation with a maximum length of 10000 printable ASCII characters
+class CiString10000Type : public CiString {
+public:
+    /// \brief Creates a case insensitive string from the given string \p data and a maximum length of 10000
+    explicit CiString10000Type(const std::string& data);
+
+    /// \brief Creates a case insensitive string from the given json \p data and a maximum length of 10000
+    explicit CiString10000Type(const json& data);
+
+    /// \brief Creates a case insensitive string with a maximum length of 10000
+    CiString10000Type();
+
+    /// \brief Assignment operator= that converts a given string \p s into a CiString10000Type
+    CiString10000Type& operator=(const std::string& s);
+
+    /// \brief Assignment operator= that converts a given char* \p c into a CiString10000Type
+    CiString10000Type& operator=(const char* c);
+
+    /// \brief Assignment operator= that converts a given json \p j into a CiString10000Type
+    CiString10000Type& operator=(const json& j);
+};
+
+/// \brief Conversion from a given CiString10000Type \p k to a given json object \p j
+void to_json(json& j, const CiString10000Type& k);
+
+/// \brief Conversion from a given json object \p j to a given CiString10000Type \p k
+void from_json(const json& j, CiString10000Type& k);
 
 /// \brief Contains a MessageId implementation based on a case insensitive string with a maximum length of 36 printable
 /// ASCII characters
