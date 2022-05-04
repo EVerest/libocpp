@@ -760,7 +760,7 @@ bool MeasurandWithPhase::operator==(MeasurandWithPhase measurand_with_phase) {
         }
     }
     return false;
-};
+}
 
 CallError::CallError() {
 }
