@@ -5,8 +5,11 @@
 
 #include <functional>
 #include <memory>
+#include <mutex>
+#include <thread>
 
 #include <websocketpp/client.hpp>
+#include <websocketpp/config/asio_client.hpp>
 
 namespace ocpp1_6 {
 
