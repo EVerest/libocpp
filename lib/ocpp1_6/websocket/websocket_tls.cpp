@@ -74,7 +74,7 @@ bool WebsocketTLS::send(const std::string& message) {
     if (ec) {
         EVLOG_error << "Error sending message over TLS websocket: " << ec.message();
 
-        this->reconnect(ec);
+        this->reconnect(ec, this->reconnect_interval_ms);
         EVLOG_info << "(TLS) Called reconnect()";
         return false;
     }
@@ -84,7 +84,7 @@ bool WebsocketTLS::send(const std::string& message) {
     return true;
 }
 
-void WebsocketTLS::reconnect(std::error_code reason) {
+void WebsocketTLS::reconnect(std::error_code reason, long delay) {
     if (this->shutting_down) {
         EVLOG_info << "Not reconnecting because the websocket is being shutdown.";
         return;
@@ -94,8 +94,8 @@ void WebsocketTLS::reconnect(std::error_code reason) {
     {
         std::lock_guard<std::mutex> lk(this->reconnect_mutex);
         if (!this->reconnect_timer) {
-            EVLOG_info << "Reconnecting in: " << this->reconnect_interval_ms << "ms";
-            this->reconnect_timer = this->wss_client.set_timer(this->reconnect_interval_ms, this->reconnect_callback);
+            EVLOG_info << "Reconnecting in: " << delay << "ms";
+            this->reconnect_timer = this->wss_client.set_timer(delay, this->reconnect_callback);
         } else {
             EVLOG_debug << "Reconnect timer already running";
         }
@@ -230,14 +230,14 @@ void WebsocketTLS::on_close_tls(tls_client* c, websocketpp::connection_hdl hdl) 
     EVLOG_info << "Closed TLS websocket connection with code: " << error_code << " ("
                << websocketpp::close::status::get_string(con->get_remote_close_code())
                << "), reason: " << con->get_remote_close_reason();
-    this->reconnect(error_code);
+    this->reconnect(error_code, this->reconnect_interval_ms);
 }
 void WebsocketTLS::on_fail_tls(tls_client* c, websocketpp::connection_hdl hdl) {
     tls_client::connection_ptr con = c->get_con_from_hdl(hdl);
     auto error_code = con->get_ec();
     EVLOG_error << "Failed to connect to TLS websocket server " << con->get_response_header("Server")
                 << ", code: " << error_code.value() << ", reason: " << error_code.message();
-    this->reconnect(error_code);
+    this->reconnect(error_code, this->reconnect_interval_ms);
 }
 void WebsocketTLS::close_tls(websocketpp::close::status::value code, const std::string& reason) {
     EVLOG_info << "Closing TLS websocket.";

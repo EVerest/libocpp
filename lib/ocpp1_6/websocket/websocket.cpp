@@ -30,8 +30,8 @@ void Websocket::disconnect() {
 
     this->websocket->disconnect();
 }
-void Websocket::reconnect(std::error_code reason) {
-    this->websocket->reconnect(reason);
+void Websocket::reconnect(std::error_code reason, long delay) {
+    this->websocket->reconnect(reason, delay);
 }
 
 void Websocket::register_connected_callback(const std::function<void()>& callback) {

@@ -74,18 +74,16 @@
             "minLength": 1,
             "maxLength": 25
         },
-        "AuthorizationKey": {
-            "type": "string",
-            "$comment": "FIXME: we should support a string here for convenience, but also support the bytearray!",
-            "readOnly": true
-        },
         "SupportedCiphers": {
             "type": "array",
             "items": {
                 "type": "string"
             },
             "readOnly": true,
-            "default": ["ECDHE-ECDSA-AES128-GCM-SHA256", "ECDHE-ECDSA-AES256-GCM-SHA384"]
+            "default": [
+                "ECDHE-ECDSA-AES128-GCM-SHA256",
+                "ECDHE-ECDSA-AES256-GCM-SHA384"
+            ]
         },
         "WebsocketReconnectInterval": {
             "$comment": "The reconnect interval of the websocket in seconds",
