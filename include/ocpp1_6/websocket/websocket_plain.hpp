@@ -42,9 +42,6 @@ private:
     /// \brief Called when a plaintext websocket connection fails to be established, tries to reconnect
     void on_fail_plain(client* c, websocketpp::connection_hdl hdl);
 
-    /// \brief Closes a plaintext websocket connection
-    void close_plain(websocketpp::close::status::value code, const std::string& reason);
-
 public:
     /// \brief Creates a new WebsocketPlain object with the providede \p configuration
     explicit WebsocketPlain(std::shared_ptr<ChargePointConfiguration> configuration);
@@ -53,12 +50,12 @@ public:
     /// \returns true if the websocket is initialized and a connection attempt is made
     bool connect() override;
 
-    /// \brief disconnect the websocket
-    void disconnect() override;
-
     /// \brief Reconnects the websocket using the delay, a reason for this reconnect can be provided with the
     /// \p reason parameter
     void reconnect(std::error_code reason, long delay);
+
+    /// \brief Closes a plaintext websocket connection
+    void close(websocketpp::close::status::value code, const std::string& reason) override;
 
     /// \brief send a \p message over the websocket
     /// \returns true if the message was sent successfully

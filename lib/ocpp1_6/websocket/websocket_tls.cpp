@@ -33,6 +33,17 @@ bool WebsocketTLS::connect() {
 
     this->reconnect_callback = [this](const websocketpp::lib::error_code& ec) {
         EVLOG_info << "Reconnecting TLS websocket...";
+
+        // close connection before reconnecting
+        if (this->is_connected) {
+            try {
+                EVLOG_debug << "Closing websocket connection";
+                this->wss_client.close(this->handle, websocketpp::close::status::normal, "");
+            } catch (std::exception& e) {
+                EVLOG_error << "Error on TLS close: " << e.what();
+            }
+        }
+
         {
             std::lock_guard<std::mutex> lk(this->reconnect_mutex);
             if (this->reconnect_timer) {
@@ -45,21 +56,6 @@ bool WebsocketTLS::connect() {
 
     this->connect_tls(this->getAuthorizationHeader());
     return true;
-}
-
-void WebsocketTLS::disconnect() {
-    if (!this->initialized()) {
-        EVLOG_error << "Cannot disconnect a websocket that was not initialized";
-        return;
-    }
-    this->shutting_down = true; // FIXME(kai): this makes the websocket inoperable after a disconnect, however this
-                                // might not be a bad thing.
-    if (this->reconnect_timer) {
-        this->reconnect_timer.get()->cancel();
-    }
-    EVLOG_info << "Disconnecting TLS websocket...";
-
-    this->close_tls(websocketpp::close::status::normal, "");
 }
 
 bool WebsocketTLS::send(const std::string& message) {
@@ -210,6 +206,7 @@ void WebsocketTLS::connect_tls(std::string authorization_header) {
 }
 void WebsocketTLS::on_open_tls(tls_client* c, websocketpp::connection_hdl hdl) {
     EVLOG_info << "Connected to TLS websocket successfully. Executing connected callback";
+    this->is_connected = true;
     this->connected_callback();
 }
 void WebsocketTLS::on_message_tls(websocketpp::connection_hdl hdl, tls_client::message_ptr msg) {
@@ -225,12 +222,17 @@ void WebsocketTLS::on_message_tls(websocketpp::connection_hdl hdl, tls_client::m
     }
 }
 void WebsocketTLS::on_close_tls(tls_client* c, websocketpp::connection_hdl hdl) {
+    this->is_connected = false;
     tls_client::connection_ptr con = c->get_con_from_hdl(hdl);
     auto error_code = con->get_ec();
+
     EVLOG_info << "Closed TLS websocket connection with code: " << error_code << " ("
                << websocketpp::close::status::get_string(con->get_remote_close_code())
                << "), reason: " << con->get_remote_close_reason();
-    this->reconnect(error_code, this->reconnect_interval_ms);
+    // dont reconnect on normal close
+    if (error_code != std::error_code()) {
+        this->reconnect(error_code, this->reconnect_interval_ms);
+    }
 }
 void WebsocketTLS::on_fail_tls(tls_client* c, websocketpp::connection_hdl hdl) {
     tls_client::connection_ptr con = c->get_con_from_hdl(hdl);
@@ -238,18 +240,6 @@ void WebsocketTLS::on_fail_tls(tls_client* c, websocketpp::connection_hdl hdl) {
     EVLOG_error << "Failed to connect to TLS websocket server " << con->get_response_header("Server")
                 << ", code: " << error_code.value() << ", reason: " << error_code.message();
     this->reconnect(error_code, this->reconnect_interval_ms);
-}
-void WebsocketTLS::close_tls(websocketpp::close::status::value code, const std::string& reason) {
-    EVLOG_info << "Closing TLS websocket.";
-    websocketpp::lib::error_code ec;
-
-    this->wss_client.stop_perpetual();
-    this->wss_client.close(this->handle, code, reason, ec);
-    if (ec) {
-        EVLOG_error << "Error initiating close of TLS websocket: " << ec.message();
-    }
-
-    EVLOG_info << "Closed TLS websocket successfully.";
 }
 
 } // namespace ocpp1_6

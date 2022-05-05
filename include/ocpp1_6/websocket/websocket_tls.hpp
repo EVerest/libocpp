@@ -58,9 +58,6 @@ private:
     /// \brief Called when a TLS websocket connection fails to be established, tries to reconnect
     void on_fail_tls(tls_client* c, websocketpp::connection_hdl hdl);
 
-    /// \brief Closes a TLS websocket connection
-    void close_tls(websocketpp::close::status::value code, const std::string& reason);
-
 public:
     /// \brief Creates a new Websocket object with the providede \p configuration
     explicit WebsocketTLS(std::shared_ptr<ChargePointConfiguration> configuration);
@@ -69,12 +66,12 @@ public:
     /// \returns true if the websocket is initialized and a connection attempt is made
     bool connect() override;
 
-    /// \brief disconnect the websocket
-    void disconnect() override;
-
     /// \brief Reconnects the websocket using the delay, a reason for this reconnect can be provided with the
     /// \p reason parameter
     void reconnect(std::error_code reason, long delay);
+
+    /// \brief closes the websocket
+    void close(websocketpp::close::status::value code, const std::string& reason) override;
 
     /// \brief send a \p message over the websocket
     /// \returns true if the message was sent successfully

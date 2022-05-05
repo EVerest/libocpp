@@ -9,6 +9,7 @@ namespace ocpp1_6 {
 
 WebsocketBase::WebsocketBase(std::shared_ptr<ChargePointConfiguration> configuration) :
     shutting_down(false),
+    is_connected(false),
     configuration(configuration),
     connected_callback(nullptr),
     disconnected_callback(nullptr),
@@ -47,6 +48,21 @@ bool WebsocketBase::initialized() {
     }
 
     return true;
+}
+
+void WebsocketBase::disconnect() {
+    if (!this->initialized()) {
+        EVLOG(error) << "Cannot disconnect a websocket that was not initialized";
+        return;
+    }
+    this->shutting_down = true; // FIXME(kai): this makes the websocket inoperable after a disconnect, however this
+                                // might not be a bad thing.
+    if (this->reconnect_timer) {
+        this->reconnect_timer.get()->cancel();
+    }
+
+    EVLOG(info) << "Disconnecting websocket...";
+    this->close(websocketpp::close::status::normal, "");
 }
 
 std::string WebsocketBase::getAuthorizationHeader() {
