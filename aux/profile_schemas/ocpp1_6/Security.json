@@ -12,7 +12,7 @@
         "AuthorizationKey": {
             "type": "string",
             "description": "The basic authentication password is used for HTTP Basic Authentication",
-            "writeOnly": true
+            "readOnly": false
         },
         "CertificateSignedMaxChainSize": {
             "type": "integer",

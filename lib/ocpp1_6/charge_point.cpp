@@ -719,33 +719,8 @@ void ChargePoint::handleChangeConfigurationRequest(Call<ChangeConfigurationReque
                     this->update_clock_aligned_meter_values_interval();
                 }
                 if (call.msg.key == "AuthorizationKey") {
-                    // set authorizationKey in user config
-                    auto user_config_path = boost::filesystem::path(this->configuration->getConfigsPath()) /
-                                            "user_config" / "user_config.json";
-                    if (boost::filesystem::exists(user_config_path)) {
-                        std::fstream ifs(user_config_path.c_str());
-                        std::string user_config_file((std::istreambuf_iterator<char>(ifs)),
-                                                     (std::istreambuf_iterator<char>()));
-                        json user_config = json::parse(user_config_file);
-                        user_config["Security"]["AuthorizationKey"] = call.msg.value;
-                        ifs.close();
-                        std::ofstream ofs(user_config_path.c_str());
-                        ofs << user_config << std::endl;
-                        ofs.close();
-
-                    } else {
-                        EVLOG_debug << "No user-config provided. Creating one.";
-                        // creating new file if it does not exist
-                        std::ofstream fs(user_config_path.c_str());
-                        json user_config;
-                        user_config["Security"]["AuthorizationKey"] = call.msg.value;
-                        fs << user_config << std::endl;
-                        fs.close();
-                    }
-
                     //  reconnect websocket with new AuthorizationKey after 1s
                     this->websocket->reconnect(std::error_code(), 1000);
-
                     // what if basic auth is not in use? what if client side certificates are in use?
                     // log change in security log - if we have one yet?!
                 }
