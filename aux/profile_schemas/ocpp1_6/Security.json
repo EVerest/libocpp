@@ -18,23 +18,25 @@
             "type": "integer",
             "description": "This configuration key can be used to limit the size of the 'certificateChain' field from the CertificateSigned.req PDU.",
             "maximum": 10000,
-            "writeOnly": true
+            "readOnly": true
         },
         "CertificateStoreMaxLength": {
             "type": "integer",
             "description": "Maximum number of Root/CA certificates that can be installed in the Charge Point.",
             "minimum": 0,
-            "writeOnly": true
+            "readOnly": true
         },
         "CpoName": {
             "type": "string",
-            "description": "This configuration key contains CPO name (or an organization trusted by the CPO) as used in the Charge Point Certificate."
+            "description": "This configuration key contains CPO name (or an organization trusted by the CPO) as used in the Charge Point Certificate.",
+            "readOnly": false
         },
         "SecurityProfile": {
             "type": "integer",
             "minimum": 0,
             "maximum": 3,
-            "description": "This configuration key is used to set the security profile used by the Charge Point"
+            "description": "This configuration key is used to set the security profile used by the Charge Point",
+            "readOnly": false
         }
     }
 }
