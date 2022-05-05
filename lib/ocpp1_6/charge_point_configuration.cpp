@@ -647,12 +647,42 @@ boost::optional<std::string> ChargePointConfiguration::getAuthorizationKey() {
 }
 
 void ChargePointConfiguration::setAuthorizationKey(std::string authorization_key) {
-    // TODO: set the key here safely
+
+    if (this->getAuthorizationKey() != boost::none) {
+        this->config["Security"]["AuthorizationKey"] = authorization_key;
+    }
+
+    // set authorizationKey in user config
+    auto user_config_path = boost::filesystem::path(this->getConfigsPath()) / "user_config" / "user_config.json";
+    if (boost::filesystem::exists(user_config_path)) {
+        // reading from and overriding to existing user config
+        std::fstream ifs(user_config_path.c_str());
+        std::string user_config_file((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
+        ifs.close();
+        json user_config = json::parse(user_config_file);
+        user_config["Security"]["AuthorizationKey"] = authorization_key;
+        std::ofstream ofs(user_config_path.c_str());
+        ofs << user_config << std::endl;
+        ofs.close();
+    } else {
+        EVLOG(debug) << "No user-config provided. Creating user_config.json.";
+        // creating new user config if it doesn't exist
+        boost::filesystem::create_directory(user_config_path.parent_path());
+        std::ofstream fs(user_config_path.c_str());
+        json user_config;
+        user_config["Security"]["AuthorizationKey"] = authorization_key;
+        fs << user_config << std::endl;
+        fs.close();
+    }
 }
 
 boost::optional<KeyValue> ChargePointConfiguration::getAuthorizationKeyKeyValue() {
     boost::optional<KeyValue> enabled_kv = boost::none;
-    auto enabled = this->getAuthorizationKey();
+    boost::optional<std::string> enabled = boost::none;
+    if (this->config["Security"].contains("AuthorizationKey")) {
+        // AuthorizationKey is writeOnly so we return a dummy
+        enabled.emplace("DummyAuthorizationKey");
+    }
     if (enabled != boost::none) {
         ocpp1_6::KeyValue kv;
         kv.key = "AuthorizationKey";
