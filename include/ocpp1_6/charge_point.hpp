@@ -229,8 +229,8 @@ public:
 
     SignCertificateResponse sign_certificate();
 
-    /// registers a \p callback function that can be used to receive a arbitrary data transfer for the given \p
-    /// vendorId and \p messageId
+    /// registers a \p callback function that can be used to receive a arbitrary data transfer for the given \p vendorId
+    /// and \p messageId
     void register_data_transfer_callback(const CiString255Type& vendorId, const CiString50Type& messageId,
                                          const std::function<void(const std::string data)>& callback);
 
