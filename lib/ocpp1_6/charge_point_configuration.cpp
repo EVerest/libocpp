@@ -156,7 +156,13 @@ ChargePointConfiguration::ChargePointConfiguration(json config, std::string conf
          {MessageType::CancelReservationResponse, MessageType::ReserveNowResponse}},
         {SupportedFeatureProfiles::SmartCharging,
          {MessageType::ClearChargingProfileResponse, MessageType::GetCompositeScheduleResponse,
-          MessageType::SetChargingProfileResponse}}};
+          MessageType::SetChargingProfileResponse}},
+        {SupportedFeatureProfiles::Security,
+         {MessageType::CertificateSignedResponse, MessageType::DeleteCertificateResponse,
+          MessageType::ExtendedTriggerMessageResponse, MessageType::GetInstalledCertificateIdsResponse,
+          MessageType::GetLogResponse, MessageType::InstallCertificateResponse, MessageType::LogStatusNotification,
+          MessageType::SecurityEventNotification, MessageType::SignCertificate,
+          MessageType::SignedFirmwareStatusNotification, MessageType::SignedUpdateFirmwareResponse}}};
 
     this->supported_message_types_from_central_system = {
         {SupportedFeatureProfiles::Core,
@@ -174,7 +180,13 @@ ChargePointConfiguration::ChargePointConfiguration(json config, std::string conf
         {SupportedFeatureProfiles::RemoteTrigger, {MessageType::TriggerMessage}},
         {SupportedFeatureProfiles::Reservation, {MessageType::CancelReservation, MessageType::ReserveNow}},
         {SupportedFeatureProfiles::SmartCharging,
-         {MessageType::ClearChargingProfile, MessageType::GetCompositeSchedule, MessageType::SetChargingProfile}}};
+         {MessageType::ClearChargingProfile, MessageType::GetCompositeSchedule, MessageType::SetChargingProfile}},
+        {SupportedFeatureProfiles::Security,
+         {MessageType::CertificateSigned, MessageType::DeleteCertificate, MessageType::ExtendedTriggerMessage,
+          MessageType::GetInstalledCertificateIds, MessageType::GetLog, MessageType::InstallCertificate,
+          MessageType::LogStatusNotificationResponse, MessageType::SecurityEventNotificationResponse,
+          MessageType::SignCertificateResponse, MessageType::SignedFirmwareStatusNotificationResponse,
+          MessageType::SignedUpdateFirmware}}};
 
     for (auto feature_profile : this->supported_feature_profiles) {
         this->supported_message_types_sending.insert(
