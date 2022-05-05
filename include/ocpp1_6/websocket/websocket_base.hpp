@@ -21,6 +21,7 @@ class ChargePointConfiguration;
 class WebsocketBase {
 protected:
     bool shutting_down;
+    bool is_connected;
     std::shared_ptr<ChargePointConfiguration> configuration;
     std::function<void()> connected_callback;
     std::function<void()> disconnected_callback;
@@ -38,6 +39,7 @@ protected:
     /// \returns true if the websocket is properly initialized
     bool initialized();
 
+    /// \brief getter for authorization header for connection with basic authentication
     std::string getAuthorizationHeader();
 
 public:
@@ -48,11 +50,14 @@ public:
     /// \returns true if the websocket is initialized and a connection attempt is made
     virtual bool connect() = 0;
 
-    /// \brief disconnect the websocket
-    virtual void disconnect() = 0;
-
     /// \brief reconnect the websocket after the delay
     virtual void reconnect(std::error_code reason, long delay) = 0;
+
+    /// \brief disconnect the websocket
+    void disconnect();
+
+    /// \brief closes the websocket
+    virtual void close(websocketpp::close::status::value code, const std::string& reason) = 0;
 
     /// \brief register a \p callback that is called when the websocket is connected successfully
     void register_connected_callback(const std::function<void()>& callback);

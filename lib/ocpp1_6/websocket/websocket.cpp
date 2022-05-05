@@ -25,11 +25,9 @@ bool Websocket::connect() {
 }
 
 void Websocket::disconnect() {
-    this->shutting_down = true; // FIXME(kai): this makes the websocket inoperable after a disconnect, however this
-                                // might not be a bad thing.
-
     this->websocket->disconnect();
 }
+
 void Websocket::reconnect(std::error_code reason, long delay) {
     this->websocket->reconnect(reason, delay);
 }
