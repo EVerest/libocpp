@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2022 Pionix GmbH and Contributors to EVerest
-#include <string>
 #include <boost/optional/optional.hpp>
 #include <chrono>
 #include <sstream>
 #include <stdexcept>
+#include <string>
 
 #include <nlohmann/json.hpp>
 
@@ -857,6 +857,8 @@ std::string supported_feature_profiles_to_string(SupportedFeatureProfiles e) {
         return "SmartCharging";
     case SupportedFeatureProfiles::RemoteTrigger:
         return "RemoteTrigger";
+    case SupportedFeatureProfiles::Security:
+        return "Security";
     }
 
     throw std::out_of_range("No known string conversion for provided enum of type SupportedFeatureProfiles");
@@ -882,6 +884,9 @@ SupportedFeatureProfiles string_to_supported_feature_profiles(const std::string&
     }
     if (s == "RemoteTrigger") {
         return SupportedFeatureProfiles::RemoteTrigger;
+    }
+    if (s == "Security") {
+        return SupportedFeatureProfiles::Security;
     }
 
     throw std::out_of_range("Provided string " + s +

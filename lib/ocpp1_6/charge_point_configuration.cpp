@@ -48,6 +48,10 @@ ChargePointConfiguration::ChargePointConfiguration(json config, std::string conf
                     throw std::runtime_error("Unknown component in SupportedFeatureProfiles config option.");
                 }
             }
+            // add Security behind the scenes as supported feature profile
+            if (this->config.contains("Security")) {
+                this->supported_feature_profiles.insert(conversions::string_to_supported_feature_profiles("Security"));
+            }
         }
     }
     if (this->supported_feature_profiles.count(SupportedFeatureProfiles::Core) == 0) {
