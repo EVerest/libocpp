@@ -25,6 +25,7 @@
 #include <ocpp1_6/messages/ClearChargingProfile.hpp>
 #include <ocpp1_6/messages/DataTransfer.hpp>
 #include <ocpp1_6/messages/DiagnosticsStatusNotification.hpp>
+#include <ocpp1_6/messages/ExtendedTriggerMessage.hpp>
 #include <ocpp1_6/messages/FirmwareStatusNotification.hpp>
 #include <ocpp1_6/messages/GetCompositeSchedule.hpp>
 #include <ocpp1_6/messages/GetConfiguration.hpp>
@@ -36,6 +37,7 @@
 #include <ocpp1_6/messages/ReserveNow.hpp>
 #include <ocpp1_6/messages/Reset.hpp>
 #include <ocpp1_6/messages/SetChargingProfile.hpp>
+#include <ocpp1_6/messages/SignCertificate.hpp>
 #include <ocpp1_6/messages/StartTransaction.hpp>
 #include <ocpp1_6/messages/StatusNotification.hpp>
 #include <ocpp1_6/messages/StopTransaction.hpp>
@@ -128,6 +130,7 @@ private:
     MeterValue get_latest_meter_value(int32_t connector, std::vector<MeasurandWithPhase> values_of_interest,
                                       ReadingContext context);
     void send_meter_value(int32_t connector, MeterValue meter_value);
+
     void status_notification(int32_t connector, ChargePointErrorCode errorCode, CiString50Type info,
                              ChargePointStatus status, DateTime timestamp);
     void status_notification(int32_t connector, ChargePointErrorCode errorCode, ChargePointStatus status);
@@ -172,6 +175,9 @@ private:
     void handleGetDiagnosticsRequest(Call<GetDiagnosticsRequest> call);
     void handleUpdateFirmwareRequest(Call<UpdateFirmwareRequest> call);
 
+    // Security profile
+    void handleExtendedTriggerMessageRequest(Call<ExtendedTriggerMessageRequest> call);
+
 public:
     /// \brief Creates a ChargePoint object with the provided \p configuration
     explicit ChargePoint(std::shared_ptr<ChargePointConfiguration> configuration);
@@ -192,6 +198,8 @@ public:
     /// system \returns the DataTransferResponse
     DataTransferResponse data_transfer(const CiString255Type& vendorId, const CiString50Type& messageId,
                                        const std::string& data);
+
+    SignCertificateResponse sign_certificate();
 
     /// registers a \p callback function that can be used to receive a arbitrary data transfer for the given \p vendorId
     /// and \p messageId

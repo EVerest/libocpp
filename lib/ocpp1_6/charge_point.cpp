@@ -579,6 +579,10 @@ void ChargePoint::handle_message(const json& json_message, MessageType message_t
         this->handleCancelReservationRequest(json_message);
         break;
 
+    case MessageType::ExtendedTriggerMessage:
+        this->handleExtendedTriggerMessageRequest(json_message);
+        break;
+
     default:
         // TODO(kai): not implemented error?
         break;
@@ -1353,6 +1357,42 @@ void ChargePoint::handleCancelReservationRequest(Call<CancelReservationRequest> 
     }
     CallResult<CancelReservationResponse> call_result(response, call.uniqueId);
     this->send<CancelReservationResponse>(call_result);
+}
+void ChargePoint::handleExtendedTriggerMessageRequest(Call<ExtendedTriggerMessageRequest> call) {
+    EVLOG(debug) << "Received ExtendedTriggerMessageRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
+
+    ExtendedTriggerMessageResponse response;
+    response.status = TriggerMessageStatusEnumType::Rejected;
+    switch (call.msg.requestedMessage) {
+    case MessageTriggerEnumType::SignChargePointCertificate:
+        response.status = TriggerMessageStatusEnumType::Accepted;
+        break;
+    }
+
+    auto connector = call.msg.connectorId.value_or(0);
+    bool valid = true;
+    if (connector < 0 || connector > this->configuration->getNumberOfConnectors()) {
+        response.status = TriggerMessageStatusEnumType::Rejected;
+        valid = false;
+    }
+
+    CallResult<ExtendedTriggerMessageResponse> call_result(response, call.uniqueId);
+    this->send<ExtendedTriggerMessageResponse>(call_result);
+
+    if (!valid) {
+        return;
+    }
+
+    switch (call.msg.requestedMessage) {
+    case MessageTriggerEnumType::SignChargePointCertificate:
+        // create private/public key pair
+        this->sign_certificate();
+        break;
+    }
+}
+
+SignCertificateResponse ChargePoint::sign_certificate() {
+    return;
 }
 
 bool ChargePoint::allowed_to_send_message(json::array_t message) {
