@@ -19,6 +19,7 @@
 #include <ocpp1_6/messages/Authorize.hpp>
 #include <ocpp1_6/messages/BootNotification.hpp>
 #include <ocpp1_6/messages/CancelReservation.hpp>
+#include <ocpp1_6/messages/CertificateSigned.hpp>
 #include <ocpp1_6/messages/ChangeAvailability.hpp>
 #include <ocpp1_6/messages/ChangeConfiguration.hpp>
 #include <ocpp1_6/messages/ClearCache.hpp>
@@ -177,6 +178,7 @@ private:
 
     // Security profile
     void handleExtendedTriggerMessageRequest(Call<ExtendedTriggerMessageRequest> call);
+    void handleCertificateSignedRequest(Call<CertificateSignedRequest> call);
 
 public:
     /// \brief Creates a ChargePoint object with the provided \p configuration
