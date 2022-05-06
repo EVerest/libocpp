@@ -9,6 +9,8 @@
 #include <ocpp1_6/charge_point_configuration.hpp>
 #include <ocpp1_6/schemas.hpp>
 
+#include <openssl/rsa.h>
+
 namespace ocpp1_6 {
 
 ChargePoint::ChargePoint(std::shared_ptr<ChargePointConfiguration> configuration) :
@@ -501,6 +503,10 @@ void ChargePoint::handle_message(const json& json_message, MessageType message_t
         // handled by authorize_id_tag future
         break;
 
+    case MessageType::CertificateSigned:
+        this->handleCertificateSignedRequest(json_message);
+        break;
+
     case MessageType::ChangeAvailability:
         this->handleChangeAvailabilityRequest(json_message);
         break;
@@ -535,6 +541,10 @@ void ChargePoint::handle_message(const json& json_message, MessageType message_t
 
     case MessageType::Reset:
         this->handleResetRequest(json_message);
+        break;
+
+    case MessageType::SignCertificateResponse:
+        // handled by sign_certificate future
         break;
 
     case MessageType::StartTransactionResponse:
@@ -1365,14 +1375,58 @@ void ChargePoint::handleExtendedTriggerMessageRequest(Call<ExtendedTriggerMessag
 
     switch (call.msg.requestedMessage) {
     case MessageTriggerEnumType::SignChargePointCertificate:
-        // create private/public key pair
         this->sign_certificate();
         break;
     }
 }
 
 SignCertificateResponse ChargePoint::sign_certificate() {
-    return;
+    // generate new private/public key pair
+
+    // create csr
+
+    std::string csr;
+    SignCertificateRequest req;
+
+    req.csr = csr;
+    Call<SignCertificateRequest> call(req, this->message_queue->createMessageId());
+    auto sign_certificate_future = this->send_async<SignCertificateRequest>(call);
+
+    auto enhanced_message = sign_certificate_future.get();
+
+    EVLOG(debug) << "Received SignCertificateResponse: " << call.msg << "\nwith messageId: " << call.uniqueId;
+
+    SignCertificateResponse sign_certificate_response;
+
+    if (enhanced_message.messageType == MessageType::SignCertificateResponse) {
+        CallResult<SignCertificateResponse> call_result = enhanced_message.message;
+        sign_certificate_response = call_result.msg;
+    }
+    if (enhanced_message.offline) {
+        sign_certificate_response.status = GenericStatusEnumType::Rejected;
+    }
+    return sign_certificate_response;
+}
+
+void ChargePoint::handleCertificateSignedRequest(Call<CertificateSignedRequest> call) {
+    EVLOG(debug) << "Received CertificateSignedRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
+
+    CertificateSignedResponse response;
+    response.status = CertificateSignedStatusEnumType::Rejected;
+
+    std::string certificateChain = call.msg.certificateChain;
+    // validate certificates
+
+    // if certificateChain is valid
+    // put CpoName is config key
+    response.status = CertificateSignedStatusEnumType::Accepted;
+
+    // if not valid: trigger an InvalidChargePointCertificate security event
+
+    CallResult<CertificateSignedResponse> call_result(response, call.uniqueId);
+    this->send<CertificateSignedResponse>(call_result);
+
+    // reconnect with new certificate
 }
 
 bool ChargePoint::allowed_to_send_message(json::array_t message) {
