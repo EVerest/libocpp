@@ -8,8 +8,6 @@
 #include <ocpp1_6/charge_point_configuration.hpp>
 #include <ocpp1_6/schemas.hpp>
 
-#include <openssl/rsa.h>
-
 namespace ocpp1_6 {
 
 ChargePoint::ChargePoint(std::shared_ptr<ChargePointConfiguration> configuration) :
