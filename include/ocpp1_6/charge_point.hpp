@@ -179,6 +179,7 @@ private:
     // Security profile
     void handleExtendedTriggerMessageRequest(Call<ExtendedTriggerMessageRequest> call);
     void handleCertificateSignedRequest(Call<CertificateSignedRequest> call);
+    std::string generateCsr();
 
 public:
     /// \brief Creates a ChargePoint object with the provided \p configuration
