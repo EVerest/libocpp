@@ -1379,14 +1379,11 @@ void ChargePoint::handleExtendedTriggerMessageRequest(Call<ExtendedTriggerMessag
 }
 
 SignCertificateResponse ChargePoint::sign_certificate() {
-    // generate new private/public key pair
 
-    // create csr
-
-    std::string csr;
     SignCertificateRequest req;
 
-    req.csr = csr;
+    std::string csr = this->generateCsr();
+
     Call<SignCertificateRequest> call(req, this->message_queue->createMessageId());
     auto sign_certificate_future = this->send_async<SignCertificateRequest>(call);
 
@@ -1404,6 +1401,89 @@ SignCertificateResponse ChargePoint::sign_certificate() {
         sign_certificate_response.status = GenericStatusEnumType::Rejected;
     }
     return sign_certificate_response;
+}
+
+std::string ChargePoint::generateCsr() {
+    // generate new private/public key pair
+    using BN_ptr = std::unique_ptr<BIGNUM, decltype(&::BN_free)>;
+    using RSA_ptr = std::unique_ptr<RSA, decltype(&::RSA_free)>;
+    using EVP_KEY_ptr = std::unique_ptr<EVP_PKEY, decltype(&::EVP_PKEY_free)>;
+    using BIO_FILE_ptr = std::unique_ptr<BIO, decltype(&::BIO_free)>;
+    using X509_REQ_ptr = std::unique_ptr<X509_REQ, decltype(&::X509_REQ_free)>;
+
+    int rc;
+    RSA* r = NULL;
+    BN_ptr bn(BN_new(), ::BN_free);
+
+    int nVersion = 0;
+    int bits = 2048;
+    unsigned long e = RSA_F4;
+
+    // csr req
+    X509_REQ_ptr x509_req(X509_REQ_new(), ::X509_REQ_free);
+    X509_NAME* x509_name = NULL;
+    EVP_KEY_ptr pKey(EVP_PKEY_new(), ::EVP_PKEY_free);
+    BIO_FILE_ptr out(BIO_new_file("certs/x509Req.pem", "w"), ::BIO_free);
+    BIO_FILE_ptr pbkey(BIO_new_file("certs/public.pem", "w"), ::BIO_free);
+    BIO_FILE_ptr prkey(BIO_new_file("certs/private.pem", "w"), ::BIO_free);
+
+    const char* szCountry = "DE";
+    const char* szProvince = "BW";
+    const char* szCity = "Bad Schoenborn";
+    const char* szOrganization = "Pionix";
+    const char* szCommon = "www.pionix.com";
+
+    // 1. generate rsa key
+    rc = BN_set_word(bn.get(), e);
+    assert(rc == 1);
+    r = RSA_new();
+    RSA_generate_key_ex(r, bits, bn.get(), NULL);
+    assert(rc == 1);
+
+    // 2. write keys to files
+    rc = PEM_write_bio_RSAPublicKey(pbkey.get(), r);
+    assert(rc == 1);
+    rc = PEM_write_bio_RSAPrivateKey(prkey.get(), r, NULL, NULL, 0, NULL, NULL);
+    assert(rc == 1);
+
+    // 3. set version of x509 req
+    X509_REQ_set_version(x509_req.get(), nVersion);
+    assert(rc == 1);
+
+    // 4. set subject of x509 req
+    x509_name = X509_REQ_get_subject_name(x509_req.get());
+    assert(rc == 1);
+    X509_NAME_add_entry_by_txt(x509_name, "C", MBSTRING_ASC, (const unsigned char*)szCountry, -1, -1, 0);
+    assert(rc == 1);
+    X509_NAME_add_entry_by_txt(x509_name, "ST", MBSTRING_ASC, (const unsigned char*)szProvince, -1, -1, 0);
+    assert(rc == 1);
+    X509_NAME_add_entry_by_txt(x509_name, "L", MBSTRING_ASC, (const unsigned char*)szCity, -1, -1, 0);
+    assert(rc == 1);
+    X509_NAME_add_entry_by_txt(x509_name, "O", MBSTRING_ASC, (const unsigned char*)szOrganization, -1, -1, 0);
+    assert(rc == 1);
+    X509_NAME_add_entry_by_txt(x509_name, "CN", MBSTRING_ASC, (const unsigned char*)szCommon, -1, -1, 0);
+    assert(rc == 1);
+
+    // 5. set public key of x509 req
+    EVP_PKEY_assign_RSA(pKey.get(), r);
+    r = NULL;
+    X509_REQ_set_pubkey(x509_req.get(), pKey.get());
+    assert(rc == 1);
+
+    // 6. set sign key of x509 req
+    X509_REQ_sign(x509_req.get(), pKey.get(), EVP_sha256()); // return x509_req->signature->length
+    assert(rc == 1);
+
+    // 7. write csr to file
+    PEM_write_bio_X509_REQ(out.get(), x509_req.get());
+    assert(rc == 1);
+
+    // 8. read csr from file
+    std::ifstream ifs("certs/csr.pem");
+    std::string csr((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
+    ifs.close();
+
+    return csr;
 }
 
 void ChargePoint::handleCertificateSignedRequest(Call<CertificateSignedRequest> call) {
