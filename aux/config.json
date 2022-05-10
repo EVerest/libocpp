@@ -2,6 +2,7 @@
     "Internal": {
         "ChargePointId": "",
         "CentralSystemURI": "",
+        "ChargeBoxSerialNumber": "",
         "ChargePointModel": "Yeti",
         "ChargePointVendor": "Pionix",
         "FirmwareVersion": "0.1"
