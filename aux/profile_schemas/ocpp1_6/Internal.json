@@ -5,6 +5,7 @@
     "required": [
         "ChargePointId",
         "CentralSystemURI",
+        "ChargeBoxSerialNumber",
         "ChargePointModel",
         "ChargePointVendor",
         "FirmwareVersion"
