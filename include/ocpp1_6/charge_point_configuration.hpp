@@ -50,10 +50,6 @@ public:
     int32_t getWebsocketReconnectInterval();
 
     std::string getSupportedCiphers();
-    // move this to a new "Security" profile with the other OCPP 1.6 security extension config options?
-    boost::optional<std::string> getAuthorizationKey();
-    void setAuthorizationKey(std::string authorization_key);
-    boost::optional<KeyValue> getAuthorizationKeyKeyValue();
 
     // Internal
     std::set<MessageType> getSupportedMessageTypesSending();
@@ -258,6 +254,33 @@ public:
     KeyValue getMaxChargingProfilesInstalledKeyValue();
 
     // SmartCharging Profile end
+
+    // Security profile - optional
+    boost::optional<bool> getAdditionalRootCertificateCheck();
+    boost::optional<KeyValue> getAdditionalRootCertificateCheckKeyValue();
+
+    // Security profile - optional
+    boost::optional<std::string> getAuthorizationKey();
+    void setAuthorizationKey(std::string authorization_key);
+    boost::optional<KeyValue> getAuthorizationKeyKeyValue();
+
+    // Security profile - optional
+    boost::optional<int32_t> getCertificateSignedMaxChainSize();
+    boost::optional<KeyValue> getCertificateSignedMaxChainSizeKeyValue();
+
+    // Security profile - optional
+    boost::optional<int32_t> getCertificateStoreMaxLength();
+    boost::optional<KeyValue> getCertificateStoreMaxLengthKeyValue();
+
+    // Security profile - optional
+    boost::optional<std::string> getCpoName();
+    void setCpoName(std::string cpo_name);
+    boost::optional<KeyValue> getCpoNameKeyValue();
+
+    // Security profile - optional
+    boost::optional<int32_t> getSecurityProfile();
+    void setSecurityProfile(int32_t security_profile);
+    boost::optional<KeyValue> getSecurityProfileKeyValue();
 
     boost::optional<KeyValue> get(CiString50Type key);
 
