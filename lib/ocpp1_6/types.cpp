@@ -28,6 +28,10 @@ std::string messagetype_to_string(MessageType m) {
         return "CancelReservation";
     case MessageType::CancelReservationResponse:
         return "CancelReservationResponse";
+    case MessageType::CertificateSigned:
+        return "CertificateSigned";
+    case MessageType::CertificateSignedResponse:
+        return "CertificateSignedResponse";
     case MessageType::ChangeAvailability:
         return "ChangeAvailability";
     case MessageType::ChangeAvailabilityResponse:
@@ -48,10 +52,18 @@ std::string messagetype_to_string(MessageType m) {
         return "DataTransfer";
     case MessageType::DataTransferResponse:
         return "DataTransferResponse";
+    case MessageType::DeleteCertificate:
+        return "DeleteCertificate";
+    case MessageType::DeleteCertificateResponse:
+        return "DeleteCertificateResponse";
     case MessageType::DiagnosticsStatusNotification:
         return "DiagnosticsStatusNotification";
     case MessageType::DiagnosticsStatusNotificationResponse:
         return "DiagnosticsStatusNotificationResponse";
+    case MessageType::ExtendedTriggerMessage:
+        return "ExtendedTriggerMessage";
+    case MessageType::ExtendedTriggerMessageResponse:
+        return "ExtendedTriggerMessageResponse";
     case MessageType::FirmwareStatusNotification:
         return "FirmwareStatusNotification";
     case MessageType::FirmwareStatusNotificationResponse:
@@ -68,14 +80,30 @@ std::string messagetype_to_string(MessageType m) {
         return "GetDiagnostics";
     case MessageType::GetDiagnosticsResponse:
         return "GetDiagnosticsResponse";
+    case MessageType::GetInstalledCertificateIds:
+        return "GetInstalledCertificateIds";
+    case MessageType::GetInstalledCertificateIdsResponse:
+        return "GetInstalledCertificateIdsResponse";
     case MessageType::GetLocalListVersion:
         return "GetLocalListVersion";
     case MessageType::GetLocalListVersionResponse:
         return "GetLocalListVersionResponse";
+    case MessageType::GetLog:
+        return "GetLog";
+    case MessageType::GetLogResponse:
+        return "GetLogResponse";
     case MessageType::Heartbeat:
         return "Heartbeat";
     case MessageType::HeartbeatResponse:
         return "HeartbeatResponse";
+    case MessageType::InstallCertificate:
+        return "InstallCertificate";
+    case MessageType::InstallCertificateResponse:
+        return "InstallCertificateResponse";
+    case MessageType::LogStatusNotification:
+        return "LogStatusNotification";
+    case MessageType::LogStatusNotificationResponse:
+        return "LogStatusNotificationResponse";
     case MessageType::MeterValues:
         return "MeterValues";
     case MessageType::MeterValuesResponse:
@@ -96,6 +124,10 @@ std::string messagetype_to_string(MessageType m) {
         return "Reset";
     case MessageType::ResetResponse:
         return "ResetResponse";
+    case MessageType::SecurityEventNotification:
+        return "SecurityEventNotification";
+    case MessageType::SecurityEventNotificationResponse:
+        return "SecurityEventNotificationResponse";
     case MessageType::SendLocalList:
         return "SendLocalList";
     case MessageType::SendLocalListResponse:
@@ -104,6 +136,18 @@ std::string messagetype_to_string(MessageType m) {
         return "SetChargingProfile";
     case MessageType::SetChargingProfileResponse:
         return "SetChargingProfileResponse";
+    case MessageType::SignCertificate:
+        return "SignCertificate";
+    case MessageType::SignCertificateResponse:
+        return "SignCertificateResponse";
+    case MessageType::SignedFirmwareStatusNotification:
+        return "SignedFirmwareStatusNotification";
+    case MessageType::SignedFirmwareStatusNotificationResponse:
+        return "SignedFirmwareStatusNotificationResponse";
+    case MessageType::SignedUpdateFirmware:
+        return "SignedUpdateFirmware";
+    case MessageType::SignedUpdateFirmwareResponse:
+        return "SignedUpdateFirmwareResponse";
     case MessageType::StartTransaction:
         return "StartTransaction";
     case MessageType::StartTransactionResponse:
@@ -154,6 +198,12 @@ MessageType string_to_messagetype(const std::string& s) {
     if (s == "CancelReservationResponse") {
         return MessageType::CancelReservationResponse;
     }
+    if (s == "CertificateSigned") {
+        return MessageType::CertificateSigned;
+    }
+    if (s == "CertificateSignedResponse") {
+        return MessageType::CertificateSignedResponse;
+    }
     if (s == "ChangeAvailability") {
         return MessageType::ChangeAvailability;
     }
@@ -184,11 +234,23 @@ MessageType string_to_messagetype(const std::string& s) {
     if (s == "DataTransferResponse") {
         return MessageType::DataTransferResponse;
     }
+    if (s == "DeleteCertificate") {
+        return MessageType::DeleteCertificate;
+    }
+    if (s == "DeleteCertificateResponse") {
+        return MessageType::DeleteCertificateResponse;
+    }
     if (s == "DiagnosticsStatusNotification") {
         return MessageType::DiagnosticsStatusNotification;
     }
     if (s == "DiagnosticsStatusNotificationResponse") {
         return MessageType::DiagnosticsStatusNotificationResponse;
+    }
+    if (s == "ExtendedTriggerMessage") {
+        return MessageType::ExtendedTriggerMessage;
+    }
+    if (s == "ExtendedTriggerMessageResponse") {
+        return MessageType::ExtendedTriggerMessageResponse;
     }
     if (s == "FirmwareStatusNotification") {
         return MessageType::FirmwareStatusNotification;
@@ -214,17 +276,41 @@ MessageType string_to_messagetype(const std::string& s) {
     if (s == "GetDiagnosticsResponse") {
         return MessageType::GetDiagnosticsResponse;
     }
+    if (s == "GetInstalledCertificateIds") {
+        return MessageType::GetInstalledCertificateIds;
+    }
+    if (s == "GetInstalledCertificateIdsResponse") {
+        return MessageType::GetInstalledCertificateIdsResponse;
+    }
     if (s == "GetLocalListVersion") {
         return MessageType::GetLocalListVersion;
     }
     if (s == "GetLocalListVersionResponse") {
         return MessageType::GetLocalListVersionResponse;
     }
+    if (s == "GetLog") {
+        return MessageType::GetLog;
+    }
+    if (s == "GetLogResponse") {
+        return MessageType::GetLogResponse;
+    }
     if (s == "Heartbeat") {
         return MessageType::Heartbeat;
     }
     if (s == "HeartbeatResponse") {
         return MessageType::HeartbeatResponse;
+    }
+    if (s == "InstallCertificate") {
+        return MessageType::InstallCertificate;
+    }
+    if (s == "InstallCertificateResponse") {
+        return MessageType::InstallCertificateResponse;
+    }
+    if (s == "LogStatusNotification") {
+        return MessageType::LogStatusNotification;
+    }
+    if (s == "LogStatusNotificationResponse") {
+        return MessageType::LogStatusNotificationResponse;
     }
     if (s == "MeterValues") {
         return MessageType::MeterValues;
@@ -256,6 +342,12 @@ MessageType string_to_messagetype(const std::string& s) {
     if (s == "ResetResponse") {
         return MessageType::ResetResponse;
     }
+    if (s == "SecurityEventNotification") {
+        return MessageType::SecurityEventNotification;
+    }
+    if (s == "SecurityEventNotificationResponse") {
+        return MessageType::SecurityEventNotificationResponse;
+    }
     if (s == "SendLocalList") {
         return MessageType::SendLocalList;
     }
@@ -267,6 +359,24 @@ MessageType string_to_messagetype(const std::string& s) {
     }
     if (s == "SetChargingProfileResponse") {
         return MessageType::SetChargingProfileResponse;
+    }
+    if (s == "SignCertificate") {
+        return MessageType::SignCertificate;
+    }
+    if (s == "SignCertificateResponse") {
+        return MessageType::SignCertificateResponse;
+    }
+    if (s == "SignedFirmwareStatusNotification") {
+        return MessageType::SignedFirmwareStatusNotification;
+    }
+    if (s == "SignedFirmwareStatusNotificationResponse") {
+        return MessageType::SignedFirmwareStatusNotificationResponse;
+    }
+    if (s == "SignedUpdateFirmware") {
+        return MessageType::SignedUpdateFirmware;
+    }
+    if (s == "SignedUpdateFirmwareResponse") {
+        return MessageType::SignedUpdateFirmwareResponse;
     }
     if (s == "StartTransaction") {
         return MessageType::StartTransaction;
