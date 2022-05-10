@@ -234,13 +234,10 @@ boost::optional<CiString25Type> ChargePointConfiguration::getChargeBoxSerialNumb
 CiString20Type ChargePointConfiguration::getChargePointModel() {
     return CiString20Type(this->config["Internal"]["ChargePointModel"]);
 }
-boost::optional<CiString25Type> ChargePointConfiguration::getChargePointSerialNumber() {
-    boost::optional<CiString25Type> charge_point_serial_number = boost::none;
-    if (this->config["Internal"].contains("ChargePointSerialNumber")) {
-        charge_point_serial_number.emplace(this->config["Internal"]["ChargePointSerialNumber"]);
-    }
-    return charge_point_serial_number;
+std::string ChargePointConfiguration::getChargePointSerialNumber() {
+    return this->config["Internal"]["ChargePointSerialNumber"];
 }
+
 CiString20Type ChargePointConfiguration::getChargePointVendor() {
     return CiString20Type(this->config["Internal"]["ChargePointVendor"]);
 }
