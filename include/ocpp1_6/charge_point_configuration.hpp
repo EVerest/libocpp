@@ -40,7 +40,7 @@ public:
     std::string getCentralSystemURI();
     boost::optional<CiString25Type> getChargeBoxSerialNumber();
     CiString20Type getChargePointModel();
-    boost::optional<CiString25Type> getChargePointSerialNumber();
+    std::string getChargePointSerialNumber();
     CiString20Type getChargePointVendor();
     CiString50Type getFirmwareVersion();
     boost::optional<CiString20Type> getICCID();
