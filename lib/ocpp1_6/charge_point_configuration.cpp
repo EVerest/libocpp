@@ -654,61 +654,6 @@ boost::optional<KeyValue> ChargePointConfiguration::getAuthorizationCacheEnabled
     return enabled_kv;
 }
 
-boost::optional<std::string> ChargePointConfiguration::getAuthorizationKey() {
-    boost::optional<std::string> authorization_key = boost::none;
-    if (this->config["Security"].contains("AuthorizationKey")) {
-        authorization_key.emplace(this->config["Security"]["AuthorizationKey"]);
-    }
-    return authorization_key;
-}
-
-void ChargePointConfiguration::setAuthorizationKey(std::string authorization_key) {
-
-    if (this->getAuthorizationKey() != boost::none) {
-        this->config["Security"]["AuthorizationKey"] = authorization_key;
-    }
-
-    // set authorizationKey in user config
-    auto user_config_path = boost::filesystem::path(this->getConfigsPath()) / "user_config" / "user_config.json";
-    if (boost::filesystem::exists(user_config_path)) {
-        // reading from and overriding to existing user config
-        std::fstream ifs(user_config_path.c_str());
-        std::string user_config_file((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
-        ifs.close();
-        json user_config = json::parse(user_config_file);
-        user_config["Security"]["AuthorizationKey"] = authorization_key;
-        std::ofstream ofs(user_config_path.c_str());
-        ofs << user_config << std::endl;
-        ofs.close();
-    } else {
-        EVLOG(debug) << "No user-config provided. Creating user_config.json.";
-        // creating new user config if it doesn't exist
-        boost::filesystem::create_directory(user_config_path.parent_path());
-        std::ofstream fs(user_config_path.c_str());
-        json user_config;
-        user_config["Security"]["AuthorizationKey"] = authorization_key;
-        fs << user_config << std::endl;
-        fs.close();
-    }
-}
-
-boost::optional<KeyValue> ChargePointConfiguration::getAuthorizationKeyKeyValue() {
-    boost::optional<KeyValue> enabled_kv = boost::none;
-    boost::optional<std::string> enabled = boost::none;
-    if (this->config["Security"].contains("AuthorizationKey")) {
-        // AuthorizationKey is writeOnly so we return a dummy
-        enabled.emplace("DummyAuthorizationKey");
-    }
-    if (enabled != boost::none) {
-        ocpp1_6::KeyValue kv;
-        kv.key = "AuthorizationKey";
-        kv.readonly = false;
-        kv.value.emplace(enabled.value());
-        enabled_kv.emplace(kv);
-    }
-    return enabled_kv;
-}
-
 // Core Profile
 bool ChargePointConfiguration::getAuthorizeRemoteTxRequests() {
     return this->config["Core"]["AuthorizeRemoteTxRequests"];
@@ -1379,6 +1324,180 @@ KeyValue ChargePointConfiguration::getMaxChargingProfilesInstalledKeyValue() {
     kv.readonly = true;
     kv.value.emplace(std::to_string(this->getMaxChargingProfilesInstalled()));
     return kv;
+}
+
+// Security profile - optional
+boost::optional<bool> ChargePointConfiguration::getAdditionalRootCertificateCheck() {
+    boost::optional<bool> additional_root_certificate_check = boost::none;
+    if (this->config["Security"].contains("AdditionalRootCertificateCheck")) {
+        additional_root_certificate_check.emplace(this->config["Security"]["AdditionalRootCertificateCheck"]);
+    }
+    return additional_root_certificate_check;
+}
+
+boost::optional<KeyValue> ChargePointConfiguration::getAdditionalRootCertificateCheckKeyValue() {
+    ocpp1_6::KeyValue kv;
+    kv.key = "AdditionalRootCertificateCheck";
+    kv.readonly = true;
+    kv.value.emplace(conversions::bool_to_string(this->getAdditionalRootCertificateCheck().value()));
+    return kv;
+}
+
+// Security Profile - optional
+boost::optional<std::string> ChargePointConfiguration::getAuthorizationKey() {
+    boost::optional<std::string> authorization_key = boost::none;
+    if (this->config["Security"].contains("AuthorizationKey")) {
+        authorization_key.emplace(this->config["Security"]["AuthorizationKey"]);
+    }
+    return authorization_key;
+}
+
+void ChargePointConfiguration::setAuthorizationKey(std::string authorization_key) {
+
+    if (this->getAuthorizationKey() != boost::none) {
+        this->config["Security"]["AuthorizationKey"] = authorization_key;
+    }
+
+    // set authorizationKey in user config
+    auto user_config_path = boost::filesystem::path(this->getConfigsPath()) / "user_config" / "user_config.json";
+    if (boost::filesystem::exists(user_config_path)) {
+        // reading from and overriding to existing user config
+        std::fstream ifs(user_config_path.c_str());
+        std::string user_config_file((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
+        ifs.close();
+        json user_config = json::parse(user_config_file);
+        user_config["Security"]["AuthorizationKey"] = authorization_key;
+        std::ofstream ofs(user_config_path.c_str());
+        ofs << user_config << std::endl;
+        ofs.close();
+    } else {
+        EVLOG(debug) << "No user-config provided. Creating user_config.json.";
+        // creating new user config if it doesn't exist
+        boost::filesystem::create_directory(user_config_path.parent_path());
+        std::ofstream fs(user_config_path.c_str());
+        json user_config;
+        user_config["Security"]["AuthorizationKey"] = authorization_key;
+        fs << user_config << std::endl;
+        fs.close();
+    }
+}
+
+boost::optional<KeyValue> ChargePointConfiguration::getAuthorizationKeyKeyValue() {
+    boost::optional<KeyValue> enabled_kv = boost::none;
+    boost::optional<std::string> enabled = boost::none;
+    if (this->config["Security"].contains("AuthorizationKey")) {
+        // AuthorizationKey is writeOnly so we return a dummy
+        enabled.emplace("DummyAuthorizationKey");
+    }
+    if (enabled != boost::none) {
+        ocpp1_6::KeyValue kv;
+        kv.key = "AuthorizationKey";
+        kv.readonly = false;
+        kv.value.emplace(enabled.value());
+        enabled_kv.emplace(kv);
+    }
+    return enabled_kv;
+}
+
+// Security profile - optional
+boost::optional<int32_t> ChargePointConfiguration::getCertificateSignedMaxChainSize() {
+    boost::optional<int32_t> certificate_max_chain_size = boost::none;
+    if (this->config["Core"].contains("CertificateMaxChainSize")) {
+        certificate_max_chain_size.emplace(this->config["Security"]["CertificateMaxChainSize"]);
+    }
+    return certificate_max_chain_size;
+}
+
+boost::optional<KeyValue> ChargePointConfiguration::getCertificateSignedMaxChainSizeKeyValue() {
+    boost::optional<KeyValue> certificate_max_chain_size_kv = boost::none;
+    auto certificate_max_chain_size = this->getCertificateSignedMaxChainSize();
+    if (certificate_max_chain_size != boost::none) {
+        ocpp1_6::KeyValue kv;
+        kv.key = "CertificateMaxChainSize";
+        kv.readonly = true;
+        kv.value.emplace(std::to_string(certificate_max_chain_size.value()));
+        certificate_max_chain_size_kv.emplace(kv);
+    }
+    return certificate_max_chain_size_kv;
+}
+
+// Security profile - optional
+boost::optional<int32_t> ChargePointConfiguration::getCertificateStoreMaxLength() {
+    boost::optional<int32_t> certificate_store_max_length = boost::none;
+    if (this->config["Core"].contains("CertificateStoreMaxLength")) {
+        certificate_store_max_length.emplace(this->config["Security"]["CertificateStoreMaxLength"]);
+    }
+    return certificate_store_max_length;
+}
+
+boost::optional<KeyValue> ChargePointConfiguration::getCertificateStoreMaxLengthKeyValue() {
+    boost::optional<KeyValue> certificate_store_max_length_kv = boost::none;
+    auto certificate_store_max_length = this->getCertificateStoreMaxLength();
+    if (certificate_store_max_length != boost::none) {
+        ocpp1_6::KeyValue kv;
+        kv.key = "CertificateStoreMaxLength";
+        kv.readonly = true;
+        kv.value.emplace(std::to_string(certificate_store_max_length.value()));
+        certificate_store_max_length_kv.emplace(kv);
+    }
+    return certificate_store_max_length_kv;
+}
+
+// Security Profile - optional
+boost::optional<std::string> ChargePointConfiguration::getCpoName() {
+    boost::optional<std::string> cpo_name = boost::none;
+    if (this->config["Security"].contains("CpoName")) {
+        cpo_name.emplace(this->config["Security"]["CpoName"]);
+    }
+    return cpo_name;
+}
+
+void ChargePointConfiguration::setCpoName(std::string cpoName) {
+    if (this->getCpoName() != boost::none) {
+        this->config["Security"]["CpoName"] = cpoName;
+    }
+}
+
+boost::optional<KeyValue> ChargePointConfiguration::getCpoNameKeyValue() {
+    boost::optional<KeyValue> cpo_name_kv = boost::none;
+    auto cpo_name = this->getCpoName();
+    if (cpo_name != boost::none) {
+        ocpp1_6::KeyValue kv;
+        kv.key = "CpoName";
+        kv.readonly = false;
+        kv.value.emplace(cpo_name.value());
+        cpo_name_kv.emplace(kv);
+    }
+    return cpo_name_kv;
+}
+
+// Security profile - optional
+boost::optional<int32_t> ChargePointConfiguration::getSecurityProfile() {
+    boost::optional<int32_t> security_profile = boost::none;
+    if (this->config["Security"].contains("SecurityProfile")) {
+        security_profile.emplace(this->config["Security"]["SecurityProfile"]);
+    }
+    return security_profile;
+}
+
+void ChargePointConfiguration::setSecurityProfile(int32_t security_profile) {
+    // TODO(piet): add boundaries for value of security profile
+    if (this->getSecurityProfile() != boost::none) {
+        this->config["Security"]["SecurityProfile"] = security_profile;
+    }
+}
+
+boost::optional<KeyValue> ChargePointConfiguration::getSecurityProfileKeyValue() {
+    boost::optional<KeyValue> security_profile_kv = boost::none;
+    auto security_profile = this->getSecurityProfile();
+    if (security_profile != boost::none) {
+        ocpp1_6::KeyValue kv;
+        kv.key = "SecurityProfile";
+        kv.readonly = false;
+        kv.value.emplace(std::to_string(security_profile.value()));
+        security_profile_kv.emplace(kv);
+    }
+    return security_profile_kv;
 }
 
 boost::optional<KeyValue> ChargePointConfiguration::get(CiString50Type key) {
