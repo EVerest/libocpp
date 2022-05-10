@@ -21,7 +21,7 @@ std::string ExtendedTriggerMessageRequest::get_type() const {
 void to_json(json& j, const ExtendedTriggerMessageRequest& k) {
     // the required parts of the message
     j = json{
-        {"requestedMessage", k.requestedMessage},
+        {"requestedMessage", conversions::message_trigger_enum_type_to_string(k.requestedMessage)},
     };
     // the optional parts of the message
     if (k.connectorId) {
@@ -31,7 +31,7 @@ void to_json(json& j, const ExtendedTriggerMessageRequest& k) {
 
 void from_json(const json& j, ExtendedTriggerMessageRequest& k) {
     // the required parts of the message
-    k.requestedMessage = j.at("requestedMessage");
+    k.requestedMessage = conversions::string_to_message_trigger_enum_type(j.at("requestedMessage"));
 
     // the optional parts of the message
     if (j.contains("connectorId")) {
@@ -53,14 +53,14 @@ std::string ExtendedTriggerMessageResponse::get_type() const {
 void to_json(json& j, const ExtendedTriggerMessageResponse& k) {
     // the required parts of the message
     j = json{
-        {"status", k.status},
+        {"status", conversions::trigger_message_status_enum_type_to_string(k.status)},
     };
     // the optional parts of the message
 }
 
 void from_json(const json& j, ExtendedTriggerMessageResponse& k) {
     // the required parts of the message
-    k.status = j.at("status");
+    k.status = conversions::string_to_trigger_message_status_enum_type(j.at("status"));
 
     // the optional parts of the message
 }
