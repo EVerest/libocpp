@@ -225,7 +225,11 @@ std::string ChargePointConfiguration::getCentralSystemURI() {
     return this->config["Internal"]["CentralSystemURI"];
 }
 boost::optional<CiString25Type> ChargePointConfiguration::getChargeBoxSerialNumber() {
-    eturn this->config["Internal"]["ChargeBoxSerialNumber"];
+    boost::optional<CiString25Type> charge_box_serial_number = boost::none;
+    if (this->config["Internal"].contains("ChargeBoxSerialNumber")) {
+        charge_box_serial_number.emplace(this->config["Internal"]["ChargeBoxSerialNumber"]);
+    }
+    return charge_box_serial_number;
 }
 CiString20Type ChargePointConfiguration::getChargePointModel() {
     return CiString20Type(this->config["Internal"]["ChargePointModel"]);
