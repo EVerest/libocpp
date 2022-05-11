@@ -7,7 +7,7 @@
 
 namespace ocpp1_6 {
 
-Websocket::Websocket(std::shared_ptr<ChargePointConfiguration> configuration) : shutting_down(false) {
+Websocket::Websocket(std::shared_ptr<ChargePointConfiguration> configuration) {
 
     auto uri = configuration->getCentralSystemURI();
     if (uri.find("ws://") == 0) {
