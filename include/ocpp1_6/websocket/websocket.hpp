@@ -19,7 +19,6 @@ class Websocket {
 private:
     std::unique_ptr<WebsocketBase> websocket;
     std::string uri;
-    bool shutting_down;
 
 public:
     /// \brief Creates a new Websocket object with the providede \p configuration
