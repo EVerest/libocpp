@@ -126,6 +126,7 @@ private:
                                     ocpp1_6::CiString20Type idTag, boost::optional<ocpp1_6::CiString20Type> parent_id)>
         reserve_now_callback;
     std::function<CancelReservationStatus(int32_t reservationId)> cancel_reservation_callback;
+    std::function<void()> switch_security_profile_callback;
 
     /// \brief This function is called after a successful connection to the Websocket
     void connected_callback();
