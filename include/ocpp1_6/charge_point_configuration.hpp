@@ -8,6 +8,7 @@
 #include <sqlite3.h>
 
 #include <ocpp1_6/ocpp_types.hpp>
+#include <ocpp1_6/pki_handler.hpp>
 #include <ocpp1_6/types.hpp>
 
 namespace ocpp1_6 {
@@ -18,6 +19,8 @@ private:
     json config;
     sqlite3* db;
     std::string configs_path;
+    std::shared_ptr<PkiHandler> pki_handler;
+
     std::set<SupportedFeatureProfiles> supported_feature_profiles;
     std::map<Measurand, std::vector<Phase>> supported_measurands;
     std::map<SupportedFeatureProfiles, std::set<MessageType>> supported_message_types_from_charge_point;
@@ -27,6 +30,9 @@ private:
 
     std::vector<MeasurandWithPhase> csv_to_measurand_with_phase_vector(std::string csv);
     bool measurands_supported(std::string csv);
+    void set_security_profile_in_user_config();
+    void set_authorization_key_in_user_config();
+    json get_user_config();
 
 public:
     ChargePointConfiguration(json config, std::string configs_path, std::string schemas_path,
@@ -34,13 +40,14 @@ public:
     void close();
 
     std::string getConfigsPath();
+    std::shared_ptr<PkiHandler> getPkiHandler();
 
     // Internal config options
     std::string getChargePointId();
     std::string getCentralSystemURI();
-    boost::optional<CiString25Type> getChargeBoxSerialNumber();
+    std::string getChargeBoxSerialNumber();
     CiString20Type getChargePointModel();
-    std::string getChargePointSerialNumber();
+    boost::optional<CiString25Type> getChargePointSerialNumber();
     CiString20Type getChargePointVendor();
     CiString50Type getFirmwareVersion();
     boost::optional<CiString20Type> getICCID();
@@ -277,10 +284,10 @@ public:
     void setCpoName(std::string cpo_name);
     boost::optional<KeyValue> getCpoNameKeyValue();
 
-    // Security profile - optional
-    boost::optional<int32_t> getSecurityProfile();
+    // // Security profile - optional in ocpp but mandatory websocket connection
+    int32_t getSecurityProfile();
     void setSecurityProfile(int32_t security_profile);
-    boost::optional<KeyValue> getSecurityProfileKeyValue();
+    KeyValue getSecurityProfileKeyValue();
 
     boost::optional<KeyValue> get(CiString50Type key);
 

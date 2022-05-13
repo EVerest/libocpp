@@ -19,14 +19,17 @@ class Websocket {
 private:
     std::unique_ptr<WebsocketBase> websocket;
     std::string uri;
+    std::function<void()> connected_callback;
+    std::function<void()> disconnected_callback;
+    std::function<void(const std::string& message)> message_callback;
 
 public:
     /// \brief Creates a new Websocket object with the providede \p configuration
-    explicit Websocket(std::shared_ptr<ChargePointConfiguration> configuration);
+    explicit Websocket(std::shared_ptr<ChargePointConfiguration> configuration, int32_t security_profile);
 
     /// \brief connect to a websocket (TLS or non-TLS depending on the central system uri in the configuration)
     /// \returns true if the websocket is initialized and a connection attempt is made
-    bool connect();
+    bool connect(int32_t security_profile);
 
     /// \brief disconnect the websocket
     void disconnect();

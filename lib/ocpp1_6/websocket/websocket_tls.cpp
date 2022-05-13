@@ -3,6 +3,7 @@
 #include <everest/logging.hpp>
 
 #include <ocpp1_6/charge_point_configuration.hpp>
+#include <ocpp1_6/pki_handler.hpp>
 #include <ocpp1_6/websocket/websocket_tls.hpp>
 
 namespace ocpp1_6 {
@@ -13,25 +14,25 @@ WebsocketTLS::WebsocketTLS(std::shared_ptr<ChargePointConfiguration> configurati
                                       .count();
 }
 
-bool WebsocketTLS::connect() {
+bool WebsocketTLS::connect(int32_t security_profile) {
     if (!this->initialized()) {
         return false;
     }
-    this->uri = this->configuration->getCentralSystemURI();
-    EVLOG_info << "Connecting to uri: " << this->uri;
-
+    this->uri = this->configuration->getCentralSystemURI().insert(0, "wss://");
+    EVLOG_info << "Connecting TLS websocket to uri: " << this->uri;
     EVLOG_info << "Connecting TLS websocket, hostname: " << this->get_hostname(uri);
     this->wss_client.clear_access_channels(websocketpp::log::alevel::all);
     this->wss_client.clear_error_channels(websocketpp::log::elevel::all);
     this->wss_client.init_asio();
     this->wss_client.start_perpetual();
 
-    this->wss_client.set_tls_init_handler(websocketpp::lib::bind(
-        &WebsocketTLS::on_tls_init, this, this->get_hostname(this->uri), websocketpp::lib::placeholders::_1));
+    this->wss_client.set_tls_init_handler(websocketpp::lib::bind(&WebsocketTLS::on_tls_init, this,
+                                                                 this->get_hostname(this->uri),
+                                                                 websocketpp::lib::placeholders::_1, security_profile));
 
     websocket_thread.reset(new websocketpp::lib::thread(&tls_client::run, &this->wss_client));
 
-    this->reconnect_callback = [this](const websocketpp::lib::error_code& ec) {
+    this->reconnect_callback = [this, security_profile](const websocketpp::lib::error_code& ec) {
         EVLOG_info << "Reconnecting TLS websocket...";
 
         // close connection before reconnecting
@@ -51,10 +52,10 @@ bool WebsocketTLS::connect() {
             }
             this->reconnect_timer = nullptr;
         }
-        this->connect_tls(this->getAuthorizationHeader());
+        this->connect_tls(security_profile);
     };
 
-    this->connect_tls(this->getAuthorizationHeader());
+    this->connect_tls(security_profile);
     return true;
 }
 
@@ -131,13 +132,14 @@ std::string WebsocketTLS::get_hostname(std::string uri) {
 // TLS
 bool WebsocketTLS::verify_certificate(std::string hostname, bool preverified,
                                       boost::asio::ssl::verify_context& context) {
+
     // FIXME(kai): this does not verify anything at the moment!
 
     EVLOG_critical << "Faking certificate verification, always returning true";
 
     return true;
 }
-tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connection_hdl hdl) {
+tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connection_hdl hdl, int32_t security_profile) {
     tls_context context = websocketpp::lib::make_shared<boost::asio::ssl::context>(boost::asio::ssl::context::sslv23);
 
     try {
@@ -162,7 +164,17 @@ tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connect
             throw std::runtime_error("Could not set TLSv1.2 cipher list");
         }
 
+        if (security_profile == 3) {
+            SSL_CTX_use_certificate(context->native_handle(),
+                                    PkiHandler::readX509FromFile(CLIENT_SIDE_CERTIFICATE_FILE));
+            SSL_CTX_use_PrivateKey(context->native_handle(), PkiHandler::readEvpKey(PRIVATE_KEY_FILE));
+        }
+
+        // TODO(piet): use SSL_CTX_load_verify_locations or SSL_CTX_set_default_verify_paths to automatically enable CA
+        // certificate chain verification
         context->set_verify_mode(boost::asio::ssl::verify_peer);
+
+        // TODO(piet): we dont need to set a verify callback manually if we set SSL_CTX_load_verify_locations
         context->set_verify_callback(websocketpp::lib::bind(&WebsocketTLS::verify_certificate, this, hostname,
                                                             websocketpp::lib::placeholders::_1,
                                                             websocketpp::lib::placeholders::_2));
@@ -173,7 +185,7 @@ tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connect
     }
     return context;
 }
-void WebsocketTLS::connect_tls(std::string authorization_header) {
+void WebsocketTLS::connect_tls(int32_t security_profile) {
     EVLOG_info << "Connecting to TLS websocket at: " << this->uri;
     websocketpp::lib::error_code ec;
 
@@ -184,12 +196,27 @@ void WebsocketTLS::connect_tls(std::string authorization_header) {
         return;
     }
 
+    if (security_profile == 2) {
+        EVLOG_debug << "Connecting with security profile: 2";
+        boost::optional<std::string> authorization_header = this->getAuthorizationHeader();
+        if (authorization_header != boost::none) {
+            con->append_header("Authorization", authorization_header.get());
+        } else {
+            throw std::runtime_error("No authorization key provided when connecting with security profile 2 or 3.");
+        }
+    } else if (security_profile == 3) {
+        EVLOG_debug << "Connecting with security profile: 3";
+    } else {
+        throw std::runtime_error("Can not connect with TLS websocket with security profile not being 2 or 3.");
+    }
+
     this->handle = con->get_handle();
 
     con->set_open_handler(websocketpp::lib::bind(&WebsocketTLS::on_open_tls, this, &this->wss_client,
-                                                 websocketpp::lib::placeholders::_1));
+                                                 websocketpp::lib::placeholders::_1, security_profile));
     con->set_fail_handler(websocketpp::lib::bind(&WebsocketTLS::on_fail_tls, this, &this->wss_client,
-                                                 websocketpp::lib::placeholders::_1));
+                                                 websocketpp::lib::placeholders::_1,
+                                                 security_profile != this->configuration->getSecurityProfile()));
     con->set_close_handler(websocketpp::lib::bind(&WebsocketTLS::on_close_tls, this, &this->wss_client,
                                                   websocketpp::lib::placeholders::_1));
     con->set_message_handler(websocketpp::lib::bind(
@@ -197,16 +224,12 @@ void WebsocketTLS::connect_tls(std::string authorization_header) {
 
     con->add_subprotocol("ocpp1.6");
 
-    if (!authorization_header.empty()) {
-        EVLOG_debug << "Authorization header provided, appending to HTTP header: " << authorization_header;
-        con->append_header("Authorization", authorization_header);
-    }
-
     this->wss_client.connect(con);
 }
-void WebsocketTLS::on_open_tls(tls_client* c, websocketpp::connection_hdl hdl) {
+void WebsocketTLS::on_open_tls(tls_client* c, websocketpp::connection_hdl hdl, int32_t security_profile) {
     EVLOG_info << "Connected to TLS websocket successfully. Executing connected callback";
     this->is_connected = true;
+    this->configuration->setSecurityProfile(2);
     this->connected_callback();
 }
 void WebsocketTLS::on_message_tls(websocketpp::connection_hdl hdl, tls_client::message_ptr msg) {
@@ -233,13 +256,18 @@ void WebsocketTLS::on_close_tls(tls_client* c, websocketpp::connection_hdl hdl) 
     if (error_code != std::error_code()) {
         this->reconnect(error_code, this->reconnect_interval_ms);
     }
+    this->disconnected_callback();
 }
-void WebsocketTLS::on_fail_tls(tls_client* c, websocketpp::connection_hdl hdl) {
+void WebsocketTLS::on_fail_tls(tls_client* c, websocketpp::connection_hdl hdl, bool try_once) {
     tls_client::connection_ptr con = c->get_con_from_hdl(hdl);
     auto error_code = con->get_ec();
     EVLOG_error << "Failed to connect to TLS websocket server " << con->get_response_header("Server")
                 << ", code: " << error_code.value() << ", reason: " << error_code.message();
-    this->reconnect(error_code, this->reconnect_interval_ms);
+    if (!try_once) {
+        this->reconnect(error_code, this->reconnect_interval_ms);
+    } else {
+        this->disconnected_callback();
+    }
 }
 
 } // namespace ocpp1_6

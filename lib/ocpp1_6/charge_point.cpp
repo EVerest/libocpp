@@ -15,7 +15,8 @@ ChargePoint::ChargePoint(std::shared_ptr<ChargePointConfiguration> configuration
     initialized(false),
     registration_status(RegistrationStatus::Pending),
     diagnostics_status(DiagnosticsStatus::Idle),
-    firmware_status(FirmwareStatus::Idle) {
+    firmware_status(FirmwareStatus::Idle),
+    switch_security_profile_callback(nullptr) {
 
     this->configuration = configuration;
     this->connection_state = ChargePointConnectionState::Disconnected;
@@ -24,18 +25,7 @@ ChargePoint::ChargePoint(std::shared_ptr<ChargePointConfiguration> configuration
     this->message_queue = std::make_unique<MessageQueue>(
         this->configuration, [this](json message) -> bool { return this->websocket->send(message.dump()); });
 
-    this->websocket = std::make_unique<Websocket>(this->configuration);
-    this->websocket->register_connected_callback([this]() {
-        this->message_queue->resume(); //
-        this->connected_callback();    //
-    });
-    this->websocket->register_disconnected_callback([this]() {
-        this->message_queue->pause(); //
-    });
-
-    this->websocket->register_message_callback([this](const std::string& message) {
-        this->message_callback(message); //
-    });
+    this->init_websocket(this->configuration->getSecurityProfile());
 
     this->boot_notification_timer =
         std::make_unique<Everest::SteadyTimer>(&this->io_service, [this]() { this->boot_notification(); });
@@ -54,6 +44,24 @@ ChargePoint::ChargePoint(std::shared_ptr<ChargePointConfiguration> configuration
         [this](int32_t connector, ChargePointErrorCode errorCode, ChargePointStatus status) {
             this->status_notification(connector, errorCode, status);
         });
+}
+
+void ChargePoint::init_websocket(int32_t security_profile) {
+    this->websocket = std::make_unique<Websocket>(this->configuration, security_profile);
+    this->websocket->register_connected_callback([this]() {
+        this->message_queue->resume(); //
+        this->connected_callback();    //
+    });
+    this->websocket->register_disconnected_callback([this]() {
+        this->message_queue->pause(); //
+        if (this->switch_security_profile_callback != nullptr) {
+            this->switch_security_profile_callback();
+        }
+    });
+
+    this->websocket->register_message_callback([this](const std::string& message) {
+        this->message_callback(message); //
+    });
 }
 
 void ChargePoint::heartbeat() {
@@ -368,7 +376,7 @@ void ChargePoint::send_meter_value(int32_t connector, MeterValue meter_value) {
 }
 
 void ChargePoint::start() {
-    this->websocket->connect();
+    this->websocket->connect(this->configuration->getSecurityProfile());
 }
 
 void ChargePoint::stop_all_transactions() {
@@ -414,6 +422,7 @@ void ChargePoint::stop() {
 }
 
 void ChargePoint::connected_callback() {
+    this->switch_security_profile_callback = nullptr;
     switch (this->connection_state) {
     case ChargePointConnectionState::Disconnected: {
         this->connection_state = ChargePointConnectionState::Connected;
@@ -711,6 +720,8 @@ void ChargePoint::handleChangeConfigurationRequest(Call<ChangeConfigurationReque
     EVLOG_debug << "Received ChangeConfigurationRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
 
     ChangeConfigurationResponse response;
+    // when reconnect or switching security profile the response has to be sent before that
+    bool responded = false;
 
     auto kv = this->configuration->get(call.msg.key);
     if (kv) {
@@ -731,10 +742,36 @@ void ChargePoint::handleChangeConfigurationRequest(Call<ChangeConfigurationReque
                     this->update_clock_aligned_meter_values_interval();
                 }
                 if (call.msg.key == "AuthorizationKey") {
-                    //  reconnect websocket with new AuthorizationKey after 1s
-                    this->websocket->reconnect(std::error_code(), 1000);
+                    if (this->configuration->getSecurityProfile() == 0) {
+                        EVLOG(debug)
+                            << "AuthorizationKey was changed while on security profile 0. Switiching to profile 1";
+                        CallResult<ChangeConfigurationResponse> call_result(response, call.uniqueId);
+                        this->send<ChangeConfigurationResponse>(call_result);
+                        responded = true;
+                        this->switch_security_profile(1);
+                    } else if (this->configuration->getSecurityProfile() == 1 ||
+                               this->configuration->getSecurityProfile() == 2) {
+                        EVLOG(debug)
+                            << "AuthorizationKey was changed while on security profile 1 or 2. Reconnect Websocket.";
+                        CallResult<ChangeConfigurationResponse> call_result(response, call.uniqueId);
+                        this->send<ChangeConfigurationResponse>(call_result);
+                        responded = true;
+                        this->websocket->reconnect(std::error_code(), 1000);
+                    } else {
+                        EVLOG(debug) << "AuthorizationKey was changed while on security profile 3. Nothing to do.";
+                    }
                     // what if basic auth is not in use? what if client side certificates are in use?
                     // log change in security log - if we have one yet?!
+                }
+                if (call.msg.key == "SecurityProfile") {
+                    CallResult<ChangeConfigurationResponse> call_result(response, call.uniqueId);
+                    this->send<ChangeConfigurationResponse>(call_result);
+                    int32_t security_profile = std::stoi(call.msg.value);
+                    responded = true;
+                    this->register_switch_security_profile_callback(
+                        [this, security_profile]() { this->switch_security_profile(security_profile); });
+                    // disconnected_callback will trigger security_profile_callback when it is set
+                    this->websocket->disconnect();
                 }
             }
         }
@@ -742,8 +779,23 @@ void ChargePoint::handleChangeConfigurationRequest(Call<ChangeConfigurationReque
         response.status = ConfigurationStatus::NotSupported;
     }
 
-    CallResult<ChangeConfigurationResponse> call_result(response, call.uniqueId);
-    this->send<ChangeConfigurationResponse>(call_result);
+    if (!responded) {
+        CallResult<ChangeConfigurationResponse> call_result(response, call.uniqueId);
+        this->send<ChangeConfigurationResponse>(call_result);
+    }
+}
+
+void ChargePoint::switch_security_profile(int32_t new_security_profile) {
+    EVLOG(debug) << "Switching security profile from " << this->configuration->getSecurityProfile() << " to "
+                 << new_security_profile;
+
+    this->init_websocket(new_security_profile);
+    this->register_switch_security_profile_callback([this]() {
+        EVLOG(warning) << "Switching security profile back to fallback because new profile couldnt connect";
+        this->switch_security_profile(this->configuration->getSecurityProfile());
+    });
+
+    this->websocket->connect(new_security_profile);
 }
 
 void ChargePoint::handleClearCacheRequest(Call<ClearCacheRequest> call) {
@@ -1372,14 +1424,31 @@ void ChargePoint::handleExtendedTriggerMessageRequest(Call<ExtendedTriggerMessag
     ExtendedTriggerMessageResponse response;
     response.status = TriggerMessageStatusEnumType::Rejected;
     switch (call.msg.requestedMessage) {
+    case MessageTriggerEnumType::BootNotification:
+        break;
+    case MessageTriggerEnumType::FirmwareStatusNotification:
+        break;
+    case MessageTriggerEnumType::Heartbeat:
+        break;
+    case MessageTriggerEnumType::LogStatusNotification:
+        break;
+    case MessageTriggerEnumType::MeterValues:
+        break;
     case MessageTriggerEnumType::SignChargePointCertificate:
-        response.status = TriggerMessageStatusEnumType::Accepted;
+        if (this->configuration->getCpoName() != boost::none) {
+            response.status = TriggerMessageStatusEnumType::Accepted;
+        } else {
+            EVLOG(debug) << "Received ExtendedTriggerMessage with SignChargePointCertificate but no CpoName is set.";
+        }
+        break;
+    case MessageTriggerEnumType::StatusNotification:
         break;
     }
 
     auto connector = call.msg.connectorId.value_or(0);
     bool valid = true;
-    if (connector < 0 || connector > this->configuration->getNumberOfConnectors()) {
+    if (response.status == TriggerMessageStatusEnumType::Rejected || connector < 0 ||
+        connector > this->configuration->getNumberOfConnectors()) {
         response.status = TriggerMessageStatusEnumType::Rejected;
         valid = false;
     }
@@ -1392,8 +1461,20 @@ void ChargePoint::handleExtendedTriggerMessageRequest(Call<ExtendedTriggerMessag
     }
 
     switch (call.msg.requestedMessage) {
+    case MessageTriggerEnumType::BootNotification:
+        break;
+    case MessageTriggerEnumType::FirmwareStatusNotification:
+        break;
+    case MessageTriggerEnumType::Heartbeat:
+        break;
+    case MessageTriggerEnumType::LogStatusNotification:
+        break;
+    case MessageTriggerEnumType::MeterValues:
+        break;
     case MessageTriggerEnumType::SignChargePointCertificate:
         this->sign_certificate();
+        break;
+    case MessageTriggerEnumType::StatusNotification:
         break;
     }
 }
@@ -1402,8 +1483,11 @@ SignCertificateResponse ChargePoint::sign_certificate() {
 
     SignCertificateRequest req;
 
-    std::string csr = this->generateCsr();
+    std::string csr = this->configuration->getPkiHandler()->generateCsr(
+        "DE", "BW", "Bad Schoenborn", this->configuration->getCpoName().get().c_str(),
+        this->configuration->getChargeBoxSerialNumber().c_str());
 
+    req.csr = csr;
     Call<SignCertificateRequest> call(req, this->message_queue->createMessageId());
     auto sign_certificate_future = this->send_async<SignCertificateRequest>(call);
 
@@ -1423,89 +1507,6 @@ SignCertificateResponse ChargePoint::sign_certificate() {
     return sign_certificate_response;
 }
 
-std::string ChargePoint::generateCsr() {
-    // generate new private/public key pair
-    using BN_ptr = std::unique_ptr<BIGNUM, decltype(&::BN_free)>;
-    using RSA_ptr = std::unique_ptr<RSA, decltype(&::RSA_free)>;
-    using EVP_KEY_ptr = std::unique_ptr<EVP_PKEY, decltype(&::EVP_PKEY_free)>;
-    using BIO_FILE_ptr = std::unique_ptr<BIO, decltype(&::BIO_free)>;
-    using X509_REQ_ptr = std::unique_ptr<X509_REQ, decltype(&::X509_REQ_free)>;
-
-    int rc;
-    RSA* r = NULL;
-    BN_ptr bn(BN_new(), ::BN_free);
-
-    int nVersion = 0;
-    int bits = 2048;
-    unsigned long e = RSA_F4;
-
-    // csr req
-    X509_REQ_ptr x509_req(X509_REQ_new(), ::X509_REQ_free);
-    X509_NAME* x509_name = NULL;
-    EVP_KEY_ptr pKey(EVP_PKEY_new(), ::EVP_PKEY_free);
-    BIO_FILE_ptr out(BIO_new_file("certs/x509Req.pem", "w"), ::BIO_free);
-    BIO_FILE_ptr pbkey(BIO_new_file("certs/public.pem", "w"), ::BIO_free);
-    BIO_FILE_ptr prkey(BIO_new_file("certs/private.pem", "w"), ::BIO_free);
-
-    const char* szCountry = "DE";
-    const char* szProvince = "BW";
-    const char* szCity = "Bad Schoenborn";
-    const char* szOrganization = "Pionix";
-    const char* szCommon = "www.pionix.com";
-
-    // 1. generate rsa key
-    rc = BN_set_word(bn.get(), e);
-    assert(rc == 1);
-    r = RSA_new();
-    RSA_generate_key_ex(r, bits, bn.get(), NULL);
-    assert(rc == 1);
-
-    // 2. write keys to files
-    rc = PEM_write_bio_RSAPublicKey(pbkey.get(), r);
-    assert(rc == 1);
-    rc = PEM_write_bio_RSAPrivateKey(prkey.get(), r, NULL, NULL, 0, NULL, NULL);
-    assert(rc == 1);
-
-    // 3. set version of x509 req
-    X509_REQ_set_version(x509_req.get(), nVersion);
-    assert(rc == 1);
-
-    // 4. set subject of x509 req
-    x509_name = X509_REQ_get_subject_name(x509_req.get());
-    assert(rc == 1);
-    X509_NAME_add_entry_by_txt(x509_name, "C", MBSTRING_ASC, (const unsigned char*)szCountry, -1, -1, 0);
-    assert(rc == 1);
-    X509_NAME_add_entry_by_txt(x509_name, "ST", MBSTRING_ASC, (const unsigned char*)szProvince, -1, -1, 0);
-    assert(rc == 1);
-    X509_NAME_add_entry_by_txt(x509_name, "L", MBSTRING_ASC, (const unsigned char*)szCity, -1, -1, 0);
-    assert(rc == 1);
-    X509_NAME_add_entry_by_txt(x509_name, "O", MBSTRING_ASC, (const unsigned char*)szOrganization, -1, -1, 0);
-    assert(rc == 1);
-    X509_NAME_add_entry_by_txt(x509_name, "CN", MBSTRING_ASC, (const unsigned char*)szCommon, -1, -1, 0);
-    assert(rc == 1);
-
-    // 5. set public key of x509 req
-    EVP_PKEY_assign_RSA(pKey.get(), r);
-    r = NULL;
-    X509_REQ_set_pubkey(x509_req.get(), pKey.get());
-    assert(rc == 1);
-
-    // 6. set sign key of x509 req
-    X509_REQ_sign(x509_req.get(), pKey.get(), EVP_sha256()); // return x509_req->signature->length
-    assert(rc == 1);
-
-    // 7. write csr to file
-    PEM_write_bio_X509_REQ(out.get(), x509_req.get());
-    assert(rc == 1);
-
-    // 8. read csr from file
-    std::ifstream ifs("certs/csr.pem");
-    std::string csr((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
-    ifs.close();
-
-    return csr;
-}
-
 void ChargePoint::handleCertificateSignedRequest(Call<CertificateSignedRequest> call) {
     EVLOG(debug) << "Received CertificateSignedRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
 
@@ -1513,18 +1514,22 @@ void ChargePoint::handleCertificateSignedRequest(Call<CertificateSignedRequest> 
     response.status = CertificateSignedStatusEnumType::Rejected;
 
     std::string certificateChain = call.msg.certificateChain;
-    // validate certificates
 
-    // if certificateChain is valid
-    // put CpoName is config key
-    response.status = CertificateSignedStatusEnumType::Accepted;
-
-    // if not valid: trigger an InvalidChargePointCertificate security event
+    if (this->configuration->getPkiHandler()->validateCertificate(certificateChain,
+                                                                  this->configuration->getChargeBoxSerialNumber())) {
+        // put CpoName is config key
+        response.status = CertificateSignedStatusEnumType::Accepted;
+    } else {
+        // if not valid: trigger an InvalidChargePointCertificate security event
+    }
 
     CallResult<CertificateSignedResponse> call_result(response, call.uniqueId);
     this->send<CertificateSignedResponse>(call_result);
 
     // reconnect with new certificate
+    if (response.status == CertificateSignedStatusEnumType::Accepted) {
+        this->websocket->reconnect(std::error_code(), 1000);
+    }
 }
 
 bool ChargePoint::allowed_to_send_message(json::array_t message) {
@@ -2005,6 +2010,7 @@ void ChargePoint::register_set_max_current_callback(
     const std::function<bool(int32_t connector, double max_current)>& callback) {
     this->set_max_current_callback = callback;
 }
+
 void ChargePoint::register_upload_diagnostics_callback(
     const std::function<std::string(std::string location)>& callback) {
     this->upload_diagnostics_callback = callback;
@@ -2012,6 +2018,10 @@ void ChargePoint::register_upload_diagnostics_callback(
 
 void ChargePoint::register_update_firmware_callback(const std::function<void(std::string location)>& callback) {
     this->update_firmware_callback = callback;
+}
+
+void ChargePoint::register_switch_security_profile_callback(const std::function<void()>& callback) {
+    this->switch_security_profile_callback = callback;
 }
 
 } // namespace ocpp1_6

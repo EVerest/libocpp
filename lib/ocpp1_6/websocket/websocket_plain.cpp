@@ -13,13 +13,13 @@ WebsocketPlain::WebsocketPlain(std::shared_ptr<ChargePointConfiguration> configu
                                       .count();
 }
 
-bool WebsocketPlain::connect() {
+bool WebsocketPlain::connect(int32_t security_profile) {
     if (!this->initialized()) {
         return false;
     }
-    auto uri = this->configuration->getCentralSystemURI();
+    auto uri = this->configuration->getCentralSystemURI().insert(0, "ws://");
 
-    EVLOG_info << "Connecting plain websocket";
+    EVLOG_info << "Connecting plain websocket to uri: " << uri;
     this->ws_client.clear_access_channels(websocketpp::log::alevel::all);
     this->ws_client.clear_error_channels(websocketpp::log::elevel::all);
     this->ws_client.init_asio();
@@ -28,7 +28,7 @@ bool WebsocketPlain::connect() {
 
     websocket_thread.reset(new websocketpp::lib::thread(&client::run, &this->ws_client));
 
-    this->reconnect_callback = [this](const websocketpp::lib::error_code& ec) {
+    this->reconnect_callback = [this, security_profile](const websocketpp::lib::error_code& ec) {
         EVLOG(info) << "Reconnecting plain websocket...";
 
         // close connection before reconnecting
@@ -48,10 +48,10 @@ bool WebsocketPlain::connect() {
             }
             this->reconnect_timer = nullptr;
         }
-        this->connect_plain(this->getAuthorizationHeader());
+        this->connect_plain(security_profile);
     };
 
-    this->connect_plain(this->getAuthorizationHeader());
+    this->connect_plain(security_profile);
     return true;
 }
 
@@ -110,8 +110,9 @@ void WebsocketPlain::reconnect(std::error_code reason, long delay) {
     // https://github.com/zaphoyd/websocketpp/blob/master/websocketpp/close.hpp
 }
 
-void WebsocketPlain::connect_plain(std::string authorization_header) {
+void WebsocketPlain::connect_plain(int32_t security_profile) {
     EVLOG_info << "Connecting to plain websocket at: " << this->uri;
+
     websocketpp::lib::error_code ec;
 
     client::connection_ptr con = this->ws_client.get_connection(this->uri, ec);
@@ -121,12 +122,27 @@ void WebsocketPlain::connect_plain(std::string authorization_header) {
         return;
     }
 
+    if (security_profile == 0) {
+        EVLOG(debug) << "Connecting with security profile: 0";
+    } else if (security_profile == 1) {
+        EVLOG(debug) << "Connecting with security profile: 1";
+        boost::optional<std::string> authorization_header = this->getAuthorizationHeader();
+        if (authorization_header != boost::none) {
+            con->append_header("Authorization", authorization_header.get());
+        } else {
+            throw std::runtime_error("No authorization key provided when connecting with security profile: 1");
+        }
+    } else {
+        throw std::runtime_error("Cannot connect with plain websocket with security profile > 1");
+    }
+
     this->handle = con->get_handle();
 
     con->set_open_handler(websocketpp::lib::bind(&WebsocketPlain::on_open_plain, this, &this->ws_client,
-                                                 websocketpp::lib::placeholders::_1));
+                                                 websocketpp::lib::placeholders::_1, security_profile));
     con->set_fail_handler(websocketpp::lib::bind(&WebsocketPlain::on_fail_plain, this, &this->ws_client,
-                                                 websocketpp::lib::placeholders::_1));
+                                                 websocketpp::lib::placeholders::_1,
+                                                 security_profile != this->configuration->getSecurityProfile()));
     con->set_close_handler(websocketpp::lib::bind(&WebsocketPlain::on_close_plain, this, &this->ws_client,
                                                   websocketpp::lib::placeholders::_1));
     con->set_message_handler(websocketpp::lib::bind(&WebsocketPlain::on_message_plain, this,
@@ -138,9 +154,10 @@ void WebsocketPlain::connect_plain(std::string authorization_header) {
     this->ws_client.connect(con);
 }
 
-void WebsocketPlain::on_open_plain(client* c, websocketpp::connection_hdl hdl) {
+void WebsocketPlain::on_open_plain(client* c, websocketpp::connection_hdl hdl, int32_t security_profile) {
     EVLOG_info << "Connected to plain websocket successfully. Executing connected callback";
     this->is_connected = true;
+    this->configuration->setSecurityProfile(security_profile);
     this->connected_callback();
 }
 
@@ -168,14 +185,20 @@ void WebsocketPlain::on_close_plain(client* c, websocketpp::connection_hdl hdl) 
     if (error_code != std::error_code()) {
         this->reconnect(error_code, this->reconnect_interval_ms);
     }
+    this->disconnected_callback();
 }
 
-void WebsocketPlain::on_fail_plain(client* c, websocketpp::connection_hdl hdl) {
+void WebsocketPlain::on_fail_plain(client* c, websocketpp::connection_hdl hdl, bool try_once) {
     client::connection_ptr con = c->get_con_from_hdl(hdl);
     auto error_code = con->get_ec();
     EVLOG_error << "Failed to connect to plain websocket server " << con->get_response_header("Server")
                 << ", code: " << error_code.value() << ", reason: " << error_code.message();
-    this->reconnect(error_code, this->reconnect_interval_ms);
+    // when connecting with new security profile websocket should only try to connect once
+    if (!try_once) {
+        this->reconnect(error_code, this->reconnect_interval_ms);
+    } else {
+        this->disconnected_callback();
+    }
 }
 
 void WebsocketPlain::close(websocketpp::close::status::value code, const std::string& reason) {
