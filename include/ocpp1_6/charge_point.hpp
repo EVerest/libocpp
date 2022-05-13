@@ -31,6 +31,7 @@
 #include <ocpp1_6/messages/GetCompositeSchedule.hpp>
 #include <ocpp1_6/messages/GetConfiguration.hpp>
 #include <ocpp1_6/messages/GetDiagnostics.hpp>
+#include <ocpp1_6/messages/GetInstalledCertificateIds.hpp>
 #include <ocpp1_6/messages/Heartbeat.hpp>
 #include <ocpp1_6/messages/MeterValues.hpp>
 #include <ocpp1_6/messages/RemoteStartTransaction.hpp>
@@ -181,6 +182,7 @@ private:
     // Security profile
     void handleExtendedTriggerMessageRequest(Call<ExtendedTriggerMessageRequest> call);
     void handleCertificateSignedRequest(Call<CertificateSignedRequest> call);
+    void handleGetInstalledCertificateIdsRequest(Call<GetInstalledCertificateIdsRequest> call);
     void switch_security_profile(int32_t new_security_profile);
     void register_switch_security_profile_callback(const std::function<void()>& callback);
 

@@ -115,7 +115,7 @@ std::string PkiHandler::generateCsr(const char* szCountry, const char* szProvinc
 }
 
 bool PkiHandler::validateCertificate(const std::string& certificateChain, const std::string& charge_box_serial_number) {
-    X509_ptr root_ca_ptr(readX509FromFile(this->maindir / ROOT_CA_FILE), ::X509_free);
+    X509_ptr root_ca_ptr(readX509FromFile(this->maindir / CS_ROOT_CA_FILE), ::X509_free);
     X509_ptr certificate_ptr(readX509FromString(certificateChain), ::X509_free);
     X509_STORE_ptr store_ptr(X509_STORE_new(), ::X509_STORE_free);
     X509_STORE_CTX_ptr store_ctx_ptr(X509_STORE_CTX_new(), ::X509_STORE_CTX_free);
@@ -164,6 +164,80 @@ bool PkiHandler::validateCertificate(const std::string& certificateChain, const 
 
 bool PkiHandler::isCentralSystemRootCertificateInstalled() {
     return true;
+}
+
+std::vector<X509*> PkiHandler::get_ca_certificates(CertificateUseEnumType type) {
+    // FIXME(piet) iterate over directory and collect all ca files depending on the type
+    std::vector<X509*> ca_certificates;
+    if (type == CertificateUseEnumType::CentralSystemRootCertificate) {
+        ca_certificates.push_back(readX509FromFile(this->maindir / CS_ROOT_CA_FILE));
+    } else if (type == CertificateUseEnumType::ManufacturerRootCertificate) {
+        ca_certificates.push_back(readX509FromFile(this->maindir / MF_ROOT_CA_FILE));
+    }
+    return ca_certificates;
+}
+
+boost::optional<std::vector<CertificateHashDataType>>
+PkiHandler::getRootCertificateHashData(CertificateUseEnumType type) {
+    boost::optional<std::vector<CertificateHashDataType>> certificate_hash_data_opt = boost::none;
+    std::vector<CertificateHashDataType> certificate_hash_data_vec;
+
+    std::vector<X509*> ca_certificates = this->get_ca_certificates(type);
+
+    for (X509* ca_ptr : ca_certificates) {
+        CertificateHashDataType certificate_hash_data;
+        X509_ptr ca(ca_ptr, ::X509_free);
+        std::string issuer_name_hash = this->get_issuer_name_hash(ca);
+        std::string issuer_key_hash = this->get_issuer_key_hash(ca);
+        std::string serial_number = this->get_serial(ca);
+        certificate_hash_data.hashAlgorithm = HashAlgorithmEnumType::SHA256;
+        certificate_hash_data.issuerNameHash = issuer_name_hash;
+        certificate_hash_data.issuerKeyHash = issuer_key_hash;
+        certificate_hash_data.serialNumber = serial_number;
+        certificate_hash_data_vec.push_back(certificate_hash_data);
+    }
+
+    if (!ca_certificates.empty()) {
+        certificate_hash_data_opt.emplace(certificate_hash_data_vec);
+    }
+
+    return certificate_hash_data_opt;
+}
+
+std::string PkiHandler::get_issuer_name_hash(X509_ptr& x509) {
+    long issuer_name_hash = X509_issuer_name_hash(x509.get());
+    std::stringstream stream;
+    stream << std::hex << issuer_name_hash;
+    std::string result(stream.str());
+    return result;
+}
+
+std::string PkiHandler::get_serial(X509_ptr& x509) {
+    ASN1_INTEGER* serial = X509_get_serialNumber(x509.get());
+    BIGNUM* bnser = ASN1_INTEGER_to_BN(serial, NULL);
+    char* hex = BN_bn2hex(bnser);
+    std::string result(hex);
+    return result;
+}
+
+std::string PkiHandler::get_issuer_key_hash(X509_ptr& x509) {
+    BIO_ptr b(BIO_new(BIO_s_mem()), ::BIO_free);
+    EVP_KEY_ptr pkey(X509_get_pubkey(x509.get()), ::EVP_PKEY_free);
+    PEM_write_bio_PUBKEY(b.get(), pkey.get());
+    BUF_MEM* mem = NULL;
+    BIO_get_mem_ptr(b.get(), &mem);
+    std::string pubkey_str(mem->data, mem->length);
+
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256, pubkey_str.c_str(), pubkey_str.size());
+    SHA256_Final(hash, &sha256);
+    std::stringstream issuer_key_hash;
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+        issuer_key_hash << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
+    }
+    return issuer_key_hash.str();
 }
 
 } // namespace ocpp1_6

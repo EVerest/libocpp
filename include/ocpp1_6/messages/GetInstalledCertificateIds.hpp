@@ -31,7 +31,7 @@ std::ostream& operator<<(std::ostream& os, const GetInstalledCertificateIdsReque
 /// \brief Contains a OCPP 1.6 GetInstalledCertificateIdsResponse message
 struct GetInstalledCertificateIdsResponse : public Message {
     GetInstalledCertificateStatusEnumType status;
-    boost::optional<std::vector<CertificateHashData>> certificateHashData;
+    boost::optional<std::vector<CertificateHashDataType>> certificateHashData;
 
     /// \brief Provides the type of this GetInstalledCertificateIdsResponse message as a human readable string
     /// \returns the message type as a human readable string

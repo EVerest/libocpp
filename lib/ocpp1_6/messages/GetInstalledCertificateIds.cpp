@@ -65,7 +65,7 @@ void from_json(const json& j, GetInstalledCertificateIdsResponse& k) {
     // the optional parts of the message
     if (j.contains("certificateHashData")) {
         json arr = j.at("certificateHashData");
-        std::vector<CertificateHashData> vec;
+        std::vector<CertificateHashDataType> vec;
         for (auto val : arr) {
             vec.push_back(val);
         }
