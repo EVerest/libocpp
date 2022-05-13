@@ -594,6 +594,10 @@ void ChargePoint::handle_message(const json& json_message, MessageType message_t
         this->handleExtendedTriggerMessageRequest(json_message);
         break;
 
+    case MessageType::GetInstalledCertificateIds:
+        this->handleGetInstalledCertificateIdsRequest(json_message);
+        break;
+
     default:
         // TODO(kai): not implemented error?
         break;
@@ -1510,6 +1514,21 @@ void ChargePoint::handleCertificateSignedRequest(Call<CertificateSignedRequest> 
     if (response.status == CertificateSignedStatusEnumType::Accepted) {
         this->websocket->reconnect(std::error_code(), 1000);
     }
+}
+
+void ChargePoint::handleGetInstalledCertificateIdsRequest(Call<GetInstalledCertificateIdsRequest> call) {
+    GetInstalledCertificateIdsResponse response;
+    response.status = GetInstalledCertificateStatusEnumType::NotFound;
+
+    auto certificateHashData =
+        this->configuration->getPkiHandler()->getRootCertificateHashData(call.msg.certificateType);
+    if (certificateHashData != boost::none) {
+        response.certificateHashData = certificateHashData;
+        response.status = GetInstalledCertificateStatusEnumType::Accepted;
+    }
+
+    CallResult<GetInstalledCertificateIdsResponse> call_result(response, call.uniqueId);
+    this->send<GetInstalledCertificateIdsResponse>(call_result);
 }
 
 bool ChargePoint::allowed_to_send_message(json::array_t message) {
