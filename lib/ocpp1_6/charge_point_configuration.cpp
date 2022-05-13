@@ -1788,6 +1788,8 @@ ConfigurationStatus ChargePointConfiguration::set(CiString50Type key, CiString50
                    !this->pki_handler->isCentralSystemRootCertificateInstalled()) {
             EVLOG(debug) << "New security level set to 2 or 3 but no CentralSystemRootCertificateInstalled";
             return ConfigurationStatus::Rejected;
+        } else if (security_profile > 3) {
+            return ConfigurationStatus::Rejected;
         } else {
             // security profile is set during actual connection
             return ConfigurationStatus::Accepted;

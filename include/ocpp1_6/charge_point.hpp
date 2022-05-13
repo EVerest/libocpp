@@ -26,6 +26,7 @@
 #include <ocpp1_6/messages/ClearChargingProfile.hpp>
 #include <ocpp1_6/messages/DataTransfer.hpp>
 #include <ocpp1_6/messages/DiagnosticsStatusNotification.hpp>
+#include <ocpp1_6/messages/DeleteCertificate.hpp>
 #include <ocpp1_6/messages/ExtendedTriggerMessage.hpp>
 #include <ocpp1_6/messages/FirmwareStatusNotification.hpp>
 #include <ocpp1_6/messages/GetCompositeSchedule.hpp>
@@ -183,6 +184,7 @@ private:
     void handleExtendedTriggerMessageRequest(Call<ExtendedTriggerMessageRequest> call);
     void handleCertificateSignedRequest(Call<CertificateSignedRequest> call);
     void handleGetInstalledCertificateIdsRequest(Call<GetInstalledCertificateIdsRequest> call);
+    void handleDeleteCertificateRequest(Call<DeleteCertificateRequest> call);
     void switch_security_profile(int32_t new_security_profile);
     void register_switch_security_profile_callback(const std::function<void()>& callback);
 

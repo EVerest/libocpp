@@ -165,9 +165,7 @@ tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connect
         }
 
         if (security_profile == 3) {
-            SSL_CTX_use_certificate(context->native_handle(),
-                                    PkiHandler::readX509FromFile(CLIENT_SIDE_CERTIFICATE_FILE));
-            SSL_CTX_use_PrivateKey(context->native_handle(), PkiHandler::readEvpKey(PRIVATE_KEY_FILE));
+            // TODO(piet) load client certificate here
         }
 
         // TODO(piet): use SSL_CTX_load_verify_locations or SSL_CTX_set_default_verify_paths to automatically enable CA
