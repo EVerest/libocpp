@@ -12,6 +12,7 @@
 #include <openssl/x509v3.h>
 #include <string>
 
+#include <ocpp1_6/messages/DeleteCertificate.hpp>
 #include <ocpp1_6/messages/GetInstalledCertificateIds.hpp>
 
 namespace ocpp1_6 {
@@ -20,6 +21,7 @@ using RSA_ptr = std::unique_ptr<RSA, decltype(&::RSA_free)>;
 using EVP_KEY_ptr = std::unique_ptr<EVP_PKEY, decltype(&::EVP_PKEY_free)>;
 using BIO_ptr = std::unique_ptr<BIO, decltype(&::BIO_free)>;
 using X509_REQ_ptr = std::unique_ptr<X509_REQ, decltype(&::X509_REQ_free)>;
+using X509_NAME_ptr = std::unique_ptr<X509_NAME, decltype(&::X509_NAME_free)>;
 using X509_ptr = std::unique_ptr<X509, decltype(&::X509_free)>;
 using X509_STORE_ptr = std::unique_ptr<X509_STORE, decltype(&::X509_STORE_free)>;
 using X509_STORE_CTX_ptr = std::unique_ptr<X509_STORE_CTX, decltype(&::X509_STORE_CTX_free)>;
@@ -31,15 +33,37 @@ const boost::filesystem::path MF_ROOT_CA_FILE("certs/mf_root_ca.pem");
 const boost::filesystem::path PUBLIC_KEY_FILE("certs/pubkey.pem");
 const boost::filesystem::path PRIVATE_KEY_FILE("certs/prvkey.pem");
 
+enum class CertificateType
+{
+    CentralSystemRootCertificate,
+    ManufacturerRootCertificate,
+    ClientCertificate
+};
+
+struct X509Certificate {
+    boost::filesystem::path path;
+    X509* x509;
+    std::string str;
+    CertificateType type;
+
+    void write();
+    void write(const boost::filesystem::path& path);
+};
+
+X509Certificate load_from_file(const boost::filesystem::path& path);
+X509Certificate load_from_string(std::string& str);
+
+std::string read_file_to_string(const boost::filesystem::path& path);
 class PkiHandler {
 
 private:
     boost::filesystem::path maindir;
 
-    std::string get_issuer_name_hash(X509_ptr& x509);
-    std::string get_serial(X509_ptr& x509);
-    std::string get_issuer_key_hash(X509_ptr& x509);
-    std::vector<X509*> get_ca_certificates(CertificateUseEnumType type);
+    std::string get_issuer_name_hash(const X509Certificate& cert);
+    std::string get_serial(const X509Certificate& cert);
+    std::string get_issuer_key_hash(const X509Certificate& cert);
+    std::vector<X509Certificate> get_ca_certificates(CertificateUseEnumType type);
+    std::vector<X509Certificate> get_ca_certificates();
 
 public:
     PkiHandler(std::string maindir);
@@ -48,10 +72,7 @@ public:
                             const char* szOrganization, const char* szCommon);
     bool isCentralSystemRootCertificateInstalled();
     boost::optional<std::vector<CertificateHashDataType>> getRootCertificateHashData(CertificateUseEnumType type);
-    static X509* readX509FromFile(const boost::filesystem::path& path);
-    static EVP_PKEY* readEvpKey(const boost::filesystem::path& path);
-    static X509* readX509FromString(const std::string& str);
-    static std::string readFileToString(const boost::filesystem::path& path);
+    DeleteCertificateStatusEnumType delete_certificate(CertificateHashDataType certificate_hash_data);
 };
 
 } // namespace ocpp1_6

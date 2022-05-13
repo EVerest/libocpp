@@ -598,6 +598,10 @@ void ChargePoint::handle_message(const json& json_message, MessageType message_t
         this->handleGetInstalledCertificateIdsRequest(json_message);
         break;
 
+    case MessageType::DeleteCertificate:
+        this->handleDeleteCertificateRequest(json_message);
+        break;
+
     default:
         // TODO(kai): not implemented error?
         break;
@@ -1529,6 +1533,14 @@ void ChargePoint::handleGetInstalledCertificateIdsRequest(Call<GetInstalledCerti
 
     CallResult<GetInstalledCertificateIdsResponse> call_result(response, call.uniqueId);
     this->send<GetInstalledCertificateIdsResponse>(call_result);
+}
+
+void ChargePoint::handleDeleteCertificateRequest(Call<DeleteCertificateRequest> call) {
+    DeleteCertificateResponse response;
+    response.status = this->configuration->getPkiHandler()->delete_certificate(call.msg.certificateHashData);
+
+    CallResult<DeleteCertificateResponse> call_result(response, call.uniqueId);
+    this->send<DeleteCertificateResponse>(call_result);
 }
 
 bool ChargePoint::allowed_to_send_message(json::array_t message) {
