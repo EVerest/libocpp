@@ -3,7 +3,6 @@
 #include <thread>
 
 #include <everest/logging.hpp>
-
 #include <ocpp1_6/charge_point.hpp>
 #include <ocpp1_6/charge_point_configuration.hpp>
 #include <ocpp1_6/schemas.hpp>
@@ -589,9 +588,6 @@ void ChargePoint::handle_message(const json& json_message, MessageType message_t
 
     case MessageType::UpdateFirmware:
         this->handleUpdateFirmwareRequest(json_message);
-        break;
-    case MessageType::ExtendedTriggerMessage:
-        this->handleExtendedTriggerMessageRequest(json_message);
         break;
 
     case MessageType::GetInstalledCertificateIds:

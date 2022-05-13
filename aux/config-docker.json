@@ -32,5 +32,8 @@
     },
     "FirmwareManagement": {
         "SupportedFileTransferProtocols": "FTP"
+    },
+    "Security": {
+        "SecurityProfile": 0
     }
 }
