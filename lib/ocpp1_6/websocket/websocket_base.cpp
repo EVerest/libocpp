@@ -17,6 +17,10 @@ WebsocketBase::WebsocketBase(std::shared_ptr<ChargePointConfiguration> configura
     reconnect_timer(nullptr) {
 }
 
+WebsocketBase::~WebsocketBase() {
+    this->websocket_thread->detach();
+}
+
 void WebsocketBase::register_connected_callback(const std::function<void()>& callback) {
     this->connected_callback = callback;
 }
@@ -65,13 +69,13 @@ void WebsocketBase::disconnect() {
     this->close(websocketpp::close::status::normal, "");
 }
 
-std::string WebsocketBase::getAuthorizationHeader() {
-    std::string auth_header = "";
+boost::optional<std::string> WebsocketBase::getAuthorizationHeader() {
+    boost::optional<std::string> auth_header = boost::none;
     auto authorization_key = this->configuration->getAuthorizationKey();
     if (authorization_key != boost::none) {
         EVLOG(debug) << "AuthorizationKey present, encoding authentication header";
         std::string plain_auth_header = this->configuration->getChargePointId() + ":" + authorization_key.value();
-        auth_header = std::string("Basic ") + websocketpp::base64_encode(plain_auth_header);
+        auth_header.emplace(std::string("Basic ") + websocketpp::base64_encode(plain_auth_header));
     }
     return auth_header;
 }

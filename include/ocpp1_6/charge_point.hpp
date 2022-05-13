@@ -103,9 +103,11 @@ private:
     std::function<bool(int32_t connector, double max_current)> set_max_current_callback;
     std::function<std::string(std::string location)> upload_diagnostics_callback;
     std::function<void(std::string location)> update_firmware_callback;
+    std::function<void()> switch_security_profile_callback;
 
     /// \brief This function is called after a successful connection to the Websocket
     void connected_callback();
+    void init_websocket(int32_t security_profile);
     void message_callback(const std::string& message);
     void handle_message(const json& json_message, MessageType message_type);
     bool allowed_to_send_message(json::array_t message_type);
@@ -163,7 +165,8 @@ private:
     // Security profile
     void handleExtendedTriggerMessageRequest(Call<ExtendedTriggerMessageRequest> call);
     void handleCertificateSignedRequest(Call<CertificateSignedRequest> call);
-    std::string generateCsr();
+    void switch_security_profile(int32_t new_security_profile);
+    void register_switch_security_profile_callback(const std::function<void()>& callback);
 
 public:
     /// \brief Creates a ChargePoint object with the provided \p configuration

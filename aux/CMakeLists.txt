@@ -1,5 +1,6 @@
 set(OCPP1_6_PROFILE_SCHEMAS_DIR "profile_schemas/ocpp1_6/")
 set(USER_CONFIG_FILE "${CMAKE_CURRENT_SOURCE_DIR}/user_config/user_config.json")
+set(CERTS_DIR "certs/")
 
 list(APPEND OCPP1_6_PROFILE_SCHEMAS
      Config.json
@@ -27,6 +28,8 @@ list(APPEND CONFIGS
 
 install(FILES ${CONFIGS}
         DESTINATION ocpp)
+
+install (DIRECTORY ${CERTS_DIR} DESTINATION ocpp/certs)
 
 if(EXISTS ${USER_CONFIG_FILE})
      install(FILES ${USER_CONFIG_FILE} DESTINATION ocpp/user_config)

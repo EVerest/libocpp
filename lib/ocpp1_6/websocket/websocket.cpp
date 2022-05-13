@@ -7,21 +7,20 @@
 
 namespace ocpp1_6 {
 
-Websocket::Websocket(std::shared_ptr<ChargePointConfiguration> configuration) {
+Websocket::Websocket(std::shared_ptr<ChargePointConfiguration> configuration, int32_t security_profile) {
 
     auto uri = configuration->getCentralSystemURI();
-    if (uri.find("ws://") == 0) {
+    if (security_profile <= 1) {
         EVLOG(debug) << "Creating plaintext websocket based on the provided URI: " << uri;
         this->websocket = std::make_unique<WebsocketPlain>(configuration);
-    }
-    if (uri.find("wss://") == 0) {
+    } else if (security_profile >= 2) {
         EVLOG(debug) << "Creating TLS websocket based on the provided URI: " << uri;
         this->websocket = std::make_unique<WebsocketTLS>(configuration);
     }
 }
 
-bool Websocket::connect() {
-    return this->websocket->connect();
+bool Websocket::connect(int32_t security_profile) {
+    return this->websocket->connect(security_profile);
 }
 
 void Websocket::disconnect() {
@@ -33,12 +32,15 @@ void Websocket::reconnect(std::error_code reason, long delay) {
 }
 
 void Websocket::register_connected_callback(const std::function<void()>& callback) {
+    this->connected_callback = callback;
     this->websocket->register_connected_callback(callback);
 }
 void Websocket::register_disconnected_callback(const std::function<void()>& callback) {
+    this->disconnected_callback = callback;
     this->websocket->register_disconnected_callback(callback);
 }
 void Websocket::register_message_callback(const std::function<void(const std::string& message)>& callback) {
+    this->message_callback = callback;
     this->websocket->register_message_callback(callback);
 }
 

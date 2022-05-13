@@ -16,6 +16,8 @@ ChargePointConfiguration::ChargePointConfiguration(json config, std::string conf
                                                    std::string database_path) {
 
     this->configs_path = configs_path;
+    this->pki_handler = std::make_shared<PkiHandler>(configs_path);
+
     // validate config entries
     Schemas schemas = Schemas(schemas_path);
     auto patch = schemas.get_profile_validator()->validate(config);
@@ -49,8 +51,9 @@ ChargePointConfiguration::ChargePointConfiguration(json config, std::string conf
                 }
             }
             // add Security behind the scenes as supported feature profile
-            if (this->config.contains("Security")) {
-                this->supported_feature_profiles.insert(conversions::string_to_supported_feature_profiles("Security"));
+            this->supported_feature_profiles.insert(conversions::string_to_supported_feature_profiles("Security"));
+            if (!this->config.contains("Security")) {
+                this->config["Security"] = json({});
             }
         }
     }
@@ -217,6 +220,48 @@ std::string ChargePointConfiguration::getConfigsPath() {
     return this->configs_path;
 }
 
+std::shared_ptr<PkiHandler> ChargePointConfiguration::getPkiHandler() {
+    return this->pki_handler;
+}
+
+json ChargePointConfiguration::get_user_config() {
+    auto user_config_path = boost::filesystem::path(this->getConfigsPath()) / "user_config" / "user_config.json";
+    if (boost::filesystem::exists(user_config_path)) {
+        // reading from and overriding to existing user config
+        std::fstream ifs(user_config_path.c_str());
+        std::string user_config_file((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
+        ifs.close();
+        return json::parse(user_config_file);
+    } else {
+        EVLOG(debug) << "No user-config provided. Creating user_config.json.";
+        // creating new user config if it doesn't exist
+        boost::filesystem::create_directory(user_config_path.parent_path());
+        std::ofstream fs(user_config_path.c_str());
+        json user_config = json({});
+        fs << user_config << std::endl;
+        fs.close();
+        return user_config;
+    }
+}
+
+void ChargePointConfiguration::set_security_profile_in_user_config() {
+    auto user_config_path = boost::filesystem::path(this->getConfigsPath()) / "user_config" / "user_config.json";
+    json user_config = this->get_user_config();
+    user_config["Security"]["SecurityProfile"] = this->getSecurityProfile();
+    std::ofstream ofs(user_config_path.c_str());
+    ofs << user_config << std::endl;
+    ofs.close();
+}
+
+void ChargePointConfiguration::set_authorization_key_in_user_config() {
+    auto user_config_path = boost::filesystem::path(this->getConfigsPath()) / "user_config" / "user_config.json";
+    json user_config = this->get_user_config();
+    user_config["Security"]["AuthorizationKey"] = this->getAuthorizationKey().get();
+    std::ofstream ofs(user_config_path.c_str());
+    ofs << user_config << std::endl;
+    ofs.close();
+}
+
 // Internal config options
 std::string ChargePointConfiguration::getChargePointId() {
     return this->config["Internal"]["ChargePointId"];
@@ -224,18 +269,19 @@ std::string ChargePointConfiguration::getChargePointId() {
 std::string ChargePointConfiguration::getCentralSystemURI() {
     return this->config["Internal"]["CentralSystemURI"];
 }
-boost::optional<CiString25Type> ChargePointConfiguration::getChargeBoxSerialNumber() {
-    boost::optional<CiString25Type> charge_box_serial_number = boost::none;
-    if (this->config["Internal"].contains("ChargeBoxSerialNumber")) {
-        charge_box_serial_number.emplace(this->config["Internal"]["ChargeBoxSerialNumber"]);
-    }
-    return charge_box_serial_number;
+std::string ChargePointConfiguration::getChargeBoxSerialNumber() {
+    return this->config["Internal"]["ChargeBoxSerialNumber"];
 }
+
 CiString20Type ChargePointConfiguration::getChargePointModel() {
     return CiString20Type(this->config["Internal"]["ChargePointModel"]);
 }
-std::string ChargePointConfiguration::getChargePointSerialNumber() {
-    return this->config["Internal"]["ChargePointSerialNumber"];
+boost::optional<CiString25Type> ChargePointConfiguration::getChargePointSerialNumber() {
+    boost::optional<CiString25Type> charge_point_serial_number = boost::none;
+    if (this->config["Internal"].contains("ChargePointSerialNumber")) {
+        charge_point_serial_number.emplace(this->config["Internal"]["ChargePointSerialNumber"]);
+    }
+    return charge_point_serial_number;
 }
 
 CiString20Type ChargePointConfiguration::getChargePointVendor() {
@@ -1351,32 +1397,8 @@ boost::optional<std::string> ChargePointConfiguration::getAuthorizationKey() {
 
 void ChargePointConfiguration::setAuthorizationKey(std::string authorization_key) {
 
-    if (this->getAuthorizationKey() != boost::none) {
-        this->config["Security"]["AuthorizationKey"] = authorization_key;
-    }
-
-    // set authorizationKey in user config
-    auto user_config_path = boost::filesystem::path(this->getConfigsPath()) / "user_config" / "user_config.json";
-    if (boost::filesystem::exists(user_config_path)) {
-        // reading from and overriding to existing user config
-        std::fstream ifs(user_config_path.c_str());
-        std::string user_config_file((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
-        ifs.close();
-        json user_config = json::parse(user_config_file);
-        user_config["Security"]["AuthorizationKey"] = authorization_key;
-        std::ofstream ofs(user_config_path.c_str());
-        ofs << user_config << std::endl;
-        ofs.close();
-    } else {
-        EVLOG(debug) << "No user-config provided. Creating user_config.json.";
-        // creating new user config if it doesn't exist
-        boost::filesystem::create_directory(user_config_path.parent_path());
-        std::ofstream fs(user_config_path.c_str());
-        json user_config;
-        user_config["Security"]["AuthorizationKey"] = authorization_key;
-        fs << user_config << std::endl;
-        fs.close();
-    }
+    this->config["Security"]["AuthorizationKey"] = authorization_key;
+    this->set_authorization_key_in_user_config();
 }
 
 boost::optional<KeyValue> ChargePointConfiguration::getAuthorizationKeyKeyValue() {
@@ -1468,33 +1490,25 @@ boost::optional<KeyValue> ChargePointConfiguration::getCpoNameKeyValue() {
     return cpo_name_kv;
 }
 
-// Security profile - optional
-boost::optional<int32_t> ChargePointConfiguration::getSecurityProfile() {
-    boost::optional<int32_t> security_profile = boost::none;
-    if (this->config["Security"].contains("SecurityProfile")) {
-        security_profile.emplace(this->config["Security"]["SecurityProfile"]);
-    }
-    return security_profile;
+// Security profile - optional in ocpp but mandatory websocket connection
+int32_t ChargePointConfiguration::getSecurityProfile() {
+    return this->config["Security"]["SecurityProfile"];
 }
 
 void ChargePointConfiguration::setSecurityProfile(int32_t security_profile) {
     // TODO(piet): add boundaries for value of security profile
-    if (this->getSecurityProfile() != boost::none) {
-        this->config["Security"]["SecurityProfile"] = security_profile;
-    }
+    this->config["Security"]["SecurityProfile"] = security_profile;
+    // set security profile in user config
+    this->set_security_profile_in_user_config();
 }
 
-boost::optional<KeyValue> ChargePointConfiguration::getSecurityProfileKeyValue() {
-    boost::optional<KeyValue> security_profile_kv = boost::none;
+KeyValue ChargePointConfiguration::getSecurityProfileKeyValue() {
+    ocpp1_6::KeyValue kv;
     auto security_profile = this->getSecurityProfile();
-    if (security_profile != boost::none) {
-        ocpp1_6::KeyValue kv;
-        kv.key = "SecurityProfile";
-        kv.readonly = false;
-        kv.value.emplace(std::to_string(security_profile.value()));
-        security_profile_kv.emplace(kv);
-    }
-    return security_profile_kv;
+    kv.key = "SecurityProfile";
+    kv.readonly = false;
+    kv.value.emplace(std::to_string(security_profile));
+    return kv;
 }
 
 boost::optional<KeyValue> ChargePointConfiguration::get(CiString50Type key) {
@@ -1567,6 +1581,9 @@ boost::optional<KeyValue> ChargePointConfiguration::get(CiString50Type key) {
     }
     if (key == "ResetRetries") {
         return this->getResetRetriesKeyValue();
+    }
+    if (key == "SecurityProfile") {
+        return this->getSecurityProfileKeyValue();
     }
     if (key == "StopTransactionOnEVSideDisconnect") {
         return this->getStopTransactionOnEVSideDisconnectKeyValue();
@@ -1659,10 +1676,14 @@ ConfigurationStatus ChargePointConfiguration::set(CiString50Type key, CiString50
         this->setAuthorizationCacheEnabled(conversions::string_to_bool(value.get()));
     }
     if (key == "AuthorizationKey") {
-        if (this->getAuthorizationKey() == boost::none) {
-            return ConfigurationStatus::NotSupported;
+        std::string authorization_key = value.get();
+        if (authorization_key.length() >= 16) {
+            this->setAuthorizationKey(value.get());
+            return ConfigurationStatus::Accepted;
+        } else {
+            EVLOG(debug) << "AuthorizationKey is < 16 bytes";
+            return ConfigurationStatus::Rejected;
         }
-        this->setAuthorizationKey(value.get());
     }
     // TODO(kai): Implementations can choose if the is R or RW, at the moment readonly
     // if (key == "AuthorizeRemoteTxRequests") {
@@ -1753,6 +1774,24 @@ ConfigurationStatus ChargePointConfiguration::set(CiString50Type key, CiString50
     }
     if (key == "ResetRetries") {
         this->setResetRetries(std::stoi(value.get()));
+    }
+    if (key == "SecurityProfile") {
+        auto security_profile = std::stoi(value.get());
+        auto current_security_profile = this->getSecurityProfile();
+        if (security_profile <= current_security_profile) {
+            EVLOG(debug) << "New security profile is <= current security profile. Rejecting request.";
+            return ConfigurationStatus::Rejected;
+        } else if ((security_profile == 1 || security_profile == 2) && this->getAuthorizationKey() == boost::none) {
+            EVLOG(debug) << "New security level set to 1 or 2 but no authorization key is set. Rejecting request.";
+            return ConfigurationStatus::Rejected;
+        } else if ((security_profile == 2 || security_profile == 3) &&
+                   !this->pki_handler->isCentralSystemRootCertificateInstalled()) {
+            EVLOG(debug) << "New security level set to 2 or 3 but no CentralSystemRootCertificateInstalled";
+            return ConfigurationStatus::Rejected;
+        } else {
+            // security profile is set during actual connection
+            return ConfigurationStatus::Accepted;
+        }
     }
     if (key == "StopTransactionOnEVSideDisconnect") {
         this->setStopTransactionOnEVSideDisconnect(conversions::string_to_bool(value.get()));

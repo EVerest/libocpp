@@ -40,14 +40,14 @@ private:
 
     /// \brief Called when a TLS websocket connection gets initialized, manages the supported TLS versions, cipher lists
     /// and how verification of the server certificate is handled
-    tls_context on_tls_init(std::string hostname, websocketpp::connection_hdl hdl);
+    tls_context on_tls_init(std::string hostname, websocketpp::connection_hdl hdl, int32_t security_profile);
 
     /// \brief Connect to a TLS websocket, if the provided \p authorization_header is not empty use it to add a HTTP
     /// Authorization header
-    void connect_tls(std::string authorization_header);
+    void connect_tls(int32_t security_profile);
 
     /// \brief Called when a TLS websocket connection is established, calls the connected callback
-    void on_open_tls(tls_client* c, websocketpp::connection_hdl hdl);
+    void on_open_tls(tls_client* c, websocketpp::connection_hdl hdl, int32_t security_profile);
 
     /// \brief Called when a message is received over the TLS websocket, calls the message callback
     void on_message_tls(websocketpp::connection_hdl hdl, tls_client::message_ptr msg);
@@ -56,7 +56,7 @@ private:
     void on_close_tls(tls_client* c, websocketpp::connection_hdl hdl);
 
     /// \brief Called when a TLS websocket connection fails to be established, tries to reconnect
-    void on_fail_tls(tls_client* c, websocketpp::connection_hdl hdl);
+    void on_fail_tls(tls_client* c, websocketpp::connection_hdl hdl, bool try_once);
 
 public:
     /// \brief Creates a new Websocket object with the providede \p configuration
@@ -64,7 +64,7 @@ public:
 
     /// \brief connect to a TLS websocket
     /// \returns true if the websocket is initialized and a connection attempt is made
-    bool connect() override;
+    bool connect(int32_t security_profile) override;
 
     /// \brief Reconnects the websocket using the delay, a reason for this reconnect can be provided with the
     /// \p reason parameter

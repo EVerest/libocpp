@@ -40,15 +40,16 @@ protected:
     bool initialized();
 
     /// \brief getter for authorization header for connection with basic authentication
-    std::string getAuthorizationHeader();
+    boost::optional<std::string> getAuthorizationHeader();
 
 public:
     /// \brief Creates a new WebsocketBase object with the providede \p configuration
     explicit WebsocketBase(std::shared_ptr<ChargePointConfiguration> configuration);
+    ~WebsocketBase();
 
     /// \brief connect to a websocket
     /// \returns true if the websocket is initialized and a connection attempt is made
-    virtual bool connect() = 0;
+    virtual bool connect(int32_t security_profile) = 0;
 
     /// \brief reconnect the websocket after the delay
     virtual void reconnect(std::error_code reason, long delay) = 0;

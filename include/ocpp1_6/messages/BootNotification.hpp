@@ -16,7 +16,7 @@ struct BootNotificationRequest : public Message {
     CiString20Type chargePointVendor;
     CiString20Type chargePointModel;
     boost::optional<CiString25Type> chargePointSerialNumber;
-    boost::optional<CiString25Type> chargeBoxSerialNumber;
+    CiString25Type chargeBoxSerialNumber;
     boost::optional<CiString50Type> firmwareVersion;
     boost::optional<CiString20Type> iccid;
     boost::optional<CiString20Type> imsi;

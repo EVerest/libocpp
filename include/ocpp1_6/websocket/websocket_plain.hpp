@@ -28,10 +28,10 @@ private:
     client ws_client;
 
     /// \brief Connect to a plaintext websocket
-    void connect_plain(std::string authorization_header);
+    void connect_plain(int32_t security_profile);
 
     /// \brief Called when a plaintext websocket connection is established, calls the connected callback
-    void on_open_plain(client* c, websocketpp::connection_hdl hdl);
+    void on_open_plain(client* c, websocketpp::connection_hdl hdl, int32_t security_profile);
 
     /// \brief Called when a message is received over the plaintext websocket, calls the message callback
     void on_message_plain(websocketpp::connection_hdl hdl, client::message_ptr msg);
@@ -40,7 +40,7 @@ private:
     void on_close_plain(client* c, websocketpp::connection_hdl hdl);
 
     /// \brief Called when a plaintext websocket connection fails to be established, tries to reconnect
-    void on_fail_plain(client* c, websocketpp::connection_hdl hdl);
+    void on_fail_plain(client* c, websocketpp::connection_hdl hdl, bool try_once);
 
 public:
     /// \brief Creates a new WebsocketPlain object with the providede \p configuration
@@ -48,7 +48,7 @@ public:
 
     /// \brief connect to a plaintext websocket
     /// \returns true if the websocket is initialized and a connection attempt is made
-    bool connect() override;
+    bool connect(int32_t security_profile) override;
 
     /// \brief Reconnects the websocket using the delay, a reason for this reconnect can be provided with the
     /// \p reason parameter
