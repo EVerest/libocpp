@@ -6,6 +6,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include <ocpp1_6/enums.hpp>
 #include <ocpp1_6/messages/SignCertificate.hpp>
 #include <ocpp1_6/ocpp_types.hpp>
 
@@ -46,14 +47,14 @@ std::string SignCertificateResponse::get_type() const {
 void to_json(json& j, const SignCertificateResponse& k) {
     // the required parts of the message
     j = json{
-        {"status", k.status},
+        {"status", conversions::generic_status_enum_type_to_string(k.status)},
     };
     // the optional parts of the message
 }
 
 void from_json(const json& j, SignCertificateResponse& k) {
     // the required parts of the message
-    k.status = j.at("status");
+    k.status = conversions::string_to_generic_status_enum_type(j.at("status"));
 
     // the optional parts of the message
 }

@@ -75,7 +75,7 @@ void ChargePoint::heartbeat() {
 void ChargePoint::boot_notification() {
     EVLOG_debug << "Sending BootNotification";
     BootNotificationRequest req;
-    req.chargeBoxSerialNumber = this->configuration->getChargeBoxSerialNumber();
+    req.chargeBoxSerialNumber.emplace(this->configuration->getChargeBoxSerialNumber());
     req.chargePointModel = this->configuration->getChargePointModel();
     req.chargePointSerialNumber = this->configuration->getChargePointSerialNumber();
     req.chargePointVendor = this->configuration->getChargePointVendor();

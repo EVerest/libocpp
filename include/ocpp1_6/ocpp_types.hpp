@@ -173,22 +173,6 @@ void from_json(const json& j, CertificateHashDataType& k);
 /// \returns an output stream with the CertificateHashDataType written to
 std::ostream& operator<<(std::ostream& os, const CertificateHashDataType& k);
 
-struct CertificateHashData {
-    HashAlgorithmEnumType hashAlgorithm;
-    CiString128Type issuerNameHash;
-    CiString128Type issuerKeyHash;
-    CiString40Type serialNumber;
-};
-/// \brief Conversion from a given CertificateHashData \p k to a given json object \p j
-void to_json(json& j, const CertificateHashData& k);
-
-/// \brief Conversion from a given json object \p j to a given CertificateHashData \p k
-void from_json(const json& j, CertificateHashData& k);
-
-// \brief Writes the string representation of the given CertificateHashData \p k to the given output stream \p os
-/// \returns an output stream with the CertificateHashData written to
-std::ostream& operator<<(std::ostream& os, const CertificateHashData& k);
-
 struct LogParametersType {
     CiString512Type remoteLocation;
     boost::optional<DateTime> oldestTimestamp;

@@ -7,6 +7,7 @@
 #include <boost/optional/optional.hpp>
 #include <nlohmann/json.hpp>
 
+#include <ocpp1_6/enums.hpp>
 #include <ocpp1_6/messages/GetInstalledCertificateIds.hpp>
 #include <ocpp1_6/ocpp_types.hpp>
 
@@ -21,14 +22,14 @@ std::string GetInstalledCertificateIdsRequest::get_type() const {
 void to_json(json& j, const GetInstalledCertificateIdsRequest& k) {
     // the required parts of the message
     j = json{
-        {"certificateType", k.certificateType},
+        {"certificateType", conversions::certificate_use_enum_type_to_string(k.certificateType)},
     };
     // the optional parts of the message
 }
 
 void from_json(const json& j, GetInstalledCertificateIdsRequest& k) {
     // the required parts of the message
-    k.certificateType = j.at("certificateType");
+    k.certificateType = conversions::string_to_certificate_use_enum_type(j.at("certificateType"));
 
     // the optional parts of the message
 }
@@ -47,7 +48,7 @@ std::string GetInstalledCertificateIdsResponse::get_type() const {
 void to_json(json& j, const GetInstalledCertificateIdsResponse& k) {
     // the required parts of the message
     j = json{
-        {"status", k.status},
+        {"status", conversions::get_installed_certificate_status_enum_type_to_string(k.status)},
     };
     // the optional parts of the message
     if (k.certificateHashData) {
@@ -60,7 +61,7 @@ void to_json(json& j, const GetInstalledCertificateIdsResponse& k) {
 
 void from_json(const json& j, GetInstalledCertificateIdsResponse& k) {
     // the required parts of the message
-    k.status = j.at("status");
+    k.status = conversions::string_to_get_installed_certificate_status_enum_type(j.at("status"));
 
     // the optional parts of the message
     if (j.contains("certificateHashData")) {

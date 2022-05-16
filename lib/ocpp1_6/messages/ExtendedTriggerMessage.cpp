@@ -7,6 +7,7 @@
 #include <boost/optional/optional.hpp>
 #include <nlohmann/json.hpp>
 
+#include <ocpp1_6/enums.hpp>
 #include <ocpp1_6/messages/ExtendedTriggerMessage.hpp>
 #include <ocpp1_6/ocpp_types.hpp>
 

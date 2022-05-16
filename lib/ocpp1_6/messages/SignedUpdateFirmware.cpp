@@ -7,6 +7,7 @@
 #include <boost/optional/optional.hpp>
 #include <nlohmann/json.hpp>
 
+#include <ocpp1_6/enums.hpp>
 #include <ocpp1_6/messages/SignedUpdateFirmware.hpp>
 #include <ocpp1_6/ocpp_types.hpp>
 #include <ocpp1_6/types.hpp>
@@ -62,14 +63,14 @@ std::string SignedUpdateFirmwareResponse::get_type() const {
 void to_json(json& j, const SignedUpdateFirmwareResponse& k) {
     // the required parts of the message
     j = json{
-        {"status", k.status},
+        {"status", conversions::update_firmware_status_enum_type_to_string(k.status)},
     };
     // the optional parts of the message
 }
 
 void from_json(const json& j, SignedUpdateFirmwareResponse& k) {
     // the required parts of the message
-    k.status = j.at("status");
+    k.status = conversions::string_to_update_firmware_status_enum_type(j.at("status"));
 
     // the optional parts of the message
 }
