@@ -841,7 +841,7 @@ void from_json(const json& j, MessageId& k) {
 DateTime::DateTime() : DateTimeImpl() {
 }
 
-DateTime::DateTime(std::chrono::time_point<std::chrono::system_clock> timepoint) : DateTimeImpl(timepoint) {
+DateTime::DateTime(std::chrono::time_point<date::utc_clock> timepoint) : DateTimeImpl(timepoint) {
 }
 
 DateTime::DateTime(const std::string& timepoint_str) : DateTimeImpl(timepoint_str) {
