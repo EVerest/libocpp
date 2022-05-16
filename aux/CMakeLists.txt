@@ -29,7 +29,9 @@ list(APPEND CONFIGS
 install(FILES ${CONFIGS}
         DESTINATION ocpp)
 
-install (DIRECTORY ${CERTS_DIR} DESTINATION ocpp/certs)
+if(EXISTS ${CERTS_DIR})
+     install (DIRECTORY ${CERTS_DIR} DESTINATION ocpp/certs)
+endif()
 
 if(EXISTS ${USER_CONFIG_FILE})
      install(FILES ${USER_CONFIG_FILE} DESTINATION ocpp/user_config)
