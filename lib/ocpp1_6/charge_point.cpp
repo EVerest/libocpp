@@ -587,6 +587,7 @@ void ChargePoint::handle_message(const json& json_message, MessageType message_t
     case MessageType::UpdateFirmware:
         this->handleUpdateFirmwareRequest(json_message);
         break;
+<<<<<<< HEAD
 
     case MessageType::ReserveNow:
         this->handleReserveNowRequest(json_message);
@@ -596,6 +597,8 @@ void ChargePoint::handle_message(const json& json_message, MessageType message_t
         this->handleCancelReservationRequest(json_message);
         break;
 
+=======
+>>>>>>> Passing on reservation requests to EvseManager (#7)
     case MessageType::ExtendedTriggerMessage:
         this->handleExtendedTriggerMessageRequest(json_message);
         break;
@@ -618,6 +621,13 @@ void ChargePoint::handle_message(const json& json_message, MessageType message_t
 
     case MessageType::SignedUpdateFirmware:
         this->handleSignedUpdateFirmware(json_message);
+
+    case MessageType::ReserveNow:
+        this->handleReserveNowRequest(json_message);
+        break;
+
+    case MessageType::CancelReservation:
+        this->handleCancelReservationRequest(json_message);
         break;
 
     default:
@@ -1646,6 +1656,27 @@ void ChargePoint::logStatusNotification(UploadLogStatusEnumType status, int requ
 
     Call<LogStatusNotificationRequest> call(req, this->message_queue->createMessageId());
     this->send<LogStatusNotificationRequest>(call);
+}
+
+void ChargePoint::handleReserveNowRequest(Call<ReserveNowRequest> call) {
+    ReserveNowResponse response;
+    response.status = ReservationStatus::Rejected;
+    if (this->reserve_now_callback != nullptr) {
+        response.status = this->reserve_now_callback(call.msg.reservationId, call.msg.connectorId, call.msg.expiryDate,
+                                                     call.msg.idTag, call.msg.parentIdTag);
+    }
+    CallResult<ReserveNowResponse> call_result(response, call.uniqueId);
+    this->send<ReserveNowResponse>(call_result);
+}
+
+void ChargePoint::handleCancelReservationRequest(Call<CancelReservationRequest> call) {
+    CancelReservationResponse response;
+    response.status = CancelReservationStatus::Rejected;
+    if (this->cancel_reservation_callback != nullptr) {
+        response.status = this->cancel_reservation_callback(call.msg.reservationId);
+    }
+    CallResult<CancelReservationResponse> call_result(response, call.uniqueId);
+    this->send<CancelReservationResponse>(call_result);
 }
 
 bool ChargePoint::allowed_to_send_message(json::array_t message) {

@@ -122,6 +122,10 @@ private:
     std::function<void(SignedUpdateFirmwareRequest req)> signed_update_firmware_callback;
     std::function<void()> switch_security_profile_callback;
     std::function<bool(GetLogRequest msg)> upload_logs_callback;
+    std::function<ReservationStatus(int32_t reservation_id, int32_t connector, ocpp1_6::DateTime expiryDate,
+                                    ocpp1_6::CiString20Type idTag, boost::optional<ocpp1_6::CiString20Type> parent_id)>
+        reserve_now_callback;
+    std::function<CancelReservationStatus(int32_t reservationId)> cancel_reservation_callback;
 
     /// \brief This function is called after a successful connection to the Websocket
     void connected_callback();
@@ -178,7 +182,8 @@ private:
     void handleReserveNowRequest(Call<ReserveNowRequest> call);
 
     /// \brief Receives CancelReservation.req(reservationId)
-    /// The reservation response:  CancelReservationStatus: `Accepted` if the reservationId was found, else `Rejected`
+    /// The reservation response:  CancelReservationStatus: `Accepted` if the reservationId was found, else
+    /// `Rejected`
     void handleCancelReservationRequest(Call<CancelReservationRequest> call);
 
     // RemoteTrigger profile
@@ -224,8 +229,8 @@ public:
 
     SignCertificateResponse sign_certificate();
 
-    /// registers a \p callback function that can be used to receive a arbitrary data transfer for the given \p vendorId
-    /// and \p messageId
+    /// registers a \p callback function that can be used to receive a arbitrary data transfer for the given \p
+    /// vendorId and \p messageId
     void register_data_transfer_callback(const CiString255Type& vendorId, const CiString50Type& messageId,
                                          const std::function<void(const std::string data)>& callback);
 
@@ -243,9 +248,8 @@ public:
     /// \returns true if the session could be stated successfully
     bool start_session(int32_t connector, DateTime timestamp, double energy_Wh_import);
 
-    /// \brief Stops a charging session on the given \p connector with the given \p timestamp and \p energy_Wh_import as
-    /// stop energy
-    /// \returns true if the session could be stopped successfully
+    /// \brief Stops a charging session on the given \p connector with the given \p timestamp and \p
+    /// energy_Wh_import as stop energy \returns true if the session could be stopped successfully
     bool stop_session(int32_t connector, DateTime timestamp, double energy_Wh_import);
 
     /// \brief EV indicates that it starts charging on the given \p connector
@@ -301,8 +305,8 @@ public:
     /// \brief registers a \p callback function that can be used to cancel charging
     void register_cancel_charging_callback(const std::function<bool(int32_t connector)>& callback);
 
-    /// \brief registers a \p callback function that can be used to reserve a connector for a idTag until a timeout is
-    /// reached
+    /// \brief registers a \p callback function that can be used to reserve a connector for a idTag until a timeout
+    /// is reached
     void register_reserve_now_callback(
         const std::function<ReservationStatus(int32_t reservation_id, int32_t connector, ocpp1_6::DateTime expiryDate,
                                               ocpp1_6::CiString20Type idTag,
