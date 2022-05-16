@@ -6,6 +6,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include <ocpp1_6/enums.hpp>
 #include <ocpp1_6/messages/InstallCertificate.hpp>
 #include <ocpp1_6/ocpp_types.hpp>
 
@@ -48,14 +49,14 @@ std::string InstallCertificateResponse::get_type() const {
 void to_json(json& j, const InstallCertificateResponse& k) {
     // the required parts of the message
     j = json{
-        {"status", k.status},
+        {"status", conversions::install_certificate_status_enum_type_to_string(k.status)},
     };
     // the optional parts of the message
 }
 
 void from_json(const json& j, InstallCertificateResponse& k) {
     // the required parts of the message
-    k.status = j.at("status");
+    k.status = conversions::string_to_install_certificate_status_enum_type(j.at("status"));
 
     // the optional parts of the message
 }

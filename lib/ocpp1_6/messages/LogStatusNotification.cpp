@@ -7,6 +7,7 @@
 #include <boost/optional/optional.hpp>
 #include <nlohmann/json.hpp>
 
+#include <ocpp1_6/enums.hpp>
 #include <ocpp1_6/messages/LogStatusNotification.hpp>
 #include <ocpp1_6/ocpp_types.hpp>
 
@@ -21,7 +22,7 @@ std::string LogStatusNotificationRequest::get_type() const {
 void to_json(json& j, const LogStatusNotificationRequest& k) {
     // the required parts of the message
     j = json{
-        {"status", k.status},
+        {"status", conversions::upload_log_status_enum_type_to_string(k.status)},
     };
     // the optional parts of the message
     if (k.requestId) {
@@ -31,7 +32,7 @@ void to_json(json& j, const LogStatusNotificationRequest& k) {
 
 void from_json(const json& j, LogStatusNotificationRequest& k) {
     // the required parts of the message
-    k.status = j.at("status");
+    k.status = conversions::string_to_upload_log_status_enum_type(j.at("status"));
 
     // the optional parts of the message
     if (j.contains("requestId")) {

@@ -7,6 +7,7 @@
 #include <boost/optional/optional.hpp>
 #include <nlohmann/json.hpp>
 
+#include <ocpp1_6/enums.hpp>
 #include <ocpp1_6/messages/GetLog.hpp>
 #include <ocpp1_6/ocpp_types.hpp>
 #include <ocpp1_6/types.hpp>
@@ -23,7 +24,7 @@ void to_json(json& j, const GetLogRequest& k) {
     // the required parts of the message
     j = json{
         {"log", k.log},
-        {"logType", k.logType},
+        {"logType", conversions::log_enum_type_to_string(k.logType)},
         {"requestId", k.requestId},
     };
     // the optional parts of the message
@@ -38,7 +39,7 @@ void to_json(json& j, const GetLogRequest& k) {
 void from_json(const json& j, GetLogRequest& k) {
     // the required parts of the message
     k.log = j.at("log");
-    k.logType = j.at("logType");
+    k.logType = conversions::string_to_log_enum_type(j.at("logType"));
     k.requestId = j.at("requestId");
 
     // the optional parts of the message
@@ -64,7 +65,7 @@ std::string GetLogResponse::get_type() const {
 void to_json(json& j, const GetLogResponse& k) {
     // the required parts of the message
     j = json{
-        {"status", k.status},
+        {"status", conversions::log_status_enum_type_to_string(k.status)},
     };
     // the optional parts of the message
     if (k.filename) {
@@ -74,7 +75,7 @@ void to_json(json& j, const GetLogResponse& k) {
 
 void from_json(const json& j, GetLogResponse& k) {
     // the required parts of the message
-    k.status = j.at("status");
+    k.status = conversions::string_to_log_status_enum_type(j.at("status"));
 
     // the optional parts of the message
     if (j.contains("filename")) {

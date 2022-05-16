@@ -5,6 +5,7 @@
 
 #include <boost/optional.hpp>
 
+#include <ocpp1_6/enums.hpp>
 #include <ocpp1_6/ocpp_types.hpp>
 
 namespace ocpp1_6 {

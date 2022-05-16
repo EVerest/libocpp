@@ -22,12 +22,16 @@ std::string BootNotificationRequest::get_type() const {
 
 void to_json(json& j, const BootNotificationRequest& k) {
     // the required parts of the message
-    j = json{{"chargePointVendor", k.chargePointVendor},
-             {"chargePointModel", k.chargePointModel},
-             {"chargeBoxSerialNumber", k.chargeBoxSerialNumber}};
+    j = json{
+        {"chargePointVendor", k.chargePointVendor},
+        {"chargePointModel", k.chargePointModel},
+    };
     // the optional parts of the message
     if (k.chargePointSerialNumber) {
         j["chargePointSerialNumber"] = k.chargePointSerialNumber.value();
+    }
+    if (k.chargeBoxSerialNumber) {
+        j["chargeBoxSerialNumber"] = k.chargeBoxSerialNumber.value();
     }
     if (k.firmwareVersion) {
         j["firmwareVersion"] = k.firmwareVersion.value();
@@ -50,11 +54,13 @@ void from_json(const json& j, BootNotificationRequest& k) {
     // the required parts of the message
     k.chargePointVendor = j.at("chargePointVendor");
     k.chargePointModel = j.at("chargePointModel");
-    k.chargeBoxSerialNumber = j.at("chargeBoxSerialNumber");
 
     // the optional parts of the message
     if (j.contains("chargePointSerialNumber")) {
         k.chargePointSerialNumber.emplace(j.at("chargePointSerialNumber"));
+    }
+    if (j.contains("chargeBoxSerialNumber")) {
+        k.chargeBoxSerialNumber.emplace(j.at("chargeBoxSerialNumber"));
     }
     if (j.contains("firmwareVersion")) {
         k.firmwareVersion.emplace(j.at("firmwareVersion"));

@@ -366,7 +366,7 @@ std::ostream& operator<<(std::ostream& os, const TransactionData& k) {
 void to_json(json& j, const CertificateHashDataType& k) {
     // the required parts of the message
     j = json{
-        {"hashAlgorithm", k.hashAlgorithm},
+        {"hashAlgorithm", conversions::hash_algorithm_enum_type_to_string(k.hashAlgorithm)},
         {"issuerNameHash", k.issuerNameHash},
         {"issuerKeyHash", k.issuerKeyHash},
         {"serialNumber", k.serialNumber},
@@ -377,7 +377,7 @@ void to_json(json& j, const CertificateHashDataType& k) {
 /// \brief Conversion from a given json object \p j to a given CertificateHashDataType \p k
 void from_json(const json& j, CertificateHashDataType& k) {
     // the required parts of the message
-    k.hashAlgorithm = j.at("hashAlgorithm");
+    k.hashAlgorithm = conversions::string_to_hash_algorithm_enum_type(j.at("hashAlgorithm"));
     k.issuerNameHash = j.at("issuerNameHash");
     k.issuerKeyHash = j.at("issuerKeyHash");
     k.serialNumber = j.at("serialNumber");
@@ -388,36 +388,6 @@ void from_json(const json& j, CertificateHashDataType& k) {
 // \brief Writes the string representation of the given CertificateHashDataType \p k to the given output stream \p os
 /// \returns an output stream with the CertificateHashDataType written to
 std::ostream& operator<<(std::ostream& os, const CertificateHashDataType& k) {
-    os << json(k).dump(4);
-    return os;
-}
-
-/// \brief Conversion from a given CertificateHashData \p k to a given json object \p j
-void to_json(json& j, const CertificateHashData& k) {
-    // the required parts of the message
-    j = json{
-        {"hashAlgorithm", k.hashAlgorithm},
-        {"issuerNameHash", k.issuerNameHash},
-        {"issuerKeyHash", k.issuerKeyHash},
-        {"serialNumber", k.serialNumber},
-    };
-    // the optional parts of the message
-}
-
-/// \brief Conversion from a given json object \p j to a given CertificateHashData \p k
-void from_json(const json& j, CertificateHashData& k) {
-    // the required parts of the message
-    k.hashAlgorithm = j.at("hashAlgorithm");
-    k.issuerNameHash = j.at("issuerNameHash");
-    k.issuerKeyHash = j.at("issuerKeyHash");
-    k.serialNumber = j.at("serialNumber");
-
-    // the optional parts of the message
-}
-
-// \brief Writes the string representation of the given CertificateHashData \p k to the given output stream \p os
-/// \returns an output stream with the CertificateHashData written to
-std::ostream& operator<<(std::ostream& os, const CertificateHashData& k) {
     os << json(k).dump(4);
     return os;
 }
