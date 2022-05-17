@@ -22,8 +22,8 @@
 #include <ocpp1_6/messages/ClearCache.hpp>
 #include <ocpp1_6/messages/ClearChargingProfile.hpp>
 #include <ocpp1_6/messages/DataTransfer.hpp>
-#include <ocpp1_6/messages/DiagnosticsStatusNotification.hpp>
 #include <ocpp1_6/messages/DeleteCertificate.hpp>
+#include <ocpp1_6/messages/DiagnosticsStatusNotification.hpp>
 #include <ocpp1_6/messages/ExtendedTriggerMessage.hpp>
 #include <ocpp1_6/messages/FirmwareStatusNotification.hpp>
 #include <ocpp1_6/messages/GetCompositeSchedule.hpp>
@@ -31,10 +31,12 @@
 #include <ocpp1_6/messages/GetDiagnostics.hpp>
 #include <ocpp1_6/messages/GetInstalledCertificateIds.hpp>
 #include <ocpp1_6/messages/Heartbeat.hpp>
+#include <ocpp1_6/messages/InstallCertificate.hpp>
 #include <ocpp1_6/messages/MeterValues.hpp>
 #include <ocpp1_6/messages/RemoteStartTransaction.hpp>
 #include <ocpp1_6/messages/RemoteStopTransaction.hpp>
 #include <ocpp1_6/messages/Reset.hpp>
+#include <ocpp1_6/messages/SecurityEventNotification.hpp>
 #include <ocpp1_6/messages/SetChargingProfile.hpp>
 #include <ocpp1_6/messages/SignCertificate.hpp>
 #include <ocpp1_6/messages/StartTransaction.hpp>
@@ -169,6 +171,8 @@ private:
     void handleCertificateSignedRequest(Call<CertificateSignedRequest> call);
     void handleGetInstalledCertificateIdsRequest(Call<GetInstalledCertificateIdsRequest> call);
     void handleDeleteCertificateRequest(Call<DeleteCertificateRequest> call);
+    void handleInstallCertificateRequest(Call<InstallCertificateRequest> call);
+    void securityEventNotification(const SecurityEvent& type, const std::string& tech_info);
     void switch_security_profile(int32_t new_security_profile);
     void register_switch_security_profile_callback(const std::function<void()>& callback);
 

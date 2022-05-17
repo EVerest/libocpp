@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2022 Pionix GmbH and Contributors to EVerest
-#include <future>
 #include <fstream>
+#include <future>
 #include <mutex>
 
 #include <boost/algorithm/string/classification.hpp>
@@ -1398,8 +1398,29 @@ boost::optional<std::string> ChargePointConfiguration::getAuthorizationKey() {
 
 void ChargePointConfiguration::setAuthorizationKey(std::string authorization_key) {
 
-    this->config["Security"]["AuthorizationKey"] = authorization_key;
+    std::string str;
+    if (isHexNotation(authorization_key)) {
+        str = hexToString(authorization_key);
+    } else {
+        str = authorization_key;
+    }
+
+    this->config["Security"]["AuthorizationKey"] = str;
     this->set_authorization_key_in_user_config();
+}
+
+std::string ChargePointConfiguration::hexToString(std::string const& s) {
+    std::string str;
+    for (int i = 0; i < s.length(); i += 2) {
+        std::string byte = s.substr(i, 2);
+        char chr = (char)(int)strtol(byte.c_str(), NULL, 16);
+        str.push_back(chr);
+    }
+    return str;
+}
+
+bool ChargePointConfiguration::isHexNotation(std::string const& s) {
+    return s.size() > 2 && s.find_first_not_of("0123456789abcdefABCDEF", 2) == std::string::npos;
 }
 
 boost::optional<KeyValue> ChargePointConfiguration::getAuthorizationKeyKeyValue() {
