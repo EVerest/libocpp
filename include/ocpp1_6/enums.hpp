@@ -1137,6 +1137,29 @@ UpdateFirmwareStatusEnumType string_to_update_firmware_status_enum_type(const st
 /// update_firmware_status_enum_type to the given output stream \p os \returns an output stream with the
 /// UpdateFirmwareStatusEnumType written to
 std::ostream& operator<<(std::ostream& os, const UpdateFirmwareStatusEnumType& update_firmware_status_enum_type);
+
+//from SecurityEventNotificationRequest
+enum class SecurityEvent {
+    FirmwareUpdated,
+    FailedToAuthenticateAtCentralSystem,
+    CentralSystemFailedToAuthenticate,
+    SettingSystemTime,
+    StartupOfTheDevice,
+    ResetOrReboot,
+    SecurityLogWasCleared,
+    ReconfigurationOfSecurityParameters,
+    MemoryExhaustion,
+    InvalidMessages,
+    AttemptedReplayAttacks,
+    TamperDetectionActivated,
+    InvalidFirmwareSignature,
+    InvalidFirmwareSigningCertificate,
+    InvalidCentralSystemCertificate,
+    InvalidChargePointCertificate,
+    InvalidTLSVersion,
+    InvalidTLSCipherSuite
+};
+
 } // namespace ocpp1_6
 
 #endif // OCPP1_6_ENUMS_HPP

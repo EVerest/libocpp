@@ -34,6 +34,9 @@ private:
     void set_authorization_key_in_user_config();
     json get_user_config();
 
+    static std::string hexToString(std::string const& s);
+    static bool isHexNotation(std::string const& s);
+
 public:
     ChargePointConfiguration(json config, std::string configs_path, std::string schemas_path,
                              std::string database_path);

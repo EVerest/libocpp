@@ -423,6 +423,7 @@ void ChargePoint::stop() {
 
 void ChargePoint::connected_callback() {
     this->switch_security_profile_callback = nullptr;
+    this->configuration->getPkiHandler()->removeFallbackCA();
     switch (this->connection_state) {
     case ChargePointConnectionState::Disconnected: {
         this->connection_state = ChargePointConnectionState::Connected;
@@ -606,6 +607,10 @@ void ChargePoint::handle_message(const json& json_message, MessageType message_t
 
     case MessageType::DeleteCertificate:
         this->handleDeleteCertificateRequest(json_message);
+        break;
+
+    case MessageType::InstallCertificate:
+        this->handleInstallCertificateRequest(json_message);
         break;
 
     default:
@@ -1525,18 +1530,22 @@ void ChargePoint::handleCertificateSignedRequest(Call<CertificateSignedRequest> 
 
     if (this->configuration->getPkiHandler()->validateCertificate(certificateChain,
                                                                   this->configuration->getChargeBoxSerialNumber())) {
-        // put CpoName is config key
         response.status = CertificateSignedStatusEnumType::Accepted;
-    } else {
-        // if not valid: trigger an InvalidChargePointCertificate security event
     }
 
     CallResult<CertificateSignedResponse> call_result(response, call.uniqueId);
     this->send<CertificateSignedResponse>(call_result);
 
-    // reconnect with new certificate
+    // reconnect with new certificate if valid
     if (response.status == CertificateSignedStatusEnumType::Accepted) {
         this->websocket->reconnect(std::error_code(), 1000);
+    } else {
+        SecurityEventNotificationRequest req;
+        req.type = SecurityEvent::InvalidChargePointCertificate;
+        req.timestamp = ocpp1_6::DateTime();
+        // TODO(piet): Set techInfo field
+        Call<SecurityEventNotificationRequest> call(req, this->message_queue->createMessageId());
+        this->send<SecurityEventNotificationRequest>(call);
     }
 }
 
@@ -1561,6 +1570,30 @@ void ChargePoint::handleDeleteCertificateRequest(Call<DeleteCertificateRequest> 
 
     CallResult<DeleteCertificateResponse> call_result(response, call.uniqueId);
     this->send<DeleteCertificateResponse>(call_result);
+}
+
+void ChargePoint::handleInstallCertificateRequest(Call<InstallCertificateRequest> call) {
+    InstallCertificateResponse response;
+    response.status = this->configuration->getPkiHandler()->install_certificate(
+        call.msg, this->configuration->getCertificateStoreMaxLength(),
+        this->configuration->getAdditionalRootCertificateCheck());
+
+    if (response.status == InstallCertificateStatusEnumType::Accepted) {
+        // register fallback certificate
+    }
+
+    CallResult<InstallCertificateResponse> call_result(response, call.uniqueId);
+    this->send<InstallCertificateResponse>(call_result);
+}
+
+void ChargePoint::securityEventNotification(const SecurityEvent& type, const std::string& tech_info) {
+    SecurityEventNotificationRequest req;
+    req.type = type;
+    req.techInfo.emplace(tech_info);
+    req.timestamp = ocpp1_6::DateTime();
+
+    Call<SecurityEventNotificationRequest> call(req, this->message_queue->createMessageId());
+    this->send<SecurityEventNotificationRequest>(call);
 }
 
 bool ChargePoint::allowed_to_send_message(json::array_t message) {
