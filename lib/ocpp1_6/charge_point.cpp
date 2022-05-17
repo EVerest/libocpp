@@ -587,7 +587,6 @@ void ChargePoint::handle_message(const json& json_message, MessageType message_t
     case MessageType::UpdateFirmware:
         this->handleUpdateFirmwareRequest(json_message);
         break;
-<<<<<<< HEAD
 
     case MessageType::ReserveNow:
         this->handleReserveNowRequest(json_message);
@@ -597,8 +596,6 @@ void ChargePoint::handle_message(const json& json_message, MessageType message_t
         this->handleCancelReservationRequest(json_message);
         break;
 
-=======
->>>>>>> Passing on reservation requests to EvseManager (#7)
     case MessageType::ExtendedTriggerMessage:
         this->handleExtendedTriggerMessageRequest(json_message);
         break;
