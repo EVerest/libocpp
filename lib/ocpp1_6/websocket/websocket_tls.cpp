@@ -135,6 +135,8 @@ bool WebsocketTLS::verify_certificate(std::string hostname, bool preverified,
 
     // FIXME(kai): this does not verify anything at the moment!
 
+    EVLOG_debug << "Hostname: " << hostname;
+    EVLOG_debug << "Preverified: " << preverified;
     EVLOG_critical << "Faking certificate verification, always returning true";
 
     return true;
@@ -153,30 +155,33 @@ tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connect
                              boost::asio::ssl::context::single_dh_use);
 
         EVLOG_debug << "List of ciphers that will be accepted by this TLS connection: "
-                    << this->configuration->getSupportedCiphers();
+                    << this->configuration->getSupportedCiphers12() << ":"
+                    << this->configuration->getSupportedCiphers13();
 
-        // FIXME(kai): the following only applies to TSLv1.2, we should support TLSv1.3 here as well
-        // FIXME(kai): use SSL_CTX_set_ciphersuites for TLSv1.3
         auto set_cipher_list_ret =
-            SSL_CTX_set_cipher_list(context->native_handle(), this->configuration->getSupportedCiphers().c_str());
+            SSL_CTX_set_cipher_list(context->native_handle(), this->configuration->getSupportedCiphers12().c_str());
         if (set_cipher_list_ret != 1) {
             EVLOG_critical << "SSL_CTX_set_cipher_list return value: " << set_cipher_list_ret;
             throw std::runtime_error("Could not set TLSv1.2 cipher list");
         }
 
-        if (security_profile == 3) {
-            // TODO(piet) load client certificate here
+        set_cipher_list_ret =
+            SSL_CTX_set_ciphersuites(context->native_handle(), this->configuration->getSupportedCiphers13().c_str());
+        if (set_cipher_list_ret != 1) {
+            EVLOG_critical << "SSL_CTX_set_cipher_list return value: " << set_cipher_list_ret;
+            throw std::runtime_error("Could not set TLSv1.3 cipher list");
         }
 
-        // TODO(piet): use SSL_CTX_load_verify_locations or SSL_CTX_set_default_verify_paths to automatically enable CA
-        // certificate chain verification
-        context->set_verify_mode(boost::asio::ssl::verify_peer);
+        if (security_profile == 3) {
+            SSL_CTX_use_certificate(
+                context->native_handle(),
+                load_from_file(this->configuration->getPkiHandler()->getFile(CLIENT_SIDE_CERTIFICATE_FILE)).x509);
+        }
 
-        // TODO(piet): we dont need to set a verify callback manually if we set SSL_CTX_load_verify_locations
-        context->set_verify_callback(websocketpp::lib::bind(&WebsocketTLS::verify_certificate, this, hostname,
-                                                            websocketpp::lib::placeholders::_1,
-                                                            websocketpp::lib::placeholders::_2));
-        context->set_default_verify_paths();
+        context->set_verify_mode(boost::asio::ssl::verify_peer);
+        SSL_CTX_load_verify_locations(context->native_handle(),
+                                      this->configuration->getPkiHandler()->getFile(CS_ROOT_CA_FILE).c_str(), NULL);
+
     } catch (std::exception& e) {
         EVLOG_error << "Error on TLS init: " << e.what();
         throw std::runtime_error("Could not properly initialize TLS connection.");
@@ -259,8 +264,21 @@ void WebsocketTLS::on_close_tls(tls_client* c, websocketpp::connection_hdl hdl) 
 void WebsocketTLS::on_fail_tls(tls_client* c, websocketpp::connection_hdl hdl, bool try_once) {
     tls_client::connection_ptr con = c->get_con_from_hdl(hdl);
     auto error_code = con->get_ec();
+    auto transport_ec = con->get_transport_ec();
     EVLOG_error << "Failed to connect to TLS websocket server " << con->get_response_header("Server")
                 << ", code: " << error_code.value() << ", reason: " << error_code.message();
+    EVLOG_error << "Failed to connect to TLS websocket server "
+                << ", code: " << transport_ec.value() << ", reason: " << transport_ec.message()
+                << ", category: " << transport_ec.category().name();
+
+    // move fallback ca to /certs if it exists
+    if (boost::filesystem::exists(CS_ROOT_CA_FILE_BACKUP_FILE)) {
+        EVLOG_debug << "Connection with new CA was not successful - Including fallback CA";
+        boost::filesystem::path new_path =
+            CS_ROOT_CA_FILE_BACKUP_FILE.parent_path() / CS_ROOT_CA_FILE_BACKUP_FILE.filename();
+        std::rename(CS_ROOT_CA_FILE_BACKUP_FILE.c_str(), new_path.c_str());
+    }
+
     if (!try_once) {
         this->reconnect(error_code, this->reconnect_interval_ms);
     } else {

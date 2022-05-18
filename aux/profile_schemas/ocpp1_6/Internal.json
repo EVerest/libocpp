@@ -75,7 +75,7 @@
             "minLength": 1,
             "maxLength": 25
         },
-        "SupportedCiphers": {
+        "SupportedCiphers12": {
             "type": "array",
             "items": {
                 "type": "string"
@@ -83,7 +83,22 @@
             "readOnly": true,
             "default": [
                 "ECDHE-ECDSA-AES128-GCM-SHA256",
-                "ECDHE-ECDSA-AES256-GCM-SHA384"
+                "ECDHE-ECDSA-AES256-GCM-SHA384",
+                "AES128-GCM-SHA256",
+                "AES256-GCM-SHA384",
+                "TLS_AES_256_GCM_SHA384",
+                "TLS_AES_128_GCM_SHA256"
+            ]
+        },
+        "SupportedCiphers13": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "readOnly": true,
+            "default": [
+                "TLS_AES_256_GCM_SHA384",
+                "TLS_AES_128_GCM_SHA256"
             ]
         },
         "WebsocketReconnectInterval": {
