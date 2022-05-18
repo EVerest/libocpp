@@ -29,8 +29,8 @@ list(APPEND CONFIGS
 install(FILES ${CONFIGS}
         DESTINATION ocpp)
 
-if(EXISTS ${CERTS_DIR})
-     install (DIRECTORY ${CERTS_DIR} DESTINATION ocpp/certs)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/certs")
+     install (DIRECTORY certs/ DESTINATION ocpp/certs PATTERN ".gitignore" EXCLUDE)
 endif()
 
 if(EXISTS ${USER_CONFIG_FILE})
