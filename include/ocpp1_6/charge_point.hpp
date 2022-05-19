@@ -127,6 +127,7 @@ private:
         reserve_now_callback;
     std::function<CancelReservationStatus(int32_t reservationId)> cancel_reservation_callback;
     std::function<void()> switch_security_profile_callback;
+    std::function<bool(GetLogRequest msg)> upload_logs_callback;
 
     /// \brief This function is called after a successful connection to the Websocket
     void connected_callback();
