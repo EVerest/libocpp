@@ -1563,9 +1563,6 @@ void ChargePoint::handleGetLogRequest(Call<GetLogRequest> call) {
     GetLogResponse response;
     response.status = LogStatusEnumType::Accepted;
 
-    CallResult<GetLogResponse> call_result(response, call.uniqueId);
-    this->send<GetLogResponse>(call_result);
-
     if (this->upload_logs_callback) {
         response.filename.emplace(this->upload_logs_callback(call.msg));
     }
