@@ -203,6 +203,7 @@ bool PkiHandler::verifyFirmwareCertificate(const std::string& firmwareCertificat
                      << " human readable: " << X509_verify_cert_error_string(ec);
         return false;
     } else {
+        EVLOG(debug) << "Verified signature of new CA";
         return true;
     }
 }
