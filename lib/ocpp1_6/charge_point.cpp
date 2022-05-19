@@ -609,6 +609,9 @@ void ChargePoint::handle_message(const json& json_message, MessageType message_t
     case MessageType::GetLog:
         this->handleGetLogRequest(json_message);
 
+    case MessageType::SignedUpdateFirmware:
+        this->handleSignedUpdateFirmware(json_message);
+
     default:
         // TODO(kai): not implemented error?
         break;
@@ -1569,6 +1572,10 @@ void ChargePoint::handleGetLogRequest(Call<GetLogRequest> call) {
 
     CallResult<GetLogResponse> call_result(response, call.uniqueId);
     this->send<GetLogResponse>(call_result);
+}
+
+void ChargePoint::handleSignedUpdateFirmware(Call<SignedUpdateFirmwareRequest> call) {
+
 }
 
 void ChargePoint::securityEventNotification(const SecurityEvent& type, const std::string& tech_info) {
