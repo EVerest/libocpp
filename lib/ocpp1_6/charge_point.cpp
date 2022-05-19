@@ -1404,7 +1404,7 @@ void ChargePoint::handleGetDiagnosticsRequest(Call<GetDiagnosticsRequest> call) 
 void ChargePoint::handleUpdateFirmwareRequest(Call<UpdateFirmwareRequest> call) {
     EVLOG_debug << "Received UpdateFirmwareRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
     UpdateFirmwareResponse response;
-    if (this->upload_diagnostics_callback) {
+    if (this->update_firmware_callback) {
         // FIXME(kai): respect call.msg.retrieveDate and only then trigger this callback
         this->update_firmware_callback(call.msg.location);
     }
@@ -1546,6 +1546,7 @@ void ChargePoint::handleCertificateSignedRequest(Call<CertificateSignedRequest> 
 }
 
 void ChargePoint::handleGetInstalledCertificateIdsRequest(Call<GetInstalledCertificateIdsRequest> call) {
+    EVLOG(debug) << "Received GetInstalledCertificatesRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
     GetInstalledCertificateIdsResponse response;
     response.status = GetInstalledCertificateStatusEnumType::NotFound;
 
@@ -1595,7 +1596,26 @@ void ChargePoint::handleGetLogRequest(Call<GetLogRequest> call) {
 }
 
 void ChargePoint::handleSignedUpdateFirmware(Call<SignedUpdateFirmwareRequest> call) {
+    EVLOG(debug) << "Received SignedUpdateFirmwareRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
+    SignedUpdateFirmwareResponse response;
 
+    if (this->configuration->getPkiHandler()->verifyFirmwareCertificate(call.msg.firmware.signingCertificate)) {
+        if (this->signed_update_firmware_callback) {
+            // FIXME(piet): respect call.msg.retrieveDate and only then trigger this callback
+            this->signed_update_firmware_callback(call.msg);
+        } else {
+            response.status = UpdateFirmwareStatusEnumType::Rejected;
+        }
+    } else {
+        response.status = UpdateFirmwareStatusEnumType::InvalidCertificate;
+    }
+
+    CallResult<SignedUpdateFirmwareResponse> call_result(response, call.uniqueId);
+    this->send<SignedUpdateFirmwareResponse>(call_result);
+
+    if (response.status == UpdateFirmwareStatusEnumType::InvalidCertificate) {
+        this->securityEventNotification(SecurityEvent::InvalidFirmwareSigningCertificate, "");
+    }
 }
 
 void ChargePoint::securityEventNotification(const SecurityEvent& type, const std::string& tech_info) {
@@ -2111,6 +2131,10 @@ void ChargePoint::registerSwitchSecurityProfileCallback(const std::function<void
 
 void ChargePoint::register_upload_logs_callback(const std::function<bool(GetLogRequest req)>& callback) {
     this->upload_logs_callback = callback;
+}
+
+void ChargePoint::register_signed_update_firmware_request(
+    const std::function<bool(SignedUpdateFirmwareRequest req)>& callback) {
 }
 
 } // namespace ocpp1_6

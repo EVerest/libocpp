@@ -94,6 +94,7 @@ public:
     std::string generateCsr(const char* szCountry, const char* szProvince, const char* szCity,
                             const char* szOrganization, const char* szCommon);
     bool isCentralSystemRootCertificateInstalled();
+    bool verifyFirmwareCertificate(const std::string& firmwareCertificate);
     boost::optional<std::vector<CertificateHashDataType>> getRootCertificateHashData(CertificateUseEnumType type);
     DeleteCertificateStatusEnumType delete_certificate(CertificateHashDataType certificate_hash_data);
     InstallCertificateStatusEnumType install_certificate(InstallCertificateRequest msg,
