@@ -45,6 +45,7 @@
 #include <ocpp1_6/messages/SecurityEventNotification.hpp>
 #include <ocpp1_6/messages/SetChargingProfile.hpp>
 #include <ocpp1_6/messages/SignCertificate.hpp>
+#include <ocpp1_6/messages/SignedUpdateFirmware.hpp>
 #include <ocpp1_6/messages/StartTransaction.hpp>
 #include <ocpp1_6/messages/StatusNotification.hpp>
 #include <ocpp1_6/messages/StopTransaction.hpp>
@@ -193,6 +194,7 @@ private:
     void handleDeleteCertificateRequest(Call<DeleteCertificateRequest> call);
     void handleInstallCertificateRequest(Call<InstallCertificateRequest> call);
     void handleGetLogRequest(Call<GetLogRequest> call);
+    void handleSignedUpdateFirmware(Call<SignedUpdateFirmwareRequest> call);
     void securityEventNotification(const SecurityEvent& type, const std::string& tech_info);
     void logStatusNotification(UploadLogStatusEnumType status, int requestId);
     void switchSecurityProfile(int32_t new_security_profile);
