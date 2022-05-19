@@ -242,8 +242,12 @@ std::vector<std::shared_ptr<X509Certificate>> PkiHandler::get_ca_certificates(Ce
 std::vector<std::shared_ptr<X509Certificate>> PkiHandler::get_ca_certificates() {
     // FIXME(piet) make this dynamic
     std::vector<std::shared_ptr<X509Certificate>> ca_certificates;
-    ca_certificates.push_back(load_from_file(this->getCertsPath() / CS_ROOT_CA_FILE));
-    ca_certificates.push_back(load_from_file(this->getCertsPath() / MF_ROOT_CA_FILE));
+    if (boost::filesystem::exists(this->getCertsPath() / CS_ROOT_CA_FILE)) {
+        ca_certificates.push_back(load_from_file(this->getCertsPath() / CS_ROOT_CA_FILE));
+    }
+    if (boost::filesystem::exists(this->getCertsPath() / MF_ROOT_CA_FILE)) {
+        ca_certificates.push_back(load_from_file(this->getCertsPath() / MF_ROOT_CA_FILE));
+    }
     return ca_certificates;
 }
 
