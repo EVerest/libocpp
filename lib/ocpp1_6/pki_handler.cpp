@@ -377,10 +377,8 @@ std::string PkiHandler::get_issuer_key_hash(std::shared_ptr<X509Certificate> cer
     X509_pubkey_digest(cert->x509, EVP_sha256(), tmphash, NULL);
     std::stringstream ss;
     for (int i = 0; i < SHA256_DIGEST_LENGTH; i++)
-        ss << std::hex << (int)tmphash[i];
+        ss << std::setw(2) << std::setfill('0') << std::hex << (int)tmphash[i];
     std::string str = ss.str();
-    EVLOG(debug) << "Issuer key hash: " << str;
-    // 89ea6977e786fcbaeb4f04e4ccdbfaa6a6088e8ba8f7404033ac1b3a62bc36a1
     return str;
 }
 
