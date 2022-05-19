@@ -126,6 +126,7 @@ private:
                                     ocpp1_6::CiString20Type idTag, boost::optional<ocpp1_6::CiString20Type> parent_id)>
         reserve_now_callback;
     std::function<CancelReservationStatus(int32_t reservationId)> cancel_reservation_callback;
+    std::function<void(SignedUpdateFirmwareRequest req)> signed_update_firmware_callback;
     std::function<void()> switch_security_profile_callback;
     std::function<bool(GetLogRequest msg)> upload_logs_callback;
 
