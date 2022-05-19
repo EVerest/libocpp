@@ -33,8 +33,10 @@
 #include <ocpp1_6/messages/GetConfiguration.hpp>
 #include <ocpp1_6/messages/GetDiagnostics.hpp>
 #include <ocpp1_6/messages/GetInstalledCertificateIds.hpp>
+#include <ocpp1_6/messages/GetLog.hpp>
 #include <ocpp1_6/messages/Heartbeat.hpp>
 #include <ocpp1_6/messages/InstallCertificate.hpp>
+#include <ocpp1_6/messages/LogStatusNotification.hpp>
 #include <ocpp1_6/messages/MeterValues.hpp>
 #include <ocpp1_6/messages/RemoteStartTransaction.hpp>
 #include <ocpp1_6/messages/RemoteStopTransaction.hpp>
@@ -84,6 +86,7 @@ private:
     std::mutex charge_point_max_profiles_mutex;
     std::map<int32_t, std::map<int32_t, ChargingProfile>> tx_default_profiles;
     std::mutex tx_default_profiles_mutex;
+    std::map<MessageId, std::thread> sign_thread;
 
     std::unique_ptr<Websocket> websocket;
     boost::shared_ptr<boost::asio::io_service::work> work;
@@ -116,6 +119,7 @@ private:
         reserve_now_callback;
     std::function<CancelReservationStatus(int32_t reservationId)> cancel_reservation_callback;
     std::function<void()> switch_security_profile_callback;
+    std::function<bool(GetLogRequest msg)> upload_logs_callback;
 
     /// \brief This function is called after a successful connection to the Websocket
     void connected_callback();
@@ -188,9 +192,11 @@ private:
     void handleGetInstalledCertificateIdsRequest(Call<GetInstalledCertificateIdsRequest> call);
     void handleDeleteCertificateRequest(Call<DeleteCertificateRequest> call);
     void handleInstallCertificateRequest(Call<InstallCertificateRequest> call);
+    void handleGetLogRequest(Call<GetLogRequest> call);
     void securityEventNotification(const SecurityEvent& type, const std::string& tech_info);
-    void switch_security_profile(int32_t new_security_profile);
-    void register_switch_security_profile_callback(const std::function<void()>& callback);
+    void logStatusNotification(UploadLogStatusEnumType status, int requestId);
+    void switchSecurityProfile(int32_t new_security_profile);
+    void registerSwitchSecurityProfileCallback(const std::function<void()>& callback);
 
 public:
     /// \brief Creates a ChargePoint object with the provided \p configuration
@@ -314,6 +320,9 @@ public:
 
     /// registers a \p callback function that can be used to trigger a firmware update
     void register_update_firmware_callback(const std::function<void(std::string location)>& callback);
+
+    /// registers a \p callback function that can be used to upload logfiles
+    void register_upload_logs_callback(const std::function<bool(GetLogRequest msg)>& callback);
 
     // FIXME: rework the following API functions, do we want to expose them?
     // insert plug

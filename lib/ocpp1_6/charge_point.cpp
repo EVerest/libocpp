@@ -22,10 +22,9 @@ ChargePoint::ChargePoint(std::shared_ptr<ChargePointConfiguration> configuration
     this->connection_state = ChargePointConnectionState::Disconnected;
     this->charging_sessions = std::make_unique<ChargingSessions>(this->configuration->getNumberOfConnectors());
 
+    this->init_websocket(this->configuration->getSecurityProfile());
     this->message_queue = std::make_unique<MessageQueue>(
         this->configuration, [this](json message) -> bool { return this->websocket->send(message.dump()); });
-
-    this->init_websocket(this->configuration->getSecurityProfile());
 
     this->boot_notification_timer =
         std::make_unique<Everest::SteadyTimer>(&this->io_service, [this]() { this->boot_notification(); });
@@ -613,6 +612,9 @@ void ChargePoint::handle_message(const json& json_message, MessageType message_t
         this->handleInstallCertificateRequest(json_message);
         break;
 
+    case MessageType::GetLog:
+        this->handleGetLogRequest(json_message);
+
     default:
         // TODO(kai): not implemented error?
         break;
@@ -755,13 +757,9 @@ void ChargePoint::handleChangeConfigurationRequest(Call<ChangeConfigurationReque
                     this->update_clock_aligned_meter_values_interval();
                 }
                 if (call.msg.key == "AuthorizationKey") {
+                    /*SECURITYLOG*/ EVLOG(debug) << "AuthorizationKey was changed by central system";
                     if (this->configuration->getSecurityProfile() == 0) {
-                        EVLOG(debug)
-                            << "AuthorizationKey was changed while on security profile 0. Switiching to profile 1";
-                        CallResult<ChangeConfigurationResponse> call_result(response, call.uniqueId);
-                        this->send<ChangeConfigurationResponse>(call_result);
-                        responded = true;
-                        this->switch_security_profile(1);
+                        EVLOG(debug) << "AuthorizationKey was changed while on security profile 0.";
                     } else if (this->configuration->getSecurityProfile() == 1 ||
                                this->configuration->getSecurityProfile() == 2) {
                         EVLOG(debug)
@@ -781,8 +779,8 @@ void ChargePoint::handleChangeConfigurationRequest(Call<ChangeConfigurationReque
                     this->send<ChangeConfigurationResponse>(call_result);
                     int32_t security_profile = std::stoi(call.msg.value);
                     responded = true;
-                    this->register_switch_security_profile_callback(
-                        [this, security_profile]() { this->switch_security_profile(security_profile); });
+                    this->registerSwitchSecurityProfileCallback(
+                        [this, security_profile]() { this->switchSecurityProfile(security_profile); });
                     // disconnected_callback will trigger security_profile_callback when it is set
                     this->websocket->disconnect();
                 }
@@ -798,14 +796,14 @@ void ChargePoint::handleChangeConfigurationRequest(Call<ChangeConfigurationReque
     }
 }
 
-void ChargePoint::switch_security_profile(int32_t new_security_profile) {
+void ChargePoint::switchSecurityProfile(int32_t new_security_profile) {
     EVLOG(debug) << "Switching security profile from " << this->configuration->getSecurityProfile() << " to "
                  << new_security_profile;
 
     this->init_websocket(new_security_profile);
-    this->register_switch_security_profile_callback([this]() {
+    this->registerSwitchSecurityProfileCallback([this]() {
         EVLOG(warning) << "Switching security profile back to fallback because new profile couldnt connect";
-        this->switch_security_profile(this->configuration->getSecurityProfile());
+        this->switchSecurityProfile(this->configuration->getSecurityProfile());
     });
 
     this->websocket->connect(new_security_profile);
@@ -1485,7 +1483,7 @@ void ChargePoint::handleExtendedTriggerMessageRequest(Call<ExtendedTriggerMessag
     case MessageTriggerEnumType::MeterValues:
         break;
     case MessageTriggerEnumType::SignChargePointCertificate:
-        this->sign_certificate();
+        this->sign_thread[call.uniqueId] = std::thread([this]() { this->sign_certificate(); });
         break;
     case MessageTriggerEnumType::StatusNotification:
         break;
@@ -1540,12 +1538,7 @@ void ChargePoint::handleCertificateSignedRequest(Call<CertificateSignedRequest> 
     if (response.status == CertificateSignedStatusEnumType::Accepted) {
         this->websocket->reconnect(std::error_code(), 1000);
     } else {
-        SecurityEventNotificationRequest req;
-        req.type = SecurityEvent::InvalidChargePointCertificate;
-        req.timestamp = ocpp1_6::DateTime();
-        // TODO(piet): Set techInfo field
-        Call<SecurityEventNotificationRequest> call(req, this->message_queue->createMessageId());
-        this->send<SecurityEventNotificationRequest>(call);
+        this->securityEventNotification(SecurityEvent::InvalidChargePointCertificate, "");
     }
 }
 
@@ -1586,6 +1579,21 @@ void ChargePoint::handleInstallCertificateRequest(Call<InstallCertificateRequest
     this->send<InstallCertificateResponse>(call_result);
 }
 
+void ChargePoint::handleGetLogRequest(Call<GetLogRequest> call) {
+    GetLogResponse response;
+    response.status = LogStatusEnumType::Accepted;
+
+    CallResult<GetLogResponse> call_result(response, call.uniqueId);
+    this->send<GetLogResponse>(call_result);
+
+    if (this->upload_logs_callback) {
+        response.filename.emplace(this->upload_logs_callback(call.msg));
+    }
+
+    CallResult<GetLogResponse> call_result(response, call.uniqueId);
+    this->send<GetLogResponse>(call_result);
+}
+
 void ChargePoint::securityEventNotification(const SecurityEvent& type, const std::string& tech_info) {
     SecurityEventNotificationRequest req;
     req.type = type;
@@ -1594,6 +1602,15 @@ void ChargePoint::securityEventNotification(const SecurityEvent& type, const std
 
     Call<SecurityEventNotificationRequest> call(req, this->message_queue->createMessageId());
     this->send<SecurityEventNotificationRequest>(call);
+}
+
+void ChargePoint::logStatusNotification(UploadLogStatusEnumType status, int requestId) {
+    LogStatusNotificationRequest req;
+    req.status = status;
+    req.requestId = requestId;
+
+    Call<LogStatusNotificationRequest> call(req, this->message_queue->createMessageId());
+    this->send<LogStatusNotificationRequest>(call);
 }
 
 bool ChargePoint::allowed_to_send_message(json::array_t message) {
@@ -2084,8 +2101,12 @@ void ChargePoint::register_update_firmware_callback(const std::function<void(std
     this->update_firmware_callback = callback;
 }
 
-void ChargePoint::register_switch_security_profile_callback(const std::function<void()>& callback) {
+void ChargePoint::registerSwitchSecurityProfileCallback(const std::function<void()>& callback) {
     this->switch_security_profile_callback = callback;
+}
+
+void ChargePoint::register_upload_logs_callback(const std::function<bool(GetLogRequest req)>& callback) {
+    this->upload_logs_callback = callback;
 }
 
 } // namespace ocpp1_6
