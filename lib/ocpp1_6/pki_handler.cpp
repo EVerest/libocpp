@@ -256,9 +256,11 @@ boost::filesystem::path PkiHandler::getFile(boost::filesystem::path file_name) {
 std::vector<std::shared_ptr<X509Certificate>> PkiHandler::get_ca_certificates(CertificateUseEnumType type) {
     // FIXME(piet) iterate over directory and collect all ca files depending on the type
     std::vector<std::shared_ptr<X509Certificate>> ca_certificates;
-    if (type == CertificateUseEnumType::CentralSystemRootCertificate) {
+    if (type == CertificateUseEnumType::CentralSystemRootCertificate &&
+        boost::filesystem::exists(this->getCertsPath() / CS_ROOT_CA_FILE)) {
         ca_certificates.push_back(load_from_file(this->getCertsPath() / CS_ROOT_CA_FILE));
-    } else if (type == CertificateUseEnumType::ManufacturerRootCertificate) {
+    } else if (type == CertificateUseEnumType::ManufacturerRootCertificate &&
+               boost::filesystem::exists(this->getCertsPath() / MF_ROOT_CA_FILE)) {
         ca_certificates.push_back(load_from_file(this->getCertsPath() / MF_ROOT_CA_FILE));
     }
     return ca_certificates;
