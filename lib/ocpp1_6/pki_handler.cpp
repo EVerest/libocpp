@@ -353,13 +353,15 @@ void PkiHandler::removeFallbackCA() {
 }
 
 std::string PkiHandler::get_issuer_name_hash(std::shared_ptr<X509Certificate> cert) {
-    long issuer_name_hash = X509_issuer_name_hash(cert->x509);
-    std::stringstream stream;
-    stream << std::hex << issuer_name_hash;
-    std::string str(stream.str());
-    EVLOG(debug) << "Issuer name hash: " << str;
+    unsigned char md[SHA256_DIGEST_LENGTH];
+    X509_NAME* name = X509_get_issuer_name(cert->x509);
+    X509_NAME_digest(name, EVP_sha256(), md, NULL);
+
+    std::stringstream ss;
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++)
+        ss << std::setw(2) << std::setfill('0') << std::hex << (int)md[i];
+    std::string str = ss.str();
     return str;
-    // e60bd843bf2279339127ca19ab6967081dd6f95e745dc8b8632fa56031debe5b
 }
 
 std::string PkiHandler::get_serial(std::shared_ptr<X509Certificate> cert) {
@@ -372,7 +374,6 @@ std::string PkiHandler::get_serial(std::shared_ptr<X509Certificate> cert) {
 }
 
 std::string PkiHandler::get_issuer_key_hash(std::shared_ptr<X509Certificate> cert) {
-
     unsigned char tmphash[SHA256_DIGEST_LENGTH];
     X509_pubkey_digest(cert->x509, EVP_sha256(), tmphash, NULL);
     std::stringstream ss;
