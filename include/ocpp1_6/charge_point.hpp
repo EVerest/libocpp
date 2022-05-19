@@ -111,6 +111,7 @@ private:
     std::function<bool(int32_t connector, double max_current)> set_max_current_callback;
     std::function<std::string(std::string location)> upload_diagnostics_callback;
     std::function<void(std::string location)> update_firmware_callback;
+    std::function<void(SignedUpdateFirmwareRequest req)> signed_update_firmware_callback;
     std::function<void()> switch_security_profile_callback;
     std::function<bool(GetLogRequest msg)> upload_logs_callback;
 
@@ -303,6 +304,9 @@ public:
 
     /// registers a \p callback function that can be used to upload logfiles
     void register_upload_logs_callback(const std::function<bool(GetLogRequest msg)>& callback);
+
+    /// registers a \p callback function that can be used to trigger a signed firmware update
+    void register_signed_update_firmware_request(const std::function<bool(SignedUpdateFirmwareRequest req)>& callback);
 
     // FIXME: rework the following API functions, do we want to expose them?
     // insert plug
