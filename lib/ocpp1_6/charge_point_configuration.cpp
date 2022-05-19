@@ -322,9 +322,15 @@ boost::optional<CiString25Type> ChargePointConfiguration::getMeterType() {
 int32_t ChargePointConfiguration::getWebsocketReconnectInterval() {
     return this->config["Internal"]["WebsocketReconnectInterval"];
 }
-std::string ChargePointConfiguration::getSupportedCiphers() {
+std::string ChargePointConfiguration::getSupportedCiphers12() {
 
-    std::vector<std::string> supported_ciphers = this->config["Internal"]["SupportedCiphers"];
+    std::vector<std::string> supported_ciphers = this->config["Internal"]["SupportedCiphers12"];
+    return boost::algorithm::join(supported_ciphers, ":");
+}
+
+std::string ChargePointConfiguration::getSupportedCiphers13() {
+
+    std::vector<std::string> supported_ciphers = this->config["Internal"]["SupportedCiphers13"];
     return boost::algorithm::join(supported_ciphers, ":");
 }
 
@@ -1426,17 +1432,17 @@ bool ChargePointConfiguration::isHexNotation(std::string const& s) {
 boost::optional<KeyValue> ChargePointConfiguration::getAuthorizationKeyKeyValue() {
     boost::optional<KeyValue> enabled_kv = boost::none;
     boost::optional<std::string> enabled = boost::none;
+
+    ocpp1_6::KeyValue kv;
+    kv.key = "AuthorizationKey";
+    kv.readonly = false;
+
     if (this->config["Security"].contains("AuthorizationKey")) {
         // AuthorizationKey is writeOnly so we return a dummy
         enabled.emplace("DummyAuthorizationKey");
-    }
-    if (enabled != boost::none) {
-        ocpp1_6::KeyValue kv;
-        kv.key = "AuthorizationKey";
-        kv.readonly = false;
         kv.value.emplace(enabled.value());
-        enabled_kv.emplace(kv);
     }
+    enabled_kv.emplace(kv);
     return enabled_kv;
 }
 
@@ -1494,21 +1500,20 @@ boost::optional<std::string> ChargePointConfiguration::getCpoName() {
 }
 
 void ChargePointConfiguration::setCpoName(std::string cpoName) {
-    if (this->getCpoName() != boost::none) {
-        this->config["Security"]["CpoName"] = cpoName;
-    }
+    this->config["Security"]["CpoName"] = cpoName;
+    this->set_authorization_key_in_user_config();
 }
 
 boost::optional<KeyValue> ChargePointConfiguration::getCpoNameKeyValue() {
     boost::optional<KeyValue> cpo_name_kv = boost::none;
     auto cpo_name = this->getCpoName();
+    ocpp1_6::KeyValue kv;
+    kv.key = "CpoName";
+    kv.readonly = false;
     if (cpo_name != boost::none) {
-        ocpp1_6::KeyValue kv;
-        kv.key = "CpoName";
-        kv.readonly = false;
         kv.value.emplace(cpo_name.value());
-        cpo_name_kv.emplace(kv);
     }
+    cpo_name_kv.emplace(kv);
     return cpo_name_kv;
 }
 
@@ -1561,6 +1566,9 @@ boost::optional<KeyValue> ChargePointConfiguration::get(CiString50Type key) {
     }
     if (key == "ConnectorPhaseRotationMaxLength") {
         return this->getConnectorPhaseRotationMaxLengthKeyValue();
+    }
+    if (key == "CpoName") {
+        return this->getCpoNameKeyValue();
     }
     if (key == "GetConfigurationMaxKeys") {
         return this->getGetConfigurationMaxKeysKeyValue();
@@ -1737,6 +1745,9 @@ ConfigurationStatus ChargePointConfiguration::set(CiString50Type key, CiString50
     }
     if (key == "ConnectorPhaseRotation") {
         this->setConnectorPhaseRotation(value.get());
+    }
+    if (key == "CpoName") {
+        this->setCpoName(value.get());
     }
     if (key == "HeartbeatInterval") {
         auto interval = std::stoi(value.get());

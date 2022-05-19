@@ -59,7 +59,8 @@ public:
     boost::optional<CiString25Type> getMeterType();
     int32_t getWebsocketReconnectInterval();
 
-    std::string getSupportedCiphers();
+    std::string getSupportedCiphers12();
+    std::string getSupportedCiphers13();
 
     // Internal
     std::set<MessageType> getSupportedMessageTypesSending();

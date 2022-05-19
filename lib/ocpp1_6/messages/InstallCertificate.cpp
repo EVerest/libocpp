@@ -21,7 +21,7 @@ std::string InstallCertificateRequest::get_type() const {
 void to_json(json& j, const InstallCertificateRequest& k) {
     // the required parts of the message
     j = json{
-        {"certificateType", k.certificateType},
+        {"certificateType", conversions::certificate_use_enum_type_to_string(k.certificateType)},
         {"certificate", k.certificate},
     };
     // the optional parts of the message
@@ -29,7 +29,7 @@ void to_json(json& j, const InstallCertificateRequest& k) {
 
 void from_json(const json& j, InstallCertificateRequest& k) {
     // the required parts of the message
-    k.certificateType = j.at("certificateType");
+    k.certificateType = conversions::string_to_certificate_use_enum_type(j.at("certificateType"));
     k.certificate = j.at("certificate");
 
     // the optional parts of the message
