@@ -1160,6 +1160,21 @@ enum class SecurityEvent {
     InvalidTLSCipherSuite
 };
 
+namespace conversions {
+/// \brief Converts the given SecurityEvent \p e to human readable string
+/// \returns a string representation of the SecurityEvent
+std::string security_event_to_string(SecurityEvent e);
+
+/// \brief Converts the given std::string \p s to SecurityEvent
+/// \returns a SecurityEvent from a string representation
+SecurityEvent string_to_security_event(const std::string& s);
+} // namespace conversions
+
+/// \brief Writes the string representation of the given SecurityEvent \p
+/// security_event to the given output stream \p os \returns an output stream with the
+/// SecurityEvent written to
+std::ostream& operator<<(std::ostream& os, const SecurityEvent& security_event);
+
 } // namespace ocpp1_6
 
 #endif // OCPP1_6_ENUMS_HPP

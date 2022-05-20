@@ -33,7 +33,7 @@ void to_json(json& j, const SecurityEventNotificationRequest& k) {
 
 void from_json(const json& j, SecurityEventNotificationRequest& k) {
     // the required parts of the message
-    k.type = j.at("type");
+    k.type = conversions::string_to_security_event(j.at("type"));
     k.timestamp = DateTime(std::string(j.at("timestamp")));
     ;
 
