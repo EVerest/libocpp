@@ -12,26 +12,41 @@ namespace ocpp1_6 {
 PkiHandler::PkiHandler(std::string maindir) : maindir(boost::filesystem::path(maindir)) {
 }
 
-std::string read_file_to_string(const boost::filesystem::path& path) {
-    std::ifstream t(path.c_str());
-    std::string str((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
-    return str;
-}
+X509Certificate::X509Certificate(boost::filesystem::path path, X509* x509, std::string str) {
+    this->path = path;
+    this->x509 = x509;
+    this->str = str;
+};
+
+X509Certificate::X509Certificate(const boost::filesystem::path path, X509* x509, const std::string str,
+                                 const CertificateType type) {
+    this->path = path;
+    this->x509 = x509;
+    this->str = str;
+    this->type = type;
+};
 
 X509Certificate::~X509Certificate() {
     X509_free(this->x509);
 }
 
-std::shared_ptr<X509Certificate> load_from_file(const boost::filesystem::path& path) {
+std::shared_ptr<X509Certificate> loadFromFile(const boost::filesystem::path& path) {
+
+    std::ifstream t(path.c_str());
+    std::string file_str((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
+    t.close();
+
     BIO_ptr b(BIO_new(BIO_s_mem()), ::BIO_free);
-    std::string file_str = read_file_to_string(path);
     BIO_puts(b.get(), file_str.c_str());
     X509* x509 = PEM_read_bio_X509(b.get(), NULL, NULL, NULL);
     std::shared_ptr<X509Certificate> cert = std::make_shared<X509Certificate>(path, x509, file_str);
+    cert->validIn = X509_cmp_current_time(X509_get_notBefore(x509));
+    cert->validTo = X509_cmp_current_time(X509_get_notAfter(x509));
+
     return cert;
 }
 
-std::shared_ptr<X509Certificate> load_from_string(const std::string& str) {
+std::shared_ptr<X509Certificate> loadFromString(const std::string& str) {
     BIO_ptr b(BIO_new(BIO_s_mem()), ::BIO_free);
     BIO_puts(b.get(), str.c_str());
     X509* x509 = PEM_read_bio_X509(b.get(), NULL, NULL, NULL);
@@ -128,45 +143,47 @@ std::string PkiHandler::generateCsr(const char* szCountry, const char* szProvinc
     return pem;
 }
 
-bool PkiHandler::validateCertificateChain(std::shared_ptr<X509Certificate> root_ca,
-                                          std::shared_ptr<X509Certificate> cert) {
+bool PkiHandler::verifyCertificateChain(std::shared_ptr<X509Certificate> rootCA,
+                                        std::shared_ptr<X509Certificate> cert) {
     X509_STORE_ptr store_ptr(X509_STORE_new(), ::X509_STORE_free);
     X509_STORE_CTX_ptr store_ctx_ptr(X509_STORE_CTX_new(), ::X509_STORE_CTX_free);
 
-    X509_STORE_add_cert(store_ptr.get(), root_ca->x509);
+    X509_STORE_add_cert(store_ptr.get(), rootCA->x509);
     X509_STORE_CTX_init(store_ctx_ptr.get(), store_ptr.get(), cert->x509, NULL);
 
-    int rc = 0;
-
     // verifies the certificate chain based on ctx
-    rc = X509_verify_cert(store_ctx_ptr.get());
-    if (rc == 0) {
+    if (X509_verify_cert(store_ctx_ptr.get()) == 0) {
         // TODO(piet): trigger InvalidChargepointCertificate security event
         int ec = X509_STORE_CTX_get_error(store_ctx_ptr.get());
         EVLOG(error) << "Could not verify certificate chain. Error code: " << ec
-                     << " human readable: " << X509_verify_cert_error_string(ec);
+                     << " reason: " << X509_verify_cert_error_string(ec);
         return false;
     } else {
         return true;
     }
 }
 
-bool PkiHandler::validateSignature(std::shared_ptr<X509Certificate> root_ca,
-                                   std::shared_ptr<X509Certificate> new_root_ca) {
-    int rc = X509_verify(new_root_ca->x509, X509_get_pubkey(root_ca->x509));
+bool PkiHandler::verifySignature(std::shared_ptr<X509Certificate> rootCA,
+                                 std::shared_ptr<X509Certificate> new_root_ca) {
+    int rc = X509_verify(new_root_ca->x509, X509_get_pubkey(rootCA->x509));
     if (rc == 0) {
         long ec = ERR_get_error();
         EVLOG(error) << "Could not verify signature of new root CA: " << ERR_error_string(ec, NULL);
         return false;
     } else {
-        EVLOG(debug) << "Verified signature of new CA";
+        EVLOG(debug) << "Verified signature of certificate";
         return true;
     }
 }
 
 bool PkiHandler::verifyFirmwareCertificate(const std::string& firmwareCertificate) {
-    std::shared_ptr<X509Certificate> cert = load_from_string(firmwareCertificate);
-    std::shared_ptr<X509Certificate> mf_root_ca = load_from_file(this->getFile(MF_ROOT_CA_FILE));
+    std::shared_ptr<X509Certificate> cert = loadFromString(firmwareCertificate);
+    if (!this->isManufacturerRootCertificateInstalled()) {
+        EVLOG(warning) << "No manufacturer root certificate installed";
+        return false;
+    }
+
+    std::shared_ptr<X509Certificate> mf_root_ca = loadFromFile(this->getFile(MF_ROOT_CA_FILE));
 
     X509_STORE_ptr store_ptr(X509_STORE_new(), ::X509_STORE_free);
     X509_STORE_CTX_ptr store_ctx_ptr(X509_STORE_CTX_new(), ::X509_STORE_CTX_free);
@@ -192,55 +209,74 @@ bool PkiHandler::verifyFirmwareCertificate(const std::string& firmwareCertificat
 std::shared_ptr<X509Certificate> PkiHandler::getRootCertificate(CertificateUseEnumType type) {
 
     if (type == CertificateUseEnumType::CentralSystemRootCertificate) {
-        return load_from_file(CS_ROOT_CA_FILE);
+        return loadFromFile(CS_ROOT_CA_FILE);
     } else {
-        return load_from_file(MF_ROOT_CA_FILE);
+        return loadFromFile(MF_ROOT_CA_FILE);
     }
 }
 
-bool PkiHandler::validateCertificate(const std::string& certificateChain, const std::string& charge_box_serial_number) {
+bool PkiHandler::verifyCertificate(const std::string& certificateChain, const std::string& chargeBoxSerialNumber) {
 
-    std::shared_ptr<X509Certificate> root_cert = load_from_file(this->getCertsPath() / CS_ROOT_CA_FILE);
-    std::shared_ptr<X509Certificate> cert_chain = load_from_string(certificateChain);
-
-    if (!this->validateCertificateChain(root_cert, cert_chain)) {
+    if (!this->isCentralSystemRootCertificateInstalled()) {
+        EVLOG(warning) << "Could not verify certificate because no Central System Root Certificate is installed";
         return false;
     }
 
-    // verifies the signature of certificate x using public key of root_ca
-    int rc = X509_verify(cert_chain->x509, X509_get_pubkey(root_cert->x509));
-    if (rc == 0) {
+    std::shared_ptr<X509Certificate> rootCert = loadFromFile(this->getCertsPath() / CS_ROOT_CA_FILE);
+    std::shared_ptr<X509Certificate> certChain = loadFromString(certificateChain);
+
+    if (!this->verifyCertificateChain(rootCert, certChain)) {
+        return false;
+    }
+
+    // verifies the signature of certificate x using public key of rootCA
+    if (X509_verify(certChain->x509, X509_get_pubkey(rootCert->x509)) == 0) {
         // TODO(piet): trigger InvalidChargepointCertificate security event
-        std::cout << "Could not verify signature of certificate" << std::endl;
+        EVLOG(warning) << "Could not verify signature of certificate";
         return false;
     }
 
     // expiration check
-    if (X509_cmp_current_time(X509_get_notBefore(cert_chain->x509)) >= 0) {
-        std::cout << "Server certificate is not yet valid." << std::endl;
+    if (X509_cmp_current_time(X509_get_notBefore(certChain->x509)) >= 0) {
+        EVLOG(debug) << "Certificate is not yet valid.";
     }
 
-    if (X509_cmp_current_time(X509_get_notAfter(cert_chain->x509)) <= 0) {
+    if (X509_cmp_current_time(X509_get_notAfter(certChain->x509)) <= 0) {
         // TODO(piet): trigger InvalidChargepointCertificate security event
-        std::cout << "Server certificate has expired." << std::endl;
+        EVLOG(warning) << "Certificate has expired." << std::endl;
         return false;
     }
 
-    rc = X509_check_host(cert_chain->x509, charge_box_serial_number.c_str(), strlen(charge_box_serial_number.c_str()),
-                         NULL, NULL);
-
-    if (rc == 0) {
-        std::cout << "Subject field CN of certificate is not equal to ChargeBoxSerialNumber: "
-                  << charge_box_serial_number << std::endl;
+    if (X509_check_host(certChain->x509, chargeBoxSerialNumber.c_str(), strlen(chargeBoxSerialNumber.c_str()), NULL,
+                        NULL) == 0) {
+        EVLOG(warning) << "Subject field CN of certificate is not equal to ChargeBoxSerialNumber: "
+                       << chargeBoxSerialNumber;
+        return false;
     }
 
-    std::cout << rc << std::endl;
+    return true;
+}
 
-    return rc;
+void PkiHandler::writeClientCertificate(const std::string certificate) {
+    std::shared_ptr<X509Certificate> cert = loadFromString(certificate);
+    cert->path = this->getFile(CLIENT_SIDE_CERTIFICATE_FILE).append(DateTime().to_rfc3339());
+    cert->write();
 }
 
 bool PkiHandler::isCentralSystemRootCertificateInstalled() {
-    return true;
+    return boost::filesystem::exists(this->getFile(CS_ROOT_CA_FILE));
+}
+
+bool PkiHandler::isManufacturerRootCertificateInstalled() {
+    return boost::filesystem::exists(this->getFile(MF_ROOT_CA_FILE));
+}
+
+bool PkiHandler::isRootCertificateInstalled(CertificateUseEnumType type) {
+    if (type == CertificateUseEnumType::CentralSystemRootCertificate) {
+        return this->isCentralSystemRootCertificateInstalled();
+    } else {
+        return this->isManufacturerRootCertificateInstalled();
+    }
 }
 
 boost::filesystem::path PkiHandler::getCertsPath() {
@@ -253,29 +289,43 @@ boost::filesystem::path PkiHandler::getFile(boost::filesystem::path file_name) {
     return this->getCertsPath() / file_name;
 }
 
-std::vector<std::shared_ptr<X509Certificate>> PkiHandler::get_ca_certificates(CertificateUseEnumType type) {
-    // FIXME(piet) iterate over directory and collect all ca files depending on the type
-    std::vector<std::shared_ptr<X509Certificate>> ca_certificates;
-    if (type == CertificateUseEnumType::CentralSystemRootCertificate &&
-        boost::filesystem::exists(this->getCertsPath() / CS_ROOT_CA_FILE)) {
-        ca_certificates.push_back(load_from_file(this->getCertsPath() / CS_ROOT_CA_FILE));
-    } else if (type == CertificateUseEnumType::ManufacturerRootCertificate &&
-               boost::filesystem::exists(this->getCertsPath() / MF_ROOT_CA_FILE)) {
-        ca_certificates.push_back(load_from_file(this->getCertsPath() / MF_ROOT_CA_FILE));
+std::shared_ptr<X509Certificate> PkiHandler::getClientCertificate() {
+    std::shared_ptr<X509Certificate> cert = nullptr;
+    int validIn = INT_MIN;
+    for (const auto& dirEntry : boost::filesystem::recursive_directory_iterator(this->getCertsPath())) {
+        if (dirEntry.path().string().find(CLIENT_SIDE_CERTIFICATE_FILE.c_str())) {
+            std::shared_ptr<X509Certificate> c = loadFromFile(dirEntry.path());
+            if (c->validIn < 0 && c->validIn > validIn) {
+                cert = c;
+            }
+        }
     }
-    return ca_certificates;
+    return cert;
 }
 
-std::vector<std::shared_ptr<X509Certificate>> PkiHandler::get_ca_certificates() {
+std::vector<std::shared_ptr<X509Certificate>> PkiHandler::getCaCertificates(CertificateUseEnumType type) {
+    // FIXME(piet) iterate over directory and collect all ca files depending on the type
+    std::vector<std::shared_ptr<X509Certificate>> caCertificates;
+    if (type == CertificateUseEnumType::CentralSystemRootCertificate &&
+        this->isCentralSystemRootCertificateInstalled()) {
+        caCertificates.push_back(loadFromFile(this->getCertsPath() / CS_ROOT_CA_FILE));
+    } else if (type == CertificateUseEnumType::ManufacturerRootCertificate &&
+               this->isManufacturerRootCertificateInstalled()) {
+        caCertificates.push_back(loadFromFile(this->getCertsPath() / MF_ROOT_CA_FILE));
+    }
+    return caCertificates;
+}
+
+std::vector<std::shared_ptr<X509Certificate>> PkiHandler::getCaCertificates() {
     // FIXME(piet) make this dynamic
-    std::vector<std::shared_ptr<X509Certificate>> ca_certificates;
-    if (boost::filesystem::exists(this->getCertsPath() / CS_ROOT_CA_FILE)) {
-        ca_certificates.push_back(load_from_file(this->getCertsPath() / CS_ROOT_CA_FILE));
+    std::vector<std::shared_ptr<X509Certificate>> caCertificates;
+    if (this->isCentralSystemRootCertificateInstalled()) {
+        caCertificates.push_back(loadFromFile(this->getCertsPath() / CS_ROOT_CA_FILE));
     }
-    if (boost::filesystem::exists(this->getCertsPath() / MF_ROOT_CA_FILE)) {
-        ca_certificates.push_back(load_from_file(this->getCertsPath() / MF_ROOT_CA_FILE));
+    if (this->isManufacturerRootCertificateInstalled()) {
+        caCertificates.push_back(loadFromFile(this->getCertsPath() / MF_ROOT_CA_FILE));
     }
-    return ca_certificates;
+    return caCertificates;
 }
 
 boost::optional<std::vector<CertificateHashDataType>>
@@ -283,13 +333,13 @@ PkiHandler::getRootCertificateHashData(CertificateUseEnumType type) {
     boost::optional<std::vector<CertificateHashDataType>> certificate_hash_data_opt = boost::none;
     std::vector<CertificateHashDataType> certificate_hash_data_vec;
 
-    std::vector<std::shared_ptr<X509Certificate>> ca_certificates = this->get_ca_certificates(type);
+    std::vector<std::shared_ptr<X509Certificate>> caCertificates = this->getCaCertificates(type);
 
-    for (std::shared_ptr<X509Certificate> cert : ca_certificates) {
+    for (std::shared_ptr<X509Certificate> cert : caCertificates) {
         CertificateHashDataType certificate_hash_data;
-        std::string issuer_name_hash = this->get_issuer_name_hash(cert);
-        std::string issuer_key_hash = this->get_issuer_key_hash(cert);
-        std::string serial_number = this->get_serial(cert);
+        std::string issuer_name_hash = this->getIssuerNameHash(cert);
+        std::string issuer_key_hash = this->getIssuerKeyHash(cert);
+        std::string serial_number = this->getSerial(cert);
         certificate_hash_data.hashAlgorithm = HashAlgorithmEnumType::SHA256;
         certificate_hash_data.issuerNameHash = issuer_name_hash;
         certificate_hash_data.issuerKeyHash = issuer_key_hash;
@@ -297,21 +347,21 @@ PkiHandler::getRootCertificateHashData(CertificateUseEnumType type) {
         certificate_hash_data_vec.push_back(certificate_hash_data);
     }
 
-    if (!ca_certificates.empty()) {
+    if (!caCertificates.empty()) {
         certificate_hash_data_opt.emplace(certificate_hash_data_vec);
     }
 
     return certificate_hash_data_opt;
 }
 
-DeleteCertificateStatusEnumType PkiHandler::delete_certificate(CertificateHashDataType certificate_hash_data) {
-    std::vector<std::shared_ptr<X509Certificate>> ca_certificates = this->get_ca_certificates();
+DeleteCertificateStatusEnumType PkiHandler::deleteCertificate(CertificateHashDataType certificate_hash_data) {
+    std::vector<std::shared_ptr<X509Certificate>> caCertificates = this->getCaCertificates();
     DeleteCertificateStatusEnumType status = DeleteCertificateStatusEnumType::NotFound;
 
-    for (std::shared_ptr<X509Certificate> cert : ca_certificates) {
-        std::string issuer_name_hash = this->get_issuer_name_hash(cert);
-        std::string isser_key_hash = this->get_issuer_key_hash(cert);
-        std::string serial = this->get_serial(cert);
+    for (std::shared_ptr<X509Certificate> cert : caCertificates) {
+        std::string issuer_name_hash = this->getIssuerNameHash(cert);
+        std::string isser_key_hash = this->getIssuerKeyHash(cert);
+        std::string serial = this->getSerial(cert);
         if (issuer_name_hash == certificate_hash_data.issuerNameHash.get() &&
             isser_key_hash == certificate_hash_data.issuerKeyHash.get() &&
             serial == certificate_hash_data.serialNumber.get()) {
@@ -326,27 +376,34 @@ DeleteCertificateStatusEnumType PkiHandler::delete_certificate(CertificateHashDa
     return status;
 }
 
-InstallCertificateStatusEnumType
-PkiHandler::install_certificate(InstallCertificateRequest msg, boost::optional<int32_t> certificate_store_max_length,
-                                boost::optional<bool> additional_root_certificate_check) {
+InstallCertificateStatusEnumType PkiHandler::installCertificate(InstallCertificateRequest msg,
+                                                                boost::optional<int32_t> certificateStoreMaxLength,
+                                                                boost::optional<bool> additionalRootCertificateCheck) {
     InstallCertificateStatusEnumType status = InstallCertificateStatusEnumType::Rejected;
 
-    std::vector<std::shared_ptr<X509Certificate>> ca_certificates = this->get_ca_certificates();
-    if (certificate_store_max_length != boost::none && ca_certificates.size() >= certificate_store_max_length.get()) {
+    std::vector<std::shared_ptr<X509Certificate>> caCertificates = this->getCaCertificates();
+    if (certificateStoreMaxLength != boost::none && caCertificates.size() >= certificateStoreMaxLength.get()) {
         return status;
     }
 
-    std::shared_ptr<X509Certificate> root_cert = this->getRootCertificate(msg.certificateType);
-    std::shared_ptr<X509Certificate> cert = load_from_string(msg.certificate.get());
-    if (this->validateSignature(root_cert, cert)) {
-        cert->path = root_cert->path;
-        if (cert->write()) {
+    std::shared_ptr<X509Certificate> cert = loadFromString(msg.certificate.get());
+    if (this->isRootCertificateInstalled(msg.certificateType)) {
+        std::shared_ptr<X509Certificate> root_cert = this->getRootCertificate(msg.certificateType);
+        if (this->verifySignature(root_cert, cert)) {
             status = InstallCertificateStatusEnumType::Accepted;
-            std::rename(CS_ROOT_CA_FILE.c_str(), (this->getCertsPath() / CS_ROOT_CA_FILE_BACKUP_FILE).c_str());
+            cert->path = root_cert->path;
         } else {
-            status = InstallCertificateStatusEnumType::Failed;
+            status = InstallCertificateStatusEnumType::Rejected;
         }
     }
+
+    if (status == InstallCertificateStatusEnumType::Accepted && cert->write()) {
+        status = InstallCertificateStatusEnumType::Accepted;
+        std::rename(CS_ROOT_CA_FILE.c_str(), (this->getCertsPath() / CS_ROOT_CA_FILE_BACKUP_FILE).c_str());
+    } else {
+        status = InstallCertificateStatusEnumType::Failed;
+    }
+
     return status;
 }
 
@@ -354,7 +411,12 @@ void PkiHandler::removeFallbackCA() {
     std::remove(CS_ROOT_CA_FILE_BACKUP_FILE.c_str());
 }
 
-std::string PkiHandler::get_issuer_name_hash(std::shared_ptr<X509Certificate> cert) {
+int PkiHandler::validIn(const std::string certificate) {
+    std::shared_ptr<X509Certificate> cert = loadFromString(certificate);
+    return X509_cmp_current_time(X509_get_notBefore(cert->x509));
+}
+
+std::string PkiHandler::getIssuerNameHash(std::shared_ptr<X509Certificate> cert) {
     unsigned char md[SHA256_DIGEST_LENGTH];
     X509_NAME* name = X509_get_issuer_name(cert->x509);
     X509_NAME_digest(name, EVP_sha256(), md, NULL);
@@ -366,7 +428,7 @@ std::string PkiHandler::get_issuer_name_hash(std::shared_ptr<X509Certificate> ce
     return str;
 }
 
-std::string PkiHandler::get_serial(std::shared_ptr<X509Certificate> cert) {
+std::string PkiHandler::getSerial(std::shared_ptr<X509Certificate> cert) {
     ASN1_INTEGER* serial = X509_get_serialNumber(cert->x509);
     BIGNUM* bnser = ASN1_INTEGER_to_BN(serial, NULL);
     char* hex = BN_bn2hex(bnser);
@@ -375,7 +437,7 @@ std::string PkiHandler::get_serial(std::shared_ptr<X509Certificate> cert) {
     return str;
 }
 
-std::string PkiHandler::get_issuer_key_hash(std::shared_ptr<X509Certificate> cert) {
+std::string PkiHandler::getIssuerKeyHash(std::shared_ptr<X509Certificate> cert) {
     unsigned char tmphash[SHA256_DIGEST_LENGTH];
     X509_pubkey_digest(cert->x509, EVP_sha256(), tmphash, NULL);
     std::stringstream ss;

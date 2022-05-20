@@ -1528,20 +1528,30 @@ void ChargePoint::handleCertificateSignedRequest(Call<CertificateSignedRequest> 
     response.status = CertificateSignedStatusEnumType::Rejected;
 
     std::string certificateChain = call.msg.certificateChain;
+    std::shared_ptr<PkiHandler> pkiHandler = this->configuration->getPkiHandler();
 
-    if (this->configuration->getPkiHandler()->validateCertificate(certificateChain,
-                                                                  this->configuration->getChargeBoxSerialNumber())) {
+    if (pkiHandler->verifyCertificate(certificateChain, this->configuration->getChargeBoxSerialNumber())) {
         response.status = CertificateSignedStatusEnumType::Accepted;
+        // FIXME(piet): dont just override, store other one for at least one month according to spec
+        pkiHandler->writeClientCertificate(certificateChain);
     }
 
     CallResult<CertificateSignedResponse> call_result(response, call.uniqueId);
     this->send<CertificateSignedResponse>(call_result);
 
-    // reconnect with new certificate if valid
-    if (response.status == CertificateSignedStatusEnumType::Accepted) {
-        this->websocket->reconnect(std::error_code(), 1000);
-    } else {
+    if (response.status == CertificateSignedStatusEnumType::Rejected) {
         this->securityEventNotification(SecurityEvent::InvalidChargePointCertificate, "");
+    }
+
+    // reconnect with new certificate if valid and security profile is 3
+    // FIXME(piet): check date time of cert before reconnecting++
+    if (response.status == CertificateSignedStatusEnumType::Accepted &&
+        this->configuration->getSecurityProfile() == 3) {
+        if (pkiHandler->validIn(certificateChain) < 0) {
+            this->websocket->reconnect(std::error_code(), 1000);
+        } else {
+            this->websocket->reconnect(std::error_code(), pkiHandler->validIn(certificateChain));
+        }
     }
 }
 
@@ -1563,7 +1573,7 @@ void ChargePoint::handleGetInstalledCertificateIdsRequest(Call<GetInstalledCerti
 
 void ChargePoint::handleDeleteCertificateRequest(Call<DeleteCertificateRequest> call) {
     DeleteCertificateResponse response;
-    response.status = this->configuration->getPkiHandler()->delete_certificate(call.msg.certificateHashData);
+    response.status = this->configuration->getPkiHandler()->deleteCertificate(call.msg.certificateHashData);
 
     CallResult<DeleteCertificateResponse> call_result(response, call.uniqueId);
     this->send<DeleteCertificateResponse>(call_result);
@@ -1571,7 +1581,7 @@ void ChargePoint::handleDeleteCertificateRequest(Call<DeleteCertificateRequest> 
 
 void ChargePoint::handleInstallCertificateRequest(Call<InstallCertificateRequest> call) {
     InstallCertificateResponse response;
-    response.status = this->configuration->getPkiHandler()->install_certificate(
+    response.status = this->configuration->getPkiHandler()->installCertificate(
         call.msg, this->configuration->getCertificateStoreMaxLength(),
         this->configuration->getAdditionalRootCertificateCheck());
 

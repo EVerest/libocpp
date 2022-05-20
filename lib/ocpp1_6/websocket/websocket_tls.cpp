@@ -173,9 +173,12 @@ tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connect
         }
 
         if (security_profile == 3) {
-            SSL_CTX_use_certificate(
-                context->native_handle(),
-                load_from_file(this->configuration->getPkiHandler()->getFile(CLIENT_SIDE_CERTIFICATE_FILE))->x509);
+            std::shared_ptr<X509Certificate> cert = this->configuration->getPkiHandler()->getClientCertificate();
+            if (cert == nullptr) {
+                throw std::runtime_error(
+                    "Connecting with security profile 3 but no client side certificate is present or valid");
+            }
+            SSL_CTX_use_certificate(context->native_handle(), cert->x509);
         }
 
         context->set_verify_mode(boost::asio::ssl::verify_peer);
