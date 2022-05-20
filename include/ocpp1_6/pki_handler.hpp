@@ -48,61 +48,57 @@ struct X509Certificate {
     X509* x509;
     std::string str;
     CertificateType type;
+    int validIn; // seconds. If > 0 cert is not valid yet
+    int validTo; // seconds. If < 0 cert has expired
 
     X509Certificate(){};
-    X509Certificate(boost::filesystem::path path, X509* x509, std::string str) {
-        this->path = path;
-        this->x509 = x509;
-        this->str = str;
-    };
-
-    X509Certificate(boost::filesystem::path path, X509* x509, std::string str, CertificateType type) {
-        this->path = path;
-        this->x509 = x509;
-        this->str = str;
-        this->type = type;
-    };
-
+    X509Certificate(boost::filesystem::path path, X509* x509, std::string str);
+    X509Certificate(const boost::filesystem::path path, X509* x509, const std::string str, const CertificateType type);
     ~X509Certificate();
 
     bool write();
     bool write(const boost::filesystem::path& path);
 };
 
-std::shared_ptr<X509Certificate> load_from_file(const boost::filesystem::path& path);
-std::shared_ptr<X509Certificate> load_from_string(std::string& str);
+std::shared_ptr<X509Certificate> loadFromFile(const boost::filesystem::path& path);
+std::shared_ptr<X509Certificate> loadFromString(std::string& str);
 
-std::string read_file_to_string(const boost::filesystem::path& path);
+std::string readFileToString(const boost::filesystem::path& path);
 class PkiHandler {
 
 private:
     boost::filesystem::path maindir;
-    bool use_root_ca_fallback;
+    bool useRootCaFallback;
 
-    std::string get_issuer_name_hash(std::shared_ptr<X509Certificate> cert);
-    std::string get_serial(std::shared_ptr<X509Certificate> cert);
-    std::string get_issuer_key_hash(std::shared_ptr<X509Certificate> cert);
-    std::vector<std::shared_ptr<X509Certificate>> get_ca_certificates(CertificateUseEnumType type);
-    std::vector<std::shared_ptr<X509Certificate>> get_ca_certificates();
-    bool validateCertificateChain(std::shared_ptr<X509Certificate> root_ca, std::shared_ptr<X509Certificate> cert);
-    bool validateSignature(std::shared_ptr<X509Certificate> root_ca, std::shared_ptr<X509Certificate> new_root_ca);
+    std::string getIssuerNameHash(std::shared_ptr<X509Certificate> cert);
+    std::string getSerial(std::shared_ptr<X509Certificate> cert);
+    std::string getIssuerKeyHash(std::shared_ptr<X509Certificate> cert);
+    std::vector<std::shared_ptr<X509Certificate>> getCaCertificates(CertificateUseEnumType type);
+    std::vector<std::shared_ptr<X509Certificate>> getCaCertificates();
+    bool verifyCertificateChain(std::shared_ptr<X509Certificate> rootCA, std::shared_ptr<X509Certificate> cert);
+    bool verifySignature(std::shared_ptr<X509Certificate> rootCA, std::shared_ptr<X509Certificate> new_root_ca);
     std::shared_ptr<X509Certificate> getRootCertificate(CertificateUseEnumType type);
 
 public:
     PkiHandler(std::string maindir);
-    bool validateCertificate(const std::string& certificateChain, const std::string& charge_box_serial_number);
+    bool verifyCertificate(const std::string& certificateChain, const std::string& charge_box_serial_number);
+    void writeClientCertificate(const std::string certificate);
     std::string generateCsr(const char* szCountry, const char* szProvince, const char* szCity,
                             const char* szOrganization, const char* szCommon);
     bool isCentralSystemRootCertificateInstalled();
+    bool isManufacturerRootCertificateInstalled();
+    bool isRootCertificateInstalled(CertificateUseEnumType type);
     bool verifyFirmwareCertificate(const std::string& firmwareCertificate);
     boost::optional<std::vector<CertificateHashDataType>> getRootCertificateHashData(CertificateUseEnumType type);
-    DeleteCertificateStatusEnumType delete_certificate(CertificateHashDataType certificate_hash_data);
-    InstallCertificateStatusEnumType install_certificate(InstallCertificateRequest msg,
-                                                         boost::optional<int32_t> certificate_store_max_length,
-                                                         boost::optional<bool> additional_root_certificate_check);
+    DeleteCertificateStatusEnumType deleteCertificate(CertificateHashDataType certificate_hash_data);
+    InstallCertificateStatusEnumType installCertificate(InstallCertificateRequest msg,
+                                                        boost::optional<int32_t> certificateStoreMaxLength,
+                                                        boost::optional<bool> additionalRootCertificateCheck);
     boost::filesystem::path getCertsPath();
-    boost::filesystem::path getFile(boost::filesystem::path file_name);
+    boost::filesystem::path getFile(boost::filesystem::path fileName);
+    std::shared_ptr<X509Certificate> getClientCertificate();
     void removeFallbackCA();
+    int validIn(const std::string certificate);
 };
 
 } // namespace ocpp1_6
