@@ -235,7 +235,7 @@ void WebsocketTLS::connect_tls(int32_t security_profile) {
 void WebsocketTLS::on_open_tls(tls_client* c, websocketpp::connection_hdl hdl, int32_t security_profile) {
     EVLOG_info << "Connected to TLS websocket successfully. Executing connected callback";
     this->is_connected = true;
-    this->configuration->setSecurityProfile(2);
+    this->configuration->setSecurityProfile(security_profile);
     this->connected_callback();
 }
 void WebsocketTLS::on_message_tls(websocketpp::connection_hdl hdl, tls_client::message_ptr msg) {

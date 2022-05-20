@@ -40,8 +40,8 @@ std::shared_ptr<X509Certificate> loadFromFile(const boost::filesystem::path& pat
     BIO_puts(b.get(), file_str.c_str());
     X509* x509 = PEM_read_bio_X509(b.get(), NULL, NULL, NULL);
     std::shared_ptr<X509Certificate> cert = std::make_shared<X509Certificate>(path, x509, file_str);
-    cert->validIn = X509_cmp_current_time(X509_get_notBefore(x509));
-    cert->validTo = X509_cmp_current_time(X509_get_notAfter(x509));
+    cert->validIn = X509_cmp_current_time(X509_get_notBefore(cert->x509));
+    cert->validTo = X509_cmp_current_time(X509_get_notAfter(cert->x509));
 
     return cert;
 }
@@ -209,9 +209,9 @@ bool PkiHandler::verifyFirmwareCertificate(const std::string& firmwareCertificat
 std::shared_ptr<X509Certificate> PkiHandler::getRootCertificate(CertificateUseEnumType type) {
 
     if (type == CertificateUseEnumType::CentralSystemRootCertificate) {
-        return loadFromFile(CS_ROOT_CA_FILE);
+        return loadFromFile(this->getFile(CS_ROOT_CA_FILE));
     } else {
-        return loadFromFile(MF_ROOT_CA_FILE);
+        return loadFromFile(this->getFile(MF_ROOT_CA_FILE));
     }
 }
 
@@ -225,7 +225,7 @@ bool PkiHandler::verifyCertificate(const std::string& certificateChain, const st
     std::shared_ptr<X509Certificate> rootCert = loadFromFile(this->getCertsPath() / CS_ROOT_CA_FILE);
     std::shared_ptr<X509Certificate> certChain = loadFromString(certificateChain);
 
-    if (!this->verifyCertificateChain(rootCert, certChain)) {
+    if (certChain->x509 == NULL || !this->verifyCertificateChain(rootCert, certChain)) {
         return false;
     }
 
@@ -259,7 +259,10 @@ bool PkiHandler::verifyCertificate(const std::string& certificateChain, const st
 
 void PkiHandler::writeClientCertificate(const std::string certificate) {
     std::shared_ptr<X509Certificate> cert = loadFromString(certificate);
-    cert->path = this->getFile(CLIENT_SIDE_CERTIFICATE_FILE).append(DateTime().to_rfc3339());
+    std::string newPath =
+        CLIENT_SIDE_CERTIFICATE_FILE.string().substr(0, CLIENT_SIDE_CERTIFICATE_FILE.string().find_last_of(".")) +
+        DateTime().to_rfc3339() + ".pem";
+    cert->path = this->getFile(newPath);
     cert->write();
 }
 
@@ -285,7 +288,6 @@ boost::filesystem::path PkiHandler::getCertsPath() {
 
 boost::filesystem::path PkiHandler::getFile(boost::filesystem::path file_name) {
     boost::filesystem::path p = this->getCertsPath() / file_name;
-    EVLOG(debug) << "Filename: " << p.string();
     return this->getCertsPath() / file_name;
 }
 
@@ -293,7 +295,7 @@ std::shared_ptr<X509Certificate> PkiHandler::getClientCertificate() {
     std::shared_ptr<X509Certificate> cert = nullptr;
     int validIn = INT_MIN;
     for (const auto& dirEntry : boost::filesystem::recursive_directory_iterator(this->getCertsPath())) {
-        if (dirEntry.path().string().find(CLIENT_SIDE_CERTIFICATE_FILE.c_str())) {
+        if (dirEntry.path().string().find(CLIENT_SIDE_CERTIFICATE_FILE.c_str()) != std::string::npos) {
             std::shared_ptr<X509Certificate> c = loadFromFile(dirEntry.path());
             if (c->validIn < 0 && c->validIn > validIn) {
                 cert = c;
@@ -381,8 +383,8 @@ InstallCertificateStatusEnumType PkiHandler::installCertificate(InstallCertifica
                                                                 boost::optional<bool> additionalRootCertificateCheck) {
     InstallCertificateStatusEnumType status = InstallCertificateStatusEnumType::Rejected;
 
-    std::vector<std::shared_ptr<X509Certificate>> caCertificates = this->getCaCertificates();
-    if (certificateStoreMaxLength != boost::none && caCertificates.size() >= certificateStoreMaxLength.get()) {
+    if (certificateStoreMaxLength != boost::none &&
+        this->getCaCertificates().size() >= certificateStoreMaxLength.get()) {
         return status;
     }
 
@@ -395,11 +397,13 @@ InstallCertificateStatusEnumType PkiHandler::installCertificate(InstallCertifica
         } else {
             status = InstallCertificateStatusEnumType::Rejected;
         }
+    } else {
+        cert->path = this->getFile(CS_ROOT_CA_FILE);
+        status = InstallCertificateStatusEnumType::Accepted;
     }
 
     if (status == InstallCertificateStatusEnumType::Accepted && cert->write()) {
-        status = InstallCertificateStatusEnumType::Accepted;
-        std::rename(CS_ROOT_CA_FILE.c_str(), (this->getCertsPath() / CS_ROOT_CA_FILE_BACKUP_FILE).c_str());
+        std::rename(CS_ROOT_CA_FILE.c_str(), (this->getFile(CS_ROOT_CA_FILE_BACKUP_FILE)).c_str());
     } else {
         status = InstallCertificateStatusEnumType::Failed;
     }
@@ -408,7 +412,7 @@ InstallCertificateStatusEnumType PkiHandler::installCertificate(InstallCertifica
 }
 
 void PkiHandler::removeFallbackCA() {
-    std::remove(CS_ROOT_CA_FILE_BACKUP_FILE.c_str());
+    std::remove(this->getFile(CS_ROOT_CA_FILE_BACKUP_FILE).c_str());
 }
 
 int PkiHandler::validIn(const std::string certificate) {

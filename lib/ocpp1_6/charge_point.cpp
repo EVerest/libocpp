@@ -614,9 +614,11 @@ void ChargePoint::handle_message(const json& json_message, MessageType message_t
 
     case MessageType::GetLog:
         this->handleGetLogRequest(json_message);
+        break;
 
     case MessageType::SignedUpdateFirmware:
         this->handleSignedUpdateFirmware(json_message);
+        break;
 
     default:
         // TODO(kai): not implemented error?
@@ -1540,11 +1542,10 @@ void ChargePoint::handleCertificateSignedRequest(Call<CertificateSignedRequest> 
     this->send<CertificateSignedResponse>(call_result);
 
     if (response.status == CertificateSignedStatusEnumType::Rejected) {
-        this->securityEventNotification(SecurityEvent::InvalidChargePointCertificate, "");
+        this->securityEventNotification(SecurityEvent::InvalidChargePointCertificate, "techinfo");
     }
 
     // reconnect with new certificate if valid and security profile is 3
-    // FIXME(piet): check date time of cert before reconnecting++
     if (response.status == CertificateSignedStatusEnumType::Accepted &&
         this->configuration->getSecurityProfile() == 3) {
         if (pkiHandler->validIn(certificateChain) < 0) {
@@ -1624,13 +1625,13 @@ void ChargePoint::handleSignedUpdateFirmware(Call<SignedUpdateFirmwareRequest> c
     this->send<SignedUpdateFirmwareResponse>(call_result);
 
     if (response.status == UpdateFirmwareStatusEnumType::InvalidCertificate) {
-        this->securityEventNotification(SecurityEvent::InvalidFirmwareSigningCertificate, "");
+        this->securityEventNotification(SecurityEvent::InvalidFirmwareSigningCertificate, "tech info");
     }
 }
 
 void ChargePoint::securityEventNotification(const SecurityEvent& type, const std::string& tech_info) {
     SecurityEventNotificationRequest req;
-    req.type = type;
+    req.type = conversions::security_event_to_string(type);
     req.techInfo.emplace(tech_info);
     req.timestamp = ocpp1_6::DateTime();
 
