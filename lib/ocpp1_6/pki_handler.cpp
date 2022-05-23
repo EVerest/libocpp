@@ -65,6 +65,7 @@ bool X509Certificate::write() {
     std::ofstream fs(this->path);
     fs << this->str << std::endl;
     fs.close();
+    return true;
 }
 
 std::string PkiHandler::generateCsr(const char* szCountry, const char* szProvince, const char* szCity,
@@ -391,9 +392,10 @@ InstallCertificateStatusEnumType PkiHandler::installCertificate(InstallCertifica
     std::shared_ptr<X509Certificate> cert = loadFromString(msg.certificate.get());
     if (this->isRootCertificateInstalled(msg.certificateType)) {
         std::shared_ptr<X509Certificate> root_cert = this->getRootCertificate(msg.certificateType);
-        if (this->verifySignature(root_cert, cert)) {
+        if (this->verifySignature(root_cert, cert) && this->verifyCertificateChain(root_cert, cert)) {
             status = InstallCertificateStatusEnumType::Accepted;
             cert->path = root_cert->path;
+            std::rename(this->getFile(CS_ROOT_CA_FILE).c_str(), (this->getFile(CS_ROOT_CA_FILE_BACKUP_FILE)).c_str());
         } else {
             status = InstallCertificateStatusEnumType::Rejected;
         }
@@ -402,10 +404,11 @@ InstallCertificateStatusEnumType PkiHandler::installCertificate(InstallCertifica
         status = InstallCertificateStatusEnumType::Accepted;
     }
 
-    if (status == InstallCertificateStatusEnumType::Accepted && cert->write()) {
-        std::rename(CS_ROOT_CA_FILE.c_str(), (this->getFile(CS_ROOT_CA_FILE_BACKUP_FILE)).c_str());
-    } else {
-        status = InstallCertificateStatusEnumType::Failed;
+    if (status == InstallCertificateStatusEnumType::Accepted) {
+        if (!cert->write()) {
+            status = InstallCertificateStatusEnumType::Failed;
+            std::rename(this->getFile(CS_ROOT_CA_FILE).c_str(), (this->getFile(CS_ROOT_CA_FILE_BACKUP_FILE)).c_str());
+        }
     }
 
     return status;
