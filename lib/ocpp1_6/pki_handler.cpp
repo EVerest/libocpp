@@ -208,31 +208,6 @@ bool PkiHandler::verifyFirmwareCertificate(const std::string& firmwareCertificat
     }
 }
 
-bool PkiHandler::verifyFirmwareCertificate(const std::string& firmwareCertificate) {
-    std::shared_ptr<X509Certificate> cert = load_from_string(firmwareCertificate);
-    std::shared_ptr<X509Certificate> mf_root_ca = load_from_file(this->getFile(MF_ROOT_CA_FILE));
-
-    X509_STORE_ptr store_ptr(X509_STORE_new(), ::X509_STORE_free);
-    X509_STORE_CTX_ptr store_ctx_ptr(X509_STORE_CTX_new(), ::X509_STORE_CTX_free);
-
-    X509_STORE_add_cert(store_ptr.get(), mf_root_ca->x509);
-    X509_STORE_CTX_init(store_ctx_ptr.get(), store_ptr.get(), cert->x509, NULL);
-
-    int rc = 0;
-
-    // verifies the certificate chain based on ctx
-    rc = X509_verify_cert(store_ctx_ptr.get());
-    if (rc == 0) {
-        // TODO(piet): trigger InvalidChargepointCertificate security event
-        int ec = X509_STORE_CTX_get_error(store_ctx_ptr.get());
-        EVLOG(error) << "Could not verify certificate chain. Error code: " << ec
-                     << " human readable: " << X509_verify_cert_error_string(ec);
-        return false;
-    } else {
-        return true;
-    }
-}
-
 std::shared_ptr<X509Certificate> PkiHandler::getRootCertificate(CertificateUseEnumType type) {
 
     if (type == CertificateUseEnumType::CentralSystemRootCertificate) {
