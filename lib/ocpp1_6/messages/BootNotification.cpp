@@ -22,9 +22,10 @@ std::string BootNotificationRequest::get_type() const {
 
 void to_json(json& j, const BootNotificationRequest& k) {
     // the required parts of the message
-    j = json{{"chargePointVendor", k.chargePointVendor},
-             {"chargePointModel", k.chargePointModel},
-             {"chargeBoxSerialNumber", k.chargeBoxSerialNumber}};
+    j = json{
+        {"chargePointVendor", k.chargePointVendor},
+        {"chargePointModel", k.chargePointModel},
+    };
     // the optional parts of the message
     if (k.chargePointSerialNumber) {
         j["chargePointSerialNumber"] = k.chargePointSerialNumber.value();
