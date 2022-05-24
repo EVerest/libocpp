@@ -2176,12 +2176,13 @@ void ChargePoint::registerSwitchSecurityProfileCallback(const std::function<void
     this->switch_security_profile_callback = callback;
 }
 
-void ChargePoint::register_upload_logs_callback(const std::function<bool(GetLogRequest req)>& callback) {
+void ChargePoint::register_upload_logs_callback(const std::function<std::string(GetLogRequest req)>& callback) {
     this->upload_logs_callback = callback;
 }
 
 void ChargePoint::register_signed_update_firmware_request(
-    const std::function<bool(SignedUpdateFirmwareRequest req)>& callback) {
+    const std::function<void(SignedUpdateFirmwareRequest req)>& callback) {
+    this->signed_update_firmware_callback = callback;
 }
 
 } // namespace ocpp1_6

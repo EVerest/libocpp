@@ -121,7 +121,7 @@ private:
     std::function<CancelReservationStatus(int32_t reservationId)> cancel_reservation_callback;
     std::function<void(SignedUpdateFirmwareRequest req)> signed_update_firmware_callback;
     std::function<void()> switch_security_profile_callback;
-    std::function<bool(GetLogRequest msg)> upload_logs_callback;
+    std::function<std::string(GetLogRequest msg)> upload_logs_callback;
     std::function<ReservationStatus(int32_t reservation_id, int32_t connector, ocpp1_6::DateTime expiryDate,
                                     ocpp1_6::CiString20Type idTag, boost::optional<ocpp1_6::CiString20Type> parent_id)>
         reserve_now_callback;
@@ -202,7 +202,6 @@ private:
     void handleGetLogRequest(Call<GetLogRequest> call);
     void handleSignedUpdateFirmware(Call<SignedUpdateFirmwareRequest> call);
     void securityEventNotification(const SecurityEvent& type, const std::string& tech_info);
-    void logStatusNotification(UploadLogStatusEnumType status, int requestId);
     void switchSecurityProfile(int32_t new_security_profile);
     void registerSwitchSecurityProfileCallback(const std::function<void()>& callback);
 
@@ -289,6 +288,7 @@ public:
 
     void send_diagnostic_status_notification(DiagnosticsStatus status);
     void send_firmware_status_notification(FirmwareStatus status);
+    void logStatusNotification(UploadLogStatusEnumType status, int requestId);
 
     /// \brief registers a \p callback function that can be used to enable the evse
     void register_enable_evse_callback(const std::function<bool(int32_t connector)>& callback);
@@ -329,10 +329,10 @@ public:
     void register_update_firmware_callback(const std::function<void(std::string location)>& callback);
 
     /// registers a \p callback function that can be used to upload logfiles
-    void register_upload_logs_callback(const std::function<bool(GetLogRequest msg)>& callback);
+    void register_upload_logs_callback(const std::function<std::string(GetLogRequest req)>& callback);
 
     /// registers a \p callback function that can be used to trigger a signed firmware update
-    void register_signed_update_firmware_request(const std::function<bool(SignedUpdateFirmwareRequest req)>& callback);
+    void register_signed_update_firmware_request(const std::function<void(SignedUpdateFirmwareRequest req)>& callback);
 
     // FIXME: rework the following API functions, do we want to expose them?
     // insert plug

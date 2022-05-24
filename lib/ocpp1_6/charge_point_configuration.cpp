@@ -19,6 +19,8 @@ ChargePointConfiguration::ChargePointConfiguration(json config, std::string conf
     this->configs_path = configs_path;
     this->pki_handler = std::make_shared<PkiHandler>(configs_path);
 
+    EVLOG(critical) << config.dump(4);
+
     // validate config entries
     Schemas schemas = Schemas(schemas_path);
     auto patch = schemas.get_profile_validator()->validate(config);
