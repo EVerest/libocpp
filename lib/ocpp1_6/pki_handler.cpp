@@ -79,11 +79,12 @@ std::string PkiHandler::generateCsr(const char* szCountry, const char* szProvinc
     unsigned long e = RSA_F4;
 
     // csr req
+
     X509_REQ* x509_req = X509_REQ_new();
     EVP_KEY_ptr pKey(EVP_PKEY_new(), ::EVP_PKEY_free);
-    BIO_ptr out(BIO_new_file((this->getCertsPath() / CERTIFICATE_SIGNING_REQUEST_FILE).c_str(), "w"), ::BIO_free);
-    BIO_ptr pbkey(BIO_new_file((this->getCertsPath() / PUBLIC_KEY_FILE).c_str(), "w"), ::BIO_free);
-    BIO_ptr prkey(BIO_new_file((this->getCertsPath() / PRIVATE_KEY_FILE).c_str(), "w"), ::BIO_free);
+    BIO_ptr out(BIO_new_file(this->getFile(CERTIFICATE_SIGNING_REQUEST_FILE).c_str(), "w"), ::BIO_free);
+    BIO_ptr pbkey(BIO_new_file(this->getFile(PUBLIC_KEY_FILE).c_str(), "w"), ::BIO_free);
+    BIO_ptr prkey(BIO_new_file(this->getFile(PRIVATE_KEY_FILE).c_str(), "w"), ::BIO_free);
     BIO_ptr bio(BIO_new(BIO_s_mem()), ::BIO_free);
 
     // generate rsa key

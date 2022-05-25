@@ -2235,10 +2235,10 @@ std::string security_event_to_string(SecurityEvent e) {
     case SecurityEvent::InvalidTLSVersion:
         return "InvalidTLSVersion";
     case SecurityEvent::InvalidTLSCipherSuite:
-        return "InvalidTLSCipherSuite";    
+        return "InvalidTLSCipherSuite";
     }
 
-    throw std::out_of_range("No known string conversion for provided enum of type UpdateFirmwareStatusEnumType");
+    throw std::out_of_range("No known string conversion for provided enum of type SecurityEvent");
 }
 
 SecurityEvent string_to_security_event(const std::string& s) {
@@ -2296,8 +2296,7 @@ SecurityEvent string_to_security_event(const std::string& s) {
     if (s == "InvalidTLSCipherSuite") {
         return SecurityEvent::InvalidTLSCipherSuite;
     }
-    throw std::out_of_range("Provided string " + s +
-                            " could not be converted to enum of type SecurityEvent");
+    throw std::out_of_range("Provided string " + s + " could not be converted to enum of type SecurityEvent");
 }
 } // namespace conversions
 

@@ -129,18 +129,6 @@ std::string WebsocketTLS::get_hostname(std::string uri) {
     return hostname_with_port;
 }
 
-// TLS
-bool WebsocketTLS::verify_certificate(std::string hostname, bool preverified,
-                                      boost::asio::ssl::verify_context& context) {
-
-    // FIXME(kai): this does not verify anything at the moment!
-
-    EVLOG(debug) << "Hostname: " << hostname;
-    EVLOG(debug) << "Preverified: " << preverified;
-    EVLOG(critical) << "Faking certificate verification, always returning true";
-
-    return true;
-}
 tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connection_hdl hdl, int32_t security_profile) {
     tls_context context = websocketpp::lib::make_shared<boost::asio::ssl::context>(boost::asio::ssl::context::sslv23);
 
@@ -181,11 +169,10 @@ tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connect
         }
 
         context->set_verify_mode(boost::asio::ssl::verify_peer);
-        rc = SSL_CTX_load_verify_locations(context->native_handle(),
-                                           this->configuration->getPkiHandler()->getFile(CS_ROOT_CA_FILE).c_str(),
-                                           this->configuration->getPkiHandler()->getCertsPath().c_str());
+        rc = SSL_CTX_load_verify_locations(
+            context->native_handle(), this->configuration->getPkiHandler()->getFile(CS_ROOT_CA_FILE).c_str(), NULL);
         if (rc != 1) {
-            EVLOG(critical) << "Could not load CA verify locations";
+            EVLOG(critical) << "Could not load CA verify locations, error: " << ERR_error_string(ERR_get_error(), NULL);
             throw std::runtime_error("Could not load CA verify locations");
         }
 
