@@ -45,6 +45,7 @@
 #include <ocpp1_6/messages/SecurityEventNotification.hpp>
 #include <ocpp1_6/messages/SetChargingProfile.hpp>
 #include <ocpp1_6/messages/SignCertificate.hpp>
+#include <ocpp1_6/messages/SignedFirmwareStatusNotification.hpp>
 #include <ocpp1_6/messages/SignedUpdateFirmware.hpp>
 #include <ocpp1_6/messages/StartTransaction.hpp>
 #include <ocpp1_6/messages/StatusNotification.hpp>
@@ -88,6 +89,8 @@ private:
     std::map<int32_t, std::map<int32_t, ChargingProfile>> tx_default_profiles;
     std::mutex tx_default_profiles_mutex;
     std::map<MessageId, std::thread> sign_thread;
+    std::map<MessageId, std::thread> security_event_thread;
+    
 
     std::unique_ptr<Websocket> websocket;
     boost::shared_ptr<boost::asio::io_service::work> work;
@@ -289,6 +292,7 @@ public:
     void send_diagnostic_status_notification(DiagnosticsStatus status);
     void send_firmware_status_notification(FirmwareStatus status);
     void logStatusNotification(UploadLogStatusEnumType status, int requestId);
+    void signedFirmwareUpdateStatusNotification(FirmwareStatusEnumType status, int requestId);
 
     /// \brief registers a \p callback function that can be used to enable the evse
     void register_enable_evse_callback(const std::function<bool(int32_t connector)>& callback);
@@ -333,6 +337,9 @@ public:
 
     /// registers a \p callback function that can be used to trigger a signed firmware update
     void register_signed_update_firmware_request(const std::function<void(SignedUpdateFirmwareRequest req)>& callback);
+
+    /// FIXME(piet) triggers a bootnotification and can be removed when firmware update mechanisms are implemented
+    void trigger_boot_notification();
 
     // FIXME: rework the following API functions, do we want to expose them?
     // insert plug

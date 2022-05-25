@@ -622,6 +622,7 @@ void ChargePoint::handle_message(const json& json_message, MessageType message_t
 
     case MessageType::SignedUpdateFirmware:
         this->handleSignedUpdateFirmware(json_message);
+        break;
 
     case MessageType::ReserveNow:
         this->handleReserveNowRequest(json_message);
@@ -1557,7 +1558,8 @@ void ChargePoint::handleCertificateSignedRequest(Call<CertificateSignedRequest> 
     this->send<CertificateSignedResponse>(call_result);
 
     if (response.status == CertificateSignedStatusEnumType::Rejected) {
-        this->securityEventNotification(SecurityEvent::InvalidChargePointCertificate, "techinfo");
+        this->security_event_thread[call.uniqueId] = std::thread(
+            [this]() { this->securityEventNotification(SecurityEvent::InvalidChargePointCertificate, "techinfo"); });
     }
 
     // reconnect with new certificate if valid and security profile is 3
@@ -1601,12 +1603,13 @@ void ChargePoint::handleInstallCertificateRequest(Call<InstallCertificateRequest
         call.msg, this->configuration->getCertificateStoreMaxLength(),
         this->configuration->getAdditionalRootCertificateCheck());
 
-    if (response.status == InstallCertificateStatusEnumType::Accepted) {
-        // register fallback certificate
-    }
-
     CallResult<InstallCertificateResponse> call_result(response, call.uniqueId);
     this->send<InstallCertificateResponse>(call_result);
+
+    if (response.status == InstallCertificateStatusEnumType::Rejected) {
+        this->security_event_thread[call.uniqueId] = std::thread(
+            [this]() { this->securityEventNotification(SecurityEvent::InvalidCentralSystemCertificate, "techinfo"); });
+    }
 }
 
 void ChargePoint::handleGetLogRequest(Call<GetLogRequest> call) {
@@ -1628,11 +1631,12 @@ void ChargePoint::handleSignedUpdateFirmware(Call<SignedUpdateFirmwareRequest> c
     if (this->configuration->getPkiHandler()->verifyFirmwareCertificate(call.msg.firmware.signingCertificate)) {
         if (this->signed_update_firmware_callback) {
             // FIXME(piet): respect call.msg.retrieveDate and only then trigger this callback
-            this->signed_update_firmware_callback(call.msg);
+            response.status = UpdateFirmwareStatusEnumType::Accepted;
         } else {
             response.status = UpdateFirmwareStatusEnumType::Rejected;
         }
     } else {
+        EVLOG(warning) << "Certificate of firmware update is not valid";
         response.status = UpdateFirmwareStatusEnumType::InvalidCertificate;
     }
 
@@ -1642,9 +1646,14 @@ void ChargePoint::handleSignedUpdateFirmware(Call<SignedUpdateFirmwareRequest> c
     if (response.status == UpdateFirmwareStatusEnumType::InvalidCertificate) {
         this->securityEventNotification(SecurityEvent::InvalidFirmwareSigningCertificate, "tech info");
     }
+
+    if (response.status == UpdateFirmwareStatusEnumType::Accepted) {
+        this->signed_update_firmware_callback(call.msg);
+    }
 }
 
 void ChargePoint::securityEventNotification(const SecurityEvent& type, const std::string& tech_info) {
+
     SecurityEventNotificationRequest req;
     req.type = conversions::security_event_to_string(type);
     req.techInfo.emplace(tech_info);
@@ -1661,6 +1670,16 @@ void ChargePoint::logStatusNotification(UploadLogStatusEnumType status, int requ
 
     Call<LogStatusNotificationRequest> call(req, this->message_queue->createMessageId());
     this->send<LogStatusNotificationRequest>(call);
+}
+
+void ChargePoint::signedFirmwareUpdateStatusNotification(FirmwareStatusEnumType status, int requestId) {
+    EVLOG(debug) << "Sending FirmwareUpdateStatusNotification";
+    SignedFirmwareStatusNotificationRequest req;
+    req.status = status;
+    req.requestId = requestId;
+
+    Call<SignedFirmwareStatusNotificationRequest> call(req, this->message_queue->createMessageId());
+    this->send<SignedFirmwareStatusNotificationRequest>(call);
 }
 
 void ChargePoint::handleReserveNowRequest(Call<ReserveNowRequest> call) {
@@ -2183,6 +2202,10 @@ void ChargePoint::register_upload_logs_callback(const std::function<std::string(
 void ChargePoint::register_signed_update_firmware_request(
     const std::function<void(SignedUpdateFirmwareRequest req)>& callback) {
     this->signed_update_firmware_callback = callback;
+}
+
+void ChargePoint::trigger_boot_notification() {
+    this->boot_notification();
 }
 
 } // namespace ocpp1_6
