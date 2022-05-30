@@ -33,8 +33,12 @@
 #include <ocpp1_6/messages/GetCompositeSchedule.hpp>
 #include <ocpp1_6/messages/GetConfiguration.hpp>
 #include <ocpp1_6/messages/GetDiagnostics.hpp>
+<<<<<<< HEAD
 #include <ocpp1_6/messages/GetInstalledCertificateIds.hpp>
 #include <ocpp1_6/messages/GetLog.hpp>
+=======
+#include <ocpp1_6/messages/GetLocalListVersion.hpp>
+>>>>>>> Added Local Auth List Management Profile
 #include <ocpp1_6/messages/Heartbeat.hpp>
 #include <ocpp1_6/messages/InstallCertificate.hpp>
 #include <ocpp1_6/messages/LogStatusNotification.hpp>
@@ -43,7 +47,11 @@
 #include <ocpp1_6/messages/RemoteStopTransaction.hpp>
 #include <ocpp1_6/messages/ReserveNow.hpp>
 #include <ocpp1_6/messages/Reset.hpp>
+<<<<<<< HEAD
 #include <ocpp1_6/messages/SecurityEventNotification.hpp>
+=======
+#include <ocpp1_6/messages/SendLocalList.hpp>
+>>>>>>> Added Local Auth List Management Profile
 #include <ocpp1_6/messages/SetChargingProfile.hpp>
 #include <ocpp1_6/messages/SignCertificate.hpp>
 #include <ocpp1_6/messages/SignedFirmwareStatusNotification.hpp>
@@ -208,6 +216,7 @@ private:
     void handleGetDiagnosticsRequest(Call<GetDiagnosticsRequest> call);
     void handleUpdateFirmwareRequest(Call<UpdateFirmwareRequest> call);
 
+<<<<<<< HEAD
     // Security profile
     void handleExtendedTriggerMessageRequest(Call<ExtendedTriggerMessageRequest> call);
     void handleCertificateSignedRequest(Call<CertificateSignedRequest> call);
@@ -219,6 +228,11 @@ private:
     void securityEventNotification(const SecurityEvent& type, const std::string& tech_info);
     void switchSecurityProfile(int32_t new_security_profile);
     void registerSwitchSecurityProfileCallback(const std::function<void()>& callback);
+=======
+    // Local Authorization List profile
+    void handleSendLocalListRequest(Call<SendLocalListRequest> call);
+    void handleGetLocalListVersionRequest(Call<GetLocalListVersionRequest> call);
+>>>>>>> Added Local Auth List Management Profile
 
 public:
     /// \brief Creates a ChargePoint object with the provided \p configuration

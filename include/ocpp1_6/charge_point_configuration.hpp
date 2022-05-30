@@ -293,6 +293,26 @@ public:
     void setSecurityProfile(int32_t security_profile);
     KeyValue getSecurityProfileKeyValue();
 
+    // Local Auth List Management Profile
+    bool getLocalAuthListEnabled();
+    void setLocalAuthListEnabled(bool local_auth_list_enabled);
+    KeyValue getLocalAuthListEnabledKeyValue();
+
+    // Local Auth List Management Profile
+    int32_t getLocalAuthListMaxLength();
+    KeyValue getLocalAuthListMaxLengthKeyValue();
+
+    // Local Auth List Management Profile
+    int32_t getSendLocalListMaxLength();
+    KeyValue getSendLocalListMaxLengthKeyValue();
+
+    int32_t getLocalListVersion();
+
+    bool updateLocalAuthorizationListVersion(int32_t list_version);
+    bool updateLocalAuthorizationList(std::vector<LocalAuthorizationList> local_authorization_list);
+    bool clearLocalAuthorizationList();
+    boost::optional<IdTagInfo> getLocalAuthorizationListEntry(CiString20Type idTag);
+
     boost::optional<KeyValue> get(CiString50Type key);
 
     std::vector<KeyValue> get_all_key_value();
