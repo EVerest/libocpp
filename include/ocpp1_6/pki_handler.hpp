@@ -19,12 +19,9 @@
 
 namespace ocpp1_6 {
 using BN_ptr = std::unique_ptr<BIGNUM, decltype(&::BN_free)>;
-using RSA_ptr = std::unique_ptr<RSA, decltype(&::RSA_free)>;
 using EVP_KEY_ptr = std::unique_ptr<EVP_PKEY, decltype(&::EVP_PKEY_free)>;
 using BIO_ptr = std::unique_ptr<BIO, decltype(&::BIO_free)>;
-using X509_REQ_ptr = std::unique_ptr<X509_REQ, decltype(&::X509_REQ_free)>;
 using X509_NAME_ptr = std::unique_ptr<X509_NAME, decltype(&::X509_NAME_free)>;
-using X509_ptr = std::unique_ptr<X509, decltype(&::X509_free)>;
 using X509_STORE_ptr = std::unique_ptr<X509_STORE, decltype(&::X509_STORE_free)>;
 using X509_STORE_CTX_ptr = std::unique_ptr<X509_STORE_CTX, decltype(&::X509_STORE_CTX_free)>;
 
@@ -71,12 +68,12 @@ private:
     bool useRootCaFallback;
 
     std::string getIssuerNameHash(std::shared_ptr<X509Certificate> cert);
-    std::string getSerial(std::shared_ptr<X509Certificate> cert);
+    std::string getSerialNumber(std::shared_ptr<X509Certificate> cert);
     std::string getIssuerKeyHash(std::shared_ptr<X509Certificate> cert);
     std::vector<std::shared_ptr<X509Certificate>> getCaCertificates(CertificateUseEnumType type);
     std::vector<std::shared_ptr<X509Certificate>> getCaCertificates();
     bool verifyCertificateChain(std::shared_ptr<X509Certificate> rootCA, std::shared_ptr<X509Certificate> cert);
-    bool verifySignature(std::shared_ptr<X509Certificate> rootCA, std::shared_ptr<X509Certificate> new_root_ca);
+    bool verifySignature(std::shared_ptr<X509Certificate> rootCA, std::shared_ptr<X509Certificate> newCA);
     std::shared_ptr<X509Certificate> getRootCertificate(CertificateUseEnumType type);
 
 public:
