@@ -29,12 +29,14 @@
 #include <ocpp1_6/messages/GetCompositeSchedule.hpp>
 #include <ocpp1_6/messages/GetConfiguration.hpp>
 #include <ocpp1_6/messages/GetDiagnostics.hpp>
+#include <ocpp1_6/messages/GetLocalListVersion.hpp>
 #include <ocpp1_6/messages/Heartbeat.hpp>
 #include <ocpp1_6/messages/MeterValues.hpp>
 #include <ocpp1_6/messages/RemoteStartTransaction.hpp>
 #include <ocpp1_6/messages/RemoteStopTransaction.hpp>
 #include <ocpp1_6/messages/ReserveNow.hpp>
 #include <ocpp1_6/messages/Reset.hpp>
+#include <ocpp1_6/messages/SendLocalList.hpp>
 #include <ocpp1_6/messages/SetChargingProfile.hpp>
 #include <ocpp1_6/messages/StartTransaction.hpp>
 #include <ocpp1_6/messages/StatusNotification.hpp>
@@ -171,6 +173,10 @@ private:
     // FirmwareManagement profile
     void handleGetDiagnosticsRequest(Call<GetDiagnosticsRequest> call);
     void handleUpdateFirmwareRequest(Call<UpdateFirmwareRequest> call);
+
+    // Local Authorization List profile
+    void handleSendLocalListRequest(Call<SendLocalListRequest> call);
+    void handleGetLocalListVersionRequest(Call<GetLocalListVersionRequest> call);
 
 public:
     /// \brief Creates a ChargePoint object with the provided \p configuration

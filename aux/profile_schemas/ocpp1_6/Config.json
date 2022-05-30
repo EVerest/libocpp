@@ -22,6 +22,10 @@
         "FirmwareManagement": {
             "type": "object",
             "$ref": "FirmwareManagement.json"
+        },
+        "LocalAuthListManagement": {
+            "type": "object",
+            "$ref": "LocalAuthListManagement.json"
         }
     },
     "additionalProperties": false

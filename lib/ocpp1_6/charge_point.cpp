@@ -580,6 +580,14 @@ void ChargePoint::handle_message(const json& json_message, MessageType message_t
         this->handleCancelReservationRequest(json_message);
         break;
 
+    case MessageType::SendLocalList:
+        this->handleSendLocalListRequest(json_message);
+        break;
+
+    case MessageType::GetLocalListVersion:
+        this->handleGetLocalListVersionRequest(json_message);
+        break;
+
     default:
         // TODO(kai): not implemented error?
         break;
@@ -1352,6 +1360,55 @@ void ChargePoint::handleCancelReservationRequest(Call<CancelReservationRequest> 
     }
     CallResult<CancelReservationResponse> call_result(response, call.uniqueId);
     this->send<CancelReservationResponse>(call_result);
+}
+
+void ChargePoint::handleSendLocalListRequest(Call<SendLocalListRequest> call) {
+    EVLOG(debug) << "Received SendLocalListRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
+
+    SendLocalListResponse response;
+    response.status = UpdateStatus::Failed;
+
+    if (call.msg.updateType == UpdateType::Full) {
+        if (call.msg.localAuthorizationList) {
+            auto local_auth_list = call.msg.localAuthorizationList.get();
+            this->configuration->clearLocalAuthorizationList();
+            this->configuration->updateLocalAuthorizationListVersion(call.msg.listVersion);
+            this->configuration->updateLocalAuthorizationList(local_auth_list);
+
+            response.status = UpdateStatus::Accepted;
+        }
+    } else if (call.msg.updateType == UpdateType::Differential) {
+        if (call.msg.localAuthorizationList) {
+            auto local_auth_list = call.msg.localAuthorizationList.get();
+            if (this->configuration->getLocalListVersion() < call.msg.listVersion) {
+                this->configuration->updateLocalAuthorizationListVersion(call.msg.listVersion);
+                this->configuration->updateLocalAuthorizationList(local_auth_list);
+
+                response.status = UpdateStatus::Accepted;
+            } else {
+                response.status = UpdateStatus::VersionMismatch;
+            }
+        }
+    }
+
+    CallResult<SendLocalListResponse> call_result(response, call.uniqueId);
+    this->send<SendLocalListResponse>(call_result);
+}
+
+void ChargePoint::handleGetLocalListVersionRequest(Call<GetLocalListVersionRequest> call) {
+    EVLOG(debug) << "Received GetLocalListVersionRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
+
+    GetLocalListVersionResponse response;
+    if (!this->configuration->getSupportedFeatureProfilesSet().count(
+            SupportedFeatureProfiles::LocalAuthListManagement)) {
+        // if Local Authorization List is not supported, report back -1 as list version
+        response.listVersion = -1;
+    } else {
+        response.listVersion = this->configuration->getLocalListVersion();
+    }
+
+    CallResult<GetLocalListVersionResponse> call_result(response, call.uniqueId);
+    this->send<GetLocalListVersionResponse>(call_result);
 }
 
 bool ChargePoint::allowed_to_send_message(json::array_t message) {
