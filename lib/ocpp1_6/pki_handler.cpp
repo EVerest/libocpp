@@ -62,7 +62,7 @@ std::shared_ptr<X509Certificate> loadFromString(const std::string& str) {
 }
 
 bool X509Certificate::write() {
-    std::ofstream fs(this->path);
+    std::ofstream fs(this->path.string());
     fs << this->str << std::endl;
     fs.close();
     return true;
@@ -133,8 +133,6 @@ std::string PkiHandler::generateCsr(const char* szCountry, const char* szProvinc
     assert(rc == 1);
 
     // 8. read csr from file
-    out.~unique_ptr();
-
     rc = PEM_write_bio_X509_REQ(bio.get(), x509_req);
     BUF_MEM* mem = NULL;
     BIO_get_mem_ptr(bio.get(), &mem);
@@ -170,7 +168,7 @@ bool PkiHandler::verifySignature(std::shared_ptr<X509Certificate> rootCA,
     int rc = X509_verify(new_root_ca->x509, X509_get_pubkey(rootCA->x509));
     if (rc == 0) {
         long ec = ERR_get_error();
-        EVLOG(error) << "Could not verify signature of new root CA: " << ERR_error_string(ec, NULL);
+        EVLOG(warning) << "Could not verify signature of certificate: " << ERR_error_string(ec, NULL);
         return false;
     } else {
         EVLOG(debug) << "Verified signature of certificate";

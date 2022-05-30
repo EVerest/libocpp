@@ -1530,8 +1530,7 @@ void ChargePoint::handleCertificateSignedRequest(Call<CertificateSignedRequest> 
     this->send<CertificateSignedResponse>(call_result);
 
     if (response.status == CertificateSignedStatusEnumType::Rejected) {
-        this->security_event_thread[call.uniqueId] = std::thread(
-            [this]() { this->securityEventNotification(SecurityEvent::InvalidChargePointCertificate, "techinfo"); });
+        this->securityEventNotification(SecurityEvent::InvalidChargePointCertificate, "techinfo");
     }
 
     // reconnect with new certificate if valid and security profile is 3
@@ -1579,8 +1578,7 @@ void ChargePoint::handleInstallCertificateRequest(Call<InstallCertificateRequest
     this->send<InstallCertificateResponse>(call_result);
 
     if (response.status == InstallCertificateStatusEnumType::Rejected) {
-        this->security_event_thread[call.uniqueId] = std::thread(
-            [this]() { this->securityEventNotification(SecurityEvent::InvalidCentralSystemCertificate, "techinfo"); });
+        this->securityEventNotification(SecurityEvent::InvalidCentralSystemCertificate, "techinfo");
     }
 }
 
@@ -1652,6 +1650,10 @@ void ChargePoint::signedFirmwareUpdateStatusNotification(FirmwareStatusEnumType 
 
     Call<SignedFirmwareStatusNotificationRequest> call(req, this->message_queue->createMessageId());
     this->send<SignedFirmwareStatusNotificationRequest>(call);
+
+    if (status == FirmwareStatusEnumType::InvalidSignature) {
+        this->securityEventNotification(SecurityEvent::InvalidFirmwareSignature, "techinfo");
+    }
 }
 
 void ChargePoint::handleReserveNowRequest(Call<ReserveNowRequest> call) {

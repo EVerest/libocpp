@@ -89,8 +89,6 @@ private:
     std::map<int32_t, std::map<int32_t, ChargingProfile>> tx_default_profiles;
     std::mutex tx_default_profiles_mutex;
     std::map<MessageId, std::thread> sign_thread;
-    std::map<MessageId, std::thread> security_event_thread;
-    
 
     std::unique_ptr<Websocket> websocket;
     boost::shared_ptr<boost::asio::io_service::work> work;

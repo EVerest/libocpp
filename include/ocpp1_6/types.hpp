@@ -8,6 +8,8 @@
 #include <boost/optional.hpp>
 #include <nlohmann/json.hpp>
 
+#include <everest/logging.hpp>
+
 #include <date/date.h>
 #include <date/tz.h>
 #include <ocpp1_6/enums.hpp>
