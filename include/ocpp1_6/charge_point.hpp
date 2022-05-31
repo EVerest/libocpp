@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2022 Pionix GmbH and Contributors to EVerest
+#include <atomic>
 #include <chrono>
 #include <date/date.h>
 #include <date/tz.h>
@@ -105,6 +106,12 @@ private:
     DiagnosticsStatus diagnostics_status;
     FirmwareStatus firmware_status;
     UploadLogStatusEnumType log_status;
+    int log_status_request_id;
+
+    FirmwareStatusEnumType signed_firmware_status;
+    int signed_firmware_status_request_id;
+    bool signed_firmware_update_running;
+    std::mutex signed_firmware_update_mutex;
 
     // callbacks
     std::function<bool(int32_t connector)> enable_evse_callback;
@@ -338,6 +345,13 @@ public:
 
     /// FIXME(piet) triggers a bootnotification and can be removed when firmware update mechanisms are implemented
     void trigger_boot_notification();
+
+    std::atomic<bool> interrupt_log_upload;
+    std::condition_variable cv;
+    std::mutex log_upload_mutex;
+
+    bool is_signed_firmware_update_running();
+    void set_signed_firmware_update_running(bool b);
 
     // FIXME: rework the following API functions, do we want to expose them?
     // insert plug

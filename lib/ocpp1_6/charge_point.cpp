@@ -18,7 +18,9 @@ ChargePoint::ChargePoint(std::shared_ptr<ChargePointConfiguration> configuration
     diagnostics_status(DiagnosticsStatus::Idle),
     firmware_status(FirmwareStatus::Idle),
     log_status(UploadLogStatusEnumType::Idle),
-    switch_security_profile_callback(nullptr) {
+    switch_security_profile_callback(nullptr),
+    interrupt_log_upload(false),
+    signed_firmware_update_running(false) {
 
     this->configuration = configuration;
     this->connection_state = ChargePointConnectionState::Disconnected;
@@ -1399,7 +1401,6 @@ void ChargePoint::handleTriggerMessageRequest(Call<TriggerMessageRequest> call) 
             connector, this->get_latest_meter_value(connector, this->configuration->getMeterValuesSampledDataVector(),
                                                     ReadingContext::Trigger));
         break;
-
     case MessageTrigger::StatusNotification:
         this->status_notification(connector, ChargePointErrorCode::NoError, this->status->get_state(connector));
         break;
@@ -1454,14 +1455,19 @@ void ChargePoint::handleExtendedTriggerMessageRequest(Call<ExtendedTriggerMessag
     response.status = TriggerMessageStatusEnumType::Rejected;
     switch (call.msg.requestedMessage) {
     case MessageTriggerEnumType::BootNotification:
+        response.status = TriggerMessageStatusEnumType::Accepted;
         break;
     case MessageTriggerEnumType::FirmwareStatusNotification:
+        response.status = TriggerMessageStatusEnumType::Accepted;
         break;
     case MessageTriggerEnumType::Heartbeat:
+        response.status = TriggerMessageStatusEnumType::Accepted;
         break;
     case MessageTriggerEnumType::LogStatusNotification:
+        response.status = TriggerMessageStatusEnumType::Accepted;
         break;
     case MessageTriggerEnumType::MeterValues:
+        response.status = TriggerMessageStatusEnumType::Accepted;
         break;
     case MessageTriggerEnumType::SignChargePointCertificate:
         if (this->configuration->getCpoName() != boost::none) {
@@ -1471,6 +1477,7 @@ void ChargePoint::handleExtendedTriggerMessageRequest(Call<ExtendedTriggerMessag
         }
         break;
     case MessageTriggerEnumType::StatusNotification:
+        response.status = TriggerMessageStatusEnumType::Accepted;
         break;
     }
 
@@ -1491,19 +1498,28 @@ void ChargePoint::handleExtendedTriggerMessageRequest(Call<ExtendedTriggerMessag
 
     switch (call.msg.requestedMessage) {
     case MessageTriggerEnumType::BootNotification:
+        this->boot_notification();
         break;
     case MessageTriggerEnumType::FirmwareStatusNotification:
+        this->signedFirmwareUpdateStatusNotification(this->signed_firmware_status,
+                                                     this->signed_firmware_status_request_id);
         break;
     case MessageTriggerEnumType::Heartbeat:
+        this->heartbeat();
         break;
     case MessageTriggerEnumType::LogStatusNotification:
+        this->logStatusNotification(this->log_status, this->log_status_request_id);
         break;
     case MessageTriggerEnumType::MeterValues:
+        this->send_meter_value(
+            connector, this->get_latest_meter_value(connector, this->configuration->getMeterValuesSampledDataVector(),
+                                                    ReadingContext::Trigger));
         break;
     case MessageTriggerEnumType::SignChargePointCertificate:
         this->signCertificate();
         break;
     case MessageTriggerEnumType::StatusNotification:
+        this->status_notification(connector, ChargePointErrorCode::NoError, this->status->get_state(connector));
         break;
     }
 }
@@ -1615,10 +1631,13 @@ void ChargePoint::handleGetLogRequest(Call<GetLogRequest> call) {
         response.status = LogStatusEnumType::Accepted;
     } else {
         response.status = LogStatusEnumType::AcceptedCanceled;
-        // TODO(piet): Terminate upload logs thread and restart
+        this->interrupt_log_upload = true;
     }
 
     if (this->upload_logs_callback) {
+        // wait for current log upload to finish if running
+        std::unique_lock<std::mutex> lock(this->log_upload_mutex);
+        this->cv.wait(lock, [this]() { return !this->interrupt_log_upload.load(); });
         response.filename.emplace(this->upload_logs_callback(call.msg));
     }
 
@@ -1627,7 +1646,7 @@ void ChargePoint::handleGetLogRequest(Call<GetLogRequest> call) {
 }
 
 void ChargePoint::handleSignedUpdateFirmware(Call<SignedUpdateFirmwareRequest> call) {
-    EVLOG(debug) << "Received SignedUpdateFirmwareRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
+    EVLOG(critical) << "Received SignedUpdateFirmwareRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
     SignedUpdateFirmwareResponse response;
 
     if (this->configuration->getPkiHandler()->verifyFirmwareCertificate(call.msg.firmware.signingCertificate)) {
@@ -1642,15 +1661,25 @@ void ChargePoint::handleSignedUpdateFirmware(Call<SignedUpdateFirmwareRequest> c
         response.status = UpdateFirmwareStatusEnumType::InvalidCertificate;
     }
 
-    CallResult<SignedUpdateFirmwareResponse> call_result(response, call.uniqueId);
-    this->send<SignedUpdateFirmwareResponse>(call_result);
+    {
+        std::lock_guard<std::mutex> lock(this->signed_firmware_update_mutex);
 
-    if (response.status == UpdateFirmwareStatusEnumType::InvalidCertificate) {
-        this->securityEventNotification(SecurityEvent::InvalidFirmwareSigningCertificate, "tech info");
-    }
+        if (this->signed_firmware_update_running) {
+            EVLOG(debug) << "Rejecting signed firmware update request because other update is in progress";
+            response.status = UpdateFirmwareStatusEnumType::Rejected;
+        }
 
-    if (response.status == UpdateFirmwareStatusEnumType::Accepted) {
-        this->signed_update_firmware_callback(call.msg);
+        CallResult<SignedUpdateFirmwareResponse> call_result(response, call.uniqueId);
+        this->send<SignedUpdateFirmwareResponse>(call_result);
+
+        if (response.status == UpdateFirmwareStatusEnumType::InvalidCertificate) {
+            this->securityEventNotification(SecurityEvent::InvalidFirmwareSigningCertificate, "tech info");
+        }
+
+        if (response.status == UpdateFirmwareStatusEnumType::Accepted) {
+            this->signed_update_firmware_callback(call.msg);
+            this->signed_firmware_update_running = true;
+        }
     }
 }
 
@@ -1666,11 +1695,15 @@ void ChargePoint::securityEventNotification(const SecurityEvent& type, const std
 }
 
 void ChargePoint::logStatusNotification(UploadLogStatusEnumType status, int requestId) {
+
+    EVLOG(critical) << "Sending logStatusNotification with status: " << status << ", requestId: " << requestId;
+
     LogStatusNotificationRequest req;
     req.status = status;
     req.requestId = requestId;
 
     this->log_status = status;
+    this->log_status_request_id = requestId;
 
     Call<LogStatusNotificationRequest> call(req, this->message_queue->createMessageId());
     this->send<LogStatusNotificationRequest>(call);
@@ -1681,6 +1714,9 @@ void ChargePoint::signedFirmwareUpdateStatusNotification(FirmwareStatusEnumType 
     SignedFirmwareStatusNotificationRequest req;
     req.status = status;
     req.requestId = requestId;
+
+    this->signed_firmware_status = status;
+    this->signed_firmware_status_request_id = requestId;
 
     Call<SignedFirmwareStatusNotificationRequest> call(req, this->message_queue->createMessageId());
     this->send<SignedFirmwareStatusNotificationRequest>(call);
@@ -2214,6 +2250,14 @@ void ChargePoint::register_signed_update_firmware_request(
 
 void ChargePoint::trigger_boot_notification() {
     this->boot_notification();
+}
+
+bool ChargePoint::is_signed_firmware_update_running() {
+    return this->signed_firmware_update_running;
+}
+
+void ChargePoint::set_signed_firmware_update_running(bool b) {
+    this->signed_firmware_update_running = b;
 }
 
 } // namespace ocpp1_6

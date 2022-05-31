@@ -176,6 +176,9 @@ bool PkiHandler::verifySignature(std::shared_ptr<X509Certificate> rootCA, std::s
 
 bool PkiHandler::verifyFirmwareCertificate(const std::string& firmwareCertificate) {
     std::shared_ptr<X509Certificate> cert = loadFromString(firmwareCertificate);
+    if (cert->x509 == NULL) {
+        return false;
+    }
     if (!this->isManufacturerRootCertificateInstalled()) {
         EVLOG(warning) << "No manufacturer root certificate installed";
         return false;
@@ -396,7 +399,7 @@ InstallCertificateResult PkiHandler::installCertificate(InstallCertificateReques
 
     std::shared_ptr<X509Certificate> cert = loadFromString(msg.certificate.get());
 
-    if (cert == NULL) {
+    if (cert->x509 == NULL) {
         installCertificateResult = InstallCertificateResult::InvalidFormat;
     } else if (this->isRootCertificateInstalled(msg.certificateType) && additionalRootCertificateCheck) {
         std::shared_ptr<X509Certificate> root_cert = this->getRootCertificate(msg.certificateType);
