@@ -71,7 +71,7 @@ void DateTimeImpl::from_rfc3339(const std::string& timepoint_str) {
     }
 }
 
-std::chrono::time_point<date::utc_clock> DateTimeImpl::to_time_point() {
+std::chrono::time_point<date::utc_clock> DateTimeImpl::to_time_point() const {
     return this->timepoint;
 }
 
