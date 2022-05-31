@@ -2305,4 +2305,140 @@ std::ostream& operator<<(std::ostream& os, const SecurityEvent& security_event) 
     return os;
 }
 
+namespace conversions {
+std::string certificate_type_to_string(CertificateType e) {
+    switch (e) {
+    case CertificateType::CentralSystemRootCertificate:
+        return "CentralSystemRootCertificate";
+    case CertificateType::ClientCertificate:
+        return "ClientCertificate";
+    case CertificateType::ManufacturerRootCertificate:
+        return "ManufacturerRootCertificate";
+    }
+
+    throw std::out_of_range("No known string conversion for provided enum of type UpdateFirmwareStatusEnumType");
+}
+
+CertificateType string_to_certificate_type(const std::string& s) {
+    if (s == "CentralSystemRootCertificate") {
+        return CertificateType::CentralSystemRootCertificate;
+    }
+    if (s == "ClientCertificate") {
+        return CertificateType::ClientCertificate;
+    }
+    if (s == "ManufacturerRootCertificate") {
+        return CertificateType::ManufacturerRootCertificate;
+    }
+    throw std::out_of_range("Provided string " + s + " could not be converted to enum of type CertificateType");
+}
+} // namespace conversions
+
+std::ostream& operator<<(std::ostream& os, const CertificateType& certificate_type) {
+    os << conversions::certificate_type_to_string(certificate_type);
+    return os;
+}
+
+namespace conversions {
+std::string certificate_verification_result_to_string(CertificateVerificationResult e) {
+    switch (e) {
+    case CertificateVerificationResult::Expired:
+        return "Expired";
+    case CertificateVerificationResult::InvalidCertificateChain:
+        return "InvalidCertificateChain";
+    case CertificateVerificationResult::InvalidCommonName:
+        return "InvalidCommonName";
+    case CertificateVerificationResult::InvalidSignature:
+        return "InvalidSignature";
+    case CertificateVerificationResult::NoRootCertificateInstalled:
+        return "NoRootCertificateInstalled";
+    case CertificateVerificationResult::Valid:
+        return "Valid";
+    }
+
+    throw std::out_of_range("No known string conversion for provided enum of type UpdateFirmwareStatusEnumType");
+}
+
+CertificateVerificationResult string_to_certificate_verification_result(const std::string& s) {
+    if (s == "Expired") {
+        return CertificateVerificationResult::Expired;
+    }
+    if (s == "InvalidCertificateChain") {
+        return CertificateVerificationResult::InvalidCertificateChain;
+    }
+    if (s == "InvalidCommonName") {
+        return CertificateVerificationResult::InvalidCommonName;
+    }
+    if (s == "InvalidSignature") {
+        return CertificateVerificationResult::InvalidSignature;
+    }
+    if (s == "NoRootCertificateInstalled") {
+        return CertificateVerificationResult::NoRootCertificateInstalled;
+    }
+    if (s == "Valid") {
+        return CertificateVerificationResult::Valid;
+    }
+    throw std::out_of_range("Provided string " + s +
+                            " could not be converted to enum of type CertificateVerificationResult");
+}
+} // namespace conversions
+
+std::ostream& operator<<(std::ostream& os, const CertificateVerificationResult& certificate_verification_result) {
+    os << conversions::certificate_verification_result_to_string(certificate_verification_result);
+    return os;
+}
+
+namespace conversions {
+std::string install_certificate_result_to_string(InstallCertificateResult e) {
+    switch (e) {
+    case InstallCertificateResult::CertificateStoreMaxLengthExceeded:
+        return "CertificateStoreMaxLengthExceeded";
+    case InstallCertificateResult::InvalidCertificateChain:
+        return "InvalidCertificateChain";
+    case InstallCertificateResult::InvalidSignature:
+        return "InvalidSignature";
+    case InstallCertificateResult::InvalidFormat:
+        return "InvalidFormat";
+    case InstallCertificateResult::Ok:
+        return "Ok";
+    case InstallCertificateResult::Valid:
+        return "Valid";
+    case InstallCertificateResult::WriteError:
+        return "WriteError";
+    }
+
+    throw std::out_of_range("No known string conversion for provided enum of type UpdateFirmwareStatusEnumType");
+}
+
+InstallCertificateResult string_to_install_certificate_result(const std::string& s) {
+    if (s == "CertificateStoreMaxLengthExceeded") {
+        return InstallCertificateResult::CertificateStoreMaxLengthExceeded;
+    }
+    if (s == "InvalidCertificateChain") {
+        return InstallCertificateResult::InvalidCertificateChain;
+    }
+    if (s == "InvalidFormat") {
+        return InstallCertificateResult::InvalidFormat;
+    }
+    if (s == "InvalidSignature") {
+        return InstallCertificateResult::InvalidSignature;
+    }
+    if (s == "Ok") {
+        return InstallCertificateResult::Ok;
+    }
+    if (s == "Valid") {
+        return InstallCertificateResult::Valid;
+    }
+    if (s == "WriteError") {
+        return InstallCertificateResult::WriteError;
+    }
+    throw std::out_of_range("Provided string " + s +
+                            " could not be converted to enum of type CertificateVerificationResult");
+}
+} // namespace conversions
+
+std::ostream& operator<<(std::ostream& os, const InstallCertificateResult& install_certificate_result) {
+    os << conversions::install_certificate_result_to_string(install_certificate_result);
+    return os;
+}
+
 } // namespace ocpp1_6

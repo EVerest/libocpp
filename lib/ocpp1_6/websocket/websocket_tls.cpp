@@ -135,11 +135,11 @@ tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connect
     try {
         // FIXME(kai): choose reasonable defaults, they can probably be stricter than this set of options!
         // it is recommended to only accept TLSv1.2+
-        context->set_options(boost::asio::ssl::context::default_workarounds | //
-                             boost::asio::ssl::context::no_sslv2 |            //
-                             boost::asio::ssl::context::no_sslv3 |            //
-                             boost::asio::ssl::context::no_tlsv1 |            //
-                             boost::asio::ssl::context::no_tlsv1_1 |          //
+        context->set_options(boost::asio::ssl::context::default_workarounds |                                    //
+                             boost::asio::ssl::context::no_sslv2 |                                               //
+                             boost::asio::ssl::context::no_sslv3 |                                               //
+                             boost::asio::ssl::context::no_tlsv1 |                                               //
+                             boost::asio::ssl::context::no_tlsv1_1 | boost::asio::ssl::context::no_compression | //
                              boost::asio::ssl::context::single_dh_use);
 
         EVLOG_debug << "List of ciphers that will be accepted by this TLS connection: "
@@ -171,6 +171,7 @@ tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connect
         context->set_verify_mode(boost::asio::ssl::verify_peer);
         rc = SSL_CTX_load_verify_locations(
             context->native_handle(), this->configuration->getPkiHandler()->getFile(CS_ROOT_CA_FILE).c_str(), NULL);
+        rc = SSL_CTX_set_default_verify_paths(context->native_handle());
         if (rc != 1) {
             EVLOG_critical << "Could not load CA verify locations, error: " << ERR_error_string(ERR_get_error(), NULL);
             throw std::runtime_error("Could not load CA verify locations");
@@ -264,8 +265,9 @@ void WebsocketTLS::on_fail_tls(tls_client* c, websocketpp::connection_hdl hdl, b
     EVLOG_error << "Failed to connect to TLS websocket server "
                 << ", code: " << transport_ec.value() << ", reason: " << transport_ec.message()
                 << ", category: " << transport_ec.category().name();
-    long ec = ERR_get_error();
-    EVLOG_error << "Failed to connect to TLS websocket server, code: " << ERR_error_string(ec, NULL);
+    EVLOG_error << "Close code: " << con->get_local_close_code() << ", close reason: " << con->get_local_close_reason();
+
+    // TODO(piet): Trigger SecurityEvent in case InvalidCentralSystemCertificate
 
     // move fallback ca to /certs if it exists
     if (boost::filesystem::exists(CS_ROOT_CA_FILE_BACKUP_FILE)) {

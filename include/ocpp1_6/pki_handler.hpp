@@ -33,13 +33,6 @@ const boost::filesystem::path MF_ROOT_CA_FILE("MF_RootCA_RSA.pem");
 const boost::filesystem::path PUBLIC_KEY_FILE("CP_PUBLIC_KEY_RSA.pem");
 const boost::filesystem::path PRIVATE_KEY_FILE("CP_PRIVATE_KEY_RSA.pem");
 
-enum class CertificateType
-{
-    CentralSystemRootCertificate,
-    ManufacturerRootCertificate,
-    ClientCertificate
-};
-
 struct X509Certificate {
     boost::filesystem::path path;
     X509* x509;
@@ -78,7 +71,8 @@ private:
 
 public:
     PkiHandler(std::string maindir);
-    bool verifyCertificate(const std::string& certificateChain, const std::string& charge_box_serial_number);
+    CertificateVerificationResult verifyCertificate(const std::string& certificateChain,
+                                                    const std::string& charge_box_serial_number);
     void writeClientCertificate(const std::string certificate);
     std::string generateCsr(const char* szCountry, const char* szProvince, const char* szCity,
                             const char* szOrganization, const char* szCommon);
@@ -87,10 +81,11 @@ public:
     bool isRootCertificateInstalled(CertificateUseEnumType type);
     bool verifyFirmwareCertificate(const std::string& firmwareCertificate);
     boost::optional<std::vector<CertificateHashDataType>> getRootCertificateHashData(CertificateUseEnumType type);
-    DeleteCertificateStatusEnumType deleteCertificate(CertificateHashDataType certificate_hash_data);
-    InstallCertificateStatusEnumType installCertificate(InstallCertificateRequest msg,
-                                                        boost::optional<int32_t> certificateStoreMaxLength,
-                                                        boost::optional<bool> additionalRootCertificateCheck);
+    DeleteCertificateStatusEnumType deleteCertificate(CertificateHashDataType certificate_hash_data,
+                                                      int32_t security_profile);
+    InstallCertificateResult installCertificate(InstallCertificateRequest msg,
+                                                boost::optional<int32_t> certificateStoreMaxLength,
+                                                boost::optional<bool> additionalRootCertificateCheck);
     boost::filesystem::path getCertsPath();
     boost::filesystem::path getFile(boost::filesystem::path fileName);
     std::shared_ptr<X509Certificate> getClientCertificate();
