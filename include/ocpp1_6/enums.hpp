@@ -1225,6 +1225,79 @@ SecurityEvent string_to_security_event(const std::string& s);
 /// SecurityEvent written to
 std::ostream& operator<<(std::ostream& os, const SecurityEvent& security_event);
 
+enum class CertificateType
+{
+    CentralSystemRootCertificate,
+    ManufacturerRootCertificate,
+    ClientCertificate
+};
+
+namespace conversions {
+/// \brief Converts the given CertificateType \p e to human readable string
+/// \returns a string representation of the CertificateType
+std::string certificate_type_to_string(CertificateType e);
+
+/// \brief Converts the given std::string \p s to CertificateType
+/// \returns a CertificateType from a string representation
+CertificateType string_to_certificate_type(const std::string& s);
+} // namespace conversions
+
+/// \brief Writes the string representation of the given CertificateType \p
+/// certificate_type to the given output stream \p os \returns an output stream with the
+/// CertificateType written to
+std::ostream& operator<<(std::ostream& os, const CertificateType& certificate_type);
+
+enum class CertificateVerificationResult
+{
+    Expired,
+    InvalidSignature,
+    InvalidCertificateChain,
+    InvalidCommonName,
+    NoRootCertificateInstalled,
+    Valid
+};
+
+namespace conversions {
+/// \brief Converts the given CertificateVerificationResult \p e to human readable string
+/// \returns a string representation of the CertificateVerificationResult
+std::string certificate_verification_result_to_string(CertificateVerificationResult e);
+
+/// \brief Converts the given std::string \p s to CertificateVerificationResult
+/// \returns a CertificateVerificationResult from a string representation
+CertificateVerificationResult string_to_certificate_verification_result(const std::string& s);
+} // namespace conversions
+
+/// \brief Writes the string representation of the given CertificateVerificationResult \p
+/// certificate_verification_result to the given output stream \p os \returns an output stream with the
+/// CertificateVerificationResult written to
+std::ostream& operator<<(std::ostream& os, const CertificateVerificationResult& certificate_verification_result);
+
+enum class InstallCertificateResult
+{
+    InvalidSignature,
+    InvalidCertificateChain,
+    InvalidFormat,
+    Valid,
+    Ok,
+    CertificateStoreMaxLengthExceeded,
+    WriteError
+};
+
+namespace conversions {
+/// \brief Converts the given InstallCertificateResult \p e to human readable string
+/// \returns a string representation of the InstallCertificateResult
+std::string install_certificate_result_to_string(InstallCertificateResult e);
+
+/// \brief Converts the given std::string \p s to InstallCertificateResult
+/// \returns a InstallCertificateResult from a string representation
+InstallCertificateResult string_to_install_certificate_result(const std::string& s);
+} // namespace conversions
+
+/// \brief Writes the string representation of the given InstallCertificateResult \p
+/// install_certificate_result to the given output stream \p os \returns an output stream with the
+/// InstallCertificateResult written to
+std::ostream& operator<<(std::ostream& os, const InstallCertificateResult& install_certificate_result);
+
 } // namespace ocpp1_6
 
 #endif // OCPP1_6_ENUMS_HPP

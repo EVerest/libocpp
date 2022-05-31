@@ -88,7 +88,6 @@ private:
     std::mutex charge_point_max_profiles_mutex;
     std::map<int32_t, std::map<int32_t, ChargingProfile>> tx_default_profiles;
     std::mutex tx_default_profiles_mutex;
-    std::map<MessageId, std::thread> sign_thread;
 
     std::unique_ptr<Websocket> websocket;
     boost::shared_ptr<boost::asio::io_service::work> work;
@@ -105,6 +104,7 @@ private:
     std::thread reset_thread;
     DiagnosticsStatus diagnostics_status;
     FirmwareStatus firmware_status;
+    UploadLogStatusEnumType log_status;
 
     // callbacks
     std::function<bool(int32_t connector)> enable_evse_callback;
@@ -223,7 +223,7 @@ public:
     DataTransferResponse data_transfer(const CiString255Type& vendorId, const CiString50Type& messageId,
                                        const std::string& data);
 
-    SignCertificateResponse sign_certificate();
+    void signCertificate();
 
     /// registers a \p callback function that can be used to receive a arbitrary data transfer for the given \p vendorId
     /// and \p messageId

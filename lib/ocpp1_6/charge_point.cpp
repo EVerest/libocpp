@@ -17,6 +17,7 @@ ChargePoint::ChargePoint(std::shared_ptr<ChargePointConfiguration> configuration
     registration_status(RegistrationStatus::Pending),
     diagnostics_status(DiagnosticsStatus::Idle),
     firmware_status(FirmwareStatus::Idle),
+    log_status(UploadLogStatusEnumType::Idle),
     switch_security_profile_callback(nullptr) {
 
     this->configuration = configuration;
@@ -548,10 +549,6 @@ void ChargePoint::handle_message(const json& json_message, MessageType message_t
 
     case MessageType::Reset:
         this->handleResetRequest(json_message);
-        break;
-
-    case MessageType::SignCertificateResponse:
-        // handled by sign_certificate future
         break;
 
     case MessageType::StartTransactionResponse:
@@ -1476,14 +1473,14 @@ void ChargePoint::handleExtendedTriggerMessageRequest(Call<ExtendedTriggerMessag
     case MessageTriggerEnumType::MeterValues:
         break;
     case MessageTriggerEnumType::SignChargePointCertificate:
-        this->sign_thread[call.uniqueId] = std::thread([this]() { this->sign_certificate(); });
+        this->signCertificate();
         break;
     case MessageTriggerEnumType::StatusNotification:
         break;
     }
 }
 
-SignCertificateResponse ChargePoint::sign_certificate() {
+void ChargePoint::signCertificate() {
 
     SignCertificateRequest req;
 
@@ -1493,22 +1490,7 @@ SignCertificateResponse ChargePoint::sign_certificate() {
 
     req.csr = csr;
     Call<SignCertificateRequest> call(req, this->message_queue->createMessageId());
-    auto sign_certificate_future = this->send_async<SignCertificateRequest>(call);
-
-    auto enhanced_message = sign_certificate_future.get();
-
-    EVLOG(debug) << "Received SignCertificateResponse: " << call.msg << "\nwith messageId: " << call.uniqueId;
-
-    SignCertificateResponse sign_certificate_response;
-
-    if (enhanced_message.messageType == MessageType::SignCertificateResponse) {
-        CallResult<SignCertificateResponse> call_result = enhanced_message.message;
-        sign_certificate_response = call_result.msg;
-    }
-    if (enhanced_message.offline) {
-        sign_certificate_response.status = GenericStatusEnumType::Rejected;
-    }
-    return sign_certificate_response;
+    this->send<SignCertificateRequest>(call);
 }
 
 void ChargePoint::handleCertificateSignedRequest(Call<CertificateSignedRequest> call) {
@@ -1520,7 +1502,10 @@ void ChargePoint::handleCertificateSignedRequest(Call<CertificateSignedRequest> 
     std::string certificateChain = call.msg.certificateChain;
     std::shared_ptr<PkiHandler> pkiHandler = this->configuration->getPkiHandler();
 
-    if (pkiHandler->verifyCertificate(certificateChain, this->configuration->getChargeBoxSerialNumber())) {
+    CertificateVerificationResult certificateVerificationResult =
+        pkiHandler->verifyCertificate(certificateChain, this->configuration->getChargeBoxSerialNumber());
+
+    if (certificateVerificationResult == CertificateVerificationResult::Valid) {
         response.status = CertificateSignedStatusEnumType::Accepted;
         // FIXME(piet): dont just override, store other one for at least one month according to spec
         pkiHandler->writeClientCertificate(certificateChain);
@@ -1530,7 +1515,9 @@ void ChargePoint::handleCertificateSignedRequest(Call<CertificateSignedRequest> 
     this->send<CertificateSignedResponse>(call_result);
 
     if (response.status == CertificateSignedStatusEnumType::Rejected) {
-        this->securityEventNotification(SecurityEvent::InvalidChargePointCertificate, "techinfo");
+        this->securityEventNotification(
+            SecurityEvent::InvalidChargePointCertificate,
+            conversions::certificate_verification_result_to_string(certificateVerificationResult));
     }
 
     // reconnect with new certificate if valid and security profile is 3
@@ -1562,7 +1549,8 @@ void ChargePoint::handleGetInstalledCertificateIdsRequest(Call<GetInstalledCerti
 
 void ChargePoint::handleDeleteCertificateRequest(Call<DeleteCertificateRequest> call) {
     DeleteCertificateResponse response;
-    response.status = this->configuration->getPkiHandler()->deleteCertificate(call.msg.certificateHashData);
+    response.status = this->configuration->getPkiHandler()->deleteCertificate(
+        call.msg.certificateHashData, this->configuration->getSecurityProfile());
 
     CallResult<DeleteCertificateResponse> call_result(response, call.uniqueId);
     this->send<DeleteCertificateResponse>(call_result);
@@ -1570,21 +1558,37 @@ void ChargePoint::handleDeleteCertificateRequest(Call<DeleteCertificateRequest> 
 
 void ChargePoint::handleInstallCertificateRequest(Call<InstallCertificateRequest> call) {
     InstallCertificateResponse response;
-    response.status = this->configuration->getPkiHandler()->installCertificate(
+    response.status = InstallCertificateStatusEnumType::Rejected;
+
+    InstallCertificateResult installCertificateResult = this->configuration->getPkiHandler()->installCertificate(
         call.msg, this->configuration->getCertificateStoreMaxLength(),
         this->configuration->getAdditionalRootCertificateCheck());
+
+    if (installCertificateResult == InstallCertificateResult::Ok ||
+        installCertificateResult == InstallCertificateResult::Valid) {
+        response.status = InstallCertificateStatusEnumType::Accepted;
+    } else if (installCertificateResult == InstallCertificateResult::WriteError) {
+        response.status = InstallCertificateStatusEnumType::Failed;
+    }
 
     CallResult<InstallCertificateResponse> call_result(response, call.uniqueId);
     this->send<InstallCertificateResponse>(call_result);
 
     if (response.status == InstallCertificateStatusEnumType::Rejected) {
-        this->securityEventNotification(SecurityEvent::InvalidCentralSystemCertificate, "techinfo");
+        this->securityEventNotification(SecurityEvent::InvalidCentralSystemCertificate,
+                                        conversions::install_certificate_result_to_string(installCertificateResult));
     }
 }
 
 void ChargePoint::handleGetLogRequest(Call<GetLogRequest> call) {
     GetLogResponse response;
-    response.status = LogStatusEnumType::Accepted;
+
+    if (this->log_status == UploadLogStatusEnumType::Idle) {
+        response.status = LogStatusEnumType::Accepted;
+    } else {
+        response.status = LogStatusEnumType::AcceptedCanceled;
+        // TODO(piet): Terminate upload logs thread and restart
+    }
 
     if (this->upload_logs_callback) {
         response.filename.emplace(this->upload_logs_callback(call.msg));
@@ -1637,6 +1641,8 @@ void ChargePoint::logStatusNotification(UploadLogStatusEnumType status, int requ
     LogStatusNotificationRequest req;
     req.status = status;
     req.requestId = requestId;
+
+    this->log_status = status;
 
     Call<LogStatusNotificationRequest> call(req, this->message_queue->createMessageId());
     this->send<LogStatusNotificationRequest>(call);

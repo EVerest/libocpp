@@ -1404,6 +1404,8 @@ boost::optional<std::string> ChargePointConfiguration::getAuthorizationKey() {
 
 void ChargePointConfiguration::setAuthorizationKey(std::string authorization_key) {
 
+    // TODO(piet): SecurityLog entry
+
     std::string str;
     if (isHexNotation(authorization_key)) {
         str = hexToString(authorization_key);

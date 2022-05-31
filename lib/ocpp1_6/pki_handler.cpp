@@ -214,25 +214,25 @@ std::shared_ptr<X509Certificate> PkiHandler::getRootCertificate(CertificateUseEn
     }
 }
 
-bool PkiHandler::verifyCertificate(const std::string& certificateChain, const std::string& chargeBoxSerialNumber) {
+CertificateVerificationResult PkiHandler::verifyCertificate(const std::string& certificateChain,
+                                                            const std::string& chargeBoxSerialNumber) {
 
     if (!this->isCentralSystemRootCertificateInstalled()) {
         EVLOG(warning) << "Could not verify certificate because no Central System Root Certificate is installed";
-        return false;
+        return CertificateVerificationResult::NoRootCertificateInstalled;
     }
 
     std::shared_ptr<X509Certificate> rootCert = loadFromFile(this->getCertsPath() / CS_ROOT_CA_FILE);
     std::shared_ptr<X509Certificate> certChain = loadFromString(certificateChain);
 
     if (certChain->x509 == NULL || !this->verifyCertificateChain(rootCert, certChain)) {
-        return false;
+        return CertificateVerificationResult::InvalidCertificateChain;
     }
 
     // verifies the signature of certificate x using public key of rootCA
     if (X509_verify(certChain->x509, X509_get_pubkey(rootCert->x509)) == 0) {
-        // TODO(piet): trigger InvalidChargepointCertificate security event
         EVLOG(warning) << "Could not verify signature of certificate";
-        return false;
+        return CertificateVerificationResult::InvalidSignature;
     }
 
     // expiration check
@@ -241,19 +241,18 @@ bool PkiHandler::verifyCertificate(const std::string& certificateChain, const st
     }
 
     if (X509_cmp_current_time(X509_get_notAfter(certChain->x509)) <= 0) {
-        // TODO(piet): trigger InvalidChargepointCertificate security event
         EVLOG(warning) << "Certificate has expired." << std::endl;
-        return false;
+        return CertificateVerificationResult::Expired;
     }
 
     if (X509_check_host(certChain->x509, chargeBoxSerialNumber.c_str(), strlen(chargeBoxSerialNumber.c_str()), NULL,
                         NULL) == 0) {
         EVLOG(warning) << "Subject field CN of certificate is not equal to ChargeBoxSerialNumber: "
                        << chargeBoxSerialNumber;
-        return false;
+        return CertificateVerificationResult::InvalidCommonName;
     }
 
-    return true;
+    return CertificateVerificationResult::Valid;
 }
 
 void PkiHandler::writeClientCertificate(const std::string certificate) {
@@ -355,7 +354,8 @@ PkiHandler::getRootCertificateHashData(CertificateUseEnumType type) {
     return certificateHashDataOpt;
 }
 
-DeleteCertificateStatusEnumType PkiHandler::deleteCertificate(CertificateHashDataType certificate_hash_data) {
+DeleteCertificateStatusEnumType PkiHandler::deleteCertificate(CertificateHashDataType certificate_hash_data,
+                                                              int32_t security_profile) {
     std::vector<std::shared_ptr<X509Certificate>> caCertificates = this->getCaCertificates();
     DeleteCertificateStatusEnumType status = DeleteCertificateStatusEnumType::NotFound;
 
@@ -366,50 +366,62 @@ DeleteCertificateStatusEnumType PkiHandler::deleteCertificate(CertificateHashDat
         if (issuerNameHash == certificate_hash_data.issuerNameHash.get() &&
             issuerKeyHash == certificate_hash_data.issuerKeyHash.get() &&
             serial == certificate_hash_data.serialNumber.get()) {
-            bool success = boost::filesystem::remove(cert->path);
-            if (success) {
-                status = DeleteCertificateStatusEnumType::Accepted;
-            } else {
-                status = DeleteCertificateStatusEnumType::Failed;
+            // dont delete if only one root ca is installed and tls is in use
+            if (cert->type == CertificateType::CentralSystemRootCertificate &&
+                this->getCaCertificates(CertificateUseEnumType::CentralSystemRootCertificate).size() == 1 &&
+                security_profile >= 2) {
+                return DeleteCertificateStatusEnumType::Failed;
             }
+        }
+        bool success = boost::filesystem::remove(cert->path);
+        if (success) {
+            status = DeleteCertificateStatusEnumType::Accepted;
+        } else {
+            status = DeleteCertificateStatusEnumType::Failed;
         }
     }
     return status;
 }
 
-InstallCertificateStatusEnumType PkiHandler::installCertificate(InstallCertificateRequest msg,
-                                                                boost::optional<int32_t> certificateStoreMaxLength,
-                                                                boost::optional<bool> additionalRootCertificateCheck) {
-    InstallCertificateStatusEnumType status = InstallCertificateStatusEnumType::Rejected;
+InstallCertificateResult PkiHandler::installCertificate(InstallCertificateRequest msg,
+                                                        boost::optional<int32_t> certificateStoreMaxLength,
+                                                        boost::optional<bool> additionalRootCertificateCheck) {
+
+    InstallCertificateResult installCertificateResult = InstallCertificateResult::Valid;
 
     if (certificateStoreMaxLength != boost::none &&
         this->getCaCertificates().size() >= certificateStoreMaxLength.get()) {
-        return status;
+        return InstallCertificateResult::CertificateStoreMaxLengthExceeded;
     }
 
     std::shared_ptr<X509Certificate> cert = loadFromString(msg.certificate.get());
-    if (this->isRootCertificateInstalled(msg.certificateType)) {
+
+    if (cert == NULL) {
+        installCertificateResult = InstallCertificateResult::InvalidFormat;
+    } else if (this->isRootCertificateInstalled(msg.certificateType) && additionalRootCertificateCheck) {
         std::shared_ptr<X509Certificate> root_cert = this->getRootCertificate(msg.certificateType);
-        if (this->verifySignature(root_cert, cert) && this->verifyCertificateChain(root_cert, cert)) {
-            status = InstallCertificateStatusEnumType::Accepted;
+        if (!this->verifySignature(root_cert, cert)) {
+            installCertificateResult = InstallCertificateResult::InvalidSignature;
+        }
+        if (!this->verifyCertificateChain(root_cert, cert)) {
+            installCertificateResult = InstallCertificateResult::InvalidCertificateChain;
             cert->path = root_cert->path;
             std::rename(this->getFile(CS_ROOT_CA_FILE).c_str(), (this->getFile(CS_ROOT_CA_FILE_BACKUP_FILE)).c_str());
-        } else {
-            status = InstallCertificateStatusEnumType::Rejected;
         }
     } else {
         cert->path = this->getFile(CS_ROOT_CA_FILE);
-        status = InstallCertificateStatusEnumType::Accepted;
+        installCertificateResult = InstallCertificateResult::Ok;
     }
 
-    if (status == InstallCertificateStatusEnumType::Accepted) {
+    if (installCertificateResult == InstallCertificateResult::Ok ||
+        installCertificateResult == InstallCertificateResult::Valid) {
         if (!cert->write()) {
-            status = InstallCertificateStatusEnumType::Failed;
+            installCertificateResult = InstallCertificateResult::WriteError;
             std::rename(this->getFile(CS_ROOT_CA_FILE).c_str(), (this->getFile(CS_ROOT_CA_FILE_BACKUP_FILE)).c_str());
         }
     }
 
-    return status;
+    return installCertificateResult;
 }
 
 void PkiHandler::removeFallbackCA() {
