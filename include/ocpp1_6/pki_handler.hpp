@@ -24,6 +24,7 @@ using BIO_ptr = std::unique_ptr<BIO, decltype(&::BIO_free)>;
 using X509_NAME_ptr = std::unique_ptr<X509_NAME, decltype(&::X509_NAME_free)>;
 using X509_STORE_ptr = std::unique_ptr<X509_STORE, decltype(&::X509_STORE_free)>;
 using X509_STORE_CTX_ptr = std::unique_ptr<X509_STORE_CTX, decltype(&::X509_STORE_CTX_free)>;
+using ASN1_TIME_ptr = std::unique_ptr<ASN1_TIME, decltype(&ASN1_STRING_free)>;
 
 const boost::filesystem::path CLIENT_SIDE_CERTIFICATE_FILE("CP_RSA.pem");
 const boost::filesystem::path CERTIFICATE_SIGNING_REQUEST_FILE("CP_CSR.pem");
@@ -91,6 +92,7 @@ public:
     std::shared_ptr<X509Certificate> getClientCertificate();
     void removeFallbackCA();
     int validIn(const std::string certificate);
+    int getDaysUntilClientCertificateExpires();
 };
 
 } // namespace ocpp1_6

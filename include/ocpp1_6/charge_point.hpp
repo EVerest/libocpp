@@ -75,6 +75,8 @@ private:
     std::unique_ptr<Everest::SteadyTimer> heartbeat_timer;
     std::unique_ptr<Everest::SteadyTimer> boot_notification_timer;
     std::unique_ptr<Everest::SystemTimer> clock_aligned_meter_values_timer;
+    std::unique_ptr<Everest::SteadyTimer> signed_firmware_update_download_timer;
+    std::unique_ptr<Everest::SteadyTimer> signed_firmware_update_install_timer;
     std::chrono::time_point<date::utc_clock> clock_aligned_meter_values_time_point;
     std::map<int32_t, std::vector<MeterValue>> meter_values;
     std::mutex meter_values_mutex;
@@ -128,6 +130,9 @@ private:
         reserve_now_callback;
     std::function<CancelReservationStatus(int32_t reservationId)> cancel_reservation_callback;
     std::function<void(SignedUpdateFirmwareRequest req)> signed_update_firmware_callback;
+
+    std::function<void(SignedUpdateFirmwareRequest req)> signed_update_firmware_download_callback;
+    std::function<void(SignedUpdateFirmwareRequest req, boost::filesystem::path file_path)> signed_update_firmware_install_callback;
     std::function<void()> switch_security_profile_callback;
     std::function<std::string(GetLogRequest msg)> upload_logs_callback;
     std::function<ReservationStatus(int32_t reservation_id, int32_t connector, ocpp1_6::DateTime expiryDate,
@@ -340,8 +345,15 @@ public:
     /// registers a \p callback function that can be used to upload logfiles
     void register_upload_logs_callback(const std::function<std::string(GetLogRequest req)>& callback);
 
-    /// registers a \p callback function that can be used to trigger a signed firmware update
-    void register_signed_update_firmware_request(const std::function<void(SignedUpdateFirmwareRequest req)>& callback);
+    /// registers a \p callback function that can be used to trigger a signed firmware download process
+    void register_signed_update_firmware_download_callback(
+        const std::function<void(SignedUpdateFirmwareRequest req)>& callback);
+
+    /// registers a \p callback function that can be used to trigger a signed firmware install process
+    void register_signed_update_firmware_install_callback(
+        const std::function<void(SignedUpdateFirmwareRequest req, boost::filesystem::path file_path)>& callback);
+
+    void notify_signed_firmware_update_downloaded(SignedUpdateFirmwareRequest req, boost::filesystem::path file_path);
 
     /// FIXME(piet) triggers a bootnotification and can be removed when firmware update mechanisms are implemented
     void trigger_boot_notification();

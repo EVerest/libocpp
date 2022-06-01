@@ -38,6 +38,11 @@ ChargePoint::ChargePoint(std::shared_ptr<ChargePointConfiguration> configuration
     this->clock_aligned_meter_values_timer = std::make_unique<Everest::SystemTimer>(
         &this->io_service, [this]() { this->clock_aligned_meter_values_sample(); });
 
+    this->signed_firmware_update_download_timer =
+        std::make_unique<Everest::SteadyTimer>(&this->io_service, [this]() {});
+
+    this->signed_firmware_update_install_timer = std::make_unique<Everest::SteadyTimer>(&this->io_service, [this]() {});
+
     this->work = boost::make_shared<boost::asio::io_service::work>(this->io_service);
 
     this->io_service_thread = std::thread([this]() { this->io_service.run(); });
@@ -65,6 +70,11 @@ void ChargePoint::init_websocket(int32_t security_profile) {
     this->websocket->register_message_callback([this](const std::string& message) {
         this->message_callback(message); //
     });
+
+    if (security_profile == 3) {
+        EVLOG(critical) << "Registerung certificate timer";
+        this->websocket->register_sign_certificate_callback([this]() { this->signCertificate(); });
+    }
 }
 
 void ChargePoint::heartbeat() {
@@ -1650,12 +1660,7 @@ void ChargePoint::handleSignedUpdateFirmware(Call<SignedUpdateFirmwareRequest> c
     SignedUpdateFirmwareResponse response;
 
     if (this->configuration->getPkiHandler()->verifyFirmwareCertificate(call.msg.firmware.signingCertificate)) {
-        if (this->signed_update_firmware_callback) {
-            // FIXME(piet): respect call.msg.retrieveDate and only then trigger this callback
-            response.status = UpdateFirmwareStatusEnumType::Accepted;
-        } else {
-            response.status = UpdateFirmwareStatusEnumType::Rejected;
-        }
+        response.status = UpdateFirmwareStatusEnumType::Accepted;
     } else {
         EVLOG(warning) << "Certificate of firmware update is not valid";
         response.status = UpdateFirmwareStatusEnumType::InvalidCertificate;
@@ -1673,12 +1678,22 @@ void ChargePoint::handleSignedUpdateFirmware(Call<SignedUpdateFirmwareRequest> c
         this->send<SignedUpdateFirmwareResponse>(call_result);
 
         if (response.status == UpdateFirmwareStatusEnumType::InvalidCertificate) {
-            this->securityEventNotification(SecurityEvent::InvalidFirmwareSigningCertificate, "tech info");
+            this->securityEventNotification(SecurityEvent::InvalidFirmwareSigningCertificate,
+                                            "Certificate is invalid.");
         }
 
         if (response.status == UpdateFirmwareStatusEnumType::Accepted) {
-            this->signed_update_firmware_callback(call.msg);
             this->signed_firmware_update_running = true;
+            if (call.msg.firmware.retrieveDateTime.to_time_point() > date::utc_clock::now()) {
+                this->signed_firmware_update_download_timer->at(
+                    [this, call]() { this->signed_update_firmware_download_callback(call.msg); },
+                    call.msg.firmware.retrieveDateTime.to_time_point());
+                EVLOG(debug) << "DownloadScheduled for: " << call.msg.firmware.retrieveDateTime.to_rfc3339();
+                this->signedFirmwareUpdateStatusNotification(FirmwareStatusEnumType::DownloadScheduled,
+                                                             call.msg.requestId);
+            } else {
+                this->signed_update_firmware_download_callback(call.msg);
+            }
         }
     }
 }
@@ -2243,9 +2258,28 @@ void ChargePoint::register_upload_logs_callback(const std::function<std::string(
     this->upload_logs_callback = callback;
 }
 
-void ChargePoint::register_signed_update_firmware_request(
+void ChargePoint::register_signed_update_firmware_download_callback(
     const std::function<void(SignedUpdateFirmwareRequest req)>& callback) {
-    this->signed_update_firmware_callback = callback;
+    this->signed_update_firmware_download_callback = callback;
+}
+
+void ChargePoint::register_signed_update_firmware_install_callback(
+    const std::function<void(SignedUpdateFirmwareRequest req, boost::filesystem::path file_path)>& callback) {
+    this->signed_update_firmware_install_callback = callback;
+}
+
+void ChargePoint::notify_signed_firmware_update_downloaded(SignedUpdateFirmwareRequest req,
+                                                           boost::filesystem::path file_path) {
+    if (req.firmware.installDateTime != boost::none &&
+        req.firmware.installDateTime.value().to_time_point() > date::utc_clock::now()) {
+        this->signed_firmware_update_install_timer->at(
+            [this, req, file_path]() { this->signed_update_firmware_install_callback(req, file_path); },
+            req.firmware.installDateTime.value().to_time_point());
+        EVLOG(debug) << "InstallScheduled for: " << req.firmware.installDateTime.value().to_rfc3339();
+        this->signedFirmwareUpdateStatusNotification(ocpp1_6::FirmwareStatusEnumType::InstallScheduled, req.requestId);
+    } else {
+        this->signed_update_firmware_install_callback(req, file_path);
+    }
 }
 
 void ChargePoint::trigger_boot_notification() {

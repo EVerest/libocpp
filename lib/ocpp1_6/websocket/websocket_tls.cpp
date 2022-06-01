@@ -12,6 +12,7 @@ WebsocketTLS::WebsocketTLS(std::shared_ptr<ChargePointConfiguration> configurati
     this->reconnect_interval_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
                                       std::chrono::seconds(configuration->getWebsocketReconnectInterval()))
                                       .count();
+    this->client_certificate_timer = std::make_unique<Everest::SteadyTimer>();
 }
 
 bool WebsocketTLS::connect(int32_t security_profile) {
@@ -225,9 +226,22 @@ void WebsocketTLS::connect_tls(int32_t security_profile) {
     this->wss_client.connect(con);
 }
 void WebsocketTLS::on_open_tls(tls_client* c, websocketpp::connection_hdl hdl, int32_t security_profile) {
-    EVLOG_info << "Connected to TLS websocket successfully. Executing connected callback";
+    EVLOG_info << "Connected to TLS websocket successfully";
     this->is_connected = true;
     this->configuration->setSecurityProfile(security_profile);
+    if (security_profile == 3) {
+        this->client_certificate_timer->interval(
+            [this]() {
+                EVLOG_debug << "Checking expiry date of client certificate";
+                int daysLeft = this->configuration->getPkiHandler()->getDaysUntilClientCertificateExpires();
+                if (daysLeft < 30) {
+                    EVLOG_info << "Certificate is invalid in " << daysLeft
+                               << " days. Requesting new certificate with certificate signing request";
+                    this->sign_certificate_callback();
+                }
+            },
+            std::chrono::hours(24));
+    }
     this->connected_callback();
 }
 void WebsocketTLS::on_message_tls(websocketpp::connection_hdl hdl, tls_client::message_ptr msg) {

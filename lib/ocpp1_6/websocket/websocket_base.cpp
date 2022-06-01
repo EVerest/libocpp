@@ -33,6 +33,10 @@ void WebsocketBase::register_message_callback(const std::function<void(const std
     this->message_callback = callback;
 }
 
+void WebsocketBase::register_sign_certificate_callback(const std::function<void()>& callback) {
+    this->sign_certificate_callback = callback;
+}
+
 bool WebsocketBase::initialized() {
     if (this->shutting_down) {
         EVLOG_error << "Not properly initialized: websocket already shutdown.";
