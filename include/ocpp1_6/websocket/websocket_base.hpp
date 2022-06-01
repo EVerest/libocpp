@@ -26,6 +26,7 @@ protected:
     std::function<void()> connected_callback;
     std::function<void()> disconnected_callback;
     std::function<void(const std::string& message)> message_callback;
+    std::function<void()> sign_certificate_callback;
 
     websocketpp::lib::shared_ptr<websocketpp::lib::thread> websocket_thread;
     std::string uri;
@@ -68,6 +69,8 @@ public:
 
     /// \brief register a \p callback that is called when the websocket receives a message
     void register_message_callback(const std::function<void(const std::string& message)>& callback);
+
+    void register_sign_certificate_callback(const std::function<void()>& callback);
 
     /// \brief send a \p message over the websocket
     /// \returns true if the message was sent successfully

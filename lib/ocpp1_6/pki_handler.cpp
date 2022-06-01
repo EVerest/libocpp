@@ -258,6 +258,14 @@ CertificateVerificationResult PkiHandler::verifyCertificate(const std::string& c
     return CertificateVerificationResult::Valid;
 }
 
+int PkiHandler::getDaysUntilClientCertificateExpires() {
+    std::shared_ptr<X509Certificate> cert = loadFromFile(this->getFile(CLIENT_SIDE_CERTIFICATE_FILE));
+    const ASN1_TIME* expires = X509_get0_notAfter(cert->x509);
+    int days, seconds;
+    ASN1_TIME_diff(&days, &seconds, NULL, expires);
+    return days;
+}
+
 void PkiHandler::writeClientCertificate(const std::string certificate) {
     std::shared_ptr<X509Certificate> cert = loadFromString(certificate);
     std::string newPath =
