@@ -126,7 +126,8 @@ private:
     std::function<std::string(std::string location)> upload_diagnostics_callback;
     std::function<void(std::string location)> update_firmware_callback;
     std::function<void(SignedUpdateFirmwareRequest req)> signed_update_firmware_download_callback;
-    std::function<void(SignedUpdateFirmwareRequest req, boost::filesystem::path file_path)> signed_update_firmware_install_callback;
+    std::function<void(SignedUpdateFirmwareRequest req, boost::filesystem::path file_path)>
+        signed_update_firmware_install_callback;
     std::function<void()> switch_security_profile_callback;
     std::function<std::string(GetLogRequest msg)> upload_logs_callback;
     std::function<ReservationStatus(int32_t reservation_id, int32_t connector, ocpp1_6::DateTime expiryDate,
@@ -136,6 +137,8 @@ private:
 
     /// \brief This function is called after a successful connection to the Websocket
     void connected_callback();
+    /// \brief This function registers callbacks that are registered in the database and have not been executed yet
+    void register_scheduled_callbacks();
     void init_websocket(int32_t security_profile);
     void message_callback(const std::string& message);
     void handle_message(const json& json_message, MessageType message_type);
@@ -154,7 +157,6 @@ private:
     MeterValue get_latest_meter_value(int32_t connector, std::vector<MeasurandWithPhase> values_of_interest,
                                       ReadingContext context);
     void send_meter_value(int32_t connector, MeterValue meter_value);
-
     void status_notification(int32_t connector, ChargePointErrorCode errorCode, CiString50Type info,
                              ChargePointStatus status, DateTime timestamp);
     void status_notification(int32_t connector, ChargePointErrorCode errorCode, ChargePointStatus status);
@@ -233,6 +235,7 @@ public:
     DataTransferResponse data_transfer(const CiString255Type& vendorId, const CiString50Type& messageId,
                                        const std::string& data);
 
+    /// \brief Creates a new public/private key pair and sends a certificate signing request to the central system
     void signCertificate();
 
     /// registers a \p callback function that can be used to receive a arbitrary data transfer for the given \p vendorId
@@ -255,7 +258,8 @@ public:
     bool start_session(int32_t connector, DateTime timestamp, double energy_Wh_import);
 
     /// \brief Stops a charging session on the given \p connector with the given \p timestamp and \p
-    /// energy_Wh_import as stop energy \returns true if the session could be stopped successfully
+    /// energy_Wh_import as stop energy
+    /// \returns true if the session could be stopped successfully
     bool stop_session(int32_t connector, DateTime timestamp, double energy_Wh_import);
 
     /// \brief EV indicates that it starts charging on the given \p connector
@@ -293,9 +297,13 @@ public:
     /// \returns true if this state change was possible
     bool permanent_fault(int32_t connector);
 
+    /// \brief Sends a DiagnosticStatusNotification with the given \p status
     void send_diagnostic_status_notification(DiagnosticsStatus status);
+    /// \brief Sends a FirmwareUpdateStatusNotification with the given \p status
     void send_firmware_status_notification(FirmwareStatus status);
+    /// \brief Sends a logStatusNotification with the given \p status for the given \p requestId
     void logStatusNotification(UploadLogStatusEnumType status, int requestId);
+    /// \brief Sends a SignedFirmwareUpdateStatusNotification with the given \p status for the given \p requestId
     void signedFirmwareUpdateStatusNotification(FirmwareStatusEnumType status, int requestId);
 
     /// \brief registers a \p callback function that can be used to enable the evse
@@ -324,39 +332,45 @@ public:
     void
     register_cancel_reservation_callback(const std::function<CancelReservationStatus(int32_t connector)>& callback);
 
-    /// registers a \p callback function that can be used to unlock the connector
+    /// \brief registers a \p callback function that can be used to unlock the connector
     void register_unlock_connector_callback(const std::function<bool(int32_t connector)>& callback);
 
-    /// registers a \p callback function that can be used to set a max_current on a given connector
+    /// \brief registers a \p callback function that can be used to set a max_current on a given connector
     void register_set_max_current_callback(const std::function<bool(int32_t connector, double max_current)>& callback);
 
-    /// registers a \p callback function that can be used to trigger an upload of diagnostics
+    /// \brief registers a \p callback function that can be used to trigger an upload of diagnostics
     void register_upload_diagnostics_callback(const std::function<std::string(std::string location)>& callback);
 
-    /// registers a \p callback function that can be used to trigger a firmware update
+    /// \brief registers a \p callback function that can be used to trigger a firmware update
     void register_update_firmware_callback(const std::function<void(std::string location)>& callback);
 
-    /// registers a \p callback function that can be used to upload logfiles
+    /// \brief registers a \p callback function that can be used to upload logfiles
     void register_upload_logs_callback(const std::function<std::string(GetLogRequest req)>& callback);
 
-    /// registers a \p callback function that can be used to trigger a signed firmware download process
+    /// \brief registers a \p callback function that can be used to trigger a signed firmware download process
     void register_signed_update_firmware_download_callback(
         const std::function<void(SignedUpdateFirmwareRequest req)>& callback);
 
-    /// registers a \p callback function that can be used to trigger a signed firmware install process
+    /// \brief registers a \p callback function that can be used to trigger a signed firmware install process
     void register_signed_update_firmware_install_callback(
         const std::function<void(SignedUpdateFirmwareRequest req, boost::filesystem::path file_path)>& callback);
 
+    /// \brief notifies the chargepoint that the signed firmware update for the given \p req was downloaded to the given
+    /// \p file_path
     void notify_signed_firmware_update_downloaded(SignedUpdateFirmwareRequest req, boost::filesystem::path file_path);
 
     /// FIXME(piet) triggers a bootnotification and can be removed when firmware update mechanisms are implemented
     void trigger_boot_notification();
 
+    /// for the interrupt of log uploads
     std::atomic<bool> interrupt_log_upload;
     std::condition_variable cv;
     std::mutex log_upload_mutex;
 
+    /// \brief indicates if a signed_firmware_update is currently running
     bool is_signed_firmware_update_running();
+
+    /// \brief setter for the signed_firwmare_update_running flag
     void set_signed_firmware_update_running(bool b);
 
     // FIXME: rework the following API functions, do we want to expose them?

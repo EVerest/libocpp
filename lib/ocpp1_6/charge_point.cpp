@@ -23,6 +23,7 @@ ChargePoint::ChargePoint(std::shared_ptr<ChargePointConfiguration> configuration
     signed_firmware_update_running(false) {
 
     this->configuration = configuration;
+    // TODO(piet): this->register_scheduled_callbacks();
     this->connection_state = ChargePointConnectionState::Disconnected;
     this->charging_sessions = std::make_unique<ChargingSessions>(this->configuration->getNumberOfConnectors());
 
@@ -54,6 +55,17 @@ ChargePoint::ChargePoint(std::shared_ptr<ChargePointConfiguration> configuration
         });
 }
 
+void ChargePoint::register_scheduled_callbacks() {
+
+    std::vector<ScheduledCallback> callbacks = this->configuration->getScheduledCallbacks();
+
+    // SignedFirmwareUpdateRequest req = json::parse(args[0]);
+    // json j = req;
+    // j.dump();
+
+    // iterate over callbacks and register them
+}
+
 void ChargePoint::init_websocket(int32_t security_profile) {
     this->websocket = std::make_unique<Websocket>(this->configuration, security_profile);
     this->websocket->register_connected_callback([this]() {
@@ -72,7 +84,7 @@ void ChargePoint::init_websocket(int32_t security_profile) {
     });
 
     if (security_profile == 3) {
-        EVLOG(critical) << "Registerung certificate timer";
+        EVLOG(debug) << "Registerung certificate timer";
         this->websocket->register_sign_certificate_callback([this]() { this->signCertificate(); });
     }
 }
@@ -437,7 +449,7 @@ void ChargePoint::stop() {
 
 void ChargePoint::connected_callback() {
     this->switch_security_profile_callback = nullptr;
-    this->configuration->getPkiHandler()->removeFallbackCA();
+    this->configuration->getPkiHandler()->removeCentralSystemFallbackCa();
     switch (this->connection_state) {
     case ChargePointConnectionState::Disconnected: {
         this->connection_state = ChargePointConnectionState::Connected;
@@ -1529,7 +1541,7 @@ void ChargePoint::handleCertificateSignedRequest(Call<CertificateSignedRequest> 
     std::shared_ptr<PkiHandler> pkiHandler = this->configuration->getPkiHandler();
 
     CertificateVerificationResult certificateVerificationResult =
-        pkiHandler->verifyCertificate(certificateChain, this->configuration->getChargeBoxSerialNumber());
+        pkiHandler->verifyChargepointCertificate(certificateChain, this->configuration->getChargeBoxSerialNumber());
 
     if (certificateVerificationResult == CertificateVerificationResult::Valid) {
         response.status = CertificateSignedStatusEnumType::Accepted;
@@ -1575,7 +1587,7 @@ void ChargePoint::handleGetInstalledCertificateIdsRequest(Call<GetInstalledCerti
 
 void ChargePoint::handleDeleteCertificateRequest(Call<DeleteCertificateRequest> call) {
     DeleteCertificateResponse response;
-    response.status = this->configuration->getPkiHandler()->deleteCertificate(
+    response.status = this->configuration->getPkiHandler()->deleteRootCertificate(
         call.msg.certificateHashData, this->configuration->getSecurityProfile());
 
     CallResult<DeleteCertificateResponse> call_result(response, call.uniqueId);
@@ -1586,7 +1598,7 @@ void ChargePoint::handleInstallCertificateRequest(Call<InstallCertificateRequest
     InstallCertificateResponse response;
     response.status = InstallCertificateStatusEnumType::Rejected;
 
-    InstallCertificateResult installCertificateResult = this->configuration->getPkiHandler()->installCertificate(
+    InstallCertificateResult installCertificateResult = this->configuration->getPkiHandler()->installRootCertificate(
         call.msg, this->configuration->getCertificateStoreMaxLength(),
         this->configuration->getAdditionalRootCertificateCheck());
 
@@ -1628,7 +1640,7 @@ void ChargePoint::handleGetLogRequest(Call<GetLogRequest> call) {
 }
 
 void ChargePoint::handleSignedUpdateFirmware(Call<SignedUpdateFirmwareRequest> call) {
-    EVLOG(critical) << "Received SignedUpdateFirmwareRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
+    EVLOG(debug) << "Received SignedUpdateFirmwareRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
     SignedUpdateFirmwareResponse response;
 
     if (this->configuration->getPkiHandler()->verifyFirmwareCertificate(call.msg.firmware.signingCertificate)) {
@@ -1683,7 +1695,7 @@ void ChargePoint::securityEventNotification(const SecurityEvent& type, const std
 
 void ChargePoint::logStatusNotification(UploadLogStatusEnumType status, int requestId) {
 
-    EVLOG(critical) << "Sending logStatusNotification with status: " << status << ", requestId: " << requestId;
+    EVLOG(debug) << "Sending logStatusNotification with status: " << status << ", requestId: " << requestId;
 
     LogStatusNotificationRequest req;
     req.status = status;
@@ -2244,6 +2256,7 @@ void ChargePoint::notify_signed_firmware_update_downloaded(SignedUpdateFirmwareR
                                                            boost::filesystem::path file_path) {
     if (req.firmware.installDateTime != boost::none &&
         req.firmware.installDateTime.value().to_time_point() > date::utc_clock::now()) {
+        // TODO(piet): put cb into database
         this->signed_firmware_update_install_timer->at(
             [this, req, file_path]() { this->signed_update_firmware_install_callback(req, file_path); },
             req.firmware.installDateTime.value().to_time_point());

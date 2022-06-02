@@ -137,6 +137,27 @@ ChargePointConfiguration::ChargePointConfiguration(json config, std::string conf
         throw std::runtime_error("db access error");
     }
 
+    // prepare scheduled callbacks
+    std::string create_scheduled_callbacks_sql = "CREATE TABLE IF NOT EXISTS SCHEDULED_CALLBACKS ("
+                                                 "ID_TAG TEXT PRIMARY KEY     NOT NULL,"
+                                                 "DATETIME DATE NOT NULL,"
+                                                 "ARGS TEXT);";
+
+    sqlite3_stmt* create_scheduled_callbacks_statement;
+    sqlite3_prepare_v2(this->db, create_scheduled_callbacks_sql.c_str(), create_scheduled_callbacks_sql.size(),
+                       &create_scheduled_callbacks_statement, NULL);
+    int create_scheduled_callbacks_res = sqlite3_step(create_scheduled_callbacks_statement);
+    if (create_scheduled_callbacks_res != SQLITE_DONE) {
+        EVLOG(error) << "Could not create table AUTH_CACHE: " << create_scheduled_callbacks_res
+                     << sqlite3_errmsg(this->db);
+        throw std::runtime_error("db access error");
+    }
+
+    if (sqlite3_finalize(create_scheduled_callbacks_statement) != SQLITE_OK) {
+        EVLOG(error) << "Error creating table SCHEDULED_CALLBACKS";
+        throw std::runtime_error("db access error");
+    }
+
     // TODO(kai): get this from config
     this->supported_measurands = {{Measurand::Energy_Active_Import_Register, {Phase::L1, Phase::L2, Phase::L3}}, // Wh
                                   {Measurand::Energy_Active_Export_Register, {Phase::L1, Phase::L2, Phase::L3}}, // Wh
@@ -1868,4 +1889,15 @@ ConfigurationStatus ChargePointConfiguration::set(CiString50Type key, CiString50
 
     return ConfigurationStatus::Accepted;
 }
+
+std::vector<ScheduledCallback> ChargePointConfiguration::getScheduledCallbacks() {
+    // TODO(piet): Implement this
+    std::vector<ScheduledCallback> callbacks;
+    return callbacks;
+}
+
+void ChargePointConfiguration::insertScheduledCallback(ScheduledCallbackType, std::string datetime, std::string args) {
+    // TODO(piet): Implement this
+}
+
 } // namespace ocpp1_6
