@@ -1012,4 +1012,11 @@ std::ostream& operator<<(std::ostream& os, const SupportedFeatureProfiles& suppo
     return os;
 }
 
+ScheduledCallback::ScheduledCallback(ScheduledCallbackType callbackType, std::string datetime,
+                                     std::vector<std::string> args) {
+    this->callbackType = callbackType;
+    this->datetime = datetime;
+    this->args = args;
+}
+
 } // namespace ocpp1_6

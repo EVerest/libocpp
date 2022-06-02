@@ -150,17 +150,13 @@ tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connect
         auto rc =
             SSL_CTX_set_cipher_list(context->native_handle(), this->configuration->getSupportedCiphers12().c_str());
         if (rc != 1) {
-            EVLOG_critical << "SSL_CTX_set_cipher_list return value: " << rc;
+            EVLOG_debug << "SSL_CTX_set_cipher_list return value: " << rc;
             throw std::runtime_error("Could not set TLSv1.2 cipher list");
         }
 
         rc = SSL_CTX_set_ciphersuites(context->native_handle(), this->configuration->getSupportedCiphers13().c_str());
         if (rc != 1) {
-            EVLOG_critical << "SSL_CTX_set_cipher_list return value: " << rc;
-            throw std::runtime_error("Could not set TLSv1.3 cipher list");
-        }
-
-        if (security_profile == 3) {
+            EVLOG_debug << "SSL_CTX_set_cipher_list return value: " << rc;
             std::shared_ptr<X509Certificate> cert = this->configuration->getPkiHandler()->getClientCertificate();
             if (cert == nullptr) {
                 throw std::runtime_error(
@@ -174,7 +170,7 @@ tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connect
             context->native_handle(), this->configuration->getPkiHandler()->getFile(CS_ROOT_CA_FILE).c_str(), NULL);
         rc = SSL_CTX_set_default_verify_paths(context->native_handle());
         if (rc != 1) {
-            EVLOG_critical << "Could not load CA verify locations, error: " << ERR_error_string(ERR_get_error(), NULL);
+            EVLOG_error << "Could not load CA verify locations, error: " << ERR_error_string(ERR_get_error(), NULL);
             throw std::runtime_error("Could not load CA verify locations");
         }
 

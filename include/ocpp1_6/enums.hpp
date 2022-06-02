@@ -1298,6 +1298,27 @@ InstallCertificateResult string_to_install_certificate_result(const std::string&
 /// InstallCertificateResult written to
 std::ostream& operator<<(std::ostream& os, const InstallCertificateResult& install_certificate_result);
 
+enum class ScheduledCallbackType
+{
+    DownloadFirmwareCallback,
+    InstallFirmwareCallback
+};
+
+namespace conversions {
+/// \brief Converts the given ScheduledCallbackType \p e to human readable string
+/// \returns a string representation of the ScheduledCallbackType
+std::string scheduled_callback_type_to_string(ScheduledCallbackType e);
+
+/// \brief Converts the given std::string \p s to ScheduledCallbackType
+/// \returns a ScheduledCallbackType from a string representation
+ScheduledCallbackType string_to_scheduled_callback_type(const std::string& s);
+} // namespace conversions
+
+/// \brief Writes the string representation of the given ScheduledCallbackType \p
+/// scheduled_callback_type to the given output stream \p os \returns an output stream with the
+/// ScheduledCallbackType written to
+std::ostream& operator<<(std::ostream& os, const ScheduledCallbackType& scheduled_callback_type);
+
 } // namespace ocpp1_6
 
 #endif // OCPP1_6_ENUMS_HPP

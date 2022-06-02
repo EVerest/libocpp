@@ -690,5 +690,13 @@ SupportedFeatureProfiles string_to_supported_feature_profiles(const std::string&
 /// \returns an output stream with the SupportedFeatureProfiles written to
 std::ostream& operator<<(std::ostream& os, const SupportedFeatureProfiles& supported_feature_profiles);
 
+/// \brief struct for a scheduled callback
+struct ScheduledCallback {
+    ScheduledCallbackType callbackType;
+    DateTime datetime;
+    std::vector<std::string> args;
+    ScheduledCallback(ScheduledCallbackType callbackType, std::string datetime, std::vector<std::string> args);
+};
+
 } // namespace ocpp1_6
 #endif // OCPP1_6_TYPES_HPP

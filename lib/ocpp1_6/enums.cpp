@@ -2441,4 +2441,33 @@ std::ostream& operator<<(std::ostream& os, const InstallCertificateResult& insta
     return os;
 }
 
+namespace conversions {
+std::string scheduled_callback_type_to_string(ScheduledCallbackType e) {
+    switch (e) {
+    case ScheduledCallbackType::DownloadFirmwareCallback:
+        return "DownloadFirmwareCallback";
+    case ScheduledCallbackType::InstallFirmwareCallback:
+        return "InstallFirmwareCallback";
+    }
+
+    throw std::out_of_range("No known string conversion for provided enum of type UpdateFirmwareStatusEnumType");
+}
+
+ScheduledCallbackType string_to_scheduled_callback_type(const std::string& s) {
+    if (s == "DownloadFirmwareCallback") {
+        return ScheduledCallbackType::DownloadFirmwareCallback;
+    }
+    if (s == "InstallFirmwareCallback") {
+        return ScheduledCallbackType::InstallFirmwareCallback;
+    }
+    throw std::out_of_range("Provided string " + s +
+                            " could not be converted to enum of type CertificateVerificationResult");
+}
+} // namespace conversions
+
+std::ostream& operator<<(std::ostream& os, const ScheduledCallbackType& scheduled_callback_type) {
+    os << conversions::scheduled_callback_type_to_string(scheduled_callback_type);
+    return os;
+}
+
 } // namespace ocpp1_6
