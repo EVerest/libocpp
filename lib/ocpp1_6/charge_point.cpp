@@ -1851,6 +1851,22 @@ AuthorizationStatus ChargePoint::authorize_id_tag(CiString20Type idTag) {
 
     // TODO(kai): implement local authorization (this is optional)
 
+    // check if a session is running with this idTag associated
+    for (int32_t connector = 1; connector < this->configuration->getNumberOfConnectors() + 1; connector++) {
+        auto authorized_id_tag = this->charging_sessions->get_authorized_id_tag(connector);
+        if (authorized_id_tag != boost::none) {
+            if (authorized_id_tag.get() == idTag) {
+                // get transaction
+                auto transaction = this->charging_sessions->get_transaction(connector);
+                if (transaction != nullptr) {
+                    // stop charging, this will stop the session as well
+                    this->cancel_charging_callback(connector);
+                    return AuthorizationStatus::Invalid;
+                }
+            }
+        }
+    }
+
     AuthorizeRequest req;
     req.idTag = idTag;
 
