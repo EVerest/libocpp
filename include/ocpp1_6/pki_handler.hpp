@@ -75,13 +75,13 @@ private:
     std::shared_ptr<X509Certificate> getRootCertificate(CertificateUseEnumType type);
 
 public:
-    PkiHandler(std::string maindir);
+    explicit PkiHandler(std::string maindir);
     /// \brief Verifies the given \p certificateChain and the \p charge_box_serial_number.
     /// This method verifies the certificate chain, the signature, and the period when the certificate is valid
     CertificateVerificationResult verifyChargepointCertificate(const std::string& certificateChain,
                                                                const std::string& charge_box_serial_number);
     /// \brief writes the given \p certificate to the client certificate file located in the certs directory
-    void writeClientCertificate(const std::string certificate);
+    void writeClientCertificate(const std::string& certificate);
 
     /// \brief generates a certifcate signing request from the given parameters
     std::string generateCsr(const char* szCountry, const char* szProvince, const char* szCity,
@@ -126,7 +126,7 @@ public:
 
     /// \brief returns the time in milliseconds when the given certificate is valid.
     /// Result is <0 if it is already valid
-    int validIn(const std::string certificate);
+    int validIn(const std::string& certificate);
 
     /// \brief Get the Days Until Client Certificate Expires
     int getDaysUntilClientCertificateExpires();

@@ -57,7 +57,7 @@ ChargePoint::ChargePoint(std::shared_ptr<ChargePointConfiguration> configuration
 
 void ChargePoint::register_scheduled_callbacks() {
 
-    std::vector<ScheduledCallback> callbacks = this->configuration->getScheduledCallbacks();
+    // std::vector<ScheduledCallback> callbacks = this->configuration->getScheduledCallbacks();
 
     // SignedFirmwareUpdateRequest req = json::parse(args[0]);
     // json j = req;

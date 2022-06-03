@@ -99,8 +99,8 @@ CertificateVerificationResult PkiHandler::verifyChargepointCertificate(const std
         return CertificateVerificationResult::Expired;
     }
 
-    if (X509_check_host(certChain->x509, chargeBoxSerialNumber.c_str(), strlen(chargeBoxSerialNumber.c_str()), NULL,
-                        NULL) == 0) {
+    if (X509_check_host(certChain->x509, chargeBoxSerialNumber.c_str(), chargeBoxSerialNumber.length(), NULL, NULL) ==
+        0) {
         EVLOG(warning) << "Subject field CN of certificate is not equal to ChargeBoxSerialNumber: "
                        << chargeBoxSerialNumber;
         return CertificateVerificationResult::InvalidCommonName;
@@ -109,7 +109,7 @@ CertificateVerificationResult PkiHandler::verifyChargepointCertificate(const std
     return CertificateVerificationResult::Valid;
 }
 
-void PkiHandler::writeClientCertificate(const std::string certificate) {
+void PkiHandler::writeClientCertificate(const std::string& certificate) {
     std::shared_ptr<X509Certificate> cert = loadFromString(certificate);
     std::string newPath =
         CLIENT_SIDE_CERTIFICATE_FILE.string().substr(0, CLIENT_SIDE_CERTIFICATE_FILE.string().find_last_of(".")) +
@@ -183,6 +183,7 @@ std::string PkiHandler::generateCsr(const char* szCountry, const char* szProvinc
 
     // 8. read csr from file
     rc = PEM_write_bio_X509_REQ(bio.get(), x509_req);
+    assert(rc == 1);
     BUF_MEM* mem = NULL;
     BIO_get_mem_ptr(bio.get(), &mem);
     std::string csr(mem->data, mem->length);
@@ -343,7 +344,6 @@ boost::filesystem::path PkiHandler::getCertsPath() {
 }
 
 boost::filesystem::path PkiHandler::getFile(boost::filesystem::path file_name) {
-    boost::filesystem::path p = this->getCertsPath() / file_name;
     return this->getCertsPath() / file_name;
 }
 
@@ -365,7 +365,7 @@ void PkiHandler::removeCentralSystemFallbackCa() {
     std::remove(this->getFile(CS_ROOT_CA_FILE_BACKUP_FILE).c_str());
 }
 
-int PkiHandler::validIn(const std::string certificate) {
+int PkiHandler::validIn(const std::string& certificate) {
     std::shared_ptr<X509Certificate> cert = loadFromString(certificate);
     return X509_cmp_current_time(X509_get_notBefore(cert->x509));
 }
