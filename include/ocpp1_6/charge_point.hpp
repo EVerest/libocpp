@@ -236,6 +236,10 @@ public:
     /// \returns the AuthorizationStatus
     AuthorizationStatus authorize_id_tag(CiString20Type idTag);
 
+    /// \brief Provides the IdTag that was associated with the charging session on the provided \p connector
+    /// \returns the IdTag if it is available, boost::none otherwise
+    boost::optional<CiString20Type> get_authorized_id_tag(int32_t connector);
+
     /// \brief Allows the exchange of arbitrary \p data identified by a \p vendorId and \p messageId with a central
     /// system \returns the DataTransferResponse
     DataTransferResponse data_transfer(const CiString255Type& vendorId, const CiString50Type& messageId,

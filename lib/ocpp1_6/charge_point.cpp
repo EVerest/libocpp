@@ -1910,6 +1910,10 @@ AuthorizationStatus ChargePoint::authorize_id_tag(CiString20Type idTag) {
     return auth_status;
 }
 
+boost::optional<CiString20Type> ChargePoint::get_authorized_id_tag(int32_t connector) {
+    return this->charging_sessions->get_authorized_id_tag(connector);
+}
+
 DataTransferResponse ChargePoint::data_transfer(const CiString255Type& vendorId, const CiString50Type& messageId,
                                                 const std::string& data) {
     DataTransferRequest req;
