@@ -13,7 +13,7 @@ X509Certificate::X509Certificate(boost::filesystem::path path, X509* x509, std::
     this->path = path;
     this->x509 = x509;
     this->str = str;
-};
+}
 
 X509Certificate::X509Certificate(const boost::filesystem::path path, X509* x509, const std::string str,
                                  const CertificateType type) {
@@ -21,7 +21,7 @@ X509Certificate::X509Certificate(const boost::filesystem::path path, X509* x509,
     this->x509 = x509;
     this->str = str;
     this->type = type;
-};
+}
 
 X509Certificate::~X509Certificate() {
     X509_free(this->x509);
@@ -99,8 +99,7 @@ CertificateVerificationResult PkiHandler::verifyChargepointCertificate(const std
         return CertificateVerificationResult::Expired;
     }
 
-    if (X509_check_host(certChain->x509, chargeBoxSerialNumber.c_str(), chargeBoxSerialNumber.length(), NULL, NULL) ==
-        0) {
+    if (X509_check_host(certChain->x509, chargeBoxSerialNumber.c_str(), chargeBoxSerialNumber.length(), 0, NULL) == 0) {
         EVLOG(warning) << "Subject field CN of certificate is not equal to ChargeBoxSerialNumber: "
                        << chargeBoxSerialNumber;
         return CertificateVerificationResult::InvalidCommonName;
@@ -305,7 +304,7 @@ InstallCertificateResult PkiHandler::installRootCertificate(InstallCertificateRe
     InstallCertificateResult installCertificateResult = InstallCertificateResult::Valid;
 
     if (certificateStoreMaxLength != boost::none &&
-        this->getCaCertificates().size() >= certificateStoreMaxLength.get()) {
+        this->getCaCertificates().size() >= size_t(certificateStoreMaxLength.get())) {
         return InstallCertificateResult::CertificateStoreMaxLengthExceeded;
     }
 
