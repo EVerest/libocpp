@@ -26,7 +26,15 @@ ChargePoint::ChargePoint(std::shared_ptr<ChargePointConfiguration> configuration
     // TODO(piet): this->register_scheduled_callbacks();
     this->connection_state = ChargePointConnectionState::Disconnected;
     this->charging_sessions = std::make_unique<ChargingSessions>(this->configuration->getNumberOfConnectors());
-
+    for (int32_t connector = 0; connector < this->configuration->getNumberOfConnectors() + 1; connector++) {
+        this->connection_timeout_timer.push_back(
+            std::make_unique<Everest::SteadyTimer>(&this->io_service, [this, connector]() {
+                EVLOG(info) << "Removing session at connector: " << connector
+                            << " because the car was not plugged-in in time.";
+                this->charging_sessions->remove_session(connector);
+                this->status->submit_event(connector, Event_BecomeAvailable());
+            }));
+    }
     this->init_websocket(this->configuration->getSecurityProfile());
     this->message_queue = std::make_unique<MessageQueue>(
         this->configuration, [this](json message) -> bool { return this->websocket->send(message.dump()); });
@@ -1936,6 +1944,8 @@ AuthorizationStatus ChargePoint::authorize_id_tag(CiString20Type idTag) {
                 connector =
                     this->charging_sessions->add_authorized_token(connector, idTag, authorize_response.idTagInfo);
             }
+            this->connection_timeout_timer.at(connector)->timeout(
+                std::chrono::seconds(this->configuration->getConnectionTimeOut()));
             this->status->submit_event(connector, Event_UsageInitiated());
             if (connector > 0) {
                 this->start_transaction(connector);
@@ -2043,6 +2053,9 @@ bool ChargePoint::start_transaction(int32_t connector) {
         EVLOG_error << "No start energy yet"; // TODO(kai): better comment
         return false;
     }
+
+    // stop connection timeout timer, car is obviously plugged-in now
+    this->connection_timeout_timer.at(connector)->stop();
 
     StartTransactionRequest req;
     req.connectorId = connector;

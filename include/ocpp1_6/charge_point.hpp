@@ -102,6 +102,8 @@ private:
     std::mutex remote_start_transaction_mutex;                 // FIXME: this should be done differently
     std::map<MessageId, std::thread> remote_stop_transaction;  // FIXME: this should be done differently
     std::mutex remote_stop_transaction_mutex;                  // FIXME: this should be done differently
+    std::vector<std::unique_ptr<Everest::SteadyTimer>> connection_timeout_timer;
+    std::mutex connection_timeout_mutex;
 
     std::map<std::string, std::map<std::string, std::function<void(const std::string data)>>> data_transfer_callbacks;
     std::mutex data_transfer_callbacks_mutex;
