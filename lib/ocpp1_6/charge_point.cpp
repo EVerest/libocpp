@@ -1928,7 +1928,14 @@ AuthorizationStatus ChargePoint::authorize_id_tag(CiString20Type idTag) {
 
         if (auth_status == AuthorizationStatus::Accepted) {
             this->configuration->updateAuthorizationCacheEntry(idTag, call_result.msg.idTagInfo);
-            auto connector = this->charging_sessions->add_authorized_token(idTag, authorize_response.idTagInfo);
+            int32_t connector = 1;
+            if (!this->configuration->getAuthorizeConnectorZeroOnConnectorOne()) {
+                connector = this->charging_sessions->add_authorized_token(idTag, authorize_response.idTagInfo);
+            } else {
+                EVLOG(info) << "Automatically authorizing idTag on connector 1 because there is only one connector";
+                connector =
+                    this->charging_sessions->add_authorized_token(connector, idTag, authorize_response.idTagInfo);
+            }
             this->status->submit_event(connector, Event_UsageInitiated());
             if (connector > 0) {
                 this->start_transaction(connector);

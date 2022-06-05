@@ -107,6 +107,12 @@
             "readOnly": true,
             "minimum": 0,
             "default": 10
+        },
+        "AuthorizeConnectorZeroOnConnectorOne": {
+            "$comment": "Automatically authorize id tags on connector 1 when there is only one connector",
+            "type": "boolean",
+            "readOnly": true,
+            "default": true
         }
     },
     "additionalProperties": false
