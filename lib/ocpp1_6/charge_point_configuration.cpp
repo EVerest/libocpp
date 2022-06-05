@@ -1876,9 +1876,10 @@ boost::optional<KeyValue> ChargePointConfiguration::get(CiString50Type key) {
     if (key == "AuthorizationCacheEnabled") {
         return this->getAuthorizationCacheEnabledKeyValue();
     }
-    if (key == "AuthorizationKey") {
-        return this->getAuthorizationKeyKeyValue();
-    }
+    // we should not return an AuthorizationKey because it's readonly
+    // if (key == "AuthorizationKey") {
+    //     return this->getAuthorizationKeyKeyValue();
+    // }
     if (key == "AuthorizeRemoteTxRequests") {
         return this->getAuthorizeRemoteTxRequestsKeyValue();
     }
