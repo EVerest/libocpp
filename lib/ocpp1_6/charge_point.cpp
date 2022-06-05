@@ -84,7 +84,7 @@ void ChargePoint::init_websocket(int32_t security_profile) {
     });
 
     if (security_profile == 3) {
-        EVLOG(debug) << "Registerung certificate timer";
+        EVLOG_debug << "Registerung certificate timer";
         this->websocket->register_sign_certificate_callback([this]() { this->signCertificate(); });
     }
 }
@@ -609,21 +609,6 @@ void ChargePoint::handle_message(const json& json_message, MessageType message_t
     case MessageType::UpdateFirmware:
         this->handleUpdateFirmwareRequest(json_message);
         break;
-<<<<<<< HEAD
-
-    case MessageType::ReserveNow:
-        this->handleReserveNowRequest(json_message);
-        break;
-
-    case MessageType::CancelReservation:
-        this->handleCancelReservationRequest(json_message);
-        break;
-
-    case MessageType::ExtendedTriggerMessage:
-        this->handleExtendedTriggerMessageRequest(json_message);
-        break;
-=======
->>>>>>> - installing certs directory if present in aux
 
     case MessageType::GetInstalledCertificateIds:
         this->handleGetInstalledCertificateIdsRequest(json_message);
@@ -653,17 +638,16 @@ void ChargePoint::handle_message(const json& json_message, MessageType message_t
         this->handleCancelReservationRequest(json_message);
         break;
 
-<<<<<<< HEAD
     case MessageType::ExtendedTriggerMessage:
         this->handleExtendedTriggerMessageRequest(json_message);
-=======
+        break;
+
     case MessageType::SendLocalList:
         this->handleSendLocalListRequest(json_message);
         break;
 
     case MessageType::GetLocalListVersion:
         this->handleGetLocalListVersionRequest(json_message);
->>>>>>> Added Local Auth List Management Profile
         break;
 
     default:
@@ -808,19 +792,19 @@ void ChargePoint::handleChangeConfigurationRequest(Call<ChangeConfigurationReque
                     this->update_clock_aligned_meter_values_interval();
                 }
                 if (call.msg.key == "AuthorizationKey") {
-                    /*SECURITYLOG*/ EVLOG(debug) << "AuthorizationKey was changed by central system";
+                    /*SECURITYLOG*/ EVLOG_debug << "AuthorizationKey was changed by central system";
                     if (this->configuration->getSecurityProfile() == 0) {
-                        EVLOG(debug) << "AuthorizationKey was changed while on security profile 0.";
+                        EVLOG_debug << "AuthorizationKey was changed while on security profile 0.";
                     } else if (this->configuration->getSecurityProfile() == 1 ||
                                this->configuration->getSecurityProfile() == 2) {
-                        EVLOG(debug)
+                        EVLOG_debug
                             << "AuthorizationKey was changed while on security profile 1 or 2. Reconnect Websocket.";
                         CallResult<ChangeConfigurationResponse> call_result(response, call.uniqueId);
                         this->send<ChangeConfigurationResponse>(call_result);
                         responded = true;
                         this->websocket->reconnect(std::error_code(), 1000);
                     } else {
-                        EVLOG(debug) << "AuthorizationKey was changed while on security profile 3. Nothing to do.";
+                        EVLOG_debug << "AuthorizationKey was changed while on security profile 3. Nothing to do.";
                     }
                     // what if basic auth is not in use? what if client side certificates are in use?
                     // log change in security log - if we have one yet?!
@@ -848,12 +832,12 @@ void ChargePoint::handleChangeConfigurationRequest(Call<ChangeConfigurationReque
 }
 
 void ChargePoint::switchSecurityProfile(int32_t new_security_profile) {
-    EVLOG(debug) << "Switching security profile from " << this->configuration->getSecurityProfile() << " to "
-                 << new_security_profile;
+    EVLOG_debug << "Switching security profile from " << this->configuration->getSecurityProfile() << " to "
+                << new_security_profile;
 
     this->init_websocket(new_security_profile);
     this->registerSwitchSecurityProfileCallback([this]() {
-        EVLOG(warning) << "Switching security profile back to fallback because new profile couldnt connect";
+        EVLOG_warning << "Switching security profile back to fallback because new profile couldnt connect";
         this->switchSecurityProfile(this->configuration->getSecurityProfile());
     });
 
@@ -992,7 +976,10 @@ void ChargePoint::handleRemoteStartTransactionRequest(Call<RemoteStartTransactio
             if (authorized) {
                 // FIXME(kai): this probably needs to be signalled to the evse_manager in some way? we at least need the
                 // start_energy and start_timestamp from the evse manager to properly start the transaction
-                if (!this->start_transaction(connector)) {
+                if (this->remote_start_transaction_callback != nullptr) {
+                    this->remote_start_transaction_callback(connector, call.msg.idTag);
+                    this->start_transaction(connector);
+                } else {
                     EVLOG_error << "Could not start a remotely requested transaction on connector: " << connector;
                 }
             }
@@ -1480,7 +1467,7 @@ void ChargePoint::handleCancelReservationRequest(Call<CancelReservationRequest> 
     this->send<CancelReservationResponse>(call_result);
 }
 void ChargePoint::handleExtendedTriggerMessageRequest(Call<ExtendedTriggerMessageRequest> call) {
-    EVLOG(debug) << "Received ExtendedTriggerMessageRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
+    EVLOG_debug << "Received ExtendedTriggerMessageRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
 
     ExtendedTriggerMessageResponse response;
     response.status = TriggerMessageStatusEnumType::Rejected;
@@ -1504,7 +1491,7 @@ void ChargePoint::handleExtendedTriggerMessageRequest(Call<ExtendedTriggerMessag
         if (this->configuration->getCpoName() != boost::none) {
             response.status = TriggerMessageStatusEnumType::Accepted;
         } else {
-            EVLOG(debug) << "Received ExtendedTriggerMessage with SignChargePointCertificate but no CpoName is set.";
+            EVLOG_debug << "Received ExtendedTriggerMessage with SignChargePointCertificate but no CpoName is set.";
         }
         break;
     case MessageTriggerEnumType::StatusNotification:
@@ -1569,7 +1556,7 @@ void ChargePoint::signCertificate() {
 }
 
 void ChargePoint::handleCertificateSignedRequest(Call<CertificateSignedRequest> call) {
-    EVLOG(debug) << "Received CertificateSignedRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
+    EVLOG_debug << "Received CertificateSignedRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
 
     CertificateSignedResponse response;
     response.status = CertificateSignedStatusEnumType::Rejected;
@@ -1607,7 +1594,7 @@ void ChargePoint::handleCertificateSignedRequest(Call<CertificateSignedRequest> 
 }
 
 void ChargePoint::handleGetInstalledCertificateIdsRequest(Call<GetInstalledCertificateIdsRequest> call) {
-    EVLOG(debug) << "Received GetInstalledCertificatesRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
+    EVLOG_debug << "Received GetInstalledCertificatesRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
     GetInstalledCertificateIdsResponse response;
     response.status = GetInstalledCertificateStatusEnumType::NotFound;
 
@@ -1677,13 +1664,13 @@ void ChargePoint::handleGetLogRequest(Call<GetLogRequest> call) {
 }
 
 void ChargePoint::handleSignedUpdateFirmware(Call<SignedUpdateFirmwareRequest> call) {
-    EVLOG(debug) << "Received SignedUpdateFirmwareRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
+    EVLOG_debug << "Received SignedUpdateFirmwareRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
     SignedUpdateFirmwareResponse response;
 
     if (this->configuration->getPkiHandler()->verifyFirmwareCertificate(call.msg.firmware.signingCertificate)) {
         response.status = UpdateFirmwareStatusEnumType::Accepted;
     } else {
-        EVLOG(warning) << "Certificate of firmware update is not valid";
+        EVLOG_warning << "Certificate of firmware update is not valid";
         response.status = UpdateFirmwareStatusEnumType::InvalidCertificate;
     }
 
@@ -1691,7 +1678,7 @@ void ChargePoint::handleSignedUpdateFirmware(Call<SignedUpdateFirmwareRequest> c
         std::lock_guard<std::mutex> lock(this->signed_firmware_update_mutex);
 
         if (this->signed_firmware_update_running) {
-            EVLOG(debug) << "Rejecting signed firmware update request because other update is in progress";
+            EVLOG_debug << "Rejecting signed firmware update request because other update is in progress";
             response.status = UpdateFirmwareStatusEnumType::Rejected;
         }
 
@@ -1709,7 +1696,7 @@ void ChargePoint::handleSignedUpdateFirmware(Call<SignedUpdateFirmwareRequest> c
                 this->signed_firmware_update_download_timer->at(
                     [this, call]() { this->signed_update_firmware_download_callback(call.msg); },
                     call.msg.firmware.retrieveDateTime.to_time_point());
-                EVLOG(debug) << "DownloadScheduled for: " << call.msg.firmware.retrieveDateTime.to_rfc3339();
+                EVLOG_debug << "DownloadScheduled for: " << call.msg.firmware.retrieveDateTime.to_rfc3339();
                 this->signedFirmwareUpdateStatusNotification(FirmwareStatusEnumType::DownloadScheduled,
                                                              call.msg.requestId);
             } else {
@@ -1732,7 +1719,7 @@ void ChargePoint::securityEventNotification(const SecurityEvent& type, const std
 
 void ChargePoint::logStatusNotification(UploadLogStatusEnumType status, int requestId) {
 
-    EVLOG(debug) << "Sending logStatusNotification with status: " << status << ", requestId: " << requestId;
+    EVLOG_debug << "Sending logStatusNotification with status: " << status << ", requestId: " << requestId;
 
     LogStatusNotificationRequest req;
     req.status = status;
@@ -1746,7 +1733,7 @@ void ChargePoint::logStatusNotification(UploadLogStatusEnumType status, int requ
 }
 
 void ChargePoint::signedFirmwareUpdateStatusNotification(FirmwareStatusEnumType status, int requestId) {
-    EVLOG(debug) << "Sending FirmwareUpdateStatusNotification";
+    EVLOG_debug << "Sending FirmwareUpdateStatusNotification";
     SignedFirmwareStatusNotificationRequest req;
     req.status = status;
     req.requestId = requestId;
@@ -1784,7 +1771,7 @@ void ChargePoint::handleCancelReservationRequest(Call<CancelReservationRequest> 
 }
 
 void ChargePoint::handleSendLocalListRequest(Call<SendLocalListRequest> call) {
-    EVLOG(debug) << "Received SendLocalListRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
+    EVLOG_debug << "Received SendLocalListRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
 
     SendLocalListResponse response;
     response.status = UpdateStatus::Failed;
@@ -1817,7 +1804,7 @@ void ChargePoint::handleSendLocalListRequest(Call<SendLocalListRequest> call) {
 }
 
 void ChargePoint::handleGetLocalListVersionRequest(Call<GetLocalListVersionRequest> call) {
-    EVLOG(debug) << "Received GetLocalListVersionRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
+    EVLOG_debug << "Received GetLocalListVersionRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
 
     GetLocalListVersionResponse response;
     if (!this->configuration->getSupportedFeatureProfilesSet().count(
@@ -2310,6 +2297,11 @@ void ChargePoint::register_cancel_charging_callback(const std::function<bool(int
     this->cancel_charging_callback = callback;
 }
 
+void ChargePoint::register_remote_start_transaction_callback(
+    const std::function<void(int32_t connector, ocpp1_6::CiString20Type idTag)>& callback) {
+    this->remote_start_transaction_callback = callback;
+}
+
 void ChargePoint::register_reserve_now_callback(
     const std::function<ReservationStatus(int32_t reservation_id, int32_t connector, ocpp1_6::DateTime expiryDate,
                                           ocpp1_6::CiString20Type idTag,
@@ -2366,7 +2358,7 @@ void ChargePoint::notify_signed_firmware_update_downloaded(SignedUpdateFirmwareR
         this->signed_firmware_update_install_timer->at(
             [this, req, file_path]() { this->signed_update_firmware_install_callback(req, file_path); },
             req.firmware.installDateTime.value().to_time_point());
-        EVLOG(debug) << "InstallScheduled for: " << req.firmware.installDateTime.value().to_rfc3339();
+        EVLOG_debug << "InstallScheduled for: " << req.firmware.installDateTime.value().to_rfc3339();
         this->signedFirmwareUpdateStatusNotification(ocpp1_6::FirmwareStatusEnumType::InstallScheduled, req.requestId);
     } else {
         this->signed_update_firmware_install_callback(req, file_path);

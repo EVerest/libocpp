@@ -33,12 +33,9 @@
 #include <ocpp1_6/messages/GetCompositeSchedule.hpp>
 #include <ocpp1_6/messages/GetConfiguration.hpp>
 #include <ocpp1_6/messages/GetDiagnostics.hpp>
-<<<<<<< HEAD
 #include <ocpp1_6/messages/GetInstalledCertificateIds.hpp>
-#include <ocpp1_6/messages/GetLog.hpp>
-=======
 #include <ocpp1_6/messages/GetLocalListVersion.hpp>
->>>>>>> Added Local Auth List Management Profile
+#include <ocpp1_6/messages/GetLog.hpp>
 #include <ocpp1_6/messages/Heartbeat.hpp>
 #include <ocpp1_6/messages/InstallCertificate.hpp>
 #include <ocpp1_6/messages/LogStatusNotification.hpp>
@@ -47,11 +44,8 @@
 #include <ocpp1_6/messages/RemoteStopTransaction.hpp>
 #include <ocpp1_6/messages/ReserveNow.hpp>
 #include <ocpp1_6/messages/Reset.hpp>
-<<<<<<< HEAD
 #include <ocpp1_6/messages/SecurityEventNotification.hpp>
-=======
 #include <ocpp1_6/messages/SendLocalList.hpp>
->>>>>>> Added Local Auth List Management Profile
 #include <ocpp1_6/messages/SetChargingProfile.hpp>
 #include <ocpp1_6/messages/SignCertificate.hpp>
 #include <ocpp1_6/messages/SignedFirmwareStatusNotification.hpp>
@@ -129,6 +123,7 @@ private:
     std::function<bool(int32_t connector)> pause_charging_callback;
     std::function<bool(int32_t connector)> resume_charging_callback;
     std::function<bool(int32_t connector)> cancel_charging_callback;
+    std::function<void(int32_t connector, ocpp1_6::CiString20Type idTag)> remote_start_transaction_callback;
     std::function<bool(int32_t connector)> unlock_connector_callback;
     std::function<bool(int32_t connector, double max_current)> set_max_current_callback;
     std::function<std::string(std::string location)> upload_diagnostics_callback;
@@ -216,7 +211,6 @@ private:
     void handleGetDiagnosticsRequest(Call<GetDiagnosticsRequest> call);
     void handleUpdateFirmwareRequest(Call<UpdateFirmwareRequest> call);
 
-<<<<<<< HEAD
     // Security profile
     void handleExtendedTriggerMessageRequest(Call<ExtendedTriggerMessageRequest> call);
     void handleCertificateSignedRequest(Call<CertificateSignedRequest> call);
@@ -228,11 +222,10 @@ private:
     void securityEventNotification(const SecurityEvent& type, const std::string& tech_info);
     void switchSecurityProfile(int32_t new_security_profile);
     void registerSwitchSecurityProfileCallback(const std::function<void()>& callback);
-=======
+
     // Local Authorization List profile
     void handleSendLocalListRequest(Call<SendLocalListRequest> call);
     void handleGetLocalListVersionRequest(Call<GetLocalListVersionRequest> call);
->>>>>>> Added Local Auth List Management Profile
 
 public:
     /// \brief Creates a ChargePoint object with the provided \p configuration
@@ -262,8 +255,8 @@ public:
     /// \brief Creates a new public/private key pair and sends a certificate signing request to the central system
     void signCertificate();
 
-    /// registers a \p callback function that can be used to receive a arbitrary data transfer for the given \p vendorId
-    /// and \p messageId
+    /// registers a \p callback function that can be used to receive a arbitrary data transfer for the given \p
+    /// vendorId and \p messageId
     void register_data_transfer_callback(const CiString255Type& vendorId, const CiString50Type& messageId,
                                          const std::function<void(const std::string data)>& callback);
 
@@ -345,6 +338,10 @@ public:
     /// \brief registers a \p callback function that can be used to cancel charging
     void register_cancel_charging_callback(const std::function<bool(int32_t connector)>& callback);
 
+    /// registers a \p callback function that can be used to remotely start a transaction
+    void register_remote_start_transaction_callback(
+        const std::function<void(int32_t connector, ocpp1_6::CiString20Type idTag)>& callback);
+
     /// \brief registers a \p callback function that can be used to reserve a connector for a idTag until a timeout
     /// is reached
     void register_reserve_now_callback(
@@ -379,8 +376,8 @@ public:
     void register_signed_update_firmware_install_callback(
         const std::function<void(SignedUpdateFirmwareRequest req, boost::filesystem::path file_path)>& callback);
 
-    /// \brief notifies the chargepoint that the signed firmware update for the given \p req was downloaded to the given
-    /// \p file_path
+    /// \brief notifies the chargepoint that the signed firmware update for the given \p req was downloaded to the
+    /// given \p file_path
     void notify_signed_firmware_update_downloaded(SignedUpdateFirmwareRequest req, boost::filesystem::path file_path);
 
     /// FIXME(piet) triggers a bootnotification and can be removed when firmware update mechanisms are implemented
