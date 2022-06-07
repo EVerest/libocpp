@@ -782,8 +782,8 @@ void ChargePoint::handleChangeConfigurationRequest(Call<ChangeConfigurationReque
     bool responded = false;
 
     auto kv = this->configuration->get(call.msg.key);
-    if (kv) {
-        if (kv.value().readonly) {
+    if (kv || call.msg.key == "AuthorizationKey") {
+        if (call.msg.key != "AuthorizationKey" && kv.value().readonly) {
             // supported but could not be changed
             response.status = ConfigurationStatus::Rejected;
         } else {
