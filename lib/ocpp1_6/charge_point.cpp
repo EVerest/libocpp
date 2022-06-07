@@ -943,8 +943,9 @@ void ChargePoint::handleRemoteStartTransactionRequest(Call<RemoteStartTransactio
     // a charge point may reject a remote start transaction request without a connectorId
     // TODO(kai): what is our policy here? reject for now
     RemoteStartTransactionResponse response;
-    if (!call.msg.connectorId) {
-        EVLOG_warning << "RemoteStartTransactionRequest without a connector id is not supported at the moment.";
+    if (!call.msg.connectorId || call.msg.connectorId.get() == 0) {
+        EVLOG_warning << "RemoteStartTransactionRequest without a connector id or connector id = 0 is not supported "
+                         "at the moment.";
         response.status = RemoteStartStopStatus::Rejected;
         CallResult<RemoteStartTransactionResponse> call_result(response, call.uniqueId);
         this->send<RemoteStartTransactionResponse>(call_result);
@@ -952,11 +953,20 @@ void ChargePoint::handleRemoteStartTransactionRequest(Call<RemoteStartTransactio
     }
     int32_t connector = call.msg.connectorId.value();
     if (this->configuration->getConnectorAvailability(connector) == AvailabilityType::Inoperative) {
+        EVLOG_warning << "Received RemoteStartTransactionRequest for inoperative connector";
         response.status = RemoteStartStopStatus::Rejected;
         CallResult<RemoteStartTransactionResponse> call_result(response, call.uniqueId);
         this->send<RemoteStartTransactionResponse>(call_result);
         return;
     }
+    if (this->charging_sessions->transaction_active(connector)) {
+        EVLOG_warning << "Received RemoteStartTransactionRequest for a connector with an active transaction.";
+        response.status = RemoteStartStopStatus::Rejected;
+        CallResult<RemoteStartTransactionResponse> call_result(response, call.uniqueId);
+        this->send<RemoteStartTransactionResponse>(call_result);
+        return;
+    }
+
     if (call.msg.chargingProfile) {
         // TODO(kai): A charging profile was provided, forward to the charger
     }
@@ -980,6 +990,8 @@ void ChargePoint::handleRemoteStartTransactionRequest(Call<RemoteStartTransactio
                 IdTagInfo idTagInfo;
                 idTagInfo.status = AuthorizationStatus::Accepted;
                 this->charging_sessions->add_authorized_token(call.msg.connectorId.value(), call.msg.idTag, idTagInfo);
+                this->connection_timeout_timer.at(connector)->timeout(
+                    std::chrono::seconds(this->configuration->getConnectionTimeOut()));
             }
             if (authorized) {
                 // FIXME(kai): this probably needs to be signalled to the evse_manager in some way? we at least need the
@@ -1010,16 +1022,8 @@ void ChargePoint::handleRemoteStopTransactionRequest(Call<RemoteStopTransactionR
     this->send<RemoteStopTransactionResponse>(call_result);
 
     if (connector > 0) {
-        this->charging_sessions->add_stop_energy_wh(
-            connector, std::make_shared<StampedEnergyWh>(DateTime(), this->get_meter_wh(connector)));
-        {
-            std::lock_guard<std::mutex> lock(remote_stop_transaction_mutex);
-            this->remote_stop_transaction[call.uniqueId] = std::thread([this, connector, call]() {
-                this->stop_transaction(connector, Reason::Remote);
-                this->charging_sessions->remove_session(connector);
-            });
-        }
-        this->cancel_charging_callback(connector);
+        this->status->submit_event(connector, Event_TransactionStoppedAndUserActionRequired());
+        this->cancel_charging_callback(connector, Reason::Remote);
     }
 }
 
@@ -1064,8 +1068,8 @@ void ChargePoint::handleUnlockConnectorRequest(Call<UnlockConnectorRequest> call
         int32_t transactionId;
         if (this->charging_sessions->transaction_active(connector)) {
             EVLOG_info << "Received unlock connector request with active session for this connector.";
-            std::thread stop_thread =
-                std::thread([this, connector]() { this->stop_transaction(connector, Reason::UnlockCommand); });
+            this->status->submit_event(connector, Event_TransactionStoppedAndUserActionRequired());
+            this->cancel_charging_callback(connector, Reason::UnlockCommand);
         }
 
         if (this->unlock_connector_callback != nullptr) {
@@ -1920,7 +1924,8 @@ AuthorizationStatus ChargePoint::authorize_id_tag(CiString20Type idTag) {
                 auto transaction = this->charging_sessions->get_transaction(connector);
                 if (transaction != nullptr) {
                     // stop charging, this will stop the session as well
-                    this->cancel_charging_callback(connector);
+                    this->status->submit_event(connector, Event_TransactionStoppedAndUserActionRequired());
+                    this->cancel_charging_callback(connector, Reason::Local);
                     return AuthorizationStatus::Invalid;
                 }
             }
@@ -2318,7 +2323,8 @@ void ChargePoint::register_resume_charging_callback(const std::function<bool(int
     this->resume_charging_callback = callback;
 }
 
-void ChargePoint::register_cancel_charging_callback(const std::function<bool(int32_t connector)>& callback) {
+void ChargePoint::register_cancel_charging_callback(
+    const std::function<bool(int32_t connector, ocpp1_6::Reason reason)>& callback) {
     this->cancel_charging_callback = callback;
 }
 

@@ -101,7 +101,8 @@ private:
     std::map<MessageId, std::thread> remote_start_transaction; // FIXME: this should be done differently
     std::mutex remote_start_transaction_mutex;                 // FIXME: this should be done differently
     std::map<MessageId, std::thread> remote_stop_transaction;  // FIXME: this should be done differently
-    std::mutex remote_stop_transaction_mutex;                  // FIXME: this should be done differently
+    std::map<MessageId, std::thread> stop_transaction_thread;
+    std::mutex remote_stop_transaction_mutex; // FIXME: this should be done differently
     std::vector<std::unique_ptr<Everest::SteadyTimer>> connection_timeout_timer;
     std::mutex connection_timeout_mutex;
 
@@ -124,7 +125,7 @@ private:
     std::function<bool(int32_t connector)> disable_evse_callback;
     std::function<bool(int32_t connector)> pause_charging_callback;
     std::function<bool(int32_t connector)> resume_charging_callback;
-    std::function<bool(int32_t connector)> cancel_charging_callback;
+    std::function<bool(int32_t connector, Reason reason)> cancel_charging_callback;
     std::function<void(int32_t connector, ocpp1_6::CiString20Type idTag)> remote_start_transaction_callback;
     std::function<bool(int32_t connector)> unlock_connector_callback;
     std::function<bool(int32_t connector, double max_current)> set_max_current_callback;
@@ -338,7 +339,8 @@ public:
     void register_resume_charging_callback(const std::function<bool(int32_t connector)>& callback);
 
     /// \brief registers a \p callback function that can be used to cancel charging
-    void register_cancel_charging_callback(const std::function<bool(int32_t connector)>& callback);
+    void
+    register_cancel_charging_callback(const std::function<bool(int32_t connector, ocpp1_6::Reason reason)>& callback);
 
     /// registers a \p callback function that can be used to remotely start a transaction
     void register_remote_start_transaction_callback(

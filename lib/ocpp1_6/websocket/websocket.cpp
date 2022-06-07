@@ -50,6 +50,7 @@ void Websocket::register_sign_certificate_callback(const std::function<void()>& 
 }
 
 bool Websocket::send(const std::string& message) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     return this->websocket->send(message);
 }
 
