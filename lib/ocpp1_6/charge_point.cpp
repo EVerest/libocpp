@@ -1274,6 +1274,7 @@ ChargingSchedule ChargePoint::create_composite_schedule(std::vector<ChargingProf
         ChargingSchedulePeriod max_delta_period;
         max_delta_period.startPeriod = delta;
         max_delta_period.limit = default_limit; // FIXME?
+        bool max_charging_profile_exists = false;
         // first pass to establish a baseline with charge point max profiles:
         for (auto p : charging_profiles) {
             if (p.chargingProfilePurpose == ChargingProfilePurposeType::ChargePointMaxProfile &&
@@ -1341,6 +1342,7 @@ ChargingSchedule ChargePoint::create_composite_schedule(std::vector<ChargingProf
                     if (period_time <= sample_time) {
                         max_delta_period.limit = period.limit;
                         max_delta_period.numberPhases = period.numberPhases;
+                        max_charging_profile_exists = true;
                     } else {
                         break; // this should speed things up a little bit...
                     }
@@ -1413,11 +1415,16 @@ ChargingSchedule ChargePoint::create_composite_schedule(std::vector<ChargingProf
                 for (auto period : p.chargingSchedule.chargingSchedulePeriod) {
                     auto period_time = std::chrono::seconds(period.startPeriod) + start_schedule;
                     if (period_time <= sample_time) {
-                        if (period.limit < max_delta_period.limit && period.limit < delta_period.limit) {
+                        if (max_charging_profile_exists) {
+                            if (period.limit < max_delta_period.limit && period.limit < delta_period.limit) {
+                                delta_period.limit = period.limit;
+                                delta_period.numberPhases = period.numberPhases;
+                            } else {
+                                delta_period.limit = max_delta_period.limit;
+                            }
+                        } else {
                             delta_period.limit = period.limit;
                             delta_period.numberPhases = period.numberPhases;
-                        } else {
-                            delta_period.limit = max_delta_period.limit;
                         }
                     } else {
                         break; // this should speed things up a little bit...
