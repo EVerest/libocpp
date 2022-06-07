@@ -982,6 +982,16 @@ void ChargePoint::handleRemoteStartTransactionRequest(Call<RemoteStartTransactio
 
         this->remote_start_transaction[call.uniqueId] = std::thread([this, call, connector]() {
             bool authorized = true;
+            int32_t connector = 0;
+            if (!call.msg.connectorId) {
+                connector = 0;
+            } else {
+                connector = call.msg.connectorId.value();
+            }
+
+            if (this->configuration->getAuthorizeConnectorZeroOnConnectorOne() && connector == 0) {
+                connector = 1;
+            }
             if (this->configuration->getAuthorizeRemoteTxRequests()) {
                 // need to authorize first
                 authorized = (this->authorize_id_tag(call.msg.idTag) == AuthorizationStatus::Accepted);
@@ -989,7 +999,7 @@ void ChargePoint::handleRemoteStartTransactionRequest(Call<RemoteStartTransactio
                 // no explicit authorization is requested, implicitly authorizing this idTag internally
                 IdTagInfo idTagInfo;
                 idTagInfo.status = AuthorizationStatus::Accepted;
-                this->charging_sessions->add_authorized_token(call.msg.connectorId.value(), call.msg.idTag, idTagInfo);
+                this->charging_sessions->add_authorized_token(connector, call.msg.idTag, idTagInfo);
                 this->connection_timeout_timer.at(connector)->timeout(
                     std::chrono::seconds(this->configuration->getConnectionTimeOut()));
             }
