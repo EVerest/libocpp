@@ -1271,6 +1271,84 @@ ChargingSchedule ChargePoint::create_composite_schedule(std::vector<ChargingProf
         auto sample_time = start_time + delta_duration;
         auto sample_time_datetime = DateTime(sample_time);
 
+        ChargingSchedulePeriod max_delta_period;
+        max_delta_period.startPeriod = delta;
+        max_delta_period.limit = default_limit; // FIXME?
+        // first pass to establish a baseline with charge point max profiles:
+        for (auto p : charging_profiles) {
+            if (p.chargingProfilePurpose == ChargingProfilePurposeType::ChargePointMaxProfile &&
+                p.stackLevel >= current_stack_level) {
+                // get limit at this point in time:
+                if (p.validFrom && p.validFrom.value() > sample_time_datetime) {
+                    // only valid in the future
+                    continue;
+                }
+                if (p.validTo && sample_time_datetime > p.validTo.value()) {
+                    // only valid in the past
+                    continue;
+                }
+                // profile is valid right now
+                // one last check for a start schedule:
+                if (p.chargingProfileKind == ChargingProfileKindType::Absolute && !p.chargingSchedule.startSchedule) {
+                    EVLOG(error) << "ERROR we do not know when the schedule should start, this should not be "
+                                    "possible...";
+                    continue;
+                }
+
+                auto start_schedule = p.chargingSchedule.startSchedule.value().to_time_point();
+                if (p.chargingProfileKind == ChargingProfileKindType::Recurring) {
+                    // TODO(kai): special handling of recurring charging profiles!
+                    if (!p.recurrencyKind) {
+                        EVLOG(warning) << "Recurring charging profile without a recurreny kind is not supported";
+                        continue;
+                    }
+                    if (!p.chargingSchedule.startSchedule) {
+                        EVLOG(warning) << "Recurring charging profile without a start schedule is not supported";
+                        continue;
+                    }
+
+                    if (p.recurrencyKind.value() == RecurrencyKindType::Daily) {
+                        auto midnight_of_start_schedule = date::floor<date::days>(start_schedule);
+                        auto diff = start_schedule - midnight_of_start_schedule;
+                        auto daily_start_schedule = midnight_of_start_time + diff;
+                        if (daily_start_schedule > start_time) {
+                            start_schedule = daily_start_schedule - date::days(1);
+                        } else {
+                            start_schedule = daily_start_schedule;
+                        }
+                    } else if (p.recurrencyKind.value() == RecurrencyKindType::Weekly) {
+                        // TODO: compute weekly profile
+                    }
+                }
+                if (p.chargingProfileKind == ChargingProfileKindType::Relative) {
+                    if (p.chargingProfilePurpose == ChargingProfilePurposeType::ChargePointMaxProfile) {
+                        EVLOG(error) << "ERROR relative charging profiles are not supported as ChargePointMaxProfile "
+                                        "(at least for now)";
+                        continue;
+                    } else {
+                        // FIXME: relative charging profiles are possible here
+                    }
+                }
+
+                // FIXME: fix this for recurring charging profiles!
+                if (p.chargingSchedule.duration &&
+                    sample_time > p.chargingSchedule.startSchedule.value().to_time_point() +
+                                      std::chrono::seconds(p.chargingSchedule.duration.value())) {
+                    continue;
+                }
+                for (auto period : p.chargingSchedule.chargingSchedulePeriod) {
+                    auto period_time = std::chrono::seconds(period.startPeriod) + start_schedule;
+                    if (period_time <= sample_time) {
+                        max_delta_period.limit = period.limit;
+                        max_delta_period.numberPhases = period.numberPhases;
+                    } else {
+                        break; // this should speed things up a little bit...
+                    }
+                }
+            }
+        }
+        current_stack_level = 0;
+        delta_period.limit = max_delta_period.limit; // FIXME?
         for (auto p : charging_profiles) {
             if (p.stackLevel >= current_stack_level) {
                 // get limit at this point in time:
@@ -1335,8 +1413,12 @@ ChargingSchedule ChargePoint::create_composite_schedule(std::vector<ChargingProf
                 for (auto period : p.chargingSchedule.chargingSchedulePeriod) {
                     auto period_time = std::chrono::seconds(period.startPeriod) + start_schedule;
                     if (period_time <= sample_time) {
-                        delta_period.limit = period.limit;
-                        delta_period.numberPhases = period.numberPhases;
+                        if (period.limit < max_delta_period.limit && period.limit < delta_period.limit) {
+                            delta_period.limit = period.limit;
+                            delta_period.numberPhases = period.numberPhases;
+                        } else {
+                            delta_period.limit = max_delta_period.limit;
+                        }
                     } else {
                         break; // this should speed things up a little bit...
                     }
