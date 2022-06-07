@@ -20,7 +20,8 @@ private:
     std::vector<MeterValue> sampled_meter_values;
     std::mutex clock_aligned_meter_values_mutex;
     std::vector<MeterValue> clock_aligned_meter_values;
-    boost::optional<ChargingProfile> tx_charging_profile; // TODO(kai): connect to charging profile handling
+    std::mutex tx_charging_profiles_mutex;
+    std::map<int32_t, ChargingProfile> tx_charging_profiles;
 
 public:
     /// \brief Creates a new Transaction object, taking ownership of the provided \p meter_values_sample_timer
@@ -54,6 +55,18 @@ public:
 
     /// \brief Marks the transaction as stopped/inactive
     void stop();
+
+    /// \brief Set a \p charging_profile
+    void set_charging_profile(ChargingProfile charging_profile);
+
+    /// \brief Remove the charging profile at the provided \p stack_level
+    void remove_charging_profile(int32_t stack_level);
+
+    /// \brief Remove all charging profiles
+    void remove_charging_profiles();
+
+    /// \brief \returns all charging profiles of this transaction
+    std::map<int32_t, ChargingProfile> get_charging_profiles();
 };
 
 /// \brief A structure that contains a idTag and its corresponding idTagInfo

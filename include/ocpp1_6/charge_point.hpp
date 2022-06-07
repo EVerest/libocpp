@@ -197,6 +197,13 @@ private:
     void handleSetChargingProfileRequest(Call<SetChargingProfileRequest> call);
     void handleGetCompositeScheduleRequest(Call<GetCompositeScheduleRequest> call);
     void handleClearChargingProfileRequest(Call<ClearChargingProfileRequest> call);
+    std::vector<ChargingProfile> get_valid_profiles(std::map<int32_t, ocpp1_6::ChargingProfile> profiles,
+                                                    date::utc_clock::time_point start_time,
+                                                    date::utc_clock::time_point end_time);
+
+    ChargingSchedule create_composite_schedule(std::vector<ChargingProfile> charging_profiles,
+                                               date::utc_clock::time_point start_time,
+                                               date::utc_clock::time_point end_time, int32_t duration_s);
 
     /// \brief ReserveNow.req(connectorId, expiryDate, idTag, reservationId, [parentIdTag]): tries to perform the
     /// reservation and sends a reservation response. The reservation response: ReserveNow::Status
