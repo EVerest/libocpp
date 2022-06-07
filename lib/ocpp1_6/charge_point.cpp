@@ -445,7 +445,7 @@ void ChargePoint::stop() {
 
     this->message_queue->stop();
 
-    this->websocket->disconnect();
+    this->websocket->disconnect(websocketpp::close::status::going_away);
     this->work.reset();
     this->io_service.stop();
     this->io_service_thread.join();
@@ -825,7 +825,7 @@ void ChargePoint::handleChangeConfigurationRequest(Call<ChangeConfigurationReque
                     this->registerSwitchSecurityProfileCallback(
                         [this, security_profile]() { this->switchSecurityProfile(security_profile); });
                     // disconnected_callback will trigger security_profile_callback when it is set
-                    this->websocket->disconnect();
+                    this->websocket->disconnect(websocketpp::close::status::service_restart);
                 }
             }
         }

@@ -23,8 +23,8 @@ bool Websocket::connect(int32_t security_profile) {
     return this->websocket->connect(security_profile);
 }
 
-void Websocket::disconnect() {
-    this->websocket->disconnect();
+void Websocket::disconnect(websocketpp::close::status::value code) {
+    this->websocket->disconnect(code);
 }
 
 void Websocket::reconnect(std::error_code reason, long delay) {

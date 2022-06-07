@@ -181,8 +181,8 @@ void WebsocketPlain::on_close_plain(client* c, websocketpp::connection_hdl hdl) 
     EVLOG_info << "Closed plain websocket connection with code: " << error_code << " ("
                << websocketpp::close::status::get_string(con->get_remote_close_code())
                << "), reason: " << con->get_remote_close_reason();
-    // dont reconnect on normal close
-    if (error_code != std::error_code()) {
+    // dont reconnect on service restart code
+    if (con->get_remote_close_code() != websocketpp::close::status::service_restart) {
         this->reconnect(error_code, this->reconnect_interval_ms);
     }
     this->disconnected_callback();

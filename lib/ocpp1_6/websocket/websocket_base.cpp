@@ -58,7 +58,7 @@ bool WebsocketBase::initialized() {
     return true;
 }
 
-void WebsocketBase::disconnect() {
+void WebsocketBase::disconnect(websocketpp::close::status::value code) {
     if (!this->initialized()) {
         EVLOG(error) << "Cannot disconnect a websocket that was not initialized";
         return;
@@ -70,7 +70,7 @@ void WebsocketBase::disconnect() {
     }
 
     EVLOG(info) << "Disconnecting websocket...";
-    this->close(websocketpp::close::status::normal, "");
+    this->close(code, "");
 }
 
 boost::optional<std::string> WebsocketBase::getAuthorizationHeader() {

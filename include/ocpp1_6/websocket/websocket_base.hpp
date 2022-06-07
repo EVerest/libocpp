@@ -56,7 +56,7 @@ public:
     virtual void reconnect(std::error_code reason, long delay) = 0;
 
     /// \brief disconnect the websocket
-    void disconnect();
+    void disconnect(websocketpp::close::status::value code);
 
     /// \brief closes the websocket
     virtual void close(websocketpp::close::status::value code, const std::string& reason) = 0;

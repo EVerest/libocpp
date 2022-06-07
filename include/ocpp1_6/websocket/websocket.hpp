@@ -33,7 +33,7 @@ public:
     bool connect(int32_t security_profile);
 
     /// \brief disconnect the websocket
-    void disconnect();
+    void disconnect(websocketpp::close::status::value code);
 
     // \brief reconnects the websocket after the delay
     void reconnect(std::error_code reason, long delay);
