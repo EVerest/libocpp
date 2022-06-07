@@ -276,6 +276,10 @@ ChargePointConfiguration::ChargePointConfiguration(json config, std::string conf
             this->supported_message_types_from_central_system[feature_profile].begin(),
             this->supported_message_types_from_central_system[feature_profile].end());
     }
+    // GetLocalListVersion and SendLocalList should be supported even if LocalAuthListManagement is not a supported
+    // feature profile
+    this->supported_message_types_receiving.insert(MessageType::GetLocalListVersion);
+    this->supported_message_types_receiving.insert(MessageType::SendLocalList);
 }
 
 void ChargePointConfiguration::close() {

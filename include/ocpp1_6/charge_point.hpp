@@ -279,7 +279,7 @@ public:
     /// \brief Stops a charging session on the given \p connector with the given \p timestamp and \p
     /// energy_Wh_import as stop energy
     /// \returns true if the session could be stopped successfully
-    bool stop_session(int32_t connector, DateTime timestamp, double energy_Wh_import);
+    bool stop_session(int32_t connector, DateTime timestamp, double energy_Wh_import, Reason reason);
 
     /// \brief EV indicates that it starts charging on the given \p connector
     /// \returns true if this state change was possible
