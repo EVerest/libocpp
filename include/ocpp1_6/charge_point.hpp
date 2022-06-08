@@ -94,6 +94,9 @@ private:
     std::map<int32_t, std::map<int32_t, ChargingProfile>> tx_default_profiles;
     std::mutex tx_default_profiles_mutex;
 
+    std::map<int32_t, int32_t> res_conn_map;
+    std::map<int32_t, std::string> reserved_id_tag_map;
+
     std::unique_ptr<Websocket> websocket;
     boost::shared_ptr<boost::asio::io_service::work> work;
     boost::asio::io_service io_service;
@@ -282,7 +285,8 @@ public:
     /// \brief Initiates a new charging session on the given \p connector with the given \p timestamp and \p
     /// energy_Wh_import as start energy
     /// \returns true if the session could be stated successfully
-    bool start_session(int32_t connector, DateTime timestamp, double energy_Wh_import);
+    bool start_session(int32_t connector, DateTime timestamp, double energy_Wh_import,
+                       boost::optional<int32_t> reservation_id);
 
     /// \brief Stops a charging session on the given \p connector with the given \p timestamp and \p
     /// energy_Wh_import as stop energy
@@ -404,6 +408,12 @@ public:
 
     /// \brief setter for the signed_firwmare_update_running flag
     void set_signed_firmware_update_running(bool b);
+
+    /// \brief called when a reservation is started
+    void reservation_start(int32_t connector_id, int32_t reservation_id, std::string id_tag);
+
+    /// \brief called when a reservation ends
+    void reservation_end(int32_t connector, int32_t reservation_id, std::string reason);
 
     // FIXME: rework the following API functions, do we want to expose them?
     // insert plug

@@ -33,6 +33,9 @@ ChargePoint::ChargePoint(std::shared_ptr<ChargePointConfiguration> configuration
                            << " because the car was not plugged-in in time.";
                 this->charging_sessions->remove_session(connector);
                 this->status->submit_event(connector, Event_BecomeAvailable());
+                if (this->reserved_id_tag_map.find(connector) != this->reserved_id_tag_map.end()) {
+                    this->status->submit_event(connector, Event_ReserveConnector());
+                }
             }));
     }
     this->init_websocket(this->configuration->getSecurityProfile());
@@ -1961,22 +1964,34 @@ void ChargePoint::signedFirmwareUpdateStatusNotification(FirmwareStatusEnumType 
 void ChargePoint::handleReserveNowRequest(Call<ReserveNowRequest> call) {
     ReserveNowResponse response;
     response.status = ReservationStatus::Rejected;
-    if (this->reserve_now_callback != nullptr) {
+    if (this->reserve_now_callback != nullptr &&
+        this->configuration->getSupportedFeatureProfiles().find("Reservation") != std::string::npos) {
         response.status = this->reserve_now_callback(call.msg.reservationId, call.msg.connectorId, call.msg.expiryDate,
                                                      call.msg.idTag, call.msg.parentIdTag);
     }
+
     CallResult<ReserveNowResponse> call_result(response, call.uniqueId);
     this->send<ReserveNowResponse>(call_result);
+
+    if (response.status == ReservationStatus::Accepted) {
+        this->status->submit_event(call.msg.connectorId, Event_ReserveConnector());
+    }
 }
 
 void ChargePoint::handleCancelReservationRequest(Call<CancelReservationRequest> call) {
     CancelReservationResponse response;
     response.status = CancelReservationStatus::Rejected;
+
+    int32_t connector = this->res_conn_map[call.msg.reservationId];
     if (this->cancel_reservation_callback != nullptr) {
-        response.status = this->cancel_reservation_callback(call.msg.reservationId);
+        response.status = this->cancel_reservation_callback(connector);
     }
     CallResult<CancelReservationResponse> call_result(response, call.uniqueId);
     this->send<CancelReservationResponse>(call_result);
+
+    if (response.status == CancelReservationStatus::Accepted) {
+        this->status->submit_event(connector, Event_BecomeAvailable());
+    }
 }
 
 void ChargePoint::handleSendLocalListRequest(Call<SendLocalListRequest> call) {
@@ -2127,6 +2142,16 @@ AuthorizationStatus ChargePoint::authorize_id_tag(CiString20Type idTag) {
         }
     }
 
+    // check if connector is reserved and tagId matches the reserved tag
+    int32_t connector = 1;
+    if (this->reserved_id_tag_map.find(connector) != this->reserved_id_tag_map.end()) {
+        if (idTag.get() == this->reserved_id_tag_map[connector]) {
+            auth_status = AuthorizationStatus::Accepted;
+        } else {
+            return AuthorizationStatus::Invalid;
+        }
+    }
+
     AuthorizeRequest req;
     req.idTag = idTag;
 
@@ -2143,7 +2168,6 @@ AuthorizationStatus ChargePoint::authorize_id_tag(CiString20Type idTag) {
 
         if (auth_status == AuthorizationStatus::Accepted) {
             this->configuration->updateAuthorizationCacheEntry(idTag, call_result.msg.idTagInfo);
-            int32_t connector = 1;
             if (!this->configuration->getAuthorizeConnectorZeroOnConnectorOne()) {
                 connector = this->charging_sessions->add_authorized_token(idTag, authorize_response.idTagInfo);
             } else {
@@ -2275,6 +2299,10 @@ bool ChargePoint::start_transaction(int32_t connector) {
 
     Call<StartTransactionRequest> call(req, this->message_queue->createMessageId());
 
+    if (this->charging_sessions->get_reservation_id(connector) != boost::none) {
+        call.msg.reservationId = this->charging_sessions->get_reservation_id(connector).value();
+    }
+
     auto start_transaction_future = this->send_async<StartTransactionRequest>(call);
 
     auto enhanced_message = start_transaction_future.get();
@@ -2319,7 +2347,8 @@ bool ChargePoint::start_transaction(int32_t connector) {
     return true;
 }
 
-bool ChargePoint::start_session(int32_t connector, DateTime timestamp, double energy_Wh_import) {
+bool ChargePoint::start_session(int32_t connector, DateTime timestamp, double energy_Wh_import,
+                                boost::optional<int32_t> reservation_id) {
     if (!this->charging_sessions->initiate_session(connector)) {
         EVLOG_error << "Could not initiate charging session on connector '" << connector << "'";
         return false;
@@ -2329,6 +2358,9 @@ bool ChargePoint::start_session(int32_t connector, DateTime timestamp, double en
 
     this->charging_sessions->add_start_energy_wh(connector,
                                                  std::make_shared<StampedEnergyWh>(timestamp, energy_Wh_import));
+    if (reservation_id != boost::none) {
+        this->charging_sessions->add_reservation_id(connector, reservation_id.value());
+    }
 
     return this->start_transaction(connector);
 }
@@ -2604,6 +2636,31 @@ bool ChargePoint::is_signed_firmware_update_running() {
 
 void ChargePoint::set_signed_firmware_update_running(bool b) {
     this->signed_firmware_update_running = b;
+}
+
+void ChargePoint::reservation_start(int32_t connector, int32_t reservation_id, std::string id_tag) {
+    this->reserved_id_tag_map[connector] = id_tag;
+
+    if (res_conn_map.count(reservation_id) == 0) {
+        this->res_conn_map[reservation_id] = connector;
+    } else if (res_conn_map.count(reservation_id) == 1) {
+        std::map<int32_t, int32_t>::iterator it;
+        it = this->res_conn_map.find(reservation_id);
+        this->res_conn_map.erase(it);
+        this->res_conn_map[reservation_id] = connector;
+    }
+}
+
+void ChargePoint::reservation_end(int32_t connector, int32_t reservation_id, std::string reason) {
+    if (reason == "Expired") {
+        this->status->submit_event(connector, Event_BecomeAvailable());
+    }
+    // delete reservation in res con map
+    std::map<int32_t, int32_t>::iterator res_con_map_it;
+    res_con_map_it = this->res_conn_map.find(reservation_id);
+    this->res_conn_map.erase(res_con_map_it);
+
+    this->reserved_id_tag_map.erase(connector);
 }
 
 } // namespace ocpp1_6
