@@ -113,6 +113,12 @@
             "type": "boolean",
             "readOnly": true,
             "default": true
+        },
+        "LogMessages": {
+            "$comment": "Automatically log all sent and received messages to a temporary file at /tmp/libocpp_messages_<LIBOCPP_START_TIMESTAMP>.txt",
+            "type": "boolean",
+            "readOnly": true,
+            "default": true
         }
     },
     "additionalProperties": false

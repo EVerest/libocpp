@@ -403,6 +403,9 @@ bool ChargePointConfiguration::getAuthorizeConnectorZeroOnConnectorOne() {
     }
     return false;
 }
+bool ChargePointConfiguration::getLogMessages() {
+    return this->config["Internal"]["LogMessages"];
+}
 
 std::string ChargePointConfiguration::getSupportedCiphers12() {
 

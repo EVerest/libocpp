@@ -59,6 +59,7 @@ public:
     boost::optional<CiString25Type> getMeterType();
     int32_t getWebsocketReconnectInterval();
     bool getAuthorizeConnectorZeroOnConnectorOne();
+    bool getLogMessages();
 
     std::string getSupportedCiphers12();
     std::string getSupportedCiphers13();

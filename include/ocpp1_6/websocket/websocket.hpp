@@ -3,6 +3,8 @@
 #ifndef OCPP_WEBSOCKET_HPP
 #define OCPP_WEBSOCKET_HPP
 
+#include <iostream>
+#include <fstream>
 #include <thread>
 
 #include <ocpp1_6/websocket/websocket_plain.hpp>
@@ -23,10 +25,14 @@ private:
     std::function<void()> disconnected_callback;
     std::function<void(const std::string& message)> message_callback;
     std::function<void()> sign_certificate_callback;
+    std::ofstream output_file;
+    std::mutex output_file_mutex;
+    bool log_messages;
 
 public:
     /// \brief Creates a new Websocket object with the providede \p configuration
     explicit Websocket(std::shared_ptr<ChargePointConfiguration> configuration, int32_t security_profile);
+    ~Websocket();
 
     /// \brief connect to a websocket (TLS or non-TLS depending on the central system uri in the configuration)
     /// \returns true if the websocket is initialized and a connection attempt is made
