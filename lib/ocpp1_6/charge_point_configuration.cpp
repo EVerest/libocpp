@@ -276,10 +276,12 @@ ChargePointConfiguration::ChargePointConfiguration(json config, std::string conf
             this->supported_message_types_from_central_system[feature_profile].begin(),
             this->supported_message_types_from_central_system[feature_profile].end());
     }
-    // GetLocalListVersion and SendLocalList should be supported even if LocalAuthListManagement is not a supported
-    // feature profile
+
+    // those MessageTypes should still be accepted and implement their individual handling in case the feature profile
+    // is not supported
     this->supported_message_types_receiving.insert(MessageType::GetLocalListVersion);
     this->supported_message_types_receiving.insert(MessageType::SendLocalList);
+    this->supported_message_types_receiving.insert(MessageType::ReserveNow);
 }
 
 void ChargePointConfiguration::close() {
@@ -1354,6 +1356,28 @@ KeyValue ChargePointConfiguration::getNumberOfConnectorsKeyValue() {
     return kv;
 }
 
+// Reservation Profile
+boost::optional<bool> ChargePointConfiguration::getReserveConnectorZeroSupported() {
+    boost::optional<bool> reserve_connector_zero_supported = boost::none;
+    if (this->config.contains("Reservation") && this->config["Reservation"].contains("ReserveConnectorZeroSupported")) {
+        reserve_connector_zero_supported.emplace(this->config["Reservation"]["ReserveConnectorZeroSupported"]);
+    }
+    return reserve_connector_zero_supported;
+}
+
+boost::optional<KeyValue> ChargePointConfiguration::getReserveConnectorZeroSupportedKeyValue() {
+    boost::optional<KeyValue> reserve_connector_zero_supported_kv = boost::none;
+    auto reserve_connector_zero_supported = this->getReserveConnectorZeroSupported();
+    if (reserve_connector_zero_supported != boost::none) {
+        ocpp1_6::KeyValue kv;
+        kv.key = "ReserveConnectorZeroSupported";
+        kv.readonly = true;
+        kv.value.emplace(std::to_string(reserve_connector_zero_supported.value()));
+        reserve_connector_zero_supported_kv.emplace(kv);
+    }
+    return reserve_connector_zero_supported_kv;
+}
+
 // Core Profile
 int32_t ChargePointConfiguration::getResetRetries() {
     return this->config["Core"]["ResetRetries"];
@@ -1946,6 +1970,9 @@ boost::optional<KeyValue> ChargePointConfiguration::get(CiString50Type key) {
     }
     if (key == "NumberOfConnectors") {
         return this->getNumberOfConnectorsKeyValue();
+    }
+    if (key == "ReserveConnectorZeroSupported") {
+        return this->getReserveConnectorZeroSupportedKeyValue();
     }
     if (key == "ResetRetries") {
         return this->getResetRetriesKeyValue();

@@ -179,6 +179,10 @@ public:
     int32_t getNumberOfConnectors();
     KeyValue getNumberOfConnectorsKeyValue();
 
+    // Reservation Profile
+    boost::optional<bool> getReserveConnectorZeroSupported();
+    boost::optional<KeyValue> getReserveConnectorZeroSupportedKeyValue();
+
     // Core Profile
     int32_t getResetRetries();
     void setResetRetries(int32_t retries);
