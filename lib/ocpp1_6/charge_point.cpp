@@ -338,7 +338,7 @@ MeterValue ChargePoint::get_latest_meter_value(int32_t connector, std::vector<Me
                         sample.value = conversions::double_to_string((double)power_meter_value["current_A"]["L3"]);
                     }
                     if (phase == Phase::N) {
-                        sample.value = conversions::double_to_string((double)power_meter_value["current_A"]["LN3"]);
+                        sample.value = conversions::double_to_string((double)power_meter_value["current_A"]["N"]);
                     }
                     filtered_meter_value.sampledValue.push_back(sample);
                 }
