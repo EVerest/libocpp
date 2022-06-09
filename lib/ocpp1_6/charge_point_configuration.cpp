@@ -2190,16 +2190,20 @@ ConfigurationStatus ChargePointConfiguration::set(CiString50Type key, CiString50
         auto security_profile = std::stoi(value.get());
         auto current_security_profile = this->getSecurityProfile();
         if (security_profile <= current_security_profile) {
-            EVLOG(debug) << "New security profile is <= current security profile. Rejecting request.";
+            EVLOG(warning) << "New security profile is <= current security profile. Rejecting request.";
             return ConfigurationStatus::Rejected;
         } else if ((security_profile == 1 || security_profile == 2) && this->getAuthorizationKey() == boost::none) {
-            EVLOG(debug) << "New security level set to 1 or 2 but no authorization key is set. Rejecting request.";
+            EVLOG(warning) << "New security level set to 1 or 2 but no authorization key is set. Rejecting request.";
             return ConfigurationStatus::Rejected;
         } else if ((security_profile == 2 || security_profile == 3) &&
                    !this->pki_handler->isCentralSystemRootCertificateInstalled()) {
-            EVLOG(debug) << "New security level set to 2 or 3 but no CentralSystemRootCertificateInstalled";
+            EVLOG(warning) << "New security level set to 2 or 3 but no CentralSystemRootCertificateInstalled";
             return ConfigurationStatus::Rejected;
-        } else if (security_profile > 3) {
+        } else if (security_profile == 3 && !this->pki_handler->isClientCertificateInstalled()) {
+            EVLOG(warning) << "New security level set to 3 but no Client Certificate is installed"
+        }
+
+        else if (security_profile > 3) {
             return ConfigurationStatus::Rejected;
         } else {
             // security profile is set during actual connection

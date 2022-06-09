@@ -200,6 +200,10 @@ bool PkiHandler::isManufacturerRootCertificateInstalled() {
     return boost::filesystem::exists(this->getFile(MF_ROOT_CA_FILE));
 }
 
+bool PkiHandler::isClientCertificateInstalled() {
+    return boost::filesystem::exists(this->getFile(CLIENT_SIDE_CERTIFICATE_FILE));
+}
+
 bool PkiHandler::isRootCertificateInstalled(CertificateUseEnumType type) {
     if (type == CertificateUseEnumType::CentralSystemRootCertificate) {
         return this->isCentralSystemRootCertificateInstalled();

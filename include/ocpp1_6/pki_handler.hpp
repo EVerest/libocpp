@@ -93,6 +93,9 @@ public:
     /// \brief indicates if a manufacturer root certificate is installed
     bool isManufacturerRootCertificateInstalled();
 
+    /// \brief indicates if a client certificate is installed
+    bool isClientCertificateInstalled();
+
     /// \brief indicates if a root certificate of the given \p type is installed
     bool isRootCertificateInstalled(CertificateUseEnumType type);
 
