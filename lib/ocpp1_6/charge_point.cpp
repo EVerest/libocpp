@@ -33,9 +33,6 @@ ChargePoint::ChargePoint(std::shared_ptr<ChargePointConfiguration> configuration
                            << " because the car was not plugged-in in time.";
                 this->charging_sessions->remove_session(connector);
                 this->status->submit_event(connector, Event_BecomeAvailable());
-                if (this->reserved_id_tag_map.find(connector) != this->reserved_id_tag_map.end()) {
-                    this->status->submit_event(connector, Event_ReserveConnector());
-                }
             }));
     }
     this->init_websocket(this->configuration->getSecurityProfile());
