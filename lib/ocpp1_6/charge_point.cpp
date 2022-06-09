@@ -2008,6 +2008,7 @@ void ChargePoint::handleSendLocalListRequest(Call<SendLocalListRequest> call) {
             this->configuration->updateLocalAuthorizationListVersion(call.msg.listVersion);
             this->configuration->updateLocalAuthorizationList(local_auth_list);
         } else {
+            this->configuration->updateLocalAuthorizationListVersion(call.msg.listVersion);
             this->configuration->clearLocalAuthorizationList();
         }
         response.status = UpdateStatus::Accepted;
