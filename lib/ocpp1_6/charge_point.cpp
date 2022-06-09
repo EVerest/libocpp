@@ -2471,7 +2471,6 @@ bool ChargePoint::stop_session(int32_t connector, DateTime timestamp, double ene
     }
     this->charging_sessions->remove_session(connector);
 
-    this->status->submit_event(connector, Event_BecomeAvailable());
     return true; // FIXME
 }
 
