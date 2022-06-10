@@ -2352,7 +2352,9 @@ bool ChargePoint::start_session(int32_t connector, DateTime timestamp, double en
         return false;
     }
 
-    this->status->submit_event(connector, Event_UsageInitiated());
+    if (this->status->get_state(connector) != ChargePointStatus::Reserved) {
+        this->status->submit_event(connector, Event_UsageInitiated());
+    }
 
     this->charging_sessions->add_start_energy_wh(connector,
                                                  std::make_shared<StampedEnergyWh>(timestamp, energy_Wh_import));
