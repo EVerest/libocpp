@@ -271,7 +271,8 @@ void WebsocketTLS::on_fail_tls(tls_client* c, websocketpp::connection_hdl hdl, b
     auto error_code = con->get_ec();
     auto transport_ec = con->get_transport_ec();
     EVLOG_error << "Failed to connect to TLS websocket server " << con->get_response_header("Server")
-                << ", code: " << error_code.value() << ", reason: " << error_code.message();
+                << ", code: " << error_code.value() << ", reason: " << error_code.message()
+                << ", response code: " << con->get_response_code();
     EVLOG_error << "Failed to connect to TLS websocket server "
                 << ", code: " << transport_ec.value() << ", reason: " << transport_ec.message()
                 << ", category: " << transport_ec.category().name();

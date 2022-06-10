@@ -192,7 +192,8 @@ void WebsocketPlain::on_fail_plain(client* c, websocketpp::connection_hdl hdl, b
     client::connection_ptr con = c->get_con_from_hdl(hdl);
     auto error_code = con->get_ec();
     EVLOG_error << "Failed to connect to plain websocket server " << con->get_response_header("Server")
-                << ", code: " << error_code.value() << ", reason: " << error_code.message();
+                << ", code: " << error_code.value() << ", reason: " << error_code.message()
+                << ", response code: " << con->get_response_code();
     EVLOG_error << "Failed to connect to plain websocket server "
                 << ", code: " << con->get_transport_ec().value() << ", reason: " << con->get_transport_ec().message()
                 << ", category: " << con->get_transport_ec().category().name();
