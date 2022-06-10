@@ -191,8 +191,12 @@ void WebsocketPlain::on_close_plain(client* c, websocketpp::connection_hdl hdl) 
 void WebsocketPlain::on_fail_plain(client* c, websocketpp::connection_hdl hdl, bool try_once) {
     client::connection_ptr con = c->get_con_from_hdl(hdl);
     auto error_code = con->get_ec();
+
     EVLOG_error << "Failed to connect to plain websocket server " << con->get_response_header("Server")
                 << ", code: " << error_code.value() << ", reason: " << error_code.message();
+    EVLOG_error << "Failed to connect to plain websocket server " << con->get_response_header("Server")
+                << ", code: " << con->get_transport_ec().value()
+                << ", category: " << con->get_transport_ec().category();
     // when connecting with new security profile websocket should only try to connect once
     if (!try_once) {
         this->reconnect(error_code, this->reconnect_interval_ms);
