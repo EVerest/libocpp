@@ -80,8 +80,10 @@ boost::optional<std::string> WebsocketBase::getAuthorizationHeader() {
         EVLOG(debug) << "AuthorizationKey present, encoding authentication header";
         std::string plain_auth_header = this->configuration->getChargePointId() + ":" + authorization_key.value();
         auth_header.emplace(std::string("Basic ") + websocketpp::base64_encode(plain_auth_header));
+
+        EVLOG(info) << "Basic Auth header: " << auth_header.get();
+        return auth_header;
     }
-    return auth_header;
 }
 
 } // namespace ocpp1_6
