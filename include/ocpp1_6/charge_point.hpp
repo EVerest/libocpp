@@ -235,7 +235,6 @@ private:
     void securityEventNotification(const SecurityEvent& type, const std::string& tech_info);
     void switchSecurityProfile(int32_t new_security_profile);
     void registerSwitchSecurityProfileCallback(const std::function<void()>& callback);
-
     // Local Authorization List profile
     void handleSendLocalListRequest(Call<SendLocalListRequest> call);
     void handleGetLocalListVersionRequest(Call<GetLocalListVersionRequest> call);
