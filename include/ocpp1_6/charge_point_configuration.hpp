@@ -30,9 +30,8 @@ private:
 
     std::vector<MeasurandWithPhase> csv_to_measurand_with_phase_vector(std::string csv);
     bool measurands_supported(std::string csv);
-    void set_security_profile_in_user_config();
-    void set_authorization_key_in_user_config();
     json get_user_config();
+    void setInUserConfig(std::string profile, std::string key, json value);
 
     static std::string hexToString(std::string const& s);
     static bool isHexNotation(std::string const& s);

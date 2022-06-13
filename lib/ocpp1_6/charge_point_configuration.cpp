@@ -296,31 +296,13 @@ json ChargePointConfiguration::get_user_config() {
         std::string user_config_file((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
         ifs.close();
         return json::parse(user_config_file);
-    } else {
-        EVLOG(debug) << "No user-config provided. Creating user_config.json.";
-        // creating new user config if it doesn't exist
-        boost::filesystem::create_directory(user_config_path.parent_path());
-        std::ofstream fs(user_config_path.c_str());
-        json user_config = json({});
-        fs << user_config << std::endl;
-        fs.close();
-        return user_config;
     }
 }
 
-void ChargePointConfiguration::set_security_profile_in_user_config() {
+void ChargePointConfiguration::setInUserConfig(std::string profile, std::string key, const json value) {
     auto user_config_path = boost::filesystem::path(this->getConfigsPath()) / "user_config" / "user_config.json";
     json user_config = this->get_user_config();
-    user_config["Security"]["SecurityProfile"] = this->getSecurityProfile();
-    std::ofstream ofs(user_config_path.c_str());
-    ofs << user_config << std::endl;
-    ofs.close();
-}
-
-void ChargePointConfiguration::set_authorization_key_in_user_config() {
-    auto user_config_path = boost::filesystem::path(this->getConfigsPath()) / "user_config" / "user_config.json";
-    json user_config = this->get_user_config();
-    user_config["Security"]["AuthorizationKey"] = this->getAuthorizationKey().get();
+    user_config[profile][key] = value;
     std::ofstream ofs(user_config_path.c_str());
     ofs << user_config << std::endl;
     ofs.close();
@@ -949,6 +931,7 @@ boost::optional<bool> ChargePointConfiguration::getAllowOfflineTxForUnknownId() 
 void ChargePointConfiguration::setAllowOfflineTxForUnknownId(bool enabled) {
     if (this->getAllowOfflineTxForUnknownId() != boost::none) {
         this->config["Core"]["AllowOfflineTxForUnknownId"] = enabled;
+        this->setInUserConfig("Core", "AllowOfflineTxForUnknownId", enabled);
     }
 }
 boost::optional<KeyValue> ChargePointConfiguration::getAllowOfflineTxForUnknownIdKeyValue() {
@@ -975,6 +958,7 @@ boost::optional<bool> ChargePointConfiguration::getAuthorizationCacheEnabled() {
 void ChargePointConfiguration::setAuthorizationCacheEnabled(bool enabled) {
     if (this->getAuthorizationCacheEnabled() != boost::none) {
         this->config["Core"]["AuthorizationCacheEnabled"] = enabled;
+        this->setInUserConfig("Core", "AuthorizationCacheEnabled", enabled);
     }
 }
 boost::optional<KeyValue> ChargePointConfiguration::getAuthorizationCacheEnabledKeyValue() {
@@ -1013,6 +997,7 @@ boost::optional<int32_t> ChargePointConfiguration::getBlinkRepeat() {
 void ChargePointConfiguration::setBlinkRepeat(int32_t blink_repeat) {
     if (this->getBlinkRepeat() != boost::none) {
         this->config["Core"]["BlinkRepeat"] = blink_repeat;
+        this->setInUserConfig("Core", "BlinkRepeat", blink_repeat);
     }
 }
 boost::optional<KeyValue> ChargePointConfiguration::getBlinkRepeatKeyValue() {
@@ -1034,6 +1019,7 @@ int32_t ChargePointConfiguration::getClockAlignedDataInterval() {
 }
 void ChargePointConfiguration::setClockAlignedDataInterval(int32_t interval) {
     this->config["Core"]["ClockAlignedDataInterval"] = interval;
+    this->setInUserConfig("Core", "ClockAlignedDataInterval", interval);
 }
 KeyValue ChargePointConfiguration::getClockAlignedDataIntervalKeyValue() {
     ocpp1_6::KeyValue kv;
@@ -1049,6 +1035,7 @@ int32_t ChargePointConfiguration::getConnectionTimeOut() {
 }
 void ChargePointConfiguration::setConnectionTimeOut(int32_t timeout) {
     this->config["Core"]["ConnectionTimeOut"] = timeout;
+    this->setInUserConfig("Core", "ConnectionTimeOut", timeout);
 }
 KeyValue ChargePointConfiguration::getConnectionTimeOutKeyValue() {
     ocpp1_6::KeyValue kv;
@@ -1064,6 +1051,7 @@ std::string ChargePointConfiguration::getConnectorPhaseRotation() {
 }
 void ChargePointConfiguration::setConnectorPhaseRotation(std::string connector_phase_rotation) {
     this->config["Core"]["ConnectorPhaseRotation"] = connector_phase_rotation;
+    this->setInUserConfig("Core", "ConnectorPhaseRotation", connector_phase_rotation);
 }
 KeyValue ChargePointConfiguration::getConnectorPhaseRotationKeyValue() {
     ocpp1_6::KeyValue kv;
@@ -1112,6 +1100,7 @@ int32_t ChargePointConfiguration::getHeartbeatInterval() {
 }
 void ChargePointConfiguration::setHeartbeatInterval(int32_t interval) {
     this->config["Core"]["HeartbeatInterval"] = interval;
+    this->setInUserConfig("Core", "HeartbeatInterval", interval);
 }
 KeyValue ChargePointConfiguration::getHeartbeatIntervalKeyValue() {
     ocpp1_6::KeyValue kv;
@@ -1132,6 +1121,7 @@ boost::optional<int32_t> ChargePointConfiguration::getLightIntensity() {
 void ChargePointConfiguration::setLightIntensity(int32_t light_intensity) {
     if (this->getLightIntensity() != boost::none) {
         this->config["Core"]["LightIntensity"] = light_intensity;
+        this->setInUserConfig("Core", "LightIntensity", light_intensity);
     }
 }
 boost::optional<KeyValue> ChargePointConfiguration::getLightIntensityKeyValue() {
@@ -1153,6 +1143,7 @@ bool ChargePointConfiguration::getLocalAuthorizeOffline() {
 }
 void ChargePointConfiguration::setLocalAuthorizeOffline(bool local_authorize_offline) {
     this->config["Core"]["LocalAuthorizeOffline"] = local_authorize_offline;
+    this->setInUserConfig("Core", "LocalAuthorizeOffline", local_authorize_offline);
 }
 KeyValue ChargePointConfiguration::getLocalAuthorizeOfflineKeyValue() {
     ocpp1_6::KeyValue kv;
@@ -1168,6 +1159,7 @@ bool ChargePointConfiguration::getLocalPreAuthorize() {
 }
 void ChargePointConfiguration::setLocalPreAuthorize(bool local_pre_authorize) {
     this->config["Core"]["LocalPreAuthorize"] = local_pre_authorize;
+    this->setInUserConfig("Core", "LocalPreAuthorize", local_pre_authorize);
 }
 KeyValue ChargePointConfiguration::getLocalPreAuthorizeKeyValue() {
     ocpp1_6::KeyValue kv;
@@ -1188,6 +1180,7 @@ boost::optional<int32_t> ChargePointConfiguration::getMaxEnergyOnInvalidId() {
 void ChargePointConfiguration::setMaxEnergyOnInvalidId(int32_t max_energy) {
     if (this->getMaxEnergyOnInvalidId() != boost::none) {
         this->config["Core"]["MaxEnergyOnInvalidId"] = max_energy;
+        this->setInUserConfig("Core", "MaxEnergyOnInvalidId", max_energy);
     }
 }
 boost::optional<KeyValue> ChargePointConfiguration::getMaxEnergyOnInvalidIdKeyValue() {
@@ -1212,6 +1205,7 @@ bool ChargePointConfiguration::setMeterValuesAlignedData(std::string meter_value
         return false;
     }
     this->config["Core"]["MeterValuesAlignedData"] = meter_values_aligned_data;
+    this->setInUserConfig("Core", "MeterValuesAlignedData", meter_values_aligned_data);
     return true;
 }
 KeyValue ChargePointConfiguration::getMeterValuesAlignedDataKeyValue() {
@@ -1255,6 +1249,7 @@ bool ChargePointConfiguration::setMeterValuesSampledData(std::string meter_value
         return false;
     }
     this->config["Core"]["MeterValuesSampledData"] = meter_values_sampled_data;
+    this->setInUserConfig("Core", "MeterValuesSampledData", meter_values_sampled_data);
     return true;
 }
 KeyValue ChargePointConfiguration::getMeterValuesSampledDataKeyValue() {
@@ -1295,6 +1290,7 @@ int32_t ChargePointConfiguration::getMeterValueSampleInterval() {
 }
 void ChargePointConfiguration::setMeterValueSampleInterval(int32_t interval) {
     this->config["Core"]["MeterValueSampleInterval"] = interval;
+    this->setInUserConfig("Core", "MeterValueSampleInterval", interval);
 }
 KeyValue ChargePointConfiguration::getMeterValueSampleIntervalKeyValue() {
     ocpp1_6::KeyValue kv;
@@ -1315,6 +1311,7 @@ boost::optional<int32_t> ChargePointConfiguration::getMinimumStatusDuration() {
 void ChargePointConfiguration::setMinimumStatusDuration(int32_t minimum_status_duration) {
     if (this->getMinimumStatusDuration() != boost::none) {
         this->config["Core"]["MinimumStatusDuration"] = minimum_status_duration;
+        this->setInUserConfig("Core", "MinimumStatusDuration", minimum_status_duration);
     }
 }
 boost::optional<KeyValue> ChargePointConfiguration::getMinimumStatusDurationKeyValue() {
@@ -1370,6 +1367,7 @@ int32_t ChargePointConfiguration::getResetRetries() {
 }
 void ChargePointConfiguration::setResetRetries(int32_t retries) {
     this->config["Core"]["ResetRetries"] = retries;
+    this->setInUserConfig("Core", "ResetRetries", retries);
 }
 KeyValue ChargePointConfiguration::getResetRetriesKeyValue() {
     ocpp1_6::KeyValue kv;
@@ -1385,6 +1383,7 @@ bool ChargePointConfiguration::getStopTransactionOnEVSideDisconnect() {
 }
 void ChargePointConfiguration::setStopTransactionOnEVSideDisconnect(bool stop_transaction_on_ev_side_disconnect) {
     this->config["Core"]["StopTransactionOnEVSideDisconnect"] = stop_transaction_on_ev_side_disconnect;
+    this->setInUserConfig("Core", "StopTransactionOnEVSideDisconnect", stop_transaction_on_ev_side_disconnect);
 }
 KeyValue ChargePointConfiguration::getStopTransactionOnEVSideDisconnectKeyValue() {
     ocpp1_6::KeyValue kv;
@@ -1400,6 +1399,7 @@ bool ChargePointConfiguration::getStopTransactionOnInvalidId() {
 }
 void ChargePointConfiguration::setStopTransactionOnInvalidId(bool stop_transaction_on_invalid_id) {
     this->config["Core"]["StopTransactionOnInvalidId"] = stop_transaction_on_invalid_id;
+    this->setInUserConfig("Core", "StopTransactionOnInvalidId", stop_transaction_on_invalid_id);
 }
 KeyValue ChargePointConfiguration::getStopTransactionOnInvalidIdKeyValue() {
     ocpp1_6::KeyValue kv;
@@ -1418,6 +1418,7 @@ bool ChargePointConfiguration::setStopTxnAlignedData(std::string stop_txn_aligne
         return false;
     }
     this->config["Core"]["StopTxnAlignedData"] = stop_txn_aligned_data;
+    this->setInUserConfig("Core", "StopTxnAlignedData", stop_txn_aligned_data);
     return true;
 }
 KeyValue ChargePointConfiguration::getStopTxnAlignedDataKeyValue() {
@@ -1461,6 +1462,8 @@ bool ChargePointConfiguration::setStopTxnSampledData(std::string stop_txn_sample
         return false;
     }
     this->config["Core"]["StopTxnSampledData"] = stop_txn_sampled_data;
+    this->setInUserConfig("Core", "StopTxnSampledData", stop_txn_sampled_data);
+
     return true;
 }
 KeyValue ChargePointConfiguration::getStopTxnSampledDataKeyValue() {
@@ -1537,6 +1540,7 @@ int32_t ChargePointConfiguration::getTransactionMessageAttempts() {
 }
 void ChargePointConfiguration::setTransactionMessageAttempts(int32_t attempts) {
     this->config["Core"]["TransactionMessageAttempts"] = attempts;
+    this->setInUserConfig("Core", "TransactionMessageAttempts", attempts);
 }
 KeyValue ChargePointConfiguration::getTransactionMessageAttemptsKeyValue() {
     ocpp1_6::KeyValue kv;
@@ -1552,6 +1556,7 @@ int32_t ChargePointConfiguration::getTransactionMessageRetryInterval() {
 }
 void ChargePointConfiguration::setTransactionMessageRetryInterval(int32_t retry_interval) {
     this->config["Core"]["TransactionMessageRetryInterval"] = retry_interval;
+    this->setInUserConfig("Core", "TransactionMessageRetryInterval", retry_interval);
 }
 KeyValue ChargePointConfiguration::getTransactionMessageRetryIntervalKeyValue() {
     ocpp1_6::KeyValue kv;
@@ -1567,6 +1572,7 @@ bool ChargePointConfiguration::getUnlockConnectorOnEVSideDisconnect() {
 }
 void ChargePointConfiguration::setUnlockConnectorOnEVSideDisconnect(bool unlock_connector_on_ev_side_disconnect) {
     this->config["Core"]["UnlockConnectorOnEVSideDisconnect"] = unlock_connector_on_ev_side_disconnect;
+    this->setInUserConfig("Core", "UnlockConnectorOnEVSideDisconnect", unlock_connector_on_ev_side_disconnect);
 }
 KeyValue ChargePointConfiguration::getUnlockConnectorOnEVSideDisconnectKeyValue() {
     ocpp1_6::KeyValue kv;
@@ -1587,6 +1593,7 @@ boost::optional<int32_t> ChargePointConfiguration::getWebsocketPingInterval() {
 void ChargePointConfiguration::setWebsocketPingInterval(int32_t websocket_ping_interval) {
     if (this->getWebsocketPingInterval() != boost::none) {
         this->config["Core"]["WebsocketPingInterval"] = websocket_ping_interval;
+        this->setInUserConfig("Core", "WebsocketPingInterval", websocket_ping_interval);
     }
 }
 boost::optional<KeyValue> ChargePointConfiguration::getWebsocketPingIntervalKeyValue() {
@@ -1722,7 +1729,7 @@ void ChargePointConfiguration::setAuthorizationKey(std::string authorization_key
     }
 
     this->config["Security"]["AuthorizationKey"] = str;
-    this->set_authorization_key_in_user_config();
+    this->setInUserConfig("Security", "AuthorizationKey", str);
 }
 
 std::string ChargePointConfiguration::hexToString(std::string const& s) {
@@ -1811,7 +1818,7 @@ boost::optional<std::string> ChargePointConfiguration::getCpoName() {
 
 void ChargePointConfiguration::setCpoName(std::string cpoName) {
     this->config["Security"]["CpoName"] = cpoName;
-    this->set_authorization_key_in_user_config();
+    this->setInUserConfig("Security", "CpoName", cpoName);
 }
 
 boost::optional<KeyValue> ChargePointConfiguration::getCpoNameKeyValue() {
@@ -1836,7 +1843,7 @@ void ChargePointConfiguration::setSecurityProfile(int32_t security_profile) {
     // TODO(piet): add boundaries for value of security profile
     this->config["Security"]["SecurityProfile"] = security_profile;
     // set security profile in user config
-    this->set_security_profile_in_user_config();
+    this->setInUserConfig("Security", "SecurityProfile", security_profile);
 }
 
 KeyValue ChargePointConfiguration::getSecurityProfileKeyValue() {
@@ -1854,6 +1861,7 @@ bool ChargePointConfiguration::getLocalAuthListEnabled() {
 }
 void ChargePointConfiguration::setLocalAuthListEnabled(bool local_auth_list_enabled) {
     this->config["LocalAuthListManagement"]["LocalAuthListEnabled"] = local_auth_list_enabled;
+    this->setInUserConfig("LocalAuthListManagement", "LocalAuthListEnabled", local_auth_list_enabled);
 }
 KeyValue ChargePointConfiguration::getLocalAuthListEnabledKeyValue() {
     ocpp1_6::KeyValue kv;
