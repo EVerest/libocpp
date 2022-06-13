@@ -73,7 +73,6 @@ void Websocket::register_sign_certificate_callback(const std::function<void()>& 
 }
 
 bool Websocket::send(const std::string& message) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000)); // FIXME
     if (this->log_messages) {
         {
             std::lock_guard<std::mutex> lock(this->output_file_mutex);
