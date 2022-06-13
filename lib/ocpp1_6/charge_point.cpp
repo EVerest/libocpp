@@ -1657,26 +1657,6 @@ void ChargePoint::handleUpdateFirmwareRequest(Call<UpdateFirmwareRequest> call) 
     this->send<UpdateFirmwareResponse>(call_result);
 }
 
-void ChargePoint::handleReserveNowRequest(Call<ReserveNowRequest> call) {
-    ReserveNowResponse response;
-    response.status = ReservationStatus::Rejected;
-    if (this->reserve_now_callback != nullptr) {
-        response.status = this->reserve_now_callback(call.msg.reservationId, call.msg.connectorId, call.msg.expiryDate,
-                                                     call.msg.idTag, call.msg.parentIdTag);
-    }
-    CallResult<ReserveNowResponse> call_result(response, call.uniqueId);
-    this->send<ReserveNowResponse>(call_result);
-}
-
-void ChargePoint::handleCancelReservationRequest(Call<CancelReservationRequest> call) {
-    CancelReservationResponse response;
-    response.status = CancelReservationStatus::Rejected;
-    if (this->cancel_reservation_callback != nullptr) {
-        response.status = this->cancel_reservation_callback(call.msg.reservationId);
-    }
-    CallResult<CancelReservationResponse> call_result(response, call.uniqueId);
-    this->send<CancelReservationResponse>(call_result);
-}
 void ChargePoint::handleExtendedTriggerMessageRequest(Call<ExtendedTriggerMessageRequest> call) {
     EVLOG_debug << "Received ExtendedTriggerMessageRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
 

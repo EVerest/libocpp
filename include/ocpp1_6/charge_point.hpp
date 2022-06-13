@@ -145,10 +145,6 @@ private:
         signed_update_firmware_install_callback;
     std::function<void()> switch_security_profile_callback;
     std::function<std::string(GetLogRequest msg)> upload_logs_callback;
-    std::function<ReservationStatus(int32_t reservation_id, int32_t connector, ocpp1_6::DateTime expiryDate,
-                                    ocpp1_6::CiString20Type idTag, boost::optional<ocpp1_6::CiString20Type> parent_id)>
-        reserve_now_callback;
-    std::function<CancelReservationStatus(int32_t reservationId)> cancel_reservation_callback;
 
     /// \brief This function is called after a successful connection to the Websocket
     void connected_callback();

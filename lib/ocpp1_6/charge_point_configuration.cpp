@@ -137,18 +137,6 @@ ChargePointConfiguration::ChargePointConfiguration(json config, std::string conf
         throw std::runtime_error("db access error");
     }
 
-    // prepare scheduled callbacks
-    std::string create_scheduled_callbacks_sql = "CREATE TABLE IF NOT EXISTS SCHEDULED_CALLBACKS ("
-                                                 "ID_TAG TEXT PRIMARY KEY     NOT NULL,"
-                                                 "DATETIME DATE NOT NULL,"
-                                                 "ARGS TEXT);";
-
-    sqlite3_stmt* create_scheduled_callbacks_statement;
-    sqlite3_prepare_v2(this->db, create_scheduled_callbacks_sql.c_str(), create_scheduled_callbacks_sql.size(),
-                       &create_scheduled_callbacks_statement, NULL);
-    int create_scheduled_callbacks_res = sqlite3_step(create_scheduled_callbacks_statement);
-    if (create_scheduled_callbacks_res != SQLITE_DONE) {
-        EVLOG(error) << "Could not create table AUTH_CACHE: " << create_scheduled_callbacks_res
     // prepare local auth list
     std::string create_auth_list_version_sql = "CREATE TABLE IF NOT EXISTS AUTH_LIST_VERSION ("
                                                "ID INT PRIMARY KEY     NOT NULL,"
@@ -164,8 +152,6 @@ ChargePointConfiguration::ChargePointConfiguration(json config, std::string conf
         throw std::runtime_error("db access error");
     }
 
-    if (sqlite3_finalize(create_scheduled_callbacks_statement) != SQLITE_OK) {
-        EVLOG(error) << "Error creating table SCHEDULED_CALLBACKS";
     if (sqlite3_finalize(create_auth_list_version_statement) != SQLITE_OK) {
         EVLOG(error) << "Error creating table AUTH_LIST_VERSION";
         throw std::runtime_error("db access error");
@@ -1859,6 +1845,8 @@ KeyValue ChargePointConfiguration::getSecurityProfileKeyValue() {
     kv.key = "SecurityProfile";
     kv.readonly = false;
     kv.value.emplace(std::to_string(security_profile));
+    return kv;
+}
 
 // Local Auth List Management Profile
 bool ChargePointConfiguration::getLocalAuthListEnabled() {
