@@ -695,10 +695,7 @@ void ChargePoint::handleBootNotificationResponse(CallResult<BootNotificationResp
     case RegistrationStatus::Pending:
         this->connection_state = ChargePointConnectionState::Pending;
 
-        EVLOG_debug << "BootNotification response is pending, trying again in "
-                    << this->configuration->getHeartbeatInterval() << "s";
-
-        this->boot_notification_timer->timeout(std::chrono::seconds(this->configuration->getHeartbeatInterval()));
+        EVLOG_debug << "BootNotification response is pending.";
         break;
     default:
         this->connection_state = ChargePointConnectionState::Rejected;
@@ -721,53 +718,59 @@ void ChargePoint::handleChangeAvailabilityRequest(Call<ChangeAvailabilityRequest
     // connector. is that case this change must be scheduled and we should report an availability status
     // of "Scheduled"
 
-    std::vector<int32_t> connectors;
-    bool transaction_running = false;
+    // check if connector exists
+    if (call.msg.connectorId <= this->configuration->getNumberOfConnectors() || call.msg.connectorId < 0) {
+        std::vector<int32_t> connectors;
+        bool transaction_running = false;
 
-    if (call.msg.connectorId == 0) {
-        int32_t number_of_connectors = this->configuration->getNumberOfConnectors();
-        for (int32_t connector = 1; connector <= number_of_connectors; connector++) {
-            if (this->charging_sessions->transaction_active(connector)) {
-                transaction_running = true;
-                std::lock_guard<std::mutex> change_availability_lock(change_availability_mutex);
-                this->change_availability_queue[connector] = call.msg.type;
-            } else {
-                connectors.push_back(connector);
-            }
-        }
-    } else {
-        if (this->charging_sessions->transaction_active(call.msg.connectorId)) {
-            transaction_running = true;
-        } else {
-            connectors.push_back(call.msg.connectorId);
-        }
-    }
-
-    if (transaction_running) {
-        response.status = AvailabilityStatus::Scheduled;
-    } else {
-        for (auto connector : connectors) {
-            bool availability_change_succeeded =
-                this->configuration->setConnectorAvailability(connector, call.msg.type);
-            if (availability_change_succeeded) {
-                if (call.msg.type == AvailabilityType::Operative) {
-                    if (this->enable_evse_callback != nullptr) {
-                        // TODO(kai): check return value
-                        this->enable_evse_callback(connector);
-                    }
-
-                    this->status->submit_event(connector, Event_BecomeAvailable());
+        if (call.msg.connectorId == 0) {
+            int32_t number_of_connectors = this->configuration->getNumberOfConnectors();
+            for (int32_t connector = 1; connector <= number_of_connectors; connector++) {
+                if (this->charging_sessions->transaction_active(connector)) {
+                    transaction_running = true;
+                    std::lock_guard<std::mutex> change_availability_lock(change_availability_mutex);
+                    this->change_availability_queue[connector] = call.msg.type;
                 } else {
-                    if (this->disable_evse_callback != nullptr) {
-                        // TODO(kai): check return value
-                        this->disable_evse_callback(connector);
-                    }
-                    this->status->submit_event(connector, Event_ChangeAvailabilityToUnavailable());
+                    connectors.push_back(connector);
                 }
             }
+        } else {
+            if (this->charging_sessions->transaction_active(call.msg.connectorId)) {
+                transaction_running = true;
+            } else {
+                connectors.push_back(call.msg.connectorId);
+            }
         }
 
-        response.status = AvailabilityStatus::Accepted;
+        if (transaction_running) {
+            response.status = AvailabilityStatus::Scheduled;
+        } else {
+            for (auto connector : connectors) {
+                bool availability_change_succeeded =
+                    this->configuration->setConnectorAvailability(connector, call.msg.type);
+                if (availability_change_succeeded) {
+                    if (call.msg.type == AvailabilityType::Operative) {
+                        if (this->enable_evse_callback != nullptr) {
+                            // TODO(kai): check return value
+                            this->enable_evse_callback(connector);
+                        }
+
+                        this->status->submit_event(connector, Event_BecomeAvailable());
+                    } else {
+                        if (this->disable_evse_callback != nullptr) {
+                            // TODO(kai): check return value
+                            this->disable_evse_callback(connector);
+                        }
+                        this->status->submit_event(connector, Event_ChangeAvailabilityToUnavailable());
+                    }
+                }
+            }
+
+            response.status = AvailabilityStatus::Accepted;
+        }
+    } else {
+        // Reject if given connector id doesnt exist
+        response.status = AvailabilityStatus::Rejected;
     }
 
     CallResult<ChangeAvailabilityResponse> call_result(response, call.uniqueId);
@@ -1301,8 +1304,8 @@ ChargingSchedule ChargePoint::create_composite_schedule(std::vector<ChargingProf
                 // profile is valid right now
                 // one last check for a start schedule:
                 if (p.chargingProfileKind == ChargingProfileKindType::Absolute && !p.chargingSchedule.startSchedule) {
-                    EVLOG(error) << "ERROR we do not know when the schedule should start, this should not be "
-                                    "possible...";
+                    EVLOG_error << "ERROR we do not know when the schedule should start, this should not be "
+                                   "possible...";
                     continue;
                 }
 
@@ -1310,11 +1313,11 @@ ChargingSchedule ChargePoint::create_composite_schedule(std::vector<ChargingProf
                 if (p.chargingProfileKind == ChargingProfileKindType::Recurring) {
                     // TODO(kai): special handling of recurring charging profiles!
                     if (!p.recurrencyKind) {
-                        EVLOG(warning) << "Recurring charging profile without a recurreny kind is not supported";
+                        EVLOG_warning << "Recurring charging profile without a recurreny kind is not supported";
                         continue;
                     }
                     if (!p.chargingSchedule.startSchedule) {
-                        EVLOG(warning) << "Recurring charging profile without a start schedule is not supported";
+                        EVLOG_warning << "Recurring charging profile without a start schedule is not supported";
                         continue;
                     }
 
@@ -1333,8 +1336,8 @@ ChargingSchedule ChargePoint::create_composite_schedule(std::vector<ChargingProf
                 }
                 if (p.chargingProfileKind == ChargingProfileKindType::Relative) {
                     if (p.chargingProfilePurpose == ChargingProfilePurposeType::ChargePointMaxProfile) {
-                        EVLOG(error) << "ERROR relative charging profiles are not supported as ChargePointMaxProfile "
-                                        "(at least for now)";
+                        EVLOG_error << "ERROR relative charging profiles are not supported as ChargePointMaxProfile "
+                                       "(at least for now)";
                         continue;
                     } else {
                         // FIXME: relative charging profiles are possible here
@@ -2140,8 +2143,14 @@ AuthorizationStatus ChargePoint::authorize_id_tag(CiString20Type idTag) {
         }
     }
 
-    // check if connector is reserved and tagId matches the reserved tag
     int32_t connector = 1;
+
+    // dont authorize if state is Unavailable
+    if (this->status->get_state(connector) == ChargePointStatus::Unavailable) {
+        return AuthorizationStatus::Invalid;
+    }
+
+    // check if connector is reserved and tagId matches the reserved tag
     if (this->reserved_id_tag_map.find(connector) != this->reserved_id_tag_map.end()) {
         if (idTag.get() == this->reserved_id_tag_map[connector]) {
             auth_status = AuthorizationStatus::Accepted;
@@ -2347,11 +2356,19 @@ bool ChargePoint::start_transaction(int32_t connector) {
 
 bool ChargePoint::start_session(int32_t connector, DateTime timestamp, double energy_Wh_import,
                                 boost::optional<int32_t> reservation_id) {
+
+    // dont start session if connector is unavailable
+    if (this->status->get_state(connector) == ChargePointStatus::Unavailable) {
+        EVLOG_warning << "Connector is inoperative and can't start a session";
+        return false;
+    }
+
     if (!this->charging_sessions->initiate_session(connector)) {
         EVLOG_error << "Could not initiate charging session on connector '" << connector << "'";
         return false;
     }
 
+    // dont change to preparing when in reserved
     if (this->status->get_state(connector) != ChargePointStatus::Reserved) {
         this->status->submit_event(connector, Event_UsageInitiated());
     }
@@ -2393,10 +2410,8 @@ bool ChargePoint::stop_transaction(int32_t connector, Reason reason) {
     req.timestamp = energyWhStamped->timestamp;
     req.reason.emplace(reason);
     auto transaction = this->charging_sessions->get_transaction(connector);
-    if (transaction == nullptr) {
-        EVLOG_error << "Trying to stop a transaction on a charging session with no attached transaction";
-        return false;
-    }
+    assert(transaction != nullptr);
+
     req.transactionId = transaction->get_transaction_id();
 
     std::vector<TransactionData> transaction_data_vec = transaction->get_transaction_data();
@@ -2448,13 +2463,13 @@ bool ChargePoint::stop_transaction(int32_t connector, Reason reason) {
                     // TODO(kai): check return value
                     this->enable_evse_callback(connector);
                 }
-                this->status_notification(connector, ChargePointErrorCode::NoError, ChargePointStatus::Available);
+                this->status->submit_event(connector, Event_BecomeAvailable());
             } else {
                 if (this->disable_evse_callback != nullptr) {
                     // TODO(kai): check return value
                     this->disable_evse_callback(connector);
                 }
-                this->status_notification(connector, ChargePointErrorCode::NoError, ChargePointStatus::Unavailable);
+                this->status->submit_event(connector, Event_ChangeAvailabilityToUnavailable());
             }
         } else {
             oss << " failed" << std::endl;
@@ -2468,7 +2483,9 @@ bool ChargePoint::stop_transaction(int32_t connector, Reason reason) {
 bool ChargePoint::stop_session(int32_t connector, DateTime timestamp, double energy_Wh_import, Reason reason) {
     this->charging_sessions->add_stop_energy_wh(connector,
                                                 std::make_shared<StampedEnergyWh>(timestamp, energy_Wh_import));
-    if (!this->stop_transaction(connector, reason)) {
+    if (this->charging_sessions->get_transaction(connector) == nullptr) {
+        EVLOG_info << "Stopped a session without a transaction";
+    } else if (!this->stop_transaction(connector, reason)) {
         EVLOG_error << "Something went wrong stopping the transaction a connector " << connector;
     }
     this->charging_sessions->remove_session(connector);
@@ -2497,7 +2514,10 @@ bool ChargePoint::resume_charging(int32_t connector) {
 }
 
 bool ChargePoint::plug_disconnected(int32_t connector) {
-    this->status->submit_event(connector, Event_BecomeAvailable());
+    if (this->status->get_state(connector) != ChargePointStatus::Reserved &&
+        this->status->get_state(connector) != ChargePointStatus::Unavailable) {
+        this->status->submit_event(connector, Event_BecomeAvailable());
+    }
     return true;
 }
 
