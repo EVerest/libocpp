@@ -1727,7 +1727,7 @@ void ChargePointConfiguration::setAuthorizationKey(std::string authorization_key
 
 std::string ChargePointConfiguration::hexToString(std::string const& s) {
     std::string str;
-    for (int i = 0; i < s.length(); i += 2) {
+    for (size_t i = 0; i < s.length(); i += 2) {
         std::string byte = s.substr(i, 2);
         char chr = (char)(int)strtol(byte.c_str(), NULL, 16);
         str.push_back(chr);
