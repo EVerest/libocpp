@@ -297,6 +297,8 @@ json ChargePointConfiguration::get_user_config() {
         ifs.close();
         return json::parse(user_config_file);
     }
+
+    return json({});
 }
 
 void ChargePointConfiguration::setInUserConfig(std::string profile, std::string key, const json value) {
