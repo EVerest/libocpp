@@ -82,8 +82,9 @@ boost::optional<std::string> WebsocketBase::getAuthorizationHeader() {
         auth_header.emplace(std::string("Basic ") + websocketpp::base64_encode(plain_auth_header));
 
         EVLOG(info) << "Basic Auth header: " << auth_header.get();
-        return auth_header;
     }
+
+    return auth_header;
 }
 
 } // namespace ocpp1_6
