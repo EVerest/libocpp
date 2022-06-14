@@ -970,6 +970,16 @@ void ChargePoint::handleRemoteStartTransactionRequest(Call<RemoteStartTransactio
         return;
     }
 
+    // check if connector is reserved and tagId matches the reserved tag
+    if (this->reserved_id_tag_map.find(connector) != this->reserved_id_tag_map.end() &&
+        call.msg.idTag.get() != this->reserved_id_tag_map[connector]) {
+        EVLOG(warning) << "Received RemoteStartTransactionRequest for a reserved connector with wrong idTag.";
+        response.status = RemoteStartStopStatus::Rejected;
+        CallResult<RemoteStartTransactionResponse> call_result(response, call.uniqueId);
+        this->send<RemoteStartTransactionResponse>(call_result);
+        return;
+    }
+
     if (call.msg.chargingProfile) {
         // TODO(kai): A charging profile was provided, forward to the charger
     }
