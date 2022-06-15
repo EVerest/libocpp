@@ -295,4 +295,19 @@ void WebsocketTLS::on_fail_tls(tls_client* c, websocketpp::connection_hdl hdl, b
     }
 }
 
+void WebsocketTLS::close(websocketpp::close::status::value code, const std::string& reason) {
+
+    EVLOG_info << "Closing TLS websocket.";
+
+    websocketpp::lib::error_code ec;
+
+    this->wss_client.stop_perpetual();
+    this->wss_client.close(this->handle, code, reason, ec);
+
+    if (ec) {
+        EVLOG_error << "Error initiating close of TLS websocket: " << ec.message();
+    }
+    EVLOG_info << "Closed TLS websocket successfully.";
+}
+
 } // namespace ocpp1_6
