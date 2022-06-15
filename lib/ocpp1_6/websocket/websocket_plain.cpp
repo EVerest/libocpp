@@ -29,7 +29,7 @@ bool WebsocketPlain::connect(int32_t security_profile) {
     websocket_thread.reset(new websocketpp::lib::thread(&client::run, &this->ws_client));
 
     this->reconnect_callback = [this, security_profile](const websocketpp::lib::error_code& ec) {
-        EVLOG(info) << "Reconnecting plain websocket...";
+        EVLOG_info << "Reconnecting plain websocket...";
 
         // close connection before reconnecting
         if (this->is_connected) {
@@ -37,7 +37,7 @@ bool WebsocketPlain::connect(int32_t security_profile) {
                 EVLOG_debug << "Closing websocket connection";
                 this->ws_client.close(this->handle, websocketpp::close::status::normal, "");
             } catch (std::exception& e) {
-                EVLOG(error) << "Error on plain close: " << e.what();
+                EVLOG_error << "Error on plain close: " << e.what();
             }
         }
 
@@ -123,9 +123,9 @@ void WebsocketPlain::connect_plain(int32_t security_profile) {
     }
 
     if (security_profile == 0) {
-        EVLOG(debug) << "Connecting with security profile: 0";
+        EVLOG_debug << "Connecting with security profile: 0";
     } else if (security_profile == 1) {
-        EVLOG(debug) << "Connecting with security profile: 1";
+        EVLOG_debug << "Connecting with security profile: 1";
         boost::optional<std::string> authorization_header = this->getAuthorizationHeader();
         if (authorization_header != boost::none) {
             con->append_header("Authorization", authorization_header.get());

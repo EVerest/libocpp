@@ -173,7 +173,7 @@ std::string messagetype_to_string(MessageType m) {
     case MessageType::UpdateFirmwareResponse:
         return "UpdateFirmwareResponse";
     case MessageType::InternalError:
-        EVLOG(error) << "No known string conversion for InternalError MessageType";
+        EVLOG_error << "No known string conversion for InternalError MessageType";
         return "InternalError";
     }
 

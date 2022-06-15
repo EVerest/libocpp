@@ -49,7 +49,7 @@ std::shared_ptr<X509Certificate> loadFromString(const std::string& str) {
     X509* x509 = PEM_read_bio_X509(b.get(), NULL, NULL, NULL);
 
     if (x509 == NULL) {
-        EVLOG(error) << "Could not parse str to X509";
+        EVLOG_error << "Could not parse str to X509";
     }
 
     std::shared_ptr<X509Certificate> cert = std::make_shared<X509Certificate>();
@@ -72,7 +72,7 @@ CertificateVerificationResult PkiHandler::verifyChargepointCertificate(const std
                                                                        const std::string& chargeBoxSerialNumber) {
 
     if (!this->isCentralSystemRootCertificateInstalled()) {
-        EVLOG(warning) << "Could not verify certificate because no Central System Root Certificate is installed";
+        EVLOG_warning << "Could not verify certificate because no Central System Root Certificate is installed";
         return CertificateVerificationResult::NoRootCertificateInstalled;
     }
 
@@ -85,23 +85,23 @@ CertificateVerificationResult PkiHandler::verifyChargepointCertificate(const std
 
     // verifies the signature of certificate x using public key of rootCA
     if (X509_verify(certChain->x509, X509_get_pubkey(rootCert->x509)) == 0) {
-        EVLOG(warning) << "Could not verify signature of certificate";
+        EVLOG_warning << "Could not verify signature of certificate";
         return CertificateVerificationResult::InvalidSignature;
     }
 
     // expiration check
     if (X509_cmp_current_time(X509_get_notBefore(certChain->x509)) >= 0) {
-        EVLOG(debug) << "Certificate is not yet valid.";
+        EVLOG_debug << "Certificate is not yet valid.";
     }
 
     if (X509_cmp_current_time(X509_get_notAfter(certChain->x509)) <= 0) {
-        EVLOG(warning) << "Certificate has expired." << std::endl;
+        EVLOG_warning << "Certificate has expired." << std::endl;
         return CertificateVerificationResult::Expired;
     }
 
     if (X509_check_host(certChain->x509, chargeBoxSerialNumber.c_str(), chargeBoxSerialNumber.length(), 0, NULL) == 0) {
-        EVLOG(warning) << "Subject field CN of certificate is not equal to ChargeBoxSerialNumber: "
-                       << chargeBoxSerialNumber;
+        EVLOG_warning << "Subject field CN of certificate is not equal to ChargeBoxSerialNumber: "
+                      << chargeBoxSerialNumber;
         return CertificateVerificationResult::InvalidCommonName;
     }
 
@@ -187,7 +187,7 @@ std::string PkiHandler::generateCsr(const char* szCountry, const char* szProvinc
     BIO_get_mem_ptr(bio.get(), &mem);
     std::string csr(mem->data, mem->length);
 
-    EVLOG(debug) << csr;
+    EVLOG_debug << csr;
 
     return csr;
 }
@@ -218,7 +218,7 @@ bool PkiHandler::verifyFirmwareCertificate(const std::string& firmwareCertificat
         return false;
     }
     if (!this->isManufacturerRootCertificateInstalled()) {
-        EVLOG(warning) << "No manufacturer root certificate installed";
+        EVLOG_warning << "No manufacturer root certificate installed";
         return false;
     }
 
@@ -237,11 +237,11 @@ bool PkiHandler::verifyFirmwareCertificate(const std::string& firmwareCertificat
     if (rc == 0) {
         // TODO(piet): trigger InvalidChargepointCertificate security event
         int ec = X509_STORE_CTX_get_error(store_ctx_ptr.get());
-        EVLOG(error) << "Could not verify certificate chain. Error code: " << ec
-                     << " human readable: " << X509_verify_cert_error_string(ec);
+        EVLOG_error << "Could not verify certificate chain. Error code: " << ec
+                    << " human readable: " << X509_verify_cert_error_string(ec);
         return false;
     } else {
-        EVLOG(debug) << "Verified certificate chain of firmware certificate";
+        EVLOG_debug << "Verified certificate chain of firmware certificate";
         return true;
     }
 }
@@ -393,8 +393,8 @@ bool PkiHandler::verifyCertificateChain(std::shared_ptr<X509Certificate> rootCA,
     if (X509_verify_cert(store_ctx_ptr.get()) == 0) {
         // TODO(piet): trigger InvalidChargepointCertificate security event
         int ec = X509_STORE_CTX_get_error(store_ctx_ptr.get());
-        EVLOG(error) << "Could not verify certificate chain. Error code: " << ec
-                     << " reason: " << X509_verify_cert_error_string(ec);
+        EVLOG_error << "Could not verify certificate chain. Error code: " << ec
+                    << " reason: " << X509_verify_cert_error_string(ec);
         return false;
     } else {
         return true;
@@ -405,10 +405,10 @@ bool PkiHandler::verifySignature(std::shared_ptr<X509Certificate> rootCA, std::s
     int rc = X509_verify(newCA->x509, X509_get_pubkey(rootCA->x509));
     if (rc == 0) {
         long ec = ERR_get_error();
-        EVLOG(warning) << "Could not verify signature of certificate: " << ERR_error_string(ec, NULL);
+        EVLOG_warning << "Could not verify signature of certificate: " << ERR_error_string(ec, NULL);
         return false;
     } else {
-        EVLOG(debug) << "Verified signature of certificate";
+        EVLOG_debug << "Verified signature of certificate";
         return true;
     }
 }

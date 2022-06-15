@@ -60,7 +60,7 @@ bool WebsocketBase::initialized() {
 
 void WebsocketBase::disconnect(websocketpp::close::status::value code) {
     if (!this->initialized()) {
-        EVLOG(error) << "Cannot disconnect a websocket that was not initialized";
+        EVLOG_error << "Cannot disconnect a websocket that was not initialized";
         return;
     }
     this->shutting_down = true; // FIXME(kai): this makes the websocket inoperable after a disconnect, however this
@@ -69,7 +69,7 @@ void WebsocketBase::disconnect(websocketpp::close::status::value code) {
         this->reconnect_timer.get()->cancel();
     }
 
-    EVLOG(info) << "Disconnecting websocket...";
+    EVLOG_info << "Disconnecting websocket...";
     this->close(code, "");
 }
 
@@ -77,11 +77,11 @@ boost::optional<std::string> WebsocketBase::getAuthorizationHeader() {
     boost::optional<std::string> auth_header = boost::none;
     auto authorization_key = this->configuration->getAuthorizationKey();
     if (authorization_key != boost::none) {
-        EVLOG(debug) << "AuthorizationKey present, encoding authentication header";
+        EVLOG_debug << "AuthorizationKey present, encoding authentication header";
         std::string plain_auth_header = this->configuration->getChargePointId() + ":" + authorization_key.value();
         auth_header.emplace(std::string("Basic ") + websocketpp::base64_encode(plain_auth_header));
 
-        EVLOG(info) << "Basic Auth header: " << auth_header.get();
+        EVLOG_info << "Basic Auth header: " << auth_header.get();
     }
 
     return auth_header;

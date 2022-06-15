@@ -147,13 +147,13 @@ ChargePointConfiguration::ChargePointConfiguration(json config, std::string conf
                        &create_auth_list_version_statement, NULL);
     int create_auth_list_version_res = sqlite3_step(create_auth_list_version_statement);
     if (create_auth_list_version_res != SQLITE_DONE) {
-        EVLOG(error) << "Could not create table AUTH_LIST_VERSION: " << create_auth_list_version_res
-                     << sqlite3_errmsg(this->db);
+        EVLOG_error << "Could not create table AUTH_LIST_VERSION: " << create_auth_list_version_res
+                    << sqlite3_errmsg(this->db);
         throw std::runtime_error("db access error");
     }
 
     if (sqlite3_finalize(create_auth_list_version_statement) != SQLITE_OK) {
-        EVLOG(error) << "Error creating table AUTH_LIST_VERSION";
+        EVLOG_error << "Error creating table AUTH_LIST_VERSION";
         throw std::runtime_error("db access error");
     }
 
@@ -165,12 +165,12 @@ ChargePointConfiguration::ChargePointConfiguration(json config, std::string conf
                        &insert_auth_list_version_statement, NULL);
     int res_auth_list_version = sqlite3_step(insert_auth_list_version_statement);
     if (res_auth_list_version != SQLITE_DONE) {
-        EVLOG(error) << "Could not insert into table: " << res_auth_list_version << sqlite3_errmsg(this->db);
+        EVLOG_error << "Could not insert into table: " << res_auth_list_version << sqlite3_errmsg(this->db);
         throw std::runtime_error("db access error");
     }
 
     if (sqlite3_finalize(insert_auth_list_version_statement) != SQLITE_OK) {
-        EVLOG(error) << "Error inserting into table";
+        EVLOG_error << "Error inserting into table";
         throw std::runtime_error("db access error");
     }
 
@@ -185,12 +185,12 @@ ChargePointConfiguration::ChargePointConfiguration(json config, std::string conf
                        NULL);
     int create_auth_list_res = sqlite3_step(create_auth_list_statement);
     if (create_auth_list_res != SQLITE_DONE) {
-        EVLOG(error) << "Could not create table AUTH_LIST: " << create_auth_list_res << sqlite3_errmsg(this->db);
+        EVLOG_error << "Could not create table AUTH_LIST: " << create_auth_list_res << sqlite3_errmsg(this->db);
         throw std::runtime_error("db access error");
     }
 
     if (sqlite3_finalize(create_auth_list_statement) != SQLITE_OK) {
-        EVLOG(error) << "Error creating table AUTH_LIST";
+        EVLOG_error << "Error creating table AUTH_LIST";
         throw std::runtime_error("db access error");
     }
 
@@ -439,7 +439,7 @@ std::vector<MeasurandWithPhase> ChargePointConfiguration::csv_to_measurand_with_
             EVLOG_debug << "measurand without phase: " << m.measurand;
         } else {
             EVLOG_debug << "measurand: " << m.measurand
-                         << " with phase: " << ocpp1_6::conversions::phase_to_string(m.phase.value());
+                        << " with phase: " << ocpp1_6::conversions::phase_to_string(m.phase.value());
         }
     }
     return measurand_with_phase_vector;
@@ -478,7 +478,7 @@ bool ChargePointConfiguration::setConnectorAvailability(int32_t connectorId, Ava
     int32_t number_of_connectors = this->getNumberOfConnectors();
     if (connectorId > number_of_connectors) {
         EVLOG_warning << "trying to set the availability of a connector that does not exist: " << connectorId
-                       << ", there are only " << number_of_connectors << " connectors.";
+                      << ", there are only " << number_of_connectors << " connectors.";
         return false;
     }
     std::vector<int32_t> connectors;
@@ -697,7 +697,7 @@ boost::optional<IdTagInfo> ChargePointConfiguration::getAuthorizationCacheEntry(
             auto now = DateTime();
             if (idTagInfo.expiryDate.get() <= now) {
                 EVLOG_info << "IdTag " << idTag
-                            << " in auth cache has expiry date in the past, setting entry to expired.";
+                           << " in auth cache has expiry date in the past, setting entry to expired.";
                 idTagInfo.status = AuthorizationStatus::Expired;
                 this->updateAuthorizationCacheEntry(idTag, idTagInfo);
             }
@@ -731,9 +731,9 @@ int32_t ChargePointConfiguration::getLocalListVersion() {
         sql_future_status = sql_future.wait_until(sql_wait);
     } while (sql_future_status == std::future_status::deferred);
     if (sql_future_status == std::future_status::timeout) {
-        EVLOG(debug) << "sql future timeout";
+        EVLOG_debug << "sql future timeout";
     } else if (sql_future_status == std::future_status::ready) {
-        EVLOG(debug) << "sql future ready";
+        EVLOG_debug << "sql future ready";
     }
 
     int32_t response = sql_future.get();
@@ -749,12 +749,12 @@ bool ChargePointConfiguration::updateLocalAuthorizationListVersion(int32_t list_
     sqlite3_prepare_v2(db, insert_sql_str.c_str(), insert_sql_str.size(), &insert_statement, NULL);
     int res = sqlite3_step(insert_statement);
     if (res != SQLITE_DONE) {
-        EVLOG(error) << "Could not insert into table: " << res << sqlite3_errmsg(db);
+        EVLOG_error << "Could not insert into table: " << res << sqlite3_errmsg(db);
         throw std::runtime_error("db access error");
     }
 
     if (sqlite3_finalize(insert_statement) != SQLITE_OK) {
-        EVLOG(error) << "Error inserting into table";
+        EVLOG_error << "Error inserting into table";
         throw std::runtime_error("db access error");
     }
 
@@ -794,12 +794,12 @@ bool ChargePointConfiguration::updateLocalAuthorizationList(
 
             int res = sqlite3_step(insert_statement);
             if (res != SQLITE_DONE) {
-                EVLOG(error) << "Could not insert into table: " << res << sqlite3_errmsg(db);
+                EVLOG_error << "Could not insert into table: " << res << sqlite3_errmsg(db);
                 throw std::runtime_error("db access error");
             }
 
             if (sqlite3_finalize(insert_statement) != SQLITE_OK) {
-                EVLOG(error) << "Error inserting into table";
+                EVLOG_error << "Error inserting into table";
                 throw std::runtime_error("db access error");
             }
         } else {
@@ -815,12 +815,12 @@ bool ChargePointConfiguration::updateLocalAuthorizationList(
 
             int res = sqlite3_step(delete_statement);
             if (res != SQLITE_DONE) {
-                EVLOG(error) << "Could not delete from table: " << res << sqlite3_errmsg(db);
+                EVLOG_error << "Could not delete from table: " << res << sqlite3_errmsg(db);
                 throw std::runtime_error("db access error");
             }
 
             if (sqlite3_finalize(delete_statement) != SQLITE_OK) {
-                EVLOG(error) << "Error deleting from table";
+                EVLOG_error << "Error deleting from table";
                 throw std::runtime_error("db access error");
             }
         }
@@ -839,12 +839,12 @@ bool ChargePointConfiguration::clearLocalAuthorizationList() {
     sqlite3_prepare_v2(db, clear_sql_str.c_str(), clear_sql_str.size(), &clear_statement, NULL);
     int res = sqlite3_step(clear_statement);
     if (res != SQLITE_DONE) {
-        EVLOG(error) << "Could not clear AUTH_LIST table: " << res << sqlite3_errmsg(db);
+        EVLOG_error << "Could not clear AUTH_LIST table: " << res << sqlite3_errmsg(db);
         return false;
     }
 
     if (sqlite3_finalize(clear_statement) != SQLITE_OK) {
-        EVLOG(error) << "Error clearing table";
+        EVLOG_error << "Error clearing table";
         throw std::runtime_error("db access error");
     }
 
@@ -877,24 +877,24 @@ boost::optional<IdTagInfo> ChargePointConfiguration::getLocalAuthorizationListEn
     auto expiry_date_ptr = sqlite3_column_text(select_statement, 2);
     if (expiry_date_ptr != nullptr) {
         std::string expiry_date_str = std::string(reinterpret_cast<const char*>(expiry_date_ptr));
-        EVLOG(debug) << "expiry_date_str available: " << expiry_date_str;
+        EVLOG_debug << "expiry_date_str available: " << expiry_date_str;
         auto expiry_date = DateTime(expiry_date_str);
         idTagInfo.expiryDate.emplace(expiry_date);
     } else {
-        EVLOG(debug) << "expiry_date_str not available";
+        EVLOG_debug << "expiry_date_str not available";
     }
 
     auto parent_id_tag_ptr = sqlite3_column_text(select_statement, 3);
     if (parent_id_tag_ptr != nullptr) {
         std::string parent_id_tag_str = std::string(reinterpret_cast<const char*>(parent_id_tag_ptr));
-        EVLOG(debug) << "parent_id_tag_str available: " << parent_id_tag_str;
+        EVLOG_debug << "parent_id_tag_str available: " << parent_id_tag_str;
         idTagInfo.parentIdTag.emplace(parent_id_tag_str);
     } else {
-        EVLOG(debug) << "parent_id_tag_str not available";
+        EVLOG_debug << "parent_id_tag_str not available";
     }
 
     if (sqlite3_finalize(select_statement) != SQLITE_OK) {
-        EVLOG(error) << "Error selecting from table";
+        EVLOG_error << "Error selecting from table";
         throw std::runtime_error("db access error");
     }
 
@@ -904,8 +904,8 @@ boost::optional<IdTagInfo> ChargePointConfiguration::getLocalAuthorizationListEn
         if (idTagInfo.expiryDate) {
             auto now = DateTime();
             if (idTagInfo.expiryDate.get() <= now) {
-                EVLOG(info) << "IdTag " << idTag
-                            << " in auth list has expiry date in the past, setting entry to expired.";
+                EVLOG_info << "IdTag " << idTag
+                           << " in auth list has expiry date in the past, setting entry to expired.";
                 idTagInfo.status = AuthorizationStatus::Expired;
                 std::vector<LocalAuthorizationList> local_auth_list;
                 LocalAuthorizationList local_auth_list_entry;
@@ -2087,7 +2087,7 @@ ConfigurationStatus ChargePointConfiguration::set(CiString50Type key, CiString50
             this->setAuthorizationKey(value.get());
             return ConfigurationStatus::Accepted;
         } else {
-            EVLOG(debug) << "AuthorizationKey is < 16 bytes";
+            EVLOG_debug << "AuthorizationKey is < 16 bytes";
             return ConfigurationStatus::Rejected;
         }
     }
@@ -2188,17 +2188,17 @@ ConfigurationStatus ChargePointConfiguration::set(CiString50Type key, CiString50
         auto security_profile = std::stoi(value.get());
         auto current_security_profile = this->getSecurityProfile();
         if (security_profile <= current_security_profile) {
-            EVLOG(warning) << "New security profile is <= current security profile. Rejecting request.";
+            EVLOG_warning << "New security profile is <= current security profile. Rejecting request.";
             return ConfigurationStatus::Rejected;
         } else if ((security_profile == 1 || security_profile == 2) && this->getAuthorizationKey() == boost::none) {
-            EVLOG(warning) << "New security level set to 1 or 2 but no authorization key is set. Rejecting request.";
+            EVLOG_warning << "New security level set to 1 or 2 but no authorization key is set. Rejecting request.";
             return ConfigurationStatus::Rejected;
         } else if ((security_profile == 2 || security_profile == 3) &&
                    !this->pki_handler->isCentralSystemRootCertificateInstalled()) {
-            EVLOG(warning) << "New security level set to 2 or 3 but no CentralSystemRootCertificateInstalled";
+            EVLOG_warning << "New security level set to 2 or 3 but no CentralSystemRootCertificateInstalled";
             return ConfigurationStatus::Rejected;
         } else if (security_profile == 3 && !this->pki_handler->isClientCertificateInstalled()) {
-            EVLOG(warning) << "New security level set to 3 but no Client Certificate is installed";
+            EVLOG_warning << "New security level set to 3 but no Client Certificate is installed";
         }
 
         else if (security_profile > 3) {
