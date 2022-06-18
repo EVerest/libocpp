@@ -1427,7 +1427,7 @@ AuthorizationStatus ChargePoint::authorize_id_tag(CiString20Type idTag) {
     // TODO(kai): implement local authorization (this is optional)
 
     // check if all connectors have active transactions
-    if (this->charging_sessions->all_connectors_have_active_transactions()) {
+    if (this->charging_sessions->all_connectors_have_active_transaction()) {
         return AuthorizationStatus::Invalid;
     }
 

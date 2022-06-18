@@ -369,7 +369,7 @@ bool ChargingSessions::transaction_active(int32_t connector) {
     return this->get_transaction(connector) != nullptr;
 }
 
-bool ChargingSessions::all_connectors_have_active_transactions() {
+bool ChargingSessions::all_connectors_have_active_transaction() {
     for (int connector = 1; connector <= this->number_of_connectors; connector++) {
         if (!this->transaction_active(connector)) {
             return false;
