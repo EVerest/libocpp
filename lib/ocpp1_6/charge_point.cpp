@@ -167,7 +167,7 @@ MeterValue ChargePoint::get_latest_meter_value(int32_t connector, std::vector<Me
             sample.measurand.emplace(configured_measurand.measurand);
             if (configured_measurand.phase) {
                 EVLOG_debug << "  there is a phase configured: "
-                             << conversions::phase_to_string(configured_measurand.phase.value());
+                            << conversions::phase_to_string(configured_measurand.phase.value());
             }
             switch (configured_measurand.measurand) {
             case Measurand::Energy_Active_Import_Register:
@@ -326,8 +326,7 @@ MeterValue ChargePoint::get_latest_meter_value(int32_t connector, std::vector<Me
                 sample.location.emplace(Location::Outlet);
                 if (this->max_current_offered.count(connector) == 0) {
                     // something went wrong
-                    EVLOG_error << "No max current offered for connector " << connector
-                                 << " yet, skipping meter value";
+                    EVLOG_error << "No max current offered for connector " << connector << " yet, skipping meter value";
                     break;
                 }
 
@@ -428,7 +427,7 @@ void ChargePoint::connected_callback() {
     }
     default:
         EVLOG_error << "Connected but not in state 'Disconnected' or 'Booted', something is wrong: "
-                     << this->connection_state;
+                    << this->connection_state;
         break;
     }
 }
@@ -588,7 +587,7 @@ void ChargePoint::handle_message(const json& json_message, MessageType message_t
 
 void ChargePoint::handleBootNotificationResponse(CallResult<BootNotificationResponse> call_result) {
     EVLOG_debug << "Received BootNotificationResponse: " << call_result.msg
-                 << "\nwith messageId: " << call_result.uniqueId;
+                << "\nwith messageId: " << call_result.uniqueId;
 
     this->registration_status = call_result.msg.status;
     this->initialized = true;
@@ -618,7 +617,7 @@ void ChargePoint::handleBootNotificationResponse(CallResult<BootNotificationResp
         this->connection_state = ChargePointConnectionState::Pending;
 
         EVLOG_debug << "BootNotification response is pending, trying again in "
-                     << this->configuration->getHeartbeatInterval() << "s";
+                    << this->configuration->getHeartbeatInterval() << "s";
 
         this->boot_notification_timer->timeout(std::chrono::seconds(this->configuration->getHeartbeatInterval()));
         break;
@@ -628,7 +627,7 @@ void ChargePoint::handleBootNotificationResponse(CallResult<BootNotificationResp
         // requested. The first time we are allowed to send a message (a BootNotification) is
         // after boot_time + heartbeat_interval if the msg.interval is 0, or after boot_timer + msg.interval
         EVLOG_debug << "BootNotification was rejected, trying again in " << this->configuration->getHeartbeatInterval()
-                     << "s";
+                    << "s";
 
         this->boot_notification_timer->timeout(std::chrono::seconds(this->configuration->getHeartbeatInterval()));
 
@@ -996,9 +995,8 @@ void ChargePoint::handleSetChargingProfileRequest(Call<SetChargingProfileRequest
                             auto midnight = date::floor<date::days>(date::utc_clock::now());
                             auto start_schedule = DateTime(midnight);
                             if (!call.msg.csChargingProfiles.chargingSchedule.startSchedule) {
-                                EVLOG_debug
-                                    << "No startSchedule provided for a recurring charging profile, setting to "
-                                    << start_schedule << " (midnight today)";
+                                EVLOG_debug << "No startSchedule provided for a recurring charging profile, setting to "
+                                            << start_schedule << " (midnight today)";
                                 call.msg.csChargingProfiles.chargingSchedule.startSchedule.emplace(start_schedule);
                             }
                             std::lock_guard<std::mutex> charge_point_max_profiles_lock(charge_point_max_profiles_mutex);
@@ -1161,7 +1159,7 @@ void ChargePoint::handleGetCompositeScheduleRequest(Call<GetCompositeScheduleReq
                         if (p.chargingProfileKind == ChargingProfileKindType::Absolute &&
                             !p.chargingSchedule.startSchedule) {
                             EVLOG_error << "ERROR we do not know when the schedule should start, this should not be "
-                                            "possible...";
+                                           "possible...";
                             continue;
                         }
 
@@ -1169,13 +1167,11 @@ void ChargePoint::handleGetCompositeScheduleRequest(Call<GetCompositeScheduleReq
                         if (p.chargingProfileKind == ChargingProfileKindType::Recurring) {
                             // TODO(kai): special handling of recurring charging profiles!
                             if (!p.recurrencyKind) {
-                                EVLOG_warning
-                                    << "Recurring charging profile without a recurreny kind is not supported";
+                                EVLOG_warning << "Recurring charging profile without a recurreny kind is not supported";
                                 continue;
                             }
                             if (!p.chargingSchedule.startSchedule) {
-                                EVLOG_warning
-                                    << "Recurring charging profile without a start schedule is not supported";
+                                EVLOG_warning << "Recurring charging profile without a start schedule is not supported";
                                 continue;
                             }
 
@@ -1194,9 +1190,8 @@ void ChargePoint::handleGetCompositeScheduleRequest(Call<GetCompositeScheduleReq
                         }
                         if (p.chargingProfileKind == ChargingProfileKindType::Relative) {
                             // FIXME
-                            EVLOG_error
-                                << "ERROR relative charging profiles are not supported as ChargePointMaxProile "
-                                   "(at least for now)";
+                            EVLOG_error << "ERROR relative charging profiles are not supported as ChargePointMaxProile "
+                                           "(at least for now)";
                             continue;
                         }
 
@@ -1431,6 +1426,11 @@ AuthorizationStatus ChargePoint::authorize_id_tag(CiString20Type idTag) {
 
     // TODO(kai): implement local authorization (this is optional)
 
+    // check if all connectors have active transactions
+    if (this->charging_sessions->all_connectors_have_active_transactions()) {
+        return AuthorizationStatus::Invalid;
+    }
+
     AuthorizeRequest req;
     req.idTag = idTag;
 
@@ -1538,7 +1538,7 @@ bool ChargePoint::start_transaction(int32_t connector) {
     auto idTag_option = this->charging_sessions->get_authorized_id_tag(connector);
     if (idTag_option == boost::none) {
         EVLOG_error << "Could not start charging session on connector '" << connector
-                     << "', no authorized token available. This should not happen.";
+                    << "', no authorized token available. This should not happen.";
         return false;
     }
     auto idTag = idTag_option.get();
