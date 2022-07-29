@@ -56,6 +56,7 @@ You will need the EVerest build environment
 ```bash
   git clone https://github.com/EVerest/everest-dev-environment.git
   cd everest-dev-environment/dependency_manager
+  python3 -m pip install .
   edm --register-cmake-module
 ```
 
