@@ -53,7 +53,7 @@ For Debian GNU/Linux 11 you will need the following dependencies:
 ```
 
 You will need the EVerest build environment
-```
+```bash
   git clone https://github.com/EVerest/everest-dev-environment.git
   cd everest-dev-environment/dependency_manager
   edm --register-cmake-module
