@@ -14,6 +14,17 @@
 
 namespace ocpp1_6 {
 
+/// \brief A structure that contains a idTag and its corresponding idTagInfo
+struct AuthorizedToken {
+    CiString20Type idTag; ///< The authorization token
+    IdTagInfo idTagInfo;  ///< Information about the authorization status of the idTag authorization token
+    /// \brief Creates a AuthorizedToken from an \p idTag and \p idTagInfo
+    AuthorizedToken(CiString20Type idTag, IdTagInfo idTagInfo) {
+        this->idTag = idTag;
+        this->idTagInfo = idTagInfo;
+    }
+};
+
 /// \brief Contains all transaction related data, such as the ID and power meter values
 class Transaction {
 private:
@@ -23,7 +34,7 @@ private:
     std::string stop_transaction_message_id;
     bool active;
     bool finished;
-    CiString20Type idTag;
+    std::shared_ptr<AuthorizedToken> authorized_token;
     std::unique_ptr<Everest::SteadyTimer> meter_values_sample_timer;
     std::mutex meter_values_mutex;
     std::vector<MeterValue> meter_values;
@@ -34,16 +45,16 @@ public:
     /// \brief Creates a new Transaction object, taking ownership of the provided \p meter_values_sample_timer
     /// on the provided \p connector
     Transaction(int32_t transactionId, int32_t connector,
-                std::unique_ptr<Everest::SteadyTimer> meter_values_sample_timer, CiString20Type idTag,
-                std::string start_transaction_message_id);
+                std::unique_ptr<Everest::SteadyTimer> meter_values_sample_timer,
+                std::shared_ptr<AuthorizedToken> authorized_token, std::string start_transaction_message_id);
 
     /// \brief Provides the connector of this transaction
     /// \returns the connector
     int32_t get_connector();
 
-    /// \brief Provides the authorized id tag of this Transaction
-    /// \returns the authorized id tag
-    CiString20Type get_id_tag();
+    /// \brief Provides the AuthorizedToken tag of this Transaction
+    /// \returns the AuthorizedToken
+    std::shared_ptr<AuthorizedToken> get_authorized_token();
 
     /// \brief Adds the provided \p meter_value to a chronological list of powermeter values
     void add_meter_value(MeterValue meter_value);
@@ -109,17 +120,6 @@ public:
     std::map<int32_t, ChargingProfile> get_charging_profiles();
 };
 
-/// \brief A structure that contains a idTag and its corresponding idTagInfo
-struct AuthorizedToken {
-    CiString20Type idTag; ///< The authorization token
-    IdTagInfo idTagInfo;  ///< Information about the authorization status of the idTag authorization token
-    /// \brief Creates a AuthorizedToken from an \p idTag and \p idTagInfo
-    AuthorizedToken(CiString20Type idTag, IdTagInfo idTagInfo) {
-        this->idTag = idTag;
-        this->idTagInfo = idTagInfo;
-    }
-};
-
 /// \brief A structure that contains a energy value in Wh that can be used for start/stop energy values and a
 /// corresponding timestamp
 struct StampedEnergyWh {
@@ -134,7 +134,7 @@ struct StampedEnergyWh {
 /// \brief Manages a charging session
 class ChargingSession {
 private:
-    std::unique_ptr<AuthorizedToken> authorized_token; // the presented authentication
+    std::shared_ptr<AuthorizedToken> authorized_token; // the presented authentication
     std::shared_ptr<StampedEnergyWh> start_energy_wh;
     std::shared_ptr<StampedEnergyWh> stop_energy_wh;
     boost::optional<int32_t> reservation_id;
@@ -146,7 +146,7 @@ public:
     ChargingSession();
 
     /// \brief Creates a charging session with the provided \p authorized_token
-    explicit ChargingSession(std::unique_ptr<AuthorizedToken> authorized_token);
+    explicit ChargingSession(std::shared_ptr<AuthorizedToken> authorized_token);
 
     ~ChargingSession() {
         this->transaction = nullptr;
@@ -164,7 +164,7 @@ public:
 
     /// \brief Sets the \p authorized_token of the charging session
     /// \returns true if this was successful
-    bool add_authorized_token(std::unique_ptr<AuthorizedToken> authorized_token);
+    bool add_authorized_token(std::shared_ptr<AuthorizedToken> authorized_token);
 
     /// \brief Adds the energy in Wh at the start of the transaction \p start_energy_wh to the charging session
     /// \returns returns true if this was successful
@@ -191,9 +191,9 @@ public:
     /// \returns true if the charging session is running
     bool running();
 
-    /// \brief Provides the IdTag that was associated with this charging session if it is available
-    /// \returns the IdTag if it is available, boost::none otherwise
-    boost::optional<CiString20Type> get_authorized_id_tag();
+    /// \brief Provides the AuthorizedToken that was associated with this charging session if it is available
+    /// \returns the AuthorizedToken if it is available, boost::none otherwise
+    boost::optional<std::shared_ptr<AuthorizedToken>> get_authorized_token();
 
     /// \brief Adds a transaction to this charging session
     /// \returns true if this was successful, false if a transaction is already associated with this charging session
@@ -243,14 +243,9 @@ public:
     /// \brief Adds the given \p stopped_transaction to the vector of stopped transactions
     void add_stopped_transaction(std::shared_ptr<Transaction> stopped_transaction);
 
-    /// \brief Adds an authorized token, created from the provided \p idTag and \p idTagInfo to any connector that is in
-    /// need of a token
-    /// \returns the connector to which the authorized token was added, -1 if no valid connector was found
-    int32_t add_authorized_token(CiString20Type idTag, IdTagInfo idTagInfo);
-
-    /// \brief Adds an authorized token, created from the provided \p idTag and \p idTagInfo to the given \p connector
-    /// \returns the connector to which the authorized token was added, -1 if no valid connector was found
-    int32_t add_authorized_token(int32_t connector, CiString20Type idTag, IdTagInfo idTagInfo);
+    /// \brief Adds the \p authorized_token for the given \p connector.
+    /// If no session exists at the given connector, a session is created
+    int32_t add_authorized_token(int32_t connector, std::shared_ptr<AuthorizedToken> authorized_token);
 
     /// \brief Adds the energy in Wh at the start of the transaction \p start_energy_wh to the charging session on the
     /// given \p connector
@@ -304,10 +299,6 @@ public:
     /// \returns true if a transaction exists
     bool transaction_active(int32_t connector);
 
-    /// \brief Indicates if there is an active transaction for all connectors
-    /// \returns true if all connectors have active transactions
-    bool all_connectors_have_active_transaction();
-
     /// \brief Provides the connector on which a transaction with the given \p transaction_id is running
     /// \returns The connector or -1 if the transaction_id is unknown
     int32_t get_connector_from_transaction_id(int32_t transaction_id);
@@ -322,14 +313,15 @@ public:
     /// \returns true if the change was successful
     bool change_meter_values_sample_intervals(int32_t interval);
 
-    /// \brief Provides the IdTag that was associated with the charging session on the provided \p connector
-    /// \returns the IdTag if it is available, boost::none otherwise
-    boost::optional<CiString20Type> get_authorized_id_tag(int32_t connector);
+    /// \brief Provides the AuthorizedToken that was associated with the charging session on the provided \p connector
+    /// \returns the AuthorizedToken if it is available, boost::none otherwise
+    boost::optional<std::shared_ptr<AuthorizedToken>> get_authorized_token(int32_t connector);
 
-    /// \brief Provides the IdTag that was associated with the charging session with the provided
+    /// \brief Provides the AuthorizedToken that was associated with the charging session with the provided
     /// \p stop_transaction_message_id
-    /// \returns the IdTag if it is available, boost::none otherwise
-    boost::optional<CiString20Type> get_authorized_id_tag(std::string stop_transaction_message_id);
+    /// \returns the AuthorizedToken if it is available, boost::none otherwise
+    boost::optional<std::shared_ptr<AuthorizedToken>>
+    get_authorized_token(const std::string& stop_transaction_message_id);
 
     /// \brief Provides a list of meter values from the given \p connector
     /// \returns A vector of associated meter values

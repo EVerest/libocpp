@@ -9,14 +9,14 @@
 
 namespace ocpp1_6 {
 Transaction::Transaction(int32_t transactionId, int32_t connector,
-                         std::unique_ptr<Everest::SteadyTimer> meter_values_sample_timer, CiString20Type idTag,
-                         std::string start_transaction_message_id) :
+                         std::unique_ptr<Everest::SteadyTimer> meter_values_sample_timer,
+                         std::shared_ptr<AuthorizedToken> authorized_token, std::string start_transaction_message_id) :
     transactionId(transactionId),
     connector(connector),
     start_transaction_message_id(start_transaction_message_id),
     active(true),
     finished(false),
-    idTag(idTag),
+    authorized_token(authorized_token),
     meter_values_sample_timer(std::move(meter_values_sample_timer)) {
 }
 
@@ -24,8 +24,8 @@ int32_t Transaction::get_connector() {
     return this->connector;
 }
 
-CiString20Type Transaction::get_id_tag() {
-    return this->idTag;
+std::shared_ptr<AuthorizedToken> Transaction::get_authorized_token() {
+    return this->authorized_token;
 }
 
 void Transaction::add_meter_value(MeterValue meter_value) {
@@ -120,7 +120,7 @@ ChargingSession::ChargingSession() :
     authorized_token(nullptr), reservation_id(boost::none), plug_connected(false), transaction(nullptr) {
 }
 
-ChargingSession::ChargingSession(std::unique_ptr<AuthorizedToken> authorized_token) :
+ChargingSession::ChargingSession(std::shared_ptr<AuthorizedToken> authorized_token) :
     authorized_token(std::move(authorized_token)),
     reservation_id(boost::none),
     plug_connected(false),
@@ -139,7 +139,7 @@ bool ChargingSession::authorized_token_available() {
     return this->authorized_token != nullptr;
 }
 
-bool ChargingSession::add_authorized_token(std::unique_ptr<AuthorizedToken> authorized_token) {
+bool ChargingSession::add_authorized_token(std::shared_ptr<AuthorizedToken> authorized_token) {
     this->authorized_token = std::move(authorized_token);
     return true;
 }
@@ -179,11 +179,11 @@ bool ChargingSession::running() {
     return this->transaction != nullptr && this->transaction->transaction_active();
 }
 
-boost::optional<CiString20Type> ChargingSession::get_authorized_id_tag() {
+boost::optional<std::shared_ptr<AuthorizedToken>> ChargingSession::get_authorized_token() {
     if (this->authorized_token == nullptr) {
         return boost::none;
     }
-    return this->authorized_token->idTag;
+    return this->authorized_token;
 }
 
 bool ChargingSession::add_transaction(std::shared_ptr<Transaction> transaction) {
@@ -247,46 +247,22 @@ void ChargingSessionHandler::add_stopped_transaction(std::shared_ptr<Transaction
     this->stopped_transactions.push_back(stopped_transaction);
 }
 
-int32_t ChargingSessionHandler::add_authorized_token(CiString20Type idTag, IdTagInfo idTagInfo) {
-    return this->add_authorized_token(0, idTag, idTagInfo);
-}
-
-int32_t ChargingSessionHandler::add_authorized_token(int32_t connector, CiString20Type idTag, IdTagInfo idTagInfo) {
+int32_t ChargingSessionHandler::add_authorized_token(int32_t connector,
+                                                     std::shared_ptr<AuthorizedToken> authorized_token) {
     if (!this->valid_connector(connector)) {
         return -1;
     }
 
-    auto authorized_token = std::make_unique<AuthorizedToken>(idTag, idTagInfo);
-
-    if (connector == 0) {
-        std::lock_guard<std::mutex> lock(this->active_charging_sessions_mutex);
-        // check if a charging session is missing an authorized token
-        bool moved = false;
-        int32_t index = 0;
-        for (auto& charging_session : this->active_charging_sessions) {
-            if (charging_session != nullptr && charging_session->get_authorized_id_tag() == boost::none) {
-                charging_session->add_authorized_token(std::move(authorized_token));
-                moved = true;
-                connector = index;
-                break;
-            }
-            index += 1;
-        }
-        if (!moved) {
-            this->active_charging_sessions.at(0) = std::make_unique<ChargingSession>(std::move(authorized_token));
-        }
+    std::lock_guard<std::mutex> lock(this->active_charging_sessions_mutex);
+    if (this->active_charging_sessions.at(connector) == nullptr) {
+        this->active_charging_sessions.at(connector) = std::make_unique<ChargingSession>(authorized_token);
     } else {
-        std::lock_guard<std::mutex> lock(this->active_charging_sessions_mutex);
-        if (this->active_charging_sessions.at(connector) == nullptr) {
-            this->active_charging_sessions.at(connector) =
-                std::make_unique<ChargingSession>(std::move(authorized_token));
-        } else {
-            if (this->active_charging_sessions.at(connector)->running()) {
-                // do not add a authorized token to a running charging session
-                return -1;
-            }
-            this->active_charging_sessions.at(connector)->add_authorized_token(std::move(authorized_token));
+        if (this->active_charging_sessions.at(connector)->running()) {
+            // do not add a authorized token to a running charging session
+            EVLOG_warning << "Tried to add authorized token to a running session";
+            return -1;
         }
+        this->active_charging_sessions.at(connector)->add_authorized_token(authorized_token);
     }
     return connector;
 }
@@ -356,6 +332,7 @@ bool ChargingSessionHandler::initiate_session(int32_t connector) {
         return false;
     }
     if (!this->valid_connector(connector)) {
+        EVLOG_warning << "Attempting to start a charging session on an invalid connector";
         return false;
     }
     {
@@ -366,8 +343,11 @@ bool ChargingSessionHandler::initiate_session(int32_t connector) {
             } else {
                 this->active_charging_sessions.at(connector) = std::make_unique<ChargingSession>();
             }
+        } else {
+            EVLOG_warning << "Attempting to initiate a session for a connector where a session is not nullptr";
         }
         if (this->active_charging_sessions.at(connector)->running()) {
+            EVLOG_warning << "Attempting to initiate a session for a connector where a session is already running";
             return false;
         }
         this->active_charging_sessions.at(connector)->connect_plug();
@@ -457,15 +437,6 @@ bool ChargingSessionHandler::transaction_active(int32_t connector) {
     return this->get_transaction(connector) != nullptr && this->get_transaction(connector)->transaction_active();
 }
 
-bool ChargingSessionHandler::all_connectors_have_active_transaction() {
-    for (int connector = 1; connector <= this->number_of_connectors; connector++) {
-        if (this->get_transaction(connector) == nullptr || !this->transaction_active(connector)) {
-            return false;
-        }
-    }
-    return true;
-}
-
 int32_t ChargingSessionHandler::get_connector_from_transaction_id(int32_t transaction_id) {
     std::lock_guard<std::mutex> lock(this->active_charging_sessions_mutex);
     int32_t index = 0;
@@ -507,7 +478,7 @@ bool ChargingSessionHandler::change_meter_values_sample_intervals(int32_t interv
     return success;
 }
 
-boost::optional<CiString20Type> ChargingSessionHandler::get_authorized_id_tag(int32_t connector) {
+boost::optional<std::shared_ptr<AuthorizedToken>> ChargingSessionHandler::get_authorized_token(int32_t connector) {
     if (!this->valid_connector(connector)) {
         return boost::none;
     }
@@ -515,13 +486,14 @@ boost::optional<CiString20Type> ChargingSessionHandler::get_authorized_id_tag(in
     if (this->active_charging_sessions.at(connector) == nullptr) {
         return boost::none;
     }
-    return this->active_charging_sessions.at(connector)->get_authorized_id_tag();
+    return this->active_charging_sessions.at(connector)->get_authorized_token();
 }
 
-boost::optional<CiString20Type> ChargingSessionHandler::get_authorized_id_tag(std::string stop_transaction_message_id) {
+boost::optional<std::shared_ptr<AuthorizedToken>>
+ChargingSessionHandler::get_authorized_token(const std::string& stop_transaction_message_id) {
     for (const auto& transaction : this->stopped_transactions) {
         if (transaction->get_stop_transaction_message_id() == stop_transaction_message_id) {
-            transaction->get_id_tag();
+            transaction->get_authorized_token();
         }
     }
     return boost::none;

@@ -698,5 +698,14 @@ struct ScheduledCallback {
     ScheduledCallback(ScheduledCallbackType callbackType, std::string datetime, std::vector<std::string> args);
 };
 
+
+struct ReservationInfo {
+    int32_t reservation_id;
+    int32_t connector;
+    std::string id_tag;
+    boost::optional<std::string> parent_id_tag;
+    ocpp1_6::DateTime expiry_date;
+};
+
 } // namespace ocpp1_6
 #endif // OCPP1_6_TYPES_HPP

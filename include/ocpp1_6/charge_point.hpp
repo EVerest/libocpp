@@ -81,6 +81,7 @@ private:
     std::unique_ptr<Everest::SteadyTimer> signed_firmware_update_install_timer;
     std::chrono::time_point<date::utc_clock> clock_aligned_meter_values_time_point;
     std::map<int32_t, std::vector<MeterValue>> meter_values;
+    std::map<int32_t, std::shared_ptr<AuthorizedToken>> active_authorizations;
     std::mutex meter_values_mutex;
     std::map<int32_t, json> power_meter;
     std::map<int32_t, double> max_current_offered;
@@ -95,7 +96,7 @@ private:
     std::mutex tx_default_profiles_mutex;
 
     std::map<int32_t, int32_t> res_conn_map;
-    std::map<int32_t, std::string> reserved_id_tag_map;
+    std::map<int32_t, ReservationInfo> reservations;
 
     std::unique_ptr<Websocket> websocket;
     boost::shared_ptr<boost::asio::io_service::work> work;
@@ -239,6 +240,11 @@ private:
     void handleSendLocalListRequest(Call<SendLocalListRequest> call);
     void handleGetLocalListVersionRequest(Call<GetLocalListVersionRequest> call);
 
+    EnhancedMessage authorize_id_tag(CiString20Type idTag);
+    bool parent_id_tags_match(IdTagInfo idTagInfo1, IdTagInfo idTagInfo2);
+    bool tag_used_to_finish_session(CiString20Type idTag, const std::vector<int32_t>& connectors);
+    IdTagInfo handle_authorize_offline(CiString20Type id_tag, int32_t connector);
+
 public:
     /// \brief Creates a ChargePoint object with the provided \p configuration
     explicit ChargePoint(std::shared_ptr<ChargePointConfiguration> configuration);
@@ -257,13 +263,17 @@ public:
 
     // public API for Core profile
 
-    /// \brief Authorizes the provided \p idTag with the central system
-    /// \returns the AuthorizationStatus
-    AuthorizationStatus authorize_id_tag(CiString20Type idTag);
+    /// \brief callback function that handles the incoming \p idTag for the given \p connectors .
+    /// - checks if tag is used to stop an active transaction and initiates the process to stop the transaction
+    /// - checks if all \p connectors are occupied or connector is unavailable
+    /// - checks incoming \p idTag against reservations for given \p connectors
+    /// - handles the authorization if the chargepoint is not connected to a CSMS
+    /// - Initiates a StartTransaction.req if the \p idTag could be validated
+    AuthorizationStatus authorization_callback(CiString20Type idTag, const std::vector<int32_t>& connectors);
 
-    /// \brief Provides the IdTag that was associated with the charging session on the provided \p connector
-    /// \returns the IdTag if it is available, boost::none otherwise
-    boost::optional<CiString20Type> get_authorized_id_tag(int32_t connector);
+    /// \brief Provides the AuthorizedToken that was associated with the charging session on the provided \p connector
+    /// \returns the AuthorizedToken if it is available, boost::none otherwise
+    boost::optional<std::shared_ptr<AuthorizedToken>> get_authorized_token(int32_t connector);
 
     /// \brief Allows the exchange of arbitrary \p data identified by a \p vendorId and \p messageId with a central
     /// system \returns the DataTransferResponse
@@ -419,8 +429,9 @@ public:
     /// \brief setter for the signed_firwmare_update_running flag
     void set_signed_firmware_update_running(bool b);
 
-    /// \brief called when a reservation is started
-    void reservation_start(int32_t connector_id, int32_t reservation_id, std::string id_tag);
+    /// \brief called when a reservation starts
+    void reservation_start(int32_t connector, int32_t reservation_id, const std::string& id_tag,
+                           boost::optional<std::string>& parent_id, DateTime expiry_date);
 
     /// \brief called when a reservation ends
     void reservation_end(int32_t connector, int32_t reservation_id, std::string reason);

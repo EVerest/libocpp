@@ -32,9 +32,14 @@ ChargePoint::ChargePoint(std::shared_ptr<ChargePointConfiguration> configuration
                 EVLOG_info << "Removing session at connector: " << connector
                            << " because the car was not plugged-in in time.";
                 this->charging_session_handler->remove_active_session(connector);
+                this->active_authorizations[connector] = nullptr;
                 this->status->submit_event(connector, Event_BecomeAvailable());
             }));
     }
+    for (int32_t connector = 1; connector <= this->configuration->getNumberOfConnectors(); connector++) {
+        this->active_authorizations[connector] = nullptr;
+    }
+
     this->init_websocket(this->configuration->getSecurityProfile());
     this->message_queue = std::make_unique<MessageQueue>(
         this->configuration, [this](json message) -> bool { return this->websocket->send(message.dump()); });
@@ -988,16 +993,6 @@ void ChargePoint::handleRemoteStartTransactionRequest(Call<RemoteStartTransactio
         return;
     }
 
-    // check if connector is reserved and tagId matches the reserved tag
-    if (this->reserved_id_tag_map.find(connector) != this->reserved_id_tag_map.end() &&
-        call.msg.idTag.get() != this->reserved_id_tag_map[connector]) {
-        EVLOG_warning << "Received RemoteStartTransactionRequest for a reserved connector with wrong idTag.";
-        response.status = RemoteStartStopStatus::Rejected;
-        CallResult<RemoteStartTransactionResponse> call_result(response, call.uniqueId);
-        this->send<RemoteStartTransactionResponse>(call_result);
-        return;
-    }
-
     if (call.msg.chargingProfile) {
         // TODO(kai): A charging profile was provided, forward to the charger
     }
@@ -1012,38 +1007,36 @@ void ChargePoint::handleRemoteStartTransactionRequest(Call<RemoteStartTransactio
         std::lock_guard<std::mutex> lock(remote_start_transaction_mutex);
 
         this->remote_start_transaction[call.uniqueId] = std::thread([this, call, connector]() {
-            bool authorized = true;
-            int32_t connector = 0;
-            if (!call.msg.connectorId) {
-                connector = 0;
-            } else {
-                connector = call.msg.connectorId.value();
-            }
+            IdTagInfo idTagInfo;
+            idTagInfo.status = AuthorizationStatus::Accepted;
 
-            if (this->configuration->getAuthorizeConnectorZeroOnConnectorOne() && connector == 0) {
-                connector = 1;
-            }
             if (this->configuration->getAuthorizeRemoteTxRequests()) {
                 // need to authorize first
-                authorized = (this->authorize_id_tag(call.msg.idTag) == AuthorizationStatus::Accepted);
+                auto enhanced_message = this->authorize_id_tag(call.msg.idTag);
+                CallResult<AuthorizeResponse> call_result = enhanced_message.message;
+                if (call_result.msg.idTagInfo.status == AuthorizationStatus::Accepted) {
+                    // FIXME(kai): this probably needs to be signalled to the evse_manager in some way? we at least need
+                    // the start_energy and start_timestamp from the evse manager to properly start the transaction
+                    if (this->remote_start_transaction_callback != nullptr) {
+                        auto authorized_token =
+                            std::make_shared<AuthorizedToken>(call.msg.idTag, call_result.msg.idTagInfo);
+                        this->active_authorizations[connector] = authorized_token;
+                        this->charging_session_handler->add_authorized_token(connector,
+                                                                             this->active_authorizations[connector]);
+                        this->remote_start_transaction_callback(connector, call.msg.idTag);
+                        this->start_transaction(connector);
+                    } else {
+                        EVLOG_error << "Could not start a remotely requested transaction on connector: " << connector;
+                    }
+                }
             } else {
                 // no explicit authorization is requested, implicitly authorizing this idTag internally
-                IdTagInfo idTagInfo;
-                idTagInfo.status = AuthorizationStatus::Accepted;
-                this->charging_session_handler->add_authorized_token(connector, call.msg.idTag, idTagInfo);
-                this->connection_timeout_timer.at(connector)->timeout(
-                    std::chrono::seconds(this->configuration->getConnectionTimeOut()));
+                const auto authorized_token = std::make_shared<AuthorizedToken>(call.msg.idTag, idTagInfo);
+                this->active_authorizations[connector] = authorized_token;
+                this->charging_session_handler->add_authorized_token(connector, this->active_authorizations[connector]);
             }
-            if (authorized) {
-                // FIXME(kai): this probably needs to be signalled to the evse_manager in some way? we at least need the
-                // start_energy and start_timestamp from the evse manager to properly start the transaction
-                if (this->remote_start_transaction_callback != nullptr) {
-                    this->remote_start_transaction_callback(connector, call.msg.idTag);
-                    this->start_transaction(connector);
-                } else {
-                    EVLOG_error << "Could not start a remotely requested transaction on connector: " << connector;
-                }
-            }
+            this->connection_timeout_timer.at(connector)->timeout(
+                std::chrono::seconds(this->configuration->getConnectionTimeOut()));
         });
     }
 }
@@ -1108,9 +1101,9 @@ void ChargePoint::handleStartTransactionResponse(CallResult<StartTransactionResp
                                                         start_transaction_response.transactionId);
     }
 
-    auto idTag = transaction->get_id_tag();
-    this->configuration->updateAuthorizationCacheEntry(idTag, start_transaction_response.idTagInfo);
-    this->charging_session_handler->add_authorized_token(connector, idTag, start_transaction_response.idTagInfo);
+    const auto authorized_token = transaction->get_authorized_token();
+    const auto id_tag = authorized_token->idTag;
+    this->configuration->updateAuthorizationCacheEntry(id_tag, start_transaction_response.idTagInfo);
 
     if (start_transaction_response.idTagInfo.status == AuthorizationStatus::ConcurrentTx) {
         return;
@@ -1135,9 +1128,9 @@ void ChargePoint::handleStopTransactionResponse(CallResult<StopTransactionRespon
     int32_t connector = 1;
 
     if (stop_transaction_response.idTagInfo) {
-        auto idTag = this->charging_session_handler->get_authorized_id_tag(call_result.uniqueId.get());
-        if (idTag) {
-            this->configuration->updateAuthorizationCacheEntry(idTag.value(),
+        auto authorized_token = this->charging_session_handler->get_authorized_token(call_result.uniqueId.get());
+        if (authorized_token) {
+            this->configuration->updateAuthorizationCacheEntry(authorized_token.value()->idTag,
                                                                stop_transaction_response.idTagInfo.value());
         }
     }
@@ -2218,49 +2211,181 @@ void ChargePoint::status_notification(int32_t connector, ChargePointErrorCode er
     this->send<StatusNotificationRequest>(call);
 }
 
-// public API for Core profile
+bool ChargePoint::parent_id_tags_match(IdTagInfo idTagInfo1, IdTagInfo idTagInfo2) {
+    return idTagInfo1.parentIdTag && idTagInfo2.parentIdTag &&
+           idTagInfo1.parentIdTag.get() == idTagInfo2.parentIdTag.get();
+}
 
-AuthorizationStatus ChargePoint::authorize_id_tag(CiString20Type idTag) {
-    auto auth_status = AuthorizationStatus::Invalid;
+bool ChargePoint::tag_used_to_finish_session(CiString20Type idTag, const std::vector<int32_t>& connectors) {
+    bool tag_associated_with_active_session = false;
+    int32_t associated_connector = 0;
 
-    // TODO(kai): implement local authorization (this is optional)
-
-    // check if a session is running with this idTag associated
-    for (int32_t connector = 1; connector < this->configuration->getNumberOfConnectors() + 1; connector++) {
-        auto authorized_id_tag = this->charging_session_handler->get_authorized_id_tag(connector);
-        if (authorized_id_tag != boost::none) {
-            if (authorized_id_tag.get() == idTag) {
-                // get transaction
-                auto transaction = this->charging_session_handler->get_transaction(connector);
-                if (transaction != nullptr) {
-                    // stop charging, this will stop the session as well
-                    this->cancel_charging_callback(connector, Reason::Local);
-                    return AuthorizationStatus::Invalid;
+    // iterate over all connectors and check if tag is used for an active session
+    for (const auto& connector : connectors) {
+        const auto authorized_token = this->charging_session_handler->get_authorized_token(connector);
+        if (authorized_token != boost::none) {
+            if (authorized_token.get()->idTag == idTag) {
+                tag_associated_with_active_session = true;
+                associated_connector = connector;
+            } else if (authorized_token.get()->idTagInfo.parentIdTag) {
+                auto id_tag_info = this->configuration->getAuthorizationCacheEntry(idTag);
+                if (id_tag_info == boost::none) {
+                    // ask backend if no cache entry is available
+                    EnhancedMessage enhanced_message = this->authorize_id_tag(idTag);
+                    CallResult<AuthorizeResponse> call_result = enhanced_message.message;
+                    AuthorizeResponse authorize_response = call_result.msg;
+                    id_tag_info = call_result.msg.idTagInfo;
+                }
+                if (this->parent_id_tags_match(id_tag_info.get(), authorized_token.get()->idTagInfo)) {
+                    tag_associated_with_active_session = true;
+                    associated_connector = connector;
                 }
             }
         }
     }
 
-    // check if all connectors have active transactions
-    if (this->charging_session_handler->all_connectors_have_active_transaction()) {
-        return AuthorizationStatus::Invalid;
-    }
-
-    int32_t connector = 1;
-
-    // dont authorize if state is Unavailable
-    if (this->status->get_state(connector) == ChargePointStatus::Unavailable) {
-        return AuthorizationStatus::Invalid;
-    }
-
-    // check if connector is reserved and tagId matches the reserved tag
-    if (this->reserved_id_tag_map.find(connector) != this->reserved_id_tag_map.end()) {
-        if (idTag.get() == this->reserved_id_tag_map[connector]) {
-            auth_status = AuthorizationStatus::Accepted;
-        } else {
-            return AuthorizationStatus::Invalid;
+    if (tag_associated_with_active_session) {
+        // get transaction
+        auto transaction = this->charging_session_handler->get_transaction(associated_connector);
+        if (transaction != nullptr) {
+            // stop charging, this will stop the session as well
+            this->cancel_charging_callback(associated_connector, Reason::Local);
+            return true;
         }
     }
+    return false;
+}
+
+AuthorizationStatus ChargePoint::authorization_callback(CiString20Type idTag, const std::vector<int32_t>& connectors) {
+
+    std::set<int32_t> disqualified_connectors;
+    std::set<int32_t> qualified_connectors;
+    auto auth_status = AuthorizationStatus::Invalid;
+
+    // check if tag can be used to finish a session
+    if (this->tag_used_to_finish_session(idTag, connectors)) {
+        return AuthorizationStatus::Invalid;
+    }
+
+    if (this->status->get_state(0) == ChargePointStatus::Unavailable) {
+        return AuthorizationStatus::Invalid;
+    }
+
+    bool authorized_id_tag = false;
+    EnhancedMessage enhanced_message;
+
+    for (const auto& connector : connectors) {
+        // check if all connector has active transaction
+        if (this->charging_session_handler->get_transaction(connector) != nullptr ||
+            this->charging_session_handler->transaction_active(connector)) {
+            disqualified_connectors.insert(connector);
+        }
+        // check if connector is unavailable
+        if (this->status->get_state(connector) == ChargePointStatus::Unavailable) {
+            disqualified_connectors.insert(connector);
+        }
+        // check if connector is reserved and tagId or parentId matches the reserved tagId or parentId
+        if (this->reservations.find(connector) != this->reservations.end()) {
+            IdTagInfo reservation_id_tag_info = {AuthorizationStatus::Accepted, reservations[connector].expiry_date,
+                                                 CiString20Type(reservations[connector].parent_id_tag.get())};
+            if (idTag.get() == this->reservations[connector].id_tag) {
+                qualified_connectors.insert(connector);
+            } else if (this->reservations[connector].parent_id_tag) {
+                auto requested_id_tag_info = this->configuration->getAuthorizationCacheEntry(idTag);
+                if (requested_id_tag_info == boost::none) {
+                    enhanced_message = this->authorize_id_tag(idTag);
+                    authorized_id_tag = true;
+                    if (!enhanced_message.offline) {
+                        CallResult<AuthorizeResponse> call_result = enhanced_message.message;
+                        AuthorizeResponse authorize_response = call_result.msg;
+                        requested_id_tag_info = call_result.msg.idTagInfo;
+                    }
+                }
+                if (requested_id_tag_info != boost::none &&
+                    this->parent_id_tags_match(requested_id_tag_info.get(), reservation_id_tag_info)) {
+                    qualified_connectors.insert(connector);
+                } else {
+                    disqualified_connectors.insert(connector);
+                }
+            } else {
+                disqualified_connectors.insert(connector);
+            }
+        }
+    }
+
+    if (disqualified_connectors.size() == connectors.size()) {
+        return AuthorizationStatus::Invalid;
+    }
+
+    if (!authorized_id_tag) {
+        enhanced_message = this->authorize_id_tag(idTag);
+    }
+
+    bool authorized_at_least_one = false;
+
+    // handle response
+    for (const auto& connector : connectors) {
+        if (disqualified_connectors.find(connector) == disqualified_connectors.end()) {
+            IdTagInfo id_tag_info;
+            if (enhanced_message.offline) {
+                EVLOG_debug << "Handling offline authorize";
+                id_tag_info = this->handle_authorize_offline(idTag, connector);
+            } else {
+                EVLOG_debug << "Handling online authorize response";
+                CallResult<AuthorizeResponse> call_result = enhanced_message.message;
+                AuthorizeResponse authorize_response = call_result.msg;
+                this->configuration->updateAuthorizationCacheEntry(idTag, call_result.msg.idTagInfo);
+                id_tag_info = call_result.msg.idTagInfo;
+            }
+            if (id_tag_info.status == AuthorizationStatus::Accepted) {
+                auth_status = AuthorizationStatus::Accepted;
+                authorized_at_least_one = true;
+                const auto authorized_token = std::make_shared<AuthorizedToken>(idTag, id_tag_info);
+                this->active_authorizations[connector] = authorized_token;
+                this->charging_session_handler->add_authorized_token(connector, this->active_authorizations[connector]);
+                this->connection_timeout_timer.at(connector)->timeout(
+                    std::chrono::seconds(this->configuration->getConnectionTimeOut()));
+                this->status->submit_event(connector, Event_UsageInitiated());
+                this->start_transaction(connector);
+            }
+        }
+    }
+
+    if (authorized_at_least_one) {
+        return AuthorizationStatus::Accepted;
+    } else {
+        return AuthorizationStatus::Invalid;
+    }
+}
+
+IdTagInfo ChargePoint::handle_authorize_offline(CiString20Type id_tag, int32_t connector) {
+
+    // The charge point is offline or has a bad connection.
+    // Check if local authorization via the authorization cache is allowed:
+    if (this->configuration->getAuthorizationCacheEnabled() && this->configuration->getLocalAuthorizeOffline()) {
+        EVLOG_info << "Charge point appears to be offline, using authorization cache to check if "
+                      "IdTag is valid";
+        auto idTagInfo = this->configuration->getAuthorizationCacheEntry(id_tag);
+        if (idTagInfo) {
+            return idTagInfo.get();
+        }
+    }
+
+    // if chargepoint is offline and allowing transactions for unknown id
+    if (this->configuration->getAllowOfflineTxForUnknownId() != boost::none &&
+        this->configuration->getAllowOfflineTxForUnknownId().value()) {
+        IdTagInfo id_tag_info = {AuthorizationStatus::Accepted, boost::none, boost::none};
+        return id_tag_info;
+    }
+
+    return IdTagInfo{AuthorizationStatus::Invalid, boost::none, boost::none};
+}
+
+// public API for Core profile
+
+EnhancedMessage ChargePoint::authorize_id_tag(CiString20Type idTag) {
+
+    auto auth_status = AuthorizationStatus::Invalid;
 
     AuthorizeRequest req;
     req.idTag = idTag;
@@ -2269,62 +2394,11 @@ AuthorizationStatus ChargePoint::authorize_id_tag(CiString20Type idTag) {
 
     auto authorize_future = this->send_async<AuthorizeRequest>(call);
 
-    auto enhanced_message = authorize_future.get();
-
-    if (enhanced_message.messageType == MessageType::AuthorizeResponse) {
-        CallResult<AuthorizeResponse> call_result = enhanced_message.message;
-        AuthorizeResponse authorize_response = call_result.msg;
-
-        auth_status = authorize_response.idTagInfo.status;
-
-        if (auth_status == AuthorizationStatus::Accepted) {
-            this->configuration->updateAuthorizationCacheEntry(idTag, call_result.msg.idTagInfo);
-            if (!this->configuration->getAuthorizeConnectorZeroOnConnectorOne()) {
-                connector = this->charging_session_handler->add_authorized_token(idTag, authorize_response.idTagInfo);
-            } else {
-                EVLOG_info << "Automatically authorizing idTag on connector 1 because there is only "
-                              "one connector";
-                connector = this->charging_session_handler->add_authorized_token(connector, idTag,
-                                                                                 authorize_response.idTagInfo);
-            }
-            this->connection_timeout_timer.at(connector)->timeout(
-                std::chrono::seconds(this->configuration->getConnectionTimeOut()));
-            this->status->submit_event(connector, Event_UsageInitiated());
-        } else {
-            return auth_status;
-        }
-    }
-    if (enhanced_message.offline) {
-        // if chargepoint is offline and allowing transactions for unknown id
-        if (this->configuration->getAllowOfflineTxForUnknownId() != boost::none &&
-            this->configuration->getAllowOfflineTxForUnknownId().value()) {
-            IdTagInfo id_tag_info = {AuthorizationStatus::Accepted, boost::none, boost::none};
-            this->charging_session_handler->add_authorized_token(connector, idTag, id_tag_info);
-            auth_status = AuthorizationStatus::Accepted;
-        }
-
-        // The charge point is offline or has a bad connection.
-        // Check if local authorization via the authorization cache is allowed:
-        if (this->configuration->getAuthorizationCacheEnabled() && this->configuration->getLocalAuthorizeOffline()) {
-            EVLOG_info << "Charge point appears to be offline, using authorization cache to check if "
-                          "IdTag is valid";
-            auto idTagInfo = this->configuration->getAuthorizationCacheEntry(idTag);
-            if (idTagInfo) {
-                this->charging_session_handler->add_authorized_token(connector, idTag, idTagInfo.get());
-                auth_status = idTagInfo.get().status;
-            }
-        }
-    }
-
-    if (connector > 0 && auth_status == AuthorizationStatus::Accepted) {
-        this->start_transaction(connector);
-    }
-
-    return auth_status;
+    return authorize_future.get();
 }
 
-boost::optional<CiString20Type> ChargePoint::get_authorized_id_tag(int32_t connector) {
-    return this->charging_session_handler->get_authorized_id_tag(connector);
+boost::optional<std::shared_ptr<AuthorizedToken>> ChargePoint::get_authorized_token(int32_t connector) {
+    return this->charging_session_handler->get_authorized_token(connector);
 }
 
 DataTransferResponse ChargePoint::data_transfer(const CiString255Type& vendorId, const CiString50Type& messageId,
@@ -2382,7 +2456,7 @@ void ChargePoint::receive_number_of_phases_available(int32_t connector, double n
 bool ChargePoint::start_transaction(int32_t connector) {
     AvailabilityType connector_availability = this->configuration->getConnectorAvailability(connector);
     if (connector_availability == AvailabilityType::Inoperative) {
-        EVLOG_error << "Connector " << connector << " is inoperative.";
+        EVLOG_debug << "Connector " << connector << " is inoperative.";
         return false;
     }
 
@@ -2396,9 +2470,8 @@ bool ChargePoint::start_transaction(int32_t connector) {
         return false;
     }
 
-    auto idTag_option = this->charging_session_handler->get_authorized_id_tag(connector);
-    auto idTag = idTag_option.get();
-    auto energyWhStamped = this->charging_session_handler->get_start_energy_wh(connector);
+    const auto idTag = this->active_authorizations[connector]->idTag;
+    const auto energyWhStamped = this->charging_session_handler->get_start_energy_wh(connector);
 
     // stop connection timeout timer, car is obviously plugged-in now
     this->connection_timeout_timer.at(connector)->stop();
@@ -2423,10 +2496,10 @@ bool ChargePoint::start_transaction(int32_t connector) {
         this->charging_session_handler->add_meter_value(connector, meter_value);
         this->send_meter_value(connector, meter_value);
     });
-    auto transaction =
-        std::make_unique<Transaction>(-1, connector, std::move(meter_values_sample_timer), idTag, message_id.get());
+    auto transaction = std::make_unique<Transaction>(-1, connector, std::move(meter_values_sample_timer),
+                                                     this->active_authorizations[connector], message_id.get());
     if (!this->charging_session_handler->add_transaction(connector, std::move(transaction))) {
-        EVLOG_error << "could not add_transaction";
+        EVLOG_debug << "Could not add_transaction to session";
     }
 
     this->charging_session_handler->change_meter_values_sample_interval(
@@ -2492,8 +2565,8 @@ bool ChargePoint::stop_transaction(int32_t connector, Reason reason) {
     req.reason.emplace(reason);
     req.transactionId = transaction->get_transaction_id();
 
-    if (this->charging_session_handler->get_authorized_id_tag(connector) != boost::none) {
-        req.idTag = this->charging_session_handler->get_authorized_id_tag(connector).value();
+    if (this->charging_session_handler->get_authorized_token(connector) != boost::none) {
+        req.idTag = this->charging_session_handler->get_authorized_token(connector).value()->idTag;
     }
 
     std::vector<TransactionData> transaction_data_vec = transaction->get_transaction_data();
@@ -2540,7 +2613,6 @@ bool ChargePoint::stop_session(int32_t connector, DateTime timestamp, double ene
     EVLOG_debug << "Stopping session on connector " << connector;
     this->charging_session_handler->add_stop_energy_wh(connector,
                                                        std::make_shared<StampedEnergyWh>(timestamp, energy_Wh_import));
-
     auto transaction = this->charging_session_handler->get_transaction(connector);
     if (transaction == nullptr || transaction->is_finished()) {
         EVLOG_debug << "Transaction has already finished, not sending stop_transaction";
@@ -2551,6 +2623,7 @@ bool ChargePoint::stop_session(int32_t connector, DateTime timestamp, double ene
         }
     }
 
+    this->active_authorizations[connector] = nullptr;
     this->charging_session_handler->remove_active_session(connector);
     return true; // FIXME
 }
@@ -2722,8 +2795,11 @@ void ChargePoint::set_signed_firmware_update_running(bool b) {
     this->signed_firmware_update_running = b;
 }
 
-void ChargePoint::reservation_start(int32_t connector, int32_t reservation_id, std::string id_tag) {
-    this->reserved_id_tag_map[connector] = id_tag;
+void ChargePoint::reservation_start(int32_t connector, int32_t reservation_id, const std::string& id_tag,
+                                    boost::optional<std::string>& parent_id, DateTime expiry_date) {
+
+    const ReservationInfo reservation = {reservation_id, connector, id_tag, parent_id, expiry_date};
+    this->reservations[connector] = reservation;
 
     if (res_conn_map.count(reservation_id) == 0) {
         this->res_conn_map[reservation_id] = connector;
@@ -2744,7 +2820,7 @@ void ChargePoint::reservation_end(int32_t connector, int32_t reservation_id, std
     res_con_map_it = this->res_conn_map.find(reservation_id);
     this->res_conn_map.erase(res_con_map_it);
 
-    this->reserved_id_tag_map.erase(connector);
+    this->reservations.erase(connector);
 }
 
 } // namespace ocpp1_6
