@@ -134,8 +134,8 @@ private:
     std::function<void(int32_t connector, ocpp1_6::CiString20Type idTag)> remote_start_transaction_callback;
     std::function<bool(int32_t connector)> unlock_connector_callback;
     std::function<bool(int32_t connector, double max_current)> set_max_current_callback;
-    std::function<std::string(std::string location)> upload_diagnostics_callback;
-    std::function<void(std::string location)> update_firmware_callback;
+    std::function<std::string(const ocpp1_6::GetDiagnosticsRequest& request)> upload_diagnostics_callback;
+    std::function<void(const ocpp1_6::UpdateFirmwareRequest msg)> update_firmware_callback;
     std::function<ReservationStatus(int32_t reservation_id, int32_t connector, ocpp1_6::DateTime expiryDate,
                                     ocpp1_6::CiString20Type idTag, boost::optional<ocpp1_6::CiString20Type> parent_id)>
         reserve_now_callback;
@@ -385,10 +385,12 @@ public:
     void register_set_max_current_callback(const std::function<bool(int32_t connector, double max_current)>& callback);
 
     /// \brief registers a \p callback function that can be used to trigger an upload of diagnostics
-    void register_upload_diagnostics_callback(const std::function<std::string(std::string location)>& callback);
+    void register_upload_diagnostics_callback(
+        const std::function<std::string(const ocpp1_6::GetDiagnosticsRequest& request)>& callback);
 
     /// \brief registers a \p callback function that can be used to trigger a firmware update
-    void register_update_firmware_callback(const std::function<void(std::string location)>& callback);
+    void
+    register_update_firmware_callback(const std::function<void(const ocpp1_6::UpdateFirmwareRequest msg)>& callback);
 
     /// \brief registers a \p callback function that can be used to upload logfiles
     void register_upload_logs_callback(const std::function<std::string(GetLogRequest req)>& callback);

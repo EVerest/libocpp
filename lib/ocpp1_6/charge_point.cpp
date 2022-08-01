@@ -1756,7 +1756,7 @@ void ChargePoint::handleGetDiagnosticsRequest(Call<GetDiagnosticsRequest> call) 
     EVLOG_debug << "Received GetDiagnosticsRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
     GetDiagnosticsResponse response;
     if (this->upload_diagnostics_callback) {
-        response.fileName.emplace(this->upload_diagnostics_callback(call.msg.location));
+        response.fileName.emplace(this->upload_diagnostics_callback(call.msg));
     }
     CallResult<GetDiagnosticsResponse> call_result(response, call.uniqueId);
     this->send<GetDiagnosticsResponse>(call_result);
@@ -1767,7 +1767,7 @@ void ChargePoint::handleUpdateFirmwareRequest(Call<UpdateFirmwareRequest> call) 
     UpdateFirmwareResponse response;
     if (this->update_firmware_callback) {
         // FIXME(kai): respect call.msg.retrieveDate and only then trigger this callback
-        this->update_firmware_callback(call.msg.location);
+        this->update_firmware_callback(call.msg);
     }
     CallResult<UpdateFirmwareResponse> call_result(response, call.uniqueId);
     this->send<UpdateFirmwareResponse>(call_result);
@@ -2669,11 +2669,12 @@ void ChargePoint::register_set_max_current_callback(
 }
 
 void ChargePoint::register_upload_diagnostics_callback(
-    const std::function<std::string(std::string location)>& callback) {
+    const std::function<std::string(const ocpp1_6::GetDiagnosticsRequest& request)>& callback) {
     this->upload_diagnostics_callback = callback;
 }
 
-void ChargePoint::register_update_firmware_callback(const std::function<void(std::string location)>& callback) {
+void ChargePoint::register_update_firmware_callback(
+    const std::function<void(const ocpp1_6::UpdateFirmwareRequest msg)>& callback) {
     this->update_firmware_callback = callback;
 }
 
