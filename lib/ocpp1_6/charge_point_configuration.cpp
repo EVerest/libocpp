@@ -369,12 +369,6 @@ boost::optional<CiString25Type> ChargePointConfiguration::getMeterType() {
 int32_t ChargePointConfiguration::getWebsocketReconnectInterval() {
     return this->config["Internal"]["WebsocketReconnectInterval"];
 }
-bool ChargePointConfiguration::getAuthorizeConnectorZeroOnConnectorOne() {
-    if (this->getNumberOfConnectors() == 1) {
-        return this->config["Internal"]["AuthorizeConnectorZeroOnConnectorOne"];
-    }
-    return false;
-}
 bool ChargePointConfiguration::getLogMessages() {
     return this->config["Internal"]["LogMessages"];
 }
