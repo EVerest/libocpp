@@ -4,5 +4,6 @@ target_link_libraries(charge_point
     PRIVATE
         Boost::thread
         Boost::program_options
+        nlohmann_json::nlohmann_json
         ocpp
 )
