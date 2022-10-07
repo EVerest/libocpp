@@ -469,7 +469,8 @@ void ChargePoint::stop_all_transactions(Reason reason) {
 }
 
 bool ChargePoint::stop() {
-    if (!this->stopped) {
+    EVLOG_info << "Attempting to stop OCPP Chargepoint";
+    if (!this->stopped && this->initialized) {
         EVLOG_info << "Stopping OCPP Chargepoint";
         this->initialized = false;
         if (this->boot_notification_timer != nullptr) {
@@ -492,10 +493,10 @@ bool ChargePoint::stop() {
         this->io_service_thread.join();
 
         this->stopped = true;
-        EVLOG_info << "Terminating...";
+        EVLOG_info << "Terminating OCPP service...";
         return true;
     } else {
-        EVLOG_warning << "Attempting to stop Chargepoint while it has been stopped before";
+        EVLOG_warning << "Attempting to stop Chargepoint while it has been stopped before or was not yet initialized";
         return false;
     }
 
