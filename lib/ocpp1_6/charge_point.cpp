@@ -2423,9 +2423,10 @@ void ChargePoint::register_data_transfer_callback(const CiString255Type& vendorI
 }
 
 void ChargePoint::on_meter_values(int32_t connector, const Powermeter& power_meter) {
-    EVLOG_debug << "updating power meter for connector: " << connector;
-    std::lock_guard<std::mutex> lock(power_meters_mutex);
-    this->power_meters[connector] = power_meter;
+    // FIXME: fix power meter to also work with dc
+    // EVLOG_debug << "updating power meter for connector: " << connector;
+    // std::lock_guard<std::mutex> lock(power_meters_mutex);
+    // this->power_meters[connector] = power_meter;
 }
 
 void ChargePoint::on_max_current_offered(int32_t connector, int32_t max_current) {
