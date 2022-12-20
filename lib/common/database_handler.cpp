@@ -3,7 +3,7 @@
 
 #include <everest/logging.hpp>
 
-#include "ocpp1_6/database_handler.hpp"
+#include "common/database_handler.hpp"
 
 namespace ocpp1_6 {
 

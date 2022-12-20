@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2022 Pionix GmbH and Contributors to EVerest
 #include <ocpp1_6/charge_point_configuration.hpp>
-#include <ocpp1_6/message_queue.hpp>
+#include <common/message_queue.hpp>
 
 #include <everest/logging.hpp>
 

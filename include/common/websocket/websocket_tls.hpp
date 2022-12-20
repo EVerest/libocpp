@@ -10,7 +10,7 @@
 #include <websocketpp/client.hpp>
 #include <websocketpp/config/asio_client.hpp>
 
-#include <ocpp1_6/websocket/websocket_base.hpp>
+#include <common/websocket/websocket_base.hpp>
 
 namespace ocpp1_6 {
 

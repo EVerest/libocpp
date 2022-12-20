@@ -4,7 +4,7 @@
 
 #include <ocpp1_6/charge_point_configuration.hpp>
 #include <ocpp1_6/types.hpp>
-#include <ocpp1_6/websocket/websocket.hpp>
+#include <common/websocket/websocket.hpp>
 
 #include <boost/algorithm/string.hpp>
 

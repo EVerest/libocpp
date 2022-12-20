@@ -8,8 +8,8 @@
 #include <thread>
 
 #include <ocpp1_6/ocpp_logging.hpp>
-#include <ocpp1_6/websocket/websocket_plain.hpp>
-#include <ocpp1_6/websocket/websocket_tls.hpp>
+#include <common/websocket/websocket_plain.hpp>
+#include <common/websocket/websocket_tls.hpp>
 
 namespace ocpp1_6 {
 

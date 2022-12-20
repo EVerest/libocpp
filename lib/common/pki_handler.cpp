@@ -5,7 +5,7 @@
 #include <fstream>
 #include <streambuf>
 
-#include <ocpp1_6/pki_handler.hpp>
+#include <common/pki_handler.hpp>
 
 namespace ocpp1_6 {
 
@@ -68,6 +68,7 @@ bool X509Certificate::write() {
 PkiHandler::PkiHandler(const std::string& maindir) : maindir(boost::filesystem::path(maindir)) {
 }
 
+//FIXME(piet): Verify correct cert (either ChargePointCertificate or V2GCertificate)
 CertificateVerificationResult PkiHandler::verifyChargepointCertificate(const std::string& certificateChain,
                                                                        const std::string& chargeBoxSerialNumber) {
 
@@ -108,6 +109,7 @@ CertificateVerificationResult PkiHandler::verifyChargepointCertificate(const std
     return CertificateVerificationResult::Valid;
 }
 
+//FIXME(piet): Write the correct certificate here (either ChargePointCertificate or V2GCertificate)
 void PkiHandler::writeClientCertificate(const std::string& certificate) {
     std::shared_ptr<X509Certificate> cert = loadFromString(certificate);
     std::string newPath =
@@ -117,6 +119,7 @@ void PkiHandler::writeClientCertificate(const std::string& certificate) {
     cert->write();
 }
 
+//FIXME(piet): Add purpose type (ChargingStationCertificate or V2GCertificate)
 std::string PkiHandler::generateCsr(const char* szCountry, const char* szProvince, const char* szCity,
                                     const char* szOrganization, const char* szCommon) {
     int rc;
@@ -246,6 +249,7 @@ bool PkiHandler::verifyFirmwareCertificate(const std::string& firmwareCertificat
     }
 }
 
+//FIXME(piet): Include use type V2G
 boost::optional<std::vector<CertificateHashDataType>>
 PkiHandler::getRootCertificateHashData(CertificateUseEnumType type) {
     boost::optional<std::vector<CertificateHashDataType>> certificateHashDataOpt = boost::none;

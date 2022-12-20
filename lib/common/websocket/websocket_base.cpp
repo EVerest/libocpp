@@ -3,7 +3,7 @@
 #include <everest/logging.hpp>
 
 #include <ocpp1_6/charge_point_configuration.hpp>
-#include <ocpp1_6/websocket/websocket_base.hpp>
+#include <common/websocket/websocket_base.hpp>
 
 namespace ocpp1_6 {
 

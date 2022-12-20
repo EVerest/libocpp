@@ -3,8 +3,8 @@
 #include <everest/logging.hpp>
 
 #include <ocpp1_6/charge_point_configuration.hpp>
-#include <ocpp1_6/pki_handler.hpp>
-#include <ocpp1_6/websocket/websocket_tls.hpp>
+#include <common/pki_handler.hpp>
+#include <common/websocket/websocket_tls.hpp>
 
 namespace ocpp1_6 {
 

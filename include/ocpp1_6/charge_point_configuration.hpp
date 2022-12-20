@@ -6,7 +6,7 @@
 #include <set>
 
 #include <ocpp1_6/ocpp_types.hpp>
-#include <ocpp1_6/pki_handler.hpp>
+#include <common/pki_handler.hpp>
 #include <ocpp1_6/types.hpp>
 
 namespace ocpp1_6 {

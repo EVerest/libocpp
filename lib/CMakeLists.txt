@@ -8,18 +8,18 @@ target_sources(ocpp
         ocpp1_6/charge_point_state_machine.cpp
         ocpp1_6/transaction.cpp
         ocpp1_6/enums.cpp
-        ocpp1_6/message_queue.cpp
+        common/message_queue.cpp
         ocpp1_6/ocpp_types.cpp
         ocpp1_6/ocpp_logging.cpp
-        ocpp1_6/pki_handler.cpp
+        common/pki_handler.cpp
         ocpp1_6/schemas.cpp
-        ocpp1_6/database_handler.cpp
+        common/database_handler.cpp
         ocpp1_6/types.cpp
         ocpp1_6/types_internal.cpp
 )
 
 add_subdirectory(ocpp1_6/messages)
-add_subdirectory(ocpp1_6/websocket)
+add_subdirectory(common/websocket)
 
 target_include_directories(ocpp
     PUBLIC

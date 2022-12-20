@@ -13,10 +13,11 @@
 
 #include <everest/timer.hpp>
 
+#include <common/database_handler.hpp>
+#include <common/message_queue.hpp>
+#include <common/websocket/websocket.hpp>
 #include <ocpp1_6/charge_point_configuration.hpp>
 #include <ocpp1_6/charge_point_state_machine.hpp>
-#include <ocpp1_6/database_handler.hpp>
-#include <ocpp1_6/message_queue.hpp>
 #include <ocpp1_6/messages/Authorize.hpp>
 #include <ocpp1_6/messages/BootNotification.hpp>
 #include <ocpp1_6/messages/CancelReservation.hpp>
@@ -59,7 +60,6 @@
 #include <ocpp1_6/ocpp_logging.hpp>
 #include <ocpp1_6/transaction.hpp>
 #include <ocpp1_6/types.hpp>
-#include <ocpp1_6/websocket/websocket.hpp>
 
 namespace ocpp1_6 {
 
@@ -109,7 +109,8 @@ private:
     std::map<MessageId, std::thread> stop_transaction_thread;
     std::mutex remote_stop_transaction_mutex; // FIXME: this should be done differently
 
-    std::map<std::string, std::map<std::string, std::function<void(const std::string data)>>> data_transfer_callbacks;
+    std::map<std::string, std::map<std::string, std::function<void(Call<DataTransferRequest> call)>>>
+        data_transfer_callbacks;
     std::mutex data_transfer_callbacks_mutex;
 
     std::mutex stop_transaction_mutex;
@@ -230,6 +231,14 @@ private:
     ChargingSchedule create_composite_schedule(std::vector<ChargingProfile> charging_profiles,
                                                date::utc_clock::time_point start_time,
                                                date::utc_clock::time_point end_time, int32_t duration_s);
+
+    // plug&charge for 1.6 whitepaper
+    bool data_transfer_pnc_authorize();
+    void data_transfer_pnc_sign_certificate();
+
+    void handle_data_transfer_pnc_trigger_message(Call<DataTransferRequest> call);
+    void handle_data_transfer_pnc_certificate_signed(Call<DataTransferRequest> call);
+    void handle_data_transfer_pnc_get_installed_certificates(Call<DataTransferRequest> call);
 
     /// \brief ReserveNow.req(connectorId, expiryDate, idTag, reservationId, [parentIdTag]): tries to perform the
     /// reservation and sends a reservation response. The reservation response: ReserveNow::Status
@@ -359,7 +368,7 @@ public:
     /// registers a \p callback function that can be used to receive a arbitrary data transfer for the given \p
     /// vendorId and \p messageId
     void register_data_transfer_callback(const CiString255Type& vendorId, const CiString50Type& messageId,
-                                         const std::function<void(const std::string data)>& callback);
+                                         const std::function<void(Call<DataTransferRequest> call)>& callback);
 
     /// \brief registers a \p callback function that can be used to enable the evse
     void register_enable_evse_callback(const std::function<bool(int32_t connector)>& callback);

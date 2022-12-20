@@ -2,10 +2,10 @@
 // Copyright 2020 - 2022 Pionix GmbH and Contributors to EVerest
 #include <thread>
 
+#include <common/database_handler.hpp>
 #include <everest/logging.hpp>
 #include <ocpp1_6/charge_point.hpp>
 #include <ocpp1_6/charge_point_configuration.hpp>
-#include <ocpp1_6/database_handler.hpp>
 #include <ocpp1_6/schemas.hpp>
 
 #include <openssl/rsa.h>
@@ -1031,27 +1031,25 @@ void ChargePoint::handleDataTransferRequest(Call<DataTransferRequest> call) {
 
     auto vendorId = call.msg.vendorId.get();
     auto messageId = call.msg.messageId.get_value_or(CiString50Type()).get();
-    std::function<void(const std::string data)> callback;
     {
         std::lock_guard<std::mutex> lock(data_transfer_callbacks_mutex);
         if (this->data_transfer_callbacks.count(vendorId) == 0) {
             response.status = DataTransferStatus::UnknownVendorId;
         } else {
-            if (this->data_transfer_callbacks[vendorId].count(messageId) == 0) {
-                response.status = DataTransferStatus::UnknownMessageId;
-            } else {
+            if (this->data_transfer_callbacks[vendorId].count(messageId) != 0) {
+                // there is a callback registered for this vendorId and messageId
                 response.status = DataTransferStatus::Accepted;
-                callback = this->data_transfer_callbacks[vendorId][messageId];
+                const auto callback = this->data_transfer_callbacks[vendorId][messageId];
+                callback(call); // callback is responsible to send response
+                return;
+            } else {
+                response.status = DataTransferStatus::UnknownMessageId;
             }
         }
     }
 
     CallResult<DataTransferResponse> call_result(response, call.uniqueId);
     this->send<DataTransferResponse>(call_result);
-
-    if (response.status == DataTransferStatus::Accepted) {
-        callback(call.msg.data.get_value_or(std::string("")));
-    }
 }
 
 void ChargePoint::handleGetConfigurationRequest(Call<GetConfigurationRequest> call) {
@@ -2413,6 +2411,159 @@ IdTagInfo ChargePoint::authorize_id_token(CiString20Type idTag) {
     return id_tag_info;
 }
 
+bool ChargePoint::data_transfer_pnc_authorize() {
+
+    DataTransferRequest req;
+    req.vendorId = "org.openchargealliance.iso15118pnc";
+    req.messageId.emplace(CiString50Type(std::string("Authorize")));
+
+    // data = {
+    //     "certificate": "xxxx",
+    //     "idToken": {
+    //         "idToken": "xxxx"
+    //     },
+    //     "iso15118CertificateHashData": {
+    //         "hashAlgorithm": "xxx",
+    //         "issuerNameHash": "xxx",
+    //         "issuerKeyHash": "xxx",
+    //         "serialNumber": "xxx",
+    //         "responderURL": "akdaf"
+    //     }
+    // }
+
+    req.data.emplace("xxx"); // data
+
+    DataTransferResponse response;
+    Call<DataTransferRequest> call(req, this->message_queue->createMessageId());
+
+    auto authorize_future = this->send_async<DataTransferRequest>(call);
+    auto enhanced_message = authorize_future.get();
+
+    if (enhanced_message.messageType == MessageType::DataTransferResponse) {
+        // parse and return authorize response
+        return true;
+    } else if (enhanced_message.offline) {
+        return false;
+    }
+    return true;
+}
+
+void ChargePoint::data_transfer_pnc_sign_certificate() {
+    DataTransferRequest req;
+    req.vendorId = "org.openchargealliance.iso15118pnc";
+    req.messageId.emplace(CiString50Type(std::string("SignCertificate")));
+
+    SignCertificateRequest csr_req;
+
+    const auto csr = this->configuration->getPkiHandler()->generateCsr(
+        "DE", "BW", "Bad Schoenborn", this->configuration->getCpoName().get().c_str(),
+        this->configuration->getChargeBoxSerialNumber().c_str());
+
+    csr_req.csr = csr;
+
+    //FIXME(piet):
+    json j;
+    to_json(j, csr_req);
+
+    req.data.emplace(j.dump());
+
+    Call<DataTransferRequest> call(req, this->message_queue->createMessageId());
+    this->send<DataTransferRequest>(call);
+}
+
+void ChargePoint::handle_data_transfer_pnc_trigger_message(Call<DataTransferRequest> call) {
+
+    const TriggerMessageRequest req = json::parse(call.msg.data.value());
+
+    DataTransferResponse response;
+
+    CallResult<DataTransferResponse> call_result(response, call.uniqueId);
+    this->send<DataTransferResponse>(call_result);
+
+    if (response.status == DataTransferStatus::Accepted) {
+        // send sign certificate wrapped in data_transfer
+        this->data_transfer_pnc_sign_certificate();
+    }
+}
+
+void ChargePoint::handle_data_transfer_pnc_certificate_signed(Call<DataTransferRequest> call) {
+    EVLOG_debug << "Received Data Transfer CertificateSignedRequest: " << call.msg
+                << "\nwith messageId: " << call.uniqueId;
+
+    const CertificateSignedRequest req = json::parse(call.msg.data.value());
+
+    DataTransferResponse response;
+    response.status = DataTransferStatus::Accepted;
+
+    CertificateSignedResponse certificate_response;
+    certificate_response.status = CertificateSignedStatusEnumType::Rejected;
+
+    const auto certificate_chain = req.certificateChain.get();
+    const auto pki_handler = this->configuration->getPkiHandler();
+
+    const auto certificate_verification_result =
+        pki_handler->verifyChargepointCertificate(certificate_chain, this->configuration->getChargeBoxSerialNumber());
+
+    if (certificate_verification_result == CertificateVerificationResult::Valid) {
+        certificate_response.status = CertificateSignedStatusEnumType::Accepted;
+        // FIXME(piet): dont just override, store other one for at least one month according to spec
+        pki_handler->writeClientCertificate(certificate_chain);
+    }
+
+    json j;
+    to_json(j, certificate_response);
+
+    response.data.emplace(j.dump());
+
+    CallResult<DataTransferResponse> call_result(response, call.uniqueId);
+    this->send<DataTransferResponse>(call_result);
+
+    if (certificate_response.status == CertificateSignedStatusEnumType::Rejected) {
+        this->securityEventNotification(
+            SecurityEvent::InvalidChargePointCertificate,
+            conversions::certificate_verification_result_to_string(certificate_verification_result));
+    }
+
+    // reconnect with new certificate if valid and security profile is 3
+    // FIXME(piet): Only do this if certificateType is ChargingStationCertificate
+    if (certificate_response.status == CertificateSignedStatusEnumType::Accepted &&
+        this->configuration->getSecurityProfile() == 3) {
+        if (pki_handler->validIn(certificate_chain) < 0) {
+            this->websocket->reconnect(std::error_code(), 1000);
+        } else {
+            this->websocket->reconnect(std::error_code(), pki_handler->validIn(certificate_chain));
+        }
+    }
+}
+
+void ChargePoint::handle_data_transfer_pnc_get_installed_certificates(Call<DataTransferRequest> call) {
+    EVLOG_debug << "Received Data Transfer GetInstalledCertificatesRequest: " << call.msg
+                << "\nwith messageId: " << call.uniqueId;
+
+    const GetInstalledCertificateIdsRequest req = json::parse(call.msg.data.value());
+
+    DataTransferResponse response;
+    response.status = DataTransferStatus::Accepted;
+
+    GetInstalledCertificateIdsResponse get_certificate_ids_response;
+    get_certificate_ids_response.status = GetInstalledCertificateStatusEnumType::NotFound;
+
+    const auto certificate_hash_data =
+        this->configuration->getPkiHandler()->getRootCertificateHashData(req.certificateType);
+    if (certificate_hash_data != boost::none) {
+        get_certificate_ids_response.certificateHashData = certificate_hash_data;
+        get_certificate_ids_response.status = GetInstalledCertificateStatusEnumType::Accepted;
+    }
+
+    json j;
+    to_json(j, get_certificate_ids_response);
+
+    response.data.emplace(j.dump());
+
+    CallResult<DataTransferResponse> call_result(response, call.uniqueId);
+    this->send<DataTransferResponse>(call_result);
+}
+
 DataTransferResponse ChargePoint::data_transfer(const CiString255Type& vendorId, const CiString50Type& messageId,
                                                 const std::string& data) {
     DataTransferRequest req;
@@ -2440,7 +2591,7 @@ DataTransferResponse ChargePoint::data_transfer(const CiString255Type& vendorId,
 }
 
 void ChargePoint::register_data_transfer_callback(const CiString255Type& vendorId, const CiString50Type& messageId,
-                                                  const std::function<void(const std::string data)>& callback) {
+                                                  const std::function<void(Call<DataTransferRequest> call)>& callback) {
     std::lock_guard<std::mutex> lock(data_transfer_callbacks_mutex);
     this->data_transfer_callbacks[vendorId.get()][messageId.get()] = callback;
 }
