@@ -20,11 +20,14 @@ target_sources(ocpp
         ocpp/v16/types.cpp
         ocpp/v201/charge_point.cpp
         ocpp/v201/device_model_management.cpp
+        ocpp/v201/device_model_management_base.cpp
+        ocpp/v201/transaction.cpp
         ocpp/v201/enums.cpp
         ocpp/v201/ocpp_types.cpp
         ocpp/v201/types.cpp
         ocpp/v201/connector.cpp
         ocpp/v201/evse.cpp
+        ocpp/v201/utils.cpp
 )
 
 add_subdirectory(ocpp/common/websocket)

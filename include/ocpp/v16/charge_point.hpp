@@ -104,7 +104,6 @@ private:
     std::unique_ptr<Everest::SteadyTimer> ocsp_request_timer;
     std::unique_ptr<Everest::SteadyTimer> client_certificate_timer;
     std::unique_ptr<Everest::SteadyTimer> v2g_certificate_timer;
-    std::chrono::time_point<date::utc_clock> clock_aligned_meter_values_time_point;
     std::mutex meter_values_mutex;
     std::mutex power_meters_mutex;
     std::map<int32_t, AvailabilityType> change_availability_queue; // TODO: move to Connectors
