@@ -33,7 +33,7 @@ ChargePoint::ChargePoint(const json& config, const std::string& share_path, cons
         this->configuration->getAdditionalRootCertificateCheck().get_value_or(false));
     this->heartbeat_timer = std::make_unique<Everest::SteadyTimer>(&this->io_service, [this]() { this->heartbeat(); });
     this->heartbeat_interval = this->configuration->getHeartbeatInterval();
-    this->database_handler = std::make_shared<ocpp::DatabaseHandler>(this->configuration->getChargePointId(),
+    this->database_handler = std::make_shared<DatabaseHandler>(this->configuration->getChargePointId(),
                                                                      boost::filesystem::path(database_path),
                                                                      boost::filesystem::path(sql_init_path));
     this->database_handler->open_db_connection(this->configuration->getNumberOfConnectors());

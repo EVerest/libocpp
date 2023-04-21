@@ -4,13 +4,13 @@ add_library(everest::ocpp ALIAS ocpp)
 target_sources(ocpp
     PRIVATE
         ocpp/common/charging_station_base.cpp
-        ocpp/common/database_handler.cpp
         ocpp/common/message_queue.cpp
         ocpp/common/ocpp_logging.cpp
         ocpp/common/pki_handler.cpp
         ocpp/common/schemas.cpp
         ocpp/common/types.cpp
         ocpp/v16/charge_point.cpp
+        ocpp/v16/database_handler.cpp
         ocpp/v16/smart_charging.cpp
         ocpp/v16/charge_point_configuration.cpp
         ocpp/v16/charge_point_state_machine.cpp

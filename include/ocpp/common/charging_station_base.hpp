@@ -5,7 +5,6 @@
 
 #include <everest/timer.hpp>
 
-#include <ocpp/common/database_handler.hpp>
 #include <ocpp/common/message_queue.hpp>
 #include <ocpp/common/pki_handler.hpp>
 #include <ocpp/common/websocket/websocket.hpp>
@@ -19,7 +18,6 @@ protected:
     std::unique_ptr<Websocket> websocket;
     std::shared_ptr<PkiHandler> pki_handler;
     std::shared_ptr<MessageLogging> logging;
-    std::shared_ptr<DatabaseHandler> database_handler;
 
     boost::shared_ptr<boost::asio::io_service::work> work;
     boost::asio::io_service io_service;
