@@ -22,11 +22,11 @@ private:
     int32_t evse_id;
     std::map<int32_t, std::unique_ptr<Connector>> id_connector_map;
     std::function<void(const int32_t connector_id, const ConnectorStatusEnum& status)> status_notification_callback;
-    std::function<void(const MeterValue& meter_value, const Transaction& transaction, const EVSE& evse,
-                       const int32_t seq_no, const boost::optional<int32_t> reservation_id)>
+    std::function<void(const MeterValue& meter_value, const Transaction& transaction, const int32_t seq_no,
+                       const boost::optional<int32_t> reservation_id)>
         transaction_meter_value_req;
     std::unique_ptr<EnhancedTransaction> transaction; // pointer to active transaction (can be nullptr)
-    MeterValue meter_value; // represents current meter value
+    MeterValue meter_value;                           // represents current meter value
     std::mutex meter_value_mutex;
     Everest::SteadyTimer sampled_meter_values_timer;
 
@@ -38,16 +38,15 @@ public:
     Evse(const int32_t evse_id, const int32_t number_of_connectors,
          const std::function<void(const int32_t connector_id, const ConnectorStatusEnum& status)>&
              status_notification_callback,
-         const std::function<void(const MeterValue& meter_value, const Transaction& transaction, const EVSE& evse,
-                                  const int32_t seq_no, const boost::optional<int32_t> reservation_id)>&
-             transaction_meter_value_req);
+         const std::function<void(const MeterValue& meter_value, const Transaction& transaction, const int32_t seq_no,
+                                  const boost::optional<int32_t> reservation_id)>& transaction_meter_value_req);
 
-    /// \brief Returns an OCPP2.0.1 EVSE type 
-    /// \return 
+    /// \brief Returns an OCPP2.0.1 EVSE type
+    /// \return
     EVSE get_evse_info();
 
     /// \brief Returns a reference to the sampled meter values timer
-    /// \return 
+    /// \return
     Everest::SteadyTimer& get_sampled_meter_values_timer();
 
     /// \brief Opens a new transaction
@@ -96,11 +95,11 @@ public:
     void trigger_status_notification_callbacks();
 
     /// \brief Event handler that should be called when a new meter_value for this evse is present
-    /// \param meter_value 
+    /// \param meter_value
     void on_meter_value(const MeterValue& meter_value);
 
     /// \brief Returns the last present meter value for this evse
-    /// \return 
+    /// \return
     MeterValue get_meter_value();
 };
 

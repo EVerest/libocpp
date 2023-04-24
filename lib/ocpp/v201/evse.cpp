@@ -13,9 +13,8 @@ namespace v201 {
 Evse::Evse(const int32_t evse_id, const int32_t number_of_connectors,
            const std::function<void(const int32_t connector_id, const ConnectorStatusEnum& status)>&
                status_notification_callback,
-           const std::function<void(const MeterValue& meter_value, const Transaction& transaction, const EVSE& evse,
-                                    const int32_t seq_no, const boost::optional<int32_t> reservation_id)>&
-               transaction_meter_value_req) :
+           const std::function<void(const MeterValue& meter_value, const Transaction& transaction, const int32_t seq_no,
+                                    const boost::optional<int32_t> reservation_id)>& transaction_meter_value_req) :
     evse_id(evse_id),
     status_notification_callback(status_notification_callback),
     transaction_meter_value_req(transaction_meter_value_req),
@@ -58,8 +57,7 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
                 const auto meter_value = this->get_meter_value();
                 this->transaction->meter_values.push_back(meter_value);
                 this->transaction_meter_value_req(meter_value, this->transaction->get_transaction(),
-                                                  this->get_evse_info(), transaction->get_seq_no(),
-                                                  this->transaction->reservation_id);
+                                                  transaction->get_seq_no(), this->transaction->reservation_id);
             },
             std::chrono::seconds(sampled_data_tx_updated_interval));
     }

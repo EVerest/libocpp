@@ -5,6 +5,7 @@
 
 #include <ocpp/common/charging_station_base.hpp>
 
+#include <ocpp/v201/database_handler.hpp>
 #include <ocpp/v201/device_model_management.hpp>
 #include <ocpp/v201/enums.hpp>
 #include <ocpp/v201/evse.hpp>
@@ -31,6 +32,8 @@ namespace v201 {
 struct Callbacks {
     std::function<bool(const ResetEnum& reset_type)> is_reset_allowed_callback;
     std::function<void(const ResetEnum& reset_type)> reset_callback;
+    std::function<void(const int32_t evse_id, const ReasonEnum& stop_reason)> stop_transaction_callback;
+    std::function<void(const int32_t evse_id)> pause_charging_callback;
 };
 
 /// \brief Class implements OCPP2.0.1 Charging Station
@@ -43,6 +46,7 @@ private:
     // utility
     std::unique_ptr<MessageQueue<v201::MessageType>> message_queue;
     std::shared_ptr<DeviceModelManager> device_model_manager;
+    std::unique_ptr<DatabaseHandler> database_handler;
 
     // timers
     Everest::SteadyTimer heartbeat_timer;
@@ -106,14 +110,19 @@ private:
     void handle_get_report_req(Call<GetReportRequest> call);
     void handle_reset_req(Call<ResetRequest> call);
 
+    // Transaction
+    void handle_start_transaction_event_response(CallResult<TransactionEventResponse> call_result,
+                                                 const int32_t evse_id);
+
 public:
     /// \brief Construct a new ChargePoint object
     /// \param config OCPP json config
     /// \param ocpp_main_path Path where utility files for OCPP are read and written to
     /// \param message_log_path Path to where logfiles are written to
     /// \param callbacks Callbacks that will be registered for ChargePoint
-    ChargePoint(const json& config, const std::string& ocpp_main_path, const std::string& message_log_path,
-                const std::string& certs_path, const Callbacks& callbacks);
+    ChargePoint(const json& config, const std::string& ocpp_main_path, const std::string& database_path,
+                const std::string& sql_init_path, const std::string& message_log_path, const std::string& certs_path,
+                const Callbacks& callbacks);
 
     /// \brief Starts the ChargePoint, initializes and connects to the Websocket endpoint
     void start();
@@ -127,25 +136,25 @@ public:
     void on_session_started(const int32_t evse_id, const int32_t connector_id);
 
     /// \brief Event handler that should be called when a transaction has started
-    /// \param evse_id 
-    /// \param connector_id 
-    /// \param session_id 
-    /// \param timestamp 
-    /// \param meter_start 
-    /// \param id_token 
-    /// \param reservation_id 
+    /// \param evse_id
+    /// \param connector_id
+    /// \param session_id
+    /// \param timestamp
+    /// \param meter_start
+    /// \param id_token
+    /// \param reservation_id
     void on_transaction_started(const int32_t evse_id, const int32_t connector_id, const std::string& session_id,
                                 const DateTime& timestamp, const MeterValue& meter_start, const IdToken& id_token,
                                 const boost::optional<int32_t>& reservation_id);
 
     /// \brief Event handler that should be called when a transaction has finished
-    /// \param evse_id 
-    /// \param timestamp 
-    /// \param meter_stop 
-    /// \param reason 
-    /// \param id_token 
-    /// \param signed_meter_value 
-    void on_transaction_finished(const int32_t evse_id, const DateTime& timestamp, const MeterValue &meter_stop,
+    /// \param evse_id
+    /// \param timestamp
+    /// \param meter_stop
+    /// \param reason
+    /// \param id_token
+    /// \param signed_meter_value
+    void on_transaction_finished(const int32_t evse_id, const DateTime& timestamp, const MeterValue& meter_stop,
                                  const ReasonEnum reason, const boost::optional<std::string>& id_token,
                                  const boost::optional<std::string>& signed_meter_value);
 

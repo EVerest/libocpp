@@ -9,7 +9,7 @@ namespace ocpp {
 namespace v201 {
 namespace utils {
 
-std::vector<MeasurandEnum> get_measurands_vec(const std::string &measurands_csv) {
+std::vector<MeasurandEnum> get_measurands_vec(const std::string& measurands_csv) {
     std::vector<MeasurandEnum> measurands;
     std::vector<std::string> measurands_strings;
     std::stringstream ss(measurands_csv);
@@ -19,11 +19,11 @@ std::vector<MeasurandEnum> get_measurands_vec(const std::string &measurands_csv)
         measurands_strings.push_back(measurand);
     }
 
-    for (const auto &measurand_string : measurands_strings) {
+    for (const auto& measurand_string : measurands_strings) {
         try {
             measurands.push_back(conversions::string_to_measurand_enum(measurand_string));
-        } catch (std::out_of_range &e) {
-            EVLOG_warning << "Could not convert string: " << measurand_string <<" to MeasurandEnum";
+        } catch (std::out_of_range& e) {
+            EVLOG_warning << "Could not convert string: " << measurand_string << " to MeasurandEnum";
         }
     }
     return measurands;
@@ -81,7 +81,7 @@ get_meter_values_with_measurands_and_interval_applied(const std::vector<MeterVal
                 meter_values.push_back(get_meter_value_with_measurands_applied(meter_value, sample_measurands));
                 next_sampled_timepoint = meter_value.timestamp.to_time_point() + std::chrono::seconds(sampled_interval);
             }
-        // we add any other meter value than Sample_Clock or Sample_Periodic
+            // we add any other meter value than Sample_Clock or Sample_Periodic
         } else if (!meter_value.sampledValue.empty() and meter_value.sampledValue.at(0).context.has_value() and
                    meter_value.sampledValue.at(0).context.value() != ReadingContextEnum::Sample_Periodic and
                    meter_value.sampledValue.at(0).context.value() != ReadingContextEnum::Sample_Clock) {
@@ -134,6 +134,19 @@ TriggerReasonEnum stop_reason_to_trigger_reason_enum(const ReasonEnum& stop_reas
     default:
         return TriggerReasonEnum::AbnormalCondition;
     }
+}
+
+std::string sha256(const std::string& str) {
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256, str.c_str(), str.size());
+    SHA256_Final(hash, &sha256);
+    std::stringstream ss;
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+        ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
+    }
+    return ss.str();
 }
 
 } // namespace utils

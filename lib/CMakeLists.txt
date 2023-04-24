@@ -19,6 +19,7 @@ target_sources(ocpp
         ocpp/v16/ocpp_types.cpp
         ocpp/v16/types.cpp
         ocpp/v201/charge_point.cpp
+        ocpp/v201/database_handler.cpp
         ocpp/v201/device_model_management.cpp
         ocpp/v201/device_model_management_base.cpp
         ocpp/v201/transaction.cpp

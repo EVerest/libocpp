@@ -3,8 +3,10 @@
 #ifndef V201_UTILS_HPP
 #define V201_UTILS_HPP
 
-#include <ocpp/v201/ocpp_types.hpp>
+#include <openssl/sha.h>
+#include <sstream>
 
+#include <ocpp/v201/ocpp_types.hpp>
 namespace ocpp {
 namespace v201 {
 namespace utils {
@@ -44,6 +46,7 @@ std::vector<MeterValue> get_meter_values_with_measurands_and_interval_applied(
 /// \return
 TriggerReasonEnum stop_reason_to_trigger_reason_enum(const ReasonEnum& stop_reason);
 
+std::string sha256(const std::string &str);
 } // namespace utils
 } // namespace v201
 } // namespace ocpp
