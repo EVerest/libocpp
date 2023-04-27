@@ -46,7 +46,30 @@ std::vector<MeterValue> get_meter_values_with_measurands_and_interval_applied(
 /// \return
 TriggerReasonEnum stop_reason_to_trigger_reason_enum(const ReasonEnum& stop_reason);
 
-std::string sha256(const std::string &str);
+/// \brief Returns the given \p str hashed using SHA256
+/// \param str
+/// \return
+std::string sha256(const std::string& str);
+
+struct ScheduledChangeAvailabilityTargetIdentifier {
+    boost::optional<EVSE> evse;
+
+    ScheduledChangeAvailabilityTargetIdentifier(const boost::optional<EVSE> &evse) : evse(evse){};
+    bool operator==(const ScheduledChangeAvailabilityTargetIdentifier &other) const {
+        if (!this->evse.has_value() and !other.evse.has_value()) {
+            return true;
+        } else if (this->evse.has_value() and other.evse.has_value()) {
+            if (this->evse.value().id == other.evse.value().id) {
+                return this->evse.value().connectorId == other.evse.value().connectorId;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+};
+
 } // namespace utils
 } // namespace v201
 } // namespace ocpp

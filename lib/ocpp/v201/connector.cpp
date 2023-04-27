@@ -13,7 +13,15 @@ Connector::Connector(const int32_t connector_id,
                      const std::function<void(const ConnectorStatusEnum& status)>& status_notification_callback) :
     connector_id(connector_id),
     state(ConnectorStatusEnum::Available),
+    last_state(ConnectorStatusEnum::Available),
+    operational_state(OperationalStatusEnum::Operative),
     status_notification_callback(status_notification_callback) {
+}
+
+void Connector::set_state(const ConnectorStatusEnum new_state) {
+    std::lock_guard<std::mutex> lg(this->state_mutex);
+    this->last_state = this->state;
+    this->state = new_state;
 }
 
 ConnectorStatusEnum Connector::get_state() {
@@ -21,26 +29,36 @@ ConnectorStatusEnum Connector::get_state() {
     return this->state;
 }
 
+OperationalStatusEnum Connector::get_operational_state() {
+    return this->operational_state;
+}
+
+void Connector::set_operational_state(const OperationalStatusEnum& operational_state) {
+    this->operational_state = operational_state;
+    if (this->operational_state == OperationalStatusEnum::Inoperative) {
+        this->submit_event(ConnectorEvent::Unavailable);
+    }
+}
+
 void Connector::submit_event(ConnectorEvent event) {
 
-    //FIXME(piet): This state machine implementation is a first draft
+    // FIXME(piet): This state machine implementation is a first draft
     const auto current_state = this->get_state();
-    std::lock_guard<std::mutex> lg(this->state_mutex);
 
     switch (current_state) {
     case ConnectorStatusEnum::Available:
         switch (event) {
         case ConnectorEvent::PlugIn:
-            this->state = ConnectorStatusEnum::Occupied;
+            this->set_state(ConnectorStatusEnum::Occupied);
             break;
         case ConnectorEvent::Reserve:
-            this->state = ConnectorStatusEnum::Reserved;
+            this->set_state(ConnectorStatusEnum::Reserved);
             break;
         case ConnectorEvent::Error:
-            this->state = ConnectorStatusEnum::Faulted;
+            this->set_state(ConnectorStatusEnum::Faulted);
             break;
         case ConnectorEvent::Unavailable:
-            this->state = ConnectorStatusEnum::Unavailable;
+            this->set_state(ConnectorStatusEnum::Unavailable);
             break;
         default:
             EVLOG_warning << "Invalid connector event in state Available.";
@@ -50,13 +68,13 @@ void Connector::submit_event(ConnectorEvent event) {
     case ConnectorStatusEnum::Occupied:
         switch (event) {
         case ConnectorEvent::PlugOut:
-            this->state = ConnectorStatusEnum::Available;
+            this->set_state(ConnectorStatusEnum::Available);
             break;
         case ConnectorEvent::Error:
-            this->state = ConnectorStatusEnum::Faulted;
+            this->set_state(ConnectorStatusEnum::Faulted);
             break;
         case ConnectorEvent::Unavailable:
-            this->state = ConnectorStatusEnum::Unavailable;
+            this->set_state(ConnectorStatusEnum::Unavailable);
             break;
         default:
             EVLOG_warning << "Invalid connector event in state Occupied.";
@@ -66,16 +84,16 @@ void Connector::submit_event(ConnectorEvent event) {
     case ConnectorStatusEnum::Reserved:
         switch (event) {
         case ConnectorEvent::ReservationFinished:
-            this->state = ConnectorStatusEnum::Available;
+            this->set_state(ConnectorStatusEnum::Available);
             break;
         case ConnectorEvent::PlugInAndTokenValid:
-            this->state = ConnectorStatusEnum::Occupied;
+            this->set_state(ConnectorStatusEnum::Occupied);
             break;
         case ConnectorEvent::Error:
-            this->state = ConnectorStatusEnum::Faulted;
+            this->set_state(ConnectorStatusEnum::Faulted);
             break;
         case ConnectorEvent::Unavailable:
-            this->state = ConnectorStatusEnum::Unavailable;
+            this->set_state(ConnectorStatusEnum::Unavailable);
             break;
         default:
             EVLOG_warning << "Invalid connector event in state Reserved.";
@@ -85,16 +103,27 @@ void Connector::submit_event(ConnectorEvent event) {
     case ConnectorStatusEnum::Unavailable:
         switch (event) {
         case ConnectorEvent::UnavailableToAvailable:
-            this->state = ConnectorStatusEnum::Available;
+            this->set_state(ConnectorStatusEnum::Available);
             break;
         case ConnectorEvent::UnavailableToOccupied:
-            this->state = ConnectorStatusEnum::Occupied;
+            this->set_state(ConnectorStatusEnum::Occupied);
             break;
         case ConnectorEvent::UnavailableToReserved:
-            this->state = ConnectorStatusEnum::Reserved;
+            this->set_state(ConnectorStatusEnum::Reserved);
             break;
         case ConnectorEvent::UnavailableFaulted:
-            this->state = ConnectorStatusEnum::Faulted;
+            this->set_state(ConnectorStatusEnum::Faulted);
+            break;
+        case ConnectorEvent::PlugOut:
+            this->last_state = ConnectorStatusEnum::Available;
+            break;
+        case ConnectorEvent::PlugIn:
+            this->last_state = ConnectorStatusEnum::Occupied;
+            break;
+        case ConnectorEvent::ReturnToOperativeState:
+            if (this->operational_state == OperationalStatusEnum::Operative) {
+                this->set_state(this->last_state);
+            }
             break;
         default:
             EVLOG_warning << "Invalid connector event in state Unavailable.";
@@ -104,16 +133,16 @@ void Connector::submit_event(ConnectorEvent event) {
     case ConnectorStatusEnum::Faulted:
         switch (event) {
         case ConnectorEvent::ErrorCleared:
-            this->state = ConnectorStatusEnum::Available;
+            this->set_state(ConnectorStatusEnum::Available);
             break;
         case ConnectorEvent::ErrorCleardOnOccupied:
-            this->state = ConnectorStatusEnum::Occupied;
+            this->set_state(ConnectorStatusEnum::Occupied);
             break;
         case ConnectorEvent::ErrorCleardOnReserved:
-            this->state = ConnectorStatusEnum::Reserved;
+            this->set_state(ConnectorStatusEnum::Reserved);
             break;
         case ConnectorEvent::Unavailable:
-            this->state = ConnectorStatusEnum::Unavailable;
+            this->set_state(ConnectorStatusEnum::Unavailable);
             break;
         default:
             EVLOG_warning << "Invalid connector event in state Faulted.";
@@ -121,7 +150,9 @@ void Connector::submit_event(ConnectorEvent event) {
         }
         break;
     }
-    this->status_notification_callback(this->state);
+    if (current_state != this->state) {
+        this->status_notification_callback(this->state);
+    }
 }
 
 } // namespace v201

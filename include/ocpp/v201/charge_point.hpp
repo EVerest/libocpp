@@ -15,6 +15,7 @@
 
 #include <ocpp/v201/messages/Authorize.hpp>
 #include <ocpp/v201/messages/BootNotification.hpp>
+#include <ocpp/v201/messages/ChangeAvailability.hpp>
 #include <ocpp/v201/messages/GetBaseReport.hpp>
 #include <ocpp/v201/messages/GetReport.hpp>
 #include <ocpp/v201/messages/GetVariables.hpp>
@@ -48,6 +49,8 @@ private:
     std::shared_ptr<DeviceModelManager> device_model_manager;
     std::unique_ptr<DatabaseHandler> database_handler;
 
+    std::map<int32_t, ChangeAvailabilityRequest> scheduled_change_availability_requests;
+
     // timers
     Everest::SteadyTimer heartbeat_timer;
     Everest::SteadyTimer boot_notification_timer;
@@ -56,6 +59,7 @@ private:
     // states
     RegistrationStatusEnum registration_status;
     WebsocketConnectionStatusEnum websocket_connection_status;
+    OperationalStatusEnum operational_state;
 
     // callback struct
     Callbacks callbacks;
@@ -71,6 +75,9 @@ private:
     void handle_message(const json& json_message, const MessageType& message_type);
     void message_callback(const std::string& message);
     void update_aligned_data_interval();
+    bool is_change_availability_possible(const ChangeAvailabilityRequest& req);
+    void change_availability(const ChangeAvailabilityRequest& req);
+    void handle_scheduled_change_availability_requests(const int32_t evse_id);
 
     /* OCPP message requests */
 
@@ -102,7 +109,7 @@ private:
 
     /* OCPP message handlers */
 
-    // Provisioning
+    // Functional Block B: Provisioning
     void handle_boot_notification_response(CallResult<BootNotificationResponse> call_result);
     void handle_set_variables_req(Call<SetVariablesRequest> call);
     void handle_get_variables_req(Call<GetVariablesRequest> call);
@@ -110,9 +117,12 @@ private:
     void handle_get_report_req(Call<GetReportRequest> call);
     void handle_reset_req(Call<ResetRequest> call);
 
-    // Transaction
+    // Functional Block E: Transaction
     void handle_start_transaction_event_response(CallResult<TransactionEventResponse> call_result,
                                                  const int32_t evse_id);
+
+    // Functional Block G: Availability
+    void handle_change_availability_req(Call<ChangeAvailabilityRequest> call);
 
 public:
     /// \brief Construct a new ChargePoint object

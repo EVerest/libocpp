@@ -20,6 +20,7 @@ class Evse {
 
 private:
     int32_t evse_id;
+    OperationalStatusEnum operational_state;
     std::map<int32_t, std::unique_ptr<Connector>> id_connector_map;
     std::function<void(const int32_t connector_id, const ConnectorStatusEnum& status)> status_notification_callback;
     std::function<void(const MeterValue& meter_value, const Transaction& transaction, const int32_t seq_no,
@@ -84,6 +85,16 @@ public:
     /// \param connector_id id of the connector of the evse
     /// \return ConnectorStatusEnum
     ConnectorStatusEnum get_state(const int32_t connector_id);
+
+    /// \brief Get the operational_state of this EVSE
+    /// \return
+    OperationalStatusEnum get_operational_state();
+
+    /// \brief Sets the operational_state of this EVSE and its connectors to the given \p operational_state
+    void set_operational_state(const OperationalStatusEnum& operational_state);
+
+    /// \brief Sets the operational_state of the given \p connector_id to \p operational_state
+    void set_operational_state(const int32_t connector_id, const OperationalStatusEnum& operational_state);
 
     /// \brief Submits the given \p event to the state machine controller of the connector with the given
     /// \p connector_id
