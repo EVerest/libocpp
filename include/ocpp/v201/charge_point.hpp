@@ -35,6 +35,7 @@ struct Callbacks {
     std::function<void(const ResetEnum& reset_type)> reset_callback;
     std::function<void(const int32_t evse_id, const ReasonEnum& stop_reason)> stop_transaction_callback;
     std::function<void(const int32_t evse_id)> pause_charging_callback;
+    std::function<void(const ChangeAvailabilityRequest& request)> change_availability_callback;
 };
 
 /// \brief Class implements OCPP2.0.1 Charging Station
@@ -173,10 +174,18 @@ public:
     /// \param connector_id
     void on_session_finished(const int32_t evse_id, const int32_t connector_id);
 
-    /// \brief Event handler that should be called a new meter value is present
+    /// \brief Event handler that should be called when a new meter value is present
     /// \param evse_id
     /// \param meter_value
     void on_meter_value(const int32_t evse_id, const MeterValue& meter_value);
+
+    /// \brief Event handler that should be called when the connector on the given \p evse_id and \p connector_id
+    /// becomes unavailable
+    void on_unavailable(const int32_t evse_id, const int32_t connector_id);
+
+    /// \brief Event handler that should be called when the connector on the given \p evse_id and \p connector_id
+    /// becomes operative again
+    void on_operative(const int32_t evse_id, const int32_t connector_id);
 
     /// \brief Validates provided \p id_token \p certificate and \p ocsp_request_data using CSMS, AuthCache or AuthList
     /// \param id_token

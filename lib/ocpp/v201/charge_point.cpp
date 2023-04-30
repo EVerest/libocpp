@@ -142,6 +142,14 @@ void ChargePoint::on_meter_value(const int32_t evse_id, const MeterValue& meter_
     this->evses.at(evse_id)->on_meter_value(meter_value);
 }
 
+void ChargePoint::on_unavailable(const int32_t evse_id, const int32_t connector_id) {
+    this->evses.at(evse_id)->submit_event(connector_id, ConnectorEvent::Unavailable);
+}
+
+void ChargePoint::on_operative(const int32_t evse_id, const int32_t connector_id) {
+    this->evses.at(evse_id)->submit_event(connector_id, ConnectorEvent::ReturnToOperativeState);
+}
+
 AuthorizeResponse ChargePoint::validate_token(const IdToken id_token,
                                               const boost::optional<CiString<5500>>& certificate,
                                               const boost::optional<std::vector<OCSPRequestData>>& ocsp_request_data) {
@@ -385,55 +393,18 @@ bool ChargePoint::is_change_availability_possible(const ChangeAvailabilityReques
     return true;
 }
 
-void ChargePoint::change_availability(const ChangeAvailabilityRequest& req) {
-    const auto operational_status = req.operationalStatus;
-
-    if (req.evse.has_value()) {
-        if (req.evse.value().connectorId.has_value()) {
-            // Connector is adressed
-            this->evses.at(req.evse.value().id)
-                ->set_operational_state(req.evse.value().connectorId.value(), operational_status);
-            if (operational_status == OperationalStatusEnum::Operative and
-                this->operational_state == OperationalStatusEnum::Operative and
-                this->evses.at(req.evse.value().id)->get_operational_state() == OperationalStatusEnum::Operative) {
-                this->evses.at(req.evse.value().id)->submit_event(1, ConnectorEvent::ReturnToOperativeState);
-            }
-        } else {
-            // EVSE is adressed
-            this->evses.at(req.evse.value().id)->set_operational_state(operational_status);
-            if (operational_status == OperationalStatusEnum::Operative and
-                this->operational_state == OperationalStatusEnum::Operative) {
-                this->evses.at(req.evse.value().id)->submit_event(1, ConnectorEvent::ReturnToOperativeState);
-            }
-        }
-    } else {
-        // whole charging station is adressed
-        this->operational_state = operational_status;
-        for (auto const& [evse_id, evse] : this->evses) {
-            if (this->operational_state == OperationalStatusEnum::Inoperative) {
-                evse->submit_event(1, ConnectorEvent::Unavailable);
-            } else {
-                // only pipe that event through if evse is operative
-                if (evse->get_operational_state() == OperationalStatusEnum::Operative) {
-                    evse->submit_event(1, ConnectorEvent::ReturnToOperativeState);
-                }
-            }
-        }
-    }
-}
-
 void ChargePoint::handle_scheduled_change_availability_requests(const int32_t evse_id) {
     if (this->scheduled_change_availability_requests.count(evse_id)) {
         EVLOG_info << "Found scheduled ChangeAvailability.req for evse_id:" << evse_id;
         const auto req = this->scheduled_change_availability_requests[evse_id];
         if (this->is_change_availability_possible(req)) {
             EVLOG_info << "Changing availability of evse:" << evse_id;
-            this->change_availability(req);
+            this->callbacks.change_availability_callback(req);
             this->scheduled_change_availability_requests.erase(evse_id);
         } else {
             EVLOG_info << "Cannot change availability because transaction is still active";
         }
-    } 
+    }
 }
 
 void ChargePoint::boot_notification_req(const BootReasonEnum& reason) {
@@ -761,7 +732,8 @@ void ChargePoint::handle_change_availability_req(Call<ChangeAvailabilityRequest>
         if (msg.evse.has_value()) {
             evse_id = msg.evse.value().id;
         }
-        // add to map of scheduled operational_states. This also overrides successive ChangeAvailability.req with the same EVSE, which is propably desirable
+        // add to map of scheduled operational_states. This also overrides successive ChangeAvailability.req with the
+        // same EVSE, which is propably desirable
         this->scheduled_change_availability_requests[evse_id] = msg;
     }
 
@@ -772,7 +744,7 @@ void ChargePoint::handle_change_availability_req(Call<ChangeAvailabilityRequest>
 
     // execute change availability if possible
     if (is_change_availability_possible) {
-        this->change_availability(msg);
+        this->callbacks.change_availability_callback(msg);
     }
 }
 

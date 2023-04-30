@@ -16,7 +16,6 @@ Evse::Evse(const int32_t evse_id, const int32_t number_of_connectors,
            const std::function<void(const MeterValue& meter_value, const Transaction& transaction, const int32_t seq_no,
                                     const boost::optional<int32_t> reservation_id)>& transaction_meter_value_req) :
     evse_id(evse_id),
-    operational_state(OperationalStatusEnum::Operative),
     status_notification_callback(status_notification_callback),
     transaction_meter_value_req(transaction_meter_value_req),
     transaction(nullptr) {
@@ -32,6 +31,10 @@ Evse::Evse(const int32_t evse_id, const int32_t number_of_connectors,
 EVSE Evse::get_evse_info() {
     EVSE evse{evse_id};
     return evse;
+}
+
+int32_t Evse::get_number_of_connectors() {
+    return this->id_connector_map.size();
 }
 
 Everest::SteadyTimer& Evse::get_sampled_meter_values_timer() {
@@ -89,23 +92,6 @@ std::unique_ptr<EnhancedTransaction>& Evse::get_transaction() {
 
 ConnectorStatusEnum Evse::get_state(const int32_t connector_id) {
     return this->id_connector_map.at(connector_id)->get_state();
-}
-
-OperationalStatusEnum Evse::get_operational_state() {
-    return this->operational_state;
-}
-
-void Evse::set_operational_state(const OperationalStatusEnum& operational_state) {
-    this->operational_state = operational_state;
-    if (operational_state == OperationalStatusEnum::Inoperative) {
-        for (auto const& [connector_id, connector] : this->id_connector_map) {
-            this->submit_event(connector_id, ConnectorEvent::Unavailable);
-        }
-    }
-}
-
-void Evse::set_operational_state(const int32_t connector_id, const OperationalStatusEnum& operational_state) {
-    this->id_connector_map.at(connector_id)->set_operational_state(operational_state);
 }
 
 void Evse::submit_event(const int32_t connector_id, ConnectorEvent event) {
