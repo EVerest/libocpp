@@ -21,8 +21,11 @@ ChargePoint::ChargePoint(const json& config, const std::string& ocpp_main_path, 
     this->database_handler = std::make_unique<DatabaseHandler>(database_path, sql_init_path);
     this->database_handler->open_connection();
 
+    // operational status of whole charging station
+    this->database_handler->insert_availability(0, boost::none, OperationalStatusEnum::Operative, false);
     // intantiate and initialize evses
     for (int evse_id = 1; evse_id <= this->device_model_manager->get_number_of_connectors(); evse_id++) {
+        this->database_handler->insert_availability(1, 1, OperationalStatusEnum::Operative, false);
         // used by evse to trigger StatusNotification.req
         auto status_notification_callback = [this, evse_id](const int32_t connector_id,
                                                             const ConnectorStatusEnum& status) {

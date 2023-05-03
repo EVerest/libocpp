@@ -36,7 +36,7 @@ public:
     /// \brief Closes connection to database file
     void close_connection();
 
-    /// \brief
+    /// \brief Inserts cache entry
     /// \param id_token_hash
     /// \param id_token_info
     void insert_auth_cache_entry(const std::string& id_token_hash, const IdTokenInfo& id_token_info);
@@ -45,6 +45,11 @@ public:
     /// \param id_token_hash
     /// \return
     boost::optional<IdTokenInfo> get_auth_cache_entry(const std::string& id_token_hash);
+
+    void insert_availability(const int32_t evse_id, boost::optional<int32_t> connector_id,
+                             const OperationalStatusEnum& operational_status, const bool replace);
+
+    OperationalStatusEnum get_availability(const int32_t evse_id, boost::optional<int32_t> connector_id);
 };
 
 } // namespace v201
