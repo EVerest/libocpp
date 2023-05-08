@@ -77,7 +77,6 @@ private:
     void message_callback(const std::string& message);
     void update_aligned_data_interval();
     bool is_change_availability_possible(const ChangeAvailabilityRequest& req);
-    void change_availability(const ChangeAvailabilityRequest& req);
     void handle_scheduled_change_availability_requests(const int32_t evse_id);
 
     /* OCPP message requests */
@@ -127,13 +126,16 @@ private:
 
 public:
     /// \brief Construct a new ChargePoint object
+    /// \param evse_connector_structure Map that defines the structure of EVSE and connectors of the chargepoint. The
+    /// key represents the id of the EVSE and the value represents the number of connectors for this EVSE. The ids of
+    /// the EVSEs have to increment starting with 1.
     /// \param config OCPP json config
     /// \param ocpp_main_path Path where utility files for OCPP are read and written to
     /// \param message_log_path Path to where logfiles are written to
     /// \param callbacks Callbacks that will be registered for ChargePoint
-    ChargePoint(const json& config, const std::string& ocpp_main_path, const std::string& database_path,
-                const std::string& sql_init_path, const std::string& message_log_path, const std::string& certs_path,
-                const Callbacks& callbacks);
+    ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure, const json& config,
+                const std::string& ocpp_main_path, const std::string& database_path, const std::string& sql_init_path,
+                const std::string& message_log_path, const std::string& certs_path, const Callbacks& callbacks);
 
     /// \brief Starts the ChargePoint, initializes and connects to the Websocket endpoint
     void start();

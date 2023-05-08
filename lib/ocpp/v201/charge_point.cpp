@@ -8,7 +8,8 @@ namespace v201 {
 
 const auto DEFAULT_BOOT_NOTIFICATION_RETRY_INTERVAL = std::chrono::seconds(30);
 
-ChargePoint::ChargePoint(const json& config, const std::string& ocpp_main_path, const std::string& database_path,
+ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure, const json& config,
+                         const std::string& ocpp_main_path, const std::string& database_path,
                          const std::string& sql_init_path, const std::string& message_log_path,
                          const std::string& certs_path, const Callbacks& callbacks) :
     ocpp::ChargingStationBase(),
@@ -24,8 +25,9 @@ ChargePoint::ChargePoint(const json& config, const std::string& ocpp_main_path, 
     // operational status of whole charging station
     this->database_handler->insert_availability(0, boost::none, OperationalStatusEnum::Operative, false);
     // intantiate and initialize evses
-    for (int evse_id = 1; evse_id <= this->device_model_manager->get_number_of_connectors(); evse_id++) {
-        this->database_handler->insert_availability(1, 1, OperationalStatusEnum::Operative, false);
+    for (auto const& [evse_id, number_of_connectors] : evse_connector_structure) {
+        // operational status for this evse
+        this->database_handler->insert_availability(evse_id, boost::none, OperationalStatusEnum::Operative, false);
         // used by evse to trigger StatusNotification.req
         auto status_notification_callback = [this, evse_id](const int32_t connector_id,
                                                             const ConnectorStatusEnum& status) {
@@ -45,9 +47,16 @@ ChargePoint::ChargePoint(const json& config, const std::string& ocpp_main_path, 
                                         boost::none, std::vector<MeterValue>(1, filtered_meter_value), boost::none,
                                         boost::none, reservation_id);
         };
-        this->evses.insert(std::make_pair(evse_id, std::make_unique<Evse>(evse_id, 1, status_notification_callback,
-                                                                          transaction_meter_value_callback)));
+
+        this->evses.insert(
+            std::make_pair(evse_id, std::make_unique<Evse>(evse_id, number_of_connectors, status_notification_callback,
+                                                           transaction_meter_value_callback)));
+        for (int32_t connector_id = 1; connector_id <= number_of_connectors; connector_id++) {
+            // operational status for this connector
+            this->database_handler->insert_availability(evse_id, connector_id, OperationalStatusEnum::Operative, false);
+        }
     }
+
     this->logging = std::make_shared<ocpp::MessageLogging>(true, message_log_path, DateTime().to_rfc3339(), false,
                                                            false, false, true, true);
     this->message_queue = std::make_unique<ocpp::MessageQueue<v201::MessageType>>(
@@ -60,7 +69,6 @@ void ChargePoint::start() {
     this->init_websocket();
     this->websocket->connect(this->device_model_manager->get_security_profile());
     this->boot_notification_req(BootReasonEnum::PowerUp);
-
     // FIXME(piet): Run state machine with correct initial state
 }
 
