@@ -294,7 +294,7 @@ each of these functions will have a small note what the Session Event was and wh
 
 - on_enabled(int32_t connector)
 
-  Notifies libocpp that the connector is enabled
+  Notifies libocpp that the connector is functional and operational
 
 - on_disabled(int32_t connector)
 
@@ -302,7 +302,7 @@ each of these functions will have a small note what the Session Event was and wh
 
 - on_transaction_started
 
-  Notifies libocpp that a transaction at the given connector has started
+  Notifies libocpp that a transaction at the given connector has started, this means that authorization is available and the car is plugged in.
 
   Some of its parameters:
 
@@ -338,11 +338,11 @@ each of these functions will have a small note what the Session Event was and wh
 
 - on_session_started
 
-  this is mostly used for logging
+  this is mostly used for logging and changing the connector state
 
 - on_session_stopped
 
-  this is mostly used for logging
+  this is mostly used for logging and changing the connector state
 
 - on_error
 
