@@ -138,12 +138,6 @@ This is defined in libocpp/include/ocpp/v16/charge_point.hpp and takes the follo
   ```bash
   .
   ├── ca
-  │   ├── cps
-  │   │   ├── CPS_SUB_CA1.der
-  │   │   ├── CPS_SUB_CA1.pem
-  │   │   ├── CPS_SUB_CA2.der
-  │   │   ├── CPS_SUB_CA2.pem
-  │   │   └── INTERMEDIATE_CPS_CA_CERTS.pem
   │   ├── csms
   │   │   └── CSMS_ROOT_CA.pem
   │   ├── cso
@@ -162,26 +156,10 @@ This is defined in libocpp/include/ocpp/v16/charge_point.hpp and takes the follo
   │   │   ├── MO_SUB_CA1.pem
   │   │   ├── MO_SUB_CA2.der
   │   │   └── MO_SUB_CA2.pem
-  │   ├── oem
-  │   │   ├── INTERMEDIATE_OEM_CA.pem
-  │   │   ├── OEM_CERT_CHAIN.pem
-  │   │   ├── OEM_ROOT_CA.der
-  │   │   ├── OEM_ROOT_CA.pem
-  │   │   ├── OEM_SUB_CA1.der
-  │   │   ├── OEM_SUB_CA1.pem
-  │   │   ├── OEM_SUB_CA2.der
-  │   │   └── OEM_SUB_CA2.pem
   │   └── v2g
   │       ├── V2G_ROOT_CA.der
   │       └── V2G_ROOT_CA.pem
   ├── client
-  │   ├── cps
-  │   │   ├── CPS_CERT_CHAIN.p12
-  │   │   ├── CPS_LEAF.der
-  │   │   ├── CPS_LEAF.key
-  │   │   ├── CPS_LEAF.pem
-  │   │   ├── CPS_SUB_CA1.key
-  │   │   └── CPS_SUB_CA2.key
   │   ├── csms
   │   │   ├── CPO_CERT_CHAIN.pem
   │   │   ├── CPO_SUB_CA1.key
@@ -196,23 +174,6 @@ This is defined in libocpp/include/ocpp/v16/charge_point.hpp and takes the follo
   │   │   ├── SECC_LEAF.der
   │   │   ├── SECC_LEAF.key
   │   │   └── SECC_LEAF.pem
-  │   ├── mo
-  │   │   ├── MO_CERT_CHAIN.p12
-  │   │   ├── MO_LEAF.der
-  │   │   ├── MO_LEAF.key
-  │   │   ├── MO_LEAF.pem
-  │   │   ├── MO_ROOT_CA.key
-  │   │   ├── MO_SUB_CA1.key
-  │   │   ├── MO_SUB_CA2.key
-  │   │   └── MO_SUB_CA2.pkcs8.der
-  │   ├── oem
-  │   │   ├── OEM_CERT_CHAIN.p12
-  │   │   ├── OEM_LEAF.der
-  │   │   ├── OEM_LEAF.key
-  │   │   ├── OEM_LEAF.pem
-  │   │   ├── OEM_ROOT_CA.key
-  │   │   ├── OEM_SUB_CA1.key
-  │   │   └── OEM_SUB_CA2.key
   │   └── v2g
   │       └── V2G_ROOT_CA.key
   ```
