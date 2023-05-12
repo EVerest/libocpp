@@ -1374,7 +1374,6 @@ void ChargePoint::handleRemoteStartTransactionRequest(ocpp::Call<RemoteStartTran
     }
 
     {
-        std::lock_guard<std::mutex> lock(remote_start_transaction_mutex);
         std::vector<int32_t> referenced_connectors;
 
         if (!call.msg.connectorId) {
@@ -3138,11 +3137,6 @@ void ChargePoint::register_cancel_reservation_callback(const std::function<bool(
 
 void ChargePoint::register_unlock_connector_callback(const std::function<bool(int32_t connector)>& callback) {
     this->unlock_connector_callback = callback;
-}
-
-void ChargePoint::register_set_max_current_callback(
-    const std::function<bool(int32_t connector, double max_current)>& callback) {
-    this->set_max_current_callback = callback;
 }
 
 void ChargePoint::register_is_reset_allowed_callback(const std::function<bool(const ResetType& reset_type)>& callback) {
