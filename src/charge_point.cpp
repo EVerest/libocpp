@@ -68,7 +68,7 @@ int main(int argc, char* argv[]) {
 
     const auto configs_path = maindir;
     const auto database_path = "/tmp/ocpp";
-    const auto share_path = "dist/share/everest/ocpp";
+    const auto share_path = maindir + "/share/everest/modules/OCPP";
 
     boost::filesystem::path config_path = boost::filesystem::path(maindir) / conf;
     std::ifstream ifs(config_path.c_str());
@@ -90,7 +90,7 @@ int main(int argc, char* argv[]) {
         fs.close();
     }
 
-    const boost::filesystem::path sql_init_path = boost::filesystem::path(configs_path) / "init.sql";
+    const boost::filesystem::path sql_init_path = boost::filesystem::path(share_path) / "init.sql";
     charge_point = new ocpp::v16::ChargePoint(json_config, share_path, user_config_path.string(), database_path,
                                               sql_init_path.string(), "/tmp", "/tmp");
 
