@@ -16,12 +16,14 @@
 #include <ocpp/v201/messages/Authorize.hpp>
 #include <ocpp/v201/messages/BootNotification.hpp>
 #include <ocpp/v201/messages/ChangeAvailability.hpp>
+#include <ocpp/v201/messages/DataTransfer.hpp>
 #include <ocpp/v201/messages/GetBaseReport.hpp>
 #include <ocpp/v201/messages/GetReport.hpp>
 #include <ocpp/v201/messages/GetVariables.hpp>
 #include <ocpp/v201/messages/Heartbeat.hpp>
 #include <ocpp/v201/messages/MeterValues.hpp>
 #include <ocpp/v201/messages/NotifyReport.hpp>
+#include <ocpp/v201/messages/NotifyEvent.hpp>
 #include <ocpp/v201/messages/Reset.hpp>
 #include <ocpp/v201/messages/SetVariables.hpp>
 #include <ocpp/v201/messages/StatusNotification.hpp>
@@ -107,6 +109,9 @@ private:
     // Functional Block J: MeterValues
     void meter_values_req(const int32_t evse_id, const std::vector<MeterValue>& meter_values);
 
+    // Functional Block N: Diagnostics
+    void notify_event_req(const std::vector<EventData> &events);
+
     /* OCPP message handlers */
 
     // Functional Block B: Provisioning
@@ -123,6 +128,9 @@ private:
 
     // Functional Block G: Availability
     void handle_change_availability_req(Call<ChangeAvailabilityRequest> call);
+
+    // Functional Block P: DataTransfer
+    void handle_data_transfer_req(Call<DataTransferRequest> call);
 
 public:
     /// \brief Construct a new ChargePoint object
@@ -196,6 +204,10 @@ public:
     /// \return AuthorizeResponse containing the result of the validation
     AuthorizeResponse validate_token(const IdToken id_token, const boost::optional<CiString<5500>>& certificate,
                                      const boost::optional<std::vector<OCSPRequestData>>& ocsp_request_data);
+
+    /// \brief Event handler that can be called to trigger a NotifyEvent.req with the given \p events
+    /// \param events 
+    void on_event(const std::vector<EventData> &events);
 };
 
 } // namespace v201

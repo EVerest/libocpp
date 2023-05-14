@@ -217,6 +217,10 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token,
     }
 }
 
+void ChargePoint::on_event(const std::vector<EventData>& events) {
+    this->notify_event_req(events);
+}
+
 template <class T> bool ChargePoint::send(ocpp::Call<T> call) {
     this->message_queue->push(call);
     return true;
@@ -295,6 +299,9 @@ void ChargePoint::handle_message(const json& json_message, const MessageType& me
         break;
     case MessageType::TransactionEventResponse:
         // handled by transaction_event_req future
+        break;
+    case MessageType::DataTransfer:
+        this->handle_data_transfer_req(json_message);
         break;
     }
 }
@@ -536,6 +543,16 @@ void ChargePoint::meter_values_req(const int32_t evse_id, const std::vector<Mete
     this->send<MeterValuesRequest>(call);
 }
 
+void ChargePoint::notify_event_req(const std::vector<EventData>& events) {
+    NotifyEventRequest req;
+    req.eventData = events;
+    req.generatedAt = DateTime();
+    req.seqNo = 0;
+
+    ocpp::Call<NotifyEventRequest> call(req, this->message_queue->createMessageId());
+    this->send<NotifyEventRequest>(call);
+}
+
 void ChargePoint::handle_boot_notification_response(CallResult<BootNotificationResponse> call_result) {
     // TODO(piet): B01.FR.06
     // TODO(piet): B01.FR.07
@@ -757,6 +774,15 @@ void ChargePoint::handle_change_availability_req(Call<ChangeAvailabilityRequest>
     if (is_change_availability_possible) {
         this->callbacks.change_availability_callback(msg);
     }
+}
+
+void ChargePoint::handle_data_transfer_req(Call<DataTransferRequest> call) {
+    const auto msg = call.msg;
+    DataTransferResponse response;
+    response.status = DataTransferStatusEnum::Rejected;
+
+    ocpp::CallResult<DataTransferResponse> call_result(response, call.uniqueId);
+    this->send<DataTransferResponse>(call_result);
 }
 
 } // namespace v201
