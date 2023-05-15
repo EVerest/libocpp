@@ -413,9 +413,8 @@ Use the following command to start the charge point. Replace the config with [co
 
 ```bash
   ./dist/bin/charge_point \
-    --maindir ./dist/share/everest/ocpp/ \
-    --conf config.json \
-    --logconf ./dist/share/everest/ocpp/logging.ini
+    --maindir ./dist \
+    --conf config.json
 ```
 
 Type `help` to see a list of possible commands.
