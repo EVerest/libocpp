@@ -82,6 +82,9 @@ j["{{property.name}}"] = k.{{property.name}}.value();
         }
 {% endif %}
 {% endfor %}
+{% if not type.properties|length %}
+    (void)k; // no elements to unpack, silence unused parameter warning
+{% endif %}
     }
 
     void from_json(const json& j, {{ type.name }}& k) {
@@ -132,6 +135,11 @@ j["{{property.name}}"] = k.{{property.name}}.value();
         }
 {% endif %}
 {% endfor %}
+{% if not type.properties|length %}
+    // no elements to unpack, silence unused parameter warning
+    (void)j;
+    (void)k;
+{% endif %}
     }
 
 /// \brief Writes the string representation of the given {{ type.name }} \p k to the given output stream \p os

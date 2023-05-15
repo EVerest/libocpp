@@ -19,12 +19,16 @@ void to_json(json& j, const ClearCacheRequest& k) {
     // the required parts of the message
     j = json({});
     // the optional parts of the message
+    (void)k; // no elements to unpack, silence unused parameter warning
 }
 
 void from_json(const json& j, ClearCacheRequest& k) {
     // the required parts of the message
 
     // the optional parts of the message
+    // no elements to unpack, silence unused parameter warning
+    (void)j;
+    (void)k;
 }
 
 /// \brief Writes the string representation of the given ClearCacheRequest \p k to the given output stream \p os
