@@ -59,42 +59,33 @@ public:
     /// \returns a std::chrono::time_point
     std::chrono::time_point<date::utc_clock> to_time_point() const;
 
-    /// \brief Writes the given DateTimeImpl \p dt to the given output stream \p os as a RFC 3339 compatible string
-    /// \returns an output stream with the DateTimeImpl as a RFC 3339 compatible string written to
-    friend std::ostream& operator<<(std::ostream& os, const DateTimeImpl& dt);
+    /// \brief Assignment operator= to assign another DateTimeImpl \p dt to this DateTimeImpl
+    DateTimeImpl& operator=(const DateTimeImpl& dt);
+
+    /// \brief Conversion operatpr std::string returns a RFC 3339 compatible string representation of the stored
+    /// DateTime
     operator std::string() {
         return this->to_rfc3339();
     }
 
+    /// \brief Writes the given DateTimeImpl \p dt to the given output stream \p os as a RFC 3339 compatible string
+    /// \returns an output stream with the DateTimeImpl as a RFC 3339 compatible string written to
+    friend std::ostream& operator<<(std::ostream& os, const DateTimeImpl& dt);
+
     /// \brief Comparison operator> between two DateTimeImpl \p lhs and \p rhs
-    friend bool operator>(const DateTimeImpl& lhs, const DateTimeImpl& rhs) {
-        return lhs.to_rfc3339() > rhs.to_rfc3339();
-    }
+    friend bool operator>(const DateTimeImpl& lhs, const DateTimeImpl& rhs);
 
     /// \brief Comparison operator>= between two DateTimeImpl \p lhs and \p rhs
-    friend bool operator>=(const DateTimeImpl& lhs, const DateTimeImpl& rhs) {
-        return lhs.to_rfc3339() >= rhs.to_rfc3339();
-    }
+    friend bool operator>=(const DateTimeImpl& lhs, const DateTimeImpl& rhs);
 
     /// \brief Comparison operator< between two DateTimeImpl \p lhs and \p rhs
-    friend bool operator<(const DateTimeImpl& lhs, const DateTimeImpl& rhs) {
-        return lhs.to_rfc3339() < rhs.to_rfc3339();
-    }
+    friend bool operator<(const DateTimeImpl& lhs, const DateTimeImpl& rhs);
 
     /// \brief Comparison operator<= between two DateTimeImpl \p lhs and \p rhs
-    friend bool operator<=(const DateTimeImpl& lhs, const DateTimeImpl& rhs) {
-        return lhs.to_rfc3339() <= rhs.to_rfc3339();
-    }
+    friend bool operator<=(const DateTimeImpl& lhs, const DateTimeImpl& rhs);
 
     /// \brief Comparison operator== between two DateTimeImpl \p lhs and \p rhs
-    friend bool operator==(const DateTimeImpl& lhs, const DateTimeImpl& rhs) {
-        return lhs.to_rfc3339() == rhs.to_rfc3339();
-    }
-
-    DateTimeImpl& operator=(const DateTimeImpl& dt) {
-        this->timepoint = dt.timepoint;
-        return *this;
-    }
+    friend bool operator==(const DateTimeImpl& lhs, const DateTimeImpl& rhs);
 };
 
 /// \brief Contains a DateTime implementation that can parse and create RFC 3339 compatible strings
