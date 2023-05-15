@@ -4,8 +4,6 @@
 #include <ostream>
 #include <string>
 
-#include <nlohmann/json.hpp>
-
 #include <ocpp/v16/messages/GetLocalListVersion.hpp>
 
 using json = nlohmann::json;

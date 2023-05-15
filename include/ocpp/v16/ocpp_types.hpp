@@ -5,8 +5,8 @@
 
 #include <string>
 
-#include <nlohmann/json.hpp>
 #include <optional>
+#include <nlohmann/json_fwd.hpp>
 
 #include <ocpp/common/types.hpp>
 #include <ocpp/v16/enums.hpp>

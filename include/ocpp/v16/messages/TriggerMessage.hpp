@@ -4,6 +4,7 @@
 #define OCPP_V16_TRIGGERMESSAGE_HPP
 
 #include <optional>
+#include <nlohmann/json_fwd.hpp>
 
 #include <ocpp/v16/enums.hpp>
 #include <ocpp/v16/ocpp_types.hpp>

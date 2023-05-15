@@ -4,6 +4,7 @@
 #define OCPP_V16_STOPTRANSACTION_HPP
 
 #include <optional>
+#include <nlohmann/json_fwd.hpp>
 
 #include <ocpp/common/types.hpp>
 #include <ocpp/v16/enums.hpp>

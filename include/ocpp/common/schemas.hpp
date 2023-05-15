@@ -11,7 +11,7 @@
 #include <boost/filesystem.hpp>
 #include <everest/logging.hpp>
 #include <nlohmann/json-schema.hpp>
-#include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 
 using json = nlohmann::json;
 using json_uri = nlohmann::json_uri;
