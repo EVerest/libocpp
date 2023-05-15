@@ -157,12 +157,6 @@ int main(int argc, char* argv[]) {
         return true;
     });
 
-    charge_point->register_set_max_current_callback([](int32_t connector, double max_current) {
-        std::cout << "Callback: "
-                  << "Setting maximum current for connector#" << connector << "to: " << max_current;
-        return true;
-    });
-
     charge_point->register_upload_diagnostics_callback([](const ocpp::v16::GetDiagnosticsRequest& request) {
         std::cout << "Callback: "
                   << "Uploading Diagnostics file" << std::endl;
