@@ -15,7 +15,8 @@
 namespace ocpp {
 namespace v16 {
 
-ChargePointConfiguration::ChargePointConfiguration(const json& config, const std::filesystem::path& ocpp_main_path,
+ChargePointConfiguration::ChargePointConfiguration(const std::string& config,
+                                                   const std::filesystem::path& ocpp_main_path,
                                                    const std::filesystem::path& user_config_path) {
 
     this->user_config_path = user_config_path;
@@ -28,15 +29,21 @@ ChargePointConfiguration::ChargePointConfiguration(const json& config, const std
     Schemas schemas = Schemas(ocpp_main_path / "profile_schemas");
 
     try {
-        auto patch = schemas.get_validator()->validate(config);
+        this->config = json::parse(config);
+    } catch (const json::parse_error& e) {
+        EVLOG_error << "Error while parsing config file.";
+        EVLOG_AND_THROW(e);
+    }
+
+    try {
+        auto patch = schemas.get_validator()->validate(this->config);
         if (patch.is_null()) {
             // no defaults substituted
             EVLOG_debug << "Using a charge point configuration without default values.";
-            this->config = config;
         } else {
             // extend config with default values
             EVLOG_debug << "Adding the following default values to the charge point configuration: " << patch;
-            auto patched_config = config.patch(patch);
+            auto patched_config = this->config.patch(patch);
             this->config = patched_config;
         }
     } catch (const std::exception& e) {
@@ -87,7 +94,7 @@ ChargePointConfiguration::ChargePointConfiguration(const json& config, const std
                                   {Measurand::Frequency, {Phase::L1, Phase::L2, Phase::L3}},                     // Hz
                                   {Measurand::Current_Offered, {}}};                                             // A
 
-    if (!this->validate_measurands(config)) {
+    if (!this->validate_measurands(this->config)) {
         EVLOG_AND_THROW(std::runtime_error("Given Measurands are invalid"));
     }
 

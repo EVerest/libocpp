@@ -17,7 +17,7 @@ const auto OCSP_REQUEST_TIMER_INTERVAL = std::chrono::hours(12);
 const auto V2G_CERTIFICATE_TIMER_INTERVAL = std::chrono::hours(12);
 const auto INITIAL_CERTIFICATE_REQUESTS_DELAY = std::chrono::seconds(60);
 
-ChargePoint::ChargePoint(const json& config, const std::filesystem::path& share_path,
+ChargePoint::ChargePoint(const std::string& config, const std::filesystem::path& share_path,
                          const std::filesystem::path& user_config_path, const std::filesystem::path& database_path,
                          const std::filesystem::path& sql_init_path, const std::filesystem::path& message_log_path,
                          const std::filesystem::path& certs_path) :

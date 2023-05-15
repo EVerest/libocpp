@@ -33,7 +33,7 @@ private:
     bool isConnectorPhaseRotationValid(std::string str);
 
 public:
-    ChargePointConfiguration(const json& config, const std::filesystem::path& ocpp_main_path,
+    ChargePointConfiguration(const std::string& config, const std::filesystem::path& ocpp_main_path,
                              const std::filesystem::path& user_config_path);
 
     // Internal config options
