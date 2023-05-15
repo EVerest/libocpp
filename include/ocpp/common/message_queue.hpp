@@ -17,6 +17,7 @@
 
 #include <everest/timer.hpp>
 
+#include <ocpp/common/call_types.hpp>
 #include <ocpp/common/types.hpp>
 #include <ocpp/v16/types.hpp>
 #include <ocpp/v201/types.hpp>
