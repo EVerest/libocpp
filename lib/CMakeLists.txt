@@ -9,6 +9,7 @@ target_sources(ocpp
         ocpp/common/pki_handler.cpp
         ocpp/common/schemas.cpp
         ocpp/common/types.cpp
+        ocpp/common/utils.cpp
         ocpp/v16/charge_point.cpp
         ocpp/v16/database_handler.cpp
         ocpp/v16/smart_charging.cpp
