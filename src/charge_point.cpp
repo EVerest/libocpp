@@ -54,8 +54,11 @@ int main(int argc, char* argv[]) {
         maindir = vm["maindir"].as<std::string>();
     }
 
+    const auto database_path = "/tmp/ocpp";
+    const auto share_path = maindir + "/share/everest/modules/OCPP";
+
     // initialize logging as early as possible
-    std::string logging_config = maindir + "/logging.ini";
+    std::string logging_config = share_path + "/logging.ini";
     if (vm.count("logconf") != 0) {
         logging_config = vm["logconf"].as<std::string>();
     }
@@ -66,11 +69,11 @@ int main(int argc, char* argv[]) {
         conf = vm["conf"].as<std::string>();
     }
 
-    const auto configs_path = maindir;
-    const auto database_path = "/tmp/ocpp";
-    const auto share_path = maindir + "/share/everest/modules/OCPP";
-
-    boost::filesystem::path config_path = boost::filesystem::path(maindir) / conf;
+    boost::filesystem::path config_path = boost::filesystem::path(share_path) / conf;
+    if (!boost::filesystem::exists(config_path)) {
+        EVLOG_error << "Could not find config at: " << config_path;
+        return 1;
+    }
     std::ifstream ifs(config_path.c_str());
     std::string config_file((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
 
