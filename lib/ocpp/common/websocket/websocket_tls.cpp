@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
+#include <boost/optional/optional.hpp>
+
 #include <everest/logging.hpp>
 
 #include <ocpp/common/pki_handler.hpp>

@@ -5,6 +5,8 @@
 
 #include <ocpp/v16/database_handler.hpp>
 
+#include <boost/optional/optional.hpp>
+
 namespace ocpp {
 namespace v16 {
 
