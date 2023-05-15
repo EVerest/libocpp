@@ -50,7 +50,6 @@ target_link_libraries(ocpp
         everest::timer
         websocketpp::websocketpp
     PRIVATE
-        Boost::filesystem
         OpenSSL::SSL
         OpenSSL::Crypto
         SQLite::SQLite3

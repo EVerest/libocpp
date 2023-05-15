@@ -17,9 +17,10 @@ const auto OCSP_REQUEST_TIMER_INTERVAL = std::chrono::hours(12);
 const auto V2G_CERTIFICATE_TIMER_INTERVAL = std::chrono::hours(12);
 const auto INITIAL_CERTIFICATE_REQUESTS_DELAY = std::chrono::seconds(60);
 
-ChargePoint::ChargePoint(const json& config, const std::string& share_path, const std::string& user_config_path,
-                         const std::string& database_path, const std::string& sql_init_path,
-                         const std::string& message_log_path, const std::string& certs_path) :
+ChargePoint::ChargePoint(const json& config, const std::filesystem::path& share_path,
+                         const std::filesystem::path& user_config_path, const std::filesystem::path& database_path,
+                         const std::filesystem::path& sql_init_path, const std::filesystem::path& message_log_path,
+                         const std::filesystem::path& certs_path) :
     ocpp::ChargingStationBase(),
     initialized(false),
     connection_state(ChargePointConnectionState::Disconnected),
@@ -31,13 +32,11 @@ ChargePoint::ChargePoint(const json& config, const std::string& share_path, cons
     message_log_path(message_log_path) {
     this->configuration = std::make_shared<ocpp::v16::ChargePointConfiguration>(config, share_path, user_config_path);
     this->pki_handler = std::make_shared<ocpp::PkiHandler>(
-        boost::filesystem::path(certs_path),
-        this->configuration->getAdditionalRootCertificateCheck().value_or(false));
+        certs_path, this->configuration->getAdditionalRootCertificateCheck().value_or(false));
     this->heartbeat_timer = std::make_unique<Everest::SteadyTimer>(&this->io_service, [this]() { this->heartbeat(); });
     this->heartbeat_interval = this->configuration->getHeartbeatInterval();
-    this->database_handler = std::make_shared<DatabaseHandler>(this->configuration->getChargePointId(),
-                                                                     boost::filesystem::path(database_path),
-                                                                     boost::filesystem::path(sql_init_path));
+    this->database_handler =
+        std::make_shared<ocpp::DatabaseHandler>(this->configuration->getChargePointId(), database_path, sql_init_path);
     this->database_handler->open_db_connection(this->configuration->getNumberOfConnectors());
     this->transaction_handler = std::make_unique<TransactionHandler>(this->configuration->getNumberOfConnectors());
     this->external_notify = {v16::MessageType::StartTransactionResponse};

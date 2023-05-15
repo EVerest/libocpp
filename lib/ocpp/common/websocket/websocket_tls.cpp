@@ -227,12 +227,14 @@ void WebsocketTLS::connect_tls(int32_t security_profile, bool try_once) {
         if (authorization_header != std::nullopt) {
             con->append_header("Authorization", authorization_header.value());
         } else {
-            EVLOG_AND_THROW(std::runtime_error("No authorization key provided when connecting with security profile 2 or 3."));
+            EVLOG_AND_THROW(
+                std::runtime_error("No authorization key provided when connecting with security profile 2 or 3."));
         }
     } else if (security_profile == 3) {
         EVLOG_debug << "Connecting with security profile: 3";
     } else {
-        EVLOG_AND_THROW(std::runtime_error("Can not connect with TLS websocket with security profile not being 2 or 3."));
+        EVLOG_AND_THROW(
+            std::runtime_error("Can not connect with TLS websocket with security profile not being 2 or 3."));
     }
 
     this->handle = con->get_handle();
@@ -297,7 +299,7 @@ void WebsocketTLS::on_fail_tls(tls_client* c, websocketpp::connection_hdl hdl, b
 
     // TODO(piet): Trigger SecurityEvent in case InvalidCentralSystemCertificate
 
-    if (boost::filesystem::exists(this->pki_handler->getCaCsmsPath() / CSMS_ROOT_CA_BACKUP)) {
+    if (std::filesystem::exists(this->pki_handler->getCaCsmsPath() / CSMS_ROOT_CA_BACKUP)) {
         // if a fallback ca exists, we move back to it and delete the new ca certificate
         EVLOG_warning << "Connection with new CA was not successful - Falling back to old CA";
         this->pki_handler->useCsmsFallbackRoot();

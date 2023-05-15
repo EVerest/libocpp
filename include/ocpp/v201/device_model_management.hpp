@@ -19,7 +19,7 @@ public:
     /// \brief Construct a new DeviceModelManager object
     /// \param config OCPP json config
     /// \param ocpp_main_path path where utility files for OCPP are read and written to
-    DeviceModelManager(const json& config, const std::string& ocpp_main_path);
+    DeviceModelManager(const json& config, const std::filesystem::path& ocpp_main_path);
 
     /// \brief Set the variable specified by \p set_variable_data
     /// \param set_variable_data specifies the variable to be set

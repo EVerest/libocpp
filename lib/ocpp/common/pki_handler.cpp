@@ -12,7 +12,7 @@
 
 namespace ocpp {
 
-X509Certificate::X509Certificate(boost::filesystem::path path, X509* x509, std::string str) {
+X509Certificate::X509Certificate(std::filesystem::path path, X509* x509, std::string str) {
     this->path = path;
     this->x509 = x509;
     this->str = str;
@@ -141,7 +141,7 @@ CertificateType getRootCertificateTypeFromPki(const PkiEnum& pki) {
     }
 }
 
-std::shared_ptr<X509Certificate> loadFromFile(const boost::filesystem::path& path) {
+std::shared_ptr<X509Certificate> loadFromFile(const std::filesystem::path& path) {
     try {
         X509* x509;
         std::string fileStr;
@@ -198,7 +198,7 @@ std::shared_ptr<X509Certificate> loadFromString(const std::string& str) {
     return cert;
 }
 
-PkiHandler::PkiHandler(const boost::filesystem::path& certsPath, const bool multipleCsmsCaNotAllowed) :
+PkiHandler::PkiHandler(const std::filesystem::path& certsPath, const bool multipleCsmsCaNotAllowed) :
     certsPath(certsPath) {
 
     this->caPath = this->certsPath / "ca";
@@ -230,7 +230,7 @@ PkiHandler::PkiHandler(const boost::filesystem::path& certsPath, const bool mult
     std::vector<PkiEnum> pkis = {PkiEnum::CSO, PkiEnum::CSMS, PkiEnum::MF, PkiEnum::MO, PkiEnum::OEM, PkiEnum::V2G};
     for (const auto& pki : pkis) {
         const auto caPath = this->getCaPath(pki);
-        if (boost::filesystem::exists(caPath)) {
+        if (std::filesystem::exists(caPath)) {
             this->execOpenSSLRehash(caPath);
         } else {
             EVLOG_warning << "Certificate directory does not exist: " << caPath;
@@ -238,13 +238,13 @@ PkiHandler::PkiHandler(const boost::filesystem::path& certsPath, const bool mult
     }
 }
 
-boost::filesystem::path PkiHandler::getCaCsmsPath() {
+std::filesystem::path PkiHandler::getCaCsmsPath() {
     return this->caCsmsPath;
 }
 
 int PkiHandler::getNumberOfCsmsCaCertificates() {
     int fileCounter = 0;
-    for (const auto& entry : boost::filesystem::directory_iterator(this->caCsmsPath)) {
+    for (const auto& entry : std::filesystem::directory_iterator(this->caCsmsPath)) {
         if (entry.path().extension().string() == ".pem") {
             fileCounter++;
         }
@@ -311,7 +311,7 @@ void PkiHandler::writeClientCertificate(const std::string& certificateChain,
     } else {
         auto leafCert = certificates.at(0);
         std::string newPath;
-        boost::filesystem::path leafPath;
+        std::filesystem::path leafPath;
 
         if (certificate_use == CertificateSigningUseEnum::ChargingStationCertificate) {
             leafPath = this->clientCsmsPath / CSMS_LEAF;
@@ -319,7 +319,7 @@ void PkiHandler::writeClientCertificate(const std::string& certificateChain,
             leafPath = this->clientCsoPath / V2G_LEAF;
         }
 
-        if (boost::filesystem::exists(leafPath)) {
+        if (std::filesystem::exists(leafPath)) {
             const auto oldLeafPath =
                 leafPath.parent_path() /
                 (leafPath.filename().string().substr(0, leafPath.filename().string().find_last_of(".")) +
@@ -343,8 +343,8 @@ std::string PkiHandler::generateCsr(const CertificateSigningUseEnum& certificate
     EC_KEY* ecKey = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
     X509_NAME* x509Name = X509_REQ_get_subject_name(x509ReqPtr.get());
 
-    boost::filesystem::path csrFile;
-    boost::filesystem::path privateKeyFile;
+    std::filesystem::path csrFile;
+    std::filesystem::path privateKeyFile;
 
     // FIXME(piet): This just overrides the private key and in case no valid certificate will be delivered by a future
     // CertificateSigned.req from CSMS for this CSR the private key is lost
@@ -357,8 +357,7 @@ std::string PkiHandler::generateCsr(const CertificateSigningUseEnum& certificate
         // CertificateSigningUseEnum::CertificateSigningUseEnum::V2GCertificate
         csrFile = this->clientCsoPath / V2G_CSR;
         privateKeyFile = this->clientCsoPath / V2G_LEAF_KEY;
-        std::rename((this->clientCsoPath / V2G_LEAF_KEY).c_str(),
-                    (this->clientCsoPath / V2G_LEAF_KEY_BACKUP).c_str());
+        std::rename((this->clientCsoPath / V2G_LEAF_KEY).c_str(), (this->clientCsoPath / V2G_LEAF_KEY_BACKUP).c_str());
     }
 
     BIO_ptr out(BIO_new_file(csrFile.c_str(), "w"), ::BIO_free);
@@ -407,8 +406,8 @@ std::string PkiHandler::generateCsr(const CertificateSigningUseEnum& certificate
         EVLOG_error << "Failed to add 'CN' entry to X509 request";
     }
 
-    rc = X509_NAME_add_entry_by_txt(x509Name, "DC", MBSTRING_ASC,
-                                    reinterpret_cast<const unsigned char*>("CPO"), -1, -1, 0);
+    rc = X509_NAME_add_entry_by_txt(x509Name, "DC", MBSTRING_ASC, reinterpret_cast<const unsigned char*>("CPO"), -1, -1,
+                                    0);
 
     if (rc != 1) {
         EVLOG_error << "Failed to add 'DC' entry to X509 request";
@@ -422,8 +421,7 @@ std::string PkiHandler::generateCsr(const CertificateSigningUseEnum& certificate
 
     STACK_OF(X509_EXTENSION)* extensions = sk_X509_EXTENSION_new_null();
     X509_EXTENSION* ext_key_usage = X509V3_EXT_conf_nid(NULL, NULL, NID_key_usage, "digitalSignature, keyAgreement");
-    X509_EXTENSION* ext_basic_constraints =
-        X509V3_EXT_conf_nid(NULL, NULL, NID_basic_constraints, "critical,CA:false");
+    X509_EXTENSION* ext_basic_constraints = X509V3_EXT_conf_nid(NULL, NULL, NID_basic_constraints, "critical,CA:false");
     sk_X509_EXTENSION_push(extensions, ext_key_usage);
     sk_X509_EXTENSION_push(extensions, ext_basic_constraints);
 
@@ -457,19 +455,19 @@ std::string PkiHandler::generateCsr(const CertificateSigningUseEnum& certificate
 }
 
 bool PkiHandler::isCentralSystemRootCertificateInstalled() {
-    return !boost::filesystem::is_empty(this->getCaPath(PkiEnum::CSMS));
+    return !std::filesystem::is_empty(this->getCaPath(PkiEnum::CSMS));
 }
 
 bool PkiHandler::isV2GRootCertificateInstalled() {
-    return !boost::filesystem::is_empty(this->getCaPath(PkiEnum::V2G));
+    return !std::filesystem::is_empty(this->getCaPath(PkiEnum::V2G));
 }
 
 bool PkiHandler::isManufacturerRootCertificateInstalled() {
-    return !boost::filesystem::is_empty(this->getCaPath(PkiEnum::MF));
+    return !std::filesystem::is_empty(this->getCaPath(PkiEnum::MF));
 }
 
 bool PkiHandler::isCsmsLeafCertificateInstalled() {
-    return boost::filesystem::exists(this->clientCsmsPath / CSMS_LEAF);
+    return std::filesystem::exists(this->clientCsmsPath / CSMS_LEAF);
 }
 
 std::optional<std::vector<CertificateHashDataChain>>
@@ -565,7 +563,7 @@ DeleteCertificateResult PkiHandler::deleteRootCertificate(CertificateHashDataTyp
                 return DeleteCertificateResult::Failed;
             }
             found = true;
-            if (!boost::filesystem::remove(cert->path)) {
+            if (!std::filesystem::remove(cert->path)) {
                 removeFailed = true;
             }
         }
@@ -657,7 +655,7 @@ PkiHandler::getLeafCertificate(const CertificateSigningUseEnum& certificate_sign
     std::shared_ptr<X509Certificate> cert = nullptr;
     int validIn = INT_MIN;
 
-    boost::filesystem::path leafPath;
+    std::filesystem::path leafPath;
     if (certificate_signing_use == CertificateSigningUseEnum::ChargingStationCertificate) {
         leafPath = this->clientCsmsPath / CSMS_LEAF;
     } else {
@@ -665,7 +663,7 @@ PkiHandler::getLeafCertificate(const CertificateSigningUseEnum& certificate_sign
     }
 
     // TODO(piet): Client certificate could be V2G_LEAF or CSMS_LEAF, possibly only one cert is set
-    for (const auto& dirEntry : boost::filesystem::directory_iterator(leafPath.parent_path())) {
+    for (const auto& dirEntry : std::filesystem::directory_iterator(leafPath.parent_path())) {
         if (dirEntry.path().string().find(leafPath.filename().c_str()) != std::string::npos) {
             std::shared_ptr<X509Certificate> c = loadFromFile(dirEntry.path());
             if (c != nullptr && c->validIn < 0 && c->validIn > validIn) {
@@ -676,7 +674,7 @@ PkiHandler::getLeafCertificate(const CertificateSigningUseEnum& certificate_sign
     return cert;
 }
 
-boost::filesystem::path PkiHandler::getLeafPrivateKeyPath(const CertificateSigningUseEnum& certificate_signing_use) {
+std::filesystem::path PkiHandler::getLeafPrivateKeyPath(const CertificateSigningUseEnum& certificate_signing_use) {
     if (certificate_signing_use == CertificateSigningUseEnum::ChargingStationCertificate) {
         return this->clientCsmsPath / CSMS_LEAF_KEY;
     } else {
@@ -689,9 +687,9 @@ void PkiHandler::removeCentralSystemFallbackCa() {
 }
 
 void PkiHandler::useCsmsFallbackRoot() {
-    if (boost::filesystem::exists(this->caCsmsPath / CSMS_ROOT_CA_BACKUP)) {
+    if (std::filesystem::exists(this->caCsmsPath / CSMS_ROOT_CA_BACKUP)) {
         std::remove((this->caCsmsPath / CSMS_ROOT_CA).c_str()); // remove recently installed ca
-        boost::filesystem::path new_path = this->caCsmsPath / CSMS_ROOT_CA;
+        std::filesystem::path new_path = this->caCsmsPath / CSMS_ROOT_CA;
         std::rename((this->caCsmsPath / CSMS_ROOT_CA_BACKUP).c_str(), new_path.c_str());
         this->execOpenSSLRehash(this->caCsmsPath);
     } else {
@@ -724,8 +722,8 @@ void PkiHandler::updateOcspCache(const OCSPRequestData& ocspRequestData, const s
             cert->getSerialNumber() == ocspRequestData.serialNumber) {
             EVLOG_info << "Writing OCSP Response to filesystem";
             const auto ocspPath = cert->path.parent_path() / "ocsp";
-            if (!boost::filesystem::exists(ocspPath)) {
-                boost::filesystem::create_directories(ocspPath);
+            if (!std::filesystem::exists(ocspPath)) {
+                std::filesystem::create_directories(ocspPath);
             }
             const auto ocspFilePath = ocspPath / cert->path.filename().replace_extension(".ocsp.der");
             std::ofstream fs(ocspFilePath.string());
@@ -891,7 +889,7 @@ bool PkiHandler::isCaCertificateAlreadyInstalled(const std::shared_ptr<X509Certi
     return false;
 }
 
-boost::filesystem::path PkiHandler::getCaPath(const PkiEnum& pki) {
+std::filesystem::path PkiHandler::getCaPath(const PkiEnum& pki) {
     switch (pki) {
     case PkiEnum::CSMS:
         return this->caCsmsPath;
@@ -912,10 +910,10 @@ boost::filesystem::path PkiHandler::getCaPath(const PkiEnum& pki) {
     }
 }
 
-void PkiHandler::execOpenSSLRehash(const boost::filesystem::path caPath) {
-    for (const auto& entry : boost::filesystem::directory_iterator(caPath)) {
-        if (boost::filesystem::is_symlink(entry.path())) {
-            boost::filesystem::remove(entry.path());
+void PkiHandler::execOpenSSLRehash(const std::filesystem::path caPath) {
+    for (const auto& entry : std::filesystem::directory_iterator(caPath)) {
+        if (std::filesystem::is_symlink(entry.path())) {
+            std::filesystem::remove(entry.path());
         }
     }
 
@@ -925,9 +923,9 @@ void PkiHandler::execOpenSSLRehash(const boost::filesystem::path caPath) {
     }
 }
 
-std::optional<boost::filesystem::path> PkiHandler::getCsmsCaFilePath() {
-    std::optional<boost::filesystem::path> csmsCaFilePath;
-    for (const auto& entry : boost::filesystem::directory_iterator(this->caCsmsPath)) {
+std::optional<std::filesystem::path> PkiHandler::getCsmsCaFilePath() {
+    std::optional<std::filesystem::path> csmsCaFilePath;
+    for (const auto& entry : std::filesystem::directory_iterator(this->caCsmsPath)) {
         if (entry.path().extension().string() == ".pem") {
             csmsCaFilePath.emplace(entry.path());
         }
@@ -942,8 +940,8 @@ PkiHandler::getCaCertificates(const PkiEnum& pki, const CertificateType& type, c
 
     const auto caPath = this->getCaPath(pki);
 
-    if (boost::filesystem::exists(caPath)) {
-        for (const auto& dirEntry : boost::filesystem::directory_iterator(caPath)) {
+    if (std::filesystem::exists(caPath)) {
+        for (const auto& dirEntry : std::filesystem::directory_iterator(caPath)) {
             if (dirEntry.path().extension().string() != ".ocsp" and
                 (includeSymlinks or dirEntry.path().extension().string() == ".pem")) {
                 auto cert = loadFromFile(dirEntry.path());

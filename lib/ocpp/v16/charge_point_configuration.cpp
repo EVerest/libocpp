@@ -15,17 +15,17 @@
 namespace ocpp {
 namespace v16 {
 
-ChargePointConfiguration::ChargePointConfiguration(const json& config, const std::string& ocpp_main_path,
-                                                   const std::string& user_config_path) {
+ChargePointConfiguration::ChargePointConfiguration(const json& config, const std::filesystem::path& ocpp_main_path,
+                                                   const std::filesystem::path& user_config_path) {
 
-    this->user_config_path = boost::filesystem::path(user_config_path);
-    if (!boost::filesystem::exists(this->user_config_path)) {
+    this->user_config_path = user_config_path;
+    if (!std::filesystem::exists(this->user_config_path)) {
         EVLOG_critical << "User config file does not exist";
         throw std::runtime_error("User config file does not exist");
     }
 
     // validate config entries
-    Schemas schemas = Schemas(boost::filesystem::path(ocpp_main_path) / "profile_schemas");
+    Schemas schemas = Schemas(ocpp_main_path / "profile_schemas");
 
     try {
         auto patch = schemas.get_validator()->validate(config);
@@ -159,7 +159,7 @@ ChargePointConfiguration::ChargePointConfiguration(const json& config, const std
 }
 
 json ChargePointConfiguration::get_user_config() {
-    if (boost::filesystem::exists(this->user_config_path)) {
+    if (std::filesystem::exists(this->user_config_path)) {
         // reading from and overriding to existing user config
         std::fstream ifs(user_config_path.c_str());
         std::string user_config_file((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
@@ -178,7 +178,7 @@ void ChargePointConfiguration::setInUserConfig(std::string profile, std::string 
     ofs.close();
 }
 
-std::string to_csl(const std::vector<std::string> &vec) {
+std::string to_csl(const std::vector<std::string>& vec) {
     std::string csl;
     for (auto it = vec.begin(); it != vec.end(); ++it) {
         if (it != vec.begin()) {

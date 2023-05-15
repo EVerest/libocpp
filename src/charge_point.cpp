@@ -5,6 +5,7 @@
 #include <csignal>
 #include <date/date.h>
 #include <date/tz.h>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <mutex>
@@ -16,7 +17,6 @@
 #include <boost/uuid/uuid_io.hpp>
 
 #include <boost/exception/diagnostic_information.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <everest/logging.hpp>
 
@@ -55,22 +55,22 @@ int main(int argc, char* argv[]) {
     }
 
     const auto database_path = "/tmp/ocpp";
-    const auto share_path = maindir + "/share/everest/modules/OCPP";
+    const auto share_path = std::filesystem::path(maindir) / "share" / "everest" / "modules" / "OCPP";
 
     // initialize logging as early as possible
-    std::string logging_config = share_path + "/logging.ini";
+    auto logging_config = share_path / "logging.ini";
     if (vm.count("logconf") != 0) {
-        logging_config = vm["logconf"].as<std::string>();
+        logging_config = std::filesystem::path(vm["logconf"].as<std::string>());
     }
-    Everest::Logging::init(logging_config, "charge_point");
+    Everest::Logging::init(logging_config.string(), "charge_point");
 
     std::string conf = "config.json";
     if (vm.count("conf") != 0) {
         conf = vm["conf"].as<std::string>();
     }
 
-    boost::filesystem::path config_path = boost::filesystem::path(share_path) / conf;
-    if (!boost::filesystem::exists(config_path)) {
+    std::filesystem::path config_path = share_path / conf;
+    if (!std::filesystem::exists(config_path)) {
         EVLOG_error << "Could not find config at: " << config_path;
         return 1;
     }
@@ -79,9 +79,9 @@ int main(int argc, char* argv[]) {
 
     auto json_config = json::parse(config_file);
     json_config["Internal"]["LogMessagesFormat"][0] = "console_detailed";
-    auto user_config_path = boost::filesystem::path("/tmp") / "user_config.json";
+    auto user_config_path = std::filesystem::path("/tmp") / "user_config.json";
 
-    if (boost::filesystem::exists(user_config_path)) {
+    if (std::filesystem::exists(user_config_path)) {
         std::ifstream ifs(user_config_path.c_str());
         std::string user_config_file((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
         auto user_config = json::parse(user_config_file);
@@ -93,9 +93,9 @@ int main(int argc, char* argv[]) {
         fs.close();
     }
 
-    const boost::filesystem::path sql_init_path = boost::filesystem::path(share_path) / "init.sql";
-    charge_point = new ocpp::v16::ChargePoint(json_config, share_path, user_config_path.string(), database_path,
-                                              sql_init_path.string(), "/tmp", "/tmp");
+    const std::filesystem::path sql_init_path = share_path / "init.sql";
+    charge_point = new ocpp::v16::ChargePoint(json_config, share_path, user_config_path, database_path, sql_init_path,
+                                              std::filesystem::path("/tmp"), std::filesystem::path("/tmp"));
 
     /************************************** START REGISTERING CALLBACKS /**************************************/
 
