@@ -10,8 +10,6 @@
 #include <mutex>
 #include <set>
 
-#include <boost/asio.hpp>
-
 #include <everest/timer.hpp>
 
 #include <ocpp/common/charging_station_base.hpp>
