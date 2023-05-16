@@ -71,6 +71,10 @@ ChargePointConfiguration::ChargePointConfiguration(const json& config, const std
             if (this->config.contains("PnC")) {
                 // add PnC behind the scenes as supported feature profile
                 this->supported_feature_profiles.insert(conversions::string_to_supported_feature_profiles("PnC"));
+                if (!this->getCpoName().has_value() and !this->getSeccLeafSubjectOrganization().has_value()) {
+                    throw std::runtime_error("PnC feature profile is supported but no CpoName and no "
+                                     "SeccLeafSubjectOrganization is configured.");
+                }
             }
         }
     }
@@ -178,7 +182,7 @@ void ChargePointConfiguration::setInUserConfig(std::string profile, std::string 
     ofs.close();
 }
 
-std::string to_csl(const std::vector<std::string> &vec) {
+std::string to_csl(const std::vector<std::string>& vec) {
     std::string csl;
     for (auto it = vec.begin(); it != vec.end(); ++it) {
         if (it != vec.begin()) {
