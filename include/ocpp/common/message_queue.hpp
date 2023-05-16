@@ -75,11 +75,11 @@ private:
     std::mutex message_mutex;
     std::condition_variable cv;
     std::function<bool(json message)> send_callback;
+    std::vector<M> external_notify;
     bool paused;
     bool running;
     bool new_message;
     boost::uuids::random_generator uuid_generator;
-    std::vector<M> external_notify;
 
     Everest::SteadyTimer in_flight_timeout_timer;
     Everest::SteadyTimer notify_queue_timer;

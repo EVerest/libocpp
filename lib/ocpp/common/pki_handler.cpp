@@ -521,7 +521,7 @@ PkiHandler::getRootCertificateHashData(std::optional<std::vector<CertificateType
         // only add child certificate data for V2GCertificateChain
         if (certChain.size() > 1 and certChain.at(1)->type == CertificateType::V2GCertificateChain) {
             std::vector<ocpp::CertificateHashDataType> childCertificateHashData;
-            for (int i = 1; i < certChain.size(); i++) {
+            for (size_t i = 1; i < certChain.size(); i++) {
                 auto cert = certChain.at(i);
                 CertificateHashDataType certificateHashData;
                 certificateHashData.hashAlgorithm = HashAlgorithmEnumType::SHA256;
@@ -775,7 +775,7 @@ PkiHandler::verifyCertificate(const PkiEnum& pki, const std::vector<std::shared_
     X509_STORE_ptr store_ptr(X509_STORE_new(), ::X509_STORE_free);
     X509_STORE_CTX_ptr store_ctx_ptr(X509_STORE_CTX_new(), ::X509_STORE_CTX_free);
 
-    for (int i = 1; i < certificates.size(); i++) {
+    for (size_t i = 1; i < certificates.size(); i++) {
         if (certificates.at(i)->x509 == NULL) {
             return CertificateVerificationResult::InvalidCertificateChain;
         }

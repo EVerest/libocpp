@@ -84,17 +84,22 @@ namespace v16 {
 /// \brief Contains a ChargePoint implementation compatible with OCPP-J 1.6
 class ChargePointImpl : ocpp::ChargingStationBase {
 private:
+    bool initialized;
+    ChargePointConnectionState connection_state;
+    RegistrationStatus registration_status;
+    DiagnosticsStatus diagnostics_status;
+    FirmwareStatus firmware_status;
+    UploadLogStatusEnumType log_status;
+    std::string message_log_path;
+
     std::unique_ptr<MessageQueue<v16::MessageType>> message_queue;
     std::map<int32_t, std::shared_ptr<Connector>> connectors;
     std::unique_ptr<SmartChargingHandler> smart_charging_handler;
     int32_t heartbeat_interval;
-    bool initialized;
     bool stopped;
     std::chrono::time_point<date::utc_clock> boot_time;
     std::set<MessageType> allowed_message_types;
     std::mutex allowed_message_types_mutex;
-    RegistrationStatus registration_status;
-    ChargePointConnectionState connection_state;
     std::unique_ptr<ChargePointStates> status;
     std::shared_ptr<ChargePointConfiguration> configuration;
     std::shared_ptr<ocpp::DatabaseHandler> database_handler;
@@ -113,7 +118,6 @@ private:
     std::unique_ptr<TransactionHandler> transaction_handler;
     std::vector<v16::MessageType> external_notify;
 
-    std::string message_log_path;
     std::map<std::string,
              std::map<std::string, std::function<DataTransferResponse(const boost::optional<std::string>& msg)>>>
         data_transfer_callbacks;
@@ -124,9 +128,7 @@ private:
     std::condition_variable stop_transaction_cv;
 
     std::thread reset_thread;
-    DiagnosticsStatus diagnostics_status;
-    FirmwareStatus firmware_status;
-    UploadLogStatusEnumType log_status;
+
     int log_status_request_id;
 
     FirmwareStatusEnumType signed_firmware_status;

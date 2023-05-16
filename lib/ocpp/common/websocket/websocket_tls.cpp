@@ -253,6 +253,7 @@ void WebsocketTLS::connect_tls(int32_t security_profile, bool try_once) {
     this->wss_client.connect(con);
 }
 void WebsocketTLS::on_open_tls(tls_client* c, websocketpp::connection_hdl hdl, int32_t security_profile) {
+    (void)c; // tlc_client is not used in this function
     EVLOG_info << "Connected to TLS websocket successfully";
     this->m_is_connected = true;
     this->connection_options.security_profile = security_profile;
@@ -260,6 +261,7 @@ void WebsocketTLS::on_open_tls(tls_client* c, websocketpp::connection_hdl hdl, i
     this->connected_callback(this->connection_options.security_profile);
 }
 void WebsocketTLS::on_message_tls(websocketpp::connection_hdl hdl, tls_client::message_ptr msg) {
+    (void)hdl; // connection_hdl is not used in this function
     if (!this->initialized()) {
         EVLOG_error << "Message received but TLS websocket has not been correctly initialized. Discarding message.";
         return;
