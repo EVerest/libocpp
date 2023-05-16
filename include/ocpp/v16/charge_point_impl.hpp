@@ -1,20 +1,71 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
-#ifndef OCPP_V16_CHARGE_POINT_HPP
-#define OCPP_V16_CHARGE_POINT_HPP
+#ifndef OCPP_V16_CHARGE_POINT_IMPL_HPP
+#define OCPP_V16_CHARGE_POINT_IMPL_HPP
+#include <atomic>
+#include <chrono>
+#include <date/date.h>
+#include <date/tz.h>
 #include <filesystem>
+#include <future>
+#include <iostream>
+#include <mutex>
+#include <set>
 
-#include <boost/optional/optional.hpp>
+#include <everest/timer.hpp>
 
-#include <ocpp/common/cistring.hpp>
-#include <ocpp/v16/ocpp_types.hpp>
-#include <ocpp/v16/types.hpp>
-
+#include <ocpp/common/charging_station_base.hpp>
+#include <ocpp/common/database_handler.hpp>
+#include <ocpp/common/message_queue.hpp>
+#include <ocpp/common/schemas.hpp>
+#include <ocpp/common/types.hpp>
+#include <ocpp/common/websocket/websocket.hpp>
+#include <ocpp/v16/charge_point_configuration.hpp>
+#include <ocpp/v16/charge_point_state_machine.hpp>
+#include <ocpp/v16/connector.hpp>
+#include <ocpp/v16/messages/Authorize.hpp>
+#include <ocpp/v16/messages/BootNotification.hpp>
+#include <ocpp/v16/messages/CancelReservation.hpp>
+#include <ocpp/v16/messages/CertificateSigned.hpp>
+#include <ocpp/v16/messages/ChangeAvailability.hpp>
+#include <ocpp/v16/messages/ChangeConfiguration.hpp>
+#include <ocpp/v16/messages/ClearCache.hpp>
+#include <ocpp/v16/messages/ClearChargingProfile.hpp>
 #include <ocpp/v16/messages/DataTransfer.hpp>
+#include <ocpp/v16/messages/DeleteCertificate.hpp>
+#include <ocpp/v16/messages/DiagnosticsStatusNotification.hpp>
+#include <ocpp/v16/messages/ExtendedTriggerMessage.hpp>
+#include <ocpp/v16/messages/FirmwareStatusNotification.hpp>
+#include <ocpp/v16/messages/GetCompositeSchedule.hpp>
+#include <ocpp/v16/messages/GetConfiguration.hpp>
 #include <ocpp/v16/messages/GetDiagnostics.hpp>
+#include <ocpp/v16/messages/GetInstalledCertificateIds.hpp>
+#include <ocpp/v16/messages/GetLocalListVersion.hpp>
 #include <ocpp/v16/messages/GetLog.hpp>
+#include <ocpp/v16/messages/Heartbeat.hpp>
+#include <ocpp/v16/messages/InstallCertificate.hpp>
+#include <ocpp/v16/messages/LogStatusNotification.hpp>
+#include <ocpp/v16/messages/MeterValues.hpp>
+#include <ocpp/v16/messages/RemoteStartTransaction.hpp>
+#include <ocpp/v16/messages/RemoteStopTransaction.hpp>
+#include <ocpp/v16/messages/ReserveNow.hpp>
+#include <ocpp/v16/messages/Reset.hpp>
+#include <ocpp/v16/messages/SecurityEventNotification.hpp>
+#include <ocpp/v16/messages/SendLocalList.hpp>
+#include <ocpp/v16/messages/SetChargingProfile.hpp>
+#include <ocpp/v16/messages/SignCertificate.hpp>
+#include <ocpp/v16/messages/SignedFirmwareStatusNotification.hpp>
 #include <ocpp/v16/messages/SignedUpdateFirmware.hpp>
+#include <ocpp/v16/messages/StartTransaction.hpp>
+#include <ocpp/v16/messages/StatusNotification.hpp>
+#include <ocpp/v16/messages/StopTransaction.hpp>
+#include <ocpp/v16/messages/TriggerMessage.hpp>
+#include <ocpp/v16/messages/UnlockConnector.hpp>
 #include <ocpp/v16/messages/UpdateFirmware.hpp>
+#include <ocpp/v16/ocpp_types.hpp>
+#include <ocpp/v16/smart_charging.hpp>
+#include <ocpp/v16/transaction.hpp>
+#include <ocpp/v16/types.hpp>
 
 // for OCPP1.6 PnC
 #include <ocpp/v201/messages/Authorize.hpp>
@@ -29,12 +80,211 @@
 
 namespace ocpp {
 namespace v16 {
-class ChargePointImpl;
 
 /// \brief Contains a ChargePoint implementation compatible with OCPP-J 1.6
-class ChargePoint {
+class ChargePointImpl : ocpp::ChargingStationBase {
 private:
-    std::unique_ptr<ChargePointImpl> charge_point;
+    std::unique_ptr<MessageQueue<v16::MessageType>> message_queue;
+    std::map<int32_t, std::shared_ptr<Connector>> connectors;
+    std::unique_ptr<SmartChargingHandler> smart_charging_handler;
+    int32_t heartbeat_interval;
+    bool initialized;
+    bool stopped;
+    std::chrono::time_point<date::utc_clock> boot_time;
+    std::set<MessageType> allowed_message_types;
+    std::mutex allowed_message_types_mutex;
+    RegistrationStatus registration_status;
+    ChargePointConnectionState connection_state;
+    std::unique_ptr<ChargePointStates> status;
+    std::shared_ptr<ChargePointConfiguration> configuration;
+    std::shared_ptr<ocpp::DatabaseHandler> database_handler;
+    std::unique_ptr<Everest::SteadyTimer> boot_notification_timer;
+    std::unique_ptr<Everest::SteadyTimer> heartbeat_timer;
+    std::unique_ptr<Everest::SystemTimer> clock_aligned_meter_values_timer;
+    std::vector<std::unique_ptr<Everest::SteadyTimer>> status_notification_timers;
+    std::unique_ptr<Everest::SteadyTimer> ocsp_request_timer;
+    std::unique_ptr<Everest::SteadyTimer> client_certificate_timer;
+    std::unique_ptr<Everest::SteadyTimer> v2g_certificate_timer;
+    std::chrono::time_point<date::utc_clock> clock_aligned_meter_values_time_point;
+    std::mutex meter_values_mutex;
+    std::mutex power_meters_mutex;
+    std::map<int32_t, AvailabilityType> change_availability_queue; // TODO: move to Connectors
+    std::mutex change_availability_mutex;                          // TODO: move to Connectors
+    std::unique_ptr<TransactionHandler> transaction_handler;
+    std::vector<v16::MessageType> external_notify;
+
+    std::string message_log_path;
+    std::map<std::string,
+             std::map<std::string, std::function<DataTransferResponse(const boost::optional<std::string>& msg)>>>
+        data_transfer_callbacks;
+    std::map<std::string, std::function<void(Call<DataTransferRequest> call)>> data_transfer_pnc_callbacks;
+    std::mutex data_transfer_callbacks_mutex;
+
+    std::mutex stop_transaction_mutex;
+    std::condition_variable stop_transaction_cv;
+
+    std::thread reset_thread;
+    DiagnosticsStatus diagnostics_status;
+    FirmwareStatus firmware_status;
+    UploadLogStatusEnumType log_status;
+    int log_status_request_id;
+
+    FirmwareStatusEnumType signed_firmware_status;
+    int signed_firmware_status_request_id;
+
+    // callbacks
+    std::function<bool(int32_t connector)> enable_evse_callback;
+    std::function<bool(int32_t connector)> disable_evse_callback;
+    std::function<bool(int32_t connector)> pause_charging_callback;
+    std::function<bool(int32_t connector)> resume_charging_callback;
+    std::function<void(const std::string& id_token, std::vector<int32_t> referenced_connectors, bool prevalidated)>
+        provide_token_callback;
+    std::function<bool(int32_t connector, Reason reason)> stop_transaction_callback;
+    std::function<bool(int32_t connector)> unlock_connector_callback;
+    std::function<bool(int32_t connector, int32_t max_current)> set_max_current_callback;
+    std::function<bool(const ResetType& reset_type)> is_reset_allowed_callback;
+    std::function<void(const ResetType& reset_type)> reset_callback;
+    std::function<void(const std::string& system_time)> set_system_time_callback;
+    std::function<void()> signal_set_charging_profiles_callback;
+    std::function<void(bool is_connected)> connection_state_changed_callback;
+
+    std::function<GetLogResponse(const GetDiagnosticsRequest& request)> upload_diagnostics_callback;
+    std::function<void(const UpdateFirmwareRequest msg)> update_firmware_callback;
+
+    std::function<UpdateFirmwareStatusEnumType(const SignedUpdateFirmwareRequest msg)> signed_update_firmware_callback;
+
+    std::function<ReservationStatus(int32_t reservation_id, int32_t connector, ocpp::DateTime expiryDate,
+                                    CiString<20> idTag, boost::optional<CiString<20>> parent_id)>
+        reserve_now_callback;
+    std::function<bool(int32_t reservation_id)> cancel_reservation_callback;
+    std::function<void()> switch_security_profile_callback;
+    std::function<GetLogResponse(GetLogRequest msg)> upload_logs_callback;
+    std::function<void(int32_t connection_timeout)> set_connection_timeout_callback;
+
+    // iso15118 callback
+    std::function<void(const int32_t connector, const ocpp::v201::Get15118EVCertificateResponse& certificate_response,
+                       const ocpp::v201::CertificateActionEnum& certificate_action)>
+        get_15118_ev_certificate_response_callback;
+
+    /// \brief This function is called after a successful connection to the Websocket
+    void connected_callback();
+    void init_websocket(int32_t security_profile);
+    void message_callback(const std::string& message);
+    void handle_message(const json& json_message, MessageType message_type);
+    bool allowed_to_send_message(json::array_t message_type);
+    template <class T> bool send(Call<T> call);
+    template <class T> std::future<EnhancedMessage<v16::MessageType>> send_async(Call<T> call);
+    template <class T> bool send(CallResult<T> call_result);
+    bool send(CallError call_error);
+    void heartbeat();
+    void boot_notification();
+    void clock_aligned_meter_values_sample();
+    void update_heartbeat_interval();
+    void update_meter_values_sample_interval();
+    void update_clock_aligned_meter_values_interval();
+    boost::optional<MeterValue> get_latest_meter_value(int32_t connector,
+                                                       std::vector<MeasurandWithPhase> values_of_interest,
+                                                       ReadingContext context);
+    MeterValue get_signed_meter_value(const std::string& signed_value, const ReadingContext& context,
+                                      const ocpp::DateTime& datetime);
+    void send_meter_value(int32_t connector, MeterValue meter_value);
+    void status_notification(int32_t connector, ChargePointErrorCode errorCode, CiString<50> info,
+                             ChargePointStatus status, ocpp::DateTime timestamp);
+    void status_notification(int32_t connector, ChargePointErrorCode errorCode, ChargePointStatus status);
+    void diagnostic_status_notification(DiagnosticsStatus status);
+    void firmware_status_notification(FirmwareStatus status);
+    void log_status_notification(UploadLogStatusEnumType status, int requestId);
+    void signed_firmware_update_status_notification(FirmwareStatusEnumType status, int requestId);
+
+    void stop_all_transactions();
+    void stop_all_transactions(Reason reason);
+    bool validate_against_cache_entries(CiString<20> id_tag);
+
+    // new transaction handling:
+    void start_transaction(std::shared_ptr<Transaction> transaction);
+
+    /// \brief Sends StopTransaction.req for all transactions for which meter_stop or time_end is not set in the
+    /// database's Transaction table
+    void stop_pending_transactions();
+    void stop_transaction(int32_t connector, Reason reason, boost::optional<CiString<20>> id_tag_end);
+
+    /// \brief Returns transaction data that can be used to set the transactionData field in StopTransaction.req.
+    /// Filters the meter values of the transaction according to the values set within StopTxnAlignedData and
+    /// StopTxnSampledData
+    std::vector<TransactionData> get_filtered_transaction_data(const std::shared_ptr<Transaction>& transaction);
+
+    /// \brief Load charging profiles if present in database
+    void load_charging_profiles();
+
+    // security
+    /// \brief Creates a new public/private key pair and sends a certificate signing request to the central system for
+    /// the given \p certificate_signing_use
+    void sign_certificate(const ocpp::CertificateSigningUseEnum& certificate_signing_use);
+
+    /// \brief Checks if OCSP cache needs to be updated and executes update if necessary by using
+    /// DataTransfer(GetCertificateStatus.req)
+    void update_ocsp_cache();
+
+    // core profile
+    void handleBootNotificationResponse(
+        CallResult<BootNotificationResponse> call_result); // TODO(kai):: async/promise based version?
+    void handleChangeAvailabilityRequest(Call<ChangeAvailabilityRequest> call);
+    void handleChangeConfigurationRequest(Call<ChangeConfigurationRequest> call);
+    void handleClearCacheRequest(Call<ClearCacheRequest> call);
+    void handleDataTransferRequest(Call<DataTransferRequest> call);
+    void handleGetConfigurationRequest(Call<GetConfigurationRequest> call);
+    void handleRemoteStartTransactionRequest(Call<RemoteStartTransactionRequest> call);
+    void handleRemoteStopTransactionRequest(Call<RemoteStopTransactionRequest> call);
+    void handleResetRequest(Call<ResetRequest> call);
+    void handleStartTransactionResponse(CallResult<StartTransactionResponse> call_result);
+    void handleStopTransactionResponse(CallResult<StopTransactionResponse> call_result);
+    void handleUnlockConnectorRequest(Call<UnlockConnectorRequest> call);
+
+    // smart charging profile
+    void handleSetChargingProfileRequest(Call<SetChargingProfileRequest> call);
+    void handleGetCompositeScheduleRequest(Call<GetCompositeScheduleRequest> call);
+    void handleClearChargingProfileRequest(Call<ClearChargingProfileRequest> call);
+
+    // plug&charge for 1.6 whitepaper
+    bool is_pnc_enabled();
+    void data_transfer_pnc_sign_certificate();
+    void data_transfer_pnc_get_certificate_status(const ocpp::v201::OCSPRequestData& ocsp_request_data);
+
+    void handle_data_transfer_pnc_trigger_message(Call<DataTransferRequest> call);
+    void handle_data_transfer_pnc_certificate_signed(Call<DataTransferRequest> call);
+    void handle_data_transfer_pnc_get_installed_certificates(Call<DataTransferRequest> call);
+    void handle_data_transfer_delete_certificate(Call<DataTransferRequest> call);
+    void handle_data_transfer_install_certificate(Call<DataTransferRequest> call);
+
+    /// \brief ReserveNow.req(connectorId, expiryDate, idTag, reservationId, [parentIdTag]): tries to perform the
+    /// reservation and sends a reservation response. The reservation response: ReserveNow::Status
+    void handleReserveNowRequest(Call<ReserveNowRequest> call);
+
+    /// \brief Receives CancelReservation.req(reservationId)
+    /// The reservation response:  CancelReservationStatus: `Accepted` if the reservationId was found, else
+    /// `Rejected`
+    void handleCancelReservationRequest(Call<CancelReservationRequest> call);
+
+    // RemoteTrigger profile
+    void handleTriggerMessageRequest(Call<TriggerMessageRequest> call);
+
+    // FirmwareManagement profile
+    void handleGetDiagnosticsRequest(Call<GetDiagnosticsRequest> call);
+    void handleUpdateFirmwareRequest(Call<UpdateFirmwareRequest> call);
+
+    // Security profile
+    void handleExtendedTriggerMessageRequest(Call<ExtendedTriggerMessageRequest> call);
+    void handleCertificateSignedRequest(Call<CertificateSignedRequest> call);
+    void handleGetInstalledCertificateIdsRequest(Call<GetInstalledCertificateIdsRequest> call);
+    void handleDeleteCertificateRequest(Call<DeleteCertificateRequest> call);
+    void handleInstallCertificateRequest(Call<InstallCertificateRequest> call);
+    void handleGetLogRequest(Call<GetLogRequest> call);
+    void handleSignedUpdateFirmware(Call<SignedUpdateFirmwareRequest> call);
+    void securityEventNotification(const SecurityEvent& type, const std::string& tech_info);
+    void switchSecurityProfile(int32_t new_security_profile);
+    // Local Authorization List profile
+    void handleSendLocalListRequest(Call<SendLocalListRequest> call);
+    void handleGetLocalListVersionRequest(Call<GetLocalListVersionRequest> call);
 
 public:
     /// \brief The main entrypoint for libOCPP for OCPP 1.6
@@ -58,13 +308,13 @@ public:
     /// \param certs_path this points to the directory where certificates used by libocpp are located, these are used
     /// for the "Improved security for OCPP 1.6-J" whitepaper (eg. Security Profile 3 TLS with Client Side Certificates)
     /// as well as for Plug & Charge.
-    explicit ChargePoint(const std::string& config, const std::filesystem::path& share_path,
-                         const std::filesystem::path& user_config_path, const std::filesystem::path& database_path,
-                         const std::filesystem::path& sql_init_path, const std::filesystem::path& message_log_path,
-                         const std::filesystem::path& certs_path);
+    explicit ChargePointImpl(const std::string& config, const std::filesystem::path& share_path,
+                             const std::filesystem::path& user_config_path, const std::filesystem::path& database_path,
+                             const std::filesystem::path& sql_init_path, const std::filesystem::path& message_log_path,
+                             const std::filesystem::path& certs_path);
 
-    ~ChargePoint();
-
+    ~ChargePointImpl() {
+    }
     /// \brief Starts the ChargePoint, initializes and connects to the Websocket endpoint and initializes a
     /// BootNotification.req
     bool start();
@@ -105,8 +355,8 @@ public:
     /// \param iso15118_certificate_hash_data
     /// \return
     ocpp::v201::AuthorizeResponse data_transfer_pnc_authorize(
-        const std::string& emaid, const std::optional<std::string>& certificate,
-        const std::optional<std::vector<ocpp::v201::OCSPRequestData>>& iso15118_certificate_hash_data);
+        const std::string& emaid, const boost::optional<std::string>& certificate,
+        const boost::optional<std::vector<ocpp::v201::OCSPRequestData>>& iso15118_certificate_hash_data);
 
     /// \brief  Uses data transfer mechanism to get 15118 ev certificate from CSMS. This function can be called when the
     /// EVCC requests the update or installation of a contract certificate as part of the ISO15118
@@ -156,7 +406,7 @@ public:
     /// \param reason "Authorized" or "EVConnected" TODO(piet): Convert to enum
     /// \param session_logging_path optional filesystem path to where the session log should be written
     void on_session_started(int32_t connector, const std::string& session_id, const std::string& reason,
-                            const std::optional<std::string>& session_logging_path);
+                            const boost::optional<std::string>& session_logging_path);
 
     /// \brief Notifies chargepoint that a session has been stopped at the given \p connector. This function must be
     /// called when the EV disconnects from the given \p connector .
@@ -175,8 +425,8 @@ public:
     /// \param timestamp of the start of transaction
     /// \param signed_meter_value e.g. in OCMF format
     void on_transaction_started(const int32_t& connector, const std::string& session_id, const std::string& id_token,
-                                const int32_t& meter_start, std::optional<int32_t> reservation_id,
-                                const ocpp::DateTime& timestamp, std::optional<std::string> signed_meter_value);
+                                const int32_t& meter_start, boost::optional<int32_t> reservation_id,
+                                const ocpp::DateTime& timestamp, boost::optional<std::string> signed_meter_value);
 
     /// \brief Notifies chargepoint that the transaction on the given \p connector with the given \p reason has been
     /// stopped. This function must be called at the point where one of the preconditions for charging irrevocably
@@ -191,8 +441,8 @@ public:
     /// \param signed_meter_value e.g. in OCMF format
     void on_transaction_stopped(const int32_t connector, const std::string& session_id, const Reason& reason,
                                 ocpp::DateTime timestamp, float energy_wh_import,
-                                std::optional<CiString<20>> id_tag_end,
-                                std::optional<std::string> signed_meter_value);
+                                boost::optional<CiString<20>> id_tag_end,
+                                boost::optional<std::string> signed_meter_value);
 
     /// \brief This function should be called when EV indicates that it suspends charging on the given \p connector
     /// \param connector
@@ -255,7 +505,7 @@ public:
     /// \param callback
     void register_data_transfer_callback(
         const CiString<255>& vendorId, const CiString<50>& messageId,
-        const std::function<DataTransferResponse(const std::optional<std::string>& msg)>& callback);
+        const std::function<DataTransferResponse(const boost::optional<std::string>& msg)>& callback);
 
     /// \brief registers a \p callback function that can be used to enable the evse. The enable_evse_callback is called
     /// when a ChangeAvailaibility.req is received.
@@ -298,7 +548,7 @@ public:
     /// \param callback
     void register_reserve_now_callback(
         const std::function<ReservationStatus(int32_t reservation_id, int32_t connector, ocpp::DateTime expiryDate,
-                                              CiString<20> idTag, std::optional<CiString<20>> parent_id)>& callback);
+                                              CiString<20> idTag, boost::optional<CiString<20>> parent_id)>& callback);
 
     /// \brief registers a \p callback function that can be used to cancel a reservation on a connector. Callback
     /// function should return false if the reservation could not be cancelled, else true . The

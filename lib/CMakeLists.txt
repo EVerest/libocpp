@@ -13,6 +13,7 @@ target_sources(ocpp
         ocpp/common/utils.cpp
         ocpp/v16/charge_point.cpp
         ocpp/v16/database_handler.cpp
+        ocpp/v16/charge_point_impl.cpp
         ocpp/v16/smart_charging.cpp
         ocpp/v16/charge_point_configuration.cpp
         ocpp/v16/charge_point_state_machine.cpp
