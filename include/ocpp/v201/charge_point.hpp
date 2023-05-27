@@ -54,6 +54,12 @@ private:
 
     std::map<int32_t, ChangeAvailabilityRequest> scheduled_change_availability_requests;
 
+    std::map<std::string,
+             std::map<std::string, std::function<DataTransferResponse(const std::optional<std::string>& msg)>>>
+        data_transfer_callbacks;
+    std::map<std::string, std::function<void(Call<DataTransferRequest> call)>> data_transfer_pnc_callbacks;
+    std::mutex data_transfer_callbacks_mutex;
+    
     // timers
     Everest::SteadyTimer heartbeat_timer;
     Everest::SteadyTimer boot_notification_timer;

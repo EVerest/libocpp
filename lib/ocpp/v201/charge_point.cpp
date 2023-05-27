@@ -779,7 +779,21 @@ void ChargePoint::handle_change_availability_req(Call<ChangeAvailabilityRequest>
 void ChargePoint::handle_data_transfer_req(Call<DataTransferRequest> call) {
     const auto msg = call.msg;
     DataTransferResponse response;
-    response.status = DataTransferStatusEnum::Rejected;
+    auto vendorId = call.msg.vendorId.get();
+    auto messageId = call.msg.messageId.get_value_or(CiString<50>()).get();
+    {
+        std::lock_guard<std::mutex> lock(data_transfer_callbacks_mutex);
+        if (this->data_transfer_callbacks.count(vendorId) == 0) {
+            response.status = DataTransferStatus::UnknownVendorId;
+        } else if (this->data_transfer_callbacks.count(vendorId) and
+                   this->data_transfer_callbacks[vendorId].count(messageId) == 0) {
+            response.status = DataTransferStatus::UnknownMessageId;
+        } else {
+            // there is a callback registered for this vendorId and messageId
+            response = this->data_transfer_callbacks[vendorId][messageId](call.msg.data);
+        }
+    }
+    //response.status = DataTransferStatusEnum::Rejected;
 
     ocpp::CallResult<DataTransferResponse> call_result(response, call.uniqueId);
     this->send<DataTransferResponse>(call_result);
