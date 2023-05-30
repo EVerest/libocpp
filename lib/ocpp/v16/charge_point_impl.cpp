@@ -37,7 +37,7 @@ ChargePointImpl::ChargePointImpl(const std::string& config, const std::filesyste
     this->heartbeat_timer = std::make_unique<Everest::SteadyTimer>(&this->io_service, [this]() { this->heartbeat(); });
     this->heartbeat_interval = this->configuration->getHeartbeatInterval();
     this->database_handler =
-        std::make_shared<ocpp::DatabaseHandler>(this->configuration->getChargePointId(), database_path, sql_init_path);
+        std::make_shared<ocpp::v16::DatabaseHandler>(this->configuration->getChargePointId(), database_path, sql_init_path);
     this->database_handler->open_db_connection(this->configuration->getNumberOfConnectors());
     this->transaction_handler = std::make_unique<TransactionHandler>(this->configuration->getNumberOfConnectors());
     this->external_notify = {v16::MessageType::StartTransactionResponse};

@@ -15,7 +15,6 @@
 #include <everest/timer.hpp>
 
 #include <ocpp/common/charging_station_base.hpp>
-#include <ocpp/common/database_handler.hpp>
 #include <ocpp/common/message_queue.hpp>
 #include <ocpp/common/schemas.hpp>
 #include <ocpp/common/types.hpp>
@@ -23,6 +22,7 @@
 #include <ocpp/v16/charge_point_configuration.hpp>
 #include <ocpp/v16/charge_point_state_machine.hpp>
 #include <ocpp/v16/connector.hpp>
+#include <ocpp/v16/database_handler.hpp>
 #include <ocpp/v16/messages/Authorize.hpp>
 #include <ocpp/v16/messages/BootNotification.hpp>
 #include <ocpp/v16/messages/CancelReservation.hpp>
@@ -102,7 +102,7 @@ private:
     std::mutex allowed_message_types_mutex;
     std::unique_ptr<ChargePointStates> status;
     std::shared_ptr<ChargePointConfiguration> configuration;
-    std::shared_ptr<ocpp::DatabaseHandler> database_handler;
+    std::shared_ptr<ocpp::v16::DatabaseHandler> database_handler;
     std::unique_ptr<Everest::SteadyTimer> boot_notification_timer;
     std::unique_ptr<Everest::SteadyTimer> heartbeat_timer;
     std::unique_ptr<Everest::SystemTimer> clock_aligned_meter_values_timer;
