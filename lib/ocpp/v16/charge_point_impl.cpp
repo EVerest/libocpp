@@ -260,6 +260,7 @@ void ChargePointImpl::update_clock_aligned_meter_values_interval() {
     const auto next_timestamp = this->get_next_clock_aligned_meter_value_timestamp(clock_aligned_data_interval);
     if (next_timestamp.has_value()) {
         this->clock_aligned_meter_values_timer->at(next_timestamp.value().to_time_point());
+    }
 }
 
 void ChargePointImpl::stop_pending_transactions() {
