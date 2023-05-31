@@ -66,7 +66,11 @@ if (j.size() == 0) {
             }
 {% endif %}
             for (auto val : k.{{property.name}}.value()) {
+                {%- if property.type.endswith('Enum>') %}
+                j["{{property.name}}"].push_back(conversions::{{- property.type.replace('std::vector<','').replace('>','') | snake_case}}_to_string(val));
+                {%- else%}
                 j["{{property.name}}"].push_back(val);
+                {%- endif%}
             }
 {% else %}
 {% if property.enum %}
@@ -118,7 +122,11 @@ j["{{property.name}}"] = k.{{property.name}}.value();
             json arr = j.at("{{property.name}}");
             {{property.type}} vec;
             for (auto val : arr) {
+                {%- if property.type.endswith('Enum>') %}
+                vec.push_back(conversions::string_to_{{- property.type.replace('std::vector<','').replace('>','') | snake_case}}(val));
+                {%- else %}
                 vec.push_back(val);
+                {%- endif %}
             }
             k.{{property.name}}.emplace(vec);
 {% else %}
