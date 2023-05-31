@@ -52,8 +52,8 @@ IdTagInfo ChargePoint::authorize_id_token(CiString<20> id_token) {
 
 ocpp::v201::AuthorizeResponse ChargePoint::data_transfer_pnc_authorize(
 
-    const std::string& emaid, const boost::optional<std::string>& certificate,
-    const boost::optional<std::vector<ocpp::v201::OCSPRequestData>>& iso15118_certificate_hash_data) {
+    const std::string& emaid, const std::optional<std::string>& certificate,
+    const std::optional<std::vector<ocpp::v201::OCSPRequestData>>& iso15118_certificate_hash_data) {
     return this->charge_point->data_transfer_pnc_authorize(emaid, certificate, iso15118_certificate_hash_data);
 }
 
@@ -95,16 +95,16 @@ void ChargePoint::on_session_stopped(const int32_t connector, const std::string&
 
 void ChargePoint::on_transaction_started(const int32_t& connector, const std::string& session_id,
                                          const std::string& id_token, const int32_t& meter_start,
-                                         boost::optional<int32_t> reservation_id, const ocpp::DateTime& timestamp,
-                                         boost::optional<std::string> signed_meter_value) {
+                                         std::optional<int32_t> reservation_id, const ocpp::DateTime& timestamp,
+                                         std::optional<std::string> signed_meter_value) {
     this->charge_point->on_transaction_started(connector, session_id, id_token, meter_start, reservation_id, timestamp,
                                                signed_meter_value);
 }
 
 void ChargePoint::on_transaction_stopped(const int32_t connector, const std::string& session_id, const Reason& reason,
                                          ocpp::DateTime timestamp, float energy_wh_import,
-                                         boost::optional<CiString<20>> id_tag_end,
-                                         boost::optional<std::string> signed_meter_value) {
+                                         std::optional<CiString<20>> id_tag_end,
+                                         std::optional<std::string> signed_meter_value) {
     this->charge_point->on_transaction_stopped(connector, session_id, reason, timestamp, energy_wh_import, id_tag_end,
                                                signed_meter_value);
 }
@@ -151,7 +151,7 @@ void ChargePoint::on_disabled(int32_t connector) {
 
 void ChargePoint::register_data_transfer_callback(
     const CiString<255>& vendorId, const CiString<50>& messageId,
-    const std::function<DataTransferResponse(const boost::optional<std::string>& msg)>& callback) {
+    const std::function<DataTransferResponse(const std::optional<std::string>& msg)>& callback) {
     this->charge_point->register_data_transfer_callback(vendorId, messageId, callback);
 }
 
@@ -184,7 +184,7 @@ void ChargePoint::register_stop_transaction_callback(
 
 void ChargePoint::register_reserve_now_callback(
     const std::function<ReservationStatus(int32_t reservation_id, int32_t connector, ocpp::DateTime expiryDate,
-                                          CiString<20> idTag, boost::optional<CiString<20>> parent_id)>& callback) {
+                                          CiString<20> idTag, std::optional<CiString<20>> parent_id)>& callback) {
     this->charge_point->register_reserve_now_callback(callback);
 }
 

@@ -35,7 +35,7 @@ private:
     std::string session_id;
     CiString<20> id_token;
     std::shared_ptr<StampedEnergyWh> start_energy_wh;
-    boost::optional<int32_t> reservation_id;
+    std::optional<int32_t> reservation_id;
     bool active;
     bool finished;
     std::unique_ptr<Everest::SteadyTimer> meter_values_sample_timer;
