@@ -94,8 +94,9 @@ int main(int argc, char* argv[]) {
     }
 
     const std::filesystem::path sql_init_path = share_path / "init.sql";
-    charge_point = new ocpp::v16::ChargePoint(json_config.dump(), share_path, user_config_path, database_path, sql_init_path,
-                                              std::filesystem::path("/tmp"), std::filesystem::path("/tmp"));
+    charge_point =
+        new ocpp::v16::ChargePoint(json_config.dump(), share_path, user_config_path, database_path, sql_init_path,
+                                   std::filesystem::path("/tmp"), std::filesystem::path("/tmp"));
 
     /************************************** START REGISTERING CALLBACKS /**************************************/
 
@@ -138,7 +139,7 @@ int main(int argc, char* argv[]) {
 
     charge_point->register_reserve_now_callback([](int32_t reservation_id, int32_t connector, ocpp::DateTime expiryDate,
                                                    ocpp::CiString<20> idTag,
-                                                   boost::optional<ocpp::CiString<20>> parent_id) {
+                                                   std::optional<ocpp::CiString<20>> parent_id) {
         std::cout << "Callback: "
                   << "Reserving connector# " << connector << " for id token: " << idTag.get() << " until "
                   << expiryDate;
