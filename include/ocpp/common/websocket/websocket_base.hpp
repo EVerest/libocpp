@@ -10,8 +10,6 @@
 
 #include <everest/timer.hpp>
 
-#include <boost/optional.hpp>
-
 #include <ocpp/common/types.hpp>
 
 #include <websocketpp/client.hpp>

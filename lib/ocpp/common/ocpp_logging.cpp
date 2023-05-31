@@ -7,7 +7,6 @@
 #include <ocpp/common/types.hpp>
 
 #include <boost/algorithm/string.hpp>
-#include <boost/optional/optional.hpp>
 
 using json = nlohmann::json;
 

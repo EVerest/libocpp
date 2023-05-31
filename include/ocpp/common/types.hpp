@@ -11,8 +11,6 @@
 #include <string>
 #include <optional>
 
-#include <boost/algorithm/string/predicate.hpp>
-
 #include <nlohmann/json_fwd.hpp>
 
 #include <date/date.h>

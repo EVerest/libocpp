@@ -4,8 +4,6 @@
 #define OCPP_V16_CHARGE_POINT_HPP
 #include <filesystem>
 
-#include <boost/optional/optional.hpp>
-
 #include <ocpp/common/cistring.hpp>
 #include <ocpp/v16/ocpp_types.hpp>
 #include <ocpp/v16/types.hpp>

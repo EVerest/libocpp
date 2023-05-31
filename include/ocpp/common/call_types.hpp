@@ -3,7 +3,6 @@
 #ifndef OCPP_COMMON_CALL_TYPES_HPP
 #define OCPP_COMMON_CALL_TYPES_HPP
 
-#include <boost/optional/optional.hpp>
 #include <iostream>
 #include <nlohmann/json_fwd.hpp>
 #include <sstream>

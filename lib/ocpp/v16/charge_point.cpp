@@ -7,8 +7,6 @@
 #include <ocpp/v16/charge_point_configuration.hpp>
 #include <ocpp/v16/charge_point_impl.hpp>
 
-#include <boost/optional/optional.hpp>
-
 namespace ocpp {
 namespace v16 {
 

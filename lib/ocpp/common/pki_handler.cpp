@@ -8,8 +8,6 @@
 
 #include <ocpp/common/pki_handler.hpp>
 
-#include <boost/optional/optional.hpp>
-
 namespace ocpp {
 
 X509Certificate::X509Certificate(std::filesystem::path path, X509* x509, std::string str) {
