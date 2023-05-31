@@ -30,8 +30,8 @@ ChargePointImpl::ChargePointImpl(const std::string& config, const std::filesyste
     diagnostics_status(DiagnosticsStatus::Idle),
     firmware_status(FirmwareStatus::Idle),
     log_status(UploadLogStatusEnumType::Idle),
-    switch_security_profile_callback(nullptr),
-    message_log_path(message_log_path) {
+    message_log_path(message_log_path),
+    switch_security_profile_callback(nullptr) {
     this->configuration = std::make_shared<ocpp::v16::ChargePointConfiguration>(config, share_path, user_config_path);
     this->pki_handler = std::make_shared<ocpp::PkiHandler>(
         certs_path, this->configuration->getAdditionalRootCertificateCheck().value_or(false));
@@ -676,7 +676,7 @@ bool ChargePointImpl::start() {
     connector_availability[0] = AvailabilityType::Operative; // FIXME(kai): fix internal representation in charge
                                                              // point states, we need a different kind of state
                                                              // machine for connector 0 anyway (with reduced states)
-    if (this->configuration->getNumberOfConnectors() + 1 != connector_availability.size()) {
+    if ((size_t)this->configuration->getNumberOfConnectors() + 1 != connector_availability.size()) {
         throw std::runtime_error("Number of configured connectors doesn't match number of connectors in the database.");
     }
     this->status->reset(connector_availability);
@@ -1578,8 +1578,6 @@ void ChargePointImpl::handleUnlockConnectorRequest(ocpp::Call<UnlockConnectorReq
     } else {
         // this message is not intended to remotely stop a transaction, but if a transaction is still ongoing it is
         // advised to stop it first
-        CiString<20> idTag;
-        int32_t transactionId;
         if (this->transaction_handler->transaction_active(connector)) {
             EVLOG_info << "Received unlock connector request with active session for this connector.";
             this->stop_transaction_callback(connector, Reason::UnlockCommand);
@@ -1661,7 +1659,7 @@ void ChargePointImpl::handleGetCompositeScheduleRequest(ocpp::Call<GetCompositeS
     const auto connector_id = call.msg.connectorId;
     const auto allowed_charging_rate_units = this->configuration->getChargingScheduleAllowedChargingRateUnitVector();
 
-    if (connector_id >= this->connectors.size() or connector_id < 0) {
+    if ((size_t)connector_id >= this->connectors.size() or connector_id < 0) {
         response.status = GetCompositeScheduleStatus::Rejected;
     } else if (call.msg.chargingRateUnit and
                std::find(allowed_charging_rate_units.begin(), allowed_charging_rate_units.end(),
@@ -2292,7 +2290,7 @@ IdTagInfo ChargePointImpl::authorize_id_token(CiString<20> idTag) {
     // OR
     // - LocalAuthorizeOffline is true and CP is offline
     if ((this->configuration->getLocalPreAuthorize() && this->websocket->is_connected()) ||
-        this->configuration->getLocalAuthorizeOffline() && !this->websocket->is_connected()) {
+        (this->configuration->getLocalAuthorizeOffline() && !this->websocket->is_connected())) {
         if (this->configuration->getLocalAuthListEnabled()) {
             const auto auth_list_entry_opt = this->database_handler->get_local_authorization_list_entry(idTag);
             if (auth_list_entry_opt.has_value()) {
@@ -2616,7 +2614,7 @@ void ChargePointImpl::handle_data_transfer_pnc_certificate_signed(Call<DataTrans
                         "V2GCertificate";
             EVLOG_warning << tech_info;
         } else if (this->configuration->getCertificateSignedMaxChainSize().has_value() and
-                   this->configuration->getCertificateSignedMaxChainSize().value() <
+                   (size_t)this->configuration->getCertificateSignedMaxChainSize().value() <
                        req.certificateChain.get().size()) {
             tech_info = "Received DataTransfer.req containing CertificateSigned.req where chain size is greater "
                         "than configured CertificateSignedMaxChainSize";
