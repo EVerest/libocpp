@@ -3,8 +3,8 @@
 #ifndef OCPP_V16_UPDATEFIRMWARE_HPP
 #define OCPP_V16_UPDATEFIRMWARE_HPP
 
-#include <optional>
 #include <nlohmann/json_fwd.hpp>
+#include <optional>
 
 #include <ocpp/v16/ocpp_types.hpp>
 

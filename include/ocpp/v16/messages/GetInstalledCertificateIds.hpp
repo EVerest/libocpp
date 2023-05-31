@@ -3,8 +3,8 @@
 #ifndef OCPP_V16_GETINSTALLEDCERTIFICATEIDS_HPP
 #define OCPP_V16_GETINSTALLEDCERTIFICATEIDS_HPP
 
-#include <optional>
 #include <nlohmann/json_fwd.hpp>
+#include <optional>
 
 #include <ocpp/v16/enums.hpp>
 #include <ocpp/v16/ocpp_types.hpp>
