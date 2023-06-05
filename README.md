@@ -94,9 +94,9 @@ The following tries to explain the steps you can follow to implement their funct
 #### ChargePoint() constructor
 The main entrypoint for libOCPP for OCPP 1.6 is the ocpp::v16::ChargePoint constructor.
 This is defined in libocpp/include/ocpp/v16/charge_point.hpp and takes the following parameters:
-- config: a nlohmann json config object that contains the libocpp 1.6 config. There are example configs that work with a [SteVe](https://github.com/steve-community/steve) installation [running in Docker](https://github.com/EVerest/everest-utils/tree/main/docker/steve), for example: [config-docker.json](config/v16/config-docker.json)
+- config: a std::string that contains the libocpp 1.6 config. There are example configs that work with a [SteVe](https://github.com/steve-community/steve) installation [running in Docker](https://github.com/EVerest/everest-utils/tree/main/docker/steve), for example: [config-docker.json](config/v16/config-docker.json)
 
-- share_path: a std::string (that will be converted into a std::filesystem path object soon, like all the other mentioned paths from now on) containing the path to the OCPP modules folder, for example pointing to */usr/share/everest/modules/OCPP*. This path contains the following files and directories and is installed by the libocpp  install target:
+- share_path: a std::filesystem path containing the path to the OCPP modules folder, for example pointing to */usr/share/everest/modules/OCPP*. This path contains the following files and directories and is installed by the libocpp  install target:
   ```bash
   .
   ├── config-docker.json
