@@ -30,7 +30,11 @@ std::vector<MeasurandEnum> get_measurands_vec(const std::string& measurands_csv)
 }
 
 MeterValue get_meter_value_with_measurands_applied(const MeterValue& _meter_value,
+<<<<<<< HEAD
                                                    const std::vector<MeasurandEnum> measurands) {
+=======
+                                                   const std::vector<MeasurandEnum>& measurands) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     auto meter_value = _meter_value;
     for (auto it = meter_value.sampledValue.begin(); it != meter_value.sampledValue.end();) {
         if (it->measurand.has_value()) {
@@ -48,8 +52,13 @@ MeterValue get_meter_value_with_measurands_applied(const MeterValue& _meter_valu
 
 std::vector<MeterValue>
 get_meter_values_with_measurands_and_interval_applied(const std::vector<MeterValue>& _meter_values,
+<<<<<<< HEAD
                                                       const std::vector<MeasurandEnum> aligned_measurands,
                                                       const std::vector<MeasurandEnum> sample_measurands,
+=======
+                                                      const std::vector<MeasurandEnum>& aligned_measurands,
+                                                      const std::vector<MeasurandEnum>& sample_measurands,
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
                                                       const int32_t aligned_interval, const int32_t sampled_interval) {
     std::vector<MeterValue> meter_values;
 

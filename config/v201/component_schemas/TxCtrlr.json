@@ -67,7 +67,7 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadOnly"
         }
       ],
       "description": "When set to true, the Charging Station SHALL deauthorize the transaction when the cable is unplugged from the EV.",
@@ -109,7 +109,7 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadOnly"
         }
       ],
       "description": "Defines when the Charging Station starts a new transaction",
@@ -123,7 +123,7 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadOnly"
         }
       ],
       "description": "Defines when the Charging Station ends a transaction",

@@ -3,7 +3,8 @@
 #ifndef OCPP_V201_UNPUBLISHFIRMWARE_HPP
 #define OCPP_V201_UNPUBLISHFIRMWARE_HPP
 
-#include <boost/optional.hpp>
+#include <nlohmann/json_fwd.hpp>
+#include <optional>
 
 #include <ocpp/common/types.hpp>
 #include <ocpp/v201/enums.hpp>
@@ -15,7 +16,7 @@ namespace v201 {
 /// \brief Contains a OCPP UnpublishFirmware message
 struct UnpublishFirmwareRequest : public ocpp::Message {
     CiString<32> checksum;
-    boost::optional<CustomData> customData;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this UnpublishFirmware message as a human readable string
     /// \returns the message type as a human readable string
@@ -35,7 +36,7 @@ std::ostream& operator<<(std::ostream& os, const UnpublishFirmwareRequest& k);
 /// \brief Contains a OCPP UnpublishFirmwareResponse message
 struct UnpublishFirmwareResponse : public ocpp::Message {
     UnpublishFirmwareStatusEnum status;
-    boost::optional<CustomData> customData;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this UnpublishFirmwareResponse message as a human readable string
     /// \returns the message type as a human readable string

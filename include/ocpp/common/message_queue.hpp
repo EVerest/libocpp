@@ -17,6 +17,7 @@
 
 #include <everest/timer.hpp>
 
+#include <ocpp/common/call_types.hpp>
 #include <ocpp/common/types.hpp>
 #include <ocpp/v16/types.hpp>
 #include <ocpp/v201/types.hpp>
@@ -74,11 +75,11 @@ private:
     std::mutex message_mutex;
     std::condition_variable cv;
     std::function<bool(json message)> send_callback;
+    std::vector<M> external_notify;
     bool paused;
     bool running;
     bool new_message;
     boost::uuids::random_generator uuid_generator;
-    std::vector<M> external_notify;
 
     Everest::SteadyTimer in_flight_timeout_timer;
     Everest::SteadyTimer notify_queue_timer;
@@ -263,7 +264,7 @@ public:
                     this->reset_in_flight();
                 } else {
                     EVLOG_debug << "Successfully sent message. UID: " << this->in_flight->uniqueId();
-                    this->in_flight_timeout_timer.timeout([this]() { this->handle_timeout_or_callerror(boost::none); },
+                    this->in_flight_timeout_timer.timeout([this]() { this->handle_timeout_or_callerror(std::nullopt); },
                                                           STANDARD_MESSAGE_TIMEOUT);
                     switch (queue_type) {
                     case QueueType::Normal:
@@ -408,7 +409,7 @@ public:
     }
 
     /// \brief Handles a message timeout or a CALLERROR. \p enhanced_message_opt is set only in case of CALLERROR
-    void handle_timeout_or_callerror(const boost::optional<EnhancedMessage<M>>& enhanced_message_opt) {
+    void handle_timeout_or_callerror(const std::optional<EnhancedMessage<M>>& enhanced_message_opt) {
         std::lock_guard<std::mutex> lk(this->message_mutex);
         EVLOG_warning << "Message timeout or CALLERROR for: " << this->in_flight->messageType << " ("
                       << this->in_flight->uniqueId() << ")";

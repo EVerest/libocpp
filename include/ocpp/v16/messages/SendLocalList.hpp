@@ -3,7 +3,8 @@
 #ifndef OCPP_V16_SENDLOCALLIST_HPP
 #define OCPP_V16_SENDLOCALLIST_HPP
 
-#include <boost/optional.hpp>
+#include <nlohmann/json_fwd.hpp>
+#include <optional>
 
 #include <ocpp/common/types.hpp>
 #include <ocpp/v16/enums.hpp>
@@ -16,7 +17,7 @@ namespace v16 {
 struct SendLocalListRequest : public ocpp::Message {
     int32_t listVersion;
     UpdateType updateType;
-    boost::optional<std::vector<LocalAuthorizationList>> localAuthorizationList;
+    std::optional<std::vector<LocalAuthorizationList>> localAuthorizationList;
 
     /// \brief Provides the type of this SendLocalList message as a human readable string
     /// \returns the message type as a human readable string

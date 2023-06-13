@@ -10,8 +10,6 @@
 
 #include <everest/timer.hpp>
 
-#include <boost/optional.hpp>
-
 #include <ocpp/common/types.hpp>
 
 #include <websocketpp/client.hpp>
@@ -24,14 +22,14 @@ struct WebsocketConnectionOptions {
     std::string cs_uri;
     int security_profile;
     std::string chargepoint_id;
-    boost::optional<std::string> authorization_key;
+    std::optional<std::string> authorization_key;
     int reconnect_interval_s;
     std::string supported_ciphers_12;
     std::string supported_ciphers_13;
     int ping_interval_s;
     std::string ping_payload;
     bool use_ssl_default_verify_paths;
-    boost::optional<bool> additional_root_certificate_check;
+    std::optional<bool> additional_root_certificate_check;
 };
 
 ///
@@ -41,25 +39,25 @@ class WebsocketBase {
 protected:
     bool shutting_down;
     bool m_is_connected;
+    WebsocketConnectionOptions connection_options;
     std::function<void(const int security_profile)> connected_callback;
     std::function<void()> disconnected_callback;
     std::function<void(const std::string& message)> message_callback;
-    WebsocketConnectionOptions connection_options;
+    websocketpp::lib::shared_ptr<boost::asio::steady_timer> reconnect_timer;
+    std::unique_ptr<Everest::SteadyTimer> ping_timer;
     websocketpp::lib::shared_ptr<websocketpp::lib::thread> websocket_thread;
     std::string uri;
     websocketpp::connection_hdl handle;
     std::mutex reconnect_mutex;
     long reconnect_interval_ms;
     websocketpp::transport::timer_handler reconnect_callback;
-    websocketpp::lib::shared_ptr<boost::asio::steady_timer> reconnect_timer;
-    std::unique_ptr<Everest::SteadyTimer> ping_timer;
 
     /// \brief Indicates if the required callbacks are registered and the websocket is not shutting down
     /// \returns true if the websocket is properly initialized
     bool initialized();
 
     /// \brief getter for authorization header for connection with basic authentication
-    boost::optional<std::string> getAuthorizationHeader();
+    std::optional<std::string> getAuthorizationHeader();
 
     /// \brief send a websocket ping
     virtual void ping() = 0;

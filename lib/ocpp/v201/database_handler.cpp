@@ -79,25 +79,38 @@ void DatabaseHandler::insert_auth_cache_entry(const std::string& id_token_hash, 
     }
 }
 
+<<<<<<< HEAD
 boost::optional<IdTokenInfo> DatabaseHandler::get_auth_cache_entry(const std::string& id_token_hash) {
+=======
+std::optional<IdTokenInfo> DatabaseHandler::get_auth_cache_entry(const std::string& id_token_hash) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     try {
         std::string sql = "SELECT ID_TOKEN_INFO FROM AUTH_CACHE WHERE ID_TOKEN_HASH = @id_token_hash";
         sqlite3_stmt* stmt;
         if (sqlite3_prepare_v2(this->db, sql.c_str(), sql.size(), &stmt, NULL) != SQLITE_OK) {
             EVLOG_error << "Could not prepare insert statement: " << sqlite3_errmsg(this->db);
+<<<<<<< HEAD
             return boost::none;
+=======
+            return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
         }
 
         sqlite3_bind_text(stmt, 1, id_token_hash.c_str(), id_token_hash.length(), NULL);
 
         if (sqlite3_step(stmt) != SQLITE_ROW) {
+<<<<<<< HEAD
             return boost::none;
+=======
+            return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
         }
         IdTokenInfo id_token_info =
             json::parse(std::string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0))));
         return id_token_info;
     } catch (const json::exception& e) {
         EVLOG_warning << "Could not parse data of IdTokenInfo: " << e.what();
+<<<<<<< HEAD
         return boost::none;
     } catch (const std::exception& e) {
         EVLOG_error << "Unknown Error while parsing IdTokenInfo: " << e.what();
@@ -106,6 +119,16 @@ boost::optional<IdTokenInfo> DatabaseHandler::get_auth_cache_entry(const std::st
 }
 
 void DatabaseHandler::insert_availability(const int32_t evse_id, boost::optional<int32_t> connector_id,
+=======
+        return std::nullopt;
+    } catch (const std::exception& e) {
+        EVLOG_error << "Unknown Error while parsing IdTokenInfo: " << e.what();
+        return std::nullopt;
+    }
+}
+
+void DatabaseHandler::insert_availability(const int32_t evse_id, std::optional<int32_t> connector_id,
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
                                           const OperationalStatusEnum& operational_status, const bool replace) {
     std::string sql = "INSERT OR REPLACE INTO AVAILABILITY (EVSE_ID, CONNECTOR_ID, OPERATIONAL_STATUS) VALUES "
                       "(@evse_id, @connector_id, @operational_status)";
@@ -144,7 +167,11 @@ void DatabaseHandler::insert_availability(const int32_t evse_id, boost::optional
     }
 }
 
+<<<<<<< HEAD
 OperationalStatusEnum DatabaseHandler::get_availability(const int32_t evse_id, boost::optional<int32_t> connector_id) {
+=======
+OperationalStatusEnum DatabaseHandler::get_availability(const int32_t evse_id, std::optional<int32_t> connector_id) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     try {
         std::string sql =
             "SELECT OPERATIONAL_STATUS FROM AVAILABILITY WHERE EVSE_ID = @evse_id AND CONNECTOR_ID = @connector_id;";
@@ -173,4 +200,8 @@ OperationalStatusEnum DatabaseHandler::get_availability(const int32_t evse_id, b
 }
 
 } // namespace v201
+<<<<<<< HEAD
 } // namespace ocpp
+=======
+} // namespace ocpp
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73

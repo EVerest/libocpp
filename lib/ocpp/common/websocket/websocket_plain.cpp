@@ -4,6 +4,8 @@
 
 #include <ocpp/common/websocket/websocket_plain.hpp>
 
+#include <boost/optional/optional.hpp>
+
 namespace ocpp {
 
 WebsocketPlain::WebsocketPlain(const WebsocketConnectionOptions& connection_options) :
@@ -134,9 +136,9 @@ void WebsocketPlain::connect_plain(int32_t security_profile, bool try_once) {
         EVLOG_debug << "Connecting with security profile: 0";
     } else if (security_profile == 1) {
         EVLOG_debug << "Connecting with security profile: 1";
-        boost::optional<std::string> authorization_header = this->getAuthorizationHeader();
-        if (authorization_header != boost::none) {
-            con->append_header("Authorization", authorization_header.get());
+        std::optional<std::string> authorization_header = this->getAuthorizationHeader();
+        if (authorization_header) {
+            con->append_header("Authorization", authorization_header.value());
         } else {
             throw std::runtime_error("No authorization key provided when connecting with security profile: 1");
         }
@@ -162,6 +164,7 @@ void WebsocketPlain::connect_plain(int32_t security_profile, bool try_once) {
 }
 
 void WebsocketPlain::on_open_plain(client* c, websocketpp::connection_hdl hdl, int32_t security_profile) {
+    (void)c; // client is not used in this function
     EVLOG_info << "Connected to plain websocket successfully. Executing connected callback";
     this->m_is_connected = true;
     this->connection_options.security_profile = security_profile;

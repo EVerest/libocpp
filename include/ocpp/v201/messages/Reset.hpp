@@ -3,7 +3,8 @@
 #ifndef OCPP_V201_RESET_HPP
 #define OCPP_V201_RESET_HPP
 
-#include <boost/optional.hpp>
+#include <nlohmann/json_fwd.hpp>
+#include <optional>
 
 #include <ocpp/common/types.hpp>
 #include <ocpp/v201/enums.hpp>
@@ -15,8 +16,8 @@ namespace v201 {
 /// \brief Contains a OCPP Reset message
 struct ResetRequest : public ocpp::Message {
     ResetEnum type;
-    boost::optional<CustomData> customData;
-    boost::optional<int32_t> evseId;
+    std::optional<CustomData> customData;
+    std::optional<int32_t> evseId;
 
     /// \brief Provides the type of this Reset message as a human readable string
     /// \returns the message type as a human readable string
@@ -36,8 +37,8 @@ std::ostream& operator<<(std::ostream& os, const ResetRequest& k);
 /// \brief Contains a OCPP ResetResponse message
 struct ResetResponse : public ocpp::Message {
     ResetStatusEnum status;
-    boost::optional<CustomData> customData;
-    boost::optional<StatusInfo> statusInfo;
+    std::optional<CustomData> customData;
+    std::optional<StatusInfo> statusInfo;
 
     /// \brief Provides the type of this ResetResponse message as a human readable string
     /// \returns the message type as a human readable string

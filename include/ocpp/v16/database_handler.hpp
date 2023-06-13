@@ -4,7 +4,7 @@
 #define OCPP_V16_DATABASE_HANDLER_HPP
 
 #include "sqlite3.h"
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 
@@ -28,28 +28,28 @@ struct TransactionEntry {
     int32_t meter_last;
     std::string meter_last_time;
     std::string last_update;
-    boost::optional<int32_t> reservation_id = boost::none;
-    boost::optional<std::string> parent_id_tag = boost::none;
-    boost::optional<int32_t> meter_stop = boost::none;
-    boost::optional<std::string> time_end = boost::none;
-    boost::optional<std::string> id_tag_end = boost::none;
-    boost::optional<std::string> stop_reason = boost::none;
+    std::optional<int32_t> reservation_id = std::nullopt;
+    std::optional<std::string> parent_id_tag = std::nullopt;
+    std::optional<int32_t> meter_stop = std::nullopt;
+    std::optional<std::string> time_end = std::nullopt;
+    std::optional<std::string> id_tag_end = std::nullopt;
+    std::optional<std::string> stop_reason = std::nullopt;
 };
 
 /// \brief This class handles the connection and operations of the SQLite database
 class DatabaseHandler {
 private:
     sqlite3* db;
-    boost::filesystem::path db_path;          // directory where the database file is located
-    boost::filesystem::path init_script_path; // full path of init sql script
+    std::filesystem::path db_path;          // directory where the database file is located
+    std::filesystem::path init_script_path; // full path of init sql script
 
     void run_sql_init();
     bool clear_table(const std::string& table_name);
     void init_connector_table(int32_t number_of_connectors);
 
 public:
-    DatabaseHandler(const std::string& chargepoint_id, const boost::filesystem::path& database_path,
-                    const boost::filesystem::path& init_script_path);
+    DatabaseHandler(const std::string& chargepoint_id, const std::filesystem::path& database_path,
+                    const std::filesystem::path& init_script_path);
     ~DatabaseHandler();
 
     /// \brief Opens the database connection, runs initialization script and initializes the CONNECTORS and
@@ -63,15 +63,15 @@ public:
     /// \brief Inserts a transaction with the given parameter to the TRANSACTIONS table.
     void insert_transaction(const std::string& session_id, const int32_t transaction_id, const int32_t connector,
                             const std::string& id_tag_start, const std::string& time_start, const int32_t meter_start,
-                            const bool csms_ack, const boost::optional<int32_t> reservation_id);
+                            const bool csms_ack, const std::optional<int32_t> reservation_id);
 
     /// \brief Updates the given parameters for the transaction with the given \p session_id in the TRANSACTIONS table.
     void update_transaction(const std::string& session_id, int32_t transaction_id,
-                            boost::optional<CiString<20>> parent_id_tag = boost::none);
+                            std::optional<CiString<20>> parent_id_tag = std::nullopt);
 
     /// \brief Updates the given parameters for the transaction with the given \p session_id in the TRANSACTIONS table.
     void update_transaction(const std::string& session_id, int32_t meter_stop, const std::string& time_end,
-                            boost::optional<CiString<20>> id_tag_end, boost::optional<v16::Reason> stop_reason);
+                            std::optional<CiString<20>> id_tag_end, std::optional<v16::Reason> stop_reason);
 
     /// \brief Updates the CSMS_ACK column for the transaction with the given \p session_id in the TRANSACTIONS table
     void update_transaction_csms_ack(const std::string& session_id);
@@ -89,8 +89,8 @@ public:
     /// \brief Inserts or updates an authorization cache entry to the AUTH_CACHE table.
     void insert_or_update_authorization_cache_entry(const CiString<20>& id_tag, const v16::IdTagInfo& id_tag_info);
 
-    /// \brief Returns the IdTagInfo of the given \p id_tag if it exists in the AUTH_CACHE table, else boost::none.
-    boost::optional<v16::IdTagInfo> get_authorization_cache_entry(const CiString<20>& id_tag);
+    /// \brief Returns the IdTagInfo of the given \p id_tag if it exists in the AUTH_CACHE table, else std::nullopt.
+    std::optional<v16::IdTagInfo> get_authorization_cache_entry(const CiString<20>& id_tag);
 
     /// \brief Deletes all entries of the AUTH_CACHE table.
     bool clear_authorization_cache();
@@ -126,8 +126,8 @@ public:
     /// \brief Deletes the authorization list entry with the given \p id_tag
     void delete_local_authorization_list_entry(const std::string& id_tag);
 
-    /// \brief Returns the IdTagInfo of the given \p id_tag if it exists in the AUTH_LIST table, else boost::none.
-    boost::optional<v16::IdTagInfo> get_local_authorization_list_entry(const CiString<20>& id_tag);
+    /// \brief Returns the IdTagInfo of the given \p id_tag if it exists in the AUTH_LIST table, else std::nullopt.
+    std::optional<v16::IdTagInfo> get_local_authorization_list_entry(const CiString<20>& id_tag);
 
     /// \brief Deletes all entries of the AUTH_LIST table.
     bool clear_local_authorization_list();
@@ -151,7 +151,7 @@ public:
     void insert_ocsp_update();
 
     /// \brief Gets the only entry in the OCSP_REQUEST table
-    boost::optional<DateTime> get_last_ocsp_update();
+    std::optional<DateTime> get_last_ocsp_update();
 };
 
 } // namespace v16

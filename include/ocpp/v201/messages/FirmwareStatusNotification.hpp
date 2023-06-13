@@ -3,7 +3,8 @@
 #ifndef OCPP_V201_FIRMWARESTATUSNOTIFICATION_HPP
 #define OCPP_V201_FIRMWARESTATUSNOTIFICATION_HPP
 
-#include <boost/optional.hpp>
+#include <nlohmann/json_fwd.hpp>
+#include <optional>
 
 #include <ocpp/common/types.hpp>
 #include <ocpp/v201/enums.hpp>
@@ -15,8 +16,8 @@ namespace v201 {
 /// \brief Contains a OCPP FirmwareStatusNotification message
 struct FirmwareStatusNotificationRequest : public ocpp::Message {
     FirmwareStatusEnum status;
-    boost::optional<CustomData> customData;
-    boost::optional<int32_t> requestId;
+    std::optional<CustomData> customData;
+    std::optional<int32_t> requestId;
 
     /// \brief Provides the type of this FirmwareStatusNotification message as a human readable string
     /// \returns the message type as a human readable string
@@ -35,7 +36,7 @@ std::ostream& operator<<(std::ostream& os, const FirmwareStatusNotificationReque
 
 /// \brief Contains a OCPP FirmwareStatusNotificationResponse message
 struct FirmwareStatusNotificationResponse : public ocpp::Message {
-    boost::optional<CustomData> customData;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this FirmwareStatusNotificationResponse message as a human readable string
     /// \returns the message type as a human readable string

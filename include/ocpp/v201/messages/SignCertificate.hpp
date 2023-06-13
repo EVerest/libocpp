@@ -3,7 +3,8 @@
 #ifndef OCPP_V201_SIGNCERTIFICATE_HPP
 #define OCPP_V201_SIGNCERTIFICATE_HPP
 
-#include <boost/optional.hpp>
+#include <nlohmann/json_fwd.hpp>
+#include <optional>
 
 #include <ocpp/common/types.hpp>
 #include <ocpp/v201/enums.hpp>
@@ -15,8 +16,8 @@ namespace v201 {
 /// \brief Contains a OCPP SignCertificate message
 struct SignCertificateRequest : public ocpp::Message {
     CiString<5500> csr;
-    boost::optional<CustomData> customData;
-    boost::optional<CertificateSigningUseEnum> certificateType;
+    std::optional<CustomData> customData;
+    std::optional<CertificateSigningUseEnum> certificateType;
 
     /// \brief Provides the type of this SignCertificate message as a human readable string
     /// \returns the message type as a human readable string
@@ -36,8 +37,8 @@ std::ostream& operator<<(std::ostream& os, const SignCertificateRequest& k);
 /// \brief Contains a OCPP SignCertificateResponse message
 struct SignCertificateResponse : public ocpp::Message {
     GenericStatusEnum status;
-    boost::optional<CustomData> customData;
-    boost::optional<StatusInfo> statusInfo;
+    std::optional<CustomData> customData;
+    std::optional<StatusInfo> statusInfo;
 
     /// \brief Provides the type of this SignCertificateResponse message as a human readable string
     /// \returns the message type as a human readable string

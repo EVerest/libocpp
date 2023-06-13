@@ -3,7 +3,8 @@
 #ifndef OCPP_V16_RESERVENOW_HPP
 #define OCPP_V16_RESERVENOW_HPP
 
-#include <boost/optional.hpp>
+#include <nlohmann/json_fwd.hpp>
+#include <optional>
 
 #include <ocpp/common/types.hpp>
 #include <ocpp/v16/enums.hpp>
@@ -18,7 +19,7 @@ struct ReserveNowRequest : public ocpp::Message {
     ocpp::DateTime expiryDate;
     CiString<20> idTag;
     int32_t reservationId;
-    boost::optional<CiString<20>> parentIdTag;
+    std::optional<CiString<20>> parentIdTag;
 
     /// \brief Provides the type of this ReserveNow message as a human readable string
     /// \returns the message type as a human readable string

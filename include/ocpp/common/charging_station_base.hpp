@@ -3,8 +3,11 @@
 #ifndef OCPP_COMMON_CHARGE_POINT_HPP
 #define OCPP_COMMON_CHARGE_POINT_HPP
 
+<<<<<<< HEAD
 #include <everest/timer.hpp>
 
+=======
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
 #include <ocpp/common/message_queue.hpp>
 #include <ocpp/common/pki_handler.hpp>
 #include <ocpp/common/websocket/websocket.hpp>
@@ -27,9 +30,15 @@ protected:
 
     /// \brief Identifies the next timestamp at which a clock aligned meter value should be send
     /// \param interval the configured AlignedDataInterval
+<<<<<<< HEAD
     /// \return boost::optional<DateTime> If \param interval > 0 it returns the next timestamp at which a clock aligned
     /// meter value should be sent, else boost::none
     boost::optional<DateTime> get_next_clock_aligned_meter_value_timestamp(const int32_t interval);
+=======
+    /// \return std::optional<DateTime> If \param interval > 0 it returns the next timestamp at which a clock aligned
+    /// meter value should be sent, else std::nullopt
+    std::optional<DateTime> get_next_clock_aligned_meter_value_timestamp(const int32_t interval);
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
 
     /// \brief Generates a uuid  
     /// \return uuid

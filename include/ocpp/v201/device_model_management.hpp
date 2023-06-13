@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
-#include <boost/optional.hpp>
 #include <map>
 
 #include <ocpp/common/pki_handler.hpp>
@@ -19,7 +18,7 @@ public:
     /// \brief Construct a new DeviceModelManager object
     /// \param config OCPP json config
     /// \param ocpp_main_path path where utility files for OCPP are read and written to
-    DeviceModelManager(const json& config, const std::string& ocpp_main_path);
+    DeviceModelManager(const json& config, const std::filesystem::path& ocpp_main_path);
 
     /// \brief Set the variable specified by \p set_variable_data
     /// \param set_variable_data specifies the variable to be set
@@ -28,9 +27,9 @@ public:
 
     /// \brief Get the variable specified by \p get_variable_data
     /// \param get_variable_data specifies the variable to get
-    /// \return std::pair<GetVariableStatusEnum, boost::optional<CiString<2500>>> first item of the pair indicates the
+    /// \return std::pair<GetVariableStatusEnum, std::optional<CiString<2500>>> first item of the pair indicates the
     /// result of the operation and the second item optionally contains the value
-    std::pair<GetVariableStatusEnum, boost::optional<CiString<2500>>>
+    std::pair<GetVariableStatusEnum, std::optional<CiString<2500>>>
     get_variable(const GetVariableData& get_variable_data);
 
     /// \brief This function returns an std::vector<ReportData> based on the options specified by the arguments \p
@@ -42,9 +41,15 @@ public:
     /// included in the result
     /// \return std::vector<ReportData>
     std::vector<ReportData>
+<<<<<<< HEAD
     get_report_data(const boost::optional<ReportBaseEnum>& report_base = boost::none,
                     const boost::optional<std::vector<ComponentVariable>>& component_variables = boost::none,
                     const boost::optional<std::vector<ComponentCriterionEnum>>& component_criteria = boost::none);
+=======
+    get_report_data(const std::optional<ReportBaseEnum>& report_base = std::nullopt,
+                    const std::optional<std::vector<ComponentVariable>>& component_variables = std::nullopt,
+                    const std::optional<std::vector<ComponentCriterionEnum>>& component_criteria = std::nullopt);
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
 };
 
 } // namespace v201

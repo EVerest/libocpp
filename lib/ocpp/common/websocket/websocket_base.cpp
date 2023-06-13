@@ -4,6 +4,8 @@
 
 #include <ocpp/common/websocket/websocket_base.hpp>
 
+#include <boost/optional/optional.hpp>
+
 namespace ocpp {
 
 WebsocketBase::WebsocketBase(const WebsocketConnectionOptions& connection_options) :
@@ -71,15 +73,15 @@ bool WebsocketBase::is_connected() {
     return this->m_is_connected;
 }
 
-boost::optional<std::string> WebsocketBase::getAuthorizationHeader() {
-    boost::optional<std::string> auth_header = boost::none;
+std::optional<std::string> WebsocketBase::getAuthorizationHeader() {
+    std::optional<std::string> auth_header = std::nullopt;
     const auto authorization_key = this->connection_options.authorization_key;
     if (authorization_key) {
         EVLOG_debug << "AuthorizationKey present, encoding authentication header";
         std::string plain_auth_header = this->connection_options.chargepoint_id + ":" + authorization_key.value();
         auth_header.emplace(std::string("Basic ") + websocketpp::base64_encode(plain_auth_header));
 
-        EVLOG_info << "Basic Auth header: " << auth_header.get();
+        EVLOG_info << "Basic Auth header: " << auth_header.value();
     }
 
     return auth_header;

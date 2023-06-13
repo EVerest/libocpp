@@ -3,7 +3,8 @@
 #ifndef OCPP_V201_CLEARCHARGINGPROFILE_HPP
 #define OCPP_V201_CLEARCHARGINGPROFILE_HPP
 
-#include <boost/optional.hpp>
+#include <nlohmann/json_fwd.hpp>
+#include <optional>
 
 #include <ocpp/common/types.hpp>
 #include <ocpp/v201/enums.hpp>
@@ -14,9 +15,9 @@ namespace v201 {
 
 /// \brief Contains a OCPP ClearChargingProfile message
 struct ClearChargingProfileRequest : public ocpp::Message {
-    boost::optional<CustomData> customData;
-    boost::optional<int32_t> chargingProfileId;
-    boost::optional<ClearChargingProfile> chargingProfileCriteria;
+    std::optional<CustomData> customData;
+    std::optional<int32_t> chargingProfileId;
+    std::optional<ClearChargingProfile> chargingProfileCriteria;
 
     /// \brief Provides the type of this ClearChargingProfile message as a human readable string
     /// \returns the message type as a human readable string
@@ -36,8 +37,8 @@ std::ostream& operator<<(std::ostream& os, const ClearChargingProfileRequest& k)
 /// \brief Contains a OCPP ClearChargingProfileResponse message
 struct ClearChargingProfileResponse : public ocpp::Message {
     ClearChargingProfileStatusEnum status;
-    boost::optional<CustomData> customData;
-    boost::optional<StatusInfo> statusInfo;
+    std::optional<CustomData> customData;
+    std::optional<StatusInfo> statusInfo;
 
     /// \brief Provides the type of this ClearChargingProfileResponse message as a human readable string
     /// \returns the message type as a human readable string

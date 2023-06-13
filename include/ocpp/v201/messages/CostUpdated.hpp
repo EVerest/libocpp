@@ -3,7 +3,8 @@
 #ifndef OCPP_V201_COSTUPDATED_HPP
 #define OCPP_V201_COSTUPDATED_HPP
 
-#include <boost/optional.hpp>
+#include <nlohmann/json_fwd.hpp>
+#include <optional>
 
 #include <ocpp/common/types.hpp>
 #include <ocpp/v201/ocpp_types.hpp>
@@ -15,7 +16,7 @@ namespace v201 {
 struct CostUpdatedRequest : public ocpp::Message {
     float totalCost;
     CiString<36> transactionId;
-    boost::optional<CustomData> customData;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this CostUpdated message as a human readable string
     /// \returns the message type as a human readable string
@@ -34,7 +35,7 @@ std::ostream& operator<<(std::ostream& os, const CostUpdatedRequest& k);
 
 /// \brief Contains a OCPP CostUpdatedResponse message
 struct CostUpdatedResponse : public ocpp::Message {
-    boost::optional<CustomData> customData;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this CostUpdatedResponse message as a human readable string
     /// \returns the message type as a human readable string

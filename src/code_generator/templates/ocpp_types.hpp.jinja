@@ -6,8 +6,8 @@
 
 #include <string>
 
-#include <boost/optional.hpp>
-#include <nlohmann/json.hpp>
+#include <optional>
+#include <nlohmann/json_fwd.hpp>
 
 #include <ocpp/{{namespace}}/enums.hpp>
 {% if namespace == "v16" %}
@@ -24,7 +24,7 @@ namespace {{namespace}} {
 
 struct {{type.name}} {
 {% for property in type.properties %}
-    {{ 'boost::optional<' if not property.required -}}
+    {{ 'std::optional<' if not property.required -}}
     {{ property.type -}}
     {{ '>' if not property.required -}}
     {{ ' ' + property.name + ';' }}

@@ -8,7 +8,11 @@ namespace ocpp {
 namespace v201 {
 
 Transaction EnhancedTransaction::get_transaction() {
+<<<<<<< HEAD
     Transaction transaction = {this->transactionId,     boost::none,         this->chargingState,
+=======
+    Transaction transaction = {this->transactionId,     std::nullopt,         this->chargingState,
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
                                this->timeSpentCharging, this->stoppedReason, this->remoteStartId};
     return transaction;
 }
@@ -20,4 +24,8 @@ int32_t EnhancedTransaction::get_seq_no() {
 
 } // namespace v201
 
+<<<<<<< HEAD
 } // namespace ocpp
+=======
+} // namespace ocpp
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73

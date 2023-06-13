@@ -3,7 +3,8 @@
 #ifndef OCPP_V16_SECURITYEVENTNOTIFICATION_HPP
 #define OCPP_V16_SECURITYEVENTNOTIFICATION_HPP
 
-#include <boost/optional.hpp>
+#include <nlohmann/json_fwd.hpp>
+#include <optional>
 
 #include <ocpp/common/types.hpp>
 #include <ocpp/v16/enums.hpp>
@@ -16,7 +17,7 @@ namespace v16 {
 struct SecurityEventNotificationRequest : public ocpp::Message {
     SecurityEvent type;
     ocpp::DateTime timestamp;
-    boost::optional<CiString<255>> techInfo;
+    std::optional<CiString<255>> techInfo;
 
     /// \brief Provides the type of this SecurityEventNotification message as a human readable string
     /// \returns the message type as a human readable string

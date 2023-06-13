@@ -3,7 +3,8 @@
 #ifndef OCPP_V201_CUSTOMERINFORMATION_HPP
 #define OCPP_V201_CUSTOMERINFORMATION_HPP
 
-#include <boost/optional.hpp>
+#include <nlohmann/json_fwd.hpp>
+#include <optional>
 
 #include <ocpp/common/types.hpp>
 #include <ocpp/v201/enums.hpp>
@@ -17,10 +18,10 @@ struct CustomerInformationRequest : public ocpp::Message {
     int32_t requestId;
     bool report;
     bool clear;
-    boost::optional<CustomData> customData;
-    boost::optional<CertificateHashDataType> customerCertificate;
-    boost::optional<IdToken> idToken;
-    boost::optional<CiString<64>> customerIdentifier;
+    std::optional<CustomData> customData;
+    std::optional<CertificateHashDataType> customerCertificate;
+    std::optional<IdToken> idToken;
+    std::optional<CiString<64>> customerIdentifier;
 
     /// \brief Provides the type of this CustomerInformation message as a human readable string
     /// \returns the message type as a human readable string
@@ -40,8 +41,8 @@ std::ostream& operator<<(std::ostream& os, const CustomerInformationRequest& k);
 /// \brief Contains a OCPP CustomerInformationResponse message
 struct CustomerInformationResponse : public ocpp::Message {
     CustomerInformationStatusEnum status;
-    boost::optional<CustomData> customData;
-    boost::optional<StatusInfo> statusInfo;
+    std::optional<CustomData> customData;
+    std::optional<StatusInfo> statusInfo;
 
     /// \brief Provides the type of this CustomerInformationResponse message as a human readable string
     /// \returns the message type as a human readable string

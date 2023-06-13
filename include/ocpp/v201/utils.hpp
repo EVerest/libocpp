@@ -22,7 +22,11 @@ std::vector<MeasurandEnum> get_measurands_vec(const std::string& measurands_csv)
 /// \param measurands applied measurands
 /// \return filtered meter value
 MeterValue get_meter_value_with_measurands_applied(const MeterValue& _meter_value,
+<<<<<<< HEAD
                                                    const std::vector<MeasurandEnum> measurands);
+=======
+                                                   const std::vector<MeasurandEnum>& measurands);
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
 
 /// \brief Applies the given intervals \p aligned_interval and \p sampled_interval and the measurands \p
 /// aligned_measurands and \p sample_measurands to the given \p _meter_values based on their ReadingContext. The
@@ -37,9 +41,17 @@ MeterValue get_meter_value_with_measurands_applied(const MeterValue& _meter_valu
 /// \param sampled_interval applied sampled interval. Minimum interval between to MeterValues with ReadingContext
 /// Sample_Periodic. The interval might be greater, based on the SampledDataTxUpdatedInterval configuration key
 /// \return filtered meter values
+<<<<<<< HEAD
 std::vector<MeterValue> get_meter_values_with_measurands_and_interval_applied(
     const std::vector<MeterValue>& _meter_values, const std::vector<MeasurandEnum> aligned_measurands,
     const std::vector<MeasurandEnum> sample_measurands, const int32_t aligned_interval, const int32_t sampled_interval);
+=======
+std::vector<MeterValue>
+get_meter_values_with_measurands_and_interval_applied(const std::vector<MeterValue>& _meter_values,
+                                                      const std::vector<MeasurandEnum>& aligned_measurands,
+                                                      const std::vector<MeasurandEnum>& sample_measurands,
+                                                      const int32_t aligned_interval, const int32_t sampled_interval);
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
 
 /// \brief Converts the given \p stop_reason to a TriggerReasonEnum
 /// \param stop_reason
@@ -51,6 +63,7 @@ TriggerReasonEnum stop_reason_to_trigger_reason_enum(const ReasonEnum& stop_reas
 /// \return
 std::string sha256(const std::string& str);
 
+<<<<<<< HEAD
 struct ScheduledChangeAvailabilityTargetIdentifier {
     boost::optional<EVSE> evse;
 
@@ -70,6 +83,8 @@ struct ScheduledChangeAvailabilityTargetIdentifier {
     }
 };
 
+=======
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
 } // namespace utils
 } // namespace v201
 } // namespace ocpp

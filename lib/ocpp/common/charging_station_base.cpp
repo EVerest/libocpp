@@ -9,9 +9,15 @@ ChargingStationBase::ChargingStationBase() : uuid_generator(boost::uuids::random
     this->io_service_thread = std::thread([this]() { this->io_service.run(); });
 }
 
+<<<<<<< HEAD
 boost::optional<DateTime> ChargingStationBase::get_next_clock_aligned_meter_value_timestamp(const int32_t interval) {
     if (interval == 0) {
         return boost::none;
+=======
+std::optional<DateTime> ChargingStationBase::get_next_clock_aligned_meter_value_timestamp(const int32_t interval) {
+    if (interval == 0) {
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
     const auto seconds_in_a_day = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::hours(24)).count();
     const auto now = date::utc_clock::now();

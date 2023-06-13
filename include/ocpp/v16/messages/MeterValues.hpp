@@ -3,7 +3,8 @@
 #ifndef OCPP_V16_METERVALUES_HPP
 #define OCPP_V16_METERVALUES_HPP
 
-#include <boost/optional.hpp>
+#include <nlohmann/json_fwd.hpp>
+#include <optional>
 
 #include <ocpp/v16/enums.hpp>
 #include <ocpp/v16/ocpp_types.hpp>
@@ -15,7 +16,7 @@ namespace v16 {
 struct MeterValuesRequest : public ocpp::Message {
     int32_t connectorId;
     std::vector<MeterValue> meterValue;
-    boost::optional<int32_t> transactionId;
+    std::optional<int32_t> transactionId;
 
     /// \brief Provides the type of this MeterValues message as a human readable string
     /// \returns the message type as a human readable string

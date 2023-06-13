@@ -183,14 +183,22 @@ bool DeviceModelManagerBase::exists(const StandardizedComponent &standardized_co
                 .value.has_value();
 }
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_internal_ctrlr_enabled(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_internal_ctrlr_enabled(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::InternalCtrlr, "InternalCtrlrEnabled", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::InternalCtrlr)
         .variables.at("InternalCtrlrEnabled")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -235,14 +243,22 @@ std::string DeviceModelManagerBase::get_charge_point_model(const AttributeEnum &
 }
 
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_charge_point_serial_number(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_charge_point_serial_number(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::InternalCtrlr, "ChargePointSerialNumber", attribute_enum)) {
             return this->components.at(StandardizedComponent::InternalCtrlr)
             .variables.at("ChargePointSerialNumber")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -263,50 +279,82 @@ std::string DeviceModelManagerBase::get_firmware_version(const AttributeEnum &at
 }
 
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_iccid(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_iccid(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::InternalCtrlr, "ICCID", attribute_enum)) {
             return this->components.at(StandardizedComponent::InternalCtrlr)
             .variables.at("ICCID")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_imsi(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_imsi(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::InternalCtrlr, "IMSI", attribute_enum)) {
             return this->components.at(StandardizedComponent::InternalCtrlr)
             .variables.at("IMSI")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_meter_serial_number(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_meter_serial_number(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::InternalCtrlr, "MeterSerialNumber", attribute_enum)) {
             return this->components.at(StandardizedComponent::InternalCtrlr)
             .variables.at("MeterSerialNumber")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_meter_type(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_meter_type(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::InternalCtrlr, "MeterType", attribute_enum)) {
             return this->components.at(StandardizedComponent::InternalCtrlr)
             .variables.at("MeterType")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -335,62 +383,102 @@ int DeviceModelManagerBase::get_websocket_reconnect_interval(const AttributeEnum
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_authorize_connector_zero_on_connector_one(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_authorize_connector_zero_on_connector_one(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::InternalCtrlr, "AuthorizeConnectorZeroOnConnectorOne", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::InternalCtrlr)
         .variables.at("AuthorizeConnectorZeroOnConnectorOne")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_log_messages(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_log_messages(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::InternalCtrlr, "LogMessages", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::InternalCtrlr)
         .variables.at("LogMessages")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_log_messages_format(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_log_messages_format(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::InternalCtrlr, "LogMessagesFormat", attribute_enum)) {
             return this->components.at(StandardizedComponent::InternalCtrlr)
             .variables.at("LogMessagesFormat")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_supported_charging_profile_purpose_types(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_supported_charging_profile_purpose_types(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::InternalCtrlr, "SupportedChargingProfilePurposeTypes", attribute_enum)) {
             return this->components.at(StandardizedComponent::InternalCtrlr)
             .variables.at("SupportedChargingProfilePurposeTypes")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<int> DeviceModelManagerBase::get_max_composite_schedule_duration(const AttributeEnum &attribute_enum) {
+=======
+std::optional<int> DeviceModelManagerBase::get_max_composite_schedule_duration(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::InternalCtrlr, "MaxCompositeScheduleDuration", attribute_enum)) {
             return std::stoi(this->components.at(StandardizedComponent::InternalCtrlr)
             .variables.at("MaxCompositeScheduleDuration")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -403,26 +491,42 @@ int DeviceModelManagerBase::get_number_of_connectors(const AttributeEnum &attrib
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_use_ssl_default_verify_paths(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_use_ssl_default_verify_paths(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::InternalCtrlr, "UseSslDefaultVerifyPaths", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::InternalCtrlr)
         .variables.at("UseSslDefaultVerifyPaths")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<int> DeviceModelManagerBase::get_ocsp_request_interval(const AttributeEnum &attribute_enum) {
+=======
+std::optional<int> DeviceModelManagerBase::get_ocsp_request_interval(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::InternalCtrlr, "OcspRequestInterval", attribute_enum)) {
             return std::stoi(this->components.at(StandardizedComponent::InternalCtrlr)
             .variables.at("OcspRequestInterval")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -435,26 +539,42 @@ void DeviceModelManagerBase::set_ocsp_request_interval(const int &ocsp_request_i
         }
 }
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_websocket_ping_payload(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_websocket_ping_payload(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::InternalCtrlr, "WebsocketPingPayload", attribute_enum)) {
             return this->components.at(StandardizedComponent::InternalCtrlr)
             .variables.at("WebsocketPingPayload")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_aligned_data_ctrlr_enabled(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_aligned_data_ctrlr_enabled(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::AlignedDataCtrlr, "AlignedDataCtrlrEnabled", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::AlignedDataCtrlr)
         .variables.at("AlignedDataCtrlrEnabled")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -467,14 +587,22 @@ void DeviceModelManagerBase::set_aligned_data_ctrlr_enabled(const bool &aligned_
         }
 }
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_aligned_data_ctrlr_available(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_aligned_data_ctrlr_available(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::AlignedDataCtrlr, "AlignedDataCtrlrAvailable", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::AlignedDataCtrlr)
         .variables.at("AlignedDataCtrlrAvailable")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -507,14 +635,22 @@ void DeviceModelManagerBase::set_aligned_data_measurands(const std::string &alig
         .value.emplace(aligned_data_measurands);
 }
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_aligned_data_send_during_idle(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_aligned_data_send_during_idle(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::AlignedDataCtrlr, "AlignedDataSendDuringIdle", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::AlignedDataCtrlr)
         .variables.at("AlignedDataSendDuringIdle")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -527,14 +663,22 @@ void DeviceModelManagerBase::set_aligned_data_send_during_idle(const bool &align
         }
 }
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_aligned_data_sign_readings(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_aligned_data_sign_readings(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::AlignedDataCtrlr, "AlignedDataSignReadings", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::AlignedDataCtrlr)
         .variables.at("AlignedDataSignReadings")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -575,26 +719,42 @@ void DeviceModelManagerBase::set_aligned_data_tx_ended_measurands(const std::str
         .value.emplace(aligned_data_tx_ended_measurands);
 }
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_auth_cache_ctrlr_available(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_auth_cache_ctrlr_available(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::AuthCacheCtrlr, "AuthCacheCtrlrAvailable", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::AuthCacheCtrlr)
         .variables.at("AuthCacheCtrlrAvailable")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_auth_cache_ctrlr_enabled(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_auth_cache_ctrlr_enabled(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::AuthCacheCtrlr, "AuthCacheCtrlrEnabled", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::AuthCacheCtrlr)
         .variables.at("AuthCacheCtrlrEnabled")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -607,14 +767,22 @@ void DeviceModelManagerBase::set_auth_cache_ctrlr_enabled(const bool &auth_cache
         }
 }
 
+<<<<<<< HEAD
 boost::optional<int> DeviceModelManagerBase::get_auth_cache_life_time(const AttributeEnum &attribute_enum) {
+=======
+std::optional<int> DeviceModelManagerBase::get_auth_cache_life_time(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::AuthCacheCtrlr, "AuthCacheLifeTime", attribute_enum)) {
             return std::stoi(this->components.at(StandardizedComponent::AuthCacheCtrlr)
             .variables.at("AuthCacheLifeTime")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -627,14 +795,22 @@ void DeviceModelManagerBase::set_auth_cache_life_time(const int &auth_cache_life
         }
 }
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_auth_cache_policy(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_auth_cache_policy(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::AuthCacheCtrlr, "AuthCachePolicy", attribute_enum)) {
             return this->components.at(StandardizedComponent::AuthCacheCtrlr)
             .variables.at("AuthCachePolicy")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -647,26 +823,42 @@ void DeviceModelManagerBase::set_auth_cache_policy(const std::string &auth_cache
         }
 }
 
+<<<<<<< HEAD
 boost::optional<int> DeviceModelManagerBase::get_auth_cache_storage(const AttributeEnum &attribute_enum) {
+=======
+std::optional<int> DeviceModelManagerBase::get_auth_cache_storage(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::AuthCacheCtrlr, "AuthCacheStorage", attribute_enum)) {
             return std::stoi(this->components.at(StandardizedComponent::AuthCacheCtrlr)
             .variables.at("AuthCacheStorage")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_auth_cache_disable_post_authorize(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_auth_cache_disable_post_authorize(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::AuthCacheCtrlr, "AuthCacheDisablePostAuthorize", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::AuthCacheCtrlr)
         .variables.at("AuthCacheDisablePostAuthorize")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -679,14 +871,22 @@ void DeviceModelManagerBase::set_auth_cache_disable_post_authorize(const bool &a
         }
 }
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_auth_ctrlr_enabled(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_auth_ctrlr_enabled(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::AuthCtrlr, "AuthCtrlrEnabled", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::AuthCtrlr)
         .variables.at("AuthCtrlrEnabled")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -699,14 +899,22 @@ void DeviceModelManagerBase::set_auth_ctrlr_enabled(const bool &auth_ctrlr_enabl
         }
 }
 
+<<<<<<< HEAD
 boost::optional<int> DeviceModelManagerBase::get_additional_info_items_per_message(const AttributeEnum &attribute_enum) {
+=======
+std::optional<int> DeviceModelManagerBase::get_additional_info_items_per_message(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::AuthCtrlr, "AdditionalInfoItemsPerMessage", attribute_enum)) {
             return std::stoi(this->components.at(StandardizedComponent::AuthCtrlr)
             .variables.at("AdditionalInfoItemsPerMessage")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -753,14 +961,22 @@ void DeviceModelManagerBase::set_local_pre_authorize(const bool &local_pre_autho
         .value.emplace(ocpp::conversions::bool_to_string(local_pre_authorize));
 }
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_master_pass_group_id(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_master_pass_group_id(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::AuthCtrlr, "MasterPassGroupId", attribute_enum)) {
             return this->components.at(StandardizedComponent::AuthCtrlr)
             .variables.at("MasterPassGroupId")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -773,14 +989,22 @@ void DeviceModelManagerBase::set_master_pass_group_id(const std::string &master_
         }
 }
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_offline_tx_for_unknown_id_enabled(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_offline_tx_for_unknown_id_enabled(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::AuthCtrlr, "OfflineTxForUnknownIdEnabled", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::AuthCtrlr)
         .variables.at("OfflineTxForUnknownIdEnabled")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -793,14 +1017,22 @@ void DeviceModelManagerBase::set_offline_tx_for_unknown_id_enabled(const bool &o
         }
 }
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_disable_remote_authorization(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_disable_remote_authorization(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::AuthCtrlr, "DisableRemoteAuthorization", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::AuthCtrlr)
         .variables.at("DisableRemoteAuthorization")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -813,14 +1045,22 @@ void DeviceModelManagerBase::set_disable_remote_authorization(const bool &disabl
         }
 }
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_chade_moctrlr_enabled(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_chade_moctrlr_enabled(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::CHAdeMOCtrlr, "CHAdeMOCtrlrEnabled", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::CHAdeMOCtrlr)
         .variables.at("CHAdeMOCtrlrEnabled")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -833,98 +1073,162 @@ void DeviceModelManagerBase::set_chade_moctrlr_enabled(const bool &chade_moctrlr
         }
 }
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_selftest_active(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_selftest_active(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::CHAdeMOCtrlr, "SelftestActive", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::CHAdeMOCtrlr)
         .variables.at("SelftestActive")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<int> DeviceModelManagerBase::get_chade_moprotocol_number(const AttributeEnum &attribute_enum) {
+=======
+std::optional<int> DeviceModelManagerBase::get_chade_moprotocol_number(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::CHAdeMOCtrlr, "CHAdeMOProtocolNumber", attribute_enum)) {
             return std::stoi(this->components.at(StandardizedComponent::CHAdeMOCtrlr)
             .variables.at("CHAdeMOProtocolNumber")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_vehicle_status(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_vehicle_status(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::CHAdeMOCtrlr, "VehicleStatus", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::CHAdeMOCtrlr)
         .variables.at("VehicleStatus")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_dynamic_control(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_dynamic_control(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::CHAdeMOCtrlr, "DynamicControl", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::CHAdeMOCtrlr)
         .variables.at("DynamicControl")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_high_current_control(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_high_current_control(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::CHAdeMOCtrlr, "HighCurrentControl", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::CHAdeMOCtrlr)
         .variables.at("HighCurrentControl")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_high_voltage_control(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_high_voltage_control(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::CHAdeMOCtrlr, "HighVoltageControl", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::CHAdeMOCtrlr)
         .variables.at("HighVoltageControl")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<int> DeviceModelManagerBase::get_auto_manufacturer_code(const AttributeEnum &attribute_enum) {
+=======
+std::optional<int> DeviceModelManagerBase::get_auto_manufacturer_code(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::CHAdeMOCtrlr, "AutoManufacturerCode", attribute_enum)) {
             return std::stoi(this->components.at(StandardizedComponent::CHAdeMOCtrlr)
             .variables.at("AutoManufacturerCode")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_allow_new_sessions_pending_firmware_update(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_allow_new_sessions_pending_firmware_update(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::ChargingStation, "AllowNewSessionsPendingFirmwareUpdate", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::ChargingStation)
         .variables.at("AllowNewSessionsPendingFirmwareUpdate")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -953,14 +1257,22 @@ bool DeviceModelManagerBase::get_charging_station_available(const AttributeEnum 
 }
 
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_model(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_model(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::ChargingStation, "Model", attribute_enum)) {
             return this->components.at(StandardizedComponent::ChargingStation)
             .variables.at("Model")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -973,26 +1285,42 @@ int DeviceModelManagerBase::get_charging_station_supply_phases(const AttributeEn
 }
 
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_vendor_name(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_vendor_name(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::ChargingStation, "VendorName", attribute_enum)) {
             return this->components.at(StandardizedComponent::ChargingStation)
             .variables.at("VendorName")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_clock_ctrlr_enabled(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_clock_ctrlr_enabled(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::ClockCtrlr, "ClockCtrlrEnabled", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::ClockCtrlr)
         .variables.at("ClockCtrlrEnabled")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -1013,14 +1341,22 @@ ocpp::DateTime DeviceModelManagerBase::get_date_time(const AttributeEnum &attrib
 }
 
 
+<<<<<<< HEAD
 boost::optional<ocpp::DateTime> DeviceModelManagerBase::get_next_time_offset_transition_date_time(const AttributeEnum &attribute_enum) {
+=======
+std::optional<ocpp::DateTime> DeviceModelManagerBase::get_next_time_offset_transition_date_time(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::ClockCtrlr, "NextTimeOffsetTransitionDateTime", attribute_enum)) {
             return ocpp::DateTime(this->components.at(StandardizedComponent::ClockCtrlr)
             .variables.at("NextTimeOffsetTransitionDateTime")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -1033,14 +1369,22 @@ void DeviceModelManagerBase::set_next_time_offset_transition_date_time(const ocp
         }
 }
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_ntp_server_uri(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_ntp_server_uri(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::ClockCtrlr, "NtpServerUri", attribute_enum)) {
             return this->components.at(StandardizedComponent::ClockCtrlr)
             .variables.at("NtpServerUri")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -1053,14 +1397,22 @@ void DeviceModelManagerBase::set_ntp_server_uri(const std::string &ntp_server_ur
         }
 }
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_ntp_source(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_ntp_source(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::ClockCtrlr, "NtpSource", attribute_enum)) {
             return this->components.at(StandardizedComponent::ClockCtrlr)
             .variables.at("NtpSource")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -1073,14 +1425,22 @@ void DeviceModelManagerBase::set_ntp_source(const std::string &ntp_source, const
         }
 }
 
+<<<<<<< HEAD
 boost::optional<int> DeviceModelManagerBase::get_time_adjustment_reporting_threshold(const AttributeEnum &attribute_enum) {
+=======
+std::optional<int> DeviceModelManagerBase::get_time_adjustment_reporting_threshold(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::ClockCtrlr, "TimeAdjustmentReportingThreshold", attribute_enum)) {
             return std::stoi(this->components.at(StandardizedComponent::ClockCtrlr)
             .variables.at("TimeAdjustmentReportingThreshold")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -1093,14 +1453,22 @@ void DeviceModelManagerBase::set_time_adjustment_reporting_threshold(const int &
         }
 }
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_time_offset(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_time_offset(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::ClockCtrlr, "TimeOffset", attribute_enum)) {
             return this->components.at(StandardizedComponent::ClockCtrlr)
             .variables.at("TimeOffset")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -1113,14 +1481,22 @@ void DeviceModelManagerBase::set_time_offset(const std::string &time_offset, con
         }
 }
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_time_offset_next_transition(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_time_offset_next_transition(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::ClockCtrlr, "TimeOffsetNextTransition", attribute_enum)) {
             return this->components.at(StandardizedComponent::ClockCtrlr)
             .variables.at("TimeOffsetNextTransition")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -1147,14 +1523,22 @@ void DeviceModelManagerBase::set_time_source(const std::string &time_source, con
         .value.emplace(time_source);
 }
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_time_zone(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_time_zone(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::ClockCtrlr, "TimeZone", attribute_enum)) {
             return this->components.at(StandardizedComponent::ClockCtrlr)
             .variables.at("TimeZone")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -1167,50 +1551,82 @@ void DeviceModelManagerBase::set_time_zone(const std::string &time_zone, const A
         }
 }
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_protocol_agreed(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_protocol_agreed(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::ConnectedEV, "ProtocolAgreed", attribute_enum)) {
             return this->components.at(StandardizedComponent::ConnectedEV)
             .variables.at("ProtocolAgreed")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_protocol_supported_by_ev_priority_(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_protocol_supported_by_ev_priority_(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::ConnectedEV, "ProtocolSupportedByEV<Priority>", attribute_enum)) {
             return this->components.at(StandardizedComponent::ConnectedEV)
             .variables.at("ProtocolSupportedByEV<Priority>")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_vehicle_id(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_vehicle_id(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::ConnectedEV, "VehicleID", attribute_enum)) {
             return this->components.at(StandardizedComponent::ConnectedEV)
             .variables.at("VehicleID")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_connector_availability_state(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_connector_availability_state(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::Connector, "ConnectorAvailabilityState", attribute_enum)) {
             return this->components.at(StandardizedComponent::Connector)
             .variables.at("ConnectorAvailabilityState")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -1223,14 +1639,22 @@ bool DeviceModelManagerBase::get_connector_available(const AttributeEnum &attrib
 }
 
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_charge_protocol(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_charge_protocol(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::Connector, "ChargeProtocol", attribute_enum)) {
             return this->components.at(StandardizedComponent::Connector)
             .variables.at("ChargeProtocol")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -1251,26 +1675,42 @@ int DeviceModelManagerBase::get_connector_supply_phases(const AttributeEnum &att
 }
 
 
+<<<<<<< HEAD
 boost::optional<int> DeviceModelManagerBase::get_max_msg_elements(const AttributeEnum &attribute_enum) {
+=======
+std::optional<int> DeviceModelManagerBase::get_max_msg_elements(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::Controller, "MaxMsgElements", attribute_enum)) {
             return std::stoi(this->components.at(StandardizedComponent::Controller)
             .variables.at("MaxMsgElements")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_cppwmcontroller_enabled(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_cppwmcontroller_enabled(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::CPPWMController, "CPPWMControllerEnabled", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::CPPWMController)
         .variables.at("CPPWMControllerEnabled")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -1283,26 +1723,42 @@ void DeviceModelManagerBase::set_cppwmcontroller_enabled(const bool &cppwmcontro
         }
 }
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_state(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_state(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::CPPWMController, "State", attribute_enum)) {
             return this->components.at(StandardizedComponent::CPPWMController)
             .variables.at("State")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_customization_ctrlr_enabled(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_customization_ctrlr_enabled(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::CustomizationCtrlr, "CustomizationCtrlrEnabled", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::CustomizationCtrlr)
         .variables.at("CustomizationCtrlrEnabled")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -1315,14 +1771,22 @@ void DeviceModelManagerBase::set_customization_ctrlr_enabled(const bool &customi
         }
 }
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_custom_implementation_enabled_vendor_id_(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_custom_implementation_enabled_vendor_id_(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::CustomizationCtrlr, "CustomImplementationEnabled<vendorId>", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::CustomizationCtrlr)
         .variables.at("CustomImplementationEnabled<vendorId>")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -1335,14 +1799,22 @@ void DeviceModelManagerBase::set_custom_implementation_enabled_vendor_id_(const 
         }
 }
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_device_data_ctrlr_enabled(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_device_data_ctrlr_enabled(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::DeviceDataCtrlr, "DeviceDataCtrlrEnabled", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::DeviceDataCtrlr)
         .variables.at("DeviceDataCtrlrEnabled")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -1379,14 +1851,22 @@ int DeviceModelManagerBase::get_bytes_per_message_set_variables(const AttributeE
 }
 
 
+<<<<<<< HEAD
 boost::optional<int> DeviceModelManagerBase::get_configuration_value_size(const AttributeEnum &attribute_enum) {
+=======
+std::optional<int> DeviceModelManagerBase::get_configuration_value_size(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::DeviceDataCtrlr, "ConfigurationValueSize", attribute_enum)) {
             return std::stoi(this->components.at(StandardizedComponent::DeviceDataCtrlr)
             .variables.at("ConfigurationValueSize")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -1415,38 +1895,62 @@ int DeviceModelManagerBase::get_items_per_message_set_variables(const AttributeE
 }
 
 
+<<<<<<< HEAD
 boost::optional<int> DeviceModelManagerBase::get_reporting_value_size(const AttributeEnum &attribute_enum) {
+=======
+std::optional<int> DeviceModelManagerBase::get_reporting_value_size(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::DeviceDataCtrlr, "ReportingValueSize", attribute_enum)) {
             return std::stoi(this->components.at(StandardizedComponent::DeviceDataCtrlr)
             .variables.at("ReportingValueSize")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<int> DeviceModelManagerBase::get_value_size(const AttributeEnum &attribute_enum) {
+=======
+std::optional<int> DeviceModelManagerBase::get_value_size(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::DeviceDataCtrlr, "ValueSize", attribute_enum)) {
             return std::stoi(this->components.at(StandardizedComponent::DeviceDataCtrlr)
             .variables.at("ValueSize")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_display_message_ctrlr_available(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_display_message_ctrlr_available(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::DisplayMessageCtrlr, "DisplayMessageCtrlrAvailable", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::DisplayMessageCtrlr)
         .variables.at("DisplayMessageCtrlrAvailable")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -1459,14 +1963,22 @@ int DeviceModelManagerBase::get_number_of_display_messages(const AttributeEnum &
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_display_message_ctrlr_enabled(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_display_message_ctrlr_enabled(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::DisplayMessageCtrlr, "DisplayMessageCtrlrEnabled", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::DisplayMessageCtrlr)
         .variables.at("DisplayMessageCtrlrEnabled")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -1479,14 +1991,22 @@ void DeviceModelManagerBase::set_display_message_ctrlr_enabled(const bool &displ
         }
 }
 
+<<<<<<< HEAD
 boost::optional<int> DeviceModelManagerBase::get_personal_message_size(const AttributeEnum &attribute_enum) {
+=======
+std::optional<int> DeviceModelManagerBase::get_personal_message_size(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::DisplayMessageCtrlr, "PersonalMessageSize", attribute_enum)) {
             return std::stoi(this->components.at(StandardizedComponent::DisplayMessageCtrlr)
             .variables.at("PersonalMessageSize")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -1507,50 +2027,82 @@ std::string DeviceModelManagerBase::get_display_message_supported_priorities(con
 }
 
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_charging_station(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_charging_station(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::DistributionPanel, "ChargingStation", attribute_enum)) {
             return this->components.at(StandardizedComponent::DistributionPanel)
             .variables.at("ChargingStation")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_distribution_panel(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_distribution_panel(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::DistributionPanel, "DistributionPanel", attribute_enum)) {
             return this->components.at(StandardizedComponent::DistributionPanel)
             .variables.at("DistributionPanel")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<int> DeviceModelManagerBase::get_fuse_n_(const AttributeEnum &attribute_enum) {
+=======
+std::optional<int> DeviceModelManagerBase::get_fuse_n_(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::DistributionPanel, "Fuse<n>", attribute_enum)) {
             return std::stoi(this->components.at(StandardizedComponent::DistributionPanel)
             .variables.at("Fuse<n>")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_allow_reset(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_allow_reset(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::EVSE, "AllowReset", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::EVSE)
         .variables.at("AllowReset")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -1571,14 +2123,22 @@ bool DeviceModelManagerBase::get_evse_available(const AttributeEnum &attribute_e
 }
 
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_evse__id(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_evse__id(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::EVSE, "EvseId", attribute_enum)) {
             return this->components.at(StandardizedComponent::EVSE)
             .variables.at("EvseId")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -1599,14 +2159,22 @@ int DeviceModelManagerBase::get_evse_supply_phases(const AttributeEnum &attribut
 }
 
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_iso15118_evse__id(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_iso15118_evse__id(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::EVSE, "ISO15118EvseId", attribute_enum)) {
             return this->components.at(StandardizedComponent::EVSE)
             .variables.at("ISO15118EvseId")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -1619,62 +2187,102 @@ void DeviceModelManagerBase::set_iso15118_evse__id(const std::string &iso15118_e
         }
 }
 
+<<<<<<< HEAD
 boost::optional<double> DeviceModelManagerBase::get_energy_export(const AttributeEnum &attribute_enum) {
+=======
+std::optional<double> DeviceModelManagerBase::get_energy_export(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::FiscalMetering, "EnergyExport", attribute_enum)) {
             return std::stod(this->components.at(StandardizedComponent::FiscalMetering)
             .variables.at("EnergyExport")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<double> DeviceModelManagerBase::get_energy_export_register(const AttributeEnum &attribute_enum) {
+=======
+std::optional<double> DeviceModelManagerBase::get_energy_export_register(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::FiscalMetering, "EnergyExportRegister", attribute_enum)) {
             return std::stod(this->components.at(StandardizedComponent::FiscalMetering)
             .variables.at("EnergyExportRegister")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<double> DeviceModelManagerBase::get_energy_import(const AttributeEnum &attribute_enum) {
+=======
+std::optional<double> DeviceModelManagerBase::get_energy_import(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::FiscalMetering, "EnergyImport", attribute_enum)) {
             return std::stod(this->components.at(StandardizedComponent::FiscalMetering)
             .variables.at("EnergyImport")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<double> DeviceModelManagerBase::get_energy_import_register(const AttributeEnum &attribute_enum) {
+=======
+std::optional<double> DeviceModelManagerBase::get_energy_import_register(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::FiscalMetering, "EnergyImportRegister", attribute_enum)) {
             return std::stod(this->components.at(StandardizedComponent::FiscalMetering)
             .variables.at("EnergyImportRegister")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_iso15118ctrlr_enabled(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_iso15118ctrlr_enabled(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::ISO15118Ctrlr, "ISO15118CtrlrEnabled", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::ISO15118Ctrlr)
         .variables.at("ISO15118CtrlrEnabled")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -1687,14 +2295,22 @@ void DeviceModelManagerBase::set_iso15118ctrlr_enabled(const bool &iso15118ctrlr
         }
 }
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_central_contract_validation_allowed(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_central_contract_validation_allowed(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::ISO15118Ctrlr, "CentralContractValidationAllowed", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::ISO15118Ctrlr)
         .variables.at("CentralContractValidationAllowed")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -1721,14 +2337,22 @@ void DeviceModelManagerBase::set_contract_validation_offline(const bool &contrac
         .value.emplace(ocpp::conversions::bool_to_string(contract_validation_offline));
 }
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_secc_id(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_secc_id(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::ISO15118Ctrlr, "SeccId", attribute_enum)) {
             return this->components.at(StandardizedComponent::ISO15118Ctrlr)
             .variables.at("SeccId")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -1741,38 +2365,62 @@ void DeviceModelManagerBase::set_secc_id(const std::string &secc_id, const Attri
         }
 }
 
+<<<<<<< HEAD
 boost::optional<int> DeviceModelManagerBase::get_max_schedule_entries(const AttributeEnum &attribute_enum) {
+=======
+std::optional<int> DeviceModelManagerBase::get_max_schedule_entries(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::ISO15118Ctrlr, "MaxScheduleEntries", attribute_enum)) {
             return std::stoi(this->components.at(StandardizedComponent::ISO15118Ctrlr)
             .variables.at("MaxScheduleEntries")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_requested_energy_transfer_mode(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_requested_energy_transfer_mode(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::ISO15118Ctrlr, "RequestedEnergyTransferMode", attribute_enum)) {
             return this->components.at(StandardizedComponent::ISO15118Ctrlr)
             .variables.at("RequestedEnergyTransferMode")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_request_metering_receipt(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_request_metering_receipt(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::ISO15118Ctrlr, "RequestMeteringReceipt", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::ISO15118Ctrlr)
         .variables.at("RequestMeteringReceipt")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -1785,14 +2433,22 @@ void DeviceModelManagerBase::set_request_metering_receipt(const bool &request_me
         }
 }
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_country_name(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_country_name(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::ISO15118Ctrlr, "CountryName", attribute_enum)) {
             return this->components.at(StandardizedComponent::ISO15118Ctrlr)
             .variables.at("CountryName")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -1805,14 +2461,22 @@ void DeviceModelManagerBase::set_country_name(const std::string &country_name, c
         }
 }
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_iso15118ctrlr_organization_name(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_iso15118ctrlr_organization_name(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::ISO15118Ctrlr, "ISO15118CtrlrOrganizationName", attribute_enum)) {
             return this->components.at(StandardizedComponent::ISO15118Ctrlr)
             .variables.at("ISO15118CtrlrOrganizationName")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -1825,14 +2489,22 @@ void DeviceModelManagerBase::set_iso15118ctrlr_organization_name(const std::stri
         }
 }
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_pn_cenabled(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_pn_cenabled(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::ISO15118Ctrlr, "PnCEnabled", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::ISO15118Ctrlr)
         .variables.at("PnCEnabled")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -1845,14 +2517,22 @@ void DeviceModelManagerBase::set_pn_cenabled(const bool &pn_cenabled, const Attr
         }
 }
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_v2gcertificate_installation_enabled(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_v2gcertificate_installation_enabled(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::ISO15118Ctrlr, "V2GCertificateInstallationEnabled", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::ISO15118Ctrlr)
         .variables.at("V2GCertificateInstallationEnabled")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -1865,14 +2545,22 @@ void DeviceModelManagerBase::set_v2gcertificate_installation_enabled(const bool 
         }
 }
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_contract_certificate_installation_enabled(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_contract_certificate_installation_enabled(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::ISO15118Ctrlr, "ContractCertificateInstallationEnabled", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::ISO15118Ctrlr)
         .variables.at("ContractCertificateInstallationEnabled")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -1885,14 +2573,22 @@ void DeviceModelManagerBase::set_contract_certificate_installation_enabled(const
         }
 }
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_local_auth_list_ctrlr_available(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_local_auth_list_ctrlr_available(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::LocalAuthListCtrlr, "LocalAuthListCtrlrAvailable", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::LocalAuthListCtrlr)
         .variables.at("LocalAuthListCtrlrAvailable")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -1905,14 +2601,22 @@ int DeviceModelManagerBase::get_bytes_per_message_send_local_list(const Attribut
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_local_auth_list_ctrlr_enabled(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_local_auth_list_ctrlr_enabled(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::LocalAuthListCtrlr, "LocalAuthListCtrlrEnabled", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::LocalAuthListCtrlr)
         .variables.at("LocalAuthListCtrlrEnabled")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -1941,26 +2645,42 @@ int DeviceModelManagerBase::get_items_per_message_send_local_list(const Attribut
 }
 
 
+<<<<<<< HEAD
 boost::optional<int> DeviceModelManagerBase::get_storage(const AttributeEnum &attribute_enum) {
+=======
+std::optional<int> DeviceModelManagerBase::get_storage(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::LocalAuthListCtrlr, "Storage", attribute_enum)) {
             return std::stoi(this->components.at(StandardizedComponent::LocalAuthListCtrlr)
             .variables.at("Storage")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_disable_post_authorize(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_disable_post_authorize(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::LocalAuthListCtrlr, "DisablePostAuthorize", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::LocalAuthListCtrlr)
         .variables.at("DisablePostAuthorize")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -1973,38 +2693,62 @@ void DeviceModelManagerBase::set_disable_post_authorize(const bool &disable_post
         }
 }
 
+<<<<<<< HEAD
 boost::optional<double> DeviceModelManagerBase::get_capacity(const AttributeEnum &attribute_enum) {
+=======
+std::optional<double> DeviceModelManagerBase::get_capacity(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::LocalEnergyStorage, "Capacity", attribute_enum)) {
             return std::stod(this->components.at(StandardizedComponent::LocalEnergyStorage)
             .variables.at("Capacity")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_monitoring_ctrlr_available(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_monitoring_ctrlr_available(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::MonitoringCtrlr, "MonitoringCtrlrAvailable", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::MonitoringCtrlr)
         .variables.at("MonitoringCtrlrAvailable")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<int> DeviceModelManagerBase::get_bytes_per_message_clear_variable_monitoring(const AttributeEnum &attribute_enum) {
+=======
+std::optional<int> DeviceModelManagerBase::get_bytes_per_message_clear_variable_monitoring(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::MonitoringCtrlr, "BytesPerMessageClearVariableMonitoring", attribute_enum)) {
             return std::stoi(this->components.at(StandardizedComponent::MonitoringCtrlr)
             .variables.at("BytesPerMessageClearVariableMonitoring")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -2017,14 +2761,22 @@ int DeviceModelManagerBase::get_bytes_per_message_set_variable_monitoring(const 
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_monitoring_ctrlr_enabled(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_monitoring_ctrlr_enabled(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::MonitoringCtrlr, "MonitoringCtrlrEnabled", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::MonitoringCtrlr)
         .variables.at("MonitoringCtrlrEnabled")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -2037,14 +2789,22 @@ void DeviceModelManagerBase::set_monitoring_ctrlr_enabled(const bool &monitoring
         }
 }
 
+<<<<<<< HEAD
 boost::optional<int> DeviceModelManagerBase::get_items_per_message_clear_variable_monitoring(const AttributeEnum &attribute_enum) {
+=======
+std::optional<int> DeviceModelManagerBase::get_items_per_message_clear_variable_monitoring(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::MonitoringCtrlr, "ItemsPerMessageClearVariableMonitoring", attribute_enum)) {
             return std::stoi(this->components.at(StandardizedComponent::MonitoringCtrlr)
             .variables.at("ItemsPerMessageClearVariableMonitoring")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -2057,14 +2817,22 @@ int DeviceModelManagerBase::get_items_per_message_set_variable_monitoring(const 
 }
 
 
+<<<<<<< HEAD
 boost::optional<int> DeviceModelManagerBase::get_offline_queuing_severity(const AttributeEnum &attribute_enum) {
+=======
+std::optional<int> DeviceModelManagerBase::get_offline_queuing_severity(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::MonitoringCtrlr, "OfflineQueuingSeverity", attribute_enum)) {
             return std::stoi(this->components.at(StandardizedComponent::MonitoringCtrlr)
             .variables.at("OfflineQueuingSeverity")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -2077,62 +2845,102 @@ void DeviceModelManagerBase::set_offline_queuing_severity(const int &offline_que
         }
 }
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_monitoring_base(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_monitoring_base(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::MonitoringCtrlr, "MonitoringBase", attribute_enum)) {
             return this->components.at(StandardizedComponent::MonitoringCtrlr)
             .variables.at("MonitoringBase")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<int> DeviceModelManagerBase::get_monitoring_level(const AttributeEnum &attribute_enum) {
+=======
+std::optional<int> DeviceModelManagerBase::get_monitoring_level(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::MonitoringCtrlr, "MonitoringLevel", attribute_enum)) {
             return std::stoi(this->components.at(StandardizedComponent::MonitoringCtrlr)
             .variables.at("MonitoringLevel")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_active_monitoring_base(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_active_monitoring_base(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::MonitoringCtrlr, "ActiveMonitoringBase", attribute_enum)) {
             return this->components.at(StandardizedComponent::MonitoringCtrlr)
             .variables.at("ActiveMonitoringBase")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<int> DeviceModelManagerBase::get_active_monitoring_level(const AttributeEnum &attribute_enum) {
+=======
+std::optional<int> DeviceModelManagerBase::get_active_monitoring_level(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::MonitoringCtrlr, "ActiveMonitoringLevel", attribute_enum)) {
             return std::stoi(this->components.at(StandardizedComponent::MonitoringCtrlr)
             .variables.at("ActiveMonitoringLevel")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_ocppcomm_ctrlr_enabled(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_ocppcomm_ctrlr_enabled(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::OCPPCommCtrlr, "OCPPCommCtrlrEnabled", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::OCPPCommCtrlr)
         .variables.at("OCPPCommCtrlrEnabled")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -2145,14 +2953,22 @@ void DeviceModelManagerBase::set_ocppcomm_ctrlr_enabled(const bool &ocppcomm_ctr
         }
 }
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_active_network_profile(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_active_network_profile(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::OCPPCommCtrlr, "ActiveNetworkProfile", attribute_enum)) {
             return this->components.at(StandardizedComponent::OCPPCommCtrlr)
             .variables.at("ActiveNetworkProfile")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -2165,14 +2981,22 @@ std::string DeviceModelManagerBase::get_file_transfer_protocols(const AttributeE
 }
 
 
+<<<<<<< HEAD
 boost::optional<int> DeviceModelManagerBase::get_heartbeat_interval(const AttributeEnum &attribute_enum) {
+=======
+std::optional<int> DeviceModelManagerBase::get_heartbeat_interval(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::OCPPCommCtrlr, "HeartbeatInterval", attribute_enum)) {
             return std::stoi(this->components.at(StandardizedComponent::OCPPCommCtrlr)
             .variables.at("HeartbeatInterval")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -2263,14 +3087,22 @@ void DeviceModelManagerBase::set_offline_threshold(const int &offline_threshold,
         .value.emplace(std::to_string(offline_threshold));
 }
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_public_key_with_signed_meter_value(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_public_key_with_signed_meter_value(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::OCPPCommCtrlr, "PublicKeyWithSignedMeterValue", attribute_enum)) {
             return this->components.at(StandardizedComponent::OCPPCommCtrlr)
             .variables.at("PublicKeyWithSignedMeterValue")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -2283,14 +3115,22 @@ void DeviceModelManagerBase::set_public_key_with_signed_meter_value(const std::s
         }
 }
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_queue_all_messages(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_queue_all_messages(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::OCPPCommCtrlr, "QueueAllMessages", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::OCPPCommCtrlr)
         .variables.at("QueueAllMessages")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -2317,14 +3157,22 @@ void DeviceModelManagerBase::set_reset_retries(const int &reset_retries, const A
         .value.emplace(std::to_string(reset_retries));
 }
 
+<<<<<<< HEAD
 boost::optional<int> DeviceModelManagerBase::get_retry_back_off_random_range(const AttributeEnum &attribute_enum) {
+=======
+std::optional<int> DeviceModelManagerBase::get_retry_back_off_random_range(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::OCPPCommCtrlr, "RetryBackOffRandomRange", attribute_enum)) {
             return std::stoi(this->components.at(StandardizedComponent::OCPPCommCtrlr)
             .variables.at("RetryBackOffRandomRange")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -2337,14 +3185,22 @@ void DeviceModelManagerBase::set_retry_back_off_random_range(const int &retry_ba
         }
 }
 
+<<<<<<< HEAD
 boost::optional<int> DeviceModelManagerBase::get_retry_back_off_repeat_times(const AttributeEnum &attribute_enum) {
+=======
+std::optional<int> DeviceModelManagerBase::get_retry_back_off_repeat_times(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::OCPPCommCtrlr, "RetryBackOffRepeatTimes", attribute_enum)) {
             return std::stoi(this->components.at(StandardizedComponent::OCPPCommCtrlr)
             .variables.at("RetryBackOffRepeatTimes")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -2357,14 +3213,22 @@ void DeviceModelManagerBase::set_retry_back_off_repeat_times(const int &retry_ba
         }
 }
 
+<<<<<<< HEAD
 boost::optional<int> DeviceModelManagerBase::get_retry_back_off_wait_minimum(const AttributeEnum &attribute_enum) {
+=======
+std::optional<int> DeviceModelManagerBase::get_retry_back_off_wait_minimum(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::OCPPCommCtrlr, "RetryBackOffWaitMinimum", attribute_enum)) {
             return std::stoi(this->components.at(StandardizedComponent::OCPPCommCtrlr)
             .variables.at("RetryBackOffWaitMinimum")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -2391,14 +3255,22 @@ void DeviceModelManagerBase::set_unlock_on_evside_disconnect(const bool &unlock_
         .value.emplace(ocpp::conversions::bool_to_string(unlock_on_evside_disconnect));
 }
 
+<<<<<<< HEAD
 boost::optional<int> DeviceModelManagerBase::get_web_socket_ping_interval(const AttributeEnum &attribute_enum) {
+=======
+std::optional<int> DeviceModelManagerBase::get_web_socket_ping_interval(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::OCPPCommCtrlr, "WebSocketPingInterval", attribute_enum)) {
             return std::stoi(this->components.at(StandardizedComponent::OCPPCommCtrlr)
             .variables.at("WebSocketPingInterval")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -2411,38 +3283,62 @@ void DeviceModelManagerBase::set_web_socket_ping_interval(const int &web_socket_
         }
 }
 
+<<<<<<< HEAD
 boost::optional<int> DeviceModelManagerBase::get_field_length(const AttributeEnum &attribute_enum) {
+=======
+std::optional<int> DeviceModelManagerBase::get_field_length(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::OCPPCommCtrlr, "FieldLength", attribute_enum)) {
             return std::stoi(this->components.at(StandardizedComponent::OCPPCommCtrlr)
             .variables.at("FieldLength")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_reservation_ctrlr_available(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_reservation_ctrlr_available(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::ReservationCtrlr, "ReservationCtrlrAvailable", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::ReservationCtrlr)
         .variables.at("ReservationCtrlrAvailable")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_reservation_ctrlr_enabled(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_reservation_ctrlr_enabled(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::ReservationCtrlr, "ReservationCtrlrEnabled", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::ReservationCtrlr)
         .variables.at("ReservationCtrlrEnabled")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -2455,38 +3351,62 @@ void DeviceModelManagerBase::set_reservation_ctrlr_enabled(const bool &reservati
         }
 }
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_non__evse__specific(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_non__evse__specific(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::ReservationCtrlr, "NonEvseSpecific", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::ReservationCtrlr)
         .variables.at("NonEvseSpecific")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_sampled_data_ctrlr_available(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_sampled_data_ctrlr_available(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::SampledDataCtrlr, "SampledDataCtrlrAvailable", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::SampledDataCtrlr)
         .variables.at("SampledDataCtrlrAvailable")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_sampled_data_ctrlr_enabled(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_sampled_data_ctrlr_enabled(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::SampledDataCtrlr, "SampledDataCtrlrEnabled", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::SampledDataCtrlr)
         .variables.at("SampledDataCtrlrEnabled")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -2499,14 +3419,22 @@ void DeviceModelManagerBase::set_sampled_data_ctrlr_enabled(const bool &sampled_
         }
 }
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_sampled_data_sign_readings(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_sampled_data_sign_readings(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::SampledDataCtrlr, "SampledDataSignReadings", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::SampledDataCtrlr)
         .variables.at("SampledDataSignReadings")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -2589,14 +3517,22 @@ void DeviceModelManagerBase::set_sampled_data_tx_updated_measurands(const std::s
         .value.emplace(sampled_data_tx_updated_measurands);
 }
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_register_values_without_phases(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_register_values_without_phases(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::SampledDataCtrlr, "RegisterValuesWithoutPhases", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::SampledDataCtrlr)
         .variables.at("RegisterValuesWithoutPhases")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -2609,14 +3545,22 @@ void DeviceModelManagerBase::set_register_values_without_phases(const bool &regi
         }
 }
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_security_ctrlr_enabled(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_security_ctrlr_enabled(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::SecurityCtrlr, "SecurityCtrlrEnabled", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::SecurityCtrlr)
         .variables.at("SecurityCtrlrEnabled")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -2629,26 +3573,42 @@ void DeviceModelManagerBase::set_security_ctrlr_enabled(const bool &security_ctr
         }
 }
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_additional_root_certificate_check(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_additional_root_certificate_check(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::SecurityCtrlr, "AdditionalRootCertificateCheck", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::SecurityCtrlr)
         .variables.at("AdditionalRootCertificateCheck")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_basic_auth_password(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_basic_auth_password(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::SecurityCtrlr, "BasicAuthPassword", attribute_enum)) {
             return this->components.at(StandardizedComponent::SecurityCtrlr)
             .variables.at("BasicAuthPassword")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -2661,14 +3621,22 @@ int DeviceModelManagerBase::get_certificate_entries(const AttributeEnum &attribu
 }
 
 
+<<<<<<< HEAD
 boost::optional<int> DeviceModelManagerBase::get_cert_signing_repeat_times(const AttributeEnum &attribute_enum) {
+=======
+std::optional<int> DeviceModelManagerBase::get_cert_signing_repeat_times(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::SecurityCtrlr, "CertSigningRepeatTimes", attribute_enum)) {
             return std::stoi(this->components.at(StandardizedComponent::SecurityCtrlr)
             .variables.at("CertSigningRepeatTimes")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -2681,14 +3649,22 @@ void DeviceModelManagerBase::set_cert_signing_repeat_times(const int &cert_signi
         }
 }
 
+<<<<<<< HEAD
 boost::optional<int> DeviceModelManagerBase::get_cert_signing_wait_minimum(const AttributeEnum &attribute_enum) {
+=======
+std::optional<int> DeviceModelManagerBase::get_cert_signing_wait_minimum(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::SecurityCtrlr, "CertSigningWaitMinimum", attribute_enum)) {
             return std::stoi(this->components.at(StandardizedComponent::SecurityCtrlr)
             .variables.at("CertSigningWaitMinimum")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -2701,26 +3677,42 @@ void DeviceModelManagerBase::set_cert_signing_wait_minimum(const int &cert_signi
         }
 }
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_identity(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_identity(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::SecurityCtrlr, "Identity", attribute_enum)) {
             return this->components.at(StandardizedComponent::SecurityCtrlr)
             .variables.at("Identity")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<int> DeviceModelManagerBase::get_max_certificate_chain_size(const AttributeEnum &attribute_enum) {
+=======
+std::optional<int> DeviceModelManagerBase::get_max_certificate_chain_size(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::SecurityCtrlr, "MaxCertificateChainSize", attribute_enum)) {
             return std::stoi(this->components.at(StandardizedComponent::SecurityCtrlr)
             .variables.at("MaxCertificateChainSize")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -2747,38 +3739,62 @@ int DeviceModelManagerBase::get_security_profile(const AttributeEnum &attribute_
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_acphase_switching_supported(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_acphase_switching_supported(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::SmartChargingCtrlr, "ACPhaseSwitchingSupported", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::SmartChargingCtrlr)
         .variables.at("ACPhaseSwitchingSupported")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_smart_charging_ctrlr_available(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_smart_charging_ctrlr_available(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::SmartChargingCtrlr, "SmartChargingCtrlrAvailable", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::SmartChargingCtrlr)
         .variables.at("SmartChargingCtrlrAvailable")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_smart_charging_ctrlr_enabled(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_smart_charging_ctrlr_enabled(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::SmartChargingCtrlr, "SmartChargingCtrlrEnabled", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::SmartChargingCtrlr)
         .variables.at("SmartChargingCtrlrEnabled")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -2799,14 +3815,22 @@ int DeviceModelManagerBase::get_entries_charging_profiles(const AttributeEnum &a
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_external_control_signals_enabled(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_external_control_signals_enabled(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::SmartChargingCtrlr, "ExternalControlSignalsEnabled", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::SmartChargingCtrlr)
         .variables.at("ExternalControlSignalsEnabled")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -2833,14 +3857,22 @@ void DeviceModelManagerBase::set_limit_change_significance(const double &limit_c
         .value.emplace(ocpp::conversions::double_to_string(limit_change_significance));
 }
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_notify_charging_limit_with_schedules(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_notify_charging_limit_with_schedules(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::SmartChargingCtrlr, "NotifyChargingLimitWithSchedules", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::SmartChargingCtrlr)
         .variables.at("NotifyChargingLimitWithSchedules")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -2861,14 +3893,22 @@ int DeviceModelManagerBase::get_periods_per_schedule(const AttributeEnum &attrib
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_phases3to1(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_phases3to1(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::SmartChargingCtrlr, "Phases3to1", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::SmartChargingCtrlr)
         .variables.at("Phases3to1")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -2889,26 +3929,42 @@ std::string DeviceModelManagerBase::get_charging_schedule_charging_rate_unit(con
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_available_tariff(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_available_tariff(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::TariffCostCtrlr, "AvailableTariff", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::TariffCostCtrlr)
         .variables.at("AvailableTariff")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_available_cost(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_available_cost(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::TariffCostCtrlr, "AvailableCost", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::TariffCostCtrlr)
         .variables.at("AvailableCost")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -2927,14 +3983,22 @@ void DeviceModelManagerBase::set_currency(const std::string &currency, const Att
         .value.emplace(currency);
 }
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_enabled_tariff(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_enabled_tariff(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::TariffCostCtrlr, "EnabledTariff", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::TariffCostCtrlr)
         .variables.at("EnabledTariff")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -2947,14 +4011,22 @@ void DeviceModelManagerBase::set_enabled_tariff(const bool &enabled_tariff, cons
         }
 }
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_enabled_cost(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_enabled_cost(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::TariffCostCtrlr, "EnabledCost", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::TariffCostCtrlr)
         .variables.at("EnabledCost")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -2995,38 +4067,62 @@ void DeviceModelManagerBase::set_total_cost_fallback_message(const std::string &
         .value.emplace(total_cost_fallback_message);
 }
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_token(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_token(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::TokenReader, "Token", attribute_enum)) {
             return this->components.at(StandardizedComponent::TokenReader)
             .variables.at("Token")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<std::string> DeviceModelManagerBase::get_token_type(const AttributeEnum &attribute_enum) {
+=======
+std::optional<std::string> DeviceModelManagerBase::get_token_type(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::TokenReader, "TokenType", attribute_enum)) {
             return this->components.at(StandardizedComponent::TokenReader)
             .variables.at("TokenType")
             .attributes.at(attribute_enum)
             .value.value().get();
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_tx_ctrlr_enabled(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_tx_ctrlr_enabled(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::TxCtrlr, "TxCtrlrEnabled", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::TxCtrlr)
         .variables.at("TxCtrlrEnabled")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -3039,14 +4135,22 @@ void DeviceModelManagerBase::set_tx_ctrlr_enabled(const bool &tx_ctrlr_enabled, 
         }
 }
 
+<<<<<<< HEAD
 boost::optional<double> DeviceModelManagerBase::get_charging_time(const AttributeEnum &attribute_enum) {
+=======
+std::optional<double> DeviceModelManagerBase::get_charging_time(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::TxCtrlr, "ChargingTime", attribute_enum)) {
             return std::stod(this->components.at(StandardizedComponent::TxCtrlr)
             .variables.at("ChargingTime")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -3065,14 +4169,22 @@ void DeviceModelManagerBase::set_evconnection_time_out(const int &evconnection_t
         .value.emplace(std::to_string(evconnection_time_out));
 }
 
+<<<<<<< HEAD
 boost::optional<int> DeviceModelManagerBase::get_max_energy_on_invalid_id(const AttributeEnum &attribute_enum) {
+=======
+std::optional<int> DeviceModelManagerBase::get_max_energy_on_invalid_id(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::TxCtrlr, "MaxEnergyOnInvalidId", attribute_enum)) {
             return std::stoi(this->components.at(StandardizedComponent::TxCtrlr)
             .variables.at("MaxEnergyOnInvalidId")
             .attributes.at(attribute_enum)
             .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 
@@ -3113,14 +4225,22 @@ void DeviceModelManagerBase::set_stop_tx_on_invalid_id(const bool &stop_tx_on_in
         .value.emplace(ocpp::conversions::bool_to_string(stop_tx_on_invalid_id));
 }
 
+<<<<<<< HEAD
 boost::optional<bool> DeviceModelManagerBase::get_tx_before_accepted_enabled(const AttributeEnum &attribute_enum) {
+=======
+std::optional<bool> DeviceModelManagerBase::get_tx_before_accepted_enabled(const AttributeEnum &attribute_enum) {
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     if (this->exists(StandardizedComponent::TxCtrlr, "TxBeforeAcceptedEnabled", attribute_enum)) {
         return ocpp::conversions::string_to_bool(this->components.at(StandardizedComponent::TxCtrlr)
         .variables.at("TxBeforeAcceptedEnabled")
         .attributes.at(attribute_enum)
         .value.value());
         } else {
+<<<<<<< HEAD
         return boost::none;
+=======
+        return std::nullopt;
+>>>>>>> 158e9e7208760f1ead8bffbdb331a1743b260b73
     }
 }
 

@@ -3,7 +3,8 @@
 #ifndef OCPP_V16_SIGNEDUPDATEFIRMWARE_HPP
 #define OCPP_V16_SIGNEDUPDATEFIRMWARE_HPP
 
-#include <boost/optional.hpp>
+#include <nlohmann/json_fwd.hpp>
+#include <optional>
 
 #include <ocpp/v16/enums.hpp>
 #include <ocpp/v16/ocpp_types.hpp>
@@ -15,8 +16,8 @@ namespace v16 {
 struct SignedUpdateFirmwareRequest : public ocpp::Message {
     int32_t requestId;
     FirmwareType firmware;
-    boost::optional<int32_t> retries;
-    boost::optional<int32_t> retryInterval;
+    std::optional<int32_t> retries;
+    std::optional<int32_t> retryInterval;
 
     /// \brief Provides the type of this SignedUpdateFirmware message as a human readable string
     /// \returns the message type as a human readable string

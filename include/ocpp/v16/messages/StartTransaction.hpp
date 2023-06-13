@@ -3,7 +3,8 @@
 #ifndef OCPP_V16_STARTTRANSACTION_HPP
 #define OCPP_V16_STARTTRANSACTION_HPP
 
-#include <boost/optional.hpp>
+#include <nlohmann/json_fwd.hpp>
+#include <optional>
 
 #include <ocpp/common/types.hpp>
 #include <ocpp/v16/enums.hpp>
@@ -18,7 +19,7 @@ struct StartTransactionRequest : public ocpp::Message {
     CiString<20> idTag;
     int32_t meterStart;
     ocpp::DateTime timestamp;
-    boost::optional<int32_t> reservationId;
+    std::optional<int32_t> reservationId;
 
     /// \brief Provides the type of this StartTransaction message as a human readable string
     /// \returns the message type as a human readable string

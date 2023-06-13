@@ -3,7 +3,8 @@
 #ifndef OCPP_V16_CLEARCHARGINGPROFILE_HPP
 #define OCPP_V16_CLEARCHARGINGPROFILE_HPP
 
-#include <boost/optional.hpp>
+#include <nlohmann/json_fwd.hpp>
+#include <optional>
 
 #include <ocpp/v16/enums.hpp>
 #include <ocpp/v16/ocpp_types.hpp>
@@ -13,10 +14,10 @@ namespace v16 {
 
 /// \brief Contains a OCPP ClearChargingProfile message
 struct ClearChargingProfileRequest : public ocpp::Message {
-    boost::optional<int32_t> id;
-    boost::optional<int32_t> connectorId;
-    boost::optional<ChargingProfilePurposeType> chargingProfilePurpose;
-    boost::optional<int32_t> stackLevel;
+    std::optional<int32_t> id;
+    std::optional<int32_t> connectorId;
+    std::optional<ChargingProfilePurposeType> chargingProfilePurpose;
+    std::optional<int32_t> stackLevel;
 
     /// \brief Provides the type of this ClearChargingProfile message as a human readable string
     /// \returns the message type as a human readable string
