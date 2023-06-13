@@ -214,6 +214,13 @@ public:
     /// \brief Event handler that can be called to trigger a NotifyEvent.req with the given \p events
     /// \param events 
     void on_event(const std::vector<EventData> &events);
+    
+    /// @brief Data transfer mechanism initiated by charger
+    /// @param vendorId 
+    /// @param messageId 
+    /// @param data 
+    /// @return DataTransferResponse contaning the result from CSMS
+    DataTransferResponse data_transfer(const CiString<255>& vendorId,const CiString<50>& messageId, const std::string& data);
 };
 
 } // namespace v201

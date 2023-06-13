@@ -775,7 +775,27 @@ void ChargePoint::handle_change_availability_req(Call<ChangeAvailabilityRequest>
         this->callbacks.change_availability_callback(msg);
     }
 }
+DataTransferResponse ChargePoint::data_transfer(const CiString<255>& vendorId,const CiString<50>& messageId, const std::string& data) {
+    DataTransferRequest req;
+    req.vendorId = vendorId;
+    req.messageId = messageId;
+    req.data.emplace(data);
 
+    DataTransferResponse response;
+    ocpp::Call<DataTransferRequest> call(req, this->message_queue->createMessageId());
+    auto data_transfer_future = this->send_async<DataTransferRequest>(call);
+
+    auto enhanced_message = data_transfer_future.get();
+    if(enhanced_message.messageType == MessageType::DataTransferResponse){
+        ocpp::CallResult<DataTransferResponse> call_result = enhanced_message.message;
+        response = call_result.msg;
+    }
+    if(enhanced_message.offline){
+        response.status = DataTransferStatusEnum::Rejected;
+    }
+
+    return response;
+}
 void ChargePoint::handle_data_transfer_req(Call<DataTransferRequest> call) {
     const auto msg = call.msg;
     DataTransferResponse response;
