@@ -84,15 +84,18 @@ The implementation must call **event handlers** of libocpp so that the library c
 Your reference within libocpp to interact is a single instance to the class [ChargePoint](include/ocpp/v16/charge_point.hpp) for OCPP 1.6 or to the class [ChargePoint](include/ocpp/v201/charge_point.hpp) for OCPP 2.0.1.
 
 ### Overview of the required callbacks and events and what libocpp expects to happen
-In EVerest the OCPP module leverages several other modules to perform tasks that relate to authorization, reservations, charging session handling and system tasks like rebooting or firmware updates.
-- Auth orchestrates authorization, utilizing different token providers like RFID reads and token validators. Libocpp mainly acts as a token validator, but in thr case of RemoteStartTransactions it acts as a token provider as weill
-- EvseManager manages the charging session and charging state machine by communicating with a "board support package", a driver for the charging hardware that abstracts away the control pilot, relay control, power meters, etc. The EvseManager also handles reservations.
-- System handles firmware updates, log uploads, resets
 
-The following tries to explain the steps you can follow to implement their functionality on your own and inegrate the libOCPP directly into your charging station software without relying on EVerest. However, in most cases it's much easier to write a EVerest driver using the *everest-core/interfaces/board_support_AC.yaml* interface.
+The following section will give you a high level overview of how to integrate libocpp with your application. Please use the [Doxygen Documentation](#building-the-doxygen-documentation) as an additional source for the ChargePoint API.
+
+In EVerest the OCPP module leverages several other modules to perform tasks that relate to authorization, reservations, charging session handling and system tasks like rebooting or firmware updates.
+- Auth orchestrates authorization, utilizing different token providers like RFID reads and token validators. Libocpp mainly acts as a token validator, but in the case of RemoteStartTransactions it acts as a token provider as well
+- EvseManager manages the charging session and charging state machine by communicating with a "board support package", a driver for the charging hardware that abstracts away the control pilot, relay control, power meters, etc. The EvseManager also handles reservations.
+- System handles firmware updates, log uploads and resets
+
+The following sections explain the steps you can follow to implement their functionality on your own and integrate the libocpp directly into your charging station software without relying on EVerest. However, in most cases it's much easier to write an EVerest driver using the *everest-core/interfaces/board_support_AC.yaml* interface.
 
 #### ChargePoint() constructor
-The main entrypoint for libOCPP for OCPP 1.6 is the ocpp::v16::ChargePoint constructor.
+The main entrypoint for libocpp for OCPP1.6 is the ocpp::v16::ChargePoint constructor.
 This is defined in libocpp/include/ocpp/v16/charge_point.hpp and takes the following parameters:
 - config: a std::string that contains the libocpp 1.6 config. There are example configs that work with a [SteVe](https://github.com/steve-community/steve) installation [running in Docker](https://github.com/EVerest/everest-utils/tree/main/docker/steve), for example: [config-docker.json](config/v16/config-docker.json)
 
@@ -122,7 +125,7 @@ This is defined in libocpp/include/ocpp/v16/charge_point.hpp and takes the follo
 
   - a *init.sql* file which contains the database schema used by libocpp for its sqlite database
 
-  - and a *profile_schemas* directory. This contains json schema files that are used to validate the libocpp config. The schemas are split up according to the OCPP 1.6 functional blocks/profiles like Core, FirmwareManagement and so on. Additionally there is a schema for "Internal" configuration options (for example the ChargePointId, or CentralSystemURI). A "PnC" schema for the ISO 15118 Plug & Charge with OCPP 1.6 Application note, as well as a "Security" schema for the OCPP 1.6 Security Whitepaper (3rd edition) are provided as well. Finally there's a Config.json schema that ties everything together
+  - and a *profile_schemas* directory. This contains json schema files that are used to validate the libocpp config. The schemas are split up according to the OCPP1.6 feature profiles like Core, FirmwareManagement and so on. Additionally there is a schema for "Internal" configuration options (for example the ChargePointId, or CentralSystemURI). A "PnC" schema for the ISO 15118 Plug & Charge with OCPP 1.6 Application note, as well as a "Security" schema for the OCPP 1.6 Security Whitepaper (3rd edition) are provided as well. Finally there's a Config.json schema that ties everything together
 
 - user_config_path: this points to a "user config", which we call a configuration file that's merged with the config that's provided in the "config" parameter. Here you can add, remove and overwrite settings without modifying the config passed in the first parameter directly. This is also used by libocpp to persistently modify config entries that are changed by the CSMS that should persist across restarts.
 
@@ -130,9 +133,9 @@ This is defined in libocpp/include/ocpp/v16/charge_point.hpp and takes the follo
 
 - sql_init_path: this points to the aforementioned init.sql file which contains the database schema used by libocpp for its sqlite database
 
-- message_log_path: this points to the directory in which libocpp can put OCPP communication logfiles for debugging purposes. This behavior can be controlled by the "LogMessages" (set to true by default) and "LogMessagesFormat" (set to ["log", "html", "session_logging"] by default, "console" and "console_detailed" are also available) configuration keys in the "Internal" section of the config file. Please not that this is intended for debugging purposes only as it logs all communication, including authentication messages.
+- message_log_path: this points to the directory in which libocpp can put OCPP communication logfiles for debugging purposes. This behavior can be controlled by the "LogMessages" (set to true by default) and "LogMessagesFormat" (set to ["log", "html", "session_logging"] by default, "console" and "console_detailed" are also available) configuration keys in the "Internal" section of the config file. Please note that this is intended for debugging purposes only as it logs all communication, including authentication messages.
 
-- certs_path: this points to the directory where certificates used by libocpp are located, these are used for the "Improved security for OCPP 1.6-J" whitepaper (eg. Security Profile 3 TLS with Client Side Certificates) as well as for Plug & Charge.
+- certs_path: this points to the directory where certificates used by libocpp are located, these are used for the "Improved security for OCPP 1.6-J" whitepaper (e.g. Security Profile 3 TLS with Client Side Certificates) as well as for Plug & Charge.
 
   The directory layout expected is as follows
   ```bash
@@ -189,9 +192,9 @@ This is defined in libocpp/include/ocpp/v16/charge_point.hpp and takes the follo
   ```
 
 #### registering callbacks
-You can (and in many cases MUST) register a number of callbacks so libOCPP can interact with the charger. In EVerest most of this functionality is orchestrated by the "EvseManager" module, but you can also register your own callbacks interacting directly with your chargers software. Following is a list of callbacks that you must register and a few words about their purpose.
+You can (and in many cases MUST) register a number of callbacks so libocpp can interact with the charger. In EVerest most of this functionality is orchestrated by the "EvseManager" module, but you can also register your own callbacks interacting directly with your chargers software. Following is a list of callbacks that you must register and a few words about their purpose.
 
-TODO: in a future version of libocpp the callbacks will be organised in a struct with optional members emphasizing the required and optional callbacks
+TODO: in a future version of libocpp the callbacks will be organised in a struct with optional members emphasizing the required and optional callbacks.
 
 Some general notes: the "connector" parameter of some of the callbacks refers to the connector number as understood in the OCPP 1.6 specification, "0" means the whole charging station, the connectors with EVSEs used for charging cars start at "1".
 
@@ -216,7 +219,7 @@ Some general notes: the "connector" parameter of some of the callbacks refers to
 
 - register_reserve_now_callback
 
-  libocpp can use this to reserve a connector, reservation handling is outsourced to a reservation manager in EVerest that implements the reservation interface (eeverest-core/interfaces/reservation.yaml)
+  libocpp can use this to reserve a connector, reservation handling is outsourced to a reservation manager in EVerest that implements the reservation interface (everest-core/interfaces/reservation.yaml)
 
 - register_upload_diagnostics_callback
 
@@ -244,15 +247,15 @@ Some general notes: the "connector" parameter of some of the callbacks refers to
 
 - register_disable_evse_callback
 
-  used to disable the EVSE (change availability request)
+  used to disable the EVSE (ChangeAvailability.req)
 
 - register_enable_evse_callback
 
-  used to enable the EVSE (change availability request)
+  used to enable the EVSE (ChangeAvailability.req)
 
 - register_cancel_reservation_callback
 
-  used to cancel a reservation in the reservation manager
+  used to cancel a reservation in the reservation manager (CancelReservation.req)
 
 - register_signal_set_charging_profiles_callback
 
@@ -269,7 +272,7 @@ Some general notes: the "connector" parameter of some of the callbacks refers to
 
 - register_connection_state_changed_callback
 
-  used to inform about the connection state (connected = true, disconnected = false)
+  used to inform about the connection state to the CSMS (connected = true, disconnected = false)
 
 
 #### Functions that need to be triggered from the outside after new information is availble (on_... functions in the charge point API)
@@ -330,7 +333,7 @@ each of these functions will have a small note what the Session Event was and wh
 
 - on_suspend_charging_evse
 
-  Notifies libocpp that the EVSE has pause charging
+  Notifies libocpp that the EVSE has paused charging
 
 - on_resume_charging
 
@@ -358,8 +361,7 @@ each of these functions will have a small note what the Session Event was and wh
 
 #### Authorization
 In EVerest authorization is handled by the Auth module and various auth token providers and validators. The OCPP module acts as both a token provider (for pre validated tokens in RemoteStartTransactions) and a token validator (using the authorize requests, or plug & charge)
-To use libocpp as a auth token validator (eg. before starting a transaction) you can call the "authorize_id_token" function of the ChargePoint object
-
+To use libocpp as a auth token validator (e.g. before starting a transaction) you can call the "authorize_id_token" function of the ChargePoint object
 
 ### Install libocpp
 
@@ -426,3 +428,5 @@ Type `help` to see a list of possible commands.
 ```
 You will find the generated doxygen documentation at:
 `build/dist/docs/html/index.html`
+
+The main reference for the integration of libocpp for OCPP1.6 is the ocpp::v16::ChargePoint class defined in libocpp/include/ocpp/v16/charge_point.hpp . 
