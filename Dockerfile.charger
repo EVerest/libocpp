@@ -17,13 +17,14 @@ COPY . /usr/src/app/libocpp
 
 WORKDIR /usr/src/app
 RUN git clone https://github.com/EVerest/everest-cmake.git
-RUN git clone https://github.com/EVerest/everest-dev-environment.git
+RUN git clone -b user/lschubert/use_https_for_cloning https://github.com/luisschubert/everest-dev-environment.git
+
 
 WORKDIR /usr/src/app/everest-dev-environment
 RUN python3 -m pip install --upgrade pip setuptools wheel
 WORKDIR /usr/src/app/everest-dev-environment/dependency_manager
 RUN python3 -m pip install .
-RUN edm --register-cmake-module --config ../everest-complete.yaml --workspace ~/checkout/everest-workspace
+RUN edm --config ../everest-complete.yaml --workspace ~/checkout/everest-workspace
 
 ENV PATH="/usr/src/app/everest-dev-environment:${PATH}"
 
