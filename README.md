@@ -390,6 +390,11 @@ Execute cmake and then make install:
 
 Libocpp provides a small standalone OCPP1.6 client that you can control using command line.
 
+Step 1. build the docker container `chargepoint`
+```bash
+docker build -f Dockerfile.chargepoint -t chargepoint .
+```
+
 Install the dependencies and libocpp as described in [Install libocpp](#install-libocpp).
 
 Make sure you modify the following config entries in the [config.json](config/v16/config.json) file according to the CSMS you want to connect to before executing make install.
