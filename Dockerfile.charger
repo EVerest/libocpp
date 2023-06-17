@@ -1,0 +1,50 @@
+# Start from a base Ubuntu image
+FROM ubuntu:20.04
+
+RUN ln -snf /usr/share/zoneinfo/$CONTAINER_TIMEZONE /etc/localtime && echo $CONTAINER_TIMEZONE > /etc/timezone
+
+# Update package list and install dependencies
+RUN apt-get update && apt-get install -y \
+  build-essential \
+  cmake \
+  python3-pip \
+  libboost-all-dev \
+  libsqlite3-dev \
+  libssl-dev \
+  git
+
+COPY . /usr/src/app/libocpp
+
+WORKDIR /usr/src/app
+RUN git clone https://github.com/EVerest/everest-cmake.git
+RUN git clone https://github.com/EVerest/everest-dev-environment.git
+
+WORKDIR /usr/src/app/everest-dev-environment
+RUN python3 -m pip install --upgrade pip setuptools wheel
+WORKDIR /usr/src/app/everest-dev-environment/dependency_manager
+RUN python3 -m pip install .
+RUN edm --register-cmake-module --config ../everest-complete.yaml --workspace ~/checkout/everest-workspace
+
+ENV PATH="/usr/src/app/everest-dev-environment:${PATH}"
+
+WORKDIR /usr/src/app/libocpp
+
+# Create a build directory and move into it
+RUN mkdir build
+WORKDIR /usr/src/app/libocpp/build
+
+# Generate Makefile with cmake
+RUN cmake ..
+
+# Build and install the project
+RUN make install
+
+# Build the OCPP 1.6 example
+RUN cmake -DLIBOCPP16_BUILD_EXAMPLES=ON -DCMAKE_INSTALL_PREFIX=./dist ..
+RUN make -j$(nproc) install
+
+# Expose any necessary ports
+EXPOSE 13789
+
+# Set the command that will be run when the container starts
+CMD ["./dist/bin/charge_point", "--maindir ./dist", "--conf config.json"]
