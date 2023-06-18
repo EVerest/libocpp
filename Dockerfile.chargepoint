@@ -48,4 +48,4 @@ RUN make -j$(nproc) install
 EXPOSE 8180
 
 # Set the command that will be run when the container starts
-CMD ["./dist/bin/charge_point", "--maindir", "./dist", "--conf", "config-json.json"]
+CMD ["./dist/bin/charge_point", "--maindir", "./dist", "--conf", "config-docker.json"]
