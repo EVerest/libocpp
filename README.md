@@ -395,6 +395,21 @@ Step 1. build the docker container `chargepoint`
 docker build -f Dockerfile.chargepoint -t chargepoint .
 ```
 
+Step 2. start the container
+```bash
+docker run -it chargepoint
+```
+
+Step 2.1 optionally you can start the container with custom args
+```bash
+docker run -it chargepoint ./dist/bin/charge_point --maindir ./dist --conf config.json
+```
+
+Since we want to test this library I want do run it with the steve project.
+
+
+
+
 Install the dependencies and libocpp as described in [Install libocpp](#install-libocpp).
 
 Make sure you modify the following config entries in the [config.json](config/v16/config.json) file according to the CSMS you want to connect to before executing make install.
