@@ -32,5 +32,7 @@ services:
     build: 
       context: .
       dockerfile: Dockerfile.chargepoint
+    tty: true
+    stdin_open: true
     ports:
       - "8181:8180"
