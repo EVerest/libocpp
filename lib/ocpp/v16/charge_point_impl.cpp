@@ -2617,7 +2617,7 @@ void ChargePointImpl::handle_data_transfer_pnc_certificate_signed(Call<DataTrans
                         "V2GCertificate";
             EVLOG_warning << tech_info;
         } else if (this->configuration->getCertificateSignedMaxChainSize().has_value() and
-                   (size_t)this->configuration->getCertificateSignedMaxChainSize().value() <
+                   (size_t) this->configuration->getCertificateSignedMaxChainSize().value() <
                        req.certificateChain.get().size()) {
             tech_info = "Received DataTransfer.req containing CertificateSigned.req where chain size is greater "
                         "than configured CertificateSignedMaxChainSize";
