@@ -44,8 +44,8 @@ RUN make install
 RUN cmake -DLIBOCPP16_BUILD_EXAMPLES=ON -DCMAKE_INSTALL_PREFIX=./dist ..
 RUN make -j$(nproc) install
 
-# Expose any necessary ports
-EXPOSE 8180
+# # Expose any necessary ports
+# EXPOSE 8180
 
 # Set the command that will be run when the container starts
 CMD ["./dist/bin/charge_point", "--maindir", "./dist", "--conf", "config-docker.json"]
