@@ -1516,6 +1516,9 @@ void ChargePointImpl::handleStartTransactionResponse(ocpp::CallResult<StartTrans
             this->stop_transaction_callback(connector, Reason::DeAuthorized);
         }
     }
+    else if (this->transaction_started_callback!= nullptr) {
+        this->transaction_started_callback(connector, start_transaction_response.transactionId);
+    }
 }
 
 void ChargePointImpl::handleStopTransactionResponse(ocpp::CallResult<StopTransactionResponse> call_result) {
@@ -2614,7 +2617,7 @@ void ChargePointImpl::handle_data_transfer_pnc_certificate_signed(Call<DataTrans
                         "V2GCertificate";
             EVLOG_warning << tech_info;
         } else if (this->configuration->getCertificateSignedMaxChainSize().has_value() and
-                   (size_t)this->configuration->getCertificateSignedMaxChainSize().value() <
+                   (size_t) this->configuration->getCertificateSignedMaxChainSize().value() <
                        req.certificateChain.get().size()) {
             tech_info = "Received DataTransfer.req containing CertificateSigned.req where chain size is greater "
                         "than configured CertificateSignedMaxChainSize";
@@ -3191,6 +3194,11 @@ void ChargePointImpl::register_get_15118_ev_certificate_response_callback(
                              const ocpp::v201::Get15118EVCertificateResponse& certificate_response,
                              const ocpp::v201::CertificateActionEnum& certificate_action)>& callback) {
     this->get_15118_ev_certificate_response_callback = callback;
+}
+
+void ChargePointImpl::register_transaction_started_callback(
+    const std::function<void(const int32_t connector, const int32_t transaction_id )>& callback) {
+    this->transaction_started_callback = callback;
 }
 
 void ChargePointImpl::on_reservation_start(int32_t connector) {
