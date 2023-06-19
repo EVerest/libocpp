@@ -219,7 +219,7 @@ public:
     /// @param messageId 
     /// @param data 
     /// @return DataTransferResponse contaning the result from CSMS
-    DataTransferResponse data_transfer(const CiString<255>& vendorId,const CiString<50>& messageId, const std::string& data);
+    DataTransferResponse data_transfer_req(const CiString<255>& vendorId,const CiString<50>& messageId, const std::string& data);
 };
 
 } // namespace v201
