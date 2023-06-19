@@ -188,8 +188,8 @@ private:
     void update_meter_values_sample_interval();
     void update_clock_aligned_meter_values_interval();
     std::optional<MeterValue> get_latest_meter_value(int32_t connector,
-                                                     std::vector<MeasurandWithPhase> values_of_interest,
-                                                     ReadingContext context);
+                                                       std::vector<MeasurandWithPhase> values_of_interest,
+                                                       ReadingContext context);
     MeterValue get_signed_meter_value(const std::string& signed_value, const ReadingContext& context,
                                       const ocpp::DateTime& datetime);
     void send_meter_value(int32_t connector, MeterValue meter_value);
@@ -446,7 +446,8 @@ public:
     /// \param signed_meter_value e.g. in OCMF format
     void on_transaction_stopped(const int32_t connector, const std::string& session_id, const Reason& reason,
                                 ocpp::DateTime timestamp, float energy_wh_import,
-                                std::optional<CiString<20>> id_tag_end, std::optional<std::string> signed_meter_value);
+                                std::optional<CiString<20>> id_tag_end,
+                                std::optional<std::string> signed_meter_value);
 
     /// \brief This function should be called when EV indicates that it suspends charging on the given \p connector
     /// \param connector
