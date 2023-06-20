@@ -25,6 +25,8 @@
 #include <ocpp/v201/messages/MeterValues.hpp>
 #include <ocpp/v201/messages/NotifyEvent.hpp>
 #include <ocpp/v201/messages/NotifyReport.hpp>
+#include <ocpp/v201/messages/RequestStartTransaction.hpp>
+#include <ocpp/v201/messages/RequestStopTransaction.hpp>
 #include <ocpp/v201/messages/Reset.hpp>
 #include <ocpp/v201/messages/SetVariables.hpp>
 #include <ocpp/v201/messages/StatusNotification.hpp>
@@ -44,6 +46,8 @@ struct Callbacks {
     std::function<void(const ChangeAvailabilityRequest& request)> change_availability_callback;
     std::function<GetLogResponse(const GetLogRequest& request)> get_log_request_callback;
     std::function<UnlockConnectorResponse(const int32_t evse_id, const int32_t connecor_id)> unlock_connector_callback;
+    std::function<void(const RequestStartTransactionRequest& request)> remote_start_transaction_callback;
+    std::function<void(const CiString<36>& transaction_id)> remote_stop_transaction_callback;
 };
 
 /// \brief Class implements OCPP2.0.1 Charging Station
@@ -140,6 +144,9 @@ private:
 
     // Function Block F: Remote transaction control
     void handle_unlock_connector(Call<UnlockConnectorRequest> call);
+    // Function Block f: Remote transaction control
+    void handle_request_start_transaction_request(CallResult<RequestStartTransactionRequest> call);
+    void handle_request_stop_transaction_request(CallResult<RequestStopTransactionRequest> call);
 
     // Functional Block G: Availability
     void handle_change_availability_req(Call<ChangeAvailabilityRequest> call);

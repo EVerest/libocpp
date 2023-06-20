@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
-#include <ocpp/v201/messages/LogStatusNotification.hpp>
 #include <ocpp/v201/charge_point.hpp>
+#include <ocpp/v201/messages/LogStatusNotification.hpp>
 
 namespace ocpp {
 namespace v201 {
@@ -222,8 +222,7 @@ void ChargePoint::on_event(const std::vector<EventData>& events) {
     this->notify_event_req(events);
 }
 
-void ChargePoint::on_log_status_notification(UploadLogStatusEnum status, int32_t requestId)
-{
+void ChargePoint::on_log_status_notification(UploadLogStatusEnum status, int32_t requestId) {
     LogStatusNotificationRequest request;
     request.status = status;
     request.requestId = requestId;
@@ -308,6 +307,12 @@ void ChargePoint::handle_message(const json& json_message, const MessageType& me
         break;
     case MessageType::TransactionEventResponse:
         // handled by transaction_event_req future
+        break;
+    case MessageType::RequestStartTransaction:
+        this->handle_request_start_transaction_request(json_message);
+        break;
+    case MessageType::RequestStopTransaction:
+        this->handle_request_stop_transaction_request(json_message);
         break;
     case MessageType::DataTransfer:
         this->handle_data_transfer_req(json_message);
@@ -560,8 +565,7 @@ void ChargePoint::meter_values_req(const int32_t evse_id, const std::vector<Mete
     this->send<MeterValuesRequest>(call);
 }
 
-void ChargePoint::handle_get_log_req(Call<GetLogRequest> call)
-{
+void ChargePoint::handle_get_log_req(Call<GetLogRequest> call) {
     const GetLogResponse response = this->callbacks.get_log_request_callback(call.msg);
 
     ocpp::CallResult<GetLogResponse> call_result(response, call.uniqueId);
@@ -781,6 +785,71 @@ void ChargePoint::handle_unlock_connector(Call<UnlockConnectorRequest> call) {
     const UnlockConnectorResponse unlock_response = callbacks.unlock_connector_callback(msg.evseId, msg.connectorId);
     ocpp::CallResult<UnlockConnectorResponse> call_result(unlock_response, call.uniqueId);
     this->send<UnlockConnectorResponse>(call_result);
+}
+
+void ChargePoint::handle_request_start_transaction_request(CallResult<RequestStartTransactionRequest> call) {
+    const auto msg = call.msg;
+
+    RequestStartTransactionResponse response;
+    response.status = RequestStartStopStatusEnum::Rejected;
+
+    bool can_start_transaction = false;
+
+    // Check if evse id is given.
+    if (msg.evseId.has_value()) {
+        const int32_t evse_id = msg.evseId.value();
+        auto& evse = this->evses.at(evse_id);
+        if (evse != nullptr) {
+            const int32_t connectors = evse->get_number_of_connectors();
+            bool available = false;
+            bool occupied = false;
+            for (int32_t i = 0; i < connectors; ++i) {
+                // Check if status is unavailable or faulted. In that case: Rejected should be sent (F01.FR.23).
+                // However, we do not have this status for an evse, but only for a connector. So loop over all
+                // connectors of this evse id and if there is one not faulted or unavailable, we assume there is one
+                // available.
+                const ConnectorStatusEnum& status = evse->get_state(i);
+                if (status != ConnectorStatusEnum::Faulted && status != ConnectorStatusEnum::Unavailable) {
+                    available = true;
+                }
+
+                if (status == ConnectorStatusEnum::Occupied) {
+                    occupied = true;
+                }
+            }
+
+            // When not available
+            // When occupied and there is an active transaction: send rejected (F02.FR.26)
+            // When there is an evse id and active transaction: send accepted
+            if (available && evse->has_active_transaction() && !occupied) {
+                // F01: cable is plugged in already.
+
+                // TODO all the requirements
+
+                // get transaction id to send with requeststarttransactionresponse
+                const auto transactionId = evse->get_transaction()->get_transaction().transactionId;
+                // send requeststarttransactionresponse
+                response.transactionId = transactionId;
+                response.status = RequestStartStopStatusEnum::Accepted;
+            }
+        }
+    }
+
+    ocpp::CallResult<RequestStartTransactionResponse> call_result(response, call.uniqueId);
+    this->send<RequestStartTransactionResponse>(call_result);
+
+    this->callbacks.remote_start_transaction_callback(msg);
+}
+
+void ChargePoint::handle_request_stop_transaction_request(CallResult<RequestStopTransactionRequest> call) {
+    const auto msg = call.msg;
+
+    // TODO get current running transaction with the given transaction id (msg.transactionId)
+    // TODO send 'rejected' if there was no ongoing transaction with the given transaction id (F03.FR.08)
+    // TODO send 'accepted' if there was an ongoing transaction with the given transaction id (F03.FR.07)
+
+    RequestStopTransactionResponse response;
+    this->callbacks.remote_stop_transaction_callback(msg.transactionId);
 }
 
 void ChargePoint::handle_change_availability_req(Call<ChangeAvailabilityRequest> call) {
