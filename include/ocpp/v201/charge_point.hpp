@@ -95,6 +95,7 @@ private:
     void update_aligned_data_interval();
     bool is_change_availability_possible(const ChangeAvailabilityRequest& req);
     void handle_scheduled_change_availability_requests(const int32_t evse_id);
+    bool is_transaction_ongoing(const CiString<36>& transaction_id);
 
     /* OCPP message requests */
 
@@ -145,8 +146,8 @@ private:
     // Function Block F: Remote transaction control
     void handle_unlock_connector(Call<UnlockConnectorRequest> call);
     // Function Block f: Remote transaction control
-    void handle_request_start_transaction_request(CallResult<RequestStartTransactionRequest> call);
-    void handle_request_stop_transaction_request(CallResult<RequestStopTransactionRequest> call);
+    void handle_remote_start_transaction_request(CallResult<RequestStartTransactionRequest> call);
+    void handle_remote_stop_transaction_request(CallResult<RequestStopTransactionRequest> call);
 
     // Functional Block G: Availability
     void handle_change_availability_req(Call<ChangeAvailabilityRequest> call);
