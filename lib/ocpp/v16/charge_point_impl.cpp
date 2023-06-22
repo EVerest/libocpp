@@ -845,132 +845,141 @@ void ChargePointImpl::message_callback(const std::string& message) {
 }
 
 void ChargePointImpl::handle_message(const json& json_message, MessageType message_type) {
-    // lots of messages are allowed here
-    switch (message_type) {
+    try {
+        // lots of messages are allowed here
+        switch (message_type) {
 
-    case MessageType::AuthorizeResponse:
-        // handled by authorize_id_tag future
-        break;
+        case MessageType::AuthorizeResponse:
+            // handled by authorize_id_tag future
+            break;
 
-    case MessageType::CertificateSigned:
-        this->handleCertificateSignedRequest(json_message);
-        break;
+        case MessageType::CertificateSigned:
+            this->handleCertificateSignedRequest(json_message);
+            break;
 
-    case MessageType::ChangeAvailability:
-        this->handleChangeAvailabilityRequest(json_message);
-        break;
+        case MessageType::ChangeAvailability:
+            this->handleChangeAvailabilityRequest(json_message);
+            break;
 
-    case MessageType::ChangeConfiguration:
-        this->handleChangeConfigurationRequest(json_message);
-        break;
+        case MessageType::ChangeConfiguration:
+            this->handleChangeConfigurationRequest(json_message);
+            break;
 
-    case MessageType::ClearCache:
-        this->handleClearCacheRequest(json_message);
-        break;
+        case MessageType::ClearCache:
+            this->handleClearCacheRequest(json_message);
+            break;
 
-    case MessageType::DataTransfer:
-        this->handleDataTransferRequest(json_message);
-        break;
+        case MessageType::DataTransfer:
+            this->handleDataTransferRequest(json_message);
+            break;
 
-    case MessageType::DataTransferResponse:
-        // handled by data_transfer future
-        break;
+        case MessageType::DataTransferResponse:
+            // handled by data_transfer future
+            break;
 
-    case MessageType::GetConfiguration:
-        this->handleGetConfigurationRequest(json_message);
-        break;
+        case MessageType::GetConfiguration:
+            this->handleGetConfigurationRequest(json_message);
+            break;
 
-    case MessageType::RemoteStartTransaction:
-        this->handleRemoteStartTransactionRequest(json_message);
-        break;
+        case MessageType::RemoteStartTransaction:
+            this->handleRemoteStartTransactionRequest(json_message);
+            break;
 
-    case MessageType::RemoteStopTransaction:
-        this->handleRemoteStopTransactionRequest(json_message);
-        break;
+        case MessageType::RemoteStopTransaction:
+            this->handleRemoteStopTransactionRequest(json_message);
+            break;
 
-    case MessageType::Reset:
-        this->handleResetRequest(json_message);
-        break;
+        case MessageType::Reset:
+            this->handleResetRequest(json_message);
+            break;
 
-    case MessageType::StartTransactionResponse:
-        this->handleStartTransactionResponse(json_message);
-        break;
+        case MessageType::StartTransactionResponse:
+            this->handleStartTransactionResponse(json_message);
+            break;
 
-    case MessageType::StopTransactionResponse:
-        this->handleStopTransactionResponse(json_message);
-        break;
+        case MessageType::StopTransactionResponse:
+            this->handleStopTransactionResponse(json_message);
+            break;
 
-    case MessageType::UnlockConnector:
-        this->handleUnlockConnectorRequest(json_message);
-        break;
+        case MessageType::UnlockConnector:
+            this->handleUnlockConnectorRequest(json_message);
+            break;
 
-    case MessageType::SetChargingProfile:
-        this->handleSetChargingProfileRequest(json_message);
-        break;
+        case MessageType::SetChargingProfile:
+            this->handleSetChargingProfileRequest(json_message);
+            break;
 
-    case MessageType::GetCompositeSchedule:
-        this->handleGetCompositeScheduleRequest(json_message);
-        break;
+        case MessageType::GetCompositeSchedule:
+            this->handleGetCompositeScheduleRequest(json_message);
+            break;
 
-    case MessageType::ClearChargingProfile:
-        this->handleClearChargingProfileRequest(json_message);
-        break;
+        case MessageType::ClearChargingProfile:
+            this->handleClearChargingProfileRequest(json_message);
+            break;
 
-    case MessageType::TriggerMessage:
-        this->handleTriggerMessageRequest(json_message);
-        break;
+        case MessageType::TriggerMessage:
+            this->handleTriggerMessageRequest(json_message);
+            break;
 
-    case MessageType::GetDiagnostics:
-        this->handleGetDiagnosticsRequest(json_message);
-        break;
+        case MessageType::GetDiagnostics:
+            this->handleGetDiagnosticsRequest(json_message);
+            break;
 
-    case MessageType::UpdateFirmware:
-        this->handleUpdateFirmwareRequest(json_message);
-        break;
+        case MessageType::UpdateFirmware:
+            this->handleUpdateFirmwareRequest(json_message);
+            break;
 
-    case MessageType::GetInstalledCertificateIds:
-        this->handleGetInstalledCertificateIdsRequest(json_message);
-        break;
+        case MessageType::GetInstalledCertificateIds:
+            this->handleGetInstalledCertificateIdsRequest(json_message);
+            break;
 
-    case MessageType::DeleteCertificate:
-        this->handleDeleteCertificateRequest(json_message);
-        break;
+        case MessageType::DeleteCertificate:
+            this->handleDeleteCertificateRequest(json_message);
+            break;
 
-    case MessageType::InstallCertificate:
-        this->handleInstallCertificateRequest(json_message);
-        break;
+        case MessageType::InstallCertificate:
+            this->handleInstallCertificateRequest(json_message);
+            break;
 
-    case MessageType::GetLog:
-        this->handleGetLogRequest(json_message);
-        break;
+        case MessageType::GetLog:
+            this->handleGetLogRequest(json_message);
+            break;
 
-    case MessageType::SignedUpdateFirmware:
-        this->handleSignedUpdateFirmware(json_message);
-        break;
+        case MessageType::SignedUpdateFirmware:
+            this->handleSignedUpdateFirmware(json_message);
+            break;
 
-    case MessageType::ReserveNow:
-        this->handleReserveNowRequest(json_message);
-        break;
+        case MessageType::ReserveNow:
+            this->handleReserveNowRequest(json_message);
+            break;
 
-    case MessageType::CancelReservation:
-        this->handleCancelReservationRequest(json_message);
-        break;
+        case MessageType::CancelReservation:
+            this->handleCancelReservationRequest(json_message);
+            break;
 
-    case MessageType::ExtendedTriggerMessage:
-        this->handleExtendedTriggerMessageRequest(json_message);
-        break;
+        case MessageType::ExtendedTriggerMessage:
+            this->handleExtendedTriggerMessageRequest(json_message);
+            break;
 
-    case MessageType::SendLocalList:
-        this->handleSendLocalListRequest(json_message);
-        break;
+        case MessageType::SendLocalList:
+            this->handleSendLocalListRequest(json_message);
+            break;
 
-    case MessageType::GetLocalListVersion:
-        this->handleGetLocalListVersionRequest(json_message);
-        break;
+        case MessageType::GetLocalListVersion:
+            this->handleGetLocalListVersionRequest(json_message);
+            break;
 
-    default:
-        // TODO(kai): not implemented error?
-        break;
+        default:
+            // TODO(kai): not implemented error?
+            break;
+        }
+    } catch (json::exception& e) {
+        EVLOG_error << "JSON exception during handling of message: " << e.what();
+        if (json_message.is_array() && json_message.size() > MESSAGE_ID) {
+            auto call_error = CallError(MessageId(json_message.at(MESSAGE_ID).get<std::string>()), "FormationViolation",
+                                        e.what(), json({}));
+            this->send(call_error);
+        }
     }
 }
 
