@@ -786,191 +786,60 @@ void ChargePointImpl::connected_callback() {
 
 void ChargePointImpl::message_callback(const std::string& message) {
     EVLOG_debug << "Received Message: " << message;
-
     // EVLOG_debug << "json message: " << json_message;
     auto enhanced_message = this->message_queue->receive(message);
     auto json_message = enhanced_message.message;
     this->logging->central_system(conversions::messagetype_to_string(enhanced_message.messageType), message);
-    // reject unsupported messages
-    if (this->configuration->getSupportedMessageTypesReceiving().count(enhanced_message.messageType) == 0) {
-        EVLOG_warning << "Received an unsupported message: " << enhanced_message.messageType;
-        // FIXME(kai): however, only send a CALLERROR when it is a CALL message we just received
-        if (enhanced_message.messageTypeId == MessageTypeId::CALL) {
-            auto call_error = CallError(enhanced_message.uniqueId, "NotSupported", "", json({}));
-            this->send(call_error);
-        }
-
-        // in any case stop message handling here:
-        return;
-    }
-
-    switch (this->connection_state) {
-    case ChargePointConnectionState::Disconnected: {
-        EVLOG_error << "Received a message in disconnected state, this cannot be correct";
-        break;
-    }
-    case ChargePointConnectionState::Connected: {
-        if (enhanced_message.messageType == MessageType::BootNotificationResponse) {
-            this->handleBootNotificationResponse(json_message);
-        }
-        break;
-    }
-    case ChargePointConnectionState::Rejected: {
-        if (this->registration_status == RegistrationStatus::Rejected) {
-            if (enhanced_message.messageType == MessageType::BootNotificationResponse) {
-                this->handleBootNotificationResponse(json_message);
-            }
-        }
-        break;
-    }
-    case ChargePointConnectionState::Pending: {
-        if (this->registration_status == RegistrationStatus::Pending) {
-            if (enhanced_message.messageType == MessageType::BootNotificationResponse) {
-                this->handleBootNotificationResponse(json_message);
-            } else {
-                this->handle_message(json_message, enhanced_message.messageType);
-            }
-        }
-        break;
-    }
-    case ChargePointConnectionState::Booted: {
-        this->handle_message(json_message, enhanced_message.messageType);
-        break;
-    }
-
-    default:
-        EVLOG_error << "Reached default statement in on_message, this should not be possible";
-        break;
-    }
-}
-
-void ChargePointImpl::handle_message(const json& json_message, MessageType message_type) {
     try {
-        // lots of messages are allowed here
-        switch (message_type) {
+        // reject unsupported messages
+        if (this->configuration->getSupportedMessageTypesReceiving().count(enhanced_message.messageType) == 0) {
+            EVLOG_warning << "Received an unsupported message: " << enhanced_message.messageType;
+            // FIXME(kai): however, only send a CALLERROR when it is a CALL message we just received
+            if (enhanced_message.messageTypeId == MessageTypeId::CALL) {
+                auto call_error = CallError(enhanced_message.uniqueId, "NotSupported", "", json({}));
+                this->send(call_error);
+            }
 
-        case MessageType::AuthorizeResponse:
-            // handled by authorize_id_tag future
-            break;
+            // in any case stop message handling here:
+            return;
+        }
 
-        case MessageType::CertificateSigned:
-            this->handleCertificateSignedRequest(json_message);
+        switch (this->connection_state) {
+        case ChargePointConnectionState::Disconnected: {
+            EVLOG_error << "Received a message in disconnected state, this cannot be correct";
             break;
-
-        case MessageType::ChangeAvailability:
-            this->handleChangeAvailabilityRequest(json_message);
+        }
+        case ChargePointConnectionState::Connected: {
+            if (enhanced_message.messageType == MessageType::BootNotificationResponse) {
+                this->handleBootNotificationResponse(json_message);
+            }
             break;
-
-        case MessageType::ChangeConfiguration:
-            this->handleChangeConfigurationRequest(json_message);
+        }
+        case ChargePointConnectionState::Rejected: {
+            if (this->registration_status == RegistrationStatus::Rejected) {
+                if (enhanced_message.messageType == MessageType::BootNotificationResponse) {
+                    this->handleBootNotificationResponse(json_message);
+                }
+            }
             break;
-
-        case MessageType::ClearCache:
-            this->handleClearCacheRequest(json_message);
+        }
+        case ChargePointConnectionState::Pending: {
+            if (this->registration_status == RegistrationStatus::Pending) {
+                if (enhanced_message.messageType == MessageType::BootNotificationResponse) {
+                    this->handleBootNotificationResponse(json_message);
+                } else {
+                    this->handle_message(json_message, enhanced_message.messageType);
+                }
+            }
             break;
-
-        case MessageType::DataTransfer:
-            this->handleDataTransferRequest(json_message);
+        }
+        case ChargePointConnectionState::Booted: {
+            this->handle_message(json_message, enhanced_message.messageType);
             break;
-
-        case MessageType::DataTransferResponse:
-            // handled by data_transfer future
-            break;
-
-        case MessageType::GetConfiguration:
-            this->handleGetConfigurationRequest(json_message);
-            break;
-
-        case MessageType::RemoteStartTransaction:
-            this->handleRemoteStartTransactionRequest(json_message);
-            break;
-
-        case MessageType::RemoteStopTransaction:
-            this->handleRemoteStopTransactionRequest(json_message);
-            break;
-
-        case MessageType::Reset:
-            this->handleResetRequest(json_message);
-            break;
-
-        case MessageType::StartTransactionResponse:
-            this->handleStartTransactionResponse(json_message);
-            break;
-
-        case MessageType::StopTransactionResponse:
-            this->handleStopTransactionResponse(json_message);
-            break;
-
-        case MessageType::UnlockConnector:
-            this->handleUnlockConnectorRequest(json_message);
-            break;
-
-        case MessageType::SetChargingProfile:
-            this->handleSetChargingProfileRequest(json_message);
-            break;
-
-        case MessageType::GetCompositeSchedule:
-            this->handleGetCompositeScheduleRequest(json_message);
-            break;
-
-        case MessageType::ClearChargingProfile:
-            this->handleClearChargingProfileRequest(json_message);
-            break;
-
-        case MessageType::TriggerMessage:
-            this->handleTriggerMessageRequest(json_message);
-            break;
-
-        case MessageType::GetDiagnostics:
-            this->handleGetDiagnosticsRequest(json_message);
-            break;
-
-        case MessageType::UpdateFirmware:
-            this->handleUpdateFirmwareRequest(json_message);
-            break;
-
-        case MessageType::GetInstalledCertificateIds:
-            this->handleGetInstalledCertificateIdsRequest(json_message);
-            break;
-
-        case MessageType::DeleteCertificate:
-            this->handleDeleteCertificateRequest(json_message);
-            break;
-
-        case MessageType::InstallCertificate:
-            this->handleInstallCertificateRequest(json_message);
-            break;
-
-        case MessageType::GetLog:
-            this->handleGetLogRequest(json_message);
-            break;
-
-        case MessageType::SignedUpdateFirmware:
-            this->handleSignedUpdateFirmware(json_message);
-            break;
-
-        case MessageType::ReserveNow:
-            this->handleReserveNowRequest(json_message);
-            break;
-
-        case MessageType::CancelReservation:
-            this->handleCancelReservationRequest(json_message);
-            break;
-
-        case MessageType::ExtendedTriggerMessage:
-            this->handleExtendedTriggerMessageRequest(json_message);
-            break;
-
-        case MessageType::SendLocalList:
-            this->handleSendLocalListRequest(json_message);
-            break;
-
-        case MessageType::GetLocalListVersion:
-            this->handleGetLocalListVersionRequest(json_message);
-            break;
+        }
 
         default:
-            // TODO(kai): not implemented error?
+            EVLOG_error << "Reached default statement in on_message, this should not be possible";
             break;
         }
     } catch (json::exception& e) {
@@ -980,6 +849,136 @@ void ChargePointImpl::handle_message(const json& json_message, MessageType messa
                                         e.what(), json({}));
             this->send(call_error);
         }
+    }
+}
+
+void ChargePointImpl::handle_message(const json& json_message, MessageType message_type) {
+    // lots of messages are allowed here
+    switch (message_type) {
+
+    case MessageType::AuthorizeResponse:
+        // handled by authorize_id_tag future
+        break;
+
+    case MessageType::CertificateSigned:
+        this->handleCertificateSignedRequest(json_message);
+        break;
+
+    case MessageType::ChangeAvailability:
+        this->handleChangeAvailabilityRequest(json_message);
+        break;
+
+    case MessageType::ChangeConfiguration:
+        this->handleChangeConfigurationRequest(json_message);
+        break;
+
+    case MessageType::ClearCache:
+        this->handleClearCacheRequest(json_message);
+        break;
+
+    case MessageType::DataTransfer:
+        this->handleDataTransferRequest(json_message);
+        break;
+
+    case MessageType::DataTransferResponse:
+        // handled by data_transfer future
+        break;
+
+    case MessageType::GetConfiguration:
+        this->handleGetConfigurationRequest(json_message);
+        break;
+
+    case MessageType::RemoteStartTransaction:
+        this->handleRemoteStartTransactionRequest(json_message);
+        break;
+
+    case MessageType::RemoteStopTransaction:
+        this->handleRemoteStopTransactionRequest(json_message);
+        break;
+
+    case MessageType::Reset:
+        this->handleResetRequest(json_message);
+        break;
+
+    case MessageType::StartTransactionResponse:
+        this->handleStartTransactionResponse(json_message);
+        break;
+
+    case MessageType::StopTransactionResponse:
+        this->handleStopTransactionResponse(json_message);
+        break;
+
+    case MessageType::UnlockConnector:
+        this->handleUnlockConnectorRequest(json_message);
+        break;
+
+    case MessageType::SetChargingProfile:
+        this->handleSetChargingProfileRequest(json_message);
+        break;
+
+    case MessageType::GetCompositeSchedule:
+        this->handleGetCompositeScheduleRequest(json_message);
+        break;
+
+    case MessageType::ClearChargingProfile:
+        this->handleClearChargingProfileRequest(json_message);
+        break;
+
+    case MessageType::TriggerMessage:
+        this->handleTriggerMessageRequest(json_message);
+        break;
+
+    case MessageType::GetDiagnostics:
+        this->handleGetDiagnosticsRequest(json_message);
+        break;
+
+    case MessageType::UpdateFirmware:
+        this->handleUpdateFirmwareRequest(json_message);
+        break;
+
+    case MessageType::GetInstalledCertificateIds:
+        this->handleGetInstalledCertificateIdsRequest(json_message);
+        break;
+
+    case MessageType::DeleteCertificate:
+        this->handleDeleteCertificateRequest(json_message);
+        break;
+
+    case MessageType::InstallCertificate:
+        this->handleInstallCertificateRequest(json_message);
+        break;
+
+    case MessageType::GetLog:
+        this->handleGetLogRequest(json_message);
+        break;
+
+    case MessageType::SignedUpdateFirmware:
+        this->handleSignedUpdateFirmware(json_message);
+        break;
+
+    case MessageType::ReserveNow:
+        this->handleReserveNowRequest(json_message);
+        break;
+
+    case MessageType::CancelReservation:
+        this->handleCancelReservationRequest(json_message);
+        break;
+
+    case MessageType::ExtendedTriggerMessage:
+        this->handleExtendedTriggerMessageRequest(json_message);
+        break;
+
+    case MessageType::SendLocalList:
+        this->handleSendLocalListRequest(json_message);
+        break;
+
+    case MessageType::GetLocalListVersion:
+        this->handleGetLocalListVersionRequest(json_message);
+        break;
+
+    default:
+        // TODO(kai): not implemented error?
+        break;
     }
 }
 
@@ -1524,8 +1523,7 @@ void ChargePointImpl::handleStartTransactionResponse(ocpp::CallResult<StartTrans
         if (this->configuration->getStopTransactionOnInvalidId()) {
             this->stop_transaction_callback(connector, Reason::DeAuthorized);
         }
-    }
-    else if (this->transaction_started_callback!= nullptr) {
+    } else if (this->transaction_started_callback != nullptr) {
         this->transaction_started_callback(connector, start_transaction_response.transactionId);
     }
 }
@@ -2626,7 +2624,7 @@ void ChargePointImpl::handle_data_transfer_pnc_certificate_signed(Call<DataTrans
                         "V2GCertificate";
             EVLOG_warning << tech_info;
         } else if (this->configuration->getCertificateSignedMaxChainSize().has_value() and
-                   (size_t)this->configuration->getCertificateSignedMaxChainSize().value() <
+                   (size_t) this->configuration->getCertificateSignedMaxChainSize().value() <
                        req.certificateChain.get().size()) {
             tech_info = "Received DataTransfer.req containing CertificateSigned.req where chain size is greater "
                         "than configured CertificateSignedMaxChainSize";
@@ -3206,7 +3204,7 @@ void ChargePointImpl::register_get_15118_ev_certificate_response_callback(
 }
 
 void ChargePointImpl::register_transaction_started_callback(
-    const std::function<void(const int32_t connector, const int32_t transaction_id )>& callback) {
+    const std::function<void(const int32_t connector, const int32_t transaction_id)>& callback) {
     this->transaction_started_callback = callback;
 }
 
