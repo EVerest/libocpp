@@ -2310,7 +2310,7 @@ IdTagInfo ChargePointImpl::authorize_id_token(CiString<20> idTag) {
         }
         if (this->configuration->getAuthorizationCacheEnabled()) {
             if (this->validate_against_cache_entries(idTag)) {
-                EVLOG_info << "Found vlaid id_tag " << idTag.get() << " in AuthorizationCache";
+                EVLOG_info << "Found valid id_tag " << idTag.get() << " in AuthorizationCache";
                 return this->database_handler->get_authorization_cache_entry(idTag).value();
             }
         }
