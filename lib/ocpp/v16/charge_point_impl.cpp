@@ -2326,9 +2326,15 @@ IdTagInfo ChargePointImpl::authorize_id_token(CiString<20> idTag) {
 
     IdTagInfo id_tag_info;
     if (enhanced_message.messageType == MessageType::AuthorizeResponse) {
-        ocpp::CallResult<AuthorizeResponse> call_result = enhanced_message.message;
-        this->database_handler->insert_or_update_authorization_cache_entry(idTag, call_result.msg.idTagInfo);
-        return call_result.msg.idTagInfo;
+        try {
+            ocpp::CallResult<AuthorizeResponse> call_result = enhanced_message.message;
+            this->database_handler->insert_or_update_authorization_cache_entry(idTag, call_result.msg.idTagInfo);
+            return call_result.msg.idTagInfo;
+        } catch (const json::exception& e) {
+            EVLOG_error << "CSMS returned a malformed response to the AuthorizeRequest, assuming id tag is invalid.";
+            id_tag_info = {AuthorizationStatus::Invalid, std::nullopt, std::nullopt};
+            return id_tag_info;
+        }
     } else if (enhanced_message.offline) {
         if (this->configuration->getAllowOfflineTxForUnknownId() != std::nullopt &&
             this->configuration->getAllowOfflineTxForUnknownId().value()) {
