@@ -97,6 +97,30 @@ private:
     void handle_scheduled_change_availability_requests(const int32_t evse_id);
     bool is_transaction_ongoing(const CiString<36>& transaction_id);
 
+    ///
+    /// \brief Check if EVSE connector is reserved for another than the given id token and / or group id token.
+    /// \param evse             The evse id that must be checked. Reservation will be checked for all connectors.
+    /// \param id_token         The id token to check if it is reserved for that token.
+    /// \param group_id_token   The group id token to check if it is reserved for that group id.
+    /// \return True when one of the EVSE connectors is reserved for another id token or group id token than the given
+    ///         tokens.
+    ///         If id_token is different than reserved id_token, but group_id_token is equal to reserved group_id_token,
+    ///         returns true.
+    ///         If both are different, returns true.
+    ///         If id_token is equal to reserved id_token or group_id_token is equal, return false.
+    ///         If there is no reservation, return false.
+    ///
+    bool is_evse_connector_reserved_not_available(const std::unique_ptr<Evse>& evse, const IdToken& id_token,
+                                                  const std::optional<IdToken>& group_id_token) const;
+
+    ///
+    /// \brief Check if one of the connectors of the evse is available (both connectors faulted or unavailable or on of
+    ///        the connectors occupied).
+    /// \param evse Evse to check.
+    /// \return True if at least one connector is not faulted or unavailable.
+    ///
+    bool is_evse_connector_available(const std::unique_ptr<Evse>& evse) const;
+
     /* OCPP message requests */
 
     // Functional Block B: Provisioning

@@ -456,6 +456,51 @@ bool ChargePoint::is_transaction_ongoing(const CiString<36>& transaction_id) {
     return false;
 }
 
+bool ChargePoint::is_evse_connector_reserved_not_available(const std::unique_ptr<Evse> &evse, const IdToken &id_token,
+                                                           const std::optional<IdToken> &group_id_token) const
+{
+    const int32_t connectors = evse->get_number_of_connectors();
+    for (int32_t i = 0; i < connectors; ++i) {
+        const ConnectorStatusEnum& status = evse->get_state(i);
+        if (status == ConnectorStatusEnum::Reserved) {
+            const CiString<36>& transaction_id_token = evse->get_transaction()->id_token.idToken;
+            const CiString<36>& call_id_token = id_token.idToken;
+            if (transaction_id_token != call_id_token &&
+                (group_id_token.has_value() &&                           // TODO mz how does this group id token work?
+                 group_id_token.value().idToken != transaction_id_token) // TODO mz get the group id token to compare with instead of transaction id token
+               ) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool ChargePoint::is_evse_connector_available(const std::unique_ptr<Evse> &evse) const
+{
+    bool available = false;
+
+    const int32_t connectors = evse->get_number_of_connectors();
+    for (int32_t i = 0; i < connectors; ++i) {
+        const ConnectorStatusEnum& status = evse->get_state(i);
+        if (status == ConnectorStatusEnum::Occupied) {
+            // One of the connectors of the evse is occupied. Since you can not charge to different cars on one evse,
+            // this means the evse is not available. We can return directly, no need to loop through the other
+            // connectors.
+            return false;
+        }
+
+        // At least one of the connectors is available, but don't return here yet because the other connector can be
+        // occupied for example.
+        if (status != ConnectorStatusEnum::Faulted && status != ConnectorStatusEnum::Unavailable) {
+            available = true;
+        }
+    }
+
+    return available;
+}
+
 void ChargePoint::boot_notification_req(const BootReasonEnum& reason) {
     EVLOG_debug << "Sending BootNotification";
     BootNotificationRequest req;
@@ -808,28 +853,29 @@ void ChargePoint::handle_remote_start_transaction_request(CallResult<RequestStar
     // Check if evse id is given.
     if (msg.evseId.has_value()) {
         const int32_t evse_id = msg.evseId.value();
-        const auto& evse = this->evses.at(evse_id);
+        const auto &evse = this->evses.at(evse_id);
 
         if (evse != nullptr) {
-            // TODO F01.FR.26 If a Charging Station with support for Smart Charging receives a
+            // TODO mz F01.FR.26 If a Charging Station with support for Smart Charging receives a
             // RequestStartTransactionRequest with an invalid ChargingProfile: The Charging Station SHALL respond with
             // RequestStartTransactionResponse with status = Rejected and optionally with reasonCode = "InvalidProfile"
             // or "InvalidSchedule".
 
-            // F01.FR.23: Faulted or unavailable. F01.FR.24 / F02.FR.25: Occupied. Send rejected.
+            // F01.FR.23: Faulted or unavailable. F01.FR.24: Occupied. Send rejected.
             const bool available = is_evse_connector_available(evse);
 
             // When available but there was a reservation for another token id or group token id:
             //    send rejected (F01.FR.21 & F01.FR.22)
-            const bool reserved = is_evse_reserved_for_other(evse, call.msg.idToken, call.msg.groupIdToken);
+            const bool reserved = is_evse_connector_reserved_not_available(evse, call.msg.idToken, call.msg.groupIdToken);
 
             if (!available || reserved) {
-                // Note: we only support TxStartPoint PowerPathClosed, so we did not implement starting a transaction
-                // first (and send TransactionEventRequest (eventType = Started). Only if a transaction is authorized, a
-                // TransactionEventRequest will be sent. Because of this, F01.FR.13 is not implemented as well, because
-                // in the current situation, this is an impossible state. (TODO: when more TxStartPoints are supported,
-                // add implementation for F01.FR.13 as well).
-                EVLOG_info << "Remote start transaction requested, but connector is not available or reserved.";
+                // TODO: When occupied and there is an active transaction: send rejected (F02.FR.25)
+
+                // Note: we only support TxStartPoint PowerPathClosed, so we did not implement starting a transaction first
+                // (and send TransactionEventRequest (eventType = Started). Only if a transaction is authorized, a
+                // TransactionEventRequest will be sent. Because of this, F01.FR.13 is not implemented as well, because in
+                // the current situation, this is an impossible state. (TODO: when more TxStartPoints are supported, add
+                // implementation for F01.FR.13 as well).
             } else {
                 // F02: No active transaction yet and there is an available connector, so just send 'accepted'.
                 response.status = RequestStartStopStatusEnum::Accepted;
