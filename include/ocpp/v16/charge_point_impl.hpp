@@ -640,8 +640,8 @@ public:
                                  const ocpp::v201::Get15118EVCertificateResponse& certificate_response,
                                  const ocpp::v201::CertificateActionEnum& certificate_action)>& callback);
 
-    // \brief registers a \p callback function that can be used to publish the response when transaction starts respone is received
-    // \param callback
+    /// \brief registers a \p callback function that can be used to publish the response when transaction starts respone is received
+    /// \param callback
     void register_transaction_started_callback(
         const std::function<void(int32_t connector, int32_t transaction_id)>& callback);
 };
