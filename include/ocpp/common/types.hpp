@@ -253,19 +253,19 @@ struct Temperature {
     friend std::ostream& operator<<(std::ostream& os, const Temperature& k);
 };
 
-struct RPM {
-    float value; ///< RPM
-    std::optional<std::string> location; ///< Location of the RPM sensor
+struct RotationSpeed {
+    float value; ///< Rotation speed in rpm
+    std::optional<std::string> location; ///< Location of the rotation speed sensor
 
-    /// \brief Conversion from a given RPM \p k to a given json object \p j
-    friend void to_json(json& j, const RPM& k);
+    /// \brief Conversion from a given RotationSpeed \p k to a given json object \p j
+    friend void to_json(json& j, const RotationSpeed& k);
 
-    /// \brief Conversion from a given json object \p j to a given RPM \p k
-    friend void from_json(const json& j, RPM& k);
+    /// \brief Conversion from a given json object \p j to a given RotationSpeed \p k
+    friend void from_json(const json& j, RotationSpeed& k);
 
-    // \brief Writes the string representation of the given RPM \p k to the given output stream \p os
-    /// \returns an output stream with the RPM written to
-    friend std::ostream& operator<<(std::ostream& os, const RPM& k);
+    // \brief Writes the string representation of the given RotationSpeed \p k to the given output stream \p os
+    /// \returns an output stream with the rotation speed written to
+    friend std::ostream& operator<<(std::ostream& os, const RotationSpeed& k);
 };
 struct Measurement {
     std::string timestamp;                  ///< Timestamp of measurement
@@ -281,7 +281,7 @@ struct Measurement {
     std::optional<Frequency> frequency_Hz; ///< Grid frequency in Hertz
     std::optional<StateOfCharge> soc_Percent; ///< State of Charge in percent
     std::optional<Temperature> temperature_C; ///< Temperature in degree Celsius
-    std::optional<RPM> rpm; ///< RPM
+    std::optional<RotationSpeed> rotation_speed_RPM; ///< Rotation speed in RPM
 
     /// \brief Conversion from a given Measurement \p k to a given json object \p j
     friend void to_json(json& j, const Measurement& k);

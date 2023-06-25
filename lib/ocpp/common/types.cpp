@@ -432,7 +432,7 @@ std::ostream& operator<<(std::ostream& os, const Temperature& k) {
     return os;
 }
 
-void to_json(json& j, const RPM& k) {
+void to_json(json& j, const RotationSpeed& k) {
     // the required parts of the type
     j = json{
         {"value", k.value},
@@ -444,7 +444,7 @@ void to_json(json& j, const RPM& k) {
     }
 }
 
-void from_json(const json& j, RPM& k) {
+void from_json(const json& j, RotationSpeed& k) {
     // the required parts of the type
     k.value = j.at("value");
 
@@ -454,7 +454,7 @@ void from_json(const json& j, RPM& k) {
     }
 }
 
-std::ostream& operator<<(std::ostream& os, const RPM& k) {
+std::ostream& operator<<(std::ostream& os, const RotationSpeed& k) {
     os << json(k).dump(4);
     return os;
 }
@@ -496,8 +496,8 @@ void to_json(json& j, const Measurement& k) {
     if (k.temperature_C) {
         j["temperature_C"] = k.temperature_C.value();
     }
-    if (k.rpm) {
-        j["rpm"] = k.rpm.value();
+    if (k.rotation_speed_RPM) {
+        j["rotation_speed_RPM"] = k.rotation_speed_RPM.value();
     }
 }
 
@@ -537,8 +537,8 @@ void from_json(const json& j, Measurement& k) {
     if (j.contains("temperature_C")) {
         k.temperature_C.emplace(j.at("temperature_C"));
     }
-    if (j.contains("rpm")) {
-        k.rpm.emplace(j.at("rpm"));
+    if (j.contains("rotation_speed_RPM")) {
+        k.rotation_speed_RPM.emplace(j.at("rotation_speed_RPM"));
     }
 }
 

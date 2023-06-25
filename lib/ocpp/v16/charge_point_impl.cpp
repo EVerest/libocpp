@@ -631,7 +631,7 @@ std::optional<MeterValue> ChargePointImpl::get_latest_meter_value(int32_t connec
                     auto temperature = measurement.temperature_C;
                     sample.unit.emplace(UnitOfMeasure::Celsius);
                     if (temperature.value().location.has_value()) {
-                        // sample.location.emplace(temperature.value().location.value());
+                        sample.location.emplace(ocpp::v16::conversions::string_to_location((temperature.value().location.value())));
                     } else {
                         sample.location.emplace(Location::EV);
                     }
@@ -643,18 +643,18 @@ std::optional<MeterValue> ChargePointImpl::get_latest_meter_value(int32_t connec
             }
 
             case Measurand::RPM : {
-                // RPM
-                if (measurement.rpm) {
-                    auto rpm = measurement.rpm;
+                // Rotation speed
+                if (measurement.rotation_speed_RPM) {
+                    auto rpm = measurement.rotation_speed_RPM;
                     sample.unit.emplace(UnitOfMeasure::RevolutionsPerMinute);
                     if (rpm.value().location.has_value()) {
-                        // sample.location.emplace(rpm.value().location.value());
+                        sample.location.emplace(ocpp::v16::conversions::string_to_location((rpm.value().location.value())));
                     } else {
                         sample.location.emplace(Location::EV);
                     }
                     sample.value = ocpp::conversions::double_to_string(rpm.value().value);
                 } else {
-                    EVLOG_debug << "Power meter does not contain rpm configured measurand";
+                    EVLOG_debug << "Power meter does not contain rotation_speed_RPM configured measurand";
                 }
                 break;
             }
