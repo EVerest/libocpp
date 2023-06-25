@@ -92,7 +92,11 @@ ChargePointConfiguration::ChargePointConfiguration(const std::string& config,
                                   {Measurand::Voltage, {Phase::L1, Phase::L2, Phase::L3}},                       // V
                                   {Measurand::Current_Import, {Phase::L1, Phase::L2, Phase::L3, Phase::N}},      // A
                                   {Measurand::Frequency, {Phase::L1, Phase::L2, Phase::L3}},                     // Hz
-                                  {Measurand::Current_Offered, {}}};                                             // A
+                                  {Measurand::Current_Offered, {}},                                           // A
+                                  {Measurand::SoC, {}},                                                       // %
+                                  {Measurand::Temperature, {}},                                              // °C
+                                  {Measurand::RPM, {}},                                                     // rpm
+                                  };                                            
 
     if (!this->validate_measurands(this->config)) {
         EVLOG_AND_THROW(std::runtime_error("Given Measurands are invalid"));
