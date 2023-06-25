@@ -95,8 +95,7 @@ ChargePointConfiguration::ChargePointConfiguration(const std::string& config,
                                   {Measurand::Current_Offered, {}},                                           // A
                                   {Measurand::SoC, {}},                                                       // %
                                   {Measurand::Temperature, {}},                                              // °C
-                                  {Measurand::RPM, {}},                                                     // rpm
-                                  };                                            
+                                  {Measurand::RPM, {}}};                                            
 
     if (!this->validate_measurands(this->config)) {
         EVLOG_AND_THROW(std::runtime_error("Given Measurands are invalid"));
