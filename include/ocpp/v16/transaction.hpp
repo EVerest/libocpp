@@ -76,18 +76,18 @@ public:
     /// \returns the authorized id tag
     CiString<20> get_id_tag();
 
-    /// \brief Adds the provided \p meter_value to a chronological list of powermeter values
+    /// \brief Adds the provided \p meter_value to a chronological list of measurement values
     void add_meter_value(MeterValue meter_value);
 
-    /// \brief Provides all recorded powermeter values
-    /// \returns a vector of powermeter values
+    /// \brief Provides all recorded measurement values
+    /// \returns a vector of measurement values
     std::vector<MeterValue> get_meter_values();
 
-    /// \brief Changes the sample \p interval of the powermeter values sampling timer
+    /// \brief Changes the sample \p interval of the measurement values sampling timer
     /// \returns true if successful
     bool change_meter_values_sample_interval(int32_t interval);
 
-    /// \brief Adds the provided \p meter_value to a chronological list of clock aligned powermeter values
+    /// \brief Adds the provided \p meter_value to a chronological list of clock aligned measurement values
     void add_clock_aligned_meter_value(MeterValue meter_value);
 
     /// \brief Provides the id of this transaction
@@ -113,8 +113,8 @@ public:
     /// \brief Sets the transaction id
     void set_transaction_id(int32_t transaction_id);
 
-    /// \brief Provides all recorded sampled and clock aligned powermeter values
-    /// \returns a vector of sampled and clock aligned powermeter values packaged into a TransactionData object
+    /// \brief Provides all recorded sampled and clock aligned measurement values
+    /// \returns a vector of sampled and clock aligned measurement values packaged into a TransactionData object
     std::vector<TransactionData> get_transaction_data();
 
     /// \brief Marks the transaction as stopped/inactive

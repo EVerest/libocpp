@@ -238,7 +238,7 @@ void ChargePointImpl::clock_aligned_meter_values_sample() {
                 }
                 this->send_meter_value(connector, meter_value.value());
             } else {
-                EVLOG_warning << "Could not send clock aligned meter value for uninitialized powermeter at connector#"
+                EVLOG_warning << "Could not send clock aligned meter value for uninitialized measurement at connector#"
                               << connector;
             }
         }
@@ -328,16 +328,16 @@ void ChargePointImpl::load_charging_profiles() {
 std::optional<MeterValue> ChargePointImpl::get_latest_meter_value(int32_t connector,
                                                                   std::vector<MeasurandWithPhase> values_of_interest,
                                                                   ReadingContext context) {
-    std::lock_guard<std::mutex> lock(power_meters_mutex);
+    std::lock_guard<std::mutex> lock(measurements_mutex);
     std::optional<MeterValue> filtered_meter_value_opt;
-    // TODO(kai): also support readings from the charge point powermeter at "connector 0"
+    // TODO(kai): also support readings from the charge point measurement at "connector 0"
     if (this->connectors.find(connector) != this->connectors.end() &&
-        this->connectors.at(connector)->powermeter.has_value()) {
+        this->connectors.at(connector)->measurement.has_value()) {
         MeterValue filtered_meter_value;
-        const auto power_meter = this->connectors.at(connector)->powermeter.value();
-        const auto timestamp = power_meter.timestamp;
+        const auto measurement = this->connectors.at(connector)->measurement.value();
+        const auto timestamp = measurement.timestamp;
         filtered_meter_value.timestamp = ocpp::DateTime(timestamp);
-        EVLOG_debug << "PowerMeter value for connector: " << connector << ": " << power_meter;
+        EVLOG_debug << "PowerMeter value for connector: " << connector << ": " << measurement;
 
         for (auto configured_measurand : values_of_interest) {
             EVLOG_debug << "Value of interest: " << conversions::measurand_to_string(configured_measurand.measurand);
@@ -354,7 +354,7 @@ std::optional<MeterValue> ChargePointImpl::get_latest_meter_value(int32_t connec
             }
             switch (configured_measurand.measurand) {
             case Measurand::Energy_Active_Import_Register: {
-                const auto energy_Wh_import = power_meter.energy_Wh_import;
+                const auto energy_Wh_import = measurement.energy_Wh_import;
 
                 // Imported energy in Wh (from grid)
                 sample.unit.emplace(UnitOfMeasure::Wh);
@@ -393,7 +393,7 @@ std::optional<MeterValue> ChargePointImpl::get_latest_meter_value(int32_t connec
                 break;
             }
             case Measurand::Energy_Active_Export_Register: {
-                const auto energy_Wh_export = power_meter.energy_Wh_export;
+                const auto energy_Wh_export = measurement.energy_Wh_export;
                 // Exported energy in Wh (to grid)
                 sample.unit.emplace(UnitOfMeasure::Wh);
                 // TODO: which location is appropriate here? Inlet?
@@ -438,7 +438,7 @@ std::optional<MeterValue> ChargePointImpl::get_latest_meter_value(int32_t connec
                 break;
             }
             case Measurand::Power_Active_Import: {
-                const auto power_W = power_meter.power_W;
+                const auto power_W = measurement.power_W;
                 // power flow to EV, Instantaneous power in Watt
                 sample.unit.emplace(UnitOfMeasure::W);
                 sample.location.emplace(Location::Outlet);
@@ -476,7 +476,7 @@ std::optional<MeterValue> ChargePointImpl::get_latest_meter_value(int32_t connec
                 break;
             }
             case Measurand::Voltage: {
-                const auto voltage_V = power_meter.voltage_V;
+                const auto voltage_V = measurement.voltage_V;
                 // AC supply voltage, Voltage in Volts
                 sample.unit.emplace(UnitOfMeasure::V);
                 sample.location.emplace(Location::Outlet);
@@ -523,7 +523,7 @@ std::optional<MeterValue> ChargePointImpl::get_latest_meter_value(int32_t connec
                 break;
             }
             case Measurand::Current_Import: {
-                const auto current_A = power_meter.current_A;
+                const auto current_A = measurement.current_A;
                 // current flow to EV in A
                 sample.unit.emplace(UnitOfMeasure::A);
                 sample.location.emplace(Location::Outlet);
@@ -570,7 +570,7 @@ std::optional<MeterValue> ChargePointImpl::get_latest_meter_value(int32_t connec
                 break;
             }
             case Measurand::Frequency: {
-                const auto frequency_Hz = power_meter.frequency_Hz;
+                const auto frequency_Hz = measurement.frequency_Hz;
                 // Grid frequency in Hertz
                 // TODO: which location is appropriate here? Inlet?
                 // sample.location.emplace(Location::Outlet);
@@ -612,6 +612,53 @@ std::optional<MeterValue> ChargePointImpl::get_latest_meter_value(int32_t connec
                 sample.value = ocpp::conversions::double_to_string(this->connectors.at(connector)->max_current_offered);
                 break;
             }
+            case Measurand::SoC : {
+                // state of charge
+                if (measurement.soc_Percent) {
+                    auto soc = measurement.soc_Percent;
+                    sample.unit.emplace(UnitOfMeasure::Percent);
+                    sample.location.emplace(Location::EV);
+                    sample.value = ocpp::conversions::double_to_string(soc.value().value);
+                } else {
+                    EVLOG_debug << "Power meter does not contain soc_Percent configured measurand";
+                }
+                break;
+            }
+
+            case Measurand::Temperature: {
+                // temperature
+                if (measurement.temperature_C) {
+                    auto temperature = measurement.temperature_C;
+                    sample.unit.emplace(UnitOfMeasure::Celsius);
+                    if (temperature.value().location.has_value()) {
+                        // sample.location.emplace(temperature.value().location.value());
+                    } else {
+                        sample.location.emplace(Location::EV);
+                    }
+                    sample.value = ocpp::conversions::double_to_string(temperature.value().value);
+                } else {
+                    EVLOG_debug << "Power meter does not contain temperature_C configured measurand";
+                }
+                break;
+            }
+
+            case Measurand::RPM : {
+                // RPM
+                if (measurement.rpm) {
+                    auto rpm = measurement.rpm;
+                    sample.unit.emplace(UnitOfMeasure::RevolutionsPerMinute);
+                    if (rpm.value().location.has_value()) {
+                        // sample.location.emplace(rpm.value().location.value());
+                    } else {
+                        sample.location.emplace(Location::EV);
+                    }
+                    sample.value = ocpp::conversions::double_to_string(rpm.value().value);
+                } else {
+                    EVLOG_debug << "Power meter does not contain rpm configured measurand";
+                }
+                break;
+            }
+
             default:
                 break;
             }
@@ -646,7 +693,7 @@ void ChargePointImpl::send_meter_value(int32_t connector, MeterValue meter_value
 
     MeterValuesRequest req;
     const auto message_id = this->message_queue->createMessageId();
-    // connector = 0 designates the main powermeter
+    // connector = 0 designates the main measurement
     // connector > 0 designates a connector of the charge point
     req.connectorId = connector;
     std::ostringstream oss;
@@ -1778,7 +1825,7 @@ void ChargePointImpl::handleTriggerMessageRequest(ocpp::Call<TriggerMessageReque
         if (meter_value.has_value()) {
             this->send_meter_value(connector, meter_value.value());
         } else {
-            EVLOG_warning << "Could not send triggered meter value for uninitialized powermeter at connector#"
+            EVLOG_warning << "Could not send triggered meter value for uninitialized measurement at connector#"
                           << connector;
         }
         break;
@@ -1881,7 +1928,7 @@ void ChargePointImpl::handleExtendedTriggerMessageRequest(ocpp::Call<ExtendedTri
         if (meter_value.has_value()) {
             this->send_meter_value(connector, meter_value.value());
         } else {
-            EVLOG_warning << "Could not send triggered meter value for uninitialized powermeter at connector#"
+            EVLOG_warning << "Could not send triggered meter value for uninitialized measurement at connector#"
                           << connector;
         }
         break;
@@ -2816,15 +2863,15 @@ void ChargePointImpl::register_data_transfer_callback(
     this->data_transfer_callbacks[vendorId.get()][messageId.get()] = callback;
 }
 
-void ChargePointImpl::on_meter_values(int32_t connector, const Powermeter& power_meter) {
+void ChargePointImpl::on_meter_values(int32_t connector, const Measurement& new_measurement) {
     // FIXME: fix power meter to also work with dc
     EVLOG_debug << "updating power meter for connector: " << connector;
-    std::lock_guard<std::mutex> lock(power_meters_mutex);
-    this->connectors.at(connector)->powermeter.emplace(power_meter);
+    std::lock_guard<std::mutex> lock(measurements_mutex);
+    this->connectors.at(connector)->measurement.emplace(new_measurement);
 }
 
 void ChargePointImpl::on_max_current_offered(int32_t connector, int32_t max_current) {
-    std::lock_guard<std::mutex> lock(power_meters_mutex);
+    std::lock_guard<std::mutex> lock(measurements_mutex);
     // TODO(kai): uses power meter mutex because the reading context is similar, think about storing
     // this information in a unified struct
     this->connectors.at(connector)->max_current_offered = max_current;
@@ -2917,7 +2964,7 @@ void ChargePointImpl::on_transaction_started(const int32_t& connector, const std
             }
         } else {
             EVLOG_warning
-                << "Could not send and add meter value to transaction for uninitialized powermeter at connector#"
+                << "Could not send and add meter value to transaction for uninitialized measurement at connector#"
                 << connector;
         }
     });
