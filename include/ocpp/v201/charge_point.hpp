@@ -223,8 +223,8 @@ public:
     ///
     /// This function should be called curing a Diagnostics / Log upload to indicate the current log status.
     ///
-    /// \param status
-    /// \param requestId
+    /// \param status       Log status.
+    /// \param requestId    Request id that was provided in GetLogRequest.
     ///
     void on_log_status_notification(UploadLogStatusEnum status, int32_t requestId);
 
