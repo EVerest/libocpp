@@ -212,10 +212,11 @@ public:
     /// \param timestamp
     /// \param meter_start
     /// \param id_token
+    /// \param group_id_token   Optional group id token
     /// \param reservation_id
     void on_transaction_started(const int32_t evse_id, const int32_t connector_id, const std::string& session_id,
                                 const DateTime& timestamp, const MeterValue& meter_start, const IdToken& id_token,
-                                const std::optional<int32_t>& reservation_id);
+                                const std::optional<IdToken> &group_id_token, const std::optional<int32_t>& reservation_id);
 
     /// \brief Event handler that should be called when a transaction has finished
     /// \param evse_id

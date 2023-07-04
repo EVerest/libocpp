@@ -90,10 +90,11 @@ void ChargePoint::on_session_started(const int32_t evse_id, const int32_t connec
 void ChargePoint::on_transaction_started(const int32_t evse_id, const int32_t connector_id,
                                          const std::string& session_id, const DateTime& timestamp,
                                          const MeterValue& meter_start, const IdToken& id_token,
+                                         const std::optional<IdToken>& group_id_token,
                                          const std::optional<int32_t>& reservation_id) {
 
     this->evses.at(evse_id)->open_transaction(
-        session_id, connector_id, timestamp, meter_start, id_token, reservation_id,
+        session_id, connector_id, timestamp, meter_start, id_token, group_id_token, reservation_id,
         this->device_model->get_value<int>(ControllerComponentVariables::SampledDataTxUpdatedInterval));
     const auto& enhanced_transaction = this->evses.at(evse_id)->get_transaction();
     const auto meter_value = utils::get_meter_value_with_measurands_applied(
@@ -465,9 +466,9 @@ bool ChargePoint::is_evse_connector_reserved_not_available(const std::unique_ptr
             const CiString<36>& transaction_id_token = evse->get_transaction()->id_token.idToken;
             const CiString<36>& call_id_token = id_token.idToken;
             if (transaction_id_token != call_id_token &&
-                (group_id_token.has_value() &&                           // TODO mz how does this group id token work?
-                 group_id_token.value().idToken != transaction_id_token) // TODO mz get the group id token to compare
-                                                                         // with instead of transaction id token
+                (group_id_token.has_value() &&
+                 evse->get_transaction()->group_id_token.has_value() &&
+                 group_id_token.value().idToken != evse->get_transaction()->group_id_token.value().idToken)
             ) {
                 return true;
             }
@@ -855,12 +856,12 @@ void ChargePoint::handle_remote_start_transaction_request(CallResult<RequestStar
         const auto& evse = this->evses.at(evse_id);
 
         if (evse != nullptr) {
-            // TODO mz F01.FR.26 If a Charging Station with support for Smart Charging receives a
+            // TODO F01.FR.26 If a Charging Station with support for Smart Charging receives a
             // RequestStartTransactionRequest with an invalid ChargingProfile: The Charging Station SHALL respond with
             // RequestStartTransactionResponse with status = Rejected and optionally with reasonCode = "InvalidProfile"
             // or "InvalidSchedule".
 
-            // F01.FR.23: Faulted or unavailable. F01.FR.24: Occupied. Send rejected.
+            // F01.FR.23: Faulted or unavailable. F01.FR.24 / F02.FR.25: Occupied. Send rejected.
             const bool available = is_evse_connector_available(evse);
 
             // When available but there was a reservation for another token id or group token id:
@@ -869,13 +870,12 @@ void ChargePoint::handle_remote_start_transaction_request(CallResult<RequestStar
                 is_evse_connector_reserved_not_available(evse, call.msg.idToken, call.msg.groupIdToken);
 
             if (!available || reserved) {
-                // TODO: When occupied and there is an active transaction: send rejected (F02.FR.25)
-
                 // Note: we only support TxStartPoint PowerPathClosed, so we did not implement starting a transaction
                 // first (and send TransactionEventRequest (eventType = Started). Only if a transaction is authorized, a
                 // TransactionEventRequest will be sent. Because of this, F01.FR.13 is not implemented as well, because
                 // in the current situation, this is an impossible state. (TODO: when more TxStartPoints are supported,
                 // add implementation for F01.FR.13 as well).
+                EVLOG_info << "Remote start transaction requested, but connector is not available or reserved.";
             } else {
                 // F02: No active transaction yet and there is an available connector, so just send 'accepted'.
                 response.status = RequestStartStopStatusEnum::Accepted;
