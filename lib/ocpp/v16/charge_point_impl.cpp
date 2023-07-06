@@ -2813,13 +2813,18 @@ DataTransferResponse ChargePointImpl::data_transfer(const CiString<255>& vendorI
 
     DataTransferResponse response;
     ocpp::Call<DataTransferRequest> call(req, this->message_queue->createMessageId());
-
     auto data_transfer_future = this->send_async<DataTransferRequest>(call);
 
     auto enhanced_message = data_transfer_future.get();
     if (enhanced_message.messageType == MessageType::DataTransferResponse) {
-        ocpp::CallResult<DataTransferResponse> call_result = enhanced_message.message;
-        response = call_result.msg;
+        try {
+            ocpp::CallResult<DataTransferResponse> call_result = enhanced_message.message;
+            response = call_result.msg;
+        } catch (json::exception& e) {
+            // We can not parse the returned message, so we somehow have to indicate an error to the caller
+            response.status = DataTransferStatus::Rejected; // Rejected is not completely correct, but the
+                                                            // best we have to indicate an error
+        }
     }
     if (enhanced_message.offline) {
         // The charge point is offline or has a bad connection.
