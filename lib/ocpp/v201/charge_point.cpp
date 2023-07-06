@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
-#include "ocpp/v201/messages/LogStatusNotification.hpp"
+#include <ocpp/v201/messages/LogStatusNotification.hpp>
 #include <ocpp/v201/charge_point.hpp>
 
 namespace ocpp {
@@ -220,7 +220,7 @@ void ChargePoint::on_log_status_notification(UploadLogStatusEnum status, int32_t
     request.requestId = requestId;
 
     ocpp::Call<LogStatusNotificationRequest> call(request, this->message_queue->createMessageId());
-    this->send_async<LogStatusNotificationRequest>(call);
+    this->send<LogStatusNotificationRequest>(call);
 }
 
 template <class T> bool ChargePoint::send(ocpp::Call<T> call) {
