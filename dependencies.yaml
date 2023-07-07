@@ -22,3 +22,4 @@ date:
 websocketpp:
   git: https://github.com/zaphoyd/websocketpp.git
   git_tag: 0.8.2
+  options: ["BUILD_EXAMPLES OFF"]

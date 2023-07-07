@@ -6,9 +6,33 @@ project(ocpp
     LANGUAGES CXX
 )
 
-find_package(everest-cmake 0.1 REQUIRED
-    PATHS ../everest-cmake
-)
+if (USE_FIND_PACKAGE)
+    find_package(everest-cmake 0.1 REQUIRED
+      PATHS ../everest-cmake
+    )
+else()
+    
+    include(FetchContent)
+
+    set(EXTERNAL_EVEREST_CMAKE_NAME everest-cmake)
+    set(EXTERNAL_EVEREST_CMAKE_URL https://github.com/EVerest/everest-cmake.git)
+    set(EXTERNAL_EVEREST_CMAKE_TAG v0.1.0)
+
+    message(STATUS "Fetching everest cmake")
+    FetchContent_Declare(
+        ${EXTERNAL_EVEREST_CMAKE_NAME}
+        GIT_REPOSITORY              ${EXTERNAL_EVEREST_CMAKE_URL}
+        GIT_TAG                     ${EXTERNAL_EVEREST_CMAKE_TAG}
+    )
+
+    FetchContent_MakeAvailable(${EXTERNAL_EVEREST_CMAKE_NAME})
+
+    # Add the cmake directory to the module path
+    # this is needed because some submodules (everest-timer and everest-log) still need to find the cmake module using "find_package"
+    set(${EXTERNAL_EVEREST_CMAKE_NAME}_DIR ${CMAKE_BINARY_DIR}/_deps/${EXTERNAL_EVEREST_CMAKE_NAME}-src)
+    find_package(everest-cmake REQUIRED PATHS ${everest-cmake_DIR})
+
+endif()
 
 # options
 option(BUILD_TESTING "Run unit tests" OFF)
@@ -32,14 +56,19 @@ if(NOT DISABLE_EDM)
     set_target_properties(websocketpp::websocketpp PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${websocketpp_SOURCE_DIR}")
 
 else()
-    find_package(date REQUIRED)
-    find_package(nlohmann_json REQUIRED)
-    find_package(nlohmann_json_schema_validator REQUIRED)
-    find_package(websocketpp REQUIRED)
+    if (USE_FIND_PACKAGE)
+        find_package(date REQUIRED)
+        find_package(nlohmann_json REQUIRED)
+        find_package(nlohmann_json_schema_validator REQUIRED)
+        find_package(websocketpp REQUIRED)
     
-    find_package(fsm REQUIRED)
-    find_package(everest-timer REQUIRED)
-    find_package(everest-log REQUIRED)
+        find_package(fsm REQUIRED)
+        find_package(everest-timer REQUIRED)
+        find_package(everest-log REQUIRED)
+    else()
+        cmake_minimum_required(VERSION 3.12)
+        include(dependencies.cmake)
+    endif()
 endif()
 
 # library code
