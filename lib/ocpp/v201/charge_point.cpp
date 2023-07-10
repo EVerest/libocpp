@@ -445,16 +445,16 @@ void ChargePoint::handle_scheduled_change_availability_requests(const int32_t ev
     }
 }
 
-bool ChargePoint::is_transaction_active(const CiString<36>& transaction_id) {
+std::optional<int32_t> ChargePoint::get_transaction_evseid(const CiString<36>& transaction_id) {
     for (auto const& [evse_id, evse] : evses) {
         if (evse->has_active_transaction()) {
             if (transaction_id == evse->get_transaction()->get_transaction().transactionId) {
-                return true;
+                return evse_id;
             }
         }
     }
 
-    return false;
+    return std::nullopt;
 }
 
 bool ChargePoint::is_evse_connector_reserved_not_available(const std::unique_ptr<Evse>& evse, const IdToken& id_token,
@@ -901,8 +901,9 @@ void ChargePoint::handle_remote_stop_transaction_request(CallResult<RequestStopT
     const auto msg = call.msg;
 
     RequestStopTransactionResponse response;
+    std::optional<int32_t> evseid = get_transaction_evseid(msg.transactionId);
 
-    if (is_transaction_active(msg.transactionId)) {
+    if (evseid.has_value()) {
         // F03.FR.07: send 'accepted' if there was an ongoing transaction with the given transaction id
         response.status = RequestStartStopStatusEnum::Accepted;
     } else {
@@ -910,11 +911,12 @@ void ChargePoint::handle_remote_stop_transaction_request(CallResult<RequestStopT
         response.status = RequestStartStopStatusEnum::Rejected;
     }
 
-    if (response.status == RequestStartStopStatusEnum::Accepted) {
-        this->callbacks.remote_stop_transaction_callback(msg.transactionId);
-    }
+    const ocpp::CallResult<RequestStopTransactionResponse> call_result(response, call.uniqueId);
+    this->send<RequestStopTransactionResponse>(call_result);
 
-    this->callbacks.remote_stop_transaction_callback(msg.transactionId);
+    if (response.status == RequestStartStopStatusEnum::Accepted) {
+        this->callbacks.stop_transaction_callback(evseid.value(), ReasonEnum::Remote);
+    }
 }
 
 void ChargePoint::handle_change_availability_req(Call<ChangeAvailabilityRequest> call) {

@@ -47,7 +47,6 @@ struct Callbacks {
     std::function<GetLogResponse(const GetLogRequest& request)> get_log_request_callback;
     std::function<UnlockConnectorResponse(const int32_t evse_id, const int32_t connecor_id)> unlock_connector_callback;
     std::function<void(const RequestStartTransactionRequest& request)> remote_start_transaction_callback;
-    std::function<void(const CiString<36>& transaction_id)> remote_stop_transaction_callback;
 };
 
 /// \brief Class implements OCPP2.0.1 Charging Station
@@ -95,7 +94,14 @@ private:
     void update_aligned_data_interval();
     bool is_change_availability_possible(const ChangeAvailabilityRequest& req);
     void handle_scheduled_change_availability_requests(const int32_t evse_id);
-    bool is_transaction_active(const CiString<36>& transaction_id);
+
+    ///
+    /// \brief Get evseid for the given transaction id.
+    /// \param transaction_id   The transactionid
+    /// \return The evse id belonging the the transaction id. std::nullopt if there is no transaction with the given
+    ///         transaction id.
+    ///
+    std::optional<int32_t> get_transaction_evseid(const CiString<36>& transaction_id);
 
     ///
     /// \brief Check if EVSE connector is reserved for another than the given id token and / or group id token.
