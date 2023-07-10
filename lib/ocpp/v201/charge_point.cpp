@@ -445,7 +445,7 @@ void ChargePoint::handle_scheduled_change_availability_requests(const int32_t ev
     }
 }
 
-bool ChargePoint::is_transaction_ongoing(const CiString<36>& transaction_id) {
+bool ChargePoint::is_transaction_active(const CiString<36>& transaction_id) {
     for (auto const& [evse_id, evse] : evses) {
         if (evse->has_active_transaction()) {
             if (transaction_id == evse->get_transaction()->get_transaction().transactionId) {
@@ -460,7 +460,7 @@ bool ChargePoint::is_transaction_ongoing(const CiString<36>& transaction_id) {
 bool ChargePoint::is_evse_connector_reserved_not_available(const std::unique_ptr<Evse>& evse, const IdToken& id_token,
                                                            const std::optional<IdToken>& group_id_token) const {
     const int32_t connectors = evse->get_number_of_connectors();
-    for (int32_t i = 0; i < connectors; ++i) {
+    for (int32_t i = 1; i <= connectors; ++i) {
         const ConnectorStatusEnum& status = evse->get_state(i);
         if (status == ConnectorStatusEnum::Reserved) {
             const CiString<36>& transaction_id_token = evse->get_transaction()->id_token.idToken;
@@ -479,26 +479,25 @@ bool ChargePoint::is_evse_connector_reserved_not_available(const std::unique_ptr
 }
 
 bool ChargePoint::is_evse_connector_available(const std::unique_ptr<Evse>& evse) const {
-    bool available = false;
+    if (evse->has_active_transaction())
+    {
+        // If an EV is connected and has no authorization yet then the status is 'Occupied' and the RemoteStartRequest
+        // should still be accepted. So this is the 'occupied' check instead.
+        return false;
+    }
 
     const int32_t connectors = evse->get_number_of_connectors();
-    for (int32_t i = 0; i < connectors; ++i) {
+    for (int32_t i = 1; i <= connectors; ++i) {
         const ConnectorStatusEnum& status = evse->get_state(i);
-        if (status == ConnectorStatusEnum::Occupied) {
-            // One of the connectors of the evse is occupied. Since you can not charge to different cars on one evse,
-            // this means the evse is not available. We can return directly, no need to loop through the other
-            // connectors.
-            return false;
-        }
 
-        // At least one of the connectors is available, but don't return here yet because the other connector can be
-        // occupied for example.
+        // At least one of the connectors is available / not faulted.
         if (status != ConnectorStatusEnum::Faulted && status != ConnectorStatusEnum::Unavailable) {
-            available = true;
+            return true;
         }
     }
 
-    return available;
+    // Connectors are faulted or unavailable.
+    return false;
 }
 
 void ChargePoint::boot_notification_req(const BootReasonEnum& reason) {
@@ -903,7 +902,7 @@ void ChargePoint::handle_remote_stop_transaction_request(CallResult<RequestStopT
 
     RequestStopTransactionResponse response;
 
-    if (is_transaction_ongoing(msg.transactionId)) {
+    if (is_transaction_active(msg.transactionId)) {
         // F03.FR.07: send 'accepted' if there was an ongoing transaction with the given transaction id
         response.status = RequestStartStopStatusEnum::Accepted;
     } else {

@@ -95,7 +95,7 @@ private:
     void update_aligned_data_interval();
     bool is_change_availability_possible(const ChangeAvailabilityRequest& req);
     void handle_scheduled_change_availability_requests(const int32_t evse_id);
-    bool is_transaction_ongoing(const CiString<36>& transaction_id);
+    bool is_transaction_active(const CiString<36>& transaction_id);
 
     ///
     /// \brief Check if EVSE connector is reserved for another than the given id token and / or group id token.
