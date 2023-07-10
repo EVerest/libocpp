@@ -47,6 +47,7 @@ struct Callbacks {
     std::function<GetLogResponse(const GetLogRequest& request)> get_log_request_callback;
     std::function<UnlockConnectorResponse(const int32_t evse_id, const int32_t connecor_id)> unlock_connector_callback;
     std::function<void(const RequestStartTransactionRequest& request)> remote_start_transaction_callback;
+    std::function<bool(const int32_t evse_id, const CiString<36> idToken, const std::optional <CiString<36>> groupIdToken)> is_reservation_valid_callback;
 };
 
 /// \brief Class implements OCPP2.0.1 Charging Station
@@ -176,8 +177,8 @@ private:
     // Function Block F: Remote transaction control
     void handle_unlock_connector(Call<UnlockConnectorRequest> call);
     // Function Block f: Remote transaction control
-    void handle_remote_start_transaction_request(CallResult<RequestStartTransactionRequest> call);
-    void handle_remote_stop_transaction_request(CallResult<RequestStopTransactionRequest> call);
+    void handle_remote_start_transaction_request(Call<RequestStartTransactionRequest> call);
+    void handle_remote_stop_transaction_request(Call<RequestStopTransactionRequest> call);
 
     // Functional Block G: Availability
     void handle_change_availability_req(Call<ChangeAvailabilityRequest> call);

@@ -463,6 +463,7 @@ bool ChargePoint::is_evse_connector_reserved_not_available(const std::unique_ptr
     for (int32_t i = 1; i <= connectors; ++i) {
         const ConnectorStatusEnum& status = evse->get_state(i);
         if (status == ConnectorStatusEnum::Reserved) {
+            // TODO create callback here
             const CiString<36>& transaction_id_token = evse->get_transaction()->id_token.idToken;
             const CiString<36>& call_id_token = id_token.idToken;
             if (transaction_id_token != call_id_token &&
