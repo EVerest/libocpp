@@ -46,7 +46,8 @@ struct Callbacks {
     std::function<void(const ChangeAvailabilityRequest& request)> change_availability_callback;
     std::function<GetLogResponse(const GetLogRequest& request)> get_log_request_callback;
     std::function<UnlockConnectorResponse(const int32_t evse_id, const int32_t connecor_id)> unlock_connector_callback;
-    std::function<void(const RequestStartTransactionRequest& request)> remote_start_transaction_callback;
+    // callback to be called when the request can be accepted. authorize_remote_start indicates if Authorize.req needs to follow or not
+    std::function<void(const RequestStartTransactionRequest& request, const bool authorize_remote_start)> remote_start_transaction_callback;
     ///
     /// \brief Check if the current reservation for the given evse id is made for the id token / group id token.
     /// \return True if evse is reserved for the given id token / group id token, false if it is reserved for another

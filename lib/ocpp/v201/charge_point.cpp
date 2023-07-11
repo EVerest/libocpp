@@ -99,7 +99,7 @@ void ChargePoint::on_transaction_started(const int32_t evse_id, const int32_t co
     const auto& enhanced_transaction = this->evses.at(evse_id)->get_transaction();
     const auto meter_value = utils::get_meter_value_with_measurands_applied(
         meter_start, utils::get_measurands_vec(this->device_model->get_value<std::string>(
-                         ControllerComponentVariables::SampledDataTxUpdatedMeasurands)));
+                         ControllerComponentVariables::SampledDataTxStartedMeasurands)));
 
     Transaction transaction{enhanced_transaction->transactionId};
 
@@ -890,8 +890,7 @@ void ChargePoint::handle_remote_start_transaction_request(Call<RequestStartTrans
 
     if (response.status == RequestStartStopStatusEnum::Accepted) {
         // F01.FR.01 and F01.FR.02
-        this->callbacks.remote_start_transaction_callback(
-            msg, this->device_model->get_value<bool>(ControllerComponentVariables::AuthorizeRemoteStart));
+        this->callbacks.remote_start_transaction_callback(msg, this->device_model->get_value<bool>(ControllerComponentVariables::AuthorizeRemoteStart));
     }
 }
 
