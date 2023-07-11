@@ -47,7 +47,14 @@ struct Callbacks {
     std::function<GetLogResponse(const GetLogRequest& request)> get_log_request_callback;
     std::function<UnlockConnectorResponse(const int32_t evse_id, const int32_t connecor_id)> unlock_connector_callback;
     std::function<void(const RequestStartTransactionRequest& request)> remote_start_transaction_callback;
-    std::function<bool(const int32_t evse_id, const CiString<36> idToken, const std::optional <CiString<36>> groupIdToken)> is_reservation_valid_callback;
+    ///
+    /// \brief Check if the current reservation for the given evse id is made for the id token / group id token.
+    /// \return True if evse is reserved for the given id token / group id token, false if it is reserved for another
+    ///         one.
+    ///
+    std::function<bool(const int32_t evse_id, const CiString<36> idToken,
+                       const std::optional<CiString<36>> groupIdToken)>
+        is_reservation_for_token_callback;
 };
 
 /// \brief Class implements OCPP2.0.1 Charging Station
@@ -117,8 +124,8 @@ private:
     ///         If id_token is equal to reserved id_token or group_id_token is equal, return false.
     ///         If there is no reservation, return false.
     ///
-    bool is_evse_connector_reserved_not_available(const std::unique_ptr<Evse>& evse, const IdToken& id_token,
-                                                  const std::optional<IdToken>& group_id_token) const;
+    bool is_evse_reserved_for_other(const std::unique_ptr<Evse>& evse, const IdToken& id_token,
+                                    const std::optional<IdToken>& group_id_token) const;
 
     ///
     /// \brief Check if one of the connectors of the evse is available (both connectors faulted or unavailable or on of

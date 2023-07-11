@@ -457,20 +457,17 @@ std::optional<int32_t> ChargePoint::get_transaction_evseid(const CiString<36>& t
     return std::nullopt;
 }
 
-bool ChargePoint::is_evse_connector_reserved_not_available(const std::unique_ptr<Evse>& evse, const IdToken& id_token,
-                                                           const std::optional<IdToken>& group_id_token) const {
+bool ChargePoint::is_evse_reserved_for_other(const std::unique_ptr<Evse>& evse, const IdToken& id_token,
+                                             const std::optional<IdToken>& group_id_token) const {
     const int32_t connectors = evse->get_number_of_connectors();
     for (int32_t i = 1; i <= connectors; ++i) {
         const ConnectorStatusEnum& status = evse->get_state(i);
         if (status == ConnectorStatusEnum::Reserved) {
-            // TODO create callback here
-            const CiString<36>& transaction_id_token = evse->get_transaction()->id_token.idToken;
-            const CiString<36>& call_id_token = id_token.idToken;
-            if (transaction_id_token != call_id_token &&
-                (group_id_token.has_value() &&
-                 evse->get_transaction()->group_id_token.has_value() &&
-                 group_id_token.value().idToken != evse->get_transaction()->group_id_token.value().idToken)
-            ) {
+            const std::optional<CiString<36>> groupIdToken =
+                group_id_token.has_value() ? group_id_token.value().idToken : std::optional<CiString<36>>{};
+
+            if (!callbacks.is_reservation_for_token_callback(evse->get_evse_info().id, id_token.idToken,
+                                                             groupIdToken)) {
                 return true;
             }
         }
@@ -844,7 +841,7 @@ void ChargePoint::handle_unlock_connector(Call<UnlockConnectorRequest> call) {
     this->send<UnlockConnectorResponse>(call_result);
 }
 
-void ChargePoint::handle_remote_start_transaction_request(CallResult<RequestStartTransactionRequest> call) {
+void ChargePoint::handle_remote_start_transaction_request(Call<RequestStartTransactionRequest> call) {
     const auto msg = call.msg;
 
     RequestStartTransactionResponse response;
@@ -867,7 +864,7 @@ void ChargePoint::handle_remote_start_transaction_request(CallResult<RequestStar
             // When available but there was a reservation for another token id or group token id:
             //    send rejected (F01.FR.21 & F01.FR.22)
             const bool reserved =
-                is_evse_connector_reserved_not_available(evse, call.msg.idToken, call.msg.groupIdToken);
+                is_evse_reserved_for_other(evse, call.msg.idToken, call.msg.groupIdToken);
 
             if (!available || reserved) {
                 // Note: we only support TxStartPoint PowerPathClosed, so we did not implement starting a transaction
@@ -898,7 +895,7 @@ void ChargePoint::handle_remote_start_transaction_request(CallResult<RequestStar
     }
 }
 
-void ChargePoint::handle_remote_stop_transaction_request(CallResult<RequestStopTransactionRequest> call) {
+void ChargePoint::handle_remote_stop_transaction_request(Call<RequestStopTransactionRequest> call) {
     const auto msg = call.msg;
 
     RequestStopTransactionResponse response;
