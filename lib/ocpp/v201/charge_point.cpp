@@ -89,6 +89,7 @@ void ChargePoint::on_session_started(const int32_t evse_id, const int32_t connec
 
 void ChargePoint::on_transaction_started(const int32_t evse_id, const int32_t connector_id,
                                          const std::string& session_id, const DateTime& timestamp,
+                                         const ocpp::v201::TriggerReasonEnum trigger_reason,
                                          const MeterValue& meter_start, const IdToken& id_token,
                                          const std::optional<IdToken>& group_id_token,
                                          const std::optional<int32_t>& reservation_id) {
@@ -106,9 +107,8 @@ void ChargePoint::on_transaction_started(const int32_t evse_id, const int32_t co
     auto evse = this->evses.at(evse_id)->get_evse_info();
     evse.connectorId.emplace(connector_id);
 
-    this->transaction_event_req(TransactionEventEnum::Started, timestamp, transaction,
-                                TriggerReasonEnum::ChargingStateChanged, enhanced_transaction->get_seq_no(),
-                                std::nullopt, evse, enhanced_transaction->id_token,
+    this->transaction_event_req(TransactionEventEnum::Started, timestamp, transaction, trigger_reason,
+                                enhanced_transaction->get_seq_no(), std::nullopt, evse, enhanced_transaction->id_token,
                                 std::vector<MeterValue>(1, meter_value), std::nullopt, std::nullopt, reservation_id);
 }
 
@@ -477,8 +477,7 @@ bool ChargePoint::is_evse_reserved_for_other(const std::unique_ptr<Evse>& evse, 
 }
 
 bool ChargePoint::is_evse_connector_available(const std::unique_ptr<Evse>& evse) const {
-    if (evse->has_active_transaction())
-    {
+    if (evse->has_active_transaction()) {
         // If an EV is connected and has no authorization yet then the status is 'Occupied' and the RemoteStartRequest
         // should still be accepted. So this is the 'occupied' check instead.
         return false;
@@ -863,8 +862,7 @@ void ChargePoint::handle_remote_start_transaction_request(Call<RequestStartTrans
 
             // When available but there was a reservation for another token id or group token id:
             //    send rejected (F01.FR.21 & F01.FR.22)
-            const bool reserved =
-                is_evse_reserved_for_other(evse, call.msg.idToken, call.msg.groupIdToken);
+            const bool reserved = is_evse_reserved_for_other(evse, call.msg.idToken, call.msg.groupIdToken);
 
             if (!available || reserved) {
                 // Note: we only support TxStartPoint PowerPathClosed, so we did not implement starting a transaction
@@ -890,7 +888,8 @@ void ChargePoint::handle_remote_start_transaction_request(Call<RequestStartTrans
 
     if (response.status == RequestStartStopStatusEnum::Accepted) {
         // F01.FR.01 and F01.FR.02
-        this->callbacks.remote_start_transaction_callback(msg, this->device_model->get_value<bool>(ControllerComponentVariables::AuthorizeRemoteStart));
+        this->callbacks.remote_start_transaction_callback(
+            msg, this->device_model->get_value<bool>(ControllerComponentVariables::AuthorizeRemoteStart));
     }
 }
 

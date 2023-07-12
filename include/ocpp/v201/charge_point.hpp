@@ -19,6 +19,7 @@
 #include <ocpp/v201/messages/ChangeAvailability.hpp>
 #include <ocpp/v201/messages/DataTransfer.hpp>
 #include <ocpp/v201/messages/GetBaseReport.hpp>
+#include <ocpp/v201/messages/GetLog.hpp>
 #include <ocpp/v201/messages/GetReport.hpp>
 #include <ocpp/v201/messages/GetVariables.hpp>
 #include <ocpp/v201/messages/Heartbeat.hpp>
@@ -32,7 +33,6 @@
 #include <ocpp/v201/messages/StatusNotification.hpp>
 #include <ocpp/v201/messages/TransactionEvent.hpp>
 #include <ocpp/v201/messages/TriggerMessage.hpp>
-#include <ocpp/v201/messages/GetLog.hpp>
 #include <ocpp/v201/messages/UnlockConnector.hpp>
 
 namespace ocpp {
@@ -46,8 +46,10 @@ struct Callbacks {
     std::function<void(const ChangeAvailabilityRequest& request)> change_availability_callback;
     std::function<GetLogResponse(const GetLogRequest& request)> get_log_request_callback;
     std::function<UnlockConnectorResponse(const int32_t evse_id, const int32_t connecor_id)> unlock_connector_callback;
-    // callback to be called when the request can be accepted. authorize_remote_start indicates if Authorize.req needs to follow or not
-    std::function<void(const RequestStartTransactionRequest& request, const bool authorize_remote_start)> remote_start_transaction_callback;
+    // callback to be called when the request can be accepted. authorize_remote_start indicates if Authorize.req needs
+    // to follow or not
+    std::function<void(const RequestStartTransactionRequest& request, const bool authorize_remote_start)>
+        remote_start_transaction_callback;
     ///
     /// \brief Check if the current reservation for the given evse id is made for the id token / group id token.
     /// \return True if evse is reserved for the given id token / group id token, false if it is reserved for another
@@ -225,13 +227,16 @@ public:
     /// \param connector_id
     /// \param session_id
     /// \param timestamp
+    /// \param trigger_reason
     /// \param meter_start
     /// \param id_token
     /// \param group_id_token   Optional group id token
     /// \param reservation_id
     void on_transaction_started(const int32_t evse_id, const int32_t connector_id, const std::string& session_id,
-                                const DateTime& timestamp, const MeterValue& meter_start, const IdToken& id_token,
-                                const std::optional<IdToken> &group_id_token, const std::optional<int32_t>& reservation_id);
+                                const DateTime& timestamp, const ocpp::v201::TriggerReasonEnum trigger_reason,
+                                const MeterValue& meter_start, const IdToken& id_token,
+                                const std::optional<IdToken>& group_id_token,
+                                const std::optional<int32_t>& reservation_id);
 
     /// \brief Event handler that should be called when a transaction has finished
     /// \param evse_id
