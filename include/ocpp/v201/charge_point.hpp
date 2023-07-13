@@ -227,12 +227,10 @@ public:
     void stop();
 
     /// \brief Chargepoint notifies about new firmware update status firmware_update_status. This function should be
-    /// called during a Firmware Update to indicate the current firmware_update_status.
-    /// \param request_id   A request_id of -1 indicates a FirmwareStatusNotification.req, else a
-    ///                     SignedFirmwareUpdateStatusNotification.req.
-    /// \param firmware_update_status The firmware_update_status should be either be convertable to the
-    ///        ocpp::v201::FirmwareStatusEnumType enum or ocpp::v201::FirmwareStatus enum depending on the previous
-    ///        request, which could have been a UpdateFirmware.req or a SignedUpdateFirmware.req (Security Whitepaper)
+    ///        called during a Firmware Update to indicate the current firmware_update_status.
+    /// \param request_id   The request_id. When it is -1, it will not be included in the request.
+    /// \param firmware_update_status The firmware_update_status should be convertable to the
+    ///        ocpp::v201::FirmwareStatusEnum.
     void on_firmware_update_status_notification(int32_t request_id, std::string& firmware_update_status);
 
     /// \brief Event handler that should be called when a session has started

@@ -350,6 +350,9 @@ void ChargePoint::handle_message(const json& json_message, const MessageType& me
     case MessageType::ClearCache:
         this->handle_clear_cache_req(json_message);
         break;
+    case MessageType::UpdateFirmware:
+        this->handle_firmware_update_req(json_message);
+        break;
     }
 }
 
