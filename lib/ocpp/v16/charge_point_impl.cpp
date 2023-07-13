@@ -790,6 +790,7 @@ void ChargePointImpl::connected_callback() {
                            "failed. Trying again...";
             this->boot_notification_callerror = false;
             this->boot_notification();
+            break;
         }
         EVLOG_error << "Connected but not in state 'Disconnected' or 'Booted', something is wrong: "
                     << this->connection_state;
