@@ -20,12 +20,9 @@ set(EXTERNAL_DATE_NAME date)
 set(EXTERNAL_DATE_URL https://github.com/HowardHinnant/date.git)
 set(EXTERNAL_DATE_TAG v3.0.1)
 
-# ofcourse this must be changed before pushing this back to EVerest
 set(EXTERNAL_EVEREST_TIMER_NAME everest-timer)
-set(EXTERNAL_EVEREST_TIMER_URL ssh://git@git.alfen.com:7999/thk/everest-timerlib-fork.git)
-set(EXTERNAL_EVEREST_TIMER_TAG "origin/AHWP-5142")
-#set(EXTERNAL_EVEREST_TIMER_URL https://github.com/EVerest/libtimer.git)
-#set(EXTERNAL_EVEREST_TIMER_TAG v0.1.1)
+set(EXTERNAL_EVEREST_TIMER_URL https://github.com/EVerest/libtimer.git)
+set(EXTERNAL_EVEREST_TIMER_TAG v0.1.1)
 
 set(EXTERNAL_EVEREST_LOG_NAME everest-log)
 set(EXTERNAL_EVEREST_LOG_URL https://github.com/EVerest/liblog.git)
