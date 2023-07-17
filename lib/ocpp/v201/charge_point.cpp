@@ -1160,19 +1160,27 @@ void ChargePoint::handle_reset_req(Call<ResetRequest> call) {
     // TODO(piet): B11.FR.09
     // TODO(piet): B11.FR.10
 
-    // TODO(piet): B12.FR.01
-    // TODO(piet): B12.FR.02
-    // TODO(piet): B12.FR.03
-    // TODO(piet): B12.FR.04
     // TODO(piet): B12.FR.05
     // TODO(piet): B12.FR.06
-    // TODO(piet): B12.FR.07
-    // TODO(piet): B12.FR.08
-    // TODO(piet): B12.FR.09
     EVLOG_debug << "Received ResetRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
     const auto msg = call.msg;
 
     ResetResponse response;
+
+    // Check if there is an active transaction (on the given evse or if not given, on one of the evse's)
+    bool transaction_active = false;
+    if (msg.evseId.has_value() && this->evses.at(msg.evseId.value())->has_active_transaction()) {
+        transaction_active = true;
+    }
+    else {
+        for (const auto& [evse_id, evse] : this->evses)
+        {
+            if (evse->has_active_transaction()) {
+                transaction_active = true;
+                break;
+            }
+        }
+    }
 
     if (this->callbacks.is_reset_allowed_callback(msg.type)) {
         // reset is allowed
@@ -1181,15 +1189,37 @@ void ChargePoint::handle_reset_req(Call<ResetRequest> call) {
         response.status = ResetStatusEnum::Rejected;
     }
 
-    if (/* transaction is active */ false) {
+    if (response.status == ResetStatusEnum::Accepted && transaction_active) {
         if (msg.type == ResetEnum::OnIdle and !msg.evseId.has_value()) {
             // B12.FR.03
+            for (const auto& [evse_id, evse] : this->evses) {
+                if (evse->has_active_transaction()) {
+                    callbacks.stop_transaction_callback(evse_id, ReasonEnum::Local);
+                }
+            }
+
+            // B12.FR.01: We have to wait until transactions have ended.
+            response.status = ResetStatusEnum::Scheduled;
         } else if (msg.type == ResetEnum::Immediate and !msg.evseId.has_value()) {
             // B12.FR.04
+            for (const auto& [evse_id, evse] : this->evses) {
+                if (evse->has_active_transaction()) {
+                    callbacks.stop_transaction_callback(evse_id, ReasonEnum::ImmediateReset);
+                }
+            }
+
+            // B12.FR.02: We will try to reset immediately, send ResetStatusEnum::Accepted.
         } else if (msg.type == ResetEnum::OnIdle and msg.evseId.has_value()) {
             // B12.FR.07
+            callbacks.stop_transaction_callback(msg.evseId.value(), ReasonEnum::Local);
+
+            // B12.FR.01: We have to wait until transactions have ended.
+            response.status = ResetStatusEnum::Scheduled;
         } else if (msg.type == ResetEnum::Immediate and msg.evseId.has_value()) {
             // B12.FR.08
+            callbacks.stop_transaction_callback(msg.evseId.value(), ReasonEnum::ImmediateReset);
+
+            // B12.FR.02: We will try to reset immediately, send ResetStatusEnum::Accepted.
         }
     }
 
