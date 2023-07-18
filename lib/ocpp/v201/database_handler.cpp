@@ -206,5 +206,38 @@ OperationalStatusEnum DatabaseHandler::get_availability(const int32_t evse_id, s
     }
 }
 
+std::deque<ControlMessage<MessageType> *> DatabaseHandler::get_transaction_messages()
+{
+    try {
+        std::string sql = "SELECT * FROM TRANSACTION_QUEUE";
+        sqlite3_stmt* stmt;
+        if (sqlite3_prepare_v2(this->db, sql.c_str(), sql.size(), &stmt, NULL) != SQLITE_OK) {
+            EVLOG_error << "Could not prepare insert statement: " << sqlite3_errmsg(this->db);
+            throw std::runtime_error("Could not get transaction queue");
+        }
+
+        int status;
+        while ((status = sqlite3_step(stmt)) == SQLITE_ROW) {
+
+        }
+
+        if (status != SQLITE_DONE) {
+            EVLOG_error << "Could not get (all) queued transaction messages from database";
+        }
+    } catch (const std::exception& e) {
+        throw std::runtime_error("Could not get queued transaction messages from database");
+    }
+}
+
+bool DatabaseHandler::insert_transaction_message(const ControlMessage<MessageType> &transaction_message)
+{
+
+}
+
+bool DatabaseHandler::remove_transaction_message(const std::string &unique_id)
+{
+
+}
+
 } // namespace v201
 } // namespace ocpp
