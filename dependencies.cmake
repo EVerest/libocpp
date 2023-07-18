@@ -33,10 +33,10 @@ set(JSON_MultipleHeaders    ON  CACHE INTERNAL "Build JSON multi header config")
 set(BUILD_TESTS             OFF CACHE INTERNAL "Build tests")
 set(BUILD_EXAMPLES          OFF CACHE INTERNAL "Build examples")
 
-set(BUILD_TZ_LIB        ON CACHE INTERNAL "Build TZ lib")
-set(HAS_REMOTE_API      0 CACHE INTERNAL  "Enable remote API")
-set(USE_AUTOLOAD        0 CACHE INTERNAL  "Use autoload")
-set(USE_SYSTEM_TZ_DB    ON CACHE INTERNAL "Use system DB for timezones")
+set(BUILD_TZ_LIB        ON CACHE BOOL "Build TZ lib")
+set(HAS_REMOTE_API      0  CACHE BOOL  "Enable remote API")
+set(USE_AUTOLOAD        0  CACHE BOOL  "Use autoload")
+set(USE_SYSTEM_TZ_DB    ON CACHE BOOL "Use system DB for timezones")
 
 # Fetch websocketpp
 message(STATUS "Fetching websocketpp")
