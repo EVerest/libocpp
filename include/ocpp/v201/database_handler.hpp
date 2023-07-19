@@ -64,17 +64,17 @@ public:
 
     /// \brief Get transaction messages from transaction messages queue table.
     /// \return The transaction messages.
-    std::deque<ControlMessage<v201::MessageType>*> get_transaction_messages();
+    std::deque<ControlMessage<v201::MessageType>> get_transaction_messages();
 
     /// \brief Insert a new transaction message that needs to be sent to the CSMS.
     /// \param transaction_message  The message to be stored.
     /// \return True on success.
-    bool insert_transaction_message(const ControlMessage<v201::MessageType>& transaction_message);
+    void insert_transaction_message(const ControlMessage<v201::MessageType>& transaction_message);
 
     /// \brief Remove a transaction message from the database.
     /// \param unique_id    The unique id of the transaction message.
     /// \return True on success.
-    bool remove_transaction_message(const std::string& unique_id);
+    void remove_transaction_message(const std::string& unique_id);
 };
 
 } // namespace v201

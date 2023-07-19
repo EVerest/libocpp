@@ -56,7 +56,7 @@ template <typename M> struct ControlMessage {
 
     /// \brief Provides the unique message ID stored in the message
     /// \returns the unique ID of the contained message
-    MessageId uniqueId() {
+    MessageId uniqueId() const {
         return this->message[MESSAGE_ID];
     }
 };
