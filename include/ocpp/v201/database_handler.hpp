@@ -4,12 +4,12 @@
 #define OCPP_V201_DATABASE_HANDLER_HPP
 
 #include "sqlite3.h"
+#include <deque>
 #include <filesystem>
 #include <fstream>
 #include <memory>
-#include <deque>
 
-#include <ocpp/common/message_queue.hpp>
+#include <ocpp/common/database_handler_base.hpp>
 #include <ocpp/v201/ocpp_types.hpp>
 
 #include <everest/logging.hpp>
@@ -19,10 +19,9 @@ namespace fs = std::filesystem;
 namespace ocpp {
 namespace v201 {
 
-class DatabaseHandler {
+class DatabaseHandler : public ocpp::common::DatabaseHandlerBase {
 
 private:
-    sqlite3* db;
     fs::path database_file_path;
     fs::path sql_init_path;
 
@@ -61,20 +60,6 @@ public:
                              const OperationalStatusEnum& operational_status, const bool replace);
 
     OperationalStatusEnum get_availability(const int32_t evse_id, std::optional<int32_t> connector_id);
-
-    /// \brief Get transaction messages from transaction messages queue table.
-    /// \return The transaction messages.
-    std::deque<ControlMessage<v201::MessageType>> get_transaction_messages();
-
-    /// \brief Insert a new transaction message that needs to be sent to the CSMS.
-    /// \param transaction_message  The message to be stored.
-    /// \return True on success.
-    void insert_transaction_message(const ControlMessage<v201::MessageType>& transaction_message);
-
-    /// \brief Remove a transaction message from the database.
-    /// \param unique_id    The unique id of the transaction message.
-    /// \return True on success.
-    void remove_transaction_message(const std::string& unique_id);
 };
 
 } // namespace v201

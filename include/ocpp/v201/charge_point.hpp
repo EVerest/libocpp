@@ -264,7 +264,7 @@ public:
     /// \param request_id   The request_id. When it is -1, it will not be included in the request.
     /// \param firmware_update_status The firmware_update_status should be convertable to the
     ///        ocpp::v201::FirmwareStatusEnum.
-    void on_firmware_update_status_notification(int32_t request_id, std::string& firmware_update_status);
+    void on_firmware_update_status_notification(int32_t request_id, const std::string& firmware_update_status);
 
     /// \brief Event handler that should be called when a session has started
     /// \param evse_id

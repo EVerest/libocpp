@@ -70,7 +70,8 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
     this->message_queue = std::make_unique<ocpp::MessageQueue<v201::MessageType>>(
         [this](json message) -> bool { return this->websocket->send(message.dump()); },
         this->device_model->get_value<int>(ControllerComponentVariables::MessageAttempts),
-        this->device_model->get_value<int>(ControllerComponentVariables::MessageAttemptInterval));
+        this->device_model->get_value<int>(ControllerComponentVariables::MessageAttemptInterval),
+        *this->database_handler.get());
 }
 
 void ChargePoint::start() {
@@ -109,7 +110,7 @@ void ChargePoint::disconnect_websocket() {
     }
 }
 
-void ChargePoint::on_firmware_update_status_notification(int32_t request_id, std::string& firmware_update_status) {
+void ChargePoint::on_firmware_update_status_notification(int32_t request_id, const std::string& firmware_update_status) {
     FirmwareStatusNotificationRequest req;
     req.status = conversions::string_to_firmware_status_enum(firmware_update_status);
     // Firmware status is stored for future trigger message request.

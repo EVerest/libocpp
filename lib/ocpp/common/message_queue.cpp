@@ -19,7 +19,9 @@ template <> ControlMessage<v201::MessageType>::ControlMessage(json message) {
     this->message_attempts = 0;
 }
 
-template <> bool MessageQueue<v16::MessageType>::isTransactionMessage(ControlMessage<v16::MessageType>* message) {
+template <>
+bool MessageQueue<v16::MessageType>::isTransactionMessage(
+    const std::shared_ptr<ControlMessage<v16::MessageType>> message) const {
     if (message == nullptr) {
         return false;
     }
@@ -31,7 +33,9 @@ template <> bool MessageQueue<v16::MessageType>::isTransactionMessage(ControlMes
     return false;
 }
 
-template <> bool MessageQueue<v201::MessageType>::isTransactionMessage(ControlMessage<v201::MessageType>* message) {
+template <>
+bool MessageQueue<v201::MessageType>::isTransactionMessage(
+    const std::shared_ptr<ControlMessage<v201::MessageType>> message) const {
     if (message == nullptr) {
         return false;
     }
