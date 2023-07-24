@@ -43,7 +43,7 @@ namespace v201 {
 
 struct Callbacks {
     std::function<bool(const ResetEnum& reset_type)> is_reset_allowed_callback;
-    std::function<void(const ResetEnum& reset_type)> reset_callback;
+    std::function<void(const std::optional<const int32_t> evse_id, const ResetEnum& reset_type)> reset_callback;
     std::function<void(const int32_t evse_id, const ReasonEnum& stop_reason)> stop_transaction_callback;
     std::function<void(const int32_t evse_id)> pause_charging_callback;
     std::function<void(const ChangeAvailabilityRequest& request)> change_availability_callback;
@@ -105,6 +105,11 @@ private:
     FirmwareStatusEnum firmware_status;
     int network_configuration_priority;
     bool disable_automatic_websocket_reconnects;
+
+    /// \brief Used when an 'OnIdle' reset is requested, to perform the reset after the charging has stopped.
+    bool reset_scheduled;
+    /// \brief If `reset_scheduled` is true and the reset is for a specific evse id, it will be stored in this member.
+    std::optional<int32_t> reset_scheduled_evseid;
 
     // callback struct
     Callbacks callbacks;
