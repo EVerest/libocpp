@@ -1192,7 +1192,7 @@ void ChargePoint::handle_reset_req(Call<ResetRequest> call) {
         }
     }
 
-    if (this->callbacks.is_reset_allowed_callback(msg.type)) {
+    if (this->callbacks.is_reset_allowed_callback(msg.evseId, msg.type)) {
         // reset is allowed
         response.status = ResetStatusEnum::Accepted;
     } else {

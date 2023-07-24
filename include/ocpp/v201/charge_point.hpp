@@ -42,7 +42,8 @@ namespace ocpp {
 namespace v201 {
 
 struct Callbacks {
-    std::function<bool(const ResetEnum& reset_type)> is_reset_allowed_callback;
+    std::function<bool(const std::optional<const int32_t> evse_id, const ResetEnum& reset_type)>
+        is_reset_allowed_callback;
     std::function<void(const std::optional<const int32_t> evse_id, const ResetEnum& reset_type)> reset_callback;
     std::function<void(const int32_t evse_id, const ReasonEnum& stop_reason)> stop_transaction_callback;
     std::function<void(const int32_t evse_id)> pause_charging_callback;
