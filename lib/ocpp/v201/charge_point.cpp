@@ -199,7 +199,34 @@ void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime&
                                 std::nullopt, std::nullopt, id_token_opt, meter_values, std::nullopt, std::nullopt,
                                 std::nullopt);
 
+    bool send_reset = false;
     if (this->reset_scheduled) {
+        // Check if this was the last active evse, if not, set to inoperative.
+        if (this->reset_scheduled_evseid.has_value()) {
+            // There is an evse id, only this one needs to be reset.
+            if (this->reset_scheduled_evseid.value() == evse_id) {
+                send_reset = true;
+            }
+        } else {
+            // No evse id is given, whole charging station needs a reset. Wait for last evse id to stop charging.
+            bool is_charging = false;
+            for (auto const& [evse_id, evse] : this->evses) {
+                if (evse->has_active_transaction()) {
+                    is_charging = true;
+                    break;
+                }
+            }
+
+            if (is_charging) {
+                this->set_evse_connectors_unavailable(this->evses.at(evse_id));
+            } else {
+                send_reset = true;
+            }
+        }
+    }
+
+    if (send_reset) {
+        // This was the last active evse, reset.
         this->callbacks.reset_callback(this->reset_scheduled_evseid, ResetEnum::OnIdle);
 
         this->reset_scheduled = false;
@@ -761,6 +788,15 @@ bool ChargePoint::is_evse_connector_available(const std::unique_ptr<Evse>& evse)
     return false;
 }
 
+void ChargePoint::set_evse_connectors_unavailable(const std::unique_ptr<Evse>& evse)
+{
+    uint32_t number_of_connectors = evse->get_number_of_connectors();
+
+    for (uint32_t i = 1; i <= number_of_connectors; ++i) {
+        evse->submit_event(static_cast<int32_t>(i), ConnectorEvent::Unavailable);
+    }
+}
+
 void ChargePoint::boot_notification_req(const BootReasonEnum& reason) {
     EVLOG_debug << "Sending BootNotification";
     BootNotificationRequest req;
@@ -1205,11 +1241,7 @@ void ChargePoint::handle_reset_req(Call<ResetRequest> call) {
             for (const auto& [evse_id, evse] : this->evses) {
                 if (!evse->has_active_transaction()) {
                     // Set all connectors that do not have an active transaction to 'Unavailable'.
-                    uint32_t number_of_connectors = evse->get_number_of_connectors();
-
-                    for (uint32_t i = 1; i <= number_of_connectors; ++i) {
-                        evse->submit_event(static_cast<int32_t>(i), ConnectorEvent::Unavailable);
-                    }
+                    this->set_evse_connectors_unavailable(evse);
                 }
             }
 

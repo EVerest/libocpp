@@ -42,6 +42,10 @@ namespace ocpp {
 namespace v201 {
 
 struct Callbacks {
+    ///
+    /// \brief Callback if reset is allowed. If evse_id has a value, reset only applies to the given evse id. If it has
+    ///        no value, applies to all evse's.
+    ///
     std::function<bool(const std::optional<const int32_t> evse_id, const ResetEnum& reset_type)>
         is_reset_allowed_callback;
     std::function<void(const std::optional<const int32_t> evse_id, const ResetEnum& reset_type)> reset_callback;
@@ -170,6 +174,12 @@ private:
     /// \return True if at least one connector is not faulted or unavailable.
     ///
     bool is_evse_connector_available(const std::unique_ptr<Evse>& evse) const;
+
+    ///
+    /// \brief Set all connectors of a given evse to unavailable.
+    /// \param evse The evse.
+    ///
+    void set_evse_connectors_unavailable(const std::unique_ptr<Evse>& evse);
 
     /* OCPP message requests */
 
