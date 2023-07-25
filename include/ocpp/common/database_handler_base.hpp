@@ -25,7 +25,15 @@ protected:
     sqlite3* db;
 
 public:
-    DatabaseHandlerBase() noexcept = default;
+    ///
+    /// \brief Base database handler class.
+    ///
+    /// Other database classes should derive from this class and only use the functions after `db` is initialized.
+    /// Class handles some common database functionality like inserting and removing transaction messages.
+    ///
+    /// \warning The 'db' variable is not initialized, the deriving class should do that.
+    ///
+    DatabaseHandlerBase() noexcept;
 
     /// \brief Get transaction messages from transaction messages queue table.
     /// \return The transaction messages.

@@ -6,6 +6,10 @@
 
 namespace ocpp::common {
 
+DatabaseHandlerBase::DatabaseHandlerBase() noexcept :
+    db(nullptr) {
+}
+
 std::vector<DBTransactionMessage> DatabaseHandlerBase::get_transaction_messages() {
     std::vector<DBTransactionMessage> transaction_messages;
 
