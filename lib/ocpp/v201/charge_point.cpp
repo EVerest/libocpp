@@ -211,21 +211,19 @@ void ChargePoint::on_reserved(const int32_t evse_id, const int32_t connector_id)
 bool ChargePoint::on_charging_state_changed(const uint32_t evse_id,
                                             ChargingStateEnum charging_state) {
     if (this->evses.find(static_cast<int32_t>(evse_id)) != this->evses.end()) {
-        std::unique_ptr<EnhancedTransaction>& transaction = this->evses.at(static_cast<int32_t>(evse_id))
-                                                                ->get_transaction();
-        if (transaction != nullptr)
-        {
+        std::unique_ptr<EnhancedTransaction> &transaction =
+            this->evses.at(static_cast<int32_t>(evse_id))->get_transaction();
+        if (transaction != nullptr) {
             transaction->chargingState = charging_state;
             return true;
+        } else {
+            EVLOG_warning
+                << "Can not change charging state: no transaction for evse id "
+                << evse_id;
         }
-        else
-        {
-            EVLOG_warning << "Can not change charging state: no transaction for evse id " << evse_id;
-        }
-    }
-    else
-    {
-        EVLOG_warning << "Can not change charging state: evse id invalid: " << evse_id;
+    } else {
+        EVLOG_warning << "Can not change charging state: evse id invalid: "
+                      << evse_id;
     }
 
     return false;
