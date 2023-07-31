@@ -2,6 +2,7 @@
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
 #include <future>
+#include <set>
 
 #include <ocpp/common/charging_station_base.hpp>
 
@@ -44,7 +45,7 @@ namespace v201 {
 struct Callbacks {
     ///
     /// \brief Callback if reset is allowed. If evse_id has a value, reset only applies to the given evse id. If it has
-    ///        no value, applies to all evse's.
+    ///        no value, applies to complete charging station.
     ///
     std::function<bool(const std::optional<const int32_t> evse_id, const ResetEnum& reset_type)>
         is_reset_allowed_callback;
@@ -114,7 +115,7 @@ private:
     /// \brief Used when an 'OnIdle' reset is requested, to perform the reset after the charging has stopped.
     bool reset_scheduled;
     /// \brief If `reset_scheduled` is true and the reset is for a specific evse id, it will be stored in this member.
-    std::optional<int32_t> reset_scheduled_evseid;
+    std::set<int32_t> reset_scheduled_evseids;
 
     // callback struct
     Callbacks callbacks;

@@ -23,7 +23,7 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
     network_configuration_priority(0),
     disable_automatic_websocket_reconnects(false),
     reset_scheduled(false),
-    reset_scheduled_evseid{std::nullopt},
+    reset_scheduled_evseids{},
     callbacks(callbacks) {
     this->device_model = std::make_unique<DeviceModel>(device_model_storage_address);
     this->pki_handler = std::make_shared<ocpp::PkiHandler>(
@@ -201,36 +201,54 @@ void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime&
 
     bool send_reset = false;
     if (this->reset_scheduled) {
-        // Check if this was the last active evse, if not, set to inoperative.
-        if (this->reset_scheduled_evseid.has_value()) {
-            // There is an evse id, only this one needs to be reset.
-            if (this->reset_scheduled_evseid.value() == evse_id) {
-                send_reset = true;
+        // Check if this evse needs to be reset or set to inoperative.
+        if (!this->reset_scheduled_evseids.empty()) {
+            // There is an evse id in the 'reset scheduled' list, it needs to be
+            // reset because it has finished charging.
+            if (this->reset_scheduled_evseids.find(evse_id) !=
+                this->reset_scheduled_evseids.end()) {
+              send_reset = true;
             }
         } else {
-            // No evse id is given, whole charging station needs a reset. Wait for last evse id to stop charging.
+            // No evse id is given, whole charging station needs a reset. Wait
+            // for last evse id to stop charging.
             bool is_charging = false;
-            for (auto const& [evse_id, evse] : this->evses) {
-                if (evse->has_active_transaction()) {
-                    is_charging = true;
-                    break;
-                }
+            for (auto const &[evse_id, evse] : this->evses) {
+              if (evse->has_active_transaction()) {
+                is_charging = true;
+                break;
+              }
             }
 
             if (is_charging) {
-                this->set_evse_connectors_unavailable(this->evses.at(evse_id));
+              this->set_evse_connectors_unavailable(this->evses.at(evse_id));
             } else {
-                send_reset = true;
+              send_reset = true;
             }
         }
     }
 
     if (send_reset) {
-        // This was the last active evse, reset.
-        this->callbacks.reset_callback(this->reset_scheduled_evseid, ResetEnum::OnIdle);
+        // Reset evse.
+        if (reset_scheduled_evseids.empty()) {
+            // This was the last evse that was charging, whole charging station
+            // should be rest, send reset.
+            this->callbacks.reset_callback(std::nullopt, ResetEnum::OnIdle);
+            this->reset_scheduled = false;
+        } else {
+            // Reset evse that just stopped the transaction.
+            this->callbacks.reset_callback(evse_id, ResetEnum::OnIdle);
+            // Remove evse id that is just reset.
+            this->reset_scheduled_evseids.erase(evse_id);
 
-        this->reset_scheduled = false;
-        this->reset_scheduled_evseid = std::nullopt;
+            // Check if there are more evse's that should be reset.
+            if (reset_scheduled_evseids.empty()) {
+              // No other evse's should be reset
+              this->reset_scheduled = false;
+            }
+        }
+
+        this->reset_scheduled_evseids.erase(evse_id);
     }
 
     this->handle_scheduled_change_availability_requests(evse_id);
@@ -794,6 +812,13 @@ void ChargePoint::set_evse_connectors_unavailable(const std::unique_ptr<Evse>& e
 
     for (uint32_t i = 1; i <= number_of_connectors; ++i) {
         evse->submit_event(static_cast<int32_t>(i), ConnectorEvent::Unavailable);
+
+        ChangeAvailabilityRequest request;
+        request.operationalStatus = OperationalStatusEnum::Inoperative;
+        request.evse = EVSE();
+        request.evse.value().id = evse->get_evse_info().id;
+        request.evse->connectorId = i;
+        this->callbacks.change_availability_callback(request);
     }
 }
 
@@ -1213,14 +1238,14 @@ void ChargePoint::handle_reset_req(Call<ResetRequest> call) {
 
     ResetResponse response;
 
-    // Check if there is an active transaction (on the given evse or if not given, on one of the evse's)
+    // Check if there is an active transaction (on the given evse or if not
+    // given, on one of the evse's)
     bool transaction_active = false;
-    if (msg.evseId.has_value() && this->evses.at(msg.evseId.value())->has_active_transaction()) {
+    if (msg.evseId.has_value() &&
+        this->evses.at(msg.evseId.value())->has_active_transaction()) {
         transaction_active = true;
-    }
-    else {
-        for (const auto& [evse_id, evse] : this->evses)
-        {
+    } else {
+        for (const auto& [evse_id, evse] : this->evses) {
             if (evse->has_active_transaction()) {
                 transaction_active = true;
                 break;
@@ -1238,22 +1263,24 @@ void ChargePoint::handle_reset_req(Call<ResetRequest> call) {
     if (response.status == ResetStatusEnum::Accepted && transaction_active) {
         if (msg.type == ResetEnum::OnIdle and !msg.evseId.has_value()) {
             // B12.FR.03
-            for (const auto& [evse_id, evse] : this->evses) {
+            for (const auto &[evse_id, evse] : this->evses) {
                 if (!evse->has_active_transaction()) {
-                    // Set all connectors that do not have an active transaction to 'Unavailable'.
+                    // Set all connectors that do not have an active transaction
+                    // to 'Unavailable'.
                     this->set_evse_connectors_unavailable(evse);
                 }
             }
 
             // B12.FR.01: We have to wait until transactions have ended.
             this->reset_scheduled = true;
-            this->reset_scheduled_evseid = std::nullopt;
             response.status = ResetStatusEnum::Scheduled;
-        } else if (msg.type == ResetEnum::Immediate and !msg.evseId.has_value()) {
+        } else if (msg.type == ResetEnum::Immediate and
+                   !msg.evseId.has_value()) {
             // B12.FR.04
-            for (const auto& [evse_id, evse] : this->evses) {
+            for (const auto &[evse_id, evse] : this->evses) {
                 if (evse->has_active_transaction()) {
-                    callbacks.stop_transaction_callback(evse_id, ReasonEnum::ImmediateReset);
+                    callbacks.stop_transaction_callback(
+                        evse_id, ReasonEnum::ImmediateReset);
                 }
             }
 
@@ -1261,15 +1288,18 @@ void ChargePoint::handle_reset_req(Call<ResetRequest> call) {
         } else if (msg.type == ResetEnum::OnIdle and msg.evseId.has_value()) {
             // B12.FR.07
             this->reset_scheduled = true;
-            this->reset_scheduled_evseid = msg.evseId;
+            this->reset_scheduled_evseids.insert(msg.evseId.value());
 
             // B12.FR.01: We have to wait until transactions have ended.
             response.status = ResetStatusEnum::Scheduled;
-        } else if (msg.type == ResetEnum::Immediate and msg.evseId.has_value()) {
+        } else if (msg.type == ResetEnum::Immediate and
+                   msg.evseId.has_value()) {
             // B12.FR.08
-            callbacks.stop_transaction_callback(msg.evseId.value(), ReasonEnum::ImmediateReset);
+            callbacks.stop_transaction_callback(msg.evseId.value(),
+                                                ReasonEnum::ImmediateReset);
 
-            // B12.FR.02: We will try to reset immediately, send ResetStatusEnum::Accepted.
+            // B12.FR.02: We will try to reset immediately, send
+            // ResetStatusEnum::Accepted.
         }
     }
 
