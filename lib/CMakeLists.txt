@@ -48,17 +48,17 @@ target_include_directories(ocpp
 
 target_link_libraries(ocpp
     PUBLIC
-        everest::log
+        $<BUILD_INTERFACE:everest::log>
         everest::timer
         websocketpp::websocketpp
-        nlohmann_json_schema_validator
+        $<BUILD_INTERFACE:nlohmann_json_schema_validator>
     PRIVATE
         OpenSSL::SSL
         OpenSSL::Crypto
         SQLite::SQLite3
         Threads::Threads
 
-        nlohmann_json::nlohmann_json
+        $<BUILD_INTERFACE:nlohmann_json::nlohmann_json>
         date::date-tz
 )
 
