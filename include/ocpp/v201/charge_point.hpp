@@ -90,6 +90,8 @@ private:
         data_transfer_callbacks;
     std::mutex data_transfer_callbacks_mutex;
 
+    std::map<int32_t, std::pair<IdToken, int32_t>> remote_start_id_per_evse;
+
     // timers
     Everest::SteadyTimer heartbeat_timer;
     Everest::SteadyTimer boot_notification_timer;

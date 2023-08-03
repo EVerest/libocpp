@@ -231,6 +231,14 @@ bool ChargePoint::on_charging_state_changed(const uint32_t evse_id,
             this->evses.at(static_cast<int32_t>(evse_id))->get_transaction();
         if (transaction != nullptr) {
             transaction->chargingState = charging_state;
+            this->transaction_event_req(
+                TransactionEventEnum::Updated, DateTime(),
+                transaction->get_transaction(),
+                TriggerReasonEnum::ChargingStateChanged,
+                transaction->get_seq_no(), std::nullopt,
+                this->evses.at(static_cast<int32_t>(evse_id))->get_evse_info(),
+                std::nullopt, std::nullopt, std::nullopt, std::nullopt,
+                std::nullopt);
             return true;
         } else {
             EVLOG_warning
@@ -860,6 +868,36 @@ void ChargePoint::transaction_event_req(const TransactionEventEnum& event_type, 
             // TODO(piet): offline handling
         }
     } else {
+        // Check if id token is in the remote start map, because when a remote
+        // start request is done, the first transaction event request should
+        // always contain trigger reason 'RemoteStart'.
+        auto it = std::find_if(
+            remote_start_id_per_evse.begin(), remote_start_id_per_evse.end(),
+            [&id_token, &evse](const std::pair<int32_t, std::pair<IdToken, int32_t>>& remote_start_per_evse) {
+                if (id_token.has_value() &&
+                    remote_start_per_evse.second.first.idToken == id_token.value().idToken) {
+
+                    if (remote_start_per_evse.first == 0) {
+                      return true;
+                    }
+
+                    if (evse.has_value() &&
+                        evse.value().id == remote_start_per_evse.first) {
+                      return true;
+                    }
+                }
+                return false;
+            }
+        );
+
+        if (it != remote_start_id_per_evse.end()) {
+            // Found remote start. Set remote start id and the trigger reason.
+            call.msg.triggerReason = TriggerReasonEnum::RemoteStart;
+            call.msg.transactionInfo.remoteStartId = it->second.second;
+
+            remote_start_id_per_evse.erase(it);
+        }
+
         this->send<TransactionEventRequest>(call);
     }
 }
@@ -1246,12 +1284,15 @@ void ChargePoint::handle_remote_start_transaction_request(Call<RequestStartTrans
             } else {
                 // F02: No active transaction yet and there is an available connector, so just send 'accepted'.
                 response.status = RequestStartStopStatusEnum::Accepted;
+
+                remote_start_id_per_evse[evse_id] = {msg.idToken, msg.remoteStartId};
             }
         }
     } else {
-        // F01.FR.07 RequestStartTransactionRequest does not contain an evseId.The Charging Station MAY reject the
+        // F01.FR.07 RequestStartTransactionRequest does not contain an evseId. The Charging Station MAY reject the
         // RequestStartTransactionRequest. We do this for now (send rejected) (TODO: eventually support the charging
-        // station to )
+        // station to accept no evse id. If so: add token and remote start id for evse id 0 to remote_start_id_per_evse,
+        // so we know for '0' it means 'all evse id's').
         EVLOG_warning << "No evse id given. Can not remote start transaction.";
     }
 
