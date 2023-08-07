@@ -6,7 +6,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include <ocpp/common/message_queue.hpp>
-#include <ocpp/common/pki_handler.hpp>
+#include <ocpp/common/evse_security.hpp>
 #include <ocpp/common/websocket/websocket.hpp>
 
 namespace ocpp {
@@ -16,7 +16,7 @@ class ChargingStationBase {
 
 protected:
     std::unique_ptr<Websocket> websocket;
-    std::shared_ptr<PkiHandler> pki_handler;
+    std::shared_ptr<EvseSecurity> evse_security;
     std::shared_ptr<MessageLogging> logging;
     Everest::SteadyTimer websocket_timer;
 
@@ -37,7 +37,9 @@ protected:
     std::string uuid();
 
 public:
-    ChargingStationBase();
+    /// \brief Constructor for ChargingStationBase
+    /// \param evse_security Pointer to evse_security that manages security related operations
+    ChargingStationBase(const std::shared_ptr<EvseSecurity> evse_security);
     virtual ~ChargingStationBase(){};
 };
 
