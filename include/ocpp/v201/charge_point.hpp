@@ -311,11 +311,13 @@ public:
     /// \param ocpp_main_path Path where utility files for OCPP are read and written to
     /// \param core_database_path Path to directory where core database is located
     /// \param message_log_path Path to where logfiles are written to
+    /// \param evse_security Pointer to evse_security that manages security related operations
     /// \param callbacks Callbacks that will be registered for ChargePoint
     ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
                 const std::string& device_model_storage_address, const std::string& ocpp_main_path,
                 const std::string& core_database_path, const std::string& sql_init_path,
-                const std::string& message_log_path, const std::string& certs_path, const Callbacks& callbacks);
+                const std::string& message_log_path, const std::shared_ptr<EvseSecurity> evse_security,
+                const Callbacks& callbacks);
 
     /// \brief Starts the ChargePoint, initializes and connects to the Websocket endpoint
     /// \param bootreason   Optional bootreason (default: PowerUp).

@@ -317,10 +317,11 @@ public:
     /// \param certs_path this points to the directory where certificates used by libocpp are located, these are used
     /// for the "Improved security for OCPP 1.6-J" whitepaper (eg. Security Profile 3 TLS with Client Side Certificates)
     /// as well as for Plug & Charge.
+    /// \param evse_security Pointer to evse_security that manages security related operations
     explicit ChargePointImpl(const std::string& config, const std::filesystem::path& share_path,
                              const std::filesystem::path& user_config_path, const std::filesystem::path& database_path,
                              const std::filesystem::path& sql_init_path, const std::filesystem::path& message_log_path,
-                             const std::filesystem::path& certs_path);
+                             const std::shared_ptr<EvseSecurity> evse_security);
 
     ~ChargePointImpl() {
     }
