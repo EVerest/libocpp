@@ -23,7 +23,7 @@ ChargePointImpl::ChargePointImpl(const std::string& config, const std::filesyste
                                  const std::filesystem::path& user_config_path,
                                  const std::filesystem::path& database_path, const std::filesystem::path& sql_init_path,
                                  const std::filesystem::path& message_log_path,
-                                 const std::filesystem::path& certs_path) :
+                                 const ocpp::CertificateFilePaths& certificate_file_paths) :
     ocpp::ChargingStationBase(),
     boot_notification_callerror(false),
     initialized(false),
@@ -36,7 +36,7 @@ ChargePointImpl::ChargePointImpl(const std::string& config, const std::filesyste
     switch_security_profile_callback(nullptr) {
     this->configuration = std::make_shared<ocpp::v16::ChargePointConfiguration>(config, share_path, user_config_path);
     this->pki_handler = std::make_shared<ocpp::PkiHandler>(
-        certs_path, this->configuration->getAdditionalRootCertificateCheck().value_or(false));
+        certificate_file_paths, this->configuration->getAdditionalRootCertificateCheck().value_or(false));
     this->heartbeat_timer = std::make_unique<Everest::SteadyTimer>(&this->io_service, [this]() { this->heartbeat(); });
     this->heartbeat_interval = this->configuration->getHeartbeatInterval();
     this->database_handler =

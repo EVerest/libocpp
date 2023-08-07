@@ -27,7 +27,22 @@ protected:
 
     void SetUp() override {
         install_certs();
-        this->pki_handler = std::make_unique<ocpp::PkiHandler>(std::filesystem::path("certs"), false);
+
+        ocpp::CertificateFilePaths file_paths;
+        file_paths.v2g_ca_bundle = std::filesystem::path("certs/ca/v2g/V2G_CA_BUNDLE.pem");
+        file_paths.csms_ca_bundle = std::filesystem::path("certs/ca/v2g/V2G_CA_BUNDLE.pem");
+
+        file_paths.cso_ca_bundle = std::filesystem::path("certs/ca/v2g/V2G_CA_BUNDLE.pem");
+        file_paths.mo_ca_bundle = std::filesystem::path("certs/ca/v2g/V2G_CA_BUNDLE.pem");
+        file_paths.oem_ca_bundle = std::filesystem::path("certs/ca/v2g/V2G_CA_BUNDLE.pem");
+        file_paths.mf_ca_bundle = std::filesystem::path("certs/ca/v2g/V2G_CA_BUNDLE.pem");
+        file_paths.cps_ca_bundle = std::filesystem::path("certs/ca/v2g/V2G_CA_BUNDLE.pem");
+
+        file_paths.cso_ca_bundle = std::filesystem::path("certs/ca/v2g/V2G_CA_BUNDLE.pem");
+        file_paths.secc_leaf_cert = std::filesystem::path("certs/client/cso/SECC_LEAF.pem");
+        file_paths.csms_leaf_cert = std::filesystem::path("certs/client/cso/SECC_LEAF.pem");
+
+        this->pki_handler = std::make_unique<ocpp::PkiHandler>(file_paths, false);
     }
 
     void TearDown() override {
@@ -62,8 +77,7 @@ TEST_F(PkiHandlerTests, verify_v2g_cert_02) {
 }
 
 TEST_F(PkiHandlerTests, install_root_ca_01) {
-    const auto v2g_root_ca = read_file_to_string(std::filesystem::path("certs/ca/v2g/V2G_ROOT_CA.pem"));
-    std::filesystem::remove("certs/ca/v2g/V2G_ROOT_CA.pem");
+    const auto v2g_root_ca = read_file_to_string(std::filesystem::path("certs/ca/v2g/V2G_ROOT_CA_NEW.pem"));
     const auto result = this->pki_handler->installRootCertificate(
         v2g_root_ca, ocpp::CertificateType::V2GRootCertificate, std::nullopt, std::nullopt);
     ASSERT_TRUE(result == ocpp::InstallCertificateResult::Ok);

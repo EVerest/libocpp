@@ -5,6 +5,7 @@
 #include <filesystem>
 
 #include <ocpp/common/cistring.hpp>
+#include <ocpp/common/pki_handler.hpp>
 #include <ocpp/v16/ocpp_types.hpp>
 #include <ocpp/v16/types.hpp>
 
@@ -53,13 +54,13 @@ public:
     /// "LogMessagesFormat" (set to ["log", "html", "session_logging"] by default, "console" and "console_detailed" are
     /// also available) configuration keys in the "Internal" section of the config file. Please note that this is
     /// intended for debugging purposes only as it logs all communication, including authentication messages.
-    /// \param certs_path this points to the directory where certificates used by libocpp are located, these are used
+    /// \param certificate_file_paths Paths to certificate files. These are used
     /// for the "Improved security for OCPP 1.6-J" whitepaper (eg. Security Profile 3 TLS with Client Side Certificates)
     /// as well as for Plug & Charge.
     explicit ChargePoint(const std::string& config, const std::filesystem::path& share_path,
                          const std::filesystem::path& user_config_path, const std::filesystem::path& database_path,
                          const std::filesystem::path& sql_init_path, const std::filesystem::path& message_log_path,
-                         const std::filesystem::path& certs_path);
+                         const ocpp::CertificateFilePaths& certificate_file_paths);
 
     ~ChargePoint();
 

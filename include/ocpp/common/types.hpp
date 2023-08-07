@@ -255,8 +255,6 @@ enum class CertificateType {
     ClientCertificate,
     V2GRootCertificate,
     V2GCertificateChain,
-    CertificateProvisioningServiceRootCertificate,
-    OEMRootCertificate
 };
 
 namespace conversions {

@@ -14,7 +14,7 @@ const auto WEBSOCKET_INIT_DELAY = std::chrono::seconds(2);
 ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
                          const std::string& device_model_storage_address, const std::string& ocpp_main_path,
                          const std::string& core_database_path, const std::string& sql_init_path,
-                         const std::string& message_log_path, const std::string& certs_path,
+                         const std::string& message_log_path, const ocpp::CertificateFilePaths& certificate_file_paths,
                          const Callbacks& callbacks) :
     ocpp::ChargingStationBase(),
     registration_status(RegistrationStatusEnum::Rejected),
@@ -25,7 +25,7 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
     callbacks(callbacks) {
     this->device_model = std::make_unique<DeviceModel>(device_model_storage_address);
     this->pki_handler = std::make_shared<ocpp::PkiHandler>(
-        certs_path,
+        certificate_file_paths,
         this->device_model->get_optional_value<bool>(ControllerComponentVariables::AdditionalRootCertificateCheck)
             .value_or(false));
     this->database_handler = std::make_unique<DatabaseHandler>(core_database_path, sql_init_path);

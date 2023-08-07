@@ -317,7 +317,7 @@ public:
     explicit ChargePointImpl(const std::string& config, const std::filesystem::path& share_path,
                              const std::filesystem::path& user_config_path, const std::filesystem::path& database_path,
                              const std::filesystem::path& sql_init_path, const std::filesystem::path& message_log_path,
-                             const std::filesystem::path& certs_path);
+                             const ocpp::CertificateFilePaths& certificate_file_paths);
 
     ~ChargePointImpl() {
     }

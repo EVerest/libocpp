@@ -184,14 +184,11 @@ tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connect
         }
 
         context->set_verify_mode(boost::asio::ssl::verify_peer);
-
-        if (this->connection_options.additional_root_certificate_check.has_value() and
-            this->connection_options.additional_root_certificate_check.value()) {
+        if (this->pki_handler->getCsmsCaPath().has_value()) {
+            EVLOG_info << "Loading ca csms bundle to verify server certificate: "
+                       << this->pki_handler->getCsmsCaPath().value();
             rc = SSL_CTX_load_verify_locations(context->native_handle(),
-                                               (this->pki_handler->getCaCsmsPath() / CSMS_ROOT_CA).c_str(), NULL);
-        } else {
-            rc = SSL_CTX_load_verify_locations(context->native_handle(), NULL,
-                                               this->pki_handler->getCaCsmsPath().string().c_str());
+                                               this->pki_handler->getCsmsCaPath().value().c_str(), NULL);
         }
 
         if (rc != 1) {
@@ -300,7 +297,7 @@ void WebsocketTLS::on_fail_tls(tls_client* c, websocketpp::connection_hdl hdl) {
 
     // TODO(piet): Trigger SecurityEvent in case InvalidCentralSystemCertificate
 
-    if (std::filesystem::exists(this->pki_handler->getCaCsmsPath() / CSMS_ROOT_CA_BACKUP)) {
+    if (this->pki_handler->getCsmsBackupCaPath().has_value()) {
         // if a fallback ca exists, we move back to it and delete the new ca certificate
         EVLOG_warning << "Connection with new CA was not successful - Falling back to old CA";
         this->pki_handler->useCsmsFallbackRoot();

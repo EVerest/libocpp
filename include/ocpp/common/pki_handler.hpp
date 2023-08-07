@@ -4,6 +4,7 @@
 #define OCPP_COMMON_PKI_HANDLER
 
 #include <filesystem>
+#include <fstream>
 #include <memory>
 #include <openssl/bio.h>
 #include <openssl/err.h>
@@ -19,15 +20,42 @@
 
 namespace ocpp {
 
+struct CertificateFilePaths {
+    std::filesystem::path csms_ca_bundle;
+    std::filesystem::path csms_ca_backup_bundle;
+    std::filesystem::path cso_ca_bundle;
+    std::filesystem::path mf_ca_bundle;
+    std::filesystem::path mo_ca_bundle;
+    std::filesystem::path v2g_ca_bundle;
+
+    std::filesystem::path csms_leaf_cert;
+    std::filesystem::path csms_leaf_key;
+    std::filesystem::path csms_leaf_csr;
+    std::filesystem::path csms_leaf_key_backup;
+    std::filesystem::path secc_leaf_cert;
+    std::filesystem::path secc_leaf_key;
+    std::filesystem::path secc_leaf_key_backup;
+    std::filesystem::path secc_leaf_csr;
+};
+
 enum class PkiEnum {
     CSMS, // Charging Station Management System
     CSO,  // Charging Station Owner
-    CPS,  // Certificate Provisioning Service
     MF,   // Manufacturer of the Charging Station
     MO,   // Mobility Operator
-    OEM,  // Car Manufacturer
     V2G   // Vehicle To Grid
 };
+
+enum class CABundleType {
+    CSMS,
+    CSMS_BACKUP,
+    CSO,
+    MF,
+    MO,
+    V2G
+};
+
+CABundleType convertPkiEnumToCABundleType(const PkiEnum pkiEnum);
 
 /// \brief Struct for OCSPRequestData
 struct OCSPRequestData {
@@ -50,20 +78,6 @@ using X509_STORE_ptr = std::unique_ptr<X509_STORE, decltype(&::X509_STORE_free)>
 using X509_STORE_CTX_ptr = std::unique_ptr<X509_STORE_CTX, decltype(&::X509_STORE_CTX_free)>;
 using X509_REQ_ptr = std::unique_ptr<X509_REQ, decltype(&::X509_REQ_free)>;
 
-// filenames of ca certificates
-const std::filesystem::path CSMS_ROOT_CA("CSMS_ROOT_CA.pem");
-const std::filesystem::path CSMS_ROOT_CA_BACKUP("CSMS_ROOT_CA_BACKUP.pem");
-
-// filenames of leaf certificates, csrs and private keys
-const std::filesystem::path CSMS_LEAF("CSMS_LEAF.pem");
-const std::filesystem::path CSMS_LEAF_KEY("CSMS_LEAF.key");
-const std::filesystem::path CSMS_LEAF_KEY_BACKUP("CSMS_LEAF_BACKUP.key");
-const std::filesystem::path CSMS_CSR("CSMS_CSR.pem");
-const std::filesystem::path V2G_LEAF("SECC_LEAF.pem"); // SECC_LEAF in ISO15118
-const std::filesystem::path V2G_LEAF_KEY("SECC_LEAF.key");
-const std::filesystem::path V2G_LEAF_KEY_BACKUP("SECC_LEAF_BACKUP.key");
-const std::filesystem::path V2G_CSR("SECC_CSR.pem");
-
 struct X509Certificate {
     std::filesystem::path path;
     X509* x509;
@@ -77,10 +91,7 @@ struct X509Certificate {
     ~X509Certificate();
 
     /// \brief writes the X509 certificate to the path set
-    bool write();
-    /// \brief writes the X509 certificate to the given \p path
-    bool write(const std::filesystem::path& path);
-
+    bool write(std::ios::openmode mode);
     /// \brief Gets CN of certificate
     std::string getCommonName();
 
@@ -123,23 +134,20 @@ std::string readFileToString(const std::filesystem::path& path);
 class PkiHandler {
 
 private:
-    std::filesystem::path certsPath;
-    std::filesystem::path caPath;
-    std::filesystem::path caCsmsPath;
-    std::filesystem::path caCsoPath;
-    std::filesystem::path caCpsPath;
-    std::filesystem::path caMfPath;
-    std::filesystem::path caMoPath;
-    std::filesystem::path caOemPath;
-    std::filesystem::path caV2gPath;
-
-    std::filesystem::path clientCsmsPath;
-    std::filesystem::path clientCsoPath;
+    std::map<CABundleType, std::filesystem::path> pki_bundle_map;
+    std::filesystem::path csms_leaf_cert;
+    std::filesystem::path csms_leaf_csr;
+    std::filesystem::path csms_leaf_key;
+    std::filesystem::path csms_leaf_key_backup;
+    std::filesystem::path secc_leaf_cert;
+    std::filesystem::path secc_leaf_key;
+    std::filesystem::path secc_leaf_key_backup;
+    std::filesystem::path secc_leaf_csr;
 
     bool useRootCaFallback;
 
     /// \brief Returns all root and intermediate certificates for the given \p pki
-    std::vector<std::shared_ptr<X509Certificate>> getCaCertificates(const PkiEnum& pki, const CertificateType& type,
+    std::vector<std::shared_ptr<X509Certificate>> getCaCertificates(const PkiEnum& pki,
                                                                     const bool includeSymlinks = false);
 
     /// \brief Returns all root and intermediate certificates
@@ -161,12 +169,6 @@ private:
     /// \brief Returns the path where the ca certificates of the given \p pki are located
     std::filesystem::path getCaPath(const PkiEnum& pki);
 
-    /// \brief Executes "openssl rehash" for the given \p caPath
-    void execOpenSSLRehash(const std::filesystem::path caPath);
-
-    /// \brief Returns the file path of the CSMS root CA file
-    std::optional<std::filesystem::path> getCsmsCaFilePath();
-
     /// \brief Returns the number of installed CSMS CA certificates
     int getNumberOfCsmsCaCertificates();
 
@@ -181,10 +183,13 @@ private:
     bool isCaCertificateAlreadyInstalled(const std::shared_ptr<X509Certificate>& certificate);
 
 public:
-    explicit PkiHandler(const std::filesystem::path& certsPath, const bool multipleCsmsCaNotAllowed);
+    explicit PkiHandler(const CertificateFilePaths& files, const bool multipleCsmsCaNotAllowed);
 
-    /// \brief Returns the path where the certificates are located
-    std::filesystem::path getCaCsmsPath();
+    /// \brief Returns csms ca path if the file exists
+    std::optional<std::filesystem::path> getCsmsCaPath();
+
+    /// \brief Returns csms backup ca path if the file exists
+    std::optional<std::filesystem::path> getCsmsBackupCaPath();
 
     /// \brief Verifies the given \p certificate and the \p charge_box_serial_number using the
     /// CentralSystemRootCertificate This method verifies the certificate chain, the signature, and the period when the
