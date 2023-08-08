@@ -146,6 +146,7 @@ void ChargePoint::on_transaction_started(const int32_t evse_id, const int32_t co
                          ControllerComponentVariables::SampledDataTxStartedMeasurands)));
 
     Transaction transaction{enhanced_transaction->transactionId};
+    transaction.chargingState = charging_state;
     if (remote_start_id.has_value()) {
         transaction.remoteStartId = remote_start_id.value();
         enhanced_transaction->remoteStartId = remote_start_id.value();
