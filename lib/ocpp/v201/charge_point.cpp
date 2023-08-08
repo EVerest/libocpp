@@ -163,8 +163,10 @@ void ChargePoint::on_transaction_started(const int32_t evse_id, const int32_t co
 void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime& timestamp,
                                           const MeterValue& meter_stop, const ReasonEnum reason,
                                           const std::optional<std::string>& id_token,
-                                          const std::optional<std::string>& signed_meter_value) {
-    const auto& enhanced_transaction = this->evses.at(evse_id)->get_transaction();
+                                          const std::optional<std::string>& signed_meter_value,
+                                          const ChargingStateEnum charging_state) {
+    auto& enhanced_transaction = this->evses.at(evse_id)->get_transaction();
+    enhanced_transaction->chargingState = charging_state;
     if (enhanced_transaction == nullptr) {
         EVLOG_warning << "Received notification of finished transaction while no transaction was active";
         return;
