@@ -76,9 +76,9 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
         *this->database_handler.get());
 }
 
-void ChargePoint::start() {
+void ChargePoint::start(BootReasonEnum bootreason) {
     this->start_websocket();
-    this->boot_notification_req(BootReasonEnum::PowerUp);
+    this->boot_notification_req(bootreason);
     // FIXME(piet): Run state machine with correct initial state
 }
 

@@ -262,7 +262,7 @@ public:
                 const std::string& message_log_path, const std::string& certs_path, const Callbacks& callbacks);
 
     /// \brief Starts the ChargePoint, initializes and connects to the Websocket endpoint
-    void start();
+    void start(BootReasonEnum bootreason = BootReasonEnum::PowerUp);
 
     /// \brief Starts the websocket
     void start_websocket();
