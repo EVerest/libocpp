@@ -110,7 +110,9 @@ private:
     FirmwareStatusEnum firmware_status;
     int network_configuration_priority;
     bool disable_automatic_websocket_reconnects;
-
+    int csr_attempt;
+    std::optional<ocpp::CertificateSigningUseEnum> awaited_certificate_signing_use_enum;
+    
     // callback struct
     Callbacks callbacks;
 

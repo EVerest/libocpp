@@ -10,6 +10,8 @@ namespace v201 {
 
 const auto DEFAULT_BOOT_NOTIFICATION_RETRY_INTERVAL = std::chrono::seconds(30);
 const auto WEBSOCKET_INIT_DELAY = std::chrono::seconds(2);
+const auto CLIENT_CERTIFICATE_TIMER_INTERVAL = std::chrono::hours(12);
+const auto INITIAL_CERTIFICATE_REQUESTS_DELAY = std::chrono::seconds(60);
 
 ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
                          const std::string& device_model_storage_address, const std::string& ocpp_main_path,
@@ -22,6 +24,7 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
     operational_state(OperationalStatusEnum::Operative),
     network_configuration_priority(0),
     disable_automatic_websocket_reconnects(false),
+    csr_attempt(1),
     callbacks(callbacks) {
     this->device_model = std::make_unique<DeviceModel>(device_model_storage_address);
     this->pki_handler = std::make_shared<ocpp::PkiHandler>(
@@ -504,6 +507,9 @@ void ChargePoint::handle_message(const json& json_message, const MessageType& me
     case MessageType::UnlockConnector:
         this->handle_unlock_connector(json_message);
         break;
+    case MessageType::SignCertificate:
+        this->handle_sign_certificate_response(json_message);
+        break;
     }
 }
 
@@ -752,6 +758,53 @@ bool ChargePoint::is_evse_connector_available(const std::unique_ptr<Evse>& evse)
     return false;
 }
 
+void ChargePoint::sign_certificate_req(const ocpp::CertificateSigningUseEnum& certificate_signing_use) {
+    if (this->awaited_certificate_signing_use_enum.has_value()) {
+        EVLOG_warning << "Not sending new SignCertificate.req because still waiting for CertificateSigned.req from CSMS";
+        return;
+    }
+
+    SignCertificateRequest req;
+
+    std::optional<std::string> common;
+    std::optional<std::string> country;
+    std::optional<std::string> organization;
+
+    if (certificate_signing_use == ocpp::CertificateSigningUseEnum::ChargingStationCertificate) {
+        common = this->device_model->get_optional_value<std::string>(ControllerComponentVariables::ChargeBoxSerialNumber);
+        organization = this->device_model->get_optional_value<std::string>(ControllerComponentVariables::OrganizationName);
+        country = this->device_model->get_optional_value<std::string>(ControllerComponentVariables::ISO15118CtrlrCountryName).value_or("DE");
+    } else {
+        common = this->device_model->get_optional_value<std::string>(ControllerComponentVariables::ChargeBoxSerialNumber);
+        this->device_model->get_optional_value<std::string>(ControllerComponentVariables::ISO15118CtrlrOrganizationName);
+        country = this->device_model->get_optional_value<std::string>(ControllerComponentVariables::ISO15118CtrlrCountryName);
+    }
+
+    if (!common.has_value() or !country.has_value() or !organization.has_value()) {
+        EVLOG_warning << "Missing configuration of either organizationName, commonName or country to generate CSR";
+        return;
+    }
+    
+    const auto csr = this->pki_handler->generateCsr(certificate_signing_use, country.value(), organization.value(), common.value());
+    req.csr = csr;
+
+    this->awaited_certificate_signing_use_enum = certificate_signing_use;
+
+    ocpp::Call<SignCertificateRequest> call(req, this->message_queue->createMessageId());
+    this->send<SignCertificateRequest>(call);
+}
+
+void ChargePoint::security_event_notification_req(const CiString<50>& type,
+                                                  const std::optional<CiString<255>>& tech_info) {
+    SecurityEventNotificationRequest req;
+    req.type = type;
+    req.timestamp = DateTime();
+    req.techInfo = tech_info;
+
+    ocpp::Call<SecurityEventNotificationRequest> call(req, this->message_queue->createMessageId());
+    this->send<SecurityEventNotificationRequest>(call);
+}
+
 void ChargePoint::boot_notification_req(const BootReasonEnum& reason) {
     EVLOG_debug << "Sending BootNotification";
     BootNotificationRequest req;
@@ -940,6 +993,103 @@ void ChargePoint::notify_event_req(const std::vector<EventData>& events) {
     this->send<NotifyEventRequest>(call);
 }
 
+void ChargePoint::handle_certificate_signed_req(Call<CertificateSignedRequest> call) {
+    // reset these parameters
+    this->csr_attempt = 1;
+    this->awaited_certificate_signing_use_enum = std::nullopt;
+    this->certificate_signed_timer.stop();
+
+    CertificateSignedResponse response;
+    response.status = CertificateSignedStatusEnum::Rejected;
+
+    const auto certificate_chain = call.msg.certificateChain.get();
+    CertificateVerificationResult verification_result;
+    ocpp::CertificateSigningUseEnum cert_signing_use;
+
+    if (!call.msg.certificateType.has_value() or
+        call.msg.certificateType.value() == CertificateSigningUseEnum::ChargingStationCertificate) {
+        cert_signing_use = ocpp::CertificateSigningUseEnum::ChargingStationCertificate;
+    } else {
+        cert_signing_use = ocpp::CertificateSigningUseEnum::V2GCertificate;
+    }
+
+    if (cert_signing_use == ocpp::CertificateSigningUseEnum::ChargingStationCertificate) {
+        verification_result = this->pki_handler->verifyChargepointCertificate(
+            certificate_chain,
+            this->device_model->get_value<std::string>(ControllerComponentVariables::ChargeBoxSerialNumber));
+    } else {
+        verification_result = this->pki_handler->verifyV2GChargingStationCertificate(
+            certificate_chain,
+            this->device_model->get_value<std::string>(ControllerComponentVariables::ChargeBoxSerialNumber));
+    }
+
+    if (verification_result == CertificateVerificationResult::Valid) {
+        response.status = CertificateSignedStatusEnum::Accepted;
+        // FIXME(piet): dont just override, store other one for at least one month according to spec
+        this->pki_handler->writeClientCertificate(certificate_chain, cert_signing_use);
+    }
+
+    ocpp::CallResult<CertificateSignedResponse> call_result(response, call.uniqueId);
+    this->send<CertificateSignedResponse>(call_result);
+
+    this->security_event_notification_req("InvalidChargingStationCertificate");
+
+    // reconnect with new certificate if valid and security profile is 3
+    if (response.status == CertificateSignedStatusEnum::Accepted &&
+        this->device_model->get_value<int>(ControllerComponentVariables::SecurityProfile) == 3) {
+        if (this->pki_handler->validIn(certificate_chain) < 0) {
+            this->websocket->reconnect(std::error_code(), 1000);
+        } else {
+            this->websocket->reconnect(std::error_code(), this->pki_handler->validIn(certificate_chain));
+        }
+    }
+}
+
+void ChargePoint::handle_sign_certificate_response(CallResult<SignCertificateResponse> call_result) {
+    if (!this->awaited_certificate_signing_use_enum.has_value()) {
+        EVLOG_warning << "Received SignCertificate.conf while not awaiting a CertificateSigned.req . This should not happen.";
+        return;
+    }
+    
+    if (call_result.msg.status == GenericStatusEnum::Accepted) {
+        // set timer waiting for certificate signed
+        const auto cert_signing_wait_minimum =
+            this->device_model->get_optional_value<int>(ControllerComponentVariables::CertSigningWaitMinimum);
+        const auto cert_signing_repeat_times =
+            this->device_model->get_optional_value<int>(ControllerComponentVariables::CertSigningRepeatTimes);
+        
+        if (!cert_signing_wait_minimum.has_value()) {
+            EVLOG_warning << "No CertSigningWaitMinimum is configured, will not attempt to retry SignCertificate.req "
+                             "in case CSMS doesn't send CertificateSigned.req";
+            return;
+        }
+        if (!cert_signing_repeat_times.has_value()) {
+            EVLOG_warning << "No CertSigningRepeatTimes is configured, will not attempt to retry SignCertificate.req "
+                             "in case CSMS doesn't send CertificateSigned.req";
+            return;
+        }
+
+        if (this->csr_attempt > cert_signing_repeat_times.value()) {
+            this->csr_attempt = 1;
+            this->certificate_signed_timer.stop();
+            this->awaited_certificate_signing_use_enum = std::nullopt;
+            return;
+        }
+        int retry_backoff_seconds = cert_signing_wait_minimum.value() * std::pow(2, this->csr_attempt);
+        this->certificate_signed_timer.timeout(
+            [this]() {
+                EVLOG_info << "Did not receive CertificateSigned.req in time. Will retry with SignCertificate.req";
+                this->csr_attempt++;
+                this->sign_certificate_req(this->awaited_certificate_signing_use_enum.value());
+            },
+            std::chrono::seconds(retry_backoff_seconds));
+    } else {
+        this->awaited_certificate_signing_use_enum = std::nullopt;
+        this->csr_attempt = 1;
+        EVLOG_warning << "SignCertificate.req has not been accepted by CSMS";
+    }
+}
+
 void ChargePoint::handle_boot_notification_response(CallResult<BootNotificationResponse> call_result) {
     // TODO(piet): B01.FR.06
     // TODO(piet): B01.FR.07
@@ -958,6 +1108,25 @@ void ChargePoint::handle_boot_notification_response(CallResult<BootNotificationR
         if (msg.interval > 0) {
             this->heartbeat_timer.interval([this]() { this->heartbeat_req(); }, std::chrono::seconds(msg.interval));
         }
+        if (this->device_model->get_value<int>(ControllerComponentVariables::SecurityProfile) == 3) {
+            this->client_certificate_timer.stop();
+            this->client_certificate_timer.timeout(
+                [this]() {
+                    EVLOG_info << "Checking if CSMS client certificate has expired";
+                    int daysLeft = this->pki_handler->getDaysUntilLeafExpires(
+                        ocpp::CertificateSigningUseEnum::ChargingStationCertificate);
+                    if (daysLeft < 30) {
+                        EVLOG_info << "CSMS client certificate is invalid in " << daysLeft
+                                   << " days. Requesting new certificate with certificate signing request";
+                        this->sign_certificate_req(ocpp::CertificateSigningUseEnum::ChargingStationCertificate);
+                    } else {
+                        EVLOG_info << "CSMS client certificate is still valid.";
+                    }
+                    this->client_certificate_timer.interval(CLIENT_CERTIFICATE_TIMER_INTERVAL);
+                },
+                INITIAL_CERTIFICATE_REQUESTS_DELAY);
+        }
+
         this->update_aligned_data_interval();
 
         for (auto const& [evse_id, evse] : this->evses) {
