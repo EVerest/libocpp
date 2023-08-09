@@ -2108,7 +2108,6 @@ void ChargePointImpl::handleCertificateSignedRequest(ocpp::Call<CertificateSigne
 
     const auto certificateChain = call.msg.certificateChain.get();
 
-    // TODO(piet): Choose the right sign use enum!
     const auto result = this->evse_security->update_leaf_certificate(
         certificateChain, ocpp::CertificateSigningUseEnum::ChargingStationCertificate);
     if (result == ocpp::InstallCertificateResult::Accepted) {
