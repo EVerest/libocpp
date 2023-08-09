@@ -16,6 +16,7 @@
 
 #include <ocpp/v201/messages/Authorize.hpp>
 #include <ocpp/v201/messages/BootNotification.hpp>
+#include <ocpp/v201/messages/CertificateSigned.hpp>
 #include <ocpp/v201/messages/ChangeAvailability.hpp>
 #include <ocpp/v201/messages/ClearCache.hpp>
 #include <ocpp/v201/messages/DataTransfer.hpp>
@@ -30,8 +31,10 @@
 #include <ocpp/v201/messages/RequestStartTransaction.hpp>
 #include <ocpp/v201/messages/RequestStopTransaction.hpp>
 #include <ocpp/v201/messages/Reset.hpp>
+#include <ocpp/v201/messages/SecurityEventNotification.hpp>
 #include <ocpp/v201/messages/SetNetworkProfile.hpp>
 #include <ocpp/v201/messages/SetVariables.hpp>
+#include <ocpp/v201/messages/SignCertificate.hpp>
 #include <ocpp/v201/messages/StatusNotification.hpp>
 #include <ocpp/v201/messages/TransactionEvent.hpp>
 #include <ocpp/v201/messages/TriggerMessage.hpp>
@@ -97,7 +100,9 @@ private:
     Everest::SteadyTimer heartbeat_timer;
     Everest::SteadyTimer boot_notification_timer;
     Everest::SteadyTimer aligned_meter_values_timer;
-
+    Everest::SteadyTimer client_certificate_timer;
+    Everest::SteadyTimer certificate_signed_timer;
+    
     // states
     RegistrationStatusEnum registration_status;
     WebsocketConnectionStatusEnum websocket_connection_status;
@@ -167,6 +172,10 @@ private:
 
     /* OCPP message requests */
 
+    // Functional Block A: Security
+    void sign_certificate_req(const ocpp::CertificateSigningUseEnum& certificate_signing_use);
+    void security_event_notification_req(const CiString<50> &type, const std::optional<CiString<255>> &tech_info = std::nullopt);
+
     // Functional Block B: Provisioning
     void boot_notification_req(const BootReasonEnum& reason);
     void notify_report_req(const int request_id, const int seq_no, const std::vector<ReportData>& report_data);
@@ -198,6 +207,10 @@ private:
     void notify_event_req(const std::vector<EventData>& events);
 
     /* OCPP message handlers */
+
+    // Functional Block A: Security
+    void handle_certificate_signed_req(Call<CertificateSignedRequest> call);
+    void handle_sign_certificate_response(CallResult<SignCertificateResponse> call_result);
 
     // Functional Block B: Provisioning
     void handle_boot_notification_response(CallResult<BootNotificationResponse> call_result);

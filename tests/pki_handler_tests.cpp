@@ -34,9 +34,7 @@ protected:
 
         file_paths.cso_ca_bundle = std::filesystem::path("certs/ca/v2g/V2G_CA_BUNDLE.pem");
         file_paths.mo_ca_bundle = std::filesystem::path("certs/ca/v2g/V2G_CA_BUNDLE.pem");
-        file_paths.oem_ca_bundle = std::filesystem::path("certs/ca/v2g/V2G_CA_BUNDLE.pem");
         file_paths.mf_ca_bundle = std::filesystem::path("certs/ca/v2g/V2G_CA_BUNDLE.pem");
-        file_paths.cps_ca_bundle = std::filesystem::path("certs/ca/v2g/V2G_CA_BUNDLE.pem");
 
         file_paths.cso_ca_bundle = std::filesystem::path("certs/ca/v2g/V2G_CA_BUNDLE.pem");
         file_paths.secc_leaf_cert = std::filesystem::path("certs/client/cso/SECC_LEAF.pem");

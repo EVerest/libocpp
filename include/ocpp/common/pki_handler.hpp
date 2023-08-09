@@ -22,7 +22,6 @@ namespace ocpp {
 
 struct CertificateFilePaths {
     std::filesystem::path csms_ca_bundle;
-    std::filesystem::path csms_ca_backup_bundle;
     std::filesystem::path cso_ca_bundle;
     std::filesystem::path mf_ca_bundle;
     std::filesystem::path mo_ca_bundle;
@@ -31,11 +30,14 @@ struct CertificateFilePaths {
     std::filesystem::path csms_leaf_cert;
     std::filesystem::path csms_leaf_key;
     std::filesystem::path csms_leaf_csr;
-    std::filesystem::path csms_leaf_key_backup;
     std::filesystem::path secc_leaf_cert;
     std::filesystem::path secc_leaf_key;
-    std::filesystem::path secc_leaf_key_backup;
     std::filesystem::path secc_leaf_csr;
+};
+
+struct CertificateKeyPair {
+    std::filesystem::path leaf_cert;
+    std::filesystem::path leaf_key;
 };
 
 enum class PkiEnum {
@@ -118,31 +120,15 @@ std::shared_ptr<X509Certificate> loadFromString(std::string& str);
 std::string readFileToString(const std::filesystem::path& path);
 
 /// \brief Handler for verifying, installing, deleting and managing certificates and security related operations.
-/// Requires CA files to be located inside the following directory structure according to their use:
-/// ca/csms (CA certificates of Charging Station Management System)
-/// ca/cso (CA certificates of Charging Station Owner)
-/// ca/mf (CA certificates of  Manufacturer)
-/// ca/mo (CA certificates of Mobility Operator)
-///
-/// client/csms (Client certificates, Private keys, Password files for TLS websocket connection to Charging Station
-/// Management System)
-/// client/cso (Client certificates, Private keys, Password files for ISO15118 TLS connection to electric vehicle)
-///
-/// Use the default filenames CSMS_ROOT_CA, CSMS_ROOT_CA_BACKUP, CSMS_LEAF, CSMS_LEAF_KEY, CSMS_CSR, V2G_LEAF,
-/// V2G_LEAF_KEY, V2G_CSR
-
 class PkiHandler {
 
 private:
     std::map<CABundleType, std::filesystem::path> pki_bundle_map;
-    std::filesystem::path csms_leaf_cert;
-    std::filesystem::path csms_leaf_csr;
-    std::filesystem::path csms_leaf_key;
-    std::filesystem::path csms_leaf_key_backup;
-    std::filesystem::path secc_leaf_cert;
-    std::filesystem::path secc_leaf_key;
-    std::filesystem::path secc_leaf_key_backup;
-    std::filesystem::path secc_leaf_csr;
+    CertificateKeyPair csms_cert_key_pair_1;
+    CertificateKeyPair csms_cert_key_pair_2;
+    CertificateKeyPair secc_cert_key_pair_1;
+    CertificateKeyPair secc_cert_key_pair_2;
+    std::optional<std::string> temp_private_key;
 
     bool useRootCaFallback;
 
@@ -155,7 +141,6 @@ private:
 
     /// \brief Verifies the given \p certificate / certificate_chain. Verifies
     /// certificate_chain, signature, expiration,
-    /// \param certificateType type of PKI //TODO(piet): Propably use another enum here
     /// \param certificates certificate_chain with leaf certificate at element 0 and
     /// optionally subCAs at succeeding positions
     /// \param chargeBoxSerialNumber \return
@@ -181,6 +166,16 @@ private:
 
     /// \brief Returns true if the given \p certificate is already installed, else returns false
     bool isCaCertificateAlreadyInstalled(const std::shared_ptr<X509Certificate>& certificate);
+
+    /// \brief Determines the file slot that can be used for the new certificate. If the optional file slot is not set,
+    /// it will be used. In case both slots are set, the slot will be chosen depending on the validation period of the
+    /// existing and the new certificate
+    /// \param certificate
+    /// \param certificateUse
+    /// \return the file slot that can be used
+    /// to write a new certificate and private key
+    CertificateKeyPair getCertificateKeyPairToOverride(const std::shared_ptr<X509Certificate> certificate,
+                                                       const CertificateSigningUseEnum& certificateUse);
 
 public:
     explicit PkiHandler(const CertificateFilePaths& files, const bool multipleCsmsCaNotAllowed);
@@ -208,7 +203,7 @@ public:
 
     /// \brief writes the given \p certificate to the client certificate file with the given \p certificateUse located
     /// in the certs directory
-    void writeClientCertificate(const std::string& certificate, const CertificateSigningUseEnum& certificateUse);
+    bool writeClientCertificate(const std::string& certificate, const CertificateSigningUseEnum& certificateUse);
 
     /// \brief generates a certifcate signing request from the given parameters
     std::string generateCsr(const CertificateSigningUseEnum& certificateType, const std::string& szCountry,
@@ -241,10 +236,8 @@ public:
                                                     std::optional<bool> additionalRootCertificateCheck);
 
     /// \brief Get the leaf certificate of the given \p certificate_signing_use
-    std::shared_ptr<X509Certificate> getLeafCertificate(const CertificateSigningUseEnum& certificate_signing_use);
-
-    /// \brief Get the leaf private key of the given \p certificate_signing_use
-    std::filesystem::path getLeafPrivateKeyPath(const CertificateSigningUseEnum& certificate_signing_use);
+    std::optional<CertificateKeyPair>
+    getLeafCertificateKeyPair(const CertificateSigningUseEnum& certificate_signing_use);
 
     /// \brief Removes a fallback central system root certificate if present
     void removeCentralSystemFallbackCa();

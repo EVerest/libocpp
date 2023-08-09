@@ -9,6 +9,8 @@
 
 namespace ocpp {
 
+const auto OPTIONAL_FILE_SUFFX = "optional";
+
 CABundleType convertPkiEnumToCABundleType(const PkiEnum pkiEnum) {
     switch (pkiEnum) {
     case PkiEnum::CSMS:
@@ -180,36 +182,26 @@ CertificateType getRootCertificateTypeFromPki(const PkiEnum& pki) {
 }
 
 std::shared_ptr<X509Certificate> loadFromFile(const std::filesystem::path& path) {
+
+    if (!std::filesystem::exists(path)) {
+        return nullptr;
+    }
+
     try {
         X509* x509;
         std::string fileStr;
 
-        if (path.extension().string() == ".der") {
-            std::ifstream t(path.c_str(), std::ios::binary);
-            fileStr = std::string((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
-            t.close();
-
-            const char* certDataPtr = fileStr.data();
-            const int certDataLen = fileStr.size();
-
-            // Convert certificate data to X509 certificate
-            x509 = d2i_X509(NULL, (const unsigned char**)&certDataPtr, certDataLen);
-            if (x509 == NULL) {
-                EVLOG_warning << "Error loading X509 certificate from " << path.string();
-                return nullptr;
-            }
-        } else {
-            std::ifstream t(path.c_str());
-            fileStr = std::string((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
-            t.close();
-            BIO_ptr b(BIO_new(BIO_s_mem()), ::BIO_free);
-            BIO_puts(b.get(), fileStr.c_str());
-            x509 = PEM_read_bio_X509(b.get(), NULL, NULL, NULL);
-            if (x509 == NULL) {
-                EVLOG_error << "Error loading X509 certificate from " << path.string();
-                return nullptr;
-            }
+        std::ifstream t(path.c_str());
+        fileStr = std::string((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
+        t.close();
+        BIO_ptr b(BIO_new(BIO_s_mem()), ::BIO_free);
+        BIO_puts(b.get(), fileStr.c_str());
+        x509 = PEM_read_bio_X509(b.get(), NULL, NULL, NULL);
+        if (x509 == NULL) {
+            EVLOG_error << "Error loading X509 certificate from " << path.string();
+            return nullptr;
         }
+        
         std::shared_ptr<X509Certificate> cert = std::make_shared<X509Certificate>(path, x509, fileStr);
         cert->validIn = X509_cmp_current_time(X509_get_notBefore(cert->x509));
         cert->validTo = X509_cmp_current_time(X509_get_notAfter(cert->x509));
@@ -239,21 +231,29 @@ std::shared_ptr<X509Certificate> loadFromString(const std::string& str) {
 
 PkiHandler::PkiHandler(const CertificateFilePaths& files, const bool multipleCsmsCaNotAllowed) {
 
-    this->pki_bundle_map[CABundleType::CSMS] = files.csms_ca_bundle;
-    this->pki_bundle_map[CABundleType::CSMS_BACKUP] = files.csms_ca_backup_bundle;
+    auto csms_ca_bunde_backup = files.csms_ca_bundle;
+    csms_ca_bunde_backup.replace_filename(csms_ca_bunde_backup.stem().string() + OPTIONAL_FILE_SUFFX +
+                                          csms_ca_bunde_backup.extension().string());
+    auto csms_leaf_cert_2 = files.csms_leaf_cert;
+    csms_leaf_cert_2.replace_filename(csms_leaf_cert_2.stem().string() + OPTIONAL_FILE_SUFFX + csms_leaf_cert_2.extension().string());
+    auto csms_leaf_key_2 = files.csms_leaf_key;
+    csms_leaf_key_2.replace_filename(csms_leaf_key_2.stem().string() + OPTIONAL_FILE_SUFFX + csms_leaf_key_2.extension().string());
+    auto secc_leaf_cert_2 = files.secc_leaf_cert;
+    secc_leaf_cert_2.replace_filename(secc_leaf_cert_2.stem().string() + OPTIONAL_FILE_SUFFX + secc_leaf_cert_2.extension().string());
+    auto secc_leaf_key_2 = files.secc_leaf_key;
+    secc_leaf_key_2.replace_filename(secc_leaf_key_2.stem().string() + OPTIONAL_FILE_SUFFX + secc_leaf_key_2.extension().string());
+
     this->pki_bundle_map[CABundleType::CSO] = files.cso_ca_bundle;
+    this->pki_bundle_map[CABundleType::CSMS] = files.csms_ca_bundle;
+    this->pki_bundle_map[CABundleType::CSMS_BACKUP] = csms_ca_bunde_backup;
     this->pki_bundle_map[CABundleType::MF] = files.mf_ca_bundle;
     this->pki_bundle_map[CABundleType::MO] = files.mo_ca_bundle;
     this->pki_bundle_map[CABundleType::V2G] = files.v2g_ca_bundle;
 
-    this->csms_leaf_cert = files.csms_leaf_cert;
-    this->csms_leaf_key = files.csms_leaf_key;
-    this->csms_leaf_key_backup = files.csms_leaf_key_backup;
-    this->csms_leaf_csr = files.csms_leaf_csr;
-    this->secc_leaf_cert = files.secc_leaf_cert;
-    this->secc_leaf_key = files.secc_leaf_key;
-    this->secc_leaf_key_backup = files.secc_leaf_key_backup;
-    this->secc_leaf_csr = files.secc_leaf_csr;
+    this->csms_cert_key_pair_1 = {files.csms_leaf_cert, files.csms_leaf_key};
+    this->csms_cert_key_pair_2 = {csms_leaf_cert_2, csms_leaf_key_2};
+    this->secc_cert_key_pair_1 = {files.secc_leaf_cert, files.secc_leaf_key};
+    this->secc_cert_key_pair_2 = {secc_leaf_cert_2, secc_leaf_key_2};
 
     if (multipleCsmsCaNotAllowed) {
         if (this->getNumberOfCsmsCaCertificates() > 1) {
@@ -339,33 +339,47 @@ CertificateVerificationResult PkiHandler::verifyFirmwareCertificate(const std::s
     }
 }
 
-void PkiHandler::writeClientCertificate(const std::string& certificateChain,
+bool PkiHandler::writeClientCertificate(const std::string& certificateChain,
                                         const CertificateSigningUseEnum& certificate_use) {
+    try {
+        if (!this->temp_private_key.has_value()) {
+            EVLOG_warning << "Attempt to write new client certificate but private key not present";
+            return false;
+        }
 
-    const auto certificates = this->getCertificatesFromChain(certificateChain);
+        const auto certificates = this->getCertificatesFromChain(certificateChain);
 
-    if (certificates.empty()) {
-        EVLOG_error << "Failed to write client certificate";
-    } else {
+        if (certificates.empty()) {
+            EVLOG_error << "Failed to write client certificate";
+            this->temp_private_key = std::nullopt;
+            return false;
+        }
         auto leafCert = certificates.at(0);
-        std::string newPath;
-        std::filesystem::path leafPath;
 
-        if (certificate_use == CertificateSigningUseEnum::ChargingStationCertificate) {
-            leafPath = this->csms_leaf_cert;
-        } else {
-            leafPath = this->secc_leaf_cert;
+        // checking if certificate belongs to pending private key 
+        BIO_ptr prkey(BIO_new_mem_buf(this->temp_private_key.value().c_str(), -1), ::BIO_free);
+        EVP_PKEY_ptr evpKey(PEM_read_bio_PrivateKey(prkey.get(), nullptr, nullptr, nullptr), EVP_PKEY_free);
+        if (!X509_check_private_key(leafCert->x509, evpKey.get())) {
+            EVLOG_warning << "Generated private key doesnt match the provided certificate";
+            this->temp_private_key = std::nullopt;
+            return false;
         }
 
-        if (std::filesystem::exists(leafPath)) {
-            const auto oldLeafPath =
-                leafPath.parent_path() /
-                (leafPath.filename().string().substr(0, leafPath.filename().string().find_last_of(".")) +
-                 DateTime().to_rfc3339() + ".pem");
-            std::rename(leafPath.c_str(), oldLeafPath.c_str());
-        }
-        leafCert->path = leafPath;
+        // write client certificate to filesystem
+        const auto keyPairToOverride = this->getCertificateKeyPairToOverride(leafCert, certificate_use);
+        leafCert->path = keyPairToOverride.leaf_cert;
         leafCert->write(std::ios::out);
+
+        // write private key to filesystem
+        std::ofstream fs(keyPairToOverride.leaf_key, std::ofstream::out | std::ofstream::trunc);
+        fs << this->temp_private_key.value() << std::endl;
+        fs.close();
+        this->temp_private_key = std::nullopt;
+        return true;
+    } catch (const std::exception& e) {
+        EVLOG_error << "Unknown error while attempting to write new client certificate";
+        this->temp_private_key = std::nullopt;
+        return false;
     }
 }
 
@@ -381,24 +395,7 @@ std::string PkiHandler::generateCsr(const CertificateSigningUseEnum& certificate
     EC_KEY* ecKey = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
     X509_NAME* x509Name = X509_REQ_get_subject_name(x509ReqPtr.get());
 
-    std::filesystem::path csrFile;
-    std::filesystem::path privateKeyFile;
-
-    // FIXME(piet): This just overrides the private key and in case no valid certificate will be delivered by a future
-    // CertificateSigned.req from CSMS for this CSR the private key is lost
-    if (certificateType == CertificateSigningUseEnum::ChargingStationCertificate) {
-        csrFile = this->csms_leaf_csr;
-        privateKeyFile = this->csms_leaf_key;
-        std::rename((this->csms_leaf_key).c_str(), (this->csms_leaf_key_backup).c_str());
-    } else {
-        // CertificateSigningUseEnum::CertificateSigningUseEnum::V2GCertificate
-        csrFile = this->secc_leaf_csr;
-        privateKeyFile = secc_leaf_key;
-        std::rename(this->secc_leaf_key.c_str(), this->secc_leaf_key_backup.c_str());
-    }
-
-    BIO_ptr out(BIO_new_file(csrFile.c_str(), "w"), ::BIO_free);
-    BIO_ptr prkey(BIO_new_file(privateKeyFile.c_str(), "w"), ::BIO_free);
+    BIO_ptr prkey(BIO_new(BIO_s_mem()), ::BIO_free);
     BIO_ptr bio(BIO_new(BIO_s_mem()), ::BIO_free);
 
     // generate ec key pair
@@ -470,21 +467,20 @@ std::string PkiHandler::generateCsr(const CertificateSigningUseEnum& certificate
     // 6. set sign key of x509 req
     X509_REQ_sign(x509ReqPtr.get(), evpKey.get(), EVP_sha256());
 
-    // 7. write csr to file
-    rc = PEM_write_bio_X509_REQ(out.get(), x509ReqPtr.get());
+    // 7. write csr
+    rc = PEM_write_bio_X509_REQ(bio.get(), x509ReqPtr.get());
     if (rc != 1) {
         EVLOG_error << "Failed to write X509 request to file";
     }
 
-    // 8. read csr from file
-    rc = PEM_write_bio_X509_REQ(bio.get(), x509ReqPtr.get());
-    if (rc != 1) {
-        EVLOG_error << "Failed to read X509 request from file";
-    }
+    BUF_MEM* mem_csr = NULL;
+    BIO_get_mem_ptr(bio.get(), &mem_csr);
+    std::string csr(mem_csr->data, mem_csr->length);
 
-    BUF_MEM* mem = NULL;
-    BIO_get_mem_ptr(bio.get(), &mem);
-    std::string csr(mem->data, mem->length);
+    BUF_MEM* mem_prkey = NULL;
+    BIO_get_mem_ptr(prkey.get(), &mem_prkey);
+    std::string prkey_str(mem_prkey->data, mem_prkey->length);
+    this->temp_private_key = prkey_str;
 
     EVLOG_debug << csr;
 
@@ -504,7 +500,8 @@ bool PkiHandler::isManufacturerRootCertificateInstalled() {
 }
 
 bool PkiHandler::isCsmsLeafCertificateInstalled() {
-    return std::filesystem::exists(this->csms_leaf_cert);
+    return std::filesystem::exists(this->csms_cert_key_pair_1.leaf_cert) or
+           std::filesystem::exists(this->csms_cert_key_pair_2.leaf_cert);
 }
 
 std::optional<std::vector<CertificateHashDataChain>>
@@ -580,7 +577,7 @@ PkiHandler::getRootCertificateHashData(std::optional<std::vector<CertificateType
 
 DeleteCertificateResult PkiHandler::deleteRootCertificate(CertificateHashDataType certificate_hash_data,
                                                           int32_t security_profile) {
-    EVLOG_info << "Attempting to delete a root certificate";
+    EVLOG_info << "Attempting to delete root certificate";
     // get ca certificates including symlinks to delete both files
     std::vector<std::shared_ptr<X509Certificate>> caCertificates = this->getCaCertificates(true);
     bool foundCertificateToDelete = false;
@@ -624,7 +621,6 @@ InstallCertificateResult PkiHandler::installRootCertificate(const std::string& r
     EVLOG_info << "Installing new root certificate of type: "
                << ocpp::conversions::certificate_type_to_string(certificateType);
     InstallCertificateResult installCertificateResult = InstallCertificateResult::Valid;
-
     if (certificateStoreMaxLength && this->getCaCertificates().size() >= size_t(certificateStoreMaxLength.value())) {
         return InstallCertificateResult::CertificateStoreMaxLengthExceeded;
     }
@@ -683,27 +679,48 @@ InstallCertificateResult PkiHandler::installRootCertificate(const std::string& r
     return installCertificateResult;
 }
 
-std::shared_ptr<X509Certificate>
-PkiHandler::getLeafCertificate(const CertificateSigningUseEnum& certificate_signing_use) {
-    std::shared_ptr<X509Certificate> cert = nullptr;
-    int validIn = INT_MIN;
+std::optional<CertificateKeyPair>
+PkiHandler::getLeafCertificateKeyPair(const CertificateSigningUseEnum& certificate_signing_use) {
+    CertificateKeyPair cert_key_pair;
 
-    std::filesystem::path leafPath;
+    std::shared_ptr<X509Certificate> cert_1;
+    std::shared_ptr<X509Certificate> cert_2;
+    std::filesystem::path key_1;
+    std::filesystem::path key_2;
+
     if (certificate_signing_use == CertificateSigningUseEnum::ChargingStationCertificate) {
-        leafPath = this->csms_leaf_cert;
+        cert_1 = loadFromFile(this->csms_cert_key_pair_1.leaf_cert);
+        cert_2 = loadFromFile(this->csms_cert_key_pair_2.leaf_cert);
+        key_1 = this->csms_cert_key_pair_1.leaf_key;
+        key_2 = this->csms_cert_key_pair_2.leaf_key;
     } else {
-        leafPath = this->secc_leaf_cert;
+        cert_1 = loadFromFile(this->secc_cert_key_pair_1.leaf_cert);
+        cert_2 = loadFromFile(this->secc_cert_key_pair_2.leaf_cert);
+        key_1 = this->secc_cert_key_pair_1.leaf_key;
+        key_2 = this->secc_cert_key_pair_2.leaf_key;
     }
 
-    return loadFromFile(leafPath);
-}
-
-std::filesystem::path PkiHandler::getLeafPrivateKeyPath(const CertificateSigningUseEnum& certificate_signing_use) {
-    if (certificate_signing_use == CertificateSigningUseEnum::ChargingStationCertificate) {
-        return this->csms_leaf_key;
+    if (cert_1 == nullptr and cert_2 == nullptr) {
+        return std::nullopt;
+    } else if (cert_1 != nullptr and cert_2 == nullptr) {
+        cert_key_pair.leaf_cert = cert_1->path;
+        cert_key_pair.leaf_key = key_1;
+        return cert_key_pair;
+    } else if (cert_1 == nullptr and cert_2 != nullptr) {
+        cert_key_pair.leaf_cert = cert_2->path;
+        cert_key_pair.leaf_key = key_2;
+        return cert_key_pair;
+    } else if (cert_1->validIn > cert_2->validIn and cert_1->validIn < 0) {
+        cert_key_pair.leaf_cert = cert_1->path;
+        cert_key_pair.leaf_key = key_1;
+        return cert_key_pair;
     } else {
-        return this->secc_leaf_key;
+        cert_key_pair.leaf_cert = cert_2->path;
+        cert_key_pair.leaf_key = key_2;
+        return cert_key_pair;
     }
+
+    return std::nullopt;
 }
 
 void PkiHandler::removeCentralSystemFallbackCa() {
@@ -726,7 +743,11 @@ int PkiHandler::validIn(const std::string& certificate) {
 }
 
 int PkiHandler::getDaysUntilLeafExpires(const CertificateSigningUseEnum& certificate_signing_use) {
-    std::shared_ptr<X509Certificate> cert = this->getLeafCertificate(certificate_signing_use);
+    const auto certKeyPair = this->getLeafCertificateKeyPair(certificate_signing_use);
+    if (!certKeyPair.has_value()) {
+        return 0;
+    }
+    const auto cert = loadFromFile(certKeyPair.value().leaf_cert);
     if (cert != nullptr) {
         const ASN1_TIME* expires = X509_get0_notAfter(cert->x509);
         int days, seconds;
@@ -791,7 +812,7 @@ PkiHandler::verifyCertificate(const PkiEnum& pki, const std::vector<std::shared_
                               const std::optional<std::string>& chargeBoxSerialNumber) {
     EVLOG_info << "Verifying certificate...";
     const auto leaf_certificate = certificates.at(0);
-    if (leaf_certificate->x509 == NULL) {
+    if (leaf_certificate == nullptr or leaf_certificate->x509 == NULL) {
         EVLOG_warning << "Invalid certificate chain";
         return CertificateVerificationResult::InvalidCertificateChain;
     }
@@ -892,7 +913,11 @@ PkiHandler::getCaCertificateChains(const std::vector<std::shared_ptr<X509Certifi
 std::vector<std::shared_ptr<X509Certificate>> PkiHandler::getV2GCertificateChain() {
     std::vector<std::shared_ptr<X509Certificate>> v2gCertificateChain;
 
-    const auto v2gLeaf = this->getLeafCertificate(CertificateSigningUseEnum::V2GCertificate);
+    const auto certKeyPair = this->getLeafCertificateKeyPair(CertificateSigningUseEnum::V2GCertificate);
+    if (!certKeyPair.has_value()) {
+        return v2gCertificateChain;
+    }
+    const auto v2gLeaf = loadFromFile(certKeyPair.value().leaf_cert);
     if (v2gLeaf != nullptr) {
         v2gLeaf->type = CertificateType::V2GCertificateChain;
         v2gCertificateChain.push_back(v2gLeaf);
@@ -913,6 +938,66 @@ bool PkiHandler::isCaCertificateAlreadyInstalled(const std::shared_ptr<X509Certi
         }
     }
     return false;
+}
+
+CertificateKeyPair PkiHandler::getCertificateKeyPairToOverride(const std::shared_ptr<X509Certificate> certificate,
+                                                               const CertificateSigningUseEnum& certificateUse) {
+
+    std::shared_ptr<X509Certificate> cert_1;
+    std::shared_ptr<X509Certificate> cert_2;
+    std::filesystem::path cert_1_path;
+    std::filesystem::path cert_2_path;
+    std::filesystem::path key_1_path;
+    std::filesystem::path key_2_path;
+
+    if (certificateUse == CertificateSigningUseEnum::ChargingStationCertificate) {
+        cert_1 = loadFromFile(this->csms_cert_key_pair_1.leaf_cert);
+        cert_2 = loadFromFile(this->csms_cert_key_pair_2.leaf_cert);
+        cert_1_path = this->csms_cert_key_pair_1.leaf_cert;
+        cert_2_path = this->csms_cert_key_pair_2.leaf_cert;
+        key_1_path = this->csms_cert_key_pair_1.leaf_key;
+        key_2_path = this->csms_cert_key_pair_2.leaf_key;
+    } else {
+        cert_1 = loadFromFile(this->secc_cert_key_pair_1.leaf_cert);
+        cert_2 = loadFromFile(this->secc_cert_key_pair_2.leaf_cert);
+        cert_1_path = this->secc_cert_key_pair_1.leaf_cert;
+        cert_2_path = this->secc_cert_key_pair_2.leaf_cert;
+        key_1_path = this->secc_cert_key_pair_1.leaf_key;
+        key_2_path = this->secc_cert_key_pair_2.leaf_key;
+    }
+
+    if (cert_2 == nullptr or cert_2->x509 == NULL) {
+        return {cert_2_path, key_2_path};
+    }
+
+    // cert_1 valid; cert_2 valid; cert3 valid: write the one that is valid for
+    // the shortest time
+    if (cert_1->validIn < 0 and cert_2->validIn < 0) {
+        if (cert_1->validTo > cert_2->validTo) {
+            return {cert_2->path, key_2_path};
+        } else {
+            return {cert_1->path, key_1_path};
+        }
+    }
+
+    // cert_1 valid; cert_2 not yet valid; cert3 valid: choose cert_1
+    if (cert_1->validIn < 0 and cert_2->validIn > 0 and certificate->validIn < 0) {
+        return {cert_1->path, key_1_path};
+    }
+    // cert_1 not yet valid; cert_2 valid; cert3 valid: choose cert_2
+    if (cert_1->validIn > 0 and cert_2->validIn < 0 and certificate->validIn < 0) {
+        return {cert_2->path, key_2_path};
+    }
+    // cert_1 not yet valid; cert_2 valid; cert3 not yet valid: choose cert_1
+    if (cert_1->validIn > 0 and cert_2->validIn < 0 and certificate->validIn > 0) {
+        return {cert_1->path, key_1_path};
+    }
+    // cert_1 valid; cert_2 not yet valid; cert3 not yet valid: choose cert_2
+    if (cert_1->validIn < 0 and cert_2->validIn > 0 and certificate->validIn > 0) {
+        return {cert_2->path, key_2_path};
+    }
+
+    return {cert_1->path, key_1_path};
 }
 
 std::vector<std::shared_ptr<X509Certificate>> PkiHandler::getCaCertificates(const PkiEnum& pki,

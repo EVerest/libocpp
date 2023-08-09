@@ -163,22 +163,18 @@ tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connect
         }
 
         if (security_profile == 3) {
-            const auto csms_leaf =
-                this->pki_handler->getLeafCertificate(CertificateSigningUseEnum::ChargingStationCertificate);
-            if (csms_leaf == nullptr) {
+            const auto certificate_key_pair =
+                this->pki_handler->getLeafCertificateKeyPair(CertificateSigningUseEnum::ChargingStationCertificate);
+            if (!certificate_key_pair.has_value()) {
                 EVLOG_AND_THROW(std::runtime_error(
                     "Connecting with security profile 3 but no client side certificate is present or valid"));
             }
-            if (SSL_CTX_use_certificate_file(context->native_handle(), csms_leaf->path.string().c_str(),
+            if (SSL_CTX_use_certificate_file(context->native_handle(), certificate_key_pair.value().leaf_cert.string().c_str(),
                                              SSL_FILETYPE_PEM) != 1) {
                 EVLOG_AND_THROW(std::runtime_error("Could not use client certificate file within SSL context"));
             }
-            if (SSL_CTX_use_PrivateKey_file(
-                    context->native_handle(),
-                    this->pki_handler->getLeafPrivateKeyPath(CertificateSigningUseEnum::ChargingStationCertificate)
-                        .string()
-                        .c_str(),
-                    SSL_FILETYPE_PEM) != 1) {
+            if (SSL_CTX_use_PrivateKey_file(context->native_handle(), certificate_key_pair.value().leaf_key.string().c_str(),
+                                            SSL_FILETYPE_PEM) != 1) {
                 EVLOG_AND_THROW(std::runtime_error("Could not set private key file within SSL context"));
             }
         }

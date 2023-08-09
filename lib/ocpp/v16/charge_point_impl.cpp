@@ -1998,11 +1998,11 @@ void ChargePointImpl::handleCertificateSignedRequest(ocpp::Call<CertificateSigne
     CertificateVerificationResult certificateVerificationResult = this->pki_handler->verifyChargepointCertificate(
         certificateChain, this->configuration->getChargeBoxSerialNumber());
 
-    if (certificateVerificationResult == CertificateVerificationResult::Valid) {
+    if (certificateVerificationResult == CertificateVerificationResult::Valid and
+        this->pki_handler->writeClientCertificate(certificateChain,
+                                                  ocpp::CertificateSigningUseEnum::ChargingStationCertificate)) {
         response.status = CertificateSignedStatusEnumType::Accepted;
         // FIXME(piet): dont just override, store other one for at least one month according to spec
-        this->pki_handler->writeClientCertificate(certificateChain,
-                                                  ocpp::CertificateSigningUseEnum::ChargingStationCertificate);
     }
 
     ocpp::CallResult<CertificateSignedResponse> call_result(response, call.uniqueId);
@@ -2683,11 +2683,10 @@ void ChargePointImpl::handle_data_transfer_pnc_certificate_signed(Call<DataTrans
             const auto certificate_verification_result = pki_handler->verifyV2GChargingStationCertificate(
                 certificate_chain, this->configuration->getChargeBoxSerialNumber());
 
-            if (certificate_verification_result == CertificateVerificationResult::Valid) {
-                certificate_response.status = CertificateSignedStatusEnumType::Accepted;
-                // FIXME(piet): dont just override, store other one for at least one month according to spec
+            if (certificate_verification_result == CertificateVerificationResult::Valid and
                 this->pki_handler->writeClientCertificate(certificate_chain,
-                                                          ocpp::CertificateSigningUseEnum::V2GCertificate);
+                                                         ocpp::CertificateSigningUseEnum::V2GCertificate)) {
+                certificate_response.status = CertificateSignedStatusEnumType::Accepted;
             } else {
                 tech_info =
                     ocpp::conversions::certificate_verification_result_to_string(certificate_verification_result);
