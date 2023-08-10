@@ -419,7 +419,7 @@ TODO
 For Debian GNU/Linux 11 you will need the following dependencies:
 
 ```bash
-  sudo apt install build-essential cmake python3-pip libboost-all-dev libsqlite3-dev libssl-dev
+  sudo apt install build-essential cmake python3-pip libboost-all-dev libsqlite3-dev libssl-dev libgtest-dev
 ```
 
 Clone this repository.
