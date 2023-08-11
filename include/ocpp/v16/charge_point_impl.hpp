@@ -77,7 +77,6 @@
 #include <ocpp/v201/messages/InstallCertificate.hpp>
 #include <ocpp/v201/messages/SignCertificate.hpp>
 #include <ocpp/v201/messages/TriggerMessage.hpp>
-
 namespace ocpp {
 namespace v16 {
 
@@ -103,7 +102,7 @@ private:
     std::mutex allowed_message_types_mutex;
     std::unique_ptr<ChargePointStates> status;
     std::shared_ptr<ChargePointConfiguration> configuration;
-    std::mutex change_configuration_mutex;
+    std::mutex change_configuration_with_custom_key_callback_mutex;
     std::shared_ptr<ocpp::v16::DatabaseHandler> database_handler;
     std::unique_ptr<Everest::SteadyTimer> boot_notification_timer;
     std::unique_ptr<Everest::SteadyTimer> heartbeat_timer;

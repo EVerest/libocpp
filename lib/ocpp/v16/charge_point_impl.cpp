@@ -1249,6 +1249,7 @@ void ChargePointImpl::handleChangeConfigurationRequest(ocpp::Call<ChangeConfigur
         }
     } else {
         if (this->change_configuration_with_custom_key_callback) {
+            std::lock_guard<std::mutex> lock(this->change_configuration_with_custom_key_callback_mutex);
             response.status = this->change_configuration_with_custom_key_callback(call.msg.key, call.msg.value);
         } else {
             EVLOG_warning << "ChangeConfiguration not supported for key " << call.msg.key;
