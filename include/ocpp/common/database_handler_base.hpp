@@ -42,7 +42,7 @@ public:
     /// \brief Insert a new transaction message that needs to be sent to the CSMS.
     /// \param transaction_message  The message to be stored.
     /// \return True on success.
-    void insert_transaction_message(const DBTransactionMessage& transaction_message);
+    bool insert_transaction_message(const DBTransactionMessage& transaction_message);
 
     /// \brief Remove a transaction message from the database.
     /// \param unique_id    The unique id of the transaction message.

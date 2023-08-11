@@ -59,7 +59,7 @@ std::vector<DBTransactionMessage> DatabaseHandlerBase::get_transaction_messages(
     return transaction_messages;
 }
 
-void DatabaseHandlerBase::insert_transaction_message(const DBTransactionMessage& transaction_message) {
+bool DatabaseHandlerBase::insert_transaction_message(const DBTransactionMessage& transaction_message) {
     const std::string sql =
         "INSERT INTO TRANSACTION_QUEUE (UNIQUE_ID, MESSAGE, MESSAGE_TYPE, MESSAGE_ATTEMPTS, MESSAGE_TIMESTAMP) VALUES "
         "(@unique_id, @message, @message_type, @message_attempts, @message_timestamp)";
@@ -70,35 +70,36 @@ void DatabaseHandlerBase::insert_transaction_message(const DBTransactionMessage&
         throw std::runtime_error("Error while inserting queued transaction message into database");
     }
 
-    sqlite3_bind_text(stmt, sqlite3_bind_parameter_index(stmt, "unique_id"), transaction_message.unique_id.c_str(),
-                      static_cast<int>(transaction_message.unique_id.size()), nullptr);
 
-    const json json_array(transaction_message.json_message);
-    json_array.dump();
-    const std::string message = json_array;
-    sqlite3_bind_text(stmt, sqlite3_bind_parameter_index(stmt, "message"), message.c_str(),
-                      static_cast<int>(message.size()), nullptr);
+    sqlite3_bind_text(stmt, sqlite3_bind_parameter_index(stmt, "@unique_id"), transaction_message.unique_id.c_str(),
+                      static_cast<int>(transaction_message.unique_id.length()), SQLITE_TRANSIENT);
 
-    sqlite3_bind_text(stmt, sqlite3_bind_parameter_index(stmt, "message_type"),
+    const std::string message = transaction_message.json_message.dump();
+    sqlite3_bind_text(stmt, sqlite3_bind_parameter_index(stmt, "@message"), message.c_str(),
+                      static_cast<int>(message.size()), SQLITE_TRANSIENT);
+
+    sqlite3_bind_text(stmt, sqlite3_bind_parameter_index(stmt, "@message_type"),
                       transaction_message.message_type.c_str(),
-                      static_cast<int>(transaction_message.message_type.size()), nullptr);
+                      static_cast<int>(transaction_message.message_type.size()), SQLITE_TRANSIENT);
 
-    sqlite3_bind_int(stmt, sqlite3_bind_parameter_index(stmt, "message_attempts"),
+    sqlite3_bind_int(stmt, sqlite3_bind_parameter_index(stmt, "@message_attempts"),
                      transaction_message.message_attempts);
 
     const std::string timestamp = transaction_message.timestamp.to_rfc3339();
-    sqlite3_bind_text(stmt, sqlite3_bind_parameter_index(stmt, "message_timestamp"), timestamp.c_str(),
-                      static_cast<int>(timestamp.size()), nullptr);
+    sqlite3_bind_text(stmt, sqlite3_bind_parameter_index(stmt, "@message_timestamp"), timestamp.c_str(),
+                      static_cast<int>(timestamp.size()), SQLITE_TRANSIENT);
 
     if (sqlite3_step(stmt) != SQLITE_DONE) {
         EVLOG_error << "Could not insert into TRANSACTION_QUEUE table: " << sqlite3_errmsg(db);
-        return;
+        return false;
     }
 
     if (sqlite3_finalize(stmt) != SQLITE_OK) {
         EVLOG_error << "Error inserting into TRANSACTION_QUEUE table: " << sqlite3_errmsg(this->db);
-        return;
+        return false;
     }
+
+    return true;
 }
 
 void DatabaseHandlerBase::remove_transaction_message(const std::string& unique_id) {
@@ -110,7 +111,7 @@ void DatabaseHandlerBase::remove_transaction_message(const std::string& unique_i
             return;
         }
 
-        sqlite3_bind_text(stmt, sqlite3_bind_parameter_index(stmt, "unique_id"), unique_id.c_str(),
+        sqlite3_bind_text(stmt, sqlite3_bind_parameter_index(stmt, "@unique_id"), unique_id.c_str(),
                           static_cast<int>(unique_id.size()), nullptr);
         if (sqlite3_step(stmt) != SQLITE_DONE) {
             EVLOG_error << "Could not delete from table: " << sqlite3_errmsg(this->db);
