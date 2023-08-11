@@ -103,6 +103,7 @@ private:
     std::mutex allowed_message_types_mutex;
     std::unique_ptr<ChargePointStates> status;
     std::shared_ptr<ChargePointConfiguration> configuration;
+    std::mutex change_configuration_mutex;
     std::shared_ptr<ocpp::v16::DatabaseHandler> database_handler;
     std::unique_ptr<Everest::SteadyTimer> boot_notification_timer;
     std::unique_ptr<Everest::SteadyTimer> heartbeat_timer;
@@ -166,6 +167,8 @@ private:
 
     std::function<void(const int32_t connector, const int32_t transaction_id)>
         transaction_started_callback;
+
+    std::function<ConfigurationStatus(const std::string& key, const std::string& value)> change_configuration_with_custom_key_callback;
 
     // iso15118 callback
     std::function<void(const int32_t connector, const ocpp::v201::Get15118EVCertificateResponse& certificate_response,
@@ -653,6 +656,11 @@ public:
     // \param callback
     void register_transaction_started_callback(
         const std::function<void(int32_t connector, int32_t transaction_id)>& callback);
+
+    /// \brief registers a \p callback function that can be change configuration for custom configuration keys
+    /// \param callback
+    void register_change_configuration_with_custom_key_callback(
+        const std::function<ConfigurationStatus(const std::string& key, const std::string& value)>& callback);
 };
 
 } // namespace v16
