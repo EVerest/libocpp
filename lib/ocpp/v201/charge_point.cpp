@@ -874,6 +874,16 @@ AuthorizeResponse ChargePoint::authorize_req(const IdToken id_token, const std::
 
     AuthorizeResponse response;
 
+    // C15.FR.08
+    // when an unknown identifier is presented AND OfflineTxForUnkownIdEnabled is set to true
+    // The Charging Station SHALL accept the presented IdToken
+
+    if (this->device_model->get_value<bool>(ControllerComponentVariables::OfflineTxForUnknownIdEnabled))
+    {
+        response.idTokenInfo.status = AuthorizationStatusEnum::Accepted;
+        return response;
+    }
+
     if (enhanced_message.messageType != MessageType::AuthorizeResponse) {
         response.idTokenInfo.status = AuthorizationStatusEnum::Unknown;
         return response;
