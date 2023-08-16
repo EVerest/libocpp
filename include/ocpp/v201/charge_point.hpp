@@ -52,7 +52,16 @@ struct Callbacks {
     std::function<void(const std::optional<const int32_t> evse_id, const ResetEnum& reset_type)> reset_callback;
     std::function<void(const int32_t evse_id, const ReasonEnum& stop_reason)> stop_transaction_callback;
     std::function<void(const int32_t evse_id)> pause_charging_callback;
-    std::function<void(const ChangeAvailabilityRequest& request)> change_availability_callback;
+    ///
+    /// \brief Change availability of charging station / evse / connector.
+    /// \param request The request.
+    /// \param persist True to persist the status after reboot.
+    ///
+    /// Persist is set to 'false' if the status does not need to be stored after restarting. Otherwise it is true.
+    /// False is for example during a reset OnIdle where first an 'unavailable' is sent until the charging session
+    /// stopped. True is for example when the CSMS sent an 'inoperative' request.
+    ///
+    std::function<void(const ChangeAvailabilityRequest& request, const bool persist)> change_availability_callback;
     std::function<GetLogResponse(const GetLogRequest& request)> get_log_request_callback;
     std::function<UnlockConnectorResponse(const int32_t evse_id, const int32_t connecor_id)> unlock_connector_callback;
     // callback to be called when the request can be accepted. authorize_remote_start indicates if Authorize.req needs
@@ -179,8 +188,10 @@ private:
     ///
     /// \brief Set all connectors of a given evse to unavailable.
     /// \param evse The evse.
+    /// \param persist  True if unavailability should persist. If it is set to false, there will be a check per
+    ///                 connector if it was already set to true and if that is the case, it will be persisted anyway.
     ///
-    void set_evse_connectors_unavailable(const std::unique_ptr<Evse>& evse);
+    void set_evse_connectors_unavailable(const std::unique_ptr<Evse>& evse, bool persist);
 
     /* OCPP message requests */
 

@@ -686,7 +686,7 @@ void ChargePoint::handle_scheduled_change_availability_requests(const int32_t ev
         const auto req = this->scheduled_change_availability_requests[evse_id];
         if (this->is_change_availability_possible(req)) {
             EVLOG_info << "Changing availability of evse:" << evse_id;
-            this->callbacks.change_availability_callback(req);
+            this->callbacks.change_availability_callback(req, true);
             this->scheduled_change_availability_requests.erase(evse_id);
         } else {
             EVLOG_info << "Cannot change availability because transaction is still active";
@@ -806,11 +806,17 @@ bool ChargePoint::is_evse_connector_available(const std::unique_ptr<Evse>& evse)
     return false;
 }
 
-void ChargePoint::set_evse_connectors_unavailable(const std::unique_ptr<Evse>& evse)
+void ChargePoint::set_evse_connectors_unavailable(const std::unique_ptr<Evse>& evse, bool persist)
 {
     uint32_t number_of_connectors = evse->get_number_of_connectors();
 
     for (uint32_t i = 1; i <= number_of_connectors; ++i) {
+        bool should_persist = persist;
+        if (!should_persist && evse->get_state(static_cast<int32_t>(i)) == ocpp::v201::ConnectorStatusEnum::Unavailable)
+        {
+            should_persist = true;
+        }
+
         evse->submit_event(static_cast<int32_t>(i), ConnectorEvent::Unavailable);
 
         ChangeAvailabilityRequest request;
@@ -818,7 +824,8 @@ void ChargePoint::set_evse_connectors_unavailable(const std::unique_ptr<Evse>& e
         request.evse = EVSE();
         request.evse.value().id = evse->get_evse_info().id;
         request.evse->connectorId = i;
-        this->callbacks.change_availability_callback(request);
+
+        this->callbacks.change_availability_callback(request, should_persist);
     }
 }
 
@@ -1474,7 +1481,7 @@ void ChargePoint::handle_change_availability_req(Call<ChangeAvailabilityRequest>
 
     // execute change availability if possible
     if (is_change_availability_possible) {
-        this->callbacks.change_availability_callback(msg);
+        this->callbacks.change_availability_callback(msg, true);
     }
 }
 
