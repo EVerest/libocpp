@@ -856,12 +856,43 @@ void ChargePoint::transaction_event_req(const TransactionEventEnum& event_type, 
 
     ocpp::Call<TransactionEventRequest> call(req, this->message_queue->createMessageId());
 
+           // Check if id token is in the remote start map, because when a remote
+           // start request is done, the first transaction event request should
+           // always contain trigger reason 'RemoteStart'.
+    auto it = std::find_if(
+        remote_start_id_per_evse.begin(), remote_start_id_per_evse.end(),
+        [&id_token, &evse](const std::pair<int32_t, std::pair<IdToken, int32_t>>& remote_start_per_evse) {
+            if (id_token.has_value() &&
+                remote_start_per_evse.second.first.idToken == id_token.value().idToken) {
+
+                if (remote_start_per_evse.first == 0) {
+                    return true;
+                }
+
+                if (evse.has_value() &&
+                    evse.value().id == remote_start_per_evse.first) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        );
+
+    if (it != remote_start_id_per_evse.end()) {
+        // Found remote start. Set remote start id and the trigger reason.
+        call.msg.triggerReason = TriggerReasonEnum::RemoteStart;
+        call.msg.transactionInfo.remoteStartId = it->second.second;
+
+        remote_start_id_per_evse.erase(it);
+    }
+
     if (event_type == TransactionEventEnum::Started) {
         if (!evse.has_value() or !id_token.has_value()) {
             EVLOG_error << "Request to send TransactionEvent(Started) without given evse or id_token. These properties "
                            "are required for this eventType \"Started\"!";
             return;
         }
+
         auto future = this->send_async<TransactionEventRequest>(call);
         const auto enhanced_message = future.get();
         if (enhanced_message.messageType == MessageType::TransactionEventResponse) {
@@ -871,36 +902,6 @@ void ChargePoint::transaction_event_req(const TransactionEventEnum& event_type, 
             // TODO(piet): offline handling
         }
     } else {
-        // Check if id token is in the remote start map, because when a remote
-        // start request is done, the first transaction event request should
-        // always contain trigger reason 'RemoteStart'.
-        auto it = std::find_if(
-            remote_start_id_per_evse.begin(), remote_start_id_per_evse.end(),
-            [&id_token, &evse](const std::pair<int32_t, std::pair<IdToken, int32_t>>& remote_start_per_evse) {
-                if (id_token.has_value() &&
-                    remote_start_per_evse.second.first.idToken == id_token.value().idToken) {
-
-                    if (remote_start_per_evse.first == 0) {
-                      return true;
-                    }
-
-                    if (evse.has_value() &&
-                        evse.value().id == remote_start_per_evse.first) {
-                      return true;
-                    }
-                }
-                return false;
-            }
-        );
-
-        if (it != remote_start_id_per_evse.end()) {
-            // Found remote start. Set remote start id and the trigger reason.
-            call.msg.triggerReason = TriggerReasonEnum::RemoteStart;
-            call.msg.transactionInfo.remoteStartId = it->second.second;
-
-            remote_start_id_per_evse.erase(it);
-        }
-
         this->send<TransactionEventRequest>(call);
     }
 }
