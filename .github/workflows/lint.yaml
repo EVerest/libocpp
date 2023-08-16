@@ -1,0 +1,21 @@
+name: Lint
+on: [workflow_dispatch, pull_request]
+
+jobs:
+  lint:
+    name: Lint
+    strategy:
+      matrix:
+        os: [large-ubuntu-22.04-s]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout libocpp
+        uses: actions/checkout@v3
+        with:
+          path: source
+      - name: Run clang-format
+        run: |
+          docker run \
+          --volume "$(pwd):/source" \
+          ghcr.io/everest/everest-clang-format:latest \
+          -r /source --extensions "hpp,cpp" -e "/source/cache"
