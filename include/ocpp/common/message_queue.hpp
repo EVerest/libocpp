@@ -65,7 +65,7 @@ template <typename M> struct ControlMessage {
 /// \brief contains a message queue that makes sure that OCPPs synchronicity requirements are met
 template <typename M> class MessageQueue {
 private:
-    ocpp::common::DatabaseHandlerBase& database_handler;
+    std::shared_ptr<ocpp::common::DatabaseHandlerBase> database_handler;
     int transaction_message_attempts;
     int transaction_message_retry_interval; // seconds
     std::thread worker_thread;
@@ -143,7 +143,7 @@ private:
             ocpp::common::DBTransactionMessage db_message{message->message, messagetype_to_string(message->messageType),
                                                           message->message_attempts, message->timestamp,
                                                           message->uniqueId()};
-            this->database_handler.insert_transaction_message(db_message);
+            this->database_handler->insert_transaction_message(db_message);
             this->new_message = true;
         }
         this->cv.notify_all();
@@ -154,7 +154,7 @@ public:
     /// \brief Creates a new MessageQueue object with the provided \p configuration and \p send_callback
     MessageQueue(const std::function<bool(json message)>& send_callback, const int transaction_message_attempts,
                  const int transaction_message_retry_interval, const std::vector<M>& external_notify,
-                 common::DatabaseHandlerBase& database_handler) :
+                 std::shared_ptr<common::DatabaseHandlerBase> database_handler) :
         database_handler(database_handler),
         transaction_message_attempts(transaction_message_attempts),
         transaction_message_retry_interval(transaction_message_retry_interval),
@@ -298,14 +298,14 @@ public:
     }
 
     MessageQueue(const std::function<bool(json message)>& send_callback, const int transaction_message_attempts,
-                 const int transaction_message_retry_interval, common::DatabaseHandlerBase& databaseHandler) :
+                 const int transaction_message_retry_interval, std::shared_ptr<common::DatabaseHandlerBase> databaseHandler) :
         MessageQueue(send_callback, transaction_message_attempts, transaction_message_retry_interval, {},
                      databaseHandler){}
 
     void get_transaction_messages_from_db()
     {
         std::vector<ocpp::common::DBTransactionMessage> transaction_messages =
-            database_handler.get_transaction_messages();
+            database_handler->get_transaction_messages();
 
         if (!transaction_messages.empty()) {
             for (auto& transaction_message : transaction_messages) {
@@ -431,7 +431,7 @@ public:
             if (isTransactionMessage(this->in_flight)) {
                 // We only remove the message as soon as a response is received. Otherwise we might miss a message if
                 // the charging station just boots after sending, but before receiving the result.
-                this->database_handler.remove_transaction_message(this->in_flight->uniqueId());
+                this->database_handler->remove_transaction_message(this->in_flight->uniqueId());
             }
 
             this->reset_in_flight();

@@ -47,7 +47,7 @@ ChargePointImpl::ChargePointImpl(const std::string& config, const std::filesyste
     this->message_queue = std::make_unique<ocpp::MessageQueue<v16::MessageType>>(
         [this](json message) -> bool { return this->websocket->send(message.dump()); },
         this->configuration->getTransactionMessageAttempts(), this->configuration->getTransactionMessageRetryInterval(),
-        this->external_notify, *this->database_handler.get());
+        this->external_notify, this->database_handler);
     auto log_formats = this->configuration->getLogMessagesFormat();
     bool log_to_console = std::find(log_formats.begin(), log_formats.end(), "console") != log_formats.end();
     bool detailed_log_to_console =
@@ -712,7 +712,7 @@ bool ChargePointImpl::restart() {
             [this](json message) -> bool { return this->websocket->send(message.dump()); },
             this->configuration->getTransactionMessageAttempts(),
             this->configuration->getTransactionMessageRetryInterval(), this->external_notify,
-            *this->database_handler.get());
+            this->database_handler);
         this->initialized = true;
         return this->start();
     } else {

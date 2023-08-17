@@ -97,7 +97,7 @@ private:
     // utility
     std::unique_ptr<MessageQueue<v201::MessageType>> message_queue;
     std::unique_ptr<DeviceModel> device_model;
-    std::unique_ptr<DatabaseHandler> database_handler;
+    std::shared_ptr<DatabaseHandler> database_handler;
 
     std::map<int32_t, ChangeAvailabilityRequest> scheduled_change_availability_requests;
 
