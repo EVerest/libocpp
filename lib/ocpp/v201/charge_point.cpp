@@ -1238,24 +1238,31 @@ void ChargePoint::handle_reset_req(Call<ResetRequest> call) {
     // TODO(piet): B11.FR.09
     // TODO(piet): B11.FR.10
 
-    // TODO(piet): B12.FR.05
-    // TODO(piet): B12.FR.06
+           // TODO(piet): B12.FR.05
+           // TODO(piet): B12.FR.06
     EVLOG_debug << "Received ResetRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
     const auto msg = call.msg;
 
     ResetResponse response;
 
-    // Check if there is an active transaction (on the given evse or if not
-    // given, on one of the evse's)
+           // Check if there is an active transaction (on the given evse or if not
+           // given, on one of the evse's)
     bool transaction_active = false;
+    std::set<int32_t> evse_active_transactions;
+    std::set<int32_t> evse_no_transactions;
     if (msg.evseId.has_value() &&
         this->evses.at(msg.evseId.value())->has_active_transaction()) {
         transaction_active = true;
+        evse_active_transactions.emplace(msg.evseId.value());
     } else {
         for (const auto& [evse_id, evse] : this->evses) {
             if (evse->has_active_transaction()) {
                 transaction_active = true;
-                break;
+                evse_active_transactions.emplace(evse_id);
+            }
+            else
+            {
+                evse_no_transactions.emplace(evse_id);
             }
         }
     }
@@ -1267,59 +1274,52 @@ void ChargePoint::handle_reset_req(Call<ResetRequest> call) {
         response.status = ResetStatusEnum::Rejected;
     }
 
-    if (response.status == ResetStatusEnum::Accepted && transaction_active) {
-        if (msg.type == ResetEnum::OnIdle and !msg.evseId.has_value()) {
-            // B12.FR.03
-            for (const auto &[evse_id, evse] : this->evses) {
-                if (!evse->has_active_transaction()) {
-                    // Set all connectors that do not have an active transaction
-                    // to 'Unavailable'.
-                    this->set_evse_connectors_unavailable(evse, false);
-                }
-            }
-
-            // B12.FR.01: We have to wait until transactions have ended.
-            this->reset_scheduled = true;
-            response.status = ResetStatusEnum::Scheduled;
-        } else if (msg.type == ResetEnum::Immediate and
-                   !msg.evseId.has_value()) {
-            // B12.FR.04
-            for (const auto &[evse_id, evse] : this->evses) {
-                if (evse->has_active_transaction()) {
-                    callbacks.stop_transaction_callback(
-                        evse_id, ReasonEnum::ImmediateReset);
-                }
-            }
-
-            // B12.FR.02: We will try to reset immediately, send ResetStatusEnum::Accepted.
-        } else if (msg.type == ResetEnum::OnIdle and msg.evseId.has_value()) {
+    if (response.status == ResetStatusEnum::Accepted && transaction_active &&
+        msg.type == ResetEnum::OnIdle) {
+        if (msg.evseId.has_value()) {
             // B12.FR.07
-            this->reset_scheduled = true;
             this->reset_scheduled_evseids.insert(msg.evseId.value());
-
-            // B12.FR.01: We have to wait until transactions have ended.
-            response.status = ResetStatusEnum::Scheduled;
-        } else if (msg.type == ResetEnum::Immediate and
-                   msg.evseId.has_value()) {
-            // B12.FR.08
-            callbacks.stop_transaction_callback(msg.evseId.value(),
-                                                ReasonEnum::ImmediateReset);
-
-            // B12.FR.02: We will try to reset immediately, send
-            // ResetStatusEnum::Accepted.
         }
+
+               // B12.FR.01: We have to wait until transactions have ended.
+               // B12.FR.07
+        this->reset_scheduled = true;
+        response.status = ResetStatusEnum::Scheduled;
     }
 
     ocpp::CallResult<ResetResponse> call_result(response, call.uniqueId);
     this->send<ResetResponse>(call_result);
 
+           // Reset response is sent, now set evse connectors to unavailable and / or
+           // stop transaction (depending on reset type)
+    if (response.status != ResetStatusEnum::Rejected && transaction_active) {
+        if (msg.type == ResetEnum::Immediate) {
+            // B12.FR.08 and B12.FR.04
+            for (const int32_t evse_id : evse_active_transactions) {
+                callbacks.stop_transaction_callback(evse_id,
+                                                    ReasonEnum::ImmediateReset);
+            }
+        } else if (msg.type == ResetEnum::OnIdle &&
+                   !evse_no_transactions.empty()) {
+            for (const int32_t evse_id : evse_no_transactions) {
+                std::unique_ptr<Evse> &evse = this->evses.at(evse_id);
+                if (evse) {
+                    this->set_evse_connectors_unavailable(evse, false);
+                } else {
+                    EVLOG_error << "No evse found with evse id " << evse_id;
+                }
+            }
+        }
+    }
+
     if (response.status == ResetStatusEnum::Accepted) {
         if (call.msg.evseId.has_value()) {
             // B11.FR.08
-            this->evses.at(call.msg.evseId.value())->submit_event(1, ConnectorEvent::Unavailable);
+            this->evses.at(call.msg.evseId.value())
+                ->submit_event(1, ConnectorEvent::Unavailable);
         } else {
             // B11.FR.03
-            for (auto const& [evse_id, evse] : this->evses) {
+            for (auto const &[evse_id, evse] : this->evses) {
                 evse->submit_event(1, ConnectorEvent::Unavailable);
             }
         }
