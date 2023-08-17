@@ -1027,6 +1027,9 @@ void ChargePoint::handle_boot_notification_response(CallResult<BootNotificationR
     this->registration_status = msg.status;
 
     if (this->registration_status == RegistrationStatusEnum::Accepted) {
+        // get transaction messages from db (if there are any) so they can be sent again.
+        message_queue->get_transaction_messages_from_db();
+
         // set timers
         if (msg.interval > 0) {
             this->heartbeat_timer.interval([this]() { this->heartbeat_req(); }, std::chrono::seconds(msg.interval));

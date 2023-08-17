@@ -164,22 +164,6 @@ public:
         new_message(false),
         uuid_generator(boost::uuids::random_generator()) {
 
-        std::vector<ocpp::common::DBTransactionMessage> transaction_messages =
-            database_handler.get_transaction_messages();
-
-        if (!transaction_messages.empty()) {
-            for (auto& transaction_message : transaction_messages) {
-                std::shared_ptr<ControlMessage<M>> message =
-                    std::make_shared<ControlMessage<M>>(transaction_message.json_message);
-                message->messageType = string_to_messagetype(transaction_message.message_type);
-                message->timestamp = transaction_message.timestamp;
-                message->message_attempts = transaction_message.message_attempts;
-                transaction_message_queue.push_back(message);
-            }
-
-            this->new_message = true;
-        }
-
         this->send_callback = send_callback;
         this->in_flight = nullptr;
         this->worker_thread = std::thread([this]() {
@@ -316,7 +300,26 @@ public:
     MessageQueue(const std::function<bool(json message)>& send_callback, const int transaction_message_attempts,
                  const int transaction_message_retry_interval, common::DatabaseHandlerBase& databaseHandler) :
         MessageQueue(send_callback, transaction_message_attempts, transaction_message_retry_interval, {},
-                     databaseHandler){};
+                     databaseHandler){}
+
+    void get_transaction_messages_from_db()
+    {
+        std::vector<ocpp::common::DBTransactionMessage> transaction_messages =
+            database_handler.get_transaction_messages();
+
+        if (!transaction_messages.empty()) {
+            for (auto& transaction_message : transaction_messages) {
+                std::shared_ptr<ControlMessage<M>> message =
+                    std::make_shared<ControlMessage<M>>(transaction_message.json_message);
+                message->messageType = string_to_messagetype(transaction_message.message_type);
+                message->timestamp = transaction_message.timestamp;
+                message->message_attempts = transaction_message.message_attempts;
+                transaction_message_queue.push_back(message);
+            }
+
+            this->new_message = true;
+        }
+    }
 
     /// \brief pushes a new \p call message onto the message queue
     template <class T> void push(Call<T> call) {
