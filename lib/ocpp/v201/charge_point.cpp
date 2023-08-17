@@ -221,7 +221,7 @@ void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime&
             }
 
             if (is_charging) {
-              this->set_evse_connectors_unavailable(this->evses.at(evse_id));
+              this->set_evse_connectors_unavailable(this->evses.at(evse_id), false);
             } else {
               send_reset = true;
             }
@@ -1274,7 +1274,7 @@ void ChargePoint::handle_reset_req(Call<ResetRequest> call) {
                 if (!evse->has_active_transaction()) {
                     // Set all connectors that do not have an active transaction
                     // to 'Unavailable'.
-                    this->set_evse_connectors_unavailable(evse);
+                    this->set_evse_connectors_unavailable(evse, false);
                 }
             }
 
