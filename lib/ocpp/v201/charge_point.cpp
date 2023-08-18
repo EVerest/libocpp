@@ -25,7 +25,7 @@ bool Callbacks::all_callbacks_valid() const {
 }
 
 ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
-                         const std::string& device_model_storage_address, const std::string& ocpp_main_path,
+                         const std::shared_ptr<DeviceModelStorage> device_model_storage, const std::string& ocpp_main_path,
                          const std::string& core_database_path, const std::string& sql_init_path,
                          const std::string& message_log_path, const std::shared_ptr<EvseSecurity> evse_security,
                          const Callbacks& callbacks,
@@ -45,8 +45,8 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
     if (!this->callbacks.all_callbacks_valid()) {
         EVLOG_AND_THROW(std::invalid_argument("All non-optional callbacks must be supplied"));
     }
-    this->device_model = std::make_unique<DeviceModel>(device_model_storage_address);
     this->evse_security = evse_security;
+    this->device_model = std::make_unique<DeviceModel>(device_model_storage);
     this->database_handler = std::make_unique<DatabaseHandler>(core_database_path, sql_init_path);
     this->database_handler->open_connection();
 

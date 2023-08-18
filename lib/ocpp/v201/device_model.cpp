@@ -4,7 +4,6 @@
 #include <ocpp/common/utils.hpp>
 #include <ocpp/v201/ctrlr_component_variables.hpp>
 #include <ocpp/v201/device_model.hpp>
-#include <ocpp/v201/device_model_storage_sqlite.hpp>
 
 namespace ocpp {
 
@@ -116,10 +115,14 @@ GetVariableStatusEnum DeviceModel::request_value(const Component& component_id, 
     return GetVariableStatusEnum::Accepted;
 }
 
+DeviceModel::DeviceModel(const std::shared_ptr<DeviceModelStorage> device_model_storage) {
+    this->storage = device_model_storage;
+    this->device_model = this->storage->get_device_model();
+};
+
 SetVariableStatusEnum DeviceModel::set_value_internal(const Component& component, const Variable& variable,
                                                       const AttributeEnum& attribute_enum, const std::string& value,
                                                       bool force_read_only) {
-
     if (this->device_model.find(component) == this->device_model.end()) {
         return SetVariableStatusEnum::UnknownComponent;
     }

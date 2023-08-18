@@ -317,7 +317,7 @@ public:
     /// \param security_configuration specifies the file paths that are required to set up the internal evse_security
     /// implementation
     ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
-                const std::string& device_model_storage_address, const std::string& ocpp_main_path,
+                const std::shared_ptr<DeviceModelStorage> device_model_storage, const std::string& ocpp_main_path,
                 const std::string& core_database_path, const std::string& sql_init_path,
                 const std::string& message_log_path, const std::shared_ptr<EvseSecurity> evse_security,
                 const Callbacks& callbacks,

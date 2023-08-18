@@ -24,7 +24,6 @@ target_sources(ocpp
         ocpp/v16/types.cpp
         ocpp/v201/charge_point.cpp
         ocpp/v201/database_handler.cpp
-        ocpp/v201/device_model_storage_sqlite.cpp
         ocpp/v201/device_model.cpp
         ocpp/v201/transaction.cpp
         ocpp/v201/enums.cpp
