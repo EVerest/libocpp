@@ -46,7 +46,7 @@ class DeviceModel {
 
 private:
     DeviceModelMap device_model;
-    std::unique_ptr<DeviceModelStorage> storage;
+    std::shared_ptr<DeviceModelStorage> storage;
 
     /// \brief Private helper method that does some checks with the device model representation in memory to evaluate if
     /// a value for the given parameters can be requested. If it can be requested it will be retrieved from the device
@@ -80,8 +80,8 @@ private:
 
 public:
     /// \brief Constructor for the device model
-    /// \param storage_address address fo device model storage
-    explicit DeviceModel(const std::string& storage_address);
+    /// \param device_model_storage pointer to implementation of device model storage
+    explicit DeviceModel(const std::shared_ptr<DeviceModelStorage> device_model_storage);
 
     /// \brief Direct access to value of a VariableAttribute for the given component, variable and attribute_enum. This
     /// should only be called for variables that have a role standardized in the OCPP2.0.1 specification.
