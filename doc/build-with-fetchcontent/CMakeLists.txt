@@ -14,6 +14,10 @@ set(BUILD_TZ_LIB ON CACHE INTERNAL "")
 set(HAS_REMOTE_API 0 CACHE INTERNAL "")
 set(USE_AUTOLOAD 0 CACHE INTERNAL "")
 set(USE_SYSTEM_TZ_DB ON CACHE INTERNAL "")
+set(JSON_VALIDATOR_INSTALL OFF CACHE INTERNAL "")
+set(JSON_VALIDATOR_BUILD_TESTS OFF CACHE INTERNAL "")
+set(JSON_VALIDATOR_BUILD_EXAMPLES OFF CACHE INTERNAL "")
+set(JSON_VALIDATOR_BUILD_SHARED_LIBS ON CACHE INTERNAL "")
 
 macro(find_date_library)
     message(STATUS "Using FetchContent for date library")
@@ -55,7 +59,7 @@ macro(find_nlohmann_json)
     message(STATUS "Using FetchContent for nlohmann_json library")
     set(EXTERNAL_JSON_NAME nlohmann_json)
     set(EXTERNAL_JSON_URL https://github.com/nlohmann/json.git)
-    set(EXTERNAL_JSON_TAG v3.10.5)
+    set(EXTERNAL_JSON_TAG v3.11.2)
 
     FetchContent_Declare(
         ${EXTERNAL_JSON_NAME}
@@ -70,7 +74,7 @@ macro(find_nlohmann_json_schema_validator)
     message(STATUS "Using FetchContent for nlohmann_json_schema library")
     set(EXTERNAL_JSON_SCHEMA_NAME nlohmann_json_schema_validator)
     set(EXTERNAL_JSON_SCHEMA_URL https://github.com/pboettch/json-schema-validator)
-    set(EXTERNAL_JSON_SCHEMA_TAG 2.1.0)
+    set(EXTERNAL_JSON_SCHEMA_TAG 2.2.0)
 
     FetchContent_Declare(
         ${EXTERNAL_JSON_SCHEMA_NAME}
