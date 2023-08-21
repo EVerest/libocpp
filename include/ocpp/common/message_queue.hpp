@@ -298,12 +298,13 @@ public:
     }
 
     MessageQueue(const std::function<bool(json message)>& send_callback, const int transaction_message_attempts,
-                 const int transaction_message_retry_interval, std::shared_ptr<common::DatabaseHandlerBase> databaseHandler) :
+                 const int transaction_message_retry_interval,
+                 std::shared_ptr<common::DatabaseHandlerBase> databaseHandler) :
         MessageQueue(send_callback, transaction_message_attempts, transaction_message_retry_interval, {},
-                     databaseHandler){}
+                     databaseHandler) {
+    }
 
-    void get_transaction_messages_from_db()
-    {
+    void get_transaction_messages_from_db() {
         std::vector<ocpp::common::DBTransactionMessage> transaction_messages =
             database_handler->get_transaction_messages();
 

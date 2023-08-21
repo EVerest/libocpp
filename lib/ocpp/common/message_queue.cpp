@@ -53,15 +53,11 @@ template <> v201::MessageType MessageQueue<v201::MessageType>::string_to_message
     return v201::conversions::string_to_messagetype(s);
 }
 
-template <>
-std::string
-MessageQueue<v16::MessageType>::messagetype_to_string(v16::MessageType m) {
+template <> std::string MessageQueue<v16::MessageType>::messagetype_to_string(v16::MessageType m) {
     return v16::conversions::messagetype_to_string(m);
 }
 
-template <>
-std::string MessageQueue<v201::MessageType>::messagetype_to_string(
-    const v201::MessageType m) {
+template <> std::string MessageQueue<v201::MessageType>::messagetype_to_string(const v201::MessageType m) {
     return v201::conversions::messagetype_to_string(m);
 }
 

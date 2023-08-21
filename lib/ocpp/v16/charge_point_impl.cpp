@@ -711,8 +711,7 @@ bool ChargePointImpl::restart() {
         this->message_queue = std::make_unique<ocpp::MessageQueue<v16::MessageType>>(
             [this](json message) -> bool { return this->websocket->send(message.dump()); },
             this->configuration->getTransactionMessageAttempts(),
-            this->configuration->getTransactionMessageRetryInterval(), this->external_notify,
-            this->database_handler);
+            this->configuration->getTransactionMessageRetryInterval(), this->external_notify, this->database_handler);
         this->initialized = true;
         return this->start();
     } else {

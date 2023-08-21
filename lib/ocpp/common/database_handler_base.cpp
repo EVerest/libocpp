@@ -6,8 +6,7 @@
 
 namespace ocpp::common {
 
-DatabaseHandlerBase::DatabaseHandlerBase() noexcept :
-    db(nullptr) {
+DatabaseHandlerBase::DatabaseHandlerBase() noexcept : db(nullptr) {
 }
 
 std::vector<DBTransactionMessage> DatabaseHandlerBase::get_transaction_messages() {
@@ -69,7 +68,6 @@ bool DatabaseHandlerBase::insert_transaction_message(const DBTransactionMessage&
         EVLOG_error << "Could not prepare insert statement: " << sqlite3_errmsg(this->db);
         throw std::runtime_error("Error while inserting queued transaction message into database");
     }
-
 
     sqlite3_bind_text(stmt, sqlite3_bind_parameter_index(stmt, "@unique_id"), transaction_message.unique_id.c_str(),
                       static_cast<int>(transaction_message.unique_id.length()), SQLITE_TRANSIENT);
