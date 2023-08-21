@@ -1233,7 +1233,8 @@ void ChargePoint::handle_start_transaction_event_response(CallResult<Transaction
         if (id_token.type != IdTokenEnum::Central and
             this->device_model->get_optional_value<bool>(ControllerComponentVariables::AuthCacheCtrlrEnabled)
                 .value_or(true)) {
-            this->database_handler->insert_auth_cache_entry(utils::sha256(id_token.idToken.get()), msg.idTokenInfo.value());
+            this->database_handler->insert_auth_cache_entry(utils::sha256(id_token.idToken.get()),
+                                                            msg.idTokenInfo.value());
         }
         if (msg.idTokenInfo.value().status != AuthorizationStatusEnum::Accepted) {
             if (this->device_model->get_value<bool>(ControllerComponentVariables::StopTxOnInvalidId)) {
