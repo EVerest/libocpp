@@ -13,9 +13,9 @@ namespace v16 {
 ChargePoint::ChargePoint(const std::string& config, const std::filesystem::path& share_path,
                          const std::filesystem::path& user_config_path, const std::filesystem::path& database_path,
                          const std::filesystem::path& sql_init_path, const std::filesystem::path& message_log_path,
-                         const ocpp::CertificateFilePaths& certificate_file_paths) {
+                         const std::shared_ptr<EvseSecurity> evse_security) {
     this->charge_point = std::make_unique<ChargePointImpl>(config, share_path, user_config_path, database_path,
-                                                           sql_init_path, message_log_path, certificate_file_paths);
+                                                           sql_init_path, message_log_path, evse_security);
 }
 
 ChargePoint::~ChargePoint() = default;

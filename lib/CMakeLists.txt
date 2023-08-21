@@ -7,7 +7,6 @@ target_sources(ocpp
         ocpp/common/charging_station_base.cpp
         ocpp/common/message_queue.cpp
         ocpp/common/ocpp_logging.cpp
-        ocpp/common/pki_handler.cpp
         ocpp/common/schemas.cpp
         ocpp/common/types.cpp
         ocpp/common/utils.cpp

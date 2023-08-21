@@ -4,7 +4,8 @@
 #include <ocpp/common/charging_station_base.hpp>
 
 namespace ocpp {
-ChargingStationBase::ChargingStationBase() : uuid_generator(boost::uuids::random_generator()) {
+ChargingStationBase::ChargingStationBase(const std::shared_ptr<EvseSecurity> evse_security) : evse_security(evse_security), 
+    uuid_generator(boost::uuids::random_generator()) {
     this->work = boost::make_shared<boost::asio::io_service::work>(this->io_service);
     this->io_service_thread = std::thread([this]() { this->io_service.run(); });
 }

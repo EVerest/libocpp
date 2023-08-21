@@ -247,63 +247,39 @@ struct Powermeter {
     friend std::ostream& operator<<(std::ostream& os, const Powermeter& k);
 };
 
-enum class CertificateType {
-    CentralSystemRootCertificate,
-    ManufacturerRootCertificate,
-    CSMSRootCertificate,
-    MORootCertificate,
-    ClientCertificate,
-    V2GRootCertificate,
-    V2GCertificateChain,
+enum class CaCertificateType {
+    V2G,
+    MO,
+    CSMS,
+    MF
 };
 
 namespace conversions {
-/// \brief Converts the given CertificateType \p e to human readable string
-/// \returns a string representation of the CertificateType
-std::string certificate_type_to_string(CertificateType e);
+/// \brief Converts the given CaCertificateType \p e to human readable string
+/// \returns a string representation of the CaCertificateType
+std::string ca_certificate_type_to_string(CaCertificateType e);
 
-/// \brief Converts the given std::string \p s to CertificateType
-/// \returns a CertificateType from a string representation
-CertificateType string_to_certificate_type(const std::string& s);
+/// \brief Converts the given std::string \p s to CaCertificateType
+/// \returns a CaCertificateType from a string representation
+CaCertificateType string_to_ca_certificate_type(const std::string& s);
 } // namespace conversions
 
-/// \brief Writes the string representation of the given CertificateType \p
-/// certificate_type to the given output stream \p os \returns an output stream with the
-/// CertificateType written to
-std::ostream& operator<<(std::ostream& os, const CertificateType& certificate_type);
-
-enum class CertificateVerificationResult {
-    Expired,
-    InvalidSignature,
-    InvalidCertificateChain,
-    InvalidCommonName,
-    NoRootCertificateInstalled,
-    Valid
-};
-
-namespace conversions {
-/// \brief Converts the given CertificateVerificationResult \p e to human readable string
-/// \returns a string representation of the CertificateVerificationResult
-std::string certificate_verification_result_to_string(CertificateVerificationResult e);
-
-/// \brief Converts the given std::string \p s to CertificateVerificationResult
-/// \returns a CertificateVerificationResult from a string representation
-CertificateVerificationResult string_to_certificate_verification_result(const std::string& s);
-} // namespace conversions
-
-/// \brief Writes the string representation of the given CertificateVerificationResult \p
-/// certificate_verification_result to the given output stream \p os \returns an output stream with the
-/// CertificateVerificationResult written to
-std::ostream& operator<<(std::ostream& os, const CertificateVerificationResult& certificate_verification_result);
+/// \brief Writes the string representation of the given CaCertificateType
+/// \param ca_certificate_type to the given output stream
+/// \param os
+/// \returns an output stream with the CaCertificateType written to
+std::ostream& operator<<(std::ostream& os, const CaCertificateType& ca_certificate_type);
 
 enum class InstallCertificateResult {
     InvalidSignature,
     InvalidCertificateChain,
     InvalidFormat,
-    Valid,
-    Ok,
+    InvalidCommonName,
+    NoRootCertificateInstalled,
+    Expired,
     CertificateStoreMaxLengthExceeded,
-    WriteError
+    WriteError,
+    Accepted
 };
 
 namespace conversions {
@@ -379,6 +355,29 @@ void from_json(const json& j, CertificateHashDataType& k);
 /// \returns an output stream with the CertificateHashDataType written to
 std::ostream& operator<<(std::ostream& os, const CertificateHashDataType& k);
 
+enum class CertificateType
+{
+    V2GRootCertificae,
+    MORootCertificate,
+    CSMSRootCertificate,
+    V2GCertificateChain,
+    MFRootCertificate,
+};
+
+namespace conversions {
+/// \brief Converts the given CertificateType \p e to human readable string
+/// \returns a string representation of the CertificateType
+std::string certificate_type_to_string(CertificateType e);
+
+/// \brief Converts the given std::string \p s to CertificateType
+/// \returns a CertificateType from a string representation
+CertificateType string_to_certificate_type(const std::string& s);
+} // namespace conversions
+
+/// \brief Writes the string representation of the given CertificateType \p ceritficate_type to
+/// the given output stream \p os \returns an output stream with the CertificateType written to
+std::ostream& operator<<(std::ostream& os, const CertificateType& ceritficate_type);
+
 struct CertificateHashDataChain {
     CertificateHashDataType certificateHashData;
     CertificateType certificateType;
@@ -432,6 +431,20 @@ CertificateSigningUseEnum string_to_certificate_signing_use_enum(const std::stri
 /// \brief Writes the string representation of the given CertificateSigningUseEnum \p certificate_signing_use_enum to
 /// the given output stream \p os \returns an output stream with the CertificateSigningUseEnum written to
 std::ostream& operator<<(std::ostream& os, const CertificateSigningUseEnum& certificate_signing_use_enum);
+
+/// \brief Struct for OCSPRequestData
+struct OCSPRequestData {
+    HashAlgorithmEnumType hashAlgorithm;
+    std::string issuerNameHash;
+    std::string issuerKeyHash;
+    std::string serialNumber;
+    std::string responderUrl;
+};
+
+struct KeyPair {
+    std::filesystem::path certificate_path;
+    std::filesystem::path key_path;
+};
 
 namespace conversions {
 /// \brief Converts the given bool \p b to a string representation of "true" or "false"

@@ -100,9 +100,8 @@ private:
     Everest::SteadyTimer heartbeat_timer;
     Everest::SteadyTimer boot_notification_timer;
     Everest::SteadyTimer aligned_meter_values_timer;
-    Everest::SteadyTimer client_certificate_timer;
     Everest::SteadyTimer certificate_signed_timer;
-    
+
     // states
     RegistrationStatusEnum registration_status;
     WebsocketConnectionStatusEnum websocket_connection_status;
@@ -112,7 +111,7 @@ private:
     bool disable_automatic_websocket_reconnects;
     int csr_attempt;
     std::optional<ocpp::CertificateSigningUseEnum> awaited_certificate_signing_use_enum;
-    
+
     // callback struct
     Callbacks callbacks;
 
@@ -176,7 +175,8 @@ private:
 
     // Functional Block A: Security
     void sign_certificate_req(const ocpp::CertificateSigningUseEnum& certificate_signing_use);
-    void security_event_notification_req(const CiString<50> &type, const std::optional<CiString<255>> &tech_info = std::nullopt);
+    void security_event_notification_req(const CiString<50>& type,
+                                         const std::optional<CiString<255>>& tech_info = std::nullopt);
 
     // Functional Block B: Provisioning
     void boot_notification_req(const BootReasonEnum& reason);
@@ -253,12 +253,12 @@ public:
     /// \param ocpp_main_path Path where utility files for OCPP are read and written to
     /// \param core_database_path Path to directory where core database is located
     /// \param message_log_path Path to where logfiles are written to
-    /// \param certificate_file_paths Paths to certificate files
+    /// \param evse_security Pointer to evse_security that manages security related operations
     /// \param callbacks Callbacks that will be registered for ChargePoint
     ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
                 const std::string& device_model_storage_address, const std::string& ocpp_main_path,
                 const std::string& core_database_path, const std::string& sql_init_path,
-                const std::string& message_log_path, const ocpp::CertificateFilePaths& certificate_file_paths,
+                const std::string& message_log_path, const std::shared_ptr<EvseSecurity> evse_security,
                 const Callbacks& callbacks);
 
     /// \brief Starts the ChargePoint, initializes and connects to the Websocket endpoint
@@ -316,7 +316,8 @@ public:
     /// \param signed_meter_value
     void on_transaction_finished(const int32_t evse_id, const DateTime& timestamp, const MeterValue& meter_stop,
                                  const ReasonEnum reason, const std::optional<std::string>& id_token,
-                                 const std::optional<std::string>& signed_meter_value, const ChargingStateEnum charging_state);
+                                 const std::optional<std::string>& signed_meter_value,
+                                 const ChargingStateEnum charging_state);
 
     /// \brief Event handler that should be called when a session has finished
     /// \param evse_id

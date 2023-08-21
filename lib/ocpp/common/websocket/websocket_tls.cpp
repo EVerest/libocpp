@@ -4,14 +4,14 @@
 
 #include <everest/logging.hpp>
 
-#include <ocpp/common/pki_handler.hpp>
+#include <ocpp/common/evse_security.hpp>
 #include <ocpp/common/websocket/websocket_tls.hpp>
 
 namespace ocpp {
 
 WebsocketTLS::WebsocketTLS(const WebsocketConnectionOptions& connection_options,
-                           std::shared_ptr<PkiHandler> pki_handler) :
-    WebsocketBase(connection_options), pki_handler(pki_handler) {
+                           std::shared_ptr<EvseSecurity> evse_security) :
+    WebsocketBase(connection_options), evse_security(evse_security) {
 }
 
 bool WebsocketTLS::connect() {
@@ -164,27 +164,30 @@ tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connect
 
         if (security_profile == 3) {
             const auto certificate_key_pair =
-                this->pki_handler->getLeafCertificateKeyPair(CertificateSigningUseEnum::ChargingStationCertificate);
+                this->evse_security->get_key_pair(CertificateSigningUseEnum::ChargingStationCertificate);
             if (!certificate_key_pair.has_value()) {
                 EVLOG_AND_THROW(std::runtime_error(
                     "Connecting with security profile 3 but no client side certificate is present or valid"));
             }
-            if (SSL_CTX_use_certificate_file(context->native_handle(), certificate_key_pair.value().leaf_cert.string().c_str(),
+            if (SSL_CTX_use_certificate_file(context->native_handle(),
+                                             certificate_key_pair.value().certificate_path.c_str(),
                                              SSL_FILETYPE_PEM) != 1) {
                 EVLOG_AND_THROW(std::runtime_error("Could not use client certificate file within SSL context"));
             }
-            if (SSL_CTX_use_PrivateKey_file(context->native_handle(), certificate_key_pair.value().leaf_key.string().c_str(),
+            if (SSL_CTX_use_PrivateKey_file(context->native_handle(),
+                                            certificate_key_pair.value().key_path.c_str(),
                                             SSL_FILETYPE_PEM) != 1) {
                 EVLOG_AND_THROW(std::runtime_error("Could not set private key file within SSL context"));
             }
         }
 
         context->set_verify_mode(boost::asio::ssl::verify_peer);
-        if (this->pki_handler->getCsmsCaPath().has_value()) {
+        if (this->evse_security->is_ca_certificate_installed(ocpp::CaCertificateType::CSMS)) {
             EVLOG_info << "Loading ca csms bundle to verify server certificate: "
-                       << this->pki_handler->getCsmsCaPath().value();
-            rc = SSL_CTX_load_verify_locations(context->native_handle(),
-                                               this->pki_handler->getCsmsCaPath().value().c_str(), NULL);
+                       << this->evse_security->get_verify_file(ocpp::CaCertificateType::CSMS);
+            rc = SSL_CTX_load_verify_locations(
+                context->native_handle(), this->evse_security->get_verify_file(ocpp::CaCertificateType::CSMS).c_str(),
+                NULL);
         }
 
         if (rc != 1) {
@@ -292,12 +295,6 @@ void WebsocketTLS::on_fail_tls(tls_client* c, websocketpp::connection_hdl hdl) {
     this->log_on_fail(ec, con->get_transport_ec(), con->get_response_code());
 
     // TODO(piet): Trigger SecurityEvent in case InvalidCentralSystemCertificate
-
-    if (this->pki_handler->getCsmsBackupCaPath().has_value()) {
-        // if a fallback ca exists, we move back to it and delete the new ca certificate
-        EVLOG_warning << "Connection with new CA was not successful - Falling back to old CA";
-        this->pki_handler->useCsmsFallbackRoot();
-    }
 
     // -1 indicates to always attempt to reconnect
     if (this->connection_options.max_connection_attempts == -1 or

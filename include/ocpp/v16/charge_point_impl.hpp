@@ -109,8 +109,6 @@ private:
     std::unique_ptr<Everest::SystemTimer> clock_aligned_meter_values_timer;
     std::vector<std::unique_ptr<Everest::SteadyTimer>> status_notification_timers;
     std::unique_ptr<Everest::SteadyTimer> ocsp_request_timer;
-    std::unique_ptr<Everest::SteadyTimer> client_certificate_timer;
-    std::unique_ptr<Everest::SteadyTimer> v2g_certificate_timer;
     std::chrono::time_point<date::utc_clock> clock_aligned_meter_values_time_point;
     std::mutex meter_values_mutex;
     std::mutex power_meters_mutex;
@@ -314,10 +312,11 @@ public:
     /// \param certs_path this points to the directory where certificates used by libocpp are located, these are used
     /// for the "Improved security for OCPP 1.6-J" whitepaper (eg. Security Profile 3 TLS with Client Side Certificates)
     /// as well as for Plug & Charge.
+    /// \param evse_security Pointer to evse_security that manages security related operations
     explicit ChargePointImpl(const std::string& config, const std::filesystem::path& share_path,
                              const std::filesystem::path& user_config_path, const std::filesystem::path& database_path,
                              const std::filesystem::path& sql_init_path, const std::filesystem::path& message_log_path,
-                             const ocpp::CertificateFilePaths& certificate_file_paths);
+                             const std::shared_ptr<EvseSecurity> evse_security);
 
     ~ChargePointImpl() {
     }
