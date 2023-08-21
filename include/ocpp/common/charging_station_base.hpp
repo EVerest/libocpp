@@ -7,6 +7,8 @@
 #include <ocpp/common/pki_handler.hpp>
 #include <ocpp/common/websocket/websocket.hpp>
 
+#include <boost/shared_ptr.hpp>
+
 namespace ocpp {
 
 /// \brief Common base class for OCPP1.6 and OCPP2.0.1 charging stations
