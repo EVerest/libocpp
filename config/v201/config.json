@@ -44,6 +44,13 @@
             "attributes": {
                 "Actual": true
             }
+        },
+        "OfflineTxForUnknownIdEnabled": {
+            "variable_name": "OfflineTxForUnknownIdEnabled",
+            "attributes": 
+              {
+                "Actual" : true
+              }
         }
     },
     "ClockCtrlr": {
