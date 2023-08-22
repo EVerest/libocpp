@@ -13,8 +13,8 @@ namespace ocpp {
 
 /// @brief Type used to indicate if SQLite should make a internal copy of a string
 enum class SQLiteString {
-    Static,     /// Indicates string will be valid for the whole statement
-    Transient   /// Indicates string might change during statement, SQLite should make a copy
+    Static,   /// Indicates string will be valid for the whole statement
+    Transient /// Indicates string might change during statement, SQLite should make a copy
 };
 
 /// \brief RAII wrapper class that handles finalization, step, binding and column access of sqlite3_stmt
@@ -48,7 +48,8 @@ public:
     }
 
     int bind_text(const int idx, const std::string& val, SQLiteString lifetime = SQLiteString::Static) {
-        return sqlite3_bind_text(this->stmt, idx, val.c_str(), val.length(), lifetime == SQLiteString::Static ? SQLITE_STATIC : SQLITE_TRANSIENT);
+        return sqlite3_bind_text(this->stmt, idx, val.c_str(), val.length(),
+                                 lifetime == SQLiteString::Static ? SQLITE_STATIC : SQLITE_TRANSIENT);
     }
 
     int bind_text(const std::string& param, const std::string& val, SQLiteString lifetime = SQLiteString::Static) {
