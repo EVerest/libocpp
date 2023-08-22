@@ -22,9 +22,9 @@ int DeviceModelStorageSqlite::get_component_id(const Component& component_id) {
     std::string select_query = "SELECT ID FROM COMPONENT WHERE NAME = ? AND INSTANCE IS ?";
     SQLiteStatement select_stmt(this->db, select_query);
 
-    select_stmt.bind_text(1, component_id.name.get());
+    select_stmt.bind_text(1, component_id.name.get(), SQLiteString::Transient);
     if (component_id.instance.has_value()) {
-        select_stmt.bind_text(2, component_id.instance.value().get());
+        select_stmt.bind_text(2, component_id.instance.value().get(), SQLiteString::Transient);
     } else {
         select_stmt.bind_null(2);
     }
@@ -46,9 +46,9 @@ int DeviceModelStorageSqlite::get_variable_id(const Component& component_id, con
     SQLiteStatement select_stmt(this->db, select_query);
 
     select_stmt.bind_int(1, _component_id);
-    select_stmt.bind_text(2, variable_id.name.get());
+    select_stmt.bind_text(2, variable_id.name.get(), SQLiteString::Transient);
     if (variable_id.instance.has_value()) {
-        select_stmt.bind_text(3, variable_id.instance.value().get());
+        select_stmt.bind_text(3, variable_id.instance.value().get(), SQLiteString::Transient);
     } else {
         select_stmt.bind_null(3);
     }
