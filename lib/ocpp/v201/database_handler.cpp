@@ -142,7 +142,8 @@ void DatabaseHandler::insert_availability(const int32_t evse_id, std::optional<i
     } else {
         insert_stmt.bind_null("@connector_id");
     }
-    insert_stmt.bind_text("@operational_status", conversions::operational_status_enum_to_string(operational_status), SQLiteString::Transient);
+    insert_stmt.bind_text("@operational_status", conversions::operational_status_enum_to_string(operational_status),
+                          SQLiteString::Transient);
 
     if (insert_stmt.step() != SQLITE_DONE) {
         EVLOG_error << "Could not insert into AVAILABILITY table: " << sqlite3_errmsg(db);
