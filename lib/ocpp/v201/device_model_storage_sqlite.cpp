@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
-#include <everest/logging.hpp>
 #include <ocpp/v201/device_model_storage_sqlite.hpp>
+#include <everest/logging.hpp>
+#include <ocpp/common/sqlite_statement.hpp>
 
 namespace ocpp {
 
