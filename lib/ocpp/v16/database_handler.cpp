@@ -68,7 +68,7 @@ void DatabaseHandler::init_connector_table(int32_t number_of_connectors) {
         SQLiteStatement stmt(this->db, sql);
 
         stmt.bind_int("@connector", connector);
-        stmt.bind_text("@text", "Operative", SQLiteString::Transient);
+        stmt.bind_text("@availability_type", "Operative", SQLiteString::Transient);
 
         if (stmt.step() != SQLITE_DONE) {
             EVLOG_error << "Could not insert into table: " << sqlite3_errmsg(this->db);
@@ -440,7 +440,7 @@ std::optional<v16::IdTagInfo> DatabaseHandler::get_local_authorization_list_entr
     std::string sql = "SELECT ID_TAG, AUTH_STATUS, EXPIRY_DATE, PARENT_ID_TAG FROM AUTH_LIST WHERE ID_TAG = @id_tag";
     SQLiteStatement stmt(this->db, sql);
 
-    stmt.bind_text("@text", id_tag.get(), SQLiteString::Transient);
+    stmt.bind_text("@id_tag", id_tag.get(), SQLiteString::Transient);
 
     if (stmt.step() != SQLITE_ROW) {
         return std::nullopt;
