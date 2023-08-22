@@ -895,7 +895,7 @@ void ChargePoint::notify_report_req(const int request_id, const int seq_no,
 AuthorizeResponse ChargePoint::authorize_req(const IdToken id_token, const std::optional<CiString<5500>>& certificate,
                                              const std::optional<std::vector<OCSPRequestData>>& ocsp_request_data) {
     AuthorizeRequest req;
-    bool enableOfflineTx;
+    std::optional<bool> enableOfflineTx;
     AuthorizeResponse response;
 
     req.idToken = id_token;
@@ -909,7 +909,7 @@ AuthorizeResponse ChargePoint::authorize_req(const IdToken id_token, const std::
     // Enable boolalpha formatting
     std::cout << std::boolalpha;
 
-    enableOfflineTx = this->device_model->get_value<bool>(ControllerComponentVariables::OfflineTxForUnknownIdEnabled);
+    enableOfflineTx = this->device_model->get_optional_value<bool>(ControllerComponentVariables::OfflineTxForUnknownIdEnabled);
     //if disconnected from the webserver
     if(enhanced_message.offline)
     {
