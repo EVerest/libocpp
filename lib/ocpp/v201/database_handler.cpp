@@ -73,9 +73,8 @@ void DatabaseHandler::insert_auth_cache_entry(const std::string& id_token_hash, 
                       "(@id_token_hash, @id_token_info)";
     SQLiteStatement insert_stmt(this->db, sql);
 
-    const auto id_token_info_str = json(id_token_info).dump();
     insert_stmt.bind_text("@id_token_hash", id_token_hash);
-    insert_stmt.bind_text("@id_token_info", id_token_info_str);
+    insert_stmt.bind_text("@id_token_info", json(id_token_info).dump(), SQLiteString::Transient);
 
     if (insert_stmt.step() != SQLITE_DONE) {
         EVLOG_error << "Could not insert into AUTH_CACHE table: " << sqlite3_errmsg(db);
@@ -136,7 +135,6 @@ void DatabaseHandler::insert_availability(const int32_t evse_id, std::optional<i
 
     SQLiteStatement insert_stmt(this->db, sql);
 
-    const auto operational_status_str = conversions::operational_status_enum_to_string(operational_status);
     insert_stmt.bind_int("@evse_id", evse_id);
 
     if (connector_id.has_value()) {
@@ -144,7 +142,7 @@ void DatabaseHandler::insert_availability(const int32_t evse_id, std::optional<i
     } else {
         insert_stmt.bind_null("@connector_id");
     }
-    insert_stmt.bind_text("@operational_status", operational_status_str);
+    insert_stmt.bind_text("@operational_status", conversions::operational_status_enum_to_string(operational_status), SQLiteString::Transient);
 
     if (insert_stmt.step() != SQLITE_DONE) {
         EVLOG_error << "Could not insert into AVAILABILITY table: " << sqlite3_errmsg(db);
