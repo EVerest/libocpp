@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
-#include <ocpp/common/charging_station_base.hpp>
 #include <boost/make_shared.hpp>
+#include <ocpp/common/charging_station_base.hpp>
 
 namespace ocpp {
 ChargingStationBase::ChargingStationBase() : uuid_generator(boost::uuids::random_generator()) {

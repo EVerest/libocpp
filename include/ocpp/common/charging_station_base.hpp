@@ -3,11 +3,11 @@
 #ifndef OCPP_COMMON_CHARGE_POINT_HPP
 #define OCPP_COMMON_CHARGE_POINT_HPP
 
+#include <boost/shared_ptr.hpp>
+
 #include <ocpp/common/message_queue.hpp>
 #include <ocpp/common/pki_handler.hpp>
 #include <ocpp/common/websocket/websocket.hpp>
-
-#include <boost/shared_ptr.hpp>
 
 namespace ocpp {
 
