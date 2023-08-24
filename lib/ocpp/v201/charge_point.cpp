@@ -336,7 +336,19 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
     if (!cache_entry.has_value()) {
         EVLOG_info << "AuthCache enabled but not entry found: Sending Authorize.req";
         response = this->authorize_req(id_token, certificate, ocsp_request_data);
-        this->database_handler->insert_auth_cache_entry(hashed_id_token, response.idTokenInfo);
+
+        //C15.FR.01 if identifier is authorized via offlineTxForUnknownIdEnabled 
+        //The charging station SHALL not add the token to Authorization cache
+        if ((this->websocket_connection_status == WebsocketConnectionStatusEnum::Connected) &&
+            (response.idTokenInfo.status == AuthorizationStatusEnum::Accepted))
+        {
+            this->database_handler->insert_auth_cache_entry(hashed_id_token, response.idTokenInfo);
+        }
+        else if ((this->websocket_connection_status == WebsocketConnectionStatusEnum::Disconnected) &&
+            (response.idTokenInfo.status == AuthorizationStatusEnum::Accepted))
+        {
+            EVLOG_info << "Offline Auth: Not including to cache";
+        }
         return response;
     }
 
@@ -895,13 +907,14 @@ AuthorizeResponse ChargePoint::authorize_req(const IdToken id_token, const std::
 
     //check if the offline tx are allowed
     const auto enable_offline_tx = this->device_model->get_optional_value<bool>(ControllerComponentVariables::OfflineTxForUnknownIdEnabled);
+    EVLOG_debug << "Offline Auth is " << enable_offline_tx.value();
 
     if(enhanced_message.offline && enable_offline_tx.has_value() && enable_offline_tx.value())
     {
         // C15.FR.08
         // when an unknown identifier is presented AND OfflineTxForUnkownIdEnabled is set to true
         // The Charging Station SHALL accept the presented IdToken
-        EVLOG_info << "Chargepoint offline";
+        EVLOG_info << "Chargepoint offline, Authorizing offline";
         response.idTokenInfo.status = AuthorizationStatusEnum::Accepted;
         return response;
     }
