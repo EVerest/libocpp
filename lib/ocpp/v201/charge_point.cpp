@@ -336,18 +336,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
     if (!cache_entry.has_value()) {
         EVLOG_info << "AuthCache enabled but not entry found: Sending Authorize.req";
         response = this->authorize_req(id_token, certificate, ocsp_request_data);
-
-        //C15.FR.01 if device is authorized offline it shouldn't be added to the cache
-        if ((this->websocket_connection_status == WebsocketConnectionStatusEnum::Connected) &&
-            (response.idTokenInfo.status == AuthorizationStatusEnum::Accepted))
-        {
-            this->database_handler->insert_auth_cache_entry(utils::sha256(id_token.idToken.get()), response.idTokenInfo);
-        }
-        else if ((this->websocket_connection_status == WebsocketConnectionStatusEnum::Disconnected) &&
-            (response.idTokenInfo.status == AuthorizationStatusEnum::Accepted))
-        {
-            EVLOG_info << "Offline Auth: Not including to cache";
-        }
+        this->database_handler->insert_auth_cache_entry(hashed_id_token, response.idTokenInfo);
         return response;
     }
 
@@ -896,61 +885,47 @@ AuthorizeResponse ChargePoint::authorize_req(const IdToken id_token, const std::
                                              const std::optional<std::vector<OCSPRequestData>>& ocsp_request_data) {
     AuthorizeRequest req;
     std::optional<bool> enableOfflineTx;
-    AuthorizeResponse response;
-
     req.idToken = id_token;
     req.certificate = certificate;
     req.iso15118CertificateHashData = ocsp_request_data;
+    AuthorizeResponse response;
 
     ocpp::Call<AuthorizeRequest> call(req, this->message_queue->createMessageId());
     auto authorize_future = this->send_async<AuthorizeRequest>(call);
     const auto enhanced_message = authorize_future.get();
 
-    // Enable boolalpha formatting
-    std::cout << std::boolalpha;
-
+    //check if the offline tx are allowed
     enableOfflineTx = this->device_model->get_optional_value<bool>(ControllerComponentVariables::OfflineTxForUnknownIdEnabled);
-    //if disconnected from the webserver
-    if(enhanced_message.offline)
+
+    if(enhanced_message.offline && enableOfflineTx)
     {
-        EVLOG_debug << "Chargepoint offline";
         // C15.FR.08
         // when an unknown identifier is presented AND OfflineTxForUnkownIdEnabled is set to true
         // The Charging Station SHALL accept the presented IdToken
-        if (enableOfflineTx)
-        {
-            response.idTokenInfo.status = AuthorizationStatusEnum::Accepted;
-        }
-        else
-        {
-            response.idTokenInfo.status = AuthorizationStatusEnum::Unknown;
-        }
-        return response;
+        EVLOG_info << "Chargepoint offline";
+        response.idTokenInfo.status = AuthorizationStatusEnum::Accepted;
     }
-    else
-    {
-        if (enhanced_message.messageType != MessageType::AuthorizeResponse) {
-            response.idTokenInfo.status = AuthorizationStatusEnum::Unknown;
-            return response;
-        }
 
-        ocpp::CallResult<AuthorizeResponse> call_result = enhanced_message.message;
-        if (response.idTokenInfo.cacheExpiryDateTime.has_value() or
-            !this->device_model->get_optional_value<int>(ControllerComponentVariables::AuthCacheLifeTime).has_value()) {
-            return call_result.msg;
-        }
-
-        // C10.FR.08
-        // when CSMS does not set cacheExpiryDateTime and config variable for AuthCacheLifeTime is present use the
-        // configured AuthCacheLifeTime
-        response = call_result.msg;
-        response.idTokenInfo.cacheExpiryDateTime = DateTime(
-            date::utc_clock::now() +
-            std::chrono::seconds(this->device_model->get_value<int>(ControllerComponentVariables::AuthCacheLifeTime)));
+    if (enhanced_message.messageType != MessageType::AuthorizeResponse) {
+        EVLOG_debug << "=======Unknown message=========";
+        response.idTokenInfo.status = AuthorizationStatusEnum::Unknown;
         return response;
     }
 
+    ocpp::CallResult<AuthorizeResponse> call_result = enhanced_message.message;
+    if (response.idTokenInfo.cacheExpiryDateTime.has_value() or
+        !this->device_model->get_optional_value<int>(ControllerComponentVariables::AuthCacheLifeTime).has_value()) {
+        return call_result.msg;
+    }
 
+    // C10.FR.08
+    // when CSMS does not set cacheExpiryDateTime and config variable for AuthCacheLifeTime is present use the
+    // configured AuthCacheLifeTime
+    response = call_result.msg;
+    response.idTokenInfo.cacheExpiryDateTime = DateTime(
+        date::utc_clock::now() +
+        std::chrono::seconds(this->device_model->get_value<int>(ControllerComponentVariables::AuthCacheLifeTime)));
+    return response;
 }
 
 void ChargePoint::status_notification_req(const int32_t evse_id, const int32_t connector_id,
