@@ -71,12 +71,12 @@ private:
 
     /// \brief Sets the variable_id attribute \p value specified by \p component_id , \p variable_id and \p
     /// attribute_enum \param component_id \param variable_id \param attribute_enum \param value
-    /// \param forceReadOnly If this is true, only read-only variables can be changed,
-    ///                      otherwise only non read-only variables can be changed
+    /// \param force_read_only If this is true, only read-only variables can be changed,
+    ///                        otherwise only non read-only variables can be changed
     /// \return Result of the requested operation
     SetVariableStatusEnum set_value_internal(const Component& component_id, const Variable& variable_id,
                                              const AttributeEnum& attribute_enum, const std::string& value,
-                                             bool forceReadOnly);
+                                             bool force_read_only);
 
 public:
     /// \brief Constructor for the device model

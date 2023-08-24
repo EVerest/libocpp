@@ -118,7 +118,7 @@ GetVariableStatusEnum DeviceModel::request_value(const Component& component_id, 
 
 SetVariableStatusEnum DeviceModel::set_value_internal(const Component& component, const Variable& variable,
                                                       const AttributeEnum& attribute_enum, const std::string& value,
-                                                      bool forceReadOnly) {
+                                                      bool force_read_only) {
 
     if (this->device_model.find(component) == this->device_model.end()) {
         return SetVariableStatusEnum::UnknownComponent;
@@ -141,11 +141,11 @@ SetVariableStatusEnum DeviceModel::set_value_internal(const Component& component
         return SetVariableStatusEnum::NotSupportedAttributeType;
     }
 
-    // If forceReadOnly is false we don't allow read only
-    // If forceReadOnly is true we only allow read only
+    // If force_read_only is false, don't allow read only
+    // If force_read_only is true, only allow read only
     if (!attribute.value().mutability.has_value() or
-        (attribute.value().mutability.value() == MutabilityEnum::ReadOnly and !forceReadOnly) or
-        ((attribute.value().mutability.value() != MutabilityEnum::ReadOnly) and forceReadOnly)) {
+        ((attribute.value().mutability.value() == MutabilityEnum::ReadOnly) and !force_read_only) or
+        ((attribute.value().mutability.value() != MutabilityEnum::ReadOnly) and force_read_only)) {
         return SetVariableStatusEnum::Rejected;
     }
 
