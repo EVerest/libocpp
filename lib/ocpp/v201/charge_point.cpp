@@ -884,7 +884,6 @@ void ChargePoint::notify_report_req(const int request_id, const int seq_no,
 AuthorizeResponse ChargePoint::authorize_req(const IdToken id_token, const std::optional<CiString<5500>>& certificate,
                                              const std::optional<std::vector<OCSPRequestData>>& ocsp_request_data) {
     AuthorizeRequest req;
-    std::optional<bool> enableOfflineTx;
     req.idToken = id_token;
     req.certificate = certificate;
     req.iso15118CertificateHashData = ocsp_request_data;
@@ -895,15 +894,16 @@ AuthorizeResponse ChargePoint::authorize_req(const IdToken id_token, const std::
     const auto enhanced_message = authorize_future.get();
 
     //check if the offline tx are allowed
-    enableOfflineTx = this->device_model->get_optional_value<bool>(ControllerComponentVariables::OfflineTxForUnknownIdEnabled);
+    const auto enable_offline_tx = this->device_model->get_optional_value<bool>(ControllerComponentVariables::OfflineTxForUnknownIdEnabled);
 
-    if(enhanced_message.offline && enableOfflineTx)
+    if(enhanced_message.offline && enable_offline_tx.has_value() && enable_offline_tx.value())
     {
         // C15.FR.08
         // when an unknown identifier is presented AND OfflineTxForUnkownIdEnabled is set to true
         // The Charging Station SHALL accept the presented IdToken
         EVLOG_info << "Chargepoint offline";
         response.idTokenInfo.status = AuthorizationStatusEnum::Accepted;
+        return response;
     }
 
     if (enhanced_message.messageType != MessageType::AuthorizeResponse) {
