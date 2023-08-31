@@ -6,6 +6,7 @@
 #include <ocpp/common/cistring.hpp>
 #include <ocpp/common/support_older_cpp_versions.hpp>
 #include <ocpp/common/evse_security.hpp>
+#include <ocpp/common/evse_security_impl.hpp>
 #include <ocpp/v16/ocpp_types.hpp>
 #include <ocpp/v16/types.hpp>
 
@@ -55,11 +56,15 @@ public:
     /// "LogMessagesFormat" (set to ["log", "html", "session_logging"] by default, "console" and "console_detailed" are
     /// also available) configuration keys in the "Internal" section of the config file. Please note that this is
     /// intended for debugging purposes only as it logs all communication, including authentication messages.
-    /// \param evse_security Pointer to evse_security that manages security related operations
+    /// \param evse_security Pointer to evse_security that manages security related operations; if nullptr
+    /// security_configuration must be set
+    /// \param security_configuration specifies the file paths that are required to set up the internal evse_security
+    /// implementation
     explicit ChargePoint(const std::string& config, const std::filesystem::path& share_path,
                          const std::filesystem::path& user_config_path, const std::filesystem::path& database_path,
                          const std::filesystem::path& sql_init_path, const std::filesystem::path& message_log_path,
-                         const std::shared_ptr<EvseSecurity> evse_security);
+                         const std::shared_ptr<EvseSecurity> evse_security,
+                         const std::optional<SecurityConfiguration> security_configuration = std::nullopt);
 
     ~ChargePoint();
 

@@ -871,42 +871,46 @@ std::ostream& operator<<(std::ostream& os, const CertificateSigningUseEnum& cert
 namespace conversions {
 std::string certificate_type_to_string(CertificateType e) {
     switch (e) {
-        case CertificateType::V2GRootCertificate: return "V2GRootCertificate";
-        case CertificateType::MORootCertificate: return "MORootCertificate";
-        case CertificateType::CSMSRootCertificate: return "CSMSRootCertificate";
-        case CertificateType::V2GCertificateChain: return "V2GCertificateChain";
-        case CertificateType::MFRootCertificate: return "MFRootCertificate";
+    case CertificateType::V2GRootCertificate:
+        return "V2GRootCertificate";
+    case CertificateType::MORootCertificate:
+        return "MORootCertificate";
+    case CertificateType::CSMSRootCertificate:
+        return "CSMSRootCertificate";
+    case CertificateType::V2GCertificateChain:
+        return "V2GCertificateChain";
+    case CertificateType::MFRootCertificate:
+        return "MFRootCertificate";
     }
 
     throw std::out_of_range("No known string conversion for provided enum of type CertificateType");
 }
 
 CertificateType string_to_certificate_type(const std::string& s) {
-    if(s == "V2GRootCertificate") {
+    if (s == "V2GRootCertificate") {
         return CertificateType::V2GRootCertificate;
     }
-    if(s == "MORootCertificate") {
+    if (s == "MORootCertificate") {
         return CertificateType::MORootCertificate;
     }
-    if(s == "CSMSRootCertificate") {
+    if (s == "CSMSRootCertificate") {
         return CertificateType::CSMSRootCertificate;
     }
-    if(s == "V2GCertificateChain") {
+    if (s == "V2GCertificateChain") {
         return CertificateType::V2GCertificateChain;
     }
-    if(s == "MFRootCertificate") {
+    if (s == "MFRootCertificate") {
         return CertificateType::MFRootCertificate;
     }
 
     throw std::out_of_range("Provided string " + s + " could not be converted to enum of type CertificateType");
 }
-}
+} // namespace conversions
 
 std::ostream& operator<<(std::ostream& os, const CertificateType& certificate_type) {
     os << conversions::certificate_type_to_string(certificate_type);
     return os;
 }
-
 
 namespace conversions {
 

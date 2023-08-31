@@ -419,8 +419,7 @@ void from_json(const json& j, CertificateHashDataType& k);
 /// \returns an output stream with the CertificateHashDataType written to
 std::ostream& operator<<(std::ostream& os, const CertificateHashDataType& k);
 
-enum class CertificateType
-{
+enum class CertificateType {
     V2GRootCertificate,
     MORootCertificate,
     CSMSRootCertificate,
