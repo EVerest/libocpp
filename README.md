@@ -7,28 +7,32 @@ Libocpp can be used for the communication of one charging station and multiple E
 Libocpp provides a complete implementation of OCPP 1.6. The implementation of OCPP 2.0.1 is currently under development.
 
 ## Table of contents
-- [Feature Support](#feature-support)
-  - [Feature Profile Support OCPP 1.6](#feature-profile-support-ocpp-16)
-  - [Support for OCPP 2.0.1](#support-for-ocpp-201)
-- [CSMS Compatibility](#csms-compatibility)
-  - [CSMS Compatibility OCPP 1.6](#csms-compatibility-ocpp-16)
-  - [CSMS Compatibility OCPP 2.0.1](#csms-compatibility-ocpp-201)
-- [Integration with EVerest](#integration-with-everest)
-  - [Run OCPP1.6 with EVerest](#run-ocpp16-with-everest)
-  - [Run OCPP2.0.1 with EVerest](#run-ocpp201-with-everest)
-- [Integrate this library with your Charging Station Implementation for OCPP1.6](#integrate-this-library-with-your-charging-station-implementation-for-ocpp16)
-  - [Overview of the required callbacks and events and what libocpp expects to happen](#overview-of-the-required-callbacks-and-events-and-what-libocpp-expects-to-happen)
-    - [ChargePoint() constructor](#chargepoint-constructor)
-    - [registering callbacks](#registering-callbacks)
-    - [Functions that need to be triggered from the outside after new information is availble (on\_... functions in the charge point API)](#functions-that-need-to-be-triggered-from-the-outside-after-new-information-is-availble-on_-functions-in-the-charge-point-api)
-    - [The following functions are triggered depending on different so called "Session Events" from the EvseManager](#the-following-functions-are-triggered-depending-on-different-so-called-session-events-from-the-evsemanager)
-    - [Authorization](#authorization)
-- [Integrate this library with your Charging Station Implementation for OCPP2.0.1](#integrate-this-library-with-your-charging-station-implementation-for-ocpp201)
-  - [Register event callbacks and on\_handlers](#register-event-callbacks-and-on_handlers)
-  - [Initialize the database](#initialize-the-database)
-- [Install libocpp](#install-libocpp)
-- [Quickstart for OCPP 1.6](#quickstart-for-ocpp-16)
-- [Building the doxygen documentation](#building-the-doxygen-documentation)
+- [C++ implementation of OCPP](#c-implementation-of-ocpp)
+  - [Table of contents](#table-of-contents)
+  - [Feature Support](#feature-support)
+    - [Feature Profile Support OCPP 1.6](#feature-profile-support-ocpp-16)
+    - [Support for OCPP 2.0.1](#support-for-ocpp-201)
+  - [CSMS Compatibility](#csms-compatibility)
+    - [CSMS Compatibility OCPP 1.6](#csms-compatibility-ocpp-16)
+    - [CSMS Compatibility OCPP 2.0.1](#csms-compatibility-ocpp-201)
+  - [Integration with EVerest](#integration-with-everest)
+    - [Run OCPP1.6 with EVerest](#run-ocpp16-with-everest)
+    - [Run OCPP2.0.1 with EVerest](#run-ocpp201-with-everest)
+  - [Integrate this library with your Charging Station Implementation for OCPP1.6](#integrate-this-library-with-your-charging-station-implementation-for-ocpp16)
+    - [Overview of the required callbacks and events and what libocpp expects to happen](#overview-of-the-required-callbacks-and-events-and-what-libocpp-expects-to-happen)
+      - [ChargePoint() constructor](#chargepoint-constructor)
+      - [registering callbacks](#registering-callbacks)
+      - [Functions that need to be triggered from the outside after new information is availble (on\_... functions in the charge point API)](#functions-that-need-to-be-triggered-from-the-outside-after-new-information-is-availble-on_-functions-in-the-charge-point-api)
+      - [The following functions are triggered depending on different so called "Session Events" from the EvseManager](#the-following-functions-are-triggered-depending-on-different-so-called-session-events-from-the-evsemanager)
+      - [Authorization](#authorization)
+  - [Integrate this library with your Charging Station Implementation for OCPP2.0.1](#integrate-this-library-with-your-charging-station-implementation-for-ocpp201)
+    - [Register event callbacks and on\_handlers](#register-event-callbacks-and-on_handlers)
+    - [Initialize the database](#initialize-the-database)
+  - [Install libocpp](#install-libocpp)
+  - [Quickstart for OCPP 1.6](#quickstart-for-ocpp-16)
+  - [Building the doxygen documentation](#building-the-doxygen-documentation)
+  - [Unit testing](#unit-testing)
+  - [Building with FetchContent instead of EDM](#building-with-fetchcontent-instead-of-edm)
 
 ## Feature Support
 
@@ -481,3 +485,23 @@ You will find the generated doxygen documentation at:
 `build/dist/docs/html/index.html`
 
 The main reference for the integration of libocpp for OCPP1.6 is the ocpp::v16::ChargePoint class defined in libocpp/include/ocpp/v16/charge_point.hpp . 
+
+
+## Unit testing
+
+If you want to run the unit tests in the tests subdirectory: install the needed dependencies.
+For Debian GNU/Linux 11 you can install it like this:
+
+```bash
+sudo apt install libgtest-dev lcov
+python3 -m pip install gcovr
+```
+
+Run the unit tests
+  
+```bash
+  cmake .. -DBUILD_TESTING=ON
+```
+
+## Building with FetchContent instead of EDM
+In [doc/build-with-fetchcontent](doc/build-with-fetchcontent) you can find an example how to build libocpp with FetchContent instead of EDM.

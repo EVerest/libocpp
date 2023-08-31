@@ -3,6 +3,8 @@
 #ifndef OCPP_COMMON_CHARGE_POINT_HPP
 #define OCPP_COMMON_CHARGE_POINT_HPP
 
+#include <boost/shared_ptr.hpp>
+
 #include <ocpp/common/message_queue.hpp>
 #include <ocpp/common/pki_handler.hpp>
 #include <ocpp/common/websocket/websocket.hpp>
@@ -30,7 +32,7 @@ protected:
     /// meter value should be sent, else std::nullopt
     std::optional<DateTime> get_next_clock_aligned_meter_value_timestamp(const int32_t interval);
 
-    /// \brief Generates a uuid  
+    /// \brief Generates a uuid
     /// \return uuid
     std::string uuid();
 

@@ -2,6 +2,7 @@
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
 #include <future>
+#include <set>
 
 #include <ocpp/common/charging_station_base.hpp>
 
@@ -42,11 +43,25 @@ namespace ocpp {
 namespace v201 {
 
 struct Callbacks {
-    std::function<bool(const ResetEnum& reset_type)> is_reset_allowed_callback;
-    std::function<void(const ResetEnum& reset_type)> reset_callback;
+    ///
+    /// \brief Callback if reset is allowed. If evse_id has a value, reset only applies to the given evse id. If it has
+    ///        no value, applies to complete charging station.
+    ///
+    std::function<bool(const std::optional<const int32_t> evse_id, const ResetEnum& reset_type)>
+        is_reset_allowed_callback;
+    std::function<void(const std::optional<const int32_t> evse_id, const ResetEnum& reset_type)> reset_callback;
     std::function<void(const int32_t evse_id, const ReasonEnum& stop_reason)> stop_transaction_callback;
     std::function<void(const int32_t evse_id)> pause_charging_callback;
-    std::function<void(const ChangeAvailabilityRequest& request)> change_availability_callback;
+    ///
+    /// \brief Change availability of charging station / evse / connector.
+    /// \param request The request.
+    /// \param persist True to persist the status after reboot.
+    ///
+    /// Persist is set to 'false' if the status does not need to be stored after restarting. Otherwise it is true.
+    /// False is for example during a reset OnIdle where first an 'unavailable' is sent until the charging session
+    /// stopped. True is for example when the CSMS sent an 'inoperative' request.
+    ///
+    std::function<void(const ChangeAvailabilityRequest& request, const bool persist)> change_availability_callback;
     std::function<GetLogResponse(const GetLogRequest& request)> get_log_request_callback;
     std::function<UnlockConnectorResponse(const int32_t evse_id, const int32_t connecor_id)> unlock_connector_callback;
     // callback to be called when the request can be accepted. authorize_remote_start indicates if Authorize.req needs
@@ -68,7 +83,8 @@ struct Callbacks {
     std::optional<std::function<SetNetworkProfileStatusEnum(
         const int32_t configuration_slot, const NetworkConnectionProfile& network_connection_profile)>>
         validate_network_profile_callback;
-    std::optional<std::function<bool(const NetworkConnectionProfile &network_connection_profile)>> configure_network_connection_profile_callback;
+    std::optional<std::function<bool(const NetworkConnectionProfile& network_connection_profile)>>
+        configure_network_connection_profile_callback;
 };
 
 /// \brief Class implements OCPP2.0.1 Charging Station
@@ -81,7 +97,7 @@ private:
     // utility
     std::unique_ptr<MessageQueue<v201::MessageType>> message_queue;
     std::unique_ptr<DeviceModel> device_model;
-    std::unique_ptr<DatabaseHandler> database_handler;
+    std::shared_ptr<DatabaseHandler> database_handler;
 
     std::map<int32_t, ChangeAvailabilityRequest> scheduled_change_availability_requests;
 
@@ -89,6 +105,8 @@ private:
              std::map<std::string, std::function<DataTransferResponse(const std::optional<std::string>& msg)>>>
         data_transfer_callbacks;
     std::mutex data_transfer_callbacks_mutex;
+
+    std::map<int32_t, std::pair<IdToken, int32_t>> remote_start_id_per_evse;
 
     // timers
     Everest::SteadyTimer heartbeat_timer;
@@ -100,7 +118,16 @@ private:
     WebsocketConnectionStatusEnum websocket_connection_status;
     OperationalStatusEnum operational_state;
     FirmwareStatusEnum firmware_status;
+    int32_t firmware_status_id;
+    UploadLogStatusEnum upload_log_status;
+    int32_t upload_log_status_id;
     int network_configuration_priority;
+    bool disable_automatic_websocket_reconnects;
+
+    /// \brief Used when an 'OnIdle' reset is requested, to perform the reset after the charging has stopped.
+    bool reset_scheduled;
+    /// \brief If `reset_scheduled` is true and the reset is for a specific evse id, it will be stored in this member.
+    std::set<int32_t> reset_scheduled_evseids;
 
     // callback struct
     Callbacks callbacks;
@@ -119,7 +146,7 @@ private:
     /// central system uri ofthe connection options will not contain ws:// or wss:// because this method removes it if
     /// present \param network_configuration_priority \return
     std::optional<NetworkConnectionProfile> get_network_connection_profile(const int32_t configuration_slot);
-    /// \brief Moves websocket network_configuration_priority to next profile 
+    /// \brief Moves websocket network_configuration_priority to next profile
     void next_network_configuration_priority();
     void handle_message(const json& json_message, const MessageType& message_type);
     void message_callback(const std::string& message);
@@ -127,7 +154,9 @@ private:
     bool is_change_availability_possible(const ChangeAvailabilityRequest& req);
     void handle_scheduled_change_availability_requests(const int32_t evse_id);
     void handle_variable_changed(const SetVariableData& set_variable_data);
-    bool validate_set_variable(const SetVariableData &set_variable_data);
+    bool validate_set_variable(const SetVariableData& set_variable_data);
+    MeterValue get_latest_meter_value_filtered(const MeterValue& meter_value, ReadingContextEnum context,
+                                               const ComponentVariable& component_variable);
 
     ///
     /// \brief Get evseid for the given transaction id.
@@ -160,6 +189,14 @@ private:
     /// \return True if at least one connector is not faulted or unavailable.
     ///
     bool is_evse_connector_available(const std::unique_ptr<Evse>& evse) const;
+
+    ///
+    /// \brief Set all connectors of a given evse to unavailable.
+    /// \param evse The evse.
+    /// \param persist  True if unavailability should persist. If it is set to false, there will be a check per
+    ///                 connector if it was already set to true and if that is the case, it will be persisted anyway.
+    ///
+    void set_evse_connectors_unavailable(const std::unique_ptr<Evse>& evse, bool persist);
 
     /* OCPP message requests */
 
@@ -209,12 +246,13 @@ private:
 
     // Functional Block E: Transaction
     void handle_start_transaction_event_response(CallResult<TransactionEventResponse> call_result,
-                                                 const int32_t evse_id, const std::string& id_token);
+                                                 const int32_t evse_id, const IdToken& id_token);
 
     // Function Block F: Remote transaction control
     void handle_unlock_connector(Call<UnlockConnectorRequest> call);
     void handle_remote_start_transaction_request(Call<RequestStartTransactionRequest> call);
     void handle_remote_stop_transaction_request(Call<RequestStopTransactionRequest> call);
+    void handle_trigger_message(Call<TriggerMessageRequest> call);
 
     // Functional Block G: Availability
     void handle_change_availability_req(Call<ChangeAvailabilityRequest> call);
@@ -241,7 +279,8 @@ public:
                 const std::string& message_log_path, const std::string& certs_path, const Callbacks& callbacks);
 
     /// \brief Starts the ChargePoint, initializes and connects to the Websocket endpoint
-    void start();
+    /// \param bootreason   Optional bootreason (default: PowerUp).
+    void start(BootReasonEnum bootreason = BootReasonEnum::PowerUp);
 
     /// \brief Starts the websocket
     void start_websocket();
@@ -249,12 +288,18 @@ public:
     /// \brief Stops the ChargePoint. Disconnects the websocket connection and stops MessageQueue and all timers
     void stop();
 
+    /// \brief Initializes the websocket and connects to CSMS if it is not yet connected
+    void connect_websocket();
+
+    /// \brief Disconnects the the websocket connection to the CSMS if it is connected
+    void disconnect_websocket();
+
     /// \brief Chargepoint notifies about new firmware update status firmware_update_status. This function should be
     ///        called during a Firmware Update to indicate the current firmware_update_status.
     /// \param request_id   The request_id. When it is -1, it will not be included in the request.
     /// \param firmware_update_status The firmware_update_status should be convertable to the
     ///        ocpp::v201::FirmwareStatusEnum.
-    void on_firmware_update_status_notification(int32_t request_id, std::string& firmware_update_status);
+    void on_firmware_update_status_notification(int32_t request_id, const std::string& firmware_update_status);
 
     /// \brief Event handler that should be called when a session has started
     /// \param evse_id
@@ -278,8 +323,7 @@ public:
                                 const MeterValue& meter_start, const IdToken& id_token,
                                 const std::optional<IdToken>& group_id_token,
                                 const std::optional<int32_t>& reservation_id,
-                                const std::optional<int32_t>& remote_start_id,
-                                const ChargingStateEnum charging_state);
+                                const std::optional<int32_t>& remote_start_id, const ChargingStateEnum charging_state);
 
     /// \brief Event handler that should be called when a transaction has finished
     /// \param evse_id
@@ -290,7 +334,8 @@ public:
     /// \param signed_meter_value
     void on_transaction_finished(const int32_t evse_id, const DateTime& timestamp, const MeterValue& meter_stop,
                                  const ReasonEnum reason, const std::optional<std::string>& id_token,
-                                 const std::optional<std::string>& signed_meter_value);
+                                 const std::optional<std::string>& signed_meter_value,
+                                 const ChargingStateEnum charging_state);
 
     /// \brief Event handler that should be called when a session has finished
     /// \param evse_id

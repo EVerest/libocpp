@@ -33,8 +33,8 @@ EVSE Evse::get_evse_info() {
     return evse;
 }
 
-int32_t Evse::get_number_of_connectors() {
-    return this->id_connector_map.size();
+uint32_t Evse::get_number_of_connectors() {
+    return static_cast<uint32_t>(this->id_connector_map.size());
 }
 
 Everest::SteadyTimer& Evse::get_sampled_meter_values_timer() {
@@ -43,8 +43,7 @@ Everest::SteadyTimer& Evse::get_sampled_meter_values_timer() {
 
 void Evse::open_transaction(const std::string& transaction_id, const int32_t connector_id, const DateTime& timestamp,
                             const MeterValue& meter_start, const IdToken& id_token,
-                            const std::optional<IdToken>& group_id_token,
-                            const std::optional<int32_t> reservation_id,
+                            const std::optional<IdToken>& group_id_token, const std::optional<int32_t> reservation_id,
                             const int32_t sampled_data_tx_updated_interval) {
     if (!this->id_connector_map.count(connector_id)) {
         EVLOG_AND_THROW(std::runtime_error("Attempt to start transaction at invalid connector_id"));
@@ -104,6 +103,10 @@ void Evse::trigger_status_notification_callbacks() {
     for (auto const& [connector_id, connector] : this->id_connector_map) {
         this->status_notification_callback(connector_id, connector->get_state());
     }
+}
+
+void Evse::trigger_status_notification_callback(const int32_t connector_id) {
+    this->status_notification_callback(connector_id, this->id_connector_map.at(connector_id)->get_state());
 }
 
 void Evse::on_meter_value(const MeterValue& meter_value) {

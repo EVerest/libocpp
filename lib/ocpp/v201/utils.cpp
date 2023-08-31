@@ -3,8 +3,8 @@
 
 #include <everest/logging.hpp>
 
-#include <ocpp/v201/utils.hpp>
 #include <ocpp/common/utils.hpp>
+#include <ocpp/v201/utils.hpp>
 
 namespace ocpp {
 namespace v201 {
@@ -147,6 +147,10 @@ std::string sha256(const std::string& str) {
         ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
     }
     return ss.str();
+}
+
+std::string generate_token_hash(const IdToken& token) {
+    return sha256(conversions::id_token_enum_to_string(token.type) + token.idToken.get());
 }
 
 } // namespace utils
