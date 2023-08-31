@@ -23,8 +23,9 @@ ChargePointImpl::ChargePointImpl(const std::string& config, const std::filesyste
                                  const std::filesystem::path& user_config_path,
                                  const std::filesystem::path& database_path, const std::filesystem::path& sql_init_path,
                                  const std::filesystem::path& message_log_path,
-                                 const std::shared_ptr<EvseSecurity> evse_security) :
-    ocpp::ChargingStationBase(evse_security),
+                                 const std::shared_ptr<EvseSecurity> evse_security,
+                                 const std::optional<SecurityConfiguration> security_configuration) :
+    ocpp::ChargingStationBase(evse_security, security_configuration),
     boot_notification_callerror(false),
     initialized(false),
     connection_state(ChargePointConnectionState::Disconnected),
@@ -70,8 +71,8 @@ ChargePointImpl::ChargePointImpl(const std::string& config, const std::filesyste
 
     this->client_certificate_timer = std::make_unique<Everest::SteadyTimer>(&this->io_service, [this]() {
         EVLOG_info << "Checking if CSMS client certificate has expired";
-        int expiry_days_count =
-            this->evse_security->get_leaf_expiry_days_count(ocpp::CertificateSigningUseEnum::ChargingStationCertificate);
+        int expiry_days_count = this->evse_security->get_leaf_expiry_days_count(
+            ocpp::CertificateSigningUseEnum::ChargingStationCertificate);
         if (expiry_days_count < 30) {
             EVLOG_info << "CSMS client certificate is invalid in " << expiry_days_count
                        << " days. Requesting new certificate with certificate signing request";
@@ -84,7 +85,8 @@ ChargePointImpl::ChargePointImpl(const std::string& config, const std::filesyste
 
     this->v2g_certificate_timer = std::make_unique<Everest::SteadyTimer>(&this->io_service, [this]() {
         EVLOG_info << "Checking if V2GCertificate has expired";
-        int expiry_days_count = this->evse_security->get_leaf_expiry_days_count(ocpp::CertificateSigningUseEnum::V2GCertificate);
+        int expiry_days_count =
+            this->evse_security->get_leaf_expiry_days_count(ocpp::CertificateSigningUseEnum::V2GCertificate);
         if (expiry_days_count < 30) {
             EVLOG_info << "V2GCertificate is invalid in " << expiry_days_count
                        << " days. Requesting new certificate with certificate signing request";
@@ -2117,8 +2119,7 @@ void ChargePointImpl::handleGetInstalledCertificateIdsRequest(ocpp::Call<GetInst
     }
 
     // this is common CertificateHashDataChain
-    const auto certificate_hash_data_chains =
-        this->evse_security->get_installed_certificates(certificate_types);
+    const auto certificate_hash_data_chains = this->evse_security->get_installed_certificates(certificate_types);
     // convert ocpp::CertificateHashData to v16::CertificateHashData
     std::optional<std::vector<CertificateHashDataType>> certificate_hash_data_16_vec_opt;
     std::vector<CertificateHashDataType> certificate_hash_data_16_vec;

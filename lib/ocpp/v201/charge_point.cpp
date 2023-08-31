@@ -28,8 +28,9 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
                          const std::string& device_model_storage_address, const std::string& ocpp_main_path,
                          const std::string& core_database_path, const std::string& sql_init_path,
                          const std::string& message_log_path, const std::shared_ptr<EvseSecurity> evse_security,
-                         const Callbacks& callbacks) :
-    ocpp::ChargingStationBase(evse_security),
+                         const Callbacks& callbacks,
+                         const std::optional<SecurityConfiguration> security_configuration) :
+    ocpp::ChargingStationBase(evse_security, security_configuration),
     registration_status(RegistrationStatusEnum::Rejected),
     websocket_connection_status(WebsocketConnectionStatusEnum::Disconnected),
     operational_state(OperationalStatusEnum::Operative),

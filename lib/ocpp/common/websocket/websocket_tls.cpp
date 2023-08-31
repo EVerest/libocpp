@@ -174,8 +174,7 @@ tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connect
                                              SSL_FILETYPE_PEM) != 1) {
                 EVLOG_AND_THROW(std::runtime_error("Could not use client certificate file within SSL context"));
             }
-            if (SSL_CTX_use_PrivateKey_file(context->native_handle(),
-                                            certificate_key_pair.value().key_path.c_str(),
+            if (SSL_CTX_use_PrivateKey_file(context->native_handle(), certificate_key_pair.value().key_path.c_str(),
                                             SSL_FILETYPE_PEM) != 1) {
                 EVLOG_AND_THROW(std::runtime_error("Could not set private key file within SSL context"));
             }

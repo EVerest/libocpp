@@ -101,9 +101,8 @@ int main(int argc, char* argv[]) {
         std::filesystem::create_directories(cso_path);
     }
 
-    charge_point =
-        new ocpp::v16::ChargePoint(json_config.dump(), share_path, user_config_path, database_path, sql_init_path,
-                                   std::filesystem::path("/tmp"), nullptr);
+    charge_point = new ocpp::v16::ChargePoint(json_config.dump(), share_path, user_config_path, database_path,
+                                              sql_init_path, std::filesystem::path("/tmp"), nullptr);
 
     /************************************** START REGISTERING CALLBACKS /**************************************/
 
