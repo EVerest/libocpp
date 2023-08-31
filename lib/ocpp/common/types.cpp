@@ -389,6 +389,86 @@ std::ostream& operator<<(std::ostream& os, const ReactivePower& k) {
     return os;
 }
 
+void to_json(json& j, const StateOfCharge& k) {
+    // the required parts of the type
+    j = json{
+        {"value", k.value},
+    };
+    // the optional parts of the type
+    if (k.location) {
+        j["location"] = k.location.value();
+    }
+}
+
+void from_json(const json& j, StateOfCharge& k) {
+    // the required parts of the type
+    k.value = j.at("value");
+
+    // the optional parts of the type
+    if (j.contains("location")) {
+        k.location.emplace(j.at("location"));
+    }
+}
+
+std::ostream& operator<<(std::ostream& os, const StateOfCharge& k) {
+    os << json(k).dump(4);
+    return os;
+}
+
+void to_json(json& j, const Temperature& k) {
+    // the required parts of the type
+    j = json{
+        {"value", k.value},
+    };
+
+    // the optional parts of the type
+    if (k.location) {
+        j["location"] = k.location.value();
+    }
+}
+
+void from_json(const json& j, Temperature& k) {
+    // the required parts of the type
+    k.value = j.at("value");
+
+    // the optional parts of the type
+    if (j.contains("location")) {
+        k.location.emplace(j.at("location"));
+    }
+}
+
+std::ostream& operator<<(std::ostream& os, const Temperature& k) {
+    os << json(k).dump(4);
+    return os;
+}
+
+void to_json(json& j, const RPM& k) {
+    // the required parts of the type
+    j = json{
+        {"value", k.value},
+    };
+
+    // the optional parts of the type
+    if (k.location) {
+        j["location"] = k.location.value();
+    }
+}
+
+void from_json(const json& j, RPM& k) {
+    // the required parts of the type
+    k.value = j.at("value");
+
+    // the optional parts of the type
+    if (j.contains("location")) {
+        k.location.emplace(j.at("location"));
+    }
+}
+
+std::ostream& operator<<(std::ostream& os, const RPM& k) {
+    os << json(k).dump(4);
+    return os;
+}
+
 void to_json(json& j, const Powermeter& k) {
     // the required parts of the type
     j = json{
@@ -455,6 +535,37 @@ void from_json(const json& j, Powermeter& k) {
 }
 
 std::ostream& operator<<(std::ostream& os, const Powermeter& k) {
+    os << json(k).dump(4);
+    return os;
+}
+
+void to_json(json& j, const Measurement& k) {
+    to_json(j, k.power_meter);
+    if (k.rpm) {
+        j["rpm"] = k.rpm.value();
+    }
+    if (k.soc_Percent) {
+        j["soc_Percent"] = k.soc_Percent.value();
+    }
+    if (k.temperature_C) {
+        j["temperature_C"] = k.temperature_C.value();
+    }
+}
+
+void from_json(const json& j, Measurement& k) {
+    from_json(j, k.power_meter);
+    if (j.contains("rpm")) {
+        k.rpm.emplace(j.at("rpm"));
+    }
+    if (j.contains("soc_Percent")) {
+        k.soc_Percent.emplace(j.at("soc_Percent"));
+    }
+    if (j.contains("temperature_C")) {
+        k.temperature_C.emplace(j.at("temperature_C"));
+    }
+}
+
+std::ostream& operator<<(std::ostream& os, const Measurement& k) {
     os << json(k).dump(4);
     return os;
 }
