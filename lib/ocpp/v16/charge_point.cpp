@@ -255,10 +255,5 @@ void ChargePoint::register_transaction_started_callback(
     this->charge_point->register_transaction_started_callback(callback);
 }
 
-void ChargePoint::register_change_configuration_with_custom_key_callback(
-    const std::function<ConfigurationStatus(const std::string& key, const std::string& value)>& callback) {
-    this->charge_point->register_change_configuration_with_custom_key_callback(callback);
-    }
-
 } // namespace v16
 } // namespace ocpp
