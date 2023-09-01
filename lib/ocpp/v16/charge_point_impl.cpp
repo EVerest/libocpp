@@ -1300,13 +1300,7 @@ void ChargePointImpl::handleChangeConfigurationRequest(ocpp::Call<ChangeConfigur
             }
         }
     } else {
-        if (this->change_configuration_with_custom_key_callback) {
-            std::lock_guard<std::mutex> lock(this->change_configuration_with_custom_key_callback_mutex);
-            response.status = this->change_configuration_with_custom_key_callback(call.msg.key, call.msg.value);
-        } else {
-            EVLOG_warning << "ChangeConfiguration not supported for key " << call.msg.key;
-            response.status = ConfigurationStatus::NotSupported;
-        }
+        response.status = ConfigurationStatus::NotSupported;
     }
 
     if (!responded) {
@@ -3325,11 +3319,6 @@ void ChargePointImpl::register_get_15118_ev_certificate_response_callback(
 void ChargePointImpl::register_transaction_started_callback(
     const std::function<void(const int32_t connector, const int32_t transaction_id)>& callback) {
     this->transaction_started_callback = callback;
-}
-
-void ChargePointImpl::register_change_configuration_with_custom_key_callback(
-    const std::function<ConfigurationStatus(const std::string& key, const std::string& value)>& callback) {
-    this->change_configuration_with_custom_key_callback = callback;
 }
 
 void ChargePointImpl::on_reservation_start(int32_t connector) {
