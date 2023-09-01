@@ -303,7 +303,6 @@ struct Measurement {
     // \brief Writes the string representation of the given Measurement \p k to the given output stream \p os
     /// \returns an output stream with the Measurement written to
     friend std::ostream& operator<<(std::ostream& os, const Measurement& k);
-
 };
 
 enum class CertificateType {
