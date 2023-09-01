@@ -163,7 +163,8 @@ private:
     std::function<GetLogResponse(GetLogRequest msg)> upload_logs_callback;
     std::function<void(int32_t connection_timeout)> set_connection_timeout_callback;
 
-    std::function<void(const int32_t connector, const int32_t transaction_id)> transaction_started_callback;
+    std::function<void(const int32_t connector, const int32_t transaction_id)>
+        transaction_started_callback;
 
     // iso15118 callback
     std::function<void(const int32_t connector, const ocpp::v201::Get15118EVCertificateResponse& certificate_response,
