@@ -223,7 +223,7 @@ struct ReactivePower {
 };
 
 struct StateOfCharge {
-    float value;                        ///< State of Charge in percent
+    float value;                         ///< State of Charge in percent
     std::optional<std::string> location; ///< Location of the SoC sensor
     /// \brief Conversion from a given StateOfCharge \p k to a given json object \p j
     friend void to_json(json& j, const StateOfCharge& k);
@@ -237,7 +237,7 @@ struct StateOfCharge {
 };
 
 struct Temperature {
-    float value;                ///< Temperature in degree Celsius
+    float value;                         ///< Temperature in degree Celsius
     std::optional<std::string> location; ///< Location of the temperature sensor
     /// \brief Conversion from a given Temperature \p k to a given json object \p j
     friend void to_json(json& j, const Temperature& k);
@@ -251,7 +251,7 @@ struct Temperature {
 };
 
 struct RPM {
-    float value;                        ///< RPM
+    float value;                         ///< RPM
     std::optional<std::string> location; ///< Location of the RPM sensor
     /// \brief Conversion from a given RPM \p k to a given json object \p j
     friend void to_json(json& j, const RPM& k);
