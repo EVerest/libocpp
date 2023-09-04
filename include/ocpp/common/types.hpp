@@ -280,7 +280,7 @@ struct Temperature {
 struct RPM {
     float value;                         ///< RPM
     std::optional<std::string> location; ///< Location of the RPM measurement
-    
+
     /// \brief Conversion from a given RPM \p k to a given json object \p j
     friend void to_json(json& j, const RPM& k);
 
