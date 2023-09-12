@@ -18,7 +18,7 @@ option(OCPP_INSTALL "Install the library (shared data might be installed anyway)
 
 if (${CMAKE_CXX_STANDARD} LESS_EQUAL 17) 
 	option(BOOSTFILESYSTEM "Usage of boost/filesystem.hpp instead of std::filesystem" ON)
-	add_definitions(-DUSE_BOOST_FILESYSTEM)
+	add_definitions(-DBOOSTFILESYSTEM)
 else()
 	 option(BOOSTFILESYSTEM "Usage of boost/filesystem.hpp instead of std::filesystem" OFF)
 endif()
