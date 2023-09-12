@@ -16,11 +16,11 @@ namespace ocpp {
 namespace v16 {
 
 ChargePointConfiguration::ChargePointConfiguration(const std::string& config,
-                                                   const std::filesystem::path& ocpp_main_path,
-                                                   const std::filesystem::path& user_config_path) {
+                                                   const fs::path& ocpp_main_path,
+                                                   const fs::path& user_config_path) {
 
     this->user_config_path = user_config_path;
-    if (!std::filesystem::exists(this->user_config_path)) {
+    if (!fs::exists(this->user_config_path)) {
         EVLOG_critical << "User config file does not exist";
         throw std::runtime_error("User config file does not exist");
     }
@@ -166,7 +166,7 @@ ChargePointConfiguration::ChargePointConfiguration(const std::string& config,
 }
 
 json ChargePointConfiguration::get_user_config() {
-    if (std::filesystem::exists(this->user_config_path)) {
+    if (fs::exists(this->user_config_path)) {
         // reading from and overriding to existing user config
         std::fstream ifs(user_config_path.c_str());
         std::string user_config_file((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
