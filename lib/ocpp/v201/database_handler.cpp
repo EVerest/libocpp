@@ -67,7 +67,8 @@ void DatabaseHandler::close_connection() {
     }
 }
 
-void DatabaseHandler::authorization_cache_insert_entry(const std::string& id_token_hash, const IdTokenInfo& id_token_info) {
+void DatabaseHandler::authorization_cache_insert_entry(const std::string& id_token_hash,
+                                                       const IdTokenInfo& id_token_info) {
     std::string sql = "INSERT OR REPLACE INTO AUTH_CACHE (ID_TOKEN_HASH, ID_TOKEN_INFO) VALUES "
                       "(@id_token_hash, @id_token_info)";
     SQLiteStatement insert_stmt(this->db, sql);
