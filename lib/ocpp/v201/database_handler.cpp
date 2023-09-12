@@ -120,6 +120,21 @@ bool DatabaseHandler::authorization_cache_clear() {
     return this->clear_table("AUTH_CACHE");
 }
 
+size_t DatabaseHandler::authorization_cache_get_binary_size() {
+    try {
+        std::string sql = "SELECT SUM(\"payload\") FROM \"dbstat\" WHERE name='AUTH_CACHE';";
+        SQLiteStatement stmt(this->db, sql);
+
+        if (stmt.step() != SQLITE_ROW) {
+            throw std::runtime_error("Could not get local list count from database");
+        }
+
+        return stmt.column_int(0);
+    } catch (const std::exception& e) {
+        throw std::runtime_error("Could not get availability from database");
+    }
+}
+
 void DatabaseHandler::insert_availability(const int32_t evse_id, std::optional<int32_t> connector_id,
                                           const OperationalStatusEnum& operational_status, const bool replace) {
     std::string sql = "INSERT OR REPLACE INTO AVAILABILITY (EVSE_ID, CONNECTOR_ID, OPERATIONAL_STATUS) VALUES "

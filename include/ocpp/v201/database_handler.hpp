@@ -56,6 +56,11 @@ public:
     /// \return
     bool authorization_cache_clear();
 
+    ///\brief Get the binary size of the authorization cache table
+    ///
+    ///\retval The size of the authorization cache table in bytes
+    size_t authorization_cache_get_binary_size();
+
     // Availability management
 
     void insert_availability(const int32_t evse_id, std::optional<int32_t> connector_id,
