@@ -1552,7 +1552,7 @@ void ChargePoint::handle_clear_cache_req(Call<ClearCacheRequest> call) {
 
     if (this->device_model->get_optional_value<bool>(ControllerComponentVariables::AuthCacheCtrlrEnabled)
             .value_or(true) and
-        this->database_handler->clear_authorization_cache()) {
+        this->database_handler->authorization_cache_clear()) {
         response.status = ClearCacheStatusEnum::Accepted;
     }
 
