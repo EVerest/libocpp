@@ -1113,7 +1113,7 @@ AuthorizeResponse ChargePoint::authorize_req(const IdToken id_token, const std::
     }
 
     ocpp::CallResult<AuthorizeResponse> call_result = enhanced_message.message;
-    if (response.idTokenInfo.cacheExpiryDateTime.has_value() or
+    if (call_result.msg.idTokenInfo.cacheExpiryDateTime.has_value() or
         !this->device_model->get_optional_value<int>(ControllerComponentVariables::AuthCacheLifeTime).has_value()) {
         return call_result.msg;
     }
