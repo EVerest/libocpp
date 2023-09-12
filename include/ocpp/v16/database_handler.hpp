@@ -4,7 +4,11 @@
 #define OCPP_V16_DATABASE_HANDLER_HPP
 
 #include "sqlite3.h"
-#include <filesystem>
+#ifndef BOOSTFILESYSTEM
+<filesystem>
+#else
+#include <boost/filesystem.hpp>
+#endif
 #include <fstream>
 #include <iostream>
 
@@ -13,6 +17,12 @@
 #include <ocpp/common/types.hpp>
 #include <ocpp/v16/ocpp_types.hpp>
 #include <ocpp/v16/types.hpp>
+
+#ifndef BOOSTFILESYSTEM
+namespace fs = std::filesystem;
+#else
+namespace fs = boost::filesystem;
+#endif
 
 namespace ocpp {
 namespace v16 {
