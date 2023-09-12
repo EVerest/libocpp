@@ -8,6 +8,7 @@
 #include <sqlite3.h>
 
 #include <everest/logging.hpp>
+#include <ocpp/common/types.hpp>
 
 namespace ocpp {
 
@@ -72,6 +73,20 @@ public:
         return bind_int(index, val);
     }
 
+    int bind_datetime(const int idx, const ocpp::DateTime val) {
+        return sqlite3_bind_int64(
+            this->stmt, idx,
+            std::chrono::duration_cast<std::chrono::milliseconds>(val.to_time_point().time_since_epoch()).count());
+    }
+
+    int bind_datetime(const std::string& param, const ocpp::DateTime val) {
+        int index = sqlite3_bind_parameter_index(this->stmt, param.c_str());
+        if (index <= 0) {
+            throw std::out_of_range("Parameter not found in SQL query");
+        }
+        return bind_datetime(index, val);
+    }
+
     int bind_null(const int idx) {
         return sqlite3_bind_null(this->stmt, idx);
     }
@@ -94,6 +109,11 @@ public:
 
     int column_int(const int idx) {
         return sqlite3_column_int(this->stmt, idx);
+    }
+
+    ocpp::DateTime column_datetime(const int idx) {
+        int64_t time = sqlite3_column_int64(this->stmt, idx);
+        return DateTime(date::utc_clock::time_point(std::chrono::milliseconds(time)));
     }
 
     double column_double(const int idx) {
