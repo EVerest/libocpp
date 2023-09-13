@@ -177,10 +177,14 @@ void ChargePoint::on_transaction_started(
 
     auto evse = this->evses.at(evse_id)->get_evse_info();
     evse.connectorId.emplace(connector_id);
+    std::optional<bool> offline;
 
+    if (this->websocket_connection_status == WebsocketConnectionStatusEnum::Disconnected) {
+        offline = true;
+    }
     this->transaction_event_req(TransactionEventEnum::Started, timestamp, transaction, trigger_reason,
                                 enhanced_transaction->get_seq_no(), std::nullopt, evse, enhanced_transaction->id_token,
-                                std::vector<MeterValue>(1, meter_value), std::nullopt, std::nullopt, reservation_id);
+                                std::vector<MeterValue>(1, meter_value), std::nullopt, offline, reservation_id);
 }
 
 void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime& timestamp,
