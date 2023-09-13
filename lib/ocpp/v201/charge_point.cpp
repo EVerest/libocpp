@@ -777,7 +777,6 @@ void ChargePoint::update_authorization_cache_size() {
         auto size = this->database_handler->authorization_cache_get_binary_size();
         this->device_model->set_read_only_value(auth_cache_size.component, auth_cache_size.variable.value(),
                                                 AttributeEnum::Actual, std::to_string(size));
-        EVLOG_info << "*********** New auth cache size:" << size;
     }
 }
 
