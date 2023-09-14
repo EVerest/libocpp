@@ -646,6 +646,14 @@ std::string ChargePointConfiguration::getWebsocketPingPayload() {
     return this->config["Internal"]["WebsocketPingPayload"];
 }
 
+std::optional<std::string> ChargePointConfiguration::getHostName() {
+    std::optional<std::string> hostName_key = std::nullopt;
+    if (this->config["Internal"].contains("HostName")) {
+       hostName_key.emplace(this->config["Internal"]["HostName"]);
+    }
+    return hostName_key;
+}
+
 // Core Profile - optional
 std::optional<bool> ChargePointConfiguration::getAllowOfflineTxForUnknownId() {
     std::optional<bool> unknown_offline_auth = std::nullopt;
