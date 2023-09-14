@@ -1579,7 +1579,7 @@ void ChargePointImpl::handleResetRequest(ocpp::Call<ResetRequest> call) {
         this->reset_thread = std::thread([this, reset_type]() {
             EVLOG_debug << "Waiting until all transactions are stopped...";
             std::unique_lock lk(this->stop_transaction_mutex);
-            this->stop_transaction_cv.wait_for(lk, std::chrono::seconds(5), [this] {
+            this->stop_transaction_cv.wait_for(lk, std::chrono::seconds(180), [this] {
                 for (int32_t connector = 1; connector <= this->configuration->getNumberOfConnectors(); connector++) {
                     if (this->transaction_handler->transaction_active(connector)) {
                         return false;
@@ -1677,7 +1677,16 @@ void ChargePointImpl::handleStopTransactionResponse(ocpp::CallResult<StopTransac
     this->database_handler->update_transaction_csms_ack(transaction->get_session_id());
     this->transaction_handler->erase_stopped_transaction(call_result.uniqueId.get());
     // when this transaction was stopped because of a Reset.req this signals that StopTransaction.conf has been received
-    this->stop_transaction_cv.notify_one();
+    //Check if all transaction are not active before notify is sented
+    bool isNoTransActive=true;
+    for (int32_t connector = 1; connector <= this->configuration->getNumberOfConnectors(); connector++) {
+    	if (this->transaction_handler->transaction_active(connector)) {
+    		isNoTransActive &= false;
+    	}
+    }
+    //Conditional notify the reset, if no Transaction is active anymore
+    if (isNoTransActive)
+    	this->stop_transaction_cv.notify_one();
 }
 
 void ChargePointImpl::handleUnlockConnectorRequest(ocpp::Call<UnlockConnectorRequest> call) {
