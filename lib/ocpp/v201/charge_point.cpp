@@ -804,8 +804,8 @@ void ChargePoint::update_aligned_data_interval() {
                         this->transaction_event_req(
                             TransactionEventEnum::Updated, DateTime(), enhanced_transaction->get_transaction(),
                             TriggerReasonEnum::MeterValueClock, enhanced_transaction->get_seq_no(), std::nullopt,
-                            std::nullopt, std::nullopt, std::vector<MeterValue>(1, meter_value), std::nullopt,
-                            offline, std::nullopt);
+                            std::nullopt, std::nullopt, std::vector<MeterValue>(1, meter_value), std::nullopt, offline,
+                            std::nullopt);
                     } else if (!evse->has_active_transaction() and
                                this->device_model
                                    ->get_optional_value<bool>(ControllerComponentVariables::AlignedDataSendDuringIdle)
@@ -1654,10 +1654,10 @@ void ChargePoint::handle_trigger_message(Call<TriggerMessageRequest> call) {
                 offline = true;
             }
 
-            this->transaction_event_req(
-                TransactionEventEnum::Updated, DateTime(), enhanced_transaction->get_transaction(),
-                TriggerReasonEnum::Trigger, enhanced_transaction->get_seq_no(), std::nullopt, std::nullopt,
-                std::nullopt, std::vector<MeterValue>(1, meter_value), std::nullopt, offline, std::nullopt);
+            this->transaction_event_req(TransactionEventEnum::Updated, DateTime(),
+                                        enhanced_transaction->get_transaction(), TriggerReasonEnum::Trigger,
+                                        enhanced_transaction->get_seq_no(), std::nullopt, std::nullopt, std::nullopt,
+                                        std::vector<MeterValue>(1, meter_value), std::nullopt, offline, std::nullopt);
         };
         send_evse_message(send_transaction);
     } break;
