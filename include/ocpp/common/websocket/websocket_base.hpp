@@ -33,6 +33,7 @@ struct WebsocketConnectionOptions {
     std::string ping_payload;
     bool use_ssl_default_verify_paths;
     std::optional<bool> additional_root_certificate_check;
+    std::optional<std::string> hostName;
 };
 
 ///

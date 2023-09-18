@@ -51,6 +51,11 @@
             "minLength": 1,
             "maxLength": 50
         },
+        "HostName": {
+            "type": "string",
+            "readOnly": true,
+            "minLength": 1
+         },
         "ICCID": {
             "type": "string",
             "readOnly": true,
