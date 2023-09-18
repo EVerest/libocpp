@@ -958,8 +958,8 @@ void ChargePoint::set_evse_connectors_unavailable(const std::unique_ptr<Evse>& e
     }
 }
 
-std::optional<bool> ChargePoint::is_offline() {
-    std::optional<bool> offline;
+bool ChargePoint::is_offline() {
+    bool offline = false; //false by default
     if (this->websocket_connection_status == WebsocketConnectionStatusEnum::Disconnected) {
         offline = true;
     }
@@ -1060,7 +1060,7 @@ void ChargePoint::transaction_event_req(const TransactionEventEnum& event_type, 
                                         const std::optional<ocpp::v201::IdToken>& id_token,
                                         const std::optional<std::vector<ocpp::v201::MeterValue>>& meter_value,
                                         const std::optional<int32_t>& number_of_phases_used,
-                                        const std::optional<bool>& offline,
+                                        const bool offline,
                                         const std::optional<int32_t>& reservation_id) {
     TransactionEventRequest req;
     req.eventType = event_type;
