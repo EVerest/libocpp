@@ -11,6 +11,19 @@ namespace v201 {
 const auto DEFAULT_BOOT_NOTIFICATION_RETRY_INTERVAL = std::chrono::seconds(30);
 const auto WEBSOCKET_INIT_DELAY = std::chrono::seconds(2);
 
+bool Callbacks::all_callbacks_valid() const {
+    return this->is_reset_allowed_callback != nullptr and this->reset_callback != nullptr and
+           this->stop_transaction_callback != nullptr and this->pause_charging_callback != nullptr and
+           this->change_availability_callback != nullptr and this->get_log_request_callback != nullptr and
+           this->unlock_connector_callback != nullptr and this->remote_start_transaction_callback != nullptr and
+           this->is_reservation_for_token_callback != nullptr and this->update_firmware_request_callback != nullptr and
+           (!this->variable_changed_callback.has_value() or this->variable_changed_callback.value() != nullptr) and
+           (!this->validate_network_profile_callback.has_value() or
+            this->validate_network_profile_callback.value() != nullptr) and
+           (!this->configure_network_connection_profile_callback.has_value() or
+            this->configure_network_connection_profile_callback.value() != nullptr);
+}
+
 ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
                          const std::string& device_model_storage_address, const std::string& ocpp_main_path,
                          const std::string& core_database_path, const std::string& sql_init_path,
@@ -27,6 +40,12 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
     callbacks(callbacks),
     firmware_status(FirmwareStatusEnum::Idle),
     upload_log_status(UploadLogStatusEnum::Idle) {
+
+    // Make sure the received callback struct is completely filled early before we actually start running
+    if (!this->callbacks.all_callbacks_valid()) {
+        EVLOG_AND_THROW(std::invalid_argument("All non-optional callbacks must be supplied"));
+    }
+
     this->device_model = std::make_unique<DeviceModel>(device_model_storage_address);
     this->pki_handler = std::make_shared<ocpp::PkiHandler>(
         certs_path,
@@ -314,50 +333,74 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
     // TODO(piet): C10.FR.07
 
     AuthorizeResponse response;
-    IdTokenInfo id_token_info;
 
     // C03.FR.01 && C05.FR.01: We SHALL NOT send an authorize reqeust for IdTokenType Central
     if (id_token.type == IdTokenEnum::Central or
         !this->device_model->get_optional_value<bool>(ControllerComponentVariables::AuthCtrlrEnabled).value_or(true)) {
-        id_token_info.status = AuthorizationStatusEnum::Accepted;
-        response.idTokenInfo = id_token_info;
+        response.idTokenInfo.status = AuthorizationStatusEnum::Accepted;
         return response;
     }
 
-    if (!this->device_model->get_optional_value<bool>(ControllerComponentVariables::AuthCacheCtrlrEnabled)
-             .value_or(true)) {
-        EVLOG_info << "AuthCache not enabled: Sending Authorize.req";
-        return this->authorize_req(id_token, certificate, ocsp_request_data);
+    if (this->device_model->get_optional_value<bool>(ControllerComponentVariables::LocalAuthListCtrlrEnabled)
+            .value_or(false)) {
+        const auto id_token_info = this->database_handler->get_local_authorization_list_entry(id_token);
+
+        if (id_token_info.has_value()) {
+            if (id_token_info.value().status == AuthorizationStatusEnum::Accepted) {
+                // C14.FR.02: If found in local list we shall start charging without an AuthorizeRequest
+                EVLOG_info << "Found valid entry in local authorization list";
+                response.idTokenInfo = id_token_info.value();
+            } else if (this->websocket_connection_status == WebsocketConnectionStatusEnum::Connected) {
+                // C14.FR.03: If a value found but not valid we shall send an authorize request
+                EVLOG_info << "Found invalid entry in local authorization list: Sending Authorize.req";
+                response = this->authorize_req(id_token, certificate, ocsp_request_data);
+            } else {
+                // errata C13.FR.04: even in the offline state we should not authorize if present (and not accepted)
+                EVLOG_info << "Found invalid entry in local authorization list whilst offline: Not authorized";
+                response.idTokenInfo.status = AuthorizationStatusEnum::Unknown;
+            }
+            return response;
+        }
     }
 
     const auto hashed_id_token = utils::generate_token_hash(id_token);
-    const auto cache_entry = this->database_handler->get_auth_cache_entry(hashed_id_token);
+    const auto auth_cache_enabled =
+        this->device_model->get_optional_value<bool>(ControllerComponentVariables::AuthCacheCtrlrEnabled)
+            .value_or(false);
 
-    if (!cache_entry.has_value()) {
-        EVLOG_info << "AuthCache enabled but not entry found: Sending Authorize.req";
-        response = this->authorize_req(id_token, certificate, ocsp_request_data);
-        this->database_handler->insert_auth_cache_entry(hashed_id_token, response.idTokenInfo);
-        return response;
+    if (auth_cache_enabled) {
+        const auto cache_entry = this->database_handler->get_auth_cache_entry(hashed_id_token);
+        if (cache_entry.has_value()) {
+            if ((cache_entry.value().cacheExpiryDateTime.has_value() and
+                 cache_entry.value().cacheExpiryDateTime.value().to_time_point() < DateTime().to_time_point())) {
+                EVLOG_info << "Found valid entry in AuthCache but expiry date passed: Removing from cache and sending "
+                              "new request";
+                this->database_handler->delete_auth_cache_entry(hashed_id_token);
+            } else if (this->device_model->get_value<bool>(ControllerComponentVariables::LocalPreAuthorize) and
+                       cache_entry.value().status == AuthorizationStatusEnum::Accepted) {
+                EVLOG_info << "Found valid entry in AuthCache";
+                response.idTokenInfo = cache_entry.value();
+                return response;
+            } else {
+                EVLOG_info << "Found invalid entry in AuthCache: Sending new request";
+            }
+        }
     }
 
-    if ((cache_entry.value().cacheExpiryDateTime.has_value() and
-         cache_entry.value().cacheExpiryDateTime.value().to_time_point() < DateTime().to_time_point())) {
-        EVLOG_info << "Entry found in AuthCache but cacheExpiryDate exceeded: Sending Authorize.req";
-        this->database_handler->delete_auth_cache_entry(hashed_id_token);
-        response = this->authorize_req(id_token, certificate, ocsp_request_data);
-        this->database_handler->insert_auth_cache_entry(hashed_id_token, response.idTokenInfo);
-        return response;
-    }
-
-    if (this->device_model->get_value<bool>(ControllerComponentVariables::LocalPreAuthorize) and
-        cache_entry.value().status == AuthorizationStatusEnum::Accepted) {
-        EVLOG_info << "Found valid entry in AuthCache";
-        response.idTokenInfo = cache_entry.value();
+    if (this->websocket_connection_status == WebsocketConnectionStatusEnum::Disconnected and
+        this->device_model->get_optional_value<bool>(ControllerComponentVariables::OfflineTxForUnknownIdEnabled)
+            .value_or(false)) {
+        EVLOG_info << "Offline authorization due to OfflineTxForUnknownIdEnabled being enabled";
+        response.idTokenInfo.status = AuthorizationStatusEnum::Accepted;
         return response;
     }
 
     response = this->authorize_req(id_token, certificate, ocsp_request_data);
-    this->database_handler->insert_auth_cache_entry(hashed_id_token, response.idTokenInfo);
+
+    if (auth_cache_enabled) {
+        this->database_handler->insert_auth_cache_entry(hashed_id_token, response.idTokenInfo);
+    }
+
     return response;
 }
 
@@ -427,6 +470,35 @@ void ChargePoint::init_websocket() {
     this->websocket->register_connected_callback([this](const int security_profile) {
         this->message_queue->resume();
         this->websocket_connection_status = WebsocketConnectionStatusEnum::Connected;
+
+        if (this->registration_status == RegistrationStatusEnum::Accepted) {
+            // handle offline threshold
+            //  Get the current time point using steady_clock
+            std::chrono::steady_clock::duration offline_duration = std::chrono::steady_clock::now() - time_disconnected;
+
+            // B04.FR.01
+            // If offline period exceeds offline threshold then send the status notification for all connectors
+            if (offline_duration > std::chrono::seconds(this->device_model->get_value<int>(
+                                       ControllerComponentVariables::OfflineThreshold))) {
+                EVLOG_debug << "offline for more than offline threshold ";
+                for (auto const& [evse_id, evse] : this->evses) {
+                    evse->trigger_status_notification_callbacks();
+                }
+            } else {
+                // B04.FR.02
+                // If offline period doesn't exceed offline threshold then send the status notification for all
+                // connectors that changed state
+                EVLOG_debug << "offline for less than offline threshold ";
+                for (auto const& [evse_id, evse] : this->evses) {
+                    int number_of_connectors = evse->get_number_of_connectors();
+                    for (int connector_id = 1; connector_id <= number_of_connectors; connector_id++) {
+                        if (conn_state_per_evse[{evse_id, connector_id}] != evse->get_state(connector_id)) {
+                            evse->trigger_status_notification_callback(connector_id);
+                        }
+                    }
+                }
+            }
+        }
     });
 
     this->websocket->register_closed_callback(
@@ -436,6 +508,25 @@ void ChargePoint::init_websocket() {
                           << " which is configurationSlot: " << configuration_slot;
             this->websocket_connection_status = WebsocketConnectionStatusEnum::Disconnected;
             this->message_queue->pause();
+
+            // check if offline threshold has been defined
+            if (this->device_model->get_value<int>(ControllerComponentVariables::OfflineThreshold) != 0) {
+                // get the status of all the connectors
+                for (auto const& [evse_id, evse] : this->evses) {
+                    int number_of_connectors = evse->get_number_of_connectors();
+                    EvseConnectorPair conn_states_struct_key;
+                    EVLOG_debug << "evseId: " << evse_id << " numConn: " << number_of_connectors;
+                    for (int connector_id = 1; connector_id <= number_of_connectors; connector_id++) {
+                        conn_states_struct_key.evse_id = evse_id;
+                        conn_states_struct_key.connector_id = connector_id;
+                        conn_state_per_evse[conn_states_struct_key] = evse->get_state(connector_id);
+                        EVLOG_debug << "conn_id: " << conn_states_struct_key.connector_id
+                                    << " State: " << conn_state_per_evse[conn_states_struct_key];
+                    }
+                }
+                // Get the current time point using steady_clock
+                time_disconnected = std::chrono::steady_clock::now();
+            }
 
             if (!this->disable_automatic_websocket_reconnects) {
                 this->websocket_timer.timeout(
@@ -514,8 +605,9 @@ void ChargePoint::next_network_configuration_priority() {
         (this->network_configuration_priority + 1) % (network_connection_profiles.size());
 }
 
-void ChargePoint::handle_message(const json& json_message, const MessageType& message_type) {
-    switch (message_type) {
+void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& message) {
+    const auto& json_message = message.message;
+    switch (message.messageType) {
     case MessageType::BootNotificationResponse:
         this->handle_boot_notification_response(json_message);
         break;
@@ -541,7 +633,7 @@ void ChargePoint::handle_message(const json& json_message, const MessageType& me
         this->handle_change_availability_req(json_message);
         break;
     case MessageType::TransactionEventResponse:
-        // handled by transaction_event_req future
+        this->handle_start_transaction_event_response(message);
         break;
     case MessageType::RequestStartTransaction:
         this->handle_remote_start_transaction_request(json_message);
@@ -582,7 +674,7 @@ void ChargePoint::message_callback(const std::string& message) {
     this->logging->central_system(conversions::messagetype_to_string(enhanced_message.messageType), message);
 
     if (this->registration_status == RegistrationStatusEnum::Accepted) {
-        this->handle_message(json_message, enhanced_message.messageType);
+        this->handle_message(enhanced_message);
     } else if (this->registration_status == RegistrationStatusEnum::Pending) {
         if (enhanced_message.messageType == MessageType::BootNotificationResponse) {
             this->handle_boot_notification_response(json_message);
@@ -593,7 +685,7 @@ void ChargePoint::message_callback(const std::string& message) {
                 enhanced_message.messageType == MessageType::GetBaseReport or
                 enhanced_message.messageType == MessageType::GetReport or
                 enhanced_message.messageType == MessageType::TriggerMessage) {
-                this->handle_message(json_message, enhanced_message.messageType);
+                this->handle_message(enhanced_message);
             } else if (enhanced_message.messageType == MessageType::RequestStartTransaction) {
                 // Send rejected: B02.FR.05
                 RequestStartTransactionResponse response;
@@ -619,7 +711,7 @@ void ChargePoint::message_callback(const std::string& message) {
         } else if (enhanced_message.messageType == MessageType::TriggerMessage) {
             Call<TriggerMessageRequest> call(json_message);
             if (call.msg.requestedMessage == MessageTriggerEnum::BootNotification) {
-                this->handle_message(json_message, enhanced_message.messageType);
+                this->handle_message(enhanced_message);
             } else {
                 const auto error_message = "Received TriggerMessage with requestedMessage != BootNotification before "
                                            "having received an accepted BootNotificationResponse";
@@ -1051,23 +1143,13 @@ void ChargePoint::transaction_event_req(const TransactionEventEnum& event_type, 
         remote_start_id_per_evse.erase(it);
     }
 
-    if (event_type == TransactionEventEnum::Started) {
-        if (!evse.has_value() or !id_token.has_value()) {
-            EVLOG_error << "Request to send TransactionEvent(Started) without given evse or id_token. These properties "
-                           "are required for this eventType \"Started\"!";
-            return;
-        }
-
-        auto future = this->send_async<TransactionEventRequest>(call);
-        const auto enhanced_message = future.get();
-        if (enhanced_message.messageType == MessageType::TransactionEventResponse) {
-            this->handle_start_transaction_event_response(enhanced_message.message, evse.value().id, id_token.value());
-        } else if (enhanced_message.offline) {
-            // TODO(piet): offline handling
-        }
-    } else {
-        this->send<TransactionEventRequest>(call);
+    if (event_type == TransactionEventEnum::Started and (!evse.has_value() or !id_token.has_value())) {
+        EVLOG_error << "Request to send TransactionEvent(Started) without given evse or id_token. These properties "
+                       "are required for this eventType \"Started\"!";
+        return;
     }
+
+    this->send<TransactionEventRequest>(call);
 }
 
 void ChargePoint::meter_values_req(const int32_t evse_id, const std::vector<MeterValue>& meter_values) {
@@ -1420,8 +1502,28 @@ void ChargePoint::handle_clear_cache_req(Call<ClearCacheRequest> call) {
     this->send<ClearCacheResponse>(call_result);
 }
 
-void ChargePoint::handle_start_transaction_event_response(CallResult<TransactionEventResponse> call_result,
-                                                          const int32_t evse_id, const IdToken& id_token) {
+void ChargePoint::handle_start_transaction_event_response(const EnhancedMessage<v201::MessageType>& message) {
+    CallResult<TransactionEventResponse> call_result = message.message;
+    const Call<TransactionEventRequest>& original_call = message.call_message;
+    const auto& original_msg = original_call.msg;
+
+    if (original_msg.eventType != TransactionEventEnum::Started) {
+        return;
+    }
+
+    if (!original_msg.evse.has_value()) {
+        EVLOG_error << "Start transaction event sent without without evse id";
+        return;
+    }
+
+    if (!original_msg.idToken.has_value()) {
+        EVLOG_error << "Start transaction event sent without without idToken info";
+        return;
+    }
+
+    const int32_t evse_id = original_msg.evse.value().id;
+    const IdToken& id_token = original_msg.idToken.value();
+
     const auto msg = call_result.msg;
     if (msg.idTokenInfo.has_value()) {
         // C03.FR.0x and C05.FR.01: We SHALL NOT store central information in the Authorization Cache

@@ -1069,6 +1069,10 @@ void ChargePointImpl::handle_message(const json& json_message, MessageType messa
         this->handleGetLocalListVersionRequest(json_message);
         break;
 
+    case MessageType::HeartbeatResponse:
+        this->handleHeartbeatResponse(json_message);
+        break;
+
     default:
         // TODO(kai): not implemented error?
         break;
@@ -1088,6 +1092,11 @@ void ChargePointImpl::handleBootNotificationResponse(ocpp::CallResult<BootNotifi
     switch (call_result.msg.status) {
     case RegistrationStatus::Accepted: {
         this->connection_state = ChargePointConnectionState::Booted;
+
+        if (this->set_system_time_callback != nullptr) {
+            this->set_system_time_callback(call_result.msg.currentTime.to_rfc3339());
+        }
+
         // we are allowed to send messages to the central system
         // activate heartbeat
         this->update_heartbeat_interval();
@@ -1580,14 +1589,16 @@ void ChargePointImpl::handleResetRequest(ocpp::Call<ResetRequest> call) {
         this->reset_thread = std::thread([this, reset_type]() {
             EVLOG_debug << "Waiting until all transactions are stopped...";
             std::unique_lock lk(this->stop_transaction_mutex);
-            this->stop_transaction_cv.wait_for(lk, std::chrono::seconds(5), [this] {
-                for (int32_t connector = 1; connector <= this->configuration->getNumberOfConnectors(); connector++) {
-                    if (this->transaction_handler->transaction_active(connector)) {
-                        return false;
+            this->stop_transaction_cv.wait_for(
+                lk, std::chrono::seconds(this->configuration->getWaitForStopTransactionsOnResetTimeout()), [this] {
+                    for (int32_t connector = 1; connector <= this->configuration->getNumberOfConnectors();
+                         connector++) {
+                        if (this->transaction_handler->transaction_active(connector)) {
+                            return false;
+                        }
                     }
-                }
-                return true;
-            });
+                    return true;
+                });
             // this is executed after all transactions have been stopped
             this->stop();
             this->reset_callback(reset_type);
@@ -1710,6 +1721,12 @@ void ChargePointImpl::handleUnlockConnectorRequest(ocpp::Call<UnlockConnectorReq
 
     ocpp::CallResult<UnlockConnectorResponse> call_result(response, call.uniqueId);
     this->send<UnlockConnectorResponse>(call_result);
+}
+
+void ChargePointImpl::handleHeartbeatResponse(CallResult<HeartbeatResponse> call_result) {
+    if (this->set_system_time_callback != nullptr) {
+        this->set_system_time_callback(call_result.msg.currentTime.to_rfc3339());
+    }
 }
 
 void ChargePointImpl::handleSetChargingProfileRequest(ocpp::Call<SetChargingProfileRequest> call) {
@@ -3343,6 +3360,10 @@ void ChargePointImpl::on_enabled(int32_t connector) {
 
 void ChargePointImpl::on_disabled(int32_t connector) {
     this->status->submit_event(connector, FSMEvent::ChangeAvailabilityToUnavailable);
+}
+
+void ChargePointImpl::on_plugin_timeout(int32_t connector) {
+    this->status->submit_event(connector, FSMEvent::TransactionStoppedAndUserActionRequired);
 }
 
 } // namespace v16
