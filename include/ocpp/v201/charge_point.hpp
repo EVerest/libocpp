@@ -213,6 +213,9 @@ private:
     ///
     void set_evse_connectors_unavailable(const std::unique_ptr<Evse>& evse, bool persist);
 
+    /// @brief Get the value optional offline flag
+    /// @return true if the charge point is offline. std::nullopt if it is online;
+    std::optional<bool> is_offline();
     /* OCPP message requests */
 
     // Functional Block B: Provisioning
