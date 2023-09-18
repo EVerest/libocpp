@@ -1347,6 +1347,19 @@ std::optional<KeyValue> ChargePointConfiguration::getWebsocketPingIntervalKeyVal
     return websocket_ping_interval_kv;
 }
 
+std::optional<KeyValue> ChargePointConfiguration::getHostNameKeyValue() {
+	std::optional<KeyValue> host_name_kv = std::nullopt;
+	auto host_name = this->getHostName();
+	if (host_name != std::nullopt) {
+		KeyValue kv;
+	    kv.key = "HostName";
+	    kv.readonly = true;
+	    kv.value.emplace(host_name.value());
+	    host_name_kv.emplace(kv);
+	}
+	return host_name_kv;
+}
+
 // Core Profile end
 
 int32_t ChargePointConfiguration::getChargeProfileMaxStackLevel() {
@@ -2046,6 +2059,9 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
     }
     if (key == "AllowChargingProfileWithoutStartSchedule") {
         return this->getAllowChargingProfileWithoutStartScheduleKeyValue();
+    }
+    if (key == "HostName") {
+     	return this->getHostNameKeyValue();
     }
 
     // Core Profile

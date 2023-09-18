@@ -97,6 +97,7 @@ public:
     KeyValue getWebsocketPingPayloadKeyValue();
 
     std::optional<std::string> getHostName();
+    std::optional<KeyValue> getHostNameKeyValue();
 
     // Core Profile - optional
     std::optional<bool> getAllowOfflineTxForUnknownId();
