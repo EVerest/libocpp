@@ -6,6 +6,7 @@
 #include <openssl/sha.h>
 
 #include <ocpp/v201/ocpp_types.hpp>
+#include <ocpp/common/evse_security.hpp>
 namespace ocpp {
 namespace v201 {
 namespace utils {
