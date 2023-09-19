@@ -156,11 +156,6 @@ SetVariableStatusEnum DeviceModel::set_value_internal(const Component& component
     return success ? SetVariableStatusEnum::Accepted : SetVariableStatusEnum::Rejected;
 };
 
-DeviceModel::DeviceModel(const std::string& storage_address) {
-    this->storage = std::make_unique<DeviceModelStorageSqlite>(storage_address);
-    this->device_model = this->storage->get_device_model();
-};
-
 SetVariableStatusEnum DeviceModel::set_value(const Component& component, const Variable& variable,
                                              const AttributeEnum& attribute_enum, const std::string& value) {
     return this->set_value_internal(component, variable, attribute_enum, value, false);
