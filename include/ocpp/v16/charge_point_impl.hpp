@@ -134,6 +134,7 @@ private:
         data_transfer_callbacks;
     std::map<std::string, std::function<void(Call<DataTransferRequest> call)>> data_transfer_pnc_callbacks;
     std::mutex data_transfer_callbacks_mutex;
+    std::map<CiString<50>, std::function<void(const KeyValue& key_value)>> configuration_key_changed_callbacks;
 
     std::mutex stop_transaction_mutex;
     std::condition_variable stop_transaction_cv;
@@ -184,6 +185,7 @@ private:
     /// \brief This function is called after a successful connection to the Websocket
     void connected_callback();
     void init_websocket();
+    void init_state_machine(const std::map<int, ChargePointStatus>& connector_status_map);
     WebsocketConnectionOptions get_ws_connection_options();
     void message_callback(const std::string& message);
     void handle_message(const json& json_message, MessageType message_type);
@@ -332,13 +334,21 @@ public:
 
     ~ChargePointImpl() {
     }
+
     /// \brief Starts the ChargePoint, initializes and connects to the Websocket endpoint and initializes a
     /// BootNotification.req
-    bool start();
+    /// \param connector_status_map initial state of connectors including connector 0 with reduced set of states
+    /// (Available, Unavailable, Faulted) \return
+    bool start(const std::map<int, ChargePointStatus>& connector_status_map);
 
     /// \brief Restarts the ChargePoint if it has been stopped before. The ChargePoint is reinitialized, connects to the
     /// websocket and starts to communicate OCPP messages again
     bool restart();
+
+    /// \brief Resets the internal state machine for the connectors using the given \p connector_status_map
+    /// \param connector_status_map state of connectors including connector 0 with reduced set of states (Available,
+    /// Unavailable, Faulted)
+    void reset_state_machine(const std::map<int, ChargePointStatus>& connector_status_map);
 
     /// \brief Stops the ChargePoint, stops timers, transactions and the message queue and disconnects from the
     /// websocket
@@ -666,6 +676,24 @@ public:
     /// is received \param callback
     void register_transaction_started_callback(
         const std::function<void(int32_t connector, int32_t transaction_id)>& callback);
+
+    /// \brief registers a \p callback function that can be used to react on changed configuration keys. This
+    /// callback is called when a configuration key has been changed by the CSMS
+    /// \param key the configuration key for which the callback is registered
+    /// \param callback executed when this configuration key changed
+    void register_configuration_key_changed_callback(const CiString<50>& key,
+                                                     const std::function<void(const KeyValue& key_value)>& callback);
+
+    /// \brief Gets the configured configuration key requested in the given \p request
+    /// \param request specifies the keys that should be returned. If empty or not set, all keys will be reported
+    /// \return a response containing the requested key(s) including the values and unkown keys if present
+    GetConfigurationResponse get_configuration_key(const GetConfigurationRequest& request);
+
+    /// \brief Sets a custom configuration key
+    /// \param key
+    /// \param value
+    /// \return Indicates the result of the operation
+    ConfigurationStatus set_custom_configuration_key(CiString<50> key, CiString<500> value);
 };
 
 } // namespace v16

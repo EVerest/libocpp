@@ -20,8 +20,8 @@ ChargePoint::ChargePoint(const std::string& config, const fs::path& share_path,
 
 ChargePoint::~ChargePoint() = default;
 
-bool ChargePoint::start() {
-    return this->charge_point->start();
+bool ChargePoint::start(const std::map<int, ChargePointStatus>& connector_status_map) {
+    return this->charge_point->start(connector_status_map);
 }
 
 bool ChargePoint::restart() {
@@ -257,6 +257,19 @@ void ChargePoint::register_get_15118_ev_certificate_response_callback(
 void ChargePoint::register_transaction_started_callback(
     const std::function<void(const int32_t connector, const int32_t transaction_id)>& callback) {
     this->charge_point->register_transaction_started_callback(callback);
+}
+
+void ChargePoint::register_configuration_key_changed_callback(
+    const CiString<50>& key, const std::function<void(const KeyValue& key_value)>& callback) {
+    this->charge_point->register_configuration_key_changed_callback(key, callback);
+}
+
+GetConfigurationResponse ChargePoint::get_configuration_key(const GetConfigurationRequest& request) {
+    return this->charge_point->get_configuration_key(request);
+}
+
+ConfigurationStatus ChargePoint::set_custom_configuration_key(CiString<50> key, CiString<500> value) {
+    return this->charge_point->set_custom_configuration_key(key, value);
 }
 
 } // namespace v16

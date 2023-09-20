@@ -8,12 +8,6 @@
 #include <ocpp/v16/ocpp_types.hpp>
 #include <ocpp/v16/types.hpp>
 
-#ifndef BOOSTFILESYSTEM
-namespace fs = std::filesystem;
-#else
-namespace fs = boost::filesystem;
-#endif
-
 namespace ocpp {
 namespace v16 {
 
@@ -21,7 +15,8 @@ namespace v16 {
 class ChargePointConfiguration {
 private:
     json config;
-    fs::path user_config_path;
+    json custom_schema;
+    std::filesystem::path user_config_path;
 
     std::set<SupportedFeatureProfiles> supported_feature_profiles;
     std::map<Measurand, std::vector<Phase>> supported_measurands;
@@ -39,8 +34,8 @@ private:
     bool isConnectorPhaseRotationValid(std::string str);
 
 public:
-    ChargePointConfiguration(const std::string& config, const fs::path& ocpp_main_path,
-                             const fs::path& user_config_path);
+    ChargePointConfiguration(const std::string& config, const std::filesystem::path& ocpp_main_path,
+                             const std::filesystem::path& user_config_path);
 
     // Internal config options
     std::string getChargePointId();
@@ -385,6 +380,10 @@ public:
     int32_t getWaitForStopTransactionsOnResetTimeout();
     void setWaitForStopTransactionsOnResetTimeout(const int32_t wait_for_stop_transactions_on_reset_timeout);
     KeyValue getWaitForStopTransactionsOnResetTimeoutKeyValue();
+
+    // custom
+    std::optional<KeyValue> getCustomKeyValue(CiString<50> key);
+    ConfigurationStatus setCustomKey(CiString<50> key, CiString<500> value, bool force);
 
     std::optional<KeyValue> get(CiString<50> key);
 
