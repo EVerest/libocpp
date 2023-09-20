@@ -12,6 +12,7 @@ target_sources(ocpp
         ocpp/common/schemas.cpp
         ocpp/common/types.cpp
         ocpp/common/utils.cpp
+        ocpp/common/support_older_c++_versions.cpp
         ocpp/v16/charge_point.cpp
         ocpp/v16/database_handler.cpp
         ocpp/v16/charge_point_impl.cpp
