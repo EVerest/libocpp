@@ -157,7 +157,7 @@ tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connect
             EVLOG_AND_THROW(std::runtime_error("Could not set TLSv1.2 cipher list"));
         }
 
-        rc = SSL_CTX_set_ciphersuites(context->native_handle(), this->connection_options.supported_ciphers_13.c_str());
+        rc = ssl_ctx_set_cipher_list_selected(context->native_handle(), this->connection_options.supported_ciphers_13.c_str());
         if (rc != 1) {
             EVLOG_debug << "SSL_CTX_set_cipher_list return value: " << rc;
         }
