@@ -2,12 +2,8 @@
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 #ifndef OCPP_V16_CHARGE_POINT_HPP
 #define OCPP_V16_CHARGE_POINT_HPP
-#ifndef BOOSTFILESYSTEM
-<filesystem>
-#else
-#include <boost/filesystem.hpp>
-#endif
 
+#include <ocpp/common/support_older_c++_versions.hpp>
 #include <ocpp/common/cistring.hpp>
 #include <ocpp/v16/ocpp_types.hpp>
 #include <ocpp/v16/types.hpp>
@@ -29,12 +25,6 @@
 #include <ocpp/v201/messages/InstallCertificate.hpp>
 #include <ocpp/v201/messages/SignCertificate.hpp>
 #include <ocpp/v201/messages/TriggerMessage.hpp>
-
-#ifndef BOOSTFILESYSTEM
-namespace fs = std::filesystem;
-#else
-namespace fs = boost::filesystem;
-#endif
 
 namespace ocpp {
 namespace v16 {

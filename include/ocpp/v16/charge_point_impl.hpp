@@ -6,11 +6,7 @@
 #include <chrono>
 #include <date/date.h>
 #include <date/tz.h>
-#ifndef BOOSTFILESYSTEM
-<filesystem>
-#else
-#include <boost/filesystem.hpp>
-#endif
+#include <ocpp/common/support_older_c++_versions.hpp>
 #include <future>
 #include <iostream>
 #include <mutex>
@@ -81,12 +77,6 @@
 #include <ocpp/v201/messages/InstallCertificate.hpp>
 #include <ocpp/v201/messages/SignCertificate.hpp>
 #include <ocpp/v201/messages/TriggerMessage.hpp>
-
-#ifndef BOOSTFILESYSTEM
-namespace fs = std::filesystem;
-#else
-namespace fs = boost::filesystem;
-#endif
 
 namespace ocpp {
 namespace v16 {

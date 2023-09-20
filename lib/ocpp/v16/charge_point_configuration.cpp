@@ -32,7 +32,7 @@ ChargePointConfiguration::ChargePointConfiguration(const std::string& config,
     try {
         this->config = json::parse(config);
         const auto custom_schema_path = schemas_path / "Custom.json";
-        if (std::filesystem::exists(custom_schema_path)) {
+        if (fs::exists(custom_schema_path)) {
             std::ifstream ifs(custom_schema_path.c_str());
             std::string custom_schema_file((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
             this->custom_schema = json::parse(custom_schema_file);

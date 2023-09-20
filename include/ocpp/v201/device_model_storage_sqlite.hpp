@@ -4,20 +4,9 @@
 #ifndef DEVICE_MODEL_STORAGE_SQLITE_HPP
 #define DEVICE_MODEL_STORAGE_SQLITE_HPP
 
-#ifndef BOOSTFILESYSTEM
-<filesystem>
-#else
-#include <boost/filesystem.hpp>
-#endif
 #include <sqlite3.h>
-
 #include <ocpp/v201/device_model_storage.hpp>
 
-#ifndef BOOSTFILESYSTEM
-namespace fs = std::filesystem;
-#else
-namespace fs = boost::filesystem;
-#endif
 
 namespace ocpp {
 namespace v201 {

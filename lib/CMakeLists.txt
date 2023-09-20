@@ -74,8 +74,7 @@ endif()
 #############
 # End logging configuration
 #############
-
-if(NOT BOOSTFILESYSTEM) 
+ 
 target_link_libraries(ocpp
     PUBLIC
         everest::timer
@@ -90,24 +89,13 @@ target_link_libraries(ocpp
         nlohmann_json::nlohmann_json
         date::date-tz
 )
-else()
+
+if(BOOSTFILESYSTEM) 
 target_link_libraries(ocpp
-    PUBLIC
-        everest::timer
-        websocketpp::websocketpp
-        nlohmann_json_schema_validator
     PRIVATE
   		Boost::filesystem
-        OpenSSL::SSL
-        OpenSSL::Crypto
-        SQLite::SQLite3
-        Threads::Threads
-
-        nlohmann_json::nlohmann_json
-        date::date-tz
 )
 endif()
-
 # FIXME (aw): right now nlohmann_json and boost::optional don't compile
 #             with gcc 10.x and C++11/14, so we need to publish the
 #             C++17 standard

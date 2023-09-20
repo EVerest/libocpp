@@ -4,25 +4,16 @@
 #define OCPP_V16_DATABASE_HANDLER_HPP
 
 #include "sqlite3.h"
-#ifndef BOOSTFILESYSTEM
-<filesystem>
-#else
-#include <boost/filesystem.hpp>
-#endif
 #include <fstream>
 #include <iostream>
 
+#include <ocpp/common/support_older_c++_versions.hpp>
 #include <ocpp/common/database_handler_base.hpp>
 #include <ocpp/common/schemas.hpp>
 #include <ocpp/common/types.hpp>
 #include <ocpp/v16/ocpp_types.hpp>
 #include <ocpp/v16/types.hpp>
 
-#ifndef BOOSTFILESYSTEM
-namespace fs = std::filesystem;
-#else
-namespace fs = boost::filesystem;
-#endif
 
 namespace ocpp {
 namespace v16 {
@@ -50,16 +41,16 @@ struct TransactionEntry {
 /// \brief This class handles the connection and operations of the SQLite database
 class DatabaseHandler : public ocpp::common::DatabaseHandlerBase {
 private:
-    std::filesystem::path db_path;          // directory where the database file is located
-    std::filesystem::path init_script_path; // full path of init sql script
+    fs::path db_path;          // directory where the database file is located
+    fs::path init_script_path; // full path of init sql script
 
     void run_sql_init();
     bool clear_table(const std::string& table_name);
     void init_connector_table(int32_t number_of_connectors);
 
 public:
-    DatabaseHandler(const std::string& chargepoint_id, const std::filesystem::path& database_path,
-                    const std::filesystem::path& init_script_path);
+    DatabaseHandler(const std::string& chargepoint_id, const fs::path& database_path,
+                    const fs::path& init_script_path);
     ~DatabaseHandler();
 
     /// \brief Opens the database connection, runs initialization script and initializes the CONNECTORS and

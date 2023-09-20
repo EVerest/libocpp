@@ -5,11 +5,7 @@
 
 #include "sqlite3.h"
 #include <deque>
-#ifndef BOOSTFILESYSTEM
-<filesystem>
-#else
-#include <boost/filesystem.hpp>
-#endif
+#include <ocpp/common/support_older_c++_versions.hpp>
 #include <fstream>
 #include <memory>
 
@@ -17,12 +13,6 @@
 #include <ocpp/v201/ocpp_types.hpp>
 
 #include <everest/logging.hpp>
-
-#ifndef BOOSTFILESYSTEM
-namespace fs = std::filesystem;
-#else
-namespace fs = boost::filesystem;
-#endif
 
 namespace ocpp {
 namespace v201 {

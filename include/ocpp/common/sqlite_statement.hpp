@@ -4,10 +4,10 @@
 #ifndef SQLITE_STATEMENT_HPP
 #define SQLITE_STATEMENT_HPP
 
-#include <filesystem>
 #include <sqlite3.h>
 
 #include <everest/logging.hpp>
+#include "support_older_c++_versions.hpp"
 
 namespace ocpp {
 

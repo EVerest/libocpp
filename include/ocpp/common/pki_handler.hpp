@@ -3,11 +3,7 @@
 #ifndef OCPP_COMMON_PKI_HANDLER
 #define OCPP_COMMON_PKI_HANDLER
 
-#ifndef BOOSTFILESYSTEM
-<filesystem>
-#else
-#include <boost/filesystem.hpp>
-#endif
+#include <ocpp/common/support_older_c++_versions.hpp>
 #include <memory>
 #include <openssl/bio.h>
 #include <openssl/err.h>
@@ -20,12 +16,6 @@
 #include <string>
 
 #include <ocpp/common/types.hpp>
-
-#ifndef BOOSTFILESYSTEM
-namespace fs = std::filesystem;
-#else
-namespace fs = boost::filesystem;
-#endif
 
 namespace ocpp {
 

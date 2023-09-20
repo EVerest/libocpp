@@ -9,23 +9,13 @@
 #include <vector>
 
 #include <everest/logging.hpp>
-#ifndef BOOSTFILESYSTEM
-<filesystem>
-#else
-#include <boost/filesystem.hpp>
-#endif
+#include <ocpp/common/support_older_c++_versions.hpp>
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json_fwd.hpp>
 
 using json = nlohmann::json;
 using json_uri = nlohmann::json_uri;
 using json_validator = nlohmann::json_schema::json_validator;
-
-#ifndef BOOSTFILESYSTEM
-namespace fs = std::filesystem;
-#else
-namespace fs = boost::filesystem;
-#endif
 
 namespace ocpp {
 

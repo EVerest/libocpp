@@ -7,12 +7,6 @@
 #include <ocpp/common/pki_handler.hpp>
 #include <ocpp/common/websocket/websocket_tls.hpp>
 
-#ifndef BOOSTFILESYSTEM
-namespace fs = std::filesystem;
-#else
-namespace fs = boost::filesystem;
-#endif
-
 namespace ocpp {
 
 WebsocketTLS::WebsocketTLS(const WebsocketConnectionOptions& connection_options,
