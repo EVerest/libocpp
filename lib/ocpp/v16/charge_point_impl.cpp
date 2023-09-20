@@ -1920,7 +1920,14 @@ void ChargePointImpl::handleTriggerMessageRequest(ocpp::Call<TriggerMessageReque
         break;
     }
     case MessageTrigger::StatusNotification:
-        this->status_notification(connector, ChargePointErrorCode::NoError, this->status->get_state(connector));
+        if (!call.msg.connectorId.has_value()) {
+            // send a status notification for every connector
+            for (int32_t c = 0; c <= this->configuration->getNumberOfConnectors(); c++) {
+                this->status_notification(c, ChargePointErrorCode::NoError, this->status->get_state(c));
+            }
+        } else {
+            this->status_notification(connector, ChargePointErrorCode::NoError, this->status->get_state(connector));
+        }
         break;
     }
 }
