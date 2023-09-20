@@ -5,10 +5,10 @@
 #include <csignal>
 #include <date/date.h>
 #include <date/tz.h>
-#include <ocpp/common/support_older_c++_versions.hpp>
 #include <fstream>
 #include <iostream>
 #include <mutex>
+#include <ocpp/common/support_older_c++_versions.hpp>
 #include <sys/prctl.h>
 #include <thread>
 
@@ -101,9 +101,8 @@ int main(int argc, char* argv[]) {
         fs::create_directories(cso_path);
     }
 
-    charge_point =
-        new ocpp::v16::ChargePoint(json_config.dump(), share_path, user_config_path, database_path, sql_init_path,
-                                   fs::path("/tmp"), fs::path("/tmp"));
+    charge_point = new ocpp::v16::ChargePoint(json_config.dump(), share_path, user_config_path, database_path,
+                                              sql_init_path, fs::path("/tmp"), fs::path("/tmp"));
 
     /************************************** START REGISTERING CALLBACKS /**************************************/
 

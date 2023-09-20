@@ -3,8 +3,8 @@
 #ifndef OCPP_COMMON_PKI_HANDLER
 #define OCPP_COMMON_PKI_HANDLER
 
-#include <ocpp/common/support_older_c++_versions.hpp>
 #include <memory>
+#include <ocpp/common/support_older_c++_versions.hpp>
 #include <openssl/bio.h>
 #include <openssl/err.h>
 #include <openssl/ocsp.h>

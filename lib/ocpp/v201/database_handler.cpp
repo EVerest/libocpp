@@ -7,7 +7,6 @@
 #include <ocpp/v201/types.hpp>
 #include <ocpp/v201/utils.hpp>
 
-
 namespace ocpp {
 namespace v201 {
 

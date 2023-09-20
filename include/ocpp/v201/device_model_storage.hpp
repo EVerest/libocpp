@@ -4,9 +4,9 @@
 #ifndef OCPP_V201_DEVICE_MODEL_STORAGE_HPP
 #define OCPP_V201_DEVICE_MODEL_STORAGE_HPP
 
-#include <ocpp/common/support_older_c++_versions.hpp>
 #include <map>
 #include <memory>
+#include <ocpp/common/support_older_c++_versions.hpp>
 #include <optional>
 
 #include <ocpp/v201/ocpp_types.hpp>

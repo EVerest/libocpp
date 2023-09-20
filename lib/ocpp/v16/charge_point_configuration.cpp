@@ -15,8 +15,7 @@
 namespace ocpp {
 namespace v16 {
 
-ChargePointConfiguration::ChargePointConfiguration(const std::string& config,
-                                                   const fs::path& ocpp_main_path,
+ChargePointConfiguration::ChargePointConfiguration(const std::string& config, const fs::path& ocpp_main_path,
                                                    const fs::path& user_config_path) {
 
     this->user_config_path = user_config_path;

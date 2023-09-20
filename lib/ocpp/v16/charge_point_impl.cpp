@@ -20,9 +20,8 @@ const auto INITIAL_CERTIFICATE_REQUESTS_DELAY = std::chrono::seconds(60);
 const auto WEBSOCKET_INIT_DELAY = std::chrono::seconds(2);
 
 ChargePointImpl::ChargePointImpl(const std::string& config, const fs::path& share_path,
-                                 const fs::path& user_config_path,
-                                 const fs::path& database_path, const fs::path& sql_init_path,
-                                 const fs::path& message_log_path,
+                                 const fs::path& user_config_path, const fs::path& database_path,
+                                 const fs::path& sql_init_path, const fs::path& message_log_path,
                                  const fs::path& certs_path) :
     ocpp::ChargingStationBase(),
     boot_notification_callerror(false),
@@ -32,11 +31,11 @@ ChargePointImpl::ChargePointImpl(const std::string& config, const fs::path& shar
     diagnostics_status(DiagnosticsStatus::Idle),
     firmware_status(FirmwareStatus::Idle),
     log_status(UploadLogStatusEnumType::Idle),
-	#ifndef BOOSTFILESYSTEM
-	message_log_path(message_log_path),
-	#else
-	message_log_path(message_log_path.string()),
-	#endif
+#ifndef BOOSTFILESYSTEM
+    message_log_path(message_log_path),
+#else
+    message_log_path(message_log_path.string()),
+#endif
     switch_security_profile_callback(nullptr) {
     this->configuration = std::make_shared<ocpp::v16::ChargePointConfiguration>(config, share_path, user_config_path);
     this->pki_handler = std::make_shared<ocpp::PkiHandler>(
@@ -60,15 +59,15 @@ ChargePointImpl::ChargePointImpl(const std::string& config, const fs::path& shar
     bool log_to_html = std::find(log_formats.begin(), log_formats.end(), "html") != log_formats.end();
     bool session_logging = std::find(log_formats.begin(), log_formats.end(), "session_logging") != log_formats.end();
 
-	#ifndef BOOSTFILESYSTEM
+#ifndef BOOSTFILESYSTEM
     this->logging = std::make_shared<ocpp::MessageLogging>(
-    		        this->configuration->getLogMessages(), message_log_path.string(), DateTime().to_rfc3339(), log_to_console,
-    		        detailed_log_to_console, log_to_file, log_to_html, session_logging);
-	#else
-		this->logging = std::make_shared<ocpp::MessageLogging>(
-		        this->configuration->getLogMessages(), message_log_path.string(), DateTime().to_rfc3339(), log_to_console,
-		        detailed_log_to_console, log_to_file, log_to_html, session_logging);
-	#endif
+        this->configuration->getLogMessages(), message_log_path.string(), DateTime().to_rfc3339(), log_to_console,
+        detailed_log_to_console, log_to_file, log_to_html, session_logging);
+#else
+    this->logging = std::make_shared<ocpp::MessageLogging>(
+        this->configuration->getLogMessages(), message_log_path.string(), DateTime().to_rfc3339(), log_to_console,
+        detailed_log_to_console, log_to_file, log_to_html, session_logging);
+#endif
 
     this->boot_notification_timer =
         std::make_unique<Everest::SteadyTimer>(&this->io_service, [this]() { this->boot_notification(); });

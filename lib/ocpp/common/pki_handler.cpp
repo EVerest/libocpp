@@ -196,8 +196,7 @@ std::shared_ptr<X509Certificate> loadFromString(const std::string& str) {
     return cert;
 }
 
-PkiHandler::PkiHandler(const fs::path& certsPath, const bool multipleCsmsCaNotAllowed) :
-    certsPath(certsPath) {
+PkiHandler::PkiHandler(const fs::path& certsPath, const bool multipleCsmsCaNotAllowed) : certsPath(certsPath) {
 
     this->caPath = this->certsPath / "ca";
     this->caCsmsPath = this->caPath / "csms";
