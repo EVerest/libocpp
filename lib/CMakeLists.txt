@@ -90,12 +90,14 @@ target_link_libraries(ocpp
         date::date-tz
 )
 
-if(BOOSTFILESYSTEM) 
-target_link_libraries(ocpp
-    PRIVATE
-  		Boost::filesystem
-)
+if(BOOSTFILESYSTEM)
+    find_package(Boost REQUIRED COMPONENTS filesystem)
+    target_link_libraries(ocpp
+        PRIVATE
+            Boost::filesystem
+    )
 endif()
+
 # FIXME (aw): right now nlohmann_json and boost::optional don't compile
 #             with gcc 10.x and C++11/14, so we need to publish the
 #             C++17 standard
