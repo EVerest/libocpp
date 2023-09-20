@@ -2260,8 +2260,10 @@ void ChargePointImpl::handleReserveNowRequest(ocpp::Call<ReserveNowRequest> call
         response.status = ReservationStatus::Faulted;
     } else if (this->reserve_now_callback != nullptr &&
                this->configuration->getSupportedFeatureProfiles().find("Reservation") != std::string::npos) {
-        response.status = this->reserve_now_callback(call.msg.reservationId, call.msg.connectorId, call.msg.expiryDate,
-                                                     call.msg.idTag, call.msg.parentIdTag);
+        if (call.msg.connectorId != 0 || this->configuration->getReserveConnectorZeroSupported().value_or(false)) {
+            response.status = this->reserve_now_callback(call.msg.reservationId, call.msg.connectorId,
+                                                         call.msg.expiryDate, call.msg.idTag, call.msg.parentIdTag);
+        }
     }
 
     ocpp::CallResult<ReserveNowResponse> call_result(response, call.uniqueId);
