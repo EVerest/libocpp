@@ -8,7 +8,6 @@
 #include <fstream>
 #include <iostream>
 #include <mutex>
-#include <ocpp/common/support_older_c++_versions.hpp>
 #include <sys/prctl.h>
 #include <thread>
 
