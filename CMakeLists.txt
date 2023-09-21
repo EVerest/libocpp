@@ -18,8 +18,11 @@ option(OCPP_INSTALL "Install the library (shared data might be installed anyway)
 option(USE_NON_STD_FILESYSTEM "Usage of boost/filesystem.hpp instead of std::filesystem" OFF)
 
 if (USE_NON_STD_FILESYSTEM)
+    set(BOOSTFILESYSTEM ON)
 	add_definitions(-DBOOSTFILESYSTEM)
 	add_definitions(-DBOOST_FILESYSTEM_VERSION=3)	
+else()
+	set(BOOSTFILESYSTEM OFF)
 endif()
 
 
