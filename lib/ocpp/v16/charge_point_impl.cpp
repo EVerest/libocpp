@@ -31,11 +31,7 @@ ChargePointImpl::ChargePointImpl(const std::string& config, const fs::path& shar
     diagnostics_status(DiagnosticsStatus::Idle),
     firmware_status(FirmwareStatus::Idle),
     log_status(UploadLogStatusEnumType::Idle),
-#ifndef BOOSTFILESYSTEM
-    message_log_path(message_log_path),
-#else
-    message_log_path(message_log_path.string()),
-#endif
+    message_log_path(message_log_path.string()),  // .string() for compatibility with boost::filesystem
     switch_security_profile_callback(nullptr) {
     this->configuration = std::make_shared<ocpp::v16::ChargePointConfiguration>(config, share_path, user_config_path);
     this->pki_handler = std::make_shared<ocpp::PkiHandler>(
