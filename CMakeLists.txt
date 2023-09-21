@@ -19,10 +19,10 @@ option(USE_NON_STD_FILESYSTEM "Usage of boost/filesystem.hpp instead of std::fil
 
 if (USE_NON_STD_FILESYSTEM)
     set(BOOSTFILESYSTEM ON)
-	add_definitions(-DBOOSTFILESYSTEM)
-	add_definitions(-DBOOST_FILESYSTEM_VERSION=3)	
+    add_definitions(-DBOOSTFILESYSTEM)
+    add_definitions(-DBOOST_FILESYSTEM_VERSION=3)
 else()
-	set(BOOSTFILESYSTEM OFF)
+    set(BOOSTFILESYSTEM OFF)
 endif()
 
 
