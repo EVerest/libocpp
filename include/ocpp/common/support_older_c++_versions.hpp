@@ -16,4 +16,4 @@ namespace fs = std::filesystem;
 namespace fs = boost::filesystem;
 #endif
 
-#endif /* LIB_LIBOCPPMYFORK_INCLUDE_OCPP_COMMON_SUPPORT_OLDER_C___VERSIONS_HPP_ */
+#endif /* OCPP_COMMON_SUPPORT_OLDER_CPP_VERSIONS_HPP_ */
