@@ -59,15 +59,9 @@ ChargePointImpl::ChargePointImpl(const std::string& config, const fs::path& shar
     bool log_to_html = std::find(log_formats.begin(), log_formats.end(), "html") != log_formats.end();
     bool session_logging = std::find(log_formats.begin(), log_formats.end(), "session_logging") != log_formats.end();
 
-#ifndef BOOSTFILESYSTEM
     this->logging = std::make_shared<ocpp::MessageLogging>(
         this->configuration->getLogMessages(), message_log_path.string(), DateTime().to_rfc3339(), log_to_console,
         detailed_log_to_console, log_to_file, log_to_html, session_logging);
-#else
-    this->logging = std::make_shared<ocpp::MessageLogging>(
-        this->configuration->getLogMessages(), message_log_path.string(), DateTime().to_rfc3339(), log_to_console,
-        detailed_log_to_console, log_to_file, log_to_html, session_logging);
-#endif
 
     this->boot_notification_timer =
         std::make_unique<Everest::SteadyTimer>(&this->io_service, [this]() { this->boot_notification(); });
