@@ -1,12 +1,8 @@
-/*
- * support_older_c++-versions.hpp
- *
- *  Created on: 20.09.2023
- *      Author: matthias_suess
- */
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
-#ifndef LIB_LIBOCPPMYFORK_INCLUDE_OCPP_COMMON_SUPPORT_OLDER_C___VERSIONS_HPP_
-#define LIB_LIBOCPPMYFORK_INCLUDE_OCPP_COMMON_SUPPORT_OLDER_C___VERSIONS_HPP_
+#ifndef OCPP_COMMON_SUPPORT_OLDER_CPP_VERSIONS_HPP_
+#define OCPP_COMMON_SUPPORT_OLDER_CPP_VERSIONS_HPP_
 
 #ifndef BOOSTFILESYSTEM
 #include <filesystem>

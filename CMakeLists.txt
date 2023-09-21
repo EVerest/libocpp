@@ -15,14 +15,11 @@ option(BUILD_TESTING "Run unit tests" OFF)
 option(CMAKE_RUN_CLANG_TIDY "Run clang-tidy" OFF)
 option(LIBOCPP_BUILD_EXAMPLES "Build charge_point and central_system binaries." OFF)
 option(OCPP_INSTALL "Install the library (shared data might be installed anyway)" ${EVC_MAIN_PROJECT})
+option(USE_NON_STD_FILESYSTEM "Usage of boost/filesystem.hpp instead of std::filesystem" OFF)
 
-if (${CMAKE_CXX_COMPILER_VERSION} LESS_EQUAL 7.3.0)
-	#message(${CMAKE_CXX_STANDARD}) 
-	option(BOOSTFILESYSTEM "Usage of boost/filesystem.hpp instead of std::filesystem" ON)
+if (USE_NON_STD_FILESYSTEM)
 	add_definitions(-DBOOSTFILESYSTEM)
 	add_definitions(-DBOOST_FILESYSTEM_VERSION=3)	
-else()
-	 option(BOOSTFILESYSTEM "Usage of boost/filesystem.hpp instead of std::filesystem" OFF)
 endif()
 
 
