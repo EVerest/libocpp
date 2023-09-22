@@ -62,7 +62,7 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
         this->database_handler->insert_availability(evse_id, std::nullopt, OperationalStatusEnum::Operative, false);
         // used by evse to trigger StatusNotification.req
         auto status_notification_callback = [this, &evse_id_ = evse_id](const int32_t connector_id,
-                                                            const ConnectorStatusEnum& status) {
+                                                                        const ConnectorStatusEnum& status) {
             if (this->registration_status == RegistrationStatusEnum::Accepted) {
                 this->status_notification_req(evse_id_, connector_id, status);
             }
