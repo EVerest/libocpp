@@ -5,8 +5,8 @@
 
 #include <openssl/sha.h>
 
-#include <ocpp/v201/ocpp_types.hpp>
 #include <ocpp/common/evse_security.hpp>
+#include <ocpp/v201/ocpp_types.hpp>
 namespace ocpp {
 namespace v201 {
 namespace utils {

@@ -2069,7 +2069,8 @@ void ChargePointImpl::update_ocsp_cache() {
             EVLOG_info << "Requesting OCSP response.";
             const auto ocsp_request_data = this->evse_security->get_ocsp_request_data();
             for (const auto& ocsp_request_entry : ocsp_request_data) {
-                ocpp::v201::OCSPRequestData ocsp_request = ocpp::evse_security_conversions::to_ocpp_v201(ocsp_request_entry);
+                ocpp::v201::OCSPRequestData ocsp_request =
+                    ocpp::evse_security_conversions::to_ocpp_v201(ocsp_request_entry);
                 this->data_transfer_pnc_get_certificate_status(ocsp_request);
             }
             this->database_handler->insert_ocsp_update();
