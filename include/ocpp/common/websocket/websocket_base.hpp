@@ -31,6 +31,7 @@ struct WebsocketConnectionOptions {
     std::string supported_ciphers_13;
     int ping_interval_s;
     std::string ping_payload;
+    int pong_timeout_s;
     bool use_ssl_default_verify_paths;
     std::optional<bool> additional_root_certificate_check;
 };

@@ -217,6 +217,7 @@ WebsocketConnectionOptions ChargePointImpl::get_ws_connection_options() {
                                                   this->configuration->getSupportedCiphers13(),
                                                   this->configuration->getWebsocketPingInterval().value_or(0),
                                                   this->configuration->getWebsocketPingPayload(),
+                                                  this->configuration->getWebsocketPongTimeout(),
                                                   this->configuration->getUseSslDefaultVerifyPaths(),
                                                   this->configuration->getAdditionalRootCertificateCheck()};
     return connection_options;

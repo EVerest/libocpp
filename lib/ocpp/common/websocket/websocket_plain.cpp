@@ -151,6 +151,7 @@ void WebsocketPlain::connect_plain() {
     con->set_message_handler(websocketpp::lib::bind(&WebsocketPlain::on_message_plain, this,
                                                     websocketpp::lib::placeholders::_1,
                                                     websocketpp::lib::placeholders::_2));
+    con->set_pong_timeout(this->connection_options.pong_timeout_s * 1000); // pong timeout in ms
     con->set_pong_timeout_handler(websocketpp::lib::bind(&WebsocketPlain::on_pong_timeout, this,
                                                          websocketpp::lib::placeholders::_1,
                                                          websocketpp::lib::placeholders::_2));

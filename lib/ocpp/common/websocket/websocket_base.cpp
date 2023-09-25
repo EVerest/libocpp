@@ -153,7 +153,7 @@ void WebsocketBase::set_authorization_key(const std::string& authorization_key) 
 
 void WebsocketBase::on_pong_timeout(websocketpp::connection_hdl hdl, std::string msg) {
     if (!this->reconnecting) {
-        EVLOG_info << "Reconnecting because of a pong timeout";
+        EVLOG_info << "Reconnecting because of a pong timeout after " << this->connection_options.pong_timeout_s << "s";
         this->reconnecting = true;
         this->close(websocketpp::close::status::going_away, "Pong timeout");
     }
