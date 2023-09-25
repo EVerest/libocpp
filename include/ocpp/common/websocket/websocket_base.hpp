@@ -55,6 +55,7 @@ protected:
     websocketpp::transport::timer_handler reconnect_callback;
     int connection_attempts;
     bool shutting_down;
+    bool reconnecting;
 
     /// \brief Indicates if the required callbacks are registered
     /// \returns true if the websocket is properly initialized
@@ -75,6 +76,9 @@ protected:
 
     /// \brief send a websocket ping
     virtual void ping() = 0;
+
+    /// \brief Called when a websocket pong timeout is received
+    void on_pong_timeout(websocketpp::connection_hdl hdl, std::string msg);
 
 public:
     /// \brief Creates a new WebsocketBase object with the providede \p connection_options

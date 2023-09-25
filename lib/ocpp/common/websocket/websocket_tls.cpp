@@ -244,6 +244,9 @@ void WebsocketTLS::connect_tls() {
                                                   websocketpp::lib::placeholders::_1));
     con->set_message_handler(websocketpp::lib::bind(
         &WebsocketTLS::on_message_tls, this, websocketpp::lib::placeholders::_1, websocketpp::lib::placeholders::_2));
+    con->set_pong_timeout_handler(websocketpp::lib::bind(&WebsocketPlain::on_pong_timeout, this,
+                                                         websocketpp::lib::placeholders::_1,
+                                                         websocketpp::lib::placeholders::_2));
 
     con->add_subprotocol(conversions::ocpp_protocol_version_to_string(this->connection_options.ocpp_version));
 
