@@ -155,8 +155,7 @@ void WebsocketBase::on_pong_timeout(websocketpp::connection_hdl hdl, std::string
     if (!this->reconnecting) {
         EVLOG_info << "Reconnecting because of a pong timeout";
         this->reconnecting = true;
-        websocketpp::lib::error_code error_code;
-        this->reconnect(error_code, this->get_reconnect_interval());
+        this->close(websocketpp::close::status::going_away, "Pong timeout");
     }
 }
 
