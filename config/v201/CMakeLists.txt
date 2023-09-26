@@ -1,5 +1,7 @@
 set(SQL_INIT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/init_core.sql")
 
+option(LIBOCPP_INSTALL_DEVICE_MODEL_DATABASE "Install device model database for OCPP201" ON)
+
 list(APPEND CONFIGS
      config.json
      ../logging.ini
@@ -11,3 +13,33 @@ install(
 )
 
 install(FILES ${SQL_INIT_FILE} DESTINATION ${CMAKE_INSTALL_DATADIR}/everest/modules/OCPP201)
+
+if (LIBOCPP_INSTALL_DEVICE_MODEL_DATABASE)
+     set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/config.json)
+
+     find_program(
+          PYTHON_EXECUTABLE
+          python3
+          REQUIRED
+     )
+
+     set(INIT_DEVICE_MODULE_DB_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/init_device_model_db.py")
+     set(INSERT_DEVICE_MODULE_CONFIG_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/insert_device_model_config.py")
+     set(DEVICE_MODEL_DATABASE_FILE "device_model_storage.db")
+
+     execute_process(
+          COMMAND 
+               ${PYTHON_EXECUTABLE} ${INIT_DEVICE_MODULE_DB_SCRIPT} --out ${CMAKE_CURRENT_BINARY_DIR}/${DEVICE_MODEL_DATABASE_FILE}
+          WORKING_DIRECTORY 
+               ${CMAKE_CURRENT_SOURCE_DIR}
+     )
+
+     execute_process(
+          COMMAND 
+               ${PYTHON_EXECUTABLE} ${INSERT_DEVICE_MODULE_CONFIG_SCRIPT} --db ${CMAKE_CURRENT_BINARY_DIR}/${DEVICE_MODEL_DATABASE_FILE} --config ${CMAKE_CURRENT_SOURCE_DIR}/config.json
+          WORKING_DIRECTORY 
+               ${CMAKE_CURRENT_SOURCE_DIR}
+     )
+
+     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${DEVICE_MODEL_DATABASE_FILE} DESTINATION ${CMAKE_INSTALL_DATADIR}/everest/modules/OCPP201)
+endif()
