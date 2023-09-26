@@ -672,6 +672,11 @@ void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& messa
     case MessageType::GetLocalListVersion:
         this->handle_get_local_authorization_list_version_req(json_message);
         break;
+    default:
+        if (message.messageTypeId == MessageTypeId::CALL) {
+            const auto call_error = CallError(message.uniqueId, "NotImplemented", "", json({}));
+            this->send(call_error);
+        }
     }
 }
 
@@ -680,57 +685,68 @@ void ChargePoint::message_callback(const std::string& message) {
     auto json_message = enhanced_message.message;
     this->logging->central_system(conversions::messagetype_to_string(enhanced_message.messageType), message);
 
-    if (this->registration_status == RegistrationStatusEnum::Accepted) {
-        this->handle_message(enhanced_message);
-    } else if (this->registration_status == RegistrationStatusEnum::Pending) {
-        if (enhanced_message.messageType == MessageType::BootNotificationResponse) {
-            this->handle_boot_notification_response(json_message);
-        } else {
-            // TODO(piet): Check what kind of messages we should accept in Pending state
-            if (enhanced_message.messageType == MessageType::GetVariables or
-                enhanced_message.messageType == MessageType::SetVariables or
-                enhanced_message.messageType == MessageType::GetBaseReport or
-                enhanced_message.messageType == MessageType::GetReport or
-                enhanced_message.messageType == MessageType::TriggerMessage) {
-                this->handle_message(enhanced_message);
-            } else if (enhanced_message.messageType == MessageType::RequestStartTransaction) {
-                // Send rejected: B02.FR.05
-                RequestStartTransactionResponse response;
-                response.status = RequestStartStopStatusEnum::Rejected;
-                const ocpp::CallResult<RequestStartTransactionResponse> call_result(response,
-                                                                                    enhanced_message.uniqueId);
-                this->send<RequestStartTransactionResponse>(call_result);
-            } else if (enhanced_message.messageType == MessageType::RequestStopTransaction) {
-                // Send rejected: B02.FR.05
-                RequestStopTransactionResponse response;
-                response.status = RequestStartStopStatusEnum::Rejected;
-                const ocpp::CallResult<RequestStopTransactionResponse> call_result(response, enhanced_message.uniqueId);
-                this->send<RequestStopTransactionResponse>(call_result);
+    try {
+        if (this->registration_status == RegistrationStatusEnum::Accepted) {
+            this->handle_message(enhanced_message);
+        } else if (this->registration_status == RegistrationStatusEnum::Pending) {
+            if (enhanced_message.messageType == MessageType::BootNotificationResponse) {
+                this->handle_boot_notification_response(json_message);
             } else {
-                EVLOG_warning << "Received invalid MessageType: "
-                              << conversions::messagetype_to_string(enhanced_message.messageType)
-                              << " from CSMS while in state Pending";
+                // TODO(piet): Check what kind of messages we should accept in Pending state
+                if (enhanced_message.messageType == MessageType::GetVariables or
+                    enhanced_message.messageType == MessageType::SetVariables or
+                    enhanced_message.messageType == MessageType::GetBaseReport or
+                    enhanced_message.messageType == MessageType::GetReport or
+                    enhanced_message.messageType == MessageType::TriggerMessage) {
+                    this->handle_message(enhanced_message);
+                } else if (enhanced_message.messageType == MessageType::RequestStartTransaction) {
+                    // Send rejected: B02.FR.05
+                    RequestStartTransactionResponse response;
+                    response.status = RequestStartStopStatusEnum::Rejected;
+                    const ocpp::CallResult<RequestStartTransactionResponse> call_result(response,
+                                                                                        enhanced_message.uniqueId);
+                    this->send<RequestStartTransactionResponse>(call_result);
+                } else if (enhanced_message.messageType == MessageType::RequestStopTransaction) {
+                    // Send rejected: B02.FR.05
+                    RequestStopTransactionResponse response;
+                    response.status = RequestStartStopStatusEnum::Rejected;
+                    const ocpp::CallResult<RequestStopTransactionResponse> call_result(response,
+                                                                                       enhanced_message.uniqueId);
+                    this->send<RequestStopTransactionResponse>(call_result);
+                } else {
+                    EVLOG_warning << "Received invalid MessageType: "
+                                  << conversions::messagetype_to_string(enhanced_message.messageType)
+                                  << " from CSMS while in state Pending";
+                }
             }
-        }
-    } else if (this->registration_status == RegistrationStatusEnum::Rejected) {
-        if (enhanced_message.messageType == MessageType::BootNotificationResponse) {
-            this->handle_boot_notification_response(json_message);
-        } else if (enhanced_message.messageType == MessageType::TriggerMessage) {
-            Call<TriggerMessageRequest> call(json_message);
-            if (call.msg.requestedMessage == MessageTriggerEnum::BootNotification) {
-                this->handle_message(enhanced_message);
+        } else if (this->registration_status == RegistrationStatusEnum::Rejected) {
+            if (enhanced_message.messageType == MessageType::BootNotificationResponse) {
+                this->handle_boot_notification_response(json_message);
+            } else if (enhanced_message.messageType == MessageType::TriggerMessage) {
+                Call<TriggerMessageRequest> call(json_message);
+                if (call.msg.requestedMessage == MessageTriggerEnum::BootNotification) {
+                    this->handle_message(enhanced_message);
+                } else {
+                    const auto error_message =
+                        "Received TriggerMessage with requestedMessage != BootNotification before "
+                        "having received an accepted BootNotificationResponse";
+                    EVLOG_warning << error_message;
+                    const auto call_error = CallError(enhanced_message.uniqueId, "SecurityError", "", json({}));
+                    this->send(call_error);
+                }
             } else {
-                const auto error_message = "Received TriggerMessage with requestedMessage != BootNotification before "
+                const auto error_message = "Received other message than BootNotificationResponse before "
                                            "having received an accepted BootNotificationResponse";
                 EVLOG_warning << error_message;
                 const auto call_error = CallError(enhanced_message.uniqueId, "SecurityError", "", json({}));
                 this->send(call_error);
             }
-        } else {
-            const auto error_message = "Received other message than BootNotificationResponse before "
-                                       "having received an accepted BootNotificationResponse";
-            EVLOG_warning << error_message;
-            const auto call_error = CallError(enhanced_message.uniqueId, "SecurityError", "", json({}));
+        }
+    } catch (json::exception& e) {
+        EVLOG_error << "JSON exception during handling of message: " << e.what();
+        if (json_message.is_array() && json_message.size() > MESSAGE_ID) {
+            auto call_error = CallError(MessageId(json_message.at(MESSAGE_ID).get<std::string>()), "FormationViolation",
+                                        e.what(), json({}));
             this->send(call_error);
         }
     }
@@ -864,6 +880,12 @@ bool ChargePoint::is_change_availability_possible(const ChangeAvailabilityReques
     return true;
 }
 
+bool ChargePoint::is_valid_evse(const EVSE& evse) {
+    return this->evses.count(evse.id) and
+           (!evse.connectorId.has_value() or
+            this->evses.at(evse.id)->get_number_of_connectors() >= evse.connectorId.value());
+}
+
 void ChargePoint::handle_scheduled_change_availability_requests(const int32_t evse_id) {
     if (this->scheduled_change_availability_requests.count(evse_id)) {
         EVLOG_info << "Found scheduled ChangeAvailability.req for evse_id:" << evse_id;
@@ -890,10 +912,21 @@ void ChargePoint::handle_variable_changed(const SetVariableData& set_variable_da
     if (component_variable == ControllerComponentVariables::BasicAuthPassword) {
         if (this->device_model->get_value<int>(ControllerComponentVariables::SecurityProfile) < 3) {
             // TODO: A01.FR.11 log the change of BasicAuth in Security Log
+            this->websocket->set_authorization_key(set_variable_data.attributeValue.get());
             this->websocket->disconnect(websocketpp::close::status::service_restart);
         }
     }
-
+    if (component_variable == ControllerComponentVariables::HeartbeatInterval and
+        this->registration_status == RegistrationStatusEnum::Accepted) {
+        try {
+            this->heartbeat_timer.interval([this]() { this->heartbeat_req(); },
+                                           std::chrono::seconds(std::stoi(set_variable_data.attributeValue.get())));
+        } catch (const std::invalid_argument& e) {
+            EVLOG_error << "Invalid argument exception while updating the heartbeat interval: " << e.what();
+        } catch (const std::out_of_range& e) {
+            EVLOG_error << "Out of range exception while updating the heartbeat interval: " << e.what();
+        }
+    }
     // TODO(piet): other special handling of changed variables can be added here...
 }
 
@@ -1836,6 +1869,14 @@ void ChargePoint::handle_change_availability_req(Call<ChangeAvailabilityRequest>
     const auto msg = call.msg;
     ChangeAvailabilityResponse response;
     response.status = ChangeAvailabilityStatusEnum::Scheduled;
+
+    if (msg.evse.has_value() and !this->is_valid_evse(msg.evse.value())) {
+        EVLOG_warning << "CSMS requested ChangeAvailability for invalid evse id or connector id";
+        response.status = ChangeAvailabilityStatusEnum::Rejected;
+        ocpp::CallResult<ChangeAvailabilityResponse> call_result(response, call.uniqueId);
+        this->send<ChangeAvailabilityResponse>(call_result);
+        return;
+    }
 
     const auto is_change_availability_possible = this->is_change_availability_possible(msg);
 
