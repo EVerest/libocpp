@@ -302,7 +302,13 @@ void ChargePoint::on_session_finished(const int32_t evse_id, const int32_t conne
 }
 
 void ChargePoint::on_meter_value(const int32_t evse_id, const MeterValue& meter_value) {
-    this->evses.at(evse_id)->on_meter_value(meter_value);
+
+    if (evse_id == 0) {
+        // if evseId = 0 ten store in the chargepoint metervalues
+        this->meter_value = meter_value;
+    } else {
+        this->evses.at(evse_id)->on_meter_value(meter_value);
+    }
 }
 
 void ChargePoint::on_unavailable(const int32_t evse_id, const int32_t connector_id) {
@@ -857,9 +863,10 @@ void ChargePoint::update_aligned_data_interval() {
     const auto next_timestamp = this->get_next_clock_aligned_meter_value_timestamp(
         this->device_model->get_value<int>(ControllerComponentVariables::AlignedDataInterval));
     if (next_timestamp.has_value()) {
+        bool transaction_active = false;
         EVLOG_debug << "Next meter value will be sent at: " << next_timestamp.value().to_rfc3339();
         this->aligned_meter_values_timer.at(
-            [this]() {
+            [this, &transaction_active]() {
                 for (auto const& [evse_id, evse] : this->evses) {
                     auto _meter_value = evse->get_meter_value();
                     // this will apply configured measurands and possibly reduce the entries of sampledValue
@@ -869,6 +876,7 @@ void ChargePoint::update_aligned_data_interval() {
                                                         ControllerComponentVariables::AlignedDataMeasurands);
 
                     if (evse->has_active_transaction()) {
+                        transaction_active = true;
                         // because we do not actively read meter values at clock aligned timepoint, we switch the
                         // ReadingContext here
                         for (auto& sampled_value : _meter_value.sampledValue) {
@@ -889,12 +897,19 @@ void ChargePoint::update_aligned_data_interval() {
                                this->device_model
                                    ->get_optional_value<bool>(ControllerComponentVariables::AlignedDataSendDuringIdle)
                                    .value_or(false)) {
+                                    transaction_active = false;
                         if (!meter_value.sampledValue.empty()) {
                             // J01.FR.14 this is the only case where we send a MeterValue.req
                             this->meter_values_req(evse_id, std::vector<ocpp::v201::MeterValue>(1, meter_value));
                         }
                     }
                 }
+                // also send meter values for evseId 0 if no transactions are on going
+                if(!transaction_active && !this->meter_value.sampledValue.empty())
+                {
+                    this->meter_values_req(0, std::vector<ocpp::v201::MeterValue>(1, this->meter_value));
+                }
+
                 this->update_aligned_data_interval();
             },
             next_timestamp.value().to_time_point());
