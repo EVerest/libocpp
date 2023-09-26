@@ -4,7 +4,7 @@
 #define OCPP_COMMON_PKI_HANDLER
 
 #include <memory>
-#include <ocpp/common/support_older_c++_versions.hpp>
+#include <ocpp/common/support_older_cpp_versions.hpp>
 #include <openssl/bio.h>
 #include <openssl/err.h>
 #include <openssl/ocsp.h>
