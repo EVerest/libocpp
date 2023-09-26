@@ -654,5 +654,13 @@
                 "instance": "SetVariableMonitoring"
             }
         }
+    },
+    "ChargingStation": {
+        "ChargingStationPhaseRotation": {
+            "variable_name": "PhaseRotation",
+            "attributes": {
+                "Actual": "RST"
+            }
+        }
     }
 ]
