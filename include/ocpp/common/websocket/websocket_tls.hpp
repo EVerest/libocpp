@@ -20,7 +20,7 @@ using websocketpp::lib::placeholders::_2;
 ///
 /// \brief contains a websocket abstraction that can connect to TLS and non-TLS websocket endpoints
 ///
-class WebsocketTLS : public WebsocketBase {
+class WebsocketTLS final : public WebsocketBase {
 private:
     tls_client wss_client;
     std::shared_ptr<PkiHandler> pki_handler;
@@ -66,7 +66,7 @@ public:
     /// \brief Reconnects the websocket using the delay, a reason for this reconnect can be provided with the
     /// \param reason parameter
     /// \param delay delay of the reconnect attempt
-    void reconnect(std::error_code reason, long delay);
+    void reconnect(std::error_code reason, long delay) override;
 
     /// \brief closes the websocket
     void close(websocketpp::close::status::value code, const std::string& reason) override;

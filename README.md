@@ -103,19 +103,7 @@ This library is automatically integrated as the OCPP and OCPP201 module within [
 If you run libocpp with OCPP1.6 with EVerest, the build process of [everest-core](https://github.com/EVerest/everest-core) will take care of installing all necessary dependencies for you.
 
 ### Run OCPP2.0.1 with EVerest
-the build process of [everest-core](https://github.com/EVerest/everest-core) will take care of installing all necessary dependencies for you. Additionally for OCPP2.0.1 you need to set up the SQLite device model storage database.
-
-```bash
-cd config/v201
-python3 init_device_model_db.py
-python3 insert_device_model_config.py --config config.json --db /tmp/ocpp201/device_model_storage.db
-```
-
-These two scripts do the following:
-
-- create the database and tables and it will 
-- insert the variables with a role standardized within the OCPP2.0.1 specification
-- insert the VariableAttributes specified within the config.json  
+If you run libocpp with OCPP1.6 with EVerest, the build process of [everest-core](https://github.com/EVerest/everest-core) will take care of installing all necessary dependencies for you. This includes the initialization of the device model database using the [config.json](config/v201/config.json) file.
 ## Integrate this library with your Charging Station Implementation for OCPP1.6
 
 OCPP is a protocol that affects, controls and monitors many areas of a charging station's operation.
@@ -161,7 +149,8 @@ This is defined in libocpp/include/ocpp/v16/charge_point.hpp and takes the follo
       ├── PnC.json
       ├── Reservation.json
       ├── Security.json
-      └── SmartCharging.json
+      ├── SmartCharging.json
+      └── Custom.json
   ```
   Here you can find:
   -  the aforementioned config files
@@ -170,7 +159,7 @@ This is defined in libocpp/include/ocpp/v16/charge_point.hpp and takes the follo
 
   - a *init.sql* file which contains the database schema used by libocpp for its sqlite database
 
-  - and a *profile_schemas* directory. This contains json schema files that are used to validate the libocpp config. The schemas are split up according to the OCPP1.6 feature profiles like Core, FirmwareManagement and so on. Additionally there is a schema for "Internal" configuration options (for example the ChargePointId, or CentralSystemURI). A "PnC" schema for the ISO 15118 Plug & Charge with OCPP 1.6 Application note, as well as a "Security" schema for the OCPP 1.6 Security Whitepaper (3rd edition) are provided as well. Finally there's a Config.json schema that ties everything together
+  - and a *profile_schemas* directory. This contains json schema files that are used to validate the libocpp config. The schemas are split up according to the OCPP1.6 feature profiles like Core, FirmwareManagement and so on. Additionally there is a schema for "Internal" configuration options (for example the ChargePointId, or CentralSystemURI). A "PnC" schema for the ISO 15118 Plug & Charge with OCPP 1.6 Application note, a "Security" schema for the OCPP 1.6 Security Whitepaper (3rd edition) and an exemplary "Custom" schema are provided as well. The Custom.json could be modified to be able to add custom configuration keys. Finally there's a Config.json schema that ties everything together
 
 - user_config_path: this points to a "user config", which we call a configuration file that's merged with the config that's provided in the "config" parameter. Here you can add, remove and overwrite settings without modifying the config passed in the first parameter directly. This is also used by libocpp to persistently modify config entries that are changed by the CSMS that should persist across restarts.
 
@@ -318,6 +307,9 @@ Some general notes: the "connector" parameter of some of the callbacks refers to
 - register_connection_state_changed_callback
 
   used to inform about the connection state to the CSMS (connected = true, disconnected = false)
+
+- register_configuration_key_changed_callback
+  used to react on a changed configuration key. This callback is called when the specified configuration key has been changed by the CSMS
 
 
 #### Functions that need to be triggered from the outside after new information is availble (on_... functions in the charge point API)

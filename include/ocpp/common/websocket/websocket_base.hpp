@@ -31,6 +31,7 @@ struct WebsocketConnectionOptions {
     std::string supported_ciphers_13;
     int ping_interval_s;
     std::string ping_payload;
+    int pong_timeout_s;
     bool use_ssl_default_verify_paths;
     std::optional<bool> additional_root_certificate_check;
     std::optional<std::string> hostName;
@@ -56,6 +57,7 @@ protected:
     websocketpp::transport::timer_handler reconnect_callback;
     int connection_attempts;
     bool shutting_down;
+    bool reconnecting;
 
     /// \brief Indicates if the required callbacks are registered
     /// \returns true if the websocket is properly initialized
@@ -77,10 +79,13 @@ protected:
     /// \brief send a websocket ping
     virtual void ping() = 0;
 
+    /// \brief Called when a websocket pong timeout is received
+    void on_pong_timeout(websocketpp::connection_hdl hdl, std::string msg);
+
 public:
     /// \brief Creates a new WebsocketBase object with the providede \p connection_options
     explicit WebsocketBase(const WebsocketConnectionOptions& connection_options);
-    ~WebsocketBase();
+    virtual ~WebsocketBase();
 
     /// \brief connect to a websocket
     /// \returns true if the websocket is initialized and a connection attempt is made

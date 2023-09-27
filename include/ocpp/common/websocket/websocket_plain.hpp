@@ -21,7 +21,7 @@ using websocketpp::lib::placeholders::_2;
 ///
 /// \brief contains a websocket abstraction that can connect to plaintext websocket endpoints (ws://)
 ///
-class WebsocketPlain : public WebsocketBase {
+class WebsocketPlain final : public WebsocketBase {
 private:
     client ws_client;
     websocketpp::lib::shared_ptr<websocketpp::lib::thread> websocket_thread;
@@ -55,7 +55,7 @@ public:
 
     /// \brief Reconnects the websocket using the delay, a reason for this reconnect can be provided with the
     /// \p reason parameter
-    void reconnect(std::error_code reason, long delay);
+    void reconnect(std::error_code reason, long delay) override;
 
     /// \brief Closes a plaintext websocket connection
     void close(websocketpp::close::status::value code, const std::string& reason) override;

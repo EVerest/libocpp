@@ -23,6 +23,12 @@
             "attributes": {
                 "Actual": "Energy.Active.Import.Register"
             }
+        },
+        "AlignedDataSignReadings": {
+            "variable_name": "SignReadings",
+            "attributes": {
+                "Actual": false
+            }
         }
     },
     "AuthCacheCtrlr": {
@@ -406,7 +412,7 @@
             },
             "instance": "ChargingProfiles"
         },
-        "LimitChangeSignificance": {
+            "LimitChangeSignificance": {
             "variable_name": "LimitChangeSignificance",
             "attributes": {
                 "Actual": 42

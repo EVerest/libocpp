@@ -133,6 +133,24 @@ private:
     int network_configuration_priority;
     bool disable_automatic_websocket_reconnects;
 
+    // store the connector status
+    struct EvseConnectorPair {
+        int32_t evse_id;
+        int32_t connector_id;
+
+        // Define a comparison operator for the struct
+        bool operator<(const EvseConnectorPair& other) const {
+            // Compare based on name, then age
+            if (evse_id != other.evse_id) {
+                return evse_id < other.evse_id;
+            }
+            return connector_id < other.connector_id;
+        }
+    };
+
+    std::map<EvseConnectorPair, ConnectorStatusEnum> conn_state_per_evse;
+    std::chrono::time_point<std::chrono::steady_clock> time_disconnected;
+
     /// \brief Used when an 'OnIdle' reset is requested, to perform the reset after the charging has stopped.
     bool reset_scheduled;
     /// \brief If `reset_scheduled` is true and the reset is for a specific evse id, it will be stored in this member.
@@ -157,10 +175,11 @@ private:
     std::optional<NetworkConnectionProfile> get_network_connection_profile(const int32_t configuration_slot);
     /// \brief Moves websocket network_configuration_priority to next profile
     void next_network_configuration_priority();
-    void handle_message(const json& json_message, const MessageType& message_type);
+    void handle_message(const EnhancedMessage<v201::MessageType>& message);
     void message_callback(const std::string& message);
     void update_aligned_data_interval();
     bool is_change_availability_possible(const ChangeAvailabilityRequest& req);
+    bool is_valid_evse(const EVSE& evse);
     void handle_scheduled_change_availability_requests(const int32_t evse_id);
     void handle_variable_changed(const SetVariableData& set_variable_data);
     bool validate_set_variable(const SetVariableData& set_variable_data);
@@ -213,6 +232,9 @@ private:
     ///
     void set_evse_connectors_unavailable(const std::unique_ptr<Evse>& evse, bool persist);
 
+    /// @brief Get the value optional offline flag
+    /// @return true if the charge point is offline. std::nullopt if it is online;
+    bool is_offline();
     /* OCPP message requests */
 
     // Functional Block B: Provisioning
@@ -235,7 +257,7 @@ private:
                                const std::optional<ocpp::v201::EVSE>& evse,
                                const std::optional<ocpp::v201::IdToken>& id_token,
                                const std::optional<std::vector<ocpp::v201::MeterValue>>& meter_value,
-                               const std::optional<int32_t>& number_of_phases_used, const std::optional<bool>& offline,
+                               const std::optional<int32_t>& number_of_phases_used, const bool offline,
                                const std::optional<int32_t>& reservation_id);
 
     // Functional Block J: MeterValues
@@ -264,8 +286,7 @@ private:
     void handle_get_local_authorization_list_version_req(Call<GetLocalListVersionRequest> call);
 
     // Functional Block E: Transaction
-    void handle_start_transaction_event_response(CallResult<TransactionEventResponse> call_result,
-                                                 const int32_t evse_id, const IdToken& id_token);
+    void handle_start_transaction_event_response(const EnhancedMessage<v201::MessageType>& message);
 
     // Function Block F: Remote transaction control
     void handle_unlock_connector(Call<UnlockConnectorRequest> call);

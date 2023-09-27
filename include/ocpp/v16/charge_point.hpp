@@ -9,6 +9,7 @@
 #include <ocpp/v16/types.hpp>
 
 #include <ocpp/v16/messages/DataTransfer.hpp>
+#include <ocpp/v16/messages/GetConfiguration.hpp>
 #include <ocpp/v16/messages/GetDiagnostics.hpp>
 #include <ocpp/v16/messages/GetLog.hpp>
 #include <ocpp/v16/messages/SignedUpdateFirmware.hpp>
@@ -65,11 +66,23 @@ public:
 
     /// \brief Starts the ChargePoint, initializes and connects to the Websocket endpoint and initializes a
     /// BootNotification.req
-    bool start();
+    /// \param connector_status_map initial state of connectors including connector 0 with reduced set of states
+    /// (Available, Unavailable, Faulted). connector_status_map is empty, last availability states from the persistant
+    /// storage will be used
+    /// \return
+    bool start(const std::map<int, ChargePointStatus>& connector_status_map = {});
 
     /// \brief Restarts the ChargePoint if it has been stopped before. The ChargePoint is reinitialized, connects to the
     /// websocket and starts to communicate OCPP messages again
-    bool restart();
+    /// \param connector_status_map initial state of connectors including connector 0 with reduced set of states
+    /// (Available, Unavailable, Faulted). connector_status_map is empty, last availability states from the persistant
+    /// storage will be used
+    bool restart(const std::map<int, ChargePointStatus>& connector_status_map = {});
+
+    // \brief Resets the internal state machine for the connectors using the given \p connector_status_map
+    /// \param connector_status_map state of connectors including connector 0 with reduced set of states (Available,
+    /// Unavailable, Faulted)
+    void reset_state_machine(const std::map<int, ChargePointStatus>& connector_status_map);
 
     /// \brief Stops the ChargePoint, stops timers, transactions and the message queue and disconnects from the
     /// websocket
@@ -251,6 +264,10 @@ public:
     /// \param connector
     void on_disabled(int32_t connector);
 
+    /// \brief Notifies chargepoint that a ConnectionTimeout occured for the given \p connector . This function should
+    /// be called when an EV is plugged in but the authorization is present within the specified ConnectionTimeout
+    void on_plugin_timeout(int32_t connector);
+
     /// registers a \p callback function that can be used to receive a arbitrary data transfer for the given \p
     /// vendorId and \p messageId
     /// \param vendorId
@@ -393,6 +410,24 @@ public:
     /// \param callback
     void register_transaction_started_callback(
         const std::function<void(const int32_t connector, const int32_t transaction_id)>& callback);
+
+    /// \brief registers a \p callback function that can be used to react on changed configuration keys. This
+    /// callback is called when a configuration key has been changed by the CSMS
+    /// \param key the configuration key for which the callback is registered
+    /// \param callback executed when this configuration key changed
+    void register_configuration_key_changed_callback(const CiString<50>& key,
+                                                     const std::function<void(const KeyValue& key_value)>& callback);
+
+    /// \brief Gets the configured configuration key requested in the given \p request
+    /// \param request specifies the keys that should be returned. If empty or not set, all keys will be reported
+    /// \return a response containing the requested key(s) including the values and unkown keys if present
+    GetConfigurationResponse get_configuration_key(const GetConfigurationRequest& request);
+
+    /// \brief Sets a custom configuration key
+    /// \param key
+    /// \param value
+    /// \return Indicates the result of the operation
+    ConfigurationStatus set_custom_configuration_key(CiString<50> key, CiString<500> value);
 };
 
 } // namespace v16
