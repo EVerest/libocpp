@@ -902,7 +902,7 @@ void ChargePoint::update_aligned_data_interval() {
                                this->device_model
                                    ->get_optional_value<bool>(ControllerComponentVariables::AlignedDataSendDuringIdle)
                                    .value_or(false)) {
-                                    transaction_active = false;
+                        transaction_active = false;
                         if (!meter_value.sampledValue.empty()) {
                             // J01.FR.14 this is the only case where we send a MeterValue.req
                             this->meter_values_req(evse_id, std::vector<ocpp::v201::MeterValue>(1, meter_value));
