@@ -2157,6 +2157,14 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
     if (key == "AllowChargingProfileWithoutStartSchedule") {
         return this->getAllowChargingProfileWithoutStartScheduleKeyValue();
     }
+<<<<<<< HEAD
+    if (key == "HostName") {
+     	return this->getHostNameKeyValue();
+=======
+    if (key == "WaitForStopTransactionsOnResetTimeout") {
+        return this->getWaitForStopTransactionsOnResetTimeoutKeyValue();
+>>>>>>> 17ae171fc90c89ef655aef586574d56c4a9dadcc
+    }
 
     if (key == "HostName") {
      	return this->getHostNameKeyValue();
