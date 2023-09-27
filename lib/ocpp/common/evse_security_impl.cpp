@@ -10,10 +10,11 @@ EvseSecurityImpl::EvseSecurityImpl(const SecurityConfiguration& security_configu
     file_paths.mf_ca_bundle = security_configuration.mf_ca_bundle;
     file_paths.mo_ca_bundle = security_configuration.mo_ca_bundle;
     file_paths.v2g_ca_bundle = security_configuration.v2g_ca_bundle;
-    file_paths.csms_leaf_cert_directory = security_configuration.csms_leaf_cert_directory;
-    file_paths.csms_leaf_key_directory = security_configuration.csms_leaf_key_directory;
-    file_paths.secc_leaf_cert_directory = security_configuration.secc_leaf_cert_directory;
-    file_paths.secc_leaf_key_directory = security_configuration.secc_leaf_key_directory;
+
+    file_paths.directories.csms_leaf_cert_directory = security_configuration.csms_leaf_cert_directory;
+    file_paths.directories.csms_leaf_key_directory = security_configuration.csms_leaf_key_directory;
+    file_paths.directories.secc_leaf_cert_directory = security_configuration.secc_leaf_cert_directory;
+    file_paths.directories.secc_leaf_key_directory = security_configuration.secc_leaf_key_directory;
 
     this->evse_security =
         std::make_unique<evse_security::EvseSecurity>(file_paths, security_configuration.private_key_password);
@@ -90,8 +91,8 @@ std::optional<KeyPair> EvseSecurityImpl::get_key_pair(const CertificateSigningUs
     const auto key_pair =
         this->evse_security->get_key_pair(conversions::from_ocpp(certificate_type), evse_security::EncodingFormat::PEM);
 
-    if (key_pair.has_value()) {
-        return conversions::to_ocpp(key_pair.value());
+    if (key_pair.status == evse_security::GetKeyPairStatus::Accepted && key_pair.pair.has_value()) {
+        return conversions::to_ocpp(key_pair.pair.value());
     } else {
         return std::nullopt;
     }
@@ -217,13 +218,13 @@ CertificateHashDataChain to_ocpp(evse_security::CertificateHashDataChain other) 
     CertificateHashDataChain lhs;
     lhs.certificateType = to_ocpp(other.certificate_type);
     lhs.certificateHashData = to_ocpp(other.certificate_hash_data);
-    if (other.child_certificate_hash_data.has_value()) {
-        std::vector<CertificateHashDataType> v;
-        for (const auto& certificate_hash_data : other.child_certificate_hash_data.value()) {
-            v.push_back(to_ocpp(certificate_hash_data));
-        }
-        lhs.childCertificateHashData = v;
+
+    std::vector<CertificateHashDataType> v;
+    for (const auto& certificate_hash_data : other.child_certificate_hash_data) {
+        v.push_back(to_ocpp(certificate_hash_data));
     }
+    lhs.childCertificateHashData = v;
+
     return lhs;
 }
 
