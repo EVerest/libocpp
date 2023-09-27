@@ -100,6 +100,9 @@ public:
     std::optional<std::string> getHostName();
     std::optional<KeyValue> getHostNameKeyValue();
 
+    int32_t getWebsocketPongTimeout();
+    KeyValue getWebsocketPongTimeoutKeyValue();
+
     // Core Profile - optional
     std::optional<bool> getAllowOfflineTxForUnknownId();
     void setAllowOfflineTxForUnknownId(bool enabled);

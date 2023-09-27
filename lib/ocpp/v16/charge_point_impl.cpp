@@ -217,6 +217,7 @@ WebsocketConnectionOptions ChargePointImpl::get_ws_connection_options() {
                                                   this->configuration->getSupportedCiphers13(),
                                                   this->configuration->getWebsocketPingInterval().value_or(0),
                                                   this->configuration->getWebsocketPingPayload(),
+                                                  this->configuration->getWebsocketPongTimeout(),
                                                   this->configuration->getUseSslDefaultVerifyPaths(),
                                                   this->configuration->getAdditionalRootCertificateCheck(),
 												  this->configuration->getHostName()};
@@ -1909,7 +1910,14 @@ void ChargePointImpl::handleTriggerMessageRequest(ocpp::Call<TriggerMessageReque
         break;
     }
     case MessageTrigger::StatusNotification:
-        this->status_notification(connector, ChargePointErrorCode::NoError, this->status->get_state(connector));
+        if (!call.msg.connectorId.has_value()) {
+            // send a status notification for every connector
+            for (int32_t c = 0; c <= this->configuration->getNumberOfConnectors(); c++) {
+                this->status_notification(c, ChargePointErrorCode::NoError, this->status->get_state(c));
+            }
+        } else {
+            this->status_notification(connector, ChargePointErrorCode::NoError, this->status->get_state(connector));
+        }
         break;
     }
 }
@@ -2015,7 +2023,14 @@ void ChargePointImpl::handleExtendedTriggerMessageRequest(ocpp::Call<ExtendedTri
         this->sign_certificate(ocpp::CertificateSigningUseEnum::ChargingStationCertificate);
         break;
     case MessageTriggerEnumType::StatusNotification:
-        this->status_notification(connector, ChargePointErrorCode::NoError, this->status->get_state(connector));
+        if (!call.msg.connectorId.has_value()) {
+            // send a status notification for every connector
+            for (int32_t c = 0; c <= this->configuration->getNumberOfConnectors(); c++) {
+                this->status_notification(c, ChargePointErrorCode::NoError, this->status->get_state(c));
+            }
+        } else {
+            this->status_notification(connector, ChargePointErrorCode::NoError, this->status->get_state(connector));
+        }
         break;
     }
 }
@@ -2259,8 +2274,10 @@ void ChargePointImpl::handleReserveNowRequest(ocpp::Call<ReserveNowRequest> call
         response.status = ReservationStatus::Faulted;
     } else if (this->reserve_now_callback != nullptr &&
                this->configuration->getSupportedFeatureProfiles().find("Reservation") != std::string::npos) {
-        response.status = this->reserve_now_callback(call.msg.reservationId, call.msg.connectorId, call.msg.expiryDate,
-                                                     call.msg.idTag, call.msg.parentIdTag);
+        if (call.msg.connectorId != 0 || this->configuration->getReserveConnectorZeroSupported().value_or(false)) {
+            response.status = this->reserve_now_callback(call.msg.reservationId, call.msg.connectorId,
+                                                         call.msg.expiryDate, call.msg.idTag, call.msg.parentIdTag);
+        }
     }
 
     ocpp::CallResult<ReserveNowResponse> call_result(response, call.uniqueId);

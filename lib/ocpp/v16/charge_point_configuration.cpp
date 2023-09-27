@@ -495,6 +495,14 @@ KeyValue ChargePointConfiguration::getWebsocketPingPayloadKeyValue() {
     return kv;
 }
 
+KeyValue ChargePointConfiguration::getWebsocketPongTimeoutKeyValue() {
+    KeyValue kv;
+    kv.key = "WebsocketPongTimeout";
+    kv.readonly = true;
+    kv.value.emplace(std::to_string(this->getWebsocketPongTimeout()));
+    return kv;
+}
+
 int32_t ChargePointConfiguration::getRetryBackoffRandomRange() {
     return this->config["Internal"]["RetryBackoffRandomRange"];
 }
@@ -664,6 +672,10 @@ std::optional<std::string> ChargePointConfiguration::getHostName() {
        hostName_key.emplace(this->config["Internal"]["HostName"]);
     }
     return hostName_key;
+}
+
+int32_t ChargePointConfiguration::getWebsocketPongTimeout() {
+    return this->config["Internal"]["WebsocketPongTimeout"];
 }
 
 // Core Profile - optional
@@ -2120,6 +2132,9 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
     }
     if (key == "WebsocketPingPayload") {
         return this->getWebsocketPingPayloadKeyValue();
+    }
+    if (key == "WebsocketPongTimeout") {
+        return this->getWebsocketPongTimeoutKeyValue();
     }
     if (key == "UseSslDefaultVerifyPaths") {
         return this->getUseSslDefaultVerifyPathsKeyValue();
