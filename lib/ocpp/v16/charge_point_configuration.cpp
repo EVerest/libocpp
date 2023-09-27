@@ -1981,7 +1981,7 @@ KeyValue ChargePointConfiguration::getWaitForStopTransactionsOnResetTimeoutKeyVa
 }
 
 std::optional<KeyValue> ChargePointConfiguration::getCustomKeyValue(CiString<50> key) {
-    if (!this->config["Custom"].contains(key)) {
+    if (!this->config["Custom"].contains(key.get())) {
         return std::nullopt;
     }
 
@@ -2676,7 +2676,7 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         }
     }
 
-    if (this->config.contains("Custom") and this->config["Custom"].contains(key)) {
+    if (this->config.contains("Custom") and this->config["Custom"].contains(key.get())) {
         return this->setCustomKey(key, value, false);
     }
 
