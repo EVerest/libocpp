@@ -93,13 +93,13 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
                                                        const int32_t seq_no,
                                                        const std::optional<int32_t> reservation_id) {
             if (_meter_value.sampledValue.empty() or !_meter_value.sampledValue.at(0).context.has_value()) {
-                EVLOG_info << "Not sending MeterValue due to no values";
+                EVLOG_info << "Not sending due to no values";
                 return;
             }
 
             auto type = _meter_value.sampledValue.at(0).context.value();
             if (type != ReadingContextEnum::Sample_Clock and type != ReadingContextEnum::Sample_Periodic) {
-                EVLOG_info << "Not sending MeterValue due to wrong context";
+                EVLOG_info << "Not sending due to wrong context";
                 return;
             }
 

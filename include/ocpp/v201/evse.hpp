@@ -132,7 +132,7 @@ public:
     /// \brief Returns the last present meter value for this evse
     /// \return
     MeterValue get_meter_value();
-};
+    };
 
-} // namespace v201
+    } // namespace v201
 } // namespace ocpp
