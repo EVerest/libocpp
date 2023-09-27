@@ -1970,6 +1970,25 @@ std::optional<KeyValue> ChargePointConfiguration::getAllowChargingProfileWithout
     return allow_opt;
 }
 
+int32_t ChargePointConfiguration::getWaitForStopTransactionsOnResetTimeout() {
+    return this->config["Internal"]["WaitForStopTransactionsOnResetTimeout"];
+}
+
+void ChargePointConfiguration::setWaitForStopTransactionsOnResetTimeout(
+    const int32_t wait_for_stop_transactions_on_reset_timeout) {
+    this->config["Internal"]["WaitForStopTransactionsOnResetTimeout"] = wait_for_stop_transactions_on_reset_timeout;
+    this->setInUserConfig("Internal", "WaitForStopTransactionsOnResetTimeout",
+                          wait_for_stop_transactions_on_reset_timeout);
+}
+
+KeyValue ChargePointConfiguration::getWaitForStopTransactionsOnResetTimeoutKeyValue() {
+    KeyValue kv;
+    kv.key = "WaitForStopTransactionsOnResetTimeout";
+    kv.readonly = false;
+    kv.value.emplace(std::to_string(this->getWaitForStopTransactionsOnResetTimeout()));
+    return kv;
+}
+
 std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
 
     // Internal Profile
@@ -2060,8 +2079,13 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
     if (key == "AllowChargingProfileWithoutStartSchedule") {
         return this->getAllowChargingProfileWithoutStartScheduleKeyValue();
     }
+
     if (key == "HostName") {
      	return this->getHostNameKeyValue();
+    }
+
+    if (key == "WaitForStopTransactionsOnResetTimeout") {
+        return this->getWaitForStopTransactionsOnResetTimeoutKeyValue();
     }
 
     // Core Profile
@@ -2471,6 +2495,17 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
                 return ConfigurationStatus::Rejected;
             }
             this->setOcspRequestInterval(ocsp_request_interval);
+        } catch (const std::invalid_argument& e) {
+            return ConfigurationStatus::Rejected;
+        }
+    }
+    if (key == "WaitForStopTransactionsOnResetTimeout") {
+        try {
+            auto wait_for_stop_transactions_on_reset_timeout = std::stoi(value.get());
+            if (wait_for_stop_transactions_on_reset_timeout < 0) {
+                return ConfigurationStatus::Rejected;
+            }
+            this->setWaitForStopTransactionsOnResetTimeout(wait_for_stop_transactions_on_reset_timeout);
         } catch (const std::invalid_argument& e) {
             return ConfigurationStatus::Rejected;
         }
