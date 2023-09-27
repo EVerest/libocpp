@@ -15,17 +15,6 @@ option(BUILD_TESTING "Run unit tests" OFF)
 option(CMAKE_RUN_CLANG_TIDY "Run clang-tidy" OFF)
 option(LIBOCPP_BUILD_EXAMPLES "Build charge_point and central_system binaries." OFF)
 option(OCPP_INSTALL "Install the library (shared data might be installed anyway)" ${EVC_MAIN_PROJECT})
-option(USE_NON_STD_FILESYSTEM "Usage of boost/filesystem.hpp instead of std::filesystem" OFF)
-
-if (USE_NON_STD_FILESYSTEM)
-    message(VERBOSE "INFO: using boost::filesystem instead std::filesystem (`USE_NON_STD_FILESYSTEM` set)")
-    set(BOOSTFILESYSTEM ON)
-    add_definitions(-DBOOSTFILESYSTEM)
-    add_definitions(-DBOOST_FILESYSTEM_VERSION=3)
-else()
-    set(BOOSTFILESYSTEM OFF)
-endif()
-
 
 # dependencies
 find_package(Boost COMPONENTS program_options regex system thread REQUIRED)
