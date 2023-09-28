@@ -98,6 +98,10 @@ struct Callbacks {
     std::optional<std::function<bool(const NetworkConnectionProfile& network_connection_profile)>>
         configure_network_connection_profile_callback;
     std::optional<std::function<void(const ocpp::DateTime& currentTime)>> time_sync_callback;
+
+    /// \brief callback to be called to congfigure ocpp message logging
+    std::optional<std::function<void(const std::string& message, MessageDirection direction)>> ocpp_messages_callback;
+
     ///
     /// \brief callback function that can be used to react to a security event callback. This callback is
     /// called only if the SecurityEvent occured internally within libocpp
@@ -184,6 +188,7 @@ private:
     template <class T> std::future<EnhancedMessage<v201::MessageType>> send_async(Call<T> call);
     template <class T> bool send(CallResult<T> call_result);
     bool send(CallError call_error);
+    bool send(json message);
 
     // internal helper functions
     void init_websocket();
