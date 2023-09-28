@@ -18,7 +18,7 @@ bool WebsocketPlain::connect() {
     if (!this->initialized()) {
         return false;
     }
-    auto uri = this->connection_options.cs_uri.insert(0, "ws://");
+    auto uri = this->connection_options.csms_uri.insert(0, "ws://");
     uri = this->uri = helpers::URIAppendPath(this->uri, this->connection_options.chargepoint_id);
 
     EVLOG_info << "Connecting to plain websocket at uri: " << uri
@@ -33,7 +33,7 @@ bool WebsocketPlain::connect() {
     websocket_thread.reset(new websocketpp::lib::thread(&client::run, &this->ws_client));
 
     this->reconnect_callback = [this](const websocketpp::lib::error_code& ec) {
-        EVLOG_info << "Reconnecting to plain websocket at uri: " << this->connection_options.cs_uri
+        EVLOG_info << "Reconnecting to plain websocket at uri: " << this->connection_options.csms_uri
                    << " with profile: " << this->connection_options.security_profile;
 
         // close connection before reconnecting

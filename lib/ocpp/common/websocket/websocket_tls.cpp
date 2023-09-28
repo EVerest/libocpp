@@ -19,7 +19,7 @@ bool WebsocketTLS::connect() {
     if (!this->initialized()) {
         return false;
     }
-    this->uri = this->connection_options.cs_uri.insert(0, "wss://");
+    this->uri = this->connection_options.csms_uri.insert(0, "wss://");
     this->uri = helpers::URIAppendPath(this->uri, this->connection_options.chargepoint_id);
     EVLOG_info << "Connecting TLS websocket to uri: " << this->uri << " with profile "
                << this->connection_options.security_profile;
@@ -34,7 +34,7 @@ bool WebsocketTLS::connect() {
                                websocketpp::lib::placeholders::_1, this->connection_options.security_profile));
 
     this->reconnect_callback = [this](const websocketpp::lib::error_code& ec) {
-        EVLOG_info << "Reconnecting to TLS websocket at uri: " << this->connection_options.cs_uri
+        EVLOG_info << "Reconnecting to TLS websocket at uri: " << this->connection_options.csms_uri
                    << " with profile: " << this->connection_options.security_profile;
 
         // close connection before reconnecting

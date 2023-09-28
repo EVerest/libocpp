@@ -19,7 +19,7 @@ namespace ocpp {
 
 struct WebsocketConnectionOptions {
     OcppProtocolVersion ocpp_version;
-    std::string cs_uri;
+    std::string csms_uri;  // The URI of the CSMS
     int security_profile;
     std::string chargepoint_id;
     std::optional<std::string> authorization_key;
