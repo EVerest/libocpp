@@ -2,6 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "description": "Schema for ConnectedEV",
   "type": "object",
+  "name": "ConnectedEV"
   "properties": {
     "ProtocolAgreed": {
       "variable_name": "ProtocolAgreed",
