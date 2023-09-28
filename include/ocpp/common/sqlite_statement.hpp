@@ -6,7 +6,6 @@
 
 #include <sqlite3.h>
 
-#include "support_older_cpp_versions.hpp"
 #include <everest/logging.hpp>
 
 namespace ocpp {
