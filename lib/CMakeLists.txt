@@ -36,10 +36,10 @@ target_sources(ocpp
         ocpp/v201/ctrlr_component_variables.cpp
 )
 
+add_subdirectory(ocpp/helpers)
 add_subdirectory(ocpp/common/websocket)
 add_subdirectory(ocpp/v16/messages)
 add_subdirectory(ocpp/v201/messages)
-
 
 target_include_directories(ocpp
     PUBLIC
