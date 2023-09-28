@@ -40,7 +40,7 @@ add_subdirectory(ocpp/common/websocket)
 add_subdirectory(ocpp/v16/messages)
 add_subdirectory(ocpp/v201/messages)
 
-option(USE_NON_STD_FILESYSTEM "Usage of boost/filesystem.hpp instead of std::filesystem" OFF)
+option(LIBOCPP_USE_BOOST_FILESYSTEM "Usage of boost/filesystem.hpp instead of std::filesystem" OFF)
 
 target_include_directories(ocpp
     PUBLIC
@@ -91,7 +91,7 @@ target_link_libraries(ocpp
         date::date-tz
 )
 
-if(USE_NON_STD_FILESYSTEM)
+if(LIBOCPP_USE_BOOST_FILESYSTEM)
     find_package(Boost REQUIRED COMPONENTS filesystem)
     target_link_libraries(ocpp
         PRIVATE
