@@ -3,6 +3,8 @@
 #include <everest/logging.hpp>
 
 #include <ocpp/common/websocket/websocket_plain.hpp>
+#include <ocpp/helpers/uri.hpp>
+
 
 #include <boost/optional/optional.hpp>
 
@@ -16,7 +18,8 @@ bool WebsocketPlain::connect() {
     if (!this->initialized()) {
         return false;
     }
-    const auto uri = this->connection_options.cs_uri.insert(0, "ws://");
+    auto uri = this->connection_options.cs_uri.insert(0, "ws://");
+    uri = this->uri = helpers::URIAppendPath(this->uri, this->connection_options.chargepoint_id);
 
     EVLOG_info << "Connecting to plain websocket at uri: " << uri
                << " with profile: " << this->connection_options.security_profile;

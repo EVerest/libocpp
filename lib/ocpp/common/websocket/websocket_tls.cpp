@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
-#include <boost/optional/optional.hpp>
-
 #include <everest/logging.hpp>
 
 #include <ocpp/common/pki_handler.hpp>
 #include <ocpp/common/websocket/websocket_tls.hpp>
+#include <ocpp/helpers/uri.hpp>
+
+#include <boost/optional/optional.hpp>
 
 namespace ocpp {
 
@@ -19,6 +20,7 @@ bool WebsocketTLS::connect() {
         return false;
     }
     this->uri = this->connection_options.cs_uri.insert(0, "wss://");
+    this->uri = helpers::URIAppendPath(this->uri, this->connection_options.chargepoint_id);
     EVLOG_info << "Connecting TLS websocket to uri: " << this->uri << " with profile "
                << this->connection_options.security_profile;
     this->wss_client.clear_access_channels(websocketpp::log::alevel::all);
