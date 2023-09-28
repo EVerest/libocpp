@@ -494,6 +494,14 @@ KeyValue ChargePointConfiguration::getWebsocketPingPayloadKeyValue() {
     return kv;
 }
 
+KeyValue ChargePointConfiguration::getWebsocketPongTimeoutKeyValue() {
+    KeyValue kv;
+    kv.key = "WebsocketPongTimeout";
+    kv.readonly = true;
+    kv.value.emplace(std::to_string(this->getWebsocketPongTimeout()));
+    return kv;
+}
+
 int32_t ChargePointConfiguration::getRetryBackoffRandomRange() {
     return this->config["Internal"]["RetryBackoffRandomRange"];
 }
@@ -655,6 +663,10 @@ std::set<MessageType> ChargePointConfiguration::getSupportedMessageTypesReceivin
 
 std::string ChargePointConfiguration::getWebsocketPingPayload() {
     return this->config["Internal"]["WebsocketPingPayload"];
+}
+
+int32_t ChargePointConfiguration::getWebsocketPongTimeout() {
+    return this->config["Internal"]["WebsocketPongTimeout"];
 }
 
 // Core Profile - optional
@@ -1980,22 +1992,26 @@ KeyValue ChargePointConfiguration::getWaitForStopTransactionsOnResetTimeoutKeyVa
 }
 
 std::optional<KeyValue> ChargePointConfiguration::getCustomKeyValue(CiString<50> key) {
-    if (!this->config["Custom"].contains(key)) {
+    if (!this->config["Custom"].contains(key.get())) {
         return std::nullopt;
     }
 
-    KeyValue kv;
-    kv.readonly = this->custom_schema["properties"][key]["readOnly"];
-    if (kv.readonly) {
+    try {
+        KeyValue kv;
+        kv.readonly = this->custom_schema["properties"][key]["readOnly"];
+        if (kv.readonly) {
+            return std::nullopt;
+        }
+        kv.key = key;
+        if (this->config["Custom"][key].is_string()) {
+            kv.value = std::string(this->config["Custom"][key]);
+        } else {
+            kv.value = this->config["Custom"][key].dump();
+        }
+        return kv;
+    } catch (const std::exception& e) {
         return std::nullopt;
     }
-    kv.key = key;
-    if (this->config["Custom"][key].is_string()) {
-        kv.value = std::string(this->config["Custom"][key]);
-    } else {
-        kv.value = this->config["Custom"][key].dump();
-    }
-    return kv;
 }
 
 ConfigurationStatus ChargePointConfiguration::setCustomKey(CiString<50> key, CiString<500> value, bool force) {
@@ -2094,6 +2110,9 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
     }
     if (key == "WebsocketPingPayload") {
         return this->getWebsocketPingPayloadKeyValue();
+    }
+    if (key == "WebsocketPongTimeout") {
+        return this->getWebsocketPongTimeoutKeyValue();
     }
     if (key == "UseSslDefaultVerifyPaths") {
         return this->getUseSslDefaultVerifyPathsKeyValue();
@@ -2675,7 +2694,7 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         }
     }
 
-    if (this->config.contains("Custom") and this->config["Custom"].contains(key)) {
+    if (this->config.contains("Custom") and this->config["Custom"].contains(key.get())) {
         return this->setCustomKey(key, value, false);
     }
 

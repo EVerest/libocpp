@@ -61,10 +61,10 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
         // operational status for this evse
         this->database_handler->insert_availability(evse_id, std::nullopt, OperationalStatusEnum::Operative, false);
         // used by evse to trigger StatusNotification.req
-        auto status_notification_callback = [this, evse_id](const int32_t connector_id,
-                                                            const ConnectorStatusEnum& status) {
+        auto status_notification_callback = [this, &evse_id_ = evse_id](const int32_t connector_id,
+                                                                        const ConnectorStatusEnum& status) {
             if (this->registration_status == RegistrationStatusEnum::Accepted) {
-                this->status_notification_req(evse_id, connector_id, status);
+                this->status_notification_req(evse_id_, connector_id, status);
             }
         };
         // used by evse when TransactionEvent.req to transmit meter values
@@ -582,6 +582,7 @@ WebsocketConnectionOptions ChargePoint::get_ws_connection_options(const int32_t 
         this->device_model->get_value<int>(ControllerComponentVariables::WebSocketPingInterval),
         this->device_model->get_optional_value<std::string>(ControllerComponentVariables::WebsocketPingPayload)
             .value_or("payload"),
+        this->device_model->get_optional_value<int>(ControllerComponentVariables::WebsocketPongTimeout).value_or(5),
         this->device_model->get_optional_value<bool>(ControllerComponentVariables::UseSslDefaultVerifyPaths)
             .value_or(true),
         this->device_model->get_optional_value<bool>(ControllerComponentVariables::AdditionalRootCertificateCheck)
@@ -1985,9 +1986,7 @@ void ChargePoint::handle_send_local_authorization_list_req(Call<SendLocalListReq
 void ChargePoint::handle_get_local_authorization_list_version_req(Call<GetLocalListVersionRequest> call) {
     GetLocalListVersionResponse response;
 
-    if (this->device_model->get_optional_value<bool>(ControllerComponentVariables::LocalAuthListCtrlrAvailable)
-            .value_or(false) and
-        this->device_model->get_optional_value<bool>(ControllerComponentVariables::LocalAuthListCtrlrEnabled)
+    if (this->device_model->get_optional_value<bool>(ControllerComponentVariables::LocalAuthListCtrlrEnabled)
             .value_or(false)) {
         response.versionNumber = this->database_handler->get_local_authorization_list_version();
     } else {
