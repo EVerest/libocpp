@@ -19,16 +19,16 @@ bool WebsocketPlain::connect() {
         return false;
     }
     auto uri = this->connection_options.csms_uri.insert(0, "ws://");
-    uri = this->uri = helpers::URIAppendPath(this->uri, this->connection_options.chargepoint_id);
+    uri = helpers::URIAppendPath(uri, this->connection_options.chargepoint_id);
+    this->uri = uri;
 
-    EVLOG_info << "Connecting to plain websocket at uri: " << uri
+    EVLOG_info << "Connecting to plain websocket at uri: " << this->uri
                << " with profile: " << this->connection_options.security_profile;
 
     this->ws_client.clear_access_channels(websocketpp::log::alevel::all);
     this->ws_client.clear_error_channels(websocketpp::log::elevel::all);
     this->ws_client.init_asio();
     this->ws_client.start_perpetual();
-    this->uri = uri;
 
     websocket_thread.reset(new websocketpp::lib::thread(&client::run, &this->ws_client));
 

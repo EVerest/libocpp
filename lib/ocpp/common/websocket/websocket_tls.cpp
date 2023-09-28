@@ -19,10 +19,13 @@ bool WebsocketTLS::connect() {
     if (!this->initialized()) {
         return false;
     }
-    this->uri = this->connection_options.csms_uri.insert(0, "wss://");
-    this->uri = helpers::URIAppendPath(this->uri, this->connection_options.chargepoint_id);
-    EVLOG_info << "Connecting TLS websocket to uri: " << this->uri << " with profile "
-               << this->connection_options.security_profile;
+    auto uri = this->connection_options.csms_uri.insert(0, "wss://");
+    uri = helpers::URIAppendPath(uri, this->connection_options.chargepoint_id);
+    this->uri = uri;
+
+    EVLOG_info << "Connecting TLS websocket to uri: " << this->uri
+               << " with profile " << this->connection_options.security_profile;
+
     this->wss_client.clear_access_channels(websocketpp::log::alevel::all);
     this->wss_client.clear_error_channels(websocketpp::log::elevel::all);
     this->wss_client.init_asio();
