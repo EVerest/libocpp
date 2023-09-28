@@ -4,13 +4,13 @@
 #ifndef OCPP_COMMON_SUPPORT_OLDER_CPP_VERSIONS_HPP_
 #define OCPP_COMMON_SUPPORT_OLDER_CPP_VERSIONS_HPP_
 
-#ifndef BOOSTFILESYSTEM
+#ifndef LIBOCPP_USE_BOOST_FILESYSTEM
 #include <filesystem>
 #else
 #include <boost/filesystem.hpp>
 #endif
 
-#ifndef BOOSTFILESYSTEM
+#ifndef LIBOCPP_USE_BOOST_FILESYSTEM
 namespace fs = std::filesystem;
 #else
 namespace fs = boost::filesystem;

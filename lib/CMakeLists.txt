@@ -99,7 +99,7 @@ if(LIBOCPP_USE_BOOST_FILESYSTEM)
     )
     target_compile_definitions(log
         PRIVATE
-            BOOSTFILESYSTEM       
+            LIBOCPP_USE_BOOST_FILESYSTEM
     )
 endif()
 
