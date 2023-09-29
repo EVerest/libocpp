@@ -3232,18 +3232,19 @@ void ChargePointImpl::on_log_status_notification(int32_t request_id, std::string
     }
 }
 
-void ChargePointImpl::on_firmware_update_status_notification(int32_t request_id, std::string firmware_update_status) {
-    if (request_id != -1) {
-        this->signed_firmware_update_status_notification(
-            conversions::string_to_firmware_status_enum_type(firmware_update_status), request_id);
-    } else {
-        // Not all notifications that we get from signed firmware update map onto the (unsigned) firmware status enum.
-        try {
-            this->firmware_status_notification(conversions::string_to_firmware_status(firmware_update_status));
-        } catch (const std::out_of_range& e) {
-            // If the status is not known in for non-signed firmware update, simply ignore the status update.
-            EVLOG_info << "Ignoring " + firmware_update_status + " (invalid status for non-signed firmware updates)";
+void ChargePointImpl::on_firmware_update_status_notification(int32_t request_id,
+                                                             const FirmwareStatusNotification firmware_update_status) {
+    try {
+        if (request_id != -1) {
+            this->signed_firmware_update_status_notification(
+                ocpp::conversions::firmware_status_notification_to_firmware_status_enum_type(firmware_update_status),
+                request_id);
+        } else {
+            this->firmware_status_notification(
+                ocpp::conversions::firmware_status_notification_to_firmware_status(firmware_update_status));
         }
+    } catch (const std::out_of_range& e) {
+        EVLOG_debug << "Could not convert incoming FirmwareStatusNotification to OCPP type";
     }
 }
 
