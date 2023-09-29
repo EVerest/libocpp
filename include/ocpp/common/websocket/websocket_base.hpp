@@ -9,11 +9,11 @@
 #include <thread>
 
 #include <everest/timer.hpp>
-
-#include <ocpp/common/types.hpp>
-
 #include <websocketpp/client.hpp>
 #include <websocketpp/config/asio_client.hpp>
+
+#include <ocpp/common/types.hpp>
+#include <ocpp/common/websocket/websocket_common.hpp>
 
 namespace ocpp {
 
@@ -48,7 +48,7 @@ protected:
     std::function<void(const std::string& message)> message_callback;
     websocketpp::lib::shared_ptr<boost::asio::steady_timer> reconnect_timer;
     std::unique_ptr<Everest::SteadyTimer> ping_timer;
-    std::string uri;
+    ocpp::Uri uri;
     websocketpp::connection_hdl handle;
     std::mutex reconnect_mutex;
     std::mutex connection_mutex;

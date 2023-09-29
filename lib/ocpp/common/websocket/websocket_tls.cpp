@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
-#include <everest/logging.hpp>
 
 #include <ocpp/common/pki_handler.hpp>
+#include <ocpp/common/websocket/websocket_common.hpp>
 #include <ocpp/common/websocket/websocket_tls.hpp>
-#include <ocpp/helpers/uri.hpp>
 
-#include <boost/optional/optional.hpp>
+#include <everest/logging.hpp>
 
 namespace ocpp {
 
@@ -19,11 +18,11 @@ bool WebsocketTLS::connect() {
     if (!this->initialized()) {
         return false;
     }
-    auto uri = this->connection_options.csms_uri.insert(0, "wss://");
-    uri = helpers::URIAppendPath(uri, this->connection_options.chargepoint_id);
-    this->uri = uri;
+    
+    this->uri.set(this->connection_options.csms_uri.insert(0, "wss://"));
+    this->uri.append_path(this->connection_options.chargepoint_id);
 
-    EVLOG_info << "Connecting TLS websocket to uri: " << this->uri
+    EVLOG_info << "Connecting TLS websocket to uri: " << this->uri.string()
                << " with profile " << this->connection_options.security_profile;
 
     this->wss_client.clear_access_channels(websocketpp::log::alevel::all);
@@ -33,7 +32,7 @@ bool WebsocketTLS::connect() {
     websocket_thread.reset(new websocketpp::lib::thread(&tls_client::run, &this->wss_client));
 
     this->wss_client.set_tls_init_handler(
-        websocketpp::lib::bind(&WebsocketTLS::on_tls_init, this, this->get_hostname(this->uri),
+        websocketpp::lib::bind(&WebsocketTLS::on_tls_init, this, this->uri.get_hostname(),
                                websocketpp::lib::placeholders::_1, this->connection_options.security_profile));
 
     this->reconnect_callback = [this](const websocketpp::lib::error_code& ec) {
@@ -122,15 +121,15 @@ void WebsocketTLS::reconnect(std::error_code reason, long delay) {
     // https://github.com/zaphoyd/websocketpp/blob/master/websocketpp/close.hpp
 }
 
-std::string WebsocketTLS::get_hostname(std::string uri) {
+std::string Uri::get_hostname() {
     // FIXME(kai): This only works with a very limited subset of hostnames!
     std::string start = "wss://";
     std::string stop = "/";
     std::string port = ":";
     auto hostname_start_pos = start.length();
-    auto hostname_end_pos = uri.find_first_of(stop, hostname_start_pos);
+    auto hostname_end_pos = this->value.find_first_of(stop, hostname_start_pos);
 
-    auto hostname_with_port = uri.substr(hostname_start_pos, hostname_end_pos - hostname_start_pos);
+    auto hostname_with_port = this->value.substr(hostname_start_pos, hostname_end_pos - hostname_start_pos);
     auto port_pos = hostname_with_port.find_first_of(port);
     if (port_pos != std::string::npos) {
         return hostname_with_port.substr(0, port_pos);
@@ -222,7 +221,7 @@ tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connect
 void WebsocketTLS::connect_tls() {
     websocketpp::lib::error_code ec;
 
-    tls_client::connection_ptr con = this->wss_client.get_connection(this->uri, ec);
+    tls_client::connection_ptr con = this->wss_client.get_connection(this->uri.string(), ec);
 
     if (ec) {
         EVLOG_error << "Connection initialization error for TLS websocket: " << ec.message();

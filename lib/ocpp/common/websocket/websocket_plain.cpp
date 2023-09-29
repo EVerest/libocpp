@@ -3,8 +3,6 @@
 #include <everest/logging.hpp>
 
 #include <ocpp/common/websocket/websocket_plain.hpp>
-#include <ocpp/helpers/uri.hpp>
-
 
 #include <boost/optional/optional.hpp>
 
@@ -18,11 +16,11 @@ bool WebsocketPlain::connect() {
     if (!this->initialized()) {
         return false;
     }
-    auto uri = this->connection_options.csms_uri.insert(0, "ws://");
-    uri = helpers::URIAppendPath(uri, this->connection_options.chargepoint_id);
-    this->uri = uri;
 
-    EVLOG_info << "Connecting to plain websocket at uri: " << this->uri
+    this->uri.set(this->connection_options.csms_uri.insert(0, "ws://"));
+    this->uri.append_path(this->connection_options.chargepoint_id);
+
+    EVLOG_info << "Connecting to plain websocket at uri: " << this->uri.string()
                << " with profile: " << this->connection_options.security_profile;
 
     this->ws_client.clear_access_channels(websocketpp::log::alevel::all);
@@ -123,7 +121,7 @@ void WebsocketPlain::connect_plain() {
 
     websocketpp::lib::error_code ec;
 
-    client::connection_ptr con = this->ws_client.get_connection(this->uri, ec);
+    client::connection_ptr con = this->ws_client.get_connection(this->uri.string(), ec);
 
     if (ec) {
         EVLOG_error << "Connection initialization error for plain websocket: " << ec.message();
