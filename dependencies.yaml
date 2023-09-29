@@ -29,5 +29,5 @@ websocketpp:
   git: https://github.com/zaphoyd/websocketpp.git
   git_tag: 0.8.2
 libevse-security:
-  git: git@github.com:EVerest/libevse-security.git
-  git_tag: main
+  git: https://github.com/EVerest/libevse-security.git
+  git_tag: f621aab
