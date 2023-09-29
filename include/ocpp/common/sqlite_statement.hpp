@@ -48,6 +48,10 @@ public:
         return sqlite3_step(this->stmt);
     }
 
+    int reset() {
+        return sqlite3_reset(this->stmt);
+    }
+
     int bind_text(const int idx, const std::string& val, SQLiteString lifetime = SQLiteString::Static) {
         return sqlite3_bind_text(this->stmt, idx, val.c_str(), val.length(),
                                  lifetime == SQLiteString::Static ? SQLITE_STATIC : SQLITE_TRANSIENT);
@@ -85,6 +89,18 @@ public:
             throw std::out_of_range("Parameter not found in SQL query");
         }
         return bind_datetime(index, val);
+    }
+
+    int bind_double(const int idx, const double val) {
+        return sqlite3_bind_double(this->stmt, idx, val);
+    }
+
+    int bind_double(const std::string& param, const double val) {
+        int index = sqlite3_bind_parameter_index(this->stmt, param.c_str());
+        if (index <= 0) {
+            throw std::out_of_range("Parameter not found in SQL query");
+        }
+        return bind_double(index, val);
     }
 
     int bind_null(const int idx) {
