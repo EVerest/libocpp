@@ -19,10 +19,9 @@ const auto OCSP_REQUEST_TIMER_INTERVAL = std::chrono::hours(12);
 const auto INITIAL_CERTIFICATE_REQUESTS_DELAY = std::chrono::seconds(60);
 const auto WEBSOCKET_INIT_DELAY = std::chrono::seconds(2);
 
-ChargePointImpl::ChargePointImpl(const std::string& config, const std::filesystem::path& share_path,
-                                 const std::filesystem::path& user_config_path,
-                                 const std::filesystem::path& database_path, const std::filesystem::path& sql_init_path,
-                                 const std::filesystem::path& message_log_path,
+ChargePointImpl::ChargePointImpl(const std::string& config, const fs::path& share_path,
+                                 const fs::path& user_config_path, const fs::path& database_path,
+                                 const fs::path& sql_init_path, const fs::path& message_log_path,
                                  const std::shared_ptr<EvseSecurity> evse_security,
                                  const std::optional<SecurityConfiguration> security_configuration) :
     ocpp::ChargingStationBase(evse_security, security_configuration),

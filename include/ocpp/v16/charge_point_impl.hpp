@@ -315,10 +315,9 @@ public:
     /// also available) configuration keys in the "Internal" section of the config file. Please note that this is
     /// intended for debugging purposes only as it logs all communication, including authentication messages.
     /// \param evse_security Pointer to evse_security that manages security related operations
-    explicit ChargePointImpl(const std::string& config, const std::filesystem::path& share_path,
-                             const std::filesystem::path& user_config_path, const std::filesystem::path& database_path,
-                             const std::filesystem::path& sql_init_path, const std::filesystem::path& message_log_path,
-                             const std::shared_ptr<EvseSecurity> evse_security,
+    explicit ChargePointImpl(const std::string& config, const fs::path& share_path, const fs::path& user_config_path,
+                             const fs::path& database_path, const fs::path& sql_init_path,
+                             const fs::path& message_log_path, const std::shared_ptr<EvseSecurity> evse_security,
                              const std::optional<SecurityConfiguration> security_configuration);
 
     ~ChargePointImpl() {

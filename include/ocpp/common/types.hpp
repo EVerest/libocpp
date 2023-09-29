@@ -17,6 +17,7 @@
 #include <date/tz.h>
 
 #include <ocpp/common/cistring.hpp>
+#include <ocpp/common/support_older_cpp_versions.hpp>
 #include <ocpp/v16/enums.hpp>
 #include <ocpp/v201/enums.hpp>
 
@@ -506,8 +507,8 @@ struct OCSPRequestData {
 };
 
 struct KeyPair {
-    std::filesystem::path certificate_path;
-    std::filesystem::path key_path;
+    fs::path certificate_path;
+    fs::path key_path;
     std::optional<std::string> password;
 };
 

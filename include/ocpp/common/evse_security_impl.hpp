@@ -8,18 +8,19 @@
 
 #include <evse_security.hpp>
 #include <ocpp/common/evse_security.hpp>
+#include <ocpp/common/support_older_cpp_versions.hpp>
 
 namespace ocpp {
 
 struct SecurityConfiguration {
-    std::filesystem::path csms_ca_bundle;
-    std::filesystem::path mf_ca_bundle;
-    std::filesystem::path mo_ca_bundle;
-    std::filesystem::path v2g_ca_bundle;
-    std::filesystem::path csms_leaf_cert_directory;
-    std::filesystem::path csms_leaf_key_directory;
-    std::filesystem::path secc_leaf_cert_directory;
-    std::filesystem::path secc_leaf_key_directory;
+    fs::path csms_ca_bundle;
+    fs::path mf_ca_bundle;
+    fs::path mo_ca_bundle;
+    fs::path v2g_ca_bundle;
+    fs::path csms_leaf_cert_directory;
+    fs::path csms_leaf_key_directory;
+    fs::path secc_leaf_cert_directory;
+    fs::path secc_leaf_key_directory;
     std::optional<std::string> private_key_password;
 };
 
