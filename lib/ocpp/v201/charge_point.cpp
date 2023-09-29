@@ -302,8 +302,8 @@ void ChargePoint::on_session_finished(const int32_t evse_id, const int32_t conne
 }
 
 void ChargePoint::on_meter_value(const int32_t evse_id, const MeterValue& meter_value) {
-    std::lock_guard<std::mutex> lk(this->meter_value_mutex);
     if (evse_id == 0) {
+        std::lock_guard<std::mutex> lk(this->meter_value_mutex);
         // if evseId = 0 ten store in the chargepoint metervalues
         this->meter_value = meter_value;
     } else {
@@ -868,10 +868,10 @@ void ChargePoint::update_aligned_data_interval() {
     const auto next_timestamp = this->get_next_clock_aligned_meter_value_timestamp(
         this->device_model->get_value<int>(ControllerComponentVariables::AlignedDataInterval));
     if (next_timestamp.has_value()) {
-        bool transaction_active = false;
         EVLOG_debug << "Next meter value will be sent at: " << next_timestamp.value().to_rfc3339();
         this->aligned_meter_values_timer.at(
-            [this, &transaction_active]() {
+            [this]() {
+                bool transaction_active = false;
                 for (auto const& [evse_id, evse] : this->evses) {
                     auto _meter_value = evse->get_meter_value();
                     // this will apply configured measurands and possibly reduce the entries of sampledValue
