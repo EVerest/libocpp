@@ -3,7 +3,7 @@
   "description": "Schema for EVSE",
   "type": "object",
   "name": "EVSE",
-  "evse_id": "1",
+  "evse_id": 1,
   "properties": {
     "EVSEAllowReset": {
       "variable_name": "AllowReset",

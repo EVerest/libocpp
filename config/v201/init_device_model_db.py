@@ -27,8 +27,8 @@ import os
 from glob import glob
 
 INIT_DEVICE_MODEL_SQL = "init_device_model.sql"
-STANDARDIZED_COMPONENT_SCHEMAS_DIR = Path("component_schemas/standardized")
-CUSTOM_COMPONENT_SCHEMAS_DIR = Path("component_schemas/custom")
+STANDARDIZED_COMPONENT_SCHEMAS_DIR = Path("standardized")
+CUSTOM_COMPONENT_SCHEMAS_DIR = Path("custom")
 
 DATATYPE_ENCODING = {
     "string": 0,
@@ -164,7 +164,7 @@ if __name__ == '__main__':
         formatter_class=argparse.RawTextHelpFormatter, description="OCPP2.0.1 Database Initialization")
     parser.add_argument("--out", metavar='OUT', nargs='?', const='/tmp/ocpp201/device_model_storage.db', default='/tmp/ocpp201/device_model_storage.db', type=str,
                         help="Path to where the directory where the database file should be located", required=False)
-    parser.add_argument("--config_path", metavar='CONFIG-PATH', nargs='?', const='.', default='.', type=str,
+    parser.add_argument("--schemas", metavar='CONFIG-PATH', nargs='?', const='.', default='component_schemas', type=str,
                         help="Path to libocpp/config/v201", required=False)
 
     Path("/tmp/ocpp201").mkdir(parents=True, exist_ok=True)
@@ -175,19 +175,18 @@ if __name__ == '__main__':
     if os.path.exists(out_file):
         os.remove(out_file)
 
-    config_v201_path = Path(args.config_path)
-    init_device_model_sql_path = config_v201_path / INIT_DEVICE_MODEL_SQL
+    schemas_path = Path(args.schemas)
 
-    component_schema_dirs = glob((config_v201_path / STANDARDIZED_COMPONENT_SCHEMAS_DIR).joinpath(
-        "*").as_posix()) + glob((config_v201_path / CUSTOM_COMPONENT_SCHEMAS_DIR).joinpath("*").as_posix())
+    component_schema_dirs = glob((schemas_path / STANDARDIZED_COMPONENT_SCHEMAS_DIR).joinpath(
+        "*").as_posix()) + glob((schemas_path / CUSTOM_COMPONENT_SCHEMAS_DIR).joinpath("*").as_posix())
     component_schema_dirs = [Path(component_schema)
                              for component_schema in component_schema_dirs]
 
     con = sqlite3.connect(out_file)
-    execute_init_sql(con, init_device_model_sql_path)
+    execute_init_sql(con, INIT_DEVICE_MODEL_SQL)
     insert_components(con, component_schema_dirs)
 
-    print(f"Successfully initialized device model sqlite storage at {out_file}")
+    print(f"Successfully initialized device model sqlite storage using schemas directory {schemas_path} at {out_file}")
 
     con.commit()
     con.close()
