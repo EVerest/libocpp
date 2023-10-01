@@ -28,7 +28,7 @@ from glob import glob
 
 INIT_DEVICE_MODEL_SQL = "init_device_model.sql"
 STANDARDIZED_COMPONENT_SCHEMAS_DIR = Path("component_schemas/standardized")
-ADDITIONAL_COMPONENT_SCHEMAS_DIR = Path("component_schemas/custom")
+CUSTOM_COMPONENT_SCHEMAS_DIR = Path("component_schemas/custom")
 
 DATATYPE_ENCODING = {
     "string": 0,
@@ -179,13 +179,15 @@ if __name__ == '__main__':
     init_device_model_sql_path = config_v201_path / INIT_DEVICE_MODEL_SQL
 
     component_schema_dirs = glob((config_v201_path / STANDARDIZED_COMPONENT_SCHEMAS_DIR).joinpath(
-        "*").as_posix()) + glob((config_v201_path / ADDITIONAL_COMPONENT_SCHEMAS_DIR).joinpath("*").as_posix())
-    component_schmea_dirs = [Path(component_schema)
+        "*").as_posix()) + glob((config_v201_path / CUSTOM_COMPONENT_SCHEMAS_DIR).joinpath("*").as_posix())
+    component_schema_dirs = [Path(component_schema)
                              for component_schema in component_schema_dirs]
 
     con = sqlite3.connect(out_file)
     execute_init_sql(con, init_device_model_sql_path)
-    insert_components(con, component_schmea_dirs)
+    insert_components(con, component_schema_dirs)
+
+    print(f"Successfully initialized device model sqlite storage at {out_file}")
 
     con.commit()
     con.close()
