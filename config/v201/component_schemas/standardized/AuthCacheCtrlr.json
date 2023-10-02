@@ -32,7 +32,7 @@
           "mutability": "ReadWrite"
         }
       ],
-      "description": "If set to true, Authorizaiton caching is enabled.",
+      "description": "If set to true, Authorization caching is enabled.",
       "default": "1",
       "type": "boolean"
     },
