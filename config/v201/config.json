@@ -115,7 +115,7 @@
             "SampledDataTxEndedInterval": {
                 "variable_name": "TxEndedInterval",
                 "attributes": {
-                    "Actual": "60"
+                    "Actual": 60
                 }
             },
             "SampledDataTxEndedMeasurands": {
@@ -133,7 +133,7 @@
             "SampledDataTxUpdatedInterval": {
                 "variable_name": "TxUpdatedInterval",
                 "attributes": {
-                    "Actual": "120"
+                    "Actual": 120
                 }
             },
             "SampledDataTxUpdatedMeasurands": {
@@ -147,16 +147,28 @@
     {
         "name": "LocalAuthListCtrlr",
         "variables": {
+            "LocalAuthListCtrlrAvailable": {
+                "variable_name": "Available",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "LocalAuthListCtrlrEnabled": {
+                "variable_name": "Enabled",
+                "attributes": {
+                    "Actual": false
+                }
+            },
             "BytesPerMessageSendLocalList": {
                 "variable_name": "BytesPerMessageSendLocalList",
                 "attributes": {
-                    "Actual": 42
+                    "Actual": 5000
                 }
             },
             "LocalAuthListCtrlrEntries": {
                 "variable_name": "Entries",
                 "attributes": {
-                    "Actual": 42
+                    "Actual": 0
                 }
             },
             "ItemsPerMessageSendLocalList": {
@@ -221,7 +233,7 @@
             "NumberOfConnectors": {
                 "variable_name": "NumberOfConnectors",
                 "attributes": {
-                    "Actual": "1"
+                    "Actual": 2
                 }
             }
         }
@@ -235,24 +247,31 @@
                     "Actual": ""
                 }
             },
+            "HeartbeatInterval": {
+                "variable_name": "HeartbeatInterval",
+                "attributes": {
+                    "Actual": 300
+                },
+                "instance": "Default"
+            },
             "MessageTimeout": {
                 "variable_name": "MessageTimeout",
                 "attributes": {
-                    "Actual": "60"
+                    "Actual": 60
                 },
                 "instance": "Default"
             },
             "MessageAttemptInterval": {
                 "variable_name": "MessageAttemptInterval",
                 "attributes": {
-                    "Actual": "10"
+                    "Actual": 10
                 },
                 "instance": "TransactionEvent"
             },
             "MessageAttempts": {
                 "variable_name": "MessageAttempts",
                 "attributes": {
-                    "Actual": "5"
+                    "Actual": 5
                 },
                 "instance": "TransactionEvent"
             },
@@ -265,49 +284,49 @@
             "NetworkProfileConnectionAttempts": {
                 "variable_name": "NetworkProfileConnectionAttempts",
                 "attributes": {
-                    "Actual": "3"
+                    "Actual": 3
                 }
             },
             "OfflineThreshold": {
                 "variable_name": "OfflineThreshold",
                 "attributes": {
-                    "Actual": "60"
+                    "Actual": 60
                 }
             },
             "ResetRetries": {
                 "variable_name": "ResetRetries",
                 "attributes": {
-                    "Actual": "3"
+                    "Actual": 3
                 }
             },
             "RetryBackOffRandomRange": {
                 "variable_name": "RetryBackOffRandomRange",
                 "attributes": {
-                    "Actual": "2"
+                    "Actual": 2
                 }
             },
             "RetryBackOffRepeatTimes": {
                 "variable_name": "RetryBackOffRepeatTimes",
                 "attributes": {
-                    "Actual": "2"
+                    "Actual": 2
                 }
             },
             "RetryBackOffWaitMinimum": {
                 "variable_name": "RetryBackOffWaitMinimum",
                 "attributes": {
-                    "Actual": "1"
+                    "Actual": 1
                 }
             },
             "UnlockOnEVSideDisconnect": {
                 "variable_name": "UnlockOnEVSideDisconnect",
                 "attributes": {
-                    "Actual": "1"
+                    "Actual": true
                 }
             },
             "WebSocketPingInterval": {
                 "variable_name": "WebSocketPingInterval",
                 "attributes": {
-                    "Actual": "30"
+                    "Actual": 30
                 }
             }
         }
@@ -373,19 +392,25 @@
             "EVConnectionTimeOut": {
                 "variable_name": "EVConnectionTimeOut",
                 "attributes": {
-                    "Actual": "120"
+                    "Actual": 120
                 }
             },
             "StopTxOnEVSideDisconnect": {
                 "variable_name": "StopTxOnEVSideDisconnect",
                 "attributes": {
-                    "Actual": "1"
+                    "Actual": true
                 }
             },
             "StopTxOnInvalidId": {
                 "variable_name": "StopTxOnInvalidId",
                 "attributes": {
-                    "Actual": "1"
+                    "Actual": true
+                }
+            },
+            "MaxEnergyOnInvalidId": {
+                "variable_name": "MaxEnergyOnInvalidId",
+                "attributes": {
+                    "Actual": 0
                 }
             },
             "TxStartPoint": {
@@ -408,7 +433,7 @@
             "AlignedDataInterval": {
                 "variable_name": "Interval",
                 "attributes": {
-                    "Actual": "900"
+                    "Actual": 900
                 }
             },
             "AlignedDataMeasurands": {
@@ -420,7 +445,7 @@
             "AlignedDataTxEndedInterval": {
                 "variable_name": "TxEndedInterval",
                 "attributes": {
-                    "Actual": "60"
+                    "Actual": 60
                 }
             },
             "AlignedDataTxEndedMeasurands": {
@@ -434,22 +459,40 @@
     {
         "name": "AuthCtrlr",
         "variables": {
+            "AuthCtrlrEnabled": {
+                "variable_name": "Enabled",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "AuthCtrlrAvailable": {
+                "variable_name": "Available",
+                "attributes": {
+                    "Actual": true
+                }
+            },
             "AuthorizeRemoteStart": {
                 "variable_name": "AuthorizeRemoteStart",
                 "attributes": {
-                    "Actual": "1"
+                    "Actual": true
                 }
             },
             "LocalAuthorizeOffline": {
                 "variable_name": "LocalAuthorizeOffline",
                 "attributes": {
-                    "Actual": "1"
+                    "Actual": true
                 }
             },
             "LocalPreAuthorize": {
                 "variable_name": "LocalPreAuthorize",
                 "attributes": {
-                    "Actual": "1"
+                    "Actual": true
+                }
+            },
+            "OfflineTxForUnknownIdEnabled": {
+                "variable_name": "OfflineTxForUnknownIdEnabled",
+                "attributes": {
+                    "Actual": false
                 }
             }
         }
@@ -592,7 +635,7 @@
             "SecurityProfile": {
                 "variable_name": "SecurityProfile",
                 "attributes": {
-                    "Actual": "1"
+                    "Actual": 1
                 }
             },
             "BasicAuthPassword": {
