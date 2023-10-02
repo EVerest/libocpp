@@ -127,12 +127,12 @@ size_t DatabaseHandler::authorization_cache_get_binary_size() {
         SQLiteStatement stmt(this->db, sql);
 
         if (stmt.step() != SQLITE_ROW) {
-            throw std::runtime_error("Could not get local list count from database");
+            throw std::runtime_error("Could not get authorization cache binary size from database");
         }
 
         return stmt.column_int(0);
     } catch (const std::exception& e) {
-        throw std::runtime_error("Could not get availability from database");
+        throw std::runtime_error("Could not get authorization cache binary size from database");
     }
 }
 
@@ -287,7 +287,7 @@ int32_t DatabaseHandler::get_local_authorization_list_number_of_entries() {
 
         return stmt.column_int(0);
     } catch (const std::exception& e) {
-        throw std::runtime_error("Could not get availability from database");
+        throw std::runtime_error("Could not get local list count from database");
     }
 }
 
