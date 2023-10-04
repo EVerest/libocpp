@@ -8,10 +8,11 @@ target_sources(ocpp
         ocpp/common/database_handler_base.cpp
         ocpp/common/message_queue.cpp
         ocpp/common/ocpp_logging.cpp
-        ocpp/common/pki_handler.cpp
         ocpp/common/schemas.cpp
         ocpp/common/types.cpp
         ocpp/common/utils.cpp
+        ocpp/common/evse_security_impl.cpp
+        ocpp/common/evse_security.cpp
         ocpp/v16/charge_point.cpp
         ocpp/v16/database_handler.cpp
         ocpp/v16/charge_point_impl.cpp
@@ -39,6 +40,8 @@ target_sources(ocpp
 add_subdirectory(ocpp/common/websocket)
 add_subdirectory(ocpp/v16/messages)
 add_subdirectory(ocpp/v201/messages)
+
+option(LIBOCPP_USE_BOOST_FILESYSTEM "Usage of boost/filesystem.hpp instead of std::filesystem" OFF)
 
 target_include_directories(ocpp
     PUBLIC
@@ -73,12 +76,13 @@ endif()
 #############
 # End logging configuration
 #############
-           
+ 
 target_link_libraries(ocpp
     PUBLIC
         everest::timer
         websocketpp::websocketpp
         nlohmann_json_schema_validator
+        everest::evse_security
     PRIVATE
         OpenSSL::SSL
         OpenSSL::Crypto
@@ -88,6 +92,18 @@ target_link_libraries(ocpp
         nlohmann_json::nlohmann_json
         date::date-tz
 )
+
+if(LIBOCPP_USE_BOOST_FILESYSTEM)
+    find_package(Boost REQUIRED COMPONENTS filesystem)
+    target_link_libraries(ocpp
+        PRIVATE
+            Boost::filesystem
+    )
+    target_compile_definitions(log
+        PRIVATE
+            LIBOCPP_USE_BOOST_FILESYSTEM
+    )
+endif()
 
 # FIXME (aw): right now nlohmann_json and boost::optional don't compile
 #             with gcc 10.x and C++11/14, so we need to publish the

@@ -9,6 +9,7 @@
 #include <ocpp/v201/ctrlr_component_variables.hpp>
 #include <ocpp/v201/database_handler.hpp>
 #include <ocpp/v201/device_model.hpp>
+#include <ocpp/v201/device_model_storage.hpp>
 #include <ocpp/v201/enums.hpp>
 #include <ocpp/v201/evse.hpp>
 #include <ocpp/v201/ocpp_types.hpp>
@@ -186,6 +187,10 @@ private:
     MeterValue get_latest_meter_value_filtered(const MeterValue& meter_value, ReadingContextEnum context,
                                                const ComponentVariable& component_variable);
 
+    ///\brief Calculate and update the authorization cache size in the device model
+    ///
+    void update_authorization_cache_size();
+
     ///\brief Apply a local list request to the database if allowed
     ///
     ///\param request The local list request to apply
@@ -312,11 +317,32 @@ public:
     /// \param ocpp_main_path Path where utility files for OCPP are read and written to
     /// \param core_database_path Path to directory where core database is located
     /// \param message_log_path Path to where logfiles are written to
+    /// \param evse_security Pointer to evse_security that manages security related operations; if nullptr
+    /// security_configuration must be set
     /// \param callbacks Callbacks that will be registered for ChargePoint
+    /// \param security_configuration specifies the file paths that are required to set up the internal evse_security
+    /// implementation
     ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
                 const std::string& device_model_storage_address, const std::string& ocpp_main_path,
                 const std::string& core_database_path, const std::string& sql_init_path,
-                const std::string& message_log_path, const std::string& certs_path, const Callbacks& callbacks);
+                const std::string& message_log_path, const std::shared_ptr<EvseSecurity> evse_security,
+                const Callbacks& callbacks);
+
+    /// \brief Construct a new ChargePoint object
+    /// \param evse_connector_structure Map that defines the structure of EVSE and connectors of the chargepoint. The
+    /// key represents the id of the EVSE and the value represents the number of connectors for this EVSE. The ids of
+    /// the EVSEs have to increment starting with 1.
+    /// \param device_model_storage device model storage instance
+    /// \param ocpp_main_path Path where utility files for OCPP are read and written to
+    /// \param core_database_path Path to directory where core database is located
+    /// \param message_log_path Path to where logfiles are written to
+    /// \param evse_security Pointer to evse_security that manages security related operations
+    /// \param callbacks Callbacks that will be registered for ChargePoint
+    ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
+                std::unique_ptr<DeviceModelStorage> device_model_storage, const std::string& ocpp_main_path,
+                const std::string& core_database_path, const std::string& sql_init_path,
+                const std::string& message_log_path, const std::shared_ptr<EvseSecurity> evse_security,
+                const Callbacks& callbacks);
 
     /// \brief Starts the ChargePoint, initializes and connects to the Websocket endpoint
     /// \param bootreason   Optional bootreason (default: PowerUp).
@@ -337,9 +363,8 @@ public:
     /// \brief Chargepoint notifies about new firmware update status firmware_update_status. This function should be
     ///        called during a Firmware Update to indicate the current firmware_update_status.
     /// \param request_id   The request_id. When it is -1, it will not be included in the request.
-    /// \param firmware_update_status The firmware_update_status should be convertable to the
-    ///        ocpp::v201::FirmwareStatusEnum.
-    void on_firmware_update_status_notification(int32_t request_id, const std::string& firmware_update_status);
+    /// \param firmware_update_status The firmware_update_status
+    void on_firmware_update_status_notification(int32_t request_id, const FirmwareStatusEnum& firmware_update_status);
 
     /// \brief Event handler that should be called when a session has started
     /// \param evse_id

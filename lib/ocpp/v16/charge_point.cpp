@@ -10,12 +10,13 @@
 namespace ocpp {
 namespace v16 {
 
-ChargePoint::ChargePoint(const std::string& config, const std::filesystem::path& share_path,
-                         const std::filesystem::path& user_config_path, const std::filesystem::path& database_path,
-                         const std::filesystem::path& sql_init_path, const std::filesystem::path& message_log_path,
-                         const std::filesystem::path& certs_path) {
-    this->charge_point = std::make_unique<ChargePointImpl>(config, share_path, user_config_path, database_path,
-                                                           sql_init_path, message_log_path, certs_path);
+ChargePoint::ChargePoint(const std::string& config, const fs::path& share_path, const fs::path& user_config_path,
+                         const fs::path& database_path, const fs::path& sql_init_path, const fs::path& message_log_path,
+                         const std::shared_ptr<EvseSecurity> evse_security,
+                         const std::optional<SecurityConfiguration> security_configuration) {
+    this->charge_point =
+        std::make_unique<ChargePointImpl>(config, share_path, user_config_path, database_path, sql_init_path,
+                                          message_log_path, evse_security, security_configuration);
 }
 
 ChargePoint::~ChargePoint() = default;
@@ -131,7 +132,8 @@ void ChargePoint::on_log_status_notification(int32_t request_id, std::string log
     this->charge_point->on_log_status_notification(request_id, log_status);
 }
 
-void ChargePoint::on_firmware_update_status_notification(int32_t request_id, std::string firmware_update_status) {
+void ChargePoint::on_firmware_update_status_notification(int32_t request_id,
+                                                         const FirmwareStatusNotification firmware_update_status) {
     this->charge_point->on_firmware_update_status_notification(request_id, firmware_update_status);
 }
 

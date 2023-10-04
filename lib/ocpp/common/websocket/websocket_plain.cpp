@@ -127,6 +127,11 @@ void WebsocketPlain::connect_plain() {
         EVLOG_error << "Connection initialization error for plain websocket: " << ec.message();
     }
 
+    if (this->connection_options.hostName.has_value()) {
+        EVLOG_info << "User-Host is set to " << this->connection_options.hostName.value();
+        con->append_header("User-Host", this->connection_options.hostName.value());
+    }
+
     if (this->connection_options.security_profile == 0) {
         EVLOG_debug << "Connecting with security profile: 0";
     } else if (this->connection_options.security_profile == 1) {
@@ -205,6 +210,7 @@ void WebsocketPlain::on_close_plain(client* c, websocketpp::connection_hdl hdl) 
 
 void WebsocketPlain::on_fail_plain(client* c, websocketpp::connection_hdl hdl) {
     std::lock_guard<std::mutex> lk(this->connection_mutex);
+    this->m_is_connected = false;
     this->connection_attempts += 1;
     client::connection_ptr con = c->get_con_from_hdl(hdl);
     const auto ec = con->get_ec();

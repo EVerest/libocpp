@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.14)
 
 project(ocpp
-    VERSION 0.9.1
+    VERSION 0.9.3
     DESCRIPTION "A C++ implementation of the Open Charge Point Protocol"
     LANGUAGES CXX
 )
@@ -40,6 +40,7 @@ else()
     find_package(fsm REQUIRED)
     find_package(everest-timer REQUIRED)
     find_package(everest-log REQUIRED)
+    find_package(everest-evse_security REQUIRED)
 endif()
 
 # library code

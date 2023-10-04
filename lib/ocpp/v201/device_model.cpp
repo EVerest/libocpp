@@ -153,20 +153,20 @@ SetVariableStatusEnum DeviceModel::set_value_internal(const Component& component
     return success ? SetVariableStatusEnum::Accepted : SetVariableStatusEnum::Rejected;
 };
 
-DeviceModel::DeviceModel(const std::string& storage_address) {
-    this->storage = std::make_unique<DeviceModelStorageSqlite>(storage_address);
+DeviceModel::DeviceModel(std::unique_ptr<DeviceModelStorage> device_model_storage) :
+    storage{std::move(device_model_storage)} {
     this->device_model = this->storage->get_device_model();
-};
+}
 
 SetVariableStatusEnum DeviceModel::set_value(const Component& component, const Variable& variable,
                                              const AttributeEnum& attribute_enum, const std::string& value) {
     return this->set_value_internal(component, variable, attribute_enum, value, false);
-};
+}
 
 SetVariableStatusEnum DeviceModel::set_read_only_value(const Component& component, const Variable& variable,
                                                        const AttributeEnum& attribute_enum, const std::string& value) {
 
-    if (component == ControllerComponents::LocalAuthListCtrlr) {
+    if (component == ControllerComponents::AuthCacheCtrlr or component == ControllerComponents::LocalAuthListCtrlr) {
         return this->set_value_internal(component, variable, attribute_enum, value, true);
     }
     throw std::invalid_argument("Not allowed to set read only value for component " + component.name.get());

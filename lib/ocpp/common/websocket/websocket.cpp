@@ -11,15 +11,15 @@ using json = nlohmann::json;
 
 namespace ocpp {
 
-Websocket::Websocket(const WebsocketConnectionOptions& connection_options, std::shared_ptr<PkiHandler> pki_handler,
+Websocket::Websocket(const WebsocketConnectionOptions& connection_options, std::shared_ptr<EvseSecurity> evse_security,
                      std::shared_ptr<MessageLogging> logging) :
     logging(logging) {
     if (connection_options.security_profile <= 1) {
         EVLOG_debug << "Creating plaintext websocket based on the provided URI: " << connection_options.csms_uri;
         this->websocket = std::make_unique<WebsocketPlain>(connection_options);
     } else if (connection_options.security_profile >= 2) {
-        EVLOG_debug << "Creating TLS websocket based on the provided URI: " << connection_options.csms_uri;
-        this->websocket = std::make_unique<WebsocketTLS>(connection_options, pki_handler);
+        EVLOG_debug << "Creating TLS websocket based on the provided URI: " << connection_options.cs_uri;
+        this->websocket = std::make_unique<WebsocketTLS>(connection_options, evse_security);
     }
 }
 

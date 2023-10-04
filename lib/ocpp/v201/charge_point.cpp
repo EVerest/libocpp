@@ -3,6 +3,7 @@
 
 #include "ocpp/v201/ctrlr_component_variables.hpp"
 #include <ocpp/v201/charge_point.hpp>
+#include <ocpp/v201/device_model_storage_sqlite.hpp>
 #include <ocpp/v201/messages/FirmwareStatusNotification.hpp>
 #include <ocpp/v201/messages/LogStatusNotification.hpp>
 
@@ -28,9 +29,18 @@ bool Callbacks::all_callbacks_valid() const {
 ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
                          const std::string& device_model_storage_address, const std::string& ocpp_main_path,
                          const std::string& core_database_path, const std::string& sql_init_path,
-                         const std::string& message_log_path, const std::string& certs_path,
+                         const std::string& message_log_path, const std::shared_ptr<EvseSecurity> evse_security,
                          const Callbacks& callbacks) :
-    ocpp::ChargingStationBase(),
+    ChargePoint(evse_connector_structure, std::make_unique<DeviceModelStorageSqlite>(device_model_storage_address),
+                ocpp_main_path, core_database_path, sql_init_path, message_log_path, evse_security, callbacks) {
+}
+
+ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
+                         std::unique_ptr<DeviceModelStorage> device_model_storage, const std::string& ocpp_main_path,
+                         const std::string& core_database_path, const std::string& sql_init_path,
+                         const std::string& message_log_path, const std::shared_ptr<EvseSecurity> evse_security,
+                         const Callbacks& callbacks) :
+    ocpp::ChargingStationBase(evse_security),
     registration_status(RegistrationStatusEnum::Rejected),
     websocket_connection_status(WebsocketConnectionStatusEnum::Disconnected),
     operational_state(OperationalStatusEnum::Operative),
@@ -38,21 +48,16 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
     disable_automatic_websocket_reconnects(false),
     reset_scheduled(false),
     reset_scheduled_evseids{},
-    callbacks(callbacks),
     firmware_status(FirmwareStatusEnum::Idle),
-    upload_log_status(UploadLogStatusEnum::Idle) {
-
+    upload_log_status(UploadLogStatusEnum::Idle),
+    callbacks(callbacks) {
     // Make sure the received callback struct is completely filled early before we actually start running
     if (!this->callbacks.all_callbacks_valid()) {
         EVLOG_AND_THROW(std::invalid_argument("All non-optional callbacks must be supplied"));
     }
 
-    this->device_model = std::make_unique<DeviceModel>(device_model_storage_address);
-    this->pki_handler = std::make_shared<ocpp::PkiHandler>(
-        certs_path,
-        this->device_model->get_optional_value<bool>(ControllerComponentVariables::AdditionalRootCertificateCheck)
-            .value_or(false));
-    this->database_handler = std::make_shared<DatabaseHandler>(core_database_path, sql_init_path);
+    this->device_model = std::make_unique<DeviceModel>(std::move(device_model_storage));
+    this->database_handler = std::make_unique<DatabaseHandler>(core_database_path, sql_init_path);
     this->database_handler->open_connection();
 
     // operational status of whole charging station
@@ -137,9 +142,9 @@ void ChargePoint::disconnect_websocket() {
 }
 
 void ChargePoint::on_firmware_update_status_notification(int32_t request_id,
-                                                         const std::string& firmware_update_status) {
+                                                         const FirmwareStatusEnum& firmware_update_status) {
     FirmwareStatusNotificationRequest req;
-    req.status = conversions::string_to_firmware_status_enum(firmware_update_status);
+    req.status = firmware_update_status;
     // Firmware status and id are stored for future trigger message request.
     this->firmware_status = req.status;
 
@@ -378,13 +383,14 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
             .value_or(false);
 
     if (auth_cache_enabled) {
-        const auto cache_entry = this->database_handler->get_auth_cache_entry(hashed_id_token);
+        const auto cache_entry = this->database_handler->authorization_cache_get_entry(hashed_id_token);
         if (cache_entry.has_value()) {
             if ((cache_entry.value().cacheExpiryDateTime.has_value() and
                  cache_entry.value().cacheExpiryDateTime.value().to_time_point() < DateTime().to_time_point())) {
                 EVLOG_info << "Found valid entry in AuthCache but expiry date passed: Removing from cache and sending "
                               "new request";
-                this->database_handler->delete_auth_cache_entry(hashed_id_token);
+                this->database_handler->authorization_cache_delete_entry(hashed_id_token);
+                this->update_authorization_cache_size();
             } else if (this->device_model->get_value<bool>(ControllerComponentVariables::LocalPreAuthorize) and
                        cache_entry.value().status == AuthorizationStatusEnum::Accepted) {
                 EVLOG_info << "Found valid entry in AuthCache";
@@ -407,7 +413,8 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
     response = this->authorize_req(id_token, certificate, ocsp_request_data);
 
     if (auth_cache_enabled) {
-        this->database_handler->insert_auth_cache_entry(hashed_id_token, response.idTokenInfo);
+        this->database_handler->authorization_cache_insert_entry(hashed_id_token, response.idTokenInfo);
+        this->update_authorization_cache_size();
     }
 
     return response;
@@ -475,7 +482,7 @@ void ChargePoint::init_websocket() {
         return;
     }
 
-    this->websocket = std::make_unique<Websocket>(connection_options, this->pki_handler, this->logging);
+    this->websocket = std::make_unique<Websocket>(connection_options, this->evse_security, this->logging);
     this->websocket->register_connected_callback([this](const int security_profile) {
         this->message_queue->resume();
         this->websocket_connection_status = WebsocketConnectionStatusEnum::Connected;
@@ -741,7 +748,7 @@ void ChargePoint::message_callback(const std::string& message) {
                 const auto error_message = "Received other message than BootNotificationResponse before "
                                            "having received an accepted BootNotificationResponse";
                 EVLOG_warning << error_message;
-                const auto call_error = CallError(enhanced_message.uniqueId, "SecurityError", "", json({}));
+                const auto call_error = CallError(enhanced_message.uniqueId, "SecurityError", "", json({}, true));
                 this->send(call_error);
             }
         }
@@ -763,6 +770,15 @@ MeterValue ChargePoint::get_latest_meter_value_filtered(const MeterValue& meter_
         sampled_value.context = context;
     }
     return filtered_meter_value;
+}
+
+void ChargePoint::update_authorization_cache_size() {
+    auto& auth_cache_size = ControllerComponentVariables::AuthCacheStorage;
+    if (auth_cache_size.variable.has_value()) {
+        auto size = this->database_handler->authorization_cache_get_binary_size();
+        this->device_model->set_read_only_value(auth_cache_size.component, auth_cache_size.variable.value(),
+                                                AttributeEnum::Actual, std::to_string(size));
+    }
 }
 
 SendLocalListStatusEnum ChargePoint::apply_local_authorization_list(const SendLocalListRequest& request) {
@@ -953,13 +969,15 @@ bool ChargePoint::validate_set_variable(const SetVariableData& set_variable_data
                     continue;
                 }
 
-                if (network_profile.securityProfile == 3 and !this->pki_handler->isCsmsLeafCertificateInstalled()) {
+                if (network_profile.securityProfile == 3 and
+                    !this->evse_security->get_key_pair(ocpp::CertificateSigningUseEnum::ChargingStationCertificate)
+                         .has_value()) {
                     EVLOG_warning << "SecurityProfile of configurationSlot: " << configuration_slot
                                   << " is 3 but no CSMS Leaf Certificate is installed";
                     return false;
                 }
                 if (network_profile.securityProfile >= 2 and
-                    !this->pki_handler->isCentralSystemRootCertificateInstalled()) {
+                    !this->evse_security->is_ca_certificate_installed(ocpp::CaCertificateType::CSMS)) {
                     EVLOG_warning << "SecurityProfile of configurationSlot: " << configuration_slot
                                   << " is >= 2 but no CSMS Root Certifciate is installed";
                     return false;
@@ -1001,14 +1019,13 @@ bool ChargePoint::is_evse_reserved_for_other(const std::unique_ptr<Evse>& evse, 
             }
         }
     }
-
     return false;
 }
 
 bool ChargePoint::is_evse_connector_available(const std::unique_ptr<Evse>& evse) const {
     if (evse->has_active_transaction()) {
-        // If an EV is connected and has no authorization yet then the status is 'Occupied' and the RemoteStartRequest
-        // should still be accepted. So this is the 'occupied' check instead.
+        // If an EV is connected and has no authorization yet then the status is 'Occupied' and the
+        // RemoteStartRequest should still be accepted. So this is the 'occupied' check instead.
         return false;
     }
 
@@ -1108,7 +1125,7 @@ AuthorizeResponse ChargePoint::authorize_req(const IdToken id_token, const std::
     }
 
     ocpp::CallResult<AuthorizeResponse> call_result = enhanced_message.message;
-    if (response.idTokenInfo.cacheExpiryDateTime.has_value() or
+    if (call_result.msg.idTokenInfo.cacheExpiryDateTime.has_value() or
         !this->device_model->get_optional_value<int>(ControllerComponentVariables::AuthCacheLifeTime).has_value()) {
         return call_result.msg;
     }
@@ -1354,7 +1371,8 @@ void ChargePoint::handle_get_base_report_req(Call<GetBaseReportRequest> call) {
     ocpp::CallResult<GetBaseReportResponse> call_result(response, call.uniqueId);
     this->send<GetBaseReportResponse>(call_result);
 
-    // TODO(piet): Propably split this up into several NotifyReport.req depending on ItemsPerMessage / BytesPerMessage
+    // TODO(piet): Propably split this up into several NotifyReport.req depending on ItemsPerMessage /
+    // BytesPerMessage
     const auto report_data = this->device_model->get_report_data(msg.reportBase);
     this->notify_report_req(msg.requestId, 0, report_data);
 }
@@ -1364,7 +1382,8 @@ void ChargePoint::handle_get_report_req(Call<GetReportRequest> call) {
 
     GetReportResponse response;
 
-    // TODO(piet): Propably split this up into several NotifyReport.req depending on ItemsPerMessage / BytesPerMessage
+    // TODO(piet): Propably split this up into several NotifyReport.req depending on ItemsPerMessage /
+    // BytesPerMessage
     const auto report_data = this->device_model->get_report_data(ReportBaseEnum::FullInventory, msg.componentVariable,
                                                                  msg.componentCriteria);
     if (report_data.empty()) {
@@ -1545,7 +1564,8 @@ void ChargePoint::handle_clear_cache_req(Call<ClearCacheRequest> call) {
 
     if (this->device_model->get_optional_value<bool>(ControllerComponentVariables::AuthCacheCtrlrEnabled)
             .value_or(true) and
-        this->database_handler->clear_authorization_cache()) {
+        this->database_handler->authorization_cache_clear()) {
+        this->update_authorization_cache_size();
         response.status = ClearCacheStatusEnum::Accepted;
     }
 
@@ -1582,8 +1602,9 @@ void ChargePoint::handle_start_transaction_event_response(const EnhancedMessage<
         if (id_token.type != IdTokenEnum::Central and
             this->device_model->get_optional_value<bool>(ControllerComponentVariables::AuthCacheCtrlrEnabled)
                 .value_or(true)) {
-            this->database_handler->insert_auth_cache_entry(utils::generate_token_hash(id_token),
-                                                            msg.idTokenInfo.value());
+            this->database_handler->authorization_cache_insert_entry(utils::generate_token_hash(id_token),
+                                                                     msg.idTokenInfo.value());
+            this->update_authorization_cache_size();
         }
         if (msg.idTokenInfo.value().status != AuthorizationStatusEnum::Accepted) {
             if (this->device_model->get_value<bool>(ControllerComponentVariables::StopTxOnInvalidId)) {
@@ -1803,9 +1824,9 @@ void ChargePoint::handle_remote_start_transaction_request(Call<RequestStartTrans
 
         if (evse != nullptr) {
             // TODO F01.FR.26 If a Charging Station with support for Smart Charging receives a
-            // RequestStartTransactionRequest with an invalid ChargingProfile: The Charging Station SHALL respond with
-            // RequestStartTransactionResponse with status = Rejected and optionally with reasonCode = "InvalidProfile"
-            // or "InvalidSchedule".
+            // RequestStartTransactionRequest with an invalid ChargingProfile: The Charging Station SHALL respond
+            // with RequestStartTransactionResponse with status = Rejected and optionally with reasonCode =
+            // "InvalidProfile" or "InvalidSchedule".
 
             // F01.FR.23: Faulted or unavailable. F01.FR.24 / F02.FR.25: Occupied. Send rejected.
             const bool available = is_evse_connector_available(evse);
@@ -1815,11 +1836,11 @@ void ChargePoint::handle_remote_start_transaction_request(Call<RequestStartTrans
             const bool reserved = is_evse_reserved_for_other(evse, call.msg.idToken, call.msg.groupIdToken);
 
             if (!available || reserved) {
-                // Note: we only support TxStartPoint PowerPathClosed, so we did not implement starting a transaction
-                // first (and send TransactionEventRequest (eventType = Started). Only if a transaction is authorized, a
-                // TransactionEventRequest will be sent. Because of this, F01.FR.13 is not implemented as well, because
-                // in the current situation, this is an impossible state. (TODO: when more TxStartPoints are supported,
-                // add implementation for F01.FR.13 as well).
+                // Note: we only support TxStartPoint PowerPathClosed, so we did not implement starting a
+                // transaction first (and send TransactionEventRequest (eventType = Started). Only if a transaction
+                // is authorized, a TransactionEventRequest will be sent. Because of this, F01.FR.13 is not
+                // implemented as well, because in the current situation, this is an impossible state. (TODO: when
+                // more TxStartPoints are supported, add implementation for F01.FR.13 as well).
                 EVLOG_info << "Remote start transaction requested, but connector is not available or reserved.";
             } else {
                 // F02: No active transaction yet and there is an available connector, so just send 'accepted'.
@@ -1831,8 +1852,8 @@ void ChargePoint::handle_remote_start_transaction_request(Call<RequestStartTrans
     } else {
         // F01.FR.07 RequestStartTransactionRequest does not contain an evseId. The Charging Station MAY reject the
         // RequestStartTransactionRequest. We do this for now (send rejected) (TODO: eventually support the charging
-        // station to accept no evse id. If so: add token and remote start id for evse id 0 to remote_start_id_per_evse,
-        // so we know for '0' it means 'all evse id's').
+        // station to accept no evse id. If so: add token and remote start id for evse id 0 to
+        // remote_start_id_per_evse, so we know for '0' it means 'all evse id's').
         EVLOG_warning << "No evse id given. Can not remote start transaction.";
     }
 
@@ -1890,13 +1911,13 @@ void ChargePoint::handle_change_availability_req(Call<ChangeAvailabilityRequest>
         if (msg.evse.has_value()) {
             evse_id = msg.evse.value().id;
         }
-        // add to map of scheduled operational_states. This also overrides successive ChangeAvailability.req with the
-        // same EVSE, which is propably desirable
+        // add to map of scheduled operational_states. This also overrides successive ChangeAvailability.req with
+        // the same EVSE, which is propably desirable
         this->scheduled_change_availability_requests[evse_id] = msg;
     }
 
-    // send reply before applying changes to EVSE / Connector because this could trigger StatusNotification.req before
-    // responding with ChangeAvailability.req
+    // send reply before applying changes to EVSE / Connector because this could trigger StatusNotification.req
+    // before responding with ChangeAvailability.req
     ocpp::CallResult<ChangeAvailabilityResponse> call_result(response, call.uniqueId);
     this->send<ChangeAvailabilityResponse>(call_result);
 

@@ -5,16 +5,14 @@
 
 #include "sqlite3.h"
 #include <deque>
-#include <filesystem>
 #include <fstream>
 #include <memory>
+#include <ocpp/common/support_older_cpp_versions.hpp>
 
 #include <ocpp/common/database_handler_base.hpp>
 #include <ocpp/v201/ocpp_types.hpp>
 
 #include <everest/logging.hpp>
-
-namespace fs = std::filesystem;
 
 namespace ocpp {
 namespace v201 {
@@ -43,20 +41,25 @@ public:
     /// \brief Inserts cache entry
     /// \param id_token_hash
     /// \param id_token_info
-    void insert_auth_cache_entry(const std::string& id_token_hash, const IdTokenInfo& id_token_info);
+    void authorization_cache_insert_entry(const std::string& id_token_hash, const IdTokenInfo& id_token_info);
 
     /// \brief Gets cache entry for given \p id_token_hash if present
     /// \param id_token_hash
     /// \return
-    std::optional<IdTokenInfo> get_auth_cache_entry(const std::string& id_token_hash);
+    std::optional<IdTokenInfo> authorization_cache_get_entry(const std::string& id_token_hash);
 
     /// \brief Deletes the cache entry for the given \p id_token_hash
     /// \param id_token_hash
-    void delete_auth_cache_entry(const std::string& id_token_hash);
+    void authorization_cache_delete_entry(const std::string& id_token_hash);
 
     /// \brief Deletes all entries of the AUTH_CACHE table. Returns true if the operation was successful, else false
     /// \return
-    bool clear_authorization_cache();
+    bool authorization_cache_clear();
+
+    ///\brief Get the binary size of the authorization cache table
+    ///
+    ///\retval The size of the authorization cache table in bytes
+    size_t authorization_cache_get_binary_size();
 
     // Availability management
 

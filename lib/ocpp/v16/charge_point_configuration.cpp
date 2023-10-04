@@ -15,12 +15,11 @@
 namespace ocpp {
 namespace v16 {
 
-ChargePointConfiguration::ChargePointConfiguration(const std::string& config,
-                                                   const std::filesystem::path& ocpp_main_path,
-                                                   const std::filesystem::path& user_config_path) {
+ChargePointConfiguration::ChargePointConfiguration(const std::string& config, const fs::path& ocpp_main_path,
+                                                   const fs::path& user_config_path) {
 
     this->user_config_path = user_config_path;
-    if (!std::filesystem::exists(this->user_config_path)) {
+    if (!fs::exists(this->user_config_path)) {
         EVLOG_critical << "User config file does not exist";
         throw std::runtime_error("User config file does not exist");
     }
@@ -32,7 +31,7 @@ ChargePointConfiguration::ChargePointConfiguration(const std::string& config,
     try {
         this->config = json::parse(config);
         const auto custom_schema_path = schemas_path / "Custom.json";
-        if (std::filesystem::exists(custom_schema_path)) {
+        if (fs::exists(custom_schema_path)) {
             std::ifstream ifs(custom_schema_path.c_str());
             std::string custom_schema_file((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
             this->custom_schema = json::parse(custom_schema_file);
@@ -178,7 +177,7 @@ ChargePointConfiguration::ChargePointConfiguration(const std::string& config,
 }
 
 json ChargePointConfiguration::get_user_config() {
-    if (std::filesystem::exists(this->user_config_path)) {
+    if (fs::exists(this->user_config_path)) {
         // reading from and overriding to existing user config
         std::fstream ifs(user_config_path.c_str());
         std::string user_config_file((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
@@ -186,7 +185,7 @@ json ChargePointConfiguration::get_user_config() {
         return json::parse(user_config_file);
     }
 
-    return json({});
+    return json({}, true);
 }
 
 void ChargePointConfiguration::setInUserConfig(std::string profile, std::string key, const json value) {
@@ -668,6 +667,14 @@ std::string ChargePointConfiguration::getWebsocketPingPayload() {
 
 int32_t ChargePointConfiguration::getWebsocketPongTimeout() {
     return this->config["Internal"]["WebsocketPongTimeout"];
+}
+
+std::optional<std::string> ChargePointConfiguration::getHostName() {
+    std::optional<std::string> hostName_key = std::nullopt;
+    if (this->config["Internal"].contains("HostName")) {
+        hostName_key.emplace(this->config["Internal"]["HostName"]);
+    }
+    return hostName_key;
 }
 
 // Core Profile - optional
@@ -1361,6 +1368,19 @@ std::optional<KeyValue> ChargePointConfiguration::getWebsocketPingIntervalKeyVal
         websocket_ping_interval_kv.emplace(kv);
     }
     return websocket_ping_interval_kv;
+}
+
+std::optional<KeyValue> ChargePointConfiguration::getHostNameKeyValue() {
+    std::optional<KeyValue> host_name_kv = std::nullopt;
+    auto host_name = this->getHostName();
+    if (host_name != std::nullopt) {
+        KeyValue kv;
+        kv.key = "HostName";
+        kv.readonly = true;
+        kv.value.emplace(host_name.value());
+        host_name_kv.emplace(kv);
+    }
+    return host_name_kv;
 }
 
 // Core Profile end
@@ -2138,6 +2158,9 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
     }
     if (key == "WaitForStopTransactionsOnResetTimeout") {
         return this->getWaitForStopTransactionsOnResetTimeoutKeyValue();
+    }
+    if (key == "HostName") {
+        return this->getHostNameKeyValue();
     }
 
     // Core Profile
