@@ -402,6 +402,12 @@
             "attributes": {
                 "Actual": "DEADBEEFDEADBEEF"
             }
+        },
+        "Identity": {
+            "variable_name": "Identity",
+            "attributes": {
+                "Actual": "cp001"
+            }
         }
     },
     "SmartChargingCtrlr": {

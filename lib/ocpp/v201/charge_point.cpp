@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
+#include "ocpp/v201/ctrlr_component_variables.hpp"
 #include <ocpp/v201/charge_point.hpp>
 #include <ocpp/v201/messages/FirmwareStatusNotification.hpp>
 #include <ocpp/v201/messages/LogStatusNotification.hpp>
@@ -572,7 +573,7 @@ WebsocketConnectionOptions ChargePoint::get_ws_connection_options(const int32_t 
         OcppProtocolVersion::v201,
         ocpp_csms_url,
         network_connection_profile.securityProfile,
-        this->device_model->get_value<std::string>(ControllerComponentVariables::ChargePointId),
+        this->device_model->get_value<std::string>(ControllerComponentVariables::SecurityCtrlrIdentity),
         this->device_model->get_optional_value<std::string>(ControllerComponentVariables::BasicAuthPassword),
         this->device_model->get_value<int>(ControllerComponentVariables::RetryBackOffRandomRange),
         this->device_model->get_value<int>(ControllerComponentVariables::RetryBackOffRepeatTimes),
