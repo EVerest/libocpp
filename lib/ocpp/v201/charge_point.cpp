@@ -1272,7 +1272,10 @@ void ChargePoint::handle_boot_notification_response(CallResult<BootNotificationR
             this->heartbeat_timer.interval([this]() { this->heartbeat_req(); }, std::chrono::seconds(msg.interval));
         }
         this->update_aligned_data_interval();
-        if (this->callbacks.time_sync_callback.has_value()) {
+        // B01.FR.06 Only use boot timestamp if TimeSource contains Heartbeat
+        if (this->callbacks.time_sync_callback.has_value() &&
+            this->device_model->get_value<std::string>(ControllerComponentVariables::TimeSource).find("Heartbeat") !=
+                std::string::npos) {
             this->callbacks.time_sync_callback.value()(msg.currentTime);
         }
         for (auto const& [evse_id, evse] : this->evses) {
@@ -1934,7 +1937,9 @@ void ChargePoint::handle_change_availability_req(Call<ChangeAvailabilityRequest>
 }
 
 void ChargePoint::handle_heartbeat_response(CallResult<HeartbeatResponse> call) {
-    if (this->callbacks.time_sync_callback.has_value()) {
+    if (this->callbacks.time_sync_callback.has_value() &&
+        this->device_model->get_value<std::string>(ControllerComponentVariables::TimeSource).find("Heartbeat") !=
+            std::string::npos) {
         // the received currentTime was the time the CSMS received the heartbeat request
         // to get a system time as accurate as possible keep the time-of-flight into account
         auto timeOfFlight = (std::chrono::steady_clock::now() - this->heartbeat_request_time) / 2;
