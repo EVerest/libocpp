@@ -73,7 +73,6 @@ The following table shows CSMS with which this library was tested. If you provid
 -   chargecloud
 -   chargeIQ
 -   Chargetic
--   CharlieV CMS
 -   Compleo
 -   Current
 -   Daimler Truck
