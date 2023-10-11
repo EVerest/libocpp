@@ -1550,12 +1550,12 @@ bool ChargePointConfiguration::isConnectorPhaseRotationValid(std::string str) {
     };
     // if all elemens are hit, accept it, else check the remaining
     if (elements.size() == 0) {
-    	return true;
+        return true;
     };
 
     for (const std::string& e : elements) {
         if (e.size() != 5) {
-        	return false;
+            return false;
         }
         try {
             auto connector = std::stoi(e.substr(0, 1));
