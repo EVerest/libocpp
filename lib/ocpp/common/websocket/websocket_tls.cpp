@@ -20,7 +20,7 @@ bool WebsocketTLS::connect() {
     }
     
     this->uri.set(this->connection_options.csms_uri.insert(0, "wss://"));
-    this->uri.append_path(this->connection_options.chargepoint_id);
+    this->uri.set_path(this->connection_options.chargepoint_id);
 
     EVLOG_info << "Connecting TLS websocket to uri: " << this->uri.string()
                << " with profile " << this->connection_options.security_profile;
@@ -119,22 +119,6 @@ void WebsocketTLS::reconnect(std::error_code reason, long delay) {
 
     // TODO: spec-conform reconnect, refer to status codes from:
     // https://github.com/zaphoyd/websocketpp/blob/master/websocketpp/close.hpp
-}
-
-std::string Uri::get_hostname() {
-    // FIXME(kai): This only works with a very limited subset of hostnames!
-    std::string start = "wss://";
-    std::string stop = "/";
-    std::string port = ":";
-    auto hostname_start_pos = start.length();
-    auto hostname_end_pos = this->value.find_first_of(stop, hostname_start_pos);
-
-    auto hostname_with_port = this->value.substr(hostname_start_pos, hostname_end_pos - hostname_start_pos);
-    auto port_pos = hostname_with_port.find_first_of(port);
-    if (port_pos != std::string::npos) {
-        return hostname_with_port.substr(0, port_pos);
-    }
-    return hostname_with_port;
 }
 
 tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connection_hdl hdl, int32_t security_profile) {

@@ -19,7 +19,7 @@ namespace ocpp {
 
 struct WebsocketConnectionOptions {
     OcppProtocolVersion ocpp_version;
-    std::string csms_uri;  // The URI of the CSMS
+    std::string csms_uri;  // the URI of the CSMS; TODO it can contain the `chargepoint_id` as path (for backwards-compatibility)
     int security_profile;
     std::string chargepoint_id;
     std::optional<std::string> authorization_key;

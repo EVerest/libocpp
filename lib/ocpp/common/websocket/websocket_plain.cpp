@@ -18,7 +18,7 @@ bool WebsocketPlain::connect() {
     }
 
     this->uri.set(this->connection_options.csms_uri.insert(0, "ws://"));
-    this->uri.append_path(this->connection_options.chargepoint_id);
+    this->uri.set_path(this->connection_options.chargepoint_id);
 
     EVLOG_info << "Connecting to plain websocket at uri: " << this->uri.string()
                << " with profile: " << this->connection_options.security_profile;

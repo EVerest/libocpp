@@ -5,34 +5,37 @@
 
 #include <boost/algorithm/string/predicate.hpp>
 
+#include <stdexcept>
 #include <string>
+#include <websocketpp/uri.hpp>
 
 namespace ocpp {
 
-Uri::Uri() {
+Uri::Uri():
+ value(false, "", "") {  // FIXME: Uri() should be constructed directly with real value
 }
 
-void Uri::set(std::string uri) {
-    this->value = uri;
+// if invalid, it throws `invalid_argument` exception
+void Uri::set(std::string const & uri) {
+    auto u = websocketpp::uri(uri);
+
+    if (! u.get_valid()) {
+        throw std::invalid_argument("Uri::set(): `uri` is invalid");
+    }
+
+    this->value = u;
 }
 
 std::string Uri::string() {
-    return this->value;
+    return this->value.str();
 }
 
-void Uri::append_path(std::string path) {
-    // remove ending "/" from `uri`
+void Uri::set_path(std::string const & path) {
+    this->value = websocketpp::uri(this->value.get_secure(), this->value.get_host(), this->value.get_port(), path);
+}
 
-    if ( boost::algorithm::ends_with(this->value, "/") ) {
-        this->value.pop_back();
-    }
-
-    // add initial "/" to `path`
-    if ( ! boost::algorithm::starts_with(path, "/")) {
-        path = "/" + path;
-    }
-    
-    this->value.append(path);
+std::string Uri::get_hostname() {
+    return this->value.get_host();
 }
 
 }

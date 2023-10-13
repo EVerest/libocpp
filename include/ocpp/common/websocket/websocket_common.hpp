@@ -4,20 +4,21 @@
 #define OCPP_WEBSOCKET_COMMON_HPP
 
 #include <string>
+#include <websocketpp/uri.hpp>
 
 namespace ocpp {
 
 class Uri {
     public:
         Uri();
-        void set(std::string uri);
+        void set(std::string const & uri);
         std::string string();
 
-        void append_path(std::string path);
+        void set_path(std::string const & path);
         std::string get_hostname();
     
     private:
-        std::string value;
+        websocketpp::uri value;
 };
 
 } // namespace ocpp
