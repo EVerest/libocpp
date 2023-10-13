@@ -151,6 +151,14 @@ ocpp::CertificateType from_ocpp_v201(ocpp::v201::GetCertificateIdUseEnum other) 
     }
 }
 
+std::vector<ocpp::CertificateType> from_ocpp_v201(std::vector<ocpp::v201::GetCertificateIdUseEnum> other) {
+    std::vector<ocpp::CertificateType> certificate_types;
+    for (const auto& certificate_id_use_enum : other) {
+        certificate_types.push_back(from_ocpp_v201(certificate_id_use_enum));
+    }
+    return certificate_types;
+}
+
 ocpp::CaCertificateType from_ocpp_v201(ocpp::v201::InstallCertificateUseEnum other) {
     switch (other) {
     case ocpp::v201::InstallCertificateUseEnum::V2GRootCertificate:

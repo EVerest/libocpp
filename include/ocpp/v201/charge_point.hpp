@@ -22,11 +22,13 @@
 #include <ocpp/v201/messages/ClearCache.hpp>
 #include <ocpp/v201/messages/DataTransfer.hpp>
 #include <ocpp/v201/messages/GetBaseReport.hpp>
+#include <ocpp/v201/messages/GetInstalledCertificateIds.hpp>
 #include <ocpp/v201/messages/GetLocalListVersion.hpp>
 #include <ocpp/v201/messages/GetLog.hpp>
 #include <ocpp/v201/messages/GetReport.hpp>
 #include <ocpp/v201/messages/GetVariables.hpp>
 #include <ocpp/v201/messages/Heartbeat.hpp>
+#include <ocpp/v201/messages/InstallCertificate.hpp>
 #include <ocpp/v201/messages/MeterValues.hpp>
 #include <ocpp/v201/messages/NotifyEvent.hpp>
 #include <ocpp/v201/messages/NotifyReport.hpp>
@@ -309,6 +311,10 @@ private:
 
     // Functional Block L: Firmware management
     void handle_firmware_update_req(Call<UpdateFirmwareRequest> call);
+
+    // Functional Block M: ISO 15118 Certificate Management
+    void handle_get_installed_certificate_ids_req(Call<GetInstalledCertificateIdsRequest> call);
+    void handle_install_certificate_req(Call<InstallCertificateRequest> call);
 
     // Functional Block P: DataTransfer
     void handle_data_transfer_req(Call<DataTransferRequest> call);

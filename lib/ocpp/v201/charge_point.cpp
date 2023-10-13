@@ -696,6 +696,12 @@ void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& messa
     case MessageType::GetLocalListVersion:
         this->handle_get_local_authorization_list_version_req(json_message);
         break;
+    case MessageType::GetInstalledCertificateIds:
+        this->handle_get_installed_certificate_ids_req(json_message);
+        break;
+    case MessageType::InstallCertificate:
+        this->handle_install_certificate_req(json_message);
+        break;
     default:
         if (message.messageTypeId == MessageTypeId::CALL) {
             const auto call_error = CallError(message.uniqueId, "NotImplemented", "", json({}));
@@ -1982,6 +1988,53 @@ void ChargePoint::handle_firmware_update_req(Call<UpdateFirmwareRequest> call) {
 
     ocpp::CallResult<UpdateFirmwareResponse> call_result(response, call.uniqueId);
     this->send<UpdateFirmwareResponse>(call_result);
+}
+
+void ChargePoint::handle_get_installed_certificate_ids_req(Call<GetInstalledCertificateIdsRequest> call) {
+    EVLOG_debug << "Received GetInstalledCertificateIdsRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
+    GetInstalledCertificateIdsResponse response;
+
+    const auto msg = call.msg;
+
+    // prepare argument for getRootCertificate
+    std::vector<ocpp::CertificateType> certificate_types;
+    if (msg.certificateType.has_value()) {
+        certificate_types = ocpp::evse_security_conversions::from_ocpp_v201(msg.certificateType.value());
+    }
+
+    // retrieve installed certificates
+    const auto certificate_hash_data_chains = this->evse_security->get_installed_certificates(certificate_types);
+
+    // convert the common type back to the v201 type(s) for the response
+    std::vector<CertificateHashDataChain> certificate_hash_data_chain_v201;
+    for (const auto certificate_hash_data_chain_entry : certificate_hash_data_chains) {
+        certificate_hash_data_chain_v201.push_back(
+            ocpp::evse_security_conversions::to_ocpp_v201(certificate_hash_data_chain_entry));
+    }
+
+    if (certificate_hash_data_chain_v201.empty()) {
+        response.status = GetInstalledCertificateStatusEnum::NotFound;
+    } else {
+        response.certificateHashDataChain = certificate_hash_data_chain_v201;
+        response.status = GetInstalledCertificateStatusEnum::Accepted;
+    }
+
+    ocpp::CallResult<GetInstalledCertificateIdsResponse> call_result(response, call.uniqueId);
+    this->send<GetInstalledCertificateIdsResponse>(call_result);
+}
+
+void ChargePoint::handle_install_certificate_req(Call<InstallCertificateRequest> call) {
+    EVLOG_debug << "Received InstallCertificateRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
+
+    const auto msg = call.msg;
+    InstallCertificateResponse response;
+
+    const auto result = this->evse_security->install_ca_certificate(msg.certificate.get(),
+                                                                    ocpp::evse_security_conversions::from_ocpp_v201(msg.certificateType));
+    response.status = ocpp::evse_security_conversions::to_ocpp_v201(result);
+
+    ocpp::CallResult<InstallCertificateResponse> call_result(response, call.uniqueId);
+    this->send<InstallCertificateResponse>(call_result);
 }
 
 void ChargePoint::handle_data_transfer_req(Call<DataTransferRequest> call) {
