@@ -304,7 +304,7 @@ void ChargePoint::on_session_finished(const int32_t evse_id, const int32_t conne
 void ChargePoint::on_meter_value(const int32_t evse_id, const MeterValue& meter_value) {
     if (evse_id == 0) {
         std::lock_guard<std::mutex> lk(this->meter_value_mutex);
-        // if evseId = 0 ten store in the chargepoint metervalues
+        // if evseId = 0 then store in the chargepoint metervalues
         this->meter_value = meter_value;
     } else {
         this->evses.at(evse_id)->on_meter_value(meter_value);
