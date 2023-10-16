@@ -702,6 +702,9 @@ void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& messa
     case MessageType::InstallCertificate:
         this->handle_install_certificate_req(json_message);
         break;
+    case MessageType::DeleteCertificate:
+        this->handle_delete_certificate_req(json_message);
+        break;
     default:
         if (message.messageTypeId == MessageTypeId::CALL) {
             const auto call_error = CallError(message.uniqueId, "NotImplemented", "", json({}));
@@ -2035,6 +2038,22 @@ void ChargePoint::handle_install_certificate_req(Call<InstallCertificateRequest>
 
     ocpp::CallResult<InstallCertificateResponse> call_result(response, call.uniqueId);
     this->send<InstallCertificateResponse>(call_result);
+}
+
+void ChargePoint::handle_delete_certificate_req(Call<DeleteCertificateRequest> call) {
+    EVLOG_debug << "Received DeleteCertificateRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
+    
+    const auto msg = call.msg;
+    DeleteCertificateResponse response;
+
+    const auto certificate_hash_data = ocpp::evse_security_conversions::from_ocpp_v201(msg.certificateHashData);
+
+    const auto status = this->evse_security->delete_certificate(certificate_hash_data);
+
+    response.status = ocpp::evse_security_conversions::to_ocpp_v201(status);
+
+    ocpp::CallResult<DeleteCertificateResponse> call_result(response, call.uniqueId);
+    this->send<DeleteCertificateResponse>(call_result);
 }
 
 void ChargePoint::handle_data_transfer_req(Call<DataTransferRequest> call) {

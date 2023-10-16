@@ -21,6 +21,7 @@
 #include <ocpp/v201/messages/ChangeAvailability.hpp>
 #include <ocpp/v201/messages/ClearCache.hpp>
 #include <ocpp/v201/messages/DataTransfer.hpp>
+#include <ocpp/v201/messages/DeleteCertificate.hpp>
 #include <ocpp/v201/messages/GetBaseReport.hpp>
 #include <ocpp/v201/messages/GetInstalledCertificateIds.hpp>
 #include <ocpp/v201/messages/GetLocalListVersion.hpp>
@@ -315,6 +316,7 @@ private:
     // Functional Block M: ISO 15118 Certificate Management
     void handle_get_installed_certificate_ids_req(Call<GetInstalledCertificateIdsRequest> call);
     void handle_install_certificate_req(Call<InstallCertificateRequest> call);
+    void handle_delete_certificate_req(Call<DeleteCertificateRequest> call);
 
     // Functional Block P: DataTransfer
     void handle_data_transfer_req(Call<DataTransferRequest> call);
