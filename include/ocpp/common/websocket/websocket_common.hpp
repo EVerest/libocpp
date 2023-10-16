@@ -9,16 +9,23 @@
 namespace ocpp {
 
 class Uri {
-    public:
-        Uri();
-        void set(std::string const & uri);
-        std::string string();
+public:
+    Uri();
+    void set(std::string const& uri);
+    std::string string();
 
-        void set_path(std::string const & path);
-        std::string get_hostname();
-    
-    private:
-        websocketpp::uri value;
+    void set_path(std::string const& path);
+
+    std::string get_hostname() {
+        return this->value.get_host();
+    }
+
+    websocketpp::uri get_websocketpp_uri() {
+        return this->value;
+    }
+
+private:
+    websocketpp::uri value;
 };
 
 } // namespace ocpp

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
+#include <memory>
+
 #include <ocpp/common/evse_security.hpp>
 #include <ocpp/common/websocket/websocket_common.hpp>
 #include <ocpp/common/websocket/websocket_tls.hpp>
@@ -200,7 +202,7 @@ tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connect
 void WebsocketTLS::connect_tls() {
     websocketpp::lib::error_code ec;
 
-    tls_client::connection_ptr con = this->wss_client.get_connection(this->uri.string(), ec);
+    const tls_client::connection_ptr con = this->wss_client.get_connection(std::make_shared<websocketpp::uri>(this->uri.get_websocketpp_uri()), ec);
 
     if (ec) {
         EVLOG_error << "Connection initialization error for TLS websocket: " << ec.message();

@@ -2,6 +2,7 @@
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 #include <everest/logging.hpp>
 
+#include <memory>
 #include <ocpp/common/websocket/websocket_plain.hpp>
 
 #include <boost/optional/optional.hpp>
@@ -121,7 +122,7 @@ void WebsocketPlain::connect_plain() {
 
     websocketpp::lib::error_code ec;
 
-    client::connection_ptr con = this->ws_client.get_connection(this->uri.string(), ec);
+    const client::connection_ptr con = this->ws_client.get_connection(std::make_shared<websocketpp::uri>(this->uri.get_websocketpp_uri()), ec);
 
     if (ec) {
         EVLOG_error << "Connection initialization error for plain websocket: " << ec.message();
