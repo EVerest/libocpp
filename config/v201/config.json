@@ -1,53 +1,56 @@
-{
-    "AlignedDataCtrlr": {
-        "AlignedDataInterval": {
-            "variable_name": "Interval",
-            "attributes": {
-                "Actual": 30
-            }
-        },
-        "AlignedDataMeasurands": {
-            "variable_name": "Measurands",
-            "attributes": {
-                "Actual": "Energy.Active.Import.Register,Voltage"
-            }
-        },
-        "AlignedDataTxEndedInterval": {
-            "variable_name": "TxEndedInterval",
-            "attributes": {
-                "Actual": 60
-            }
-        },
-        "AlignedDataSendDuringIdle": {
-            "variable_name": "SendDuringIdle",
-            "attributes": {
-                "Actual": false
-            }
-        },
-        "AlignedDataTxEndedMeasurands": {
-            "variable_name": "TxEndedMeasurands",
-            "attributes": {
-                "Actual": "Energy.Active.Import.Register"
-            }
-        },
-        "AlignedDataSignReadings": {
-            "variable_name": "SignReadings",
-            "attributes": {
-                "Actual": false
+[
+    {
+        "name": "Connector",
+        "evse_id": 1,
+        "connector_id": 1,
+        "variables": {
+            "ConnectorAvailable": {
+                "variable_name": "Available",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "ConnectorType": {
+                "variable_name": "ConnectorType",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "ConnectorSupplyPhases": {
+                "variable_name": "SupplyPhases",
+                "attributes": {
+                    "Actual": 42
+                }
             }
         }
     },
-    "AuthCacheCtrlr": {
-        "AuthCacheCtrlrAvailable": {
-            "variable_name": "Available",
-            "attributes": {
-                "Actual": true
-            }
-        },
-        "AuthCacheCtrlrEnabled": {
-            "variable_name": "Enabled",
-            "attributes": {
-                "Actual": false
+    {
+        "name": "EVSE",
+        "evse_id": 1,
+        "variables": {
+            "EVSEAvailabilityState": {
+                "variable_name": "AvailabilityState",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "EVSEAvailable": {
+                "variable_name": "Available",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "EVSEPower": {
+                "variable_name": "Power",
+                "attributes": {
+                    "Actual": 42
+                }
+            },
+            "EVSESupplyPhases": {
+                "variable_name": "SupplyPhases",
+                "attributes": {
+                    "Actual": 42
+                }
             }
         }
     },
@@ -425,6 +428,12 @@
                 "attributes": {
                     "Actual": "Energy.Active.Import.Register"
                 }
+            },
+            "AlignedDataSendDuringIdle": {
+                "variable_name": "SendDuringIdle",
+                "attributes": {
+                    "Actual": false
+                }
             }
         }
     },
@@ -493,6 +502,12 @@
                 "variable_name": "SupplyPhases",
                 "attributes": {
                     "Actual": 42
+                }
+            },
+            "ChargingStationPhaseRotation": {
+                "variable_name": "PhaseRotation",
+                "attributes": {
+                    "Actual": "RST"
                 }
             }
         }
@@ -652,14 +667,6 @@
                     "Actual": 42
                 },
                 "instance": "SetVariableMonitoring"
-            }
-        }
-    },
-    "ChargingStation": {
-        "ChargingStationPhaseRotation": {
-            "variable_name": "PhaseRotation",
-            "attributes": {
-                "Actual": "RST"
             }
         }
     }
