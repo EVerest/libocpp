@@ -188,7 +188,6 @@ private:
     template <class T> std::future<EnhancedMessage<v201::MessageType>> send_async(Call<T> call);
     template <class T> bool send(CallResult<T> call_result);
     bool send(CallError call_error);
-    bool send(json message);
 
     // internal helper functions
     void init_websocket();

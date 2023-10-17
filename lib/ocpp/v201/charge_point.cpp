@@ -122,11 +122,12 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
             this->database_handler->insert_availability(evse_id, connector_id, OperationalStatusEnum::Operative, false);
         }
     }
-    this->logging = std::make_shared<ocpp::MessageLogging>(true, message_log_path, DateTime().to_rfc3339(), false,
-                                                           false, false, true, true);
+    this->logging =
+        std::make_shared<ocpp::MessageLogging>(true, message_log_path, DateTime().to_rfc3339(), false, false, false,
+                                               true, true, this->callbacks.ocpp_messages_callback.value_or(nullptr));
 
     this->message_queue = std::make_unique<ocpp::MessageQueue<v201::MessageType>>(
-        [this](json message) -> bool { return this->send(message); },
+        [this](json message) -> bool { return this->websocket->send(message.dump()); },
         this->device_model->get_value<int>(ControllerComponentVariables::MessageAttempts),
         this->device_model->get_value<int>(ControllerComponentVariables::MessageAttemptInterval),
         this->database_handler);
