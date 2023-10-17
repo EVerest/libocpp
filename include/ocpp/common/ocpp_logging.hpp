@@ -8,8 +8,8 @@
 #include <map>
 #include <memory>
 #include <mutex>
-#include <thread>
 #include <ocpp/common/types.hpp>
+#include <thread>
 
 namespace ocpp {
 

@@ -201,8 +201,8 @@ FormattedMessageWithType MessageLogging::format_message(const std::string& messa
 }
 
 void MessageLogging::start_session_logging(const std::string& session_id, const std::string& log_path) {
-    this->session_id_logging[session_id] =
-        std::make_shared<ocpp::MessageLogging>(true, log_path, "incomplete-ocpp", false, false, false, true, false, nullptr);
+    this->session_id_logging[session_id] = std::make_shared<ocpp::MessageLogging>(
+        true, log_path, "incomplete-ocpp", false, false, false, true, false, nullptr);
 }
 
 void MessageLogging::stop_session_logging(const std::string& session_id) {
