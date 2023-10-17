@@ -173,6 +173,17 @@ SetVariableStatusEnum DeviceModel::set_read_only_value(const Component& componen
     throw std::invalid_argument("Not allowed to set read only value for component " + component.name.get());
 }
 
+GetVariableStatusEnum DeviceModel::get_write_only_value(const Component& component_id, const Variable& variable_id, const AttributeEnum& attribute_enum) {
+    
+    const auto attribute_opt = this->storage->get_variable_attribute(component_id, variable_id, attribute_enum);
+    if (attribute_opt.value().mutability.has_value() &&
+        attribute_opt.value().mutability.value() == MutabilityEnum::WriteOnly) {
+        // if WriteOnly then return rejected
+        EVLOG_info << "====> WriteONLY ====== ";
+        return GetVariableStatusEnum::Rejected;
+    }
+}
+
 std::optional<VariableMetaData> DeviceModel::get_variable_meta_data(const Component& component,
                                                                     const Variable& variable) {
     if (this->device_model.count(component) and this->device_model.at(component).count(variable)) {

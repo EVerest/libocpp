@@ -871,12 +871,6 @@ enum class AttributeEnum {
     MaxSet,
 };
 
-enum class MutabilityEnum {
-    ReadOnly,
-    WriteOnly,
-    ReadWrite
-};
-
 namespace conversions {
 /// \brief Converts the given AttributeEnum \p e to human readable string
 /// \returns a string representation of the AttributeEnum

@@ -360,7 +360,6 @@ struct GetVariableData {
     Variable variable;
     std::optional<CustomData> customData;
     std::optional<AttributeEnum> attributeType;
-    std::optional<MutabilityEnum> mutabilityType;
 };
 /// \brief Conversion from a given GetVariableData \p k to a given json object \p j
 void to_json(json& j, const GetVariableData& k);

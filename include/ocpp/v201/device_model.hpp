@@ -163,6 +163,13 @@ public:
     /// \return Result of the requested operation
     SetVariableStatusEnum set_read_only_value(const Component& component_id, const Variable& variable_id,
                                               const AttributeEnum& attribute_enum, const std::string& value);
+    
+    /// @brief Gets the value of write only components
+    /// @param component_id 
+    /// @param variable_id 
+    /// @param attribute_enum 
+    /// @return Result of the requested operation
+    GetVariableStatusEnum get_write_only_value(const Component& component_id, const Variable& variable_id, const AttributeEnum& attribute_enum);
 
     /// \brief Gets the VariableMetaData for the given \p component_id and \p variable_id
     /// \param component_id
