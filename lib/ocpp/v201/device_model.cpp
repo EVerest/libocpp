@@ -92,8 +92,9 @@ bool validate_value(const VariableCharacteristics& characteristics, const std::s
     }
 }
 
-GetVariableStatusEnum DeviceModel::request_value(const Component& component_id, const Variable& variable_id,
-                                                 const AttributeEnum& attribute_enum, std::string& value) {
+GetVariableStatusEnum DeviceModel::request_value_internal(const Component& component_id, const Variable& variable_id,
+                                                          const AttributeEnum& attribute_enum, std::string& value,
+                                                          bool allow_write_only) {
     const auto component_it = this->device_model.find(component_id);
     if (component_it == this->device_model.end()) {
         return GetVariableStatusEnum::UnknownComponent;
@@ -110,6 +111,12 @@ GetVariableStatusEnum DeviceModel::request_value(const Component& component_id, 
 
     if ((not attribute_opt) or (not attribute_opt->value)) {
         return GetVariableStatusEnum::NotSupportedAttributeType;
+    }
+
+    // only internal functions can access WriteOnly variables
+    if (attribute_opt.value().mutability.has_value() && !allow_write_only &&
+        attribute_opt.value().mutability.value() == MutabilityEnum::WriteOnly ) {
+        return GetVariableStatusEnum::Rejected;
     }
 
     value = attribute_opt->value->get();
@@ -171,17 +178,6 @@ SetVariableStatusEnum DeviceModel::set_read_only_value(const Component& componen
         return this->set_value_internal(component, variable, attribute_enum, value, true);
     }
     throw std::invalid_argument("Not allowed to set read only value for component " + component.name.get());
-}
-
-GetVariableStatusEnum DeviceModel::get_write_only_value(const Component& component_id, const Variable& variable_id, const AttributeEnum& attribute_enum) {
-    
-    const auto attribute_opt = this->storage->get_variable_attribute(component_id, variable_id, attribute_enum);
-    if (attribute_opt.value().mutability.has_value() &&
-        attribute_opt.value().mutability.value() == MutabilityEnum::WriteOnly) {
-        // if WriteOnly then return rejected
-        EVLOG_info << "====> WriteONLY ====== ";
-        return GetVariableStatusEnum::Rejected;
-    }
 }
 
 std::optional<VariableMetaData> DeviceModel::get_variable_meta_data(const Component& component,
