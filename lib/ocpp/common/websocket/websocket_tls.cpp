@@ -14,6 +14,11 @@ namespace ocpp {
 WebsocketTLS::WebsocketTLS(const WebsocketConnectionOptions& connection_options,
                            std::shared_ptr<EvseSecurity> evse_security) :
     WebsocketBase(connection_options), evse_security(evse_security) {
+
+    this->uri = Uri::parse_from_string(connection_options.csms_uri, connection_options.chargepoint_id);
+    this->uri.set_secure(true);
+
+    EVLOG_debug << "Initialised WebsocketTLS with URI: " << this->uri.string();
 }
 
 bool WebsocketTLS::connect() {
@@ -21,11 +26,8 @@ bool WebsocketTLS::connect() {
         return false;
     }
     
-    this->uri.set(this->connection_options.csms_uri.insert(0, "wss://"));
-    this->uri.set_path(this->connection_options.chargepoint_id);
-
     EVLOG_info << "Connecting TLS websocket to uri: " << this->uri.string()
-               << " with profile " << this->connection_options.security_profile;
+               << " with security-profile " << this->connection_options.security_profile;
 
     this->wss_client.clear_access_channels(websocketpp::log::alevel::all);
     this->wss_client.clear_error_channels(websocketpp::log::elevel::all);

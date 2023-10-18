@@ -568,17 +568,10 @@ WebsocketConnectionOptions ChargePoint::get_ws_connection_options(const int32_t 
     }
 
     const auto network_connection_profile = network_connection_profile_opt.value();
-    auto ocpp_csms_url = network_connection_profile.ocppCsmsUrl.get();
-
-    if (ocpp_csms_url.compare(0, 5, "ws://") == 0) {
-        ocpp_csms_url.erase(0, 5);
-    } else if (ocpp_csms_url.compare(0, 6, "wss://") == 0) {
-        ocpp_csms_url.erase(0, 6);
-    }
 
     WebsocketConnectionOptions connection_options{
         OcppProtocolVersion::v201,
-        ocpp_csms_url,
+        network_connection_profile.ocppCsmsUrl.get(),
         network_connection_profile.securityProfile,
         this->device_model->get_value<std::string>(ControllerComponentVariables::SecurityCtrlrIdentity),
         this->device_model->get_optional_value<std::string>(ControllerComponentVariables::BasicAuthPassword),

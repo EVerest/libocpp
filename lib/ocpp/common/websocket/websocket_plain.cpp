@@ -11,15 +11,17 @@ namespace ocpp {
 
 WebsocketPlain::WebsocketPlain(const WebsocketConnectionOptions& connection_options) :
     WebsocketBase(connection_options) {
+
+    this->uri = Uri::parse_from_string(connection_options.csms_uri, connection_options.chargepoint_id);
+    this->uri.set_secure(false);
+
+    EVLOG_debug << "Initialised WebsocketPlain with URI: " << this->uri.string();
 }
 
 bool WebsocketPlain::connect() {
     if (!this->initialized()) {
         return false;
     }
-
-    this->uri.set(this->connection_options.csms_uri.insert(0, "ws://"));
-    this->uri.set_path(this->connection_options.chargepoint_id);
 
     EVLOG_info << "Connecting to plain websocket at uri: " << this->uri.string()
                << " with profile: " << this->connection_options.security_profile;
