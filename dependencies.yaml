@@ -31,3 +31,9 @@ websocketpp:
 libevse-security:
   git: https://github.com/EVerest/libevse-security.git
   git_tag: f621aab
+
+
+# Modern C++
+tl-expected: # std:expected (C++23)
+  git: https://github.com/TartanLlama/expected
+  git_tag: v1.1.0
