@@ -22,7 +22,8 @@ Uri Uri::parse_from_string(std::string const& uri, ChargepointId chargepoint_id)
     const auto& hostname = uri_temp.get_host();
     if (!hostname.empty()) {
         if (hostname != chargepoint_id) {
-            throw std::invalid_argument("Uri constructor: the chargepoint-ID in the `uri`-path is different to the defined one");
+            throw std::invalid_argument(
+                "Uri constructor: the chargepoint-ID in the `uri`-path is different to the defined one");
         }
 
         chargepoint_id = hostname;

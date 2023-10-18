@@ -18,7 +18,7 @@ WebsocketPlain::WebsocketPlain(const WebsocketConnectionOptions& connection_opti
 }
 
 void WebsocketPlain::set_connection_options(const WebsocketConnectionOptions& connection_options) {
-    set_connection_options_base(connection_options);  // initialises this->uri, too
+    set_connection_options_base(connection_options); // initialises this->uri, too
 
     this->uri.set_secure(false);
 }
@@ -129,7 +129,8 @@ void WebsocketPlain::connect_plain() {
 
     websocketpp::lib::error_code ec;
 
-    const client::connection_ptr con = this->ws_client.get_connection(std::make_shared<websocketpp::uri>(this->uri.get_websocketpp_uri()), ec);
+    const client::connection_ptr con =
+        this->ws_client.get_connection(std::make_shared<websocketpp::uri>(this->uri.get_websocketpp_uri()), ec);
 
     if (ec) {
         EVLOG_error << "Connection initialization error for plain websocket: " << ec.message();
@@ -177,7 +178,7 @@ void WebsocketPlain::connect_plain() {
 
 void WebsocketPlain::on_open_plain(client* c, websocketpp::connection_hdl hdl) {
     std::lock_guard<std::mutex> lk(this->connection_mutex);
-    (void)c;                       // client is not used in this function
+    (void)c; // client is not used in this function
     EVLOG_info << "OCPP client successfully connected to plain websocket server";
     this->connection_attempts = 1; // reset connection attempts
     this->m_is_connected = true;

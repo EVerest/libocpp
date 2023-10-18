@@ -4,8 +4,8 @@
 #include <memory>
 
 #include <ocpp/common/evse_security.hpp>
-#include <ocpp/common/websocket/websocket_uri.hpp>
 #include <ocpp/common/websocket/websocket_tls.hpp>
+#include <ocpp/common/websocket/websocket_uri.hpp>
 
 #include <everest/logging.hpp>
 
@@ -19,7 +19,7 @@ WebsocketTLS::WebsocketTLS(const WebsocketConnectionOptions& connection_options,
 }
 
 void WebsocketTLS::set_connection_options(const WebsocketConnectionOptions& connection_options) {
-    set_connection_options_base(connection_options);  // initialises this->uri, too
+    set_connection_options_base(connection_options); // initialises this->uri, too
 
     this->uri.set_secure(true);
 }
@@ -29,8 +29,8 @@ bool WebsocketTLS::connect() {
         return false;
     }
 
-    EVLOG_info << "Connecting TLS websocket to uri: " << this->uri.string()
-               << " with security-profile " << this->connection_options.security_profile;
+    EVLOG_info << "Connecting TLS websocket to uri: " << this->uri.string() << " with security-profile "
+               << this->connection_options.security_profile;
 
     this->wss_client.clear_access_channels(websocketpp::log::alevel::all);
     this->wss_client.clear_error_channels(websocketpp::log::elevel::all);
@@ -207,7 +207,8 @@ tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connect
 void WebsocketTLS::connect_tls() {
     websocketpp::lib::error_code ec;
 
-    const tls_client::connection_ptr con = this->wss_client.get_connection(std::make_shared<websocketpp::uri>(this->uri.get_websocketpp_uri()), ec);
+    const tls_client::connection_ptr con =
+        this->wss_client.get_connection(std::make_shared<websocketpp::uri>(this->uri.get_websocketpp_uri()), ec);
 
     if (ec) {
         EVLOG_error << "Connection initialization error for TLS websocket: " << ec.message();
@@ -253,7 +254,7 @@ void WebsocketTLS::connect_tls() {
     this->wss_client.connect(con);
 }
 void WebsocketTLS::on_open_tls(tls_client* c, websocketpp::connection_hdl hdl) {
-    (void)c;                       // tls_client is not used in this function
+    (void)c; // tls_client is not used in this function
     EVLOG_info << "OCPP client successfully connected to TLS websocket server";
     this->connection_attempts = 1; // reset connection attempts
     this->m_is_connected = true;

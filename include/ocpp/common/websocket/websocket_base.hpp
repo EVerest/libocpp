@@ -19,7 +19,7 @@ namespace ocpp {
 
 struct WebsocketConnectionOptions {
     OcppProtocolVersion ocpp_version;
-    std::string csms_uri;  // the URI of the CSMS
+    std::string csms_uri; // the URI of the CSMS
     int security_profile;
     std::string chargepoint_id;
     std::optional<std::string> authorization_key;
@@ -49,7 +49,7 @@ protected:
     std::function<void(const std::string& message)> message_callback;
     websocketpp::lib::shared_ptr<boost::asio::steady_timer> reconnect_timer;
     std::unique_ptr<Everest::SteadyTimer> ping_timer;
-    ocpp::Uri uri;  // to be set in derived classes
+    ocpp::Uri uri; // to be set in derived classes
     websocketpp::connection_hdl handle;
     std::mutex reconnect_mutex;
     std::mutex connection_mutex;
