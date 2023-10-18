@@ -13,7 +13,7 @@
 #include <websocketpp/config/asio_client.hpp>
 
 #include <ocpp/common/types.hpp>
-#include <ocpp/common/websocket/websocket_common.hpp>
+#include <ocpp/common/websocket/websocket_uri.hpp>
 
 namespace ocpp {
 

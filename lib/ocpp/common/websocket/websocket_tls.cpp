@@ -4,7 +4,7 @@
 #include <memory>
 
 #include <ocpp/common/evse_security.hpp>
-#include <ocpp/common/websocket/websocket_common.hpp>
+#include <ocpp/common/websocket/websocket_uri.hpp>
 #include <ocpp/common/websocket/websocket_tls.hpp>
 
 #include <everest/logging.hpp>
