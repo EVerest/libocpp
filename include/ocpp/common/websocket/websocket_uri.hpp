@@ -13,8 +13,6 @@ class Uri {
 public:
     Uri(){};
 
-    void init(bool secure, std::string host, int port, std::string path); // TODO should return an error if invalid
-
     // if a `chargepoint_id` is given, it will be checked that it is the same as the one in the URI-path, if set
     // if invalid, it throws `invalid_argument` exception
     static Uri parse_from_string(std::string const& uri,
