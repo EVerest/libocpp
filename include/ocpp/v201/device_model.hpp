@@ -58,7 +58,8 @@ private:
     /// \param allow_write_only true to allow a writeOnly value to be read.
     /// \return GetVariableStatusEnum that indicates the result of the request
     GetVariableStatusEnum request_value_internal(const Component& component_id, const Variable& variable_id,
-                                        const AttributeEnum& attribute_enum, std::string& value, bool allow_write_only);
+                                                 const AttributeEnum& attribute_enum, std::string& value,
+                                                 bool allow_write_only);
 
     /// \brief Iterates over the given \p component_criteria and converts this to the variable names
     /// (Active,Available,Enabled,Problem). If any of the variables can not be find as part of a component this function
@@ -94,8 +95,8 @@ public:
     T get_value(const ComponentVariable& component_variable,
                 const AttributeEnum& attribute_enum = AttributeEnum::Actual) {
         std::string value;
-        const auto response = this->request_value_internal(component_variable.component,
-                                                           component_variable.variable.value(), attribute_enum,value, true);
+        const auto response = this->request_value_internal(
+            component_variable.component, component_variable.variable.value(), attribute_enum, value, true);
         if (response == GetVariableStatusEnum::Accepted) {
             return to_specific_type<T>(value);
         } else {
@@ -117,8 +118,8 @@ public:
     std::optional<T> get_optional_value(const ComponentVariable& component_variable,
                                         const AttributeEnum& attribute_enum = AttributeEnum::Actual) {
         std::string value;
-        const auto response = this->request_value_internal(component_variable.component,
-                                                           component_variable.variable.value(), attribute_enum,value, true);
+        const auto response = this->request_value_internal(
+            component_variable.component, component_variable.variable.value(), attribute_enum, value, true);
         if (response == GetVariableStatusEnum::Accepted) {
             return to_specific_type<T>(value);
         } else {

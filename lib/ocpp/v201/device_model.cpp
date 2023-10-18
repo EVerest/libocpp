@@ -115,7 +115,7 @@ GetVariableStatusEnum DeviceModel::request_value_internal(const Component& compo
 
     // only internal functions can access WriteOnly variables
     if (attribute_opt.value().mutability.has_value() && !allow_write_only &&
-        attribute_opt.value().mutability.value() == MutabilityEnum::WriteOnly ) {
+        attribute_opt.value().mutability.value() == MutabilityEnum::WriteOnly) {
         return GetVariableStatusEnum::Rejected;
     }
 
