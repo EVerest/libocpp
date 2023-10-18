@@ -45,6 +45,8 @@ private:
     /// \brief Called when a TLS websocket connection fails to be established
     void on_fail_tls(tls_client* c, websocketpp::connection_hdl hdl);
 
+    void set_connection_options(const WebsocketConnectionOptions& connection_options) override;
+
 public:
     /// \brief Creates a new Websocket object with the providede \p connection_options
     explicit WebsocketTLS(const WebsocketConnectionOptions& connection_options,

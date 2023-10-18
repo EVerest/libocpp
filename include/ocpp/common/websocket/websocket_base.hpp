@@ -92,7 +92,8 @@ public:
     virtual bool connect() = 0;
 
     /// \brief sets this connection_options to the given \p connection_options and resets the connection_attempts
-    void set_connection_options(const WebsocketConnectionOptions& connection_options);
+    virtual void set_connection_options(const WebsocketConnectionOptions& connection_options) = 0;
+    void set_connection_options_base(const WebsocketConnectionOptions& connection_options);
 
     /// \brief reconnect the websocket after the delay
     virtual void reconnect(std::error_code reason, long delay) = 0;

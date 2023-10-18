@@ -15,17 +15,20 @@ WebsocketTLS::WebsocketTLS(const WebsocketConnectionOptions& connection_options,
                            std::shared_ptr<EvseSecurity> evse_security) :
     WebsocketBase(connection_options), evse_security(evse_security) {
 
-    this->uri = Uri::parse_from_string(connection_options.csms_uri, connection_options.chargepoint_id);
-    this->uri.set_secure(true);
-
     EVLOG_debug << "Initialised WebsocketTLS with URI: " << this->uri.string();
+}
+
+void WebsocketTLS::set_connection_options(const WebsocketConnectionOptions& connection_options) {
+    set_connection_options_base(connection_options);  // initialises this->uri, too
+
+    this->uri.set_secure(true);
 }
 
 bool WebsocketTLS::connect() {
     if (!this->initialized()) {
         return false;
     }
-    
+
     EVLOG_info << "Connecting TLS websocket to uri: " << this->uri.string()
                << " with security-profile " << this->connection_options.security_profile;
 
