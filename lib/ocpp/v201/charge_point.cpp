@@ -1496,8 +1496,16 @@ void ChargePoint::handle_set_variables_req(Call<SetVariablesRequest> call) {
 void ChargePoint::handle_get_variables_req(Call<GetVariablesRequest> call) {
     const auto msg = call.msg;
 
-    // FIXME(piet): add handling for B06.FR.16
+    const auto max_variables_per_message = this->device_model->get_value<int>(ControllerComponentVariables::ItemsPerMessageGetVariables);
     // FIXME(piet): add handling for B06.FR.17
+
+    // B06.FR.16
+    if (msg.getVariableData.size() > max_variables_per_message) {
+        // send a CALLERROR
+        const auto call_error = CallError(call.uniqueId, "OccurenceConstraintViolation", "", json({}));
+        this->send(call_error);
+        return;
+    }
 
     GetVariablesResponse response;
 
