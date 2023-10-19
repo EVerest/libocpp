@@ -16,6 +16,7 @@
 #include <ocpp/v201/types.hpp>
 #include <ocpp/v201/utils.hpp>
 
+#include "ocpp/v201/messages/Get15118EVCertificate.hpp"
 #include <ocpp/v201/messages/Authorize.hpp>
 #include <ocpp/v201/messages/BootNotification.hpp>
 #include <ocpp/v201/messages/ChangeAvailability.hpp>
@@ -99,6 +100,11 @@ struct Callbacks {
     std::optional<std::function<bool(const NetworkConnectionProfile& network_connection_profile)>>
         configure_network_connection_profile_callback;
     std::optional<std::function<void(const ocpp::DateTime& currentTime)>> time_sync_callback;
+
+
+    // clarify: optional?
+    std::function<void(const Get15118EVCertificateResponse& response)> get_15118_ev_certificate_response;
+
 };
 
 /// \brief Class implements OCPP2.0.1 Charging Station
@@ -314,6 +320,7 @@ private:
     void handle_firmware_update_req(Call<UpdateFirmwareRequest> call);
 
     // Functional Block M: ISO 15118 Certificate Management
+    void handle_get_15118_ev_certificate_response(Call<Get15118EVCertificateResponse> call);
     void handle_get_installed_certificate_ids_req(Call<GetInstalledCertificateIdsRequest> call);
     void handle_install_certificate_req(Call<InstallCertificateRequest> call);
     void handle_delete_certificate_req(Call<DeleteCertificateRequest> call);
@@ -383,6 +390,10 @@ public:
     /// \param evse_id
     /// \param connector_id
     void on_session_started(const int32_t evse_id, const int32_t connector_id);
+
+    /// \brief Event handler that should be called when the EV sends a certificate request (for update or installation)
+    /// \param request
+    void on_get_15118_ev_certificate_request(const Get15118EVCertificateRequest& request);
 
     /// \brief Event handler that should be called when a transaction has started
     /// \param evse_id

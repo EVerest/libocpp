@@ -163,6 +163,11 @@ void ChargePoint::on_session_started(const int32_t evse_id, const int32_t connec
     this->evses.at(evse_id)->submit_event(connector_id, ConnectorEvent::PlugIn);
 }
 
+void ChargePoint::on_get_15118_ev_certificate_request(const Get15118EVCertificateRequest& request) {
+    this->send<Get15118EVCertificateRequest>(
+        ocpp::Call<Get15118EVCertificateRequest>(request, this->message_queue->createMessageId()));
+}
+
 void ChargePoint::on_transaction_started(
     const int32_t evse_id, const int32_t connector_id, const std::string& session_id, const DateTime& timestamp,
     const ocpp::v201::TriggerReasonEnum trigger_reason, const MeterValue& meter_start, const IdToken& id_token,
@@ -695,6 +700,9 @@ void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& messa
         break;
     case MessageType::GetLocalListVersion:
         this->handle_get_local_authorization_list_version_req(json_message);
+        break;
+    case MessageType::GetInstalledCertificateIdsResponse:
+        this->handle_get_15118_ev_certificate_response(json_message);
         break;
     case MessageType::GetInstalledCertificateIds:
         this->handle_get_installed_certificate_ids_req(json_message);
@@ -1993,6 +2001,13 @@ void ChargePoint::handle_firmware_update_req(Call<UpdateFirmwareRequest> call) {
     this->send<UpdateFirmwareResponse>(call_result);
 }
 
+void ChargePoint::handle_get_15118_ev_certificate_response(Call<Get15118EVCertificateResponse> call) {
+    // todo: id? request type?
+    EVLOG_debug << "Received Get15118EVCertificateResponse: " << call.msg << "\nwith messageId: " << call.uniqueId;
+    this->callbacks.get_15118_ev_certificate_response(call.msg);
+
+}
+
 void ChargePoint::handle_get_installed_certificate_ids_req(Call<GetInstalledCertificateIdsRequest> call) {
     EVLOG_debug << "Received GetInstalledCertificateIdsRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
     GetInstalledCertificateIdsResponse response;
@@ -2032,8 +2047,8 @@ void ChargePoint::handle_install_certificate_req(Call<InstallCertificateRequest>
     const auto msg = call.msg;
     InstallCertificateResponse response;
 
-    const auto result = this->evse_security->install_ca_certificate(msg.certificate.get(),
-                                                                    ocpp::evse_security_conversions::from_ocpp_v201(msg.certificateType));
+    const auto result = this->evse_security->install_ca_certificate(
+        msg.certificate.get(), ocpp::evse_security_conversions::from_ocpp_v201(msg.certificateType));
     response.status = ocpp::evse_security_conversions::to_ocpp_v201(result);
 
     ocpp::CallResult<InstallCertificateResponse> call_result(response, call.uniqueId);
@@ -2042,7 +2057,7 @@ void ChargePoint::handle_install_certificate_req(Call<InstallCertificateRequest>
 
 void ChargePoint::handle_delete_certificate_req(Call<DeleteCertificateRequest> call) {
     EVLOG_debug << "Received DeleteCertificateRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
-    
+
     const auto msg = call.msg;
     DeleteCertificateResponse response;
 
