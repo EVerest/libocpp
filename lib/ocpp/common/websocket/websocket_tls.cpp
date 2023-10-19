@@ -43,8 +43,8 @@ bool WebsocketTLS::connect() {
                                websocketpp::lib::placeholders::_1, this->connection_options.security_profile));
 
     this->reconnect_callback = [this](const websocketpp::lib::error_code& ec) {
-        EVLOG_info << "Reconnecting to TLS websocket at uri: " << this->connection_options.csms_uri
-                   << " with profile: " << this->connection_options.security_profile;
+        EVLOG_info << "Reconnecting to TLS websocket at uri: " << this->uri.string()
+                   << " with security profile: " << this->connection_options.security_profile;
 
         // close connection before reconnecting
         if (this->m_is_connected) {
@@ -254,7 +254,7 @@ void WebsocketTLS::connect_tls() {
     this->wss_client.connect(con);
 }
 void WebsocketTLS::on_open_tls(tls_client* c, websocketpp::connection_hdl hdl) {
-    (void)c;                       // tls_client is not used in this function
+    (void)c; // tls_client is not used in this function
     EVLOG_info << "OCPP client successfully connected to TLS websocket server";
     this->connection_attempts = 1; // reset connection attempts
     this->m_is_connected = true;

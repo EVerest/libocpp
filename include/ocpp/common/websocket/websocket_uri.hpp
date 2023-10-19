@@ -36,7 +36,7 @@ public:
     }
 
 private:
-    Uri(bool secure, std::string host, uint16_t port, std::string path) :
+    Uri(bool secure, const std::string host, uint16_t port, const std::string path) :
         secure(secure), host(host), port(port), path(path) {
     }
 
