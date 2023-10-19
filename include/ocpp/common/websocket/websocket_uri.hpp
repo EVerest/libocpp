@@ -4,8 +4,11 @@
 #define OCPP_WEBSOCKET_URI_HPP
 
 #include <ocpp/types/simple.hpp>
-#include <string>
+
+#include <tl/expected.hpp>
 #include <websocketpp/uri.hpp>
+
+#include <string>
 
 namespace ocpp {
 
@@ -15,8 +18,8 @@ public:
 
     // if a `chargepoint_id` is given, it will be checked that it is the same as the one in the URI-path, if set
     // if invalid, it throws `invalid_argument` exception
-    static Uri parse_from_string(std::string const& uri,
-                                 ChargepointId chargepoint_id); // TODO should return an `expected<>`
+    static tl::expected<Uri, int> parse_from_string(std::string const& uri,
+                                                    ChargepointId chargepoint_id); // TODO should return an `expected<>`
 
     void set_secure(bool secure) {
         this->secure = secure;
