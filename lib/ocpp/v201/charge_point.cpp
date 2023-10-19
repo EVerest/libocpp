@@ -1496,7 +1496,8 @@ void ChargePoint::handle_set_variables_req(Call<SetVariablesRequest> call) {
 void ChargePoint::handle_get_variables_req(Call<GetVariablesRequest> call) {
     const auto msg = call.msg;
 
-    const auto max_variables_per_message = this->device_model->get_value<int>(ControllerComponentVariables::ItemsPerMessageGetVariables);
+    const auto max_variables_per_message =
+        this->device_model->get_value<int>(ControllerComponentVariables::ItemsPerMessageGetVariables);
     // FIXME(piet): add handling for B06.FR.17
 
     // B06.FR.16
