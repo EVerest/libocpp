@@ -691,7 +691,7 @@ void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& messa
         this->handle_set_variables_req(json_message);
         break;
     case MessageType::GetVariables:
-        this->handle_get_variables_req(json_message);
+        this->handle_get_variables_req(message);
         break;
     case MessageType::GetBaseReport:
         this->handle_get_base_report_req(json_message);
@@ -1493,7 +1493,8 @@ void ChargePoint::handle_set_variables_req(Call<SetVariablesRequest> call) {
     }
 }
 
-void ChargePoint::handle_get_variables_req(Call<GetVariablesRequest> call) {
+void ChargePoint::handle_get_variables_req(const EnhancedMessage<v201::MessageType>& message) {
+    Call<GetVariablesRequest> call = message.call_message;
     const auto msg = call.msg;
 
     const auto max_variables_per_message =
@@ -1502,7 +1503,13 @@ void ChargePoint::handle_get_variables_req(Call<GetVariablesRequest> call) {
         this->device_model->get_value<int>(ControllerComponentVariables::BytesPerMessageGetVariables);
 
     // B06.FR.17
-    
+    if (message.message_size > max_bytes_per_message) {
+        // send a CALLERROR
+        const auto call_error = CallError(call.uniqueId, "FormatViolation", "", json({}));
+        this->send(call_error);
+        return;
+    }
+
     // B06.FR.16
     if (msg.getVariableData.size() > max_variables_per_message) {
         // send a CALLERROR
