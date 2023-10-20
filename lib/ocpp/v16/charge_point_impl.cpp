@@ -1473,7 +1473,7 @@ void ChargePointImpl::handleRemoteStartTransactionRequest(ocpp::Call<RemoteStart
             return;
         }
        referenced_connectors.push_back(call.msg.connectorId.value());
-    }else{
+    } else {
     	for (int connector = 1; connector <= this->configuration->getNumberOfConnectors(); connector++) {
     		referenced_connectors.push_back(connector);
     	}
@@ -3417,7 +3417,7 @@ void ChargePointImpl::register_security_event_callback(
 }
 
 void ChargePointImpl::register_is_token_reserved_for_connector_callback(
-    const std::function<bool(const int32_t connector, const std::string& id_token)>& callback){
+    const std::function<bool(const int32_t connector, const std::string& id_token)>& callback) {
     this->is_token_reserved_for_connector_callback = callback;
 }
 

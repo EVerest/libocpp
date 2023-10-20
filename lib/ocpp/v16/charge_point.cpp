@@ -284,7 +284,7 @@ ConfigurationStatus ChargePoint::set_custom_configuration_key(CiString<50> key, 
 }
 
 void ChargePoint::register_is_token_reserved_for_connector_callback(
-               const std::function<bool(const int32_t connector, const std::string& id_token)>& callback){
+               const std::function<bool(const int32_t connector, const std::string& id_token)>& callback) {
     this->charge_point->register_is_token_reserved_for_connector_callback(callback);
 }
 
