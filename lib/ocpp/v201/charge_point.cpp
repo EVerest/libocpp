@@ -711,9 +711,6 @@ void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& messa
     case MessageType::GetLocalListVersion:
         this->handle_get_local_authorization_list_version_req(json_message);
         break;
-    case MessageType::GetInstalledCertificateIdsResponse:
-        this->handle_get_15118_ev_certificate_response(json_message);
-        break;
     case MessageType::GetInstalledCertificateIds:
         this->handle_get_installed_certificate_ids_req(json_message);
         break;
