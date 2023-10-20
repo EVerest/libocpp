@@ -754,9 +754,9 @@ void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& messa
 
 void ChargePoint::message_callback(const std::string& message) {
     auto enhanced_message = this->message_queue->receive(message);
+    enhanced_message.message_size = message.size();
     auto json_message = enhanced_message.message;
     this->logging->central_system(conversions::messagetype_to_string(enhanced_message.messageType), message);
-
     try {
         if (this->registration_status == RegistrationStatusEnum::Accepted) {
             this->handle_message(enhanced_message);
@@ -1498,8 +1498,11 @@ void ChargePoint::handle_get_variables_req(Call<GetVariablesRequest> call) {
 
     const auto max_variables_per_message =
         this->device_model->get_value<int>(ControllerComponentVariables::ItemsPerMessageGetVariables);
-    // FIXME(piet): add handling for B06.FR.17
+    const auto max_bytes_per_message =
+        this->device_model->get_value<int>(ControllerComponentVariables::BytesPerMessageGetVariables);
 
+    // B06.FR.17
+    
     // B06.FR.16
     if (msg.getVariableData.size() > max_variables_per_message) {
         // send a CALLERROR
