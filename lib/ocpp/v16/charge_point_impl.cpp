@@ -1474,15 +1474,15 @@ void ChargePointImpl::handleRemoteStartTransactionRequest(ocpp::Call<RemoteStart
         }
         referenced_connectors.push_back(call.msg.connectorId.value());
     } else {
-    	for (int connector = 1; connector <= this->configuration->getNumberOfConnectors(); connector++) {
-    		referenced_connectors.push_back(connector);
-    	}
+        for (int connector = 1; connector <= this->configuration->getNumberOfConnectors(); connector++) {
+            referenced_connectors.push_back(connector);
+        }
     }
 
     // Check if at least one conenctor is able to execute RemoteStart (optainable == true).
     bool optainable = true;
-    for (const auto connector: referenced_connectors) {
-    	optainable = true;
+    for (const auto connector : referenced_connectors) {
+        optainable = true;
 
         if (this->status->get_state(connector) == ChargePointStatus::Unavailable or
             this->status->get_state(connector) == ChargePointStatus::Faulted) {
@@ -1491,30 +1491,30 @@ void ChargePointImpl::handleRemoteStartTransactionRequest(ocpp::Call<RemoteStart
         }
 
         if (this->transaction_handler->get_transaction(connector) != nullptr ||
-                this->status->get_state(connector) == ChargePointStatus::Finishing) {
-        	optainable = false;
-        	continue;
+            this->status->get_state(connector) == ChargePointStatus::Finishing) {
+            optainable = false;
+            continue;
         }
 
-    	if (this->is_token_reserved_for_connector_callback != nullptr &&
-    			this->status->get_state(connector) == ChargePointStatus::Reserved &&
-				!this->is_token_reserved_for_connector_callback(connector, call.msg.idTag.get())) {
-    		optainable = false;
-    		continue;
-    	}
+        if (this->is_token_reserved_for_connector_callback != nullptr &&
+            this->status->get_state(connector) == ChargePointStatus::Reserved &&
+            !this->is_token_reserved_for_connector_callback(connector, call.msg.idTag.get())) {
+            optainable = false;
+            continue;
+        }
 
-    	if (optainable) {
-    		// at least one connector can do the remote start
-    		break;
-    	}
-     }
+        if (optainable) {
+            // at least one connector can do the remote start
+            break;
+        }
+    }
 
     if (!optainable) {
-		EVLOG_debug << "Received RemoteStartTransactionRequest for reserved connector and rejected";
-			response.status = RemoteStartStopStatus::Rejected;
-		ocpp::CallResult<RemoteStartTransactionResponse> call_result(response, call.uniqueId);
-		this->send<RemoteStartTransactionResponse>(call_result);
-		return;
+        EVLOG_debug << "Received RemoteStartTransactionRequest for reserved connector and rejected";
+        response.status = RemoteStartStopStatus::Rejected;
+        ocpp::CallResult<RemoteStartTransactionResponse> call_result(response, call.uniqueId);
+        this->send<RemoteStartTransactionResponse>(call_result);
+        return;
     }
 
     if (call.msg.chargingProfile) {

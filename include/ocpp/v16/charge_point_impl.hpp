@@ -696,7 +696,6 @@ public:
     void register_is_token_reserved_for_connector_callback(
         const std::function<bool(const int32_t connector, const std::string& id_token)>& callback);
 
-
     /// \brief Gets the configured configuration key requested in the given \p request
     /// \param request specifies the keys that should be returned. If empty or not set, all keys will be reported
     /// \return a response containing the requested key(s) including the values and unkown keys if present
