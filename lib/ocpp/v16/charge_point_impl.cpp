@@ -3388,6 +3388,11 @@ void ChargePointImpl::register_security_event_callback(
     this->security_event_callback = callback;
 }
 
+void ChargePointImpl::register_is_token_reserved_for_connector_callback(
+    const std::function<bool(const int32_t connector, const std::string& id_token)>& callback){
+    this->is_token_reserved_for_connector_callback = callback;
+}
+
 void ChargePointImpl::on_reservation_start(int32_t connector) {
     this->status->submit_event(connector, FSMEvent::ReserveConnector);
 }
