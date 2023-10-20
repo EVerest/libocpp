@@ -1472,22 +1472,22 @@ void ChargePointImpl::handleRemoteStartTransactionRequest(ocpp::Call<RemoteStart
             this->send<RemoteStartTransactionResponse>(call_result);
             return;
         }
-       referenced_connectors.push_back(call.msg.connectorId.value());
+        referenced_connectors.push_back(call.msg.connectorId.value());
     } else {
     	for (int connector = 1; connector <= this->configuration->getNumberOfConnectors(); connector++) {
     		referenced_connectors.push_back(connector);
     	}
     }
 
-    //Check if at least one conenctor is able to execute RemoteStart (optainable == true).
+    // Check if at least one conenctor is able to execute RemoteStart (optainable == true).
     bool optainable = true;
     for (const auto connector: referenced_connectors) {
     	optainable = true;
 
         if (this->status->get_state(connector) == ChargePointStatus::Unavailable or
-                this->status->get_state(connector) == ChargePointStatus::Faulted) {
-             optainable = false;
-             continue;
+            this->status->get_state(connector) == ChargePointStatus::Faulted) {
+            optainable = false;
+            continue;
         }
 
         if (this->transaction_handler->get_transaction(connector) != nullptr ||
