@@ -164,10 +164,10 @@ void ChargePoint::on_session_started(const int32_t evse_id, const int32_t connec
 }
 
 Get15118EVCertificateResponse ChargePoint::on_get_15118_ev_certificate_request(const Get15118EVCertificateRequest& request) {
-    EVLOG_debug << "Received Get15118EVCertificateRequest " << request;
+    EVLOG_info << "Received Get15118EVCertificateRequest " << request;
     auto future_res = this->send_async<Get15118EVCertificateRequest>(ocpp::Call<Get15118EVCertificateRequest>(request, this->message_queue->createMessageId()));
     const auto response_message = future_res.get();
-    EVLOG_debug << "Received Get15118EVCertificateResponse " << response_message.message;
+    EVLOG_info << "Received Get15118EVCertificateResponse " << response_message.message;
     if (response_message.messageType != MessageType::Get15118EVCertificateResponse) {
         Get15118EVCertificateResponse response;
         response.status = Iso15118EVCertificateStatusEnum::Failed;
