@@ -288,6 +288,5 @@ void ChargePoint::register_is_token_reserved_for_connector_callback(
     this->charge_point->register_is_token_reserved_for_connector_callback(callback);
 }
 
-
 } // namespace v16
 } // namespace ocpp
