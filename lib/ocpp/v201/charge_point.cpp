@@ -163,9 +163,19 @@ void ChargePoint::on_session_started(const int32_t evse_id, const int32_t connec
     this->evses.at(evse_id)->submit_event(connector_id, ConnectorEvent::PlugIn);
 }
 
-void ChargePoint::on_get_15118_ev_certificate_request(const Get15118EVCertificateRequest& request) {
-    this->send<Get15118EVCertificateRequest>(
-        ocpp::Call<Get15118EVCertificateRequest>(request, this->message_queue->createMessageId()));
+Get15118EVCertificateResponse ChargePoint::on_get_15118_ev_certificate_request(const Get15118EVCertificateRequest& request) {
+    auto future_res = this->send_async<Get15118EVCertificateRequest>(ocpp::Call<Get15118EVCertificateRequest>(request, this->message_queue->createMessageId()));
+    const auto response_message = future_res.get();
+
+    if (response_message.messageType != MessageType::Get15118EVCertificateResponse) {
+        Get15118EVCertificateResponse response;
+        response.status = Iso15118EVCertificateStatusEnum::Failed;
+        return response;
+    }
+
+    ocpp::CallResult<Get15118EVCertificateResponse> call_result = response_message.message;
+    return call_result.msg;
+
 }
 
 void ChargePoint::on_transaction_started(
@@ -1999,13 +2009,6 @@ void ChargePoint::handle_firmware_update_req(Call<UpdateFirmwareRequest> call) {
 
     ocpp::CallResult<UpdateFirmwareResponse> call_result(response, call.uniqueId);
     this->send<UpdateFirmwareResponse>(call_result);
-}
-
-void ChargePoint::handle_get_15118_ev_certificate_response(Call<Get15118EVCertificateResponse> call) {
-    // todo: id? request type?
-    EVLOG_debug << "Received Get15118EVCertificateResponse: " << call.msg << "\nwith messageId: " << call.uniqueId;
-    this->callbacks.get_15118_ev_certificate_response(call.msg);
-
 }
 
 void ChargePoint::handle_get_installed_certificate_ids_req(Call<GetInstalledCertificateIdsRequest> call) {
