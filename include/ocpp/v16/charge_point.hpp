@@ -447,8 +447,8 @@ public:
     /// \p id_token. The is_token_reserved_for_connector_callback is called when a RemoteStartTransaction.req is
     /// received.
     /// \param callback
-    void register_is_token_reserved_for_connector_callback(const std::function<bool(const int32_t connector,
-        const std::string& id_token)>& callback);
+    void register_is_token_reserved_for_connector_callback(
+    	const std::function<bool(const int32_t connector, const std::string& id_token)>& callback);
 
 
 };
