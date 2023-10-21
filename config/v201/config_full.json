@@ -1,0 +1,1349 @@
+[
+    {
+        "name": "Connector",
+        "evse_id": 2,
+        "connector_id": 1,
+        "variables": {
+            "ConnectorAvailabilityState": {
+                "variable_name": "AvailabilityState",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "ConnectorAvailable": {
+                "variable_name": "Available",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "ChargeProtocol": {
+                "variable_name": "ChargeProtocol",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "ConnectorType": {
+                "variable_name": "ConnectorType",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "ConnectorSupplyPhases": {
+                "variable_name": "SupplyPhases",
+                "attributes": {
+                    "Actual": 3
+                }
+            }
+        }
+    },
+    {
+        "name": "EVSE",
+        "evse_id": 1,
+        "variables": {
+            "EVSEAllowReset": {
+                "variable_name": "AllowReset",
+                "attributes": {
+                    "Actual": false
+                }
+            },
+            "EVSEAvailabilityState": {
+                "variable_name": "AvailabilityState",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "EVSEAvailable": {
+                "variable_name": "Available",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "EvseId": {
+                "variable_name": "EvseId",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "EVSEPower": {
+                "variable_name": "Power",
+                "attributes": {
+                    "Actual": 0
+                }
+            },
+            "EVSESupplyPhases": {
+                "variable_name": "SupplyPhases",
+                "attributes": {
+                    "Actual": 3
+                }
+            },
+            "ISO15118EvseId": {
+                "variable_name": "ISO15118EvseId",
+                "attributes": {
+                    "Actual": ""
+                }
+            }
+        }
+    },
+    {
+        "name": "Connector",
+        "evse_id": 1,
+        "connector_id": 1,
+        "variables": {
+            "ConnectorAvailabilityState": {
+                "variable_name": "AvailabilityState",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "ConnectorAvailable": {
+                "variable_name": "Available",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "ChargeProtocol": {
+                "variable_name": "ChargeProtocol",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "ConnectorType": {
+                "variable_name": "ConnectorType",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "ConnectorSupplyPhases": {
+                "variable_name": "SupplyPhases",
+                "attributes": {
+                    "Actual": 3
+                }
+            }
+        }
+    },
+    {
+        "name": "EVSE",
+        "evse_id": 2,
+        "variables": {
+            "EVSEAllowReset": {
+                "variable_name": "AllowReset",
+                "attributes": {
+                    "Actual": false
+                }
+            },
+            "EVSEAvailabilityState": {
+                "variable_name": "AvailabilityState",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "EVSEAvailable": {
+                "variable_name": "Available",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "EvseId": {
+                "variable_name": "EvseId",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "EVSEPower": {
+                "variable_name": "Power",
+                "attributes": {
+                    "Actual": 0
+                }
+            },
+            "EVSESupplyPhases": {
+                "variable_name": "SupplyPhases",
+                "attributes": {
+                    "Actual": 3
+                }
+            },
+            "ISO15118EvseId": {
+                "variable_name": "ISO15118EvseId",
+                "attributes": {
+                    "Actual": ""
+                }
+            }
+        }
+    },
+    {
+        "name": "SampledDataCtrlr",
+        "variables": {
+            "SampledDataCtrlrAvailable": {
+                "variable_name": "Available",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "SampledDataCtrlrEnabled": {
+                "variable_name": "Enabled",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "SampledDataSignReadings": {
+                "variable_name": "SignReadings",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "SampledDataTxEndedInterval": {
+                "variable_name": "TxEndedInterval",
+                "attributes": {
+                    "Actual": "60"
+                }
+            },
+            "SampledDataTxEndedMeasurands": {
+                "variable_name": "TxEndedMeasurands",
+                "attributes": {
+                    "Actual": "Current.Export,Current.Import,Current.Offered,Energy.Active.Export.Register,Energy.Active.Import.Register,Energy.Reactive.Export.Register,Energy.Reactive.Import.Register,Energy.Active.Export.Interval,Energy.Active.Import.Interval,Energy.Reactive.Export.Interval,Energy.Reactive.Import.Interval,Frequency,Power.Active.Export,Power.Active.Import,Power.Factor,Power.Offered,Power.Reactive.Export,Power.Reactive.Import,Voltage"
+                }
+            },
+            "SampledDataTxStartedMeasurands": {
+                "variable_name": "TxStartedMeasurands",
+                "attributes": {
+                    "Actual": "Current.Export,Current.Import,Current.Offered,Energy.Active.Export.Register,Energy.Active.Import.Register,Energy.Reactive.Export.Register,Energy.Reactive.Import.Register,Energy.Active.Export.Interval,Energy.Active.Import.Interval,Energy.Reactive.Export.Interval,Energy.Reactive.Import.Interval,Frequency,Power.Active.Export,Power.Active.Import,Power.Factor,Power.Offered,Power.Reactive.Export,Power.Reactive.Import,Voltage"
+                }
+            },
+            "SampledDataTxUpdatedInterval": {
+                "variable_name": "TxUpdatedInterval",
+                "attributes": {
+                    "Actual": "120"
+                }
+            },
+            "SampledDataTxUpdatedMeasurands": {
+                "variable_name": "TxUpdatedMeasurands",
+                "attributes": {
+                    "Actual": "Current.Export,Current.Import,Current.Offered,Energy.Active.Export.Register,Energy.Active.Import.Register,Energy.Reactive.Export.Register,Energy.Reactive.Import.Register,Energy.Active.Export.Interval,Energy.Active.Import.Interval,Energy.Reactive.Export.Interval,Energy.Reactive.Import.Interval,Frequency,Power.Active.Export,Power.Active.Import,Power.Factor,Power.Offered,Power.Reactive.Export,Power.Reactive.Import,Voltage"
+                }
+            },
+            "RegisterValuesWithoutPhases": {
+                "variable_name": "RegisterValuesWithoutPhases",
+                "attributes": {
+                    "Actual": true
+                }
+            }
+        }
+    },
+    {
+        "name": "LocalAuthListCtrlr",
+        "variables": {
+            "LocalAuthListCtrlrAvailable": {
+                "variable_name": "Available",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "BytesPerMessageSendLocalList": {
+                "variable_name": "BytesPerMessageSendLocalList",
+                "attributes": {
+                    "Actual": 5000
+                }
+            },
+            "LocalAuthListCtrlrEnabled": {
+                "variable_name": "Enabled",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "LocalAuthListCtrlrEntries": {
+                "variable_name": "Entries",
+                "attributes": {
+                    "Actual": 500
+                }
+            },
+            "ItemsPerMessageSendLocalList": {
+                "variable_name": "ItemsPerMessageSendLocalList",
+                "attributes": {
+                    "Actual": 500
+                }
+            },
+            "LocalAuthListCtrlrStorage": {
+                "variable_name": "Storage",
+                "attributes": {
+                    "Actual": 500
+                }
+            },
+            "LocalAuthListCtrlrDisablePostAuthorize": {
+                "variable_name": "DisablePostAuthorize",
+                "attributes": {
+                    "Actual": false
+                }
+            }
+        }
+    },
+    {
+        "name": "InternalCtrlr",
+        "variables": {
+            "InternalCtrlrEnabled": {
+                "variable_name": "Enabled",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "ChargePointId": {
+                "variable_name": "ChargePointId",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "NetworkConnectionProfiles": {
+                "variable_name": "NetworkConnectionProfiles",
+                "attributes": {
+                    "Actual": "[{\"configurationSlot\": 1, \"connectionData\": {\"messageTimeout\": 30, \"ocppCsmsUrl\": \"ws://localhost:9000/cp001\", \"ocppInterface\": \"Wired0\", \"ocppTransport\": \"JSON\", \"ocppVersion\": \"OCPP20\", \"securityProfile\": 1}}]"
+                }
+            },
+            "ChargeBoxSerialNumber": {
+                "variable_name": "ChargeBoxSerialNumber",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "ChargePointModel": {
+                "variable_name": "ChargePointModel",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "ChargePointSerialNumber": {
+                "variable_name": "ChargePointSerialNumber",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "ChargePointVendor": {
+                "variable_name": "ChargePointVendor",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "FirmwareVersion": {
+                "variable_name": "FirmwareVersion",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "ICCID": {
+                "variable_name": "ICCID",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "IMSI": {
+                "variable_name": "IMSI",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "MeterSerialNumber": {
+                "variable_name": "MeterSerialNumber",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "MeterType": {
+                "variable_name": "MeterType",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "SupportedCiphers12": {
+                "variable_name": "SupportedCiphers12",
+                "attributes": {
+                    "Actual": "ECDHE-ECDSA-AES128-GCM-SHA256,ECDHE-ECDSA-AES256,GCM-SHA384,AES128-GCM-SHA256,AES256-GCM-SHA384,TLS_AES_256_GCM_SHA384,TLS_AES_128_GCM_SHA256"
+                }
+            },
+            "SupportedCiphers13": {
+                "variable_name": "SupportedCiphers13",
+                "attributes": {
+                    "Actual": "TLS_AES_256_GCM_SHA384,TLS_AES_128_GCM_SHA256"
+                }
+            },
+            "AuthorizeConnectorZeroOnConnectorOne": {
+                "variable_name": "AuthorizeConnectorZeroOnConnectorOne",
+                "attributes": {
+                    "Actual": false
+                }
+            },
+            "LogMessages": {
+                "variable_name": "LogMessages",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "LogMessagesFormat": {
+                "variable_name": "LogMessagesFormat",
+                "attributes": {
+                    "Actual": "log,html"
+                }
+            },
+            "SupportedChargingProfilePurposeTypes": {
+                "variable_name": "SupportedChargingProfilePurposeTypes",
+                "attributes": {
+                    "Actual": "ChargePointMaxProfile,TxDefaultProfile,TxProfile"
+                }
+            },
+            "MaxCompositeScheduleDuration": {
+                "variable_name": "MaxCompositeScheduleDuration",
+                "attributes": {
+                    "Actual": 31536000
+                }
+            },
+            "NumberOfConnectors": {
+                "variable_name": "NumberOfConnectors",
+                "attributes": {
+                    "Actual": 2
+                }
+            },
+            "UseSslDefaultVerifyPaths": {
+                "variable_name": "UseSslDefaultVerifyPaths",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "OcspRequestInterval": {
+                "variable_name": "OcspRequestInterval",
+                "attributes": {
+                    "Actual": 604800
+                }
+            },
+            "WebsocketPingPayload": {
+                "variable_name": "WebsocketPingPayload",
+                "attributes": {
+                    "Actual": "hello there"
+                }
+            }
+        }
+    },
+    {
+        "name": "OCPPCommCtrlr",
+        "variables": {
+            "OCPPCommCtrlrEnabled": {
+                "variable_name": "Enabled",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "ActiveNetworkProfile": {
+                "variable_name": "ActiveNetworkProfile",
+                "attributes": {
+                    "Actual": 1
+                }
+            },
+            "FileTransferProtocols": {
+                "variable_name": "FileTransferProtocols",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "HeartbeatInterval": {
+                "variable_name": "HeartbeatInterval",
+                "attributes": {
+                    "Actual": 1800
+                }
+            },
+            "MessageTimeout": {
+                "variable_name": "MessageTimeout",
+                "attributes": {
+                    "Actual": 60
+                },
+                "instance": "Default"
+            },
+            "MessageAttemptInterval": {
+                "variable_name": "MessageAttemptInterval",
+                "attributes": {
+                    "Actual": 10
+                },
+                "instance": "TransactionEvent"
+            },
+            "MessageAttempts": {
+                "variable_name": "MessageAttempts",
+                "attributes": {
+                    "Actual": 5
+                },
+                "instance": "TransactionEvent"
+            },
+            "NetworkConfigurationPriority": {
+                "variable_name": "NetworkConfigurationPriority",
+                "attributes": {
+                    "Actual": "1"
+                }
+            },
+            "NetworkProfileConnectionAttempts": {
+                "variable_name": "NetworkProfileConnectionAttempts",
+                "attributes": {
+                    "Actual": 3
+                }
+            },
+            "OfflineThreshold": {
+                "variable_name": "OfflineThreshold",
+                "attributes": {
+                    "Actual": 60
+                }
+            },
+            "PublicKeyWithSignedMeterValue": {
+                "variable_name": "PublicKeyWithSignedMeterValue",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "QueueAllMessages": {
+                "variable_name": "QueueAllMessages",
+                "attributes": {
+                    "Actual": false
+                }
+            },
+            "ResetRetries": {
+                "variable_name": "ResetRetries",
+                "attributes": {
+                    "Actual": 3
+                }
+            },
+            "RetryBackOffRandomRange": {
+                "variable_name": "RetryBackOffRandomRange",
+                "attributes": {
+                    "Actual": 2
+                }
+            },
+            "RetryBackOffRepeatTimes": {
+                "variable_name": "RetryBackOffRepeatTimes",
+                "attributes": {
+                    "Actual": 2
+                }
+            },
+            "RetryBackOffWaitMinimum": {
+                "variable_name": "RetryBackOffWaitMinimum",
+                "attributes": {
+                    "Actual": 1
+                }
+            },
+            "UnlockOnEVSideDisconnect": {
+                "variable_name": "UnlockOnEVSideDisconnect",
+                "attributes": {
+                    "Actual": 1
+                }
+            },
+            "WebSocketPingInterval": {
+                "variable_name": "WebSocketPingInterval",
+                "attributes": {
+                    "Actual": 30
+                }
+            },
+            "FieldLength": {
+                "variable_name": "FieldLength",
+                "attributes": {
+                    "Actual": 42
+                }
+            }
+        }
+    },
+    {
+        "name": "DisplayMessageCtrlr",
+        "variables": {
+            "DisplayMessageCtrlrAvailable": {
+                "variable_name": "Available",
+                "attributes": {
+                    "Actual": false
+                }
+            },
+            "NumberOfDisplayMessages": {
+                "variable_name": "NumberOfDisplayMessages",
+                "attributes": {
+                    "Actual": 42
+                }
+            },
+            "DisplayMessageCtrlrEnabled": {
+                "variable_name": "Enabled",
+                "attributes": {
+                    "Actual": false
+                }
+            },
+            "PersonalMessageSize": {
+                "variable_name": "PersonalMessageSize",
+                "attributes": {
+                    "Actual": 42
+                }
+            },
+            "DisplayMessageSupportedFormats": {
+                "variable_name": "SupportedFormats",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "DisplayMessageSupportedPriorities": {
+                "variable_name": "SupportedPriorities",
+                "attributes": {
+                    "Actual": ""
+                }
+            }
+        }
+    },
+    {
+        "name": "ClockCtrlr",
+        "variables": {
+            "ClockCtrlrEnabled": {
+                "variable_name": "Enabled",
+                "attributes": {
+                    "Actual": false
+                }
+            },
+            "ClockCtrlrDateTime": {
+                "variable_name": "DateTime",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "NextTimeOffsetTransitionDateTime": {
+                "variable_name": "NextTimeOffsetTransitionDateTime",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "NtpServerUri": {
+                "variable_name": "NtpServerUri",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "NtpSource": {
+                "variable_name": "NtpSource",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "TimeAdjustmentReportingThreshold": {
+                "variable_name": "TimeAdjustmentReportingThreshold",
+                "attributes": {
+                    "Actual": 42
+                }
+            },
+            "TimeOffset": {
+                "variable_name": "TimeOffset",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "TimeOffsetNextTransition": {
+                "variable_name": "TimeOffset",
+                "attributes": {
+                    "Actual": ""
+                },
+                "instance": "NextTransition"
+            },
+            "TimeSource": {
+                "variable_name": "TimeSource",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "TimeZone": {
+                "variable_name": "TimeZone",
+                "attributes": {
+                    "Actual": ""
+                }
+            }
+        }
+    },
+    {
+        "name": "ReservationCtrlr",
+        "variables": {
+            "ReservationCtrlrAvailable": {
+                "variable_name": "Available",
+                "attributes": {
+                    "Actual": false
+                }
+            },
+            "ReservationCtrlrEnabled": {
+                "variable_name": "Enabled",
+                "attributes": {
+                    "Actual": false
+                }
+            },
+            "ReservationCtrlrNonEvseSpecific": {
+                "variable_name": "NonEvseSpecific",
+                "attributes": {
+                    "Actual": true
+                }
+            }
+        }
+    },
+    {
+        "name": "ISO15118Ctrlr",
+        "variables": {
+            "ISO15118CtrlrEnabled": {
+                "variable_name": "Enabled",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "CentralContractValidationAllowed": {
+                "variable_name": "CentralContractValidationAllowed",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "ContractValidationOffline": {
+                "variable_name": "ContractValidationOffline",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "SeccId": {
+                "variable_name": "SeccId",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "MaxScheduleEntries": {
+                "variable_name": "MaxScheduleEntries",
+                "attributes": {
+                    "Actual": 42
+                }
+            },
+            "RequestedEnergyTransferMode": {
+                "variable_name": "RequestedEnergyTransferMode",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "RequestMeteringReceipt": {
+                "variable_name": "RequestMeteringReceipt",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "ISO15118CtrlrCountryName": {
+                "variable_name": "CountryName",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "ISO15118CtrlrOrganizationName": {
+                "variable_name": "OrganizationName",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "PnCEnabled": {
+                "variable_name": "PnCEnabled",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "V2GCertificateInstallationEnabled": {
+                "variable_name": "V2GCertificateInstallationEnabled",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "ContractCertificateInstallationEnabled": {
+                "variable_name": "ContractCertificateInstallationEnabled",
+                "attributes": {
+                    "Actual": true
+                }
+            }
+        }
+    },
+    {
+        "name": "TxCtrlr",
+        "variables": {
+            "TxCtrlrEnabled": {
+                "variable_name": "Enabled",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "ChargingTime": {
+                "variable_name": "ChargingTime",
+                "attributes": {
+                    "Actual": 42
+                }
+            },
+            "EVConnectionTimeOut": {
+                "variable_name": "EVConnectionTimeOut",
+                "attributes": {
+                    "Actual": 120
+                }
+            },
+            "MaxEnergyOnInvalidId": {
+                "variable_name": "MaxEnergyOnInvalidId",
+                "attributes": {
+                    "Actual": 0
+                }
+            },
+            "StopTxOnEVSideDisconnect": {
+                "variable_name": "StopTxOnEVSideDisconnect",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "StopTxOnInvalidId": {
+                "variable_name": "StopTxOnInvalidId",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "TxBeforeAcceptedEnabled": {
+                "variable_name": "TxBeforeAcceptedEnabled",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "TxStartPoint": {
+                "variable_name": "TxStartPoint",
+                "attributes": {
+                    "Actual": "PowerPathClosed"
+                }
+            },
+            "TxStopPoint": {
+                "variable_name": "TxStopPoint",
+                "attributes": {
+                    "Actual": "EVConnected,Authorized"
+                }
+            }
+        }
+    },
+    {
+        "name": "AlignedDataCtrlr",
+        "variables": {
+            "AlignedDataCtrlrEnabled": {
+                "variable_name": "Enabled",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "AlignedDataCtrlrAvailable": {
+                "variable_name": "Available",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "AlignedDataInterval": {
+                "variable_name": "Interval",
+                "attributes": {
+                    "Actual": 900
+                }
+            },
+            "AlignedDataMeasurands": {
+                "variable_name": "Measurands",
+                "attributes": {
+                    "Actual": "Current.Export,Current.Import,Current.Offered,Energy.Active.Export.Register,Energy.Active.Import.Register,Energy.Reactive.Export.Register,Energy.Reactive.Import.Register,Energy.Active.Export.Interval,Energy.Active.Import.Interval,Energy.Reactive.Export.Interval,Energy.Reactive.Import.Interval,Frequency,Power.Active.Export,Power.Active.Import,Power.Factor,Power.Offered,Power.Reactive.Export,Power.Reactive.Import,Voltage"
+                }
+            },
+            "AlignedDataSendDuringIdle": {
+                "variable_name": "SendDuringIdle",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "AlignedDataSignReadings": {
+                "variable_name": "SignReadings",
+                "attributes": {
+                    "Actual": 0
+                }
+            },
+            "AlignedDataTxEndedInterval": {
+                "variable_name": "TxEndedInterval",
+                "attributes": {
+                    "Actual": 60
+                }
+            },
+            "AlignedDataTxEndedMeasurands": {
+                "variable_name": "TxEndedMeasurands",
+                "attributes": {
+                    "Actual": "Current.Export,Current.Import,Current.Offered,Energy.Active.Export.Register,Energy.Active.Import.Register,Energy.Reactive.Export.Register,Energy.Reactive.Import.Register,Energy.Active.Export.Interval,Energy.Active.Import.Interval,Energy.Reactive.Export.Interval,Energy.Reactive.Import.Interval,Frequency,Power.Active.Export,Power.Active.Import,Power.Factor,Power.Offered,Power.Reactive.Export,Power.Reactive.Import,Voltage"
+                }
+            }
+        }
+    },
+    {
+        "name": "AuthCtrlr",
+        "variables": {
+            "AuthCtrlrEnabled": {
+                "variable_name": "Enabled",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "AdditionalInfoItemsPerMessage": {
+                "variable_name": "AdditionalInfoItemsPerMessage",
+                "attributes": {
+                    "Actual": 500
+                }
+            },
+            "AuthorizeRemoteStart": {
+                "variable_name": "AuthorizeRemoteStart",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "LocalAuthorizeOffline": {
+                "variable_name": "LocalAuthorizeOffline",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "LocalPreAuthorize": {
+                "variable_name": "LocalPreAuthorize",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "MasterPassGroupId": {
+                "variable_name": "MasterPassGroupId",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "OfflineTxForUnknownIdEnabled": {
+                "variable_name": "OfflineTxForUnknownIdEnabled",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "DisableRemoteAuthorization": {
+                "variable_name": "DisableRemoteAuthorization",
+                "attributes": {
+                    "Actual": false
+                }
+            }
+        }
+    },
+    {
+        "name": "AuthCacheCtrlr",
+        "variables": {
+            "AuthCacheCtrlrAvailable": {
+                "variable_name": "Available",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "AuthCacheCtrlrEnabled": {
+                "variable_name": "Enabled",
+                "attributes": {
+                    "Actual": false
+                }
+            },
+            "AuthCacheLifeTime": {
+                "variable_name": "LifeTime",
+                "attributes": {
+                    "Actual": 604800
+                }
+            },
+            "AuthCachePolicy": {
+                "variable_name": "Policy",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "AuthCacheStorage": {
+                "variable_name": "Storage",
+                "attributes": {
+                    "Actual": 500
+                }
+            },
+            "AuthCacheDisablePostAuthorize": {
+                "variable_name": "DisablePostAuthorize",
+                "attributes": {
+                    "Actual": false
+                }
+            }
+        }
+    },
+    {
+        "name": "ChargingStation",
+        "variables": {
+            "AllowNewSessionsPendingFirmwareUpdate": {
+                "variable_name": "AllowNewSessionsPendingFirmwareUpdate",
+                "attributes": {
+                    "Actual": false
+                },
+                "instance": "BytesPerMessage"
+            },
+            "ChargingStationAvailabilityState": {
+                "variable_name": "AvailabilityState",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "ChargingStationAvailable": {
+                "variable_name": "Available",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "ChargingStationModel": {
+                "variable_name": "Model",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "ChargingStationSupplyPhases": {
+                "variable_name": "SupplyPhases",
+                "attributes": {
+                    "Actual": 3
+                }
+            },
+            "ChargingStationVendorName": {
+                "variable_name": "VendorName",
+                "attributes": {
+                    "Actual": "Pionix"
+                }
+            }
+        }
+    },
+    {
+        "name": "CustomizationCtrlr",
+        "variables": {
+            "": {
+                "variable_name": "Enabled",
+                "attributes": {
+                    "Actual": false
+                }
+            },
+            "CustomImplementationEnabled": {
+                "variable_name": "CustomImplementationEnabled",
+                "attributes": {
+                    "Actual": false
+                }
+            }
+        }
+    },
+    {
+        "name": "DeviceDataCtrlr",
+        "variables": {
+            "DeviceDataCtrlrEnabled": {
+                "variable_name": "Enabled",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "BytesPerMessageGetReport": {
+                "variable_name": "BytesPerMessage",
+                "attributes": {
+                    "Actual": 5000
+                },
+                "instance": "GetReport"
+            },
+            "BytesPerMessageGetVariables": {
+                "variable_name": "BytesPerMessage",
+                "attributes": {
+                    "Actual": 5000
+                },
+                "instance": "GetVariables"
+            },
+            "BytesPerMessageSetVariables": {
+                "variable_name": "BytesPerMessage",
+                "attributes": {
+                    "Actual": 5000
+                },
+                "instance": "SetVariables"
+            },
+            "ConfigurationValueSize": {
+                "variable_name": "ConfigurationValueSize",
+                "attributes": {
+                    "Actual": 1000
+                }
+            },
+            "ItemsPerMessageGetReport": {
+                "variable_name": "ItemsPerMessage",
+                "attributes": {
+                    "Actual": 500
+                },
+                "instance": "GetReport"
+            },
+            "ItemsPerMessageGetVariables": {
+                "variable_name": "ItemsPerMessage",
+                "attributes": {
+                    "Actual": 500
+                },
+                "instance": "GetVariables"
+            },
+            "ItemsPerMessageSetVariables": {
+                "variable_name": "ItemsPerMessage",
+                "attributes": {
+                    "Actual": 500
+                },
+                "instance": "SetVariables"
+            },
+            "ReportingValueSize": {
+                "variable_name": "ReportingValueSize",
+                "attributes": {
+                    "Actual": 2500
+                }
+            },
+            "ValueSize": {
+                "variable_name": "ValueSize",
+                "attributes": {
+                    "Actual": 2500
+                }
+            }
+        }
+    },
+    {
+        "name": "TariffCostCtrlr",
+        "variables": {
+            "TariffCostCtrlrAvailableTariff": {
+                "variable_name": "Available",
+                "attributes": {
+                    "Actual": false
+                },
+                "instance": "Tariff"
+            },
+            "TariffCostCtrlrAvailableCost": {
+                "variable_name": "Available",
+                "attributes": {
+                    "Actual": false
+                },
+                "instance": "Cost"
+            },
+            "TariffCostCtrlrCurrency": {
+                "variable_name": "Currency",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "TariffCostCtrlrEnabledTariff": {
+                "variable_name": "Enabled",
+                "attributes": {
+                    "Actual": false
+                },
+                "instance": "Tariff"
+            },
+            "TariffCostCtrlrEnabledCost": {
+                "variable_name": "Enabled",
+                "attributes": {
+                    "Actual": false
+                },
+                "instance": "Cost"
+            },
+            "TariffFallbackMessage": {
+                "variable_name": "TariffFallbackMessage",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "TotalCostFallbackMessage": {
+                "variable_name": "TotalCostFallbackMessage",
+                "attributes": {
+                    "Actual": ""
+                }
+            }
+        }
+    },
+    {
+        "name": "SecurityCtrlr",
+        "variables": {
+            "SecurityCtrlrEnabled": {
+                "variable_name": "Enabled",
+                "attributes": {
+                    "Actual": true
+                }
+            },
+            "AdditionalRootCertificateCheck": {
+                "variable_name": "AdditionalRootCertificateCheck",
+                "attributes": {
+                    "Actual": false
+                }
+            },
+            "BasicAuthPassword": {
+                "variable_name": "BasicAuthPassword",
+                "attributes": {
+                    "Actual": "DEADBEEFDEADBEEF"
+                }
+            },
+            "CertificateEntries": {
+                "variable_name": "CertificateEntries",
+                "attributes": {
+                    "Actual": 500
+                }
+            },
+            "CertSigningRepeatTimes": {
+                "variable_name": "CertSigningRepeatTimes",
+                "attributes": {
+                    "Actual": 3
+                }
+            },
+            "CertSigningWaitMinimum": {
+                "variable_name": "CertSigningWaitMinimum",
+                "attributes": {
+                    "Actual": 30
+                }
+            },
+            "SecurityCtrlrIdentity": {
+                "variable_name": "Identity",
+                "attributes": {
+                    "Actual": "cp001"
+                }
+            },
+            "MaxCertificateChainSize": {
+                "variable_name": "MaxCertificateChainSize",
+                "attributes": {
+                    "Actual": 42
+                }
+            },
+            "OrganizationName": {
+                "variable_name": "OrganizationName",
+                "attributes": {
+                    "Actual": "Pionix"
+                }
+            },
+            "SecurityProfile": {
+                "variable_name": "SecurityProfile",
+                "attributes": {
+                    "Actual": 1
+                }
+            }
+        }
+    },
+    {
+        "name": "SmartChargingCtrlr",
+        "variables": {
+            "ACPhaseSwitchingSupported": {
+                "variable_name": "ACPhaseSwitchingSupported",
+                "attributes": {
+                    "Actual": false
+                }
+            },
+            "SmartChargingCtrlrAvailable": {
+                "variable_name": "Available",
+                "attributes": {
+                    "Actual": false
+                }
+            },
+            "SmartChargingCtrlrAvailableEnabled": {
+                "variable_name": "Enabled",
+                "attributes": {
+                    "Actual": false
+                }
+            },
+            "EntriesChargingProfiles": {
+                "variable_name": "Entries",
+                "attributes": {
+                    "Actual": 500
+                },
+                "instance": "ChargingProfiles"
+            },
+            "ExternalControlSignalsEnabled": {
+                "variable_name": "ExternalControlSignalsEnabled",
+                "attributes": {
+                    "Actual": false
+                }
+            },
+            "LimitChangeSignificance": {
+                "variable_name": "LimitChangeSignificance",
+                "attributes": {
+                    "Actual": 42
+                }
+            },
+            "NotifyChargingLimitWithSchedules": {
+                "variable_name": "NotifyChargingLimitWithSchedules",
+                "attributes": {
+                    "Actual": false
+                }
+            },
+            "PeriodsPerSchedule": {
+                "variable_name": "PeriodsPerSchedule",
+                "attributes": {
+                    "Actual": 42
+                }
+            },
+            "Phases3to1": {
+                "variable_name": "Phases3to1",
+                "attributes": {
+                    "Actual": false
+                }
+            },
+            "ChargingProfileMaxStackLevel": {
+                "variable_name": "ProfileStackLevel",
+                "attributes": {
+                    "Actual": 42
+                }
+            },
+            "ChargingScheduleChargingRateUnit": {
+                "variable_name": "RateUnit",
+                "attributes": {
+                    "Actual": ""
+                }
+            }
+        }
+    },
+    {
+        "name": "MonitoringCtrlr",
+        "variables": {
+            "MonitoringCtrlrAvailable": {
+                "variable_name": "Available",
+                "attributes": {
+                    "Actual": false
+                }
+            },
+            "BytesPerMessageClearVariableMonitoring": {
+                "variable_name": "BytesPerMessage",
+                "attributes": {
+                    "Actual": 5000
+                },
+                "instance": "ClearVariableMonitoring"
+            },
+            "BytesPerMessageSetVariableMonitoring": {
+                "variable_name": "BytesPerMessage",
+                "attributes": {
+                    "Actual": 5000
+                },
+                "instance": "SetVariableMonitoring"
+            },
+            "MonitoringCtrlrEnabled": {
+                "variable_name": "Enabled",
+                "attributes": {
+                    "Actual": false
+                }
+            },
+            "ItemsPerMessageClearVariableMonitoring": {
+                "variable_name": "ItemsPerMessage",
+                "attributes": {
+                    "Actual": 500
+                },
+                "instance": "ClearVariableMonitoring"
+            },
+            "ItemsPerMessageSetVariableMonitoring": {
+                "variable_name": "ItemsPerMessage",
+                "attributes": {
+                    "Actual": 500
+                },
+                "instance": "SetVariableMonitoring"
+            },
+            "OfflineQueuingSeverity": {
+                "variable_name": "OfflineQueuingSeverity",
+                "attributes": {
+                    "Actual": 500
+                }
+            },
+            "MonitoringBase": {
+                "variable_name": "MonitoringBase",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "MonitoringLevel": {
+                "variable_name": "MonitoringLevel",
+                "attributes": {
+                    "Actual": 42
+                }
+            },
+            "ActiveMonitoringBase": {
+                "variable_name": "ActiveMonitoringBase",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "ActiveMonitoringLevel": {
+                "variable_name": "ActiveMonitoringLevel",
+                "attributes": {
+                    "Actual": 42
+                }
+            }
+        }
+    }
+]
