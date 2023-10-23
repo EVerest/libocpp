@@ -12,7 +12,7 @@
 
 namespace ocpp {
 
-Uri Uri::parse_from_string(std::string const& uri, ChargepointId chargepoint_id) {
+Uri Uri::parse_from_string(std::string const& uri, std::string chargepoint_id) {
     auto uri_temp = websocketpp::uri(uri);
 
     if (!uri_temp.get_valid()) {

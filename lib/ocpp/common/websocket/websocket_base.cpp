@@ -8,7 +8,6 @@ namespace ocpp {
 
 WebsocketBase::WebsocketBase(const WebsocketConnectionOptions& connection_options) :
     m_is_connected(false),
-    connection_options(connection_options),
     connected_callback(nullptr),
     closed_callback(nullptr),
     message_callback(nullptr),
@@ -17,7 +16,10 @@ WebsocketBase::WebsocketBase(const WebsocketConnectionOptions& connection_option
     reconnect_backoff_ms(0),
     shutting_down(false),
     reconnecting(false) {
-    this->ping_timer = std::make_unique<Everest::SteadyTimer>();
+
+    set_connection_options_base(connection_options)
+
+        this->ping_timer = std::make_unique<Everest::SteadyTimer>();
     const auto auth_key = connection_options.authorization_key;
     if (auth_key.has_value() and auth_key.value().length() < 16) {
         EVLOG_warning << "AuthorizationKey with only " << auth_key.value().length()
