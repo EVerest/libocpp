@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
-#include <memory>
-
 #include <ocpp/common/evse_security.hpp>
+#include <ocpp/common/types.hpp>
 #include <ocpp/common/websocket/websocket_tls.hpp>
 #include <ocpp/common/websocket/websocket_uri.hpp>
 
 #include <everest/logging.hpp>
+
+#include <memory>
+#include <stdexcept>
 
 namespace ocpp {
 
@@ -21,7 +23,18 @@ WebsocketTLS::WebsocketTLS(const WebsocketConnectionOptions& connection_options,
 }
 
 void WebsocketTLS::set_connection_options(const WebsocketConnectionOptions& connection_options) {
+    switch (connection_options.security_profile) { // `switch` used to lint on missing enum-values
+    case security::SecurityProfiles::unsecured_transport_with_basic_authentication:
+        throw std::invalid_argument("`security_profile` is not a TLS-profile");
+    case security::SecurityProfiles::TLS_with_basic_authentication:
+    case security::SecurityProfiles::TLS_with_client_side_certificates:
+        break;
+    default:
+        throw std::invalid_argument("unknown `security_profile`");
+    }
+
     set_connection_options_base(connection_options);
+
     this->connection_options.csms_uri.set_secure(true);
 }
 
