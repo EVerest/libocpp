@@ -100,7 +100,6 @@ struct Callbacks {
     std::optional<std::function<bool(const NetworkConnectionProfile& network_connection_profile)>>
         configure_network_connection_profile_callback;
     std::optional<std::function<void(const ocpp::DateTime& currentTime)>> time_sync_callback;
-
 };
 
 /// \brief Class implements OCPP2.0.1 Charging Station
