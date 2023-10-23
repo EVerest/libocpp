@@ -203,8 +203,11 @@ void ChargePointImpl::init_state_machine(const std::map<int, ChargePointStatus>&
 }
 
 WebsocketConnectionOptions ChargePointImpl::get_ws_connection_options() {
+    auto uri =
+        Uri::parse_from_string(this->configuration->getCentralSystemURI(), this->configuration->getChargePointId());
+
     WebsocketConnectionOptions connection_options{OcppProtocolVersion::v16,
-                                                  this->configuration->getCentralSystemURI(),
+                                                  uri,
                                                   this->configuration->getSecurityProfile(),
                                                   this->configuration->getChargePointId(),
                                                   this->configuration->getAuthorizationKey(),

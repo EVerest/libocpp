@@ -15,13 +15,12 @@ WebsocketTLS::WebsocketTLS(const WebsocketConnectionOptions& connection_options,
                            std::shared_ptr<EvseSecurity> evse_security) :
     WebsocketBase(connection_options), evse_security(evse_security) {
 
-    EVLOG_debug << "Initialised WebsocketTLS with URI: " << this->uri.string();
+    EVLOG_debug << "Initialised WebsocketTLS with URI: " << this->connection_options.csms_uri.string();
 }
 
 void WebsocketTLS::set_connection_options(const WebsocketConnectionOptions& connection_options) {
-    set_connection_options_base(connection_options); // initialises this->uri, too
-
-    this->uri.set_secure(true);
+    set_connection_options_base(connection_options);
+    this->connection_options.csms_uri.set_secure(true);
 }
 
 bool WebsocketTLS::connect() {
@@ -29,8 +28,8 @@ bool WebsocketTLS::connect() {
         return false;
     }
 
-    EVLOG_info << "Connecting TLS websocket to uri: " << this->uri.string() << " with security-profile "
-               << this->connection_options.security_profile;
+    EVLOG_info << "Connecting TLS websocket to uri: " << this->connection_options.csms_uri.string()
+               << " with security-profile " << this->connection_options.security_profile;
 
     this->wss_client.clear_access_channels(websocketpp::log::alevel::all);
     this->wss_client.clear_error_channels(websocketpp::log::elevel::all);
@@ -39,11 +38,11 @@ bool WebsocketTLS::connect() {
     websocket_thread.reset(new websocketpp::lib::thread(&tls_client::run, &this->wss_client));
 
     this->wss_client.set_tls_init_handler(
-        websocketpp::lib::bind(&WebsocketTLS::on_tls_init, this, this->uri.get_hostname(),
+        websocketpp::lib::bind(&WebsocketTLS::on_tls_init, this, this->connection_options.csms_uri.get_hostname(),
                                websocketpp::lib::placeholders::_1, this->connection_options.security_profile));
 
     this->reconnect_callback = [this](const websocketpp::lib::error_code& ec) {
-        EVLOG_info << "Reconnecting to TLS websocket at uri: " << this->uri.string()
+        EVLOG_info << "Reconnecting to TLS websocket at uri: " << this->connection_options.csms_uri.string()
                    << " with security profile: " << this->connection_options.security_profile;
 
         // close connection before reconnecting
@@ -207,8 +206,8 @@ tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connect
 void WebsocketTLS::connect_tls() {
     websocketpp::lib::error_code ec;
 
-    const tls_client::connection_ptr con =
-        this->wss_client.get_connection(std::make_shared<websocketpp::uri>(this->uri.get_websocketpp_uri()), ec);
+    const tls_client::connection_ptr con = this->wss_client.get_connection(
+        std::make_shared<websocketpp::uri>(this->connection_options.csms_uri.get_websocketpp_uri()), ec);
 
     if (ec) {
         EVLOG_error << "Connection initialization error for TLS websocket: " << ec.message();

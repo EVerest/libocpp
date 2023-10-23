@@ -31,8 +31,6 @@ WebsocketBase::~WebsocketBase() {
 }
 
 void WebsocketBase::set_connection_options_base(const WebsocketConnectionOptions& connection_options) {
-    this->uri = Uri::parse_from_string(connection_options.csms_uri, connection_options.chargepoint_id);
-
     this->connection_attempts = 0;
     this->connection_options = connection_options;
 }

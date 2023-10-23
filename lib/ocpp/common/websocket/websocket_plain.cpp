@@ -14,13 +14,12 @@ WebsocketPlain::WebsocketPlain(const WebsocketConnectionOptions& connection_opti
 
     set_connection_options(connection_options);
 
-    EVLOG_debug << "Initialised WebsocketPlain with URI: " << this->uri.string();
+    EVLOG_debug << "Initialised WebsocketPlain with URI: " << this->connection_options.csms_uri.string();
 }
 
 void WebsocketPlain::set_connection_options(const WebsocketConnectionOptions& connection_options) {
-    set_connection_options_base(connection_options); // initialises this->uri, too
-
-    this->uri.set_secure(false);
+    set_connection_options_base(connection_options);
+    this->connection_options.csms_uri.set_secure(false);
 }
 
 bool WebsocketPlain::connect() {
@@ -28,7 +27,7 @@ bool WebsocketPlain::connect() {
         return false;
     }
 
-    EVLOG_info << "Connecting to plain websocket at uri: " << this->uri.string()
+    EVLOG_info << "Connecting to plain websocket at uri: " << this->connection_options.csms_uri.string()
                << " with security profile: " << this->connection_options.security_profile;
 
     this->ws_client.clear_access_channels(websocketpp::log::alevel::all);
@@ -39,7 +38,7 @@ bool WebsocketPlain::connect() {
     websocket_thread.reset(new websocketpp::lib::thread(&client::run, &this->ws_client));
 
     this->reconnect_callback = [this](const websocketpp::lib::error_code& ec) {
-        EVLOG_info << "Reconnecting to plain websocket at uri: " << this->uri.string()
+        EVLOG_info << "Reconnecting to plain websocket at uri: " << this->connection_options.csms_uri.string()
                    << " with security profile: " << this->connection_options.security_profile;
 
         // close connection before reconnecting
@@ -129,8 +128,8 @@ void WebsocketPlain::connect_plain() {
 
     websocketpp::lib::error_code ec;
 
-    const client::connection_ptr con =
-        this->ws_client.get_connection(std::make_shared<websocketpp::uri>(this->uri.get_websocketpp_uri()), ec);
+    const client::connection_ptr con = this->ws_client.get_connection(
+        std::make_shared<websocketpp::uri>(this->connection_options.csms_uri.get_websocketpp_uri()), ec);
 
     if (ec) {
         EVLOG_error << "Connection initialization error for plain websocket: " << ec.message();
