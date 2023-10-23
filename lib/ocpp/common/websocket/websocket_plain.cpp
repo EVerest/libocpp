@@ -9,9 +9,7 @@
 
 namespace ocpp {
 
-WebsocketPlain::WebsocketPlain(const WebsocketConnectionOptions& connection_options) :
-    WebsocketBase(connection_options) {
-
+WebsocketPlain::WebsocketPlain(const WebsocketConnectionOptions& connection_options) : WebsocketBase() {
     set_connection_options(connection_options);
 
     EVLOG_debug << "Initialised WebsocketPlain with URI: " << this->connection_options.csms_uri.string();

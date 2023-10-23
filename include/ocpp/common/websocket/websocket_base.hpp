@@ -82,8 +82,9 @@ protected:
     void on_pong_timeout(websocketpp::connection_hdl hdl, std::string msg);
 
 public:
-    /// \brief Creates a new WebsocketBase object with the providede \p connection_options
-    explicit WebsocketBase(const WebsocketConnectionOptions& connection_options);
+    /// \brief Creates a new WebsocketBase object. The `connection_options` must be initialised with
+    /// `set_connection_options()`
+    explicit WebsocketBase();
     virtual ~WebsocketBase();
 
     /// \brief connect to a websocket

@@ -13,7 +13,9 @@ namespace ocpp {
 
 WebsocketTLS::WebsocketTLS(const WebsocketConnectionOptions& connection_options,
                            std::shared_ptr<EvseSecurity> evse_security) :
-    WebsocketBase(connection_options), evse_security(evse_security) {
+    WebsocketBase(), evse_security(evse_security) {
+
+    set_connection_options(connection_options);
 
     EVLOG_debug << "Initialised WebsocketTLS with URI: " << this->connection_options.csms_uri.string();
 }

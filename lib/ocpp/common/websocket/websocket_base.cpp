@@ -6,7 +6,7 @@
 #include <ocpp/common/websocket/websocket_base.hpp>
 namespace ocpp {
 
-WebsocketBase::WebsocketBase(const WebsocketConnectionOptions& connection_options) :
+WebsocketBase::WebsocketBase() :
     m_is_connected(false),
     connected_callback(nullptr),
     closed_callback(nullptr),
