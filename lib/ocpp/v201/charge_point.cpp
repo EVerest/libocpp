@@ -2027,7 +2027,7 @@ void ChargePoint::handle_get_installed_certificate_ids_req(Call<GetInstalledCert
 
     // convert the common type back to the v201 type(s) for the response
     std::vector<CertificateHashDataChain> certificate_hash_data_chain_v201;
-    for (const auto certificate_hash_data_chain_entry : certificate_hash_data_chains) {
+    for (const auto& certificate_hash_data_chain_entry : certificate_hash_data_chains) {
         certificate_hash_data_chain_v201.push_back(
             ocpp::evse_security_conversions::to_ocpp_v201(certificate_hash_data_chain_entry));
     }

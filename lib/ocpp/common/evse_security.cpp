@@ -114,7 +114,7 @@ ocpp::v201::CertificateHashDataChain to_ocpp_v201(ocpp::CertificateHashDataChain
     ocpp::v201::CertificateHashDataChain lhs;
     lhs.certificateType = to_ocpp_v201(other.certificateType);
     lhs.certificateHashData = to_ocpp_v201(other.certificateHashData);
-    if (other.childCertificateHashData.has_value()) {
+    if (other.childCertificateHashData.has_value() && !other.childCertificateHashData.value().empty()) {
         std::vector<ocpp::v201::CertificateHashDataType> v;
         for (const auto& certificate_hash_data : other.childCertificateHashData.value()) {
             v.push_back(to_ocpp_v201(certificate_hash_data));
