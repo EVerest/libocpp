@@ -629,14 +629,16 @@ WebsocketConnectionOptions ChargePoint::get_ws_connection_options(const int32_t 
 
     const auto network_connection_profile = network_connection_profile_opt.value();
 
-    auto uri = Uri::parse_from_string(
+    auto security_profile = network_connection_profile.securityProfile;
+    auto uri = Uri::parse_and_validate(
         network_connection_profile.ocppCsmsUrl.get(),
-        this->device_model->get_value<std::string>(ControllerComponentVariables::SecurityCtrlrIdentity));
+        this->device_model->get_value<std::string>(ControllerComponentVariables::SecurityCtrlrIdentity),
+        security_profile);
 
     WebsocketConnectionOptions connection_options{
         OcppProtocolVersion::v201,
         uri,
-        network_connection_profile.securityProfile,
+        security_profile,
         this->device_model->get_optional_value<std::string>(ControllerComponentVariables::BasicAuthPassword),
         this->device_model->get_value<int>(ControllerComponentVariables::RetryBackOffRandomRange),
         this->device_model->get_value<int>(ControllerComponentVariables::RetryBackOffRepeatTimes),

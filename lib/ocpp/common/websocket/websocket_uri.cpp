@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2023 Pionix GmbH and Contributors to EVerest
 
+#include "ocpp/common/types.hpp"
 #include "ocpp/types/simple.hpp"
 #include <ocpp/common/websocket/websocket_uri.hpp>
 
@@ -12,24 +13,41 @@
 
 namespace ocpp {
 
-Uri Uri::parse_from_string(std::string const& uri, std::string chargepoint_id) {
-    auto uri_temp = websocketpp::uri(uri);
+Uri Uri::parse_and_validate(std::string uri, std::string chargepoint_id, int security_profile) {
+    // workaround for required schema in `websocketpp::uri()`
+    bool scheme_added_workaround = false;
+    if (uri.find("://") == std::string::npos) {
+        scheme_added_workaround = true;
+        uri = "ws://" + uri;
+    }
 
+    auto uri_temp = websocketpp::uri(uri);
     if (!uri_temp.get_valid()) {
-        throw std::invalid_argument("Uri constructor: given `uri` is invalid");
+        throw std::invalid_argument("given `uri` is invalid");
+    }
+
+    if (!scheme_added_workaround) {
+        switch (security_profile) { // `switch` to lint for unused enum-values
+        case security::SecurityProfiles::unsecured_transport_with_basic_authentication:
+            if (uri_temp.get_secure()) {
+                throw std::invalid_argument("secure schema in URI does not fit with insecure security-profile");
+            }
+        case security::SecurityProfiles::TLS_with_basic_authentication:
+        case security::SecurityProfiles::TLS_with_client_side_certificates:
+            if (!uri_temp.get_secure()) {
+                throw std::invalid_argument("insecure schema in URI does not fit with secure security-profile");
+            }
+        }
     }
 
     const auto& hostname = uri_temp.get_host();
     if (!hostname.empty()) {
         if (hostname != chargepoint_id) {
-            throw std::invalid_argument(
-                "Uri constructor: the chargepoint-ID in the `uri`-path is different to the defined one");
+            throw std::invalid_argument("the chargepoint-ID in the `uri`-path is different to the defined one");
         }
     }
 
-    auto uri_return = Uri(uri_temp.get_secure(), uri_temp.get_host(), uri_temp.get_port(), hostname);
-
-    return uri_return;
+    return Uri(uri_temp.get_secure(), uri_temp.get_host(), uri_temp.get_port(), chargepoint_id);
 }
 
 } // namespace ocpp

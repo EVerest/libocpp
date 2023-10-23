@@ -15,8 +15,7 @@ public:
 
     // if a `chargepoint_id` is given, it will be checked that it is the same as the one in the URI-path, if set
     // if invalid, it throws `invalid_argument` exception
-    static Uri parse_from_string(std::string const& uri,
-                                 ChargepointId chargepoint_id); // TODO should return an `expected<>`
+    static Uri parse_and_validate(std::string uri, std::string chargepoint_id, int security_profile);
 
     void set_secure(bool secure) {
         this->secure = secure;
