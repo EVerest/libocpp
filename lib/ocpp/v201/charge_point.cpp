@@ -577,7 +577,7 @@ void ChargePoint::init_websocket() {
     });
 
     this->websocket->register_closed_callback(
-        [this, connection_options, configuration_slot](const websocketpp::close::status::value reason) {
+        [this, connection_options, configuration_slot](const websocketpp::close::status::value reason, const bool doFull) {
             EVLOG_warning << "Failed to connect to NetworkConfigurationPriority: "
                           << this->network_configuration_priority + 1
                           << " which is configurationSlot: " << configuration_slot;

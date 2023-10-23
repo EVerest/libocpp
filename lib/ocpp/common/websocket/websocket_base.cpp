@@ -38,7 +38,7 @@ void WebsocketBase::register_connected_callback(const std::function<void(const i
 }
 
 void WebsocketBase::register_closed_callback(
-    const std::function<void(const websocketpp::close::status::value reason)>& callback) {
+    const std::function<void(const websocketpp::close::status::value reason)>& callback, const bool doFull) {
     this->closed_callback = callback;
 }
 
