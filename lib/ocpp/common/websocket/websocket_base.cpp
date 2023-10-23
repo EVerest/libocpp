@@ -93,7 +93,8 @@ std::optional<std::string> WebsocketBase::getAuthorizationHeader() {
     const auto authorization_key = this->connection_options.authorization_key;
     if (authorization_key.has_value()) {
         EVLOG_debug << "AuthorizationKey present, encoding authentication header";
-        std::string plain_auth_header = this->connection_options.chargepoint_id + ":" + authorization_key.value();
+        std::string plain_auth_header =
+            this->connection_options.csms_uri.get_chargepoint_id() + ":" + authorization_key.value();
         auth_header.emplace(std::string("Basic ") + websocketpp::base64_encode(plain_auth_header));
         EVLOG_debug << "Basic Auth header: " << auth_header.value();
     }

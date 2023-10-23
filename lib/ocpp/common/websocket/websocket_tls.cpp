@@ -40,7 +40,7 @@ bool WebsocketTLS::connect() {
     websocket_thread.reset(new websocketpp::lib::thread(&tls_client::run, &this->wss_client));
 
     this->wss_client.set_tls_init_handler(
-        websocketpp::lib::bind(&WebsocketTLS::on_tls_init, this, this->connection_options.csms_uri.get_hostname(),
+        websocketpp::lib::bind(&WebsocketTLS::on_tls_init, this, this->connection_options.csms_uri.get_chargepoint_id(),
                                websocketpp::lib::placeholders::_1, this->connection_options.security_profile));
 
     this->reconnect_callback = [this](const websocketpp::lib::error_code& ec) {
@@ -255,7 +255,7 @@ void WebsocketTLS::connect_tls() {
     this->wss_client.connect(con);
 }
 void WebsocketTLS::on_open_tls(tls_client* c, websocketpp::connection_hdl hdl) {
-    (void)c;                       // tls_client is not used in this function
+    (void)c; // tls_client is not used in this function
     EVLOG_info << "OCPP client successfully connected to TLS websocket server";
     this->connection_attempts = 1; // reset connection attempts
     this->m_is_connected = true;

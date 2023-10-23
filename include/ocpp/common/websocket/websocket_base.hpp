@@ -21,7 +21,6 @@ struct WebsocketConnectionOptions {
     OcppProtocolVersion ocpp_version;
     Uri csms_uri; // the URI of the CSMS
     int security_profile;
-    std::string chargepoint_id;
     std::optional<std::string> authorization_key;
     int retry_backoff_random_range_s;
     int retry_backoff_repeat_times;

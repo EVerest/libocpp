@@ -25,6 +25,9 @@ public:
     std::string get_hostname() {
         return this->host;
     }
+    std::string get_chargepoint_id() {
+        return this->chargepoint_id;
+    }
 
     std::string string() {
         auto uri = get_websocketpp_uri();
@@ -32,18 +35,18 @@ public:
     }
 
     websocketpp::uri get_websocketpp_uri() { // FIXME: wrap needed `websocketpp:uri` functionality inside `Uri`
-        return websocketpp::uri(this->secure, this->host, this->port, this->path);
+        return websocketpp::uri(this->secure, this->host, this->port, this->chargepoint_id);
     }
 
 private:
-    Uri(bool secure, const std::string& host, uint16_t port, const std::string& path) :
-        secure(secure), host(host), port(port), path(path) {
+    Uri(bool secure, const std::string& host, uint16_t port, const std::string& chargepoint_id) :
+        secure(secure), host(host), port(port), chargepoint_id(chargepoint_id) {
     }
 
     bool secure;
     std::string host;
     uint16_t port;
-    std::string path;
+    std::string chargepoint_id;
 };
 
 } // namespace ocpp

@@ -209,7 +209,6 @@ WebsocketConnectionOptions ChargePointImpl::get_ws_connection_options() {
     WebsocketConnectionOptions connection_options{OcppProtocolVersion::v16,
                                                   uri,
                                                   this->configuration->getSecurityProfile(),
-                                                  this->configuration->getChargePointId(),
                                                   this->configuration->getAuthorizationKey(),
                                                   this->configuration->getRetryBackoffRandomRange(),
                                                   this->configuration->getRetryBackoffRepeatTimes(),
