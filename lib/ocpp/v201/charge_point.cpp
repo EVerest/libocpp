@@ -576,44 +576,44 @@ void ChargePoint::init_websocket() {
         this->time_disconnected = std::chrono::time_point<std::chrono::steady_clock>();
     });
 
-    this->websocket->register_closed_callback(
-        [this, connection_options, configuration_slot](const websocketpp::close::status::value reason, const bool doFull) {
-            EVLOG_warning << "Failed to connect to NetworkConfigurationPriority: "
-                          << this->network_configuration_priority + 1
-                          << " which is configurationSlot: " << configuration_slot;
-            this->websocket_connection_status = WebsocketConnectionStatusEnum::Disconnected;
-            this->message_queue->pause();
+    this->websocket->register_closed_callback([this, connection_options, configuration_slot](
+                                                  const websocketpp::close::status::value reason, const bool doFull) {
+        EVLOG_warning << "Failed to connect to NetworkConfigurationPriority: "
+                      << this->network_configuration_priority + 1
+                      << " which is configurationSlot: " << configuration_slot;
+        this->websocket_connection_status = WebsocketConnectionStatusEnum::Disconnected;
+        this->message_queue->pause();
 
-            // check if offline threshold has been defined
-            if (this->device_model->get_value<int>(ControllerComponentVariables::OfflineThreshold) != 0) {
-                // get the status of all the connectors
-                for (auto const& [evse_id, evse] : this->evses) {
-                    int number_of_connectors = evse->get_number_of_connectors();
-                    EvseConnectorPair conn_states_struct_key;
-                    EVLOG_debug << "evseId: " << evse_id << " numConn: " << number_of_connectors;
-                    for (int connector_id = 1; connector_id <= number_of_connectors; connector_id++) {
-                        conn_states_struct_key.evse_id = evse_id;
-                        conn_states_struct_key.connector_id = connector_id;
-                        conn_state_per_evse[conn_states_struct_key] = evse->get_state(connector_id);
-                        EVLOG_debug << "conn_id: " << conn_states_struct_key.connector_id
-                                    << " State: " << conn_state_per_evse[conn_states_struct_key];
-                    }
+        // check if offline threshold has been defined
+        if (this->device_model->get_value<int>(ControllerComponentVariables::OfflineThreshold) != 0) {
+            // get the status of all the connectors
+            for (auto const& [evse_id, evse] : this->evses) {
+                int number_of_connectors = evse->get_number_of_connectors();
+                EvseConnectorPair conn_states_struct_key;
+                EVLOG_debug << "evseId: " << evse_id << " numConn: " << number_of_connectors;
+                for (int connector_id = 1; connector_id <= number_of_connectors; connector_id++) {
+                    conn_states_struct_key.evse_id = evse_id;
+                    conn_states_struct_key.connector_id = connector_id;
+                    conn_state_per_evse[conn_states_struct_key] = evse->get_state(connector_id);
+                    EVLOG_debug << "conn_id: " << conn_states_struct_key.connector_id
+                                << " State: " << conn_state_per_evse[conn_states_struct_key];
                 }
-                // Get the current time point using steady_clock
-                this->time_disconnected = std::chrono::steady_clock::now();
             }
+            // Get the current time point using steady_clock
+            this->time_disconnected = std::chrono::steady_clock::now();
+        }
 
-            if (!this->disable_automatic_websocket_reconnects) {
-                this->websocket_timer.timeout(
-                    [this, reason]() {
-                        if (reason != websocketpp::close::status::service_restart) {
-                            this->next_network_configuration_priority();
-                        }
-                        this->start_websocket();
-                    },
-                    WEBSOCKET_INIT_DELAY);
-            }
-        });
+        if (!this->disable_automatic_websocket_reconnects) {
+            this->websocket_timer.timeout(
+                [this, reason]() {
+                    if (reason != websocketpp::close::status::service_restart) {
+                        this->next_network_configuration_priority();
+                    }
+                    this->start_websocket();
+                },
+                WEBSOCKET_INIT_DELAY);
+        }
+    });
 
     this->websocket->register_message_callback([this](const std::string& message) { this->message_callback(message); });
 }
