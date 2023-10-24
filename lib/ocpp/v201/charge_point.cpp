@@ -1277,12 +1277,28 @@ AuthorizeResponse ChargePoint::authorize_req(const IdToken id_token, const std::
 
     AuthorizeResponse response;
 
+    auto master_pass_group_id =
+        this->device_model->get_optional_value<std::string>(ControllerComponentVariables::MasterPassGroupId).value();
+
     if (enhanced_message.messageType != MessageType::AuthorizeResponse) {
         response.idTokenInfo.status = AuthorizationStatusEnum::Unknown;
         return response;
     }
 
     ocpp::CallResult<AuthorizeResponse> call_result = enhanced_message.message;
+
+    if (call_result.msg.idTokenInfo.groupIdToken.has_value() &&
+        call_result.msg.idTokenInfo.status == AuthorizationStatusEnum::Accepted) {
+        // if a master pass is presented stop any ongoing transactions and do not authorize charging
+        auto response_group_id = call_result.msg.idTokenInfo.groupIdToken.value();
+        for (auto const& [evse_id, evse] : this->evses) {
+            if (evse->has_active_transaction()) {
+                callbacks.stop_transaction_callback(evse_id, ReasonEnum::MasterPass);
+            }
+        }
+        return call_result.msg;
+    }
+
     if (call_result.msg.idTokenInfo.cacheExpiryDateTime.has_value() or
         !this->device_model->get_optional_value<int>(ControllerComponentVariables::AuthCacheLifeTime).has_value()) {
         return call_result.msg;
