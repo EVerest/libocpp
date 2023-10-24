@@ -1502,18 +1502,18 @@ void ChargePoint::handle_get_variables_req(const EnhancedMessage<v201::MessageTy
     const auto max_bytes_per_message =
         this->device_model->get_value<int>(ControllerComponentVariables::BytesPerMessageGetVariables);
 
-    // B06.FR.17
-    if (message.message_size > max_bytes_per_message) {
-        // send a CALLERROR
-        const auto call_error = CallError(call.uniqueId, "FormatViolation", "", json({}));
-        this->send(call_error);
-        return;
-    }
-
     // B06.FR.16
     if (msg.getVariableData.size() > max_variables_per_message) {
         // send a CALLERROR
         const auto call_error = CallError(call.uniqueId, "OccurenceConstraintViolation", "", json({}));
+        this->send(call_error);
+        return;
+    }
+
+    // B06.FR.17
+    if (message.message_size > max_bytes_per_message) {
+        // send a CALLERROR
+        const auto call_error = CallError(call.uniqueId, "FormatViolation", "", json({}));
         this->send(call_error);
         return;
     }
