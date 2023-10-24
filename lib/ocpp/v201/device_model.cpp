@@ -187,7 +187,8 @@ SetVariableStatusEnum DeviceModel::set_value_internal(const Component& component
             return SetVariableStatusEnum::Rejected;
         }
     } catch (const std::exception& e) {
-        EVLOG_warning << "Could not validate value: " << value << " for component: " << component << " and variable: " << variable;
+        EVLOG_warning << "Could not validate value: " << value << " for component: " << component
+                      << " and variable: " << variable;
         return SetVariableStatusEnum::Rejected;
     }
 
