@@ -16,6 +16,7 @@
 #include <ocpp/v201/types.hpp>
 #include <ocpp/v201/utils.hpp>
 
+#include "ocpp/v201/messages/Get15118EVCertificate.hpp"
 #include <ocpp/v201/messages/Authorize.hpp>
 #include <ocpp/v201/messages/BootNotification.hpp>
 #include <ocpp/v201/messages/ChangeAvailability.hpp>
@@ -383,6 +384,10 @@ public:
     /// \param evse_id
     /// \param connector_id
     void on_session_started(const int32_t evse_id, const int32_t connector_id);
+
+    /// \brief Event handler that should be called when the EV sends a certificate request (for update or installation)
+    /// \param request
+    Get15118EVCertificateResponse on_get_15118_ev_certificate_request(const Get15118EVCertificateRequest& request);
 
     /// \brief Event handler that should be called when a transaction has started
     /// \param evse_id
