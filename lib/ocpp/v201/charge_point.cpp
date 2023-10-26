@@ -1816,13 +1816,21 @@ void ChargePoint::handle_get_transaction_status_request(Call<GetTransactionStatu
         if (evse->has_active_transaction()) {
             // EVLOG_info << "active transaction with id " << evse->get_transaction()->transactionId;
             transaction_id = evse->get_transaction()->transactionId;
-        }
-    }
-    // E14.FR.01
-    if (call.msg.transactionId != transaction_id) {
 
-        response.ongoingIndicator = false;
-        response.messagesInQueue = false;
+            // E14.FR.01
+            if (call.msg.transactionId != transaction_id) {
+
+                response.ongoingIndicator = false;
+                response.messagesInQueue = false;
+            }
+            else
+            {
+                // E14.FR.02
+                response.ongoingIndicator = true;
+                // TODO: get messages in queue
+                response.messagesInQueue = false;
+            }
+        }
     }
 
     ocpp::CallResult<GetTransactionStatusResponse> call_result(response, call.uniqueId);
