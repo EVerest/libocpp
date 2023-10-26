@@ -83,11 +83,7 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
     this->transaction->reservation_id = reservation_id;
     this->transaction->id_token = id_token;
     this->transaction->group_id_token = group_id_token;
-
-    auto start_value = this->get_active_import_register_meter_value();
-    if (start_value.has_value()) {
-        this->transaction->active_energy_import_start_value = start_value.value();
-    }
+    this->transaction->active_energy_import_start_value = this->get_active_import_register_meter_value();
 
     transaction->meter_values.push_back(meter_start);
 
