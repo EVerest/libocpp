@@ -1806,13 +1806,27 @@ void ChargePoint::handle_start_transaction_event_response(const EnhancedMessage<
     }
 }
 
-void ChargePoint::handle_get_transaction_status_request(Call<GetTransactionStatusRequest> call)
-{
+void ChargePoint::handle_get_transaction_status_request(Call<GetTransactionStatusRequest> call) {
     const auto msg = call.msg;
     GetTransactionStatusResponse response;
+    ocpp::CiString<36UL> transaction_id;
 
-    
-    EVLOG_info << "========HANDLE GET TRANSACTION REqUEST=====";
+    EVLOG_info << "========HANDLE GET TRANSACTION REQUEST=====";
+    for (auto const& [evse_id, evse] : this->evses) {
+        if (evse->has_active_transaction()) {
+            // EVLOG_info << "active transaction with id " << evse->get_transaction()->transactionId;
+            transaction_id = evse->get_transaction()->transactionId;
+        }
+    }
+    // E14.FR.01
+    if (call.msg.transactionId != transaction_id) {
+
+        response.ongoingIndicator = false;
+        response.messagesInQueue = false;
+    }
+
+    ocpp::CallResult<GetTransactionStatusResponse> call_result(response, call.uniqueId);
+    this->send<GetTransactionStatusResponse>(call_result);
 }
 void ChargePoint::handle_unlock_connector(Call<UnlockConnectorRequest> call) {
     const UnlockConnectorRequest& msg = call.msg;
