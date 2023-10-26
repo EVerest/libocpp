@@ -744,6 +744,9 @@ void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& messa
     case MessageType::GetLocalListVersion:
         this->handle_get_local_authorization_list_version_req(json_message);
         break;
+    case MessageType::GetTransactionStatus:
+        this->handle_get_transaction_status_request(json_message);
+        break;
     default:
         if (message.messageTypeId == MessageTypeId::CALL) {
             const auto call_error = CallError(message.uniqueId, "NotImplemented", "", json({}));
@@ -1803,6 +1806,14 @@ void ChargePoint::handle_start_transaction_event_response(const EnhancedMessage<
     }
 }
 
+void ChargePoint::handle_get_transaction_status_request(Call<GetTransactionStatusRequest> call)
+{
+    const auto msg = call.msg;
+    GetTransactionStatusResponse response;
+
+    
+    EVLOG_info << "========HANDLE GET TRANSACTION REqUEST=====";
+}
 void ChargePoint::handle_unlock_connector(Call<UnlockConnectorRequest> call) {
     const UnlockConnectorRequest& msg = call.msg;
     const UnlockConnectorResponse unlock_response = callbacks.unlock_connector_callback(msg.evseId, msg.connectorId);
