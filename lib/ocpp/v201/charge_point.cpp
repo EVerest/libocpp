@@ -1446,7 +1446,7 @@ void ChargePoint::handle_boot_notification_response(CallResult<BootNotificationR
             retry_interval);
     }
 
-    //call the registered boot notification callback
+    // call the registered boot notification callback
     callbacks.boot_notification_callback(this->registration_status);
 }
 
