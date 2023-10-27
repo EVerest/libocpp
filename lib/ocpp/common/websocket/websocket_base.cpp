@@ -17,9 +17,9 @@ WebsocketBase::WebsocketBase(const WebsocketConnectionOptions& connection_option
     shutting_down(false),
     reconnecting(false) {
 
-    set_connection_options_base(connection_options)
+    set_connection_options_base(connection_options);
 
-        this->ping_timer = std::make_unique<Everest::SteadyTimer>();
+    this->ping_timer = std::make_unique<Everest::SteadyTimer>();
     const auto auth_key = connection_options.authorization_key;
     if (auth_key.has_value() and auth_key.value().length() < 16) {
         EVLOG_warning << "AuthorizationKey with only " << auth_key.value().length()
