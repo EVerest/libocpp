@@ -106,7 +106,7 @@ struct Callbacks {
         security_event_callback;
 
     /// @brief  Callback for when a bootnotification response is received
-    std::function<void(const ocpp::v201::RegistrationStatusEnum& reg_status)> boot_notification_callback;
+    std::optional<std::function<void(const ocpp::v201::RegistrationStatusEnum& reg_status)>> boot_notification_callback;
 };
 
 /// \brief Class implements OCPP2.0.1 Charging Station
