@@ -11,19 +11,21 @@
 #include <sys/prctl.h>
 #include <thread>
 
+#include <boost/exception/diagnostic_information.hpp>
+#include <boost/program_options.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 
-#include <boost/exception/diagnostic_information.hpp>
-#include <boost/program_options.hpp>
-#include <everest/logging.hpp>
+#define DOCTEST_CONFIG_IMPLEMENT
+#include <doctest/doctest.h>
 
-#include <ocpp/v16/charge_point.hpp>
-#include <ocpp/v16/database_handler.hpp>
+#include <everest/logging.hpp>
 
 #include <ocpp/common/cistring.hpp>
 #include <ocpp/common/string.hpp>
+#include <ocpp/v16/charge_point.hpp>
+#include <ocpp/v16/database_handler.hpp>
 
 namespace po = boost::program_options;
 
@@ -32,6 +34,14 @@ bool running = false;
 std::mutex m;
 
 int main(int argc, char* argv[]) {
+    doctest::Context ctx;
+    ctx.setOption("abort-after", 5);  // default - stop after 5 failed asserts
+    ctx.applyCommandLine(argc, argv); // apply command line - argc / argv
+    ctx.setOption("no-breaks", true); // override - don't break in the debugger
+    int res = ctx.run();              // run test cases unless with --no-run
+    if (ctx.shouldExit())             // query flags (and --exit) rely on this
+        return res;                   // propagate the result of the tests
+
     po::options_description desc("OCPP charge point");
 
     desc.add_options()("help,h", "produce help message");

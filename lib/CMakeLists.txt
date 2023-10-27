@@ -91,6 +91,12 @@ target_link_libraries(ocpp
 
         nlohmann_json::nlohmann_json
         date::date-tz
+        doctest
+)
+
+target_include_directories(ocpp
+    PUBLIC
+        ${doctest_SOURCE_DIR}
 )
 
 if(LIBOCPP_USE_BOOST_FILESYSTEM)

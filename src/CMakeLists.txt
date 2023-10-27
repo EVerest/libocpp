@@ -9,6 +9,8 @@ target_link_libraries(charge_point
         ocpp
         OpenSSL::SSL
         OpenSSL::Crypto
+
+        doctest
 )
 
 install(TARGETS charge_point
