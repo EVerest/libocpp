@@ -197,6 +197,7 @@
     "SupportedCiphers12": {
       "variable_name": "SupportedCiphers12",
       "characteristics": {
+        "valuesList": "ECDHE-ECDSA-AES128-GCM-SHA256,ECDHE-ECDSA-AES256,GCM-SHA384,AES128-GCM-SHA256,AES256-GCM-SHA384,TLS_AES_256_GCM_SHA384,TLS_AES_128_GCM_SHA256",
         "supportsMonitoring": true,
         "dataType": "MemberList"
       },
@@ -213,6 +214,7 @@
     "SupportedCiphers13": {
       "variable_name": "SupportedCiphers13",
       "characteristics": {
+        "valuesList": "TLS_AES_256_GCM_SHA384,TLS_AES_128_GCM_SHA256",
         "supportsMonitoring": true,
         "dataType": "MemberList"
       },
@@ -259,6 +261,7 @@
     "LogMessagesFormat": {
       "variable_name": "LogMessagesFormat",
       "characteristics": {
+        "valuesList": "log,html,console,console_detailed",
         "supportsMonitoring": true,
         "dataType": "MemberList"
       },
@@ -275,6 +278,7 @@
     "SupportedChargingProfilePurposeTypes": {
       "variable_name": "SupportedChargingProfilePurposeTypes",
       "characteristics": {
+        "valuesList": "ChargePointMaxProfile,TxDefaultProfile,TxProfile",
         "supportsMonitoring": true,
         "dataType": "MemberList"
       },
