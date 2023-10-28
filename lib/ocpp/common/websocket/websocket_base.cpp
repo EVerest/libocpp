@@ -86,6 +86,10 @@ bool WebsocketBase::is_connected() {
     return this->m_is_connected;
 }
 
+std::chrono::time_point<std::chrono::steady_clock> WebsocketBase::get_disconnected_time_point() {
+    return this->disconnected_time_point;
+}
+
 std::optional<std::string> WebsocketBase::getAuthorizationHeader() {
     std::optional<std::string> auth_header = std::nullopt;
     const auto authorization_key = this->connection_options.authorization_key;

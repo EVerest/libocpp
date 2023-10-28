@@ -58,6 +58,7 @@ protected:
     int connection_attempts;
     bool shutting_down;
     bool reconnecting;
+    std::chrono::time_point<std::chrono::steady_clock> disconnected_time_point;
 
     /// \brief Indicates if the required callbacks are registered
     /// \returns true if the websocket is properly initialized
@@ -102,6 +103,8 @@ public:
 
     /// \brief indicates if the websocket is connected
     bool is_connected();
+
+    std::chrono::time_point<std::chrono::steady_clock> get_disconnected_time_point();
 
     /// \brief closes the websocket
     virtual void close(websocketpp::close::status::value code, const std::string& reason) = 0;

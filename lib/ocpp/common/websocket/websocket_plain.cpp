@@ -175,6 +175,7 @@ void WebsocketPlain::on_open_plain(client* c, websocketpp::connection_hdl hdl) {
     this->reconnecting = false;
     this->set_websocket_ping_interval(this->connection_options.ping_interval_s);
     this->connected_callback(this->connection_options.security_profile);
+    this->disconnected_time_point = std::chrono::time_point<std::chrono::steady_clock>();
 }
 
 void WebsocketPlain::on_message_plain(websocketpp::connection_hdl hdl, client::message_ptr msg) {
@@ -193,6 +194,8 @@ void WebsocketPlain::on_message_plain(websocketpp::connection_hdl hdl, client::m
 void WebsocketPlain::on_close_plain(client* c, websocketpp::connection_hdl hdl) {
     std::lock_guard<std::mutex> lk(this->connection_mutex);
     this->m_is_connected = false;
+    // Get the current time point using steady_clock
+    this->disconnected_time_point = std::chrono::steady_clock::now();
     this->cancel_reconnect_timer();
     client::connection_ptr con = c->get_con_from_hdl(hdl);
     auto error_code = con->get_ec();
@@ -210,6 +213,8 @@ void WebsocketPlain::on_close_plain(client* c, websocketpp::connection_hdl hdl) 
 void WebsocketPlain::on_fail_plain(client* c, websocketpp::connection_hdl hdl) {
     std::lock_guard<std::mutex> lk(this->connection_mutex);
     this->m_is_connected = false;
+    // Get the current time point using steady_clock
+    this->disconnected_time_point = std::chrono::steady_clock::now();
     this->connection_attempts += 1;
     client::connection_ptr con = c->get_con_from_hdl(hdl);
     const auto ec = con->get_ec();

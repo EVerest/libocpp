@@ -265,6 +265,7 @@ void WebsocketTLS::on_open_tls(tls_client* c, websocketpp::connection_hdl hdl) {
     this->reconnecting = false;
     this->set_websocket_ping_interval(this->connection_options.ping_interval_s);
     this->connected_callback(this->connection_options.security_profile);
+    this->disconnected_time_point = std::chrono::time_point<std::chrono::steady_clock>();
 }
 void WebsocketTLS::on_message_tls(websocketpp::connection_hdl hdl, tls_client::message_ptr msg) {
     (void)hdl; // connection_hdl is not used in this function
@@ -282,6 +283,7 @@ void WebsocketTLS::on_message_tls(websocketpp::connection_hdl hdl, tls_client::m
 void WebsocketTLS::on_close_tls(tls_client* c, websocketpp::connection_hdl hdl) {
     std::lock_guard<std::mutex> lk(this->connection_mutex);
     this->m_is_connected = false;
+    this->disconnected_time_point = std::chrono::steady_clock::now();
     this->cancel_reconnect_timer();
     tls_client::connection_ptr con = c->get_con_from_hdl(hdl);
     auto error_code = con->get_ec();
@@ -299,6 +301,7 @@ void WebsocketTLS::on_close_tls(tls_client* c, websocketpp::connection_hdl hdl) 
 void WebsocketTLS::on_fail_tls(tls_client* c, websocketpp::connection_hdl hdl) {
     std::lock_guard<std::mutex> lk(this->connection_mutex);
     this->m_is_connected = false;
+    this->disconnected_time_point = std::chrono::steady_clock::now();
     this->connection_attempts += 1;
     tls_client::connection_ptr con = c->get_con_from_hdl(hdl);
     const auto ec = con->get_ec();

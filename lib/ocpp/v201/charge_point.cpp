@@ -44,7 +44,6 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
                          const Callbacks& callbacks) :
     ocpp::ChargingStationBase(evse_security),
     registration_status(RegistrationStatusEnum::Rejected),
-    websocket_connection_status(WebsocketConnectionStatusEnum::Disconnected),
     operational_state(OperationalStatusEnum::Operative),
     network_configuration_priority(0),
     disable_automatic_websocket_reconnects(false),
@@ -222,11 +221,11 @@ void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime&
                                           const std::optional<std::string>& signed_meter_value,
                                           const ChargingStateEnum charging_state) {
     auto& enhanced_transaction = this->evses.at(evse_id)->get_transaction();
-    enhanced_transaction->chargingState = charging_state;
     if (enhanced_transaction == nullptr) {
         EVLOG_warning << "Received notification of finished transaction while no transaction was active";
         return;
     }
+    enhanced_transaction->chargingState = charging_state;
 
     this->evses.at(evse_id)->close_transaction(timestamp, meter_stop, reason);
     const auto transaction = enhanced_transaction->get_transaction();
@@ -404,7 +403,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
                 // C14.FR.02: If found in local list we shall start charging without an AuthorizeRequest
                 EVLOG_info << "Found valid entry in local authorization list";
                 response.idTokenInfo = id_token_info.value();
-            } else if (this->websocket_connection_status == WebsocketConnectionStatusEnum::Connected) {
+            } else if (this->websocket->is_connected()) {
                 // C14.FR.03: If a value found but not valid we shall send an authorize request
                 EVLOG_info << "Found invalid entry in local authorization list: Sending Authorize.req";
                 response = this->authorize_req(id_token, certificate, ocsp_request_data);
@@ -442,7 +441,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
         }
     }
 
-    if (this->websocket_connection_status == WebsocketConnectionStatusEnum::Disconnected and
+    if (!this->websocket->is_connected() and
         this->device_model->get_optional_value<bool>(ControllerComponentVariables::OfflineTxForUnknownIdEnabled)
             .value_or(false)) {
         EVLOG_info << "Offline authorization due to OfflineTxForUnknownIdEnabled being enabled";
@@ -536,7 +535,6 @@ void ChargePoint::init_websocket() {
     this->websocket = std::make_unique<Websocket>(connection_options, this->evse_security, this->logging);
     this->websocket->register_connected_callback([this](const int security_profile) {
         this->message_queue->resume();
-        this->websocket_connection_status = WebsocketConnectionStatusEnum::Connected;
 
         const auto& security_profile_cv = ControllerComponentVariables::SecurityProfile;
         if (security_profile_cv.variable.has_value()) {
@@ -545,10 +543,10 @@ void ChargePoint::init_websocket() {
         }
 
         if (this->registration_status == RegistrationStatusEnum::Accepted and
-            this->time_disconnected.time_since_epoch() != 0s) {
+            this->websocket->get_disconnected_time_point().time_since_epoch() != 0s) {
             // handle offline threshold
             //  Get the current time point using steady_clock
-            auto offline_duration = std::chrono::steady_clock::now() - this->time_disconnected;
+            auto offline_duration = std::chrono::steady_clock::now() - this->websocket->get_disconnected_time_point();
 
             // B04.FR.01
             // If offline period exceeds offline threshold then send the status notification for all connectors
@@ -573,7 +571,6 @@ void ChargePoint::init_websocket() {
                 }
             }
         }
-        this->time_disconnected = std::chrono::time_point<std::chrono::steady_clock>();
     });
 
     this->websocket->register_closed_callback(
@@ -581,7 +578,6 @@ void ChargePoint::init_websocket() {
             EVLOG_warning << "Failed to connect to NetworkConfigurationPriority: "
                           << this->network_configuration_priority + 1
                           << " which is configurationSlot: " << configuration_slot;
-            this->websocket_connection_status = WebsocketConnectionStatusEnum::Disconnected;
             this->message_queue->pause();
 
             // check if offline threshold has been defined
@@ -599,8 +595,6 @@ void ChargePoint::init_websocket() {
                                     << " State: " << conn_state_per_evse[conn_states_struct_key];
                     }
                 }
-                // Get the current time point using steady_clock
-                this->time_disconnected = std::chrono::steady_clock::now();
             }
 
             if (!this->disable_automatic_websocket_reconnects) {
@@ -1186,11 +1180,7 @@ void ChargePoint::set_evse_connectors_unavailable(const std::unique_ptr<Evse>& e
 }
 
 bool ChargePoint::is_offline() {
-    bool offline = false; // false by default
-    if (this->websocket_connection_status == WebsocketConnectionStatusEnum::Disconnected) {
-        offline = true;
-    }
-    return offline;
+    return this->websocket->is_connected();
 }
 
 void ChargePoint::security_event_notification_req(const CiString<50>& event_type,

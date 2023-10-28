@@ -49,6 +49,10 @@ bool Websocket::is_connected() {
     return this->websocket->is_connected();
 }
 
+std::chrono::time_point<std::chrono::steady_clock> Websocket::get_disconnected_time_point() {
+    return this->websocket->get_disconnected_time_point();
+}
+
 void Websocket::register_connected_callback(const std::function<void(const int security_profile)>& callback) {
     this->connected_callback = callback;
 

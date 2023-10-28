@@ -41,6 +41,8 @@ public:
     /// \brief indicates if the websocket is connected
     bool is_connected();
 
+    std::chrono::time_point<std::chrono::steady_clock> get_disconnected_time_point();
+
     /// \brief register a \p callback that is called when the websocket is connected successfully
     void register_connected_callback(const std::function<void(const int security_profile)>& callback);
 
