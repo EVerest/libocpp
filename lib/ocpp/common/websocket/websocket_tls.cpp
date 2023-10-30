@@ -24,10 +24,10 @@ WebsocketTLS::WebsocketTLS(const WebsocketConnectionOptions& connection_options,
 
 void WebsocketTLS::set_connection_options(const WebsocketConnectionOptions& connection_options) {
     switch (connection_options.security_profile) { // `switch` used to lint on missing enum-values
-    case security::SecurityProfiles::unsecured_transport_with_basic_authentication:
+    case security::SecurityProfile::UNSECURED_TRANSPORT_WITH_BASIC_AUTHENTICATION:
         throw std::invalid_argument("`security_profile` is not a TLS-profile");
-    case security::SecurityProfiles::TLS_with_basic_authentication:
-    case security::SecurityProfiles::TLS_with_client_side_certificates:
+    case security::SecurityProfile::TLS_WITH_BASIC_AUTHENTICATION:
+    case security::SecurityProfile::TLS_WITH_CLIENT_SIDE_CERTIFICATES:
         break;
     default:
         throw std::invalid_argument("unknown `security_profile`");
@@ -268,7 +268,7 @@ void WebsocketTLS::connect_tls() {
     this->wss_client.connect(con);
 }
 void WebsocketTLS::on_open_tls(tls_client* c, websocketpp::connection_hdl hdl) {
-    (void)c;                       // tls_client is not used in this function
+    (void)c; // tls_client is not used in this function
     EVLOG_info << "OCPP client successfully connected to TLS websocket server";
     this->connection_attempts = 1; // reset connection attempts
     this->m_is_connected = true;

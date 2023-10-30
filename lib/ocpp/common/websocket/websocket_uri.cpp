@@ -27,12 +27,12 @@ Uri Uri::parse_and_validate(std::string uri, std::string chargepoint_id, int sec
 
     if (!scheme_added_workaround) {
         switch (security_profile) { // `switch` to lint for unused enum-values
-        case security::SecurityProfiles::unsecured_transport_with_basic_authentication:
+        case security::SecurityProfile::UNSECURED_TRANSPORT_WITH_BASIC_AUTHENTICATION:
             if (uri_temp.get_secure()) {
                 throw std::invalid_argument("secure schema in URI does not fit with insecure security-profile");
             }
-        case security::SecurityProfiles::TLS_with_basic_authentication:
-        case security::SecurityProfiles::TLS_with_client_side_certificates:
+        case security::SecurityProfile::TLS_WITH_BASIC_AUTHENTICATION:
+        case security::SecurityProfile::TLS_WITH_CLIENT_SIDE_CERTIFICATES:
             if (!uri_temp.get_secure()) {
                 throw std::invalid_argument("insecure schema in URI does not fit with secure security-profile");
             }

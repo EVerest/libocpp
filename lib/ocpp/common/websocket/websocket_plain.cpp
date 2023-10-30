@@ -20,10 +20,10 @@ WebsocketPlain::WebsocketPlain(const WebsocketConnectionOptions& connection_opti
 
 void WebsocketPlain::set_connection_options(const WebsocketConnectionOptions& connection_options) {
     switch (connection_options.security_profile) { // `switch` used to lint on missing enum-values
-    case security::SecurityProfiles::unsecured_transport_with_basic_authentication:
+    case security::SecurityProfile::UNSECURED_TRANSPORT_WITH_BASIC_AUTHENTICATION:
         break;
-    case security::SecurityProfiles::TLS_with_basic_authentication:
-    case security::SecurityProfiles::TLS_with_client_side_certificates:
+    case security::SecurityProfile::TLS_WITH_BASIC_AUTHENTICATION:
+    case security::SecurityProfile::TLS_WITH_CLIENT_SIDE_CERTIFICATES:
         throw std::invalid_argument("`security_profile` is not a plain, unsecured one.");
     default:
         throw std::invalid_argument("unknown `security_profile`");
@@ -188,7 +188,7 @@ void WebsocketPlain::connect_plain() {
 
 void WebsocketPlain::on_open_plain(client* c, websocketpp::connection_hdl hdl) {
     std::lock_guard<std::mutex> lk(this->connection_mutex);
-    (void)c;                       // client is not used in this function
+    (void)c; // client is not used in this function
     EVLOG_info << "OCPP client successfully connected to plain websocket server";
     this->connection_attempts = 1; // reset connection attempts
     this->m_is_connected = true;
