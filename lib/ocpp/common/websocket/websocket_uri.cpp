@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2023 Pionix GmbH and Contributors to EVerest
 
-#include "ocpp/common/types.hpp"
-#include "ocpp/types/simple.hpp"
+#include <ocpp/common/types.hpp>
 #include <ocpp/common/websocket/websocket_uri.hpp>
 
 #include <boost/algorithm/string/predicate.hpp>
@@ -40,11 +39,14 @@ Uri Uri::parse_and_validate(std::string uri, std::string chargepoint_id, int sec
         }
     }
 
-    const auto& hostname = uri_temp.get_host();
-    if (!hostname.empty()) {
-        if (hostname != chargepoint_id) {
-            throw std::invalid_argument("the chargepoint-ID in the `uri`-path is different to the defined one");
+    const auto& path = uri_temp.get_resource();
+    if (!path.empty()) {
+        if (path != chargepoint_id) {
+            throw std::invalid_argument(
+                "Uri constructor: the chargepoint-ID in the `uri`-path is different to the defined one");
         }
+
+        chargepoint_id = path;
     }
 
     return Uri(uri_temp.get_secure(), uri_temp.get_host(), uri_temp.get_port(), chargepoint_id);

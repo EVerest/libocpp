@@ -3,7 +3,6 @@
 #ifndef OCPP_WEBSOCKET_URI_HPP
 #define OCPP_WEBSOCKET_URI_HPP
 
-#include <ocpp/types/simple.hpp>
 #include <string>
 #include <websocketpp/uri.hpp>
 
