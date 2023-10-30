@@ -15,6 +15,7 @@ struct EnhancedTransaction : public Transaction {
     IdToken id_token;
     std::optional<IdToken> group_id_token;
     std::optional<int32_t> reservation_id;
+    int32_t connector_id;
     int32_t seq_no = 0;
     int32_t get_seq_no();
     Transaction get_transaction();

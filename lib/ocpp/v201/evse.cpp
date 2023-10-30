@@ -51,6 +51,7 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
     this->transaction = std::make_unique<EnhancedTransaction>();
     this->transaction->transactionId = transaction_id;
     this->transaction->reservation_id = reservation_id;
+    this->transaction->connector_id = connector_id;
     this->transaction->id_token = id_token;
     this->transaction->group_id_token = group_id_token;
 
@@ -81,6 +82,19 @@ void Evse::close_transaction(const DateTime& timestamp, const MeterValue& meter_
 
 bool Evse::has_active_transaction() {
     return this->transaction != nullptr;
+}
+
+bool Evse::has_active_transaction(int32_t connector_id) {
+    if (!this->id_connector_map.count(connector_id)) {
+        EVLOG_warning << "has_active_transaction called for invalid connector_id";
+        return false;
+    }
+
+    if (this->transaction == nullptr) {
+        return false;
+    }
+
+    return this->transaction->connector_id == connector_id;
 }
 
 void Evse::release_transaction() {
