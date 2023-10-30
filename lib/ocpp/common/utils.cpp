@@ -2,6 +2,7 @@
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
 #include <boost/algorithm/string/predicate.hpp>
+#include <regex>
 #include <sstream>
 
 #include <ocpp/common/utils.hpp>
@@ -20,6 +21,22 @@ std::vector<std::string> get_vector_from_csv(const std::string& csv_str) {
         csv.push_back(str);
     }
     return csv;
+}
+
+bool isInteger(const std::string& value) {
+    if (value.empty() || ((!isdigit(value[0])) && (value[0] != '-') && (value[0] != '+'))) {
+        return false;
+    }
+
+    char* p;
+    strtol(value.c_str(), &p, 10);
+
+    return (*p == 0);
+}
+
+bool isDecimal(const std::string& value) {
+    const std::regex decimalRegex("^[-+]?([0-9]*\\.[0-9]+|[0-9]+)$");
+    return std::regex_match(value, decimalRegex);
 }
 
 } // namespace ocpp

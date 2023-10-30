@@ -5,6 +5,7 @@
 #include <ocpp/v201/ctrlr_component_variables.hpp>
 #include <ocpp/v201/device_model.hpp>
 #include <ocpp/v201/device_model_storage_sqlite.hpp>
+#include <regex>
 
 namespace ocpp {
 
@@ -43,22 +44,50 @@ bool validate_value(const VariableCharacteristics& characteristics, const std::s
             return false;
         }
         return true;
-    case DataEnum::decimal:
-        if (characteristics.minLimit.has_value() and std::stof(value) < characteristics.minLimit.value()) {
+    case DataEnum::decimal: {
+        if (!ocpp::isDecimal(value)) {
             return false;
         }
-        if (characteristics.maxLimit.has_value() and std::stof(value) > characteristics.maxLimit.value()) {
+
+        float fpValue;
+        try {
+            fpValue = std::stof(value);
+        } catch (const std::invalid_argument&) {
+            return false;
+        } catch (const std::out_of_range&) {
+            return false;
+        }
+
+        if (characteristics.minLimit.has_value() and fpValue < characteristics.minLimit.value()) {
+            return false;
+        }
+        if (characteristics.maxLimit.has_value() and fpValue > characteristics.maxLimit.value()) {
             return false;
         }
         return true;
-    case DataEnum::integer:
-        if (characteristics.minLimit.has_value() and std::stoi(value) < characteristics.minLimit.value()) {
+    }
+    case DataEnum::integer: {
+        if (!ocpp::isInteger(value)) {
             return false;
         }
-        if (characteristics.maxLimit.has_value() and std::stoi(value) > characteristics.maxLimit.value()) {
+
+        int intValue;
+        try {
+            intValue = std::stoi(value);
+        } catch (const std::invalid_argument&) {
+            return false;
+        } catch (const std::out_of_range&) {
+            return false;
+        }
+
+        if (characteristics.minLimit.has_value() and intValue < characteristics.minLimit.value()) {
+            return false;
+        }
+        if (characteristics.maxLimit.has_value() and intValue > characteristics.maxLimit.value()) {
             return false;
         }
         return true;
+    }
     case DataEnum::dateTime:
         return true;
     case DataEnum::boolean:
