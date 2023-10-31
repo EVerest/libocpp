@@ -830,6 +830,7 @@ void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& messa
         break;
     case MessageType::TriggerMessage:
         this->handle_trigger_message(json_message);
+        break;
     case MessageType::SignCertificate:
         this->handle_sign_certificate_response(json_message);
         break;
@@ -1339,7 +1340,7 @@ void ChargePoint::sign_certificate_req(const ocpp::CertificateSigningUseEnum& ce
     } else {
         common =
             this->device_model->get_optional_value<std::string>(ControllerComponentVariables::ChargeBoxSerialNumber);
-        this->device_model->get_optional_value<std::string>(
+        organization = this->device_model->get_optional_value<std::string>(
             ControllerComponentVariables::ISO15118CtrlrOrganizationName);
         country =
             this->device_model->get_optional_value<std::string>(ControllerComponentVariables::ISO15118CtrlrCountryName);
@@ -1578,7 +1579,8 @@ void ChargePoint::handle_certificate_signed_req(Call<CertificateSignedRequest> c
     this->send<CertificateSignedResponse>(call_result);
 
     if (result != ocpp::InstallCertificateResult::Accepted) {
-        // TODO(piet): this->security_event_notification_req("InvalidChargingStationCertificate");
+        this->security_event_notification_req("InvalidChargingStationCertificate", std::optional<CiString<255>>{}, true,
+                                              true);
     }
 
     // reconnect with new certificate if valid and security profile is 3
@@ -2169,10 +2171,15 @@ void ChargePoint::handle_trigger_message(Call<TriggerMessageRequest> call) {
         }
         break;
 
+    case MessageTriggerEnum::SignChargingStationCertificate:
+        EVLOG_info << "got SignChargingStationCertificate";
+        response.status = TriggerMessageStatusEnum::Accepted;
+        break;
+    case MessageTriggerEnum::SignV2GCertificate:
+        response.status = TriggerMessageStatusEnum::Accepted;
+        break;
         // TODO:
         // PublishFirmwareStatusNotification
-        // SignChargingStationCertificate
-        // SignV2GCertificate
         // SignCombinedCertificate
 
     default:
@@ -2279,6 +2286,14 @@ void ChargePoint::handle_trigger_message(Call<TriggerMessageRequest> call) {
 
         ocpp::Call<FirmwareStatusNotificationRequest> call(request, this->message_queue->createMessageId());
         this->send<FirmwareStatusNotificationRequest>(call);
+    } break;
+
+    case MessageTriggerEnum::SignChargingStationCertificate: {
+        sign_certificate_req(ocpp::CertificateSigningUseEnum::ChargingStationCertificate);
+    } break;
+
+    case MessageTriggerEnum::SignV2GCertificate: {
+        sign_certificate_req(ocpp::CertificateSigningUseEnum::V2GCertificate);
     } break;
 
     default:
