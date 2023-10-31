@@ -1446,8 +1446,10 @@ void ChargePoint::handle_boot_notification_response(CallResult<BootNotificationR
             retry_interval);
     }
 
-    // call the registered boot notification callback
-    callbacks.boot_notification_callback.value()(this->registration_status);
+    if (this->callbacks.boot_notification_callback.has_value()) {
+        // call the registered boot notification callback
+        callbacks.boot_notification_callback.value()(this->registration_status);
+    }
 }
 
 void ChargePoint::handle_set_variables_req(Call<SetVariablesRequest> call) {
