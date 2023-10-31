@@ -3,6 +3,8 @@
 #ifndef OCPP_WEBSOCKET_URI_HPP
 #define OCPP_WEBSOCKET_URI_HPP
 
+#include <ocpp/common/types.hpp>
+
 #include <doctest/doctest.h>
 #include <websocketpp/uri.hpp>
 
@@ -54,9 +56,10 @@ private:
 namespace ocpp_test {
 
 TEST_CASE("parse_from_string()") {
-    auto uri = ocpp::Uri::parse_from_string("wss://test.example.com/cp123", "cp123");
+    auto uri = ocpp::Uri::parse_and_validate("wss://test.example.com/cp123", "cp123",
+                                             ocpp::security::SecurityProfile::TLS_WITH_BASIC_AUTHENTICATION);
     CHECK(uri.string() == "wss://test.example.com/cp123");
-}
+};
 
 } // namespace ocpp_test
 
