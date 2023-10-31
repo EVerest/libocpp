@@ -174,7 +174,7 @@ void ChargePoint::on_firmware_update_status_notification(int32_t request_id,
         this->security_event_notification_req(
             CiString<50>(ocpp::security_events::INVALIDFIRMWARESIGNATURE),
             std::optional<CiString<255>>("Signature of the provided firmware is not valid!"), true,
-            false); // L01.FR.03
+            true); // L01.FR.03 - critical because TC_L_06_CS requires this message to be sent
     }
 }
 
@@ -690,7 +690,7 @@ void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& messa
         this->handle_set_variables_req(json_message);
         break;
     case MessageType::GetVariables:
-        this->handle_get_variables_req(json_message);
+        this->handle_get_variables_req(message);
         break;
     case MessageType::GetBaseReport:
         this->handle_get_base_report_req(json_message);
@@ -753,9 +753,9 @@ void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& messa
 
 void ChargePoint::message_callback(const std::string& message) {
     auto enhanced_message = this->message_queue->receive(message);
+    enhanced_message.message_size = message.size();
     auto json_message = enhanced_message.message;
     this->logging->central_system(conversions::messagetype_to_string(enhanced_message.messageType), message);
-
     try {
         if (this->registration_status == RegistrationStatusEnum::Accepted) {
             this->handle_message(enhanced_message);
@@ -1492,11 +1492,30 @@ void ChargePoint::handle_set_variables_req(Call<SetVariablesRequest> call) {
     }
 }
 
-void ChargePoint::handle_get_variables_req(Call<GetVariablesRequest> call) {
+void ChargePoint::handle_get_variables_req(const EnhancedMessage<v201::MessageType>& message) {
+    Call<GetVariablesRequest> call = message.call_message;
     const auto msg = call.msg;
 
-    // FIXME(piet): add handling for B06.FR.16
-    // FIXME(piet): add handling for B06.FR.17
+    const auto max_variables_per_message =
+        this->device_model->get_value<int>(ControllerComponentVariables::ItemsPerMessageGetVariables);
+    const auto max_bytes_per_message =
+        this->device_model->get_value<int>(ControllerComponentVariables::BytesPerMessageGetVariables);
+
+    // B06.FR.16
+    if (msg.getVariableData.size() > max_variables_per_message) {
+        // send a CALLERROR
+        const auto call_error = CallError(call.uniqueId, "OccurenceConstraintViolation", "", json({}));
+        this->send(call_error);
+        return;
+    }
+
+    // B06.FR.17
+    if (message.message_size > max_bytes_per_message) {
+        // send a CALLERROR
+        const auto call_error = CallError(call.uniqueId, "FormatViolation", "", json({}));
+        this->send(call_error);
+        return;
+    }
 
     GetVariablesResponse response;
 
@@ -1993,9 +2012,10 @@ void ChargePoint::handle_remote_start_transaction_request(Call<RequestStartTrans
     // Check if evse id is given.
     if (msg.evseId.has_value()) {
         const int32_t evse_id = msg.evseId.value();
-        const auto& evse = this->evses.at(evse_id);
+        const auto it_evse{this->evses.find(evse_id)};
 
-        if (evse != nullptr) {
+        if (it_evse != this->evses.cend()) {
+            const auto& evse{it_evse->second};
             // TODO F01.FR.26 If a Charging Station with support for Smart Charging receives a
             // RequestStartTransactionRequest with an invalid ChargingProfile: The Charging Station SHALL respond
             // with RequestStartTransactionResponse with status = Rejected and optionally with reasonCode =
@@ -2021,7 +2041,10 @@ void ChargePoint::handle_remote_start_transaction_request(Call<RequestStartTrans
 
                 remote_start_id_per_evse[evse_id] = {msg.idToken, msg.remoteStartId};
             }
+        } else {
+            EVLOG_warning << "Invalid evse id given. Can not remote start transaction.";
         }
+
     } else {
         // F01.FR.07 RequestStartTransactionRequest does not contain an evseId. The Charging Station MAY reject the
         // RequestStartTransactionRequest. We do this for now (send rejected) (TODO: eventually support the charging
@@ -2129,7 +2152,8 @@ void ChargePoint::handle_firmware_update_req(Call<UpdateFirmwareRequest> call) {
         // L01.FR.02
         this->security_event_notification_req(
             CiString<50>(ocpp::security_events::INVALIDFIRMWARESIGNINGCERTIFICATE),
-            std::optional<CiString<255>>("Provided signing certificate is not valid!"), true, false);
+            std::optional<CiString<255>>("Provided signing certificate is not valid!"), true,
+            true); // critical because TC_L_05_CS requires this message to be sent
     }
 }
 
