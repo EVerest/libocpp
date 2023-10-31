@@ -5,12 +5,16 @@
 #include <ocpp/common/websocket/websocket_uri.hpp>
 
 #include <boost/algorithm/string/predicate.hpp>
+#include <websocketpp/uri.hpp>
 
 #include <stdexcept>
 #include <string>
-#include <websocketpp/uri.hpp>
 
 namespace ocpp {
+
+auto path_last_segment(const std::string_view path) -> std::string {
+    return std::string(path.substr(path.rfind("/"), path.length()));
+}
 
 Uri Uri::parse_and_validate(std::string uri, std::string chargepoint_id, int security_profile) {
     // workaround for required schema in `websocketpp::uri()`
@@ -39,14 +43,14 @@ Uri Uri::parse_and_validate(std::string uri, std::string chargepoint_id, int sec
         }
     }
 
-    const auto& path = uri_temp.get_resource();
-    if (!path.empty()) {
-        if (path != chargepoint_id) {
+    const auto& base = path_last_segment(uri_temp.get_resource());
+    if (!base.empty()) {
+        if (base != chargepoint_id) {
             throw std::invalid_argument(
                 "Uri constructor: the chargepoint-ID in the `uri`-path is different to the defined one");
         }
 
-        chargepoint_id = path;
+        chargepoint_id = base;
     }
 
     return Uri(uri_temp.get_secure(), uri_temp.get_host(), uri_temp.get_port(), chargepoint_id);
