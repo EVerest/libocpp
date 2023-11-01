@@ -151,7 +151,7 @@ void ChargePoint::stop() {
     this->heartbeat_timer.stop();
     this->boot_notification_timer.stop();
     this->websocket_timer.stop();
-    this->websocket->disconnect(websocketpp::close::status::going_away);
+    this->websocket->disconnect(websocketpp::close::status::normal);
     this->message_queue->stop();
 }
 
