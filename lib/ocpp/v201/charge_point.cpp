@@ -382,13 +382,35 @@ void ChargePoint::on_session_finished(const int32_t evse_id, const int32_t conne
 }
 
 void ChargePoint::on_meter_value(const int32_t evse_id, const MeterValue& meter_value) {
-    if (evse_id == 0) {
-        std::lock_guard<std::mutex> lk(this->meter_value_mutex);
-        // if evseId = 0 then store in the chargepoint metervalues
-        this->meter_value = meter_value;
-    } else {
-        this->evses.at(evse_id)->on_meter_value(meter_value);
+
+//========================================================================================
+MeterValue fake_value = meter_value;
+    // Create a random number generator engine
+    std::random_device rd;
+std::mt19937 mt(rd());
+
+// Create a uniform distribution for the range
+std::uniform_real_distribution<double> dist(1, 15);
+
+    for (auto& element : fake_value.sampledValue)
+    {
+        // element.value = dist(mt);
+        element.value = 5.55555;
     }
+    
+
+    //=========================================================================================
+    if (evse_id == 0) {
+    std::lock_guard<std::mutex> lk(this->meter_value_mutex);
+    // if evseId = 0 then store in the chargepoint metervalues
+    this->meter_value = fake_value;
+}
+else {
+    this->evses.at(evse_id)->on_meter_value(fake_value);
+}
+
+    //average values for some measurands
+this->aligned_data_idle.set_values(fake_value);
 }
 
 MeterValue ChargePoint::get_meter_value() {
@@ -1114,7 +1136,7 @@ void ChargePoint::update_aligned_data_interval() {
                 // this will apply configured measurands and possibly reduce the entries of sampledValue
                 // according to the configuration
                 const auto meter_value =
-                    get_latest_meter_value_filtered(evse->get_meter_value(), ReadingContextEnum::Sample_Clock,
+                    get_latest_meter_value_filtered(evse->get_idle_meter_value(), ReadingContextEnum::Sample_Clock,
                                                     ControllerComponentVariables::AlignedDataMeasurands);
 
                 if (!meter_value.sampledValue.empty()) {

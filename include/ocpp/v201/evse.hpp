@@ -5,6 +5,7 @@
 #include <map>
 #include <memory>
 
+#include <ocpp/v201/aligned_data.hpp>
 #include <ocpp/v201/connector.hpp>
 #include <ocpp/v201/database_handler.hpp>
 #include <ocpp/v201/device_model.hpp>
@@ -38,6 +39,8 @@ private:
 
     /// \brief function to check if the max energy has been exceeded, calls pause_charging_callback if so.
     void check_max_energy_on_invalid_id();
+
+    AlignedData aligned_data_updated;
 
 public:
     /// \brief Construct a new Evse object
@@ -132,7 +135,9 @@ public:
     /// \brief Returns the last present meter value for this evse
     /// \return
     MeterValue get_meter_value();
-    };
 
-    } // namespace v201
+    MeterValue get_idle_meter_value();
+};
+
+} // namespace v201
 } // namespace ocpp

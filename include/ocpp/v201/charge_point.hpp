@@ -15,6 +15,7 @@
 #include <ocpp/v201/ocpp_types.hpp>
 #include <ocpp/v201/types.hpp>
 #include <ocpp/v201/utils.hpp>
+#include <ocpp/v201/aligned_data.hpp>
 
 #include "ocpp/v201/messages/Get15118EVCertificate.hpp"
 #include <ocpp/v201/messages/Authorize.hpp>
@@ -199,6 +200,7 @@ private:
 
     MeterValue meter_value; // represents evseId = 0 meter value
     std::mutex meter_value_mutex;
+    AlignedData aligned_data_idle; // functions relating to aligned data values
 
     /// \brief Used when an 'OnIdle' reset is requested, to perform the reset after the charging has stopped.
     bool reset_scheduled;

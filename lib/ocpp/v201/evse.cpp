@@ -7,7 +7,7 @@
 #include <ocpp/v201/ctrlr_component_variables.hpp>
 #include <ocpp/v201/evse.hpp>
 #include <ocpp/v201/utils.hpp>
-
+#include <ocpp/v201/aligned_data.hpp>
 using namespace std::chrono_literals;
 
 namespace ocpp {
@@ -209,12 +209,18 @@ void Evse::trigger_status_notification_callback(const int32_t connector_id) {
 void Evse::on_meter_value(const MeterValue& meter_value) {
     std::lock_guard<std::recursive_mutex> lk(this->meter_value_mutex);
     this->meter_value = meter_value;
+    this->aligned_data_updated.set_values(meter_value);
     this->check_max_energy_on_invalid_id();
 }
 
 MeterValue Evse::get_meter_value() {
     std::lock_guard<std::recursive_mutex> lk(this->meter_value_mutex);
     return this->meter_value;
+}
+
+MeterValue Evse::get_idle_meter_value() {
+    std::lock_guard<std::recursive_mutex> lk(this->meter_value_mutex);
+    return this->aligned_data_updated.get_values();
 }
 
 std::optional<float> Evse::get_active_import_register_meter_value() {

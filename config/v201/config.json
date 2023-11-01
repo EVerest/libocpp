@@ -432,7 +432,7 @@
             "AlignedDataTxEndedMeasurands": {
                 "variable_name": "TxEndedMeasurands",
                 "attributes": {
-                    "Actual": "Energy.Active.Import.Register"
+                    "Actual": "Energy.Active.Import.Register,Voltage"
                 }
             },
             "AlignedDataSendDuringIdle": {
