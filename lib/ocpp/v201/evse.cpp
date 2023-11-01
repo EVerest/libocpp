@@ -111,6 +111,10 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
     if (aligned_data_tx_updated_interval > 0s) {
         transaction->aligned_tx_updated_meter_values_timer.interval_starting_from(
             [this] {
+                if (this->device_model.get_optional_value<bool>(ControllerComponentVariables::AlignedDataSendDuringIdle)
+                        .value_or(false)) {
+                    return;
+                }
                 auto meter_value = this->get_meter_value();
                 for (auto& item : meter_value.sampledValue) {
                     item.context = ReadingContextEnum::Sample_Clock;
