@@ -1622,14 +1622,19 @@ void ChargePoint::handle_sign_certificate_response(CallResult<SignCertificateRes
             this->awaited_certificate_signing_use_enum = std::nullopt;
             return;
         }
-        int retry_backoff_seconds = cert_signing_wait_minimum.value() * std::pow(2, this->csr_attempt);
+        int retry_backoff_milliseconds =
+            std::max(250, 1000 * cert_signing_wait_minimum.value()) *
+            std::pow(2, this->csr_attempt); // prevent immediate repetition in case of value 0
         this->certificate_signed_timer.timeout(
             [this]() {
                 EVLOG_info << "Did not receive CertificateSigned.req in time. Will retry with SignCertificate.req";
                 this->csr_attempt++;
-                this->sign_certificate_req(this->awaited_certificate_signing_use_enum.value());
+                const auto current_awaited_certificate_signing_use_enum =
+                    this->awaited_certificate_signing_use_enum.value();
+                this->awaited_certificate_signing_use_enum.reset();
+                this->sign_certificate_req(current_awaited_certificate_signing_use_enum);
             },
-            std::chrono::seconds(retry_backoff_seconds));
+            std::chrono::milliseconds(retry_backoff_milliseconds));
     } else {
         this->awaited_certificate_signing_use_enum = std::nullopt;
         this->csr_attempt = 1;
