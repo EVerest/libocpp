@@ -9,14 +9,29 @@
 
 #include <stdexcept>
 #include <string>
+#include <string_view>
 
 namespace ocpp {
 
-auto path_last_segment(const std::string_view path) -> std::string {
-    return std::string(path.substr(path.rfind("/"), path.length()));
+auto path_split_last_segment(const std::string_view path) {
+    struct result {
+        std::string path_without_last_segment;
+        std::string last_segment;
+    };
+
+    auto pos_last_slash = path.rfind("/");
+
+    return result{std::string(path.substr(pos_last_slash, path.length())), std::string(path.substr(0, pos_last_slash))};
 }
 
 Uri Uri::parse_and_validate(std::string uri, std::string chargepoint_id, int security_profile) {
+    if (uri.empty()) {
+        throw std::invalid_argument("`uri`-parameter must not be empty");
+    }
+    if (chargepoint_id.empty()) {
+        throw std::invalid_argument("`chargepoint_id`-parameter must not be empty");
+    }
+
     // workaround for required schema in `websocketpp::uri()`
     bool scheme_added_workaround = false;
     if (uri.find("://") == std::string::npos) {
@@ -40,20 +55,23 @@ Uri Uri::parse_and_validate(std::string uri, std::string chargepoint_id, int sec
             if (!uri_temp.get_secure()) {
                 throw std::invalid_argument("insecure schema in URI does not fit with secure security-profile");
             }
+        default:
+            throw std::invalid_argument("`security_profile`-parameter has unknown value = " +
+                                        std::to_string(security_profile));
         }
     }
 
-    const auto& base = path_last_segment(uri_temp.get_resource());
-    if (!base.empty()) {
-        if (base != chargepoint_id) {
-            throw std::invalid_argument(
-                "Uri constructor: the chargepoint-ID in the `uri`-path is different to the defined one");
-        }
+    auto path = uri_temp.get_resource();
 
-        chargepoint_id = base;
+    // backwards-compatibility: remove chargepoint-ID from URI, if given as last path-segment
+    if (path != "/") {
+        const auto [path_without_base, base] = path_split_last_segment(path);
+        if (base == chargepoint_id) {
+            path = path_without_base;
+        }
     }
 
-    return Uri(uri_temp.get_secure(), uri_temp.get_host(), uri_temp.get_port(), chargepoint_id);
+    return Uri(uri_temp.get_secure(), uri_temp.get_host(), uri_temp.get_port(), path, chargepoint_id);
 }
 
 } // namespace ocpp
