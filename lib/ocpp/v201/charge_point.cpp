@@ -831,7 +831,7 @@ void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& messa
     case MessageType::TriggerMessage:
         this->handle_trigger_message(json_message);
         break;
-    case MessageType::SignCertificate:
+    case MessageType::SignCertificateResponse:
         this->handle_sign_certificate_response(json_message);
         break;
     case MessageType::HeartbeatResponse:
