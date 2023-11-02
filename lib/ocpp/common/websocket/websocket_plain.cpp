@@ -26,7 +26,8 @@ void WebsocketPlain::set_connection_options(const WebsocketConnectionOptions& co
     case security::SecurityProfile::TLS_WITH_CLIENT_SIDE_CERTIFICATES:
         throw std::invalid_argument("`security_profile` is not a plain, unsecured one.");
     default:
-        throw std::invalid_argument("unknown `security_profile`");
+        throw std::invalid_argument("unknown `security_profile`, value = " +
+                                    std::to_string(connection_options.security_profile));
     }
 
     set_connection_options_base(connection_options);

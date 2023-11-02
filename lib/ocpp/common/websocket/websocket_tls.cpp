@@ -10,6 +10,7 @@
 
 #include <memory>
 #include <stdexcept>
+#include <string>
 
 namespace ocpp {
 
@@ -30,7 +31,8 @@ void WebsocketTLS::set_connection_options(const WebsocketConnectionOptions& conn
     case security::SecurityProfile::TLS_WITH_CLIENT_SIDE_CERTIFICATES:
         break;
     default:
-        throw std::invalid_argument("unknown `security_profile`");
+        throw std::invalid_argument("unknown `security_profile`, value = " +
+                                    std::to_string(connection_options.security_profile));
     }
 
     set_connection_options_base(connection_options);
