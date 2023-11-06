@@ -135,7 +135,7 @@ int main(int argc, char* argv[]) {
     secConfig.secc_leaf_key_directory = fs::path("/tmp/client/cso/");
 
     charge_point = new ocpp::v16::ChargePoint(json_config.dump(), share_path, user_config_path, database_path,
-                                              sql_init_path, fs::path("/tmp"), nullptr);
+                                              sql_init_path, fs::path("/tmp"), nullptr, secConfig);
 
     /************************************** START REGISTERING CALLBACKS **************************************/
 
