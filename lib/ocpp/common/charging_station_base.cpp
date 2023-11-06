@@ -22,8 +22,7 @@ ChargingStationBase::ChargingStationBase(const std::shared_ptr<EvseSecurity> evs
     this->io_service_thread = std::thread([this]() { this->io_service.run(); });
 }
 
-ChargingStationBase::~ChargingStationBase()
-{
+ChargingStationBase::~ChargingStationBase() {
     work->get_io_context().stop();
     io_service.stop();
     io_service_thread.join();
