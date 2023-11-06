@@ -223,6 +223,11 @@ MeterValue Evse::get_idle_meter_value() {
     return this->aligned_data_updated.get_values();
 }
 
+void Evse::clear_meter_values()
+{
+    this->aligned_data_updated.clear_values();
+}
+
 std::optional<float> Evse::get_active_import_register_meter_value() {
     std::lock_guard<std::recursive_mutex> lk(this->meter_value_mutex);
     auto it = std::find_if(

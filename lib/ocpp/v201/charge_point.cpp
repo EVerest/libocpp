@@ -383,34 +383,29 @@ void ChargePoint::on_session_finished(const int32_t evse_id, const int32_t conne
 
 void ChargePoint::on_meter_value(const int32_t evse_id, const MeterValue& meter_value) {
 
-//========================================================================================
-MeterValue fake_value = meter_value;
-    // Create a random number generator engine
-    std::random_device rd;
-std::mt19937 mt(rd());
+    //========================================================================================
+    MeterValue fake_value = meter_value;
+    // // Create a random number generator engine
+    // std::random_device rd;
+    // std::mt19937 mt(rd());
 
-// Create a uniform distribution for the range
-std::uniform_real_distribution<double> dist(1, 15);
+    // // Create a uniform distribution for the range
+    // std::uniform_real_distribution<double> dist(1, 15);
 
-    for (auto& element : fake_value.sampledValue)
-    {
-        // element.value = dist(mt);
-        element.value = 5.55555;
-    }
-    
-
+    // for (auto& element : fake_value.sampledValue) {
+    //     element.value = dist(mt);
+    //     // element.value = 5.55555;
+    // }
     //=========================================================================================
     if (evse_id == 0) {
-    std::lock_guard<std::mutex> lk(this->meter_value_mutex);
-    // if evseId = 0 then store in the chargepoint metervalues
-    this->meter_value = fake_value;
-}
-else {
-    this->evses.at(evse_id)->on_meter_value(fake_value);
-}
+        std::lock_guard<std::mutex> lk(this->meter_value_mutex);
+        // if evseId = 0 then store in the chargepoint metervalues
+        this->meter_value = fake_value;
+        this->aligned_data_idle.set_values(fake_value);
+    } else {
+        this->evses.at(evse_id)->on_meter_value(fake_value);
+    }
 
-    //average values for some measurands
-this->aligned_data_idle.set_values(fake_value);
 }
 
 MeterValue ChargePoint::get_meter_value() {
@@ -1142,6 +1137,8 @@ void ChargePoint::update_aligned_data_interval() {
                 if (!meter_value.sampledValue.empty()) {
                     // J01.FR.14 this is the only case where we send a MeterValue.req
                     this->meter_values_req(evse_id, std::vector<ocpp::v201::MeterValue>(1, meter_value));
+                    //clear the values
+                    evse->clear_meter_values();
                 }
             }
         },

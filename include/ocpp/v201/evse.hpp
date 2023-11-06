@@ -41,6 +41,7 @@ private:
     void check_max_energy_on_invalid_id();
 
     AlignedData aligned_data_updated;
+    AlignedData aligned_data_tx_end;
 
 public:
     /// \brief Construct a new Evse object
@@ -137,6 +138,7 @@ public:
     MeterValue get_meter_value();
 
     MeterValue get_idle_meter_value();
+    void clear_meter_values();
 };
 
 } // namespace v201
