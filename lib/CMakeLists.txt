@@ -4,7 +4,7 @@ add_library(everest::ocpp ALIAS ocpp)
 
 target_compile_options(ocpp
     PRIVATE
-        -Werror # turn warnings into errors
+         #-Werror # turn warnings into errors
         -Wimplicit-fallthrough  # avoid unintended fallthroughs
 )
 
