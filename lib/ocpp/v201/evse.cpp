@@ -112,7 +112,7 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
     if (aligned_data_tx_updated_interval > 0s) {
         transaction->aligned_tx_updated_meter_values_timer.interval_starting_from(
             [this] {
-                auto meter_value = this->get_meter_value();
+                auto meter_value = this->aligned_data_updated.get_values();
                 for (auto& item : meter_value.sampledValue) {
                     item.context = ReadingContextEnum::Sample_Clock;
                 }
@@ -121,6 +121,7 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
             },
             aligned_data_tx_updated_interval,
             std::chrono::floor<date::days>(date::utc_clock::to_sys(date::utc_clock::now())));
+        this->aligned_data_updated.clear_values();
     }
 
     if (aligned_data_tx_ended_interval > 0s) {
@@ -210,6 +211,7 @@ void Evse::on_meter_value(const MeterValue& meter_value) {
     std::lock_guard<std::recursive_mutex> lk(this->meter_value_mutex);
     this->meter_value = meter_value;
     this->aligned_data_updated.set_values(meter_value);
+    // this->aligned_data_tx_end.set_values(meter_value);
     this->check_max_energy_on_invalid_id();
 }
 
