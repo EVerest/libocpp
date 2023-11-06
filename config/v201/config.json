@@ -338,7 +338,7 @@
     {
         "name": "ClockCtrlr",
         "variables": {
-            "ClockCtrlrDateTime": {
+            "DateTime": {
                 "variable_name": "DateTime",
                 "attributes": {
                     "Actual": ""
@@ -456,6 +456,12 @@
                 "variable_name": "LocalPreAuthorize",
                 "attributes": {
                     "Actual": "1"
+                }
+            },
+            "MasterPassGroupId": {
+                "variable_name": "MasterPassGroupId",
+                "attributes": {
+                    "Actual": "123"
                 }
             }
         }

@@ -20,7 +20,9 @@
 #include <ocpp/common/call_types.hpp>
 #include <ocpp/common/database_handler_base.hpp>
 #include <ocpp/common/types.hpp>
+#include <ocpp/v16/messages/StopTransaction.hpp>
 #include <ocpp/v16/types.hpp>
+#include <ocpp/v201/messages/TransactionEvent.hpp>
 #include <ocpp/v201/types.hpp>
 
 namespace ocpp {
@@ -83,6 +85,7 @@ private:
     bool running;
     bool new_message;
     boost::uuids::random_generator uuid_generator;
+    std::optional<MessageId> next_message_to_send;
 
     Everest::SteadyTimer in_flight_timeout_timer;
     Everest::SteadyTimer notify_queue_timer;
@@ -241,6 +244,15 @@ public:
                     continue;
                 }
 
+                if (next_message_to_send.has_value()) {
+                    if (next_message_to_send.value() != message->uniqueId()) {
+                        EVLOG_debug << "Message with id " << message->uniqueId()
+                                    << " held back because message with id " << next_message_to_send.value()
+                                    << " should be sent first";
+                        continue;
+                    }
+                }
+
                 EVLOG_debug << "Attempting to send message to central system. UID: " << message->uniqueId()
                             << " attempt#: " << message->message_attempts;
                 this->in_flight = message;
@@ -325,7 +337,6 @@ public:
 
     /// \brief pushes a new \p call message onto the message queue
     template <class T> void push(Call<T> call) {
-
         if (!running) {
             return;
         }
@@ -345,6 +356,38 @@ public:
                 this->add_to_normal_message_queue(message);
             }
         }
+        this->cv.notify_all();
+    }
+
+    /// \brief Sends a new \p call_result message over the websocket
+    template <class T> void push(CallResult<T> call_result) {
+        if (!running) {
+            return;
+        }
+
+        this->send_callback(call_result);
+        if (next_message_to_send.has_value()) {
+            if (next_message_to_send.value() == call_result.uniqueId) {
+                next_message_to_send.reset();
+            }
+        }
+
+        this->cv.notify_all();
+    }
+
+    /// \brief Sends a new \p call_error message over the websocket
+    void push(CallError call_error) {
+        if (!running) {
+            return;
+        }
+
+        this->send_callback(call_error);
+        if (next_message_to_send.has_value()) {
+            if (next_message_to_send.value() == call_error.uniqueId) {
+                next_message_to_send.reset();
+            }
+        }
+
         this->cv.notify_all();
     }
 
@@ -390,11 +433,16 @@ public:
             if (enhanced_message.messageTypeId == MessageTypeId::CALL) {
                 enhanced_message.messageType = this->string_to_messagetype(enhanced_message.message.at(CALL_ACTION));
                 enhanced_message.call_message = enhanced_message.message;
+
+                // save the uid of the message we just received to ensure the next message we send is a response to this
+                // message
+                next_message_to_send.emplace(enhanced_message.uniqueId);
             }
 
             // TODO(kai): what happens if we receive a CallResult or CallError out of order?
             if (enhanced_message.messageTypeId == MessageTypeId::CALLRESULT ||
                 enhanced_message.messageTypeId == MessageTypeId::CALLERROR) {
+                next_message_to_send.reset();
                 // we need to remove Call messages from in_flight if we receive a CallResult OR a CallError
 
                 // TODO(kai): we need to do some error handling in the CallError case
@@ -543,6 +591,37 @@ public:
         this->paused = false;
         this->cv.notify_one();
         EVLOG_debug << "resume() notified message queue";
+    }
+
+    bool is_transaction_message_queue_empty() {
+        std::lock_guard<std::mutex> lk(this->message_mutex);
+        return this->transaction_message_queue.empty();
+    }
+
+    bool contains_transaction_messages(const CiString<36> transaction_id) {
+        std::lock_guard<std::mutex> lk(this->message_mutex);
+        for (const auto control_message : this->transaction_message_queue) {
+            if (control_message->messageType == v201::MessageType::TransactionEvent) {
+                v201::TransactionEventRequest req = control_message->message.at(CALL_PAYLOAD);
+                if (req.transactionInfo.transactionId == transaction_id) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    bool contains_stop_transaction_message(const int32_t transaction_id) {
+        std::lock_guard<std::mutex> lk(this->message_mutex);
+        for (const auto control_message : this->transaction_message_queue) {
+            if (control_message->messageType == v16::MessageType::StopTransaction) {
+                v16::StopTransactionRequest req = control_message->message.at(CALL_PAYLOAD);
+                if (req.transactionId == transaction_id) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /// \brief Set transaction_message_attempts to given \p transaction_message_attempts

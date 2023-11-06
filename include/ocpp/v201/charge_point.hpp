@@ -16,17 +16,22 @@
 #include <ocpp/v201/types.hpp>
 #include <ocpp/v201/utils.hpp>
 
+#include "ocpp/v201/messages/Get15118EVCertificate.hpp"
 #include <ocpp/v201/messages/Authorize.hpp>
 #include <ocpp/v201/messages/BootNotification.hpp>
 #include <ocpp/v201/messages/ChangeAvailability.hpp>
 #include <ocpp/v201/messages/ClearCache.hpp>
 #include <ocpp/v201/messages/DataTransfer.hpp>
+#include <ocpp/v201/messages/DeleteCertificate.hpp>
 #include <ocpp/v201/messages/GetBaseReport.hpp>
+#include <ocpp/v201/messages/GetInstalledCertificateIds.hpp>
 #include <ocpp/v201/messages/GetLocalListVersion.hpp>
 #include <ocpp/v201/messages/GetLog.hpp>
 #include <ocpp/v201/messages/GetReport.hpp>
+#include <ocpp/v201/messages/GetTransactionStatus.hpp>
 #include <ocpp/v201/messages/GetVariables.hpp>
 #include <ocpp/v201/messages/Heartbeat.hpp>
+#include <ocpp/v201/messages/InstallCertificate.hpp>
 #include <ocpp/v201/messages/MeterValues.hpp>
 #include <ocpp/v201/messages/NotifyEvent.hpp>
 #include <ocpp/v201/messages/NotifyReport.hpp>
@@ -97,6 +102,10 @@ struct Callbacks {
     std::optional<std::function<bool(const NetworkConnectionProfile& network_connection_profile)>>
         configure_network_connection_profile_callback;
     std::optional<std::function<void(const ocpp::DateTime& currentTime)>> time_sync_callback;
+
+    /// \brief callback to be called to congfigure ocpp message logging
+    std::optional<std::function<void(const std::string& message, MessageDirection direction)>> ocpp_messages_callback;
+
     ///
     /// \brief callback function that can be used to react to a security event callback. This callback is
     /// called only if the SecurityEvent occured internally within libocpp
@@ -104,6 +113,9 @@ struct Callbacks {
     ///
     std::function<void(const CiString<50>& event_type, const std::optional<CiString<255>>& tech_info)>
         security_event_callback;
+
+    /// @brief  Callback for when a bootnotification response is received
+    std::optional<std::function<void(const ocpp::v201::RegistrationStatusEnum& reg_status)>> boot_notification_callback;
 };
 
 /// \brief Class implements OCPP2.0.1 Charging Station
@@ -130,14 +142,13 @@ private:
     // timers
     Everest::SteadyTimer heartbeat_timer;
     Everest::SteadyTimer boot_notification_timer;
-    Everest::SteadyTimer aligned_meter_values_timer;
+    ClockAlignedTimer aligned_meter_values_timer;
 
     // time keeping
     std::chrono::time_point<std::chrono::steady_clock> heartbeat_request_time;
 
     // states
     RegistrationStatusEnum registration_status;
-    WebsocketConnectionStatusEnum websocket_connection_status;
     OperationalStatusEnum operational_state;
     FirmwareStatusEnum firmware_status;
     int32_t firmware_status_id;
@@ -326,6 +337,7 @@ private:
 
     // Functional Block E: Transaction
     void handle_start_transaction_event_response(const EnhancedMessage<v201::MessageType>& message);
+    void handle_get_transaction_status(const Call<GetTransactionStatusRequest> call);
 
     // Function Block F: Remote transaction control
     void handle_unlock_connector(Call<UnlockConnectorRequest> call);
@@ -339,6 +351,11 @@ private:
 
     // Functional Block L: Firmware management
     void handle_firmware_update_req(Call<UpdateFirmwareRequest> call);
+
+    // Functional Block M: ISO 15118 Certificate Management
+    void handle_get_installed_certificate_ids_req(Call<GetInstalledCertificateIdsRequest> call);
+    void handle_install_certificate_req(Call<InstallCertificateRequest> call);
+    void handle_delete_certificate_req(Call<DeleteCertificateRequest> call);
 
     // Functional Block P: DataTransfer
     void handle_data_transfer_req(Call<DataTransferRequest> call);
@@ -393,7 +410,8 @@ public:
     void connect_websocket();
 
     /// \brief Disconnects the the websocket connection to the CSMS if it is connected
-    void disconnect_websocket();
+    /// \param code Optional websocket close status code (default: normal).
+    void disconnect_websocket(websocketpp::close::status::value code = websocketpp::close::status::normal);
 
     /// \brief Chargepoint notifies about new firmware update status firmware_update_status. This function should be
     ///        called during a Firmware Update to indicate the current firmware_update_status.
@@ -405,6 +423,10 @@ public:
     /// \param evse_id
     /// \param connector_id
     void on_session_started(const int32_t evse_id, const int32_t connector_id);
+
+    /// \brief Event handler that should be called when the EV sends a certificate request (for update or installation)
+    /// \param request
+    Get15118EVCertificateResponse on_get_15118_ev_certificate_request(const Get15118EVCertificateRequest& request);
 
     /// \brief Event handler that should be called when a transaction has started
     /// \param evse_id

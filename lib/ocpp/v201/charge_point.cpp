@@ -7,7 +7,7 @@
 #include <ocpp/v201/messages/FirmwareStatusNotification.hpp>
 #include <ocpp/v201/messages/LogStatusNotification.hpp>
 
-using namespace std::literals::chrono_literals;
+using namespace std::chrono_literals;
 
 namespace ocpp {
 namespace v201 {
@@ -26,7 +26,9 @@ bool Callbacks::all_callbacks_valid() const {
             this->validate_network_profile_callback.value() != nullptr) and
            (!this->configure_network_connection_profile_callback.has_value() or
             this->configure_network_connection_profile_callback.value() != nullptr) and
-           (!this->time_sync_callback.has_value() or this->time_sync_callback.value() != nullptr);
+           (!this->time_sync_callback.has_value() or this->time_sync_callback.value() != nullptr) and
+           (!this->boot_notification_callback.has_value() or this->boot_notification_callback.value() != nullptr) and
+           (!this->ocpp_messages_callback.has_value() or this->ocpp_messages_callback.value() != nullptr);
 }
 
 ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
@@ -45,7 +47,6 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
                          const Callbacks& callbacks) :
     ocpp::ChargingStationBase(evse_security),
     registration_status(RegistrationStatusEnum::Rejected),
-    websocket_connection_status(WebsocketConnectionStatusEnum::Disconnected),
     operational_state(OperationalStatusEnum::Operative),
     network_configuration_priority(0),
     disable_automatic_websocket_reconnects(false),
@@ -82,28 +83,50 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
         auto transaction_meter_value_callback = [this](const MeterValue& _meter_value, const Transaction& transaction,
                                                        const int32_t seq_no,
                                                        const std::optional<int32_t> reservation_id) {
-            const auto filtered_meter_value = utils::get_meter_value_with_measurands_applied(
-                _meter_value, utils::get_measurands_vec(this->device_model->get_value<std::string>(
-                                  ControllerComponentVariables::SampledDataTxUpdatedMeasurands)));
+            if (_meter_value.sampledValue.empty() or !_meter_value.sampledValue.at(0).context.has_value()) {
+                EVLOG_info << "Not sending MeterValue due to no values";
+                return;
+            }
+
+            auto type = _meter_value.sampledValue.at(0).context.value();
+            if (type != ReadingContextEnum::Sample_Clock and type != ReadingContextEnum::Sample_Periodic) {
+                EVLOG_info << "Not sending MeterValue due to wrong context";
+                return;
+            }
+
+            const auto filter_vec = utils::get_measurands_vec(this->device_model->get_value<std::string>(
+                type == ReadingContextEnum::Sample_Clock
+                    ? ControllerComponentVariables::AlignedDataMeasurands
+                    : ControllerComponentVariables::SampledDataTxUpdatedMeasurands));
+
+            const auto filtered_meter_value = utils::get_meter_value_with_measurands_applied(_meter_value, filter_vec);
 
             if (!filtered_meter_value.sampledValue.empty()) {
-                this->transaction_event_req(TransactionEventEnum::Updated, DateTime(), transaction,
-                                            TriggerReasonEnum::MeterValuePeriodic, seq_no, std::nullopt, std::nullopt,
-                                            std::nullopt, std::vector<MeterValue>(1, filtered_meter_value),
-                                            std::nullopt, this->is_offline(), reservation_id);
+                const auto trigger = type == ReadingContextEnum::Sample_Clock ? TriggerReasonEnum::MeterValueClock
+                                                                              : TriggerReasonEnum::MeterValuePeriodic;
+                this->transaction_event_req(TransactionEventEnum::Updated, DateTime(), transaction, trigger, seq_no,
+                                            std::nullopt, std::nullopt, std::nullopt,
+                                            std::vector<MeterValue>(1, filtered_meter_value), std::nullopt,
+                                            this->is_offline(), reservation_id);
             }
         };
 
+        auto pause_charging_callback = [this, evse_id_]() { this->callbacks.pause_charging_callback(evse_id_); };
+
         this->evses.insert(
-            std::make_pair(evse_id, std::make_unique<Evse>(evse_id, number_of_connectors, status_notification_callback,
-                                                           transaction_meter_value_callback)));
+            std::make_pair(evse_id, std::make_unique<Evse>(evse_id, number_of_connectors, *this->device_model,
+                                                           this->database_handler, status_notification_callback,
+                                                           transaction_meter_value_callback, pause_charging_callback)));
+
         for (int32_t connector_id = 1; connector_id <= number_of_connectors; connector_id++) {
             // operational status for this connector
             this->database_handler->insert_availability(evse_id, connector_id, OperationalStatusEnum::Operative, false);
         }
     }
-    this->logging = std::make_shared<ocpp::MessageLogging>(true, message_log_path, DateTime().to_rfc3339(), false,
-                                                           false, false, true, true);
+    this->logging =
+        std::make_shared<ocpp::MessageLogging>(true, message_log_path, DateTime().to_rfc3339(), false, false, false,
+                                               true, true, this->callbacks.ocpp_messages_callback.value_or(nullptr));
+
     this->message_queue = std::make_unique<ocpp::MessageQueue<v201::MessageType>>(
         [this](json message) -> bool { return this->websocket->send(message.dump()); },
         this->device_model->get_value<int>(ControllerComponentVariables::MessageAttempts),
@@ -129,7 +152,7 @@ void ChargePoint::stop() {
     this->heartbeat_timer.stop();
     this->boot_notification_timer.stop();
     this->websocket_timer.stop();
-    this->websocket->disconnect(websocketpp::close::status::going_away);
+    this->disconnect_websocket(websocketpp::close::status::going_away);
     this->message_queue->stop();
 }
 
@@ -141,10 +164,12 @@ void ChargePoint::connect_websocket() {
     }
 }
 
-void ChargePoint::disconnect_websocket() {
-    if (this->websocket->is_connected()) {
-        this->disable_automatic_websocket_reconnects = true;
-        this->websocket->disconnect(websocketpp::close::status::normal);
+void ChargePoint::disconnect_websocket(websocketpp::close::status::value code) {
+    if (this->websocket != nullptr) {
+        if (this->websocket->is_connected()) {
+            this->disable_automatic_websocket_reconnects = true;
+            this->websocket->disconnect(code);
+        }
     }
 }
 
@@ -182,6 +207,23 @@ void ChargePoint::on_session_started(const int32_t evse_id, const int32_t connec
     this->evses.at(evse_id)->submit_event(connector_id, ConnectorEvent::PlugIn);
 }
 
+Get15118EVCertificateResponse
+ChargePoint::on_get_15118_ev_certificate_request(const Get15118EVCertificateRequest& request) {
+    EVLOG_debug << "Received Get15118EVCertificateRequest " << request;
+    auto future_res = this->send_async<Get15118EVCertificateRequest>(
+        ocpp::Call<Get15118EVCertificateRequest>(request, this->message_queue->createMessageId()));
+    const auto response_message = future_res.get();
+    EVLOG_debug << "Received Get15118EVCertificateResponse " << response_message.message;
+    if (response_message.messageType != MessageType::Get15118EVCertificateResponse) {
+        Get15118EVCertificateResponse response;
+        response.status = Iso15118EVCertificateStatusEnum::Failed;
+        return response;
+    }
+
+    ocpp::CallResult<Get15118EVCertificateResponse> call_result = response_message.message;
+    return call_result.msg;
+}
+
 void ChargePoint::on_transaction_started(
     const int32_t evse_id, const int32_t connector_id, const std::string& session_id, const DateTime& timestamp,
     const ocpp::v201::TriggerReasonEnum trigger_reason, const MeterValue& meter_start, const IdToken& id_token,
@@ -190,7 +232,13 @@ void ChargePoint::on_transaction_started(
 
     this->evses.at(evse_id)->open_transaction(
         session_id, connector_id, timestamp, meter_start, id_token, group_id_token, reservation_id,
-        this->device_model->get_value<int>(ControllerComponentVariables::SampledDataTxUpdatedInterval));
+        std::chrono::seconds(
+            this->device_model->get_value<int>(ControllerComponentVariables::SampledDataTxUpdatedInterval)),
+        std::chrono::seconds(
+            this->device_model->get_value<int>(ControllerComponentVariables::SampledDataTxEndedInterval)),
+        std::chrono::seconds(this->device_model->get_value<int>(ControllerComponentVariables::AlignedDataInterval)),
+        std::chrono::seconds(
+            this->device_model->get_value<int>(ControllerComponentVariables::AlignedDataTxEndedInterval)));
     const auto& enhanced_transaction = this->evses.at(evse_id)->get_transaction();
     enhanced_transaction->chargingState = charging_state;
     const auto meter_value = utils::get_meter_value_with_measurands_applied(
@@ -231,14 +279,13 @@ void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime&
 
     this->evses.at(evse_id)->close_transaction(timestamp, meter_stop, reason);
     const auto transaction = enhanced_transaction->get_transaction();
-    auto meter_values = std::make_optional(utils::get_meter_values_with_measurands_and_interval_applied(
-        enhanced_transaction->meter_values,
-        utils::get_measurands_vec(
-            this->device_model->get_value<std::string>(ControllerComponentVariables::AlignedDataTxEndedMeasurands)),
+    const auto transaction_id = enhanced_transaction->transactionId.get();
+    auto meter_values = std::make_optional(utils::get_meter_values_with_measurands_applied(
+        this->database_handler->transaction_metervalues_get_all(transaction_id),
         utils::get_measurands_vec(
             this->device_model->get_value<std::string>(ControllerComponentVariables::SampledDataTxEndedMeasurands)),
-        this->device_model->get_value<int>(ControllerComponentVariables::AlignedDataTxEndedInterval),
-        this->device_model->get_value<int>(ControllerComponentVariables::SampledDataTxEndedInterval)));
+        utils::get_measurands_vec(
+            this->device_model->get_value<std::string>(ControllerComponentVariables::AlignedDataTxEndedMeasurands))));
 
     if (meter_values.value().empty()) {
         meter_values.reset();
@@ -260,6 +307,8 @@ void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime&
     this->transaction_event_req(TransactionEventEnum::Ended, timestamp, transaction, trigger_reason, seq_no,
                                 std::nullopt, std::nullopt, id_token_opt, meter_values, std::nullopt,
                                 this->is_offline(), std::nullopt);
+
+    this->database_handler->transaction_metervalues_clear(transaction_id);
 
     bool send_reset = false;
     if (this->reset_scheduled) {
@@ -405,7 +454,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
                 // C14.FR.02: If found in local list we shall start charging without an AuthorizeRequest
                 EVLOG_info << "Found valid entry in local authorization list";
                 response.idTokenInfo = id_token_info.value();
-            } else if (this->websocket_connection_status == WebsocketConnectionStatusEnum::Connected) {
+            } else if (this->websocket->is_connected()) {
                 // C14.FR.03: If a value found but not valid we shall send an authorize request
                 EVLOG_info << "Found invalid entry in local authorization list: Sending Authorize.req";
                 response = this->authorize_req(id_token, certificate, ocsp_request_data);
@@ -443,7 +492,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
         }
     }
 
-    if (this->websocket_connection_status == WebsocketConnectionStatusEnum::Disconnected and
+    if (!this->websocket->is_connected() and
         this->device_model->get_optional_value<bool>(ControllerComponentVariables::OfflineTxForUnknownIdEnabled)
             .value_or(false)) {
         EVLOG_info << "Offline authorization due to OfflineTxForUnknownIdEnabled being enabled";
@@ -492,11 +541,13 @@ template <class T> std::future<EnhancedMessage<v201::MessageType>> ChargePoint::
 }
 
 template <class T> bool ChargePoint::send(ocpp::CallResult<T> call_result) {
-    return this->websocket->send(json(call_result).dump());
+    this->message_queue->push(call_result);
+    return true;
 }
 
 bool ChargePoint::send(CallError call_error) {
-    return this->websocket->send(json(call_error).dump());
+    this->message_queue->push(call_error);
+    return true;
 }
 
 void ChargePoint::init_websocket() {
@@ -537,7 +588,6 @@ void ChargePoint::init_websocket() {
     this->websocket = std::make_unique<Websocket>(connection_options, this->evse_security, this->logging);
     this->websocket->register_connected_callback([this](const int security_profile) {
         this->message_queue->resume();
-        this->websocket_connection_status = WebsocketConnectionStatusEnum::Connected;
 
         const auto& security_profile_cv = ControllerComponentVariables::SecurityProfile;
         if (security_profile_cv.variable.has_value()) {
@@ -577,32 +627,34 @@ void ChargePoint::init_websocket() {
         this->time_disconnected = std::chrono::time_point<std::chrono::steady_clock>();
     });
 
+    this->websocket->register_disconnected_callback([this]() {
+        this->message_queue->pause();
+
+        // check if offline threshold has been defined
+        if (this->device_model->get_value<int>(ControllerComponentVariables::OfflineThreshold) != 0) {
+            // get the status of all the connectors
+            for (auto const& [evse_id, evse] : this->evses) {
+                int number_of_connectors = evse->get_number_of_connectors();
+                EvseConnectorPair conn_states_struct_key;
+                EVLOG_debug << "evseId: " << evse_id << " numConn: " << number_of_connectors;
+                for (int connector_id = 1; connector_id <= number_of_connectors; connector_id++) {
+                    conn_states_struct_key.evse_id = evse_id;
+                    conn_states_struct_key.connector_id = connector_id;
+                    conn_state_per_evse[conn_states_struct_key] = evse->get_state(connector_id);
+                    EVLOG_debug << "conn_id: " << conn_states_struct_key.connector_id
+                                << " State: " << conn_state_per_evse[conn_states_struct_key];
+                }
+            }
+            // Get the current time point using steady_clock
+            this->time_disconnected = std::chrono::steady_clock::now();
+        }
+    });
+
     this->websocket->register_closed_callback(
         [this, connection_options, configuration_slot](const websocketpp::close::status::value reason) {
             EVLOG_warning << "Failed to connect to NetworkConfigurationPriority: "
                           << this->network_configuration_priority + 1
                           << " which is configurationSlot: " << configuration_slot;
-            this->websocket_connection_status = WebsocketConnectionStatusEnum::Disconnected;
-            this->message_queue->pause();
-
-            // check if offline threshold has been defined
-            if (this->device_model->get_value<int>(ControllerComponentVariables::OfflineThreshold) != 0) {
-                // get the status of all the connectors
-                for (auto const& [evse_id, evse] : this->evses) {
-                    int number_of_connectors = evse->get_number_of_connectors();
-                    EvseConnectorPair conn_states_struct_key;
-                    EVLOG_debug << "evseId: " << evse_id << " numConn: " << number_of_connectors;
-                    for (int connector_id = 1; connector_id <= number_of_connectors; connector_id++) {
-                        conn_states_struct_key.evse_id = evse_id;
-                        conn_states_struct_key.connector_id = connector_id;
-                        conn_state_per_evse[conn_states_struct_key] = evse->get_state(connector_id);
-                        EVLOG_debug << "conn_id: " << conn_states_struct_key.connector_id
-                                    << " State: " << conn_state_per_evse[conn_states_struct_key];
-                    }
-                }
-                // Get the current time point using steady_clock
-                this->time_disconnected = std::chrono::steady_clock::now();
-            }
 
             if (!this->disable_automatic_websocket_reconnects) {
                 this->websocket_timer.timeout(
@@ -742,6 +794,18 @@ void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& messa
         break;
     case MessageType::GetLocalListVersion:
         this->handle_get_local_authorization_list_version_req(json_message);
+        break;
+    case MessageType::GetTransactionStatus:
+        this->handle_get_transaction_status(json_message);
+        break;
+    case MessageType::GetInstalledCertificateIds:
+        this->handle_get_installed_certificate_ids_req(json_message);
+        break;
+    case MessageType::InstallCertificate:
+        this->handle_install_certificate_req(json_message);
+        break;
+    case MessageType::DeleteCertificate:
+        this->handle_delete_certificate_req(json_message);
         break;
     default:
         if (message.messageTypeId == MessageTypeId::CALL) {
@@ -901,69 +965,52 @@ SendLocalListStatusEnum ChargePoint::apply_local_authorization_list(const SendLo
 }
 
 void ChargePoint::update_aligned_data_interval() {
-    const auto next_timestamp = this->get_next_clock_aligned_meter_value_timestamp(
-        this->device_model->get_value<int>(ControllerComponentVariables::AlignedDataInterval));
-    if (next_timestamp.has_value()) {
-        EVLOG_debug << "Next meter value will be sent at: " << next_timestamp.value().to_rfc3339();
-        this->aligned_meter_values_timer.at(
-            [this]() {
-                bool transaction_active = false;
-                for (auto const& [evse_id, evse] : this->evses) {
-                    auto _meter_value = evse->get_meter_value();
-                    // this will apply configured measurands and possibly reduce the entries of sampledValue
-                    // according to the configuration
-                    const auto meter_value =
-                        get_latest_meter_value_filtered(_meter_value, ReadingContextEnum::Sample_Clock,
-                                                        ControllerComponentVariables::AlignedDataMeasurands);
-
-                    if (evse->has_active_transaction()) {
-                        transaction_active = true;
-                        // because we do not actively read meter values at clock aligned timepoint, we switch the
-                        // ReadingContext here
-                        for (auto& sampled_value : _meter_value.sampledValue) {
-                            sampled_value.context = ReadingContextEnum::Sample_Clock;
-                        }
-
-                        // add meter value to transaction meter values
-                        const auto& enhanced_transaction = evse->get_transaction();
-                        enhanced_transaction->meter_values.push_back(_meter_value);
-                        if (!meter_value.sampledValue.empty()) {
-                            this->transaction_event_req(
-                                TransactionEventEnum::Updated, DateTime(), enhanced_transaction->get_transaction(),
-                                TriggerReasonEnum::MeterValueClock, enhanced_transaction->get_seq_no(), std::nullopt,
-                                std::nullopt, std::nullopt, std::vector<MeterValue>(1, meter_value), std::nullopt,
-                                this->is_offline(), std::nullopt);
-                        }
-                    } else if (!evse->has_active_transaction() and
-                               this->device_model
-                                   ->get_optional_value<bool>(ControllerComponentVariables::AlignedDataSendDuringIdle)
-                                   .value_or(false)) {
-                        transaction_active = false;
-                        if (!meter_value.sampledValue.empty()) {
-                            // J01.FR.14 this is the only case where we send a MeterValue.req
-                            this->meter_values_req(evse_id, std::vector<ocpp::v201::MeterValue>(1, meter_value));
-                        }
-                    }
-                }
-                // also send meter values for evseId 0 if no transactions are on going
-                if (!transaction_active) {
-                    auto _meter_value = this->get_meter_value();
-
-                    // this will apply configured measurands and possibly reduce the entries of sampledValue
-                    // according to the configuration
-                    const auto meter_value =
-                        get_latest_meter_value_filtered(_meter_value, ReadingContextEnum::Sample_Clock,
-                                                        ControllerComponentVariables::AlignedDataMeasurands);
-
-                    if (!meter_value.sampledValue.empty()) {
-                        this->meter_values_req(0, std::vector<ocpp::v201::MeterValue>(1, meter_value));
-                    }
-                }
-
-                this->update_aligned_data_interval();
-            },
-            next_timestamp.value().to_time_point());
+    auto interval =
+        std::chrono::seconds(this->device_model->get_value<int>(ControllerComponentVariables::AlignedDataInterval));
+    if (interval <= 0s) {
+        this->aligned_meter_values_timer.stop();
+        return;
     }
+
+    this->aligned_meter_values_timer.interval_starting_from(
+        [this]() {
+            // J01.FR.20 if AlignedDataSendDuringIdle is true and any transaction is active, don't send clock aligned
+            // meter values
+            if (this->device_model->get_optional_value<bool>(ControllerComponentVariables::AlignedDataSendDuringIdle)
+                    .value_or(false)) {
+                for (auto const& [evse_id, evse] : this->evses) {
+                    if (evse->has_active_transaction()) {
+                        return;
+                    }
+                }
+            }
+
+            const auto meter_value =
+                get_latest_meter_value_filtered(this->get_meter_value(), ReadingContextEnum::Sample_Clock,
+                                                ControllerComponentVariables::AlignedDataMeasurands);
+
+            if (!meter_value.sampledValue.empty()) {
+                this->meter_values_req(0, std::vector<ocpp::v201::MeterValue>(1, meter_value));
+            }
+
+            for (auto const& [evse_id, evse] : this->evses) {
+                if (evse->has_active_transaction()) {
+                    continue;
+                }
+
+                // this will apply configured measurands and possibly reduce the entries of sampledValue
+                // according to the configuration
+                const auto meter_value =
+                    get_latest_meter_value_filtered(evse->get_meter_value(), ReadingContextEnum::Sample_Clock,
+                                                    ControllerComponentVariables::AlignedDataMeasurands);
+
+                if (!meter_value.sampledValue.empty()) {
+                    // J01.FR.14 this is the only case where we send a MeterValue.req
+                    this->meter_values_req(evse_id, std::vector<ocpp::v201::MeterValue>(1, meter_value));
+                }
+            }
+        },
+        interval, std::chrono::floor<date::days>(date::utc_clock::to_sys(date::utc_clock::now())));
 }
 
 bool ChargePoint::any_transaction_active(const std::optional<EVSE>& evse) {
@@ -1064,6 +1111,9 @@ void ChargePoint::handle_variable_changed(const SetVariableData& set_variable_da
         } catch (const std::out_of_range& e) {
             EVLOG_error << "Out of range exception while updating the heartbeat interval: " << e.what();
         }
+    }
+    if (component_variable == ControllerComponentVariables::AlignedDataInterval) {
+        this->update_aligned_data_interval();
     }
     // TODO(piet): other special handling of changed variables can be added here...
 }
@@ -1186,7 +1236,7 @@ void ChargePoint::set_evse_connectors_unavailable(const std::unique_ptr<Evse>& e
 
 bool ChargePoint::is_offline() {
     bool offline = false; // false by default
-    if (this->websocket_connection_status == WebsocketConnectionStatusEnum::Disconnected) {
+    if (!this->websocket->is_connected()) {
         offline = true;
     }
     return offline;
@@ -1443,6 +1493,11 @@ void ChargePoint::handle_boot_notification_response(CallResult<BootNotificationR
             },
             retry_interval);
     }
+
+    if (this->callbacks.boot_notification_callback.has_value()) {
+        // call the registered boot notification callback
+        callbacks.boot_notification_callback.value()(this->registration_status);
+    }
 }
 
 void ChargePoint::handle_set_variables_req(Call<SetVariablesRequest> call) {
@@ -1547,13 +1602,19 @@ void ChargePoint::handle_get_base_report_req(Call<GetBaseReportRequest> call) {
     GetBaseReportResponse response;
     response.status = GenericDeviceModelStatusEnum::Accepted;
 
+    if (msg.reportBase == ReportBaseEnum::SummaryInventory) {
+        response.status = GenericDeviceModelStatusEnum::NotSupported;
+    }
+
     ocpp::CallResult<GetBaseReportResponse> call_result(response, call.uniqueId);
     this->send<GetBaseReportResponse>(call_result);
 
-    // TODO(piet): Propably split this up into several NotifyReport.req depending on ItemsPerMessage /
-    // BytesPerMessage
-    const auto report_data = this->device_model->get_report_data(msg.reportBase);
-    this->notify_report_req(msg.requestId, 0, report_data);
+    if (response.status == GenericDeviceModelStatusEnum::Accepted) {
+        // TODO(piet): Propably split this up into several NotifyReport.req depending on ItemsPerMessage /
+        // BytesPerMessage
+        const auto report_data = this->device_model->get_report_data(msg.reportBase);
+        this->notify_report_req(msg.requestId, 0, report_data);
+    }
 }
 
 void ChargePoint::handle_get_report_req(Call<GetReportRequest> call) {
@@ -1789,17 +1850,40 @@ void ChargePoint::handle_start_transaction_event_response(const EnhancedMessage<
             if (this->device_model->get_value<bool>(ControllerComponentVariables::StopTxOnInvalidId)) {
                 this->callbacks.stop_transaction_callback(evse_id, ReasonEnum::DeAuthorized);
             } else {
-                if (this->device_model->get_optional_value<bool>(ControllerComponentVariables::MaxEnergyOnInvalidId)
+                if (this->device_model->get_optional_value<int32_t>(ControllerComponentVariables::MaxEnergyOnInvalidId)
                         .has_value()) {
-                    // TODO(piet): E05.FR.03
                     // Energy delivery to the EV SHALL be allowed until the amount of energy specified in
                     // MaxEnergyOnInvalidId has been reached.
+                    this->evses.at(evse_id)->start_checking_max_energy_on_invalid_id();
                 } else {
                     this->callbacks.pause_charging_callback(evse_id);
                 }
             }
         }
     }
+}
+
+void ChargePoint::handle_get_transaction_status(const Call<GetTransactionStatusRequest> call) {
+    const auto msg = call.msg;
+
+    GetTransactionStatusResponse response;
+    response.messagesInQueue = false;
+
+    if (msg.transactionId.has_value()) {
+        if (this->get_transaction_evseid(msg.transactionId.value()).has_value()) {
+            response.ongoingIndicator = true;
+        } else {
+            response.ongoingIndicator = false;
+        }
+        if (this->message_queue->contains_transaction_messages(msg.transactionId.value())) {
+            response.messagesInQueue = true;
+        }
+    } else if (!this->message_queue->is_transaction_message_queue_empty()) {
+        response.messagesInQueue = true;
+    }
+
+    ocpp::CallResult<GetTransactionStatusResponse> call_result(response, call.uniqueId);
+    this->send<GetTransactionStatusResponse>(call_result);
 }
 
 void ChargePoint::handle_unlock_connector(Call<UnlockConnectorRequest> call) {
@@ -2106,7 +2190,8 @@ void ChargePoint::handle_change_availability_req(Call<ChangeAvailabilityRequest>
         evse_id = msg.evse.value().id;
     }
 
-    if (!transaction_active or is_already_in_state) {
+    if (!transaction_active or is_already_in_state or
+        (evse_id == 0 and msg.operationalStatus == OperationalStatusEnum::Operative)) {
         response.status = ChangeAvailabilityStatusEnum::Accepted;
         // remove any scheduled availability request in case no transaction is scheduled or the component is already in
         // correct state to override possible requests that have been scheduled before
@@ -2125,6 +2210,31 @@ void ChargePoint::handle_change_availability_req(Call<ChangeAvailabilityRequest>
     if (!transaction_active) {
         // execute change availability if possible
         this->callbacks.change_availability_callback(msg, true);
+    } else if (response.status == ChangeAvailabilityStatusEnum::Scheduled) {
+        if (evse_id == 0) {
+            // put all EVSEs to unavailable that do not have active transaction
+            for (auto const& [evse_id, evse] : this->evses) {
+                if (!evse->has_active_transaction()) {
+                    this->set_evse_connectors_unavailable(evse, false);
+                }
+            }
+        } else {
+            // put all connectors of the EVSE to unavailable that do not have active transaction
+            int number_of_connectors = this->evses.at(evse_id)->get_number_of_connectors();
+            for (int connector_id = 1; connector_id <= number_of_connectors; connector_id++) {
+                if (!this->evses.at(evse_id)->has_active_transaction(connector_id)) {
+                    const auto _request = [this, evse_id, connector_id]() {
+                        ChangeAvailabilityRequest request;
+                        request.operationalStatus = OperationalStatusEnum::Inoperative;
+                        request.evse = EVSE();
+                        request.evse->id = evse_id;
+                        request.evse->connectorId = connector_id;
+                        return request;
+                    }();
+                    this->callbacks.change_availability_callback(_request, false);
+                }
+            }
+        }
     }
 }
 
@@ -2155,6 +2265,75 @@ void ChargePoint::handle_firmware_update_req(Call<UpdateFirmwareRequest> call) {
             std::optional<CiString<255>>("Provided signing certificate is not valid!"), true,
             true); // critical because TC_L_05_CS requires this message to be sent
     }
+}
+
+void ChargePoint::handle_get_installed_certificate_ids_req(Call<GetInstalledCertificateIdsRequest> call) {
+    EVLOG_debug << "Received GetInstalledCertificateIdsRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
+    GetInstalledCertificateIdsResponse response;
+
+    const auto msg = call.msg;
+
+    // prepare argument for getRootCertificate
+    std::vector<ocpp::CertificateType> certificate_types;
+    if (msg.certificateType.has_value()) {
+        certificate_types = ocpp::evse_security_conversions::from_ocpp_v201(msg.certificateType.value());
+    } else {
+        certificate_types.push_back(CertificateType::CSMSRootCertificate);
+        certificate_types.push_back(CertificateType::MFRootCertificate);
+        certificate_types.push_back(CertificateType::MORootCertificate);
+        certificate_types.push_back(CertificateType::V2GCertificateChain);
+        certificate_types.push_back(CertificateType::V2GRootCertificate);
+    }
+
+    // retrieve installed certificates
+    const auto certificate_hash_data_chains = this->evse_security->get_installed_certificates(certificate_types);
+
+    // convert the common type back to the v201 type(s) for the response
+    std::vector<CertificateHashDataChain> certificate_hash_data_chain_v201;
+    for (const auto& certificate_hash_data_chain_entry : certificate_hash_data_chains) {
+        certificate_hash_data_chain_v201.push_back(
+            ocpp::evse_security_conversions::to_ocpp_v201(certificate_hash_data_chain_entry));
+    }
+
+    if (certificate_hash_data_chain_v201.empty()) {
+        response.status = GetInstalledCertificateStatusEnum::NotFound;
+    } else {
+        response.certificateHashDataChain = certificate_hash_data_chain_v201;
+        response.status = GetInstalledCertificateStatusEnum::Accepted;
+    }
+
+    ocpp::CallResult<GetInstalledCertificateIdsResponse> call_result(response, call.uniqueId);
+    this->send<GetInstalledCertificateIdsResponse>(call_result);
+}
+
+void ChargePoint::handle_install_certificate_req(Call<InstallCertificateRequest> call) {
+    EVLOG_debug << "Received InstallCertificateRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
+
+    const auto msg = call.msg;
+    InstallCertificateResponse response;
+
+    const auto result = this->evse_security->install_ca_certificate(
+        msg.certificate.get(), ocpp::evse_security_conversions::from_ocpp_v201(msg.certificateType));
+    response.status = ocpp::evse_security_conversions::to_ocpp_v201(result);
+
+    ocpp::CallResult<InstallCertificateResponse> call_result(response, call.uniqueId);
+    this->send<InstallCertificateResponse>(call_result);
+}
+
+void ChargePoint::handle_delete_certificate_req(Call<DeleteCertificateRequest> call) {
+    EVLOG_debug << "Received DeleteCertificateRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
+
+    const auto msg = call.msg;
+    DeleteCertificateResponse response;
+
+    const auto certificate_hash_data = ocpp::evse_security_conversions::from_ocpp_v201(msg.certificateHashData);
+
+    const auto status = this->evse_security->delete_certificate(certificate_hash_data);
+
+    response.status = ocpp::evse_security_conversions::to_ocpp_v201(status);
+
+    ocpp::CallResult<DeleteCertificateResponse> call_result(response, call.uniqueId);
+    this->send<DeleteCertificateResponse>(call_result);
 }
 
 void ChargePoint::handle_data_transfer_req(Call<DataTransferRequest> call) {

@@ -14,6 +14,7 @@
 
 #include <everest/timer.hpp>
 
+#include <ocpp/common/aligned_timer.hpp>
 #include <ocpp/common/charging_station_base.hpp>
 #include <ocpp/common/message_queue.hpp>
 #include <ocpp/common/schemas.hpp>
@@ -106,7 +107,7 @@ private:
     std::shared_ptr<ocpp::v16::DatabaseHandler> database_handler;
     std::unique_ptr<Everest::SteadyTimer> boot_notification_timer;
     std::unique_ptr<Everest::SteadyTimer> heartbeat_timer;
-    std::unique_ptr<Everest::SystemTimer> clock_aligned_meter_values_timer;
+    std::unique_ptr<ClockAlignedTimer> clock_aligned_meter_values_timer;
     std::vector<std::unique_ptr<Everest::SteadyTimer>> status_notification_timers;
     std::unique_ptr<Everest::SteadyTimer> ocsp_request_timer;
     std::unique_ptr<Everest::SteadyTimer> client_certificate_timer;
@@ -179,7 +180,7 @@ private:
     void init_state_machine(const std::map<int, ChargePointStatus>& connector_status_map);
     WebsocketConnectionOptions get_ws_connection_options();
     void message_callback(const std::string& message);
-    void handle_message(const json& json_message, MessageType message_type);
+    void handle_message(const EnhancedMessage<v16::MessageType>& message);
     bool allowed_to_send_message(json::array_t message_type);
     template <class T> bool send(Call<T> call);
     template <class T> std::future<EnhancedMessage<v16::MessageType>> send_async(Call<T> call);
@@ -246,7 +247,7 @@ private:
     void handleRemoteStopTransactionRequest(Call<RemoteStopTransactionRequest> call);
     void handleResetRequest(Call<ResetRequest> call);
     void handleStartTransactionResponse(CallResult<StartTransactionResponse> call_result);
-    void handleStopTransactionResponse(CallResult<StopTransactionResponse> call_result);
+    void handleStopTransactionResponse(const EnhancedMessage<v16::MessageType>& message);
     void handleUnlockConnectorRequest(Call<UnlockConnectorRequest> call);
     void handleHeartbeatResponse(CallResult<HeartbeatResponse> call_result);
 
