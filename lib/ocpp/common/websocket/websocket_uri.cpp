@@ -20,12 +20,17 @@ auto path_split_last_segment(std::string path) {
     };
 
     auto pos_last_slash = path.rfind("/");
+
     if (pos_last_slash == path.length() + 1) {
         path.pop_back();
         pos_last_slash = path.rfind("/");
     }
 
-    return result{std::string(path.substr(0, pos_last_slash)), std::string(path.substr(0, pos_last_slash))};
+    auto path_without_last_segment = std::string(path.substr(0, pos_last_slash));
+
+    auto last_segment = std::string(path.substr(pos_last_slash + 1));
+
+    return result{path_without_last_segment, last_segment};
 }
 
 Uri Uri::parse_and_validate(std::string uri, std::string chargepoint_id, int security_profile) {
