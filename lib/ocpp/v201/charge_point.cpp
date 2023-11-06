@@ -151,7 +151,7 @@ void ChargePoint::stop() {
     this->heartbeat_timer.stop();
     this->boot_notification_timer.stop();
     this->websocket_timer.stop();
-    this->websocket->disconnect(websocketpp::close::status::normal);
+    this->disconnect_websocket();
     this->message_queue->stop();
 }
 
@@ -164,9 +164,11 @@ void ChargePoint::connect_websocket() {
 }
 
 void ChargePoint::disconnect_websocket() {
-    if (this->websocket->is_connected()) {
-        this->disable_automatic_websocket_reconnects = true;
-        this->websocket->disconnect(websocketpp::close::status::normal);
+    if (this->websocket != nullptr) {
+        if (this->websocket->is_connected()) {
+            this->disable_automatic_websocket_reconnects = true;
+            this->websocket->disconnect(websocketpp::close::status::normal);
+        }
     }
 }
 
