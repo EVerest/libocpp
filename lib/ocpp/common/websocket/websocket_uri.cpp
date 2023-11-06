@@ -57,13 +57,19 @@ Uri Uri::parse_and_validate(std::string uri, std::string chargepoint_id, int sec
         switch (security_profile) { // `switch` to lint for unused enum-values
         case security::SecurityProfile::UNSECURED_TRANSPORT_WITH_BASIC_AUTHENTICATION:
             if (uri_temp.get_secure()) {
-                throw std::invalid_argument("secure schema in URI does not fit with insecure security-profile");
+                throw std::invalid_argument(
+                    "secure schema 'ws://' in URI does not fit with insecure security-profile = " +
+                    std::to_string(security_profile));
             }
+            break;
         case security::SecurityProfile::TLS_WITH_BASIC_AUTHENTICATION:
         case security::SecurityProfile::TLS_WITH_CLIENT_SIDE_CERTIFICATES:
             if (!uri_temp.get_secure()) {
-                throw std::invalid_argument("insecure schema in URI does not fit with secure security-profile");
+                throw std::invalid_argument(
+                    "insecure schema 'ws://' in URI does not fit with secure security-profile = " +
+                    std::to_string(security_profile));
             }
+            break;
         default:
             throw std::invalid_argument("`security_profile`-parameter has unknown value = " +
                                         std::to_string(security_profile));
