@@ -28,6 +28,15 @@ DatabaseHandler::~DatabaseHandler() {
 
 void DatabaseHandler::sql_init() {
     EVLOG_debug << "Running SQL initialization script.";
+
+    if (!fs::exists(this->sql_init_path)) {
+        EVLOG_AND_THROW(std::runtime_error("SQL initialization script does not exist"));
+    }
+
+    if (fs::file_size(this->sql_init_path) == 0) {
+        EVLOG_AND_THROW(std::runtime_error("SQL initialization script empty"));
+    }
+
     std::ifstream t(this->sql_init_path.string());
     std::stringstream init_sql;
 
