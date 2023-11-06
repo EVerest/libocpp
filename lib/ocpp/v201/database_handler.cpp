@@ -19,11 +19,7 @@ DatabaseHandler::DatabaseHandler(const fs::path& database_path, const fs::path& 
 };
 
 DatabaseHandler::~DatabaseHandler() {
-    if (sqlite3_close_v2(this->db) == SQLITE_OK) {
-        EVLOG_debug << "Successfully closed database: "<< this->database_file_path;
-    } else {
-        EVLOG_error << "Error closing database: " << sqlite3_errmsg(this->db);
-    }
+    close_connection();
 }
 
 void DatabaseHandler::sql_init() {
@@ -134,7 +130,7 @@ void DatabaseHandler::open_connection() {
 
 void DatabaseHandler::close_connection() {
     if (sqlite3_close(this->db) == SQLITE_OK) {
-        EVLOG_debug << "Successfully closed database file";
+        EVLOG_debug << "Successfully closed database: "<< this->database_file_path;
     } else {
         EVLOG_error << "Error closing database file: " << sqlite3_errmsg(this->db);
     }
