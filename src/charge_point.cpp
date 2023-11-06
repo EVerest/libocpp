@@ -120,7 +120,7 @@ int main(int argc, char* argv[]) {
     }
 
     if (!fs::is_regular_file("/tmp/certs/ca/mo/MO_CA_BUNDLE.pem")) {
-        fs::ofstream("/tmp/certs/ca/v2g/MO_CA_BUNDLE.pem");
+        fs::ofstream("/tmp/certs/ca/mo//MO_CA_BUNDLE.pem");
     }
 
     ocpp::SecurityConfiguration secConfig;
