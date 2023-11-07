@@ -43,7 +43,7 @@ private:
     MeterValue averaged_meter_values;
     std::mutex avg_meter_value_mutex;
     std::map<DataMeasurands, AlignedDataValues> aligned_meter_values;
-    bool is_avg_meas(const std::optional<ocpp::v201::MeasurandEnum>& meas);
+    bool is_avg_meas(const SampledValue& sample);
     void average_meter_value();
 };
 } // namespace v201

@@ -127,12 +127,13 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
     if (aligned_data_tx_ended_interval > 0s) {
         transaction->aligned_tx_ended_meter_values_timer.interval_starting_from(
             [this] {
-                auto meter_value = this->get_meter_value();
+                auto meter_value = this->aligned_data_tx_end.get_values();
                 for (auto& item : meter_value.sampledValue) {
                     item.context = ReadingContextEnum::Sample_Clock;
                 }
                 this->database_handler->transaction_metervalues_insert(this->transaction->transactionId.get(),
                                                                        meter_value);
+                this->aligned_data_tx_end.clear_values();
             },
             aligned_data_tx_ended_interval,
             std::chrono::floor<date::days>(date::utc_clock::to_sys(date::utc_clock::now())));
