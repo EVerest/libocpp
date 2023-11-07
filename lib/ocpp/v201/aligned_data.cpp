@@ -59,6 +59,7 @@ void AlignedData::average_meter_value() {
 }
 bool AlignedData::is_avg_meas(const SampledValue& sample) {
 
+    //TODO: check up on location values and how they impact the averaging
     if (sample.measurand.has_value() && sample.phase.has_value()) {
         if ((sample.measurand == MeasurandEnum::Current_Import) || (sample.measurand == MeasurandEnum::Voltage) ||
             (sample.measurand == MeasurandEnum::Power_Active_Import))

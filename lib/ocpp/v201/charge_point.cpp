@@ -385,8 +385,7 @@ void ChargePoint::on_meter_value(const int32_t evse_id, const MeterValue& meter_
     if (evse_id == 0) {
         std::lock_guard<std::mutex> lk(this->meter_value_mutex);
         // if evseId = 0 then store in the chargepoint metervalues
-        this->meter_value = meter_value;
-        this->aligned_data_idle.set_values(meter_value);
+        this->aligned_data_evse0.set_values(meter_value);
     } else {
         this->evses.at(evse_id)->on_meter_value(meter_value);
     }
@@ -394,7 +393,7 @@ void ChargePoint::on_meter_value(const int32_t evse_id, const MeterValue& meter_
 
 MeterValue ChargePoint::get_meter_value() {
     std::lock_guard<std::mutex> lk(this->meter_value_mutex);
-    return this->meter_value;
+    return this->aligned_data_evse0.get_values();
 }
 
 std::string ChargePoint::get_customer_information(const std::optional<CertificateHashDataType> customer_certificate,
@@ -1099,6 +1098,7 @@ void ChargePoint::update_aligned_data_interval() {
                 }
             }
 
+            // send evseID = 0 values
             const auto meter_value =
                 get_latest_meter_value_filtered(this->get_meter_value(), ReadingContextEnum::Sample_Clock,
                                                 ControllerComponentVariables::AlignedDataMeasurands);
