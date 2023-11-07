@@ -128,9 +128,7 @@ void OcspUpdater::execute_ocsp_update() {
         }
 
         if (!response.ocspResult.has_value()) {
-            throw OcspUpdateFailedException(std::string("CSMS returned empty response for serial no. ") +
-                                            ocsp_request.serialNumber + " with issuer name hash " +
-                                            ocsp_request.issuerNameHash);
+            throw OcspUpdateFailedException(std::string("CSMS sent an Accepted GetCertificateStatusResponse with no ocspResult"));
         }
 
         ocpp::CertificateHashDataType hash_data;
