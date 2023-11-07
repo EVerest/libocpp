@@ -13,6 +13,7 @@
 #include <ocpp/v201/enums.hpp>
 #include <ocpp/v201/evse.hpp>
 #include <ocpp/v201/ocpp_types.hpp>
+#include <ocpp/v201/ocsp_updater.h>
 #include <ocpp/v201/types.hpp>
 #include <ocpp/v201/utils.hpp>
 
@@ -186,6 +187,9 @@ private:
 
     // callback struct
     Callbacks callbacks;
+
+    /// \brief Handler for automatic or explicit OCSP cache updates
+    OcspUpdater ocsp_updater;
 
     // general message handling
     template <class T> bool send(Call<T> call);
