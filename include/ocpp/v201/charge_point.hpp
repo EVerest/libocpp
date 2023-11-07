@@ -6,6 +6,7 @@
 
 #include <ocpp/common/charging_station_base.hpp>
 
+#include <ocpp/v201/aligned_data.hpp>
 #include <ocpp/v201/ctrlr_component_variables.hpp>
 #include <ocpp/v201/database_handler.hpp>
 #include <ocpp/v201/device_model.hpp>
@@ -15,7 +16,6 @@
 #include <ocpp/v201/ocpp_types.hpp>
 #include <ocpp/v201/types.hpp>
 #include <ocpp/v201/utils.hpp>
-#include <ocpp/v201/aligned_data.hpp>
 
 #include "ocpp/v201/messages/Get15118EVCertificate.hpp"
 #include <ocpp/v201/messages/Authorize.hpp>

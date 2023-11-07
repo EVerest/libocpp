@@ -4,10 +4,10 @@
 #include <utility>
 
 #include <everest/logging.hpp>
+#include <ocpp/v201/aligned_data.hpp>
 #include <ocpp/v201/ctrlr_component_variables.hpp>
 #include <ocpp/v201/evse.hpp>
 #include <ocpp/v201/utils.hpp>
-#include <ocpp/v201/aligned_data.hpp>
 using namespace std::chrono_literals;
 
 namespace ocpp {
@@ -118,10 +118,10 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
                 }
                 this->transaction_meter_value_req(meter_value, this->transaction->get_transaction(),
                                                   transaction->get_seq_no(), this->transaction->reservation_id);
+                this->aligned_data_updated.clear_values();
             },
             aligned_data_tx_updated_interval,
             std::chrono::floor<date::days>(date::utc_clock::to_sys(date::utc_clock::now())));
-        this->aligned_data_updated.clear_values();
     }
 
     if (aligned_data_tx_ended_interval > 0s) {
@@ -211,7 +211,7 @@ void Evse::on_meter_value(const MeterValue& meter_value) {
     std::lock_guard<std::recursive_mutex> lk(this->meter_value_mutex);
     this->meter_value = meter_value;
     this->aligned_data_updated.set_values(meter_value);
-    // this->aligned_data_tx_end.set_values(meter_value);
+    this->aligned_data_tx_end.set_values(meter_value);
     this->check_max_energy_on_invalid_id();
 }
 
@@ -225,8 +225,8 @@ MeterValue Evse::get_idle_meter_value() {
     return this->aligned_data_updated.get_values();
 }
 
-void Evse::clear_meter_values()
-{
+void Evse::clear_meter_values() {
+    std::lock_guard<std::recursive_mutex> lk(this->meter_value_mutex);
     this->aligned_data_updated.clear_values();
 }
 

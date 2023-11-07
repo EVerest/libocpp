@@ -393,8 +393,8 @@ void ChargePoint::on_meter_value(const int32_t evse_id, const MeterValue& meter_
     std::uniform_real_distribution<double> dist(1, 15);
 
     for (auto& element : fake_value.sampledValue) {
-        // element.value = dist(mt);
-        element.value = 5.55555;
+        element.value = dist(mt);
+        // element.value = 5.55555;
     }
     //=========================================================================================
     if (evse_id == 0) {
@@ -405,7 +405,6 @@ void ChargePoint::on_meter_value(const int32_t evse_id, const MeterValue& meter_
     } else {
         this->evses.at(evse_id)->on_meter_value(fake_value);
     }
-
 }
 
 MeterValue ChargePoint::get_meter_value() {
@@ -1137,7 +1136,7 @@ void ChargePoint::update_aligned_data_interval() {
                 if (!meter_value.sampledValue.empty()) {
                     // J01.FR.14 this is the only case where we send a MeterValue.req
                     this->meter_values_req(evse_id, std::vector<ocpp::v201::MeterValue>(1, meter_value));
-                    //clear the values
+                    // clear the values
                     evse->clear_meter_values();
                 }
             }

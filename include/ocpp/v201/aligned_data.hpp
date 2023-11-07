@@ -26,10 +26,24 @@ private:
         double sum;
         int num_elements;
     };
-    MeterValue averaged_meter_values;
-    AlignedDataValues aligned_meter_values[static_cast<int>(MeasurandEnum::Voltage)];
+    struct DataMeasurands {
+        MeasurandEnum measurand;
+        PhaseEnum phase;
 
-    bool is_avg_meas(const std::optional < ocpp::v201::MeasurandEnum>& meas);
+        // Define a comparison operator for the struct
+        bool operator<(const DataMeasurands& other) const {
+            // Compare based on name, then age
+            if (measurand != other.measurand) {
+                return measurand < other.measurand;
+            }
+            return phase < other.phase;
+        }
+    };
+
+    MeterValue averaged_meter_values;
+    std::mutex avg_meter_value_mutex;
+    std::map<DataMeasurands, AlignedDataValues> aligned_meter_values;
+    bool is_avg_meas(const std::optional<ocpp::v201::MeasurandEnum>& meas);
     void average_meter_value();
 };
 } // namespace v201
