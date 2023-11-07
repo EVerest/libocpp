@@ -4,7 +4,7 @@
 #include <utility>
 
 #include <everest/logging.hpp>
-#include <ocpp/v201/aligned_data.hpp>
+#include <ocpp/v201/average_meter_values.hpp>
 #include <ocpp/v201/ctrlr_component_variables.hpp>
 #include <ocpp/v201/evse.hpp>
 #include <ocpp/v201/utils.hpp>
@@ -112,7 +112,11 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
     if (aligned_data_tx_updated_interval > 0s) {
         transaction->aligned_tx_updated_meter_values_timer.interval_starting_from(
             [this] {
-                auto meter_value = this->aligned_data_updated.get_values();
+                if (this->device_model.get_optional_value<bool>(ControllerComponentVariables::AlignedDataSendDuringIdle)
+                        .value_or(false)) {
+                    return;
+                }
+                auto meter_value = this->aligned_data_updated.retrieve_processed_values();
                 for (auto& item : meter_value.sampledValue) {
                     item.context = ReadingContextEnum::Sample_Clock;
                 }
@@ -127,7 +131,7 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
     if (aligned_data_tx_ended_interval > 0s) {
         transaction->aligned_tx_ended_meter_values_timer.interval_starting_from(
             [this] {
-                auto meter_value = this->aligned_data_tx_end.get_values();
+                auto meter_value = this->aligned_data_tx_end.retrieve_processed_values();
                 for (auto& item : meter_value.sampledValue) {
                     item.context = ReadingContextEnum::Sample_Clock;
                 }
@@ -222,11 +226,10 @@ MeterValue Evse::get_meter_value() {
 }
 
 MeterValue Evse::get_idle_meter_value() {
-    std::lock_guard<std::recursive_mutex> lk(this->meter_value_mutex);
-    return this->aligned_data_updated.get_values();
+    return this->aligned_data_updated.retrieve_processed_values();
 }
 
-void Evse::clear_meter_values() {
+void Evse::clear_idle_meter_values() {
     std::lock_guard<std::recursive_mutex> lk(this->meter_value_mutex);
     this->aligned_data_updated.clear_values();
 }

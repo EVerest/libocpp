@@ -13,25 +13,30 @@
 #include <vector>
 namespace ocpp {
 namespace v201 {
-class AlignedData {
+class AverageMeterValues {
 
 public:
-    AlignedData();
-    void clear_values();
+    AverageMeterValues();
+    /// @brief Set the meter values into the local object for processing
+    /// @param meter_value MeterValue
     void set_values(const MeterValue& meter_value);
-    MeterValue get_values();
+    /// @brief retrive the processed values
+    /// @return MeterValue type
+    MeterValue retrieve_processed_values();
+    /// @brief Manually clear the local object meter values
+    void clear_values();
 
 private:
-    struct AlignedDataValues {
+    struct MeterValueCalc {
         double sum;
         int num_elements;
     };
-    struct DataMeasurands {
+    struct MeterValueMeasurands {
         MeasurandEnum measurand;
         PhaseEnum phase;
 
         // Define a comparison operator for the struct
-        bool operator<(const DataMeasurands& other) const {
+        bool operator<(const MeterValueMeasurands& other) const {
             // Compare based on name, then age
             if (measurand != other.measurand) {
                 return measurand < other.measurand;
@@ -42,7 +47,7 @@ private:
 
     MeterValue averaged_meter_values;
     std::mutex avg_meter_value_mutex;
-    std::map<DataMeasurands, AlignedDataValues> aligned_meter_values;
+    std::map<MeterValueMeasurands, MeterValueCalc> aligned_meter_values;
     bool is_avg_meas(const SampledValue& sample);
     void average_meter_value();
 };
