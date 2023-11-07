@@ -128,7 +128,7 @@ void OcspUpdater::execute_ocsp_update() {
         }
 
         if (!response.ocspResult.has_value()) {
-            throw OcspUpdateFailedException(std::string("CSMS sent an Accepted GetCertificateStatusResponse with no ocspResult"));
+            throw OcspUpdateFailedException(std::string("CSMS sent an Accepted GetCertificateStatusResponse with no ocspResult"), true);
         }
 
         ocpp::CertificateHashDataType hash_data;

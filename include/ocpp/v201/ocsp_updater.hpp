@@ -22,7 +22,7 @@ public:
         return this->reason.c_str();
     }
 
-    explicit OcspUpdateFailedException(std::string reason, bool can_be_retried = false) :
+    explicit OcspUpdateFailedException(std::string reason, bool can_be_retried) :
         reason(std::move(reason)), _allows_retry(can_be_retried) {
     }
 
