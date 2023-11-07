@@ -724,19 +724,18 @@ void ChargePoint::init_websocket() {
 
 void ChargePoint::init_certificate_expiration_check_timers() {
 
-    auto csms_certificate_check =
-        [this]() {
-            EVLOG_info << "Checking if CSMS client certificate has expired";
-            int expiry_days_count = this->evse_security->get_leaf_expiry_days_count(
-                ocpp::CertificateSigningUseEnum::ChargingStationCertificate);
-            if (expiry_days_count < 30) {
-                EVLOG_info << "CSMS client certificate is invalid in " << expiry_days_count
-                           << " days. Requesting new certificate with certificate signing request";
-                this->sign_certificate_req(ocpp::CertificateSigningUseEnum::ChargingStationCertificate);
-            } else {
-                EVLOG_info << "CSMS client certificate is still valid.";
-            }
-        };
+    auto csms_certificate_check = [this]() {
+        EVLOG_info << "Checking if CSMS client certificate has expired";
+        int expiry_days_count = this->evse_security->get_leaf_expiry_days_count(
+            ocpp::CertificateSigningUseEnum::ChargingStationCertificate);
+        if (expiry_days_count < 30) {
+            EVLOG_info << "CSMS client certificate is invalid in " << expiry_days_count
+                       << " days. Requesting new certificate with certificate signing request";
+            this->sign_certificate_req(ocpp::CertificateSigningUseEnum::ChargingStationCertificate);
+        } else {
+            EVLOG_info << "CSMS client certificate is still valid.";
+        }
+    };
     csms_certificate_check();
     this->client_certificate_expiration_check_timer.interval(csms_certificate_check,
                                                              CLIENT_CERTIFICATE_EXPIRATION_CHECK_TIMER_INTERVAL);
