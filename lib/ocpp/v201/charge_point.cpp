@@ -16,6 +16,8 @@ namespace v201 {
 const auto DEFAULT_BOOT_NOTIFICATION_RETRY_INTERVAL = std::chrono::seconds(30);
 const auto WEBSOCKET_INIT_DELAY = std::chrono::seconds(2);
 const auto INITIAL_CERTIFICATE_REQUESTS_DELAY = std::chrono::seconds(60);
+const auto CLIENT_CERTIFICATE_EXPIRATION_CHECK_TIMER_INTERVAL = std::chrono::hours(12);
+const auto V2G_CERTIFICATE_EXPIRATION_CHECK_TIMER_INTERVAL = std::chrono::hours(12);
 
 bool Callbacks::all_callbacks_valid() const {
     return this->is_reset_allowed_callback != nullptr and this->reset_callback != nullptr and
@@ -140,6 +142,7 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
 void ChargePoint::start(BootReasonEnum bootreason) {
     this->bootreason = bootreason;
     this->start_websocket();
+
     this->boot_notification_req(bootreason);
     // FIXME(piet): Run state machine with correct initial state
 }
@@ -668,6 +671,8 @@ void ChargePoint::init_websocket() {
             }
         }
         this->time_disconnected = std::chrono::time_point<std::chrono::steady_clock>();
+
+        this->init_certificate_expiration_check_timers();
     });
 
     this->websocket->register_disconnected_callback([this]() {
@@ -690,6 +695,9 @@ void ChargePoint::init_websocket() {
             }
             // Get the current time point using steady_clock
             this->time_disconnected = std::chrono::steady_clock::now();
+
+            this->client_certificate_expiration_check_timer.stop();
+            this->v2g_certificate_expiration_check_timer.stop();
         }
     });
 
@@ -712,6 +720,42 @@ void ChargePoint::init_websocket() {
         });
 
     this->websocket->register_message_callback([this](const std::string& message) { this->message_callback(message); });
+}
+
+void ChargePoint::init_certificate_expiration_check_timers() {
+
+    auto csms_certificate_check =
+        [this]() {
+            EVLOG_info << "Checking if CSMS client certificate has expired";
+            int expiry_days_count = this->evse_security->get_leaf_expiry_days_count(
+                ocpp::CertificateSigningUseEnum::ChargingStationCertificate);
+            if (expiry_days_count < 30) {
+                EVLOG_info << "CSMS client certificate is invalid in " << expiry_days_count
+                           << " days. Requesting new certificate with certificate signing request";
+                this->sign_certificate_req(ocpp::CertificateSigningUseEnum::ChargingStationCertificate);
+            } else {
+                EVLOG_info << "CSMS client certificate is still valid.";
+            }
+        };
+    csms_certificate_check();
+    this->client_certificate_expiration_check_timer.interval(csms_certificate_check,
+                                                             CLIENT_CERTIFICATE_EXPIRATION_CHECK_TIMER_INTERVAL);
+
+    auto v2g_certificate_check = [this]() {
+        EVLOG_info << "Checking if V2GCertificate has expired";
+        int expiry_days_count =
+            this->evse_security->get_leaf_expiry_days_count(ocpp::CertificateSigningUseEnum::V2GCertificate);
+        if (expiry_days_count < 30) {
+            EVLOG_info << "V2GCertificate is invalid in " << expiry_days_count
+                       << " days. Requesting new certificate with certificate signing request";
+            this->sign_certificate_req(ocpp::CertificateSigningUseEnum::V2GCertificate);
+        } else {
+            EVLOG_info << "V2GCertificate is still valid.";
+        }
+    };
+    v2g_certificate_check();
+    this->v2g_certificate_expiration_check_timer.interval(v2g_certificate_check,
+                                                          V2G_CERTIFICATE_EXPIRATION_CHECK_TIMER_INTERVAL);
 }
 
 WebsocketConnectionOptions ChargePoint::get_ws_connection_options(const int32_t configuration_slot) {
