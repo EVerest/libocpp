@@ -19,14 +19,18 @@ auto path_split_last_segment(std::string path) {
         std::string last_segment;
     };
 
+    if (path == "/") {
+        return result{"/", ""};
+    }
     auto pos_last_slash = path.rfind("/");
 
-    if (pos_last_slash == path.length() + 1) {
+    if (pos_last_slash == path.length() - 1) {
         path.pop_back();
-        pos_last_slash = path.rfind("/");
+        pos_last_slash -= 1;
     }
 
     auto path_without_last_segment = std::string(path.substr(0, pos_last_slash));
+    std::string last_segment = std::string(path.substr(pos_last_slash + 1));
 
     auto last_segment = std::string(path.substr(pos_last_slash + 1));
 
@@ -79,11 +83,9 @@ Uri Uri::parse_and_validate(std::string uri, std::string chargepoint_id, int sec
     auto path = uri_temp.get_resource();
 
     // backwards-compatibility: remove chargepoint-ID from URI, if given as last path-segment
-    if (path != "/") {
-        const auto [path_without_base, base] = path_split_last_segment(path);
-        if (base == chargepoint_id) {
-            path = path_without_base;
-        }
+    const auto [path_without_base, base] = path_split_last_segment(path);
+    if (base == chargepoint_id) {
+        path = path_without_base;
     }
 
     return Uri(uri_temp.get_secure(), uri_temp.get_host(), uri_temp.get_port(), path, chargepoint_id);

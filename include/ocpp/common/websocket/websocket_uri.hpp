@@ -40,7 +40,8 @@ public:
 
     websocketpp::uri get_websocketpp_uri() { // FIXME: wrap needed `websocketpp:uri` functionality inside `Uri`
         return websocketpp::uri(this->secure, this->host, this->port,
-                                this->path_without_chargepoint_id + "/" + this->chargepoint_id);
+                                this->path_without_chargepoint_id /* is normalized with ending slash */ +
+                                    this->chargepoint_id);
     }
 
 private:
