@@ -13,7 +13,8 @@
 
 namespace ocpp::v201 {
 
-const std::chrono::duration OCSP_CACHE_UPDATE_INTERVAL = std::chrono::hours(168);
+const std::chrono::duration OCSP_CACHE_UPDATE_INTERVAL = std::chrono::hours(167);
+const std::chrono::duration OCSP_CACHE_UPDATE_RETRY_INTERVAL = std::chrono::seconds(30);
 
 class OcspUpdateFailedException : public std::exception {
 public:
