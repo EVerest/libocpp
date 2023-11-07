@@ -12,7 +12,9 @@
 #include <ocpp/v201/ocsp_updater.h>
 
 namespace ocpp::v201 {
-    OcspUpdater::OcspUpdater(std::shared_ptr<EvseSecurity> evse_security) : evse_security(std::move(evse_security)) {
+    OcspUpdater::OcspUpdater(std::shared_ptr<EvseSecurity> evse_security, ChargePoint* charge_point) :
+    evse_security(std::move(evse_security)),
+    charge_point(charge_point) {
         // Set the current deadline to "now" - no need to lock the mutex, as the updater thread is not running yet
         this->update_deadline = std::chrono::steady_clock::now();
         // Now create the updater thread - because the deadline is in the past, it will immediately attempt an update

@@ -34,10 +34,13 @@ private:
     const bool _allows_retry;
 };
 
+// Forward declaration to avoid include loops
+class ChargePoint;
+
 class OcspUpdater {
 public:
     OcspUpdater() = delete;
-    explicit OcspUpdater(std::shared_ptr<EvseSecurity> evse_security);
+    explicit OcspUpdater(std::shared_ptr<EvseSecurity> evse_security, ChargePoint* charge_point);
 
     // Wake up the updater thread and tell it to update
     // Used e.g. when a new charging station cert was just installed
@@ -53,6 +56,8 @@ private:
     // Worker thread responsible for the updates
     std::thread updater_thread;
     std::shared_ptr<EvseSecurity> evse_security;
+    // This pointer will not go stale, because the OcspUpdater is part of the ChargePoint and will not outlive it
+    ChargePoint* charge_point;
 
     void updater_thread_loop();
     // Helper function that actually performs the OCSP update. Only called within updater_thread_loop().

@@ -55,7 +55,7 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
     upload_log_status(UploadLogStatusEnum::Idle),
     bootreason(BootReasonEnum::PowerUp),
     callbacks(callbacks),
-    ocsp_updater(OcspUpdater(this->evse_security)) {
+    ocsp_updater(OcspUpdater(this->evse_security, this)) {
     // Make sure the received callback struct is completely filled early before we actually start running
     if (!this->callbacks.all_callbacks_valid()) {
         EVLOG_AND_THROW(std::invalid_argument("All non-optional callbacks must be supplied"));
