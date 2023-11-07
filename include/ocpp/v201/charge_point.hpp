@@ -13,7 +13,7 @@
 #include <ocpp/v201/enums.hpp>
 #include <ocpp/v201/evse.hpp>
 #include <ocpp/v201/ocpp_types.hpp>
-#include <ocpp/v201/ocsp_updater.h>
+#include <ocpp/v201/ocsp_updater.hpp>
 #include <ocpp/v201/types.hpp>
 #include <ocpp/v201/utils.hpp>
 
@@ -191,10 +191,6 @@ private:
     /// \brief Handler for automatic or explicit OCSP cache updates
     OcspUpdater ocsp_updater;
 
-    // general message handling
-    template <class T> bool send(Call<T> call);
-    template <class T> std::future<EnhancedMessage<v201::MessageType>> send_async(Call<T> call);
-    template <class T> bool send(CallResult<T> call_result);
     bool send(CallError call_error);
 
     // internal helper functions
@@ -365,6 +361,19 @@ private:
     void handle_data_transfer_req(Call<DataTransferRequest> call);
 
 public:
+    // general message handling
+    template <class T> bool send(ocpp::Call<T> call) {
+        this->message_queue->push(call);
+        return true;
+    }
+    template <class T> std::future<EnhancedMessage<v201::MessageType>> send_async(ocpp::Call<T> call) {
+        return this->message_queue->push_async(call);
+    }
+    template <class T> bool send(ocpp::CallResult<T> call_result) {
+        this->message_queue->push(call_result);
+        return true;
+    }
+
     /// \brief Construct a new ChargePoint object
     /// \param evse_connector_structure Map that defines the structure of EVSE and connectors of the chargepoint. The
     /// key represents the id of the EVSE and the value represents the number of connectors for this EVSE. The ids of

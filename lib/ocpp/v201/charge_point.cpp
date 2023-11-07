@@ -138,6 +138,7 @@ void ChargePoint::start(BootReasonEnum bootreason) {
     this->bootreason = bootreason;
     this->start_websocket();
     this->boot_notification_req(bootreason);
+    this->ocsp_updater.start();
     // FIXME(piet): Run state machine with correct initial state
 }
 
@@ -529,20 +530,6 @@ void ChargePoint::on_log_status_notification(UploadLogStatusEnum status, int32_t
 
 void ChargePoint::on_security_event(const CiString<50>& event_type, const std::optional<CiString<255>>& tech_info) {
     this->security_event_notification_req(event_type, tech_info, false, false);
-}
-
-template <class T> bool ChargePoint::send(ocpp::Call<T> call) {
-    this->message_queue->push(call);
-    return true;
-}
-
-template <class T> std::future<EnhancedMessage<v201::MessageType>> ChargePoint::send_async(ocpp::Call<T> call) {
-    return this->message_queue->push_async(call);
-}
-
-template <class T> bool ChargePoint::send(ocpp::CallResult<T> call_result) {
-    this->message_queue->push(call_result);
-    return true;
 }
 
 bool ChargePoint::send(CallError call_error) {

@@ -2,14 +2,15 @@
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
 #include <chrono>
-#include <stdexcept>
 #include <thread>
-#include <mutex>
 #include <condition_variable>
 
 #include <everest/logging.hpp>
 
-#include <ocpp/v201/ocsp_updater.h>
+#include <ocpp/v201/charge_point.hpp>
+#include <ocpp/v201/messages/GetCertificateStatus.hpp>
+#include <ocpp/v201/ocpp_types.hpp>
+#include <ocpp/v201/ocsp_updater.hpp>
 
 namespace ocpp::v201 {
     OcspUpdater::OcspUpdater(std::shared_ptr<EvseSecurity> evse_security, ChargePoint* charge_point) :
@@ -17,7 +18,10 @@ namespace ocpp::v201 {
     charge_point(charge_point) {
         // Set the current deadline to "now" - no need to lock the mutex, as the updater thread is not running yet
         this->update_deadline = std::chrono::steady_clock::now();
-        // Now create the updater thread - because the deadline is in the past, it will immediately attempt an update
+    }
+
+    void OcspUpdater::start() {
+        // Create the updater thread - because the deadline is in the past, it will immediately attempt an update
         this->updater_thread = std::thread([this] {
             this->updater_thread_loop();
         });
@@ -52,7 +56,69 @@ namespace ocpp::v201 {
     }
 
     void OcspUpdater::execute_ocsp_update() {
-        EVLOG_info << "Updating OCSP cache!";
-        // TODO
+        auto ocsp_request_list = this->evse_security->get_ocsp_request_data();
+        std::vector<std::pair<ocpp::CertificateHashDataType, std::string>> ocsp_responses;
+
+        EVLOG_info << "libocpp: Updating OCSP cache on " << ocsp_request_list.size() << " certificates";
+
+        for (auto &ocsp_request : ocsp_request_list) {
+            GetCertificateStatusRequest request;
+            switch(ocsp_request.hashAlgorithm) {
+            case HashAlgorithmEnumType::SHA256:
+                request.ocspRequestData.hashAlgorithm = ocpp::v201::HashAlgorithmEnum::SHA256;
+                break;
+            case HashAlgorithmEnumType::SHA384:
+                request.ocspRequestData.hashAlgorithm = ocpp::v201::HashAlgorithmEnum::SHA384;
+                break;
+            case HashAlgorithmEnumType::SHA512:
+                request.ocspRequestData.hashAlgorithm = ocpp::v201::HashAlgorithmEnum::SHA512;
+                break;
+            }
+            request.ocspRequestData.issuerKeyHash = ocsp_request.issuerKeyHash;
+            request.ocspRequestData.issuerNameHash = ocsp_request.issuerNameHash;
+            request.ocspRequestData.serialNumber = ocsp_request.serialNumber;
+            request.ocspRequestData.responderURL = ocsp_request.responderUrl;
+
+            MessageId message_id = MessageId(to_string(this->uuid_generator()));
+
+            auto response_future = this->charge_point->send_async<GetCertificateStatusRequest>(
+                ocpp::Call<GetCertificateStatusRequest>(request, message_id));
+            const auto enhanced_response = response_future.get();
+
+            if (enhanced_response.messageType != MessageType::GetCertificateStatusResponse) {
+                throw OcspUpdateFailedException("Got unexpected message type from CSMS", true);
+            }
+            ocpp::CallResult<GetCertificateStatusResponse> call_result = enhanced_response.message;
+            const auto response = call_result.msg;
+
+            if (response.status != GetCertificateStatusEnum::Accepted) {
+                std::string error_msg =
+                    (response.statusInfo.has_value()) ? response.statusInfo.value().reasonCode.get()
+                                                      : "(No status info provided)";
+                throw OcspUpdateFailedException(
+                    std::string("CSMS rejected certificate status update: ") + error_msg, true);
+            }
+
+            if (!response.ocspResult.has_value()) {
+                throw OcspUpdateFailedException(
+                    std::string("CSMS returned empty response for serial no. ")
+                    + ocsp_request.serialNumber
+                    + " with issuer name hash "
+                    + ocsp_request.issuerNameHash);
+            }
+
+            ocpp::CertificateHashDataType hash_data;
+            hash_data.hashAlgorithm = ocsp_request.hashAlgorithm;
+            hash_data.issuerNameHash = ocsp_request.issuerNameHash;
+            hash_data.issuerKeyHash = ocsp_request.issuerKeyHash;
+            hash_data.serialNumber = ocsp_request.serialNumber;
+            ocsp_responses.emplace_back(std::pair(hash_data, response.ocspResult.value()));
+        }
+
+        for (auto &response : ocsp_responses) {
+            this->evse_security->update_ocsp_cache(response.first, response.second);
+        }
+
+        EVLOG_info << "libocpp: Done updating OCSP cache";
     }
 }

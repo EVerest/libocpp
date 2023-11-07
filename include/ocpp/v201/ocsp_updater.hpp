@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
-#ifndef OCPP_OCSP_UPDATER_H
-#define OCPP_OCSP_UPDATER_H
+#ifndef OCPP_OCSP_UPDATER_HPP
+#define OCPP_OCSP_UPDATER_HPP
 
 #include <chrono>
 #include <stdexcept>
@@ -42,6 +42,8 @@ public:
     OcspUpdater() = delete;
     explicit OcspUpdater(std::shared_ptr<EvseSecurity> evse_security, ChargePoint* charge_point);
 
+    void start();
+
     // Wake up the updater thread and tell it to update
     // Used e.g. when a new charging station cert was just installed
     void trigger_ocsp_cache_update();
@@ -58,6 +60,7 @@ private:
     std::shared_ptr<EvseSecurity> evse_security;
     // This pointer will not go stale, because the OcspUpdater is part of the ChargePoint and will not outlive it
     ChargePoint* charge_point;
+    boost::uuids::random_generator uuid_generator;
 
     void updater_thread_loop();
     // Helper function that actually performs the OCSP update. Only called within updater_thread_loop().
@@ -66,4 +69,4 @@ private:
 
 } // namespace ocpp::v201
 
-#endif // OCPP_OCSP_UPDATER_H
+#endif // OCPP_OCSP_UPDATER_HPP
