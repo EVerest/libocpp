@@ -5,9 +5,9 @@
 #define OCPP_OCSP_UPDATER_HPP
 
 #include <chrono>
+#include <mutex>
 #include <stdexcept>
 #include <thread>
-#include <mutex>
 
 #include <ocpp/common/evse_security.hpp>
 
