@@ -15,20 +15,35 @@
 namespace ocpp::v201 {
     OcspUpdater::OcspUpdater(std::shared_ptr<EvseSecurity> evse_security, ChargePoint* charge_point) :
     evse_security(std::move(evse_security)),
-    charge_point(charge_point) {
-        // Set the current deadline to "now" - no need to lock the mutex, as the updater thread is not running yet
-        this->update_deadline = std::chrono::steady_clock::now();
-    }
+    charge_point(charge_point),
+    update_deadline(std::chrono::steady_clock::now()) {}
 
     void OcspUpdater::start() {
+        this->update_ocsp_cache_lock.lock();
+        this->running = true;
+        this->update_ocsp_cache_lock.unlock();
         // Create the updater thread - because the deadline is in the past, it will immediately attempt an update
         this->updater_thread = std::thread([this] {
             this->updater_thread_loop();
         });
     }
 
+    void OcspUpdater::stop() {
+        this->update_ocsp_cache_lock.lock();
+        this->running = false;
+        this->update_ocsp_cache_lock.unlock();
+        // Wake up the updater thread
+        this->explicit_update_trigger.notify_one();
+        // wait for updater thread to exit
+        this->updater_thread.join();
+    }
+
     void OcspUpdater::trigger_ocsp_cache_update() {
         this->update_ocsp_cache_lock.lock();
+        if (!this->running) {
+            this->update_ocsp_cache_lock.unlock();
+            throw std::logic_error("Called trigger_ocsp_cache_update, but the OcspUpdater is not running.");
+        }
         // Move the deadline to "now" so the updater thread doesn't think this is a spurious wakeup
         this->update_deadline = std::chrono::steady_clock::now();
         this->update_ocsp_cache_lock.unlock();
@@ -42,6 +57,10 @@ namespace ocpp::v201 {
             auto current_deadline = this->update_deadline;
             // Wait until the last known deadline expires, or until we're woken up by the trigger
             this->explicit_update_trigger.wait_until(lock, current_deadline);
+            // If the running variable is disabled, we should exit
+            if (!this->running) {
+                break;
+            }
             // Check that the current deadline has expired - this controls for spurious wakeups
             if(std::chrono::steady_clock::now() <= this->update_deadline) {
                 continue;
@@ -121,4 +140,9 @@ namespace ocpp::v201 {
 
         EVLOG_info << "libocpp: Done updating OCSP cache";
     }
-}
+
+    bool OcspUpdater::is_running() const {
+        return this->running;
+    }
+
+    }

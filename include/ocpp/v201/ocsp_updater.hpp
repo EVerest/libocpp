@@ -43,6 +43,9 @@ public:
     explicit OcspUpdater(std::shared_ptr<EvseSecurity> evse_security, ChargePoint* charge_point);
 
     void start();
+    void stop();
+
+    [[nodiscard]] bool is_running() const;
 
     // Wake up the updater thread and tell it to update
     // Used e.g. when a new charging station cert was just installed
@@ -61,6 +64,8 @@ private:
     // This pointer will not go stale, because the OcspUpdater is part of the ChargePoint and will not outlive it
     ChargePoint* charge_point;
     boost::uuids::random_generator uuid_generator;
+    // Set this when starting and stopping the updater
+    bool running;
 
     void updater_thread_loop();
     // Helper function that actually performs the OCSP update. Only called within updater_thread_loop().

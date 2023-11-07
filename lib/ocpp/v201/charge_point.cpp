@@ -150,6 +150,7 @@ void ChargePoint::start_websocket() {
 }
 
 void ChargePoint::stop() {
+    this->ocsp_updater.stop();
     this->heartbeat_timer.stop();
     this->boot_notification_timer.stop();
     this->websocket_timer.stop();
