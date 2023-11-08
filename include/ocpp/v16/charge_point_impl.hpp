@@ -160,6 +160,8 @@ private:
     std::function<UpdateFirmwareStatusEnumType(const SignedUpdateFirmwareRequest msg)> signed_update_firmware_callback;
     std::function<void(const std::string& type, const std::string& tech_info)> security_event_callback;
 
+    std::function<void()> all_connectors_unavailable_callback;
+
     std::function<ReservationStatus(int32_t reservation_id, int32_t connector, ocpp::DateTime expiryDate,
                                     CiString<20> idTag, std::optional<CiString<20>> parent_id)>
         reserve_now_callback;
@@ -207,6 +209,10 @@ private:
     void firmware_status_notification(FirmwareStatus status);
     void log_status_notification(UploadLogStatusEnumType status, int requestId);
     void signed_firmware_update_status_notification(FirmwareStatusEnumType status, int requestId);
+
+    /// \brief Change all unoccupied connectors to unavailable, if a transaction is running schedule an availabilty change
+    /// If all connectors are unavailable signal to the firmware updater that installation of the firmware update can proceed
+    void change_all_connectors_to_unavailable_for_firmware_update();
 
     void stop_all_transactions();
     void stop_all_transactions(Reason reason);
@@ -634,6 +640,10 @@ public:
     /// \param callback
     void register_signed_update_firmware_callback(
         const std::function<UpdateFirmwareStatusEnumType(const SignedUpdateFirmwareRequest msg)>& callback);
+
+    /// \brief registers a \p callback function that is called when all connectors are set to unavailable.
+    /// This can be used to then trigger the installation of the firmware update
+    void register_all_connectors_unavailable_callback(const std::function<void()>& callback);
 
     /// \brief registers a \p callback function that can be used to upload logfiles. This callback
     /// should trigger a process of a log upload using the given parameters of the request. This process should

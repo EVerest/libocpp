@@ -806,6 +806,38 @@ void ChargePointImpl::reset_state_machine(const std::map<int, ChargePointStatus>
     this->status->reset(connector_status_map);
 }
 
+void ChargePointImpl::change_all_connectors_to_unavailable_for_firmware_update() {
+    std::map<int32_t, AvailabilityStatus> connector_availability_status;
+
+    bool transaction_running = false;
+
+    int32_t number_of_connectors = this->configuration->getNumberOfConnectors();
+    for (int32_t connector = 1; connector <= number_of_connectors; connector++) {
+        if (this->transaction_handler->transaction_active(connector)) {
+            transaction_running = true;
+            std::lock_guard<std::mutex> change_availability_lock(change_availability_mutex);
+            this->change_availability_queue[connector] = AvailabilityType::Inoperative;
+        } else {
+            connector_availability_status[connector] = AvailabilityStatus::Accepted;
+        }
+    }
+
+    for (const auto& [connector, availability_status] : connector_availability_status) {
+        this->database_handler->insert_or_update_connector_availability(connector, AvailabilityType::Inoperative);
+        if (connector == 0) {
+            this->status->submit_event(0, FSMEvent::ChangeAvailabilityToUnavailable);
+        } else if (this->disable_evse_callback != nullptr and availability_status == AvailabilityStatus::Accepted) {
+            this->disable_evse_callback(connector);
+        }
+    }
+
+    if (!transaction_running) {
+        if (this->all_connectors_unavailable_callback) {
+            this->all_connectors_unavailable_callback();
+        }
+    }
+}
+
 void ChargePointImpl::stop_all_transactions() {
     this->stop_all_transactions(Reason::Other);
 }
@@ -1757,6 +1789,11 @@ void ChargePointImpl::handleStopTransactionResponse(const EnhancedMessage<v16::M
     this->transaction_handler->erase_stopped_transaction(call_result.uniqueId.get());
     // when this transaction was stopped because of a Reset.req this signals that StopTransaction.conf has been received
     this->stop_transaction_cv.notify_one();
+
+    if (this->firmware_status == FirmwareStatus::Downloaded or
+        this->signed_firmware_status == FirmwareStatusEnumType::SignatureVerified) {
+        this->change_all_connectors_to_unavailable_for_firmware_update();
+    }
 }
 
 void ChargePointImpl::handleUnlockConnectorRequest(ocpp::Call<UnlockConnectorRequest> call) {
@@ -2328,6 +2365,10 @@ void ChargePointImpl::signed_firmware_update_status_notification(FirmwareStatusE
 
     if (status == FirmwareStatusEnumType::InvalidSignature) {
         this->securityEventNotification("InvalidFirmwareSignature", "", true);
+    }
+
+    if (this->signed_firmware_status == FirmwareStatusEnumType::SignatureVerified) {
+        this->change_all_connectors_to_unavailable_for_firmware_update();
     }
 }
 
@@ -3338,6 +3379,10 @@ void ChargePointImpl::firmware_status_notification(FirmwareStatus status) {
 
     ocpp::Call<FirmwareStatusNotificationRequest> call(req, this->message_queue->createMessageId());
     this->send_async<FirmwareStatusNotificationRequest>(call);
+
+    if (this->firmware_status == FirmwareStatus::Downloaded) {
+        this->change_all_connectors_to_unavailable_for_firmware_update();
+    }
 }
 
 void ChargePointImpl::register_enable_evse_callback(const std::function<bool(int32_t connector)>& callback) {
@@ -3412,6 +3457,10 @@ void ChargePointImpl::register_update_firmware_callback(
 void ChargePointImpl::register_signed_update_firmware_callback(
     const std::function<UpdateFirmwareStatusEnumType(const SignedUpdateFirmwareRequest msg)>& callback) {
     this->signed_update_firmware_callback = callback;
+}
+
+void ChargePointImpl::register_all_connectors_unavailable_callback(const std::function<void()>& callback) {
+    this->all_connectors_unavailable_callback = callback;
 }
 
 void ChargePointImpl::register_upload_logs_callback(const std::function<GetLogResponse(GetLogRequest req)>& callback) {
