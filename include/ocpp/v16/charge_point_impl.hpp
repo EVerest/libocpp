@@ -210,8 +210,9 @@ private:
     void log_status_notification(UploadLogStatusEnumType status, int requestId);
     void signed_firmware_update_status_notification(FirmwareStatusEnumType status, int requestId);
 
-    /// \brief Change all unoccupied connectors to unavailable, if a transaction is running schedule an availabilty change
-    /// If all connectors are unavailable signal to the firmware updater that installation of the firmware update can proceed
+    /// \brief Change all unoccupied connectors to unavailable, if a transaction is running schedule an availabilty
+    /// change If all connectors are unavailable signal to the firmware updater that installation of the firmware update
+    /// can proceed
     void change_all_connectors_to_unavailable_for_firmware_update();
 
     void stop_all_transactions();
