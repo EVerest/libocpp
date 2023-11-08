@@ -30,8 +30,6 @@ auto path_split_last_segment(std::string path) {
     }
 
     auto path_without_last_segment = std::string(path.substr(0, pos_last_slash + 1));
-    std::string last_segment = std::string(path.substr(pos_last_slash + 1));
-
     auto last_segment = std::string(path.substr(pos_last_slash + 1));
 
     return result{path_without_last_segment, last_segment};
