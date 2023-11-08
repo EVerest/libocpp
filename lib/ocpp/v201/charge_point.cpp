@@ -728,11 +728,11 @@ void ChargePoint::init_certificate_expiration_check_timers() {
     // Timers started with initial delays; callback functions are supposed to re-schedule on their own!
     this->client_certificate_expiration_check_timer.timeout(std::chrono::seconds(
         this->device_model
-            ->get_optional_value<int>(ControllerComponentVariables::ClientCertificateExpirationCheckInitialDelaySeconds)
+            ->get_optional_value<int>(ControllerComponentVariables::ClientCertificateExpireCheckInitialDelaySeconds)
             .value_or(60)));
     this->v2g_certificate_expiration_check_timer.timeout(std::chrono::seconds(
         this->device_model
-            ->get_optional_value<int>(ControllerComponentVariables::V2GCertificateExpirationCheckInitialDelaySeconds)
+            ->get_optional_value<int>(ControllerComponentVariables::V2GCertificateExpireCheckInitialDelaySeconds)
             .value_or(60)));
 }
 
@@ -2728,7 +2728,7 @@ void ChargePoint::scheduled_check_client_certificate_expiration() {
 
     this->client_certificate_expiration_check_timer.interval(std::chrono::seconds(
         this->device_model
-            ->get_optional_value<int>(ControllerComponentVariables::ClientCertificateExpirationCheckIntervalSeconds)
+            ->get_optional_value<int>(ControllerComponentVariables::ClientCertificateExpireCheckIntervalSeconds)
             .value_or(12 * 60 * 60)));
 }
 
@@ -2754,7 +2754,7 @@ void ChargePoint::scheduled_check_v2g_certificate_expiration() {
 
     this->v2g_certificate_expiration_check_timer.interval(std::chrono::seconds(
         this->device_model
-            ->get_optional_value<int>(ControllerComponentVariables::V2GCertificateExpirationCheckIntervalSeconds)
+            ->get_optional_value<int>(ControllerComponentVariables::V2GCertificateExpireCheckIntervalSeconds)
             .value_or(12 * 60 * 60)));
 }
 
