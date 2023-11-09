@@ -1579,7 +1579,8 @@ void ChargePoint::handle_certificate_signed_req(Call<CertificateSignedRequest> c
     this->send<CertificateSignedResponse>(call_result);
 
     if (result != ocpp::InstallCertificateResult::Accepted) {
-        this->security_event_notification_req("InvalidChargingStationCertificate", std::optional<CiString<255>>{}, true,
+        this->security_event_notification_req("InvalidChargingStationCertificate",
+                                              ocpp::conversions::install_certificate_result_to_string(result), true,
                                               true);
     }
 
@@ -2177,7 +2178,6 @@ void ChargePoint::handle_trigger_message(Call<TriggerMessageRequest> call) {
         break;
 
     case MessageTriggerEnum::SignChargingStationCertificate:
-        EVLOG_info << "got SignChargingStationCertificate";
         response.status = TriggerMessageStatusEnum::Accepted;
         break;
     case MessageTriggerEnum::SignV2GCertificate:
