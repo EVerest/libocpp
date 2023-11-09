@@ -317,6 +317,8 @@ private:
                                     const std::optional<IdToken> id_token,
                                     const std::optional<CiString<64>> customer_identifier);
 
+    void configure_message_logging_callback(const std::string& message_log_path);
+
     /* OCPP message requests */
 
     // Functional Block A: Security
@@ -569,6 +571,7 @@ public:
     /// \return DataTransferResponse contaning the result from CSMS
     DataTransferResponse data_transfer_req(const CiString<255>& vendorId, const CiString<50>& messageId,
                                            const std::string& data);
+
 };
 
 } // namespace v201
