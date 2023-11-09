@@ -1562,6 +1562,10 @@ void ChargePoint::handle_certificate_signed_req(Call<CertificateSignedRequest> c
 
     if (result == ocpp::InstallCertificateResult::Accepted) {
         response.status = CertificateSignedStatusEnum::Accepted;
+        // For V2G certificates, also trigger an OCSP cache update
+        if (cert_signing_use == ocpp::CertificateSigningUseEnum::V2GCertificate) {
+            this->ocsp_updater.trigger_ocsp_cache_update();
+        }
     }
 
     ocpp::CallResult<CertificateSignedResponse> call_result(response, call.uniqueId);
