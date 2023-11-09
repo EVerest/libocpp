@@ -20,8 +20,10 @@
 #include "ocpp/v201/messages/Get15118EVCertificate.hpp"
 #include <ocpp/v201/messages/Authorize.hpp>
 #include <ocpp/v201/messages/BootNotification.hpp>
+#include <ocpp/v201/messages/CertificateSigned.hpp>
 #include <ocpp/v201/messages/ChangeAvailability.hpp>
 #include <ocpp/v201/messages/ClearCache.hpp>
+#include <ocpp/v201/messages/CustomerInformation.hpp>
 #include <ocpp/v201/messages/DataTransfer.hpp>
 #include <ocpp/v201/messages/DeleteCertificate.hpp>
 #include <ocpp/v201/messages/GetBaseReport.hpp>
@@ -34,6 +36,7 @@
 #include <ocpp/v201/messages/Heartbeat.hpp>
 #include <ocpp/v201/messages/InstallCertificate.hpp>
 #include <ocpp/v201/messages/MeterValues.hpp>
+#include <ocpp/v201/messages/NotifyCustomerInformation.hpp>
 #include <ocpp/v201/messages/NotifyEvent.hpp>
 #include <ocpp/v201/messages/NotifyReport.hpp>
 #include <ocpp/v201/messages/RequestStartTransaction.hpp>
@@ -43,6 +46,7 @@
 #include <ocpp/v201/messages/SendLocalList.hpp>
 #include <ocpp/v201/messages/SetNetworkProfile.hpp>
 #include <ocpp/v201/messages/SetVariables.hpp>
+#include <ocpp/v201/messages/SignCertificate.hpp>
 #include <ocpp/v201/messages/StatusNotification.hpp>
 #include <ocpp/v201/messages/TransactionEvent.hpp>
 #include <ocpp/v201/messages/TriggerMessage.hpp>
@@ -115,8 +119,21 @@ struct Callbacks {
     std::function<void(const CiString<50>& event_type, const std::optional<CiString<255>>& tech_info)>
         security_event_callback;
 
-    /// @brief  Callback for when a bootnotification response is received
+    /// \brief  Callback for when a bootnotification response is received
     std::optional<std::function<void(const ocpp::v201::RegistrationStatusEnum& reg_status)>> boot_notification_callback;
+
+    /// \brief Callback function that can be used to get (human readable) customer information based on the given
+    /// arguments
+    std::optional<std::function<std::string(const std::optional<CertificateHashDataType> customer_certificate,
+                                            const std::optional<IdToken> id_token,
+                                            const std::optional<CiString<64>> customer_identifier)>>
+        get_customer_information_callback;
+
+    /// \brief Callback function that can be called to clear customer information based on the given arguments
+    std::optional<std::function<void(const std::optional<CertificateHashDataType> customer_certificate,
+                                     const std::optional<IdToken> id_token,
+                                     const std::optional<CiString<64>> customer_identifier)>>
+        clear_customer_information_callback;
 };
 
 /// \brief Class implements OCPP2.0.1 Charging Station
@@ -147,6 +164,8 @@ private:
 
     // time keeping
     std::chrono::time_point<std::chrono::steady_clock> heartbeat_request_time;
+
+    Everest::SteadyTimer certificate_signed_timer;
 
     // states
     RegistrationStatusEnum registration_status;
@@ -184,6 +203,9 @@ private:
     bool reset_scheduled;
     /// \brief If `reset_scheduled` is true and the reset is for a specific evse id, it will be stored in this member.
     std::set<int32_t> reset_scheduled_evseids;
+
+    int csr_attempt;
+    std::optional<ocpp::CertificateSigningUseEnum> awaited_certificate_signing_use_enum;
 
     // callback struct
     Callbacks callbacks;
@@ -273,19 +295,41 @@ private:
     ///
     void set_evse_connectors_unavailable(const std::unique_ptr<Evse>& evse, bool persist);
 
-    /// @brief Get the value optional offline flag
-    /// @return true if the charge point is offline. std::nullopt if it is online;
+    /// \brief Get the value optional offline flag
+    /// \return true if the charge point is offline. std::nullopt if it is online;
     bool is_offline();
 
     /// \brief Returns the last present meter value for evseId 0
     /// \return MeterValue
     MeterValue get_meter_value();
 
+    /// \brief Returns customer information based on the given arguments. This function also executes the
+    /// get_customer_information_callback in case it is present
+    /// \param customer_certificate Certificate of the customer this request refers to
+    /// \param id_token IdToken of the customer this request refers to
+    /// \param customer_identifier A (e.g. vendor specific) identifier of the customer this request refers to. This
+    /// field contains a custom identifier other than IdToken and Certificate
+    /// \return customer information
+    std::string get_customer_information(const std::optional<CertificateHashDataType> customer_certificate,
+                                         const std::optional<IdToken> id_token,
+                                         const std::optional<CiString<64>> customer_identifier);
+
+    /// \brief Clears customer information based on the given arguments. This function also executes the
+    /// clear_customer_information_callback in case it is present
+    /// \param customer_certificate Certificate of the customer this request refers to
+    /// \param id_token IdToken of the customer this request refers to
+    /// \param customer_identifier A (e.g. vendor specific) identifier of the customer this request refers to. This
+    /// field contains a custom identifier other than IdToken and Certificate
+    void clear_customer_information(const std::optional<CertificateHashDataType> customer_certificate,
+                                    const std::optional<IdToken> id_token,
+                                    const std::optional<CiString<64>> customer_identifier);
+
     /* OCPP message requests */
 
     // Functional Block A: Security
     void security_event_notification_req(const CiString<50>& event_type, const std::optional<CiString<255>>& tech_info,
                                          const bool triggered_internally, const bool critical);
+    void sign_certificate_req(const ocpp::CertificateSigningUseEnum& certificate_signing_use);
 
     // Functional Block B: Provisioning
     void boot_notification_req(const BootReasonEnum& reason);
@@ -314,10 +358,14 @@ private:
     void meter_values_req(const int32_t evse_id, const std::vector<MeterValue>& meter_values);
 
     // Functional Block N: Diagnostics
-    void handle_get_log_req(Call<GetLogRequest> call);
     void notify_event_req(const std::vector<EventData>& events);
+    void notify_customer_information_req(const std::string& data, const int32_t request_id);
 
     /* OCPP message handlers */
+
+    // Functional Block A: Security
+    void handle_certificate_signed_req(Call<CertificateSignedRequest> call);
+    void handle_sign_certificate_response(CallResult<SignCertificateResponse> call_result);
 
     // Functional Block B: Provisioning
     void handle_boot_notification_response(CallResult<BootNotificationResponse> call_result);
@@ -356,6 +404,10 @@ private:
     void handle_get_installed_certificate_ids_req(Call<GetInstalledCertificateIdsRequest> call);
     void handle_install_certificate_req(Call<InstallCertificateRequest> call);
     void handle_delete_certificate_req(Call<DeleteCertificateRequest> call);
+
+    // Functional Block N: Diagnostics
+    void handle_get_log_req(Call<GetLogRequest> call);
+    void handle_customer_information_req(Call<CustomerInformationRequest> call);
 
     // Functional Block P: DataTransfer
     void handle_data_transfer_req(Call<DataTransferRequest> call);
