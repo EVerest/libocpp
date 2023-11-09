@@ -724,10 +724,18 @@ void ChargePoint::init_websocket() {
 void ChargePoint::init_certificate_expiration_check_timers() {
 
     // Timers started with initial delays; callback functions are supposed to re-schedule on their own!
-    this->client_certificate_expiration_check_timer.timeout(std::chrono::seconds(
-        this->device_model
-            ->get_optional_value<int>(ControllerComponentVariables::ClientCertificateExpireCheckInitialDelaySeconds)
-            .value_or(60)));
+
+    // Client Certificate only needs to be checked for SecurityProfile 3; if SecurityProfile changes, timers get
+    // re-initialized at reconnect
+    if (this->device_model->get_value<int>(ControllerComponentVariables::SecurityProfile) == 3) {
+        this->client_certificate_expiration_check_timer.timeout(std::chrono::seconds(
+            this->device_model
+                ->get_optional_value<int>(ControllerComponentVariables::ClientCertificateExpireCheckInitialDelaySeconds)
+                .value_or(60)));
+    }
+
+    // V2G Certificate timer is started in any case; condition (V2GCertificateInstallationEnabled) is validated in
+    // callback (ChargePoint::scheduled_check_v2g_certificate_expiration)
     this->v2g_certificate_expiration_check_timer.timeout(std::chrono::seconds(
         this->device_model
             ->get_optional_value<int>(ControllerComponentVariables::V2GCertificateExpireCheckInitialDelaySeconds)
@@ -2711,17 +2719,16 @@ void ChargePoint::handle_get_local_authorization_list_version_req(Call<GetLocalL
 }
 
 void ChargePoint::scheduled_check_client_certificate_expiration() {
-    if (this->device_model->get_value<int>(ControllerComponentVariables::SecurityProfile) == 3) {
-        EVLOG_info << "Checking if CSMS client certificate has expired";
-        int expiry_days_count = this->evse_security->get_leaf_expiry_days_count(
-            ocpp::CertificateSigningUseEnum::ChargingStationCertificate);
-        if (expiry_days_count < 30) {
-            EVLOG_info << "CSMS client certificate is invalid in " << expiry_days_count
-                       << " days. Requesting new certificate with certificate signing request";
-            this->sign_certificate_req(ocpp::CertificateSigningUseEnum::ChargingStationCertificate);
-        } else {
-            EVLOG_info << "CSMS client certificate is still valid.";
-        }
+
+    EVLOG_info << "Checking if CSMS client certificate has expired";
+    int expiry_days_count =
+        this->evse_security->get_leaf_expiry_days_count(ocpp::CertificateSigningUseEnum::ChargingStationCertificate);
+    if (expiry_days_count < 30) {
+        EVLOG_info << "CSMS client certificate is invalid in " << expiry_days_count
+                   << " days. Requesting new certificate with certificate signing request";
+        this->sign_certificate_req(ocpp::CertificateSigningUseEnum::ChargingStationCertificate);
+    } else {
+        EVLOG_info << "CSMS client certificate is still valid.";
     }
 
     this->client_certificate_expiration_check_timer.interval(std::chrono::seconds(
