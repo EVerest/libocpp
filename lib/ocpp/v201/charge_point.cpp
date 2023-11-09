@@ -1086,10 +1086,7 @@ void ChargePoint::change_all_connectors_to_unavailable_for_firmware_update() {
                 EVSE e;
                 e.id = evse_id;
                 msg.evse = e;
-                CustomData c;
-                c.vendorId = "PIONIX_do_not_persist_availability_change";
-                msg.customData = c;
-                this->scheduled_change_availability_requests[evse_id] = msg;
+                this->scheduled_change_availability_requests[evse_id] = {msg, false};
             }
         }
     }
@@ -1276,15 +1273,11 @@ bool ChargePoint::is_valid_evse(const EVSE& evse) {
 void ChargePoint::handle_scheduled_change_availability_requests(const int32_t evse_id) {
     if (this->scheduled_change_availability_requests.count(evse_id)) {
         EVLOG_info << "Found scheduled ChangeAvailability.req for evse_id:" << evse_id;
-        const auto req = this->scheduled_change_availability_requests[evse_id];
+        const auto req = this->scheduled_change_availability_requests[evse_id].request;
+        const auto persist = this->scheduled_change_availability_requests[evse_id].persist;
         if (!this->any_transaction_active(req.evse)) {
             EVLOG_info << "Changing availability of evse:" << evse_id;
-            if (req.customData.has_value() and
-                req.customData.value().vendorId == "PIONIX_do_not_persist_availability_change") {
-                this->callbacks.change_availability_callback(req, false);
-            } else {
-                this->callbacks.change_availability_callback(req, true);
-            }
+            this->callbacks.change_availability_callback(req, persist);
             this->scheduled_change_availability_requests.erase(evse_id);
             if (this->callbacks.all_connectors_unavailable_callback.has_value()) {
                 this->callbacks.all_connectors_unavailable_callback.value()();
@@ -2605,7 +2598,7 @@ void ChargePoint::handle_change_availability_req(Call<ChangeAvailabilityRequest>
     } else {
         // add to map of scheduled operational_states. This also overrides successive ChangeAvailability.req with
         // the same EVSE, which is propably desirable
-        this->scheduled_change_availability_requests[evse_id] = msg;
+        this->scheduled_change_availability_requests[evse_id] = {msg, true};
     }
 
     // send reply before applying changes to EVSE / Connector because this could trigger StatusNotification.req

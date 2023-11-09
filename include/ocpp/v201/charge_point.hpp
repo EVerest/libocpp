@@ -139,6 +139,11 @@ struct Callbacks {
     std::optional<std::function<void()>> all_connectors_unavailable_callback;
 };
 
+struct AvailabilityChange {
+    ChangeAvailabilityRequest request;
+    bool persist;
+};
+
 /// \brief Class implements OCPP2.0.1 Charging Station
 class ChargePoint : ocpp::ChargingStationBase {
 
@@ -151,7 +156,7 @@ private:
     std::unique_ptr<DeviceModel> device_model;
     std::shared_ptr<DatabaseHandler> database_handler;
 
-    std::map<int32_t, ChangeAvailabilityRequest> scheduled_change_availability_requests;
+    std::map<int32_t, AvailabilityChange> scheduled_change_availability_requests;
 
     std::map<std::string,
              std::map<std::string, std::function<DataTransferResponse(const std::optional<std::string>& msg)>>>
