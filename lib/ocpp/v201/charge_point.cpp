@@ -141,7 +141,6 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
 void ChargePoint::start(BootReasonEnum bootreason) {
     this->bootreason = bootreason;
     this->start_websocket();
-
     this->boot_notification_req(bootreason);
     // FIXME(piet): Run state machine with correct initial state
 }
@@ -673,7 +672,6 @@ void ChargePoint::init_websocket() {
             this->init_certificate_expiration_check_timers(); // re-init as timers are stopped on disconnect
         }
         this->time_disconnected = std::chrono::time_point<std::chrono::steady_clock>();
-
     });
 
     this->websocket->register_disconnected_callback([this]() {
