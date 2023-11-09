@@ -170,64 +170,64 @@
     {
         "name": "InternalCtrlr",
         "variables": {
-          "ChargePointId": {
-            "variable_name": "ChargePointId",
-            "attributes": {
-              "Actual": "cp001"
-            }
-          },
-          "NetworkConnectionProfiles": {
-            "variable_name": "NetworkConnectionProfiles",
-            "attributes": {
-              "Actual": "[{\"configurationSlot\": 1, \"connectionData\": {\"messageTimeout\": 30, \"ocppCsmsUrl\": \"ws://localhost:9000/cp001\", \"ocppInterface\": \"Wired0\", \"ocppTransport\": \"JSON\", \"ocppVersion\": \"OCPP20\", \"securityProfile\": 1}}]"
-            }
-          },
-          "ChargeBoxSerialNumber": {
-            "variable_name": "ChargeBoxSerialNumber",
-            "attributes": {
-              "Actual": ""
-            }
-          },
-          "ChargePointModel": {
-            "variable_name": "ChargePointModel",
-            "attributes": {
-              "Actual": ""
-            }
-          },
-          "ChargePointVendor": {
-            "variable_name": "ChargePointVendor",
-            "attributes": {
-              "Actual": ""
-            }
-          },
-          "FirmwareVersion": {
-            "variable_name": "FirmwareVersion",
-            "attributes": {
-              "Actual": ""
-            }
-          },
-          "LogMessagesFormat": {
+            "ChargePointId": {
+                "variable_name": "ChargePointId",
+                "attributes": {
+                    "Actual": "cp001"
+                }
+            },
+            "NetworkConnectionProfiles": {
+                "variable_name": "NetworkConnectionProfiles",
+                "attributes": {
+                    "Actual": "[{\"configurationSlot\": 1, \"connectionData\": {\"messageTimeout\": 30, \"ocppCsmsUrl\": \"ws://localhost:9000/cp001\", \"ocppInterface\": \"Wired0\", \"ocppTransport\": \"JSON\", \"ocppVersion\": \"OCPP20\", \"securityProfile\": 1}}]"
+                }
+            },
+            "ChargeBoxSerialNumber": {
+                "variable_name": "ChargeBoxSerialNumber",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "ChargePointModel": {
+                "variable_name": "ChargePointModel",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "ChargePointVendor": {
+                "variable_name": "ChargePointVendor",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "FirmwareVersion": {
+                "variable_name": "FirmwareVersion",
+                "attributes": {
+                    "Actual": ""
+                }
+            },
+            "SupportedCiphers12": {
+                "variable_name": "SupportedCiphers12",
+                "attributes": {
+                    "Actual": "ECDHE-ECDSA-AES128-GCM-SHA256,ECDHE-ECDSA-AES256,GCM-SHA384,AES128-GCM-SHA256,AES256-GCM-SHA384,TLS_AES_256_GCM_SHA384,TLS_AES_128_GCM_SHA256"
+                }
+            },
+            "SupportedCiphers13": {
+                "variable_name": "SupportedCiphers13",
+                "attributes": {
+                    "Actual": "TLS_AES_256_GCM_SHA384,TLS_AES_128_GCM_SHA256"
+                }
+            },
+            "NumberOfConnectors": {
+                "variable_name": "NumberOfConnectors",
+                "attributes": {
+                    "Actual": "1"
+                }
+            },
+            "LogMessagesFormat": {
             "variable_name": "LogMessagesFormat",
             "attributes": {
               "Actual": "log,html"
-            }
-          },
-          "SupportedCiphers12": {
-            "variable_name": "SupportedCiphers12",
-            "attributes": {
-              "Actual": "ECDHE-ECDSA-AES128-GCM-SHA256,ECDHE-ECDSA-AES256,GCM-SHA384,AES128-GCM-SHA256,AES256-GCM-SHA384,TLS_AES_256_GCM_SHA384,TLS_AES_128_GCM_SHA256"
-            }
-          },
-          "SupportedCiphers13": {
-            "variable_name": "SupportedCiphers13",
-            "attributes": {
-              "Actual": "TLS_AES_256_GCM_SHA384,TLS_AES_128_GCM_SHA256"
-            }
-          },
-          "NumberOfConnectors": {
-            "variable_name": "NumberOfConnectors",
-            "attributes": {
-              "Actual": "1"
             }
           }
         }

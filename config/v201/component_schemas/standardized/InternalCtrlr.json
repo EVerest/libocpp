@@ -269,7 +269,7 @@
         }
       ],
       "description": "Supported log formats are console, log, html and console_detailed",
-      "default": "log,html,session_logging",
+      "default": "log,html,session_logging,console,console_detailed",
       "type": "string"
     },
     "SupportedChargingProfilePurposeTypes": {
