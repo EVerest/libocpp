@@ -13,15 +13,22 @@ class Uri {
 public:
     Uri(){};
 
-    // parse_and_validate parses the URI and checks
-    // 1. general validity of the URI
-    // 2. scheme fits to given `security_profile`
-    //
-    // Backwards-compatibility: The path (of the URI) can contain the `chargepoint_id` as last segment.
-    //
-    // It throws `std::invalid_argument` for several checks
+    // clang-format off
+    /// \brief parse_and_validate parses the \p uri and checks
+    ///   1. the general validity of it and
+    ///   2. if optional scheme fits to given \p security_profile
+    ///
+    /// \param uri  The whole URI with optional scheme and \p chargepoint_id as last segment (as backward-compatibility).
+    /// \param chargepoint_id  The identifier unique to the CSMS.
+    /// \param security_profile The security-profile.
+    /// \returns Uri
+    /// \throws std::invalid_argument for several checks
+    // clang-format on
     static Uri parse_and_validate(std::string uri, std::string chargepoint_id, int security_profile);
 
+    /// \brief set_secure defines if the connection is done via TLS
+    ///
+    /// \param secure true: connect via TLS; false: connect as plaintext
     void set_secure(bool secure) {
         this->secure = secure;
     }
