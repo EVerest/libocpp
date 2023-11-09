@@ -562,7 +562,7 @@ namespace security {
 // The security profiles defined in OCPP 2.0.1 resp. in the OCPP 1.6 security-whitepaper.
 enum SecurityProfile { // no "enum class" because values are used in implicit `switch`-comparisons to `int
                        // security_profile`
-    UNSPECIFIED = 0,
+    OCPP_1_6_ONLY_UNSECURED_TRANSPORT_WITHOUT_BASIC_AUTHENTICATION = 0,
     UNSECURED_TRANSPORT_WITH_BASIC_AUTHENTICATION = 1,
     TLS_WITH_BASIC_AUTHENTICATION = 2,
     TLS_WITH_CLIENT_SIDE_CERTIFICATES = 3,
@@ -585,7 +585,7 @@ inline const std::string RESET_OR_REBOOT = "ResetOrReboot";               // CRI
 inline const std::string STARTUP_OF_THE_DEVICE = "StartupOfTheDevice";    // CRITICAL
 inline const std::string SECURITYLOGWASCLEARED = "SecurityLogWasCleared"; // CRITICAL
 inline const std::string RECONFIGURATIONOFSECURITYPARAMETERS = "ReconfigurationOfSecurityParameters";
-inline const std::string MEMORYEXHAUSTION = "MemoryExhaustion";           // CRITICAL
+inline const std::string MEMORYEXHAUSTION = "MemoryExhaustion"; // CRITICAL
 inline const std::string INVALIDMESSAGES = "InvalidMessages";
 inline const std::string ATTEMPTEDREPLAYATTACKS = "AttemptedReplayAttacks";
 inline const std::string TAMPERDETECTIONACTIVATED = "TamperDetectionActivated"; // CRITICAL

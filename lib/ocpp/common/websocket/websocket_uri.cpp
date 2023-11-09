@@ -57,6 +57,7 @@ Uri Uri::parse_and_validate(std::string uri, std::string chargepoint_id, int sec
 
     if (!scheme_added_workaround) {
         switch (security_profile) { // `switch` to lint for unused enum-values
+        case security::SecurityProfile::OCPP_1_6_ONLY_UNSECURED_TRANSPORT_WITHOUT_BASIC_AUTHENTICATION:
         case security::SecurityProfile::UNSECURED_TRANSPORT_WITH_BASIC_AUTHENTICATION:
             if (uri_temp.get_secure()) {
                 throw std::invalid_argument(
