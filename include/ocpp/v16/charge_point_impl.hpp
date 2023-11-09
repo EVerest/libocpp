@@ -115,8 +115,8 @@ private:
     std::chrono::time_point<date::utc_clock> clock_aligned_meter_values_time_point;
     std::mutex meter_values_mutex;
     std::mutex measurement_mutex;
-    std::map<int32_t, AvailabilityType> change_availability_queue; // TODO: move to Connectors
-    std::mutex change_availability_mutex;                          // TODO: move to Connectors
+    std::map<int32_t, AvailabilityChange> change_availability_queue; // TODO: move to Connectors
+    std::mutex change_availability_mutex;                            // TODO: move to Connectors
     std::unique_ptr<TransactionHandler> transaction_handler;
     std::vector<v16::MessageType> external_notify;
 

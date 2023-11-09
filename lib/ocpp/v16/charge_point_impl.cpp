@@ -816,14 +816,13 @@ void ChargePointImpl::change_all_connectors_to_unavailable_for_firmware_update()
         if (this->transaction_handler->transaction_active(connector)) {
             transaction_running = true;
             std::lock_guard<std::mutex> change_availability_lock(change_availability_mutex);
-            this->change_availability_queue[connector] = AvailabilityType::Inoperative;
+            this->change_availability_queue[connector] = {AvailabilityType::Inoperative, false};
         } else {
             connector_availability_status[connector] = AvailabilityStatus::Accepted;
         }
     }
 
     for (const auto& [connector, availability_status] : connector_availability_status) {
-        this->database_handler->insert_or_update_connector_availability(connector, AvailabilityType::Inoperative);
         if (connector == 0) {
             this->status->submit_event(0, FSMEvent::ChangeAvailabilityToUnavailable);
         } else if (this->disable_evse_callback != nullptr and availability_status == AvailabilityStatus::Accepted) {
@@ -1224,7 +1223,7 @@ void ChargePointImpl::handleChangeAvailabilityRequest(ocpp::Call<ChangeAvailabil
                 if (this->transaction_handler->transaction_active(connector)) {
                     transaction_running = true;
                     std::lock_guard<std::mutex> change_availability_lock(change_availability_mutex);
-                    this->change_availability_queue[connector] = call.msg.type;
+                    this->change_availability_queue[connector] = {call.msg.type, true};
                 } else {
                     connector_availability_status[connector] = AvailabilityStatus::Accepted;
                 }
@@ -1233,7 +1232,7 @@ void ChargePointImpl::handleChangeAvailabilityRequest(ocpp::Call<ChangeAvailabil
             if (this->transaction_handler->transaction_active(call.msg.connectorId)) {
                 transaction_running = true;
                 std::lock_guard<std::mutex> change_availability_lock(change_availability_mutex);
-                this->change_availability_queue[call.msg.connectorId] = call.msg.type;
+                this->change_availability_queue[call.msg.connectorId] = {call.msg.type, true};
             } else {
                 connector_availability_status[call.msg.connectorId] = AvailabilityStatus::Accepted;
             }
@@ -1755,15 +1754,19 @@ void ChargePointImpl::handleStopTransactionResponse(const EnhancedMessage<v16::M
         // perform a queued connector availability change
         bool change_queued = false;
         AvailabilityType connector_availability;
+        bool persist = false;
         {
             std::lock_guard<std::mutex> change_availability_lock(change_availability_mutex);
             change_queued = this->change_availability_queue.count(connector) != 0;
-            connector_availability = this->change_availability_queue[connector];
+            connector_availability = this->change_availability_queue[connector].availability;
+            persist = this->change_availability_queue[connector].persist;
             this->change_availability_queue.erase(connector);
         }
 
         if (change_queued) {
-            this->database_handler->insert_or_update_connector_availability(connector, connector_availability);
+            if (persist) {
+                this->database_handler->insert_or_update_connector_availability(connector, connector_availability);
+            }
             EVLOG_debug << "Queued availability change of connector " << connector << " to "
                         << conversions::availability_type_to_string(connector_availability);
 

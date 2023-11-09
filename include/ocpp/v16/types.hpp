@@ -180,6 +180,11 @@ struct MeasurandWithPhases {
     std::vector<Phase> phases; ///< A list of Phases
 };
 
+struct AvailabilityChange {
+    AvailabilityType availability;
+    bool persist;
+};
+
 } // namespace v16
 } // namespace ocpp
 
