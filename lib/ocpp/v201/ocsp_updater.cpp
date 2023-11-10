@@ -14,10 +14,20 @@
 
 namespace ocpp::v201 {
 OcspUpdater::OcspUpdater(std::shared_ptr<EvseSecurity> evse_security, ChargePoint* charge_point) :
+    OcspUpdater(std::move(evse_security), charge_point,
+                std::chrono::hours(167),
+                std::chrono::seconds(5)){}
+
+OcspUpdater::OcspUpdater(std::shared_ptr<EvseSecurity> evse_security, ChargePoint* charge_point,
+            std::chrono::seconds ocsp_cache_update_interval,
+            std::chrono::seconds ocsp_cache_update_retry_interval)  :
     evse_security(std::move(evse_security)),
     charge_point(charge_point),
-    update_deadline(std::chrono::steady_clock::now()) {
-}
+    update_deadline(std::chrono::steady_clock::now()),
+    ocsp_cache_update_interval(ocsp_cache_update_interval),
+    ocsp_cache_update_retry_interval(ocsp_cache_update_retry_interval),
+    uuid_generator(),
+    running(false) {}
 
 void OcspUpdater::start() {
     this->update_ocsp_cache_lock.lock();
@@ -69,13 +79,13 @@ void OcspUpdater::updater_thread_loop() {
         try {
             this->execute_ocsp_update();
             // Successful update, set the deadline at a week from now and go back to sleep
-            this->update_deadline = std::chrono::steady_clock::now() + OCSP_CACHE_UPDATE_INTERVAL;
+            this->update_deadline = std::chrono::steady_clock::now() + this->ocsp_cache_update_interval;
         } catch (OcspUpdateFailedException& e) {
             // Unsuccessful update
             if (e.allows_retry()) {
                 // Can be retried - go to sleep for a short time then retry
                 EVLOG_warning << "libocpp: OCSP status update failed: " << e.what() << ", will retry.";
-                this->update_deadline = std::chrono::steady_clock::now() + OCSP_CACHE_UPDATE_RETRY_INTERVAL;
+                this->update_deadline = std::chrono::steady_clock::now() + this->ocsp_cache_update_retry_interval;
             } else {
                 // Cannot be retried - rethrow the exception. This will terminate the updater thread.
                 EVLOG_error << "libocpp FATAL: OCSP status update failed: " << e.what();
@@ -111,9 +121,8 @@ void OcspUpdater::execute_ocsp_update() {
 
         MessageId message_id = MessageId(to_string(this->uuid_generator()));
 
-        auto response_future = this->charge_point->send_async<GetCertificateStatusRequest>(
-            ocpp::Call<GetCertificateStatusRequest>(request, message_id));
-        const auto enhanced_response = response_future.get();
+        const auto enhanced_response = this->charge_point->send_async<GetCertificateStatusRequest>(
+                ocpp::Call<GetCertificateStatusRequest>(request, message_id)).get();
 
         if (enhanced_response.messageType != MessageType::GetCertificateStatusResponse) {
             throw OcspUpdateFailedException("Got unexpected message type from CSMS", true);

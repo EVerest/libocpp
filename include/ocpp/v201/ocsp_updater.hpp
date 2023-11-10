@@ -13,9 +13,6 @@
 
 namespace ocpp::v201 {
 
-const std::chrono::duration OCSP_CACHE_UPDATE_INTERVAL = std::chrono::hours(167);
-const std::chrono::duration OCSP_CACHE_UPDATE_RETRY_INTERVAL = std::chrono::seconds(30);
-
 class OcspUpdateFailedException : public std::exception {
 public:
     [[nodiscard]] const char* what() const noexcept override {
@@ -41,7 +38,10 @@ class ChargePoint;
 class OcspUpdater {
 public:
     OcspUpdater() = delete;
-    explicit OcspUpdater(std::shared_ptr<EvseSecurity> evse_security, ChargePoint* charge_point);
+    OcspUpdater(std::shared_ptr<EvseSecurity> evse_security, ChargePoint* charge_point);
+    OcspUpdater(std::shared_ptr<EvseSecurity> evse_security, ChargePoint* charge_point,
+                std::chrono::seconds ocsp_cache_update_interval,
+                std::chrono::seconds ocsp_cache_update_retry_interval);
 
     void start();
     void stop();
@@ -67,6 +67,10 @@ private:
     boost::uuids::random_generator uuid_generator;
     // Set this when starting and stopping the updater
     bool running;
+
+    // Timing constants
+    const std::chrono::seconds ocsp_cache_update_interval;
+    const std::chrono::seconds ocsp_cache_update_retry_interval;
 
     void updater_thread_loop();
     // Helper function that actually performs the OCSP update. Only called within updater_thread_loop().
