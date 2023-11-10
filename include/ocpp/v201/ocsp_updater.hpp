@@ -10,6 +10,8 @@
 #include <thread>
 
 #include <ocpp/common/evse_security.hpp>
+#include <ocpp/common/call_types.hpp>
+#include <ocpp/v201/messages/GetCertificateStatus.hpp>
 
 namespace ocpp::v201 {
 
@@ -32,14 +34,20 @@ private:
     const bool _allows_retry;
 };
 
+typedef std::function<GetCertificateStatusResponse(GetCertificateStatusRequest)> cert_status_func;
+
 // Forward declaration to avoid include loops
 class ChargePoint;
 
 class OcspUpdater {
 public:
     OcspUpdater() = delete;
-    OcspUpdater(std::shared_ptr<EvseSecurity> evse_security, ChargePoint* charge_point);
-    OcspUpdater(std::shared_ptr<EvseSecurity> evse_security, ChargePoint* charge_point,
+    OcspUpdater(std::shared_ptr<EvseSecurity> evse_security,
+                ChargePoint* charge_point);
+    OcspUpdater(std::shared_ptr<EvseSecurity> evse_security,
+                cert_status_func get_cert_status_from_csms);
+    OcspUpdater(std::shared_ptr<EvseSecurity> evse_security,
+                cert_status_func get_cert_status_from_csms,
                 std::chrono::seconds ocsp_cache_update_interval,
                 std::chrono::seconds ocsp_cache_update_retry_interval);
 
@@ -62,8 +70,10 @@ private:
     // Worker thread responsible for the updates
     std::thread updater_thread;
     std::shared_ptr<EvseSecurity> evse_security;
-    // This pointer will not go stale, because the OcspUpdater is part of the ChargePoint and will not outlive it
-    ChargePoint* charge_point;
+
+    // This function captures a pointer to the owning ChargePoint, but this is fine.
+    // The OcspUpdater is part of the ChargePoint, and thus it cannot outlive it.
+    cert_status_func get_cert_status_from_csms;
     boost::uuids::random_generator uuid_generator;
     // Set this when starting and stopping the updater
     bool running;

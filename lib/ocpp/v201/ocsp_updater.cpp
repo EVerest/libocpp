@@ -13,16 +13,30 @@
 #include <ocpp/v201/ocsp_updater.hpp>
 
 namespace ocpp::v201 {
-OcspUpdater::OcspUpdater(std::shared_ptr<EvseSecurity> evse_security, ChargePoint* charge_point) :
-    OcspUpdater(std::move(evse_security), charge_point,
+
+OcspUpdater::OcspUpdater(std::shared_ptr<EvseSecurity> evse_security,
+            ChargePoint* charge_point) :
+    OcspUpdater(std::move(evse_security), [charge_point, this] (auto request) {
+        MessageId message_id = MessageId(to_string(this->uuid_generator()));
+        const auto enhanced_response = charge_point->send_async<GetCertificateStatusRequest>(
+                ocpp::Call<GetCertificateStatusRequest>(request, message_id)).get();
+        if (enhanced_response.messageType != MessageType::GetCertificateStatusResponse) {
+            throw OcspUpdateFailedException("Got unexpected message type from CSMS", true);
+        }
+        ocpp::CallResult<GetCertificateStatusResponse> call_result = enhanced_response.message;
+        return call_result.msg;
+    }) {}
+
+OcspUpdater::OcspUpdater(std::shared_ptr<EvseSecurity> evse_security, cert_status_func get_cert_status_from_csms) :
+    OcspUpdater(std::move(evse_security), std::move(get_cert_status_from_csms),
                 std::chrono::hours(167),
                 std::chrono::seconds(5)){}
 
-OcspUpdater::OcspUpdater(std::shared_ptr<EvseSecurity> evse_security, ChargePoint* charge_point,
+OcspUpdater::OcspUpdater(std::shared_ptr<EvseSecurity> evse_security, cert_status_func get_cert_status_from_csms,
             std::chrono::seconds ocsp_cache_update_interval,
             std::chrono::seconds ocsp_cache_update_retry_interval)  :
     evse_security(std::move(evse_security)),
-    charge_point(charge_point),
+    get_cert_status_from_csms(std::move(get_cert_status_from_csms)),
     update_deadline(std::chrono::steady_clock::now()),
     ocsp_cache_update_interval(ocsp_cache_update_interval),
     ocsp_cache_update_retry_interval(ocsp_cache_update_retry_interval),
@@ -121,14 +135,7 @@ void OcspUpdater::execute_ocsp_update() {
 
         MessageId message_id = MessageId(to_string(this->uuid_generator()));
 
-        const auto enhanced_response = this->charge_point->send_async<GetCertificateStatusRequest>(
-                ocpp::Call<GetCertificateStatusRequest>(request, message_id)).get();
-
-        if (enhanced_response.messageType != MessageType::GetCertificateStatusResponse) {
-            throw OcspUpdateFailedException("Got unexpected message type from CSMS", true);
-        }
-        ocpp::CallResult<GetCertificateStatusResponse> call_result = enhanced_response.message;
-        const auto response = call_result.msg;
+        const auto response = this->get_cert_status_from_csms(request);
 
         if (response.status != GetCertificateStatusEnum::Accepted) {
             std::string error_msg = (response.statusInfo.has_value()) ? response.statusInfo.value().reasonCode.get()
