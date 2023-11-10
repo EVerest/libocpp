@@ -1,0 +1,18 @@
+name: Trunk Check setup
+description: Set up dependencies for Trunk Check
+
+runs:
+  using: composite
+  steps:
+    - name: Run cmake
+      shell: bash
+      run: |
+        cmake -B build/ \
+          -D CMAKE_CXX_COMPILER=clang++-15 -D CXX_STANDARD=17 \
+          -D CMAKE_EXPORT_COMPILE_COMMANDS=1 \
+          -D CMAKE_BUILD_TYPE=Debug \
+          -D CMAKE_GENERATOR="Unix Makefiles"
+
+    - name: Run make
+      shell: bash
+      run: make -j$(nproc) install
