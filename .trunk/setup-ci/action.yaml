@@ -4,6 +4,10 @@ description: Set up dependencies for Trunk Check
 runs:
   using: composite
   steps:
+    - name: Checkout `everest-cmake`
+      run: |
+        cd ..
+        git clone https://github.com/EVerest/everest-cmake
     - name: Run cmake
       shell: bash
       run: |
