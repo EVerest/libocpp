@@ -43,8 +43,6 @@ class OcspUpdater {
 public:
     OcspUpdater() = delete;
     OcspUpdater(std::shared_ptr<EvseSecurity> evse_security,
-                ChargePoint* charge_point);
-    OcspUpdater(std::shared_ptr<EvseSecurity> evse_security,
                 cert_status_func get_cert_status_from_csms);
     OcspUpdater(std::shared_ptr<EvseSecurity> evse_security,
                 cert_status_func get_cert_status_from_csms,
