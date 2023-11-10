@@ -14,11 +14,6 @@
 
 namespace ocpp::v201 {
 
-OcspUpdater::OcspUpdater(std::shared_ptr<EvseSecurity> evse_security, cert_status_func get_cert_status_from_csms) :
-    OcspUpdater(std::move(evse_security), std::move(get_cert_status_from_csms), std::chrono::hours(167),
-                std::chrono::seconds(5)) {
-}
-
 OcspUpdater::OcspUpdater(std::shared_ptr<EvseSecurity> evse_security, cert_status_func get_cert_status_from_csms,
                          std::chrono::seconds ocsp_cache_update_interval,
                          std::chrono::seconds ocsp_cache_update_retry_interval) :
@@ -93,6 +88,9 @@ void OcspUpdater::updater_thread_loop() {
                 EVLOG_error << "libocpp FATAL: OCSP status update failed: " << e.what();
                 throw;
             }
+        } catch (UnexpectedMessageTypeFromCSMS& e) {
+            EVLOG_warning << "libocpp: " << e.what() << ", will retry.";
+            this->update_deadline = std::chrono::steady_clock::now() + this->ocsp_cache_update_retry_interval;
         }
     }
 }

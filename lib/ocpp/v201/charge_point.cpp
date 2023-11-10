@@ -58,16 +58,7 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
     upload_log_status(UploadLogStatusEnum::Idle),
     bootreason(BootReasonEnum::PowerUp),
     callbacks(callbacks),
-    ocsp_updater(OcspUpdater(this->evse_security, [this](auto request) {
-        MessageId message_id = MessageId(to_string(this->uuid_generator()));
-        const auto enhanced_response =
-            this->send_async<GetCertificateStatusRequest>(ocpp::Call<GetCertificateStatusRequest>(request, message_id)).get();
-        if (enhanced_response.messageType != MessageType::GetCertificateStatusResponse) {
-            throw std::runtime_error("Got unexpected message type from CSMS");
-        }
-        ocpp::CallResult<GetCertificateStatusResponse> call_result = enhanced_response.message;
-        return call_result.msg;
-    })),
+    ocsp_updater(OcspUpdater(this->evse_security,this->send_callback<GetCertificateStatusRequest, GetCertificateStatusResponse>(MessageType::GetCertificateStatusResponse))),
     csr_attempt(1) {
     // Make sure the received callback struct is completely filled early before we actually start running
     if (!this->callbacks.all_callbacks_valid()) {

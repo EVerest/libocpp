@@ -36,18 +36,17 @@ private:
 
 typedef std::function<GetCertificateStatusResponse(GetCertificateStatusRequest)> cert_status_func;
 
-// Forward declaration to avoid include loops
+// Forward declarations to avoid include loops
 class ChargePoint;
+class UnexpectedMessageTypeFromCSMS;
 
 class OcspUpdater {
 public:
     OcspUpdater() = delete;
     OcspUpdater(std::shared_ptr<EvseSecurity> evse_security,
-                cert_status_func get_cert_status_from_csms);
-    OcspUpdater(std::shared_ptr<EvseSecurity> evse_security,
                 cert_status_func get_cert_status_from_csms,
-                std::chrono::seconds ocsp_cache_update_interval,
-                std::chrono::seconds ocsp_cache_update_retry_interval);
+                std::chrono::seconds ocsp_cache_update_interval = std::chrono::hours(167),
+                std::chrono::seconds ocsp_cache_update_retry_interval = std::chrono::seconds(5));
 
     void start();
     void stop();
