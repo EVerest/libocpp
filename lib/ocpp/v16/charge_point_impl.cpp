@@ -275,6 +275,9 @@ void ChargePointImpl::clock_aligned_meter_values_sample() {
         for (int32_t connector = 1; connector < this->configuration->getNumberOfConnectors() + 1; connector++) {
             auto meter_value = this->get_latest_meter_value(
                 connector, this->configuration->getMeterValuesAlignedDataVector(), ReadingContext::Sample_Clock);
+
+            meter_value.value(); // <- this should trigger multiple clang-tidy warnings
+
             if (meter_value.has_value()) {
                 if (this->transaction_handler->transaction_active(connector)) {
                     this->transaction_handler->get_transaction(connector)->add_meter_value(meter_value.value());
