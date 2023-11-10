@@ -1479,37 +1479,37 @@ void ChargePointImpl::handleRemoteStartTransactionRequest(ocpp::Call<RemoteStart
         }
     }
 
-    // Check if at least one conenctor is able to execute RemoteStart (optainable == true).
-    bool optainable = true;
+    // Check if at least one conenctor is able to execute RemoteStart (obtainable == true).
+    bool obtainable = true;
     for (const auto connector : referenced_connectors) {
-        optainable = true;
+        obtainable = true;
 
         if (this->status->get_state(connector) == ChargePointStatus::Unavailable or
             this->status->get_state(connector) == ChargePointStatus::Faulted) {
-            optainable = false;
+            obtainable = false;
             continue;
         }
 
         if (this->transaction_handler->get_transaction(connector) != nullptr ||
             this->status->get_state(connector) == ChargePointStatus::Finishing) {
-            optainable = false;
+            obtainable = false;
             continue;
         }
 
         if (this->is_token_reserved_for_connector_callback != nullptr &&
             this->status->get_state(connector) == ChargePointStatus::Reserved &&
             !this->is_token_reserved_for_connector_callback(connector, call.msg.idTag.get())) {
-            optainable = false;
+            obtainable = false;
             continue;
         }
 
-        if (optainable) {
+        if (obtainable) {
             // at least one connector can do the remote start
             break;
         }
     }
 
-    if (!optainable) {
+    if (!obtainable) {
         EVLOG_debug << "Received RemoteStartTransactionRequest for reserved connector and rejected";
         response.status = RemoteStartStopStatus::Rejected;
         ocpp::CallResult<RemoteStartTransactionResponse> call_result(response, call.uniqueId);
