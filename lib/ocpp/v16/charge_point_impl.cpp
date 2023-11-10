@@ -1486,12 +1486,15 @@ void ChargePointImpl::handleRemoteStartTransactionRequest(ocpp::Call<RemoteStart
 
         if (this->status->get_state(connector) == ChargePointStatus::Unavailable or
             this->status->get_state(connector) == ChargePointStatus::Faulted) {
+            EVLOG_debug << "Received RemoteStartTransactionRequest for an inoperative connector.";
             obtainable = false;
             continue;
         }
 
         if (this->transaction_handler->get_transaction(connector) != nullptr ||
             this->status->get_state(connector) == ChargePointStatus::Finishing) {
+            EVLOG_debug
+                << "Received RemoteStartTransactionRequest for a connector with an active or finished transaction.";
             obtainable = false;
             continue;
         }
@@ -1499,6 +1502,7 @@ void ChargePointImpl::handleRemoteStartTransactionRequest(ocpp::Call<RemoteStart
         if (this->is_token_reserved_for_connector_callback != nullptr &&
             this->status->get_state(connector) == ChargePointStatus::Reserved &&
             !this->is_token_reserved_for_connector_callback(connector, call.msg.idTag.get())) {
+            EVLOG_debug << "Received RemoteStartTransactionRequest for a reserved connector.";
             obtainable = false;
             continue;
         }
