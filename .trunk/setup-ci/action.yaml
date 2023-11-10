@@ -4,6 +4,10 @@ description: Set up dependencies for Trunk Check
 runs:
   using: composite
   steps:
+    - name: Install big dependencies
+      shell: bash
+      run: |
+        apt install libboost-all-dev libssl-dev libsqlite3-dev
     - name: Checkout `everest-cmake`
       shell: bash
       run: |
