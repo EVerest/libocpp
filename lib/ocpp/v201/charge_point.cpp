@@ -435,6 +435,7 @@ void ChargePoint::configure_message_logging_callback(const std::string& message_
         !log_formats.empty(), message_log_path, DateTime().to_rfc3339(), log_to_console, detailed_log_to_console,
         log_to_file, log_to_html, session_logging, this->callbacks.ocpp_messages_callback.value_or(nullptr));
 }
+
 void ChargePoint::on_unavailable(const int32_t evse_id, const int32_t connector_id) {
     this->evses.at(evse_id)->submit_event(connector_id, ConnectorEvent::Unavailable);
 }
