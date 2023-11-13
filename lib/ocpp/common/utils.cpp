@@ -36,6 +36,18 @@ bool is_integer(const std::string& value) {
     return std::all_of(value.begin() + start_pos, value.end(), ::isdigit);
 }
 
+std::tuple<bool, int> is_positive_integer(const std::string& value) {
+    bool valid = is_integer(value);
+    auto value_int = 0;
+    if (valid) {
+        value_int = std::stoi(value);
+        if (value_int < 0) {
+            valid = false;
+        }
+    }
+    return {valid, value_int};
+}
+
 bool is_decimal_number(const std::string& value) {
     if (value.empty()) {
         return false;
