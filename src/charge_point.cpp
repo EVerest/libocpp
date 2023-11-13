@@ -24,6 +24,7 @@
 
 #include <ocpp/common/cistring.hpp>
 #include <ocpp/common/string.hpp>
+#include <ocpp/common/support_older_cpp_versions.hpp>
 
 namespace po = boost::program_options;
 
