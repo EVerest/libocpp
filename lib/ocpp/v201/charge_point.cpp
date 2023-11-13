@@ -126,7 +126,7 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
     }
 
     // configure logging
-    this->configure_message_logging_callback(message_log_path);
+    this->configure_message_logging_format(message_log_path);
 
     this->message_queue = std::make_unique<ocpp::MessageQueue<v201::MessageType>>(
         [this](json message) -> bool { return this->websocket->send(message.dump()); },
@@ -424,7 +424,7 @@ void ChargePoint::clear_customer_information(const std::optional<CertificateHash
     }
 }
 
-void ChargePoint::configure_message_logging_callback(const std::string& message_log_path) {
+void ChargePoint::configure_message_logging_format(const std::string& message_log_path) {
     auto log_formats = this->device_model->get_value<std::string>(ControllerComponentVariables::LogMessagesFormat);
     bool log_to_console = log_formats.find("console") != log_formats.npos;
     bool detailed_log_to_console = log_formats.find("console_detailed") != log_formats.npos;
