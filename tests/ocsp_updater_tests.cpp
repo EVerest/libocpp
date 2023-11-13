@@ -1,0 +1,329 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
+
+#include <iostream>
+
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+#include <boost/interprocess/sync/interprocess_semaphore.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
+
+#include <ocpp/v201/ocsp_updater.hpp>
+
+namespace ocpp {
+
+ACTION_P2(SignalCallsComplete, return_value, semaphore)
+{
+    semaphore->post();
+    return return_value;
+}
+ACTION_P2(SignalCallsCompleteVoid, semaphore)
+{
+    semaphore->post();
+    return;
+}
+
+class EvseSecurityMock : public EvseSecurity {
+public:
+    MOCK_METHOD(InstallCertificateResult, install_ca_certificate,
+                (const std::string&, const CaCertificateType&), (override));
+    MOCK_METHOD(DeleteCertificateResult, delete_certificate,
+                (const ocpp::CertificateHashDataType&), (override));
+    MOCK_METHOD(InstallCertificateResult, update_leaf_certificate,
+                (const std::string&, const CertificateSigningUseEnum&), (override));
+    MOCK_METHOD(InstallCertificateResult, verify_certificate,
+                (const std::string&, const CertificateSigningUseEnum&), (override));
+    MOCK_METHOD(std::vector<CertificateHashDataChain>, get_installed_certificates,
+                (const std::vector<CertificateType>&), (override));
+    MOCK_METHOD(std::vector<OCSPRequestData>, get_ocsp_request_data,
+                (), (override));
+    MOCK_METHOD(void, update_ocsp_cache,
+                (const CertificateHashDataType&, const std::string&), (override));
+    MOCK_METHOD(bool, is_ca_certificate_installed,
+                (const CaCertificateType&), (override));
+    MOCK_METHOD(std::string, generate_certificate_signing_request,
+                (const CertificateSigningUseEnum&, const std::string&, const std::string&, const std::string&), (override));
+    MOCK_METHOD(std::optional<KeyPair>, get_key_pair,
+                (const CertificateSigningUseEnum&), (override));
+    MOCK_METHOD(std::string, get_verify_file,
+                (const CaCertificateType&), (override));
+    MOCK_METHOD(int, get_leaf_expiry_days_count,
+                (const CertificateSigningUseEnum&), (override));
+};
+
+class ChargePointMock {
+public:
+    MOCK_METHOD(v201::GetCertificateStatusResponse, get_certificate_status, (v201::GetCertificateStatusRequest), ());
+};
+
+static bool operator== (const CertificateHashDataType& a, const CertificateHashDataType& b) {
+    return a.serialNumber == b.serialNumber && a.issuerKeyHash == b.issuerKeyHash &&
+           a.issuerNameHash == b.issuerNameHash && a.hashAlgorithm == b.hashAlgorithm;
+}
+static bool operator== (const v201::GetCertificateStatusRequest& a, const v201::GetCertificateStatusRequest& b) {
+    return a.ocspRequestData.serialNumber == b.ocspRequestData.serialNumber &&
+    a.ocspRequestData.issuerKeyHash == b.ocspRequestData.issuerKeyHash &&
+    a.ocspRequestData.issuerNameHash == b.ocspRequestData.issuerNameHash &&
+    a.ocspRequestData.hashAlgorithm == b.ocspRequestData.hashAlgorithm &&
+    a.ocspRequestData.responderURL == b.ocspRequestData.responderURL;
+}
+
+class OcspUpdaterTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        this->charge_point = std::make_shared<ChargePointMock>();
+        this->evse_security = std::make_shared<EvseSecurityMock>();
+        this->status_update = [this] (auto request) {
+            return this->charge_point->get_certificate_status(request);
+        };
+
+        this->example_ocsp_data.push_back(OCSPRequestData{
+            .hashAlgorithm = HashAlgorithmEnumType::SHA256,
+            .issuerNameHash = "issuerHash1",
+            .issuerKeyHash = "issuerKey1",
+            .serialNumber = "serial1",
+            .responderUrl = "responder1"
+        });
+        this->example_ocsp_data.push_back(OCSPRequestData{
+            .hashAlgorithm = HashAlgorithmEnumType::SHA384,
+            .issuerNameHash = "issuerHash2",
+            .issuerKeyHash = "issuerKey2",
+            .serialNumber = "serial2",
+            .responderUrl = "responder2"
+        });
+        this->example_ocsp_data.push_back(OCSPRequestData{
+            .hashAlgorithm = HashAlgorithmEnumType::SHA512,
+            .issuerNameHash = "issuerHash3",
+            .issuerKeyHash = "issuerKey3",
+            .serialNumber = "serial3",
+            .responderUrl = "responder3"
+        });
+
+        this->example_hash_data.push_back(CertificateHashDataType{
+            .hashAlgorithm = HashAlgorithmEnumType::SHA256,
+            .issuerNameHash = "issuerHash1",
+            .issuerKeyHash = "issuerKey1",
+            .serialNumber = "serial1",
+        });
+        this->example_hash_data.push_back(CertificateHashDataType{
+            .hashAlgorithm = HashAlgorithmEnumType::SHA384,
+            .issuerNameHash = "issuerHash2",
+            .issuerKeyHash = "issuerKey2",
+            .serialNumber = "serial2",
+        });
+        this->example_hash_data.push_back(CertificateHashDataType{
+            .hashAlgorithm = HashAlgorithmEnumType::SHA512,
+            .issuerNameHash = "issuerHash3",
+            .issuerKeyHash = "issuerKey3",
+            .serialNumber = "serial3",
+        });
+
+        v201::GetCertificateStatusRequest example_get_cert_status_request_1;
+        example_get_cert_status_request_1.ocspRequestData = v201::OCSPRequestData {
+            .hashAlgorithm = v201::HashAlgorithmEnum::SHA256,
+            .issuerNameHash = "issuerHash1",
+            .issuerKeyHash = "issuerKey1",
+            .serialNumber = "serial1",
+            .responderURL = "responder1"
+        };
+        this->example_status_requests.push_back(example_get_cert_status_request_1);
+        v201::GetCertificateStatusRequest example_get_cert_status_request_2;
+        example_get_cert_status_request_2.ocspRequestData = v201::OCSPRequestData {
+            .hashAlgorithm = v201::HashAlgorithmEnum::SHA384,
+            .issuerNameHash = "issuerHash2",
+            .issuerKeyHash = "issuerKey2",
+            .serialNumber = "serial2",
+            .responderURL = "responder2"
+        };
+        this->example_status_requests.push_back(example_get_cert_status_request_2);
+        v201::GetCertificateStatusRequest example_get_cert_status_request_3;
+        example_get_cert_status_request_3.ocspRequestData = v201::OCSPRequestData {
+            .hashAlgorithm = v201::HashAlgorithmEnum::SHA512,
+            .issuerNameHash = "issuerHash3",
+            .issuerKeyHash = "issuerKey3",
+            .serialNumber = "serial3",
+            .responderURL = "responder3"
+        };
+        this->example_status_requests.push_back(example_get_cert_status_request_3);
+    }
+
+    void TearDown() override {
+    }
+
+    v201::cert_status_func status_update;
+    std::shared_ptr<EvseSecurityMock> evse_security;
+    std::shared_ptr<ChargePointMock> charge_point;
+
+    std::vector<OCSPRequestData> example_ocsp_data;
+    std::vector<v201::GetCertificateStatusRequest> example_status_requests;
+    std::vector<CertificateHashDataType> example_hash_data;
+
+    boost::interprocess::interprocess_semaphore calls_complete = boost::interprocess::interprocess_semaphore(0);
+};
+
+/// \brief Tests a successful update for multiple certs on boot
+TEST_F(OcspUpdaterTest, test_success_boot_many) {
+    auto ocsp_updater = std::make_unique<v201::OcspUpdater>(this->evse_security, this->status_update);
+
+    testing::Sequence seq;
+    v201::GetCertificateStatusResponse response_success;
+    response_success.ocspResult = "EXAMPLE OCSP RESULT";
+    response_success.status = v201::GetCertificateStatusEnum::Accepted;
+
+    EXPECT_CALL(*this->evse_security, get_ocsp_request_data())
+        .Times(1)
+        .InSequence(seq)
+        .WillOnce(testing::Return(this->example_ocsp_data));
+    EXPECT_CALL(*this->charge_point, get_certificate_status(this->example_status_requests[0]))
+        .Times(1)
+        .InSequence(seq)
+        .WillOnce(testing::Return(response_success));
+    EXPECT_CALL(*this->charge_point, get_certificate_status(this->example_status_requests[1]))
+        .Times(1)
+        .InSequence(seq)
+        .WillOnce(testing::Return(response_success));
+    EXPECT_CALL(*this->charge_point, get_certificate_status(this->example_status_requests[2]))
+        .Times(1)
+        .InSequence(seq)
+        .WillOnce(testing::Return(response_success));
+
+    EXPECT_CALL(*this->evse_security, update_ocsp_cache(this->example_hash_data[0], "EXAMPLE OCSP RESULT"))
+        .Times(1)
+        .InSequence(seq)
+        .WillOnce(testing::Return());
+    EXPECT_CALL(*this->evse_security, update_ocsp_cache(this->example_hash_data[1], "EXAMPLE OCSP RESULT"))
+        .Times(1)
+        .InSequence(seq)
+        .WillOnce(testing::Return());
+    EXPECT_CALL(*this->evse_security, update_ocsp_cache(this->example_hash_data[2], "EXAMPLE OCSP RESULT"))
+        .Times(1)
+        .InSequence(seq)
+        .WillOnce(SignalCallsCompleteVoid(&this->calls_complete));
+
+    ocsp_updater->start();
+    this->calls_complete.timed_wait(boost::posix_time::second_clock::universal_time() + boost::posix_time::seconds(5));
+    ocsp_updater->stop();
+}
+
+/// \brief Tests retry logic on CSMS failure to update, multiple certs
+TEST_F(OcspUpdaterTest, test_retry_boot_many) {
+    auto ocsp_updater = std::make_unique<v201::OcspUpdater>(this->evse_security, this->status_update,
+                                                            std::chrono::hours(167),
+                                                            std::chrono::seconds(0));
+
+    testing::Sequence seq;
+    v201::GetCertificateStatusResponse response_success;
+    response_success.ocspResult = "EXAMPLE OCSP RESULT";
+    response_success.status = v201::GetCertificateStatusEnum::Accepted;
+    v201::GetCertificateStatusResponse response_fail_status;
+    response_fail_status.status = v201::GetCertificateStatusEnum::Failed;
+    v201::GetCertificateStatusResponse response_fail_empty;
+    response_fail_empty.status = v201::GetCertificateStatusEnum::Accepted;
+
+    EXPECT_CALL(*this->evse_security, get_ocsp_request_data())
+        .Times(1)
+        .InSequence(seq)
+        .WillOnce(testing::Return(this->example_ocsp_data));
+    EXPECT_CALL(*this->charge_point, get_certificate_status(this->example_status_requests[0]))
+        .Times(1)
+        .InSequence(seq)
+        .WillOnce(testing::Return(response_fail_status));
+
+    EXPECT_CALL(*this->evse_security, get_ocsp_request_data())
+        .Times(1)
+        .InSequence(seq)
+        .WillOnce(testing::Return(this->example_ocsp_data));
+    EXPECT_CALL(*this->charge_point, get_certificate_status(this->example_status_requests[0]))
+        .Times(1)
+        .InSequence(seq)
+        .WillOnce(testing::Return(response_success));
+    EXPECT_CALL(*this->charge_point, get_certificate_status(this->example_status_requests[1]))
+        .Times(1)
+        .InSequence(seq)
+        .WillOnce(testing::Return(response_fail_empty));
+
+    EXPECT_CALL(*this->evse_security, get_ocsp_request_data())
+        .Times(1)
+        .InSequence(seq)
+        .WillOnce(testing::Return(this->example_ocsp_data));
+    EXPECT_CALL(*this->charge_point, get_certificate_status(this->example_status_requests[0]))
+        .Times(1)
+        .InSequence(seq)
+        .WillOnce(testing::Return(response_success));
+    EXPECT_CALL(*this->charge_point, get_certificate_status(this->example_status_requests[1]))
+        .Times(1)
+        .InSequence(seq)
+        .WillOnce(testing::Return(response_success));
+    EXPECT_CALL(*this->charge_point, get_certificate_status(this->example_status_requests[2]))
+        .Times(1)
+        .InSequence(seq)
+        .WillOnce(testing::Return(response_success));
+
+    EXPECT_CALL(*this->evse_security, update_ocsp_cache(this->example_hash_data[0], "EXAMPLE OCSP RESULT"))
+        .Times(1)
+        .InSequence(seq)
+        .WillOnce(testing::Return());
+    EXPECT_CALL(*this->evse_security, update_ocsp_cache(this->example_hash_data[1], "EXAMPLE OCSP RESULT"))
+        .Times(1)
+        .InSequence(seq)
+        .WillOnce(testing::Return());
+    EXPECT_CALL(*this->evse_security, update_ocsp_cache(this->example_hash_data[2], "EXAMPLE OCSP RESULT"))
+        .Times(1)
+        .InSequence(seq)
+        .WillOnce(SignalCallsCompleteVoid(&this->calls_complete));
+
+    ocsp_updater->start();
+    this->calls_complete.timed_wait(boost::posix_time::second_clock::universal_time() + boost::posix_time::seconds(5));
+    ocsp_updater->stop();
+}
+
+/// \brief Tests certificates are re-verified over time
+TEST_F(OcspUpdaterTest, test_reverify_logic) {
+    auto ocsp_updater = std::make_unique<v201::OcspUpdater>(this->evse_security, this->status_update,
+                                                            std::chrono::seconds(0));
+
+    testing::Sequence seq;
+    v201::GetCertificateStatusResponse response_success;
+    response_success.ocspResult = "EXAMPLE OCSP RESULT";
+    response_success.status = v201::GetCertificateStatusEnum::Accepted;
+
+    EXPECT_CALL(*this->evse_security, get_ocsp_request_data())
+        .Times(1)
+        .InSequence(seq)
+        .WillOnce(testing::Return(this->example_ocsp_data));
+    EXPECT_CALL(*this->charge_point, get_certificate_status(testing::_))
+        .Times(3)
+        .InSequence(seq)
+        .WillRepeatedly(testing::Return(response_success));
+    EXPECT_CALL(*this->evse_security, update_ocsp_cache(testing::_, "EXAMPLE OCSP RESULT"))
+        .Times(3)
+        .InSequence(seq)
+        .WillRepeatedly(testing::Return());
+
+    EXPECT_CALL(*this->evse_security, get_ocsp_request_data())
+        .Times(1)
+        .InSequence(seq)
+        .WillOnce(testing::Return(this->example_ocsp_data));
+    EXPECT_CALL(*this->charge_point, get_certificate_status(testing::_))
+        .Times(3)
+        .InSequence(seq)
+        .WillRepeatedly(testing::Return(response_success));
+    EXPECT_CALL(*this->evse_security, update_ocsp_cache(testing::_, "EXAMPLE OCSP RESULT"))
+        .Times(2)
+        .InSequence(seq)
+        .WillRepeatedly(testing::Return());
+    EXPECT_CALL(*this->evse_security, update_ocsp_cache(testing::_, "EXAMPLE OCSP RESULT"))
+        .Times(1)
+        .InSequence(seq)
+        .WillOnce(SignalCallsCompleteVoid(&this->calls_complete));
+
+    EXPECT_CALL(*this->evse_security, get_ocsp_request_data())
+        .InSequence(seq)
+        .WillRepeatedly(testing::Return(std::vector<OCSPRequestData>()));
+
+    ocsp_updater->start();
+    this->calls_complete.timed_wait(boost::posix_time::second_clock::universal_time() + boost::posix_time::seconds(5));
+    ocsp_updater->stop();
+}
+
+} // namespace ocpp::v201

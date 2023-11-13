@@ -71,7 +71,6 @@ private:
     // This function captures a pointer to the owning ChargePoint, but this is fine.
     // The OcspUpdater is part of the ChargePoint, and thus it cannot outlive it.
     cert_status_func get_cert_status_from_csms;
-    boost::uuids::random_generator uuid_generator;
     // Set this when starting and stopping the updater
     bool running;
 

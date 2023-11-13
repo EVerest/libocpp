@@ -22,7 +22,6 @@ OcspUpdater::OcspUpdater(std::shared_ptr<EvseSecurity> evse_security, cert_statu
     update_deadline(std::chrono::steady_clock::now()),
     ocsp_cache_update_interval(ocsp_cache_update_interval),
     ocsp_cache_update_retry_interval(ocsp_cache_update_retry_interval),
-    uuid_generator(),
     running(false) {
 }
 
@@ -36,12 +35,16 @@ void OcspUpdater::start() {
 
 void OcspUpdater::stop() {
     this->update_ocsp_cache_lock.lock();
-    this->running = false;
-    this->update_ocsp_cache_lock.unlock();
-    // Wake up the updater thread
-    this->explicit_update_trigger.notify_one();
-    // wait for updater thread to exit
-    this->updater_thread.join();
+    if (this->running) {
+        this->running = false;
+        this->update_ocsp_cache_lock.unlock();
+        // Wake up the updater thread
+        this->explicit_update_trigger.notify_one();
+        // wait for updater thread to exit
+        this->updater_thread.join();
+    } else {
+        this->update_ocsp_cache_lock.unlock();
+    }
 }
 
 void OcspUpdater::trigger_ocsp_cache_update() {
@@ -118,8 +121,6 @@ void OcspUpdater::execute_ocsp_update() {
         request.ocspRequestData.issuerNameHash = ocsp_request.issuerNameHash;
         request.ocspRequestData.serialNumber = ocsp_request.serialNumber;
         request.ocspRequestData.responderURL = ocsp_request.responderUrl;
-
-        MessageId message_id = MessageId(to_string(this->uuid_generator()));
 
         const auto response = this->get_cert_status_from_csms(request);
 
