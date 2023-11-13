@@ -92,7 +92,7 @@ If you provide a CSMS that is not yet listed here, feel free to
 -   iLumen
 -   JibeCompany (CharlieV CMS and Chargebroker proxy)
 -   MSI
--   PUMP Connect
+-   PUMP (PUMP Connect)
 -   Scoptvision (Scopt Powerconnect)
 -   Siemens
 -   SteVe
