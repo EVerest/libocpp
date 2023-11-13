@@ -438,17 +438,18 @@ private:
         return true;
     }
     // Generates async sending callbacks
-    template <class RequestType, class ResponseType> std::function<ResponseType(RequestType)> send_callback(MessageType expected_response_message_type) {
-        return [this, expected_response_message_type] (auto request) {
+    template <class RequestType, class ResponseType>
+    std::function<ResponseType(RequestType)> send_callback(MessageType expected_response_message_type) {
+        return [this, expected_response_message_type](auto request) {
             MessageId message_id = MessageId(to_string(this->uuid_generator()));
-            const auto enhanced_response =
-                this->send_async<GetCertificateStatusRequest>(ocpp::Call<GetCertificateStatusRequest>(request, message_id)).get();
+            const auto enhanced_response = this->send_async<GetCertificateStatusRequest>(
+                                                   ocpp::Call<GetCertificateStatusRequest>(request, message_id))
+                                               .get();
             if (enhanced_response.messageType != expected_response_message_type) {
                 throw UnexpectedMessageTypeFromCSMS(
-                    std::string("Got unexpected message type from CSMS, expected: ")
-                    + conversions::messagetype_to_string(expected_response_message_type)
-                    + ", got: "
-                    + conversions::messagetype_to_string(enhanced_response.messageType));
+                    std::string("Got unexpected message type from CSMS, expected: ") +
+                    conversions::messagetype_to_string(expected_response_message_type) +
+                    ", got: " + conversions::messagetype_to_string(enhanced_response.messageType));
             }
             ocpp::CallResult<GetCertificateStatusResponse> call_result = enhanced_response.message;
             return call_result.msg;

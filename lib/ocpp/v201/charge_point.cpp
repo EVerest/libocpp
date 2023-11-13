@@ -61,7 +61,9 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
     firmware_status(FirmwareStatusEnum::Idle),
     upload_log_status(UploadLogStatusEnum::Idle),
     bootreason(BootReasonEnum::PowerUp),
-    ocsp_updater(OcspUpdater(this->evse_security,this->send_callback<GetCertificateStatusRequest, GetCertificateStatusResponse>(MessageType::GetCertificateStatusResponse))),
+    ocsp_updater(
+        OcspUpdater(this->evse_security, this->send_callback<GetCertificateStatusRequest, GetCertificateStatusResponse>(
+                                             MessageType::GetCertificateStatusResponse))),
     csr_attempt(1),
     client_certificate_expiration_check_timer([this]() { this->scheduled_check_client_certificate_expiration(); }),
     v2g_certificate_expiration_check_timer([this]() { this->scheduled_check_v2g_certificate_expiration(); }),

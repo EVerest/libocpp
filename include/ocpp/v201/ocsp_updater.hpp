@@ -9,8 +9,8 @@
 #include <stdexcept>
 #include <thread>
 
-#include <ocpp/common/evse_security.hpp>
 #include <ocpp/common/call_types.hpp>
+#include <ocpp/common/evse_security.hpp>
 #include <ocpp/v201/messages/GetCertificateStatus.hpp>
 
 namespace ocpp::v201 {
@@ -43,8 +43,7 @@ class UnexpectedMessageTypeFromCSMS;
 class OcspUpdater {
 public:
     OcspUpdater() = delete;
-    OcspUpdater(std::shared_ptr<EvseSecurity> evse_security,
-                cert_status_func get_cert_status_from_csms,
+    OcspUpdater(std::shared_ptr<EvseSecurity> evse_security, cert_status_func get_cert_status_from_csms,
                 std::chrono::seconds ocsp_cache_update_interval = std::chrono::hours(167),
                 std::chrono::seconds ocsp_cache_update_retry_interval = std::chrono::seconds(5));
 
