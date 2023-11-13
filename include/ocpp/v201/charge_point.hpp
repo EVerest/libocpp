@@ -319,9 +319,7 @@ private:
 
     /// @brief Configure the message logging callback with device model parameters
     /// @param message_log_path path to file logging
-    void configure_message_logging_format(
-        const std::string& message_log_path,
-        std::function<void(const std::string& message, MessageDirection direction)> message_callback);
+    void configure_message_logging_format(const std::string& message_log_path);
 
     /* OCPP message requests */
 
