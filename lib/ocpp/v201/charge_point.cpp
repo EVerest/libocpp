@@ -1,10 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
+#include <ocpp/common/types.hpp>
 #include <ocpp/v201/charge_point.hpp>
+#include <ocpp/v201/ctrlr_component_variables.hpp>
 #include <ocpp/v201/device_model_storage_sqlite.hpp>
 #include <ocpp/v201/messages/FirmwareStatusNotification.hpp>
 #include <ocpp/v201/messages/LogStatusNotification.hpp>
+
+#include <stdexcept>
+#include <string>
 
 using namespace std::chrono_literals;
 
@@ -15,7 +20,6 @@ namespace v201 {
 
 const auto DEFAULT_BOOT_NOTIFICATION_RETRY_INTERVAL = std::chrono::seconds(30);
 const auto WEBSOCKET_INIT_DELAY = std::chrono::seconds(2);
-const auto INITIAL_CERTIFICATE_REQUESTS_DELAY = std::chrono::seconds(60);
 
 bool Callbacks::all_callbacks_valid() const {
     return this->is_reset_allowed_callback != nullptr and this->reset_callback != nullptr and
@@ -57,9 +61,11 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
     firmware_status(FirmwareStatusEnum::Idle),
     upload_log_status(UploadLogStatusEnum::Idle),
     bootreason(BootReasonEnum::PowerUp),
-    callbacks(callbacks),
     ocsp_updater(OcspUpdater(this->evse_security,this->send_callback<GetCertificateStatusRequest, GetCertificateStatusResponse>(MessageType::GetCertificateStatusResponse))),
-    csr_attempt(1) {
+    csr_attempt(1),
+    client_certificate_expiration_check_timer([this]() { this->scheduled_check_client_certificate_expiration(); }),
+    v2g_certificate_expiration_check_timer([this]() { this->scheduled_check_v2g_certificate_expiration(); }),
+    callbacks(callbacks) {
     // Make sure the received callback struct is completely filled early before we actually start running
     if (!this->callbacks.all_callbacks_valid()) {
         EVLOG_AND_THROW(std::invalid_argument("All non-optional callbacks must be supplied"));
@@ -127,9 +133,9 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
             this->database_handler->insert_availability(evse_id, connector_id, OperationalStatusEnum::Operative, false);
         }
     }
-    this->logging =
-        std::make_shared<ocpp::MessageLogging>(true, message_log_path, DateTime().to_rfc3339(), false, false, false,
-                                               true, true, this->callbacks.ocpp_messages_callback.value_or(nullptr));
+
+    // configure logging
+    this->configure_message_logging_format(message_log_path);
 
     this->message_queue = std::make_unique<ocpp::MessageQueue<v201::MessageType>>(
         [this](json message) -> bool { return this->websocket->send(message.dump()); },
@@ -159,6 +165,8 @@ void ChargePoint::stop() {
     this->boot_notification_timer.stop();
     this->certificate_signed_timer.stop();
     this->websocket_timer.stop();
+    this->client_certificate_expiration_check_timer.stop();
+    this->v2g_certificate_expiration_check_timer.stop();
     this->disconnect_websocket(websocketpp::close::status::going_away);
     this->message_queue->stop();
 }
@@ -430,6 +438,25 @@ void ChargePoint::clear_customer_information(const std::optional<CertificateHash
     }
 }
 
+void ChargePoint::configure_message_logging_format(const std::string& message_log_path) {
+    auto log_formats = this->device_model->get_value<std::string>(ControllerComponentVariables::LogMessagesFormat);
+    bool log_to_console = log_formats.find("console") != log_formats.npos;
+    bool detailed_log_to_console = log_formats.find("console_detailed") != log_formats.npos;
+    bool log_to_file = log_formats.find("log") != log_formats.npos;
+    bool log_to_html = log_formats.find("html") != log_formats.npos;
+    bool session_logging = log_formats.find("session_logging") != log_formats.npos;
+    bool message_callback = log_formats.find("callback") != log_formats.npos;
+    std::function<void(const std::string& message, MessageDirection direction)> logging_callback = nullptr;
+
+    if (message_callback) {
+        logging_callback = this->callbacks.ocpp_messages_callback.value_or(nullptr);
+    }
+
+    this->logging = std::make_shared<ocpp::MessageLogging>(
+        !log_formats.empty(), message_log_path, DateTime().to_rfc3339(), log_to_console, detailed_log_to_console,
+        log_to_file, log_to_html, session_logging, logging_callback);
+}
+
 void ChargePoint::on_unavailable(const int32_t evse_id, const int32_t connector_id) {
     this->evses.at(evse_id)->submit_event(connector_id, ConnectorEvent::Unavailable);
 }
@@ -655,6 +682,7 @@ void ChargePoint::init_websocket() {
                     }
                 }
             }
+            this->init_certificate_expiration_check_timers(); // re-init as timers are stopped on disconnect
         }
         this->time_disconnected = std::chrono::time_point<std::chrono::steady_clock>();
     });
@@ -680,6 +708,9 @@ void ChargePoint::init_websocket() {
             // Get the current time point using steady_clock
             this->time_disconnected = std::chrono::steady_clock::now();
         }
+
+        this->client_certificate_expiration_check_timer.stop();
+        this->v2g_certificate_expiration_check_timer.stop();
     });
 
     this->websocket->register_closed_callback(
@@ -703,6 +734,27 @@ void ChargePoint::init_websocket() {
     this->websocket->register_message_callback([this](const std::string& message) { this->message_callback(message); });
 }
 
+void ChargePoint::init_certificate_expiration_check_timers() {
+
+    // Timers started with initial delays; callback functions are supposed to re-schedule on their own!
+
+    // Client Certificate only needs to be checked for SecurityProfile 3; if SecurityProfile changes, timers get
+    // re-initialized at reconnect
+    if (this->device_model->get_value<int>(ControllerComponentVariables::SecurityProfile) == 3) {
+        this->client_certificate_expiration_check_timer.timeout(std::chrono::seconds(
+            this->device_model
+                ->get_optional_value<int>(ControllerComponentVariables::ClientCertificateExpireCheckInitialDelaySeconds)
+                .value_or(60)));
+    }
+
+    // V2G Certificate timer is started in any case; condition (V2GCertificateInstallationEnabled) is validated in
+    // callback (ChargePoint::scheduled_check_v2g_certificate_expiration)
+    this->v2g_certificate_expiration_check_timer.timeout(std::chrono::seconds(
+        this->device_model
+            ->get_optional_value<int>(ControllerComponentVariables::V2GCertificateExpireCheckInitialDelaySeconds)
+            .value_or(60)));
+}
+
 WebsocketConnectionOptions ChargePoint::get_ws_connection_options(const int32_t configuration_slot) {
     const auto network_connection_profile_opt = this->get_network_connection_profile(configuration_slot);
 
@@ -712,19 +764,16 @@ WebsocketConnectionOptions ChargePoint::get_ws_connection_options(const int32_t 
     }
 
     const auto network_connection_profile = network_connection_profile_opt.value();
-    auto ocpp_csms_url = network_connection_profile.ocppCsmsUrl.get();
 
-    if (ocpp_csms_url.compare(0, 5, "ws://") == 0) {
-        ocpp_csms_url.erase(0, 5);
-    } else if (ocpp_csms_url.compare(0, 6, "wss://") == 0) {
-        ocpp_csms_url.erase(0, 6);
-    }
+    auto uri = Uri::parse_and_validate(
+        network_connection_profile.ocppCsmsUrl.get(),
+        this->device_model->get_value<std::string>(ControllerComponentVariables::SecurityCtrlrIdentity),
+        network_connection_profile.securityProfile);
 
     WebsocketConnectionOptions connection_options{
         OcppProtocolVersion::v201,
-        ocpp_csms_url,
+        uri,
         network_connection_profile.securityProfile,
-        this->device_model->get_value<std::string>(ControllerComponentVariables::ChargePointId),
         this->device_model->get_optional_value<std::string>(ControllerComponentVariables::BasicAuthPassword),
         this->device_model->get_value<int>(ControllerComponentVariables::RetryBackOffRandomRange),
         this->device_model->get_value<int>(ControllerComponentVariables::RetryBackOffRepeatTimes),
@@ -750,6 +799,15 @@ std::optional<NetworkConnectionProfile> ChargePoint::get_network_connection_prof
 
     for (const auto& network_profile : network_connection_profiles) {
         if (network_profile.configurationSlot == configuration_slot) {
+            auto security_profile = network_profile.connectionData.securityProfile;
+            switch (security_profile) {
+            case security::OCPP_1_6_ONLY_UNSECURED_TRANSPORT_WITHOUT_BASIC_AUTHENTICATION:
+                throw std::invalid_argument("security_profile = " + std::to_string(security_profile) +
+                                            " not officially allowed in OCPP 2.0.1");
+            default:
+                break;
+            }
+
             return network_profile.connectionData;
         }
     }
@@ -1657,6 +1715,7 @@ void ChargePoint::handle_boot_notification_response(CallResult<BootNotificationR
         if (msg.interval > 0) {
             this->heartbeat_timer.interval([this]() { this->heartbeat_req(); }, std::chrono::seconds(msg.interval));
         }
+        this->init_certificate_expiration_check_timers();
         this->update_aligned_data_interval();
         // B01.FR.06 Only use boot timestamp if TimeSource contains Heartbeat
         if (this->callbacks.time_sync_callback.has_value() &&
@@ -2680,6 +2739,51 @@ void ChargePoint::handle_get_local_authorization_list_version_req(Call<GetLocalL
 
     ocpp::CallResult<GetLocalListVersionResponse> call_result(response, call.uniqueId);
     this->send<GetLocalListVersionResponse>(call_result);
+}
+
+void ChargePoint::scheduled_check_client_certificate_expiration() {
+
+    EVLOG_info << "Checking if CSMS client certificate has expired";
+    int expiry_days_count =
+        this->evse_security->get_leaf_expiry_days_count(ocpp::CertificateSigningUseEnum::ChargingStationCertificate);
+    if (expiry_days_count < 30) {
+        EVLOG_info << "CSMS client certificate is invalid in " << expiry_days_count
+                   << " days. Requesting new certificate with certificate signing request";
+        this->sign_certificate_req(ocpp::CertificateSigningUseEnum::ChargingStationCertificate);
+    } else {
+        EVLOG_info << "CSMS client certificate is still valid.";
+    }
+
+    this->client_certificate_expiration_check_timer.interval(std::chrono::seconds(
+        this->device_model
+            ->get_optional_value<int>(ControllerComponentVariables::ClientCertificateExpireCheckIntervalSeconds)
+            .value_or(12 * 60 * 60)));
+}
+
+void ChargePoint::scheduled_check_v2g_certificate_expiration() {
+    if (this->device_model->get_optional_value<bool>(ControllerComponentVariables::V2GCertificateInstallationEnabled)
+            .value_or(false)) {
+        EVLOG_info << "Checking if V2GCertificate has expired";
+        int expiry_days_count =
+            this->evse_security->get_leaf_expiry_days_count(ocpp::CertificateSigningUseEnum::V2GCertificate);
+        if (expiry_days_count < 30) {
+            EVLOG_info << "V2GCertificate is invalid in " << expiry_days_count
+                       << " days. Requesting new certificate with certificate signing request";
+            this->sign_certificate_req(ocpp::CertificateSigningUseEnum::V2GCertificate);
+        } else {
+            EVLOG_info << "V2GCertificate is still valid.";
+        }
+    } else {
+        if (this->device_model->get_optional_value<bool>(ControllerComponentVariables::PnCEnabled).value_or(false)) {
+            EVLOG_warning << "PnC is enabled but V2G certificate installation is not, so no certificate expiration "
+                             "check is performed.";
+        }
+    }
+
+    this->v2g_certificate_expiration_check_timer.interval(std::chrono::seconds(
+        this->device_model
+            ->get_optional_value<int>(ControllerComponentVariables::V2GCertificateExpireCheckIntervalSeconds)
+            .value_or(12 * 60 * 60)));
 }
 
 } // namespace v201

@@ -223,7 +223,13 @@
                 "attributes": {
                     "Actual": "1"
                 }
+            },
+            "LogMessagesFormat": {
+            "variable_name": "LogMessagesFormat",
+            "attributes": {
+              "Actual": "log,html"
             }
+          }
         }
     },
     {
@@ -611,6 +617,12 @@
                 "variable_name": "SecurityProfile",
                 "attributes": {
                     "Actual": "1"
+                }
+            },
+            "Identity": {
+                "variable_name": "Identity",
+                "attributes": {
+                    "Actual": "cp001"
                 }
             },
             "BasicAuthPassword": {
