@@ -1199,7 +1199,7 @@ void ChargePoint::handle_scheduled_change_availability_requests(const int32_t ev
 }
 
 /**
- * Determine for a component variable whether it affects the Websocket Connnection Options (cf.
+ * Determine for a component variable whether it affects the Websocket Connection Options (cf.
  * get_ws_connection_options); return true if it is furthermore writable and does not require a reconnect
  *
  * @param component_variable
