@@ -665,6 +665,8 @@ void ChargePoint::init_websocket() {
                                                     AttributeEnum::Actual, std::to_string(security_profile));
         }
 
+        this->remove_network_connection_profiles_below_level(security_profile);
+
         if (this->registration_status == RegistrationStatusEnum::Accepted and
             this->time_disconnected.time_since_epoch() != 0s) {
             // handle offline threshold
@@ -833,6 +835,23 @@ void ChargePoint::next_network_configuration_priority() {
     }
     this->network_configuration_priority =
         (this->network_configuration_priority + 1) % (network_connection_profiles.size());
+}
+
+void ChargePoint::remove_network_connection_profiles_below_level(const int32_t security_level) {
+    auto network_connection_profiles = json::parse(
+        this->device_model->get_value<std::string>(ControllerComponentVariables::NetworkConnectionProfiles));
+
+    auto check_security_level = [security_level](const SetNetworkProfileRequest& item) {
+        return item.connectionData.securityProfile < security_level;
+    };
+
+    network_connection_profiles.erase(
+        std::remove_if(network_connection_profiles.begin(), network_connection_profiles.end(), check_security_level),
+        network_connection_profiles.end());
+
+    this->device_model->set_value(ControllerComponentVariables::NetworkConnectionProfiles.component,
+                                  ControllerComponentVariables::NetworkConnectionProfiles.variable.value(),
+                                  AttributeEnum::Actual, network_connection_profiles.dump());
 }
 
 void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& message) {
