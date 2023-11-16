@@ -665,7 +665,9 @@ void ChargePoint::init_websocket() {
                                                     AttributeEnum::Actual, std::to_string(security_profile));
         }
 
-        this->remove_network_connection_profiles_below_level(security_profile);
+        if (this->registration_status == RegistrationStatusEnum::Accepted) {
+            this->remove_network_connection_profiles_below_level(security_profile);
+        }
 
         if (this->registration_status == RegistrationStatusEnum::Accepted and
             this->time_disconnected.time_since_epoch() != 0s) {
@@ -852,6 +854,31 @@ void ChargePoint::remove_network_connection_profiles_below_level(const int32_t s
     this->device_model->set_value(ControllerComponentVariables::NetworkConnectionProfiles.component,
                                   ControllerComponentVariables::NetworkConnectionProfiles.variable.value(),
                                   AttributeEnum::Actual, network_connection_profiles.dump());
+
+    auto network_priority = ocpp::get_vector_from_csv(
+        this->device_model->get_value<std::string>(ControllerComponentVariables::NetworkConfigurationPriority));
+
+    auto not_in_network_profiles = [&network_connection_profiles](const std::string& item) {
+        auto is_same_slot = [&item](const SetNetworkProfileRequest& profile) {
+            return std::to_string(profile.configurationSlot) == item;
+        };
+        return std::none_of(network_connection_profiles.begin(), network_connection_profiles.end(), is_same_slot);
+    };
+
+    network_priority.erase(std::remove_if(network_priority.begin(), network_priority.end(), not_in_network_profiles),
+                           network_priority.end());
+
+    std::string new_network_priority;
+    for (const auto& item : network_priority) {
+        if (!new_network_priority.empty()) {
+            new_network_priority += ',';
+        }
+        new_network_priority += item;
+    }
+
+    this->device_model->set_value(ControllerComponentVariables::NetworkConfigurationPriority.component,
+                                  ControllerComponentVariables::NetworkConfigurationPriority.variable.value(),
+                                  AttributeEnum::Actual, new_network_priority);
 }
 
 void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& message) {
