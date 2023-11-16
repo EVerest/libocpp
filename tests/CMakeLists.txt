@@ -17,9 +17,9 @@ target_link_libraries(database_tests PRIVATE
 add_test(database_tests database_tests)
 
 
-add_executable(ocsp_updater_tests ocsp_updater_tests.cpp)
+add_executable(ocsp_updater_tests ocsp_updater_tests.cpp comparators.cpp)
 
-target_include_directories(ocsp_updater_tests PUBLIC ${GTEST_INCLUDE_DIRS})
+target_include_directories(ocsp_updater_tests PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${GTEST_INCLUDE_DIRS})
 
 find_package(GTest REQUIRED)
 

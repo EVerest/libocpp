@@ -3,12 +3,14 @@
 
 #include <iostream>
 
+#include <comparators.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/interprocess/sync/interprocess_semaphore.hpp>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <ocpp/v201/ocsp_updater.hpp>
+#include <evse_security_mock.hpp>
 
 namespace ocpp {
 
@@ -21,44 +23,10 @@ ACTION_P2(SignalCallsCompleteVoid, semaphore) {
     return;
 }
 
-class EvseSecurityMock : public EvseSecurity {
-public:
-    MOCK_METHOD(InstallCertificateResult, install_ca_certificate, (const std::string&, const CaCertificateType&),
-                (override));
-    MOCK_METHOD(DeleteCertificateResult, delete_certificate, (const ocpp::CertificateHashDataType&), (override));
-    MOCK_METHOD(InstallCertificateResult, update_leaf_certificate,
-                (const std::string&, const CertificateSigningUseEnum&), (override));
-    MOCK_METHOD(InstallCertificateResult, verify_certificate, (const std::string&, const CertificateSigningUseEnum&),
-                (override));
-    MOCK_METHOD(std::vector<CertificateHashDataChain>, get_installed_certificates,
-                (const std::vector<CertificateType>&), (override));
-    MOCK_METHOD(std::vector<OCSPRequestData>, get_ocsp_request_data, (), (override));
-    MOCK_METHOD(void, update_ocsp_cache, (const CertificateHashDataType&, const std::string&), (override));
-    MOCK_METHOD(bool, is_ca_certificate_installed, (const CaCertificateType&), (override));
-    MOCK_METHOD(std::string, generate_certificate_signing_request,
-                (const CertificateSigningUseEnum&, const std::string&, const std::string&, const std::string&),
-                (override));
-    MOCK_METHOD(std::optional<KeyPair>, get_key_pair, (const CertificateSigningUseEnum&), (override));
-    MOCK_METHOD(std::string, get_verify_file, (const CaCertificateType&), (override));
-    MOCK_METHOD(int, get_leaf_expiry_days_count, (const CertificateSigningUseEnum&), (override));
-};
-
 class ChargePointMock {
 public:
     MOCK_METHOD(v201::GetCertificateStatusResponse, get_certificate_status, (v201::GetCertificateStatusRequest), ());
 };
-
-static bool operator==(const CertificateHashDataType& a, const CertificateHashDataType& b) {
-    return a.serialNumber == b.serialNumber && a.issuerKeyHash == b.issuerKeyHash &&
-           a.issuerNameHash == b.issuerNameHash && a.hashAlgorithm == b.hashAlgorithm;
-}
-static bool operator==(const v201::GetCertificateStatusRequest& a, const v201::GetCertificateStatusRequest& b) {
-    return a.ocspRequestData.serialNumber == b.ocspRequestData.serialNumber &&
-           a.ocspRequestData.issuerKeyHash == b.ocspRequestData.issuerKeyHash &&
-           a.ocspRequestData.issuerNameHash == b.ocspRequestData.issuerNameHash &&
-           a.ocspRequestData.hashAlgorithm == b.ocspRequestData.hashAlgorithm &&
-           a.ocspRequestData.responderURL == b.ocspRequestData.responderURL;
-}
 
 class OcspUpdaterTest : public ::testing::Test {
 protected:
