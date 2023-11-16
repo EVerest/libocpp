@@ -442,9 +442,8 @@ private:
     std::function<ResponseType(RequestType)> send_callback(MessageType expected_response_message_type) {
         return [this, expected_response_message_type](auto request) {
             MessageId message_id = MessageId(to_string(this->uuid_generator()));
-            const auto enhanced_response = this->send_async<RequestType>(
-                                                   ocpp::Call<RequestType>(request, message_id))
-                                               .get();
+            const auto enhanced_response =
+                this->send_async<RequestType>(ocpp::Call<RequestType>(request, message_id)).get();
             if (enhanced_response.messageType != expected_response_message_type) {
                 throw UnexpectedMessageTypeFromCSMS(
                     std::string("Got unexpected message type from CSMS, expected: ") +

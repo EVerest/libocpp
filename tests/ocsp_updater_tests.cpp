@@ -3,14 +3,14 @@
 
 #include <iostream>
 
-#include <comparators.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/interprocess/sync/interprocess_semaphore.hpp>
+#include <comparators.hpp>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <ocpp/v201/ocsp_updater.hpp>
 #include <evse_security_mock.hpp>
+#include <ocpp/v201/ocsp_updater.hpp>
 
 namespace ocpp {
 
@@ -316,7 +316,6 @@ TEST_F(OcspUpdaterTest, test_trigger) {
         .Times(1)
         .InSequence(seq)
         .WillOnce(SignalCallsCompleteVoid(&this->calls_complete));
-
 
     ocsp_updater->start();
     this->calls_complete.timed_wait(boost::posix_time::second_clock::universal_time() + boost::posix_time::seconds(5));

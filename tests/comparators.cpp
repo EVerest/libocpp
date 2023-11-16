@@ -9,7 +9,8 @@ bool operator==(const ::ocpp::CertificateHashDataType& a, const ::ocpp::Certific
     return a.serialNumber == b.serialNumber && a.issuerKeyHash == b.issuerKeyHash &&
            a.issuerNameHash == b.issuerNameHash && a.hashAlgorithm == b.hashAlgorithm;
 }
-bool operator==(const ::ocpp::v201::GetCertificateStatusRequest& a, const ::ocpp::v201::GetCertificateStatusRequest& b) {
+bool operator==(const ::ocpp::v201::GetCertificateStatusRequest& a,
+                const ::ocpp::v201::GetCertificateStatusRequest& b) {
     return a.ocspRequestData.serialNumber == b.ocspRequestData.serialNumber &&
            a.ocspRequestData.issuerKeyHash == b.ocspRequestData.issuerKeyHash &&
            a.ocspRequestData.issuerNameHash == b.ocspRequestData.issuerNameHash &&

@@ -4,9 +4,9 @@
 #ifndef TESTS_OCPP_COMPARATORS_H
 #define TESTS_OCPP_COMPARATORS_H
 
-#include <ocpp/v201/types.hpp>
 #include <ocpp/common/types.hpp>
 #include <ocpp/v201/messages/GetCertificateStatus.hpp>
+#include <ocpp/v201/types.hpp>
 
 namespace testing::internal {
 
