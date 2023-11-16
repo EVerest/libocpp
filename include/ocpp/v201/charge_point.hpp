@@ -442,8 +442,8 @@ private:
     std::function<ResponseType(RequestType)> send_callback(MessageType expected_response_message_type) {
         return [this, expected_response_message_type](auto request) {
             MessageId message_id = MessageId(to_string(this->uuid_generator()));
-            const auto enhanced_response = this->send_async<GetCertificateStatusRequest>(
-                                                   ocpp::Call<GetCertificateStatusRequest>(request, message_id))
+            const auto enhanced_response = this->send_async<RequestType>(
+                                                   ocpp::Call<RequestType>(request, message_id))
                                                .get();
             if (enhanced_response.messageType != expected_response_message_type) {
                 throw UnexpectedMessageTypeFromCSMS(
@@ -451,7 +451,7 @@ private:
                     conversions::messagetype_to_string(expected_response_message_type) +
                     ", got: " + conversions::messagetype_to_string(enhanced_response.messageType));
             }
-            ocpp::CallResult<GetCertificateStatusResponse> call_result = enhanced_response.message;
+            ocpp::CallResult<ResponseType> call_result = enhanced_response.message;
             return call_result.msg;
         };
     };
