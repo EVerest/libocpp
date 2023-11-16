@@ -55,28 +55,32 @@ public:
     void trigger_ocsp_cache_update();
 
 private:
-    // This mutex guards access to everything below it
+    // Updater thread responsible for executing the updates
+    std::thread updater_thread;
+
+    // This mutex guards access to everything below it, INCLUDING explicit_update_trigger
+    // - The updater thread always holds the lock, except when it's waiting on explicit_update_trigger
+    // - The lib needs to hold the lock to notify the explicit_update_trigger (this guarantees it wakes up the worker)
     std::mutex update_ocsp_cache_lock;
     // Condition variable used to wake up the updater thread
     std::condition_variable explicit_update_trigger;
     // Deadline by which libocpp must automatically trigger an OCSP cache update
     std::chrono::time_point<std::chrono::steady_clock> update_deadline;
-    // Worker thread responsible for the updates
-    std::thread updater_thread;
     std::shared_ptr<EvseSecurity> evse_security;
-
-    // This function captures a pointer to the owning ChargePoint, but this is fine.
-    // The OcspUpdater is part of the ChargePoint, and thus it cannot outlive it.
-    cert_status_func get_cert_status_from_csms;
-    // Set this when starting and stopping the updater
+    // Set this when starting and stopping the updater thread
     bool running;
+
+    // This function captures a pointer to a ChargePoint, which has to remain valid.
+    // The OcspUpdater class is part of the ChargePoint, and thus it cannot outlive the ChargePoint.
+    cert_status_func get_cert_status_from_csms;
 
     // Timing constants
     const std::chrono::seconds ocsp_cache_update_interval;
     const std::chrono::seconds ocsp_cache_update_retry_interval;
 
+    // Running loop of the OCSP updater thread
     void updater_thread_loop();
-    // Helper function that actually performs the OCSP update. Only called within updater_thread_loop().
+    // Helper method, only called within updater_thread_loop().
     void execute_ocsp_update();
 };
 

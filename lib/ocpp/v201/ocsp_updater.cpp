@@ -28,7 +28,8 @@ OcspUpdater::OcspUpdater(std::shared_ptr<EvseSecurity> evse_security, cert_statu
 void OcspUpdater::start() {
     std::unique_lock lock(this->update_ocsp_cache_lock);
     this->running = true;
-    // Create the updater thread - because the deadline is in the past, it will immediately attempt an update
+    // Create the updater thread - we are holding the lock, so it will only start after we leave this function.
+    // Because the deadline is in the past, it will immediately attempt an update
     this->updater_thread = std::thread([this] { this->updater_thread_loop(); });
 }
 
@@ -36,9 +37,9 @@ void OcspUpdater::stop() {
     std::unique_lock lock(this->update_ocsp_cache_lock);
     if (this->running) {
         this->running = false;
-        lock.unlock();
         // Wake up the updater thread
         this->explicit_update_trigger.notify_one();
+        lock.unlock();
         // wait for updater thread to exit
         this->updater_thread.join();
     }
@@ -51,16 +52,16 @@ void OcspUpdater::trigger_ocsp_cache_update() {
     }
     // Move the deadline to "now" so the updater thread doesn't think this is a spurious wakeup
     this->update_deadline = std::chrono::steady_clock::now();
-    lock.unlock();
     // Wake up the updater thread
     this->explicit_update_trigger.notify_one();
 }
 
 void OcspUpdater::updater_thread_loop() {
+    std::unique_lock lock(this->update_ocsp_cache_lock);
     while (true) {
-        std::unique_lock lock(this->update_ocsp_cache_lock);
         auto current_deadline = this->update_deadline;
         // Wait until the last known deadline expires, or until we're woken up by the trigger
+        // This is the only place where we release this->update_ocsp_cache_lock
         this->explicit_update_trigger.wait_until(lock, current_deadline);
         // If the running variable is disabled, we should exit
         if (!this->running) {
