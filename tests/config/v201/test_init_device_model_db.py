@@ -49,7 +49,13 @@ class TestDeviceModelDatabaseInitializer:
                                                           'INSTANCE': None,
                                                           'NAME': 'UnitTestPropertyBName',
                                                           'REQUIRED': 0,
-                                                          'VARIABLE_CHARACTERISTICS_ID': 2}]
+                                                          'VARIABLE_CHARACTERISTICS_ID': 2},
+                                                         {'COMPONENT_ID': 1,
+                                                          'ID': 3,
+                                                          'INSTANCE': None,
+                                                          'NAME': 'UnitTestPropertyCName',
+                                                          'REQUIRED': 0,
+                                                          'VARIABLE_CHARACTERISTICS_ID': 3}]
         assert self._read_table(db_file, "VARIABLE_MONITORING") == []
         assert self._read_table(db_file, "VARIABLE_CHARACTERISTICS") == [{'DATATYPE_ID': 4,
                                                                           'ID': 1,
@@ -60,6 +66,13 @@ class TestDeviceModelDatabaseInitializer:
                                                                           'VALUES_LIST': None},
                                                                          {'DATATYPE_ID': 0,
                                                                           'ID': 2,
+                                                                          'MAX_LIMIT': None,
+                                                                          'MIN_LIMIT': None,
+                                                                          'SUPPORTS_MONITORING': 0,
+                                                                          'UNIT': None,
+                                                                          'VALUES_LIST': None},
+                                                                         {'DATATYPE_ID': None,
+                                                                          'ID': 3,
                                                                           'MAX_LIMIT': None,
                                                                           'MIN_LIMIT': None,
                                                                           'SUPPORTS_MONITORING': 0,
@@ -123,7 +136,14 @@ class TestDeviceModelDatabaseInitializer:
                                                                     'PERSISTENT': 1,
                                                                     'TYPE_ID': 0,
                                                                     'VALUE': None,
-                                                                    'VARIABLE_ID': 2}]
+                                                                    'VARIABLE_ID': 2},
+                                                                   {'CONSTANT': 0,
+                                                                    'ID': 3,
+                                                                    'MUTABILITY_ID': 0,
+                                                                    'PERSISTENT': 1,
+                                                                    'TYPE_ID': 0,
+                                                                    'VALUE': None,
+                                                                    'VARIABLE_ID': 3}]
 
     def test_insert(self, db_file):
 
@@ -150,4 +170,11 @@ class TestDeviceModelDatabaseInitializer:
                                                                     'PERSISTENT': 1,
                                                                     'TYPE_ID': 0,
                                                                     'VALUE': "test_value",
-                                                                    'VARIABLE_ID': 2}]
+                                                                    'VARIABLE_ID': 2},
+                                                                   {'CONSTANT': 0,
+                                                                    'ID': 3,
+                                                                    'MUTABILITY_ID': 0,
+                                                                    'PERSISTENT': 1,
+                                                                    'TYPE_ID': 0,
+                                                                    'VALUE': None,
+                                                                    'VARIABLE_ID': 3}]

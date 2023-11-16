@@ -207,7 +207,9 @@ void DeviceModelStorageSqlite::check_integrity() {
                     "JOIN VARIABLE v ON v.ID = va.VARIABLE_ID "
                     "JOIN COMPONENT c ON v.COMPONENT_ID = c.ID "
                     "WHERE va.TYPE_ID = "
-                 << static_cast<int>(AttributeEnum::Actual) << " AND va.VALUE IS NULL";
+                 << static_cast<int>(AttributeEnum::Actual)
+                 << " AND va.VALUE IS NULL"
+                    " AND v.REQUIRED = 1";
     SQLiteStatement select_stmt(this->db, query_stream.str());
 
     int res = select_stmt.step();

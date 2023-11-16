@@ -34,6 +34,20 @@
         }
       ],
       "type": "string"
+    },
+    "UnitTestPropertyC": {
+      "variable_name": "UnitTestPropertyCName",
+      "characteristics": {
+        "supportsMonitoring": false,
+        "dataType": "number"
+      },
+      "attributes": [
+        {
+          "type": "Actual",
+          "mutability": "ReadOnly"
+        }
+      ],
+      "type": "number"
     }
   },
   "required": [
