@@ -420,7 +420,7 @@
             "AlignedDataMeasurands": {
                 "variable_name": "Measurands",
                 "attributes": {
-                    "Actual": "Energy.Active.Import.Register,Voltage"
+                    "Actual": "Energy.Active.Import.Register,Voltage,Frequency"
                 }
             },
             "AlignedDataTxEndedInterval": {

@@ -33,15 +33,13 @@ private:
     };
     struct MeterValueMeasurands {
         MeasurandEnum measurand;
-        PhaseEnum phase;
+        std::optional<PhaseEnum> phase;       // measurand may or may not have a phase field
+        std::optional<LocationEnum> location; // measurand may or may not have location field
 
         // Define a comparison operator for the struct
         bool operator<(const MeterValueMeasurands& other) const {
-            // Compare based on name, then age
-            if (measurand != other.measurand) {
-                return measurand < other.measurand;
-            }
-            return phase < other.phase;
+
+            return measurand < other.measurand or location < other.location or phase < other.phase;
         }
     };
 

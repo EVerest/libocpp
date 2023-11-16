@@ -10,6 +10,7 @@ namespace v201 {
 AverageMeterValues::AverageMeterValues() {
 }
 void AverageMeterValues::clear_values() {
+    std::lock_guard<std::mutex> lk(this->avg_meter_value_mutex);
     this->aligned_meter_values.clear();
     this->averaged_meter_values.sampledValue.clear();
 }
@@ -20,12 +21,12 @@ void AverageMeterValues::set_values(const MeterValue& meter_value) {
     this->averaged_meter_values = meter_value;
 
     // avg all the possible measurerands
-    for (auto element : meter_value.sampledValue) {
+    for (auto& element : meter_value.sampledValue) {
         if (is_avg_meas(element)) {
-            MeterValueCalc temp = this->aligned_meter_values[{element.measurand.value(), element.phase.value_or(7)}];
+            MeterValueCalc& temp =
+                this->aligned_meter_values[{element.measurand.value(), element.phase, element.location}];
             temp.sum += element.value;
             temp.num_elements++;
-            this->aligned_meter_values[{element.measurand.value(), element.phase.value()}] = temp;
         }
     }
 }
@@ -39,23 +40,31 @@ MeterValue AverageMeterValues::retrieve_processed_values() {
 void AverageMeterValues::average_meter_value() {
     for (auto& element : this->averaged_meter_values.sampledValue) {
         if (is_avg_meas(element)) {
-            element.value = this->aligned_meter_values[{element.measurand.value(), element.phase.value()}].sum /
-                            this->aligned_meter_values[{element.measurand.value(), element.phase.value()}].num_elements;
-            EVLOG_debug << "Meas: " << element.measurand.value() << " phase: " << element.phase.value() << " sum: "
-                        << this->aligned_meter_values[{element.measurand.value(), element.phase.value()}].sum
-                        << " num_ele"
-                        << this->aligned_meter_values[{element.measurand.value(), element.phase.value()}].num_elements;
-            EVLOG_debug << "AVG: " << element.value;
+
+            MeterValueCalc& temp =
+                this->aligned_meter_values[{element.measurand.value(), element.phase, element.location}];
+
+            element.value = temp.sum / temp.num_elements;
+
+            EVLOG_debug << "====== Meas: " << element.measurand.value();
+            if (element.phase.has_value()) {
+
+                EVLOG_debug << " phase: " << element.phase.value();
+            }
+            if (element.location.has_value()) {
+
+                EVLOG_debug << " loc: " << element.location.value();
+            }
+
+            EVLOG_debug << " sum:" << temp.sum << "#num" << temp.num_elements << "AVG: " << element.value;
         }
     }
 }
 bool AverageMeterValues::is_avg_meas(const SampledValue& sample) {
-
-    // TODO: check up on location values and how they impact the averaging
-    if (sample.measurand.has_value()) {
-        if ((sample.measurand == MeasurandEnum::Current_Import) || (sample.measurand == MeasurandEnum::Voltage) ||
-            (sample.measurand == MeasurandEnum::Power_Active_Import) || (sample.measurand == MeasurandEnum::Frequency))
-            return true;
+    if (sample.measurand.has_value() and (sample.measurand == MeasurandEnum::Current_Import) or
+        (sample.measurand == MeasurandEnum::Voltage) or (sample.measurand == MeasurandEnum::Power_Active_Import) or
+        (sample.measurand == MeasurandEnum::Frequency)) {
+        return true;
     } else {
         return false;
     }

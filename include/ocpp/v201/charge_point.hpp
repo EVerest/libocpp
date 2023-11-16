@@ -303,10 +303,6 @@ private:
     /// \return true if the charge point is offline. std::nullopt if it is online;
     bool is_offline();
 
-    /// \brief Returns the last present meter value for evseId 0
-    /// \return MeterValue
-    MeterValue get_meter_value();
-
     /// \brief Returns customer information based on the given arguments. This function also executes the
     /// get_customer_information_callback in case it is present
     /// \param customer_certificate Certificate of the customer this request refers to

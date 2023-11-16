@@ -390,6 +390,63 @@ void ChargePoint::on_meter_value(const int32_t evse_id, const MeterValue& meter_
     }
 }
 
+std::string ChargePoint::get_customer_information(const std::optional<CertificateHashDataType> customer_certificate,
+                                                  const std::optional<IdToken> id_token,
+                                                  const std::optional<CiString<64>> customer_identifier) {
+    std::stringstream s;
+
+    // Retrieve possible customer information from application that uses this library
+    if (this->callbacks.get_customer_information_callback.has_value()) {
+        s << this->callbacks.get_customer_information_callback.value()(customer_certificate, id_token,
+                                                                       customer_identifier);
+    }
+
+    // Retrieve information from auth cache
+    if (id_token.has_value()) {
+        const auto hashed_id_token = utils::generate_token_hash(id_token.value());
+        const auto entry = this->database_handler->authorization_cache_get_entry(hashed_id_token);
+        if (entry.has_value()) {
+            s << "Hashed id_token stored in cache: " + hashed_id_token + "\n";
+            s << "IdTokenInfo: " << entry.value();
+        }
+    }
+
+    return s.str();
+}
+
+void ChargePoint::clear_customer_information(const std::optional<CertificateHashDataType> customer_certificate,
+                                             const std::optional<IdToken> id_token,
+                                             const std::optional<CiString<64>> customer_identifier) {
+    if (this->callbacks.clear_customer_information_callback.has_value()) {
+        this->callbacks.clear_customer_information_callback.value()(customer_certificate, id_token,
+                                                                    customer_identifier);
+    }
+
+    if (id_token.has_value()) {
+        const auto hashed_id_token = utils::generate_token_hash(id_token.value());
+        this->database_handler->authorization_cache_delete_entry(hashed_id_token);
+        this->update_authorization_cache_size();
+    }
+}
+
+void ChargePoint::configure_message_logging_format(const std::string& message_log_path) {
+    auto log_formats = this->device_model->get_value<std::string>(ControllerComponentVariables::LogMessagesFormat);
+    bool log_to_console = log_formats.find("console") != log_formats.npos;
+    bool detailed_log_to_console = log_formats.find("console_detailed") != log_formats.npos;
+    bool log_to_file = log_formats.find("log") != log_formats.npos;
+    bool log_to_html = log_formats.find("html") != log_formats.npos;
+    bool session_logging = log_formats.find("session_logging") != log_formats.npos;
+    bool message_callback = log_formats.find("callback") != log_formats.npos;
+    std::function<void(const std::string& message, MessageDirection direction)> logging_callback = nullptr;
+
+    if (message_callback) {
+        logging_callback = this->callbacks.ocpp_messages_callback.value_or(nullptr);
+    }
+
+    this->logging = std::make_shared<ocpp::MessageLogging>(
+        !log_formats.empty(), message_log_path, DateTime().to_rfc3339(), log_to_console, detailed_log_to_console,
+        log_to_file, log_to_html, session_logging, logging_callback);
+}
 void ChargePoint::on_unavailable(const int32_t evse_id, const int32_t connector_id) {
     this->evses.at(evse_id)->submit_event(connector_id, ConnectorEvent::Unavailable);
 }
@@ -1041,8 +1098,8 @@ void ChargePoint::update_aligned_data_interval() {
 
             if (!meter_value.sampledValue.empty()) {
                 this->meter_values_req(0, std::vector<ocpp::v201::MeterValue>(1, meter_value));
-                this->aligned_data_evse0.clear_values();
             }
+            this->aligned_data_evse0.clear_values();
 
             for (auto const& [evse_id, evse] : this->evses) {
                 if (evse->has_active_transaction()) {
@@ -1059,8 +1116,8 @@ void ChargePoint::update_aligned_data_interval() {
                     // J01.FR.14 this is the only case where we send a MeterValue.req
                     this->meter_values_req(evse_id, std::vector<ocpp::v201::MeterValue>(1, meter_value));
                     // clear the values
-                    evse->clear_idle_meter_values();
                 }
+                evse->clear_idle_meter_values();
             }
         },
         interval, std::chrono::floor<date::days>(date::utc_clock::to_sys(date::utc_clock::now())));
