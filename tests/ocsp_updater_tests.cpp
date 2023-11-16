@@ -274,4 +274,57 @@ TEST_F(OcspUpdaterTest, test_reverify_logic) {
     ocsp_updater->stop();
 }
 
+/// \brief Tests triggering an update before the deadline
+TEST_F(OcspUpdaterTest, test_trigger) {
+    auto ocsp_updater = std::make_unique<v201::OcspUpdater>(this->evse_security, this->status_update);
+
+    testing::Sequence seq;
+    v201::GetCertificateStatusResponse response_success;
+    response_success.ocspResult = "EXAMPLE OCSP RESULT";
+    response_success.status = v201::GetCertificateStatusEnum::Accepted;
+
+    EXPECT_CALL(*this->evse_security, get_ocsp_request_data())
+        .Times(1)
+        .InSequence(seq)
+        .WillOnce(testing::Return(this->example_ocsp_data));
+    EXPECT_CALL(*this->charge_point, get_certificate_status(testing::_))
+        .Times(3)
+        .InSequence(seq)
+        .WillRepeatedly(testing::Return(response_success));
+    EXPECT_CALL(*this->evse_security, update_ocsp_cache(testing::_, "EXAMPLE OCSP RESULT"))
+        .Times(2)
+        .InSequence(seq)
+        .WillRepeatedly(testing::Return());
+    EXPECT_CALL(*this->evse_security, update_ocsp_cache(testing::_, "EXAMPLE OCSP RESULT"))
+        .Times(1)
+        .InSequence(seq)
+        .WillOnce(SignalCallsCompleteVoid(&this->calls_complete));
+
+    EXPECT_CALL(*this->evse_security, get_ocsp_request_data())
+        .Times(1)
+        .InSequence(seq)
+        .WillOnce(testing::Return(this->example_ocsp_data));
+    EXPECT_CALL(*this->charge_point, get_certificate_status(testing::_))
+        .Times(3)
+        .InSequence(seq)
+        .WillRepeatedly(testing::Return(response_success));
+    EXPECT_CALL(*this->evse_security, update_ocsp_cache(testing::_, "EXAMPLE OCSP RESULT"))
+        .Times(2)
+        .InSequence(seq)
+        .WillRepeatedly(testing::Return());
+    EXPECT_CALL(*this->evse_security, update_ocsp_cache(testing::_, "EXAMPLE OCSP RESULT"))
+        .Times(1)
+        .InSequence(seq)
+        .WillOnce(SignalCallsCompleteVoid(&this->calls_complete));
+
+
+    ocsp_updater->start();
+    this->calls_complete.timed_wait(boost::posix_time::second_clock::universal_time() + boost::posix_time::seconds(5));
+    ocsp_updater->trigger_ocsp_cache_update();
+    this->calls_complete.timed_wait(boost::posix_time::second_clock::universal_time() + boost::posix_time::seconds(5));
+    ocsp_updater->stop();
+}
+
+// TODO test: start/stop
+
 } // namespace ocpp
