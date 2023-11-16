@@ -26,36 +26,32 @@ OcspUpdater::OcspUpdater(std::shared_ptr<EvseSecurity> evse_security, cert_statu
 }
 
 void OcspUpdater::start() {
-    this->update_ocsp_cache_lock.lock();
+    std::unique_lock lock(this->update_ocsp_cache_lock);
     this->running = true;
-    this->update_ocsp_cache_lock.unlock();
     // Create the updater thread - because the deadline is in the past, it will immediately attempt an update
     this->updater_thread = std::thread([this] { this->updater_thread_loop(); });
 }
 
 void OcspUpdater::stop() {
-    this->update_ocsp_cache_lock.lock();
+    std::unique_lock lock(this->update_ocsp_cache_lock);
     if (this->running) {
         this->running = false;
-        this->update_ocsp_cache_lock.unlock();
+        lock.unlock();
         // Wake up the updater thread
         this->explicit_update_trigger.notify_one();
         // wait for updater thread to exit
         this->updater_thread.join();
-    } else {
-        this->update_ocsp_cache_lock.unlock();
     }
 }
 
 void OcspUpdater::trigger_ocsp_cache_update() {
-    this->update_ocsp_cache_lock.lock();
+    std::unique_lock lock(this->update_ocsp_cache_lock);
     if (!this->running) {
-        this->update_ocsp_cache_lock.unlock();
         throw std::logic_error("Called trigger_ocsp_cache_update, but the OcspUpdater is not running.");
     }
     // Move the deadline to "now" so the updater thread doesn't think this is a spurious wakeup
     this->update_deadline = std::chrono::steady_clock::now();
-    this->update_ocsp_cache_lock.unlock();
+    lock.unlock();
     // Wake up the updater thread
     this->explicit_update_trigger.notify_one();
 }
