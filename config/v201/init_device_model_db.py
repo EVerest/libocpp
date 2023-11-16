@@ -236,7 +236,8 @@ class DeviceModelDatabaseInitializer:
         cur.execute(statement,
                     (component_key.name, component_key.instance, component_key.evse_id, component_key.connector_id))
         component_id = cur.lastrowid
-        for variable_meta_data in component_schema.get("properties").values():
+        required_properties = set(component_schema.get("required", set()))
+        for property_key, variable_meta_data in component_schema.get("properties", {}).items():
             variable_name = variable_meta_data["variable_name"]
             instance = variable_meta_data.get("instance")
             characteristics: dict = variable_meta_data["characteristics"]
@@ -248,7 +249,9 @@ class DeviceModelDatabaseInitializer:
             # insert VARIABLE
             variable_characteristics_id = cur.lastrowid
             self._insert_variable(variable_name, instance, component_id,
-                                  variable_characteristics_id, False, cur)
+                                  variable_characteristics_id,
+                                  property_key in required_properties,
+                                  cur)
 
             # insert VARIABLE_ATTRIBUTES
             variable_id = cur.lastrowid
@@ -347,7 +350,7 @@ if __name__ == '__main__':
     database_initializer = DeviceModelDatabaseInitializer(database_file)
 
     if "init" in commands:
-        if database_file.relative_to(Path("/tmp/ocpp201")):
+        if database_file.is_relative_to(Path("/tmp/ocpp201")):
             Path("/tmp/ocpp201").mkdir(parents=True, exist_ok=True)
         database_initializer.initialize_database(schemas_path)
 

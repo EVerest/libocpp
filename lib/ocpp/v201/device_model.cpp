@@ -294,5 +294,10 @@ DeviceModel::get_report_data(const std::optional<ReportBaseEnum>& report_base,
     return report_data_vec;
 }
 
+void DeviceModel::check_integrity() {
+    EVLOG_debug << "Checking integrity of device model in storage";
+    this->storage->check_integrity();
+}
+
 } // namespace v201
 } // namespace ocpp

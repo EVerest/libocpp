@@ -8,7 +8,7 @@ from init_device_model_db import DeviceModelDatabaseInitializer
 
 @pytest.fixture
 def db_file(tmp_path):
-    return tmp_path / "device_model.db"
+    return tmp_path / "unittest_device_model.db"
 
 
 class TestDeviceModelDatabaseInitializer:
@@ -42,7 +42,7 @@ class TestDeviceModelDatabaseInitializer:
                                                           'ID': 1,
                                                           'INSTANCE': None,
                                                           'NAME': 'UnitTestPropertyAName',
-                                                          'REQUIRED': 0,
+                                                          'REQUIRED': 1,
                                                           'VARIABLE_CHARACTERISTICS_ID': 1},
                                                          {'COMPONENT_ID': 1,
                                                           'ID': 2,
@@ -132,7 +132,8 @@ class TestDeviceModelDatabaseInitializer:
         schema_base = Path(__file__).parent / "resources" / "component_schemas"
         database_initializer.initialize_database(schema_base)
 
-        database_initializer.insert_config_and_default_values(Path(__file__).parent / "resources/config.json")
+        database_initializer.insert_config_and_default_values(Path(__file__).parent / "resources/config.json",
+                                                              schema_base)
 
         self._assert_database_tables_as_expected(db_file)
 

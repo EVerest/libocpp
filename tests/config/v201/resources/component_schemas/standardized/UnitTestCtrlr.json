@@ -36,7 +36,7 @@
       "type": "string"
     }
   },
-"UnitTestPropertyB": [
+  "required": [
     "UnitTestPropertyA"
   ]
 }

@@ -198,5 +198,31 @@ bool DeviceModelStorageSqlite::set_variable_attribute_value(const Component& com
     return true;
 }
 
+void DeviceModelStorageSqlite::check_integrity() {
+
+    // Check for required variables without actual values
+    std::stringstream query_stream;
+    query_stream << "SELECT c.NAME as 'COMPONENT_NAME', v.NAME as 'VARIABLE_NAME'"
+                    "FROM VARIABLE_ATTRIBUTE va "
+                    "JOIN VARIABLE v ON v.ID = va.VARIABLE_ID "
+                    "JOIN COMPONENT c ON v.COMPONENT_ID = c.ID "
+                    "WHERE va.TYPE_ID = "
+                 << static_cast<int>(AttributeEnum::Actual) << " AND va.VALUE IS NULL";
+    SQLiteStatement select_stmt(this->db, query_stream.str());
+
+    int res = select_stmt.step();
+    if (res != SQLITE_DONE) {
+        std::stringstream error;
+        error << "Corrupted device model: Missing required values for 'Actual' Variable Attributes of";
+        do {
+            auto component_name = select_stmt.column_text(0);
+            auto variable_name = select_stmt.column_text(1);
+            error << "(" << component_name << ", " << variable_name << ")";
+        } while ((res = select_stmt.step()) == SQLITE_ROW);
+
+        throw DeviceModelStorageError(error.str());
+    }
+}
+
 } // namespace v201
 } // namespace ocpp
