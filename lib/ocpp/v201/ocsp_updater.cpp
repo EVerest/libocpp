@@ -150,8 +150,4 @@ void OcspUpdater::execute_ocsp_update() {
     EVLOG_info << "libocpp: Done updating OCSP cache";
 }
 
-bool OcspUpdater::is_running() const {
-    return this->running;
-}
-
 } // namespace ocpp::v201

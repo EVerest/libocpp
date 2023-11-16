@@ -50,8 +50,6 @@ public:
     void start();
     void stop();
 
-    [[nodiscard]] bool is_running() const;
-
     // Wake up the updater thread and tell it to update
     // Used e.g. when a new charging station cert was just installed
     void trigger_ocsp_cache_update();
