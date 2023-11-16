@@ -325,6 +325,14 @@ TEST_F(OcspUpdaterTest, test_trigger) {
     ocsp_updater->stop();
 }
 
-// TODO test: start/stop
+/// \brief Triggering while the updater is not running should throw an exception
+TEST_F(OcspUpdaterTest, test_exception_trigger_when_not_running) {
+    auto ocsp_updater = std::make_unique<v201::OcspUpdater>(this->evse_security, this->status_update);
+
+    ASSERT_THROW(ocsp_updater->trigger_ocsp_cache_update(), std::logic_error);
+    ocsp_updater->start();
+    ocsp_updater->stop();
+    ASSERT_THROW(ocsp_updater->trigger_ocsp_cache_update(), std::logic_error);
+}
 
 } // namespace ocpp
