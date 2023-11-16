@@ -665,10 +665,6 @@ void ChargePoint::init_websocket() {
                                                     AttributeEnum::Actual, std::to_string(security_profile));
         }
 
-        if (this->registration_status == RegistrationStatusEnum::Accepted) {
-            this->remove_network_connection_profiles_below_level(security_profile);
-        }
-
         if (this->registration_status == RegistrationStatusEnum::Accepted and
             this->time_disconnected.time_since_epoch() != 0s) {
             // handle offline threshold
@@ -839,7 +835,9 @@ void ChargePoint::next_network_configuration_priority() {
         (this->network_configuration_priority + 1) % (network_connection_profiles.size());
 }
 
-void ChargePoint::remove_network_connection_profiles_below_level(const int32_t security_level) {
+void ChargePoint::remove_network_connection_profiles_below_actual_security_profile() {
+    auto security_level = this->device_model->get_value<int>(ControllerComponentVariables::SecurityProfile);
+
     auto network_connection_profiles = json::parse(
         this->device_model->get_value<std::string>(ControllerComponentVariables::NetworkConnectionProfiles));
 
@@ -1789,6 +1787,8 @@ void ChargePoint::handle_boot_notification_response(CallResult<BootNotificationR
     this->registration_status = msg.status;
 
     if (this->registration_status == RegistrationStatusEnum::Accepted) {
+        this->remove_network_connection_profiles_below_actual_security_profile();
+
         // get transaction messages from db (if there are any) so they can be sent again.
         message_queue->get_transaction_messages_from_db();
 

@@ -231,9 +231,9 @@ private:
     /// \brief Moves websocket network_configuration_priority to next profile
     void next_network_configuration_priority();
 
-    /// @brief Removes all network connection profiles below level \param security_level and stores the new list in the
+    /// @brief Removes all network connection profiles below the actual security profile and stores the new list in the
     /// device model
-    void remove_network_connection_profiles_below_level(const int32_t security_level);
+    void remove_network_connection_profiles_below_actual_security_profile();
 
     void handle_message(const EnhancedMessage<v201::MessageType>& message);
     void message_callback(const std::string& message);
