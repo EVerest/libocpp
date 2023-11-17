@@ -102,11 +102,6 @@ class DeviceModelDatabaseInitializer:
         instance: str | None
         attribute_type: str
 
-        @classmethod
-        def from_component_dict(cls, component: dict):
-            return cls(component["name"], component.get("instance"), component.get("evse_id"),
-                       component.get("connector_id"))
-
     def insert_config_and_default_values(self, config_file: Path, schemas_path: Path):
         """Inserts the values given in config file into the VARIABLE_ATTRIBUTE table
 
@@ -351,8 +346,7 @@ if __name__ == '__main__':
     database_initializer = DeviceModelDatabaseInitializer(database_file)
 
     if "init" in commands:
-        # nosec
-        if database_file.is_relative_to(Path("/tmp/ocpp201")):
+        if database_file.is_relative_to(Path("/tmp/ocpp201")):  # nosec
             Path("/tmp/ocpp201").mkdir(parents=True, exist_ok=True)
         database_initializer.initialize_database(schemas_path)
 

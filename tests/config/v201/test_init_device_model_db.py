@@ -25,8 +25,7 @@ class TestDeviceModelDatabaseInitializer:
 
     def _read_table(self, db_file: Path, table: str):
         with self._connect(db_file) as cur:
-            # nosec
-            query = f"SELECT * FROM {table}"
+            query = f"SELECT * FROM {table}"  # nosec
             cur.execute(query)
             rows = cur.fetchall()
 
