@@ -78,7 +78,7 @@ def generate_ctrlr_component_vars(csv_path: Path, libocpp_dir: Path):
 
 def _clang_format_file(target: Path, ocpp_project_dir):
     try:
-        subprocess.run(f"clang-format -i {target}", cwd=str(ocpp_project_dir), shell=True)
+        subprocess.run(["clang-format", "-i", str(target)], cwd=str(ocpp_project_dir))
     except Exception as e:
         print(f"failed to run clang-format on {target}: {e}")
 
