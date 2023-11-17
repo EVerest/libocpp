@@ -478,6 +478,7 @@
     "ChargePointModel",
     "ChargePointVendor",
     "FirmwareVersion",
+    "LogMessagesFormat",
     "NetworkConnectionProfiles",
     "NumberOfConnectors",
     "SupportedCiphers12",

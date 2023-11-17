@@ -57,7 +57,7 @@ def generate_ctrlr_component_vars(csv_path: Path, libocpp_dir: Path):
                     "variable_name": variable_entry["variable_name"],
                     "instance": variable_entry["instance"],
                     "description": f"Schema for {component}",
-                    "required": []
+                    "required": variable_entry["required"] == '1'
                 })
 
     with open(hpp_file, 'w') as f:

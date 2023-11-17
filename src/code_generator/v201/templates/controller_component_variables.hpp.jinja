@@ -18,7 +18,7 @@ extern const Component& {{ component }};
 // Provides access to standardized variables of OCPP2.0.1 spec
 namespace ControllerComponentVariables {
 {% for variable in variables %}
-extern const ComponentVariable& {{ variable.unique_variable_name }};
+extern const {% if variable.required %}Required{% endif %}ComponentVariable& {{ variable.unique_variable_name }};
 {% endfor %}
 
 } // namespace ComponentVariables
