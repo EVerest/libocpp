@@ -387,14 +387,6 @@ const ComponentVariable& ChargingStationAvailabilityState = {
         "AvailabilityState",
     }),
 };
-const ComponentVariable& ChargingStationPhaseRotation = {
-    ControllerComponents::ChargingStation,
-    std::nullopt,
-    std::optional<Variable>({
-        "PhaseRotation",
-    }),
-};
-
 const ComponentVariable& ChargingStationAvailable = {
     ControllerComponents::ChargingStation,
     std::nullopt,
