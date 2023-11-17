@@ -91,8 +91,10 @@ class DeviceModelDatabaseInitializer:
 
         @classmethod
         def from_component_dict(cls, component: dict):
-            return cls(component["name"], component.get("instance"), component.get("evse_id"),
-                       component.get("connector_id"))
+            return cls(name=component["name"],
+                       instance=component.get("instance"),
+                       evse_id=component.get("evse_id"),
+                       connector_id=component.get("connector_id"))
 
     @dataclass(frozen=True)
     class _VariableAttributeKey:
@@ -300,11 +302,10 @@ class DeviceModelDatabaseInitializer:
                      "AND TYPE_ID = ?")
 
         # Execute the query with parameter values
-        res = cur.execute(statement, (str(value).lower() if isinstance(value, bool) else value, component_key.name,
-                                      component_key.instance, component_key.evse_id, component_key.connector_id,
-                                      variable_attr_key.name, variable_attr_key.instance,
-                                      VARIABLE_ATTRIBUTE_TYPE_ENCODING[variable_attr_key.attribute_type]))
-        pass
+        cur.execute(statement, (str(value).lower() if isinstance(value, bool) else value, component_key.name,
+                                component_key.instance, component_key.evse_id, component_key.connector_id,
+                                variable_attr_key.name, variable_attr_key.instance,
+                                VARIABLE_ATTRIBUTE_TYPE_ENCODING[variable_attr_key.attribute_type]))
 
     def _read_component_default_values(self, schemas_path: Path) -> dict[
         _ComponentKey, dict[_VariableAttributeKey, str]]:
@@ -350,6 +351,7 @@ if __name__ == '__main__':
     database_initializer = DeviceModelDatabaseInitializer(database_file)
 
     if "init" in commands:
+        # nosec
         if database_file.is_relative_to(Path("/tmp/ocpp201")):
             Path("/tmp/ocpp201").mkdir(parents=True, exist_ok=True)
         database_initializer.initialize_database(schemas_path)
