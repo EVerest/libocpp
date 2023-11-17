@@ -296,7 +296,12 @@ DeviceModel::get_report_data(const std::optional<ReportBaseEnum>& report_base,
 
 void DeviceModel::check_integrity() {
     EVLOG_debug << "Checking integrity of device model in storage";
-    this->storage->check_integrity();
+    try {
+        this->storage->check_integrity();
+    } catch (const DeviceModelStorageError& e) {
+        EVLOG_error << "Integrity check in Device Model storage failed:" << e.what();
+        throw e;
+    }
 }
 
 } // namespace v201
