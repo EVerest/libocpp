@@ -230,7 +230,6 @@ MeterValue Evse::get_idle_meter_value() {
 }
 
 void Evse::clear_idle_meter_values() {
-    std::lock_guard<std::recursive_mutex> lk(this->meter_value_mutex);
     this->aligned_data_updated.clear_values();
 }
 

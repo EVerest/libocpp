@@ -45,18 +45,6 @@ void AverageMeterValues::average_meter_value() {
                 this->aligned_meter_values[{element.measurand.value(), element.phase, element.location}];
 
             element.value = temp.sum / temp.num_elements;
-
-            EVLOG_debug << "====== Meas: " << element.measurand.value();
-            if (element.phase.has_value()) {
-
-                EVLOG_debug << " phase: " << element.phase.value();
-            }
-            if (element.location.has_value()) {
-
-                EVLOG_debug << " loc: " << element.location.value();
-            }
-
-            EVLOG_debug << " sum:" << temp.sum << "#num" << temp.num_elements << "AVG: " << element.value;
         }
     }
 }
