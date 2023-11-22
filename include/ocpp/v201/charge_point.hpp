@@ -6,6 +6,7 @@
 
 #include <ocpp/common/charging_station_base.hpp>
 
+#include <ocpp/v201/average_meter_values.hpp>
 #include <ocpp/v201/ctrlr_component_variables.hpp>
 #include <ocpp/v201/database_handler.hpp>
 #include <ocpp/v201/device_model.hpp>
@@ -138,6 +139,15 @@ struct Callbacks {
                                      const std::optional<IdToken> id_token,
                                      const std::optional<CiString<64>> customer_identifier)>>
         clear_customer_information_callback;
+
+    /// \brief Callback function that can be called when all connectors are unavailable
+    std::optional<std::function<void()>> all_connectors_unavailable_callback;
+};
+
+/// \brief Combines ChangeAvailabilityRequest with persist flag for scheduled Availability changes
+struct AvailabilityChange {
+    ChangeAvailabilityRequest request;
+    bool persist;
 };
 
 /// \brief Class implements OCPP2.0.1 Charging Station
@@ -152,7 +162,7 @@ private:
     std::unique_ptr<DeviceModel> device_model;
     std::shared_ptr<DatabaseHandler> database_handler;
 
-    std::map<int32_t, ChangeAvailabilityRequest> scheduled_change_availability_requests;
+    std::map<int32_t, AvailabilityChange> scheduled_change_availability_requests;
 
     std::map<std::string,
              std::map<std::string, std::function<DataTransferResponse(const std::optional<std::string>& msg)>>>
@@ -178,6 +188,7 @@ private:
     OperationalStatusEnum operational_state;
     FirmwareStatusEnum firmware_status;
     int32_t firmware_status_id;
+    FirmwareStatusEnum firmware_status_before_installing = FirmwareStatusEnum::SignatureVerified;
     UploadLogStatusEnum upload_log_status;
     int32_t upload_log_status_id;
     BootReasonEnum bootreason;
@@ -201,9 +212,7 @@ private:
 
     std::map<EvseConnectorPair, ConnectorStatusEnum> conn_state_per_evse;
     std::chrono::time_point<std::chrono::steady_clock> time_disconnected;
-
-    MeterValue meter_value; // represents evseId = 0 meter value
-    std::mutex meter_value_mutex;
+    AverageMeterValues aligned_data_evse0; // represents evseId = 0 meter value
 
     /// \brief Used when an 'OnIdle' reset is requested, to perform the reset after the charging has stopped.
     bool reset_scheduled;
@@ -234,6 +243,11 @@ private:
     std::optional<NetworkConnectionProfile> get_network_connection_profile(const int32_t configuration_slot);
     /// \brief Moves websocket network_configuration_priority to next profile
     void next_network_configuration_priority();
+
+    /// @brief Removes all network connection profiles below the actual security profile and stores the new list in the
+    /// device model
+    void remove_network_connection_profiles_below_actual_security_profile();
+
     void handle_message(const EnhancedMessage<v201::MessageType>& message);
     void message_callback(const std::string& message);
     void update_aligned_data_interval();
@@ -253,6 +267,16 @@ private:
     bool validate_set_variable(const SetVariableData& set_variable_data);
     MeterValue get_latest_meter_value_filtered(const MeterValue& meter_value, ReadingContextEnum context,
                                                const ComponentVariable& component_variable);
+
+    /// \brief Changes all unoccupied connectors to unavailable. If a transaction is running schedule an availabilty
+    /// change
+    /// If all connectors are unavailable signal to the firmware updater that installation of the firmware update can
+    /// proceed
+    void change_all_connectors_to_unavailable_for_firmware_update();
+
+    /// \brief Sets the cache lifetime value in \param id_token_info with configured AuthCacheLifeTime
+    /// if it was not already set
+    void update_id_token_cache_lifetime(IdTokenInfo& id_token_info);
 
     ///\brief Calculate and update the authorization cache size in the device model
     ///
@@ -307,10 +331,6 @@ private:
     /// \brief Get the value optional offline flag
     /// \return true if the charge point is offline. std::nullopt if it is online;
     bool is_offline();
-
-    /// \brief Returns the last present meter value for evseId 0
-    /// \return MeterValue
-    MeterValue get_meter_value();
 
     /// \brief Returns customer information based on the given arguments. This function also executes the
     /// get_customer_information_callback in case it is present

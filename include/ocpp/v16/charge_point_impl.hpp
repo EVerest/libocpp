@@ -115,14 +115,15 @@ private:
     std::chrono::time_point<date::utc_clock> clock_aligned_meter_values_time_point;
     std::mutex meter_values_mutex;
     std::mutex measurement_mutex;
-    std::map<int32_t, AvailabilityType> change_availability_queue; // TODO: move to Connectors
-    std::mutex change_availability_mutex;                          // TODO: move to Connectors
+    std::map<int32_t, AvailabilityChange> change_availability_queue; // TODO: move to Connectors
+    std::mutex change_availability_mutex;                            // TODO: move to Connectors
     std::unique_ptr<TransactionHandler> transaction_handler;
     std::vector<v16::MessageType> external_notify;
 
     std::map<std::string,
              std::map<std::string, std::function<DataTransferResponse(const std::optional<std::string>& msg)>>>
         data_transfer_callbacks;
+    std::function<DataTransferResponse(const DataTransferRequest& request)> data_transfer_callback;
     std::map<std::string, std::function<void(Call<DataTransferRequest> call)>> data_transfer_pnc_callbacks;
     std::mutex data_transfer_callbacks_mutex;
     std::map<CiString<50>, std::function<void(const KeyValue& key_value)>> configuration_key_changed_callbacks;
@@ -158,6 +159,8 @@ private:
 
     std::function<UpdateFirmwareStatusEnumType(const SignedUpdateFirmwareRequest msg)> signed_update_firmware_callback;
     std::function<void(const std::string& type, const std::string& tech_info)> security_event_callback;
+
+    std::function<void()> all_connectors_unavailable_callback;
 
     std::function<ReservationStatus(int32_t reservation_id, int32_t connector, ocpp::DateTime expiryDate,
                                     CiString<20> idTag, std::optional<CiString<20>> parent_id)>
@@ -206,6 +209,11 @@ private:
     void firmware_status_notification(FirmwareStatus status);
     void log_status_notification(UploadLogStatusEnumType status, int requestId);
     void signed_firmware_update_status_notification(FirmwareStatusEnumType status, int requestId);
+
+    /// \brief Changes all unoccupied connectors to unavailable. If a transaction is running schedule an availabilty
+    /// change. If all connectors are unavailable signal to the firmware updater that installation of the firmware
+    /// update can proceed
+    void change_all_connectors_to_unavailable_for_firmware_update();
 
     void stop_all_transactions();
     void stop_all_transactions(Reason reason);
@@ -402,8 +410,8 @@ public:
     /// \param messageId
     /// \param data
     /// \return
-    DataTransferResponse data_transfer(const CiString<255>& vendorId, const CiString<50>& messageId,
-                                       const std::string& data);
+    DataTransferResponse data_transfer(const CiString<255>& vendorId, const std::optional<CiString<50>>& messageId,
+                                       const std::optional<std::string>& data);
 
     /// \brief Calculates ChargingProfiles configured by the CSMS of all connectors from now until now + given \p
     /// duration_s
@@ -548,6 +556,12 @@ public:
         const CiString<255>& vendorId, const CiString<50>& messageId,
         const std::function<DataTransferResponse(const std::optional<std::string>& msg)>& callback);
 
+    /// registers a \p callback function that can be used to handle arbitrary data transfers for all vendorId an
+    /// messageId
+    /// \param callback
+    void register_data_transfer_callback(
+        const std::function<DataTransferResponse(const DataTransferRequest& request)>& callback);
+
     /// \brief registers a \p callback function that can be used to enable the evse. The enable_evse_callback is called
     /// when a ChangeAvailaibility.req is received.
     /// \param callback
@@ -627,6 +641,10 @@ public:
     /// \param callback
     void register_signed_update_firmware_callback(
         const std::function<UpdateFirmwareStatusEnumType(const SignedUpdateFirmwareRequest msg)>& callback);
+
+    /// \brief registers a \p callback function that is called when all connectors are set to unavailable.
+    /// This can be used to then trigger the installation of the firmware update
+    void register_all_connectors_unavailable_callback(const std::function<void()>& callback);
 
     /// \brief registers a \p callback function that can be used to upload logfiles. This callback
     /// should trigger a process of a log upload using the given parameters of the request. This process should

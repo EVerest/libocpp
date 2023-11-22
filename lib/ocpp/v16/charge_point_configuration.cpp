@@ -344,7 +344,7 @@ std::optional<KeyValue> ChargePointConfiguration::getChargePointSerialNumberKeyV
         KeyValue kv;
         kv.key = "ChargePointSerialNumber";
         kv.readonly = true;
-        kv.value.emplace(this->getChargePointSerialNumber().value());
+        kv.value.emplace(charge_point_serial_number.value());
         charge_point_serial_number_kv.emplace(kv);
     }
     return charge_point_serial_number_kv;
@@ -561,7 +561,7 @@ std::vector<MeasurandWithPhase> ChargePointConfiguration::csv_to_measurand_with_
     if (csv.empty()) {
         return measurand_with_phase_vector;
     }
-    for (auto component : components) {
+    for (const auto& component : components) {
         MeasurandWithPhase measurand_with_phase;
         Measurand measurand = conversions::string_to_measurand(component);
         // check if this measurand can be provided on multiple phases
@@ -1405,7 +1405,7 @@ std::vector<ChargingRateUnit> ChargePointConfiguration::getChargingScheduleAllow
     auto csv = this->getChargingScheduleAllowedChargingRateUnit();
     boost::split(components, csv, boost::is_any_of(","));
     std::vector<ChargingRateUnit> charging_rate_unit_vector;
-    for (auto component : components) {
+    for (const auto& component : components) {
         if (component == "Current") {
             charging_rate_unit_vector.push_back(ChargingRateUnit::A);
         } else if (component == "Power") {
@@ -1469,11 +1469,17 @@ std::optional<bool> ChargePointConfiguration::getAdditionalRootCertificateCheck(
 }
 
 std::optional<KeyValue> ChargePointConfiguration::getAdditionalRootCertificateCheckKeyValue() {
-    KeyValue kv;
-    kv.key = "AdditionalRootCertificateCheck";
-    kv.readonly = true;
-    kv.value.emplace(ocpp::conversions::bool_to_string(this->getAdditionalRootCertificateCheck().value()));
-    return kv;
+    std::optional<KeyValue> additional_root_certificate_check_kv = std::nullopt;
+
+    auto additional_root_certificate_check = this->getAdditionalRootCertificateCheck();
+    if (additional_root_certificate_check.has_value()) {
+        KeyValue kv;
+        kv.key = "AdditionalRootCertificateCheck";
+        kv.readonly = true;
+        kv.value.emplace(ocpp::conversions::bool_to_string(additional_root_certificate_check.value()));
+        additional_root_certificate_check_kv.emplace(kv);
+    }
+    return additional_root_certificate_check_kv;
 }
 
 // Security Profile - optional
@@ -2398,34 +2404,40 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
             return ConfigurationStatus::NotSupported;
         }
         try {
-            auto blink_repeat = std::stoi(value.get());
-            if (blink_repeat < 0) {
+            auto [valid, blink_repeat] = is_positive_integer(value.get());
+            if (!valid) {
                 return ConfigurationStatus::Rejected;
             }
             this->setBlinkRepeat(blink_repeat);
         } catch (const std::invalid_argument& e) {
             return ConfigurationStatus::Rejected;
+        } catch (const std::out_of_range& e) {
+            return ConfigurationStatus::Rejected;
         }
     }
     if (key == "ClockAlignedDataInterval") {
         try {
-            auto interval = std::stoi(value.get());
-            if (interval < 0) {
+            auto [valid, interval] = is_positive_integer(value.get());
+            if (!valid) {
                 return ConfigurationStatus::Rejected;
             }
             this->setClockAlignedDataInterval(interval);
         } catch (const std::invalid_argument& e) {
             return ConfigurationStatus::Rejected;
+        } catch (const std::out_of_range& e) {
+            return ConfigurationStatus::Rejected;
         }
     }
     if (key == "ConnectionTimeOut") {
         try {
-            auto interval = std::stoi(value.get());
-            if (interval < 0) {
+            auto [valid, timeout] = is_positive_integer(value.get());
+            if (!valid) {
                 return ConfigurationStatus::Rejected;
             }
-            this->setConnectionTimeOut(interval);
+            this->setConnectionTimeOut(timeout);
         } catch (const std::invalid_argument& e) {
+            return ConfigurationStatus::Rejected;
+        } catch (const std::out_of_range& e) {
             return ConfigurationStatus::Rejected;
         }
     }
@@ -2448,12 +2460,14 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
             return ConfigurationStatus::NotSupported;
         } else {
             try {
-                auto cert_signing_wait_minimum = std::stoi(value.get());
-                if (cert_signing_wait_minimum < 0) {
+                auto [valid, cert_signing_wait_minimum] = is_positive_integer(value.get());
+                if (!valid) {
                     return ConfigurationStatus::Rejected;
                 }
                 this->setCertSigningWaitMinimum(cert_signing_wait_minimum);
             } catch (const std::invalid_argument& e) {
+                return ConfigurationStatus::Rejected;
+            } catch (const std::out_of_range& e) {
                 return ConfigurationStatus::Rejected;
             }
         }
@@ -2463,12 +2477,14 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
             return ConfigurationStatus::NotSupported;
         } else {
             try {
-                auto cert_signing_repeat_times = std::stoi(value.get());
-                if (cert_signing_repeat_times < 0) {
+                auto [valid, cert_signing_repeat_times] = is_positive_integer(value.get());
+                if (!valid) {
                     return ConfigurationStatus::Rejected;
                 }
                 this->setCertSigningRepeatTimes(cert_signing_repeat_times);
             } catch (const std::invalid_argument& e) {
+                return ConfigurationStatus::Rejected;
+            } catch (const std::out_of_range& e) {
                 return ConfigurationStatus::Rejected;
             }
         }
@@ -2481,12 +2497,14 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
     }
     if (key == "HeartbeatInterval") {
         try {
-            auto interval = std::stoi(value.get());
-            if (interval < 0) {
+            auto [valid, interval] = is_positive_integer(value.get());
+            if (!valid) {
                 return ConfigurationStatus::Rejected;
             }
             this->setHeartbeatInterval(interval);
         } catch (const std::invalid_argument& e) {
+            return ConfigurationStatus::Rejected;
+        } catch (const std::out_of_range& e) {
             return ConfigurationStatus::Rejected;
         }
     }
@@ -2498,12 +2516,14 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
             return ConfigurationStatus::NotSupported;
         }
         try {
-            auto light_intensity = std::stoi(value.get());
-            if (light_intensity < 0 || light_intensity > 100) {
+            auto [valid, light_intensity] = is_positive_integer(value.get());
+            if (!valid or light_intensity > 100) {
                 return ConfigurationStatus::Rejected;
             }
             this->setLightIntensity(light_intensity);
         } catch (const std::invalid_argument& e) {
+            return ConfigurationStatus::Rejected;
+        } catch (const std::out_of_range& e) {
             return ConfigurationStatus::Rejected;
         }
     }
@@ -2526,12 +2546,14 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
             return ConfigurationStatus::NotSupported;
         }
         try {
-            auto max_energy = std::stoi(value.get());
-            if (max_energy < 0) {
+            auto [valid, max_energy] = is_positive_integer(value.get());
+            if (!valid) {
                 return ConfigurationStatus::Rejected;
             }
             this->setMaxEnergyOnInvalidId(max_energy);
         } catch (const std::invalid_argument& e) {
+            return ConfigurationStatus::Rejected;
+        } catch (const std::out_of_range& e) {
             return ConfigurationStatus::Rejected;
         }
     }
@@ -2547,12 +2569,14 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
     }
     if (key == "MeterValueSampleInterval") {
         try {
-            auto meter_value_sample_interval = std::stoi(value.get());
-            if (meter_value_sample_interval < 0) {
+            auto [valid, meter_value_sample_interval] = is_positive_integer(value.get());
+            if (!valid) {
                 return ConfigurationStatus::Rejected;
             }
             this->setMeterValueSampleInterval(meter_value_sample_interval);
         } catch (const std::invalid_argument& e) {
+            return ConfigurationStatus::Rejected;
+        } catch (const std::out_of_range& e) {
             return ConfigurationStatus::Rejected;
         }
     }
@@ -2561,45 +2585,53 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
             return ConfigurationStatus::NotSupported;
         }
         try {
-            auto duration = std::stoi(value.get());
-            if (duration < 0) {
+            auto [valid, duration] = is_positive_integer(value.get());
+            if (!valid) {
                 return ConfigurationStatus::Rejected;
             }
             this->setMinimumStatusDuration(duration);
         } catch (const std::invalid_argument& e) {
             return ConfigurationStatus::Rejected;
+        } catch (const std::out_of_range& e) {
+            return ConfigurationStatus::Rejected;
         }
     }
     if (key == "OcspRequestInterval") {
         try {
-            auto ocsp_request_interval = std::stoi(value.get());
-            if (ocsp_request_interval < 86400) {
+            auto [valid, ocsp_request_interval] = is_positive_integer(value.get());
+            if (!valid or ocsp_request_interval < 86400) {
                 return ConfigurationStatus::Rejected;
             }
             this->setOcspRequestInterval(ocsp_request_interval);
         } catch (const std::invalid_argument& e) {
             return ConfigurationStatus::Rejected;
+        } catch (const std::out_of_range& e) {
+            return ConfigurationStatus::Rejected;
         }
     }
     if (key == "WaitForStopTransactionsOnResetTimeout") {
         try {
-            auto wait_for_stop_transactions_on_reset_timeout = std::stoi(value.get());
-            if (wait_for_stop_transactions_on_reset_timeout < 0) {
+            auto [valid, wait_for_stop_transactions_on_reset_timeout] = is_positive_integer(value.get());
+            if (!valid) {
                 return ConfigurationStatus::Rejected;
             }
             this->setWaitForStopTransactionsOnResetTimeout(wait_for_stop_transactions_on_reset_timeout);
         } catch (const std::invalid_argument& e) {
             return ConfigurationStatus::Rejected;
+        } catch (const std::out_of_range& e) {
+            return ConfigurationStatus::Rejected;
         }
     }
     if (key == "ResetRetries") {
         try {
-            auto reset_retries = std::stoi(value.get());
-            if (reset_retries < 0) {
+            auto [valid, reset_retries] = is_positive_integer(value.get());
+            if (!valid) {
                 return ConfigurationStatus::Rejected;
             }
             this->setResetRetries(reset_retries);
         } catch (const std::invalid_argument& e) {
+            return ConfigurationStatus::Rejected;
+        } catch (const std::out_of_range& e) {
             return ConfigurationStatus::Rejected;
         }
     }
@@ -2629,23 +2661,27 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
     }
     if (key == "TransactionMessageAttempts") {
         try {
-            auto message_attempts = std::stoi(value.get());
-            if (message_attempts < 0) {
+            auto [valid, message_attempts] = is_positive_integer(value.get());
+            if (!valid) {
                 return ConfigurationStatus::Rejected;
             }
             this->setTransactionMessageAttempts(message_attempts);
         } catch (const std::invalid_argument& e) {
             return ConfigurationStatus::Rejected;
+        } catch (const std::out_of_range& e) {
+            return ConfigurationStatus::Rejected;
         }
     }
     if (key == "TransactionMessageRetryInterval") {
         try {
-            auto retry_inverval = std::stoi(value.get());
-            if (retry_inverval < 0) {
+            auto [valid, retry_inverval] = is_positive_integer(value.get());
+            if (!valid) {
                 return ConfigurationStatus::Rejected;
             }
             this->setTransactionMessageRetryInterval(retry_inverval);
         } catch (const std::invalid_argument& e) {
+            return ConfigurationStatus::Rejected;
+        } catch (const std::out_of_range& e) {
             return ConfigurationStatus::Rejected;
         }
     }
@@ -2661,12 +2697,14 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
             return ConfigurationStatus::NotSupported;
         }
         try {
-            auto interval = std::stoi(value.get());
-            if (interval < 0) {
+            auto [valid, interval] = is_positive_integer(value.get());
+            if (!valid) {
                 return ConfigurationStatus::Rejected;
             }
             this->setWebsocketPingInterval(interval);
         } catch (const std::invalid_argument& e) {
+            return ConfigurationStatus::Rejected;
+        } catch (const std::out_of_range& e) {
             return ConfigurationStatus::Rejected;
         }
     }

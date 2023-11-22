@@ -169,7 +169,7 @@ void ChargePoint::stop() {
     this->websocket_timer.stop();
     this->client_certificate_expiration_check_timer.stop();
     this->v2g_certificate_expiration_check_timer.stop();
-    this->disconnect_websocket(websocketpp::close::status::going_away);
+    this->disconnect_websocket(websocketpp::close::status::normal);
     this->message_queue->stop();
 }
 
@@ -217,6 +217,15 @@ void ChargePoint::on_firmware_update_status_notification(int32_t request_id,
             CiString<50>(ocpp::security_events::INVALIDFIRMWARESIGNATURE),
             std::optional<CiString<255>>("Signature of the provided firmware is not valid!"), true,
             true); // L01.FR.03 - critical because TC_L_06_CS requires this message to be sent
+    }
+
+    if (this->firmware_status_before_installing == req.status) {
+        this->firmware_status = FirmwareStatusEnum::InstallScheduled;
+        req.status = firmware_status;
+        ocpp::Call<FirmwareStatusNotificationRequest> call(req, this->message_queue->createMessageId());
+        this->send_async<FirmwareStatusNotificationRequest>(call);
+
+        this->change_all_connectors_to_unavailable_for_firmware_update();
     }
 }
 
@@ -388,17 +397,11 @@ void ChargePoint::on_session_finished(const int32_t evse_id, const int32_t conne
 
 void ChargePoint::on_meter_value(const int32_t evse_id, const MeterValue& meter_value) {
     if (evse_id == 0) {
-        std::lock_guard<std::mutex> lk(this->meter_value_mutex);
         // if evseId = 0 then store in the chargepoint metervalues
-        this->meter_value = meter_value;
+        this->aligned_data_evse0.set_values(meter_value);
     } else {
         this->evses.at(evse_id)->on_meter_value(meter_value);
     }
-}
-
-MeterValue ChargePoint::get_meter_value() {
-    std::lock_guard<std::mutex> lk(this->meter_value_mutex);
-    return this->meter_value;
 }
 
 std::string ChargePoint::get_customer_information(const std::optional<CertificateHashDataType> customer_certificate,
@@ -458,7 +461,6 @@ void ChargePoint::configure_message_logging_format(const std::string& message_lo
         !log_formats.empty(), message_log_path, DateTime().to_rfc3339(), log_to_console, detailed_log_to_console,
         log_to_file, log_to_html, session_logging, logging_callback);
 }
-
 void ChargePoint::on_unavailable(const int32_t evse_id, const int32_t connector_id) {
     this->evses.at(evse_id)->submit_event(connector_id, ConnectorEvent::Unavailable);
 }
@@ -578,6 +580,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
     response = this->authorize_req(id_token, certificate, ocsp_request_data);
 
     if (auth_cache_enabled) {
+        this->update_id_token_cache_lifetime(response.idTokenInfo);
         this->database_handler->authorization_cache_insert_entry(hashed_id_token, response.idTokenInfo);
         this->update_authorization_cache_size();
     }
@@ -717,7 +720,7 @@ void ChargePoint::init_websocket() {
 
     this->websocket->register_closed_callback(
         [this, connection_options, configuration_slot](const websocketpp::close::status::value reason) {
-            EVLOG_warning << "Failed to connect to NetworkConfigurationPriority: "
+            EVLOG_warning << "Closed websocket of NetworkConfigurationPriority: "
                           << this->network_configuration_priority + 1
                           << " which is configurationSlot: " << configuration_slot;
 
@@ -824,6 +827,51 @@ void ChargePoint::next_network_configuration_priority() {
     }
     this->network_configuration_priority =
         (this->network_configuration_priority + 1) % (network_connection_profiles.size());
+}
+
+void ChargePoint::remove_network_connection_profiles_below_actual_security_profile() {
+    // Remove all the profiles that are a lower security level than security_level
+    const auto security_level = this->device_model->get_value<int>(ControllerComponentVariables::SecurityProfile);
+
+    auto network_connection_profiles = json::parse(
+        this->device_model->get_value<std::string>(ControllerComponentVariables::NetworkConnectionProfiles));
+
+    auto is_lower_security_level = [security_level](const SetNetworkProfileRequest& item) {
+        return item.connectionData.securityProfile < security_level;
+    };
+
+    network_connection_profiles.erase(
+        std::remove_if(network_connection_profiles.begin(), network_connection_profiles.end(), is_lower_security_level),
+        network_connection_profiles.end());
+
+    this->device_model->set_value(ControllerComponentVariables::NetworkConnectionProfiles.component,
+                                  ControllerComponentVariables::NetworkConnectionProfiles.variable.value(),
+                                  AttributeEnum::Actual, network_connection_profiles.dump());
+
+    // Update the NetworkConfigurationPriority so only remaining profiles are in there
+    const auto network_priority = ocpp::get_vector_from_csv(
+        this->device_model->get_value<std::string>(ControllerComponentVariables::NetworkConfigurationPriority));
+
+    auto in_network_profiles = [&network_connection_profiles](const std::string& item) {
+        auto is_same_slot = [&item](const SetNetworkProfileRequest& profile) {
+            return std::to_string(profile.configurationSlot) == item;
+        };
+        return std::any_of(network_connection_profiles.begin(), network_connection_profiles.end(), is_same_slot);
+    };
+
+    std::string new_network_priority;
+    for (const auto& item : network_priority) {
+        if (in_network_profiles(item)) {
+            if (!new_network_priority.empty()) {
+                new_network_priority += ',';
+            }
+            new_network_priority += item;
+        }
+    }
+
+    this->device_model->set_value(ControllerComponentVariables::NetworkConfigurationPriority.component,
+                                  ControllerComponentVariables::NetworkConfigurationPriority.variable.value(),
+                                  AttributeEnum::Actual, new_network_priority);
 }
 
 void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& message) {
@@ -1001,6 +1049,51 @@ MeterValue ChargePoint::get_latest_meter_value_filtered(const MeterValue& meter_
     return filtered_meter_value;
 }
 
+void ChargePoint::change_all_connectors_to_unavailable_for_firmware_update() {
+    ChangeAvailabilityResponse response;
+    response.status = ChangeAvailabilityStatusEnum::Scheduled;
+
+    ChangeAvailabilityRequest msg;
+    msg.operationalStatus = OperationalStatusEnum::Inoperative;
+
+    const auto transaction_active = this->any_transaction_active(std::nullopt);
+
+    if (!transaction_active) {
+        // execute change availability if possible
+        for (auto const& [evse_id, evse] : this->evses) {
+            if (!evse->has_active_transaction()) {
+                this->set_evse_connectors_unavailable(evse, false);
+            }
+        }
+
+        if (this->callbacks.all_connectors_unavailable_callback.has_value()) {
+            this->callbacks.all_connectors_unavailable_callback.value()();
+        }
+    } else if (response.status == ChangeAvailabilityStatusEnum::Scheduled) {
+        // put all EVSEs to unavailable that do not have active transaction
+        for (auto const& [evse_id, evse] : this->evses) {
+            if (!evse->has_active_transaction()) {
+                this->set_evse_connectors_unavailable(evse, false);
+            } else {
+                EVSE e;
+                e.id = evse_id;
+                msg.evse = e;
+                this->scheduled_change_availability_requests[evse_id] = {msg, false};
+            }
+        }
+    }
+}
+
+void ChargePoint::update_id_token_cache_lifetime(IdTokenInfo& id_token_info) {
+    // C10.FR.08
+    // when CSMS does not set cacheExpiryDateTime and config variable for AuthCacheLifeTime is present use the
+    // configured AuthCacheLifeTime
+    auto lifetime = this->device_model->get_optional_value<int>(ControllerComponentVariables::AuthCacheLifeTime);
+    if (!id_token_info.cacheExpiryDateTime.has_value() and lifetime.has_value()) {
+        id_token_info.cacheExpiryDateTime = DateTime(date::utc_clock::now() + std::chrono::seconds(lifetime.value()));
+    }
+}
+
 void ChargePoint::update_authorization_cache_size() {
     auto& auth_cache_size = ControllerComponentVariables::AuthCacheStorage;
     if (auth_cache_size.variable.has_value()) {
@@ -1089,13 +1182,15 @@ void ChargePoint::update_aligned_data_interval() {
                 }
             }
 
-            const auto meter_value =
-                get_latest_meter_value_filtered(this->get_meter_value(), ReadingContextEnum::Sample_Clock,
-                                                ControllerComponentVariables::AlignedDataMeasurands);
+            // send evseID = 0 values
+            const auto meter_value = get_latest_meter_value_filtered(
+                this->aligned_data_evse0.retrieve_processed_values(), ReadingContextEnum::Sample_Clock,
+                ControllerComponentVariables::AlignedDataMeasurands);
 
             if (!meter_value.sampledValue.empty()) {
                 this->meter_values_req(0, std::vector<ocpp::v201::MeterValue>(1, meter_value));
             }
+            this->aligned_data_evse0.clear_values();
 
             for (auto const& [evse_id, evse] : this->evses) {
                 if (evse->has_active_transaction()) {
@@ -1105,13 +1200,15 @@ void ChargePoint::update_aligned_data_interval() {
                 // this will apply configured measurands and possibly reduce the entries of sampledValue
                 // according to the configuration
                 const auto meter_value =
-                    get_latest_meter_value_filtered(evse->get_meter_value(), ReadingContextEnum::Sample_Clock,
+                    get_latest_meter_value_filtered(evse->get_idle_meter_value(), ReadingContextEnum::Sample_Clock,
                                                     ControllerComponentVariables::AlignedDataMeasurands);
 
                 if (!meter_value.sampledValue.empty()) {
                     // J01.FR.14 this is the only case where we send a MeterValue.req
                     this->meter_values_req(evse_id, std::vector<ocpp::v201::MeterValue>(1, meter_value));
+                    // clear the values
                 }
+                evse->clear_idle_meter_values();
             }
         },
         interval, std::chrono::floor<date::days>(date::utc_clock::to_sys(date::utc_clock::now())));
@@ -1178,11 +1275,15 @@ bool ChargePoint::is_valid_evse(const EVSE& evse) {
 void ChargePoint::handle_scheduled_change_availability_requests(const int32_t evse_id) {
     if (this->scheduled_change_availability_requests.count(evse_id)) {
         EVLOG_info << "Found scheduled ChangeAvailability.req for evse_id:" << evse_id;
-        const auto req = this->scheduled_change_availability_requests[evse_id];
+        const auto req = this->scheduled_change_availability_requests[evse_id].request;
+        const auto persist = this->scheduled_change_availability_requests[evse_id].persist;
         if (!this->any_transaction_active(req.evse)) {
             EVLOG_info << "Changing availability of evse:" << evse_id;
-            this->callbacks.change_availability_callback(req, true);
+            this->callbacks.change_availability_callback(req, persist);
             this->scheduled_change_availability_requests.erase(evse_id);
+            if (this->callbacks.all_connectors_unavailable_callback.has_value()) {
+                this->callbacks.all_connectors_unavailable_callback.value()();
+            }
         } else {
             EVLOG_info << "Cannot change availability because transaction is still active";
         }
@@ -1482,27 +1583,14 @@ AuthorizeResponse ChargePoint::authorize_req(const IdToken id_token, const std::
     auto future = this->send_async<AuthorizeRequest>(call);
     const auto enhanced_message = future.get();
 
-    AuthorizeResponse response;
-
     if (enhanced_message.messageType != MessageType::AuthorizeResponse) {
+        AuthorizeResponse response;
         response.idTokenInfo.status = AuthorizationStatusEnum::Unknown;
         return response;
     }
 
     ocpp::CallResult<AuthorizeResponse> call_result = enhanced_message.message;
-    if (call_result.msg.idTokenInfo.cacheExpiryDateTime.has_value() or
-        !this->device_model->get_optional_value<int>(ControllerComponentVariables::AuthCacheLifeTime).has_value()) {
-        return call_result.msg;
-    }
-
-    // C10.FR.08
-    // when CSMS does not set cacheExpiryDateTime and config variable for AuthCacheLifeTime is present use the
-    // configured AuthCacheLifeTime
-    response = call_result.msg;
-    response.idTokenInfo.cacheExpiryDateTime = DateTime(
-        date::utc_clock::now() +
-        std::chrono::seconds(this->device_model->get_value<int>(ControllerComponentVariables::AuthCacheLifeTime)));
-    return response;
+    return call_result.msg;
 }
 
 void ChargePoint::status_notification_req(const int32_t evse_id, const int32_t connector_id,
@@ -1738,6 +1826,8 @@ void ChargePoint::handle_boot_notification_response(CallResult<BootNotificationR
     this->registration_status = msg.status;
 
     if (this->registration_status == RegistrationStatusEnum::Accepted) {
+        this->remove_network_connection_profiles_below_actual_security_profile();
+
         // get transaction messages from db (if there are any) so they can be sent again.
         message_queue->get_transaction_messages_from_db();
 
@@ -2132,8 +2222,10 @@ void ChargePoint::handle_start_transaction_event_response(const EnhancedMessage<
         if (id_token.type != IdTokenEnum::Central and
             this->device_model->get_optional_value<bool>(ControllerComponentVariables::AuthCacheCtrlrEnabled)
                 .value_or(true)) {
+            auto id_token_info = msg.idTokenInfo.value();
+            this->update_id_token_cache_lifetime(id_token_info);
             this->database_handler->authorization_cache_insert_entry(utils::generate_token_hash(id_token),
-                                                                     msg.idTokenInfo.value());
+                                                                     id_token_info);
             this->update_authorization_cache_size();
         }
         if (msg.idTokenInfo.value().status != AuthorizationStatusEnum::Accepted) {
@@ -2501,7 +2593,7 @@ void ChargePoint::handle_change_availability_req(Call<ChangeAvailabilityRequest>
     } else {
         // add to map of scheduled operational_states. This also overrides successive ChangeAvailability.req with
         // the same EVSE, which is propably desirable
-        this->scheduled_change_availability_requests[evse_id] = msg;
+        this->scheduled_change_availability_requests[evse_id] = {msg, true};
     }
 
     // send reply before applying changes to EVSE / Connector because this could trigger StatusNotification.req
@@ -2554,6 +2646,11 @@ void ChargePoint::handle_heartbeat_response(CallResult<HeartbeatResponse> call) 
 
 void ChargePoint::handle_firmware_update_req(Call<UpdateFirmwareRequest> call) {
     EVLOG_debug << "Received UpdateFirmwareRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
+    if (call.msg.firmware.signingCertificate.has_value() or call.msg.firmware.signature.has_value()) {
+        this->firmware_status_before_installing = FirmwareStatusEnum::SignatureVerified;
+    } else {
+        this->firmware_status_before_installing = FirmwareStatusEnum::Downloaded;
+    }
     UpdateFirmwareResponse response = callbacks.update_firmware_request_callback(call.msg);
 
     ocpp::CallResult<UpdateFirmwareResponse> call_result(response, call.uniqueId);

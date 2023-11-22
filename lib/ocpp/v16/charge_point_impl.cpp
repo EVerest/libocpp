@@ -806,6 +806,37 @@ void ChargePointImpl::reset_state_machine(const std::map<int, ChargePointStatus>
     this->status->reset(connector_status_map);
 }
 
+void ChargePointImpl::change_all_connectors_to_unavailable_for_firmware_update() {
+    std::map<int32_t, AvailabilityStatus> connector_availability_status;
+
+    bool transaction_running = false;
+
+    int32_t number_of_connectors = this->configuration->getNumberOfConnectors();
+    for (int32_t connector = 1; connector <= number_of_connectors; connector++) {
+        if (this->transaction_handler->transaction_active(connector)) {
+            transaction_running = true;
+            std::lock_guard<std::mutex> change_availability_lock(change_availability_mutex);
+            this->change_availability_queue[connector] = {AvailabilityType::Inoperative, false};
+        } else {
+            connector_availability_status[connector] = AvailabilityStatus::Accepted;
+        }
+    }
+
+    for (const auto& [connector, availability_status] : connector_availability_status) {
+        if (connector == 0) {
+            this->status->submit_event(0, FSMEvent::ChangeAvailabilityToUnavailable);
+        } else if (this->disable_evse_callback != nullptr and availability_status == AvailabilityStatus::Accepted) {
+            this->disable_evse_callback(connector);
+        }
+    }
+
+    if (!transaction_running) {
+        if (this->all_connectors_unavailable_callback) {
+            this->all_connectors_unavailable_callback();
+        }
+    }
+}
+
 void ChargePointImpl::stop_all_transactions() {
     this->stop_all_transactions(Reason::Other);
 }
@@ -1192,7 +1223,7 @@ void ChargePointImpl::handleChangeAvailabilityRequest(ocpp::Call<ChangeAvailabil
                 if (this->transaction_handler->transaction_active(connector)) {
                     transaction_running = true;
                     std::lock_guard<std::mutex> change_availability_lock(change_availability_mutex);
-                    this->change_availability_queue[connector] = call.msg.type;
+                    this->change_availability_queue[connector] = {call.msg.type, true};
                 } else {
                     connector_availability_status[connector] = AvailabilityStatus::Accepted;
                 }
@@ -1201,7 +1232,7 @@ void ChargePointImpl::handleChangeAvailabilityRequest(ocpp::Call<ChangeAvailabil
             if (this->transaction_handler->transaction_active(call.msg.connectorId)) {
                 transaction_running = true;
                 std::lock_guard<std::mutex> change_availability_lock(change_availability_mutex);
-                this->change_availability_queue[call.msg.connectorId] = call.msg.type;
+                this->change_availability_queue[call.msg.connectorId] = {call.msg.type, true};
             } else {
                 connector_availability_status[call.msg.connectorId] = AvailabilityStatus::Accepted;
             }
@@ -1420,6 +1451,8 @@ void ChargePointImpl::handleDataTransferRequest(ocpp::Call<DataTransferRequest> 
 
     auto vendorId = call.msg.vendorId.get();
     auto messageId = call.msg.messageId.value_or(CiString<50>()).get();
+
+    // first try the callbacks that are explicitly registered for a vendorId or messageId
     {
         std::lock_guard<std::mutex> lock(data_transfer_callbacks_mutex);
         if (vendorId == ISO15118_PNC_VENDOR_ID and !this->is_pnc_enabled()) {
@@ -1444,6 +1477,14 @@ void ChargePointImpl::handleDataTransferRequest(ocpp::Call<DataTransferRequest> 
         } else {
             // there is a callback registered for this vendorId and messageId
             response = this->data_transfer_callbacks[vendorId][messageId](call.msg.data);
+        }
+    }
+
+    // only try the general data_transfer_callback if a explicity registered callback was not found
+    if (response.status == DataTransferStatus::UnknownVendorId or
+        response.status == DataTransferStatus::UnknownMessageId) {
+        if (this->data_transfer_callback != nullptr) {
+            response = this->data_transfer_callback(call.msg);
         }
     }
 
@@ -1713,15 +1754,19 @@ void ChargePointImpl::handleStopTransactionResponse(const EnhancedMessage<v16::M
         // perform a queued connector availability change
         bool change_queued = false;
         AvailabilityType connector_availability;
+        bool persist = false;
         {
             std::lock_guard<std::mutex> change_availability_lock(change_availability_mutex);
             change_queued = this->change_availability_queue.count(connector) != 0;
-            connector_availability = this->change_availability_queue[connector];
+            connector_availability = this->change_availability_queue[connector].availability;
+            persist = this->change_availability_queue[connector].persist;
             this->change_availability_queue.erase(connector);
         }
 
         if (change_queued) {
-            this->database_handler->insert_or_update_connector_availability(connector, connector_availability);
+            if (persist) {
+                this->database_handler->insert_or_update_connector_availability(connector, connector_availability);
+            }
             EVLOG_debug << "Queued availability change of connector " << connector << " to "
                         << conversions::availability_type_to_string(connector_availability);
 
@@ -1747,6 +1792,11 @@ void ChargePointImpl::handleStopTransactionResponse(const EnhancedMessage<v16::M
     this->transaction_handler->erase_stopped_transaction(call_result.uniqueId.get());
     // when this transaction was stopped because of a Reset.req this signals that StopTransaction.conf has been received
     this->stop_transaction_cv.notify_one();
+
+    if (this->firmware_status == FirmwareStatus::Downloaded or
+        this->signed_firmware_status == FirmwareStatusEnumType::SignatureVerified) {
+        this->change_all_connectors_to_unavailable_for_firmware_update();
+    }
 }
 
 void ChargePointImpl::handleUnlockConnectorRequest(ocpp::Call<UnlockConnectorRequest> call) {
@@ -2318,6 +2368,10 @@ void ChargePointImpl::signed_firmware_update_status_notification(FirmwareStatusE
 
     if (status == FirmwareStatusEnumType::InvalidSignature) {
         this->securityEventNotification("InvalidFirmwareSignature", "", true);
+    }
+
+    if (this->signed_firmware_status == FirmwareStatusEnumType::SignatureVerified) {
+        this->change_all_connectors_to_unavailable_for_firmware_update();
     }
 }
 
@@ -2973,12 +3027,13 @@ void ChargePointImpl::handle_data_transfer_install_certificate(Call<DataTransfer
     this->send<DataTransferResponse>(call_result);
 }
 
-DataTransferResponse ChargePointImpl::data_transfer(const CiString<255>& vendorId, const CiString<50>& messageId,
-                                                    const std::string& data) {
+DataTransferResponse ChargePointImpl::data_transfer(const CiString<255>& vendorId,
+                                                    const std::optional<CiString<50>>& messageId,
+                                                    const std::optional<std::string>& data) {
     DataTransferRequest req;
     req.vendorId = vendorId;
     req.messageId = messageId;
-    req.data.emplace(data);
+    req.data = data;
 
     DataTransferResponse response;
     ocpp::Call<DataTransferRequest> call(req, this->message_queue->createMessageId());
@@ -3009,6 +3064,11 @@ void ChargePointImpl::register_data_transfer_callback(
     const std::function<DataTransferResponse(const std::optional<std::string>& msg)>& callback) {
     std::lock_guard<std::mutex> lock(data_transfer_callbacks_mutex);
     this->data_transfer_callbacks[vendorId.get()][messageId.get()] = callback;
+}
+
+void ChargePointImpl::register_data_transfer_callback(
+    const std::function<DataTransferResponse(const DataTransferRequest& request)>& callback) {
+    this->data_transfer_callback = callback;
 }
 
 void ChargePointImpl::on_meter_values(int32_t connector, const Measurement& measurement) {
@@ -3322,6 +3382,10 @@ void ChargePointImpl::firmware_status_notification(FirmwareStatus status) {
 
     ocpp::Call<FirmwareStatusNotificationRequest> call(req, this->message_queue->createMessageId());
     this->send_async<FirmwareStatusNotificationRequest>(call);
+
+    if (this->firmware_status == FirmwareStatus::Downloaded) {
+        this->change_all_connectors_to_unavailable_for_firmware_update();
+    }
 }
 
 void ChargePointImpl::register_enable_evse_callback(const std::function<bool(int32_t connector)>& callback) {
@@ -3396,6 +3460,10 @@ void ChargePointImpl::register_update_firmware_callback(
 void ChargePointImpl::register_signed_update_firmware_callback(
     const std::function<UpdateFirmwareStatusEnumType(const SignedUpdateFirmwareRequest msg)>& callback) {
     this->signed_update_firmware_callback = callback;
+}
+
+void ChargePointImpl::register_all_connectors_unavailable_callback(const std::function<void()>& callback) {
+    this->all_connectors_unavailable_callback = callback;
 }
 
 void ChargePointImpl::register_upload_logs_callback(const std::function<GetLogResponse(GetLogRequest req)>& callback) {
