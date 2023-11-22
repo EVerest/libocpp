@@ -139,6 +139,7 @@ struct Callbacks {
     std::optional<std::function<void()>> all_connectors_unavailable_callback;
 };
 
+/// \brief Combines ChangeAvailabilityRequest with persist flag for scheduled Availability changes
 struct AvailabilityChange {
     ChangeAvailabilityRequest request;
     bool persist;
@@ -263,7 +264,7 @@ private:
     MeterValue get_latest_meter_value_filtered(const MeterValue& meter_value, ReadingContextEnum context,
                                                const ComponentVariable& component_variable);
 
-    /// \brief Change all unoccupied connectors to unavailable, if a transaction is running schedule an availabilty
+    /// \brief Changes all unoccupied connectors to unavailable. If a transaction is running schedule an availabilty
     /// change
     /// If all connectors are unavailable signal to the firmware updater that installation of the firmware update can
     /// proceed
