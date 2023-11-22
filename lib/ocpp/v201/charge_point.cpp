@@ -575,7 +575,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
     response = this->authorize_req(id_token, certificate, ocsp_request_data);
 
     if (auth_cache_enabled) {
-        update_id_token_cache_lifetime(response.idTokenInfo);
+        this->update_id_token_cache_lifetime(response.idTokenInfo);
         this->database_handler->authorization_cache_insert_entry(hashed_id_token, response.idTokenInfo);
         this->update_authorization_cache_size();
     }
@@ -2228,7 +2228,7 @@ void ChargePoint::handle_start_transaction_event_response(const EnhancedMessage<
             this->device_model->get_optional_value<bool>(ControllerComponentVariables::AuthCacheCtrlrEnabled)
                 .value_or(true)) {
             auto id_token_info = msg.idTokenInfo.value();
-            update_id_token_cache_lifetime(id_token_info);
+            this->update_id_token_cache_lifetime(id_token_info);
             this->database_handler->authorization_cache_insert_entry(utils::generate_token_hash(id_token),
                                                                      id_token_info);
             this->update_authorization_cache_size();
