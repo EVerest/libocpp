@@ -1137,9 +1137,9 @@ void ChargePoint::update_aligned_data_interval() {
             }
 
             // send evseID = 0 values
-            auto meter_value = get_latest_meter_value_filtered(
-                this->aligned_data_evse0.retrieve_processed_values(), ReadingContextEnum::Sample_Clock,
-                ControllerComponentVariables::AlignedDataMeasurands);
+            auto meter_value = get_latest_meter_value_filtered(this->aligned_data_evse0.retrieve_processed_values(),
+                                                               ReadingContextEnum::Sample_Clock,
+                                                               ControllerComponentVariables::AlignedDataMeasurands);
 
             if (!meter_value.sampledValue.empty()) {
                 // Get the aligned timestamp
@@ -1148,7 +1148,7 @@ void ChargePoint::update_aligned_data_interval() {
                     this->device_model->get_value<int>(ControllerComponentVariables::AlignedDataInterval));
                 auto new_time = utils::round_to_x_seconds(old_time, interval_value);
                 meter_value.timestamp = new_time;
-                
+
                 this->meter_values_req(0, std::vector<ocpp::v201::MeterValue>(1, meter_value));
             }
             this->aligned_data_evse0.clear_values();
