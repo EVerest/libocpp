@@ -1153,9 +1153,16 @@ void ChargePoint::update_aligned_data_interval() {
 
                 // this will apply configured measurands and possibly reduce the entries of sampledValue
                 // according to the configuration
-                const auto meter_value =
+                auto meter_value =
                     get_latest_meter_value_filtered(evse->get_idle_meter_value(), ReadingContextEnum::Sample_Clock,
                                                     ControllerComponentVariables::AlignedDataMeasurands);
+
+                // Get the current timestamp
+                auto old_time = meter_value.timestamp;
+                auto interval_value = std::chrono::seconds(
+                    this->device_model->get_value<int>(ControllerComponentVariables::AlignedDataInterval));
+                auto new_time = evse->round_to_x_seconds(old_time, interval_value);
+                meter_value.timestamp = new_time;
 
                 if (!meter_value.sampledValue.empty()) {
                     // J01.FR.14 this is the only case where we send a MeterValue.req

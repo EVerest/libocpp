@@ -143,6 +143,8 @@ public:
 
     /// @brief Clear the idle meter values for this evse
     void clear_idle_meter_values();
+
+    ocpp::DateTime round_to_x_seconds(const DateTime& timestamp, std::chrono::seconds x);
 };
 
 } // namespace v201
