@@ -167,9 +167,9 @@ ocpp::DateTime round_to_x_seconds(const DateTime& timestamp, std::chrono::second
     auto rounded_time = ocpp::DateTime(date::utc_clock::from_sys(midnight + std::chrono::seconds(rounded_seconds)));
 
     // Output the original and rounded timestamps
-    EVLOG_info << "Original Timestamp: " << timestamp.to_rfc3339() << std::endl;
-    EVLOG_info << "Interval: " << x.count() << std::endl;
-    EVLOG_info << "Rounded Timestamp: " << rounded_time;
+    EVLOG_debug << "Original Timestamp: " << timestamp.to_rfc3339() << std::endl;
+    EVLOG_debug << "Interval: " << x.count() << std::endl;
+    EVLOG_debug << "Rounded Timestamp: " << rounded_time;
 
     return rounded_time;
 }
