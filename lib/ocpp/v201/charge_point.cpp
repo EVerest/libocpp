@@ -2785,6 +2785,7 @@ void ChargePoint::handle_data_transfer_req(Call<DataTransferRequest> call) {
     DataTransferResponse response;
     const auto vendor_id = msg.vendorId.get();
     const auto message_id = msg.messageId.value_or(CiString<50>()).get();
+    // first try the callbacks that are explicitly registered for a vendorId or messageId
     {
         std::lock_guard<std::mutex> lock(data_transfer_callbacks_mutex);
         if (this->data_transfer_callbacks.count(vendor_id) == 0) {
@@ -2798,16 +2799,25 @@ void ChargePoint::handle_data_transfer_req(Call<DataTransferRequest> call) {
         }
     }
 
+    // only try the general data_transfer_callback if a explicity registered callback was not found
+    if (response.status == ocpp::v201::DataTransferStatusEnum::UnknownVendorId or
+        response.status == ocpp::v201::DataTransferStatusEnum::UnknownMessageId) {
+        if (this->callbacks.data_transfer_callback.has_value()) {
+            response = this->callbacks.data_transfer_callback.value()(call.msg);
+        }
+    }
+
     ocpp::CallResult<DataTransferResponse> call_result(response, call.uniqueId);
     this->send<DataTransferResponse>(call_result);
 }
 
-DataTransferResponse ChargePoint::data_transfer_req(const CiString<255>& vendorId, const CiString<50>& messageId,
-                                                    const std::string& data) {
+DataTransferResponse ChargePoint::data_transfer_req(const CiString<255>& vendorId,
+                                                    const std::optional<CiString<50>>& messageId,
+                                                    const std::optional<std::string>& data) {
     DataTransferRequest req;
     req.vendorId = vendorId;
     req.messageId = messageId;
-    req.data.emplace(data);
+    req.data = data;
 
     DataTransferResponse response;
     ocpp::Call<DataTransferRequest> call(req, this->message_queue->createMessageId());
