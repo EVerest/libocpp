@@ -157,7 +157,22 @@ std::string sha256(const std::string& str) {
 std::string generate_token_hash(const IdToken& token) {
     return sha256(conversions::id_token_enum_to_string(token.type) + token.idToken.get());
 }
+ocpp::DateTime round_to_x_seconds(const DateTime& timestamp, std::chrono::seconds x) {
+    auto timestamp_sys = date::utc_clock::to_sys(timestamp.to_time_point());
 
+    // get the current midnight
+    auto midnight = std::chrono::floor<date::days>(timestamp_sys);
+    auto seconds_since_midnight = std::chrono::duration_cast<std::chrono::seconds>(timestamp_sys - midnight).count();
+    auto rounded_seconds = ((seconds_since_midnight + x.count() / 2) / x.count()) * x.count();
+    auto rounded_time = ocpp::DateTime(date::utc_clock::from_sys(midnight + std::chrono::seconds(rounded_seconds)));
+
+    // Output the original and rounded timestamps
+    EVLOG_info << "Original Timestamp: " << timestamp.to_rfc3339() << std::endl;
+    EVLOG_info << "Interval: " << x.count() << std::endl;
+    EVLOG_info << "Rounded Timestamp: " << rounded_time;
+
+    return rounded_time;
+}
 } // namespace utils
 } // namespace v201
 } // namespace ocpp

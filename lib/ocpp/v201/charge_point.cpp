@@ -7,7 +7,7 @@
 #include <ocpp/v201/device_model_storage_sqlite.hpp>
 #include <ocpp/v201/messages/FirmwareStatusNotification.hpp>
 #include <ocpp/v201/messages/LogStatusNotification.hpp>
-
+#include <ocpp/v201/utils.hpp>
 #include <stdexcept>
 #include <string>
 
@@ -1137,11 +1137,18 @@ void ChargePoint::update_aligned_data_interval() {
             }
 
             // send evseID = 0 values
-            const auto meter_value = get_latest_meter_value_filtered(
+            auto meter_value = get_latest_meter_value_filtered(
                 this->aligned_data_evse0.retrieve_processed_values(), ReadingContextEnum::Sample_Clock,
                 ControllerComponentVariables::AlignedDataMeasurands);
 
             if (!meter_value.sampledValue.empty()) {
+                // Get the aligned timestamp
+                auto old_time = meter_value.timestamp;
+                auto interval_value = std::chrono::seconds(
+                    this->device_model->get_value<int>(ControllerComponentVariables::AlignedDataInterval));
+                auto new_time = utils::round_to_x_seconds(old_time, interval_value);
+                meter_value.timestamp = new_time;
+                
                 this->meter_values_req(0, std::vector<ocpp::v201::MeterValue>(1, meter_value));
             }
             this->aligned_data_evse0.clear_values();
@@ -1157,11 +1164,11 @@ void ChargePoint::update_aligned_data_interval() {
                     get_latest_meter_value_filtered(evse->get_idle_meter_value(), ReadingContextEnum::Sample_Clock,
                                                     ControllerComponentVariables::AlignedDataMeasurands);
 
-                // Get the current timestamp
+                // Get the aligned timestamp
                 auto old_time = meter_value.timestamp;
                 auto interval_value = std::chrono::seconds(
                     this->device_model->get_value<int>(ControllerComponentVariables::AlignedDataInterval));
-                auto new_time = evse->round_to_x_seconds(old_time, interval_value);
+                auto new_time = utils::round_to_x_seconds(old_time, interval_value);
                 meter_value.timestamp = new_time;
 
                 if (!meter_value.sampledValue.empty()) {

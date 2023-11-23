@@ -120,6 +120,13 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
                 for (auto& item : meter_value.sampledValue) {
                     item.context = ReadingContextEnum::Sample_Clock;
                 }
+                // Get the aligned timestamp
+                auto old_time = meter_value.timestamp;
+                auto interval_value = std::chrono::seconds(
+                    this->device_model.get_value<int>(ControllerComponentVariables::AlignedDataInterval));
+                auto new_time = utils::round_to_x_seconds(old_time, interval_value);
+                meter_value.timestamp = new_time;
+
                 this->transaction_meter_value_req(meter_value, this->transaction->get_transaction(),
                                                   transaction->get_seq_no(), this->transaction->reservation_id);
                 this->aligned_data_updated.clear_values();
@@ -135,6 +142,13 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
                 for (auto& item : meter_value.sampledValue) {
                     item.context = ReadingContextEnum::Sample_Clock;
                 }
+                // Get the aligned timestamp
+                auto old_time = meter_value.timestamp;
+                auto interval_value = std::chrono::seconds(
+                    this->device_model.get_value<int>(ControllerComponentVariables::AlignedDataTxEndedInterval));
+                auto new_time = utils::round_to_x_seconds(old_time, interval_value);
+                meter_value.timestamp = new_time;
+
                 this->database_handler->transaction_metervalues_insert(this->transaction->transactionId.get(),
                                                                        meter_value);
                 this->aligned_data_tx_end.clear_values();
@@ -263,22 +277,6 @@ void Evse::check_max_energy_on_invalid_id() {
             }
         }
     }
-}
-ocpp::DateTime Evse::round_to_x_seconds(const DateTime& timestamp, std::chrono::seconds x) {
-    auto timestamp_sys = date::utc_clock::to_sys(timestamp.to_time_point());
-
-    // get the current midnight
-    auto midnight = std::chrono::floor<date::days>(timestamp_sys);
-    auto seconds_since_midnight = std::chrono::duration_cast<std::chrono::seconds>(timestamp_sys - midnight).count();
-    auto rounded_seconds = ((seconds_since_midnight + x.count() / 2) / x.count()) * x.count();
-    auto rounded_time = ocpp::DateTime(date::utc_clock::from_sys(midnight + std::chrono::seconds(rounded_seconds)));
-
-    // Output the original and rounded timestamps
-    EVLOG_info << "Original Timestamp: " << timestamp.to_rfc3339() << std::endl;
-    EVLOG_info << "Interval: " << x.count() << std::endl;
-    EVLOG_info << "Rounded Timestamp: " << rounded_time;
-
-    return rounded_time;
 }
 } // namespace v201
 } // namespace ocpp

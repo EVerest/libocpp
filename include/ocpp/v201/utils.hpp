@@ -52,6 +52,8 @@ std::string sha256(const std::string& str);
 /// @return A SHA256 hash string
 std::string generate_token_hash(const IdToken& token);
 
+ocpp::DateTime round_to_x_seconds(const DateTime& timestamp, std::chrono::seconds x);
+
 } // namespace utils
 } // namespace v201
 } // namespace ocpp
