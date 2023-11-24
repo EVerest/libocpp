@@ -436,6 +436,12 @@ public:
     void register_configuration_key_changed_callback(const CiString<50>& key,
                                                      const std::function<void(const KeyValue& key_value)>& callback);
 
+    /// \brief registers a \p callback function that can be used to react on changed configuration key. This
+    /// callback is called when a configuration key has been changed by the CSMS
+    /// \param callback executed when this configuration key changed
+    void register_configuration_key_changed_callback(
+        const std::function<void(const CiString<50>& key, const CiString<500>& value)>& callback);
+
     /// \brief registers a \p callback function that can be used to react to a security event callback. This callback is
     /// called only if the SecurityEvent occured internally within libocpp
     void register_security_event_callback(
