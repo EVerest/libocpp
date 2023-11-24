@@ -52,7 +52,11 @@ std::string sha256(const std::string& str);
 /// @return A SHA256 hash string
 std::string generate_token_hash(const IdToken& token);
 
-ocpp::DateTime align_timestamp(const DateTime timestamp, std::chrono::seconds x);
+/// @brief Align the clock aligned timestamps to the interval values
+/// @param timestamp the timestamp to align
+/// @param align_interval the clock aligned interval to align to since midnight 00:00
+/// @return DateTime type timestamp
+ocpp::DateTime align_timestamp(const DateTime timestamp, std::chrono::seconds align_interval);
 
 } // namespace utils
 } // namespace v201
