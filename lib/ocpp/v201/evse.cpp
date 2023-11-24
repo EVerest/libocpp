@@ -133,7 +133,7 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
 
     if (aligned_data_tx_ended_interval > 0s) {
         transaction->aligned_tx_ended_meter_values_timer.interval_starting_from(
-            [this,aligned_data_tx_ended_interval] {
+            [this, aligned_data_tx_ended_interval] {
                 auto meter_value = this->aligned_data_tx_end.retrieve_processed_values();
                 for (auto& item : meter_value.sampledValue) {
                     item.context = ReadingContextEnum::Sample_Clock;
