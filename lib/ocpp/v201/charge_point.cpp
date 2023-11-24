@@ -1124,7 +1124,7 @@ void ChargePoint::update_aligned_data_interval() {
     }
 
     this->aligned_meter_values_timer.interval_starting_from(
-        [this]() {
+        [this, interval]() {
             // J01.FR.20 if AlignedDataSendDuringIdle is true and any transaction is active, don't send clock aligned
             // meter values
             if (this->device_model->get_optional_value<bool>(ControllerComponentVariables::AlignedDataSendDuringIdle)
@@ -1143,11 +1143,7 @@ void ChargePoint::update_aligned_data_interval() {
 
             if (!meter_value.sampledValue.empty()) {
                 // Get the aligned timestamp
-                auto old_time = meter_value.timestamp;
-                auto interval_value = std::chrono::seconds(
-                    this->device_model->get_value<int>(ControllerComponentVariables::AlignedDataInterval));
-                auto new_time = utils::round_to_x_seconds(old_time, interval_value);
-                meter_value.timestamp = new_time;
+                meter_value.timestamp = utils::align_timestamp(meter_value.timestamp, interval);
 
                 this->meter_values_req(0, std::vector<ocpp::v201::MeterValue>(1, meter_value));
             }
@@ -1165,11 +1161,7 @@ void ChargePoint::update_aligned_data_interval() {
                                                     ControllerComponentVariables::AlignedDataMeasurands);
 
                 // Get the aligned timestamp
-                auto old_time = meter_value.timestamp;
-                auto interval_value = std::chrono::seconds(
-                    this->device_model->get_value<int>(ControllerComponentVariables::AlignedDataInterval));
-                auto new_time = utils::round_to_x_seconds(old_time, interval_value);
-                meter_value.timestamp = new_time;
+                meter_value.timestamp = utils::align_timestamp(meter_value.timestamp, interval);
 
                 if (!meter_value.sampledValue.empty()) {
                     // J01.FR.14 this is the only case where we send a MeterValue.req

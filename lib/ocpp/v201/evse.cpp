@@ -111,7 +111,7 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
 
     if (aligned_data_tx_updated_interval > 0s) {
         transaction->aligned_tx_updated_meter_values_timer.interval_starting_from(
-            [this] {
+            [this, aligned_data_tx_updated_interval] {
                 if (this->device_model.get_optional_value<bool>(ControllerComponentVariables::AlignedDataSendDuringIdle)
                         .value_or(false)) {
                     return;
@@ -121,11 +121,7 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
                     item.context = ReadingContextEnum::Sample_Clock;
                 }
                 // Get the aligned timestamp
-                auto old_time = meter_value.timestamp;
-                auto interval_value = std::chrono::seconds(
-                    this->device_model.get_value<int>(ControllerComponentVariables::AlignedDataInterval));
-                auto new_time = utils::round_to_x_seconds(old_time, interval_value);
-                meter_value.timestamp = new_time;
+                meter_value.timestamp = utils::align_timestamp(meter_value.timestamp, aligned_data_tx_updated_interval);
 
                 this->transaction_meter_value_req(meter_value, this->transaction->get_transaction(),
                                                   transaction->get_seq_no(), this->transaction->reservation_id);
@@ -137,17 +133,14 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
 
     if (aligned_data_tx_ended_interval > 0s) {
         transaction->aligned_tx_ended_meter_values_timer.interval_starting_from(
-            [this] {
+            [this,aligned_data_tx_ended_interval] {
                 auto meter_value = this->aligned_data_tx_end.retrieve_processed_values();
                 for (auto& item : meter_value.sampledValue) {
                     item.context = ReadingContextEnum::Sample_Clock;
                 }
+
                 // Get the aligned timestamp
-                auto old_time = meter_value.timestamp;
-                auto interval_value = std::chrono::seconds(
-                    this->device_model.get_value<int>(ControllerComponentVariables::AlignedDataTxEndedInterval));
-                auto new_time = utils::round_to_x_seconds(old_time, interval_value);
-                meter_value.timestamp = new_time;
+                meter_value.timestamp = utils::align_timestamp(meter_value.timestamp, aligned_data_tx_ended_interval);
 
                 this->database_handler->transaction_metervalues_insert(this->transaction->transactionId.get(),
                                                                        meter_value);
