@@ -161,7 +161,11 @@ private:
 
     // Unlike the public resume(), this doesn't schedule anything - it just does the actual resumption
     void resume_now() {
-
+        std::lock_guard<std::mutex> lk(this->message_mutex);
+        // TODO: Use the deadline to check that we didn't wake up while pause() was running
+        this->paused = false;
+        this->cv.notify_one();
+        EVLOG_debug << "resume() notified message queue";
     }
 
 public:
@@ -596,16 +600,16 @@ public:
     }
 
     /// \brief Resumes the message queue
-    void resume(unsigned int delay_seconds = 1) {
+    void resume(unsigned int delay_seconds = 0) {
         EVLOG_debug << "resume() called, delay: " << delay_seconds << " seconds";
-        std::lock_guard<std::mutex> lk(this->message_mutex);
-        this->resume_timer.timeout([this] {
+        if (delay_seconds > 0) {
             std::lock_guard<std::mutex> lk(this->message_mutex);
-            // TODO: Use the deadline to check that we didn't wake up while pause() was running
-            this->paused = false;
-            this->cv.notify_one();
-            EVLOG_debug << "resume() notified message queue";
-        }, std::chrono::seconds(delay_seconds));
+            this->resume_timer.timeout([this] {
+                this->resume_now();
+            }, std::chrono::seconds(delay_seconds));
+        } else {
+            this->resume_now();
+        }
     }
 
     bool is_transaction_message_queue_empty() {
