@@ -92,8 +92,10 @@ private:
 
     // This timer schedules the resumption of the message queue
     Everest::SteadyTimer resume_timer;
-    // This is the deadline by which the message queue should be resumed; can only move forward
-    std::chrono::time_point<std::chrono::steady_clock> message_queue_resume_deadline;
+    // Counts the number of pause()/resume() calls.
+    // Used by the resume timer callback to abort itself in case the timer triggered before it could be cancelled.
+    u_int64_t pause_resume_ctr = 0;
+
 
     // key is the message id of the stop transaction and the value is the transaction id
     // this map is used for StopTransaction.req that have been put on the message queue without having received a
@@ -160,12 +162,13 @@ private:
     }
 
     // Unlike the public resume(), this doesn't schedule anything - it just does the actual resumption
-    void resume_now() {
-        std::lock_guard<std::mutex> lk(this->message_mutex);
-        // TODO: Use the deadline to check that we didn't wake up while pause() was running
-        this->paused = false;
-        this->cv.notify_one();
-        EVLOG_debug << "resume() notified message queue";
+    // Does not lock this->message_mutex, make sure to do that before calling
+    void resume_now(u_int64_t expected_pause_resume_ctr) {
+        if (this->pause_resume_ctr == expected_pause_resume_ctr) {
+            this->paused = false;
+            this->cv.notify_one();
+            EVLOG_debug << "resume() notified message queue";
+        }
     }
 
 public:
@@ -593,6 +596,7 @@ public:
     void pause() {
         EVLOG_debug << "pause()";
         std::lock_guard<std::mutex> lk(this->message_mutex);
+        this->pause_resume_ctr++;
         this->resume_timer.stop();
         this->paused = true;
         this->cv.notify_one();
@@ -602,13 +606,16 @@ public:
     /// \brief Resumes the message queue
     void resume(unsigned int delay_seconds = 0) {
         EVLOG_debug << "resume() called, delay: " << delay_seconds << " seconds";
+        std::lock_guard<std::mutex> lk(this->message_mutex);
         if (delay_seconds > 0) {
-            std::lock_guard<std::mutex> lk(this->message_mutex);
-            this->resume_timer.timeout([this] {
-                this->resume_now();
+            this->pause_resume_ctr++;
+            u_int64_t expected_pause_resume_ctr = this->pause_resume_ctr;
+            this->resume_timer.timeout([this, expected_pause_resume_ctr] {
+                std::lock_guard<std::mutex> lk(this->message_mutex);
+                this->resume_now(expected_pause_resume_ctr);
             }, std::chrono::seconds(delay_seconds));
         } else {
-            this->resume_now();
+            this->resume_now(this->pause_resume_ctr);
         }
     }
 
