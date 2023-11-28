@@ -90,6 +90,11 @@ private:
     Everest::SteadyTimer in_flight_timeout_timer;
     Everest::SteadyTimer notify_queue_timer;
 
+    // This timer schedules the resumption of the message queue
+    Everest::SteadyTimer resume_timer;
+    // This is the deadline by which the message queue should be resumed; can only move forward
+    std::chrono::time_point<std::chrono::steady_clock> message_queue_resume_deadline;
+
     // key is the message id of the stop transaction and the value is the transaction id
     // this map is used for StopTransaction.req that have been put on the message queue without having received a
     // transactionId from the backend (e.g. when offline) it is used to replace the transactionId in the
@@ -152,6 +157,11 @@ private:
         }
         this->cv.notify_all();
         EVLOG_debug << "Notified message queue worker";
+    }
+
+    // Unlike the public resume(), this doesn't schedule anything - it just does the actual resumption
+    void resume_now() {
+
     }
 
 public:
@@ -579,18 +589,23 @@ public:
     void pause() {
         EVLOG_debug << "pause()";
         std::lock_guard<std::mutex> lk(this->message_mutex);
+        this->resume_timer.stop();
         this->paused = true;
         this->cv.notify_one();
         EVLOG_debug << "pause() notified message queue";
     }
 
     /// \brief Resumes the message queue
-    void resume() {
-        EVLOG_debug << "resume()";
+    void resume(unsigned int delay_seconds = 1) {
+        EVLOG_debug << "resume() called, delay: " << delay_seconds << " seconds";
         std::lock_guard<std::mutex> lk(this->message_mutex);
-        this->paused = false;
-        this->cv.notify_one();
-        EVLOG_debug << "resume() notified message queue";
+        this->resume_timer.timeout([this] {
+            std::lock_guard<std::mutex> lk(this->message_mutex);
+            // TODO: Use the deadline to check that we didn't wake up while pause() was running
+            this->paused = false;
+            this->cv.notify_one();
+            EVLOG_debug << "resume() notified message queue";
+        }, std::chrono::seconds(delay_seconds));
     }
 
     bool is_transaction_message_queue_empty() {
