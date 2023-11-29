@@ -470,6 +470,21 @@
       "description": "Seconds between two checks for client certificate expiration and potential renewal",
       "default": "43200",
       "type": "integer"
+    },
+    "MessageQueueSizeThreshold": {
+      "variable_name": "MessageQueueSizeThreshold",
+      "characteristics": {
+        "supportsMonitoring": true,
+        "dataType": "integer"
+      },
+      "attributes": [
+        {
+          "type": "Actual",
+          "mutability": "ReadOnly"
+        }
+      ],
+      "description": "Seconds between two checks for client certificate expiration and potential renewal",
+      "type": "integer"
     }
   },
   "required": [
