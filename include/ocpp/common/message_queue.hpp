@@ -77,8 +77,8 @@ private:
     /// message queue for non-transaction related messages
     std::queue<std::shared_ptr<ControlMessage<M>>> normal_message_queue;
     std::shared_ptr<ControlMessage<M>> in_flight;
-    std::mutex message_mutex;
-    std::condition_variable cv;
+    std::recursive_mutex message_mutex;
+    std::condition_variable_any cv;
     std::function<bool(json message)> send_callback;
     std::vector<M> external_notify;
     bool paused;
@@ -139,7 +139,7 @@ private:
     void add_to_normal_message_queue(std::shared_ptr<ControlMessage<M>> message) {
         EVLOG_debug << "Adding message to normal message queue";
         {
-            std::lock_guard<std::mutex> lk(this->message_mutex);
+            std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
             this->normal_message_queue.push(message);
             this->new_message = true;
         }
@@ -149,7 +149,7 @@ private:
     void add_to_transaction_message_queue(std::shared_ptr<ControlMessage<M>> message) {
         EVLOG_debug << "Adding message to transaction message queue";
         {
-            std::lock_guard<std::mutex> lk(this->message_mutex);
+            std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
             this->transaction_message_queue.push_back(message);
             ocpp::common::DBTransactionMessage db_message{message->message, messagetype_to_string(message->messageType),
                                                           message->message_attempts, message->timestamp,
@@ -161,9 +161,9 @@ private:
         EVLOG_debug << "Notified message queue worker";
     }
 
-    // Unlike the public resume(), this doesn't schedule anything - it just does the actual resumption
-    // Does not lock this->message_mutex, make sure to do that before calling
+    // The public resume() delegates the actual resumption to this method
     void resume_now(u_int64_t expected_pause_resume_ctr) {
+        std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
         if (this->pause_resume_ctr == expected_pause_resume_ctr) {
             this->paused = false;
             this->cv.notify_one();
@@ -192,8 +192,9 @@ public:
             while (this->running) {
                 EVLOG_debug << "Waiting for a message from the message queue";
 
-                std::unique_lock<std::mutex> lk(this->message_mutex);
+                std::unique_lock<std::recursive_mutex> lk(this->message_mutex);
                 using namespace std::chrono_literals;
+                // It's safe to wait on the cv here because we're guaranteed to only lock this->message_mutex once
                 this->cv.wait(lk, [this]() {
                     return !this->running || (!this->paused && this->new_message && this->in_flight == nullptr);
                 });
@@ -463,7 +464,7 @@ public:
                 // we need to remove Call messages from in_flight if we receive a CallResult OR a CallError
 
                 // TODO(kai): we need to do some error handling in the CallError case
-                std::unique_lock<std::mutex> lk(this->message_mutex);
+                std::unique_lock<std::recursive_mutex> lk(this->message_mutex);
                 if (this->in_flight == nullptr) {
                     EVLOG_error
                         << "Received a CALLRESULT OR CALLERROR without a message in flight, this should not happen";
@@ -525,7 +526,7 @@ public:
 
     /// \brief Handles a message timeout or a CALLERROR. \p enhanced_message_opt is set only in case of CALLERROR
     void handle_timeout_or_callerror(const std::optional<EnhancedMessage<M>>& enhanced_message_opt) {
-        std::lock_guard<std::mutex> lk(this->message_mutex);
+        std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
         EVLOG_warning << "Message timeout or CALLERROR for: " << this->in_flight->messageType << " ("
                       << this->in_flight->uniqueId() << ")";
         if (this->isTransactionMessage(this->in_flight)) {
@@ -595,7 +596,7 @@ public:
     /// \brief Pauses the message queue
     void pause() {
         EVLOG_debug << "pause()";
-        std::lock_guard<std::mutex> lk(this->message_mutex);
+        std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
         this->pause_resume_ctr++;
         this->resume_timer.stop();
         this->paused = true;
@@ -604,28 +605,27 @@ public:
     }
 
     /// \brief Resumes the message queue
-    void resume(unsigned int delay_seconds = 0) {
-        EVLOG_debug << "resume() called, delay: " << delay_seconds << " seconds";
-        std::lock_guard<std::mutex> lk(this->message_mutex);
-        if (delay_seconds > 0) {
+    void resume(std::chrono::seconds delay = std::chrono::seconds(0)) {
+        EVLOG_debug << "resume() called, delay: " << delay.count() << " seconds";
+        std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
+        if (delay > std::chrono::seconds(0)) {
             this->pause_resume_ctr++;
             u_int64_t expected_pause_resume_ctr = this->pause_resume_ctr;
             this->resume_timer.timeout([this, expected_pause_resume_ctr] {
-                std::lock_guard<std::mutex> lk(this->message_mutex);
                 this->resume_now(expected_pause_resume_ctr);
-            }, std::chrono::seconds(delay_seconds));
+            }, delay);
         } else {
             this->resume_now(this->pause_resume_ctr);
         }
     }
 
     bool is_transaction_message_queue_empty() {
-        std::lock_guard<std::mutex> lk(this->message_mutex);
+        std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
         return this->transaction_message_queue.empty();
     }
 
     bool contains_transaction_messages(const CiString<36> transaction_id) {
-        std::lock_guard<std::mutex> lk(this->message_mutex);
+        std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
         for (const auto control_message : this->transaction_message_queue) {
             if (control_message->messageType == v201::MessageType::TransactionEvent) {
                 v201::TransactionEventRequest req = control_message->message.at(CALL_PAYLOAD);
@@ -638,7 +638,7 @@ public:
     }
 
     bool contains_stop_transaction_message(const int32_t transaction_id) {
-        std::lock_guard<std::mutex> lk(this->message_mutex);
+        std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
         for (const auto control_message : this->transaction_message_queue) {
             if (control_message->messageType == v16::MessageType::StopTransaction) {
                 v16::StopTransactionRequest req = control_message->message.at(CALL_PAYLOAD);
@@ -693,7 +693,7 @@ public:
 
         // replace transaction id in meter values if start_transaction_message_id is present in map
         // this is necessary when the chargepoint queued MeterValue.req for a transaction with unknown transaction_id
-        std::lock_guard<std::mutex> lk(this->message_mutex);
+        std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
         if (this->start_transaction_mid_meter_values_mid_map.count(start_transaction_message_id)) {
             for (auto it = this->transaction_message_queue.begin(); it != transaction_message_queue.end(); ++it) {
                 for (const auto& meter_value_message_id :

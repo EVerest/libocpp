@@ -648,7 +648,7 @@ void ChargePoint::init_websocket() {
 
     this->websocket = std::make_unique<Websocket>(connection_options, this->evse_security, this->logging);
     this->websocket->register_connected_callback([this](const int security_profile) {
-        this->message_queue->resume(1); // TODO: derive from configuration
+        this->message_queue->resume(std::chrono::seconds(1)); // TODO: derive from configuration
 
         const auto& security_profile_cv = ControllerComponentVariables::SecurityProfile;
         if (security_profile_cv.variable.has_value()) {
