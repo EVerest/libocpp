@@ -2025,7 +2025,7 @@ KeyValue ChargePointConfiguration::getWaitForStopTransactionsOnResetTimeoutKeyVa
 }
 
 std::optional<KeyValue> ChargePointConfiguration::getCustomKeyValue(CiString<50> key) {
-    std::lock_guard<std::mutex> lock(configuration_mutex);
+    std::lock_guard<std::recursive_mutex> lock(configuration_mutex);
     if (!this->config["Custom"].contains(key.get())) {
         return std::nullopt;
     }
@@ -2050,7 +2050,7 @@ ConfigurationStatus ChargePointConfiguration::setCustomKey(CiString<50> key, CiS
     if (!kv.has_value() or (kv.value().readonly and !force)) {
         return ConfigurationStatus::Rejected;
     }
-    std::lock_guard<std::mutex> lock(configuration_mutex);
+    std::lock_guard<std::recursive_mutex> lock(configuration_mutex);
     try {
         const auto type = this->custom_schema["properties"][key]["type"];
         if (type == "integer") {

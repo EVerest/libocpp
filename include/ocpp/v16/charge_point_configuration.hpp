@@ -25,7 +25,7 @@ private:
     std::map<SupportedFeatureProfiles, std::set<MessageType>> supported_message_types_from_central_system;
     std::set<MessageType> supported_message_types_sending;
     std::set<MessageType> supported_message_types_receiving;
-    std::mutex configuration_mutex;
+    std::recursive_mutex configuration_mutex;
 
     std::vector<MeasurandWithPhase> csv_to_measurand_with_phase_vector(std::string csv);
     bool validate_measurands(const json& config);
