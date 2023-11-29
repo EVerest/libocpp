@@ -302,22 +302,27 @@ TEST_F(MessageQueueTest, test_queuing_up_of_non_transactional_messages) {
 
     // expect calls _are_ repeated
     wait_for_calls(message_count + 1);
-
 }
 
 // \brief Test that if the max size threshold is exceeded, the non-transactional  messages are dropped
-//  Sends both non-transactions and transactional messages while on pause, expects a certain amount of non-transactional to be dropped.
+//  Sends both non-transactions and transactional messages while on pause, expects a certain amount of non-transactional
+//  to be dropped.
 TEST_F(MessageQueueTest, test_clean_up_non_transactional_queue) {
 
     const int sent_transactional_messages = 10;
     const int sent_non_transactional_messages = 15;
-    config.queues_total_size_threshold = 20; // expect two messages to be dropped each round (3x), end up with 15-6=9 non-transactional remaining
+    config.queues_total_size_threshold =
+        20; // expect two messages to be dropped each round (3x), end up with 15-6=9 non-transactional remaining
     config.queue_all_messages = true;
     const int expected_skipped_transactional_messages = 6;
     init_message_queue();
 
-    EXPECT_CALL(*db, insert_transaction_message(testing::_)).Times(sent_transactional_messages).WillRepeatedly(testing::Return(true));
-    EXPECT_CALL(*db, remove_transaction_message(testing::_)).Times(sent_transactional_messages).WillRepeatedly(testing::Return());
+    EXPECT_CALL(*db, insert_transaction_message(testing::_))
+        .Times(sent_transactional_messages)
+        .WillRepeatedly(testing::Return(true));
+    EXPECT_CALL(*db, remove_transaction_message(testing::_))
+        .Times(sent_transactional_messages)
+        .WillRepeatedly(testing::Return());
 
     // go offline
     message_queue->pause();
@@ -332,27 +337,26 @@ TEST_F(MessageQueueTest, test_clean_up_non_transactional_queue) {
                 .InSequence(s)
                 .WillOnce(MarkAndReturn(true, true));
         }
-
     }
     for (int i = 0; i < sent_transactional_messages; i++) {
-         auto msg_id =  push_message_call(TestMessageType::TRANSACTIONAL);
-         EXPECT_CALL(send_callback_mock, Call(json{2, msg_id, to_string(TestMessageType::TRANSACTIONAL), json{{"data", msg_id}}}))
-             .InSequence(s)
-             .WillOnce(MarkAndReturn(true, true));
+        auto msg_id = push_message_call(TestMessageType::TRANSACTIONAL);
+        EXPECT_CALL(send_callback_mock,
+                    Call(json{2, msg_id, to_string(TestMessageType::TRANSACTIONAL), json{{"data", msg_id}}}))
+            .InSequence(s)
+            .WillOnce(MarkAndReturn(true, true));
     }
 
     // go online again
     message_queue->resume();
 
     // expect calls _are_ repeated
-    wait_for_calls(sent_transactional_messages + sent_non_transactional_messages - expected_skipped_transactional_messages);
+    wait_for_calls(sent_transactional_messages + sent_non_transactional_messages -
+                   expected_skipped_transactional_messages);
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
     // assert no further calls
-    EXPECT_EQ(sent_transactional_messages + sent_non_transactional_messages - expected_skipped_transactional_messages, get_call_count());
-
+    EXPECT_EQ(sent_transactional_messages + sent_non_transactional_messages - expected_skipped_transactional_messages,
+              get_call_count());
 }
-
-
 
 } // namespace ocpp
