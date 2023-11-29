@@ -96,7 +96,6 @@ private:
     // Used by the resume timer callback to abort itself in case the timer triggered before it could be cancelled.
     u_int64_t pause_resume_ctr = 0;
 
-
     // key is the message id of the stop transaction and the value is the transaction id
     // this map is used for StopTransaction.req that have been put on the message queue without having received a
     // transactionId from the backend (e.g. when offline) it is used to replace the transactionId in the
@@ -611,11 +610,10 @@ public:
         this->pause_resume_ctr++;
         // Do not delay if this is the first call to resume(), i.e. this is the initial connection
         if (this->pause_resume_ctr > 1 && delay_on_reconnect > std::chrono::seconds(0)) {
-            EVLOG_debug << "Delaying message queue resume by "<< delay_on_reconnect.count() << " seconds";
+            EVLOG_debug << "Delaying message queue resume by " << delay_on_reconnect.count() << " seconds";
             u_int64_t expected_pause_resume_ctr = this->pause_resume_ctr;
-            this->resume_timer.timeout([this, expected_pause_resume_ctr] {
-                this->resume_now(expected_pause_resume_ctr);
-            }, delay_on_reconnect);
+            this->resume_timer.timeout(
+                [this, expected_pause_resume_ctr] { this->resume_now(expected_pause_resume_ctr); }, delay_on_reconnect);
         } else {
             this->resume_now(this->pause_resume_ctr);
         }
