@@ -8,8 +8,8 @@ namespace v201 {
 
 class DeviceModelStorageSQLiteTest : public ::testing::Test {
 protected:
-    const std::string DEVICE_MODEL_DATABASE = "./unittest_device_model.db";
-    const std::string INVALID_DEVICE_MODEL_DATABASE = "./unittest_device_model_missing_required.db";
+    const std::string DEVICE_MODEL_DATABASE = "./resources/unittest_device_model.db";
+    const std::string INVALID_DEVICE_MODEL_DATABASE = "./resources/unittest_device_model_missing_required.db";
 };
 
 /// \brief Tests check_integrity does not raise error for valid database
