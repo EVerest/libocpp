@@ -227,7 +227,7 @@ private:
 
     /// \brief Handler for automatic or explicit OCSP cache updates
     OcspUpdater ocsp_updater;
-    /// \brief optional delay to resumption of message queue after connecting to the CSMS
+    /// \brief optional delay to resumption of message queue after reconnecting to the CSMS
     std::chrono::seconds message_queue_resume_delay = std::chrono::seconds(0);
 
     bool send(CallError call_error);
@@ -647,7 +647,7 @@ public:
     DataTransferResponse data_transfer_req(const CiString<255>& vendorId, const CiString<50>& messageId,
                                            const std::string& data);
 
-    /// \brief Delay draining the message queue after connecting, e.g. so the CSMS can perform post-reconnect checks first
+    /// \brief Delay draining the message queue after reconnecting, e.g. so the CSMS can perform post-reconnect checks first
     /// \param delay        The delay period (seconds)
     void set_message_queue_resume_delay(std::chrono::seconds delay) {
         this->message_queue_resume_delay = delay;

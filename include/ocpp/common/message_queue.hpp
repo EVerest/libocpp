@@ -605,15 +605,17 @@ public:
     }
 
     /// \brief Resumes the message queue
-    void resume(std::chrono::seconds delay = std::chrono::seconds(0)) {
-        EVLOG_debug << "resume() called, delay: " << delay.count() << " seconds";
+    void resume(std::chrono::seconds delay_on_reconnect = std::chrono::seconds(0)) {
+        EVLOG_debug << "resume() called";
         std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
-        if (delay > std::chrono::seconds(0)) {
-            this->pause_resume_ctr++;
+        this->pause_resume_ctr++;
+        // Do not delay if this is the first call to resume(), i.e. this is the initial connection
+        if (this->pause_resume_ctr > 1 && delay_on_reconnect > std::chrono::seconds(0)) {
+            EVLOG_debug << "Delaying message queue resume by "<< delay_on_reconnect.count() << " seconds";
             u_int64_t expected_pause_resume_ctr = this->pause_resume_ctr;
             this->resume_timer.timeout([this, expected_pause_resume_ctr] {
                 this->resume_now(expected_pause_resume_ctr);
-            }, delay);
+            }, delay_on_reconnect);
         } else {
             this->resume_now(this->pause_resume_ctr);
         }
