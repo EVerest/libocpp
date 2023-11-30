@@ -15,7 +15,7 @@
 namespace ocpp {
 
 // verify that the csms certificate's commonName matches the CSMS FQDN
-bool verify_csms_cn(const std::string hostname, bool preverified, boost::asio::ssl::verify_context& ctx) {
+bool verify_csms_cn(const std::string& hostname, bool preverified, boost::asio::ssl::verify_context& ctx) {
 
     if (!preverified) {
         EVLOG_error << "Could not verify CSMS server certificate";
