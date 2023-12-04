@@ -168,11 +168,6 @@ private:
 
     std::map<int32_t, AvailabilityChange> scheduled_change_availability_requests;
 
-    std::map<std::string,
-             std::map<std::string, std::function<DataTransferResponse(const std::optional<std::string>& msg)>>>
-        data_transfer_callbacks;
-    std::mutex data_transfer_callbacks_mutex;
-
     std::map<int32_t, std::pair<IdToken, int32_t>> remote_start_id_per_evse;
 
     // timers

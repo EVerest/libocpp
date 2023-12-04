@@ -2783,28 +2783,9 @@ void ChargePoint::handle_customer_information_req(Call<CustomerInformationReques
 void ChargePoint::handle_data_transfer_req(Call<DataTransferRequest> call) {
     const auto msg = call.msg;
     DataTransferResponse response;
-    const auto vendor_id = msg.vendorId.get();
-    const auto message_id = msg.messageId.value_or(CiString<50>()).get();
-    // first try the callbacks that are explicitly registered for a vendorId or messageId
-    {
-        std::lock_guard<std::mutex> lock(data_transfer_callbacks_mutex);
-        if (this->data_transfer_callbacks.count(vendor_id) == 0) {
-            response.status = ocpp::v201::DataTransferStatusEnum::UnknownVendorId;
-        } else if (this->data_transfer_callbacks.count(vendor_id) and
-                   this->data_transfer_callbacks[vendor_id].count(message_id) == 0) {
-            response.status = ocpp::v201::DataTransferStatusEnum::UnknownMessageId;
-        } else {
-            // there is a callback registered for this vendorId and messageId
-            response = this->data_transfer_callbacks[vendor_id][message_id](msg.data);
-        }
-    }
 
-    // only try the general data_transfer_callback if a explicity registered callback was not found
-    if (response.status == ocpp::v201::DataTransferStatusEnum::UnknownVendorId or
-        response.status == ocpp::v201::DataTransferStatusEnum::UnknownMessageId) {
-        if (this->callbacks.data_transfer_callback.has_value()) {
-            response = this->callbacks.data_transfer_callback.value()(call.msg);
-        }
+    if (this->callbacks.data_transfer_callback.has_value()) {
+        response = this->callbacks.data_transfer_callback.value()(call.msg);
     }
 
     ocpp::CallResult<DataTransferResponse> call_result(response, call.uniqueId);
