@@ -52,8 +52,9 @@ ChargingProfile get_sample_charging_profile() {
 class DatabaseTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        this->db_handler = std::make_unique<DatabaseHandler>(CP_ID, std::filesystem::path("/tmp"),
-                                                             std::filesystem::path("../../config/v16/init.sql"));
+        this->db_handler =
+            std::make_unique<DatabaseHandler>(CP_ID, std::filesystem::path("/tmp"),
+                                              std::filesystem::path("../../dist/share/everest/modules/OCPP/init.sql"));
         this->db_handler->open_db_connection(2);
     }
 
