@@ -1,6 +1,9 @@
 *build*
+!.ci/**
+!.github/**
+!.gitignore
 *vscode
-.cache/
+cache/
 workspace.yaml
 CMakeLists.txt.user
 !doc/build-with-fetchcontent
