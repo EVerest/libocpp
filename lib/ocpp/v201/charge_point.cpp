@@ -2786,6 +2786,9 @@ void ChargePoint::handle_data_transfer_req(Call<DataTransferRequest> call) {
 
     if (this->callbacks.data_transfer_callback.has_value()) {
         response = this->callbacks.data_transfer_callback.value()(call.msg);
+    } else {
+        response.status = DataTransferStatusEnum::UnknownVendorId;
+        EVLOG_warning << "Received a DataTransferRequest but no data transfer callback was registered";
     }
 
     ocpp::CallResult<DataTransferResponse> call_result(response, call.uniqueId);
