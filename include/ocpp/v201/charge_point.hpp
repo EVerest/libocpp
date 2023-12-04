@@ -143,7 +143,7 @@ struct Callbacks {
     /// \brief Callback function that can be called when all connectors are unavailable
     std::optional<std::function<void()>> all_connectors_unavailable_callback;
 
-    /// \brief Callbackfunction that can be used to handle arbitrary data transfers for all vendorId an
+    /// \brief Callback function that can be used to handle arbitrary data transfers for all vendorId and
     /// messageId
     std::optional<std::function<DataTransferResponse(const DataTransferRequest& request)>> data_transfer_callback;
 };
