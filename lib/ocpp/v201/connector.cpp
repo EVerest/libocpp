@@ -29,9 +29,9 @@ std::string connector_event_to_string(ConnectorEvent e) {
         return "PlugInAndTokenValid";
     case ConnectorEvent::ErrorCleared:
         return "ErrorCleared";
-    case ConnectorEvent::ErrorCleardOnOccupied:
+    case ConnectorEvent::ErrorClearedOnOccupied:
         return "ErrorCleardOnOccupied";
-    case ConnectorEvent::ErrorCleardOnReserved:
+    case ConnectorEvent::ErrorClearedOnReserved:
         return "ErrorCleardOnReserved";
     case ConnectorEvent::UnavailableToAvailable:
         return "UnavailableToAvailable";
@@ -74,10 +74,10 @@ ConnectorEvent string_to_connector_event(const std::string& s) {
         return ConnectorEvent::ErrorCleared;
     }
     if (s == "ErrorCleardOnOccupied") {
-        return ConnectorEvent::ErrorCleardOnOccupied;
+        return ConnectorEvent::ErrorClearedOnOccupied;
     }
     if (s == "ErrorCleardOnReserved") {
-        return ConnectorEvent::ErrorCleardOnReserved;
+        return ConnectorEvent::ErrorClearedOnReserved;
     }
     if (s == "UnavailableToAvailable") {
         return ConnectorEvent::UnavailableToAvailable;
@@ -103,15 +103,25 @@ ConnectorEvent string_to_connector_event(const std::string& s) {
 Connector::Connector(const int32_t connector_id,
                      const std::function<void(const ConnectorStatusEnum& status)>& status_notification_callback) :
     connector_id(connector_id),
-    state(ConnectorStatusEnum::Available),
-    last_state(ConnectorStatusEnum::Available),
+    state(ConnectorStatusEnum::Available), // TODO verify this is correct init
+    state_if_operative(ConnectorStatusEnum::Available), // TODO verify this is correct init
+    effective_state(ConnectorStatusEnum::Available), // TODO verify this is correct init
     status_notification_callback(status_notification_callback) {
 }
 
 void Connector::set_state(const ConnectorStatusEnum new_state) {
     std::lock_guard<std::mutex> lg(this->state_mutex);
-    this->last_state = this->state;
     this->state = new_state;
+    if (this->state == ConnectorStatusEnum::Available
+        || this->state == ConnectorStatusEnum::Occupied
+        || this->state == ConnectorStatusEnum::Reserved) {
+        this->state_if_operative = new_state;
+    }
+}
+
+ConnectorStatusEnum Connector::get_effective_state() {
+    std::lock_guard<std::mutex> lg(this->state_mutex);
+    return this->effective_state;
 }
 
 ConnectorStatusEnum Connector::get_state() {
@@ -119,7 +129,7 @@ ConnectorStatusEnum Connector::get_state() {
     return this->state;
 }
 
-void Connector::submit_event(ConnectorEvent event) {
+void Connector::submit_event(ConnectorEvent event, OperationalStatusEnum evse_status) {
 
     // FIXME(piet): This state machine implementation is a first draft
     const auto current_state = this->get_state();
@@ -159,6 +169,9 @@ void Connector::submit_event(ConnectorEvent event) {
         case ConnectorEvent::Unavailable:
             this->set_state(ConnectorStatusEnum::Unavailable);
             break;
+        case ConnectorEvent::ReturnToOperativeState: // TODO: Is this valid?
+            this->set_state(ConnectorStatusEnum::Occupied);
+            break;
         default:
             EVLOG_warning << "Invalid connector event: " << conversions::connector_event_to_string(event)
                           << " in state Occupied.";
@@ -178,6 +191,9 @@ void Connector::submit_event(ConnectorEvent event) {
             break;
         case ConnectorEvent::Unavailable:
             this->set_state(ConnectorStatusEnum::Unavailable);
+            break;
+        case ConnectorEvent::ReturnToOperativeState: // TODO: Is this valid?
+            this->set_state(ConnectorStatusEnum::Reserved);
             break;
         default:
             EVLOG_warning << "Invalid connector event: " << conversions::connector_event_to_string(event)
@@ -200,13 +216,13 @@ void Connector::submit_event(ConnectorEvent event) {
             this->set_state(ConnectorStatusEnum::Faulted);
             break;
         case ConnectorEvent::PlugOut:
-            this->last_state = ConnectorStatusEnum::Available;
+            this->state_if_operative = ConnectorStatusEnum::Available;
             break;
         case ConnectorEvent::PlugIn:
-            this->last_state = ConnectorStatusEnum::Occupied;
+            this->state_if_operative = ConnectorStatusEnum::Occupied;
             break;
         case ConnectorEvent::ReturnToOperativeState:
-            this->set_state(this->last_state);
+            this->set_state(this->state_if_operative);
             break;
         case ConnectorEvent::Unavailable:
             break;
@@ -221,13 +237,13 @@ void Connector::submit_event(ConnectorEvent event) {
         case ConnectorEvent::ErrorCleared:
             this->set_state(ConnectorStatusEnum::Available);
             break;
-        case ConnectorEvent::ErrorCleardOnOccupied:
+        case ConnectorEvent::ErrorClearedOnOccupied:
             this->set_state(ConnectorStatusEnum::Occupied);
             break;
-        case ConnectorEvent::ErrorCleardOnReserved:
+        case ConnectorEvent::ErrorClearedOnReserved:
             this->set_state(ConnectorStatusEnum::Reserved);
             break;
-        case ConnectorEvent::Unavailable:
+        case ConnectorEvent::Unavailable: // TODO: Is this a sensible state transition?
             this->set_state(ConnectorStatusEnum::Unavailable);
             break;
         default:
@@ -237,9 +253,32 @@ void Connector::submit_event(ConnectorEvent event) {
         }
         break;
     }
-    if (current_state != this->state) {
-        this->status_notification_callback(this->state);
+
+    // Recompute the effective state of the connector
+    ConnectorStatusEnum prev_effective_state = this->effective_state;
+    // It's Unavailable if the evse is unavailable, otherwise equal to the individual status
+    this->effective_state = ConnectorStatusEnum::Unavailable;
+    if (evse_status == OperationalStatusEnum::Operative) {
+        this->effective_state = this->state;
     }
+    if (prev_effective_state != this->effective_state) {
+        this->status_notification_callback(this->effective_state);
+    }
+}
+
+void Connector::change_availability(std::optional<OperationalStatusEnum> new_status,
+                                    OperationalStatusEnum evse_status) {
+    if (new_status.has_value()) {
+        if (evse_status == OperationalStatusEnum::Inoperative) {
+            // Disable the connector
+            this->submit_event(ConnectorEvent::Unavailable, evse_status);
+        } else {
+            // Enable the connector
+            this->submit_event(ConnectorEvent::ReturnToOperativeState, evse_status);
+        }
+        // TODO persist new status
+    }
+
 }
 
 } // namespace v201

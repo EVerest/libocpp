@@ -465,11 +465,11 @@ void ChargePoint::configure_message_logging_format(const std::string& message_lo
         log_to_file, log_to_html, session_logging, logging_callback);
 }
 void ChargePoint::on_unavailable(const int32_t evse_id, const int32_t connector_id) {
-    this->evses.at(evse_id)->submit_event(connector_id, ConnectorEvent::Unavailable);
+    this->change_availability(OperationalStatusEnum::Inoperative, evse_id, connector_id);
 }
 
 void ChargePoint::on_operative(const int32_t evse_id, const int32_t connector_id) {
-    this->evses.at(evse_id)->submit_event(connector_id, ConnectorEvent::ReturnToOperativeState);
+    this->change_availability(OperationalStatusEnum::Operative, evse_id, connector_id);
 }
 
 void ChargePoint::on_faulted(const int32_t evse_id, const int32_t connector_id) {
@@ -2567,6 +2567,7 @@ void ChargePoint::handle_remote_stop_transaction_request(Call<RequestStopTransac
 }
 
 void ChargePoint::handle_change_availability_req(Call<ChangeAvailabilityRequest> call) {
+    // TODO adapt this function
     const auto msg = call.msg;
     ChangeAvailabilityResponse response;
     response.status = ChangeAvailabilityStatusEnum::Scheduled;
@@ -2908,6 +2909,30 @@ void ChargePoint::scheduled_check_v2g_certificate_expiration() {
         this->device_model
             ->get_optional_value<int>(ControllerComponentVariables::V2GCertificateExpireCheckIntervalSeconds)
             .value_or(12 * 60 * 60)));
+}
+
+void ChargePoint::change_availability(std::optional<OperationalStatusEnum> new_status,
+                         int32_t evse_id,
+                         int32_t connector_id) {
+    if (evse_id == 0) {
+        // The CS itself is addressed
+        // update the CS's individual status
+        if (new_status.has_value()) {
+            this->individual_availability_status = new_status.value();
+            // TODO persist new status
+        }
+        // update the effective statuses on all EVSEs
+        for (auto &id_and_evse : this->evses) {
+            auto &evse = id_and_evse.second;
+            if (evse != nullptr) {
+                evse->change_availability({}, this->individual_availability_status, connector_id);
+            }
+        }
+    } else {
+        // A specific EVSE is addressed, forward the status update
+        this->evses.at(evse_id).get()
+            ->change_availability(new_status, this->individual_availability_status, connector_id);
+    }
 }
 
 } // namespace v201

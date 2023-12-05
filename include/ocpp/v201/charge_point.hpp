@@ -227,6 +227,10 @@ private:
     /// \brief Handler for automatic or explicit OCSP cache updates
     OcspUpdater ocsp_updater;
 
+    /// \brief The independent availability status of the whole CS, set via OCPP or libocpp calls
+    /// This status is persisted in the database
+    OperationalStatusEnum individual_availability_status;
+
     bool send(CallError call_error);
 
     // internal helper functions
@@ -643,6 +647,14 @@ public:
     /// \return DataTransferResponse contaning the result from CSMS
     DataTransferResponse data_transfer_req(const CiString<255>& vendorId, const std::optional<CiString<50>>& messageId,
                                            const std::optional<std::string>& data);
+
+    /// \brief Changes the availability status of the CS, EVSE, or a connector
+    /// \param new_status The new availability status to switch to, empty if it is to remain the same
+    /// \param evse_id The ID of the EVSE whose status to change, 0 if the CS itself is addressed.
+    /// \param connector_id The ID of the connector whose status to change, 0 if the EVSE or CS is addressed.
+    void change_availability(std::optional<OperationalStatusEnum> new_status,
+                             int32_t evse_id,
+                             int32_t connector_id);
 };
 
 } // namespace v201

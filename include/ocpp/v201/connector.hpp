@@ -5,6 +5,7 @@
 #include <mutex>
 
 #include <ocpp/v201/enums.hpp>
+#include <optional>
 
 namespace ocpp {
 namespace v201 {
@@ -19,8 +20,8 @@ enum class ConnectorEvent {
     ReservationFinished,
     PlugInAndTokenValid,
     ErrorCleared,
-    ErrorCleardOnOccupied,
-    ErrorCleardOnReserved,
+    ErrorClearedOnOccupied,
+    ErrorClearedOnReserved,
     UnavailableToAvailable,
     UnavailableToOccupied,
     UnavailableToReserved,
@@ -42,10 +43,21 @@ ConnectorEvent string_to_connector_event(const std::string& s);
 class Connector {
 private:
     int32_t connector_id;
-    ConnectorStatusEnum state;
-    ConnectorStatusEnum last_state;
-    std::mutex state_mutex;
 
+    /// \brief Protects the state, last_state, and effective_state fields
+    std::mutex state_mutex;
+    /// \brief The independent availability state of the whole EVSE, set via OCPP or libocpp calls
+    /// This status is persisted in the database
+    ConnectorStatusEnum state;
+    /// \brief State to return to when returning to operative state. Must be Available, Occupied, or Reserved.
+    /// used to e.g. keep track of plug-ins and plug-outs while the connector is inoperative
+    /// If "state" is operative, this is the same value.
+    ConnectorStatusEnum state_if_operative;
+    /// \brief The effective availability status, visible to OCPP and used in most protocol logic
+    /// This status is not persisted, but computed from the individual status and the effective status of the parent
+    ConnectorStatusEnum effective_state;
+
+    ConnectorStatusEnum get_state();
     void set_state(const ConnectorStatusEnum new_state);
     std::function<void(const ConnectorStatusEnum& status)> status_notification_callback;
 
@@ -56,13 +68,19 @@ public:
     Connector(const int32_t connector_id,
               const std::function<void(const ConnectorStatusEnum& status)>& status_notification_callback);
 
-    /// \brief Get the state object
+    /// \brief Get the effective state of the connector
     /// \return ConnectorStatusEnum
-    ConnectorStatusEnum get_state();
+    ConnectorStatusEnum get_effective_state();
 
     /// \brief Submits the given \p event to the state machine controller
     /// \param event
-    void submit_event(ConnectorEvent event);
+    void submit_event(ConnectorEvent event, OperationalStatusEnum evse_status);
+
+    /// \brief Changes the availability status of the connector.
+    /// \param new_status The new availability status to switch to, empty if it is to remain the same
+    /// \param evse_status The effective availability status of the EVSE
+    void change_availability(std::optional<OperationalStatusEnum> new_status,
+                             OperationalStatusEnum evse_status);
 };
 
 } // namespace v201

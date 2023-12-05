@@ -43,6 +43,13 @@ private:
     AverageMeterValues aligned_data_updated;
     AverageMeterValues aligned_data_tx_end;
 
+    /// \brief The independent availability status of the whole EVSE, set via OCPP or libocpp calls
+    /// This status is persisted in the database
+    OperationalStatusEnum individual_availability_status;
+    /// \brief The effective availability status, visible to OCPP and used in most protocol logic
+    /// This status is not persisted, but computed from the individual status and the effective status of the parent
+    OperationalStatusEnum effective_availability_status;
+
 public:
     /// \brief Construct a new Evse object
     /// \param evse_id id of the evse
@@ -143,6 +150,14 @@ public:
 
     /// @brief Clear the idle meter values for this evse
     void clear_idle_meter_values();
+
+    /// \brief Changes the availability status of the EVSE or a connector.
+    /// \param new_status The new availability status to switch to, empty if it is to remain the same
+    /// \param evse_status The effective availability status of the charging station
+    /// \param connector_id The ID of the connector whose status to change, 0 if the EVSE itself is addressed.
+    void change_availability(std::optional<OperationalStatusEnum> new_status,
+                             OperationalStatusEnum cs_status,
+                             int32_t connector_id);
 };
 
 } // namespace v201
