@@ -292,10 +292,9 @@ void Evse::set_connector_operative_status(int32_t connector_id, OperationalStatu
     this->effective_status = new_effective_status;
 
     // Update the effective status of all connectors
-    for (auto &id_and_connector : this->id_connector_map) {
-        auto &connector = id_and_connector.second;
+    for (auto &[id, connector] : this->id_connector_map) {
         if (connector != nullptr) {
-            if (connector_id == id_and_connector.first) {
+            if (connector_id == id) {
                 connector->set_operative_status(new_status, this->effective_status);
             } else {
                 connector->update_effective_status(this->effective_status);
@@ -313,8 +312,7 @@ void Evse::set_evse_operative_status(OperationalStatusEnum new_status, Operation
     this->effective_status = new_effective_status;
 
     // Update the effective status of all connectors
-    for (auto &id_and_connector : this->id_connector_map) {
-        auto &connector = id_and_connector.second;
+    for (auto &[id, connector] : this->id_connector_map) {
         if (connector != nullptr) {
             connector->update_effective_status(this->effective_status);
         }
@@ -327,8 +325,7 @@ void Evse::update_effective_status(OperationalStatusEnum cs_status) {
     this->effective_status = new_effective_status;
 
     // Update the effective status of all connectors
-    for (auto &id_and_connector : this->id_connector_map) {
-        auto &connector = id_and_connector.second;
+    for (auto &[id, connector] : this->id_connector_map) {
         if (connector != nullptr) {
             connector->update_effective_status(this->effective_status);
         }

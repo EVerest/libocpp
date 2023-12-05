@@ -2928,8 +2928,7 @@ void ChargePoint::set_cs_operative_status(ocpp::v201::OperationalStatusEnum new_
     this->is_operative = (new_status == OperationalStatusEnum::Operative);
     // TODO persist the new state if needed
     // Update the effective status of all EVSEs
-    for (auto &id_and_evse : this->evses) {
-        auto &evse = id_and_evse.second;
+    for (auto &[id, evse] : this->evses) {
         if (evse != nullptr) {
             evse->update_effective_status(this->get_operative_status());
         }
@@ -2937,10 +2936,9 @@ void ChargePoint::set_cs_operative_status(ocpp::v201::OperationalStatusEnum new_
 }
 
 void ChargePoint::set_evse_operative_status(int32_t evse_id, OperationalStatusEnum new_status) {
-    for (auto &id_and_evse : this->evses) {
-        auto &evse = id_and_evse.second;
+    for (auto &[id, evse] : this->evses) {
         if (evse != nullptr) {
-            if (evse_id == id_and_evse.first) {
+            if (evse_id == id) {
                 evse->set_evse_operative_status(new_status, this->get_operative_status());
             } else {
                 evse->update_effective_status(this->get_operative_status());
@@ -2950,10 +2948,9 @@ void ChargePoint::set_evse_operative_status(int32_t evse_id, OperationalStatusEn
 }
 
 void ChargePoint::set_connector_operative_status(int32_t evse_id, int32_t connector_id, OperationalStatusEnum new_status) {
-    for (auto &id_and_evse : this->evses) {
-        auto &evse = id_and_evse.second;
+    for (auto &[id, evse] : this->evses) {
         if (evse != nullptr) {
-            if (evse_id == id_and_evse.first) {
+            if (evse_id == id) {
                 evse->set_connector_operative_status(connector_id, new_status, this->get_operative_status());
             } else {
                 evse->update_effective_status(this->get_operative_status());
