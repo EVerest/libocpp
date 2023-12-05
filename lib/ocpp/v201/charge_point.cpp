@@ -22,6 +22,7 @@ namespace v201 {
 const auto DEFAULT_BOOT_NOTIFICATION_RETRY_INTERVAL = std::chrono::seconds(30);
 const auto WEBSOCKET_INIT_DELAY = std::chrono::seconds(2);
 const auto DEFAULT_MESSAGE_QUEUE_SIZE_THRESHOLD = 2E5;
+const auto DEFAULT_MAX_MESSAGE_SIZE = 65000;
 
 bool Callbacks::all_callbacks_valid() const {
     return this->is_reset_allowed_callback != nullptr and this->reset_callback != nullptr and
@@ -1594,7 +1595,11 @@ void ChargePoint::notify_report_req(const int request_id, const std::vector<Repo
         ocpp::Call<NotifyReportRequest> call(req, this->message_queue->createMessageId());
         this->send<NotifyReportRequest>(call);
     } else {
-        NotifyReportRequestsSplitter splitter{req, 65000, [this]() { return this->message_queue->createMessageId(); }};
+        NotifyReportRequestsSplitter splitter{
+            req,
+            this->device_model->get_optional_value<size_t>(ControllerComponentVariables::MaxMessageSize)
+                .value_or(DEFAULT_MAX_MESSAGE_SIZE),
+            [this]() { return this->message_queue->createMessageId(); }};
         for (const auto& msg : splitter.create_call_payloads()) {
             this->message_queue->push(msg);
         }

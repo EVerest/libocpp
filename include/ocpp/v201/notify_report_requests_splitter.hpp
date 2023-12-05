@@ -6,6 +6,7 @@
 
 #include "ocpp/common/call_types.hpp"
 #include "ocpp/v201/messages/NotifyReport.hpp"
+#include "ocpp/v201/types.hpp"
 
 namespace ocpp {
 namespace v201 {
@@ -14,28 +15,31 @@ namespace v201 {
 class NotifyReportRequestsSplitter {
 
 private:
+    static const std::string MESSAGE_TYPE; // NotifyReport
     const NotifyReportRequest& original_request;
     size_t max_size;
     const std::function<MessageId()>& message_id_generator_callback;
+    json request_json_template;      // json that is used  as template for request json
+    const size_t json_skeleton_size; // size of the json skeleton for a call json object which includes everything
+                                     // except the requests' reportData and the messageId
 
 public:
     /// \brief Splits the provided NotifyReportRequest into (potentially) several Call payloads
     /// \returns the json messages that serialize the resulting Call<NotifyReportRequest> objects
     NotifyReportRequestsSplitter(const NotifyReportRequest& originalRequest, size_t max_size,
-                                 const std::function<MessageId()>& message_id_generator_callback) :
-        original_request(originalRequest),
-        max_size(max_size),
-        message_id_generator_callback(message_id_generator_callback) {
-    }
-
+                                 const std::function<MessageId()>& message_id_generator_callback);
     NotifyReportRequestsSplitter() = delete;
 
 private:
+    size_t create_request_template_json_and_return_skeleton_size();
+
+    // Create next call payload (with as many reportData items as possible)
     json create_next_payload(const int& seq_no,
                              std::vector<ocpp::v201::ReportData>::const_iterator& report_data_iterator,
                              const std::vector<ocpp::v201::ReportData>::const_iterator& report_data_end,
                              const std::string& message_id);
 
+    // Create next request payload (with as many reportData items as possible) to be contained in next call payload
     static json create_next_report_data_json(std::vector<ocpp::v201::ReportData>::const_iterator& report_data_iterator,
                                              const std::vector<ocpp::v201::ReportData>::const_iterator& report_data_end,
                                              const size_t& remaining_size);
