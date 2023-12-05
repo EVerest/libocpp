@@ -49,7 +49,9 @@ private:
     bool is_operative;
     OperationalStatusEnum effective_status;
 
-    // TODO document
+    /// \brief Determine the new effective state of the EVSE
+    /// \param cs_status: The effective state of the charging station
+    /// \return ConnectorStatusEnum
     OperationalStatusEnum determine_effective_status(OperationalStatusEnum cs_status);
 
 public:
@@ -155,6 +157,21 @@ public:
 
     /// \brief Get the current effective status of the EVSE
     OperationalStatusEnum get_effective_status();
+
+    /// \brief Switches the operative status of the EVSE
+    /// \param new_status: The new operative status to switch to
+    /// \param cs_status: The effective status of the charging station
+    void set_connector_operative_status(int32_t connector_id, OperationalStatusEnum new_status,
+                                        OperationalStatusEnum cs_status);
+
+    /// \brief Switches the operative status of the EVSE
+    /// \param new_status: The new operative status to switch to
+    /// \param cs_status: The effective status of the charging station
+    void set_evse_operative_status(OperationalStatusEnum new_status, OperationalStatusEnum cs_status);
+
+    /// \brief Updates the effective status of the EVSE without changing the operative status
+    /// \param cs_status: The effective status of the charging station
+    void update_effective_status(OperationalStatusEnum cs_status);
 };
 
 } // namespace v201

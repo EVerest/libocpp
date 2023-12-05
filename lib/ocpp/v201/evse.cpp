@@ -285,5 +285,55 @@ OperationalStatusEnum Evse::get_effective_status() {
     return this->effective_status;
 }
 
+void Evse::set_connector_operative_status(int32_t connector_id, OperationalStatusEnum new_status,
+                                          OperationalStatusEnum cs_status) {
+    // Update the effective status of the EVSE
+    OperationalStatusEnum new_effective_status = this->determine_effective_status(cs_status);
+    this->effective_status = new_effective_status;
+
+    // Update the effective status of all connectors
+    for (auto &id_and_connector : this->id_connector_map) {
+        auto &connector = id_and_connector.second;
+        if (connector != nullptr) {
+            if (connector_id == id_and_connector.first) {
+                connector->set_operative_status(new_status, this->effective_status);
+            } else {
+                connector->update_effective_status(this->effective_status);
+            }
+        }
+    }
+}
+
+void Evse::set_evse_operative_status(OperationalStatusEnum new_status, OperationalStatusEnum cs_status) {
+    this->is_operative = (new_status == OperationalStatusEnum::Operative);
+    // TODO persist the new state if needed
+
+    // Update the effective status of the EVSE
+    OperationalStatusEnum new_effective_status = this->determine_effective_status(cs_status);
+    this->effective_status = new_effective_status;
+
+    // Update the effective status of all connectors
+    for (auto &id_and_connector : this->id_connector_map) {
+        auto &connector = id_and_connector.second;
+        if (connector != nullptr) {
+            connector->update_effective_status(this->effective_status);
+        }
+    }
+}
+
+void Evse::update_effective_status(OperationalStatusEnum cs_status) {
+    // Update the effective status of the EVSE
+    OperationalStatusEnum new_effective_status = this->determine_effective_status(cs_status);
+    this->effective_status = new_effective_status;
+
+    // Update the effective status of all connectors
+    for (auto &id_and_connector : this->id_connector_map) {
+        auto &connector = id_and_connector.second;
+        if (connector != nullptr) {
+            connector->update_effective_status(this->effective_status);
+        }
+    }
+}
+
 } // namespace v201
 } // namespace ocpp

@@ -12,8 +12,6 @@ namespace v201 {
 
 /// \brief Enum for ConnectorEvents
 enum class ConnectorEvent {
-    Enable,
-    Disable,
     PlugIn,
     PlugOut,
     Reserve,
@@ -48,6 +46,9 @@ private:
     /// \return ConnectorStatusEnum
     ConnectorStatusEnum determine_effective_status(OperationalStatusEnum evse_status);
 
+    /// \brief Updates the connector's effective status and publishes a status update if needed
+    void set_effective_status(ConnectorStatusEnum new_effective_status);
+
 public:
     /// \brief Construct a new Connector object
     /// \param connector_id id of the connector
@@ -63,6 +64,15 @@ public:
     /// \param event
     /// \param evse_status: The effective state of the EVSE
     void submit_event(ConnectorEvent event, OperationalStatusEnum evse_status);
+
+    /// \brief Switches the operative status of the connector
+    /// \param new_status: The new operative status to switch to
+    /// \param evse_status: The effective status of the EVSE
+    void set_operative_status(OperationalStatusEnum new_status, OperationalStatusEnum evse_status);
+
+    /// \brief Updates the effective status of the container without changing the operational status
+    /// \param evse_status: The effective status of the EVSE
+    void update_effective_status(OperationalStatusEnum evse_status);
 };
 
 } // namespace v201
