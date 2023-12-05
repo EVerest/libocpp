@@ -44,14 +44,14 @@ Connector::Connector(const int32_t connector_id,
     reserved(false),
     plugged_in(false),
     faulted(false),
-    evse_is_operative(true),
+    effective_status(ConnectorStatusEnum::Available),
     // TODO verify init END
     status_notification_callback(status_notification_callback) {
 }
 
-ConnectorStatusEnum Connector::get_effective_state() {
+ConnectorStatusEnum Connector::determine_effective_status(OperationalStatusEnum evse_status) {
     std::lock_guard<std::recursive_mutex> lg(this->state_mutex);
-    if (!this->evse_is_operative) {
+    if (evse_status != OperationalStatusEnum::Operative) {
         return ConnectorStatusEnum::Unavailable;
     }
     if (!this->enabled) {
@@ -71,8 +71,7 @@ ConnectorStatusEnum Connector::get_effective_state() {
 
 void Connector::submit_event(ConnectorEvent event, OperationalStatusEnum evse_status) {
     std::lock_guard<std::recursive_mutex> lg(this->state_mutex);
-    ConnectorStatusEnum prev_effective_state = this->get_effective_state();
-    this->evse_is_operative = (evse_status == OperationalStatusEnum::Operative);
+    ConnectorStatusEnum prev_effective_state = this->determine_effective_status(evse_status);
     switch(event) {
     case ConnectorEvent::Enable:
         this->enabled = true;
@@ -99,26 +98,16 @@ void Connector::submit_event(ConnectorEvent event, OperationalStatusEnum evse_st
         this->faulted = false;
         break;
     }
+    // TODO persist the new state if needed
     // Recompute the effective state of the connector
-    ConnectorStatusEnum new_effective_state = this->get_effective_state();
-    if (prev_effective_state != new_effective_state) {
-        this->status_notification_callback(new_effective_state);
+    this->effective_status = this->determine_effective_status(evse_status);
+    if (prev_effective_state != this->effective_status) {
+        this->status_notification_callback(this->effective_status);
     }
 }
-
-void Connector::change_availability(std::optional<OperationalStatusEnum> new_status,
-                                    OperationalStatusEnum evse_status) {
-    if (new_status.has_value()) {
-        if (evse_status == OperationalStatusEnum::Inoperative) {
-            // Disable the connector
-            this->submit_event(ConnectorEvent::Disable, evse_status);
-        } else {
-            // Enable the connector
-            this->submit_event(ConnectorEvent::Enable, evse_status);
-        }
-        // TODO persist new operative status
-    }
-
+ConnectorStatusEnum Connector::get_effective_status() {
+    std::lock_guard<std::recursive_mutex> lg(this->state_mutex);
+    return this->effective_status;
 }
 
 } // namespace v201

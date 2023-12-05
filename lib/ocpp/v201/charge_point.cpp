@@ -233,7 +233,7 @@ void ChargePoint::on_firmware_update_status_notification(int32_t request_id,
 }
 
 void ChargePoint::on_session_started(const int32_t evse_id, const int32_t connector_id) {
-    this->evses.at(evse_id)->submit_event(connector_id, ConnectorEvent::PlugIn);
+    this->evses.at(evse_id)->submit_event(connector_id, ConnectorEvent::PlugIn, this->availability_status);
 }
 
 Get15118EVCertificateResponse
@@ -395,7 +395,7 @@ void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime&
 }
 
 void ChargePoint::on_session_finished(const int32_t evse_id, const int32_t connector_id) {
-    this->evses.at(evse_id)->submit_event(connector_id, ConnectorEvent::PlugOut);
+    this->evses.at(evse_id)->submit_event(connector_id, ConnectorEvent::PlugOut, availability_status);
 }
 
 void ChargePoint::on_meter_value(const int32_t evse_id, const MeterValue& meter_value) {
@@ -465,19 +465,19 @@ void ChargePoint::configure_message_logging_format(const std::string& message_lo
         log_to_file, log_to_html, session_logging, logging_callback);
 }
 void ChargePoint::on_unavailable(const int32_t evse_id, const int32_t connector_id) {
-    this->change_availability(OperationalStatusEnum::Inoperative, evse_id, connector_id);
+    this->evses.at(evse_id)->submit_event(connector_id, ConnectorEvent::Disable, this->availability_status);
 }
 
 void ChargePoint::on_operative(const int32_t evse_id, const int32_t connector_id) {
-    this->change_availability(OperationalStatusEnum::Operative, evse_id, connector_id);
+    this->evses.at(evse_id)->submit_event(connector_id, ConnectorEvent::Enable, this->availability_status);
 }
 
 void ChargePoint::on_faulted(const int32_t evse_id, const int32_t connector_id) {
-    this->evses.at(evse_id)->submit_event(connector_id, ConnectorEvent::Error);
+    this->evses.at(evse_id)->submit_event(connector_id, ConnectorEvent::Error, this->availability_status);
 }
 
 void ChargePoint::on_reserved(const int32_t evse_id, const int32_t connector_id) {
-    this->evses.at(evse_id)->submit_event(connector_id, ConnectorEvent::Reserve);
+    this->evses.at(evse_id)->submit_event(connector_id, ConnectorEvent::Reserve, this->availability_status);
 }
 
 bool ChargePoint::on_charging_state_changed(const uint32_t evse_id, ChargingStateEnum charging_state) {
@@ -1458,7 +1458,7 @@ void ChargePoint::set_evse_connectors_unavailable(const std::unique_ptr<Evse>& e
             should_persist = true;
         }
 
-        evse->submit_event(static_cast<int32_t>(i), ConnectorEvent::Disable);
+        evse->submit_event(static_cast<int32_t>(i), ConnectorEvent::Disable, this->availability_status);
 
         ChangeAvailabilityRequest request;
         request.operationalStatus = OperationalStatusEnum::Inoperative;
@@ -2170,11 +2170,11 @@ void ChargePoint::handle_reset_req(Call<ResetRequest> call) {
     if (response.status == ResetStatusEnum::Accepted) {
         if (call.msg.evseId.has_value()) {
             // B11.FR.08
-            this->evses.at(call.msg.evseId.value())->submit_event(1, ConnectorEvent::Disable);
+            this->evses.at(call.msg.evseId.value())->submit_event(1, ConnectorEvent::Disable, this->availability_status);
         } else {
             // B11.FR.03
             for (auto const& [evse_id, evse] : this->evses) {
-                evse->submit_event(1, ConnectorEvent::Disable);
+                evse->submit_event(1, ConnectorEvent::Disable, this->availability_status);
             }
         }
         this->callbacks.reset_callback(call.msg.evseId, ResetEnum::Immediate);
@@ -2909,30 +2909,6 @@ void ChargePoint::scheduled_check_v2g_certificate_expiration() {
         this->device_model
             ->get_optional_value<int>(ControllerComponentVariables::V2GCertificateExpireCheckIntervalSeconds)
             .value_or(12 * 60 * 60)));
-}
-
-void ChargePoint::change_availability(std::optional<OperationalStatusEnum> new_status,
-                         int32_t evse_id,
-                         int32_t connector_id) {
-    if (evse_id == 0) {
-        // The CS itself is addressed
-        // update the CS's individual status
-        if (new_status.has_value()) {
-            this->individual_availability_status = new_status.value();
-            // TODO persist new status
-        }
-        // update the effective statuses on all EVSEs
-        for (auto &id_and_evse : this->evses) {
-            auto &evse = id_and_evse.second;
-            if (evse != nullptr) {
-                evse->change_availability({}, this->individual_availability_status, connector_id);
-            }
-        }
-    } else {
-        // A specific EVSE is addressed, forward the status update
-        this->evses.at(evse_id).get()
-            ->change_availability(new_status, this->individual_availability_status, connector_id);
-    }
 }
 
 } // namespace v201

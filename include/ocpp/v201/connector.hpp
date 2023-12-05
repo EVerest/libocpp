@@ -39,9 +39,14 @@ private:
     bool reserved;
     bool plugged_in;
     bool faulted;
-    bool evse_is_operative;
+    ConnectorStatusEnum effective_status;
 
     std::function<void(const ConnectorStatusEnum& status)> status_notification_callback;
+
+    /// \brief Determine the new effective state of the connector
+    /// \param evse_status: The effective state of the EVSE
+    /// \return ConnectorStatusEnum
+    ConnectorStatusEnum determine_effective_status(OperationalStatusEnum evse_status);
 
 public:
     /// \brief Construct a new Connector object
@@ -52,17 +57,12 @@ public:
 
     /// \brief Get the effective state of the connector
     /// \return ConnectorStatusEnum
-    ConnectorStatusEnum get_effective_state();
+    ConnectorStatusEnum get_effective_status();
 
     /// \brief Submits the given \p event to the state machine controller
     /// \param event
+    /// \param evse_status: The effective state of the EVSE
     void submit_event(ConnectorEvent event, OperationalStatusEnum evse_status);
-
-    /// \brief Changes the availability status of the connector.
-    /// \param new_status The new availability status to switch to, empty if it is to remain the same
-    /// \param evse_status The effective availability status of the EVSE
-    void change_availability(std::optional<OperationalStatusEnum> new_status,
-                             OperationalStatusEnum evse_status);
 };
 
 } // namespace v201

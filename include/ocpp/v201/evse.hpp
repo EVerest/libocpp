@@ -22,6 +22,7 @@ class Evse {
 private:
     int32_t evse_id;
     DeviceModel& device_model;
+    // TODO this can be an array, it does not need to be a map
     std::map<int32_t, std::unique_ptr<Connector>> id_connector_map;
     std::function<void(const int32_t connector_id, const ConnectorStatusEnum& status)> status_notification_callback;
     std::function<void(const MeterValue& meter_value, const Transaction& transaction, const int32_t seq_no,
@@ -43,12 +44,13 @@ private:
     AverageMeterValues aligned_data_updated;
     AverageMeterValues aligned_data_tx_end;
 
-    /// \brief The independent availability status of the whole EVSE, set via OCPP or libocpp calls
-    /// This status is persisted in the database
-    OperationalStatusEnum individual_availability_status;
-    /// \brief The effective availability status, visible to OCPP and used in most protocol logic
-    /// This status is not persisted, but computed from the individual status and the effective status of the parent
-    OperationalStatusEnum effective_availability_status;
+    /// \brief Whether the EVSE is enabled or not (e.g. due to OCPP commands)
+    // TODO add a lock for this
+    bool is_operative;
+    OperationalStatusEnum effective_status;
+
+    // TODO document
+    OperationalStatusEnum determine_effective_status(OperationalStatusEnum cs_status);
 
 public:
     /// \brief Construct a new Evse object
@@ -127,7 +129,7 @@ public:
     /// \p connector_id
     /// \param connector_id id of the connector of the evse
     /// \param event
-    void submit_event(const int32_t connector_id, ConnectorEvent event);
+    void submit_event(const int32_t connector_id, ConnectorEvent event, OperationalStatusEnum cs_status);
 
     /// \brief Triggers status notification callback for all connectors of the evse
     void trigger_status_notification_callbacks();
@@ -151,13 +153,8 @@ public:
     /// @brief Clear the idle meter values for this evse
     void clear_idle_meter_values();
 
-    /// \brief Changes the availability status of the EVSE or a connector.
-    /// \param new_status The new availability status to switch to, empty if it is to remain the same
-    /// \param evse_status The effective availability status of the charging station
-    /// \param connector_id The ID of the connector whose status to change, 0 if the EVSE itself is addressed.
-    void change_availability(std::optional<OperationalStatusEnum> new_status,
-                             OperationalStatusEnum cs_status,
-                             int32_t connector_id);
+    /// \brief Get the current effective status of the EVSE
+    OperationalStatusEnum get_effective_status();
 };
 
 } // namespace v201
