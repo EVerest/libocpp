@@ -12,31 +12,20 @@ namespace v201 {
 
 /// \brief Enum for ConnectorEvents
 enum class ConnectorEvent {
+    Enable,
+    Disable,
     PlugIn,
     PlugOut,
     Reserve,
+    ReservationCleared,
     Error,
-    Unavailable,
-    ReservationFinished,
-    PlugInAndTokenValid,
     ErrorCleared,
-    ErrorClearedOnOccupied,
-    ErrorClearedOnReserved,
-    UnavailableToAvailable,
-    UnavailableToOccupied,
-    UnavailableToReserved,
-    UnavailableFaulted,
-    ReturnToOperativeState
 };
 
 namespace conversions {
 /// \brief Converts the given ConnectorEvent \p e to human readable string
 /// \returns a string representation of the ConnectorEvent
 std::string connector_event_to_string(ConnectorEvent e);
-
-/// \brief Converts the given std::string \p s to ConnectorEvent
-/// \returns a ConnectorEvent from a string representation
-ConnectorEvent string_to_connector_event(const std::string& s);
 } // namespace conversions
 
 /// \brief Represents a Connector, thus electrical outlet on a Charging Station. Single physical Connector.
@@ -44,21 +33,14 @@ class Connector {
 private:
     int32_t connector_id;
 
-    /// \brief Protects the state, last_state, and effective_state fields
-    std::mutex state_mutex;
-    /// \brief The independent availability state of the whole EVSE, set via OCPP or libocpp calls
-    /// This status is persisted in the database
-    ConnectorStatusEnum state;
-    /// \brief State to return to when returning to operative state. Must be Available, Occupied, or Reserved.
-    /// used to e.g. keep track of plug-ins and plug-outs while the connector is inoperative
-    /// If "state" is operative, this is the same value.
-    ConnectorStatusEnum state_if_operative;
-    /// \brief The effective availability status, visible to OCPP and used in most protocol logic
-    /// This status is not persisted, but computed from the individual status and the effective status of the parent
-    ConnectorStatusEnum effective_state;
+    /// \brief Protects all fields describing the state (or effective state) of the connector
+    std::recursive_mutex state_mutex;
+    bool enabled;
+    bool reserved;
+    bool plugged_in;
+    bool faulted;
+    bool evse_is_operative;
 
-    ConnectorStatusEnum get_state();
-    void set_state(const ConnectorStatusEnum new_state);
     std::function<void(const ConnectorStatusEnum& status)> status_notification_callback;
 
 public:

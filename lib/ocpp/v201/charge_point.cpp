@@ -1458,7 +1458,7 @@ void ChargePoint::set_evse_connectors_unavailable(const std::unique_ptr<Evse>& e
             should_persist = true;
         }
 
-        evse->submit_event(static_cast<int32_t>(i), ConnectorEvent::Unavailable);
+        evse->submit_event(static_cast<int32_t>(i), ConnectorEvent::Disable);
 
         ChangeAvailabilityRequest request;
         request.operationalStatus = OperationalStatusEnum::Inoperative;
@@ -2170,11 +2170,11 @@ void ChargePoint::handle_reset_req(Call<ResetRequest> call) {
     if (response.status == ResetStatusEnum::Accepted) {
         if (call.msg.evseId.has_value()) {
             // B11.FR.08
-            this->evses.at(call.msg.evseId.value())->submit_event(1, ConnectorEvent::Unavailable);
+            this->evses.at(call.msg.evseId.value())->submit_event(1, ConnectorEvent::Disable);
         } else {
             // B11.FR.03
             for (auto const& [evse_id, evse] : this->evses) {
-                evse->submit_event(1, ConnectorEvent::Unavailable);
+                evse->submit_event(1, ConnectorEvent::Disable);
             }
         }
         this->callbacks.reset_callback(call.msg.evseId, ResetEnum::Immediate);
