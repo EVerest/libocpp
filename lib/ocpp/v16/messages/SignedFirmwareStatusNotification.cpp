@@ -1,17 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
+#include <ocpp/v16/enums.hpp>
+#include <ocpp/v16/messages/SignedFirmwareStatusNotification.hpp>
+
+#include <optional>
 #include <ostream>
 #include <string>
 
-#include <optional>
-
-#include <ocpp/v16/messages/SignedFirmwareStatusNotification.hpp>
-
 using json = nlohmann::json;
 
-namespace ocpp {
-namespace v16 {
+namespace ocpp::v16 {
 
 std::string SignedFirmwareStatusNotificationRequest::get_type() const {
     return "SignedFirmwareStatusNotification";
@@ -20,7 +19,7 @@ std::string SignedFirmwareStatusNotificationRequest::get_type() const {
 void to_json(json& j, const SignedFirmwareStatusNotificationRequest& k) {
     // the required parts of the message
     j = json{
-        {"status", conversions::firmware_status_enum_type_to_string(k.status)},
+        {"status", k.status.string()},
     };
     // the optional parts of the message
     if (k.requestId) {
@@ -30,7 +29,7 @@ void to_json(json& j, const SignedFirmwareStatusNotificationRequest& k) {
 
 void from_json(const json& j, SignedFirmwareStatusNotificationRequest& k) {
     // the required parts of the message
-    k.status = conversions::string_to_firmware_status_enum_type(j.at("status"));
+    k.status = FirmwareStatusEnumType(j.at("status"));
 
     // the optional parts of the message
     if (j.contains("requestId")) {
@@ -72,5 +71,4 @@ std::ostream& operator<<(std::ostream& os, const SignedFirmwareStatusNotificatio
     return os;
 }
 
-} // namespace v16
-} // namespace ocpp
+} // namespace ocpp::v16

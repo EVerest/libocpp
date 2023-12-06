@@ -4,11 +4,8 @@
 #define OCPP_COMMON_TYPES_HPP
 
 #include <chrono>
-#include <cstddef>
 #include <iostream>
 #include <optional>
-#include <sstream>
-#include <stdexcept>
 #include <string>
 
 #include <nlohmann/json_fwd.hpp>
@@ -18,7 +15,6 @@
 
 #include <ocpp/common/cistring.hpp>
 #include <ocpp/common/support_older_cpp_versions.hpp>
-#include <ocpp/v16/enums.hpp>
 #include <ocpp/v201/enums.hpp>
 
 using json = nlohmann::json;
@@ -547,17 +543,6 @@ enum class FirmwareStatusNotification {
     SignatureVerified
 };
 
-namespace conversions {
-
-/// \brief Converts ocpp::FirmwareStatusNotification to v16::FirmwareStatus
-v16::FirmwareStatus firmware_status_notification_to_firmware_status(const FirmwareStatusNotification status);
-
-/// \brief Converts ocpp::FirmwareStatusNotification to v16::FirmwareStatusEnumType
-v16::FirmwareStatusEnumType
-firmware_status_notification_to_firmware_status_enum_type(const FirmwareStatusNotification status);
-
-} // namespace conversions
-
 namespace security {
 // The security profiles defined in OCPP 2.0.1 resp. in the OCPP 1.6 security-whitepaper.
 enum SecurityProfile { // no "enum class" because values are used in implicit `switch`-comparisons to `int
@@ -585,7 +570,7 @@ inline const std::string RESET_OR_REBOOT = "ResetOrReboot";               // CRI
 inline const std::string STARTUP_OF_THE_DEVICE = "StartupOfTheDevice";    // CRITICAL
 inline const std::string SECURITYLOGWASCLEARED = "SecurityLogWasCleared"; // CRITICAL
 inline const std::string RECONFIGURATIONOFSECURITYPARAMETERS = "ReconfigurationOfSecurityParameters";
-inline const std::string MEMORYEXHAUSTION = "MemoryExhaustion";           // CRITICAL
+inline const std::string MEMORYEXHAUSTION = "MemoryExhaustion"; // CRITICAL
 inline const std::string INVALIDMESSAGES = "InvalidMessages";
 inline const std::string ATTEMPTEDREPLAYATTACKS = "AttemptedReplayAttacks";
 inline const std::string TAMPERDETECTIONACTIVATED = "TamperDetectionActivated"; // CRITICAL

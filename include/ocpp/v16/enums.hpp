@@ -3,11 +3,13 @@
 #ifndef OCPP_V16_ENUMS_HPP
 #define OCPP_V16_ENUMS_HPP
 
+#include <ocpp/common/types.hpp>
+
 #include <iosfwd>
 #include <string>
+#include <string_view>
 
-namespace ocpp {
-namespace v16 {
+namespace ocpp::v16 {
 
 // from: AuthorizeResponse
 enum class AuthorizationStatus {
@@ -353,29 +355,55 @@ TriggerMessageStatusEnumType string_to_trigger_message_status_enum_type(const st
 std::ostream& operator<<(std::ostream& os, const TriggerMessageStatusEnumType& trigger_message_status_enum_type);
 
 // from: FirmwareStatusNotificationRequest
-enum class FirmwareStatus {
-    Downloaded,
-    DownloadFailed,
-    Downloading,
-    Idle,
-    InstallationFailed,
-    Installing,
-    Installed,
+class FirmwareStatus {
+public:
+    enum Enum {
+        Downloaded,
+        DownloadFailed,
+        Downloading,
+        Idle,
+        InstallationFailed,
+        Installing,
+        Installed,
+    };
+
+    static FirmwareStatus from(ocpp::FirmwareStatusNotification status);
+    [[nodiscard]] std::string string() const; // FIXME: get `operator std::string()` to work
+
+    FirmwareStatus() = default;
+    explicit constexpr FirmwareStatus(std::string_view str);
+    constexpr FirmwareStatus(Enum val) : value(val) {
+    }
+    // enables switch(FirmwareStatus)
+    constexpr operator Enum() const {
+        return this->value;
+    }
+
+    /// \brief Writes the string representation of the given FirmwareStatus \p firmware_status to the given output
+    /// stream \p
+    /// os \returns an output stream with the FirmwareStatus written to
+    std::ostream& operator<<(std::ostream& os) const;
+
+    // prevent if(FirmwareStatus)
+    explicit operator bool() const = delete;
+
+    // FIXME: consider using switch() for these, too
+    constexpr bool operator==(FirmwareStatus status) const {
+        return this->value == status.value;
+    }
+    constexpr bool operator==(Enum val) const {
+        return this->value == val;
+    }
+    constexpr bool operator!=(FirmwareStatus status) const {
+        return this->value != status.value;
+    }
+    constexpr bool operator!=(Enum val) const {
+        return this->value != val;
+    }
+
+private:
+    Enum value;
 };
-
-namespace conversions {
-/// \brief Converts the given FirmwareStatus \p e to human readable string
-/// \returns a string representation of the FirmwareStatus
-std::string firmware_status_to_string(FirmwareStatus e);
-
-/// \brief Converts the given std::string \p s to FirmwareStatus
-/// \returns a FirmwareStatus from a string representation
-FirmwareStatus string_to_firmware_status(const std::string& s);
-} // namespace conversions
-
-/// \brief Writes the string representation of the given FirmwareStatus \p firmware_status to the given output stream \p
-/// os \returns an output stream with the FirmwareStatus written to
-std::ostream& operator<<(std::ostream& os, const FirmwareStatus& firmware_status);
 
 // from: GetCompositeScheduleRequest
 enum class ChargingRateUnit {
@@ -929,36 +957,47 @@ GenericStatusEnumType string_to_generic_status_enum_type(const std::string& s);
 std::ostream& operator<<(std::ostream& os, const GenericStatusEnumType& generic_status_enum_type);
 
 // from: SignedFirmwareStatusNotificationRequest
-enum class FirmwareStatusEnumType {
-    Downloaded,
-    DownloadFailed,
-    Downloading,
-    DownloadScheduled,
-    DownloadPaused,
-    Idle,
-    InstallationFailed,
-    Installing,
-    Installed,
-    InstallRebooting,
-    InstallScheduled,
-    InstallVerificationFailed,
-    InvalidSignature,
-    SignatureVerified,
+class FirmwareStatusEnumType {
+public:
+    enum Enum {
+        Downloaded,
+        DownloadFailed,
+        Downloading,
+        DownloadScheduled,
+        DownloadPaused,
+        Idle,
+        InstallationFailed,
+        Installing,
+        Installed,
+        InstallRebooting,
+        InstallScheduled,
+        InstallVerificationFailed,
+        InvalidSignature,
+        SignatureVerified,
+    };
+
+    static FirmwareStatusEnumType from(ocpp::FirmwareStatusNotification status);
+    [[nodiscard]] std::string string() const; // FIXME: get `operator std::string()` to work
+
+    FirmwareStatusEnumType() = default;
+    constexpr FirmwareStatusEnumType(Enum val) : value(val) {
+    }
+    explicit constexpr FirmwareStatusEnumType(std::string_view str);
+
+    /// \brief Writes the string representation of the given FirmwareStatusEnumType \p firmware_status_enum_type to the
+    /// given output stream \p os \returns an output stream with the FirmwareStatusEnumType written to
+    std::ostream& operator<<(std::ostream& os) const;
+
+    // enables switch(FirmwareStatusEnumType)
+    constexpr operator Enum() const {
+        return this->value;
+    }
+    // prevent if(FirmwareStatusEnumType)
+    explicit operator bool() const = delete;
+
+private:
+    Enum value;
 };
-
-namespace conversions {
-/// \brief Converts the given FirmwareStatusEnumType \p e to human readable string
-/// \returns a string representation of the FirmwareStatusEnumType
-std::string firmware_status_enum_type_to_string(FirmwareStatusEnumType e);
-
-/// \brief Converts the given std::string \p s to FirmwareStatusEnumType
-/// \returns a FirmwareStatusEnumType from a string representation
-FirmwareStatusEnumType string_to_firmware_status_enum_type(const std::string& s);
-} // namespace conversions
-
-/// \brief Writes the string representation of the given FirmwareStatusEnumType \p firmware_status_enum_type to the
-/// given output stream \p os \returns an output stream with the FirmwareStatusEnumType written to
-std::ostream& operator<<(std::ostream& os, const FirmwareStatusEnumType& firmware_status_enum_type);
 
 // from: SignedUpdateFirmwareResponse
 enum class UpdateFirmwareStatusEnumType {
@@ -1140,7 +1179,6 @@ UnlockStatus string_to_unlock_status(const std::string& s);
 /// \returns an output stream with the UnlockStatus written to
 std::ostream& operator<<(std::ostream& os, const UnlockStatus& unlock_status);
 
-} // namespace v16
-} // namespace ocpp
+} // namespace ocpp::v16
 
 #endif // OCPP_V16_ENUMS_HPP

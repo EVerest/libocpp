@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
+
 #include <ocpp/v16/enums.hpp>
+
 #include <stdexcept>
 #include <string>
+#include <string_view>
 
-namespace ocpp {
-namespace v16 {
+namespace ocpp::v16 {
 
 // from: AuthorizeResponse
 namespace conversions {
@@ -593,9 +595,29 @@ std::ostream& operator<<(std::ostream& os, const TriggerMessageStatusEnumType& t
 }
 
 // from: FirmwareStatusNotificationRequest
-namespace conversions {
-std::string firmware_status_to_string(FirmwareStatus e) {
-    switch (e) {
+FirmwareStatus FirmwareStatus::from(const ocpp::FirmwareStatusNotification status) {
+    switch (status) { // TODO: 7 enumeration values not handled
+    case ocpp::FirmwareStatusNotification::Downloaded:
+        return FirmwareStatus::Downloaded;
+    case ocpp::FirmwareStatusNotification::DownloadFailed:
+        return FirmwareStatus::DownloadFailed;
+    case ocpp::FirmwareStatusNotification::Downloading:
+        return FirmwareStatus::Downloading;
+    case ocpp::FirmwareStatusNotification::Idle:
+        return FirmwareStatus::Idle;
+    case ocpp::FirmwareStatusNotification::InstallationFailed:
+        return FirmwareStatus::InstallationFailed;
+    case ocpp::FirmwareStatusNotification::Installing:
+        return FirmwareStatus::Installing;
+    case ocpp::FirmwareStatusNotification::Installed:
+        return FirmwareStatus::Installed;
+    }
+
+    throw std::out_of_range("Could not convert to FirmwareStatus");
+}
+
+std::string FirmwareStatus::string() const {
+    switch (this->value) {
     case FirmwareStatus::Downloaded:
         return "Downloaded";
     case FirmwareStatus::DownloadFailed:
@@ -615,35 +637,39 @@ std::string firmware_status_to_string(FirmwareStatus e) {
     throw std::out_of_range("No known string conversion for provided enum of type FirmwareStatus");
 }
 
-FirmwareStatus string_to_firmware_status(const std::string& s) {
-    if (s == "Downloaded") {
-        return FirmwareStatus::Downloaded;
-    }
-    if (s == "DownloadFailed") {
-        return FirmwareStatus::DownloadFailed;
-    }
-    if (s == "Downloading") {
-        return FirmwareStatus::Downloading;
-    }
-    if (s == "Idle") {
-        return FirmwareStatus::Idle;
-    }
-    if (s == "InstallationFailed") {
-        return FirmwareStatus::InstallationFailed;
-    }
-    if (s == "Installing") {
-        return FirmwareStatus::Installing;
-    }
-    if (s == "Installed") {
-        return FirmwareStatus::Installed;
-    }
+constexpr FirmwareStatus::FirmwareStatus(std::string_view str) : value(FirmwareStatus::Idle) {
+    auto value_to_init = [](std::string_view s) {
+        if (s == "Downloaded") {
+            return FirmwareStatus::Downloaded;
+        }
+        if (s == "DownloadFailed") {
+            return FirmwareStatus::DownloadFailed;
+        }
+        if (s == "Downloading") {
+            return FirmwareStatus::Downloading;
+        }
+        if (s == "Idle") {
+            return FirmwareStatus::Idle;
+        }
+        if (s == "InstallationFailed") {
+            return FirmwareStatus::InstallationFailed;
+        }
+        if (s == "Installing") {
+            return FirmwareStatus::Installing;
+        }
+        if (s == "Installed") {
+            return FirmwareStatus::Installed;
+        }
 
-    throw std::out_of_range("Provided string " + s + " could not be converted to enum of type FirmwareStatus");
+        throw std::out_of_range("Provided string " + std::string(s) +
+                                " could not be converted to enum of type FirmwareStatus");
+    }(str);
+
+    this->value = value_to_init;
 }
-} // namespace conversions
 
-std::ostream& operator<<(std::ostream& os, const FirmwareStatus& firmware_status) {
-    os << conversions::firmware_status_to_string(firmware_status);
+std::ostream& FirmwareStatus::operator<<(std::ostream& os) const {
+    os << this->string();
     return os;
 }
 
@@ -1707,11 +1733,44 @@ std::ostream& operator<<(std::ostream& os, const GenericStatusEnumType& generic_
     os << conversions::generic_status_enum_type_to_string(generic_status_enum_type);
     return os;
 }
-
 // from: SignedFirmwareStatusNotificationRequest
-namespace conversions {
-std::string firmware_status_enum_type_to_string(FirmwareStatusEnumType e) {
-    switch (e) {
+FirmwareStatusEnumType FirmwareStatusEnumType::from(const FirmwareStatusNotification status) {
+    switch (status) {
+    case FirmwareStatusNotification::Downloaded:
+        return FirmwareStatusEnumType::Downloaded;
+    case FirmwareStatusNotification::DownloadFailed:
+        return FirmwareStatusEnumType::DownloadFailed;
+    case FirmwareStatusNotification::Downloading:
+        return FirmwareStatusEnumType::Downloading;
+    case FirmwareStatusNotification::DownloadScheduled:
+        return FirmwareStatusEnumType::DownloadScheduled;
+    case FirmwareStatusNotification::DownloadPaused:
+        return FirmwareStatusEnumType::DownloadPaused;
+    case FirmwareStatusNotification::Idle:
+        return FirmwareStatusEnumType::Idle;
+    case FirmwareStatusNotification::InstallationFailed:
+        return FirmwareStatusEnumType::InstallationFailed;
+    case FirmwareStatusNotification::Installing:
+        return FirmwareStatusEnumType::Installing;
+    case FirmwareStatusNotification::Installed:
+        return FirmwareStatusEnumType::Installed;
+    case FirmwareStatusNotification::InstallRebooting:
+        return FirmwareStatusEnumType::InstallRebooting;
+    case FirmwareStatusNotification::InstallScheduled:
+        return FirmwareStatusEnumType::InstallScheduled;
+    case FirmwareStatusNotification::InstallVerificationFailed:
+        return FirmwareStatusEnumType::InstallVerificationFailed;
+    case FirmwareStatusNotification::InvalidSignature:
+        return FirmwareStatusEnumType::InvalidSignature;
+    case FirmwareStatusNotification::SignatureVerified:
+        return FirmwareStatusEnumType::SignatureVerified;
+    }
+
+    throw std::out_of_range("Could not convert to FirmwareStatusEnumType");
+}
+
+std::string FirmwareStatusEnumType::string() const {
+    switch (this->value) {
     case FirmwareStatusEnumType::Downloaded:
         return "Downloaded";
     case FirmwareStatusEnumType::DownloadFailed:
@@ -1745,56 +1804,58 @@ std::string firmware_status_enum_type_to_string(FirmwareStatusEnumType e) {
     throw std::out_of_range("No known string conversion for provided enum of type FirmwareStatusEnumType");
 }
 
-FirmwareStatusEnumType string_to_firmware_status_enum_type(const std::string& s) {
-    if (s == "Downloaded") {
-        return FirmwareStatusEnumType::Downloaded;
-    }
-    if (s == "DownloadFailed") {
-        return FirmwareStatusEnumType::DownloadFailed;
-    }
-    if (s == "Downloading") {
-        return FirmwareStatusEnumType::Downloading;
-    }
-    if (s == "DownloadScheduled") {
-        return FirmwareStatusEnumType::DownloadScheduled;
-    }
-    if (s == "DownloadPaused") {
-        return FirmwareStatusEnumType::DownloadPaused;
-    }
-    if (s == "Idle") {
-        return FirmwareStatusEnumType::Idle;
-    }
-    if (s == "InstallationFailed") {
-        return FirmwareStatusEnumType::InstallationFailed;
-    }
-    if (s == "Installing") {
-        return FirmwareStatusEnumType::Installing;
-    }
-    if (s == "Installed") {
-        return FirmwareStatusEnumType::Installed;
-    }
-    if (s == "InstallRebooting") {
-        return FirmwareStatusEnumType::InstallRebooting;
-    }
-    if (s == "InstallScheduled") {
-        return FirmwareStatusEnumType::InstallScheduled;
-    }
-    if (s == "InstallVerificationFailed") {
-        return FirmwareStatusEnumType::InstallVerificationFailed;
-    }
-    if (s == "InvalidSignature") {
-        return FirmwareStatusEnumType::InvalidSignature;
-    }
-    if (s == "SignatureVerified") {
-        return FirmwareStatusEnumType::SignatureVerified;
-    }
+constexpr FirmwareStatusEnumType::FirmwareStatusEnumType(std::string_view str) : value(FirmwareStatusEnumType::Idle) {
+    // FIXME: store strings in a map and have a single-source with `FirmwareStatusEnumType::string()`
+    auto value_for_init = [](std::string_view s) {
+        if (s == "DownloadFailed") {
+            return FirmwareStatusEnumType::DownloadFailed;
+        }
+        if (s == "Downloading") {
+            return FirmwareStatusEnumType::Downloading;
+        }
+        if (s == "DownloadScheduled") {
+            return FirmwareStatusEnumType::DownloadScheduled;
+        }
+        if (s == "DownloadPaused") {
+            return FirmwareStatusEnumType::DownloadPaused;
+        }
+        if (s == "Idle") {
+            return FirmwareStatusEnumType::Idle;
+        }
+        if (s == "InstallationFailed") {
+            return FirmwareStatusEnumType::InstallationFailed;
+        }
+        if (s == "Installing") {
+            return FirmwareStatusEnumType::Installing;
+        }
+        if (s == "Installed") {
+            return FirmwareStatusEnumType::Installed;
+        }
+        if (s == "InstallRebooting") {
+            return FirmwareStatusEnumType::InstallRebooting;
+        }
+        if (s == "InstallScheduled") {
+            return FirmwareStatusEnumType::InstallScheduled;
+        }
+        if (s == "InstallVerificationFailed") {
+            return FirmwareStatusEnumType::InstallVerificationFailed;
+        }
+        if (s == "InvalidSignature") {
+            return FirmwareStatusEnumType::InvalidSignature;
+        }
+        if (s == "SignatureVerified") {
+            return FirmwareStatusEnumType::SignatureVerified;
+        }
 
-    throw std::out_of_range("Provided string " + s + " could not be converted to enum of type FirmwareStatusEnumType");
+        throw std::out_of_range("Provided string " + std::string(s) +
+                                " could not be converted to enum of type FirmwareStatusEnumType");
+    }(str);
+
+    this->value = value_for_init;
 }
-} // namespace conversions
 
-std::ostream& operator<<(std::ostream& os, const FirmwareStatusEnumType& firmware_status_enum_type) {
-    os << conversions::firmware_status_enum_type_to_string(firmware_status_enum_type);
+std::ostream& FirmwareStatusEnumType::operator<<(std::ostream& os) const {
+    os << this->string();
     return os;
 }
 
@@ -2204,5 +2265,4 @@ std::ostream& operator<<(std::ostream& os, const UnlockStatus& unlock_status) {
     return os;
 }
 
-} // namespace v16
-} // namespace ocpp
+} // namespace ocpp::v16

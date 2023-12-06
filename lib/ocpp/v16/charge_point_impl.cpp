@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
-#include <thread>
 
-#include <everest/logging.hpp>
 #include <ocpp/v16/charge_point.hpp>
 #include <ocpp/v16/charge_point_configuration.hpp>
 #include <ocpp/v16/charge_point_impl.hpp>
+#include <ocpp/v16/enums.hpp>
+
+#include <everest/logging.hpp>
 
 #include <optional>
+#include <thread>
 
-namespace ocpp {
-namespace v16 {
+namespace ocpp::v16 {
 
 const auto ISO15118_PNC_VENDOR_ID = "org.openchargealliance.iso15118pnc";
 const auto CLIENT_CERTIFICATE_TIMER_INTERVAL = std::chrono::hours(12);
@@ -3353,12 +3354,10 @@ void ChargePointImpl::on_firmware_update_status_notification(int32_t request_id,
                                                              const FirmwareStatusNotification firmware_update_status) {
     try {
         if (request_id != -1) {
-            this->signed_firmware_update_status_notification(
-                ocpp::conversions::firmware_status_notification_to_firmware_status_enum_type(firmware_update_status),
-                request_id);
+            this->signed_firmware_update_status_notification(FirmwareStatusEnumType::from(firmware_update_status),
+                                                             request_id);
         } else {
-            this->firmware_status_notification(
-                ocpp::conversions::firmware_status_notification_to_firmware_status(firmware_update_status));
+            this->firmware_status_notification(FirmwareStatus::from(firmware_update_status));
         }
     } catch (const std::out_of_range& e) {
         EVLOG_debug << "Could not convert incoming FirmwareStatusNotification to OCPP type";
@@ -3570,5 +3569,4 @@ ConfigurationStatus ChargePointImpl::set_custom_configuration_key(CiString<50> k
     return this->configuration->setCustomKey(key, value, true);
 }
 
-} // namespace v16
-} // namespace ocpp
+} // namespace ocpp::v16
