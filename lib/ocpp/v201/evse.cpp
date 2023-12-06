@@ -360,5 +360,18 @@ void Evse::update_effective_status(OperationalStatusEnum cs_status) {
     }
 }
 
+bool Evse::all_connectors_inoperative() {
+    for (auto &[connector_id, connector] : this->id_connector_map) {
+        if (connector != nullptr) {
+            if (connector->get_effective_status() == ConnectorStatusEnum::Available
+                || connector->get_effective_status() == ConnectorStatusEnum::Reserved
+                || connector->get_effective_status() == ConnectorStatusEnum::Occupied) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 } // namespace v201
 } // namespace ocpp

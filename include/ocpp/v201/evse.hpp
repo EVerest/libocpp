@@ -185,6 +185,9 @@ public:
     /// \brief Updates the effective status of the EVSE and its connectors without changing the operative status
     /// \param cs_status: The effective status of the charging station
     void update_effective_status(OperationalStatusEnum cs_status);
+
+    /// \brief check if all connectors are effectively Inoperative.
+    bool all_connectors_inoperative();
 };
 
 } // namespace v201

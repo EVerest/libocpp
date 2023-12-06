@@ -2988,7 +2988,16 @@ void ChargePoint::set_connector_operative_status(int32_t evse_id, int32_t connec
 }
 
 void ChargePoint::notify_user_if_all_connectors_unavailable() {
-    // TODO: Check that all connectors have effective status Inoperative before doing this
+    // Check that all connectors on all EVSEs are inoperative
+    for (auto &[evse_id, evse] : this->evses) {
+        if (evse != nullptr) {
+            if (!evse->all_connectors_inoperative()) {
+                // Check failed, stop here
+                return;
+            }
+        }
+    }
+    // Check succeeded, trigger the callback
     if (this->callbacks.all_connectors_unavailable_callback.has_value()) {
         this->callbacks.all_connectors_unavailable_callback.value()();
     }
