@@ -165,9 +165,6 @@ public:
     /// @brief Clear the idle meter values for this evse
     void clear_idle_meter_values();
 
-    /// \brief Get the current effective status of the EVSE
-    OperationalStatusEnum get_effective_status();
-
     /// \brief check if all connectors are effectively Inoperative.
     bool all_connectors_inoperative();
 

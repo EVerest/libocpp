@@ -2948,8 +2948,11 @@ void ChargePoint::set_operative_status(std::optional<int32_t> evse_id,
         }
     }
 
+    // We will trigger the callback if:
+    // - The operative state of the changed (we need to persist it if the persist flag is on) or
+    // - The effective state changed (do not persist, but still announce it)
+    // For the charging station, operative state is the same as the effective state
     if (old_op_status != this->operative_status) {
-        // TODO revisit this - when do we persist?
         this->callbacks.change_availability_callback({}, {}, this->operative_status, persist);
     }
 }

@@ -214,7 +214,7 @@ ConnectorStatusEnum Evse::get_state(const int32_t connector_id) {
 void Evse::submit_event(const int32_t connector_id, ConnectorEvent event, OperationalStatusEnum cs_status) {
     // TODO support addressing the EVSE itself
     // TODO recompute EVSE's availability status here
-    return this->id_connector_map.at(connector_id)->submit_event(event, this->get_effective_status());
+    return this->id_connector_map.at(connector_id)->submit_event(event, this->effective_status);
 }
 
 void Evse::trigger_status_notification_callbacks() {
@@ -287,10 +287,6 @@ OperationalStatusEnum Evse::determine_effective_status(OperationalStatusEnum cs_
     return this->operative_status;
 }
 
-OperationalStatusEnum Evse::get_effective_status() {
-    return this->effective_status;
-}
-
 bool Evse::all_connectors_inoperative() {
     for (auto &[connector_id, connector] : this->id_connector_map) {
         if (connector != nullptr) {
@@ -308,7 +304,8 @@ void Evse::set_operative_status(std::optional<int32_t> connector_id,
                                 std::optional<OperationalStatusEnum> new_status,
                                 OperationalStatusEnum cs_status,
                                 bool persist) {
-    OperationalStatusEnum old_op_status = this->get_effective_status();
+    OperationalStatusEnum old_eff_status = this->effective_status;
+    OperationalStatusEnum old_op_status = this->operative_status;
 
     if (!connector_id.has_value() && new_status.has_value()) {
         // The EVSE is addressed
@@ -331,10 +328,13 @@ void Evse::set_operative_status(std::optional<int32_t> connector_id,
         }
     }
 
-    OperationalStatusEnum new_op_status = this->effective_status;
-    if (old_op_status != new_op_status) {
-        // TODO revisit this
-        this->change_availability_callback({}, new_op_status, persist);
+    // We will trigger the callback if:
+    // - The operative state changed (we need to persist it if the persist flag is on), or
+    // - The effective state changed (do not persist, but still announce it)
+    if (old_op_status != this->operative_status) {
+        this->change_availability_callback({}, this->effective_status, persist);
+    } else if (old_eff_status != this->effective_status) {
+        this->change_availability_callback({}, this->effective_status, false);
     }
 }
 

@@ -111,33 +111,40 @@ void Connector::set_effective_status(ConnectorStatusEnum new_effective_status) {
 
 }
 
+static OperationalStatusEnum to_operative(ConnectorStatusEnum connector_status) {
+    if (connector_status == ConnectorStatusEnum::Unavailable
+        || connector_status == ConnectorStatusEnum::Faulted) {
+        return OperationalStatusEnum::Inoperative;
+    } else {
+        return OperationalStatusEnum::Operative;
+    }
+}
+
 void Connector::set_operative_status(std::optional<OperationalStatusEnum> new_status,
                                      OperationalStatusEnum evse_status,
                                      bool persist) {
     std::lock_guard<std::recursive_mutex> lk(this->state_mutex);
 
-    OperationalStatusEnum old_op_status = OperationalStatusEnum::Operative;
-    if (this->get_effective_status() == ConnectorStatusEnum::Unavailable
-        || this->get_effective_status() == ConnectorStatusEnum::Faulted) {
-        old_op_status = OperationalStatusEnum::Inoperative;
-    }
+    OperationalStatusEnum old_op_status = this->enabled ? OperationalStatusEnum::Operative
+                                                        : OperationalStatusEnum::Inoperative;
+    OperationalStatusEnum old_eff_status = to_operative(this->get_effective_status());
 
     if (new_status.has_value()) {
         this->enabled = (new_status.value() == OperationalStatusEnum::Operative);
     }
+    this->set_effective_status(this->determine_effective_status(evse_status));
 
-    // Update the effective status of the connector
-    ConnectorStatusEnum new_effective_status = this->determine_effective_status(evse_status);
-    this->set_effective_status(new_effective_status);
+    OperationalStatusEnum new_op_status = this->enabled ? OperationalStatusEnum::Operative
+                                                        : OperationalStatusEnum::Inoperative;
+    OperationalStatusEnum new_eff_status = to_operative(this->get_effective_status());
 
-    OperationalStatusEnum new_op_status = OperationalStatusEnum::Operative;
-    if (new_effective_status == ConnectorStatusEnum::Unavailable
-        || new_effective_status == ConnectorStatusEnum::Faulted) {
-        new_op_status = OperationalStatusEnum::Inoperative;
-    }
+    // We will trigger the callback if:
+    // - The operative state changed (we need to persist it if the persist flag is on), or
+    // - The effective state changed (do not persist, but still announce it)
     if (old_op_status != new_op_status) {
-        // TODO revisit this
-        this->change_availability_callback(new_op_status, persist && new_status.has_value());
+        this->change_availability_callback(new_op_status, persist);
+    } else if (old_eff_status != new_eff_status) {
+        this->change_availability_callback(new_eff_status, false);
     }
 }
 
