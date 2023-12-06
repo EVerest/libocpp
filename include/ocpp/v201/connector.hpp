@@ -68,7 +68,8 @@ public:
     /// \brief Switches the operative status of the connector
     /// \param new_status: The new operative status to switch to
     /// \param evse_status: The effective status of the EVSE
-    void set_operative_status(OperationalStatusEnum new_status, OperationalStatusEnum evse_status);
+    /// \param persist: Whether the updated state should be persisted in the database or not
+    void set_operative_status(OperationalStatusEnum new_status, OperationalStatusEnum evse_status, bool persist);
 
     /// \brief Updates the effective status of the container without changing the operational status
     /// \param evse_status: The effective status of the EVSE

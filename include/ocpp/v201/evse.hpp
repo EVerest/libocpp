@@ -161,15 +161,18 @@ public:
     /// \brief Switches the operative status of the EVSE
     /// \param new_status: The new operative status to switch to
     /// \param cs_status: The effective status of the charging station
+    /// \param persist: Whether the updated state should be persisted in the database or not
     void set_connector_operative_status(int32_t connector_id, OperationalStatusEnum new_status,
-                                        OperationalStatusEnum cs_status);
+                                        OperationalStatusEnum cs_status, bool persist);
 
     /// \brief Switches the operative status of the EVSE
     /// \param new_status: The new operative status to switch to
     /// \param cs_status: The effective status of the charging station
-    void set_evse_operative_status(OperationalStatusEnum new_status, OperationalStatusEnum cs_status);
+    /// \param persist: Whether the updated state should be persisted in the database or not
+    void set_evse_operative_status(OperationalStatusEnum new_status, OperationalStatusEnum cs_status,
+                                   bool persist);
 
-    /// \brief Updates the effective status of the EVSE without changing the operative status
+    /// \brief Updates the effective status of the EVSE and its connectors without changing the operative status
     /// \param cs_status: The effective status of the charging station
     void update_effective_status(OperationalStatusEnum cs_status);
 };

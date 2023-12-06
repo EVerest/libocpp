@@ -286,7 +286,7 @@ OperationalStatusEnum Evse::get_effective_status() {
 }
 
 void Evse::set_connector_operative_status(int32_t connector_id, OperationalStatusEnum new_status,
-                                          OperationalStatusEnum cs_status) {
+                                          OperationalStatusEnum cs_status, bool persist) {
     // Update the effective status of the EVSE
     OperationalStatusEnum new_effective_status = this->determine_effective_status(cs_status);
     this->effective_status = new_effective_status;
@@ -295,7 +295,7 @@ void Evse::set_connector_operative_status(int32_t connector_id, OperationalStatu
     for (auto &[id, connector] : this->id_connector_map) {
         if (connector != nullptr) {
             if (connector_id == id) {
-                connector->set_operative_status(new_status, this->effective_status);
+                connector->set_operative_status(new_status, this->effective_status, persist);
             } else {
                 connector->update_effective_status(this->effective_status);
             }
@@ -303,7 +303,7 @@ void Evse::set_connector_operative_status(int32_t connector_id, OperationalStatu
     }
 }
 
-void Evse::set_evse_operative_status(OperationalStatusEnum new_status, OperationalStatusEnum cs_status) {
+void Evse::set_evse_operative_status(OperationalStatusEnum new_status, OperationalStatusEnum cs_status, bool persist) {
     this->is_operative = (new_status == OperationalStatusEnum::Operative);
     // TODO persist the new state if needed
 

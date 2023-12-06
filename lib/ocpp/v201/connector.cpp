@@ -107,7 +107,9 @@ void Connector::set_effective_status(ConnectorStatusEnum new_effective_status) {
     }
 
 }
-void Connector::set_operative_status(OperationalStatusEnum new_status, OperationalStatusEnum evse_status) {
+void Connector::set_operative_status(OperationalStatusEnum new_status,
+                                     OperationalStatusEnum evse_status,
+                                     bool persist) {
     std::lock_guard<std::recursive_mutex> lk(this->state_mutex);
     this->enabled = (new_status == OperationalStatusEnum::Operative);
     // TODO persist the new state if needed

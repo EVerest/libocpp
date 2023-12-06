@@ -652,18 +652,22 @@ public:
 
     /// \brief Switches the operative status of the charging station
     /// \param new_status: The new operative status to switch to
-    void set_cs_operative_status(OperationalStatusEnum new_status);
+    /// \param persist: Whether the updated state should be persisted in the database or not
+    void set_cs_operative_status(OperationalStatusEnum new_status, bool persist);
 
     /// \brief Switches the operative status of an EVSE
     /// \param evse_id: The ID of the EVSE
     /// \param new_status: The new operative status to switch to
-    void set_evse_operative_status(int32_t evse_id, OperationalStatusEnum new_status);
+    /// \param persist: Whether the updated state should be persisted in the database or not
+    void set_evse_operative_status(int32_t evse_id, OperationalStatusEnum new_status, bool persist);
 
     /// \brief Switches the operative status of a connector
     /// \param evse_id: The ID of the EVSE
     /// \param connector_id: The ID of the connector
     /// \param new_status: The new operative status to switch to
-    void set_connector_operative_status(int32_t evse_id, int32_t connector_id, OperationalStatusEnum new_status);
+    /// \param persist: Whether the updated state should be persisted in the database or not
+    void set_connector_operative_status(int32_t evse_id, int32_t connector_id, OperationalStatusEnum new_status,
+                                        bool persist);
 };
 
 } // namespace v201
