@@ -45,12 +45,16 @@ Evse::Evse(const int32_t evse_id, const int32_t number_of_connectors, DeviceMode
                status_notification_callback,
            const std::function<void(const MeterValue& meter_value, const Transaction& transaction, const int32_t seq_no,
                                     const std::optional<int32_t> reservation_id)>& transaction_meter_value_req,
-           const std::function<void()> pause_charging_callback) :
+           const std::function<void()> pause_charging_callback,
+           const std::function<void(const std::optional<int32_t> connector_id,
+                                    const OperationalStatusEnum new_status,
+                                    const bool persist)> change_availability_callback) :
     evse_id(evse_id),
     device_model(device_model),
     status_notification_callback(status_notification_callback),
     transaction_meter_value_req(transaction_meter_value_req),
     pause_charging_callback(pause_charging_callback),
+    change_availability_callback(change_availability_callback),
     database_handler(database_handler),
     // TODO verify init BEGIN
     is_operative(true),
@@ -60,9 +64,14 @@ Evse::Evse(const int32_t evse_id, const int32_t number_of_connectors, DeviceMode
     for (int connector_id = 1; connector_id <= number_of_connectors; connector_id++) {
         this->id_connector_map.insert(std::make_pair(
             connector_id,
-            std::make_unique<Connector>(connector_id, [this, connector_id](const ConnectorStatusEnum& status) {
-                this->status_notification_callback(connector_id, status);
-            })));
+            std::make_unique<Connector>(
+                connector_id,
+                [this, connector_id](const ConnectorStatusEnum& status) {
+                    this->status_notification_callback(connector_id, status);
+                },
+                [this, connector_id](const OperationalStatusEnum new_status, const bool persist) {
+                    this->change_availability_callback(connector_id, new_status, persist);
+                })));
     }
 }
 

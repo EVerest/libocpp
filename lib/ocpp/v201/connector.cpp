@@ -33,7 +33,9 @@ std::string connector_event_to_string(ConnectorEvent e) {
 } // namespace conversions
 
 Connector::Connector(const int32_t connector_id,
-                     const std::function<void(const ConnectorStatusEnum& status)>& status_notification_callback) :
+                     const std::function<void(const ConnectorStatusEnum& status)>& status_notification_callback,
+                     const std::function<void(const OperationalStatusEnum new_status,
+                                              const bool persist)> change_availability_callback) :
     connector_id(connector_id),
     // TODO verify init BEGIN
     enabled(true),
@@ -42,7 +44,8 @@ Connector::Connector(const int32_t connector_id,
     faulted(false),
     effective_status(ConnectorStatusEnum::Available),
     // TODO verify init END
-    status_notification_callback(status_notification_callback) {
+    status_notification_callback(status_notification_callback),
+    change_availability_callback(change_availability_callback) {
 }
 
 ConnectorStatusEnum Connector::determine_effective_status(OperationalStatusEnum evse_status) {

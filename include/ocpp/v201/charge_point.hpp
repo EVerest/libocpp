@@ -78,16 +78,23 @@ struct Callbacks {
     std::function<void(const std::optional<const int32_t> evse_id, const ResetEnum& reset_type)> reset_callback;
     std::function<void(const int32_t evse_id, const ReasonEnum& stop_reason)> stop_transaction_callback;
     std::function<void(const int32_t evse_id)> pause_charging_callback;
+
+    //std::function<void(const ChangeAvailabilityRequest& request, const bool persist)> change_availability_callback;
     ///
     /// \brief Change availability of charging station / evse / connector.
-    /// \param request The request.
+    /// \param evse_id The id of the EVSE affected, or empty if the whole charging station is addressed
+    /// \param connector_id The ID of the connector, or empty if the whole EVSE/CS is addressed
+    /// \param new_status The operational status to switch to
     /// \param persist True to persist the status after reboot.
     ///
-    /// Persist is set to 'false' if the status does not need to be stored after restarting. Otherwise it is true.
-    /// False is for example during a reset OnIdle where first an 'unavailable' is sent until the charging session
-    /// stopped. True is for example when the CSMS sent an 'inoperative' request.
-    ///
-    std::function<void(const ChangeAvailabilityRequest& request, const bool persist)> change_availability_callback;
+    /// The callback executes the state transition on the charging station (e.g. enabling/disabling EVSEs)
+    /// If "persist" is set to true, the new state will be persisted after a reboot.
+    /// For example, transitions explicitly requested by the CSMS with a ChangeAvailability are persisted,
+    /// whereas disabling the charging station prior to a reset is transient.
+    std::function<void(const std::optional<int32_t> evse_id,
+                       const std::optional<int32_t> connector_id,
+                       const OperationalStatusEnum new_status,
+                       const bool persist)> change_availability_callback;
     std::function<GetLogResponse(const GetLogRequest& request)> get_log_request_callback;
     std::function<UnlockConnectorResponse(const int32_t evse_id, const int32_t connecor_id)> unlock_connector_callback;
     // callback to be called when the request can be accepted. authorize_remote_start indicates if Authorize.req needs
