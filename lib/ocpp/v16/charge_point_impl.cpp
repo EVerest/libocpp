@@ -145,8 +145,9 @@ ChargePointImpl::ChargePointImpl(const std::string& config, const fs::path& shar
 std::unique_ptr<ocpp::MessageQueue<v16::MessageType>> ChargePointImpl::create_message_queue() {
     return std::make_unique<ocpp::MessageQueue<v16::MessageType>>(
         [this](json message) -> bool { return this->websocket->send(message.dump()); },
-        MessageQueueConfig{this->configuration->getTransactionMessageAttempts(),
-                           this->configuration->getTransactionMessageRetryInterval(),
+        MessageQueueConfig{
+            this->configuration->getTransactionMessageAttempts(),
+            this->configuration->getTransactionMessageRetryInterval(),
             this->configuration->getMessageQueueSizeThreshold().value_or(DEFAULT_MESSAGE_QUEUE_SIZE_THRESHOLD),
             this->configuration->getQueueAllMessages().value_or(false)},
         this->external_notify, this->database_handler);
