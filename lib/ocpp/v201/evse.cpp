@@ -58,10 +58,8 @@ Evse::Evse(const int32_t evse_id, const int32_t number_of_connectors, DeviceMode
     change_effective_availability_callback(change_effective_availability_callback),
     persist_availability_callback(persist_availability_callback),
     database_handler(database_handler),
-    // TODO verify init BEGIN
     operative_status(OperationalStatusEnum::Operative),
     effective_status(OperationalStatusEnum::Operative),
-    // TODO verify init END
     transaction(nullptr) {
     for (int connector_id = 1; connector_id <= number_of_connectors; connector_id++) {
         this->id_connector_map.insert(std::make_pair(

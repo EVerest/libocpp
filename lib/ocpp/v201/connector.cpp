@@ -37,13 +37,11 @@ Connector::Connector(const int32_t connector_id,
                      const std::function<void(const OperationalStatusEnum new_status)> change_effective_availability_callback,
                      const std::function<void(const OperationalStatusEnum new_status)> persist_availability_callback) :
     connector_id(connector_id),
-    // TODO verify init BEGIN
     enabled(true),
     reserved(false),
     plugged_in(false),
     faulted(false),
     effective_status(ConnectorStatusEnum::Available),
-    // TODO verify init END
     status_notification_callback(status_notification_callback),
     change_effective_availability_callback(change_effective_availability_callback),
     persist_availability_callback(persist_availability_callback) {
