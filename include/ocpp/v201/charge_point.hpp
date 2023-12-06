@@ -486,6 +486,11 @@ private:
         };
     };
 
+    /// \brief Checks if all connectors are effectively unavailable.
+    /// If this is the case, calls the all_connectors_unavailable_callback
+    /// This is used e.g. to allow firmware updates once all transactions have finished
+    void notify_user_if_all_connectors_unavailable();
+
 public:
     /// \brief Construct a new ChargePoint object
     /// \param evse_connector_structure Map that defines the structure of EVSE and connectors of the chargepoint. The
