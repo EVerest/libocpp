@@ -20,6 +20,7 @@ namespace v201 {
 
 const auto DEFAULT_BOOT_NOTIFICATION_RETRY_INTERVAL = std::chrono::seconds(30);
 const auto WEBSOCKET_INIT_DELAY = std::chrono::seconds(2);
+const auto DEFAULT_MESSAGE_QUEUE_SIZE_THRESHOLD = 2E5;
 
 bool Callbacks::all_callbacks_valid() const {
     return this->is_reset_allowed_callback != nullptr and this->reset_callback != nullptr and
@@ -147,7 +148,7 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
             this->device_model->get_value<int>(ControllerComponentVariables::MessageAttempts),
             this->device_model->get_value<int>(ControllerComponentVariables::MessageAttemptInterval),
             this->device_model->get_optional_value<int>(ControllerComponentVariables::MessageQueueSizeThreshold)
-                .value_or(2E5),
+                .value_or(DEFAULT_MESSAGE_QUEUE_SIZE_THRESHOLD),
             this->device_model->get_optional_value<bool>(ControllerComponentVariables::QueueAllMessages)
                 .value_or(false)},
         this->database_handler);
