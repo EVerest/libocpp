@@ -25,7 +25,8 @@ const auto DEFAULT_MESSAGE_QUEUE_SIZE_THRESHOLD = 2E5;
 bool Callbacks::all_callbacks_valid() const {
     return this->is_reset_allowed_callback != nullptr and this->reset_callback != nullptr and
            this->stop_transaction_callback != nullptr and this->pause_charging_callback != nullptr and
-           this->change_availability_callback != nullptr and this->get_log_request_callback != nullptr and
+           this->change_effective_availability_callback != nullptr and
+           this->persist_availability_setting_callback != nullptr and this->get_log_request_callback != nullptr and
            this->unlock_connector_callback != nullptr and this->remote_start_transaction_callback != nullptr and
            this->is_reservation_for_token_callback != nullptr and this->update_firmware_request_callback != nullptr and
            (!this->variable_changed_callback.has_value() or this->variable_changed_callback.value() != nullptr) and
@@ -130,11 +131,15 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
 
         auto pause_charging_callback = [this, evse_id_]() { this->callbacks.pause_charging_callback(evse_id_); };
 
-        auto change_availability_callback = [this, evse_id_] (const std::optional<int32_t> connector_id,
-                                                              const OperationalStatusEnum new_status,
-                                                              const bool persist) {
-            this->callbacks.change_availability_callback(evse_id_, connector_id, new_status, persist);
-        };
+        auto change_effective_availability_callback =
+            [this, evse_id_] (const std::optional<int32_t> connector_id, const OperationalStatusEnum new_status){
+                this->callbacks.change_effective_availability_callback(evse_id_, connector_id, new_status);
+            };
+
+        auto persist_availability_callback =
+            [this, evse_id_] (const std::optional<int32_t> connector_id, const OperationalStatusEnum new_status){
+                this->callbacks.persist_availability_setting_callback(evse_id_, connector_id, new_status);
+            };
 
         this->evses.insert(
             std::make_pair(evse_id,
@@ -146,7 +151,8 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
                                status_notification_callback,
                                transaction_meter_value_callback,
                                pause_charging_callback,
-                               change_availability_callback)
+                               change_effective_availability_callback,
+                               persist_availability_callback)
                            ));
 
         for (int32_t connector_id = 1; connector_id <= number_of_connectors; connector_id++) {
@@ -1461,9 +1467,7 @@ void ChargePoint::set_evse_connectors_unavailable(const std::unique_ptr<Evse>& e
         evse->set_operative_status(static_cast<int32_t>(i), OperationalStatusEnum::Inoperative,
                                    this->operative_status, persist);
 
-        // TODO: Replace this
-        auto evse_id = evse->get_evse_info().id;
-        this->callbacks.change_availability_callback(evse_id, i, OperationalStatusEnum::Inoperative, should_persist);
+        this->set_operative_status(evse->get_evse_info().id, i, OperationalStatusEnum::Inoperative, should_persist);
     }
 }
 
@@ -2943,9 +2947,12 @@ void ChargePoint::set_operative_status(std::optional<int32_t> evse_id,
         }
     }
 
-    // We will trigger the callback if the operative state  changed (we need to persist it if the persist flag is on)
+    // We will trigger the callback if the operative state changed (we need to persist it if the persist flag is on)
     if (old_op_status != this->operative_status) {
-        this->callbacks.change_availability_callback({}, {}, this->operative_status, persist);
+        this->callbacks.change_effective_availability_callback({}, {}, this->operative_status);
+        if (persist) {
+            this->callbacks.persist_availability_setting_callback({}, {}, this->operative_status);
+        }
     }
 }
 

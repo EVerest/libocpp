@@ -47,14 +47,16 @@ Evse::Evse(const int32_t evse_id, const int32_t number_of_connectors, DeviceMode
                                     const std::optional<int32_t> reservation_id)>& transaction_meter_value_req,
            const std::function<void()> pause_charging_callback,
            const std::function<void(const std::optional<int32_t> connector_id,
-                                    const OperationalStatusEnum new_status,
-                                    const bool persist)> change_availability_callback) :
+                                    const OperationalStatusEnum new_status)> change_effective_availability_callback,
+           const std::function<void(const std::optional<int32_t> connector_id,
+                                    const OperationalStatusEnum new_status)> persist_availability_callback) :
     evse_id(evse_id),
     device_model(device_model),
     status_notification_callback(status_notification_callback),
     transaction_meter_value_req(transaction_meter_value_req),
     pause_charging_callback(pause_charging_callback),
-    change_availability_callback(change_availability_callback),
+    change_effective_availability_callback(change_effective_availability_callback),
+    persist_availability_callback(persist_availability_callback),
     database_handler(database_handler),
     // TODO verify init BEGIN
     operative_status(OperationalStatusEnum::Operative),
@@ -69,8 +71,11 @@ Evse::Evse(const int32_t evse_id, const int32_t number_of_connectors, DeviceMode
                 [this, connector_id](const ConnectorStatusEnum& status) {
                     this->status_notification_callback(connector_id, status);
                 },
-                [this, connector_id](const OperationalStatusEnum new_status, const bool persist) {
-                    this->change_availability_callback(connector_id, new_status, persist);
+                [this, connector_id](const OperationalStatusEnum new_status) {
+                    this->change_effective_availability_callback(connector_id, new_status);
+                },
+                [this, connector_id](const OperationalStatusEnum new_status) {
+                    this->persist_availability_callback(connector_id, new_status);
                 })));
     }
 }
@@ -328,13 +333,11 @@ void Evse::set_operative_status(std::optional<int32_t> connector_id,
         }
     }
 
-    // We will trigger the callback if:
-    // - The operative state changed (we need to persist it if the persist flag is on), or
-    // - The effective state changed (do not persist, but still announce it)
-    if (old_op_status != this->operative_status) {
-        this->change_availability_callback({}, this->effective_status, persist);
-    } else if (old_eff_status != this->effective_status) {
-        this->change_availability_callback({}, this->effective_status, false);
+    if (old_op_status != this->operative_status && persist) {
+        this->persist_availability_callback({}, this->effective_status);
+    }
+    if (old_eff_status != this->effective_status) {
+        this->change_effective_availability_callback({}, this->effective_status);
     }
 }
 

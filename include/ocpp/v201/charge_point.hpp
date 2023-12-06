@@ -79,7 +79,6 @@ struct Callbacks {
     std::function<void(const int32_t evse_id, const ReasonEnum& stop_reason)> stop_transaction_callback;
     std::function<void(const int32_t evse_id)> pause_charging_callback;
 
-    //std::function<void(const ChangeAvailabilityRequest& request, const bool persist)> change_availability_callback;
     ///
     /// \brief Change availability of charging station / evse / connector.
     /// \param evse_id The id of the EVSE affected, or empty if the whole charging station is addressed
@@ -88,13 +87,28 @@ struct Callbacks {
     /// \param persist True to persist the status after reboot.
     ///
     /// The callback executes the state transition on the charging station (e.g. enabling/disabling EVSEs)
-    /// If "persist" is set to true, the new state will be persisted after a reboot.
-    /// For example, transitions explicitly requested by the CSMS with a ChangeAvailability are persisted,
-    /// whereas disabling the charging station prior to a reset is transient.
+    /// It should not persist anything - this must be done in persist_availability_setting_callback.
+    ///
     std::function<void(const std::optional<int32_t> evse_id,
                        const std::optional<int32_t> connector_id,
-                       const OperationalStatusEnum new_status,
-                       const bool persist)> change_availability_callback;
+                       const OperationalStatusEnum new_status)> change_effective_availability_callback;
+
+    ///
+    /// \brief Called when libocpp wants to save a set availability status, such that it persists across a reboot.
+    /// \param evse_id The id of the EVSE affected, or empty if the whole charging station is addressed
+    /// \param connector_id The ID of the connector, or empty if the whole EVSE/CS is addressed
+    /// \param new_status The operational status to switch to
+    /// \param persist True to persist the status after reboot.
+    ///
+    /// This callback does NOT trigger changes to the charging station (e.g. turning EVSEs on or off).
+    /// It only saves the setting in the database. The actual effective state of the component may differ,
+    /// e.g. when a connector is enabled, but the EVSE as a whole is disabled.
+    /// To change the effective state of a component, libocpp will call change_effective_availability_callback instead.
+    ///
+    std::function<void(const std::optional<int32_t> evse_id,
+                       const std::optional<int32_t> connector_id,
+                       const OperationalStatusEnum new_status)> persist_availability_setting_callback;
+
     std::function<GetLogResponse(const GetLogRequest& request)> get_log_request_callback;
     std::function<UnlockConnectorResponse(const int32_t evse_id, const int32_t connecor_id)> unlock_connector_callback;
     // callback to be called when the request can be accepted. authorize_remote_start indicates if Authorize.req needs
@@ -202,7 +216,6 @@ private:
 
     /// \brief The independent availability status of the whole CS, set via OCPP or libocpp calls
     /// This status is persisted in the database
-    // TODO add a lock for this
     OperationalStatusEnum operative_status;
 
     // store the connector status

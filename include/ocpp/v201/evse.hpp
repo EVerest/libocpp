@@ -35,12 +35,15 @@ private:
     Everest::SteadyTimer sampled_meter_values_timer;
     std::shared_ptr<DatabaseHandler> database_handler;
 
-    /// \brief Callback to execute a desired operational state change on the charging station.
+    /// \brief Callback to execute a desired effective operational state change on the charging station.
     /// If connector_id is empty, then the EVSE itself underwent a state transition.
-    /// If "persist" is set to true, the change will be persisted across reboots.
     std::function<void(const std::optional<int32_t> connector_id,
-                       const OperationalStatusEnum new_status,
-                       const bool persist)> change_availability_callback;
+                       const OperationalStatusEnum new_status)> change_effective_availability_callback;
+
+    /// \brief Callback to persist an operational state change.
+    /// If connector_id is empty, then the EVSE itself underwent a state transition.
+    std::function<void(const std::optional<int32_t> connector_id,
+                       const OperationalStatusEnum new_status)> persist_availability_callback;
 
     /// \brief gets the active import energy meter value from meter_value, normalized to Wh.
     std::optional<float> get_active_import_register_meter_value();
@@ -52,7 +55,6 @@ private:
     AverageMeterValues aligned_data_tx_end;
 
     /// \brief Whether the EVSE is enabled or not (e.g. due to OCPP commands)
-    // TODO add a lock for this
     OperationalStatusEnum operative_status;
     OperationalStatusEnum effective_status;
 
@@ -77,8 +79,9 @@ public:
                                   const std::optional<int32_t> reservation_id)>& transaction_meter_value_req,
          const std::function<void()> pause_charging_callback,
          const std::function<void(const std::optional<int32_t> connector_id,
-                                  const OperationalStatusEnum new_status,
-                                  const bool persist)> change_availability_callback);
+                                  const OperationalStatusEnum new_status)> change_effective_availability_callback,
+         const std::function<void(const std::optional<int32_t> connector_id,
+                                  const OperationalStatusEnum new_status)> persist_availability_callback);
 
     /// \brief Returns an OCPP2.0.1 EVSE type
     /// \return

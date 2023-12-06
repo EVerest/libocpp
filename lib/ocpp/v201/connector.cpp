@@ -34,8 +34,8 @@ std::string connector_event_to_string(ConnectorEvent e) {
 
 Connector::Connector(const int32_t connector_id,
                      const std::function<void(const ConnectorStatusEnum& status)>& status_notification_callback,
-                     const std::function<void(const OperationalStatusEnum new_status,
-                                              const bool persist)> change_availability_callback) :
+                     const std::function<void(const OperationalStatusEnum new_status)> change_effective_availability_callback,
+                     const std::function<void(const OperationalStatusEnum new_status)> persist_availability_callback) :
     connector_id(connector_id),
     // TODO verify init BEGIN
     enabled(true),
@@ -45,7 +45,8 @@ Connector::Connector(const int32_t connector_id,
     effective_status(ConnectorStatusEnum::Available),
     // TODO verify init END
     status_notification_callback(status_notification_callback),
-    change_availability_callback(change_availability_callback) {
+    change_effective_availability_callback(change_effective_availability_callback),
+    persist_availability_callback(persist_availability_callback) {
 }
 
 ConnectorStatusEnum Connector::determine_effective_status(OperationalStatusEnum evse_status) {
@@ -138,13 +139,11 @@ void Connector::set_operative_status(std::optional<OperationalStatusEnum> new_st
                                                         : OperationalStatusEnum::Inoperative;
     OperationalStatusEnum new_eff_status = to_operative(this->get_effective_status());
 
-    // We will trigger the callback if:
-    // - The operative state changed (we need to persist it if the persist flag is on), or
-    // - The effective state changed (do not persist, but still announce it)
     if (old_op_status != new_op_status) {
-        this->change_availability_callback(new_op_status, persist);
-    } else if (old_eff_status != new_eff_status) {
-        this->change_availability_callback(new_eff_status, false);
+        this->persist_availability_callback(new_op_status);
+    }
+    if (old_eff_status != new_eff_status) {
+        this->change_effective_availability_callback(new_eff_status);
     }
 }
 OperationalStatusEnum Connector::get_operative_status() {

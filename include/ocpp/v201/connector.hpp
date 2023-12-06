@@ -41,10 +41,11 @@ private:
 
     std::function<void(const ConnectorStatusEnum& status)> status_notification_callback;
 
-    /// \brief Callback to execute a desired operational state change on the charging station.
-    /// If "persist" is set to true, the change will be persisted across reboots.
-    std::function<void(const OperationalStatusEnum new_status,
-                       const bool persist)> change_availability_callback;
+    /// \brief Callback to execute a desired effective operational state change on the charging station.
+    std::function<void(const OperationalStatusEnum new_status)> change_effective_availability_callback;
+
+    /// \brief Callback to persist an operational state change.
+    std::function<void(const OperationalStatusEnum new_status)> persist_availability_callback;
 
     /// \brief Determine the new effective state of the connector
     /// \param evse_status: The effective state of the EVSE
@@ -60,8 +61,8 @@ public:
     /// \param status_notification_callback callback executed when the state of the connector changes
     Connector(const int32_t connector_id,
               const std::function<void(const ConnectorStatusEnum& status)>& status_notification_callback,
-              const std::function<void(const OperationalStatusEnum new_status,
-                                       const bool persist)> change_availability_callback);
+              const std::function<void(const OperationalStatusEnum new_status)> change_effective_availability_callback,
+              const std::function<void(const OperationalStatusEnum new_status)> persist_availability_callback);
 
     /// \brief Get the effective state of the connector
     /// \return ConnectorStatusEnum
