@@ -54,7 +54,9 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
                          const Callbacks& callbacks) :
     ocpp::ChargingStationBase(evse_security),
     registration_status(RegistrationStatusEnum::Rejected),
-    operational_state(OperationalStatusEnum::Operative),
+    // TODO verify init BEGIN
+    is_operative(true),
+    // TODO verify init END
     network_configuration_priority(0),
     disable_automatic_websocket_reconnects(false),
     reset_scheduled(false),

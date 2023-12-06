@@ -184,7 +184,6 @@ private:
 
     // states
     RegistrationStatusEnum registration_status;
-    OperationalStatusEnum operational_state;
     FirmwareStatusEnum firmware_status;
     int32_t firmware_status_id;
     FirmwareStatusEnum firmware_status_before_installing = FirmwareStatusEnum::SignatureVerified;
@@ -193,6 +192,12 @@ private:
     BootReasonEnum bootreason;
     int network_configuration_priority;
     bool disable_automatic_websocket_reconnects;
+
+    /// \brief The independent availability status of the whole CS, set via OCPP or libocpp calls
+    /// This status is persisted in the database
+    // TODO add a lock for this
+    bool is_operative;
+    OperationalStatusEnum get_operative_status();
 
     // store the connector status
     struct EvseConnectorPair {
@@ -226,12 +231,6 @@ private:
 
     /// \brief Handler for automatic or explicit OCSP cache updates
     OcspUpdater ocsp_updater;
-
-    /// \brief The independent availability status of the whole CS, set via OCPP or libocpp calls
-    /// This status is persisted in the database
-    // TODO add a lock for this
-    bool is_operative;
-    OperationalStatusEnum get_operative_status();
 
     bool send(CallError call_error);
 
