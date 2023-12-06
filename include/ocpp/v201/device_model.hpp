@@ -67,8 +67,8 @@ private:
                                                  bool allow_write_only);
 
     /// \brief Iterates over the given \p component_criteria and converts this to the variable names
-    /// (Active,Available,Enabled,Problem). If any of the variables can not be find as part of a component this function
-    /// returns true. If any of those variable's value is true, this function returns true. If all variable's value are
+    /// (Active,Available,Enabled,Problem). If any of the variables can not be found as part of a component this function
+    /// returns false. If any of those variable's value is true, this function returns true. If all variable's value are
     /// false, this function returns false
     ///  \param component_id
     ///  \param /// component_criteria

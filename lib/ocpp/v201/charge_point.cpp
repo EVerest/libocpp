@@ -2054,8 +2054,8 @@ void ChargePoint::handle_get_report_req(Call<GetReportRequest> call) {
 
     // TODO(piet): Propably split this up into several NotifyReport.req depending on ItemsPerMessage /
     // BytesPerMessage
-    const auto report_data = this->device_model->get_report_data(ReportBaseEnum::FullInventory, msg.componentVariable,
-                                                                 msg.componentCriteria);
+    const auto report_data =
+        this->device_model->get_report_data(std::nullopt,msg.componentVariable, msg.componentCriteria);
     if (report_data.empty()) {
         response.status = GenericDeviceModelStatusEnum::EmptyResultSet;
     } else {

@@ -575,6 +575,12 @@
                 "attributes": {
                     "Actual": "RST"
                 }
+            },
+            "ChargingStationProblem": {
+                "variable_name": "Problem",
+                "attributes": {
+                    "Actual": false
+                }
             }
         }
     },
