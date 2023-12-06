@@ -72,15 +72,13 @@ public:
     /// \param evse_status: The effective state of the EVSE
     void submit_event(ConnectorEvent event, OperationalStatusEnum evse_status);
 
-    /// \brief Switches the operative status of the connector
-    /// \param new_status: The new operative status to switch to
+    /// \brief Switches the operative status of the connector and recomputes the effective status
+    /// \param new_status: The new operative status to switch to, empty if it should remain the same
     /// \param evse_status: The effective status of the EVSE
     /// \param persist: Whether the updated state should be persisted in the database or not
-    void set_operative_status(OperationalStatusEnum new_status, OperationalStatusEnum evse_status, bool persist);
-
-    /// \brief Updates the effective status of the container without changing the operational status
-    /// \param evse_status: The effective status of the EVSE
-    void update_effective_status(OperationalStatusEnum evse_status);
+    void set_operative_status(std::optional<OperationalStatusEnum> new_status,
+                              OperationalStatusEnum evse_status,
+                              bool persist);
 };
 
 } // namespace v201

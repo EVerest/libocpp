@@ -203,8 +203,7 @@ private:
     /// \brief The independent availability status of the whole CS, set via OCPP or libocpp calls
     /// This status is persisted in the database
     // TODO add a lock for this
-    bool is_operative;
-    OperationalStatusEnum get_operative_status();
+    OperationalStatusEnum operative_status;
 
     // store the connector status
     struct EvseConnectorPair {
@@ -661,24 +660,15 @@ public:
     DataTransferResponse data_transfer_req(const CiString<255>& vendorId, const std::optional<CiString<50>>& messageId,
                                            const std::optional<std::string>& data);
 
-    /// \brief Switches the operative status of the charging station
+    /// \brief Switches the operative status of the CS, an EVSE, or a connector
+    /// \param evse_id: The ID of the EVSE, empty if the CS is addressed
+    /// \param connector_id: The ID of the connector, empty if an EVSE or the CS is addressed
     /// \param new_status: The new operative status to switch to
     /// \param persist: Whether the updated state should be persisted in the database or not
-    void set_cs_operative_status(OperationalStatusEnum new_status, bool persist);
-
-    /// \brief Switches the operative status of an EVSE
-    /// \param evse_id: The ID of the EVSE
-    /// \param new_status: The new operative status to switch to
-    /// \param persist: Whether the updated state should be persisted in the database or not
-    void set_evse_operative_status(int32_t evse_id, OperationalStatusEnum new_status, bool persist);
-
-    /// \brief Switches the operative status of a connector
-    /// \param evse_id: The ID of the EVSE
-    /// \param connector_id: The ID of the connector
-    /// \param new_status: The new operative status to switch to
-    /// \param persist: Whether the updated state should be persisted in the database or not
-    void set_connector_operative_status(int32_t evse_id, int32_t connector_id, OperationalStatusEnum new_status,
-                                        bool persist);
+    void set_operative_status(std::optional<int32_t> evse_id,
+                              std::optional<int32_t> connector_id,
+                              OperationalStatusEnum new_status,
+                              bool persist);
 };
 
 } // namespace v201

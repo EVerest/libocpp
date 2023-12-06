@@ -53,7 +53,7 @@ private:
 
     /// \brief Whether the EVSE is enabled or not (e.g. due to OCPP commands)
     // TODO add a lock for this
-    bool is_operative;
+    OperationalStatusEnum operative_status;
     OperationalStatusEnum effective_status;
 
     /// \brief Determine the new effective state of the EVSE
@@ -168,26 +168,18 @@ public:
     /// \brief Get the current effective status of the EVSE
     OperationalStatusEnum get_effective_status();
 
-    /// \brief Switches the operative status of the EVSE
-    /// \param new_status: The new operative status to switch to
-    /// \param cs_status: The effective status of the charging station
-    /// \param persist: Whether the updated state should be persisted in the database or not
-    void set_connector_operative_status(int32_t connector_id, OperationalStatusEnum new_status,
-                                        OperationalStatusEnum cs_status, bool persist);
-
-    /// \brief Switches the operative status of the EVSE
-    /// \param new_status: The new operative status to switch to
-    /// \param cs_status: The effective status of the charging station
-    /// \param persist: Whether the updated state should be persisted in the database or not
-    void set_evse_operative_status(OperationalStatusEnum new_status, OperationalStatusEnum cs_status,
-                                   bool persist);
-
-    /// \brief Updates the effective status of the EVSE and its connectors without changing the operative status
-    /// \param cs_status: The effective status of the charging station
-    void update_effective_status(OperationalStatusEnum cs_status);
-
     /// \brief check if all connectors are effectively Inoperative.
     bool all_connectors_inoperative();
+
+    /// \brief Switches the operative status of the EVSE or a connector, recomputes effective statuses
+    /// \param connector_id The ID of the connector, empty if the EVSE is addressed
+    /// \param new_status The new operative status to switch to, empty if it should remain the same
+    /// \param cs_status The effective status of the charging station
+    /// \param persist Whether the updated state should be persisted in the database or not
+    void set_operative_status(std::optional<int32_t> connector_id,
+                              std::optional<OperationalStatusEnum> new_status,
+                              OperationalStatusEnum cs_status,
+                              bool persist);
 };
 
 } // namespace v201
