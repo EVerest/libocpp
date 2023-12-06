@@ -1244,6 +1244,7 @@ bool ChargePoint::any_transaction_active(const std::optional<EVSE>& evse) {
     return this->evses.at(evse.value().id)->has_active_transaction();
 }
 
+// TODO: This functionality is duplicated in the Connector class, can be refactored away
 bool operational_status_matches_connector_status(ConnectorStatusEnum connector_status,
                                                  OperationalStatusEnum operational_status) {
     if (operational_status == OperationalStatusEnum::Operative) {
@@ -1256,32 +1257,12 @@ bool operational_status_matches_connector_status(ConnectorStatusEnum connector_s
 
 bool ChargePoint::is_already_in_state(const ChangeAvailabilityRequest& request) {
     if (!request.evse.has_value()) {
-        for (const auto& [evse_id, evse] : this->evses) {
-            for (int connector_id = 1; connector_id <= evse->get_number_of_connectors(); connector_id++) {
-                auto status = evse->get_state(connector_id);
-                if (!operational_status_matches_connector_status(status, request.operationalStatus)) {
-                    return false;
-                }
-            }
-        }
-        return true;
+        // We're addressing the whole charging station.
+        return (this->operative_status == request.operationalStatus);
     }
-
-    const auto evse_id = request.evse.value().id;
-    if (request.evse.value().connectorId.has_value()) {
-        const auto connector_id = request.evse.value().connectorId.value();
-        const auto status = this->evses.at(evse_id)->get_state(connector_id);
-        return operational_status_matches_connector_status(status, request.operationalStatus);
-    } else {
-        for (int connector_id = 1; connector_id <= this->evses.at(evse_id)->get_number_of_connectors();
-             connector_id++) {
-            auto status = this->evses.at(evse_id)->get_state(connector_id);
-            if (!operational_status_matches_connector_status(status, request.operationalStatus)) {
-                return false;
-            }
-        }
-        return true;
-    }
+    // We're addressing either an EVSE or a connector within, check that the operational state there matches
+    return (request.operationalStatus == this->evses.at(request.evse.value().id)
+                                             ->get_operative_status(request.evse.value().connectorId));
 }
 
 bool ChargePoint::is_valid_evse(const EVSE& evse) {
@@ -2585,11 +2566,12 @@ void ChargePoint::handle_remote_stop_transaction_request(Call<RequestStopTransac
 }
 
 void ChargePoint::handle_change_availability_req(Call<ChangeAvailabilityRequest> call) {
-    // TODO adapt this function
+    // TODO the state referenced here needs a lock!
     const auto msg = call.msg;
     ChangeAvailabilityResponse response;
     response.status = ChangeAvailabilityStatusEnum::Scheduled;
 
+    // Sanity check: if we're addressing an EVSE or a connector, it must actually exist
     if (msg.evse.has_value() and !this->is_valid_evse(msg.evse.value())) {
         EVLOG_warning << "CSMS requested ChangeAvailability for invalid evse id or connector id";
         response.status = ChangeAvailabilityStatusEnum::Rejected;
@@ -2598,51 +2580,64 @@ void ChargePoint::handle_change_availability_req(Call<ChangeAvailabilityRequest>
         return;
     }
 
+    // Check if we have any transaction running on the EVSE (or any EVSE if we're addressing the whole CS)
     const auto transaction_active = this->any_transaction_active(msg.evse);
+    // Check if we're already in the requested state
     const auto is_already_in_state = this->is_already_in_state(msg);
 
-    auto evse_id = 0; // represents the whole charging station
+    // evse_id will be 0 if we're addressing the whole CS, and >=1 otherwise
+    auto evse_id = 0;
     if (msg.evse.has_value()) {
         evse_id = msg.evse.value().id;
     }
 
     if (!transaction_active or is_already_in_state or
         (evse_id == 0 and msg.operationalStatus == OperationalStatusEnum::Operative)) {
+        // If the chosen EVSE (or CS) has no transactions, we're already in the desired state,
+        // or we're telling the whole CS to power on, we can accept the request - there's nothing stopping us.
         response.status = ChangeAvailabilityStatusEnum::Accepted;
-        // remove any scheduled availability request in case no transaction is scheduled or the component is already in
-        // correct state to override possible requests that have been scheduled before
+        // Remove any scheduled availability requests for the evse_id.
+        // This is relevant in case some of those requests become activated later - the current one overrides them.
         this->scheduled_change_availability_requests.erase(evse_id);
     } else {
-        // add to map of scheduled operational_states. This also overrides successive ChangeAvailability.req with
-        // the same EVSE, which is propably desirable
+        // We can't immediately perform the change, because we have a transaction running.
+        // Schedule the request to run when the transaction finishes.
         this->scheduled_change_availability_requests[evse_id] = {msg, true};
     }
 
-    // send reply before applying changes to EVSE / Connector because this could trigger StatusNotification.req
-    // before responding with ChangeAvailability.req
+    // Respond to the CSMS before performing any changes to avoid StatusNotification.req being sent before
+    // the ChangeAvailabilityResponse.
     ocpp::CallResult<ChangeAvailabilityResponse> call_result(response, call.uniqueId);
     this->send<ChangeAvailabilityResponse>(call_result);
 
-    if (!transaction_active) {
-        // execute change availability if possible
+    if (is_already_in_state) {
+        // Nothing more to do
+        return;
+    } else if (!transaction_active) {
+        // No transactions - execute the change now
         if (msg.evse.has_value()) {
             this->set_operative_status(msg.evse.value().id, msg.evse.value().connectorId, msg.operationalStatus, true);
         } else {
             this->set_operative_status({}, {}, msg.operationalStatus, true);
         }
     } else if (response.status == ChangeAvailabilityStatusEnum::Scheduled) {
+        // We can't execute the change now, but it's scheduled to run after transactions are finished.
         if (evse_id == 0) {
-            // put all EVSEs to unavailable that do not have active transaction
+            // The whole CS is being addressed - we need to prevent further transactions from starting.
+            // To do that, make all EVSEs without an active transaction Inoperative
             for (auto const& [evse_id, evse] : this->evses) {
                 if (!evse->has_active_transaction()) {
-                    this->set_evse_connectors_unavailable(evse, false);
+                    // TODO(Valentin): This will linger after the update too! We probably need another mechanism...
+                    this->set_operative_status(evse_id, {}, OperationalStatusEnum::Inoperative, false);
                 }
             }
         } else {
-            // put all connectors of the EVSE to unavailable that do not have active transaction
+            // A single EVSE is being addressed. We need to prevent further transactions from starting on it.
+            // To do that, make all connectors of the EVSE without an active transaction Inoperative.
             int number_of_connectors = this->evses.at(evse_id)->get_number_of_connectors();
             for (int connector_id = 1; connector_id <= number_of_connectors; connector_id++) {
                 if (!this->evses.at(evse_id)->has_active_transaction(connector_id)) {
+                    // TODO(Valentin): This will linger after the update too! We probably need another mechanism...
                     this->set_operative_status(evse_id, connector_id, OperationalStatusEnum::Inoperative, false);
                 }
             }
@@ -2948,10 +2943,7 @@ void ChargePoint::set_operative_status(std::optional<int32_t> evse_id,
         }
     }
 
-    // We will trigger the callback if:
-    // - The operative state of the changed (we need to persist it if the persist flag is on) or
-    // - The effective state changed (do not persist, but still announce it)
-    // For the charging station, operative state is the same as the effective state
+    // We will trigger the callback if the operative state  changed (we need to persist it if the persist flag is on)
     if (old_op_status != this->operative_status) {
         this->callbacks.change_availability_callback({}, {}, this->operative_status, persist);
     }

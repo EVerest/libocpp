@@ -338,5 +338,13 @@ void Evse::set_operative_status(std::optional<int32_t> connector_id,
     }
 }
 
+OperationalStatusEnum Evse::get_operative_status(std::optional<int32_t> connector_id) {
+    if (connector_id.has_value()) {
+        return this->id_connector_map.at(connector_id.value())->get_operative_status();
+    } else {
+        return this->operative_status;
+    }
+}
+
 } // namespace v201
 } // namespace ocpp

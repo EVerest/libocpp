@@ -67,6 +67,9 @@ public:
     /// \return ConnectorStatusEnum
     ConnectorStatusEnum get_effective_status();
 
+    /// \brief Get the operative status of the connector (NOT the same as the effective status!)
+    OperationalStatusEnum get_operative_status();
+
     /// \brief Submits the given \p event to the state machine controller
     /// \param event
     /// \param evse_status: The effective state of the EVSE

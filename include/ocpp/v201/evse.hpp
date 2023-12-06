@@ -165,6 +165,10 @@ public:
     /// @brief Clear the idle meter values for this evse
     void clear_idle_meter_values();
 
+    /// \brief Get the operative status of the EVSE or one of its connectors (NOT the same as the effective status!)
+    /// \param connector_id The ID of the connector, empty if the EVSE itself is addressed
+    OperationalStatusEnum get_operative_status(std::optional<int32_t> connector_id);
+
     /// \brief check if all connectors are effectively Inoperative.
     bool all_connectors_inoperative();
 

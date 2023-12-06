@@ -147,6 +147,9 @@ void Connector::set_operative_status(std::optional<OperationalStatusEnum> new_st
         this->change_availability_callback(new_eff_status, false);
     }
 }
+OperationalStatusEnum Connector::get_operative_status() {
+    return this->enabled ? OperationalStatusEnum::Operative : OperationalStatusEnum::Inoperative;
+}
 
 } // namespace v201
 } // namespace ocpp
