@@ -2947,13 +2947,19 @@ OperationalStatusEnum ChargePoint::get_operative_status() {
 }
 
 void ChargePoint::set_cs_operative_status(ocpp::v201::OperationalStatusEnum new_status, bool persist) {
+    OperationalStatusEnum old_op_status = this->get_operative_status();
+
     this->is_operative = (new_status == OperationalStatusEnum::Operative);
-    // TODO persist the new state if needed
     // Update the effective status of all EVSEs
     for (auto &[id, evse] : this->evses) {
         if (evse != nullptr) {
             evse->update_effective_status(this->get_operative_status());
         }
+    }
+
+    OperationalStatusEnum new_op_status = this->get_operative_status();
+    if (old_op_status != new_op_status) {
+        this->callbacks.change_availability_callback({}, {}, new_op_status, persist);
     }
 }
 
