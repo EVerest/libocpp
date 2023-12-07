@@ -38,7 +38,7 @@
       "variable_name": "NetworkConnectionProfiles",
       "characteristics": {
         "supportsMonitoring": true,
-        "dataType": "MemberList"
+        "dataType": "string"
       },
       "attributes": [
         {
