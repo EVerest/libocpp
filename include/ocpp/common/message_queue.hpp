@@ -690,7 +690,7 @@ public:
     }
 
     /// \brief Resumes the message queue
-    void resume(std::chrono::seconds delay_on_reconnect = std::chrono::seconds(0)) {
+    void resume(std::chrono::seconds delay_on_reconnect) {
         EVLOG_debug << "resume() called";
         std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
         this->pause_resume_ctr++;
