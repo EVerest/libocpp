@@ -196,6 +196,16 @@ public:
                     const std::optional<std::vector<ComponentVariable>>& component_variables = std::nullopt,
                     const std::optional<std::vector<ComponentCriterionEnum>>& component_criteria = std::nullopt);
 
+    /// \brief Gets the ReportData for the specifed filter \p component_variables and \p
+    /// component_criteria
+    /// \param report_base
+    /// \param component_variables
+    /// \param component_criteria
+    /// \return
+    std::vector<ReportData>
+    get_custom_report_data(const std::optional<std::vector<ComponentVariable>>& component_variables = std::nullopt,
+                           const std::optional<std::vector<ComponentCriterionEnum>>& component_criteria = std::nullopt);
+
     /// \brief Check data integrity of the device model provided by the device model data storage:
     /// For "required" variables, assert values exist. Checks might be extended in the future.
     void check_integrity();
