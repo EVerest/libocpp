@@ -733,8 +733,8 @@ public:
     /// \return Indicates the result of the operation
     ConfigurationStatus set_custom_configuration_key(CiString<50> key, CiString<500> value);
 
-    /// \brief Delay draining the message queue after reconnecting, e.g. so the CSMS can perform post-reconnect checks
-    /// first \param delay The delay period (seconds)
+    /// \brief Delay draining the message queue after reconnecting, so the CSMS can perform post-reconnect checks first
+    /// \param delay The delay period (seconds)
     void set_message_queue_resume_delay(std::chrono::seconds delay) {
         this->message_queue_resume_delay = delay;
     }
