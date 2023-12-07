@@ -80,8 +80,7 @@ public:
     /// \param new_status: The new operative status to switch to, empty if it should remain the same
     /// \param evse_status: The effective status of the EVSE
     /// \param persist: Whether the updated state should be persisted in the database or not
-    void set_operative_status(std::optional<OperationalStatusEnum> new_status,
-                              OperationalStatusEnum evse_status,
+    void set_operative_status(std::optional<OperationalStatusEnum> new_status, OperationalStatusEnum evse_status,
                               bool persist);
 };
 

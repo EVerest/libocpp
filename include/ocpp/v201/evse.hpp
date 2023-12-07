@@ -37,13 +37,13 @@ private:
 
     /// \brief Callback to execute a desired effective operational state change on the charging station.
     /// If connector_id is empty, then the EVSE itself underwent a state transition.
-    std::function<void(const std::optional<int32_t> connector_id,
-                       const OperationalStatusEnum new_status)> change_effective_availability_callback;
+    std::function<void(const std::optional<int32_t> connector_id, const OperationalStatusEnum new_status)>
+        change_effective_availability_callback;
 
     /// \brief Callback to persist an operational state change.
     /// If connector_id is empty, then the EVSE itself underwent a state transition.
-    std::function<void(const std::optional<int32_t> connector_id,
-                       const OperationalStatusEnum new_status)> persist_availability_callback;
+    std::function<void(const std::optional<int32_t> connector_id, const OperationalStatusEnum new_status)>
+        persist_availability_callback;
 
     /// \brief gets the active import energy meter value from meter_value, normalized to Wh.
     std::optional<float> get_active_import_register_meter_value();
@@ -78,10 +78,10 @@ public:
          const std::function<void(const MeterValue& meter_value, const Transaction& transaction, const int32_t seq_no,
                                   const std::optional<int32_t> reservation_id)>& transaction_meter_value_req,
          const std::function<void()> pause_charging_callback,
-         const std::function<void(const std::optional<int32_t> connector_id,
-                                  const OperationalStatusEnum new_status)> change_effective_availability_callback,
-         const std::function<void(const std::optional<int32_t> connector_id,
-                                  const OperationalStatusEnum new_status)> persist_availability_callback);
+         const std::function<void(const std::optional<int32_t> connector_id, const OperationalStatusEnum new_status)>
+             change_effective_availability_callback,
+         const std::function<void(const std::optional<int32_t> connector_id, const OperationalStatusEnum new_status)>
+             persist_availability_callback);
 
     /// \brief Returns an OCPP2.0.1 EVSE type
     /// \return
@@ -180,10 +180,8 @@ public:
     /// \param new_status The new operative status to switch to, empty if it should remain the same
     /// \param cs_status The effective status of the charging station
     /// \param persist Whether the updated state should be persisted in the database or not
-    void set_operative_status(std::optional<int32_t> connector_id,
-                              std::optional<OperationalStatusEnum> new_status,
-                              OperationalStatusEnum cs_status,
-                              bool persist);
+    void set_operative_status(std::optional<int32_t> connector_id, std::optional<OperationalStatusEnum> new_status,
+                              OperationalStatusEnum cs_status, bool persist);
 };
 
 } // namespace v201

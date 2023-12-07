@@ -89,9 +89,9 @@ struct Callbacks {
     /// The callback executes the state transition on the charging station (e.g. enabling/disabling EVSEs)
     /// It should not persist anything - this must be done in persist_availability_setting_callback.
     ///
-    std::function<void(const std::optional<int32_t> evse_id,
-                       const std::optional<int32_t> connector_id,
-                       const OperationalStatusEnum new_status)> change_effective_availability_callback;
+    std::function<void(const std::optional<int32_t> evse_id, const std::optional<int32_t> connector_id,
+                       const OperationalStatusEnum new_status)>
+        change_effective_availability_callback;
 
     ///
     /// \brief Called when libocpp wants to save a set availability status, such that it persists across a reboot.
@@ -105,9 +105,9 @@ struct Callbacks {
     /// e.g. when a connector is enabled, but the EVSE as a whole is disabled.
     /// To change the effective state of a component, libocpp will call change_effective_availability_callback instead.
     ///
-    std::function<void(const std::optional<int32_t> evse_id,
-                       const std::optional<int32_t> connector_id,
-                       const OperationalStatusEnum new_status)> persist_availability_setting_callback;
+    std::function<void(const std::optional<int32_t> evse_id, const std::optional<int32_t> connector_id,
+                       const OperationalStatusEnum new_status)>
+        persist_availability_setting_callback;
 
     std::function<GetLogResponse(const GetLogRequest& request)> get_log_request_callback;
     std::function<UnlockConnectorResponse(const int32_t evse_id, const int32_t connecor_id)> unlock_connector_callback;
@@ -678,10 +678,8 @@ public:
     /// \param connector_id: The ID of the connector, empty if an EVSE or the CS is addressed
     /// \param new_status: The new operative status to switch to
     /// \param persist: Whether the updated state should be persisted in the database or not
-    void set_operative_status(std::optional<int32_t> evse_id,
-                              std::optional<int32_t> connector_id,
-                              OperationalStatusEnum new_status,
-                              bool persist);
+    void set_operative_status(std::optional<int32_t> evse_id, std::optional<int32_t> connector_id,
+                              OperationalStatusEnum new_status, bool persist);
 };
 
 } // namespace v201

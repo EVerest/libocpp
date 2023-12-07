@@ -32,10 +32,11 @@ std::string connector_event_to_string(ConnectorEvent e) {
 
 } // namespace conversions
 
-Connector::Connector(const int32_t connector_id,
-                     const std::function<void(const ConnectorStatusEnum& status)>& status_notification_callback,
-                     const std::function<void(const OperationalStatusEnum new_status)> change_effective_availability_callback,
-                     const std::function<void(const OperationalStatusEnum new_status)> persist_availability_callback) :
+Connector::Connector(
+    const int32_t connector_id,
+    const std::function<void(const ConnectorStatusEnum& status)>& status_notification_callback,
+    const std::function<void(const OperationalStatusEnum new_status)> change_effective_availability_callback,
+    const std::function<void(const OperationalStatusEnum new_status)> persist_availability_callback) :
     connector_id(connector_id),
     enabled(true),
     reserved(false),
@@ -69,7 +70,7 @@ ConnectorStatusEnum Connector::determine_effective_status(OperationalStatusEnum 
 
 void Connector::submit_event(ConnectorEvent event, OperationalStatusEnum evse_status) {
     std::lock_guard<std::recursive_mutex> lk(this->state_mutex);
-    switch(event) {
+    switch (event) {
     case ConnectorEvent::PlugIn:
         this->plugged_in = true;
         break;
@@ -107,25 +108,22 @@ void Connector::set_effective_status(ConnectorStatusEnum new_effective_status) {
     if (changed) {
         this->status_notification_callback(new_effective_status);
     }
-
 }
 
 static OperationalStatusEnum to_operative(ConnectorStatusEnum connector_status) {
-    if (connector_status == ConnectorStatusEnum::Unavailable
-        || connector_status == ConnectorStatusEnum::Faulted) {
+    if (connector_status == ConnectorStatusEnum::Unavailable || connector_status == ConnectorStatusEnum::Faulted) {
         return OperationalStatusEnum::Inoperative;
     } else {
         return OperationalStatusEnum::Operative;
     }
 }
 
-void Connector::set_operative_status(std::optional<OperationalStatusEnum> new_status,
-                                     OperationalStatusEnum evse_status,
+void Connector::set_operative_status(std::optional<OperationalStatusEnum> new_status, OperationalStatusEnum evse_status,
                                      bool persist) {
     std::lock_guard<std::recursive_mutex> lk(this->state_mutex);
 
-    OperationalStatusEnum old_op_status = this->enabled ? OperationalStatusEnum::Operative
-                                                        : OperationalStatusEnum::Inoperative;
+    OperationalStatusEnum old_op_status =
+        this->enabled ? OperationalStatusEnum::Operative : OperationalStatusEnum::Inoperative;
     OperationalStatusEnum old_eff_status = to_operative(this->get_effective_status());
 
     if (new_status.has_value()) {
@@ -133,8 +131,8 @@ void Connector::set_operative_status(std::optional<OperationalStatusEnum> new_st
     }
     this->set_effective_status(this->determine_effective_status(evse_status));
 
-    OperationalStatusEnum new_op_status = this->enabled ? OperationalStatusEnum::Operative
-                                                        : OperationalStatusEnum::Inoperative;
+    OperationalStatusEnum new_op_status =
+        this->enabled ? OperationalStatusEnum::Operative : OperationalStatusEnum::Inoperative;
     OperationalStatusEnum new_eff_status = to_operative(this->get_effective_status());
 
     if (old_op_status != new_op_status) {

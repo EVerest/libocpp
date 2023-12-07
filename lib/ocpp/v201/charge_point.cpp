@@ -89,9 +89,9 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
         // operational status for this evse
         this->database_handler->insert_availability(evse_id, std::nullopt, OperationalStatusEnum::Operative, false);
         // used by evse to trigger StatusNotification.req
-        auto status_notification_callback =
-            [this, evse_id_](const int32_t connector_id,const ConnectorStatusEnum& status){
-                if (this->registration_status == RegistrationStatusEnum::Accepted) {
+        auto status_notification_callback = [this, evse_id_](const int32_t connector_id,
+                                                             const ConnectorStatusEnum& status) {
+            if (this->registration_status == RegistrationStatusEnum::Accepted) {
                 this->status_notification_req(evse_id_, connector_id, status);
             }
         };
@@ -129,29 +129,21 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
 
         auto pause_charging_callback = [this, evse_id_]() { this->callbacks.pause_charging_callback(evse_id_); };
 
-        auto change_effective_availability_callback =
-            [this, evse_id_] (const std::optional<int32_t> connector_id, const OperationalStatusEnum new_status){
-                this->callbacks.change_effective_availability_callback(evse_id_, connector_id, new_status);
-            };
+        auto change_effective_availability_callback = [this, evse_id_](const std::optional<int32_t> connector_id,
+                                                                       const OperationalStatusEnum new_status) {
+            this->callbacks.change_effective_availability_callback(evse_id_, connector_id, new_status);
+        };
 
-        auto persist_availability_callback =
-            [this, evse_id_] (const std::optional<int32_t> connector_id, const OperationalStatusEnum new_status){
-                this->callbacks.persist_availability_setting_callback(evse_id_, connector_id, new_status);
-            };
+        auto persist_availability_callback = [this, evse_id_](const std::optional<int32_t> connector_id,
+                                                              const OperationalStatusEnum new_status) {
+            this->callbacks.persist_availability_setting_callback(evse_id_, connector_id, new_status);
+        };
 
-        this->evses.insert(
-            std::make_pair(evse_id,
-                           std::make_unique<Evse>(
-                               evse_id,
-                               number_of_connectors,
-                               *this->device_model,
-                               this->database_handler,
-                               status_notification_callback,
-                               transaction_meter_value_callback,
-                               pause_charging_callback,
-                               change_effective_availability_callback,
-                               persist_availability_callback)
-                           ));
+        this->evses.insert(std::make_pair(
+            evse_id, std::make_unique<Evse>(evse_id, number_of_connectors, *this->device_model, this->database_handler,
+                                            status_notification_callback, transaction_meter_value_callback,
+                                            pause_charging_callback, change_effective_availability_callback,
+                                            persist_availability_callback)));
 
         for (int32_t connector_id = 1; connector_id <= number_of_connectors; connector_id++) {
             // operational status for this connector
@@ -1265,8 +1257,8 @@ bool ChargePoint::is_already_in_state(const ChangeAvailabilityRequest& request) 
         return (this->operative_status == request.operationalStatus);
     }
     // We're addressing either an EVSE or a connector within, check that the operational state there matches
-    return (request.operationalStatus == this->evses.at(request.evse.value().id)
-                                             ->get_operative_status(request.evse.value().connectorId));
+    return (request.operationalStatus ==
+            this->evses.at(request.evse.value().id)->get_operative_status(request.evse.value().connectorId));
 }
 
 bool ChargePoint::is_valid_evse(const EVSE& evse) {
@@ -1284,7 +1276,8 @@ void ChargePoint::handle_scheduled_change_availability_requests(const int32_t ev
             EVLOG_info << "Changing availability of evse:" << evse_id;
 
             if (req.evse.has_value()) {
-                this->set_operative_status(req.evse.value().id, req.evse.value().connectorId, req.operationalStatus, persist);
+                this->set_operative_status(req.evse.value().id, req.evse.value().connectorId, req.operationalStatus,
+                                           persist);
             } else {
                 this->set_operative_status({}, {}, req.operationalStatus, persist);
             }
@@ -1462,8 +1455,8 @@ void ChargePoint::set_evse_connectors_unavailable(const std::unique_ptr<Evse>& e
             should_persist = true;
         }
 
-        evse->set_operative_status(static_cast<int32_t>(i), OperationalStatusEnum::Inoperative,
-                                   this->operative_status, persist);
+        evse->set_operative_status(static_cast<int32_t>(i), OperationalStatusEnum::Inoperative, this->operative_status,
+                                   persist);
 
         this->set_operative_status(evse->get_evse_info().id, i, OperationalStatusEnum::Inoperative, should_persist);
     }
@@ -2922,10 +2915,8 @@ void ChargePoint::scheduled_check_v2g_certificate_expiration() {
             .value_or(12 * 60 * 60)));
 }
 
-void ChargePoint::set_operative_status(std::optional<int32_t> evse_id,
-                                       std::optional<int32_t> connector_id,
-                                       OperationalStatusEnum new_status,
-                                       bool persist) {
+void ChargePoint::set_operative_status(std::optional<int32_t> evse_id, std::optional<int32_t> connector_id,
+                                       OperationalStatusEnum new_status, bool persist) {
     OperationalStatusEnum old_op_status = this->operative_status;
     if (!evse_id.has_value()) {
         // The whole CS is targeted
@@ -2933,7 +2924,7 @@ void ChargePoint::set_operative_status(std::optional<int32_t> evse_id,
     }
 
     // Update the effective status of all EVSEs
-    for (auto &[id, evse] : this->evses) {
+    for (auto& [id, evse] : this->evses) {
         if (evse != nullptr) {
             if (evse_id.has_value() && evse_id.value() == id) {
                 // The EVSE is targeted, set operative status on it
@@ -2956,7 +2947,7 @@ void ChargePoint::set_operative_status(std::optional<int32_t> evse_id,
 
 void ChargePoint::notify_user_if_all_connectors_unavailable() {
     // Check that all connectors on all EVSEs are inoperative
-    for (auto &[evse_id, evse] : this->evses) {
+    for (auto& [evse_id, evse] : this->evses) {
         if (evse != nullptr) {
             if (!evse->all_connectors_inoperative()) {
                 // Check failed, stop here
