@@ -20,6 +20,7 @@ namespace v201 {
 
 const auto DEFAULT_BOOT_NOTIFICATION_RETRY_INTERVAL = std::chrono::seconds(30);
 const auto WEBSOCKET_INIT_DELAY = std::chrono::seconds(2);
+const auto DEFAULT_MESSAGE_QUEUE_SIZE_THRESHOLD = 2E5;
 
 bool Callbacks::all_callbacks_valid() const {
     return this->is_reset_allowed_callback != nullptr and this->reset_callback != nullptr and
@@ -143,8 +144,13 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
 
     this->message_queue = std::make_unique<ocpp::MessageQueue<v201::MessageType>>(
         [this](json message) -> bool { return this->websocket->send(message.dump()); },
-        this->device_model->get_value<int>(ControllerComponentVariables::MessageAttempts),
-        this->device_model->get_value<int>(ControllerComponentVariables::MessageAttemptInterval),
+        MessageQueueConfig{
+            this->device_model->get_value<int>(ControllerComponentVariables::MessageAttempts),
+            this->device_model->get_value<int>(ControllerComponentVariables::MessageAttemptInterval),
+            this->device_model->get_optional_value<int>(ControllerComponentVariables::MessageQueueSizeThreshold)
+                .value_or(DEFAULT_MESSAGE_QUEUE_SIZE_THRESHOLD),
+            this->device_model->get_optional_value<bool>(ControllerComponentVariables::QueueAllMessages)
+                .value_or(false)},
         this->database_handler);
 }
 
@@ -2783,31 +2789,25 @@ void ChargePoint::handle_customer_information_req(Call<CustomerInformationReques
 void ChargePoint::handle_data_transfer_req(Call<DataTransferRequest> call) {
     const auto msg = call.msg;
     DataTransferResponse response;
-    const auto vendor_id = msg.vendorId.get();
-    const auto message_id = msg.messageId.value_or(CiString<50>()).get();
-    {
-        std::lock_guard<std::mutex> lock(data_transfer_callbacks_mutex);
-        if (this->data_transfer_callbacks.count(vendor_id) == 0) {
-            response.status = ocpp::v201::DataTransferStatusEnum::UnknownVendorId;
-        } else if (this->data_transfer_callbacks.count(vendor_id) and
-                   this->data_transfer_callbacks[vendor_id].count(message_id) == 0) {
-            response.status = ocpp::v201::DataTransferStatusEnum::UnknownMessageId;
-        } else {
-            // there is a callback registered for this vendorId and messageId
-            response = this->data_transfer_callbacks[vendor_id][message_id](msg.data);
-        }
+
+    if (this->callbacks.data_transfer_callback.has_value()) {
+        response = this->callbacks.data_transfer_callback.value()(call.msg);
+    } else {
+        response.status = DataTransferStatusEnum::UnknownVendorId;
+        EVLOG_warning << "Received a DataTransferRequest but no data transfer callback was registered";
     }
 
     ocpp::CallResult<DataTransferResponse> call_result(response, call.uniqueId);
     this->send<DataTransferResponse>(call_result);
 }
 
-DataTransferResponse ChargePoint::data_transfer_req(const CiString<255>& vendorId, const CiString<50>& messageId,
-                                                    const std::string& data) {
+DataTransferResponse ChargePoint::data_transfer_req(const CiString<255>& vendorId,
+                                                    const std::optional<CiString<50>>& messageId,
+                                                    const std::optional<std::string>& data) {
     DataTransferRequest req;
     req.vendorId = vendorId;
     req.messageId = messageId;
-    req.data.emplace(data);
+    req.data = data;
 
     DataTransferResponse response;
     ocpp::Call<DataTransferRequest> call(req, this->message_queue->createMessageId());
