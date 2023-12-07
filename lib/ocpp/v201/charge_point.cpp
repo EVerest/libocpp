@@ -1369,6 +1369,20 @@ void ChargePoint::handle_variable_changed(const SetVariableData& set_variable_da
         this->websocket->set_connection_options(connection_options);
     }
 
+    if (component_variable == ControllerComponentVariables::MessageAttemptInterval) {
+        if (component_variable.variable.has_value()) {
+            this->message_queue->update_transaction_message_retry_interval(
+                this->device_model->get_value<int>(ControllerComponentVariables::MessageAttemptInterval));
+        }
+    }
+
+    if (component_variable == ControllerComponentVariables::MessageAttempts) {
+        if (component_variable.variable.has_value()) {
+            this->message_queue->update_transaction_message_attempts(
+                this->device_model->get_value<int>(ControllerComponentVariables::MessageAttempts));
+        }
+    }
+
     // TODO(piet): other special handling of changed variables can be added here...
 }
 
