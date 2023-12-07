@@ -463,7 +463,8 @@ public:
         } else {
             // all other messages are allowed to "jump the queue" to improve user experience
             // TODO: decide if we only want to allow this for a subset of messages
-            if (!this->paused || this->config.queue_all_messages || control_message->messageType == M::BootNotification) {
+            if (!this->paused || this->config.queue_all_messages ||
+                control_message->messageType == M::BootNotification) {
                 this->add_to_normal_message_queue(control_message);
             }
         }
