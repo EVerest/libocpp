@@ -88,6 +88,8 @@ struct Callbacks {
     ///
     /// The callback executes the state transition on the charging station (e.g. enabling/disabling EVSEs)
     /// It should not persist anything - this must be done in persist_availability_setting_callback.
+    /// libocpp will call this callback for every component whose state changed - for example,
+    /// if an EVSE is disabled, the callback will be called once for the EVSE, and once for each disabled connector.
     ///
     std::function<void(const std::optional<int32_t> evse_id, const std::optional<int32_t> connector_id,
                        const OperationalStatusEnum new_status)>
