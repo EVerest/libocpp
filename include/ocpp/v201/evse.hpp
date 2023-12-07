@@ -54,8 +54,10 @@ private:
     AverageMeterValues aligned_data_updated;
     AverageMeterValues aligned_data_tx_end;
 
-    /// \brief Whether the EVSE is enabled or not (e.g. due to OCPP commands)
+    /// \brief The operational status setting of the EVSE, as set by the CSMS and libocpp commands.
+    /// Note that this might not match the actual state of the EVSE, e.g. if the CS is inoperative.
     OperationalStatusEnum operative_status;
+    /// \brief The actual state of the EVSE, dependent on both the operative status and the CS's operative status.
     OperationalStatusEnum effective_status;
 
     /// \brief Determine the new effective state of the EVSE
@@ -175,11 +177,11 @@ public:
     /// \brief check if all connectors are effectively Inoperative.
     bool all_connectors_inoperative();
 
-    /// \brief Switches the operative status of the EVSE or a connector, recomputes effective statuses
-    /// \param connector_id The ID of the connector, empty if the EVSE is addressed
-    /// \param new_status The new operative status to switch to, empty if it should remain the same
+    /// \brief Switches the operative status of the EVSE or a connector and recomputes effective statuses
+    /// \param connector_id The ID of the connector, empty if the EVSE itself is addressed
+    /// \param new_status The operative status to switch to, empty if we only want to recompute the effective status
     /// \param cs_status The effective status of the charging station
-    /// \param persist Whether the updated state should be persisted in the database or not
+    /// \param persist True the updated operative state should be persisted
     void set_operative_status(std::optional<int32_t> connector_id, std::optional<OperationalStatusEnum> new_status,
                               OperationalStatusEnum cs_status, bool persist);
 };

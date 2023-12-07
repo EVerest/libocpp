@@ -214,8 +214,7 @@ private:
     int network_configuration_priority;
     bool disable_automatic_websocket_reconnects;
 
-    /// \brief The independent availability status of the whole CS, set via OCPP or libocpp calls
-    /// This status is persisted in the database
+    /// \brief The availability status of the whole CS, set via OCPP or libocpp calls
     OperationalStatusEnum operative_status;
 
     // store the connector status
@@ -673,11 +672,11 @@ public:
     DataTransferResponse data_transfer_req(const CiString<255>& vendorId, const std::optional<CiString<50>>& messageId,
                                            const std::optional<std::string>& data);
 
-    /// \brief Switches the operative status of the CS, an EVSE, or a connector
+    /// \brief Switches the operative status of the CS, an EVSE, or a connector, and recomputes effective statuses
     /// \param evse_id: The ID of the EVSE, empty if the CS is addressed
     /// \param connector_id: The ID of the connector, empty if an EVSE or the CS is addressed
     /// \param new_status: The new operative status to switch to
-    /// \param persist: Whether the updated state should be persisted in the database or not
+    /// \param persist: True if the updated state should be persisted in the database
     void set_operative_status(std::optional<int32_t> evse_id, std::optional<int32_t> connector_id,
                               OperationalStatusEnum new_status, bool persist);
 };

@@ -33,26 +33,34 @@ private:
 
     /// \brief Protects all fields describing the state (or effective state) of the connector
     std::recursive_mutex state_mutex;
+    /// \brief Matches the connector's operative status setting, as set by the CSMS or libocpp commands.
+    /// Note: this might not match the actual state of the connector, e.g. because the EVSE or CS is inoperative.
     bool enabled;
+    /// \brief True if a reservation is active on this connector
     bool reserved;
+    /// \brief True if the connector is occupied (an EV is plugged in)
     bool plugged_in;
+    /// \brief True if an error is active on this connector (e.g. an electrical fault)
     bool faulted;
+    /// \brief The actual status of the connector, depending on the enabled, reserved, plugged_in, and faulted booleans
+    ///  as well as the effective status (Operative/Inoperative) of the EVSE and CS.
     ConnectorStatusEnum effective_status;
 
+    /// \brief Sends a status update to the CSMS about a change in effective status of this connector.
     std::function<void(const ConnectorStatusEnum& status)> status_notification_callback;
 
-    /// \brief Callback to execute a desired effective operational state change on the charging station.
+    /// \brief Callback to execute an effective status change (e.g. actually enabling/disabling connectors)
     std::function<void(const OperationalStatusEnum new_status)> change_effective_availability_callback;
 
-    /// \brief Callback to persist an operational state change.
+    /// \brief Callback to persist an operational state change in the database
     std::function<void(const OperationalStatusEnum new_status)> persist_availability_callback;
 
-    /// \brief Determine the new effective state of the connector
+    /// \brief Determines the current effective state of the connector
     /// \param evse_status: The effective state of the EVSE
     /// \return ConnectorStatusEnum
     ConnectorStatusEnum determine_effective_status(OperationalStatusEnum evse_status);
 
-    /// \brief Updates the connector's effective status and publishes a status update if needed
+    /// \brief Updates the connector's effective status and publishes a status update if it changed
     void set_effective_status(ConnectorStatusEnum new_effective_status);
 
 public:
@@ -71,15 +79,15 @@ public:
     /// \brief Get the operative status of the connector (NOT the same as the effective status!)
     OperationalStatusEnum get_operative_status();
 
-    /// \brief Submits the given \p event to the state machine controller
+    /// \brief Adjust the state of the connector according to the \p event that was submitted.
     /// \param event
     /// \param evse_status: The effective state of the EVSE
     void submit_event(ConnectorEvent event, OperationalStatusEnum evse_status);
 
-    /// \brief Switches the operative status of the connector and recomputes the effective status
-    /// \param new_status: The new operative status to switch to, empty if it should remain the same
+    /// \brief Switches the operative status of the connector and recomputes its effective status
+    /// \param new_status: The operative status to switch to, empty if we only want to recompute the effective status
     /// \param evse_status: The effective status of the EVSE
-    /// \param persist: Whether the updated state should be persisted in the database or not
+    /// \param persist: True if the updated operative status setting should be persisted
     void set_operative_status(std::optional<OperationalStatusEnum> new_status, OperationalStatusEnum evse_status,
                               bool persist);
 };
