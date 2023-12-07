@@ -1,5 +1,23 @@
 [
     {
+        "name": "ChargingStatusIndicator",
+        "variables": {
+            "ChargingStatusIndicatorActive": {
+                "variable_name": "Active",
+                "attributes": {
+                    "Actual": false
+                }
+            },
+            "ChargingStatusIndicatorColor": {
+                "variable_name": "Color",
+                "attributes": {
+                    "Actual": "FFFF00"
+                }
+            }
+        }
+    },
+
+    {
         "name": "Connector",
         "evse_id": 1,
         "connector_id": 1,
@@ -237,11 +255,11 @@
                 }
             },
             "LogMessagesFormat": {
-            "variable_name": "LogMessagesFormat",
-            "attributes": {
-              "Actual": "log,html"
+                "variable_name": "LogMessagesFormat",
+                "attributes": {
+                    "Actual": "log,html"
+                }
             }
-          }
         }
     },
     {

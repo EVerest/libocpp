@@ -230,7 +230,9 @@ DeviceModel::get_report_data(const std::optional<ReportBaseEnum>& report_base,
                 report_data.variable = variable;
                 for (const auto& variable_attribute : variable_attributes) {
                     report_data.variableAttribute.push_back(variable_attribute);
-                    report_data.variableCharacteristics = variable_map.at(variable).characteristics;
+
+                    //characteristics are optional
+                    // report_data.variableCharacteristics = variable_map.at(variable).characteristics;
                 }
                 EVLOG_info << "var: " << variable;
             }
