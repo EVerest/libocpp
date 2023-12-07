@@ -15,14 +15,14 @@ namespace v201 {
 class NotifyReportRequestsSplitter {
 
 private:
-    // cppcheck-suppress unusedVar
+    // cppcheck-suppress unusedStructMember
     static const std::string MESSAGE_TYPE; // NotifyReport
     const NotifyReportRequest& original_request;
-    // cppcheck-suppress unusedVar
+    // cppcheck-suppress unusedStructMember
     size_t max_size;
     const std::function<MessageId()>& message_id_generator_callback;
     json request_json_template; // json that is used  as template for request json
-    // cppcheck-suppress unusedVar
+    // cppcheck-suppress unusedStructMember
     const size_t json_skeleton_size; // size of the json skeleton for a call json object which includes everything
                                      // except the requests' reportData and the messageId
 
