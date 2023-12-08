@@ -259,8 +259,8 @@ private:
 
     // Computes the current message timeout = interval * attempt + message timeout
     std::chrono::seconds current_message_timeout(unsigned int attempt) {
-        return std::chrono::seconds(this->config.message_timeout_seconds
-                                    + (this->config.transaction_message_retry_interval*attempt));
+        return std::chrono::seconds(this->config.message_timeout_seconds +
+                                    (this->config.transaction_message_retry_interval * attempt));
     }
 
 public:
@@ -623,8 +623,8 @@ public:
         if (this->in_flight->isTransactionMessage()) {
             if (this->in_flight->message_attempts < this->config.transaction_message_attempts) {
                 EVLOG_warning << "Message is transaction related and will therefore be sent again";
-                // TODO(Valentin): regenerate UUID only on CallError, but not on timeout?
-                //this->in_flight->message[MESSAGE_ID] = this->createMessageId();
+                // TODO(Valentin): When are we expected to regenerate the UUID here?
+                // this->in_flight->message[MESSAGE_ID] = this->createMessageId();
                 if (this->config.transaction_message_retry_interval > 0) {
                     // exponential backoff
                     this->in_flight->timestamp =
