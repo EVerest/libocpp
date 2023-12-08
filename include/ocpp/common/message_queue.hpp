@@ -37,7 +37,7 @@ struct MessageQueueConfig {
 
     bool queue_all_messages; // cf. OCPP 2.0.1. "QueueAllMessages" in OCPPCommCtrlr
 
-    int message_timeout_seconds;
+    int message_timeout_seconds = 30;
 };
 
 /// \brief Contains a OCPP message in json form with additional information
