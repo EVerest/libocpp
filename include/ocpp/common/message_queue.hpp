@@ -624,8 +624,8 @@ public:
             EVLOG_warning << "Message timeout for: " << this->in_flight->messageType << " ("
                           << this->in_flight->uniqueId() << ")";
         } else {
-            EVLOG_warning << "CALLERROR for: " << this->in_flight->messageType << " ("
-                          << this->in_flight->uniqueId() << ")";
+            EVLOG_warning << "CALLERROR for: " << this->in_flight->messageType << " (" << this->in_flight->uniqueId()
+                          << ")";
         }
 
         if (this->in_flight->isTransactionMessage()) {
