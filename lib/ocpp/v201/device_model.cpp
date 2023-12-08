@@ -277,10 +277,8 @@ DeviceModel::get_custom_report_data(const std::optional<std::vector<ComponentVar
                 report_data.variable = variable;
                 for (const auto& variable_attribute : variable_attributes) {
                     report_data.variableAttribute.push_back(variable_attribute);
-
-                    // characteristics are optional
-                    //  report_data.variableCharacteristics = variable_map.at(variable).characteristics;
-                    // }
+                    report_data.variableCharacteristics = variable_map.at(variable).characteristics;
+                    }
                 }
                 if (!report_data.variableAttribute.empty()) {
                     report_data_vec.push_back(report_data);

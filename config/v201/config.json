@@ -612,7 +612,7 @@
             "BytesPerMessageGetReport": {
                 "variable_name": "BytesPerMessage",
                 "attributes": {
-                    "Actual": 42
+                    "Actual": 250
                 },
                 "instance": "GetReport"
             },
@@ -633,7 +633,7 @@
             "ItemsPerMessageGetReport": {
                 "variable_name": "ItemsPerMessage",
                 "attributes": {
-                    "Actual": 42
+                    "Actual": 4
                 },
                 "instance": "GetReport"
             },
@@ -646,6 +646,20 @@
             },
             "ItemsPerMessageSetVariables": {
                 "variable_name": "ItemsPerMessage",
+                "attributes": {
+                    "Actual": 42
+                },
+                "instance": "SetVariables"
+            },
+            "ReportingValueSize": {
+                "variable_name": "ReportingValueSize",
+                "attributes": {
+                    "Actual": 42
+                },
+                "instance": "SetVariables"
+            },
+            "ValueSize": {
+                "variable_name": "ValueSize",
                 "attributes": {
                     "Actual": 42
                 },

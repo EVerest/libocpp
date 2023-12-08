@@ -909,7 +909,7 @@ void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& messa
         this->handle_get_base_report_req(json_message);
         break;
     case MessageType::GetReport:
-        this->handle_get_report_req(json_message);
+        this->handle_get_report_req(message);
         break;
     case MessageType::Reset:
         this->handle_reset_req(json_message);
@@ -2047,9 +2047,30 @@ void ChargePoint::handle_get_base_report_req(Call<GetBaseReportRequest> call) {
     }
 }
 
-void ChargePoint::handle_get_report_req(Call<GetReportRequest> call) {
+void ChargePoint::handle_get_report_req(const EnhancedMessage<v201::MessageType>& message) {
+    Call<GetReportRequest> call = message.call_message;
     const auto msg = call.msg;
 
+    const auto max_items_per_message =
+        this->device_model->get_value<int>(ControllerComponentVariables::ItemsPerMessageGetReport);
+    const auto max_bytes_per_message =
+        this->device_model->get_value<int>(ControllerComponentVariables::BytesPerMessageGetReport);
+
+    // B08.FR.17
+    if (msg.componentVariable.has_value() and msg.componentVariable->size() > max_items_per_message) {
+        // send a CALLERROR
+        const auto call_error = CallError(call.uniqueId, "OccurenceConstraintViolation", "", json({}));
+        this->send(call_error);
+        return;
+    }
+
+    // B08.FR.18
+    if (message.message_size > max_bytes_per_message) {
+        // send a CALLERROR
+        const auto call_error = CallError(call.uniqueId, "FormatViolation", "", json({}));
+        this->send(call_error);
+        return;
+    }
     GetReportResponse response;
 
     // TODO(piet): Propably split this up into several NotifyReport.req depending on ItemsPerMessage /
