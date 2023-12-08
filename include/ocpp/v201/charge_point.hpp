@@ -208,7 +208,9 @@ private:
     // states
     RegistrationStatusEnum registration_status;
     FirmwareStatusEnum firmware_status;
-    int32_t firmware_status_id;
+    // The request ID in the last firmware update status received
+    std::optional<int32_t> firmware_status_id;
+    // The last firmware status which will be posted before the firmware is installed.
     FirmwareStatusEnum firmware_status_before_installing = FirmwareStatusEnum::SignatureVerified;
     UploadLogStatusEnum upload_log_status;
     int32_t upload_log_status_id;
@@ -251,6 +253,8 @@ private:
 
     /// \brief Handler for automatic or explicit OCSP cache updates
     OcspUpdater ocsp_updater;
+    /// \brief optional delay to resumption of message queue after reconnecting to the CSMS
+    std::chrono::seconds message_queue_resume_delay = std::chrono::seconds(0);
 
     bool send(CallError call_error);
 
@@ -681,6 +685,12 @@ public:
     /// \param persist: True if the updated state should be persisted in the database
     void set_operative_status(std::optional<int32_t> evse_id, std::optional<int32_t> connector_id,
                               OperationalStatusEnum new_status, bool persist);
+
+    /// \brief Delay draining the message queue after reconnecting, so the CSMS can perform post-reconnect checks first
+    /// \param delay The delay period (seconds)
+    void set_message_queue_resume_delay(std::chrono::seconds delay) {
+        this->message_queue_resume_delay = delay;
+    }
 };
 
 } // namespace v201
