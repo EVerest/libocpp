@@ -150,7 +150,8 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
             this->device_model->get_optional_value<int>(ControllerComponentVariables::MessageQueueSizeThreshold)
                 .value_or(DEFAULT_MESSAGE_QUEUE_SIZE_THRESHOLD),
             this->device_model->get_optional_value<bool>(ControllerComponentVariables::QueueAllMessages)
-                .value_or(false)},
+                .value_or(false),
+            this->device_model->get_value<int>(ControllerComponentVariables::MessageTimeout)},
         this->database_handler);
 }
 
@@ -1380,6 +1381,13 @@ void ChargePoint::handle_variable_changed(const SetVariableData& set_variable_da
         if (component_variable.variable.has_value()) {
             this->message_queue->update_transaction_message_attempts(
                 this->device_model->get_value<int>(ControllerComponentVariables::MessageAttempts));
+        }
+    }
+
+    if (component_variable == ControllerComponentVariables::MessageTimeout) {
+        if (component_variable.variable.has_value()) {
+            this->message_queue->update_message_timeout(
+                this->device_model->get_value<int>(ControllerComponentVariables::MessageTimeout));
         }
     }
 

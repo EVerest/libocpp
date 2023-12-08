@@ -27,8 +27,6 @@
 
 namespace ocpp {
 
-const auto STANDARD_MESSAGE_TIMEOUT = std::chrono::seconds(30);
-
 struct MessageQueueConfig {
     int transaction_message_attempts;
     int transaction_message_retry_interval; // seconds
@@ -38,6 +36,8 @@ struct MessageQueueConfig {
     int queues_total_size_threshold;
 
     bool queue_all_messages; // cf. OCPP 2.0.1. "QueueAllMessages" in OCPPCommCtrlr
+
+    int message_timeout_seconds;
 };
 
 /// \brief Contains a OCPP message in json form with additional information
@@ -257,6 +257,12 @@ private:
         }
     }
 
+    // Computes the current message timeout = interval * attempt + message timeout
+    std::chrono::seconds current_message_timeout(unsigned int attempt) {
+        return std::chrono::seconds(this->config.message_timeout_seconds
+                                    + (this->config.transaction_message_retry_interval*attempt));
+    }
+
 public:
     /// \brief Creates a new MessageQueue object with the provided \p configuration and \p send_callback
     MessageQueue(const std::function<bool(json message)>& send_callback, const MessageQueueConfig& config,
@@ -392,7 +398,7 @@ public:
                 } else {
                     EVLOG_debug << "Successfully sent message. UID: " << this->in_flight->uniqueId();
                     this->in_flight_timeout_timer.timeout([this]() { this->handle_timeout_or_callerror(std::nullopt); },
-                                                          STANDARD_MESSAGE_TIMEOUT);
+                                                          this->current_message_timeout(message->message_attempts));
                     switch (queue_type) {
                     case QueueType::Normal:
                         this->normal_message_queue.pop();
@@ -617,7 +623,8 @@ public:
         if (this->in_flight->isTransactionMessage()) {
             if (this->in_flight->message_attempts < this->config.transaction_message_attempts) {
                 EVLOG_warning << "Message is transaction related and will therefore be sent again";
-                this->in_flight->message[MESSAGE_ID] = this->createMessageId();
+                // TODO(Valentin): regenerate UUID only on CallError, but not on timeout?
+                //this->in_flight->message[MESSAGE_ID] = this->createMessageId();
                 if (this->config.transaction_message_retry_interval > 0) {
                     // exponential backoff
                     this->in_flight->timestamp =
@@ -744,6 +751,11 @@ public:
     /// \brief Set transaction_message_retry_interval to given \p transaction_message_retry_interval in seconds
     void update_transaction_message_retry_interval(const int transaction_message_retry_interval) {
         this->config.transaction_message_retry_interval = transaction_message_retry_interval;
+    }
+
+    /// \brief Set message_timeout to given \p timeout (in seconds)
+    void update_message_timeout(const int timeout) {
+        this->config.message_timeout_seconds = timeout;
     }
 
     /// \brief Creates a unique message ID
