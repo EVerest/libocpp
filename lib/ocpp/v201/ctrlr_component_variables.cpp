@@ -151,6 +151,13 @@ const RequiredComponentVariable& LogMessagesFormat = {
         "LogMessagesFormat",
     }),
 };
+const ComponentVariable& NotSupportedCriteria = {
+    ControllerComponents::InternalCtrlr,
+    std::nullopt,
+    std::optional<Variable>({
+        "NotSupportedCriteria",
+    }),
+};
 const ComponentVariable& SupportedChargingProfilePurposeTypes = {
     ControllerComponents::InternalCtrlr,
     std::nullopt,

@@ -99,7 +99,7 @@
     },
     {
         "name": "EVSE",
-        "evse_id": 1,
+        "evse_id": 2,
         "variables": {
             "EVSEAvailabilityState": {
                 "variable_name": "AvailabilityState",
@@ -258,6 +258,12 @@
                 "variable_name": "LogMessagesFormat",
                 "attributes": {
                     "Actual": "log,html"
+                }
+            },
+            "NotSupportedCriteria": {
+                "variable_name": "NotSupportedCriteria",
+                "attributes": {
+                    "Actual": ""
                 }
             }
         }

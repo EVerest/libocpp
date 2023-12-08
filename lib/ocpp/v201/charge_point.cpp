@@ -2050,6 +2050,8 @@ void ChargePoint::handle_get_base_report_req(Call<GetBaseReportRequest> call) {
 void ChargePoint::handle_get_report_req(const EnhancedMessage<v201::MessageType>& message) {
     Call<GetReportRequest> call = message.call_message;
     const auto msg = call.msg;
+    std::vector<ReportData> report_data;
+    GetReportResponse response;
 
     const auto max_items_per_message =
         this->device_model->get_value<int>(ControllerComponentVariables::ItemsPerMessageGetReport);
@@ -2071,15 +2073,34 @@ void ChargePoint::handle_get_report_req(const EnhancedMessage<v201::MessageType>
         this->send(call_error);
         return;
     }
-    GetReportResponse response;
 
-    // TODO(piet): Propably split this up into several NotifyReport.req depending on ItemsPerMessage /
-    // BytesPerMessage
-    const auto report_data = this->device_model->get_custom_report_data(msg.componentVariable, msg.componentCriteria);
-    if (report_data.empty()) {
-        response.status = GenericDeviceModelStatusEnum::EmptyResultSet;
-    } else {
-        response.status = GenericDeviceModelStatusEnum::Accepted;
+    // if a criteria is not supported then send a not supported response.
+    auto non_sup_criteria =
+        this->device_model->get_optional_value<std::string>(ControllerComponentVariables::NotSupportedCriteria);
+
+    if (non_sup_criteria.has_value() and msg.componentCriteria.has_value() and !non_sup_criteria.value().empty()) {
+        for (const auto& criteria : msg.componentCriteria.value()) {
+            const auto variable_ = conversions::component_criterion_enum_to_string(criteria);
+
+            if (non_sup_criteria.value().find(variable_) != std::string::npos) {
+                EVLOG_info << " This crieteria is not supported: " << variable_;
+                response.status = GenericDeviceModelStatusEnum::NotSupported;
+                break;
+                // TODO: maybe consider adding the reason why in statusInfo
+            }
+        }
+    }
+
+    if (response.status != GenericDeviceModelStatusEnum::NotSupported) {
+
+        // TODO(piet): Propably split this up into several NotifyReport.req depending on ItemsPerMessage /
+        // BytesPerMessage
+        report_data = this->device_model->get_custom_report_data(msg.componentVariable, msg.componentCriteria);
+        if (report_data.empty()) {
+            response.status = GenericDeviceModelStatusEnum::EmptyResultSet;
+        } else {
+            response.status = GenericDeviceModelStatusEnum::Accepted;
+        }
     }
 
     ocpp::CallResult<GetReportResponse> call_result(response, call.uniqueId);
