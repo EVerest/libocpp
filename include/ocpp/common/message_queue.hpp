@@ -618,13 +618,23 @@ public:
     /// \brief Handles a message timeout or a CALLERROR. \p enhanced_message_opt is set only in case of CALLERROR
     void handle_timeout_or_callerror(const std::optional<EnhancedMessage<M>>& enhanced_message_opt) {
         std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
-        EVLOG_warning << "Message timeout or CALLERROR for: " << this->in_flight->messageType << " ("
-                      << this->in_flight->uniqueId() << ")";
+        // We got a timeout iff enhanced_message_opt is empty. Otherwise, enhanced_message_opt contains the CallError.
+        bool timeout = !enhanced_message_opt.has_value();
+        if (timeout) {
+            EVLOG_warning << "Message timeout for: " << this->in_flight->messageType << " ("
+                          << this->in_flight->uniqueId() << ")";
+        } else {
+            EVLOG_warning << "CALLERROR for: " << this->in_flight->messageType << " ("
+                          << this->in_flight->uniqueId() << ")";
+        }
+
         if (this->in_flight->isTransactionMessage()) {
             if (this->in_flight->message_attempts < this->config.transaction_message_attempts) {
                 EVLOG_warning << "Message is transaction related and will therefore be sent again";
-                // TODO(Valentin): When are we expected to regenerate the UUID here?
-                // this->in_flight->message[MESSAGE_ID] = this->createMessageId();
+                if (!timeout) {
+                    // Reuse the message ID in the retry if we got a timeout, otherwise generate a new one.
+                    this->in_flight->message[MESSAGE_ID] = this->createMessageId();
+                }
                 if (this->config.transaction_message_retry_interval > 0) {
                     // exponential backoff
                     this->in_flight->timestamp =
