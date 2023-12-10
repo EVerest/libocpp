@@ -3203,13 +3203,19 @@ void ChargePointImpl::on_transaction_stopped(const int32_t connector, const std:
                                              const Reason& reason, ocpp::DateTime timestamp, float energy_wh_import,
                                              std::optional<CiString<20>> id_tag_end,
                                              std::optional<std::string> signed_meter_value) {
+    auto transaction = this->transaction_handler->get_transaction(connector);
+    if (transaction == nullptr) {
+        EVLOG_error << "Trying to stop a transaction that is unknown on connector: " << connector
+                    << ", with session_id: " << session_id;
+        return;
+    }
     if (signed_meter_value) {
         const auto meter_value =
             this->get_signed_meter_value(signed_meter_value.value(), ReadingContext::Transaction_End, timestamp);
-        this->transaction_handler->get_transaction(connector)->add_meter_value(meter_value);
+        transaction->add_meter_value(meter_value);
     }
     const auto stop_energy_wh = std::make_shared<StampedEnergyWh>(timestamp, energy_wh_import);
-    this->transaction_handler->get_transaction(connector)->add_stop_energy_wh(stop_energy_wh);
+    transaction->add_stop_energy_wh(stop_energy_wh);
 
     this->status->submit_event(connector, FSMEvent::TransactionStoppedAndUserActionRequired, ocpp::DateTime());
     this->stop_transaction(connector, reason, id_tag_end);
