@@ -2550,8 +2550,10 @@ IdTagInfo ChargePointImpl::authorize_id_token(CiString<20> idTag) {
     // - LocalPreAuthorize is true and CP is online
     // OR
     // - LocalAuthorizeOffline is true and CP is offline
-    if ((this->configuration->getLocalPreAuthorize() && this->websocket->is_connected()) ||
-        (this->configuration->getLocalAuthorizeOffline() && !this->websocket->is_connected())) {
+    if ((this->configuration->getLocalPreAuthorize() &&
+         (this->websocket != nullptr && this->websocket->is_connected())) ||
+        (this->configuration->getLocalAuthorizeOffline() &&
+         (this->websocket == nullptr || !this->websocket->is_connected()))) {
         if (this->configuration->getLocalAuthListEnabled()) {
             const auto auth_list_entry_opt = this->database_handler->get_local_authorization_list_entry(idTag);
             if (auth_list_entry_opt.has_value()) {
