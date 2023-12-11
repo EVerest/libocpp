@@ -14,7 +14,7 @@ find_package(everest-cmake 0.1 REQUIRED
 option(LIBOCPP_BUILD_TESTING "Run unit tests" OFF)
 option(CMAKE_RUN_CLANG_TIDY "Run clang-tidy" OFF)
 option(LIBOCPP_BUILD_EXAMPLES "Build charge_point and central_system binaries." OFF)
-option(OCPP_INSTALL "Install the library (shared data might be installed anyway)" ${EVC_MAIN_PROJECT})
+option(LIBOCPP_INSTALL "Install the library (shared data might be installed anyway)" ${EVC_MAIN_PROJECT})
 
 # dependencies
 find_package(Boost COMPONENTS program_options regex system thread REQUIRED)
@@ -25,7 +25,7 @@ if(NOT DISABLE_EDM)
     evc_setup_edm()
 
     # In EDM mode, we can't install exports (because the dependencies usually do not install their exports)
-    set(OCPP_INSTALL OFF)
+    set(LIBOCPP_INSTALL OFF)
 
     # FIXME (aw): websocketpp doesn't play well with EDM/CPM
     add_library(websocketpp::websocketpp INTERFACE IMPORTED)
@@ -51,7 +51,7 @@ add_subdirectory(config)
 
 
 # packaging
-if (OCPP_INSTALL)
+if (LIBOCPP_INSTALL)
     install(
         TARGETS ocpp
         EXPORT ocpp-targets
