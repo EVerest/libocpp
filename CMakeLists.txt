@@ -11,7 +11,7 @@ find_package(everest-cmake 0.1 REQUIRED
 )
 
 # options
-option(BUILD_TESTING "Run unit tests" OFF)
+option(LIBOCPP_BUILD_TESTING "Run unit tests" OFF)
 option(CMAKE_RUN_CLANG_TIDY "Run clang-tidy" OFF)
 option(LIBOCPP_BUILD_EXAMPLES "Build charge_point and central_system binaries." OFF)
 option(OCPP_INSTALL "Install the library (shared data might be installed anyway)" ${EVC_MAIN_PROJECT})
@@ -103,8 +103,7 @@ if(CMAKE_RUN_CLANG_TIDY)
     -export-fixes=clang-tidy-fixes.yaml)
 endif()
 
-if(BUILD_TESTING)
-    include(CTest)
+if(BUILD_TESTING_LIBOCPP)
     add_subdirectory(tests)
 endif()
 
