@@ -621,16 +621,10 @@ public:
         // We got a timeout iff enhanced_message_opt is empty. Otherwise, enhanced_message_opt contains the CallError.
         bool timeout = !enhanced_message_opt.has_value();
         if (timeout) {
-            EVLOG_warning << "Message timeout for: "
-                          << this->in_flight->messageType
-                          << " ("
-                          << this->in_flight->uniqueId()
-                          << ")";
+            EVLOG_warning << "Message timeout for: " << this->in_flight->messageType << " ("
+                          << this->in_flight->uniqueId() << ")";
         } else {
-            EVLOG_warning << "CALLERROR for: "
-                          << this->in_flight->messageType
-                          << " ("
-                          << this->in_flight->uniqueId()
+            EVLOG_warning << "CALLERROR for: " << this->in_flight->messageType << " (" << this->in_flight->uniqueId()
                           << ")";
         }
 
