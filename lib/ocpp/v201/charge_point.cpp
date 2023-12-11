@@ -1534,11 +1534,10 @@ void ChargePoint::sign_certificate_req(const ocpp::CertificateSigningUseEnum& ce
         organization =
             this->device_model->get_optional_value<std::string>(ControllerComponentVariables::OrganizationName);
         country =
-            this->device_model->get_optional_value<std::string>(ControllerComponentVariables::ISO15118CtrlrCountryName)
-                .value_or("DE");
+            this->device_model->get_optional_value<std::string>(ControllerComponentVariables::ISO15118CtrlrCountryName);
     } else {
         common =
-            this->device_model->get_optional_value<std::string>(ControllerComponentVariables::ChargeBoxSerialNumber);
+            this->device_model->get_optional_value<std::string>(ControllerComponentVariables::ISO15118CtrlrSeccId);
         organization = this->device_model->get_optional_value<std::string>(
             ControllerComponentVariables::ISO15118CtrlrOrganizationName);
         country =
