@@ -90,7 +90,6 @@ void Connector::submit_event(ConnectorEvent event, OperationalStatusEnum evse_st
         this->faulted = false;
         break;
     }
-    // TODO persist the new state if needed
     // Update the effective status of the connector
     ConnectorStatusEnum new_effective_status = this->determine_effective_status(evse_status);
     this->set_effective_status(new_effective_status);
@@ -122,8 +121,7 @@ void Connector::set_operative_status(std::optional<OperationalStatusEnum> new_st
                                      bool persist) {
     std::lock_guard<std::recursive_mutex> lk(this->state_mutex);
 
-    OperationalStatusEnum old_op_status =
-        this->enabled ? OperationalStatusEnum::Operative : OperationalStatusEnum::Inoperative;
+    OperationalStatusEnum old_op_status = this->get_operative_status();
     OperationalStatusEnum old_eff_status = to_operative(this->get_effective_status());
 
     if (new_status.has_value()) {
@@ -135,7 +133,7 @@ void Connector::set_operative_status(std::optional<OperationalStatusEnum> new_st
         this->enabled ? OperationalStatusEnum::Operative : OperationalStatusEnum::Inoperative;
     OperationalStatusEnum new_eff_status = to_operative(this->get_effective_status());
 
-    if (old_op_status != new_op_status) {
+    if (old_op_status != new_op_status && persist) {
         this->persist_availability_callback(new_op_status);
     }
     if (old_eff_status != new_eff_status) {
