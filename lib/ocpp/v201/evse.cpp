@@ -315,6 +315,13 @@ void Evse::set_operative_status(std::optional<int32_t> connector_id, std::option
     // Update the effective status of the EVSE
     this->effective_status = this->determine_effective_status(cs_status);
 
+    if (old_op_status != this->operative_status && persist) {
+        this->persist_availability_callback({}, this->effective_status);
+    }
+    if (old_eff_status != this->effective_status) {
+        this->change_effective_availability_callback({}, this->effective_status);
+    }
+
     // Update the effective status of all connectors
     for (auto& [id, connector] : this->id_connector_map) {
         if (connector != nullptr) {
@@ -326,13 +333,6 @@ void Evse::set_operative_status(std::optional<int32_t> connector_id, std::option
                 connector->set_operative_status({}, this->effective_status, false);
             }
         }
-    }
-
-    if (old_op_status != this->operative_status && persist) {
-        this->persist_availability_callback({}, this->effective_status);
-    }
-    if (old_eff_status != this->effective_status) {
-        this->change_effective_availability_callback({}, this->effective_status);
     }
 }
 

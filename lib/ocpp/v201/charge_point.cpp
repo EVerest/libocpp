@@ -2954,6 +2954,14 @@ void ChargePoint::set_operative_status(std::optional<int32_t> evse_id, std::opti
         this->operative_status = new_status;
     }
 
+    // We will trigger the callback if the operative state changed (we need to persist it if the persist flag is on)
+    if (old_op_status != this->operative_status) {
+        this->callbacks.change_effective_availability_callback({}, {}, this->operative_status);
+        if (persist) {
+            this->callbacks.persist_availability_setting_callback({}, {}, this->operative_status);
+        }
+    }
+
     // Update the effective status of all EVSEs
     for (auto& [id, evse] : this->evses) {
         if (evse != nullptr) {
@@ -2964,14 +2972,6 @@ void ChargePoint::set_operative_status(std::optional<int32_t> evse_id, std::opti
                 // The EVSE is not addressed, just propagate the effective status changes
                 evse->set_operative_status({}, {}, this->operative_status, false);
             }
-        }
-    }
-
-    // We will trigger the callback if the operative state changed (we need to persist it if the persist flag is on)
-    if (old_op_status != this->operative_status) {
-        this->callbacks.change_effective_availability_callback({}, {}, this->operative_status);
-        if (persist) {
-            this->callbacks.persist_availability_setting_callback({}, {}, this->operative_status);
         }
     }
 }
