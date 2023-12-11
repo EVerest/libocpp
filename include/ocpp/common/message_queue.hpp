@@ -621,20 +621,24 @@ public:
         // We got a timeout iff enhanced_message_opt is empty. Otherwise, enhanced_message_opt contains the CallError.
         bool timeout = !enhanced_message_opt.has_value();
         if (timeout) {
-            EVLOG_warning << "Message timeout for: " << this->in_flight->messageType << " ("
-                          << this->in_flight->uniqueId() << ")";
+            EVLOG_warning << "Message timeout for: "
+                          << this->in_flight->messageType
+                          << " ("
+                          << this->in_flight->uniqueId()
+                          << ")";
         } else {
-            EVLOG_warning << "CALLERROR for: " << this->in_flight->messageType << " (" << this->in_flight->uniqueId()
+            EVLOG_warning << "CALLERROR for: "
+                          << this->in_flight->messageType
+                          << " ("
+                          << this->in_flight->uniqueId()
                           << ")";
         }
 
         if (this->in_flight->isTransactionMessage()) {
             if (this->in_flight->message_attempts < this->config.transaction_message_attempts) {
                 EVLOG_warning << "Message is transaction related and will therefore be sent again";
-                if (!timeout) {
-                    // Reuse the message ID in the retry if we got a timeout, otherwise generate a new one.
-                    this->in_flight->message[MESSAGE_ID] = this->createMessageId();
-                }
+                // Generate a new message ID for the retry
+                this->in_flight->message[MESSAGE_ID] = this->createMessageId();
                 if (this->config.transaction_message_retry_interval > 0) {
                     // exponential backoff
                     this->in_flight->timestamp =
