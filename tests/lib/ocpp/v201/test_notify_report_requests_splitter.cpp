@@ -43,7 +43,7 @@ TEST_F(NotifyReportRequestsSplitterTest, test_create_single_request_no_report_da
     // Act: create payloads
     auto res = splitter.create_call_payloads();
 
-    // Verify: Expect singe payload; check fgields
+    // Verify: Expect single payload; check fields
     ASSERT_EQ(res.size(), 1);
     auto request = res[0];
     check_valid_call_payload(res[0]);

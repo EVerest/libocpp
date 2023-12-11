@@ -27,11 +27,13 @@ private:
                                      // except the requests' reportData and the messageId
 
 public:
-    /// \brief Splits the provided NotifyReportRequest into (potentially) several Call payloads
-    /// \returns the json messages that serialize the resulting Call<NotifyReportRequest> objects
     NotifyReportRequestsSplitter(const NotifyReportRequest& originalRequest, size_t max_size,
                                  const std::function<MessageId()>& message_id_generator_callback);
     NotifyReportRequestsSplitter() = delete;
+
+    /// \brief Splits the provided NotifyReportRequest into (potentially) several Call payloads
+    /// \returns the json messages that serialize the resulting Call<NotifyReportRequest> objects
+    std::vector<json> create_call_payloads();
 
 private:
     size_t create_request_template_json_and_return_skeleton_size();
@@ -46,9 +48,6 @@ private:
     static json create_next_report_data_json(std::vector<ocpp::v201::ReportData>::const_iterator& report_data_iterator,
                                              const std::vector<ocpp::v201::ReportData>::const_iterator& report_data_end,
                                              const size_t& remaining_size);
-
-public:
-    std::vector<json> create_call_payloads();
 };
 
 } // namespace v201
