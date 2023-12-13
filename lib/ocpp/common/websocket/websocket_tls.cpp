@@ -270,8 +270,14 @@ tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connect
         }
 
         context->set_verify_mode(boost::asio::ssl::verify_peer);
-        context->set_verify_callback(websocketpp::lib::bind(
-            &verify_csms_cn, hostname, websocketpp::lib::placeholders::_1, websocketpp::lib::placeholders::_2));
+        if (this->connection_options.verify_csms_common_name) {
+            context->set_verify_callback(websocketpp::lib::bind(
+                &verify_csms_cn, hostname, websocketpp::lib::placeholders::_1, websocketpp::lib::placeholders::_2));
+
+        } else {
+            EVLOG_warning << "Not verifying the CSMS certificates commonName with the Fully Qualified Domain Name "
+                             "(FQDN) of the server because it has been explicitly turned off via the configuration!";
+        }
         if (this->evse_security->is_ca_certificate_installed(ocpp::CaCertificateType::CSMS)) {
             EVLOG_info << "Loading ca csms bundle to verify server certificate: "
                        << this->evse_security->get_verify_file(ocpp::CaCertificateType::CSMS);
