@@ -70,10 +70,10 @@ public:
 
     // Availability management
 
-    void insert_availability(const int32_t evse_id, std::optional<int32_t> connector_id,
+    void insert_availability(const std::optional<int32_t> evse_id, std::optional<int32_t> connector_id,
                              const OperationalStatusEnum& operational_status, const bool replace);
 
-    OperationalStatusEnum get_availability(const int32_t evse_id, std::optional<int32_t> connector_id);
+    OperationalStatusEnum get_availability(const std::optional<int32_t> evse_id, std::optional<int32_t> connector_id);
 
     // Local authorization list management
 

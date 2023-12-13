@@ -40,11 +40,6 @@ private:
     std::function<void(const std::optional<int32_t> connector_id, const OperationalStatusEnum new_status)>
         change_effective_availability_callback;
 
-    /// \brief Callback to persist an operational state change.
-    /// If connector_id is empty, then the EVSE itself underwent a state transition.
-    std::function<void(const std::optional<int32_t> connector_id, const OperationalStatusEnum new_status)>
-        persist_availability_callback;
-
     /// \brief gets the active import energy meter value from meter_value, normalized to Wh.
     std::optional<float> get_active_import_register_meter_value();
 
@@ -74,16 +69,14 @@ public:
     /// \param pause_charging_callback that is called when the charging should be paused due to max energy on
     /// invalid id being exceeded
     Evse(const int32_t evse_id, const int32_t number_of_connectors, DeviceModel& device_model,
-         std::shared_ptr<DatabaseHandler> database_handler,
+         std::shared_ptr<DatabaseHandler> database_handler, OperationalStatusEnum cs_effective_status,
          const std::function<void(const int32_t connector_id, const ConnectorStatusEnum& status)>&
              status_notification_callback,
          const std::function<void(const MeterValue& meter_value, const Transaction& transaction, const int32_t seq_no,
                                   const std::optional<int32_t> reservation_id)>& transaction_meter_value_req,
          const std::function<void()> pause_charging_callback,
          const std::function<void(const std::optional<int32_t> connector_id, const OperationalStatusEnum new_status)>
-             change_effective_availability_callback,
-         const std::function<void(const std::optional<int32_t> connector_id, const OperationalStatusEnum new_status)>
-             persist_availability_callback);
+             change_effective_availability_callback);
 
     /// \brief Returns an OCPP2.0.1 EVSE type
     /// \return
@@ -182,8 +175,9 @@ public:
     /// \param new_status The operative status to switch to, empty if we only want to recompute the effective status
     /// \param cs_status The effective status of the charging station
     /// \param persist True the updated operative state should be persisted
+    /// \param is_boot True if the call is due to recomputing the effective statuses on boot
     void set_operative_status(std::optional<int32_t> connector_id, std::optional<OperationalStatusEnum> new_status,
-                              OperationalStatusEnum cs_status, bool persist);
+                              OperationalStatusEnum cs_status, bool persist, bool is_boot);
 };
 
 } // namespace v201

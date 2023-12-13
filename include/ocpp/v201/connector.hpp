@@ -4,6 +4,7 @@
 #include <functional>
 #include <mutex>
 
+#include "database_handler.hpp"
 #include <ocpp/v201/enums.hpp>
 #include <optional>
 
@@ -29,13 +30,18 @@ std::string connector_event_to_string(ConnectorEvent e);
 /// \brief Represents a Connector, thus electrical outlet on a Charging Station. Single physical Connector.
 class Connector {
 private:
+    /// \brief ID of the EVSE this connector belongs to (>0)
+    int32_t evse_id;
+    /// \brief ID of the connector itself (>0)
     int32_t connector_id;
+    /// \brief The libocpp internal database
+    std::shared_ptr<DatabaseHandler> database_handler;
 
     /// \brief Protects all fields describing the state (or effective state) of the connector
     std::recursive_mutex state_mutex;
     /// \brief Matches the connector's operative status setting, as set by the CSMS or libocpp commands.
     /// Note: this might not match the actual state of the connector, e.g. because the EVSE or CS is inoperative.
-    bool enabled;
+    OperationalStatusEnum operational;
     /// \brief True if a reservation is active on this connector
     bool reserved;
     /// \brief True if the connector is occupied (an EV is plugged in)
@@ -52,9 +58,6 @@ private:
     /// \brief Callback to execute an effective status change (e.g. actually enabling/disabling connectors)
     std::function<void(const OperationalStatusEnum new_status)> change_effective_availability_callback;
 
-    /// \brief Callback to persist an operational state change in the database
-    std::function<void(const OperationalStatusEnum new_status)> persist_availability_callback;
-
     /// \brief Determines the current effective state of the connector
     /// \param evse_status: The effective state of the EVSE
     /// \return ConnectorStatusEnum
@@ -65,12 +68,15 @@ private:
 
 public:
     /// \brief Construct a new Connector object
+    /// \param evse_id id of the EVSE the connector is ap art of
     /// \param connector_id id of the connector
-    /// \param status_notification_callback callback executed when the state of the connector changes
-    Connector(const int32_t connector_id,
+    /// \param database_handler a reference to the internal libocpp database handler
+    /// \param status_notification_callback callback executed to send a status notification for the connector
+    /// \param change_effective_availability_callback callback to change the effective operative state of the connector
+    Connector(const int32_t evse_id, const int32_t connector_id, std::shared_ptr<DatabaseHandler> database_handler,
+              OperationalStatusEnum evse_effective_status,
               const std::function<void(const ConnectorStatusEnum& status)>& status_notification_callback,
-              const std::function<void(const OperationalStatusEnum new_status)> change_effective_availability_callback,
-              const std::function<void(const OperationalStatusEnum new_status)> persist_availability_callback);
+              const std::function<void(const OperationalStatusEnum new_status)> change_effective_availability_callback);
 
     /// \brief Get the effective state of the connector
     /// \return ConnectorStatusEnum
@@ -88,8 +94,9 @@ public:
     /// \param new_status: The operative status to switch to, empty if we only want to recompute the effective status
     /// \param evse_status: The effective status of the EVSE
     /// \param persist: True if the updated operative status setting should be persisted
+    /// \param is_boot True if the call is due to recomputing the effective statuses on boot
     void set_operative_status(std::optional<OperationalStatusEnum> new_status, OperationalStatusEnum evse_status,
-                              bool persist);
+                              bool persist, bool is_boot);
 };
 
 } // namespace v201
