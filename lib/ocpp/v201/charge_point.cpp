@@ -1947,11 +1947,14 @@ void ChargePoint::handle_boot_notification_response(CallResult<BootNotificationR
             this->security_event_notification_req(
                 CiString<50>(ocpp::security_events::RESET_OR_REBOOT),
                 std::optional<CiString<255>>("Charging Station rebooted due to a scheduled reset!"), true, true);
-        } else {
+        } else if (this->bootreason == BootReasonEnum::PowerUp) {
             std::string startup_message = "Charging Station powered up! Firmware version: ";
             startup_message.append(
                 this->device_model->get_value<std::string>(ControllerComponentVariables::FirmwareVersion));
             this->security_event_notification_req(CiString<50>(ocpp::security_events::STARTUP_OF_THE_DEVICE),
+                                                  std::optional<CiString<255>>(startup_message), true, true);
+        } else {
+            this->security_event_notification_req(CiString<50>(ocpp::security_events::RESET_OR_REBOOT),
                                                   std::optional<CiString<255>>(startup_message), true, true);
         }
     } else {
