@@ -39,7 +39,7 @@ bool verify_csms_cn(const std::string& hostname, bool preverified, boost::asio::
 
         // Compare the extracted CN with the expected FQDN
         if (hostname != common_name) {
-            EVLOG_error << "Server certificate CN does not match CSMS FQDN";
+            EVLOG_error << "Server certificate CN does not match CSMS FQDN. Hostname: " << hostname << " common_name: "<<common_name;
             return false;
         }
 
@@ -223,11 +223,12 @@ tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connect
                 EVLOG_AND_THROW(std::runtime_error(
                     "Connecting with security profile 3 but no client side certificate is present or valid"));
             }
-            if (SSL_CTX_use_certificate_file(context->native_handle(),
-                                             certificate_key_pair.value().certificate_path.c_str(),
-                                             SSL_FILETYPE_PEM) != 1) {
+            EVLOG_info << "Using certificate: " << certificate_key_pair.value().certificate_path;
+            if (SSL_CTX_use_certificate_chain_file(context->native_handle(),
+                                             certificate_key_pair.value().certificate_path.c_str()) != 1) {
                 EVLOG_AND_THROW(std::runtime_error("Could not use client certificate file within SSL context"));
             }
+            EVLOG_info << "Using key file: " << certificate_key_pair.value().key_path;
             if (SSL_CTX_use_PrivateKey_file(context->native_handle(), certificate_key_pair.value().key_path.c_str(),
                                             SSL_FILETYPE_PEM) != 1) {
                 EVLOG_AND_THROW(std::runtime_error("Could not set private key file within SSL context"));
