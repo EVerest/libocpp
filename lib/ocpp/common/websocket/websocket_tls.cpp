@@ -16,13 +16,13 @@ namespace ocpp {
 
 static std::vector<std::string> get_subject_alt_names(const X509* x509) {
     std::vector<std::string> list;
-    GENERAL_NAMES* subjectAltNames =
+    GENERAL_NAMES* subject_alt_names =
         static_cast<GENERAL_NAMES*>(X509_get_ext_d2i(x509, NID_subject_alt_name, NULL, NULL));
-    if (subjectAltNames == nullptr) {
+    if (subject_alt_names == nullptr) {
         return list;
     }
-    for (int i = 0; i < sk_GENERAL_NAME_num(subjectAltNames); i++) {
-        GENERAL_NAME* gen = sk_GENERAL_NAME_value(subjectAltNames, i);
+    for (int i = 0; i < sk_GENERAL_NAME_num(subject_alt_names); i++) {
+        GENERAL_NAME* gen = sk_GENERAL_NAME_value(subject_alt_names, i);
         if (gen == nullptr) {
             continue;
         }
@@ -41,7 +41,7 @@ static std::vector<std::string> get_subject_alt_names(const X509* x509) {
             }
         }
     }
-    GENERAL_NAMES_free(subjectAltNames);
+    GENERAL_NAMES_free(subject_alt_names);
     return list;
 }
 
