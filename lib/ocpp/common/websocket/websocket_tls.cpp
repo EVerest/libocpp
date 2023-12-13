@@ -14,6 +14,28 @@
 
 namespace ocpp {
 
+static std::vector<std::string> get_subject_alt_names(const X509* x509) {
+    std::vector<std::string> list;
+    GENERAL_NAMES* subjectAltNames = (GENERAL_NAMES*)X509_get_ext_d2i(x509, NID_subject_alt_name, NULL, NULL);
+    for (int i = 0; i < sk_GENERAL_NAME_num(subjectAltNames); i++) {
+        GENERAL_NAME* gen = sk_GENERAL_NAME_value(subjectAltNames, i);
+        if (gen->type == GEN_URI || gen->type == GEN_DNS || gen->type == GEN_EMAIL) {
+            ASN1_IA5STRING* asn1_str = gen->d.uniformResourceIdentifier;
+            std::string san = std::string((char*)ASN1_STRING_get0_data(asn1_str), ASN1_STRING_length(asn1_str));
+            list.push_back(san);
+        } else if (gen->type == GEN_IPADD) {
+            unsigned char* p = gen->d.ip->data;
+            if (gen->d.ip->length == 4) { // only support ipv4 for now
+                std::stringstream ip;
+                ip << (int)p[0] << '.' << (int)p[1] << '.' << (int)p[2] << '.' << (int)p[3];
+                list.push_back(ip.str());
+            }
+        }
+    }
+    GENERAL_NAMES_free(subjectAltNames);
+    return list;
+}
+
 // verify that the csms certificate's commonName matches the CSMS FQDN
 bool verify_csms_cn(const std::string& hostname, bool preverified, boost::asio::ssl::verify_context& ctx) {
 
@@ -37,13 +59,24 @@ bool verify_csms_cn(const std::string& hostname, bool preverified, boost::asio::
             return false;
         }
 
+        auto alt_names = get_subject_alt_names(server_cert);
+
         // Compare the extracted CN with the expected FQDN
-        if (hostname != common_name) {
-            EVLOG_error << "Server certificate CN does not match CSMS FQDN. Hostname: " << hostname << " common_name: "<<common_name;
-            return false;
+        if (hostname == common_name) {
+            EVLOG_info << "FQDN matches CN of server certificate: " << hostname;
+            return true;
         }
 
-        EVLOG_info << "FQDN matches CN of server certificate";
+        // If the CN does not match, go through all alternative names
+        for (auto name : alt_names) {
+            if (hostname == name) {
+                EVLOG_info << "FQDN matches alternative name of server certificate: " << hostname;
+                return true;
+            }
+        }
+
+        EVLOG_info << "FQDN does not match CN or alternative names.";
+        return false;
     }
 
     return true;
@@ -225,7 +258,7 @@ tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connect
             }
             EVLOG_info << "Using certificate: " << certificate_key_pair.value().certificate_path;
             if (SSL_CTX_use_certificate_chain_file(context->native_handle(),
-                                             certificate_key_pair.value().certificate_path.c_str()) != 1) {
+                                                   certificate_key_pair.value().certificate_path.c_str()) != 1) {
                 EVLOG_AND_THROW(std::runtime_error("Could not use client certificate file within SSL context"));
             }
             EVLOG_info << "Using key file: " << certificate_key_pair.value().key_path;
@@ -316,7 +349,7 @@ void WebsocketTLS::connect_tls() {
     this->wss_client.connect(con);
 }
 void WebsocketTLS::on_open_tls(tls_client* c, websocketpp::connection_hdl hdl) {
-    (void)c;                       // tls_client is not used in this function
+    (void)c; // tls_client is not used in this function
     EVLOG_info << "OCPP client successfully connected to TLS websocket server";
     this->connection_attempts = 1; // reset connection attempts
     this->m_is_connected = true;
