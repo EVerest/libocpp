@@ -164,7 +164,8 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
             this->device_model->get_optional_value<int>(ControllerComponentVariables::MessageQueueSizeThreshold)
                 .value_or(DEFAULT_MESSAGE_QUEUE_SIZE_THRESHOLD),
             this->device_model->get_optional_value<bool>(ControllerComponentVariables::QueueAllMessages)
-                .value_or(false)},
+                .value_or(false),
+            this->device_model->get_value<int>(ControllerComponentVariables::MessageTimeout)},
         this->database_handler);
 }
 
@@ -1368,6 +1369,27 @@ void ChargePoint::handle_variable_changed(const SetVariableData& set_variable_da
         this->websocket->set_connection_options(connection_options);
     }
 
+    if (component_variable == ControllerComponentVariables::MessageAttemptInterval) {
+        if (component_variable.variable.has_value()) {
+            this->message_queue->update_transaction_message_retry_interval(
+                this->device_model->get_value<int>(ControllerComponentVariables::MessageAttemptInterval));
+        }
+    }
+
+    if (component_variable == ControllerComponentVariables::MessageAttempts) {
+        if (component_variable.variable.has_value()) {
+            this->message_queue->update_transaction_message_attempts(
+                this->device_model->get_value<int>(ControllerComponentVariables::MessageAttempts));
+        }
+    }
+
+    if (component_variable == ControllerComponentVariables::MessageTimeout) {
+        if (component_variable.variable.has_value()) {
+            this->message_queue->update_message_timeout(
+                this->device_model->get_value<int>(ControllerComponentVariables::MessageTimeout));
+        }
+    }
+
     // TODO(piet): other special handling of changed variables can be added here...
 }
 
@@ -1528,11 +1550,9 @@ void ChargePoint::sign_certificate_req(const ocpp::CertificateSigningUseEnum& ce
         organization =
             this->device_model->get_optional_value<std::string>(ControllerComponentVariables::OrganizationName);
         country =
-            this->device_model->get_optional_value<std::string>(ControllerComponentVariables::ISO15118CtrlrCountryName)
-                .value_or("DE");
+            this->device_model->get_optional_value<std::string>(ControllerComponentVariables::ISO15118CtrlrCountryName);
     } else {
-        common =
-            this->device_model->get_optional_value<std::string>(ControllerComponentVariables::ChargeBoxSerialNumber);
+        common = this->device_model->get_optional_value<std::string>(ControllerComponentVariables::ISO15118CtrlrSeccId);
         organization = this->device_model->get_optional_value<std::string>(
             ControllerComponentVariables::ISO15118CtrlrOrganizationName);
         country =
@@ -2191,17 +2211,6 @@ void ChargePoint::handle_reset_req(Call<ResetRequest> call) {
     }
 
     if (response.status == ResetStatusEnum::Accepted) {
-        if (call.msg.evseId.has_value()) {
-            // B11.FR.08
-            // TODO: Why only connector 1?
-            this->set_operative_status(call.msg.evseId.value(), 1, OperationalStatusEnum::Inoperative, false);
-        } else {
-            // B11.FR.03
-            for (auto const& [evse_id, evse] : this->evses) {
-                // TODO: Why only connector 1?
-                this->set_operative_status(evse_id, 1, OperationalStatusEnum::Inoperative, false);
-            }
-        }
         this->callbacks.reset_callback(call.msg.evseId, ResetEnum::Immediate);
     }
 }
