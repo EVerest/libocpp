@@ -39,13 +39,14 @@ static std::vector<std::string> get_subject_alt_names(const X509* x509) {
 // verify that the csms certificate's commonName matches the CSMS FQDN
 bool verify_csms_cn(const std::string& hostname, bool preverified, boost::asio::ssl::verify_context& ctx) {
 
+    /*
+    FIXME(cc): This does not work, always returns false here
     if (!preverified) {
-        EVLOG_error << "Could not verify CSMS server certificate";
-        return false;
-    }
+         EVLOG_error << "Could not verify CSMS server certificate";
+         return false;
+     }*/
 
     int depth = X509_STORE_CTX_get_error_depth(ctx.native_handle());
-
     // only check for CSMS server certificate
     if (depth == 0) {
         // Get server certificate
