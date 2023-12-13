@@ -16,19 +16,28 @@ namespace ocpp {
 
 static std::vector<std::string> get_subject_alt_names(const X509* x509) {
     std::vector<std::string> list;
-    GENERAL_NAMES* subjectAltNames = (GENERAL_NAMES*)X509_get_ext_d2i(x509, NID_subject_alt_name, NULL, NULL);
+    GENERAL_NAMES* subjectAltNames =
+        static_cast<GENERAL_NAMES*>(X509_get_ext_d2i(x509, NID_subject_alt_name, NULL, NULL));
+    if (subjectAltNames == nullptr) {
+        return list;
+    }
     for (int i = 0; i < sk_GENERAL_NAME_num(subjectAltNames); i++) {
         GENERAL_NAME* gen = sk_GENERAL_NAME_value(subjectAltNames, i);
+        if (gen == nullptr) {
+            continue;
+        }
         if (gen->type == GEN_URI || gen->type == GEN_DNS || gen->type == GEN_EMAIL) {
             ASN1_IA5STRING* asn1_str = gen->d.uniformResourceIdentifier;
-            std::string san = std::string((char*)ASN1_STRING_get0_data(asn1_str), ASN1_STRING_length(asn1_str));
+            std::string san = std::string(reinterpret_cast<const char*>(ASN1_STRING_get0_data(asn1_str)),
+                                          ASN1_STRING_length(asn1_str));
             list.push_back(san);
         } else if (gen->type == GEN_IPADD) {
-            unsigned char* p = gen->d.ip->data;
-            if (gen->d.ip->length == 4) { // only support ipv4 for now
-                std::stringstream ip;
-                ip << (int)p[0] << '.' << (int)p[1] << '.' << (int)p[2] << '.' << (int)p[3];
-                list.push_back(ip.str());
+            unsigned char* ip = gen->d.ip->data;
+            if (gen->d.ip->length == 4) { // only support IPv4 for now
+                std::stringstream ip_stream;
+                ip_stream << static_cast<int>(ip[0]) << '.' << static_cast<int>(ip[1]) << '.' << static_cast<int>(ip[2])
+                          << '.' << static_cast<int>(ip[3]);
+                list.push_back(ip_stream.str());
             }
         }
     }
