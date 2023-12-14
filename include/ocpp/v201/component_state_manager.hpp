@@ -25,6 +25,10 @@ private:
     std::vector<std::pair<OperationalStatusEnum, std::vector<FullConnectorStatus>>>
         evse_and_connector_individual_statuses;
 
+    OperationalStatusEnum last_cs_effective_status;
+    std::vector<std::pair<OperationalStatusEnum, std::vector<ConnectorStatusEnum>>>
+        last_evse_and_connector_effective_statuses;
+
     void check_evse_id(int32_t evse_id);
     void check_evse_and_connector_id(int32_t evse_id, int32_t connector_id);
 
@@ -39,6 +43,14 @@ public:
     OperationalStatusEnum get_cs_persisted_operational_status();
     OperationalStatusEnum get_evse_persisted_operational_status(int32_t evse_id);
     OperationalStatusEnum get_connector_persisted_operational_status(int32_t evse_id, int32_t connector_id);
+
+    bool cs_effective_status_changed();
+    bool evse_effective_status_changed(int32_t evse_id);
+    bool connector_effective_status_changed(int32_t evse_id, int32_t connector_id);
+
+    void clear_cs_effective_status_changed();
+    void clear_evse_effective_status_changed(int32_t evse_id);
+    void clear_connector_effective_status_changed(int32_t evse_id, int32_t connector_id);
 
     void set_cs_individual_operational_status(OperationalStatusEnum new_status, bool persist);
     void set_evse_individual_operational_status(int32_t evse_id, OperationalStatusEnum new_status, bool persist);

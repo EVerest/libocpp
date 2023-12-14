@@ -671,10 +671,14 @@ public:
     /// \param new_status: The new operative status to switch to
     /// \param persist: True if the updated state should be persisted in the database
     void set_operative_status(std::optional<int32_t> evse_id, std::optional<int32_t> connector_id,
-                              std::optional<OperationalStatusEnum> new_status, bool persist);
+                              OperationalStatusEnum new_status, bool persist);
 
     /// \brief Explicitly trigger the change_effective_availability_callback for each component (done on boot)
     void trigger_change_effective_availability_callback();
+
+    /// \brief Call the change_effective_availability_callback and the status_notification_callback if state changed
+    /// Also triggers the corresponding callback on EVSEs and connectors
+    void trigger_callbacks_if_effective_state_changed();
 
     /// \brief Delay draining the message queue after reconnecting, so the CSMS can perform post-reconnect checks first
     /// \param delay The delay period (seconds)

@@ -44,7 +44,6 @@ Connector::Connector(
 }
 
 void Connector::submit_event(ConnectorEvent event) {
-    ConnectorStatusEnum old_eff_conn_status = this->get_effective_connector_status();
     switch (event) {
     case ConnectorEvent::PlugIn:
         this->component_state_manager->set_connector_occupied(this->evse_id, this->connector_id, true);
@@ -65,30 +64,13 @@ void Connector::submit_event(ConnectorEvent event) {
         this->component_state_manager->set_connector_faulted(this->evse_id, this->connector_id, false);
         break;
     }
-    ConnectorStatusEnum new_eff_conn_status = this->get_effective_connector_status();
-    if (old_eff_conn_status != new_eff_conn_status) {
-        this->status_notification_callback(new_eff_conn_status);
-    }
+    this->trigger_callbacks_if_effective_state_changed();
 }
 
-void Connector::set_operative_status(std::optional<OperationalStatusEnum> new_status, bool persist) {
-    OperationalStatusEnum old_eff_op_status = this->get_effective_operational_status();
-    ConnectorStatusEnum old_eff_conn_status = this->get_effective_connector_status();
-
-    if (new_status.has_value()) {
-        this->component_state_manager
-            ->set_connector_individual_operational_status(this->evse_id, this->connector_id, new_status.value(), persist);
-    }
-
-    OperationalStatusEnum new_eff_op_status = this->get_effective_operational_status();
-    ConnectorStatusEnum new_eff_conn_status = this->get_effective_connector_status();
-
-    if (old_eff_op_status != new_eff_op_status) {
-        this->change_effective_availability_callback(new_eff_op_status);
-    }
-    if (old_eff_conn_status != new_eff_conn_status) {
-        this->status_notification_callback(new_eff_conn_status);
-    }
+void Connector::set_operative_status(OperationalStatusEnum new_status, bool persist) {
+    this->component_state_manager
+        ->set_connector_individual_operational_status(this->evse_id, this->connector_id, new_status, persist);
+    this->trigger_callbacks_if_effective_state_changed();
 }
 
 OperationalStatusEnum Connector::get_effective_operational_status() {
@@ -105,6 +87,14 @@ void Connector::trigger_status_notification_callback() {
 
 void Connector::trigger_change_effective_availability_callback() {
     this->change_effective_availability_callback(this->get_effective_operational_status());
+}
+
+void Connector::trigger_callbacks_if_effective_state_changed() {
+    if (this->component_state_manager->connector_effective_status_changed(this->evse_id, this->connector_id)) {
+        this->status_notification_callback(this->get_effective_connector_status());
+        this->change_effective_availability_callback(this->get_effective_operational_status());
+        this->component_state_manager->clear_connector_effective_status_changed(this->evse_id, this->connector_id);
+    }
 }
 
 } // namespace v201

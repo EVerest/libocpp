@@ -2951,30 +2951,14 @@ void ChargePoint::scheduled_check_v2g_certificate_expiration() {
 }
 
 void ChargePoint::set_operative_status(std::optional<int32_t> evse_id, std::optional<int32_t> connector_id,
-                                       std::optional<OperationalStatusEnum> new_status, bool persist) {
-    OperationalStatusEnum old_op_status = this->component_state_manager->get_cs_individual_operational_status();
-    if (new_status.has_value() && !evse_id.has_value()) {
+                                       OperationalStatusEnum new_status, bool persist) {
+    if (!evse_id.has_value()) {
         // The whole CS is targeted
-        this->component_state_manager->set_cs_individual_operational_status(new_status.value(), persist);
-    }
-    OperationalStatusEnum new_op_status = this->component_state_manager->get_cs_individual_operational_status();
-
-    // We will trigger the callback if the operative state changed, or if this is done on boot
-    if (old_op_status != new_op_status) {
-        this->callbacks.change_effective_availability_callback({}, {}, new_op_status);
-    }
-
-    // Update the effective status of all EVSEs
-    for (auto& [id, evse] : this->evses) {
-        if (evse != nullptr) {
-            if (evse_id.has_value() && evse_id.value() == id) {
-                // The EVSE is targeted, set operative status on it
-                evse->set_operative_status(connector_id, new_status, persist);
-            } else {
-                // The EVSE is not addressed, just propagate the effective status changes
-                evse->set_operative_status({}, {}, false);
-            }
-        }
+        this->component_state_manager->set_cs_individual_operational_status(new_status, persist);
+        this->trigger_callbacks_if_effective_state_changed();
+    } else {
+        // An EVSE or Connector is targeted
+        this->evses.at(evse_id.value())->set_operative_status(connector_id, new_status, persist);
     }
 }
 
@@ -3004,6 +2988,21 @@ void ChargePoint::notify_user_if_all_connectors_inoperative() {
     // Check succeeded, trigger the callback
     if (this->callbacks.all_connectors_unavailable_callback.has_value()) {
         this->callbacks.all_connectors_unavailable_callback.value()();
+    }
+}
+
+void ChargePoint::trigger_callbacks_if_effective_state_changed() {
+    if (this->component_state_manager->cs_effective_status_changed()) {
+        this->callbacks.change_effective_availability_callback(
+            std::nullopt, std::nullopt, this->component_state_manager->get_cs_individual_operational_status());
+        this->component_state_manager->clear_cs_effective_status_changed();
+
+        // If our effective state changed, update that of the components below us too
+        for (auto& [evse_id, evse] : this->evses) {
+            if (evse != nullptr) {
+                evse->trigger_callbacks_if_effective_state_changed();
+            }
+        }
     }
 }
 

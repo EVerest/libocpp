@@ -274,32 +274,15 @@ void Evse::check_max_energy_on_invalid_id() {
     }
 }
 
-void Evse::set_operative_status(std::optional<int32_t> connector_id, std::optional<OperationalStatusEnum> new_status,
+void Evse::set_operative_status(std::optional<int32_t> connector_id, OperationalStatusEnum new_status,
                                 bool persist) {
-    OperationalStatusEnum old_eff_status = this->get_effective_operational_status();
-
-    if (!connector_id.has_value() && new_status.has_value()) {
+    if (!connector_id.has_value()) {
         // The EVSE is addressed
-        this->component_state_manager->set_evse_individual_operational_status(this->evse_id, new_status.value(), persist);
-    }
-
-    OperationalStatusEnum new_eff_status = this->get_effective_operational_status();
-
-    if (old_eff_status != new_eff_status) {
-        this->change_effective_availability_callback({}, new_eff_status);
-    }
-
-    // Update the effective status of all connectors
-    for (auto& [id, connector] : this->id_connector_map) {
-        if (connector != nullptr) {
-            if (connector_id.has_value() && connector_id.value() == id) {
-                // The connector is addressed, change its operative status
-                connector->set_operative_status(new_status, persist);
-            } else {
-                // The connector is not addressed, just update its effective status
-                connector->set_operative_status({}, false);
-            }
-        }
+        this->component_state_manager->set_evse_individual_operational_status(this->evse_id, new_status, persist);
+        this->trigger_callbacks_if_effective_state_changed();
+    } else {
+        // A connector is addressed
+        this->id_connector_map.at(connector_id.value())->set_operative_status(new_status, persist);
     }
 }
 
@@ -311,9 +294,24 @@ void Evse::trigger_change_effective_availability_callback() {
     this->change_effective_availability_callback(std::nullopt, this->get_effective_operational_status());
     for (auto& [id, connector] : this->id_connector_map) {
         if (connector != nullptr) {
-            connector->trigger_status_notification_callback();
+            connector->trigger_change_effective_availability_callback();
         }
     }
+}
+
+void Evse::trigger_callbacks_if_effective_state_changed() {
+    if (this->component_state_manager->evse_effective_status_changed(this->evse_id)) {
+        this->change_effective_availability_callback(std::nullopt, this->get_effective_operational_status());
+        this->component_state_manager->clear_evse_effective_status_changed(this->evse_id);
+
+        // If our effective state changed, see if that of the connectors changed too
+        for (auto& [id, connector] : this->id_connector_map) {
+            if (connector != nullptr) {
+                connector->trigger_callbacks_if_effective_state_changed();
+            }
+        }
+    }
+
 }
 
 } // namespace v201

@@ -32,6 +32,21 @@ ComponentStateManager::ComponentStateManager(const std::map<int32_t, int32_t>& e
 
         this->evse_and_connector_individual_statuses.push_back(std::make_pair(evse_operational, connector_statuses));
     }
+
+    // Initialize the cached effective statuses (after everything else is done)
+    this->last_cs_effective_status = this->get_cs_individual_operational_status();
+    for (int evse_id = 1; evse_id <= num_evses; evse_id++) {
+        int num_connectors = evse_connector_structure.at(evse_id);
+        std::vector<ConnectorStatusEnum> connector_statuses;
+
+        OperationalStatusEnum evse_effective = this->get_evse_effective_operational_status(evse_id);
+        for (int connector_id = 1; connector_id <= num_connectors; connector_id++) {
+            ConnectorStatusEnum connector_effective = this->get_connector_effective_status(evse_id, connector_id);
+            connector_statuses.push_back(connector_effective);
+        }
+
+        this->last_evse_and_connector_effective_statuses.push_back(std::make_pair(evse_effective, connector_statuses));
+    }
 }
 
 void ComponentStateManager::check_evse_id(int32_t evse_id) {
@@ -156,6 +171,34 @@ void ComponentStateManager::set_connector_reserved(int32_t evse_id, int32_t conn
 void ComponentStateManager::set_connector_faulted(int32_t evse_id, int32_t connector_id, bool is_faulted) {
     this->check_evse_and_connector_id(evse_id, connector_id);
     this->evse_and_connector_individual_statuses[evse_id - 1].second[connector_id - 1].faulted = is_faulted;
+}
+
+bool ComponentStateManager::cs_effective_status_changed() {
+    return this->last_cs_effective_status != this->get_cs_individual_operational_status();
+}
+bool ComponentStateManager::evse_effective_status_changed(int32_t evse_id) {
+    this->check_evse_id(evse_id);
+    return this->get_evse_effective_operational_status(evse_id)
+           != this->last_evse_and_connector_effective_statuses[evse_id-1].first;
+}
+bool ComponentStateManager::connector_effective_status_changed(int32_t evse_id, int32_t connector_id) {
+    this->check_evse_and_connector_id(evse_id, connector_id);
+    return this->get_connector_effective_status(evse_id, connector_id)
+           != this->last_evse_and_connector_effective_statuses[evse_id-1].second[connector_id-1];
+}
+
+void ComponentStateManager::clear_cs_effective_status_changed() {
+    this->last_cs_effective_status = this->get_cs_individual_operational_status();
+}
+void ComponentStateManager::clear_evse_effective_status_changed(int32_t evse_id) {
+    this->check_evse_id(evse_id);
+    this->last_evse_and_connector_effective_statuses[evse_id-1].first =
+        this->get_evse_effective_operational_status(evse_id);
+}
+void ComponentStateManager::clear_connector_effective_status_changed(int32_t evse_id, int32_t connector_id) {
+    this->check_evse_and_connector_id(evse_id, connector_id);
+    this->last_evse_and_connector_effective_statuses[evse_id-1].second[connector_id-1] =
+        this->get_connector_effective_status(evse_id, connector_id);
 }
 
 } // namespace ocpp::v201

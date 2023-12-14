@@ -164,13 +164,17 @@ public:
 
     /// \brief Switches the operative status of the EVSE or a connector and recomputes effective statuses
     /// \param connector_id The ID of the connector, empty if the EVSE itself is addressed
-    /// \param new_status The operative status to switch to, empty if we only want to recompute the effective status
+    /// \param new_status The operative status to switch to
     /// \param persist True the updated operative state should be persisted
-    void set_operative_status(std::optional<int32_t> connector_id, std::optional<OperationalStatusEnum> new_status,
+    void set_operative_status(std::optional<int32_t> connector_id, OperationalStatusEnum new_status,
                               bool persist);
 
     /// \brief Explicitly trigger the change_effective_availability_callback for each component (done on boot)
     void trigger_change_effective_availability_callback();
+
+    /// \brief Call the change_effective_availability_callback and the status_notification_callback if state changed
+    /// Also triggers the corresponding callback on the connectors.
+    void trigger_callbacks_if_effective_state_changed();
 };
 
 } // namespace v201
