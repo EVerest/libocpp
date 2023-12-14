@@ -40,7 +40,7 @@ Connector::Connector(
     evse_id(evse_id),
     connector_id(connector_id),
     database_handler(database_handler),
-    operational(database_handler->get_availability(evse_id, connector_id)),
+    operational(database_handler->get_connector_availability(evse_id, connector_id)),
     reserved(false),
     plugged_in(false),
     faulted(false),
@@ -133,7 +133,8 @@ void Connector::set_operative_status(std::optional<OperationalStatusEnum> new_st
     OperationalStatusEnum new_eff_status = to_operative(this->get_effective_status());
 
     if (old_op_status != this->operational && persist) {
-        this->database_handler->insert_availability(this->evse_id, this->connector_id, this->operational, true);
+        this->database_handler->insert_connector_availability(this->evse_id, this->connector_id, this->operational,
+                                                              true);
     }
     if (is_boot || old_eff_status != new_eff_status) {
         this->change_effective_availability_callback(new_eff_status);

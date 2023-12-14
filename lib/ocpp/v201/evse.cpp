@@ -55,8 +55,7 @@ Evse::Evse(const int32_t evse_id, const int32_t number_of_connectors, DeviceMode
     pause_charging_callback(pause_charging_callback),
     change_effective_availability_callback(change_effective_availability_callback),
     database_handler(database_handler),
-    operative_status(database_handler->get_availability(evse_id, std::nullopt)),
-    effective_status(OperationalStatusEnum::Operative), // TODO what should this be?
+    operative_status(database_handler->get_evse_availability(evse_id)),
     transaction(nullptr) {
     this->effective_status = this->operative_status;
     if (cs_effective_status == OperationalStatusEnum::Inoperative) {
@@ -213,8 +212,6 @@ ConnectorStatusEnum Evse::get_state(const int32_t connector_id) {
 }
 
 void Evse::submit_event(const int32_t connector_id, ConnectorEvent event, OperationalStatusEnum cs_status) {
-    // TODO support addressing the EVSE itself
-    // TODO recompute EVSE's availability status here
     return this->id_connector_map.at(connector_id)->submit_event(event, this->effective_status);
 }
 
@@ -315,7 +312,7 @@ void Evse::set_operative_status(std::optional<int32_t> connector_id, std::option
     this->effective_status = this->determine_effective_status(cs_status);
 
     if (old_op_status != this->operative_status && persist) {
-        this->database_handler->insert_availability(this->evse_id, std::nullopt, this->operative_status, true);
+        this->database_handler->insert_evse_availability(this->evse_id, this->operative_status, true);
     }
     if (is_boot || old_eff_status != this->effective_status) {
         this->change_effective_availability_callback({}, this->effective_status);

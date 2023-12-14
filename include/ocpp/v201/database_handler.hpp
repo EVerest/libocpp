@@ -33,6 +33,12 @@ private:
 
     bool clear_table(const std::string& table_name);
 
+    // Availability management (internal helpers)
+    // Setting evse_id to 0 addresses the whole CS, setting evse_id > 0 and connector_id=0 addresses a whole EVSE
+    void insert_availability(int32_t evse_id, int32_t connector_id,
+                             OperationalStatusEnum operational_status, bool replace);
+    OperationalStatusEnum get_availability(int32_t evse_id, int32_t connector_id);
+
 public:
     DatabaseHandler(const fs::path& database_path, const fs::path& sql_init_path);
     ~DatabaseHandler();
@@ -68,12 +74,21 @@ public:
     ///\retval The size of the authorization cache table in bytes
     size_t authorization_cache_get_binary_size();
 
-    // Availability management
+    /// \brief Persist operational settings for the charging station
+    void insert_cs_availability(OperationalStatusEnum operational_status, bool replace);
+    /// \brief Retrieve persisted operational settings for the charging station
+    OperationalStatusEnum get_cs_availability();
 
-    void insert_availability(const std::optional<int32_t> evse_id, std::optional<int32_t> connector_id,
-                             const OperationalStatusEnum& operational_status, const bool replace);
+    /// \brief Persist operational settings for an EVSE
+    void insert_evse_availability(int32_t evse_id, OperationalStatusEnum operational_status, bool replace);
+    /// \brief Retrieve persisted operational settings for an EVSE
+    OperationalStatusEnum get_evse_availability(int32_t evse_id);
 
-    OperationalStatusEnum get_availability(const std::optional<int32_t> evse_id, std::optional<int32_t> connector_id);
+    /// \brief Persist operational settings for a connector
+    void insert_connector_availability(int32_t evse_id, int32_t connector_id, OperationalStatusEnum operational_status,
+                                       bool replace);
+    /// \brief Retrieve persisted operational settings for a connector
+    OperationalStatusEnum get_connector_availability(int32_t evse_id, int32_t connector_id);
 
     // Local authorization list management
 

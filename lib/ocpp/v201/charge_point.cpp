@@ -84,17 +84,18 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
 
     // Set up the operational status of the whole CS
     // Make sure that entry in the DB is not empty - if it is, set it to Operative
-    this->database_handler->insert_availability(std::nullopt, std::nullopt, OperationalStatusEnum::Operative, false);
-    this->operative_status = this->database_handler->get_availability(std::nullopt, std::nullopt);
+    this->database_handler->insert_cs_availability(OperationalStatusEnum::Operative, false);
+    this->operative_status = this->database_handler->get_cs_availability();
 
     // intantiate and initialize evses
     for (auto const& [evse_id, number_of_connectors] : evse_connector_structure) {
         auto evse_id_ = evse_id;
         // Make sure the entries for operational state in the DB for the EVSE and its connectors are not empty
         // If they are, set them to Operative
-        this->database_handler->insert_availability(evse_id, std::nullopt, OperationalStatusEnum::Operative, false);
+        this->database_handler->insert_evse_availability(evse_id, OperationalStatusEnum::Operative, false);
         for (int32_t connector_id = 1; connector_id <= number_of_connectors; connector_id++) {
-            this->database_handler->insert_availability(evse_id, connector_id, OperationalStatusEnum::Operative, false);
+            this->database_handler->insert_connector_availability(evse_id, connector_id,
+                                                                  OperationalStatusEnum::Operative, false);
         }
 
         // used by evse to trigger StatusNotification.req
@@ -2971,7 +2972,7 @@ void ChargePoint::set_operative_status(std::optional<int32_t> evse_id, std::opti
     }
     // We need to persist changes to the state the persist flag is on
     if (old_op_status != this->operative_status && persist) {
-        this->database_handler->insert_availability(std::nullopt, {}, this->operative_status, true);
+        this->database_handler->insert_cs_availability(this->operative_status, true);
     }
 
     // Update the effective status of all EVSEs

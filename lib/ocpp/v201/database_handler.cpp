@@ -205,8 +205,8 @@ size_t DatabaseHandler::authorization_cache_get_binary_size() {
     }
 }
 
-void DatabaseHandler::insert_availability(const std::optional<int32_t> evse_id, std::optional<int32_t> connector_id,
-                                          const OperationalStatusEnum& operational_status, const bool replace) {
+void DatabaseHandler::insert_availability(int32_t evse_id, int32_t connector_id,
+                                          OperationalStatusEnum operational_status, bool replace) {
     std::string sql;
 
     if (replace) {
@@ -219,8 +219,8 @@ void DatabaseHandler::insert_availability(const std::optional<int32_t> evse_id, 
 
     SQLiteStatement insert_stmt(this->db, sql);
 
-    insert_stmt.bind_int("@evse_id", evse_id.value_or(0));
-    insert_stmt.bind_int("@connector_id", connector_id.value_or(0));
+    insert_stmt.bind_int("@evse_id", evse_id);
+    insert_stmt.bind_int("@connector_id", connector_id);
 
     insert_stmt.bind_text("@operational_status", conversions::operational_status_enum_to_string(operational_status),
                           SQLiteString::Transient);
@@ -231,15 +231,14 @@ void DatabaseHandler::insert_availability(const std::optional<int32_t> evse_id, 
     }
 }
 
-OperationalStatusEnum DatabaseHandler::get_availability(const std::optional<int32_t> evse_id,
-                                                        std::optional<int32_t> connector_id) {
+OperationalStatusEnum DatabaseHandler::get_availability(int32_t evse_id, int32_t connector_id) {
     try {
         std::string sql =
             "SELECT OPERATIONAL_STATUS FROM AVAILABILITY WHERE EVSE_ID = @evse_id AND CONNECTOR_ID = @connector_id;";
         SQLiteStatement select_stmt(this->db, sql);
 
-        select_stmt.bind_int("@evse_id", evse_id.value_or(0));
-        select_stmt.bind_int("@connector_id", connector_id.value_or(0));
+        select_stmt.bind_int("@evse_id", evse_id);
+        select_stmt.bind_int("@connector_id", connector_id);
 
         if (select_stmt.step() != SQLITE_ROW) {
             throw std::runtime_error("Could not get availability from database");
@@ -550,6 +549,38 @@ bool DatabaseHandler::transaction_metervalues_clear(const std::string& transacti
     }
 
     return true;
+}
+
+void DatabaseHandler::insert_cs_availability(OperationalStatusEnum operational_status, bool replace) {
+    this->insert_availability(0, 0, operational_status, replace);
+}
+
+OperationalStatusEnum DatabaseHandler::get_cs_availability() {
+    return this->get_availability(0, 0);
+}
+
+void DatabaseHandler::insert_evse_availability(int32_t evse_id, OperationalStatusEnum operational_status,
+                                               bool replace) {
+    assert(evse_id > 0);
+    this->insert_availability(evse_id, 0, operational_status, replace);
+}
+
+OperationalStatusEnum DatabaseHandler::get_evse_availability(int32_t evse_id) {
+    assert(evse_id > 0);
+    return this->get_availability(evse_id, 0);
+}
+
+void DatabaseHandler::insert_connector_availability(int32_t evse_id, int32_t connector_id,
+                                                    OperationalStatusEnum operational_status, bool replace) {
+    assert(evse_id > 0);
+    assert(connector_id > 0);
+    this->insert_availability(evse_id, connector_id, operational_status, replace);
+}
+
+OperationalStatusEnum DatabaseHandler::get_connector_availability(int32_t evse_id, int32_t connector_id) {
+    assert(evse_id > 0);
+    assert(connector_id > 0);
+    return this->get_availability(evse_id, connector_id);
 }
 
 } // namespace v201

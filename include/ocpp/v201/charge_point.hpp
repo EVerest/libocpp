@@ -201,7 +201,8 @@ private:
     int network_configuration_priority;
     bool disable_automatic_websocket_reconnects;
 
-    /// \brief The availability status of the whole CS, set via OCPP or libocpp calls
+    /// \brief The availability status of the whole CS, set externally by the CSMS via ChangeAvailability requests.
+    /// It can also be set internally by the user of libocpp (e.g. to turn the CS inoperative for internal reasons)
     OperationalStatusEnum operative_status;
 
     // store the connector status
