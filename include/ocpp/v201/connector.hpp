@@ -6,10 +6,10 @@
 #include <functional>
 #include <mutex>
 
+#include "component_state_manager.hpp"
 #include "database_handler.hpp"
 #include <ocpp/v201/enums.hpp>
 #include <optional>
-#include "component_state_manager.hpp"
 
 namespace ocpp {
 namespace v201 {
@@ -44,8 +44,13 @@ private:
     /// \brief Sends a status update to the CSMS about a change in effective status of this connector.
     std::function<void(const ConnectorStatusEnum& status)> status_notification_callback;
 
-    /// \brief Callback to execute an effective status change (e.g. actually enabling/disabling connectors)
-    std::function<void(const OperationalStatusEnum new_status)> change_effective_availability_callback;
+    /// \brief Signal a changed availability of a single connector
+    /// \param evse_id The id of the EVSE
+    /// \param connector_id The ID of the connector within the EVSE
+    /// \param new_status The operational status to switch to
+    std::function<void(const int32_t evse_id, const int32_t connector_id,
+                       const OperationalStatusEnum new_status)>
+        change_connector_effective_availability_callback;
 
 public:
     /// \brief Construct a new Connector object
@@ -57,7 +62,9 @@ public:
     Connector(const int32_t evse_id, const int32_t connector_id,
               std::shared_ptr<ComponentStateManager> component_state_manager,
               const std::function<void(const ConnectorStatusEnum& status)>& status_notification_callback,
-              const std::function<void(const OperationalStatusEnum new_status)> change_effective_availability_callback);
+              std::function<void(const int32_t evse_id, const int32_t connector_id,
+                                 const OperationalStatusEnum new_status)>
+                  change_connector_effective_availability_callback);
 
     /// \brief Gets the effective Operative/Inoperative status of this connector
     OperationalStatusEnum get_effective_operational_status();

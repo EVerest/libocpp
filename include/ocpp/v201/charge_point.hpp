@@ -83,20 +83,31 @@ struct Callbacks {
     std::function<void(const int32_t evse_id, const ReasonEnum& stop_reason)> stop_transaction_callback;
     std::function<void(const int32_t evse_id)> pause_charging_callback;
 
-    ///
-    /// \brief Change availability of charging station / evse / connector.
-    /// \param evse_id The id of the EVSE affected, or empty if the whole charging station is addressed
-    /// \param connector_id The ID of the connector, or empty if the whole EVSE/CS is addressed
+    // Availability changing callbacks
+    // These callbacks execut the state transition on the charging station (e.g. enabling/disabling EVSEs)
+    // libocpp will call one callback for every component whose state changed - for example,
+    // if an EVSE is disabled, a callback will be called once for the EVSE, and once for each disabled connector.
+    // If a callback is not provided, libocpp will simply ignore it - however, at the very least the connector callback
+    // must be provided.
+
+    /// \brief Change availability of the charging station
     /// \param new_status The operational status to switch to
-    /// \param persist True to persist the status after reboot.
-    ///
-    /// The callback executes the state transition on the charging station (e.g. enabling/disabling EVSEs)
-    /// libocpp will call this callback for every component whose state changed - for example,
-    /// if an EVSE is disabled, the callback will be called once for the EVSE, and once for each disabled connector.
-    ///
-    std::function<void(const std::optional<int32_t> evse_id, const std::optional<int32_t> connector_id,
+    std::optional<std::function<void(const OperationalStatusEnum new_status)>>
+        change_cs_effective_availability_callback;
+
+    /// \brief Change availability of an EVSE
+    /// \param evse_id The id of the EVSE
+    /// \param new_status The operational status to switch to
+    std::optional<std::function<void(const int32_t evse_id, const OperationalStatusEnum new_status)>>
+        change_evse_effective_availability_callback;
+
+    /// \brief Change availability of a single connector
+    /// \param evse_id The id of the EVSE
+    /// \param connector_id The ID of the connector within the EVSE
+    /// \param new_status The operational status to switch to
+    std::function<void(const int32_t evse_id, const int32_t connector_id,
                        const OperationalStatusEnum new_status)>
-        change_effective_availability_callback;
+        change_connector_effective_availability_callback;
 
     std::function<GetLogResponse(const GetLogRequest& request)> get_log_request_callback;
     std::function<UnlockConnectorResponse(const int32_t evse_id, const int32_t connecor_id)> unlock_connector_callback;

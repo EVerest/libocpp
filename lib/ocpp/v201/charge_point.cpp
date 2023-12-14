@@ -27,9 +27,10 @@ const auto DEFAULT_MAX_MESSAGE_SIZE = 65000;
 bool Callbacks::all_callbacks_valid() const {
     return this->is_reset_allowed_callback != nullptr and this->reset_callback != nullptr and
            this->stop_transaction_callback != nullptr and this->pause_charging_callback != nullptr and
-           this->change_effective_availability_callback != nullptr and this->get_log_request_callback != nullptr and
-           this->unlock_connector_callback != nullptr and this->remote_start_transaction_callback != nullptr and
-           this->is_reservation_for_token_callback != nullptr and this->update_firmware_request_callback != nullptr and
+           this->change_connector_effective_availability_callback != nullptr and
+           this->get_log_request_callback != nullptr and this->unlock_connector_callback != nullptr and
+           this->remote_start_transaction_callback != nullptr and this->is_reservation_for_token_callback != nullptr and
+           this->update_firmware_request_callback != nullptr and
            (!this->variable_changed_callback.has_value() or this->variable_changed_callback.value() != nullptr) and
            (!this->validate_network_profile_callback.has_value() or
             this->validate_network_profile_callback.value() != nullptr) and
@@ -128,16 +129,12 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
 
         auto pause_charging_callback = [this, evse_id_]() { this->callbacks.pause_charging_callback(evse_id_); };
 
-        auto change_effective_availability_callback = [this, evse_id_](const std::optional<int32_t> connector_id,
-                                                                       const OperationalStatusEnum new_status) {
-            this->callbacks.change_effective_availability_callback(evse_id_, connector_id, new_status);
-        };
-
         this->evses.insert(std::make_pair(
             evse_id, std::make_unique<Evse>(evse_id, number_of_connectors, *this->device_model, this->database_handler,
                                             component_state_manager, status_notification_callback,
                                             transaction_meter_value_callback, pause_charging_callback,
-                                            change_effective_availability_callback)));
+                                            callbacks.change_evse_effective_availability_callback,
+                                            callbacks.change_connector_effective_availability_callback)));
     }
 
     // configure logging
@@ -2963,8 +2960,10 @@ void ChargePoint::set_operative_status(std::optional<int32_t> evse_id, std::opti
 }
 
 void ChargePoint::trigger_change_effective_availability_callback() {
-    this->callbacks.change_effective_availability_callback(
-        std::nullopt, std::nullopt, this->component_state_manager->get_cs_individual_operational_status());
+    if (this->callbacks.change_cs_effective_availability_callback.has_value()) {
+        this->callbacks.change_cs_effective_availability_callback.value()(
+            this->component_state_manager->get_cs_individual_operational_status());
+    }
     for (auto& [evse_id, evse] : this->evses) {
         if (evse != nullptr) {
             evse->trigger_change_effective_availability_callback();
@@ -2993,8 +2992,10 @@ void ChargePoint::notify_user_if_all_connectors_inoperative() {
 
 void ChargePoint::trigger_callbacks_if_effective_state_changed() {
     if (this->component_state_manager->cs_effective_status_changed()) {
-        this->callbacks.change_effective_availability_callback(
-            std::nullopt, std::nullopt, this->component_state_manager->get_cs_individual_operational_status());
+        if (this->callbacks.change_cs_effective_availability_callback.has_value()) {
+            this->callbacks.change_cs_effective_availability_callback.value()(
+                this->component_state_manager->get_cs_individual_operational_status());
+        }
         this->component_state_manager->clear_cs_effective_status_changed();
 
         // If our effective state changed, update that of the components below us too

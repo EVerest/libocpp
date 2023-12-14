@@ -8,12 +8,12 @@
 #include <memory>
 
 #include <ocpp/v201/average_meter_values.hpp>
+#include <ocpp/v201/component_state_manager.hpp>
 #include <ocpp/v201/connector.hpp>
 #include <ocpp/v201/database_handler.hpp>
 #include <ocpp/v201/device_model.hpp>
 #include <ocpp/v201/ocpp_types.hpp>
 #include <ocpp/v201/transaction.hpp>
-#include <ocpp/v201/component_state_manager.hpp>
 
 namespace ocpp {
 namespace v201 {
@@ -38,10 +38,11 @@ private:
     Everest::SteadyTimer sampled_meter_values_timer;
     std::shared_ptr<DatabaseHandler> database_handler;
 
-    /// \brief Callback to execute a desired effective operational state change on the charging station.
-    /// If connector_id is empty, then the EVSE itself underwent a state transition.
-    std::function<void(const std::optional<int32_t> connector_id, const OperationalStatusEnum new_status)>
-        change_effective_availability_callback;
+    /// \brief Signal a changed availability of an EVSE
+    /// \param evse_id The id of the EVSE
+    /// \param new_status The operational status to switch to
+    std::optional<std::function<void(const int32_t evse_id, const OperationalStatusEnum new_status)>>
+        change_evse_effective_availability_callback;
 
     /// \brief gets the active import energy meter value from meter_value, normalized to Wh.
     std::optional<float> get_active_import_register_meter_value();
@@ -63,16 +64,20 @@ public:
     /// \param status_notification_callback that is called when the status of a connector changes
     /// \param pause_charging_callback that is called when the charging should be paused due to max energy on
     /// invalid id being exceeded
-    Evse(const int32_t evse_id, const int32_t number_of_connectors, DeviceModel& device_model,
-         std::shared_ptr<DatabaseHandler> database_handler,
-         std::shared_ptr<ComponentStateManager> component_state_manager,
-         const std::function<void(const int32_t connector_id, const ConnectorStatusEnum& status)>&
-             status_notification_callback,
-         const std::function<void(const MeterValue& meter_value, const Transaction& transaction, const int32_t seq_no,
-                                  const std::optional<int32_t> reservation_id)>& transaction_meter_value_req,
-         const std::function<void()> pause_charging_callback,
-         const std::function<void(const std::optional<int32_t> connector_id, const OperationalStatusEnum new_status)>
-             change_effective_availability_callback);
+    Evse(
+        const int32_t evse_id, const int32_t number_of_connectors, DeviceModel& device_model,
+        std::shared_ptr<DatabaseHandler> database_handler,
+        std::shared_ptr<ComponentStateManager> component_state_manager,
+        const std::function<void(const int32_t connector_id, const ConnectorStatusEnum& status)>&
+            status_notification_callback,
+        const std::function<void(const MeterValue& meter_value, const Transaction& transaction, const int32_t seq_no,
+                                 const std::optional<int32_t> reservation_id)>& transaction_meter_value_req,
+        const std::function<void()> pause_charging_callback,
+        std::optional<std::function<void(const int32_t evse_id, const OperationalStatusEnum new_status)>>
+            change_evse_effective_availability_callback,
+        std::function<void(const int32_t evse_id, const int32_t connector_id,
+                           const OperationalStatusEnum new_status)>
+            change_connector_effective_availability_callback);
 
     /// \brief Returns an OCPP2.0.1 EVSE type
     /// \return
@@ -166,8 +171,7 @@ public:
     /// \param connector_id The ID of the connector, empty if the EVSE itself is addressed
     /// \param new_status The operative status to switch to
     /// \param persist True the updated operative state should be persisted
-    void set_operative_status(std::optional<int32_t> connector_id, OperationalStatusEnum new_status,
-                              bool persist);
+    void set_operative_status(std::optional<int32_t> connector_id, OperationalStatusEnum new_status, bool persist);
 
     /// \brief Explicitly trigger the change_effective_availability_callback for each component (done on boot)
     void trigger_change_effective_availability_callback();
