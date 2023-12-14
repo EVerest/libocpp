@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
+#pragma once
+
 #include <future>
 #include <set>
 
@@ -53,6 +55,8 @@
 #include <ocpp/v201/messages/TriggerMessage.hpp>
 #include <ocpp/v201/messages/UnlockConnector.hpp>
 #include <ocpp/v201/messages/UpdateFirmware.hpp>
+
+#include "component_state_manager.hpp"
 
 namespace ocpp {
 namespace v201 {
@@ -201,9 +205,8 @@ private:
     int network_configuration_priority;
     bool disable_automatic_websocket_reconnects;
 
-    /// \brief The availability status of the whole CS, set externally by the CSMS via ChangeAvailability requests.
-    /// It can also be set internally by the user of libocpp (e.g. to turn the CS inoperative for internal reasons)
-    OperationalStatusEnum operative_status;
+    /// \brief Component responsible for maintaining and persisting the operational status of CS, EVSEs, and connectors.
+    std::shared_ptr<ComponentStateManager> component_state_manager;
 
     // store the connector status
     struct EvseConnectorPair {
@@ -487,10 +490,10 @@ private:
         };
     };
 
-    /// \brief Checks if all connectors are effectively unavailable.
+    /// \brief Checks if all connectors are effectively inoperative.
     /// If this is the case, calls the all_connectors_unavailable_callback
     /// This is used e.g. to allow firmware updates once all transactions have finished
-    void notify_user_if_all_connectors_unavailable();
+    void notify_user_if_all_connectors_inoperative();
 
 public:
     /// \brief Construct a new ChargePoint object
@@ -667,9 +670,11 @@ public:
     /// \param connector_id: The ID of the connector, empty if an EVSE or the CS is addressed
     /// \param new_status: The new operative status to switch to
     /// \param persist: True if the updated state should be persisted in the database
-    /// \param is_boot True if the call is due to recomputing the effective statuses on boot
     void set_operative_status(std::optional<int32_t> evse_id, std::optional<int32_t> connector_id,
-                              OperationalStatusEnum new_status, bool persist, bool is_boot);
+                              std::optional<OperationalStatusEnum> new_status, bool persist);
+
+    /// \brief Explicitly trigger the change_effective_availability_callback for each component (done on boot)
+    void trigger_change_effective_availability_callback();
 
     /// \brief Delay draining the message queue after reconnecting, so the CSMS can perform post-reconnect checks first
     /// \param delay The delay period (seconds)

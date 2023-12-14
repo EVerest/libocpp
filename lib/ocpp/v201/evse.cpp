@@ -40,7 +40,8 @@ static float get_normalized_energy_value(SampledValue sampled_value) {
 }
 
 Evse::Evse(const int32_t evse_id, const int32_t number_of_connectors, DeviceModel& device_model,
-           std::shared_ptr<DatabaseHandler> database_handler, OperationalStatusEnum cs_effective_status,
+           std::shared_ptr<DatabaseHandler> database_handler,
+           std::shared_ptr<ComponentStateManager> component_state_manager,
            const std::function<void(const int32_t connector_id, const ConnectorStatusEnum& status)>&
                status_notification_callback,
            const std::function<void(const MeterValue& meter_value, const Transaction& transaction, const int32_t seq_no,
@@ -55,17 +56,12 @@ Evse::Evse(const int32_t evse_id, const int32_t number_of_connectors, DeviceMode
     pause_charging_callback(pause_charging_callback),
     change_effective_availability_callback(change_effective_availability_callback),
     database_handler(database_handler),
-    operative_status(database_handler->get_evse_availability(evse_id)),
+    component_state_manager(component_state_manager),
     transaction(nullptr) {
-    this->effective_status = this->operative_status;
-    if (cs_effective_status == OperationalStatusEnum::Inoperative) {
-        this->effective_status = OperationalStatusEnum::Inoperative;
-    }
-
     for (int connector_id = 1; connector_id <= number_of_connectors; connector_id++) {
         this->id_connector_map.insert(
             std::make_pair(connector_id, std::make_unique<Connector>(
-                                             evse_id, connector_id, database_handler, this->effective_status,
+                                             evse_id, connector_id, component_state_manager,
                                              [this, connector_id](const ConnectorStatusEnum& status) {
                                                  this->status_notification_callback(connector_id, status);
                                              },
@@ -208,21 +204,21 @@ std::unique_ptr<EnhancedTransaction>& Evse::get_transaction() {
 }
 
 ConnectorStatusEnum Evse::get_state(const int32_t connector_id) {
-    return this->id_connector_map.at(connector_id)->get_effective_status();
+    return this->id_connector_map.at(connector_id)->get_effective_connector_status();
 }
 
-void Evse::submit_event(const int32_t connector_id, ConnectorEvent event, OperationalStatusEnum cs_status) {
-    return this->id_connector_map.at(connector_id)->submit_event(event, this->effective_status);
+void Evse::submit_event(const int32_t connector_id, ConnectorEvent event) {
+    return this->id_connector_map.at(connector_id)->submit_event(event);
 }
 
 void Evse::trigger_status_notification_callbacks() {
     for (auto const& [connector_id, connector] : this->id_connector_map) {
-        this->status_notification_callback(connector_id, connector->get_effective_status());
+        connector->trigger_status_notification_callback();
     }
 }
 
 void Evse::trigger_status_notification_callback(const int32_t connector_id) {
-    this->status_notification_callback(connector_id, this->id_connector_map.at(connector_id)->get_effective_status());
+    this->id_connector_map.at(connector_id)->trigger_status_notification_callback();
 }
 
 void Evse::on_meter_value(const MeterValue& meter_value) {
@@ -278,44 +274,19 @@ void Evse::check_max_energy_on_invalid_id() {
     }
 }
 
-OperationalStatusEnum Evse::determine_effective_status(OperationalStatusEnum cs_status) {
-    if (cs_status != OperationalStatusEnum::Operative) {
-        return OperationalStatusEnum::Inoperative;
-    }
-    return this->operative_status;
-}
-
-bool Evse::all_connectors_inoperative() {
-    for (auto& [connector_id, connector] : this->id_connector_map) {
-        if (connector != nullptr) {
-            if (connector->get_effective_status() == ConnectorStatusEnum::Available ||
-                connector->get_effective_status() == ConnectorStatusEnum::Reserved ||
-                connector->get_effective_status() == ConnectorStatusEnum::Occupied) {
-                return false;
-            }
-        }
-    }
-    return true;
-}
-
 void Evse::set_operative_status(std::optional<int32_t> connector_id, std::optional<OperationalStatusEnum> new_status,
-                                OperationalStatusEnum cs_status, bool persist, bool is_boot) {
-    OperationalStatusEnum old_eff_status = this->effective_status;
-    OperationalStatusEnum old_op_status = this->operative_status;
+                                bool persist) {
+    OperationalStatusEnum old_eff_status = this->get_effective_operational_status();
 
     if (!connector_id.has_value() && new_status.has_value()) {
         // The EVSE is addressed
-        this->operative_status = new_status.value();
+        this->component_state_manager->set_evse_individual_operational_status(this->evse_id, new_status.value(), persist);
     }
 
-    // Update the effective status of the EVSE
-    this->effective_status = this->determine_effective_status(cs_status);
+    OperationalStatusEnum new_eff_status = this->get_effective_operational_status();
 
-    if (old_op_status != this->operative_status && persist) {
-        this->database_handler->insert_evse_availability(this->evse_id, this->operative_status, true);
-    }
-    if (is_boot || old_eff_status != this->effective_status) {
-        this->change_effective_availability_callback({}, this->effective_status);
+    if (old_eff_status != new_eff_status) {
+        this->change_effective_availability_callback({}, new_eff_status);
     }
 
     // Update the effective status of all connectors
@@ -323,20 +294,25 @@ void Evse::set_operative_status(std::optional<int32_t> connector_id, std::option
         if (connector != nullptr) {
             if (connector_id.has_value() && connector_id.value() == id) {
                 // The connector is addressed, change its operative status
-                connector->set_operative_status(new_status, this->effective_status, persist, is_boot);
+                connector->set_operative_status(new_status, persist);
             } else {
                 // The connector is not addressed, just update its effective status
-                connector->set_operative_status({}, this->effective_status, false, is_boot);
+                connector->set_operative_status({}, false);
             }
         }
     }
 }
 
-OperationalStatusEnum Evse::get_operative_status(std::optional<int32_t> connector_id) {
-    if (connector_id.has_value()) {
-        return this->id_connector_map.at(connector_id.value())->get_operative_status();
-    } else {
-        return this->operative_status;
+OperationalStatusEnum Evse::get_effective_operational_status() {
+    return this->component_state_manager->get_evse_effective_operational_status(this->evse_id);
+}
+
+void Evse::trigger_change_effective_availability_callback() {
+    this->change_effective_availability_callback(std::nullopt, this->get_effective_operational_status());
+    for (auto& [id, connector] : this->id_connector_map) {
+        if (connector != nullptr) {
+            connector->trigger_status_notification_callback();
+        }
     }
 }
 

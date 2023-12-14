@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
+#pragma once
+
 #include <functional>
 #include <map>
 #include <memory>
@@ -11,6 +13,7 @@
 #include <ocpp/v201/device_model.hpp>
 #include <ocpp/v201/ocpp_types.hpp>
 #include <ocpp/v201/transaction.hpp>
+#include <ocpp/v201/component_state_manager.hpp>
 
 namespace ocpp {
 namespace v201 {
@@ -49,16 +52,8 @@ private:
     AverageMeterValues aligned_data_updated;
     AverageMeterValues aligned_data_tx_end;
 
-    /// \brief The operational status setting of the EVSE, as set by the CSMS and libocpp commands.
-    /// Note that this might not match the actual state of the EVSE, e.g. if the CS is inoperative.
-    OperationalStatusEnum operative_status;
-    /// \brief The actual state of the EVSE, dependent on both the operative status and the CS's operative status.
-    OperationalStatusEnum effective_status;
-
-    /// \brief Determine the new effective state of the EVSE
-    /// \param cs_status: The effective state of the charging station
-    /// \return ConnectorStatusEnum
-    OperationalStatusEnum determine_effective_status(OperationalStatusEnum cs_status);
+    /// \brief Component responsible for maintaining and persisting the operational status of CS, EVSEs, and connectors.
+    std::shared_ptr<ComponentStateManager> component_state_manager;
 
 public:
     /// \brief Construct a new Evse object
@@ -69,7 +64,8 @@ public:
     /// \param pause_charging_callback that is called when the charging should be paused due to max energy on
     /// invalid id being exceeded
     Evse(const int32_t evse_id, const int32_t number_of_connectors, DeviceModel& device_model,
-         std::shared_ptr<DatabaseHandler> database_handler, OperationalStatusEnum cs_effective_status,
+         std::shared_ptr<DatabaseHandler> database_handler,
+         std::shared_ptr<ComponentStateManager> component_state_manager,
          const std::function<void(const int32_t connector_id, const ConnectorStatusEnum& status)>&
              status_notification_callback,
          const std::function<void(const MeterValue& meter_value, const Transaction& transaction, const int32_t seq_no,
@@ -139,7 +135,7 @@ public:
     /// \p connector_id
     /// \param connector_id id of the connector of the evse
     /// \param event
-    void submit_event(const int32_t connector_id, ConnectorEvent event, OperationalStatusEnum cs_status);
+    void submit_event(const int32_t connector_id, ConnectorEvent event);
 
     /// \brief Triggers status notification callback for all connectors of the evse
     void trigger_status_notification_callbacks();
@@ -163,21 +159,18 @@ public:
     /// @brief Clear the idle meter values for this evse
     void clear_idle_meter_values();
 
-    /// \brief Get the operative status of the EVSE or one of its connectors (NOT the same as the effective status!)
-    /// \param connector_id The ID of the connector, empty if the EVSE itself is addressed
-    OperationalStatusEnum get_operative_status(std::optional<int32_t> connector_id);
-
-    /// \brief check if all connectors are effectively Inoperative.
-    bool all_connectors_inoperative();
+    /// \brief Gets the effective Operative/Inoperative status of this EVSE
+    OperationalStatusEnum get_effective_operational_status();
 
     /// \brief Switches the operative status of the EVSE or a connector and recomputes effective statuses
     /// \param connector_id The ID of the connector, empty if the EVSE itself is addressed
     /// \param new_status The operative status to switch to, empty if we only want to recompute the effective status
-    /// \param cs_status The effective status of the charging station
     /// \param persist True the updated operative state should be persisted
-    /// \param is_boot True if the call is due to recomputing the effective statuses on boot
     void set_operative_status(std::optional<int32_t> connector_id, std::optional<OperationalStatusEnum> new_status,
-                              OperationalStatusEnum cs_status, bool persist, bool is_boot);
+                              bool persist);
+
+    /// \brief Explicitly trigger the change_effective_availability_callback for each component (done on boot)
+    void trigger_change_effective_availability_callback();
 };
 
 } // namespace v201
