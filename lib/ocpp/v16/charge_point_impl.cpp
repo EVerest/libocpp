@@ -2380,7 +2380,7 @@ void ChargePointImpl::signed_firmware_update_status_notification(FirmwareStatusE
     req.requestId = requestId;
 
     // The "SignatureVerified" status signals a firmware update is pending which will cause connectors to be set
-    // unavailable (now or after pending transactions are stopped); in case of a status that signals failed firmware
+    // inoperative (now or after pending transactions are stopped); in case of a status that signals a failed firmware
     // update this is revoked
     if (status == FirmwareStatusEnumType::SignatureVerified) {
         this->firmware_update_is_pending = true;
@@ -3411,9 +3411,9 @@ void ChargePointImpl::firmware_status_notification(FirmwareStatus status) {
     FirmwareStatusNotificationRequest req;
     req.status = status;
 
-    // The "Downloaded" status signals a firmware update is pending which will cause connectors to be set unavailable
-    // (now or after pending transactions are stopped); in case of a status that signals failed firmware update this is
-    // revoked
+    // The "Downloaded" status signals a firmware update is pending which will cause connectors to be set inoperative
+    // (now or after pending transactions are stopped); in case of a status that signals a failed firmware update this
+    // is// revoked
     if (status == FirmwareStatus::Downloaded) {
         this->firmware_update_is_pending = true;
     } else if (status == FirmwareStatus::DownloadFailed || status == FirmwareStatus::InstallationFailed) {
