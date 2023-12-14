@@ -3413,7 +3413,7 @@ void ChargePointImpl::firmware_status_notification(FirmwareStatus status) {
 
     // The "Downloaded" status signals a firmware update is pending which will cause connectors to be set inoperative
     // (now or after pending transactions are stopped); in case of a status that signals a failed firmware update this
-    // is// revoked
+    // is revoked
     if (status == FirmwareStatus::Downloaded) {
         this->firmware_update_is_pending = true;
     } else if (status == FirmwareStatus::DownloadFailed || status == FirmwareStatus::InstallationFailed) {
