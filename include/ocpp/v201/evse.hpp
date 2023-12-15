@@ -25,9 +25,7 @@ class Evse {
 private:
     int32_t evse_id;
     DeviceModel& device_model;
-    // TODO this can be an array, it does not need to be a map
     std::map<int32_t, std::unique_ptr<Connector>> id_connector_map;
-    std::function<void(const int32_t connector_id, const ConnectorStatusEnum& status)> status_notification_callback;
     std::function<void(const MeterValue& meter_value, const Transaction& transaction, const int32_t seq_no,
                        const std::optional<int32_t> reservation_id)>
         transaction_meter_value_req;
@@ -37,12 +35,6 @@ private:
     std::recursive_mutex meter_value_mutex;
     Everest::SteadyTimer sampled_meter_values_timer;
     std::shared_ptr<DatabaseHandler> database_handler;
-
-    /// \brief Signal a changed availability of an EVSE
-    /// \param evse_id The id of the EVSE
-    /// \param new_status The operational status to switch to
-    std::optional<std::function<void(const int32_t evse_id, const OperationalStatusEnum new_status)>>
-        change_evse_effective_availability_callback;
 
     /// \brief gets the active import energy meter value from meter_value, normalized to Wh.
     std::optional<float> get_active_import_register_meter_value();
@@ -68,16 +60,9 @@ public:
         const int32_t evse_id, const int32_t number_of_connectors, DeviceModel& device_model,
         std::shared_ptr<DatabaseHandler> database_handler,
         std::shared_ptr<ComponentStateManager> component_state_manager,
-        const std::function<void(const int32_t connector_id, const ConnectorStatusEnum& status)>&
-            status_notification_callback,
         const std::function<void(const MeterValue& meter_value, const Transaction& transaction, const int32_t seq_no,
                                  const std::optional<int32_t> reservation_id)>& transaction_meter_value_req,
-        const std::function<void()> pause_charging_callback,
-        std::optional<std::function<void(const int32_t evse_id, const OperationalStatusEnum new_status)>>
-            change_evse_effective_availability_callback,
-        std::function<void(const int32_t evse_id, const int32_t connector_id,
-                           const OperationalStatusEnum new_status)>
-            change_connector_effective_availability_callback);
+        const std::function<void()> pause_charging_callback);
 
     /// \brief Returns an OCPP2.0.1 EVSE type
     /// \return
@@ -134,20 +119,13 @@ public:
     /// \brief Get the state of the connector with the given \p connector_id
     /// \param connector_id id of the connector of the evse
     /// \return ConnectorStatusEnum
-    ConnectorStatusEnum get_state(const int32_t connector_id);
+    //ConnectorStatusEnum get_state(const int32_t connector_id);
 
     /// \brief Submits the given \p event to the state machine controller of the connector with the given
     /// \p connector_id
     /// \param connector_id id of the connector of the evse
     /// \param event
     void submit_event(const int32_t connector_id, ConnectorEvent event);
-
-    /// \brief Triggers status notification callback for all connectors of the evse
-    void trigger_status_notification_callbacks();
-
-    /// \brief Triggers a status notification callback for connector_id of the evse
-    /// \param connector_id id of the connector of the evse
-    void trigger_status_notification_callback(const int32_t connector_id);
 
     /// \brief Event handler that should be called when a new meter_value for this evse is present
     /// \param meter_value
@@ -180,13 +158,6 @@ public:
     /// \param new_status The operative status to switch to
     /// \param persist True the updated operative state should be persisted
     void set_connector_operative_status(int32_t connector_id, OperationalStatusEnum new_status, bool persist);
-
-    /// \brief Explicitly trigger the change_effective_availability_callback for each component (done on boot)
-    void trigger_change_effective_availability_callback();
-
-    /// \brief Call the change_effective_availability_callback and the status_notification_callback if state changed
-    /// Also triggers the corresponding callback on the connectors.
-    void trigger_callbacks_if_effective_state_changed();
 };
 
 } // namespace v201

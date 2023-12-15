@@ -38,19 +38,8 @@ private:
     /// \brief ID of the connector itself (>0)
     int32_t connector_id;
 
-    /// \brief Component responsible for maintaining and persisting the operational status of CS, EVSEs, and connectors.
+    /// \brief Component responsible for maintaining and monitoring the operational status of CS, EVSEs, and connectors.
     std::shared_ptr<ComponentStateManager> component_state_manager;
-
-    /// \brief Sends a status update to the CSMS about a change in effective status of this connector.
-    std::function<void(const ConnectorStatusEnum& status)> status_notification_callback;
-
-    /// \brief Signal a changed availability of a single connector
-    /// \param evse_id The id of the EVSE
-    /// \param connector_id The ID of the connector within the EVSE
-    /// \param new_status The operational status to switch to
-    std::function<void(const int32_t evse_id, const int32_t connector_id,
-                       const OperationalStatusEnum new_status)>
-        change_connector_effective_availability_callback;
 
 public:
     /// \brief Construct a new Connector object
@@ -60,11 +49,7 @@ public:
     /// \param status_notification_callback callback executed to send a status notification for the connector
     /// \param change_effective_availability_callback callback to change the effective operative state of the connector
     Connector(const int32_t evse_id, const int32_t connector_id,
-              std::shared_ptr<ComponentStateManager> component_state_manager,
-              const std::function<void(const ConnectorStatusEnum& status)>& status_notification_callback,
-              std::function<void(const int32_t evse_id, const int32_t connector_id,
-                                 const OperationalStatusEnum new_status)>
-                  change_connector_effective_availability_callback);
+              std::shared_ptr<ComponentStateManager> component_state_manager);
 
     /// \brief Gets the effective Operative/Inoperative status of this connector
     OperationalStatusEnum get_effective_operational_status();
@@ -75,19 +60,10 @@ public:
     /// \param event
     void submit_event(ConnectorEvent event);
 
-    /// \brief Explicitly causes a StatusNotification callback with the current effective status to be sent.
-    void trigger_status_notification_callback();
-
     /// \brief Switches the operative status of the connector and recomputes its effective status
     /// \param new_status: The operative status to switch to
     /// \param persist: True if the updated operative status setting should be persisted
     void set_connector_operative_status(OperationalStatusEnum new_status, bool persist);
-
-    /// \brief Explicitly trigger the change_effective_availability_callback for each component (done on boot)
-    void trigger_change_effective_availability_callback();
-
-    /// \brief Call the change_effective_availability_callback and the status_notification_callback if state changed
-    void trigger_callbacks_if_effective_state_changed();
 };
 
 } // namespace v201

@@ -44,32 +44,20 @@ static float get_normalized_energy_value(SampledValue sampled_value) {
 Evse::Evse(
     const int32_t evse_id, const int32_t number_of_connectors, DeviceModel& device_model,
     std::shared_ptr<DatabaseHandler> database_handler, std::shared_ptr<ComponentStateManager> component_state_manager,
-    const std::function<void(const int32_t connector_id, const ConnectorStatusEnum& status)>&
-        status_notification_callback,
     const std::function<void(const MeterValue& meter_value, const Transaction& transaction, const int32_t seq_no,
                              const std::optional<int32_t> reservation_id)>& transaction_meter_value_req,
-    const std::function<void()> pause_charging_callback,
-    std::optional<std::function<void(const int32_t evse_id, const OperationalStatusEnum new_status)>>
-        change_evse_effective_availability_callback,
-    std::function<void(const int32_t evse_id, const int32_t connector_id, const OperationalStatusEnum new_status)>
-        change_connector_effective_availability_callback) :
+    const std::function<void()> pause_charging_callback) :
     evse_id(evse_id),
     device_model(device_model),
-    status_notification_callback(status_notification_callback),
     transaction_meter_value_req(transaction_meter_value_req),
     pause_charging_callback(pause_charging_callback),
-    change_evse_effective_availability_callback(change_evse_effective_availability_callback),
     database_handler(database_handler),
     component_state_manager(component_state_manager),
     transaction(nullptr) {
     for (int connector_id = 1; connector_id <= number_of_connectors; connector_id++) {
         this->id_connector_map.insert(
             std::make_pair(connector_id, std::make_unique<Connector>(
-                                             evse_id, connector_id, component_state_manager,
-                                             [this, connector_id](const ConnectorStatusEnum& status) {
-                                                 this->status_notification_callback(connector_id, status);
-                                             },
-                                             change_connector_effective_availability_callback)));
+                                             evse_id, connector_id, component_state_manager)));
     }
 }
 
@@ -205,22 +193,12 @@ std::unique_ptr<EnhancedTransaction>& Evse::get_transaction() {
     return this->transaction;
 }
 
-ConnectorStatusEnum Evse::get_state(const int32_t connector_id) {
-    return this->id_connector_map.at(connector_id)->get_effective_connector_status();
-}
+//ConnectorStatusEnum Evse::get_state(const int32_t connector_id) {
+//    return this->id_connector_map.at(connector_id)->get_effective_connector_status();
+//}
 
 void Evse::submit_event(const int32_t connector_id, ConnectorEvent event) {
     return this->id_connector_map.at(connector_id)->submit_event(event);
-}
-
-void Evse::trigger_status_notification_callbacks() {
-    for (auto const& [connector_id, connector] : this->id_connector_map) {
-        connector->trigger_status_notification_callback();
-    }
-}
-
-void Evse::trigger_status_notification_callback(const int32_t connector_id) {
-    this->id_connector_map.at(connector_id)->trigger_status_notification_callback();
 }
 
 void Evse::on_meter_value(const MeterValue& meter_value) {
@@ -278,7 +256,6 @@ void Evse::check_max_energy_on_invalid_id() {
 
 void Evse::set_evse_operative_status(OperationalStatusEnum new_status, bool persist) {
     this->component_state_manager->set_evse_individual_operational_status(this->evse_id, new_status, persist);
-    this->trigger_callbacks_if_effective_state_changed();
 }
 
 void Evse::set_connector_operative_status(int32_t connector_id, OperationalStatusEnum new_status, bool persist) {
@@ -287,35 +264,6 @@ void Evse::set_connector_operative_status(int32_t connector_id, OperationalStatu
 
 OperationalStatusEnum Evse::get_effective_operational_status() {
     return this->component_state_manager->get_evse_effective_operational_status(this->evse_id);
-}
-
-void Evse::trigger_change_effective_availability_callback() {
-    if (this->change_evse_effective_availability_callback.has_value()) {
-        this->change_evse_effective_availability_callback.value()(this->evse_id,
-                                                                  this->get_effective_operational_status());
-    }
-    for (auto& [id, connector] : this->id_connector_map) {
-        if (connector != nullptr) {
-            connector->trigger_change_effective_availability_callback();
-        }
-    }
-}
-
-void Evse::trigger_callbacks_if_effective_state_changed() {
-    if (this->component_state_manager->evse_effective_status_changed(this->evse_id)) {
-        if (this->change_evse_effective_availability_callback.has_value()) {
-            this->change_evse_effective_availability_callback.value()(this->evse_id,
-                                                                      this->get_effective_operational_status());
-        }
-        this->component_state_manager->clear_evse_effective_status_changed(this->evse_id);
-
-        // If our effective state changed, see if that of the connectors changed too
-        for (auto& [id, connector] : this->id_connector_map) {
-            if (connector != nullptr) {
-                connector->trigger_callbacks_if_effective_state_changed();
-            }
-        }
-    }
 }
 
 Connector* Evse::get_connector(int32_t connector_id) {

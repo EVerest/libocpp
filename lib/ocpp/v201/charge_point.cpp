@@ -9,9 +9,9 @@
 #include <ocpp/v201/messages/LogStatusNotification.hpp>
 #include <ocpp/v201/notify_report_requests_splitter.hpp>
 
+#include <fmt/format.h>
 #include <stdexcept>
 #include <string>
-#include <fmt/format.h>
 
 using namespace std::chrono_literals;
 
@@ -84,7 +84,31 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
     this->database_handler->open_connection();
 
     // Set up the component state manager
-    this->component_state_manager = std::make_shared<ComponentStateManager>(evse_connector_structure, database_handler);
+    this->component_state_manager = std::make_shared<ComponentStateManager>(
+        evse_connector_structure, database_handler, [this](auto evse_id, auto connector_id, auto status) {
+            if (!this->websocket->is_connected()) {
+                return false;
+            } else {
+                this->status_notification_req(evse_id, connector_id, status);
+                return true;
+            }
+        });
+    if (this->callbacks.change_cs_effective_availability_callback.has_value()) {
+        this->component_state_manager->set_cs_effective_availability_changed_callback(
+            [this](auto old_status, auto new_status) {
+                this->callbacks.change_cs_effective_availability_callback.value()(new_status);
+            });
+    }
+    if (this->callbacks.change_evse_effective_availability_callback.has_value()) {
+        this->component_state_manager->set_evse_effective_availability_changed_callback(
+            [this](auto evse_id, auto old_status, auto new_status) {
+                this->callbacks.change_evse_effective_availability_callback.value()(evse_id, new_status);
+            });
+    }
+    this->component_state_manager->set_connector_effective_availability_changed_callback(
+        [this](auto evse_id, auto connector_id, auto old_status, auto new_status) {
+            this->callbacks.change_connector_effective_availability_callback(evse_id, connector_id, new_status);
+        });
 
     // intantiate and initialize evses
     for (auto const& [evse_id, number_of_connectors] : evse_connector_structure) {
@@ -130,12 +154,10 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
 
         auto pause_charging_callback = [this, evse_id_]() { this->callbacks.pause_charging_callback(evse_id_); };
 
-        this->evses.insert(std::make_pair(
-            evse_id, std::make_unique<Evse>(evse_id, number_of_connectors, *this->device_model, this->database_handler,
-                                            component_state_manager, status_notification_callback,
-                                            transaction_meter_value_callback, pause_charging_callback,
-                                            callbacks.change_evse_effective_availability_callback,
-                                            callbacks.change_connector_effective_availability_callback)));
+        this->evses.insert(
+            std::make_pair(evse_id, std::make_unique<Evse>(evse_id, number_of_connectors, *this->device_model,
+                                                           this->database_handler, component_state_manager,
+                                                           transaction_meter_value_callback, pause_charging_callback)));
     }
 
     // configure logging
@@ -160,8 +182,8 @@ void ChargePoint::start(BootReasonEnum bootreason) {
     this->boot_notification_req(bootreason);
     this->ocsp_updater.start();
 
-    // Recompute all effective operative statuses and send corresponding status notifications
-    this->trigger_change_effective_availability_callback();
+    // Trigger all initial status notifications and callbacks related to component state
+    this->component_state_manager->trigger_boot_callbacks();
     // FIXME(piet): Run state machine with correct initial state
 }
 
@@ -694,22 +716,13 @@ void ChargePoint::init_websocket() {
             if (offline_duration > std::chrono::seconds(this->device_model->get_value<int>(
                                        ControllerComponentVariables::OfflineThreshold))) {
                 EVLOG_debug << "offline for more than offline threshold ";
-                for (auto const& [evse_id, evse] : this->evses) {
-                    evse->trigger_status_notification_callbacks();
-                }
+                this->component_state_manager->send_status_notification_all_connectors();
             } else {
                 // B04.FR.02
                 // If offline period doesn't exceed offline threshold then send the status notification for all
                 // connectors that changed state
                 EVLOG_debug << "offline for less than offline threshold ";
-                for (auto const& [evse_id, evse] : this->evses) {
-                    int number_of_connectors = evse->get_number_of_connectors();
-                    for (int connector_id = 1; connector_id <= number_of_connectors; connector_id++) {
-                        if (conn_state_per_evse[{evse_id, connector_id}] != evse->get_state(connector_id)) {
-                            evse->trigger_status_notification_callback(connector_id);
-                        }
-                    }
-                }
+                this->component_state_manager->send_status_notification_changed_connectors();
             }
             this->init_certificate_expiration_check_timers(); // re-init as timers are stopped on disconnect
         }
@@ -721,19 +734,6 @@ void ChargePoint::init_websocket() {
 
         // check if offline threshold has been defined
         if (this->device_model->get_value<int>(ControllerComponentVariables::OfflineThreshold) != 0) {
-            // get the status of all the connectors
-            for (auto const& [evse_id, evse] : this->evses) {
-                int number_of_connectors = evse->get_number_of_connectors();
-                EvseConnectorPair conn_states_struct_key;
-                EVLOG_debug << "evseId: " << evse_id << " numConn: " << number_of_connectors;
-                for (int connector_id = 1; connector_id <= number_of_connectors; connector_id++) {
-                    conn_states_struct_key.evse_id = evse_id;
-                    conn_states_struct_key.connector_id = connector_id;
-                    conn_state_per_evse[conn_states_struct_key] = evse->get_state(connector_id);
-                    EVLOG_debug << "conn_id: " << conn_states_struct_key.connector_id
-                                << " State: " << conn_state_per_evse[conn_states_struct_key];
-                }
-            }
             // Get the current time point using steady_clock
             this->time_disconnected = std::chrono::steady_clock::now();
         }
@@ -1448,7 +1448,8 @@ bool ChargePoint::is_evse_reserved_for_other(const std::unique_ptr<Evse>& evse, 
                                              const std::optional<IdToken>& group_id_token) const {
     const uint32_t connectors = evse->get_number_of_connectors();
     for (uint32_t i = 1; i <= connectors; ++i) {
-        const ConnectorStatusEnum& status = evse->get_state(static_cast<int32_t>(i));
+        const ConnectorStatusEnum status =
+            evse->get_connector(static_cast<int32_t>(i))->get_effective_connector_status();
         if (status == ConnectorStatusEnum::Reserved) {
             const std::optional<CiString<36>> groupIdToken =
                 group_id_token.has_value() ? group_id_token.value().idToken : std::optional<CiString<36>>{};
@@ -1471,7 +1472,8 @@ bool ChargePoint::is_evse_connector_available(const std::unique_ptr<Evse>& evse)
 
     const uint32_t connectors = evse->get_number_of_connectors();
     for (uint32_t i = 1; i <= connectors; ++i) {
-        const ConnectorStatusEnum& status = evse->get_state(static_cast<int32_t>(i));
+        const ConnectorStatusEnum status =
+            evse->get_connector(static_cast<int32_t>(i))->get_effective_connector_status();
 
         // At least one of the connectors is available / not faulted.
         if (status != ConnectorStatusEnum::Faulted && status != ConnectorStatusEnum::Unavailable) {
@@ -1488,14 +1490,13 @@ void ChargePoint::set_evse_connectors_unavailable(const std::unique_ptr<Evse>& e
 
     for (uint32_t i = 1; i <= number_of_connectors; ++i) {
         bool should_persist = persist;
-        if (!should_persist &&
-            evse->get_state(static_cast<int32_t>(i)) == ocpp::v201::ConnectorStatusEnum::Unavailable) {
+        // TODO: Why is this condition here? What requirement does it fulfill?
+        if (!should_persist && evse->get_connector(static_cast<int32_t>(i))->get_effective_connector_status() ==
+                                   ocpp::v201::ConnectorStatusEnum::Unavailable) {
             should_persist = true;
         }
 
-        evse->set_connector_operative_status(static_cast<int32_t>(i), OperationalStatusEnum::Inoperative, persist);
-
-        this->set_connector_operative_status(evse->get_evse_info().id, i, OperationalStatusEnum::Inoperative,
+        evse->set_connector_operative_status(static_cast<int32_t>(i), OperationalStatusEnum::Inoperative,
                                              should_persist);
     }
 }
@@ -1885,9 +1886,7 @@ void ChargePoint::handle_boot_notification_response(CallResult<BootNotificationR
                 std::string::npos) {
             this->callbacks.time_sync_callback.value()(msg.currentTime);
         }
-        for (auto const& [evse_id, evse] : this->evses) {
-            evse->trigger_status_notification_callbacks();
-        }
+        this->component_state_manager->send_status_notification_all_connectors();
 
         if (this->bootreason == BootReasonEnum::RemoteReset) {
             this->security_event_notification_req(
@@ -2460,7 +2459,8 @@ void ChargePoint::handle_trigger_message(Call<TriggerMessageRequest> call) {
 
     case MessageTriggerEnum::StatusNotification:
         if (evse_ptr != nullptr and msg.evse.value().connectorId.has_value()) {
-            evse_ptr->trigger_status_notification_callback(msg.evse.value().connectorId.value());
+            this->component_state_manager->send_status_notification_single_connector(
+                msg.evse.value().id, msg.evse.value().connectorId.value());
         }
         break;
 
@@ -2959,7 +2959,6 @@ void ChargePoint::scheduled_check_v2g_certificate_expiration() {
 
 void ChargePoint::set_cs_operative_status(OperationalStatusEnum new_status, bool persist) {
     this->component_state_manager->set_cs_individual_operational_status(new_status, persist);
-    this->trigger_callbacks_if_effective_state_changed();
 }
 
 void ChargePoint::set_evse_operative_status(int32_t evse_id, OperationalStatusEnum new_status, bool persist) {
@@ -2969,18 +2968,6 @@ void ChargePoint::set_evse_operative_status(int32_t evse_id, OperationalStatusEn
 void ChargePoint::set_connector_operative_status(int32_t evse_id, int32_t connector_id,
                                                  OperationalStatusEnum new_status, bool persist) {
     this->evses.at(evse_id)->set_connector_operative_status(connector_id, new_status, persist);
-}
-
-void ChargePoint::trigger_change_effective_availability_callback() {
-    if (this->callbacks.change_cs_effective_availability_callback.has_value()) {
-        this->callbacks.change_cs_effective_availability_callback.value()(
-            this->component_state_manager->get_cs_individual_operational_status());
-    }
-    for (auto& [evse_id, evse] : this->evses) {
-        if (evse != nullptr) {
-            evse->trigger_change_effective_availability_callback();
-        }
-    }
 }
 
 void ChargePoint::notify_user_if_all_connectors_inoperative() {
@@ -2999,23 +2986,6 @@ void ChargePoint::notify_user_if_all_connectors_inoperative() {
     // Check succeeded, trigger the callback
     if (this->callbacks.all_connectors_unavailable_callback.has_value()) {
         this->callbacks.all_connectors_unavailable_callback.value()();
-    }
-}
-
-void ChargePoint::trigger_callbacks_if_effective_state_changed() {
-    if (this->component_state_manager->cs_effective_status_changed()) {
-        if (this->callbacks.change_cs_effective_availability_callback.has_value()) {
-            this->callbacks.change_cs_effective_availability_callback.value()(
-                this->component_state_manager->get_cs_individual_operational_status());
-        }
-        this->component_state_manager->clear_cs_effective_status_changed();
-
-        // If our effective state changed, update that of the components below us too
-        for (auto& [evse_id, evse] : this->evses) {
-            if (evse != nullptr) {
-                evse->trigger_callbacks_if_effective_state_changed();
-            }
-        }
     }
 }
 
