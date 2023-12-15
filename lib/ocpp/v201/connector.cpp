@@ -69,7 +69,7 @@ void Connector::submit_event(ConnectorEvent event) {
     this->trigger_callbacks_if_effective_state_changed();
 }
 
-void Connector::set_operative_status(OperationalStatusEnum new_status, bool persist) {
+void Connector::set_connector_operative_status(OperationalStatusEnum new_status, bool persist) {
     this->component_state_manager->set_connector_individual_operational_status(this->evse_id, this->connector_id,
                                                                                new_status, persist);
     this->trigger_callbacks_if_effective_state_changed();

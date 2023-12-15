@@ -105,8 +105,7 @@ struct Callbacks {
     /// \param evse_id The id of the EVSE
     /// \param connector_id The ID of the connector within the EVSE
     /// \param new_status The operational status to switch to
-    std::function<void(const int32_t evse_id, const int32_t connector_id,
-                       const OperationalStatusEnum new_status)>
+    std::function<void(const int32_t evse_id, const int32_t connector_id, const OperationalStatusEnum new_status)>
         change_connector_effective_availability_callback;
 
     std::function<GetLogResponse(const GetLogRequest& request)> get_log_request_callback;
@@ -676,13 +675,30 @@ public:
     DataTransferResponse data_transfer_req(const CiString<255>& vendorId, const std::optional<CiString<50>>& messageId,
                                            const std::optional<std::string>& data);
 
+    /// \brief Returns a pointer to the EVSE with ID \param evse_id
+    Evse* get_evse(int32_t evse_id);
+
+    /// \brief Returns a pointer to the connector with ID \param connector_id in the EVSE with ID \param evse_id
+    Connector* get_connector(int32_t evse_id, int32_t connector_id);
+
+    /// \brief Switches the operative status of the CS
+    /// \param new_status: The new operative status to switch to
+    /// \param persist: True if the updated state should be persisted in the database
+    void set_cs_operative_status(OperationalStatusEnum new_status, bool persist);
+
+    /// \brief Switches the operative status of an EVSE
+    /// \param evse_id: The ID of the EVSE, empty if the CS is addressed
+    /// \param new_status: The new operative status to switch to
+    /// \param persist: True if the updated state should be persisted in the database
+    void set_evse_operative_status(int32_t evse_id, OperationalStatusEnum new_status, bool persist);
+
     /// \brief Switches the operative status of the CS, an EVSE, or a connector, and recomputes effective statuses
     /// \param evse_id: The ID of the EVSE, empty if the CS is addressed
     /// \param connector_id: The ID of the connector, empty if an EVSE or the CS is addressed
     /// \param new_status: The new operative status to switch to
     /// \param persist: True if the updated state should be persisted in the database
-    void set_operative_status(std::optional<int32_t> evse_id, std::optional<int32_t> connector_id,
-                              OperationalStatusEnum new_status, bool persist);
+    void set_connector_operative_status(int32_t evse_id, int32_t connector_id, OperationalStatusEnum new_status,
+                                        bool persist);
 
     /// \brief Explicitly trigger the change_effective_availability_callback for each component (done on boot)
     void trigger_change_effective_availability_callback();

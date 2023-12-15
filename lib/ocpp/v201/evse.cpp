@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
+#include <fmt/format.h>
 #include <utility>
 
 #include <everest/logging.hpp>
@@ -8,6 +9,7 @@
 #include <ocpp/v201/ctrlr_component_variables.hpp>
 #include <ocpp/v201/evse.hpp>
 #include <ocpp/v201/utils.hpp>
+
 using namespace std::chrono_literals;
 
 namespace ocpp {
@@ -49,8 +51,7 @@ Evse::Evse(
     const std::function<void()> pause_charging_callback,
     std::optional<std::function<void(const int32_t evse_id, const OperationalStatusEnum new_status)>>
         change_evse_effective_availability_callback,
-    std::function<void(const int32_t evse_id, const int32_t connector_id,
-                       const OperationalStatusEnum new_status)>
+    std::function<void(const int32_t evse_id, const int32_t connector_id, const OperationalStatusEnum new_status)>
         change_connector_effective_availability_callback) :
     evse_id(evse_id),
     device_model(device_model),
@@ -275,15 +276,13 @@ void Evse::check_max_energy_on_invalid_id() {
     }
 }
 
-void Evse::set_operative_status(std::optional<int32_t> connector_id, OperationalStatusEnum new_status, bool persist) {
-    if (!connector_id.has_value()) {
-        // The EVSE is addressed
-        this->component_state_manager->set_evse_individual_operational_status(this->evse_id, new_status, persist);
-        this->trigger_callbacks_if_effective_state_changed();
-    } else {
-        // A connector is addressed
-        this->id_connector_map.at(connector_id.value())->set_operative_status(new_status, persist);
-    }
+void Evse::set_evse_operative_status(OperationalStatusEnum new_status, bool persist) {
+    this->component_state_manager->set_evse_individual_operational_status(this->evse_id, new_status, persist);
+    this->trigger_callbacks_if_effective_state_changed();
+}
+
+void Evse::set_connector_operative_status(int32_t connector_id, OperationalStatusEnum new_status, bool persist) {
+    this->id_connector_map.at(connector_id)->set_connector_operative_status(new_status, persist);
 }
 
 OperationalStatusEnum Evse::get_effective_operational_status() {
@@ -317,6 +316,13 @@ void Evse::trigger_callbacks_if_effective_state_changed() {
             }
         }
     }
+}
+
+Connector* Evse::get_connector(int32_t connector_id) {
+    if (connector_id <= 0 || connector_id > this->get_number_of_connectors()) {
+        throw std::logic_error(fmt::format("Connector ID {} out of bounds for EVSE {}", connector_id, this->evse_id));
+    }
+    return this->id_connector_map.at(connector_id).get();
 }
 
 } // namespace v201

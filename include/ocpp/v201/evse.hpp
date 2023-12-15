@@ -164,14 +164,22 @@ public:
     /// @brief Clear the idle meter values for this evse
     void clear_idle_meter_values();
 
+    /// \brief Returns a pointer to the connector with ID \param connector_id in this EVSE.
+    Connector* get_connector(int32_t connector_id);
+
     /// \brief Gets the effective Operative/Inoperative status of this EVSE
     OperationalStatusEnum get_effective_operational_status();
 
-    /// \brief Switches the operative status of the EVSE or a connector and recomputes effective statuses
-    /// \param connector_id The ID of the connector, empty if the EVSE itself is addressed
+    /// \brief Switches the operative status of the EVSE
     /// \param new_status The operative status to switch to
     /// \param persist True the updated operative state should be persisted
-    void set_operative_status(std::optional<int32_t> connector_id, OperationalStatusEnum new_status, bool persist);
+    void set_evse_operative_status(OperationalStatusEnum new_status, bool persist);
+
+    /// \brief Switches the operative status of a connector within this EVSE
+    /// \param connector_id The ID of the connector
+    /// \param new_status The operative status to switch to
+    /// \param persist True the updated operative state should be persisted
+    void set_connector_operative_status(int32_t connector_id, OperationalStatusEnum new_status, bool persist);
 
     /// \brief Explicitly trigger the change_effective_availability_callback for each component (done on boot)
     void trigger_change_effective_availability_callback();
