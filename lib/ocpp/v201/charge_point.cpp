@@ -28,7 +28,7 @@ const auto DEFAULT_MAX_MESSAGE_SIZE = 65000;
 bool Callbacks::all_callbacks_valid() const {
     return this->is_reset_allowed_callback != nullptr and this->reset_callback != nullptr and
            this->stop_transaction_callback != nullptr and this->pause_charging_callback != nullptr and
-           this->change_connector_effective_availability_callback != nullptr and
+           this->connector_effective_operative_status_changed_callback != nullptr and
            this->get_log_request_callback != nullptr and this->unlock_connector_callback != nullptr and
            this->remote_start_transaction_callback != nullptr and this->is_reservation_for_token_callback != nullptr and
            this->update_firmware_request_callback != nullptr and
@@ -93,21 +93,21 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
                 return true;
             }
         });
-    if (this->callbacks.change_cs_effective_availability_callback.has_value()) {
+    if (this->callbacks.cs_effective_operative_status_changed_callback.has_value()) {
         this->component_state_manager->set_cs_effective_availability_changed_callback(
             [this](auto old_status, auto new_status) {
-                this->callbacks.change_cs_effective_availability_callback.value()(new_status);
+                this->callbacks.cs_effective_operative_status_changed_callback.value()(new_status);
             });
     }
-    if (this->callbacks.change_evse_effective_availability_callback.has_value()) {
+    if (this->callbacks.evse_effective_operative_status_changed_callback.has_value()) {
         this->component_state_manager->set_evse_effective_availability_changed_callback(
             [this](auto evse_id, auto old_status, auto new_status) {
-                this->callbacks.change_evse_effective_availability_callback.value()(evse_id, new_status);
+                this->callbacks.evse_effective_operative_status_changed_callback.value()(evse_id, new_status);
             });
     }
     this->component_state_manager->set_connector_effective_availability_changed_callback(
         [this](auto evse_id, auto connector_id, auto old_status, auto new_status) {
-            this->callbacks.change_connector_effective_availability_callback(evse_id, connector_id, new_status);
+            this->callbacks.connector_effective_operative_status_changed_callback(evse_id, connector_id, new_status);
         });
 
     // intantiate and initialize evses

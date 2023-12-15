@@ -83,30 +83,30 @@ struct Callbacks {
     std::function<void(const int32_t evse_id, const ReasonEnum& stop_reason)> stop_transaction_callback;
     std::function<void(const int32_t evse_id)> pause_charging_callback;
 
-    // Availability changing callbacks
-    // These callbacks execut the state transition on the charging station (e.g. enabling/disabling EVSEs)
-    // libocpp will call one callback for every component whose state changed - for example,
-    // if an EVSE is disabled, a callback will be called once for the EVSE, and once for each disabled connector.
-    // If a callback is not provided, libocpp will simply ignore it - however, at the very least the connector callback
-    // must be provided.
-
-    /// \brief Change availability of the charging station
-    /// \param new_status The operational status to switch to
+    /// \brief Used to notify the user of libocpp that the Operative/Inoperative state of the charging station changed
+    /// If as a result the state of EVSEs or connectors changed as well, libocpp will additionally call the
+    /// evse_effective_operative_status_changed_callback once for each EVSE whose status changed, and
+    /// connector_effective_operative_status_changed_callback once for each connector whose status changed.
+    /// If left empty, the callback is ignored.
+    /// \param new_status The operational status the CS switched to
     std::optional<std::function<void(const OperationalStatusEnum new_status)>>
-        change_cs_effective_availability_callback;
+        cs_effective_operative_status_changed_callback;
 
-    /// \brief Change availability of an EVSE
+    /// \brief Used to notify the user of libocpp that the Operative/Inoperative state of an EVSE changed
+    /// If as a result the state of connectors changed as well, libocpp will additionally call the
+    /// connector_effective_operative_status_changed_callback once for each connector whose status changed.
+    /// If left empty, the callback is ignored.
     /// \param evse_id The id of the EVSE
-    /// \param new_status The operational status to switch to
+    /// \param new_status The operational status the EVSE switched to
     std::optional<std::function<void(const int32_t evse_id, const OperationalStatusEnum new_status)>>
-        change_evse_effective_availability_callback;
+        evse_effective_operative_status_changed_callback;
 
-    /// \brief Change availability of a single connector
+    /// \brief Used to notify the user of libocpp that the Operative/Inoperative state of a connector changed.
     /// \param evse_id The id of the EVSE
     /// \param connector_id The ID of the connector within the EVSE
-    /// \param new_status The operational status to switch to
+    /// \param new_status The operational status the connector switched to
     std::function<void(const int32_t evse_id, const int32_t connector_id, const OperationalStatusEnum new_status)>
-        change_connector_effective_availability_callback;
+        connector_effective_operative_status_changed_callback;
 
     std::function<GetLogResponse(const GetLogRequest& request)> get_log_request_callback;
     std::function<UnlockConnectorResponse(const int32_t evse_id, const int32_t connecor_id)> unlock_connector_callback;
