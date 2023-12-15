@@ -41,12 +41,12 @@ static float get_normalized_energy_value(SampledValue sampled_value) {
     return value;
 }
 
-Evse::Evse(
-    const int32_t evse_id, const int32_t number_of_connectors, DeviceModel& device_model,
-    std::shared_ptr<DatabaseHandler> database_handler, std::shared_ptr<ComponentStateManager> component_state_manager,
-    const std::function<void(const MeterValue& meter_value, const Transaction& transaction, const int32_t seq_no,
-                             const std::optional<int32_t> reservation_id)>& transaction_meter_value_req,
-    const std::function<void()> pause_charging_callback) :
+Evse::Evse(const int32_t evse_id, const int32_t number_of_connectors, DeviceModel& device_model,
+           std::shared_ptr<DatabaseHandler> database_handler,
+           std::shared_ptr<ComponentStateManager> component_state_manager,
+           const std::function<void(const MeterValue& meter_value, const Transaction& transaction, const int32_t seq_no,
+                                    const std::optional<int32_t> reservation_id)>& transaction_meter_value_req,
+           const std::function<void()> pause_charging_callback) :
     evse_id(evse_id),
     device_model(device_model),
     transaction_meter_value_req(transaction_meter_value_req),
@@ -56,8 +56,7 @@ Evse::Evse(
     transaction(nullptr) {
     for (int connector_id = 1; connector_id <= number_of_connectors; connector_id++) {
         this->id_connector_map.insert(
-            std::make_pair(connector_id, std::make_unique<Connector>(
-                                             evse_id, connector_id, component_state_manager)));
+            std::make_pair(connector_id, std::make_unique<Connector>(evse_id, connector_id, component_state_manager)));
     }
 }
 
@@ -193,9 +192,9 @@ std::unique_ptr<EnhancedTransaction>& Evse::get_transaction() {
     return this->transaction;
 }
 
-//ConnectorStatusEnum Evse::get_state(const int32_t connector_id) {
-//    return this->id_connector_map.at(connector_id)->get_effective_connector_status();
-//}
+// ConnectorStatusEnum Evse::get_state(const int32_t connector_id) {
+//     return this->id_connector_map.at(connector_id)->get_effective_connector_status();
+// }
 
 void Evse::submit_event(const int32_t connector_id, ConnectorEvent event) {
     return this->id_connector_map.at(connector_id)->submit_event(event);

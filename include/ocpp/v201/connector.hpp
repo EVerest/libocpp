@@ -34,6 +34,7 @@ std::string connector_event_to_string(ConnectorEvent e);
 class Connector {
 private:
     /// \brief ID of the EVSE this connector belongs to (>0)
+    // cppcheck-suppress unusedStructMember
     int32_t evse_id;
     /// \brief ID of the connector itself (>0)
     int32_t connector_id;

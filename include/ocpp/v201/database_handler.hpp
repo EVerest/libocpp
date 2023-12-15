@@ -35,8 +35,8 @@ private:
 
     // Availability management (internal helpers)
     // Setting evse_id to 0 addresses the whole CS, setting evse_id > 0 and connector_id=0 addresses a whole EVSE
-    void insert_availability(int32_t evse_id, int32_t connector_id,
-                             OperationalStatusEnum operational_status, bool replace);
+    void insert_availability(int32_t evse_id, int32_t connector_id, OperationalStatusEnum operational_status,
+                             bool replace);
     OperationalStatusEnum get_availability(int32_t evse_id, int32_t connector_id);
 
 public:
