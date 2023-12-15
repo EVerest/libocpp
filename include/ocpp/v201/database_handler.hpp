@@ -74,21 +74,23 @@ public:
     ///\retval The size of the authorization cache table in bytes
     size_t authorization_cache_get_binary_size();
 
+    // Availability
+
     /// \brief Persist operational settings for the charging station
-    void insert_cs_availability(OperationalStatusEnum operational_status, bool replace);
+    virtual void insert_cs_availability(OperationalStatusEnum operational_status, bool replace);
     /// \brief Retrieve persisted operational settings for the charging station
-    OperationalStatusEnum get_cs_availability();
+    virtual OperationalStatusEnum get_cs_availability();
 
     /// \brief Persist operational settings for an EVSE
-    void insert_evse_availability(int32_t evse_id, OperationalStatusEnum operational_status, bool replace);
+    virtual void insert_evse_availability(int32_t evse_id, OperationalStatusEnum operational_status, bool replace);
     /// \brief Retrieve persisted operational settings for an EVSE
-    OperationalStatusEnum get_evse_availability(int32_t evse_id);
+    virtual OperationalStatusEnum get_evse_availability(int32_t evse_id);
 
     /// \brief Persist operational settings for a connector
-    void insert_connector_availability(int32_t evse_id, int32_t connector_id, OperationalStatusEnum operational_status,
-                                       bool replace);
+    virtual void insert_connector_availability(int32_t evse_id, int32_t connector_id,
+                                               OperationalStatusEnum operational_status, bool replace);
     /// \brief Retrieve persisted operational settings for a connector
-    OperationalStatusEnum get_connector_availability(int32_t evse_id, int32_t connector_id);
+    virtual OperationalStatusEnum get_connector_availability(int32_t evse_id, int32_t connector_id);
 
     // Local authorization list management
 
