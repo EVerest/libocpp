@@ -4,6 +4,7 @@ on:
   push:
 
 jobs:
+
   build_and_test:
     uses: EVerest/everest-core/.github/workflows/build_and_test.yaml@CI/reusable-workflow
     with:
