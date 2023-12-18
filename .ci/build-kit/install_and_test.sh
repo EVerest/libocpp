@@ -1,17 +1,15 @@
-#!/bin/sh
+!/bin/sh
 
 set -e
 
 cmake \
     -B build \
     -S "$EXT_MOUNT/source" \
-    -DBUILD_TESTING_LIBOCPP=ON \
+    -G Ninja \
+    -DBUILD_TESTING=ON \
     -DCMAKE_BUILD_TYPE=Debug \
     -DCMAKE_INSTALL_PREFIX="$WORKSPACE_PATH/dist"
 
-make -j$(nproc) -C build install
+ninja -j$(nproc) -C build install
 
-cd ./build/tests/ 
-
-./database_tests
-./utils_tests
+ninja -j$(nproc) -C build tests/test
