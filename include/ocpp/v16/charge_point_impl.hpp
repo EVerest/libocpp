@@ -316,6 +316,10 @@ private:
     void handleSendLocalListRequest(Call<SendLocalListRequest> call);
     void handleGetLocalListVersionRequest(Call<GetLocalListVersionRequest> call);
 
+    // Handle internal or external ChangeAvailabilityRequest
+    void change_availability(const ChangeAvailabilityRequest& request,
+                             std::function<void(const ChangeAvailabilityResponse&)> response_callback);
+
 public:
     /// \brief The main entrypoint for libOCPP for OCPP 1.6
     /// \param config a nlohmann json config object that contains the libocpp 1.6 config. There are example configs that
@@ -550,6 +554,10 @@ public:
     /// \param type type of the security event
     /// \param tech_info additional info of the security event
     void on_security_event(const std::string& type, const std::string& tech_info);
+
+    /// \brief Handles an internal ChangeAvailabilityRequest (in the same way as if it was emitted by the CSMS).
+    /// \param request
+    ChangeAvailabilityResponse on_change_availability(const ChangeAvailabilityRequest& request);
 
     /// registers a \p callback function that can be used to receive a arbitrary data transfer for the given \p
     /// vendorId and \p messageId
