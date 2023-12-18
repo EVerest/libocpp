@@ -10,6 +10,7 @@
 
 namespace ocpp {
 namespace v16 {
+#define SQL_INIT_FILE _SQL_INIT_FILE
 
 ChargingProfile get_sample_charging_profile() {
     ChargingSchedulePeriod period1;
@@ -52,9 +53,9 @@ ChargingProfile get_sample_charging_profile() {
 class DatabaseTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        this->db_handler =
-            std::make_unique<DatabaseHandler>(CP_ID, std::filesystem::path("/tmp"),
-                                              std::filesystem::path("../../dist/share/everest/modules/OCPP/init.sql"));
+        std::cout << SQL_INIT_FILE <<std::endl;
+        this->db_handler = std::make_unique<DatabaseHandler>(CP_ID,std::filesystem::path("/tmp"), 
+                                                             std::filesystem::path(SQL_INIT_FILE));
         this->db_handler->open_db_connection(2);
     }
 

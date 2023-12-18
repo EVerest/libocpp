@@ -1,5 +1,10 @@
+# Please reference work here https://github.com/EVerest/everest-core/tree/main/.github/workflows
+# TODO: modify to reuse the above workflow to DRY up CI.
+
 name: Build and test libocpp
 on: 
+  push:
+    branch: "**"
   pull_request: {}
   workflow_dispatch:
     inputs:
@@ -13,7 +18,7 @@ on:
           - 'large-ubuntu-22.04-xxl'
 jobs:
   lint:
-    name: Install and test
+    name: Lint
     strategy:
       matrix:
         os: [ubuntu-22.04]
@@ -29,6 +34,17 @@ jobs:
           source-dir: source
           extensions: hpp,cpp
           exclude: cache
+  install_and_test:
+    name: Install and test
+    strategy:
+      matrix:
+        os: [ubuntu-22.04]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout libocpp
+        uses: actions/checkout@v3
+        with:
+          path: source
       - name: Setup run scripts
         run: |
           mkdir scripts
@@ -43,4 +59,10 @@ jobs:
           --volume "$(pwd):/ext" \
           --name test-container \
           build-kit run-script install_and_test
+      - name: Archive test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: ctest-report
+          path: /workspace/build/tests/Testing/Temporary/LastTest.log
 
