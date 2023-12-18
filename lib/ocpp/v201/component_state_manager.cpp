@@ -133,8 +133,7 @@ void ComponentStateManager::trigger_callbacks_evse(int32_t evse_id, bool only_if
     OperationalStatusEnum current_effective_status = this->get_evse_effective_operational_status(evse_id);
     if (!only_if_state_changed || this->last_evse_effective_status(evse_id) != current_effective_status) {
         if (this->evse_effective_availability_changed_callback.has_value()) {
-            this->evse_effective_availability_changed_callback.value()(
-                evse_id, current_effective_status);
+            this->evse_effective_availability_changed_callback.value()(evse_id, current_effective_status);
         }
         this->last_evse_effective_status(evse_id) = current_effective_status;
         for (int32_t connector_id = 1; connector_id <= this->num_connectors(evse_id); connector_id++) {
@@ -151,8 +150,8 @@ void ComponentStateManager::trigger_callbacks_connector(int32_t evse_id, int32_t
     OperationalStatusEnum& last_effective_status = this->last_connector_effective_status(evse_id, connector_id);
     if (!only_if_state_changed || last_effective_status != current_effective_operational_status) {
         if (this->connector_effective_availability_changed_callback.has_value()) {
-            this->connector_effective_availability_changed_callback.value()(
-                evse_id, connector_id, current_effective_operational_status);
+            this->connector_effective_availability_changed_callback.value()(evse_id, connector_id,
+                                                                            current_effective_operational_status);
         }
         last_effective_status = current_effective_operational_status;
     }
@@ -176,8 +175,7 @@ void ComponentStateManager::set_cs_effective_availability_changed_callback(
 }
 
 void ComponentStateManager::set_evse_effective_availability_changed_callback(
-    std::function<void(const int32_t evse_id, const OperationalStatusEnum new_status)>
-        callback) {
+    std::function<void(const int32_t evse_id, const OperationalStatusEnum new_status)> callback) {
     this->evse_effective_availability_changed_callback = callback;
 }
 
