@@ -731,9 +731,7 @@ public:
             EVLOG_debug << "Delaying message queue resume by " << delay_on_reconnect.count() << " seconds";
             u_int64_t expected_pause_resume_ctr = this->pause_resume_ctr;
             this->resume_timer.timeout(
-                [this, expected_pause_resume_ctr] {
-                    this->resume_now(expected_pause_resume_ctr);
-                }, delay_on_reconnect);
+                [this, expected_pause_resume_ctr] { this->resume_now(expected_pause_resume_ctr); }, delay_on_reconnect);
         } else {
             this->resume_now(this->pause_resume_ctr);
         }
