@@ -1297,11 +1297,10 @@ void ChargePointImpl::execute_connectors_availability_change(const std::vector<i
 void ChargePointImpl::handleChangeAvailabilityRequest(ocpp::Call<ChangeAvailabilityRequest> call) {
     EVLOG_debug << "Received ChangeAvailabilityRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
 
-    ChangeAvailabilityResponse response;
-    std::vector<int32_t> accepted_connector_availability_changes;
-
     const auto& request = call.msg;
 
+    ChangeAvailabilityResponse response{};
+    std::vector<int32_t> accepted_connector_availability_changes{};
     preprocess_change_availability_request(request, response, accepted_connector_availability_changes);
 
     // respond first
@@ -3582,7 +3581,20 @@ void ChargePointImpl::on_security_event(const std::string& type, const std::stri
 }
 
 ChangeAvailabilityResponse ChargePointImpl::on_change_availability(const ChangeAvailabilityRequest& request) {
-    return ChangeAvailabilityResponse();
+
+    EVLOG_debug << "Received internal ChangeAvailabilityRequest for connector " << request.connectorId << " to state "
+                << conversions::availability_type_to_string(request.type);
+
+    ChangeAvailabilityResponse response{};
+    std::vector<int32_t> accepted_connector_availability_changes{};
+
+    preprocess_change_availability_request(request, response, accepted_connector_availability_changes);
+
+    if (response.status != AvailabilityStatus::Rejected) {
+        execute_connectors_availability_change(accepted_connector_availability_changes, request.type, true);
+    }
+
+    return response;
 }
 
 GetConfigurationResponse ChargePointImpl::get_configuration_key(const GetConfigurationRequest& request) {
