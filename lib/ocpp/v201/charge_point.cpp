@@ -95,20 +95,14 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
         });
     if (this->callbacks.cs_effective_operative_status_changed_callback.has_value()) {
         this->component_state_manager->set_cs_effective_availability_changed_callback(
-            [this](auto old_status, auto new_status) {
-                this->callbacks.cs_effective_operative_status_changed_callback.value()(new_status);
-            });
+            this->callbacks.cs_effective_operative_status_changed_callback.value());
     }
     if (this->callbacks.evse_effective_operative_status_changed_callback.has_value()) {
         this->component_state_manager->set_evse_effective_availability_changed_callback(
-            [this](auto evse_id, auto old_status, auto new_status) {
-                this->callbacks.evse_effective_operative_status_changed_callback.value()(evse_id, new_status);
-            });
+            this->callbacks.evse_effective_operative_status_changed_callback.value());
     }
     this->component_state_manager->set_connector_effective_availability_changed_callback(
-        [this](auto evse_id, auto connector_id, auto old_status, auto new_status) {
-            this->callbacks.connector_effective_operative_status_changed_callback(evse_id, connector_id, new_status);
-        });
+        this->callbacks.connector_effective_operative_status_changed_callback);
 
     // intantiate and initialize evses
     for (auto const& [evse_id, number_of_connectors] : evse_connector_structure) {

@@ -47,26 +47,22 @@ private:
     std::vector<std::vector<ConnectorStatusEnum>> last_connector_reported_statuses;
 
     /// \brief Callback triggered by the library when the effective status of the charging station changes
-    /// \param old_status The previous effective status
     /// \param new_status The effective status after the change
-    std::optional<std::function<void(const OperationalStatusEnum old_status, const OperationalStatusEnum new_status)>>
+    std::optional<std::function<void(const OperationalStatusEnum new_status)>>
         cs_effective_availability_changed_callback = std::nullopt;
 
     /// \brief Callback triggered by the library when the effective status of an EVSE changes
     /// \param evse_id The ID of the EVSE whose status changed
-    /// \param old_status The previous effective status
     /// \param new_status The effective status after the change
-    std::optional<std::function<void(const int32_t evse_id, const OperationalStatusEnum old_status,
-                                     const OperationalStatusEnum new_status)>>
+    std::optional<std::function<void(const int32_t evse_id, const OperationalStatusEnum new_status)>>
         evse_effective_availability_changed_callback = std::nullopt;
 
     /// \brief Callback triggered by the library when the effective status of a connector changes
     /// \param evse_id The ID of the EVSE whose status changed
     /// \param connector_id The ID of the connector within the EVSE whose status changed
-    /// \param old_status The previous effective status
     /// \param new_status The effective status after the change
-    std::optional<std::function<void(const int32_t evse_id, const int32_t connector_id,
-                                     const OperationalStatusEnum old_status, const OperationalStatusEnum new_status)>>
+    std::optional<
+        std::function<void(const int32_t evse_id, const int32_t connector_id, const OperationalStatusEnum new_status)>>
         connector_effective_availability_changed_callback = std::nullopt;
 
     /// \brief Callback used by the library to trigger a StatusUpdateRequest for a connector
@@ -145,18 +141,15 @@ public:
 
     /// \brief Set a callback to be called when the effective Operative/Inoperative state of the CS changes.
     void set_cs_effective_availability_changed_callback(
-        std::function<void(const OperationalStatusEnum old_status, const OperationalStatusEnum new_status)> callback);
+        std::function<void(const OperationalStatusEnum new_status)> callback);
 
     /// \brief Set a callback to be called when the effective Operative/Inoperative state of an EVSE changes.
     void set_evse_effective_availability_changed_callback(
-        std::function<void(const int32_t evse_id, const OperationalStatusEnum old_status,
-                           const OperationalStatusEnum new_status)>
-            callback);
+        std::function<void(const int32_t evse_id, const OperationalStatusEnum new_status)> callback);
 
     /// \brief Set a callback to be called when the effective Operative/Inoperative state of a connector changes.
     void set_connector_effective_availability_changed_callback(
-        std::function<void(const int32_t evse_id, const int32_t connector_id, const OperationalStatusEnum old_status,
-                           const OperationalStatusEnum new_status)>
+        std::function<void(const int32_t evse_id, const int32_t connector_id, const OperationalStatusEnum new_status)>
             callback);
 
     /// \brief Get the individual status (Operative/Inoperative) of the CS, as set by the CSMS

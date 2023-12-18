@@ -119,8 +119,7 @@ void ComponentStateManager::trigger_callbacks_cs(bool only_if_state_changed, boo
     OperationalStatusEnum current_effective_status = this->get_cs_individual_operational_status();
     if (!only_if_state_changed || this->last_cs_effective_operational_status != current_effective_status) {
         if (this->cs_effective_availability_changed_callback.has_value()) {
-            this->cs_effective_availability_changed_callback.value()(this->last_cs_effective_operational_status,
-                                                                     current_effective_status);
+            this->cs_effective_availability_changed_callback.value()(current_effective_status);
         }
         this->last_cs_effective_operational_status = current_effective_status;
         for (int32_t evse_id = 1; evse_id <= this->num_evses(); evse_id++) {
@@ -135,7 +134,7 @@ void ComponentStateManager::trigger_callbacks_evse(int32_t evse_id, bool only_if
     if (!only_if_state_changed || this->last_evse_effective_status(evse_id) != current_effective_status) {
         if (this->evse_effective_availability_changed_callback.has_value()) {
             this->evse_effective_availability_changed_callback.value()(
-                evse_id, this->last_evse_effective_status(evse_id), current_effective_status);
+                evse_id, current_effective_status);
         }
         this->last_evse_effective_status(evse_id) = current_effective_status;
         for (int32_t connector_id = 1; connector_id <= this->num_connectors(evse_id); connector_id++) {
@@ -153,7 +152,7 @@ void ComponentStateManager::trigger_callbacks_connector(int32_t evse_id, int32_t
     if (!only_if_state_changed || last_effective_status != current_effective_operational_status) {
         if (this->connector_effective_availability_changed_callback.has_value()) {
             this->connector_effective_availability_changed_callback.value()(
-                evse_id, connector_id, last_effective_status, current_effective_operational_status);
+                evse_id, connector_id, current_effective_operational_status);
         }
         last_effective_status = current_effective_operational_status;
     }
@@ -172,20 +171,18 @@ void ComponentStateManager::trigger_callbacks_connector(int32_t evse_id, int32_t
 }
 
 void ComponentStateManager::set_cs_effective_availability_changed_callback(
-    std::function<void(const OperationalStatusEnum old_status, const OperationalStatusEnum new_status)> callback) {
+    std::function<void(const OperationalStatusEnum new_status)> callback) {
     this->cs_effective_availability_changed_callback = callback;
 }
 
 void ComponentStateManager::set_evse_effective_availability_changed_callback(
-    std::function<void(const int32_t evse_id, const OperationalStatusEnum old_status,
-                       const OperationalStatusEnum new_status)>
+    std::function<void(const int32_t evse_id, const OperationalStatusEnum new_status)>
         callback) {
     this->evse_effective_availability_changed_callback = callback;
 }
 
 void ComponentStateManager::set_connector_effective_availability_changed_callback(
-    std::function<void(const int32_t evse_id, const int32_t connector_id, const OperationalStatusEnum old_status,
-                       const OperationalStatusEnum new_status)>
+    std::function<void(const int32_t evse_id, const int32_t connector_id, const OperationalStatusEnum new_status)>
         callback) {
     this->connector_effective_availability_changed_callback = callback;
 }

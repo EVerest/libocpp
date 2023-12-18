@@ -83,15 +83,14 @@ protected:
                                       return true;
                                   });
         mgr.set_cs_effective_availability_changed_callback(
-            [this](OperationalStatusEnum old_status, OperationalStatusEnum status) {
+            [this](OperationalStatusEnum status) {
                 this->callbacks.cs_op_state_update(conversions::operational_status_enum_to_string(status));
             });
         mgr.set_evse_effective_availability_changed_callback(
-            [this](int32_t evse_id, OperationalStatusEnum old_status, OperationalStatusEnum status) {
+            [this](int32_t evse_id, OperationalStatusEnum status) {
                 this->callbacks.evse_op_state_update(evse_id, conversions::operational_status_enum_to_string(status));
             });
         mgr.set_connector_effective_availability_changed_callback([this](int32_t evse_id, int32_t connector_id,
-                                                                         OperationalStatusEnum old_status,
                                                                          OperationalStatusEnum status) {
             this->callbacks.connector_op_state_update(evse_id, connector_id,
                                                       conversions::operational_status_enum_to_string(status));
