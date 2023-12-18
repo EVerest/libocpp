@@ -316,9 +316,20 @@ private:
     void handleSendLocalListRequest(Call<SendLocalListRequest> call);
     void handleGetLocalListVersionRequest(Call<GetLocalListVersionRequest> call);
 
-    // Handle internal or external ChangeAvailabilityRequest
-    void change_availability(const ChangeAvailabilityRequest& request,
-                             std::function<void(const ChangeAvailabilityResponse&)> response_callback);
+    // Preprocess a ChangeAvailabilityRequest: Determine response;
+    // - if connector is 0, availability change is also propagated for all connectors
+    // - for each connector (except "0"), if transaction is ongoing the change is scheduled, otherwise the id is added
+    // to the `accepted_connector_availability_changes` vector
+    void preprocess_change_availability_request(const ChangeAvailabilityRequest& request,
+                                                ChangeAvailabilityResponse& response,
+                                                std::vector<int32_t>& accepted_connector_availability_changes);
+
+    // Executes availability change for the provided connectors:
+    // - store availability in database
+    // - submit state event (for the whole evse if "0" in set of connectors; otherwise for each connector individually)
+    // - call according EVSE enable or disable callback, respectively
+    void execute_connectors_availability_change(const std::vector<int32_t>& changed_connectors,
+                                                const ocpp::v16::AvailabilityType availability, bool persist);
 
 public:
     /// \brief The main entrypoint for libOCPP for OCPP 1.6
