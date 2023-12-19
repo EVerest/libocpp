@@ -163,7 +163,7 @@ void ChargePoint::on_security_event(const std::string& type, const std::string& 
 }
 
 ChangeAvailabilityResponse ChargePoint::on_change_availability(const ChangeAvailabilityRequest& request) {
-    this->charge_point->on_change_availability(request);
+    return this->charge_point->on_change_availability(request);
 }
 
 void ChargePoint::register_data_transfer_callback(

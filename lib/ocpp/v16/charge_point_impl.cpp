@@ -3581,7 +3581,6 @@ void ChargePointImpl::on_security_event(const std::string& type, const std::stri
 }
 
 ChangeAvailabilityResponse ChargePointImpl::on_change_availability(const ChangeAvailabilityRequest& request) {
-
     EVLOG_debug << "Received internal ChangeAvailabilityRequest for connector " << request.connectorId << " to state "
                 << conversions::availability_type_to_string(request.type);
 
