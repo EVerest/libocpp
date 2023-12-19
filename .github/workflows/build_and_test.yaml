@@ -64,5 +64,5 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ctest-report
-          path: /workspace/build/tests/Testing/Temporary/LastTest.log
+          path: ${{ github.workspace }}/ctest-report
 
