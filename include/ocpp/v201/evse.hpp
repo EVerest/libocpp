@@ -115,11 +115,6 @@ public:
     /// \return pointer to transaction (nullptr if no transaction is active)
     std::unique_ptr<EnhancedTransaction>& get_transaction();
 
-    /// \brief Get the state of the connector with the given \p connector_id
-    /// \param connector_id id of the connector of the evse
-    /// \return ConnectorStatusEnum
-    // ConnectorStatusEnum get_state(const int32_t connector_id);
-
     /// \brief Submits the given \p event to the state machine controller of the connector with the given
     /// \p connector_id
     /// \param connector_id id of the connector of the evse

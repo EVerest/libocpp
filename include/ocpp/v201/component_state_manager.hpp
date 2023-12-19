@@ -22,7 +22,7 @@ struct FullConnectorStatus {
     /// \brief Translates the individual state to an Available/Unavailable/Occupied/Reserved/Faulted state
     /// This does NOT take into account the state of the EVSE or CS,
     /// and is intended to be used internally by the ComponentStateManager.
-    ConnectorStatusEnum to_effective_status();
+    ConnectorStatusEnum to_connector_status();
 };
 
 /// \brief Stores and monitors operational/effective states of the CS, EVSEs, and connectors
@@ -42,8 +42,9 @@ private:
     std::vector<std::pair<OperationalStatusEnum, std::vector<OperationalStatusEnum>>>
         last_evse_and_connector_effective_operational_statuses;
 
-    /// Last connector status for each connector that was reported with a successful connector_status_update_callback
-    // We need to track this separately because the connector_status_update_callback can fail
+    /// Last connector status for each connector that was reported with a successful
+    /// send_connector_status_notification_callback
+    // We need to track this separately because the send_connector_status_notification_callback can fail
     std::vector<std::vector<ConnectorStatusEnum>> last_connector_reported_statuses;
 
     /// \brief Callback triggered by the library when the effective status of the charging station changes
@@ -71,16 +72,16 @@ private:
     /// \param new_status The connector status
     /// \return true if the status notification was successfully sent, false otherwise (usually it fails when offline)
     std::function<bool(const int32_t evse_id, const int32_t connector_id, const ConnectorStatusEnum new_status)>
-        connector_status_update_callback;
+        send_connector_status_notification_callback;
 
     /// \brief Internal convenience function - returns the number of EVSEs
     int32_t num_evses();
     /// \brief Internal convenience function - returns the number of connectors in an EVSE
     int32_t num_connectors(int32_t evse_id);
 
-    /// \brief Throws a std::logic_error if \param evse_id is out of bounds
+    /// \brief Throws a std::out_of_range if \param evse_id is out of bounds
     void check_evse_id(int32_t evse_id);
-    /// \brief Throws a std::logic_error if \param evse_id or \param connector_id is out of bounds
+    /// \brief Throws a std::out_of_range if \param evse_id or \param connector_id is out of bounds
     void check_evse_and_connector_id(int32_t evse_id, int32_t connector_id);
 
     /// \brief Convenience function, returns a (writeable) reference to the individual status of an EVSE
@@ -95,32 +96,35 @@ private:
     /// that was reported to the user of libocpp via callbacks.
     OperationalStatusEnum& last_connector_effective_status(int32_t evse_id, int32_t connector_id);
     /// \brief Convenience function, returns a (writeable) reference to last connector status that was successfully
-    /// reported via connector_status_update_callback
+    /// reported via send_connector_status_notification_callback
     ConnectorStatusEnum& last_connector_reported_status(int32_t evse_id, int32_t connector_id);
 
     /// \brief Internal helper function, triggers {cs, evse, connector}_effective_availability_changed_callback calls
     /// for the CS and all sub-components.
     /// \param only_if_state_changed If set to true, callbacks are only triggered for components whose state
     ///     has changed since it was last reported via callbacks
-    /// \param send_status_updates If set to true, connector_status_update_callback is also triggered for connectors.
+    /// \param send_status_updates If set to true, send_connector_status_notification_callback is also triggered for
+    /// connectors.
     void trigger_callbacks_cs(bool only_if_state_changed, bool send_status_updates);
     /// \brief Internal helper function, triggers {evse, connector}_effective_availability_changed_callback calls
     /// for an EVSE and its connectors
     /// \param only_if_state_changed If set to true, callbacks are only triggered for components whose state
     ///     has changed since it was last reported via callbacks
-    /// \param send_status_updates If set to true, connector_status_update_callback is also triggered for connectors.
+    /// \param send_status_updates If set to true, send_connector_status_notification_callback is also triggered for
+    /// connectors.
     void trigger_callbacks_evse(int32_t evse_id, bool only_if_state_changed, bool send_status_updates);
     /// \brief Internal helper function, triggers connector_effective_availability_changed_callback calls
     /// for a connector
     /// \param only_if_state_changed If set to true, callbacks are only triggered for components whose state
     ///     has changed since it was last reported via callbacks
-    /// \param send_status_updates If set to true, connector_status_update_callback is also triggered for connectors.
+    /// \param send_status_updates If set to true, send_connector_status_notification_callback is also triggered for
+    /// connectors.
     void trigger_callbacks_connector(int32_t evse_id, int32_t connector_id, bool only_if_state_changed,
                                      bool send_status_updates);
 
-    /// \brief Internal helper function, calls connector_status_update_callback for a single connector
+    /// \brief Internal helper function, calls send_connector_status_notification_callback for a single connector
     /// \param only_if_changed If set to true, the callback will only be triggered if the connector state has changed
-    ///  since it was last reported with a successful connector_status_update_callback
+    ///  since it was last reported with a successful send_connector_status_notification_callback
     void send_status_notification_single_connector_internal(int32_t evse_id, int32_t connector_id,
                                                             bool only_if_changed);
 
@@ -129,15 +133,16 @@ public:
     /// database. No callbacks are triggered at this stage.
     /// When the status of components is updated, corresponding callbacks are triggered to notify the user of libocpp.
     /// Additionally, the ComponentStateManager sends StatusNotifications to the CSMS when connector statuses change.
-    /// Note: It is expected that ComponentStateManager::trigger_boot_callbacks is called on boot, and
+    /// Note: It is expected that ComponentStateManager::trigger_all_effective_availability_changed_callbacks is called on boot, and
     /// ComponentStateManager::send_status_notification_all_connectors is called when first connected to the CSMS.
     /// \param evse_connector_structure Maps each EVSE ID to the number of connectors the EVSE has
     /// \param db_handler A shared reference to the persistent database
-    /// \param connector_status_update_callback The callback through which to send StatusNotifications to the CSMS
+    /// \param send_connector_status_notification_callback The callback through which to send StatusNotifications to the
+    /// CSMS
     explicit ComponentStateManager(
         const std::map<int32_t, int32_t>& evse_connector_structure, std::shared_ptr<DatabaseHandler> db_handler,
         std::function<bool(const int32_t evse_id, const int32_t connector_id, const ConnectorStatusEnum new_status)>
-            connector_status_update_callback);
+            send_connector_status_notification_callback);
 
     /// \brief Set a callback to be called when the effective Operative/Inoperative state of the CS changes.
     void set_cs_effective_availability_changed_callback(
@@ -208,16 +213,16 @@ public:
     /// \brief Call the {cs, evse, connector}_effective_availability_changed_callback callback once for every component.
     /// This is usually only done once on boot to notify the rest of the system what the state manager expects the
     /// operative state (Operative/Inoperative) of the CS, EVSEs, and connectors to be.
-    void trigger_boot_callbacks();
+    void trigger_all_effective_availability_changed_callbacks();
 
-    /// \brief Call the connector_status_update_callback once for every connector.
+    /// \brief Call the send_connector_status_notification_callback once for every connector.
     /// This is usually done on boot, and on reconnect after the station has been offline for a long time.
     void send_status_notification_all_connectors();
-    /// \brief Call the connector_status_update_callback once for every connector whose state has changed since it was
-    /// last reported with a successful connector_status_update_callback.
-    /// This is usually done when the station has been offline for short time and comes back online.
+    /// \brief Call the send_connector_status_notification_callback once for every connector whose state has changed
+    /// since it was last reported with a successful send_connector_status_notification_callback. This is usually done
+    /// when the station has been offline for short time and comes back online.
     void send_status_notification_changed_connectors();
-    /// \brief Call the connector_status_update_callback for a single connector.
+    /// \brief Call the send_connector_status_notification_callback for a single connector.
     /// This is usually done when the CSMS explicitly sends a TriggerMessage to send a StatusNotification.
     void send_status_notification_single_connector(int32_t evse_id, int32_t connector_id);
 };

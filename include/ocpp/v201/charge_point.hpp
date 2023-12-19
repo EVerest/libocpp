@@ -502,7 +502,17 @@ private:
     /// \brief Checks if all connectors are effectively inoperative.
     /// If this is the case, calls the all_connectors_unavailable_callback
     /// This is used e.g. to allow firmware updates once all transactions have finished
-    void notify_user_if_all_connectors_inoperative();
+    bool are_all_connectors_effectively_inoperative();
+
+    /// \brief Returns a pointer to the EVSE with ID \param evse_id
+    Evse* get_evse(int32_t evse_id);
+
+    /// \brief Returns a pointer to the connector with ID \param connector_id in the EVSE with ID \param evse_id
+    Connector* get_connector(int32_t evse_id, int32_t connector_id);
+
+    /// \brief Immediately execute the given \param request to change the operational state of a component
+    /// If \param persist is set to true, the change will be persisted across a reboot
+    void execute_change_availability_request(ChangeAvailabilityRequest request, bool persist);
 
 public:
     /// \brief Construct a new ChargePoint object
@@ -673,12 +683,6 @@ public:
     /// \return DataTransferResponse contaning the result from CSMS
     DataTransferResponse data_transfer_req(const CiString<255>& vendorId, const std::optional<CiString<50>>& messageId,
                                            const std::optional<std::string>& data);
-
-    /// \brief Returns a pointer to the EVSE with ID \param evse_id
-    Evse* get_evse(int32_t evse_id);
-
-    /// \brief Returns a pointer to the connector with ID \param connector_id in the EVSE with ID \param evse_id
-    Connector* get_connector(int32_t evse_id, int32_t connector_id);
 
     /// \brief Switches the operative status of the CS
     /// \param new_status: The new operative status to switch to

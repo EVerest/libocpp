@@ -46,9 +46,7 @@ public:
     /// \brief Construct a new Connector object
     /// \param evse_id id of the EVSE the connector is ap art of
     /// \param connector_id id of the connector
-    /// \param database_handler a reference to the internal libocpp database handler
-    /// \param status_notification_callback callback executed to send a status notification for the connector
-    /// \param change_effective_availability_callback callback to change the effective operative state of the connector
+    /// \param component_state_manager A shared reference to the component state manager
     Connector(const int32_t evse_id, const int32_t connector_id,
               std::shared_ptr<ComponentStateManager> component_state_manager);
 
