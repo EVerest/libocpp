@@ -2,6 +2,7 @@
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
 #include <ocpp/v201/component_state_manager.hpp>
+#include <utility>
 
 namespace ocpp::v201 {
 
@@ -13,12 +14,9 @@ static OperationalStatusEnum connector_status_to_operational_status(ConnectorSta
     }
 }
 
-ComponentStateManager::ComponentStateManager(
-    const std::map<int32_t, int32_t>& evse_connector_structure, std::shared_ptr<DatabaseHandler> db_handler,
-    std::function<bool(const int32_t evse_id, const int32_t connector_id, const ConnectorStatusEnum new_status)>
-        send_connector_status_notification_callback) :
-    database(std::move(db_handler)),
-    send_connector_status_notification_callback(send_connector_status_notification_callback) {
+void ComponentStateManager::read_all_states_from_database_or_set_defaults(
+    const std::map<int32_t, int32_t>& evse_connector_structure) {
+
     this->database->insert_cs_availability(OperationalStatusEnum::Operative, false);
     this->cs_individual_status = this->database->get_cs_availability();
 
@@ -44,11 +42,13 @@ ComponentStateManager::ComponentStateManager(
 
         this->evse_and_connector_individual_statuses.push_back(std::make_pair(evse_operational, connector_statuses));
     }
+}
 
+void ComponentStateManager::initialize_reported_state_cache() {
     // Initialize the cached statuses (after everything else is done)
     this->last_cs_effective_operational_status = this->get_cs_individual_operational_status();
-    for (int evse_id = 1; evse_id <= num_evses; evse_id++) {
-        int num_connectors = evse_connector_structure.at(evse_id);
+    for (int evse_id = 1; evse_id <= this->num_evses(); evse_id++) {
+        int num_connectors = this->num_connectors(evse_id);
         std::vector<ConnectorStatusEnum> connector_statuses;
         std::vector<OperationalStatusEnum> connector_op_statuses;
 
@@ -63,6 +63,16 @@ ComponentStateManager::ComponentStateManager(
             std::make_pair(evse_effective, connector_op_statuses));
         this->last_connector_reported_statuses.push_back(connector_statuses);
     }
+}
+
+ComponentStateManager::ComponentStateManager(
+    const std::map<int32_t, int32_t>& evse_connector_structure, std::shared_ptr<DatabaseHandler> db_handler,
+    std::function<bool(const int32_t evse_id, const int32_t connector_id, const ConnectorStatusEnum new_status)>
+        send_connector_status_notification_callback) :
+    database(std::move(db_handler)),
+    send_connector_status_notification_callback(std::move(send_connector_status_notification_callback)) {
+    this->read_all_states_from_database_or_set_defaults(evse_connector_structure);
+    this->initialize_reported_state_cache();
 }
 
 int32_t ComponentStateManager::num_evses() {
@@ -171,18 +181,18 @@ void ComponentStateManager::trigger_callbacks_connector(int32_t evse_id, int32_t
 }
 
 void ComponentStateManager::set_cs_effective_availability_changed_callback(
-    std::function<void(const OperationalStatusEnum new_status)> callback) {
+    const std::function<void(const OperationalStatusEnum new_status)>& callback) {
     this->cs_effective_availability_changed_callback = callback;
 }
 
 void ComponentStateManager::set_evse_effective_availability_changed_callback(
-    std::function<void(const int32_t evse_id, const OperationalStatusEnum new_status)> callback) {
+    const std::function<void(const int32_t evse_id, const OperationalStatusEnum new_status)>& callback) {
     this->evse_effective_availability_changed_callback = callback;
 }
 
 void ComponentStateManager::set_connector_effective_availability_changed_callback(
-    std::function<void(const int32_t evse_id, const int32_t connector_id, const OperationalStatusEnum new_status)>
-        callback) {
+    const std::function<void(const int32_t evse_id, const int32_t connector_id,
+                             const OperationalStatusEnum new_status)>& callback) {
     this->connector_effective_availability_changed_callback = callback;
 }
 
@@ -247,10 +257,7 @@ OperationalStatusEnum ComponentStateManager::get_evse_effective_operational_stat
 }
 ConnectorStatusEnum ComponentStateManager::get_connector_effective_status(int32_t evse_id, int32_t connector_id) {
     this->check_evse_and_connector_id(evse_id, connector_id);
-    if (this->cs_individual_status == OperationalStatusEnum::Inoperative) {
-        return ConnectorStatusEnum::Unavailable;
-    }
-    if (this->individual_evse_status(evse_id) == OperationalStatusEnum::Inoperative) {
+    if (this->get_evse_effective_operational_status(evse_id) == OperationalStatusEnum::Inoperative) {
         return ConnectorStatusEnum::Unavailable;
     }
 

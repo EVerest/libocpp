@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
-#include <fmt/format.h>
 #include <utility>
 
 #include <everest/logging.hpp>
-#include <ocpp/v201/average_meter_values.hpp>
 #include <ocpp/v201/ctrlr_component_variables.hpp>
 #include <ocpp/v201/evse.hpp>
-#include <ocpp/v201/utils.hpp>
 
 using namespace std::chrono_literals;
 
@@ -192,10 +189,6 @@ std::unique_ptr<EnhancedTransaction>& Evse::get_transaction() {
     return this->transaction;
 }
 
-// ConnectorStatusEnum Evse::get_state(const int32_t connector_id) {
-//     return this->id_connector_map.at(connector_id)->get_effective_connector_status();
-// }
-
 void Evse::submit_event(const int32_t connector_id, ConnectorEvent event) {
     return this->id_connector_map.at(connector_id)->submit_event(event);
 }
@@ -267,7 +260,9 @@ OperationalStatusEnum Evse::get_effective_operational_status() {
 
 Connector* Evse::get_connector(int32_t connector_id) {
     if (connector_id <= 0 || connector_id > this->get_number_of_connectors()) {
-        throw std::logic_error(fmt::format("Connector ID {} out of bounds for EVSE {}", connector_id, this->evse_id));
+        std::stringstream err_msg;
+        err_msg << "ConnectorID " << connector_id << " out of bounds for EVSE " << this->evse_id;
+        throw std::logic_error(err_msg.str());
     }
     return this->id_connector_map.at(connector_id).get();
 }

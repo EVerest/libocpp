@@ -146,18 +146,18 @@ TEST_F(ComponentStateManagerTest, test_check_evse_and_connector_ids) {
     auto state_mgr = this->component_state_manager(mock_database, {1, 2});
 
     // Act & Verify
-    ASSERT_THROW(state_mgr.get_evse_effective_operational_status(0), std::logic_error);
-    ASSERT_THROW(state_mgr.get_evse_effective_operational_status(-1), std::logic_error);
-    ASSERT_THROW(state_mgr.get_evse_effective_operational_status(3), std::logic_error);
-    ASSERT_THROW(state_mgr.get_connector_effective_operational_status(0, 1), std::logic_error);
-    ASSERT_THROW(state_mgr.get_connector_effective_operational_status(-1, 1), std::logic_error);
-    ASSERT_THROW(state_mgr.get_connector_effective_operational_status(3, 1), std::logic_error);
-    ASSERT_THROW(state_mgr.get_connector_effective_operational_status(1, -1), std::logic_error);
-    ASSERT_THROW(state_mgr.get_connector_effective_operational_status(1, 0), std::logic_error);
-    ASSERT_THROW(state_mgr.get_connector_effective_operational_status(1, 2), std::logic_error);
-    ASSERT_THROW(state_mgr.get_connector_effective_operational_status(2, -1), std::logic_error);
-    ASSERT_THROW(state_mgr.get_connector_effective_operational_status(2, 0), std::logic_error);
-    ASSERT_THROW(state_mgr.get_connector_effective_operational_status(2, 3), std::logic_error);
+    ASSERT_THROW(state_mgr.get_evse_effective_operational_status(0), std::out_of_range);
+    ASSERT_THROW(state_mgr.get_evse_effective_operational_status(-1), std::out_of_range);
+    ASSERT_THROW(state_mgr.get_evse_effective_operational_status(3), std::out_of_range);
+    ASSERT_THROW(state_mgr.get_connector_effective_operational_status(0, 1), std::out_of_range);
+    ASSERT_THROW(state_mgr.get_connector_effective_operational_status(-1, 1), std::out_of_range);
+    ASSERT_THROW(state_mgr.get_connector_effective_operational_status(3, 1), std::out_of_range);
+    ASSERT_THROW(state_mgr.get_connector_effective_operational_status(1, -1), std::out_of_range);
+    ASSERT_THROW(state_mgr.get_connector_effective_operational_status(1, 0), std::out_of_range);
+    ASSERT_THROW(state_mgr.get_connector_effective_operational_status(1, 2), std::out_of_range);
+    ASSERT_THROW(state_mgr.get_connector_effective_operational_status(2, -1), std::out_of_range);
+    ASSERT_THROW(state_mgr.get_connector_effective_operational_status(2, 0), std::out_of_range);
+    ASSERT_THROW(state_mgr.get_connector_effective_operational_status(2, 3), std::out_of_range);
 }
 
 /// \brief Test that the ComponentStateManager assumes missing states are Operative
@@ -410,7 +410,7 @@ TEST_F(ComponentStateManagerTest, test_status_notification_callbacks) {
     state_mgr.set_cs_individual_operational_status(OperationalStatusEnum::Operative, false);
 }
 
-/// \brief Test the ComponentStateManager::trigger_boot_callbacks()
+/// \brief Test the ComponentStateManager::trigger_all_effective_availability_changed_callbacks()
 TEST_F(ComponentStateManagerTest, test_trigger_boot_callbacks) {
     // Prepare
     std::shared_ptr<DatabaseHandler> mock_database = std::make_shared<DatabaseHandlerMock>();
@@ -443,7 +443,7 @@ TEST_F(ComponentStateManagerTest, test_trigger_boot_callbacks) {
         .WillOnce(testing::Return());
 
     // Act & Verify
-    state_mgr.trigger_boot_callbacks();
+    state_mgr.trigger_all_effective_availability_changed_callbacks();
 }
 
 /// \brief Test the ComponentStateManager::send_status_notification_all_connectors()

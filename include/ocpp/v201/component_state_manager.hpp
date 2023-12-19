@@ -128,6 +128,14 @@ private:
     void send_status_notification_single_connector_internal(int32_t evse_id, int32_t connector_id,
                                                             bool only_if_changed);
 
+    /// \brief Initializes *_individual_status(es) from the values stored in the DB.
+    /// Inserts Operative if values are missing.
+    void read_all_states_from_database_or_set_defaults(const std::map<int32_t, int32_t>& evse_connector_structure);
+
+    /// \brief Initializes last_*_operational_status(es) and last_connector_reported_statuses
+    /// with the current effective statuses of all components
+    void initialize_reported_state_cache();
+
 public:
     /// \brief At construction time, the state of each component (CS, EVSEs, and connectors) is retrieved from the
     /// database. No callbacks are triggered at this stage.
@@ -146,15 +154,15 @@ public:
 
     /// \brief Set a callback to be called when the effective Operative/Inoperative state of the CS changes.
     void set_cs_effective_availability_changed_callback(
-        std::function<void(const OperationalStatusEnum new_status)> callback);
+        const std::function<void(const OperationalStatusEnum new_status)>& callback);
 
     /// \brief Set a callback to be called when the effective Operative/Inoperative state of an EVSE changes.
     void set_evse_effective_availability_changed_callback(
-        std::function<void(const int32_t evse_id, const OperationalStatusEnum new_status)> callback);
+        const std::function<void(const int32_t evse_id, const OperationalStatusEnum new_status)>& callback);
 
     /// \brief Set a callback to be called when the effective Operative/Inoperative state of a connector changes.
     void set_connector_effective_availability_changed_callback(
-        std::function<void(const int32_t evse_id, const int32_t connector_id, const OperationalStatusEnum new_status)>
+        const std::function<void(const int32_t evse_id, const int32_t connector_id, const OperationalStatusEnum new_status)>&
             callback);
 
     /// \brief Get the individual status (Operative/Inoperative) of the CS, as set by the CSMS
