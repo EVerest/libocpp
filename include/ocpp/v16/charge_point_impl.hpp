@@ -316,18 +316,22 @@ private:
     void handleSendLocalListRequest(Call<SendLocalListRequest> call);
     void handleGetLocalListVersionRequest(Call<GetLocalListVersionRequest> call);
 
-    // Preprocess a ChangeAvailabilityRequest: Determine response;
+    // //brief Preprocess a ChangeAvailabilityRequest: Determine response;
     // - if connector is 0, availability change is also propagated for all connectors
-    // - for each connector (except "0"), if transaction is ongoing the change is scheduled, otherwise the id is added
-    // to the `accepted_connector_availability_changes` vector
+    // - for each connector (except "0"), if transaction is ongoing the change is scheduled,
+    //    otherwise the OCPP connector id is appended to the `accepted_connector_availability_changes` vector
     void preprocess_change_availability_request(const ChangeAvailabilityRequest& request,
                                                 ChangeAvailabilityResponse& response,
                                                 std::vector<int32_t>& accepted_connector_availability_changes);
 
-    // Executes availability change for the provided connectors:
-    // - store availability in database
-    // - submit state event (for the whole evse if "0" in set of connectors; otherwise for each connector individually)
+    // \brief TExecutes availability change for the provided connectors:
+    // - if persist == true: store availability in database
+    // - submit state event (for the whole ChargePoint if "0" in set of connectors; otherwise for each connector
+    // individually)
     // - call according EVSE enable or disable callback, respectively
+    /// \param changed_connectors list of OCPP connector ids (and 0 for whole chargepoint)
+    /// \param availability new availabillity
+    /// \param persist if true, persists availability in database
     void execute_connectors_availability_change(const std::vector<int32_t>& changed_connectors,
                                                 const ocpp::v16::AvailabilityType availability, bool persist);
 

@@ -1226,7 +1226,6 @@ void ChargePointImpl::preprocess_change_availability_request(
     // connector. is that case this change must be scheduled and we should report an availability status
     // of "Scheduled"
 
-
     // check if connector exists
     if (request.connectorId <= this->configuration->getNumberOfConnectors() && request.connectorId >= 0) {
         bool transaction_running = false;
