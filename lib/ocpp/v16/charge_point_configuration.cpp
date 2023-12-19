@@ -305,6 +305,10 @@ bool ChargePointConfiguration::getUseSslDefaultVerifyPaths() {
     return this->config["Internal"]["UseSslDefaultVerifyPaths"];
 }
 
+bool ChargePointConfiguration::getVerifyCsmsCommonName() {
+    return this->config["Internal"]["VerifyCsmsCommonName"];
+}
+
 KeyValue ChargePointConfiguration::getChargePointIdKeyValue() {
     KeyValue kv;
     kv.key = "ChargePointId";
@@ -483,6 +487,14 @@ KeyValue ChargePointConfiguration::getUseSslDefaultVerifyPathsKeyValue() {
     kv.key = "UseSslDefaultVerifyPaths";
     kv.readonly = true;
     kv.value.emplace(ocpp::conversions::bool_to_string(this->getUseSslDefaultVerifyPaths()));
+    return kv;
+}
+
+KeyValue ChargePointConfiguration::getVerifyCsmsCommonNameKeyValue() {
+    KeyValue kv;
+    kv.key = "VerifyCsmsCommonName";
+    kv.readonly = true;
+    kv.value.emplace(ocpp::conversions::bool_to_string(this->getVerifyCsmsCommonName()));
     return kv;
 }
 
@@ -675,6 +687,22 @@ std::optional<std::string> ChargePointConfiguration::getHostName() {
         hostName_key.emplace(this->config["Internal"]["HostName"]);
     }
     return hostName_key;
+}
+
+std::optional<bool> ChargePointConfiguration::getQueueAllMessages() {
+    std::optional<bool> queue_all_messages = std::nullopt;
+    if (this->config["Internal"].contains("QueueAllMessages")) {
+        queue_all_messages.emplace(this->config["Internal"]["QueueAllMessages"]);
+    }
+    return queue_all_messages;
+}
+
+std::optional<int> ChargePointConfiguration::getMessageQueueSizeThreshold() {
+    std::optional<int> message_queue_size_threshold = std::nullopt;
+    if (this->config["Internal"].contains("MessageQueueSizeThreshold")) {
+        message_queue_size_threshold.emplace(this->config["Internal"]["MessageQueueSizeThreshold"]);
+    }
+    return message_queue_size_threshold;
 }
 
 // Core Profile - optional
@@ -2146,6 +2174,9 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
     }
     if (key == "UseSslDefaultVerifyPaths") {
         return this->getUseSslDefaultVerifyPathsKeyValue();
+    }
+    if (key == "VerifyCsmsCommonName") {
+        return this->getVerifyCsmsCommonNameKeyValue();
     }
     if (key == "OcspRequestInterval") {
         return this->getOcspRequestIntervalKeyValue();

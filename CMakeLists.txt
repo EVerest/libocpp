@@ -103,7 +103,9 @@ if(CMAKE_RUN_CLANG_TIDY)
     -export-fixes=clang-tidy-fixes.yaml)
 endif()
 
-if(BUILD_TESTING_LIBOCPP)
+if(BUILD_TESTING)
+    enable_testing()
+    include(CTest)
     add_subdirectory(tests)
 endif()
 

@@ -142,6 +142,10 @@ struct Callbacks {
 
     /// \brief Callback function that can be called when all connectors are unavailable
     std::optional<std::function<void()>> all_connectors_unavailable_callback;
+
+    /// \brief Callback function that can be used to handle arbitrary data transfers for all vendorId and
+    /// messageId
+    std::optional<std::function<DataTransferResponse(const DataTransferRequest& request)>> data_transfer_callback;
 };
 
 /// \brief Combines ChangeAvailabilityRequest with persist flag for scheduled Availability changes
@@ -164,11 +168,6 @@ private:
 
     std::map<int32_t, AvailabilityChange> scheduled_change_availability_requests;
 
-    std::map<std::string,
-             std::map<std::string, std::function<DataTransferResponse(const std::optional<std::string>& msg)>>>
-        data_transfer_callbacks;
-    std::mutex data_transfer_callbacks_mutex;
-
     std::map<int32_t, std::pair<IdToken, int32_t>> remote_start_id_per_evse;
 
     // timers
@@ -187,7 +186,9 @@ private:
     RegistrationStatusEnum registration_status;
     OperationalStatusEnum operational_state;
     FirmwareStatusEnum firmware_status;
-    int32_t firmware_status_id;
+    // The request ID in the last firmware update status received
+    std::optional<int32_t> firmware_status_id;
+    // The last firmware status which will be posted before the firmware is installed.
     FirmwareStatusEnum firmware_status_before_installing = FirmwareStatusEnum::SignatureVerified;
     UploadLogStatusEnum upload_log_status;
     int32_t upload_log_status_id;
@@ -227,6 +228,8 @@ private:
 
     /// \brief Handler for automatic or explicit OCSP cache updates
     OcspUpdater ocsp_updater;
+    /// \brief optional delay to resumption of message queue after reconnecting to the CSMS
+    std::chrono::seconds message_queue_resume_delay = std::chrono::seconds(0);
 
     bool send(CallError call_error);
 
@@ -366,7 +369,7 @@ private:
 
     // Functional Block B: Provisioning
     void boot_notification_req(const BootReasonEnum& reason);
-    void notify_report_req(const int request_id, const int seq_no, const std::vector<ReportData>& report_data);
+    void notify_report_req(const int request_id, const std::vector<ReportData>& report_data);
 
     // Functional Block C: Authorization
     AuthorizeResponse authorize_req(const IdToken id_token, const std::optional<CiString<5500>>& certificate,
@@ -642,8 +645,14 @@ public:
     /// \param messageId
     /// \param data
     /// \return DataTransferResponse contaning the result from CSMS
-    DataTransferResponse data_transfer_req(const CiString<255>& vendorId, const CiString<50>& messageId,
-                                           const std::string& data);
+    DataTransferResponse data_transfer_req(const CiString<255>& vendorId, const std::optional<CiString<50>>& messageId,
+                                           const std::optional<std::string>& data);
+
+    /// \brief Delay draining the message queue after reconnecting, so the CSMS can perform post-reconnect checks first
+    /// \param delay The delay period (seconds)
+    void set_message_queue_resume_delay(std::chrono::seconds delay) {
+        this->message_queue_resume_delay = delay;
+    }
 };
 
 } // namespace v201

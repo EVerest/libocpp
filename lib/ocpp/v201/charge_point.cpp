@@ -7,6 +7,7 @@
 #include <ocpp/v201/device_model_storage_sqlite.hpp>
 #include <ocpp/v201/messages/FirmwareStatusNotification.hpp>
 #include <ocpp/v201/messages/LogStatusNotification.hpp>
+#include <ocpp/v201/notify_report_requests_splitter.hpp>
 
 #include <stdexcept>
 #include <string>
@@ -20,6 +21,8 @@ namespace v201 {
 
 const auto DEFAULT_BOOT_NOTIFICATION_RETRY_INTERVAL = std::chrono::seconds(30);
 const auto WEBSOCKET_INIT_DELAY = std::chrono::seconds(2);
+const auto DEFAULT_MESSAGE_QUEUE_SIZE_THRESHOLD = 2E5;
+const auto DEFAULT_MAX_MESSAGE_SIZE = 65000;
 
 bool Callbacks::all_callbacks_valid() const {
     return this->is_reset_allowed_callback != nullptr and this->reset_callback != nullptr and
@@ -143,8 +146,14 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
 
     this->message_queue = std::make_unique<ocpp::MessageQueue<v201::MessageType>>(
         [this](json message) -> bool { return this->websocket->send(message.dump()); },
-        this->device_model->get_value<int>(ControllerComponentVariables::MessageAttempts),
-        this->device_model->get_value<int>(ControllerComponentVariables::MessageAttemptInterval),
+        MessageQueueConfig{
+            this->device_model->get_value<int>(ControllerComponentVariables::MessageAttempts),
+            this->device_model->get_value<int>(ControllerComponentVariables::MessageAttemptInterval),
+            this->device_model->get_optional_value<int>(ControllerComponentVariables::MessageQueueSizeThreshold)
+                .value_or(DEFAULT_MESSAGE_QUEUE_SIZE_THRESHOLD),
+            this->device_model->get_optional_value<bool>(ControllerComponentVariables::QueueAllMessages)
+                .value_or(false),
+            this->device_model->get_value<int>(ControllerComponentVariables::MessageTimeout)},
         this->database_handler);
 }
 
@@ -194,6 +203,13 @@ void ChargePoint::disconnect_websocket(websocketpp::close::status::value code) {
 
 void ChargePoint::on_firmware_update_status_notification(int32_t request_id,
                                                          const FirmwareStatusEnum& firmware_update_status) {
+    if (this->firmware_status == firmware_update_status) {
+        if (request_id == -1 or
+            this->firmware_status_id.has_value() and this->firmware_status_id.value() == request_id) {
+            // already sent, do not send again
+            return;
+        }
+    }
     FirmwareStatusNotificationRequest req;
     req.status = firmware_update_status;
     // Firmware status and id are stored for future trigger message request.
@@ -222,6 +238,17 @@ void ChargePoint::on_firmware_update_status_notification(int32_t request_id,
     }
 
     if (this->firmware_status_before_installing == req.status) {
+        // FIXME(Kai): This is a temporary workaround, because the EVerest System module does not keep track of
+        // transactions and can't inquire about their status from the OCPP modules. If the firmware status is expected
+        // to become "Installing", but we still have a transaction running, the update will wait for the transaction to
+        // finish, and so we send an "InstallScheduled" status. This is necessary for OCTT TC_L_15_CS to pass.
+        const auto transaction_active = this->any_transaction_active(std::nullopt);
+        if (transaction_active) {
+            this->firmware_status = FirmwareStatusEnum::InstallScheduled;
+            req.status = firmware_status;
+            ocpp::Call<FirmwareStatusNotificationRequest> call(req, this->message_queue->createMessageId());
+            this->send_async<FirmwareStatusNotificationRequest>(call);
+        }
         this->change_all_connectors_to_unavailable_for_firmware_update();
     }
 }
@@ -648,7 +675,7 @@ void ChargePoint::init_websocket() {
 
     this->websocket = std::make_unique<Websocket>(connection_options, this->evse_security, this->logging);
     this->websocket->register_connected_callback([this](const int security_profile) {
-        this->message_queue->resume();
+        this->message_queue->resume(this->message_queue_resume_delay);
 
         const auto& security_profile_cv = ControllerComponentVariables::SecurityProfile;
         if (security_profile_cv.variable.has_value()) {
@@ -790,7 +817,10 @@ WebsocketConnectionOptions ChargePoint::get_ws_connection_options(const int32_t 
         this->device_model->get_optional_value<bool>(ControllerComponentVariables::UseSslDefaultVerifyPaths)
             .value_or(true),
         this->device_model->get_optional_value<bool>(ControllerComponentVariables::AdditionalRootCertificateCheck)
-            .value_or(false)};
+            .value_or(false),
+        std::nullopt, // hostName
+        true          // verify_csms_common_name
+    };
 
     return connection_options;
 }
@@ -1345,6 +1375,27 @@ void ChargePoint::handle_variable_changed(const SetVariableData& set_variable_da
         this->websocket->set_connection_options(connection_options);
     }
 
+    if (component_variable == ControllerComponentVariables::MessageAttemptInterval) {
+        if (component_variable.variable.has_value()) {
+            this->message_queue->update_transaction_message_retry_interval(
+                this->device_model->get_value<int>(ControllerComponentVariables::MessageAttemptInterval));
+        }
+    }
+
+    if (component_variable == ControllerComponentVariables::MessageAttempts) {
+        if (component_variable.variable.has_value()) {
+            this->message_queue->update_transaction_message_attempts(
+                this->device_model->get_value<int>(ControllerComponentVariables::MessageAttempts));
+        }
+    }
+
+    if (component_variable == ControllerComponentVariables::MessageTimeout) {
+        if (component_variable.variable.has_value()) {
+            this->message_queue->update_message_timeout(
+                this->device_model->get_value<int>(ControllerComponentVariables::MessageTimeout));
+        }
+    }
+
     // TODO(piet): other special handling of changed variables can be added here...
 }
 
@@ -1510,11 +1561,9 @@ void ChargePoint::sign_certificate_req(const ocpp::CertificateSigningUseEnum& ce
         organization =
             this->device_model->get_optional_value<std::string>(ControllerComponentVariables::OrganizationName);
         country =
-            this->device_model->get_optional_value<std::string>(ControllerComponentVariables::ISO15118CtrlrCountryName)
-                .value_or("DE");
+            this->device_model->get_optional_value<std::string>(ControllerComponentVariables::ISO15118CtrlrCountryName);
     } else {
-        common =
-            this->device_model->get_optional_value<std::string>(ControllerComponentVariables::ChargeBoxSerialNumber);
+        common = this->device_model->get_optional_value<std::string>(ControllerComponentVariables::ISO15118CtrlrSeccId);
         organization = this->device_model->get_optional_value<std::string>(
             ControllerComponentVariables::ISO15118CtrlrOrganizationName);
         country =
@@ -1556,17 +1605,28 @@ void ChargePoint::boot_notification_req(const BootReasonEnum& reason) {
     this->send<BootNotificationRequest>(call);
 }
 
-void ChargePoint::notify_report_req(const int request_id, const int seq_no,
-                                    const std::vector<ReportData>& report_data) {
+void ChargePoint::notify_report_req(const int request_id, const std::vector<ReportData>& report_data) {
 
     NotifyReportRequest req;
     req.requestId = request_id;
-    req.seqNo = seq_no;
+    req.seqNo = 0;
     req.generatedAt = ocpp::DateTime();
     req.reportData.emplace(report_data);
+    req.tbc = false;
 
-    ocpp::Call<NotifyReportRequest> call(req, this->message_queue->createMessageId());
-    this->send<NotifyReportRequest>(call);
+    if (report_data.size() <= 1) {
+        ocpp::Call<NotifyReportRequest> call(req, this->message_queue->createMessageId());
+        this->send<NotifyReportRequest>(call);
+    } else {
+        NotifyReportRequestsSplitter splitter{
+            req,
+            this->device_model->get_optional_value<size_t>(ControllerComponentVariables::MaxMessageSize)
+                .value_or(DEFAULT_MAX_MESSAGE_SIZE),
+            [this]() { return this->message_queue->createMessageId(); }};
+        for (const auto& msg : splitter.create_call_payloads()) {
+            this->message_queue->push(msg);
+        }
+    }
 }
 
 AuthorizeResponse ChargePoint::authorize_req(const IdToken id_token, const std::optional<CiString<5500>>& certificate,
@@ -1990,7 +2050,7 @@ void ChargePoint::handle_get_base_report_req(Call<GetBaseReportRequest> call) {
         // TODO(piet): Propably split this up into several NotifyReport.req depending on ItemsPerMessage /
         // BytesPerMessage
         const auto report_data = this->device_model->get_report_data(msg.reportBase);
-        this->notify_report_req(msg.requestId, 0, report_data);
+        this->notify_report_req(msg.requestId, report_data);
     }
 }
 
@@ -2013,7 +2073,7 @@ void ChargePoint::handle_get_report_req(Call<GetReportRequest> call) {
     this->send<GetReportResponse>(call_result);
 
     if (response.status == GenericDeviceModelStatusEnum::Accepted) {
-        this->notify_report_req(msg.requestId, 0, report_data);
+        this->notify_report_req(msg.requestId, report_data);
     }
 }
 
@@ -2162,15 +2222,6 @@ void ChargePoint::handle_reset_req(Call<ResetRequest> call) {
     }
 
     if (response.status == ResetStatusEnum::Accepted) {
-        if (call.msg.evseId.has_value()) {
-            // B11.FR.08
-            this->evses.at(call.msg.evseId.value())->submit_event(1, ConnectorEvent::Unavailable);
-        } else {
-            // B11.FR.03
-            for (auto const& [evse_id, evse] : this->evses) {
-                evse->submit_event(1, ConnectorEvent::Unavailable);
-            }
-        }
         this->callbacks.reset_callback(call.msg.evseId, ResetEnum::Immediate);
     }
 }
@@ -2783,31 +2834,25 @@ void ChargePoint::handle_customer_information_req(Call<CustomerInformationReques
 void ChargePoint::handle_data_transfer_req(Call<DataTransferRequest> call) {
     const auto msg = call.msg;
     DataTransferResponse response;
-    const auto vendor_id = msg.vendorId.get();
-    const auto message_id = msg.messageId.value_or(CiString<50>()).get();
-    {
-        std::lock_guard<std::mutex> lock(data_transfer_callbacks_mutex);
-        if (this->data_transfer_callbacks.count(vendor_id) == 0) {
-            response.status = ocpp::v201::DataTransferStatusEnum::UnknownVendorId;
-        } else if (this->data_transfer_callbacks.count(vendor_id) and
-                   this->data_transfer_callbacks[vendor_id].count(message_id) == 0) {
-            response.status = ocpp::v201::DataTransferStatusEnum::UnknownMessageId;
-        } else {
-            // there is a callback registered for this vendorId and messageId
-            response = this->data_transfer_callbacks[vendor_id][message_id](msg.data);
-        }
+
+    if (this->callbacks.data_transfer_callback.has_value()) {
+        response = this->callbacks.data_transfer_callback.value()(call.msg);
+    } else {
+        response.status = DataTransferStatusEnum::UnknownVendorId;
+        EVLOG_warning << "Received a DataTransferRequest but no data transfer callback was registered";
     }
 
     ocpp::CallResult<DataTransferResponse> call_result(response, call.uniqueId);
     this->send<DataTransferResponse>(call_result);
 }
 
-DataTransferResponse ChargePoint::data_transfer_req(const CiString<255>& vendorId, const CiString<50>& messageId,
-                                                    const std::string& data) {
+DataTransferResponse ChargePoint::data_transfer_req(const CiString<255>& vendorId,
+                                                    const std::optional<CiString<50>>& messageId,
+                                                    const std::optional<std::string>& data) {
     DataTransferRequest req;
     req.vendorId = vendorId;
     req.messageId = messageId;
-    req.data.emplace(data);
+    req.data = data;
 
     DataTransferResponse response;
     ocpp::Call<DataTransferRequest> call(req, this->message_queue->createMessageId());

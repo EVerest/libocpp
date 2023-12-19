@@ -235,6 +235,20 @@ const ComponentVariable& ClientCertificateExpireCheckIntervalSeconds = {
         "ClientCertificateExpireCheckIntervalSeconds",
     }),
 };
+const ComponentVariable& MessageQueueSizeThreshold = {
+    ControllerComponents::InternalCtrlr,
+    std::nullopt,
+    std::optional<Variable>({
+        "MessageQueueSizeThreshold",
+    }),
+};
+const ComponentVariable& MaxMessageSize = {
+    ControllerComponents::InternalCtrlr,
+    std::nullopt,
+    std::optional<Variable>({
+        "MaxMessageSize",
+    }),
+};
 const ComponentVariable& AlignedDataCtrlrEnabled = {
     ControllerComponents::AlignedDataCtrlr,
     std::nullopt,
@@ -609,6 +623,13 @@ const ComponentVariable& RequestMeteringReceipt = {
     std::nullopt,
     std::optional<Variable>({
         "RequestMeteringReceipt",
+    }),
+};
+const ComponentVariable& ISO15118CtrlrSeccId = {
+    ControllerComponents::ISO15118Ctrlr,
+    std::nullopt,
+    std::optional<Variable>({
+        "SeccId",
     }),
 };
 const ComponentVariable& ISO15118CtrlrCountryName = {
