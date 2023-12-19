@@ -274,6 +274,7 @@ public:
         config(config),
         external_notify(external_notify),
         paused(true),
+        resuming(false),
         running(true),
         new_message(false),
         uuid_generator(boost::uuids::random_generator()) {
