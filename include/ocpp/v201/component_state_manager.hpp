@@ -141,12 +141,11 @@ public:
     /// database. No callbacks are triggered at this stage.
     /// When the status of components is updated, corresponding callbacks are triggered to notify the user of libocpp.
     /// Additionally, the ComponentStateManager sends StatusNotifications to the CSMS when connector statuses change.
-    /// Note: It is expected that ComponentStateManager::trigger_all_effective_availability_changed_callbacks is called on boot, and
-    /// ComponentStateManager::send_status_notification_all_connectors is called when first connected to the CSMS.
-    /// \param evse_connector_structure Maps each EVSE ID to the number of connectors the EVSE has
-    /// \param db_handler A shared reference to the persistent database
-    /// \param send_connector_status_notification_callback The callback through which to send StatusNotifications to the
-    /// CSMS
+    /// Note: It is expected that ComponentStateManager::trigger_all_effective_availability_changed_callbacks is called
+    /// on boot, and ComponentStateManager::send_status_notification_all_connectors is called when first connected to
+    /// the CSMS. \param evse_connector_structure Maps each EVSE ID to the number of connectors the EVSE has \param
+    /// db_handler A shared reference to the persistent database \param send_connector_status_notification_callback The
+    /// callback through which to send StatusNotifications to the CSMS
     explicit ComponentStateManager(
         const std::map<int32_t, int32_t>& evse_connector_structure, std::shared_ptr<DatabaseHandler> db_handler,
         std::function<bool(const int32_t evse_id, const int32_t connector_id, const ConnectorStatusEnum new_status)>
@@ -162,8 +161,8 @@ public:
 
     /// \brief Set a callback to be called when the effective Operative/Inoperative state of a connector changes.
     void set_connector_effective_availability_changed_callback(
-        const std::function<void(const int32_t evse_id, const int32_t connector_id, const OperationalStatusEnum new_status)>&
-            callback);
+        const std::function<void(const int32_t evse_id, const int32_t connector_id,
+                                 const OperationalStatusEnum new_status)>& callback);
 
     /// \brief Get the individual status (Operative/Inoperative) of the CS, as set by the CSMS
     OperationalStatusEnum get_cs_individual_operational_status();
