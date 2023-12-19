@@ -8,5 +8,6 @@ jobs:
     uses: EVerest/everest-core/.github/workflows/build_and_test.yaml@CI/reusable-workflow
     with:
       run_unit_tests: true
+      run_integration_tests: false
       repository: EVerest/libocpp
       repository_ref: CI/reusable-workflow  # TODO use a context-variable instead
