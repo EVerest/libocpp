@@ -1220,11 +1220,29 @@ void ChargePointImpl::handleBootNotificationResponse(ocpp::CallResult<BootNotifi
 
 void ChargePointImpl::preprocess_change_availability_request(
     const ChangeAvailabilityRequest& request, ChangeAvailabilityResponse& response,
-    std::vector<int32_t>& accepted_connector_availability_changes) {
+    std::vector<int32_t>& accepted_connector_availability_changes, bool is_internal_request = false) {
 
     // we can only change the connector availability if there is no active transaction on this
     // connector. is that case this change must be scheduled and we should report an availability status
     // of "Scheduled"
+    auto current_state = this->status->get_state(request.connectorId);
+
+    //    If already in right state and nothing scheduled, return accepted and do nothing (i.e., no connectors added to
+    //    list of accepted changes)
+    //    Cf OCPP 1.6. Section 5.2: In the event that Central System requests Charge Point to
+    //    change to a status it is already in, Charge Point SHALL respond with availability status ‘Accepted’.
+    if ((request.type == AvailabilityType::Operative and current_state == ChargePointStatus::Available) or
+        (request.type == AvailabilityType::Inoperative and current_state == ChargePointStatus::Unavailable)) {
+        std::lock_guard<std::mutex> change_availability_lock(change_availability_mutex);
+        if (this->change_availability_queue.count(request.connectorId) == 0) {
+            response.status = AvailabilityStatus::Accepted;
+            return;
+        }
+    }
+
+    if (!is_internal_request) {
+        auto is_locked = this->get_configuration_key("")
+    }
 
     // check if connector exists
     if (request.connectorId <= this->configuration->getNumberOfConnectors() && request.connectorId >= 0) {
