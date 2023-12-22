@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
+#include <chrono>
 #include <everest/logging.hpp>
 #include <ocpp/common/call_types.hpp>
 #include <ocpp/common/types.hpp>
@@ -27,10 +28,11 @@ DateTime& DateTime::operator=(const char* c) {
 }
 
 DateTimeImpl::DateTimeImpl() {
-    this->timepoint = date::utc_clock::now();
+    this->timepoint = std::chrono::time_point_cast<std::chrono::seconds>(date::utc_clock::now());
 }
 
-DateTimeImpl::DateTimeImpl(std::chrono::time_point<date::utc_clock> timepoint) : timepoint(timepoint) {
+DateTimeImpl::DateTimeImpl(std::chrono::time_point<date::utc_clock> timepoint) :
+    timepoint(std::chrono::time_point_cast<std::chrono::seconds>(timepoint)) {
 }
 
 DateTimeImpl::DateTimeImpl(const std::string& timepoint_str) {
