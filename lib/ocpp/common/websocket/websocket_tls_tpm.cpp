@@ -98,7 +98,7 @@ public:
     std::unique_ptr<SSL_CTX> sec_context;
     std::unique_ptr<OSSL_LIB_CTX> sec_lib_context;
 
-    // libwebosockets state
+    // libwebsockets state
     std::unique_ptr<lws_context> lws_ctx;
     lws* wsi;
 
