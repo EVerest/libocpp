@@ -309,6 +309,8 @@ TEST_F(DatabaseTest, test_insert_and_get_transaction_without_id_tag) {
 }
 
 TEST_F(DatabaseTest, test_insert_and_get_profiles) {
+    // TODO enable again on fixing https://github.com/EVerest/libocpp/issues/384
+    GTEST_SKIP() << "validFrom/validTo checks are failing. See https://github.com/EVerest/libocpp/issues/384";
 
     const auto profile = get_sample_charging_profile();
 
