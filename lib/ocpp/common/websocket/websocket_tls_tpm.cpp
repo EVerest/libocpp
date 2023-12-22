@@ -206,11 +206,11 @@ static void create_sec_context(bool use_tpm, OSSL_LIB_CTX*& out_libctx, SSL_CTX*
         }
 
         if ((prov_default = OSSL_PROVIDER_load(libctx, "default")) == nullptr) {
-            EVLOG_AND_THROW(std::runtime_error("Can not load provider default."));
+            EVLOG_AND_THROW(std::runtime_error("Could not load provider default."));
         }
 
         if (!OSSL_PROVIDER_self_test(prov_default)) {
-            EVLOG_AND_THROW(std::runtime_error("Can not self-test provider default."));
+            EVLOG_AND_THROW(std::runtime_error("Could not self-test provider default."));
         }
     }
 
@@ -656,7 +656,7 @@ static bool send_internal(lws* wsi, WebsocketMessage* msg) {
 
     auto sent = lws_write(wsi, reinterpret_cast<unsigned char*>(&buff[LWS_PRE]), message_len, msg->protocol);
 
-    // Even if we written all the bytes to lws, it doesn't mean that it has been sent over
+    // Even if we have written all the bytes to lws, it doesn't mean that it has been sent over
     // the wire. According to the function comment (lws_write), until everything has been
     // sent, the 'LWS_CALLBACK_CLIENT_WRITEABLE' callback will be suppressed. When we received
     // another callback, it means that everything was sent and that we can mark the message
