@@ -108,7 +108,7 @@ if(LIBOCPP_ENABLE_LIBWEBSOCKETS)
     find_package(libwebsockets REQUIRED)
     target_link_libraries(ocpp
     PUBLIC
-        websockets
+        websockets_shared
     )
     target_compile_definitions(ocpp
         PRIVATE
