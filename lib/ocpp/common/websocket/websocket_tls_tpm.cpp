@@ -267,7 +267,7 @@ void WebsocketTlsTPM::tls_init() {
             EVLOG_AND_THROW(std::runtime_error("Could not use client certificate file within SSL context"));
         }
 
-        if (SSL_CTX_use_PrivateKey_file(ctx, path_key, SSL_FILETYPE_PEM) != 1) {
+        if (1 != SSL_CTX_use_PrivateKey_file(ctx, path_key, SSL_FILETYPE_PEM)) {
             EVLOG_AND_THROW(std::runtime_error("Could not set private key file within SSL context"));
         }
 
@@ -279,7 +279,7 @@ void WebsocketTlsTPM::tls_init() {
     if (this->evse_security->is_ca_certificate_installed(ocpp::CaCertificateType::CSMS)) {
         std::string ca_csms = this->evse_security->get_verify_file(ocpp::CaCertificateType::CSMS);
 
-        EVLOG_info << "Loading ca csms bundle to verify server certificate: " << ca_csms;
+        EVLOG_info << "Loading CA csms bundle to verify server certificate: " << ca_csms;
 
         rc = SSL_CTX_load_verify_locations(ctx, ca_csms.c_str(), NULL);
 
@@ -704,7 +704,7 @@ void WebsocketTlsTPM::on_writable() {
             message = message_queue.front().get();
         }
 
-        if (nullptr == message) {
+        if (message == nullptr) {
             EVLOG_AND_THROW(std::runtime_error("Null message in queue, fatal error!"));
         }
 
@@ -826,8 +826,9 @@ int WebsocketTlsTPM::process_callback(void* wsi_ptr, int callback_reason, void* 
             auto& str = this->connection_options.hostName.value();
             EVLOG_info << "User-Host is set to " << str;
 
-            if (0 != lws_add_http_header_by_name(wsi, (unsigned char*)"User-Host", (unsigned char*)str.c_str(),
-                                                 str.length(), ptr, end_header)) {
+            if (0 != lws_add_http_header_by_name(wsi, reinterpret_cast<const unsigned char*>("User-Host"),
+                                                 reinterpret_cast<const unsigned char*>(str.c_str()), str.length(), ptr,
+                                                 end_header)) {
                 EVLOG_AND_THROW(std::runtime_error("Could not append authorization header."));
             }
         }
@@ -837,8 +838,9 @@ int WebsocketTlsTPM::process_callback(void* wsi_ptr, int callback_reason, void* 
 
             if (authorization_header != std::nullopt) {
                 auto& str = authorization_header.value();
-                if (0 != lws_add_http_header_by_name(wsi, (unsigned char*)"Authorization", (unsigned char*)str.c_str(),
-                                                     str.length(), ptr, end_header)) {
+                if (0 != lws_add_http_header_by_name(wsi, reinterpret_cast<const unsigned char*>("Authorization"),
+                                                     reinterpret_cast<const unsigned char*>(str.c_str()), str.length(),
+                                                     ptr, end_header)) {
                     EVLOG_AND_THROW(std::runtime_error("Could not append authorization header."));
                 }
             } else {
