@@ -104,7 +104,6 @@ if(CMAKE_RUN_CLANG_TIDY)
 endif()
 
 if(BUILD_TESTING)
-    enable_testing()
     include(CTest)
     add_subdirectory(tests)
 endif()
