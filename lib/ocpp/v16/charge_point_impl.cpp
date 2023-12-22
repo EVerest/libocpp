@@ -20,6 +20,10 @@ const auto INITIAL_CERTIFICATE_REQUESTS_DELAY = std::chrono::seconds(60);
 const auto WEBSOCKET_INIT_DELAY = std::chrono::seconds(2);
 const auto DEFAULT_MESSAGE_QUEUE_SIZE_THRESHOLD = 2E5;
 
+// Custom configuration parameter that may be introduced in order to block an CSMS ChangeAvailabilityRequest that tries
+// to set a connector/the CS operative
+const auto CONFIG_KEY_BLOCK_REMOTE_SET_AVAILABLE_REQUESTS = "BlockRemoteSetAvailableRequests";
+
 ChargePointImpl::ChargePointImpl(const std::string& config, const fs::path& share_path,
                                  const fs::path& user_config_path, const fs::path& database_path,
                                  const fs::path& sql_init_path, const fs::path& message_log_path,
@@ -1220,7 +1224,7 @@ void ChargePointImpl::handleBootNotificationResponse(ocpp::CallResult<BootNotifi
 
 void ChargePointImpl::preprocess_change_availability_request(
     const ChangeAvailabilityRequest& request, ChangeAvailabilityResponse& response,
-    std::vector<int32_t>& accepted_connector_availability_changes, bool is_internal_request = false) {
+    std::vector<int32_t>& accepted_connector_availability_changes, bool is_internal_request) {
 
     // we can only change the connector availability if there is no active transaction on this
     // connector. is that case this change must be scheduled and we should report an availability status
@@ -1229,8 +1233,9 @@ void ChargePointImpl::preprocess_change_availability_request(
 
     //    If already in right state and nothing scheduled, return accepted and do nothing (i.e., no connectors added to
     //    list of accepted changes)
-    //    Cf OCPP 1.6. Section 5.2: In the event that Central System requests Charge Point to
-    //    change to a status it is already in, Charge Point SHALL respond with availability status ‘Accepted’.
+    //    Cf OCPP 1.6. Section 5.2:
+    //        In the event that Central System requests Charge Point to
+    //        change to a status it is already in, Charge Point SHALL respond with availability status ‘Accepted’.
     if ((request.type == AvailabilityType::Operative and current_state == ChargePointStatus::Available) or
         (request.type == AvailabilityType::Inoperative and current_state == ChargePointStatus::Unavailable)) {
         std::lock_guard<std::mutex> change_availability_lock(change_availability_mutex);
@@ -1240,8 +1245,18 @@ void ChargePointImpl::preprocess_change_availability_request(
         }
     }
 
-    if (!is_internal_request) {
-        auto is_locked = this->get_configuration_key("")
+    // OCPP 1.6. Section 4.9:
+    //     The Charge Point MAY use the Unavailable status internally for other purposes (e.g. while updating firmware
+    //     or waiting for an initial Accepted RegistrationStatus).
+    if (!is_internal_request and request.type == AvailabilityType::Operative) {
+        auto is_locked = this->configuration->get(CONFIG_KEY_BLOCK_REMOTE_SET_AVAILABLE_REQUESTS);
+        if (is_locked.has_value() and is_locked.value().value.has_value() and
+            is_locked.value().value.value() == "true") {
+            EVLOG_info << "Rejecting CSMS set operative request for connector " << request.connectorId << " since "
+                       << CONFIG_KEY_BLOCK_REMOTE_SET_AVAILABLE_REQUESTS << " is true";
+            response.status = AvailabilityStatus::Rejected;
+            return;
+        }
     }
 
     // check if connector exists
@@ -1318,7 +1333,7 @@ void ChargePointImpl::handleChangeAvailabilityRequest(ocpp::Call<ChangeAvailabil
 
     ChangeAvailabilityResponse response{};
     std::vector<int32_t> accepted_connector_availability_changes{};
-    preprocess_change_availability_request(request, response, accepted_connector_availability_changes);
+    preprocess_change_availability_request(request, response, accepted_connector_availability_changes, false);
 
     // respond first
     ocpp::CallResult<ChangeAvailabilityResponse> call_result(response, call.uniqueId);
@@ -3604,7 +3619,7 @@ ChangeAvailabilityResponse ChargePointImpl::on_change_availability(const ChangeA
     ChangeAvailabilityResponse response{};
     std::vector<int32_t> accepted_connector_availability_changes{};
 
-    preprocess_change_availability_request(request, response, accepted_connector_availability_changes);
+    preprocess_change_availability_request(request, response, accepted_connector_availability_changes, true);
 
     if (response.status != AvailabilityStatus::Rejected) {
         execute_connectors_availability_change(accepted_connector_availability_changes, request.type, true);

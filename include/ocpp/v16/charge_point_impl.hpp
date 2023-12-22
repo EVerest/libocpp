@@ -322,7 +322,8 @@ private:
     //    otherwise the OCPP connector id is appended to the `accepted_connector_availability_changes` vector
     void preprocess_change_availability_request(const ChangeAvailabilityRequest& request,
                                                 ChangeAvailabilityResponse& response,
-                                                std::vector<int32_t>& accepted_connector_availability_changes);
+                                                std::vector<int32_t>& accepted_connector_availability_changes,
+                                                bool is_internal_request);
 
     // \brief TExecutes availability change for the provided connectors:
     // - if persist == true: store availability in database
