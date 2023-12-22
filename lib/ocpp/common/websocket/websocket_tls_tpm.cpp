@@ -198,7 +198,7 @@ static void create_sec_context(bool use_tpm, OSSL_LIB_CTX*& out_libctx, SSL_CTX*
         OSSL_PROVIDER* prov_default = nullptr;
 
         if ((prov_tpm2 = OSSL_PROVIDER_load(libctx, "tpm2")) == nullptr) {
-            EVLOG_AND_THROW(std::runtime_error("Can not load provider tpm2."));
+            EVLOG_AND_THROW(std::runtime_error("Could not load provider tpm2."));
         }
 
         if (!OSSL_PROVIDER_self_test(prov_tpm2)) {
