@@ -104,6 +104,7 @@ if(CMAKE_RUN_CLANG_TIDY)
 endif()
 
 if(BUILD_TESTING_LIBOCPP)
+    include(CTest)
     add_subdirectory(tests)
 endif()
 
