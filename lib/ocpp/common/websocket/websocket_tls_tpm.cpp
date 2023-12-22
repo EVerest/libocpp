@@ -121,7 +121,7 @@ public:
 
     // How many bytes we have sent to libwebsockets, does not
     // necessarily mean that all bytes have been sent over the wire,
-    // just that these were sent to liwebsockets
+    // just that these were sent to libwebsockets
     size_t sent_bytes;
     // If libwebsockets has sent all the bytes through the wire
     volatile bool message_sent;
