@@ -34,4 +34,5 @@ libevse-security:
 libwebsockets:
   git: https://github.com/warmcat/libwebsockets.git
   git_tag: v4.3.3
+  cmake_condition: "LIBOCPP_ENABLE_LIBWEBSOCKETS"
   
