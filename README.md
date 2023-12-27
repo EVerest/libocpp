@@ -66,7 +66,7 @@ The development of OCPP2.0.1 is in progress.
 
 | Feature Profile            | Supported                 |
 | -------------------------- | ------------------------- |
-| Core                       | WIP                       |
+| Core                       | :heavy_check_mark: yes    |
 | Advanced Security          | WIP                       |
 | Local Auth List Management |                           |
 | Smart Charging             |                           |
