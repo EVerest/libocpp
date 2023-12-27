@@ -69,7 +69,7 @@ The development of OCPP2.0.1 is in progress.
 | Core                       | :heavy_check_mark: yes    |
 | Advanced Security          | WIP                       |
 | Local Auth List Management |                           |
-| Smart Charging             |                           |
+| Smart Charging             | WIP                       |
 | Advanced Device Management |                           |
 | Advanced User Interface    |                           |
 | Reservation                |                           |
