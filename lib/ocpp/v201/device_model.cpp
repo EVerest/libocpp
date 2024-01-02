@@ -23,7 +23,7 @@ bool DeviceModel::component_criteria_match(const Component& component,
         if (response.status == GetVariableStatusEnum::Accepted and value.has_value() and value.value()) {
             return true;
         }
-        // also send true if the component crietria isn't part of the compoent except "problem"
+        // also send true if the component crietria isn't part of the component except "problem"
         else if (!value.has_value() and (variable.name != "Problem")) {
             return true;
         }
@@ -266,9 +266,28 @@ DeviceModel::get_custom_report_data(const std::optional<std::vector<ComponentVar
             for (auto const& [variable, variable_meta_data] : variable_map) {
                 auto variable_ = variable;
                 auto component_ = component;
+                // send all the variables for this component criteria
 
-                if (!component_variables.has_value()) {
-                    // if component variables are missing
+                if (!component_variables.has_value() // if component variables are empty
+                    or std::find_if(component_variables.value().begin(), component_variables.value().end(),
+                                    [component_](ComponentVariable v) {
+                                        return component_ == v.component and !v.variable.has_value();
+                                    }) != component_variables.value().end() // if component variable has no variable
+                    or std::find_if(component_variables.value().begin(), component_variables.value().end(),
+                                    [component_, variable_](ComponentVariable v) {
+                                        return component_ == v.component and v.variable.has_value() and
+                                               variable_ == v.variable.value();
+                                    }) != component_variables.value().end() // if componentVariable has variable
+                    or std::find_if(component_variables.value().begin(), component_variables.value().end(),
+                                    [component_, variable_](ComponentVariable v) {
+                                        return component_ == v.component and v.variable.has_value() and
+                                               !v.variable.value().instance.has_value() and
+                                               variable_.name == v.variable.value().name;
+                                    }) != component_variables.value().end() // if component instance is missing
+                ) {
+
+                    EVLOG_info << "found component" << component_;
+
                     ReportData report_data;
                     report_data.component = component_;
                     report_data.variable = variable_;
@@ -283,72 +302,6 @@ DeviceModel::get_custom_report_data(const std::optional<std::vector<ComponentVar
 
                     if (!report_data.variableAttribute.empty()) {
                         report_data_vec.push_back(report_data);
-                    }
-                } else {
-                    // query has component crieteria
-
-                    // query can or cannot have the variableType
-                    if (std::find_if(component_variables.value().begin(), component_variables.value().end(),
-                                     [component_](ComponentVariable v) { return !v.variable.has_value(); }) !=
-                        component_variables.value().end()) {
-                        // query doesn't have variableType
-                        EVLOG_info << "no variable type" << component_;
-
-                        ReportData report_data;
-                        report_data.component = component_;
-                        report_data.variable = variable_;
-
-                        //  request the variable attribute from the device model storage
-                        const auto variable_attributes = this->storage->get_variable_attributes(component_, variable_);
-
-                        for (const auto& variable_attribute : variable_attributes) {
-                            report_data.variableAttribute.push_back(variable_attribute);
-                            report_data.variableCharacteristics = variable_map.at(variable).characteristics;
-                        }
-
-                        if (!report_data.variableAttribute.empty()) {
-                            report_data_vec.push_back(report_data);
-                        }
-                    }
-                }
-                if (std::find_if(component_variables.value().begin(), component_variables.value().end(),
-                                 [component_](ComponentVariable v) { return v.variable.has_value(); }) !=
-                    component_variables.value().end()) {
-
-                    // query has variable type
-                    if (std::find_if(component_variables.value().begin(), component_variables.value().end(),
-                                     [component_, variable_](ComponentVariable v) {
-                                         return component_ == v.component and variable_ == v.variable.value();
-                                     }) != component_variables.value().end()
-
-                        or std::find_if(component_variables.value().begin(), component_variables.value().end(),
-                                        [component_, variable_](ComponentVariable v) {
-                                            return component_ == v.component and
-                                                   !v.variable.value().instance.has_value() and
-                                                   variable_.name == v.variable.value().name;
-                                        }) != component_variables.value().end()
-
-                        or std::find_if(component_variables.value().begin(), component_variables.value().end(),
-                                        [component_, variable_](ComponentVariable v) {
-                                            return component_.name == v.component.name and
-                                                   !v.component.evse.has_value() and variable_ == v.variable.value();
-                                        }) != component_variables.value().end()) {
-
-                        ReportData report_data;
-                        report_data.component = component_;
-                        report_data.variable = variable_;
-
-                        //  request the variable attribute from the device model storage
-                        const auto variable_attributes = this->storage->get_variable_attributes(component_, variable_);
-
-                        for (const auto& variable_attribute : variable_attributes) {
-                            report_data.variableAttribute.push_back(variable_attribute);
-                            report_data.variableCharacteristics = variable_map.at(variable).characteristics;
-                        }
-
-                        if (!report_data.variableAttribute.empty()) {
-                            report_data_vec.push_back(report_data);
-                        }
                     }
                 }
             }
