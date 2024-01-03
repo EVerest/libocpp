@@ -283,11 +283,14 @@ DeviceModel::get_custom_report_data(const std::optional<std::vector<ComponentVar
                                         return component_ == v.component and v.variable.has_value() and
                                                !v.variable.value().instance.has_value() and
                                                variable_.name == v.variable.value().name;
-                                    }) != component_variables.value().end() // if component instance is missing
+                                    }) != component_variables.value().end() // if variable instance is missing
+                    or std::find_if(component_variables.value().begin(), component_variables.value().end(),
+                                 [component_, variable_](const ComponentVariable &v) {
+                                     return !v.component.evse.has_value() and (component_.name == v.component.name) and
+                                            (component_.instance == v.component.instance) and (variable_ == v.variable);
+                                 }) != component_variables.value().end() // B08.FR.23
+
                 ) {
-
-                    EVLOG_info << "found component" << component_;
-
                     ReportData report_data;
                     report_data.component = component_;
                     report_data.variable = variable_;
