@@ -327,7 +327,8 @@ TEST_F(DatabaseTest, test_insert_and_get_profiles) {
 
     ASSERT_EQ(db_profile.chargingSchedule.chargingRateUnit, ChargingRateUnit::A);
     ASSERT_EQ(db_profile.chargingSchedule.duration, profile.chargingSchedule.duration);
-    ASSERT_EQ(db_profile.chargingSchedule.startSchedule.value().to_rfc3339(), profile.chargingSchedule.startSchedule.value().to_rfc3339());
+    ASSERT_EQ(db_profile.chargingSchedule.startSchedule.value().to_rfc3339(),
+              profile.chargingSchedule.startSchedule.value().to_rfc3339());
     ASSERT_EQ(db_profile.chargingSchedule.minChargingRate.value(), profile.chargingSchedule.minChargingRate.value());
 
     for (size_t i = 0; i < profile.chargingSchedule.chargingSchedulePeriod.size(); i++) {
