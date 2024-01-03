@@ -74,7 +74,7 @@ The development of OCPP2.0.1 is in progress.
 | Advanced Device Management |                           |
 | Advanced User Interface    |                           |
 | Reservation                |                           |
-| ISO 15118 support          |                           |
+| ISO 15118 support          | WIP                       |
 
 | Whitepapers & Application Notes                                                                                                                              | Supported              |
 | ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
