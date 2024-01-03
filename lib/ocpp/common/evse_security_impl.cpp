@@ -16,6 +16,9 @@ EvseSecurityImpl::EvseSecurityImpl(const SecurityConfiguration& security_configu
     file_paths.directories.secc_leaf_cert_directory = security_configuration.secc_leaf_cert_directory;
     file_paths.directories.secc_leaf_key_directory = security_configuration.secc_leaf_key_directory;
 
+    file_paths.links.secc_leaf_cert_link = security_configuration.secc_leaf_cert_link;
+    file_paths.links.cpo_cert_chain_link = security_configuration.cpo_cert_chain_link;
+
     this->evse_security =
         std::make_unique<evse_security::EvseSecurity>(file_paths, security_configuration.private_key_password);
 }

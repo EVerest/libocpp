@@ -21,6 +21,8 @@ struct SecurityConfiguration {
     fs::path csms_leaf_key_directory;
     fs::path secc_leaf_cert_directory;
     fs::path secc_leaf_key_directory;
+    fs::path secc_leaf_cert_link;
+    fs::path cpo_cert_chain_link;
     std::optional<std::string> private_key_password;
 };
 
