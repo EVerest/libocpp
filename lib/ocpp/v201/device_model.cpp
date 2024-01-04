@@ -35,7 +35,7 @@ bool DeviceModel::component_criteria_match(const Component& component,
 }
 
 bool DeviceModel::component_criteria_match_custom(const Component& component,
-                                           const std::vector<ComponentCriterionEnum>& component_criteria) {
+                                                  const std::vector<ComponentCriterionEnum>& component_criteria) {
     if (component_criteria.empty()) {
         return false;
     }
@@ -54,7 +54,22 @@ bool DeviceModel::component_criteria_match_custom(const Component& component,
     }
     return false;
 }
+bool DeviceModel::component_variables_match(const std::vector<ComponentVariable>& component_variables,
+                                            const ocpp::v201::Component& component,
+                                            const ocpp::v201::Variable& variable) {
 
+    return std::find_if(
+               component_variables.begin(), component_variables.end(), [component, variable](ComponentVariable v) {
+                   return (component == v.component and !v.variable.has_value()) or // if component has no variable
+                          (component == v.component and v.variable.has_value() and
+                           variable == v.variable.value()) or                       // if component has variables
+                          (component == v.component and v.variable.has_value() and
+                           !v.variable.value().instance.has_value() and
+                           variable.name == v.variable.value().name) or // if component has no variable instances
+                          (!v.component.evse.has_value() and (component.name == v.component.name) and
+                           (component.instance == v.component.instance) and (variable == v.variable)); // B08.FR.23
+               }) != component_variables.end();
+}
 bool validate_value(const VariableCharacteristics& characteristics, const std::string& value) {
     switch (characteristics.dataType) {
     case DataEnum::string:
@@ -286,41 +301,15 @@ DeviceModel::get_custom_report_data(const std::optional<std::vector<ComponentVar
     for (auto const& [component, variable_map] : this->device_model) {
         if (!component_criteria.has_value() or component_criteria_match_custom(component, component_criteria.value())) {
 
-            // for (const auto& criteria : component_criteria.value()) {
             for (auto const& [variable, variable_meta_data] : variable_map) {
-                auto variable_ = variable;
-                auto component_ = component;
-                // send all the variables for this component criteria
-
-                if (!component_variables.has_value() // if component variables are empty
-                    or std::find_if(component_variables.value().begin(), component_variables.value().end(),
-                                    [component_](ComponentVariable v) {
-                                        return component_ == v.component and !v.variable.has_value();
-                                    }) != component_variables.value().end() // if component variable has no variable
-                    or std::find_if(component_variables.value().begin(), component_variables.value().end(),
-                                    [component_, variable_](ComponentVariable v) {
-                                        return component_ == v.component and v.variable.has_value() and
-                                               variable_ == v.variable.value();
-                                    }) != component_variables.value().end() // if componentVariable has variable
-                    or std::find_if(component_variables.value().begin(), component_variables.value().end(),
-                                    [component_, variable_](ComponentVariable v) {
-                                        return component_ == v.component and v.variable.has_value() and
-                                               !v.variable.value().instance.has_value() and
-                                               variable_.name == v.variable.value().name;
-                                    }) != component_variables.value().end() // if variable instance is missing
-                    or std::find_if(component_variables.value().begin(), component_variables.value().end(),
-                                 [component_, variable_](const ComponentVariable &v) {
-                                     return !v.component.evse.has_value() and (component_.name == v.component.name) and
-                                            (component_.instance == v.component.instance) and (variable_ == v.variable);
-                                 }) != component_variables.value().end() // B08.FR.23
-
-                ) {
+                if (!component_variables.has_value() or
+                    component_variables_match(component_variables.value(), component, variable)) {
                     ReportData report_data;
-                    report_data.component = component_;
-                    report_data.variable = variable_;
+                    report_data.component = component;
+                    report_data.variable = variable;
 
                     //  request the variable attribute from the device model storage
-                    const auto variable_attributes = this->storage->get_variable_attributes(component_, variable_);
+                    const auto variable_attributes = this->storage->get_variable_attributes(component, variable);
 
                     for (const auto& variable_attribute : variable_attributes) {
                         report_data.variableAttribute.push_back(variable_attribute);

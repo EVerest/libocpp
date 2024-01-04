@@ -506,8 +506,8 @@
           "default": "32000",
           "type": "integer"
       },
-      "NotSupportedCriteria": {
-          "variable_name": "NotSupportedCriteria",
+      "SupportedCriteria": {
+          "variable_name": "SupportedCriteria",
           "characteristics": {
               "supportsMonitoring": true,
               "dataType": "string"
@@ -518,7 +518,7 @@
                   "mutability": "ReadWrite"
               }
           ],
-          "description": "List of criteria not supported for a get custom report. Enabled,Active,Problem,Available",
+          "description": "List of criteria supported for a get custom report. Enabled,Active,Problem,Available",
           "default": "",
           "type": "string"
       }

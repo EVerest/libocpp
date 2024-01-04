@@ -260,10 +260,10 @@
                     "Actual": "log,html"
                 }
             },
-            "NotSupportedCriteria": {
-                "variable_name": "NotSupportedCriteria",
+            "SupportedCriteria": {
+                "variable_name": "SupportedCriteria",
                 "attributes": {
-                    "Actual": ""
+                    "Actual": "Enabled,Active,Available,Problem"
                 }
             }
         }
@@ -674,7 +674,7 @@
             "DeviceDataCtrlrEnabled": {
                 "variable_name": "Enabled",
                 "attributes": {
-                    "Actual": false
+                    "Actual": true
                 }
             }
         }

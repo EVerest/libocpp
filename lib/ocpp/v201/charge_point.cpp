@@ -2075,15 +2075,13 @@ void ChargePoint::handle_get_report_req(const EnhancedMessage<v201::MessageType>
     }
 
     // if a criteria is not supported then send a not supported response.
-    auto non_sup_criteria =
-        this->device_model->get_optional_value<std::string>(ControllerComponentVariables::NotSupportedCriteria);
-
-    if (non_sup_criteria.has_value() and msg.componentCriteria.has_value() and !non_sup_criteria.value().empty()) {
+    auto sup_criteria =
+        this->device_model->get_optional_value<std::string>(ControllerComponentVariables::SupportedCriteria);
+    if (sup_criteria.has_value() and msg.componentCriteria.has_value()) {
         for (const auto& criteria : msg.componentCriteria.value()) {
             const auto variable_ = conversions::component_criterion_enum_to_string(criteria);
-
-            if (non_sup_criteria.value().find(variable_) != std::string::npos) {
-                EVLOG_info << " This crieteria is not supported: " << variable_;
+            if (sup_criteria.value().find(variable_) == std::string::npos) {
+                EVLOG_info << "This criteria is not supported: " << variable_;
                 response.status = GenericDeviceModelStatusEnum::NotSupported;
                 break;
                 // TODO: maybe consider adding the reason why in statusInfo
