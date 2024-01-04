@@ -76,6 +76,16 @@ private:
     bool component_criteria_match(const Component& component_id,
                                   const std::vector<ComponentCriterionEnum>& component_criteria);
 
+    /// \brief Iterates over the given \p component_criteria and converts this to the variable names
+    /// (Active,Available,Enabled,Problem). If any of the variables can not be found as part of a component this
+    /// function returns false. If any of those variable's value is true, this function returns true (except for criteria problem). If all variable's
+    /// value are false, this function returns false
+    ///  \param component_id
+    ///  \param /// component_criteria
+    ///  \return
+    bool component_criteria_match_custom(const Component& component_id,
+                                         const std::vector<ComponentCriterionEnum>& component_criteria);
+
     /// \brief Sets the variable_id attribute \p value specified by \p component_id , \p variable_id and \p
     /// attribute_enum \param component_id \param variable_id \param attribute_enum \param value
     /// \param force_read_only If this is true, only read-only variables can be changed,

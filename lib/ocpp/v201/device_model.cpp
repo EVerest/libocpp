@@ -13,6 +13,30 @@ namespace v201 {
 bool DeviceModel::component_criteria_match(const Component& component,
                                            const std::vector<ComponentCriterionEnum>& component_criteria) {
     if (component_criteria.empty()) {
+        return true;
+    }
+    for (const auto& criteria : component_criteria) {
+        const Variable variable = {conversions::component_criterion_enum_to_string(criteria)};
+        // B08.FR.07
+        // B08.FR.08
+        // B08.FR.09
+        // B08.FR.10
+        if (!this->device_model.at(component).count(variable)) {
+            return true;
+        } else {
+            const auto response = this->request_value<bool>(component, variable, AttributeEnum::Actual);
+            auto value = response.value;
+            if (response.status == GetVariableStatusEnum::Accepted and value.has_value() and value.value()) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool DeviceModel::component_criteria_match_custom(const Component& component,
+                                           const std::vector<ComponentCriterionEnum>& component_criteria) {
+    if (component_criteria.empty()) {
         return false;
     }
     for (const auto& criteria : component_criteria) {
@@ -260,7 +284,7 @@ DeviceModel::get_custom_report_data(const std::optional<std::vector<ComponentVar
     std::vector<ReportData> report_data_vec;
 
     for (auto const& [component, variable_map] : this->device_model) {
-        if (!component_criteria.has_value() or component_criteria_match(component, component_criteria.value())) {
+        if (!component_criteria.has_value() or component_criteria_match_custom(component, component_criteria.value())) {
 
             // for (const auto& criteria : component_criteria.value()) {
             for (auto const& [variable, variable_meta_data] : variable_map) {
