@@ -9,6 +9,7 @@
 #include <boost/algorithm/string/split.hpp>
 
 #include <ocpp/common/schemas.hpp>
+#include <ocpp/common/websocket/websocket_uri.hpp>
 #include <ocpp/v16/charge_point_configuration.hpp>
 #include <ocpp/v16/types.hpp>
 
@@ -214,6 +215,9 @@ std::string ChargePointConfiguration::getChargePointId() {
 std::string ChargePointConfiguration::getCentralSystemURI() {
     return this->config["Internal"]["CentralSystemURI"];
 }
+void ChargePointConfiguration::setCentralSystemURI(std::string central_system_uri) {
+    this->setInUserConfig("Internal", "CentralSystemURI", central_system_uri);
+}
 std::string ChargePointConfiguration::getChargeBoxSerialNumber() {
     return this->config["Internal"]["ChargeBoxSerialNumber"];
 }
@@ -324,7 +328,7 @@ KeyValue ChargePointConfiguration::getChargePointIdKeyValue() {
 KeyValue ChargePointConfiguration::getCentralSystemURIKeyValue() {
     KeyValue kv;
     kv.key = "CentralSystemURI";
-    kv.readonly = true;
+    kv.readonly = false;
     kv.value.emplace(this->getCentralSystemURI());
     return kv;
 }
@@ -2401,6 +2405,16 @@ std::vector<KeyValue> ChargePointConfiguration::get_all_key_value() {
 }
 
 ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500> value) {
+    if (key == "CentralSystemURI") {
+        try {
+            Uri::parse_and_validate(value.get(), this->getChargePointId(), this->getSecurityProfile());
+        } catch (const std::invalid_argument& e) {
+            // given CentralSystemURI is not valid
+            return ConfigurationStatus::Rejected;
+        }
+        this->setCentralSystemURI(value.get());
+        return ConfigurationStatus::RebootRequired;
+    }
     if (key == "AllowOfflineTxForUnknownId") {
         if (this->getAllowOfflineTxForUnknownId() == std::nullopt) {
             return ConfigurationStatus::NotSupported;
