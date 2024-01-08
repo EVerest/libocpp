@@ -263,7 +263,7 @@
             "SupportedCriteria": {
                 "variable_name": "SupportedCriteria",
                 "attributes": {
-                    "Actual": "Enabled,Active,Available,Problem"
+                    "Actual": "Enabled,Active,Available"
                 }
             }
         }

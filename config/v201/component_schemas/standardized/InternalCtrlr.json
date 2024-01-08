@@ -510,7 +510,8 @@
           "variable_name": "SupportedCriteria",
           "characteristics": {
               "supportsMonitoring": true,
-              "dataType": "string"
+              "dataType": "MemberList",
+              "valuesList": "Enabled,Active,Problem,Available"
           },
           "attributes": [
               {
@@ -519,7 +520,7 @@
               }
           ],
           "description": "List of criteria supported for a get custom report. Enabled,Active,Problem,Available",
-          "default": "",
+          "default": "Enabled,Active,Problem,Available",
           "type": "string"
       }
   },
