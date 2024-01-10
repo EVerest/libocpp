@@ -11,4 +11,4 @@ jobs:
       unit_tests: true
       integration_tests: false
       repository: EVerest/libocpp
-      repository_ref: CI/reusable-workflow  # TODO use a context-variable instead
+      repository_ref: ${{ github.head_ref || github.ref_name }}
