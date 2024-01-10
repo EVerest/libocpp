@@ -246,7 +246,7 @@ std::optional<VariableMetaData> DeviceModel::get_variable_meta_data(const Compon
 }
 
 std::vector<ReportData>
-DeviceModel::get_report_data(const std::optional<ReportBaseEnum>& report_base,
+DeviceModel::get_base_report_data(const std::optional<ReportBaseEnum>& report_base,
                              const std::optional<std::vector<ComponentVariable>>& component_variables,
                              const std::optional<std::vector<ComponentCriterionEnum>>& component_criteria) {
     std::vector<ReportData> report_data_vec;
@@ -294,7 +294,7 @@ DeviceModel::get_report_data(const std::optional<ReportBaseEnum>& report_base,
 }
 
 std::vector<ReportData>
-DeviceModel::get_custom_report_data(const std::optional<std::vector<ComponentVariable>>& component_variables,
+DeviceModel::get_report_data(const std::optional<std::vector<ComponentVariable>>& component_variables,
                                     const std::optional<std::vector<ComponentCriterionEnum>>& component_criteria) {
     std::vector<ReportData> report_data_vec;
 

@@ -2042,7 +2042,7 @@ void ChargePoint::handle_get_base_report_req(Call<GetBaseReportRequest> call) {
     if (response.status == GenericDeviceModelStatusEnum::Accepted) {
         // TODO(piet): Propably split this up into several NotifyReport.req depending on ItemsPerMessage /
         // BytesPerMessage
-        const auto report_data = this->device_model->get_report_data(msg.reportBase);
+        const auto report_data = this->device_model->get_base_report_data(msg.reportBase);
         this->notify_report_req(msg.requestId, report_data);
     }
 }
@@ -2093,7 +2093,7 @@ void ChargePoint::handle_get_report_req(const EnhancedMessage<v201::MessageType>
 
         // TODO(piet): Propably split this up into several NotifyReport.req depending on ItemsPerMessage /
         // BytesPerMessage
-        report_data = this->device_model->get_custom_report_data(msg.componentVariable, msg.componentCriteria);
+        report_data = this->device_model->get_report_data(msg.componentVariable, msg.componentCriteria);
         if (report_data.empty()) {
             response.status = GenericDeviceModelStatusEnum::EmptyResultSet;
         } else {

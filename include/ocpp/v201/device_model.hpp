@@ -211,7 +211,7 @@ public:
     /// \param component_criteria
     /// \return
     std::vector<ReportData>
-    get_report_data(const std::optional<ReportBaseEnum>& report_base = std::nullopt,
+    get_base_report_data(const std::optional<ReportBaseEnum>& report_base = std::nullopt,
                     const std::optional<std::vector<ComponentVariable>>& component_variables = std::nullopt,
                     const std::optional<std::vector<ComponentCriterionEnum>>& component_criteria = std::nullopt);
 
@@ -222,7 +222,7 @@ public:
     /// \param component_criteria
     /// \return
     std::vector<ReportData>
-    get_custom_report_data(const std::optional<std::vector<ComponentVariable>>& component_variables = std::nullopt,
+    get_report_data(const std::optional<std::vector<ComponentVariable>>& component_variables = std::nullopt,
                            const std::optional<std::vector<ComponentCriterionEnum>>& component_criteria = std::nullopt);
 
     /// \brief Check data integrity of the device model provided by the device model data storage:
