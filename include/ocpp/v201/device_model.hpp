@@ -211,9 +211,7 @@ public:
     /// \param component_criteria
     /// \return
     std::vector<ReportData>
-    get_base_report_data(const std::optional<ReportBaseEnum>& report_base = std::nullopt,
-                    const std::optional<std::vector<ComponentVariable>>& component_variables = std::nullopt,
-                    const std::optional<std::vector<ComponentCriterionEnum>>& component_criteria = std::nullopt);
+    get_base_report_data(const std::optional<ReportBaseEnum>& report_base = std::nullopt);
 
     /// \brief Gets the ReportData for the specifed filter \p component_variables and \p
     /// component_criteria

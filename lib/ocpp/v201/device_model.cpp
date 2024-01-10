@@ -245,48 +245,33 @@ std::optional<VariableMetaData> DeviceModel::get_variable_meta_data(const Compon
     }
 }
 
-std::vector<ReportData>
-DeviceModel::get_base_report_data(const std::optional<ReportBaseEnum>& report_base,
-                             const std::optional<std::vector<ComponentVariable>>& component_variables,
-                             const std::optional<std::vector<ComponentCriterionEnum>>& component_criteria) {
+std::vector<ReportData> DeviceModel::get_base_report_data(const std::optional<ReportBaseEnum>& report_base) {
     std::vector<ReportData> report_data_vec;
 
     for (auto const& [component, variable_map] : this->device_model) {
-        // check if this component should be reported based on the component criteria
-        if (!component_criteria.has_value() or component_criteria_match(component, component_criteria.value())) {
-            for (auto const& [variable, variable_meta_data] : variable_map) {
-                // check if this variable should be reported based on the given component_variables
-                auto variable_ = variable;
-                auto component_ = component;
-                if (!component_variables.has_value() or
-                    std::find_if(component_variables.value().begin(), component_variables.value().end(),
-                                 [variable_, component_](ComponentVariable v) {
-                                     return component_ == v.component and v.variable.has_value() and
-                                            variable_ == v.variable.value();
-                                 }) != component_variables.value().end()) {
-                    ReportData report_data;
-                    report_data.component = component;
-                    report_data.variable = variable;
+        for (auto const& [variable, variable_meta_data] : variable_map) {
 
-                    // request the variable attribute from the device model storage
-                    const auto variable_attributes = this->storage->get_variable_attributes(component, variable);
+            ReportData report_data;
+            report_data.component = component;
+            report_data.variable = variable;
 
-                    // iterate over possibly (Actual, Target, MinSet, MaxSet)
-                    for (const auto& variable_attribute : variable_attributes) {
-                        // FIXME(piet): Right now this reports only FullInventory and ConfigurationInventory (ReadWrite
-                        // or WriteOnly) correctly
-                        // TODO(piet): SummaryInventory
-                        if (report_base == ReportBaseEnum::FullInventory or
-                            variable_attribute.mutability == MutabilityEnum::ReadWrite or
-                            variable_attribute.mutability == MutabilityEnum::WriteOnly) {
-                            report_data.variableAttribute.push_back(variable_attribute);
-                            report_data.variableCharacteristics = variable_map.at(variable).characteristics;
-                        }
-                    }
-                    if (!report_data.variableAttribute.empty()) {
-                        report_data_vec.push_back(report_data);
-                    }
+            // request the variable attribute from the device model storage
+            const auto variable_attributes = this->storage->get_variable_attributes(component, variable);
+
+            // iterate over possibly (Actual, Target, MinSet, MaxSet)
+            for (const auto& variable_attribute : variable_attributes) {
+                // FIXME(piet): Right now this reports only FullInventory and ConfigurationInventory (ReadWrite
+                // or WriteOnly) correctly
+                // TODO(piet): SummaryInventory
+                if (report_base == ReportBaseEnum::FullInventory or
+                    variable_attribute.mutability == MutabilityEnum::ReadWrite or
+                    variable_attribute.mutability == MutabilityEnum::WriteOnly) {
+                    report_data.variableAttribute.push_back(variable_attribute);
+                    report_data.variableCharacteristics = variable_map.at(variable).characteristics;
                 }
+            }
+            if (!report_data.variableAttribute.empty()) {
+                report_data_vec.push_back(report_data);
             }
         }
     }
