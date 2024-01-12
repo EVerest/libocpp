@@ -59,6 +59,7 @@ public:
     /// \brief Get the state object
     /// \return ConnectorStatusEnum
     ConnectorStatusEnum get_state();
+    void set_initial_state(const ConnectorStatusEnum new_state);
 
     /// \brief Submits the given \p event to the state machine controller
     /// \param event

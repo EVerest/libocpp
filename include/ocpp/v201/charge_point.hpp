@@ -591,6 +591,10 @@ public:
     /// becomes unavailable
     void on_unavailable(const int32_t evse_id, const int32_t connector_id);
 
+    /// \brief Set Unavailable on Operative conditions
+    /// becomes operative again
+    void mark_unavailable(const int32_t evse_id, const int32_t connector_id);
+
     /// \brief Event handler that should be called when the connector on the given \p evse_id and \p connector_id
     /// becomes operative again
     void on_operative(const int32_t evse_id, const int32_t connector_id);

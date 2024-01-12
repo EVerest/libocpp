@@ -3365,6 +3365,8 @@ std::string connector_status_enum_to_string(ConnectorStatusEnum e) {
         return "Reserved";
     case ConnectorStatusEnum::Unavailable:
         return "Unavailable";
+    case ConnectorStatusEnum::UnavailableOccupied:
+        return "Occupied";
     case ConnectorStatusEnum::Faulted:
         return "Faulted";
     }
@@ -3377,6 +3379,7 @@ ConnectorStatusEnum string_to_connector_status_enum(const std::string& s) {
         return ConnectorStatusEnum::Available;
     }
     if (s == "Occupied") {
+        // Either Occupied or UnavailableOccupied
         return ConnectorStatusEnum::Occupied;
     }
     if (s == "Reserved") {
@@ -3469,6 +3472,8 @@ std::string trigger_reason_enum_to_string(TriggerReasonEnum e) {
         return "EVDeparted";
     case TriggerReasonEnum::EVDetected:
         return "EVDetected";
+    case TriggerReasonEnum::EnergyTransfer:
+        return "EnergyTransfer";
     case TriggerReasonEnum::RemoteStop:
         return "RemoteStop";
     case TriggerReasonEnum::RemoteStart:
@@ -3532,6 +3537,9 @@ TriggerReasonEnum string_to_trigger_reason_enum(const std::string& s) {
     }
     if (s == "EVDetected") {
         return TriggerReasonEnum::EVDetected;
+    }
+    if (s == "EnergyTransfer") {
+        return TriggerReasonEnum::EnergyTransfer;
     }
     if (s == "RemoteStop") {
         return TriggerReasonEnum::RemoteStop;

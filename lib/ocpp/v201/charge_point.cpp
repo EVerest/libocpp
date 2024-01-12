@@ -485,6 +485,10 @@ void ChargePoint::on_operative(const int32_t evse_id, const int32_t connector_id
     this->evses.at(evse_id)->submit_event(connector_id, ConnectorEvent::ReturnToOperativeState);
 }
 
+void ChargePoint::mark_unavailable(const int32_t evse_id, const int32_t connector_id) {
+    this->evses.at(evse_id)->set_state(ConnectorStatusEnum::Unavailable, connector_id);
+}
+
 void ChargePoint::on_faulted(const int32_t evse_id, const int32_t connector_id) {
     this->evses.at(evse_id)->submit_event(connector_id, ConnectorEvent::Error);
 }

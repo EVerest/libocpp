@@ -1781,6 +1781,7 @@ enum class ConnectorStatusEnum {
     Occupied,
     Reserved,
     Unavailable,
+    UnavailableOccupied,
     Faulted,
 };
 
@@ -1835,6 +1836,7 @@ enum class TriggerReasonEnum {
     Trigger,
     UnlockCommand,
     StopAuthorized,
+    EnergyTransfer,
     EVDeparted,
     EVDetected,
     RemoteStop,

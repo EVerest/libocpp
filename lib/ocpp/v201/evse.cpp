@@ -198,6 +198,13 @@ ConnectorStatusEnum Evse::get_state(const int32_t connector_id) {
     return this->id_connector_map.at(connector_id)->get_state();
 }
 
+void Evse::set_state(ConnectorStatusEnum status, const int32_t connector_id) {
+    if (const auto iter = id_connector_map.find(connector_id) == id_connector_map.end()) {
+        EVLOG_AND_THROW(std::runtime_error("Unable to get_state for Connector"));
+    }
+    this->id_connector_map.at(connector_id)->set_initial_state(status);
+}
+
 void Evse::submit_event(const int32_t connector_id, ConnectorEvent event) {
     return this->id_connector_map.at(connector_id)->submit_event(event);
 }
