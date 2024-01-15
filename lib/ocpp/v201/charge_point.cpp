@@ -2093,7 +2093,7 @@ void ChargePoint::handle_get_report_req(const EnhancedMessage<v201::MessageType>
 
         // TODO(piet): Propably split this up into several NotifyReport.req depending on ItemsPerMessage /
         // BytesPerMessage
-        report_data = this->device_model->get_report_data(msg.componentVariable, msg.componentCriteria);
+        report_data = this->device_model->get_custom_report_data(msg.componentVariable, msg.componentCriteria);
         if (report_data.empty()) {
             response.status = GenericDeviceModelStatusEnum::EmptyResultSet;
         } else {

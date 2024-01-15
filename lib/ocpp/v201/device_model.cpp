@@ -221,7 +221,7 @@ std::optional<VariableMetaData> DeviceModel::get_variable_meta_data(const Compon
     }
 }
 
-std::vector<ReportData> DeviceModel::get_base_report_data(const std::optional<ReportBaseEnum>& report_base) {
+std::vector<ReportData> DeviceModel::get_base_report_data(const ReportBaseEnum& report_base) {
     std::vector<ReportData> report_data_vec;
 
     for (auto const& [component, variable_map] : this->device_model) {
@@ -255,7 +255,7 @@ std::vector<ReportData> DeviceModel::get_base_report_data(const std::optional<Re
 }
 
 std::vector<ReportData>
-DeviceModel::get_report_data(const std::optional<std::vector<ComponentVariable>>& component_variables,
+DeviceModel::get_custom_report_data(const std::optional<std::vector<ComponentVariable>>& component_variables,
                              const std::optional<std::vector<ComponentCriterionEnum>>& component_criteria) {
     std::vector<ReportData> report_data_vec;
 
