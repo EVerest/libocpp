@@ -210,7 +210,7 @@ public:
     /// \return
     std::vector<ReportData>
     get_custom_report_data(const std::optional<std::vector<ComponentVariable>>& component_variables = std::nullopt,
-                    const std::optional<std::vector<ComponentCriterionEnum>>& component_criteria = std::nullopt);
+                           const std::optional<std::vector<ComponentCriterionEnum>>& component_criteria = std::nullopt);
 
     /// \brief Check data integrity of the device model provided by the device model data storage:
     /// For "required" variables, assert values exist. Checks might be extended in the future.
