@@ -40,22 +40,16 @@ Connector::Connector(const int32_t evse_id, const int32_t connector_id,
 void Connector::submit_event(ConnectorEvent event) {
     switch (event) {
     case ConnectorEvent::PlugIn:
-        this->component_state_manager->set_connector_occupied(this->evse_id, this->connector_id, true);
         break;
     case ConnectorEvent::PlugOut:
-        this->component_state_manager->set_connector_occupied(this->evse_id, this->connector_id, false);
         break;
     case ConnectorEvent::Reserve:
-        this->component_state_manager->set_connector_reserved(this->evse_id, this->connector_id, true);
         break;
     case ConnectorEvent::ReservationCleared:
-        this->component_state_manager->set_connector_reserved(this->evse_id, this->connector_id, false);
         break;
     case ConnectorEvent::Error:
-        this->component_state_manager->set_connector_faulted(this->evse_id, this->connector_id, true);
         break;
     case ConnectorEvent::ErrorCleared:
-        this->component_state_manager->set_connector_faulted(this->evse_id, this->connector_id, false);
         break;
     }
 }

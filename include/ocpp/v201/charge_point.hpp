@@ -623,23 +623,7 @@ public:
     /// \param meter_value
     void on_meter_value(const int32_t evse_id, const MeterValue& meter_value);
 
-    /// \brief Event handler that should be called when the connector on the given \p evse_id and \p connector_id
-    /// becomes unavailable
-    void on_unavailable(const int32_t evse_id, const int32_t connector_id);
-
-    /// \brief Event handler that should be called when the connector on the given \p evse_id and \p connector_id
-    /// becomes operative again
-    void on_operative(const int32_t evse_id, const int32_t connector_id);
-
-    /// \brief Event handler that should be called when the connector on the given evse_id and connector_id is faulted.
-    /// \param evse_id          Faulted EVSE id
-    /// \param connector_id     Faulted connector id
-    void on_faulted(const int32_t evse_id, const int32_t connector_id);
-
-    /// \brief Event handler that should be called when the connector on the given evse_id and connector_id is reserved.
-    /// \param evse_id          Reserved EVSE id
-    /// \param connector_id     Reserved connector id
-    void on_reserved(const int32_t evse_id, const int32_t connector_id);
+    void on_connector_status_changed(int32_t evse_id, int32_t connector_id, ConnectorStatusEnum status);
 
     /// \brief Event handler that will update the charging state internally when it has been changed.
     /// \param evse_id          The evse id of which the charging state has changed.

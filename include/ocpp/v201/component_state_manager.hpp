@@ -12,17 +12,18 @@ namespace ocpp::v201 {
 struct FullConnectorStatus {
     /// \brief Operative/Inoperative status, usually set by the CSMS
     OperationalStatusEnum individual_operational_status;
-    /// \brief True if the connector has an active (uncleared) error, assumed false on boot
-    bool faulted;
-    /// \brief True if the connector has an active reservation, assumed false on boot
-    bool reserved;
-    /// \brief True if the connector has a cable plugged in, assumed false on boot
-    bool occupied;
 
-    /// \brief Translates the individual state to an Available/Unavailable/Occupied/Reserved/Faulted state
-    /// This does NOT take into account the state of the EVSE or CS,
-    /// and is intended to be used internally by the ComponentStateManager.
-    ConnectorStatusEnum to_connector_status();
+    ConnectorStatusEnum connectorStatus;
+};
+
+struct EvseStatus {
+    OperationalStatusEnum status;
+    std::vector<FullConnectorStatus> connectors;
+};
+
+struct CsStatus {
+    OperationalStatusEnum status;
+    std::vector<EvseStatus> evse;
 };
 
 /// \brief Stores and monitors operational/effective states of the CS, EVSEs, and connectors
@@ -210,12 +211,7 @@ public:
     /// If the EVSE or the CS is Inoperative, the connector will be effectively Unavailable.
     ConnectorStatusEnum get_connector_effective_status(int32_t evse_id, int32_t connector_id);
 
-    /// \brief Update the state of the connector when plugged in or out
-    void set_connector_occupied(int32_t evse_id, int32_t connector_id, bool is_occupied);
-    /// \brief Update the state of the connector when reservations are made or expire
-    void set_connector_reserved(int32_t evse_id, int32_t connector_id, bool is_reserved);
-    /// \brief Update the state of the connector when errors are raised and cleared
-    void set_connector_faulted(int32_t evse_id, int32_t connector_id, bool is_faulted);
+    void set_connector_status(int32_t evse_id, int32_t connector_id, ConnectorStatusEnum status);
 
     /// \brief Call the {cs, evse, connector}_effective_availability_changed_callback callback once for every component.
     /// This is usually only done once on boot to notify the rest of the system what the state manager expects the

@@ -443,6 +443,10 @@ void ChargePoint::on_meter_value(const int32_t evse_id, const MeterValue& meter_
     }
 }
 
+void ChargePoint::on_connector_status_changed(int32_t evse_id, int32_t connector_id, ConnectorStatusEnum status) {
+    this->component_state_manager->set_connector_status(evse_id, connector_id, status);
+}
+
 std::string ChargePoint::get_customer_information(const std::optional<CertificateHashDataType> customer_certificate,
                                                   const std::optional<IdToken> id_token,
                                                   const std::optional<CiString<64>> customer_identifier) {
@@ -499,21 +503,6 @@ void ChargePoint::configure_message_logging_format(const std::string& message_lo
     this->logging = std::make_shared<ocpp::MessageLogging>(
         !log_formats.empty(), message_log_path, DateTime().to_rfc3339(), log_to_console, detailed_log_to_console,
         log_to_file, log_to_html, session_logging, logging_callback);
-}
-void ChargePoint::on_unavailable(const int32_t evse_id, const int32_t connector_id) {
-    this->set_connector_operative_status(evse_id, connector_id, OperationalStatusEnum::Inoperative, false);
-}
-
-void ChargePoint::on_operative(const int32_t evse_id, const int32_t connector_id) {
-    this->set_connector_operative_status(evse_id, connector_id, OperationalStatusEnum::Operative, false);
-}
-
-void ChargePoint::on_faulted(const int32_t evse_id, const int32_t connector_id) {
-    this->evses.at(evse_id)->submit_event(connector_id, ConnectorEvent::Error);
-}
-
-void ChargePoint::on_reserved(const int32_t evse_id, const int32_t connector_id) {
-    this->evses.at(evse_id)->submit_event(connector_id, ConnectorEvent::Reserve);
 }
 
 bool ChargePoint::on_charging_state_changed(const uint32_t evse_id, ChargingStateEnum charging_state) {

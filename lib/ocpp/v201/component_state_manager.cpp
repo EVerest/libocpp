@@ -2,8 +2,8 @@
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
 #include <ocpp/v201/component_state_manager.hpp>
+#include <everest/logging.hpp>
 #include <utility>
-
 namespace ocpp::v201 {
 
 static OperationalStatusEnum connector_status_to_operational_status(ConnectorStatusEnum connector_status) {
@@ -36,7 +36,7 @@ void ComponentStateManager::read_all_states_from_database_or_set_defaults(
                                                           false);
             OperationalStatusEnum connector_operational =
                 this->database->get_connector_availability(evse_id, connector_id);
-            FullConnectorStatus full_connector_status{connector_operational, false, false, false};
+            FullConnectorStatus full_connector_status{connector_operational, ConnectorStatusEnum::Available};
             connector_statuses.push_back(full_connector_status);
         }
 
@@ -161,22 +161,11 @@ void ComponentStateManager::trigger_callbacks_connector(int32_t evse_id, int32_t
     OperationalStatusEnum& last_effective_status = this->last_connector_effective_status(evse_id, connector_id);
     if (!only_if_state_changed || last_effective_status != current_effective_operational_status) {
         if (this->connector_effective_availability_changed_callback.has_value()) {
+            EVLOG_warning << "!!! Call connector callback";
             this->connector_effective_availability_changed_callback.value()(evse_id, connector_id,
                                                                             current_effective_operational_status);
         }
         last_effective_status = current_effective_operational_status;
-    }
-
-    // Reported status callbacks
-    if (send_status_updates) {
-        ConnectorStatusEnum current_connector_status = this->get_connector_effective_status(evse_id, connector_id);
-        ConnectorStatusEnum& last_reported_connector_status =
-            this->last_connector_reported_status(evse_id, connector_id);
-        if (!only_if_state_changed || last_reported_connector_status != current_connector_status) {
-            if (this->send_connector_status_notification_callback(evse_id, connector_id, current_connector_status)) {
-                last_reported_connector_status = current_connector_status;
-            };
-        }
     }
 }
 
@@ -208,44 +197,39 @@ OperationalStatusEnum ComponentStateManager::get_connector_individual_operationa
 }
 
 void ComponentStateManager::set_cs_individual_operational_status(OperationalStatusEnum new_status, bool persist) {
+    EVLOG_warning << "!!! set_cs: new_status: " << conversions::operational_status_enum_to_string(new_status)
+                  << " persist: " << persist;
     this->cs_individual_status = new_status;
     if (persist) {
         this->database->insert_cs_availability(new_status, true);
     }
-    this->trigger_callbacks_cs(true, true);
+    this->trigger_callbacks_cs(true, false);
 }
+
 void ComponentStateManager::set_evse_individual_operational_status(int32_t evse_id, OperationalStatusEnum new_status,
                                                                    bool persist) {
+    EVLOG_warning << "!!! set_evse: evse_id: " << evse_id
+                  << " new_status: " << conversions::operational_status_enum_to_string(new_status)
+                  << " persist: " << persist;
     this->individual_evse_status(evse_id) = new_status;
     if (persist) {
         this->database->insert_evse_availability(evse_id, new_status, true);
     }
-    this->trigger_callbacks_evse(evse_id, true, true);
+    this->trigger_callbacks_evse(evse_id, true, false);
 }
+
 void ComponentStateManager::set_connector_individual_operational_status(int32_t evse_id, int32_t connector_id,
                                                                         OperationalStatusEnum new_status,
                                                                         bool persist) {
+
+    EVLOG_warning << "!!! set_connector: evse_id: " << evse_id << " connector_id: " << connector_id
+                  << " new_status: " << conversions::operational_status_enum_to_string(new_status)
+                  << " persist: " << persist;
     this->individual_connector_status(evse_id, connector_id).individual_operational_status = new_status;
     if (persist) {
         this->database->insert_connector_availability(evse_id, connector_id, new_status, true);
     }
-    this->trigger_callbacks_connector(evse_id, connector_id, true, true);
-}
-
-ConnectorStatusEnum FullConnectorStatus::to_connector_status() {
-    if (this->individual_operational_status == OperationalStatusEnum::Inoperative) {
-        return ConnectorStatusEnum::Unavailable;
-    }
-    if (this->faulted) {
-        return ConnectorStatusEnum::Faulted;
-    }
-    if (this->occupied) {
-        return ConnectorStatusEnum::Occupied;
-    }
-    if (this->reserved) {
-        return ConnectorStatusEnum::Reserved;
-    }
-    return ConnectorStatusEnum::Available;
+    this->trigger_callbacks_connector(evse_id, connector_id, true, false);
 }
 
 OperationalStatusEnum ComponentStateManager::get_evse_effective_operational_status(int32_t evse_id) {
@@ -261,8 +245,23 @@ ConnectorStatusEnum ComponentStateManager::get_connector_effective_status(int32_
         return ConnectorStatusEnum::Unavailable;
     }
 
-    return this->individual_connector_status(evse_id, connector_id).to_connector_status();
+    if (this->individual_connector_status(evse_id, connector_id).individual_operational_status == OperationalStatusEnum::Inoperative)
+    {
+        return ConnectorStatusEnum::Unavailable;
+    }
+
+    return ConnectorStatusEnum::Available;
 }
+
+void ComponentStateManager::set_connector_status(int32_t evse_id, int32_t connector_id, ConnectorStatusEnum status)
+{
+    EVLOG_warning << "!!! set_connector_status: evse_id: " << evse_id << " connector_id: " << connector_id
+                  << " status: " << conversions::connector_status_enum_to_string(status);
+    this->check_evse_and_connector_id(evse_id, connector_id);
+    this->individual_connector_status(evse_id, connector_id).connectorStatus = status;
+    send_status_notification_single_connector_internal(evse_id, connector_id, true);
+}
+
 OperationalStatusEnum ComponentStateManager::get_connector_effective_operational_status(int32_t evse_id,
                                                                                         int32_t connector_id) {
     return connector_status_to_operational_status(this->get_connector_effective_status(evse_id, connector_id));
@@ -281,26 +280,13 @@ OperationalStatusEnum ComponentStateManager::get_connector_persisted_operational
     return this->database->get_connector_availability(evse_id, connector_id);
 }
 
-void ComponentStateManager::set_connector_occupied(int32_t evse_id, int32_t connector_id, bool is_occupied) {
-    this->individual_connector_status(evse_id, connector_id).occupied = is_occupied;
-    this->trigger_callbacks_connector(evse_id, connector_id, true, true);
-}
-void ComponentStateManager::set_connector_reserved(int32_t evse_id, int32_t connector_id, bool is_reserved) {
-    this->individual_connector_status(evse_id, connector_id).reserved = is_reserved;
-    this->trigger_callbacks_connector(evse_id, connector_id, true, true);
-}
-void ComponentStateManager::set_connector_faulted(int32_t evse_id, int32_t connector_id, bool is_faulted) {
-    this->individual_connector_status(evse_id, connector_id).faulted = is_faulted;
-    this->trigger_callbacks_connector(evse_id, connector_id, true, true);
-}
-
 void ComponentStateManager::trigger_all_effective_availability_changed_callbacks() {
     this->trigger_callbacks_cs(false, false);
 }
 
 void ComponentStateManager::send_status_notification_single_connector_internal(int32_t evse_id, int32_t connector_id,
                                                                                bool only_if_changed) {
-    ConnectorStatusEnum connector_status = this->get_connector_effective_status(evse_id, connector_id);
+    ConnectorStatusEnum connector_status = this->individual_connector_status(evse_id, connector_id).connectorStatus;
     ConnectorStatusEnum& last_reported_status = this->last_connector_reported_status(evse_id, connector_id);
     if (!only_if_changed || last_reported_status != connector_status) {
         if (this->send_connector_status_notification_callback(evse_id, connector_id, connector_status)) {
