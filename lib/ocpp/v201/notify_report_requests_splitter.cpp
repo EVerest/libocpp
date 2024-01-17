@@ -88,10 +88,10 @@ json NotifyReportRequestsSplitter::create_next_payload(
 }
 NotifyReportRequestsSplitter::NotifyReportRequestsSplitter(
     const NotifyReportRequest& originalRequest, size_t max_size,
-    const std::function<MessageId()>& message_id_generator_callback) :
+    std::function<MessageId()>&& message_id_generator_callback) :
     original_request(originalRequest),
     max_size(max_size),
-    message_id_generator_callback(message_id_generator_callback),
+    message_id_generator_callback{std::move(message_id_generator_callback)},
     json_skeleton_size(create_request_template_json_and_return_skeleton_size()) {
 }
 
