@@ -259,7 +259,7 @@ TEST_F(ComponentStateManagerTest, test_effective_state_getters_evse_inoperative)
     ASSERT_EQ(state_mgr.get_evse_effective_operational_status(2), OperationalStatusEnum::Operative);
     ASSERT_EQ(state_mgr.get_connector_effective_operational_status(1, 1), OperationalStatusEnum::Inoperative);
     ASSERT_EQ(state_mgr.get_connector_effective_operational_status(2, 1), OperationalStatusEnum::Operative);
-    ASSERT_EQ(state_mgr.get_connector_effective_operational_status(2, 2), OperationalStatusEnum::Inoperative);
+    ASSERT_EQ(state_mgr.get_connector_effective_operational_status(2, 2), OperationalStatusEnum::Operative);
     ASSERT_EQ(state_mgr.get_connector_effective_status(1, 1), ConnectorStatusEnum::Unavailable);
     ASSERT_EQ(state_mgr.get_connector_effective_status(2, 1), ConnectorStatusEnum::Reserved);
     ASSERT_EQ(state_mgr.get_connector_effective_status(2, 2), ConnectorStatusEnum::Faulted);
@@ -281,18 +281,21 @@ TEST_F(ComponentStateManagerTest, test_connector_state_machine) {
     ASSERT_EQ(state_mgr.get_connector_effective_status(1, 1), ConnectorStatusEnum::Occupied);
 
     state_mgr.set_connector_faulted(1, 1, true);
-    ASSERT_EQ(state_mgr.get_connector_effective_operational_status(1, 1), OperationalStatusEnum::Inoperative);
+    ASSERT_EQ(state_mgr.get_connector_effective_operational_status(1, 1), OperationalStatusEnum::Operative);
     ASSERT_EQ(state_mgr.get_connector_effective_status(1, 1), ConnectorStatusEnum::Faulted);
 
     state_mgr.set_connector_individual_operational_status(1, 1, OperationalStatusEnum::Inoperative, false);
     ASSERT_EQ(state_mgr.get_connector_effective_operational_status(1, 1), OperationalStatusEnum::Inoperative);
-    ASSERT_EQ(state_mgr.get_connector_effective_status(1, 1), ConnectorStatusEnum::Unavailable);
+    state_mgr.set_connector_unavailable(1, 1, true);
+    // faulted has precedence over inoperative (G03.FR.06)
+    ASSERT_EQ(state_mgr.get_connector_effective_status(1, 1), ConnectorStatusEnum::Faulted);
 
     state_mgr.set_connector_faulted(1, 1, false);
     ASSERT_EQ(state_mgr.get_connector_effective_operational_status(1, 1), OperationalStatusEnum::Inoperative);
     ASSERT_EQ(state_mgr.get_connector_effective_status(1, 1), ConnectorStatusEnum::Unavailable);
 
     state_mgr.set_connector_individual_operational_status(1, 1, OperationalStatusEnum::Operative, false);
+    state_mgr.set_connector_unavailable(1, 1, false);
     ASSERT_EQ(state_mgr.get_connector_effective_operational_status(1, 1), OperationalStatusEnum::Operative);
     ASSERT_EQ(state_mgr.get_connector_effective_status(1, 1), ConnectorStatusEnum::Occupied);
 
@@ -404,10 +407,16 @@ TEST_F(ComponentStateManagerTest, test_status_notification_callbacks) {
     // Act & Verify
     state_mgr.set_connector_occupied(1, 1, true);
     state_mgr.set_evse_individual_operational_status(2, OperationalStatusEnum::Inoperative, false);
+    state_mgr.set_connector_unavailable(2, 1, true);
+    state_mgr.set_connector_unavailable(2, 2, true);
     state_mgr.set_cs_individual_operational_status(OperationalStatusEnum::Inoperative, false);
+    state_mgr.set_connector_unavailable(1, 1, true);
     state_mgr.set_evse_individual_operational_status(2, OperationalStatusEnum::Operative, false);
     state_mgr.set_connector_faulted(2, 1, true);
     state_mgr.set_cs_individual_operational_status(OperationalStatusEnum::Operative, false);
+    state_mgr.set_connector_unavailable(1, 1, false);
+    state_mgr.set_connector_unavailable(2, 1, false);
+    state_mgr.set_connector_unavailable(2, 2, false);
 }
 
 /// \brief Test the ComponentStateManager::trigger_all_effective_availability_changed_callbacks()

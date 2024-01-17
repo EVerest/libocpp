@@ -57,6 +57,12 @@ void Connector::submit_event(ConnectorEvent event) {
     case ConnectorEvent::ErrorCleared:
         this->component_state_manager->set_connector_faulted(this->evse_id, this->connector_id, false);
         break;
+    case ConnectorEvent::Unavailable:
+        this->component_state_manager->set_connector_unavailable(this->evse_id, this->connector_id, true);
+        break;
+    case ConnectorEvent::UnavailableCleared:
+        this->component_state_manager->set_connector_unavailable(this->evse_id, this->connector_id, false);
+        break;
     }
 }
 

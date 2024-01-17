@@ -627,9 +627,9 @@ public:
     /// becomes unavailable
     void on_unavailable(const int32_t evse_id, const int32_t connector_id);
 
-    /// \brief Event handler that should be called when the connector on the given \p evse_id and \p connector_id
-    /// becomes operative again
-    void on_operative(const int32_t evse_id, const int32_t connector_id);
+    /// \brief Event handler that should be called when the connector returns from unavailable on the given \p evse_id
+    /// and \p connector_id .
+    void on_enabled(const int32_t evse_id, const int32_t connector_id);
 
     /// \brief Event handler that should be called when the connector on the given evse_id and connector_id is faulted.
     /// \param evse_id          Faulted EVSE id

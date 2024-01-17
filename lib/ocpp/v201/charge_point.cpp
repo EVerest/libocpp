@@ -171,12 +171,12 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
 
 void ChargePoint::start(BootReasonEnum bootreason) {
     this->bootreason = bootreason;
+    // Trigger all initial status notifications and callbacks related to component state
+    // Should be done before sending the BootNotification.req so that the correct states can be reported
+    this->component_state_manager->trigger_all_effective_availability_changed_callbacks();
     this->start_websocket();
     this->boot_notification_req(bootreason);
     this->ocsp_updater.start();
-
-    // Trigger all initial status notifications and callbacks related to component state
-    this->component_state_manager->trigger_all_effective_availability_changed_callbacks();
     // FIXME(piet): Run state machine with correct initial state
 }
 
@@ -493,11 +493,11 @@ void ChargePoint::configure_message_logging_format(const std::string& message_lo
         log_to_file, log_to_html, session_logging, logging_callback);
 }
 void ChargePoint::on_unavailable(const int32_t evse_id, const int32_t connector_id) {
-    this->set_connector_operative_status(evse_id, connector_id, OperationalStatusEnum::Inoperative, false);
+    this->evses.at(evse_id)->submit_event(connector_id, ConnectorEvent::Unavailable);
 }
 
-void ChargePoint::on_operative(const int32_t evse_id, const int32_t connector_id) {
-    this->set_connector_operative_status(evse_id, connector_id, OperationalStatusEnum::Operative, false);
+void ChargePoint::on_enabled(const int32_t evse_id, const int32_t connector_id) {
+    this->evses.at(evse_id)->submit_event(connector_id, ConnectorEvent::UnavailableCleared);
 }
 
 void ChargePoint::on_faulted(const int32_t evse_id, const int32_t connector_id) {

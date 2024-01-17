@@ -18,6 +18,8 @@ struct FullConnectorStatus {
     bool reserved;
     /// \brief True if the connector has a cable plugged in, assumed false on boot
     bool occupied;
+    /// \brief True if the connector is explicitly set to unavailable
+    bool unavailable;
 
     /// \brief Translates the individual state to an Available/Unavailable/Occupied/Reserved/Faulted state
     /// This does NOT take into account the state of the EVSE or CS,
@@ -103,24 +105,17 @@ private:
     /// for the CS and all sub-components.
     /// \param only_if_state_changed If set to true, callbacks are only triggered for components whose state
     ///     has changed since it was last reported via callbacks
-    /// \param send_status_updates If set to true, send_connector_status_notification_callback is also triggered for
-    /// connectors.
-    void trigger_callbacks_cs(bool only_if_state_changed, bool send_status_updates);
+    void trigger_callbacks_cs(bool only_if_state_changed);
     /// \brief Internal helper function, triggers {evse, connector}_effective_availability_changed_callback calls
     /// for an EVSE and its connectors
     /// \param only_if_state_changed If set to true, callbacks are only triggered for components whose state
     ///     has changed since it was last reported via callbacks
-    /// \param send_status_updates If set to true, send_connector_status_notification_callback is also triggered for
-    /// connectors.
-    void trigger_callbacks_evse(int32_t evse_id, bool only_if_state_changed, bool send_status_updates);
+    void trigger_callbacks_evse(int32_t evse_id, bool only_if_state_changed);
     /// \brief Internal helper function, triggers connector_effective_availability_changed_callback calls
     /// for a connector
     /// \param only_if_state_changed If set to true, callbacks are only triggered for components whose state
     ///     has changed since it was last reported via callbacks
-    /// \param send_status_updates If set to true, send_connector_status_notification_callback is also triggered for
-    /// connectors.
-    void trigger_callbacks_connector(int32_t evse_id, int32_t connector_id, bool only_if_state_changed,
-                                     bool send_status_updates);
+    void trigger_callbacks_connector(int32_t evse_id, int32_t connector_id, bool only_if_state_changed);
 
     /// \brief Internal helper function, calls send_connector_status_notification_callback for a single connector
     /// \param only_if_changed If set to true, the callback will only be triggered if the connector state has changed
@@ -216,6 +211,8 @@ public:
     void set_connector_reserved(int32_t evse_id, int32_t connector_id, bool is_reserved);
     /// \brief Update the state of the connector when errors are raised and cleared
     void set_connector_faulted(int32_t evse_id, int32_t connector_id, bool is_faulted);
+    /// \brief Update the state of the connector when unavailable or enabled
+    void set_connector_unavailable(int32_t evse_id, int32_t connector_id, bool is_unavailable);
 
     /// \brief Call the {cs, evse, connector}_effective_availability_changed_callback callback once for every component.
     /// This is usually only done once on boot to notify the rest of the system what the state manager expects the

@@ -22,6 +22,8 @@ enum class ConnectorEvent {
     ReservationCleared,
     Error,
     ErrorCleared,
+    Unavailable,
+    UnavailableCleared
 };
 
 namespace conversions {
