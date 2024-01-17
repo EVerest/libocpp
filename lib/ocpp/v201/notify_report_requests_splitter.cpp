@@ -86,9 +86,8 @@ json NotifyReportRequestsSplitter::create_next_payload(
 
     return call_base;
 }
-NotifyReportRequestsSplitter::NotifyReportRequestsSplitter(
-    const NotifyReportRequest& originalRequest, size_t max_size,
-    std::function<MessageId()>&& message_id_generator_callback) :
+NotifyReportRequestsSplitter::NotifyReportRequestsSplitter(const NotifyReportRequest& originalRequest, size_t max_size,
+                                                           std::function<MessageId()>&& message_id_generator_callback) :
     original_request(originalRequest),
     max_size(max_size),
     message_id_generator_callback{std::move(message_id_generator_callback)},
