@@ -86,6 +86,9 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
 
     this->database_handler->transaction_metervalues_insert(this->transaction->transactionId.get(), meter_start);
 
+    this->aligned_data_updated.clear_values();
+    this->aligned_data_tx_end.clear_values();
+
     if (sampled_data_tx_updated_interval > 0s) {
         transaction->sampled_tx_updated_meter_values_timer.interval(
             [this] {
@@ -106,15 +109,22 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
 
     if (aligned_data_tx_updated_interval > 0s) {
         transaction->aligned_tx_updated_meter_values_timer.interval_starting_from(
-            [this] {
+            [this, aligned_data_tx_updated_interval] {
                 if (this->device_model.get_optional_value<bool>(ControllerComponentVariables::AlignedDataSendDuringIdle)
                         .value_or(false)) {
                     return;
                 }
                 auto meter_value = this->aligned_data_updated.retrieve_processed_values();
+
+                // If empty fallback on last updated metervalue
+                if (meter_value.sampledValue.empty()) {
+                    meter_value = get_meter_value();
+                }
+
                 for (auto& item : meter_value.sampledValue) {
                     item.context = ReadingContextEnum::Sample_Clock;
                 }
+                meter_value.timestamp = utils::align_timestamp(DateTime{}, aligned_data_tx_updated_interval);
                 this->transaction_meter_value_req(meter_value, this->transaction->get_transaction(),
                                                   transaction->get_seq_no(), this->transaction->reservation_id);
                 this->aligned_data_updated.clear_values();
@@ -125,11 +135,18 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
 
     if (aligned_data_tx_ended_interval > 0s) {
         transaction->aligned_tx_ended_meter_values_timer.interval_starting_from(
-            [this] {
+            [this, aligned_data_tx_ended_interval] {
                 auto meter_value = this->aligned_data_tx_end.retrieve_processed_values();
+
+                // If empty fallback on last updated metervalue
+                if (meter_value.sampledValue.empty()) {
+                    meter_value = get_meter_value();
+                }
+
                 for (auto& item : meter_value.sampledValue) {
                     item.context = ReadingContextEnum::Sample_Clock;
                 }
+                meter_value.timestamp = utils::align_timestamp(DateTime{}, aligned_data_tx_ended_interval);
                 this->database_handler->transaction_metervalues_insert(this->transaction->transactionId.get(),
                                                                        meter_value);
                 this->aligned_data_tx_end.clear_values();
@@ -153,6 +170,9 @@ void Evse::close_transaction(const DateTime& timestamp, const MeterValue& meter_
     this->transaction->aligned_tx_updated_meter_values_timer.stop();
     this->transaction->aligned_tx_ended_meter_values_timer.stop();
     this->database_handler->transaction_metervalues_insert(this->transaction->transactionId.get(), meter_stop);
+
+    // Clear for non transaction aligned metervalues
+    this->aligned_data_updated.clear_values();
 }
 
 void Evse::start_checking_max_energy_on_invalid_id() {

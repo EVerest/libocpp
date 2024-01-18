@@ -31,11 +31,13 @@ MeterValue get_meter_value_with_measurands_applied(const MeterValue& _meter_valu
 /// Transaction_Begin, Interruption_Begin, Transaction_End, Interruption_End and Sample_Periodic will be filtered using
 /// \p sampled_tx_ended_measurands.
 /// Sample_Clock will be filtered using \p aligned_tx_ended_measurands
+/// Any metervalue after \p max_timestamp will also be removed.
 ///\retval filtered meter values
 std::vector<MeterValue>
 get_meter_values_with_measurands_applied(const std::vector<MeterValue>& meter_values,
                                          const std::vector<MeasurandEnum>& sampled_tx_ended_measurands,
-                                         const std::vector<MeasurandEnum>& aligned_tx_ended_measurands);
+                                         const std::vector<MeasurandEnum>& aligned_tx_ended_measurands,
+                                         ocpp::DateTime max_timestamp);
 
 /// \brief Converts the given \p stop_reason to a TriggerReasonEnum
 /// \param stop_reason
@@ -51,6 +53,12 @@ std::string sha256(const std::string& str);
 /// @param token the token to generate the hash for
 /// @return A SHA256 hash string
 std::string generate_token_hash(const IdToken& token);
+
+/// @brief Align the clock aligned timestamps to the interval values
+/// @param timestamp the timestamp to align
+/// @param align_interval the clock aligned interval to align to since midnight 00:00
+/// @return DateTime type timestamp
+ocpp::DateTime align_timestamp(const DateTime timestamp, std::chrono::seconds align_interval);
 
 } // namespace utils
 } // namespace v201
