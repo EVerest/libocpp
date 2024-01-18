@@ -361,64 +361,6 @@ TEST_F(ComponentStateManagerTest, test_effective_state_changed_callbacks) {
     state_mgr.set_cs_individual_operational_status(OperationalStatusEnum::Operative, false);
 }
 
-/// \brief Test the ComponentStateManager calls "status notification" callbacks correctly at run-time
-TEST_F(ComponentStateManagerTest, test_status_notification_callbacks) {
-    // Prepare
-    std::shared_ptr<DatabaseHandler> mock_database = std::make_shared<DatabaseHandlerMock>();
-    auto state_mgr = this->component_state_manager(mock_database, {1, 2});
-
-    // Set up mock expectations
-    testing::Sequence seq;
-    // EVSE 1 connector 1 set to Occupied
-    EXPECT_CALL(this->callbacks, connector_status_update(1, 1, "Occupied"))
-        .Times(1)
-        .InSequence(seq)
-        .WillOnce(testing::Return(true));
-    // EVSE 2 disabled
-    EXPECT_CALL(this->callbacks, connector_status_update(2, 1, "Unavailable"))
-        .Times(1)
-        .InSequence(seq)
-        .WillOnce(testing::Return(true));
-    EXPECT_CALL(this->callbacks, connector_status_update(2, 2, "Unavailable"))
-        .Times(1)
-        .InSequence(seq)
-        .WillOnce(testing::Return(true));
-    // CS disabled
-    EXPECT_CALL(this->callbacks, connector_status_update(1, 1, "Unavailable"))
-        .Times(1)
-        .InSequence(seq)
-        .WillOnce(testing::Return(true));
-    // EVSE 2 re-enabled
-    // EVSE 2 connector 1 faulted
-    // CS re-enabled
-    EXPECT_CALL(this->callbacks, connector_status_update(1, 1, "Occupied"))
-        .Times(1)
-        .InSequence(seq)
-        .WillOnce(testing::Return(true));
-    EXPECT_CALL(this->callbacks, connector_status_update(2, 1, "Faulted"))
-        .Times(1)
-        .InSequence(seq)
-        .WillOnce(testing::Return(true));
-    EXPECT_CALL(this->callbacks, connector_status_update(2, 2, "Available"))
-        .Times(1)
-        .InSequence(seq)
-        .WillOnce(testing::Return(true));
-
-    // Act & Verify
-    state_mgr.set_connector_occupied(1, 1, true);
-    state_mgr.set_evse_individual_operational_status(2, OperationalStatusEnum::Inoperative, false);
-    state_mgr.set_connector_unavailable(2, 1, true);
-    state_mgr.set_connector_unavailable(2, 2, true);
-    state_mgr.set_cs_individual_operational_status(OperationalStatusEnum::Inoperative, false);
-    state_mgr.set_connector_unavailable(1, 1, true);
-    state_mgr.set_evse_individual_operational_status(2, OperationalStatusEnum::Operative, false);
-    state_mgr.set_connector_faulted(2, 1, true);
-    state_mgr.set_cs_individual_operational_status(OperationalStatusEnum::Operative, false);
-    state_mgr.set_connector_unavailable(1, 1, false);
-    state_mgr.set_connector_unavailable(2, 1, false);
-    state_mgr.set_connector_unavailable(2, 2, false);
-}
-
 /// \brief Test the ComponentStateManager::trigger_all_effective_availability_changed_callbacks()
 TEST_F(ComponentStateManagerTest, test_trigger_boot_callbacks) {
     // Prepare
@@ -453,33 +395,6 @@ TEST_F(ComponentStateManagerTest, test_trigger_boot_callbacks) {
 
     // Act & Verify
     state_mgr.trigger_all_effective_availability_changed_callbacks();
-}
-
-/// \brief Test the ComponentStateManager::send_status_notification_all_connectors()
-TEST_F(ComponentStateManagerTest, test_send_status_notification_all_connectors) {
-    // Prepare
-    std::shared_ptr<DatabaseHandler> mock_database = std::make_shared<DatabaseHandlerMock>();
-    // EVSE 1 disabled on boot
-    mock_database->insert_evse_availability(1, OperationalStatusEnum::Inoperative, true);
-    auto state_mgr = this->component_state_manager(mock_database, {1, 2});
-
-    // Set up mock expectations
-    testing::Sequence seq;
-    EXPECT_CALL(this->callbacks, connector_status_update(1, 1, "Unavailable"))
-        .Times(1)
-        .InSequence(seq)
-        .WillOnce(testing::Return(true));
-    EXPECT_CALL(this->callbacks, connector_status_update(2, 1, "Available"))
-        .Times(1)
-        .InSequence(seq)
-        .WillOnce(testing::Return(true));
-    EXPECT_CALL(this->callbacks, connector_status_update(2, 2, "Available"))
-        .Times(1)
-        .InSequence(seq)
-        .WillOnce(testing::Return(true));
-
-    // Act & Verify
-    state_mgr.send_status_notification_all_connectors();
 }
 
 /// \brief Test the ComponentStateManager::send_status_notification_changed_connectors()
