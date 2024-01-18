@@ -35,7 +35,7 @@ struct Message {
 /// \brief Contains a DateTime implementation that can parse and create RFC 3339 compatible strings
 class DateTimeImpl {
 private:
-    std::chrono::time_point<date::utc_clock> timepoint;
+    std::chrono::time_point<date::utc_clock, std::chrono::seconds> timepoint;
 
 public:
     /// \brief Creates a new DateTimeImpl object with the current utc time
