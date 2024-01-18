@@ -3,8 +3,6 @@
 
 name: Build and test libocpp
 on: 
-  push:
-    branch: "**"
   pull_request: {}
   workflow_dispatch:
     inputs:
