@@ -134,8 +134,7 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
     }
 
     if (aligned_data_tx_ended_interval > 0s) {
-        transaction->aligned_tx_ended_meter_values_timer.interval_starting_from(
-            [this, aligned_data_tx_ended_interval] {
+        auto store_aligned_metervalue = [this, aligned_data_tx_ended_interval] {
                 auto meter_value = this->aligned_data_tx_end.retrieve_processed_values();
 
                 // If empty fallback on last updated metervalue
@@ -150,9 +149,19 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
                 this->database_handler->transaction_metervalues_insert(this->transaction->transactionId.get(),
                                                                        meter_value);
                 this->aligned_data_tx_end.clear_values();
-            },
-            aligned_data_tx_ended_interval,
+            };
+
+        auto next_interval = transaction->aligned_tx_ended_meter_values_timer.interval_starting_from(
+            store_aligned_metervalue, aligned_data_tx_ended_interval,
             std::chrono::floor<date::days>(date::utc_clock::to_sys(date::utc_clock::now())));
+
+        // Store an extra aligned metervalue to fix the edge case where a transaction is started just before an interval
+        // but this code is processed just after the interval.
+        // For example, aligned interval = 1 min, transaction started at 11:59:59.500 and we get here on 12:00:00.100.
+        // There is still the expectation for us to add a metervalue at timepoint 12:00:00.000 which we do with this.
+        if (date::utc_clock::to_sys(timestamp.to_time_point()) < (next_interval - aligned_data_tx_ended_interval)) {
+            store_aligned_metervalue();
+        }
     }
 }
 
