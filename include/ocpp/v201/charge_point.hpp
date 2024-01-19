@@ -167,6 +167,12 @@ struct Callbacks {
     /// messageId
     std::optional<std::function<DataTransferResponse(const DataTransferRequest& request)>> data_transfer_callback;
 
+    /// \brief register a \p callback that is called when the websocket is connected successfully
+    std::function < void(std::optional<NetworkConnectionProfile> network_profile)> websocket_connected_callback;
+
+    /// \brief register a \p callback that is called when the websocket connection is disconnected
+    std::function<void()>websocket_disconnected_callback;
+
     /// \breif Callback function that is called when a transaction_event was sent to the CSMS
     std::optional<std::function<void(const TransactionEventRequest& transaction_event)>> transaction_event_callback;
 };

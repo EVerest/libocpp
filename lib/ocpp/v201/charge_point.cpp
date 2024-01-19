@@ -28,10 +28,11 @@ const auto DEFAULT_MAX_MESSAGE_SIZE = 65000;
 bool Callbacks::all_callbacks_valid() const {
     return this->is_reset_allowed_callback != nullptr and this->reset_callback != nullptr and
            this->stop_transaction_callback != nullptr and this->pause_charging_callback != nullptr and
-           this->connector_effective_operative_status_changed_callback != nullptr and
+           //    this->connector_effective_operative_status_changed_callback != nullptr and
            this->get_log_request_callback != nullptr and this->unlock_connector_callback != nullptr and
            this->remote_start_transaction_callback != nullptr and this->is_reservation_for_token_callback != nullptr and
-           this->update_firmware_request_callback != nullptr and
+           this->update_firmware_request_callback != nullptr and this->websocket_connected_callback != nullptr and
+           this->websocket_disconnected_callback != nullptr and
            (!this->variable_changed_callback.has_value() or this->variable_changed_callback.value() != nullptr) and
            (!this->validate_network_profile_callback.has_value() or
             this->validate_network_profile_callback.value() != nullptr) and
@@ -853,7 +854,7 @@ void ChargePoint::init_websocket() {
     }
 
     this->websocket = std::make_unique<Websocket>(connection_options, this->evse_security, this->logging);
-    this->websocket->register_connected_callback([this](const int security_profile) {
+    this->websocket->register_connected_callback([this, network_connection_profile](const int security_profile) {
         this->message_queue->resume(this->message_queue_resume_delay);
 
         const auto& security_profile_cv = ControllerComponentVariables::SecurityProfile;
@@ -861,6 +862,9 @@ void ChargePoint::init_websocket() {
             this->device_model->set_read_only_value(security_profile_cv.component, security_profile_cv.variable.value(),
                                                     AttributeEnum::Actual, std::to_string(security_profile));
         }
+
+        // call the registered websocket connected callback
+        this->callbacks.websocket_connected_callback(network_connection_profile);
 
         if (this->registration_status == RegistrationStatusEnum::Accepted and
             this->time_disconnected.time_since_epoch() != 0s) {
@@ -897,7 +901,7 @@ void ChargePoint::init_websocket() {
             // Get the current time point using steady_clock
             this->time_disconnected = std::chrono::steady_clock::now();
         }
-
+        this->callbacks.websocket_disconnected_callback();
         this->client_certificate_expiration_check_timer.stop();
         this->v2g_certificate_expiration_check_timer.stop();
     });
