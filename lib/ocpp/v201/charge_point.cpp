@@ -12,7 +12,6 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
-#include <future>
 using namespace std::chrono_literals;
 
 const auto DEFAULT_MAX_CUSTOMER_INFORMATION_DATA_LENGTH = 51200;
@@ -31,8 +30,7 @@ bool Callbacks::all_callbacks_valid() const {
            //    this->connector_effective_operative_status_changed_callback != nullptr and
            this->get_log_request_callback != nullptr and this->unlock_connector_callback != nullptr and
            this->remote_start_transaction_callback != nullptr and this->is_reservation_for_token_callback != nullptr and
-           this->update_firmware_request_callback != nullptr and this->websocket_connected_callback != nullptr and
-           this->websocket_disconnected_callback != nullptr and
+           this->update_firmware_request_callback != nullptr and
            (!this->variable_changed_callback.has_value() or this->variable_changed_callback.value() != nullptr) and
            (!this->validate_network_profile_callback.has_value() or
             this->validate_network_profile_callback.value() != nullptr) and
@@ -40,7 +38,9 @@ bool Callbacks::all_callbacks_valid() const {
             this->configure_network_connection_profile_callback.value() != nullptr) and
            (!this->time_sync_callback.has_value() or this->time_sync_callback.value() != nullptr) and
            (!this->boot_notification_callback.has_value() or this->boot_notification_callback.value() != nullptr) and
-           (!this->ocpp_messages_callback.has_value() or this->ocpp_messages_callback.value() != nullptr);
+           (!this->ocpp_messages_callback.has_value() or this->ocpp_messages_callback.value() != nullptr) and
+           (!this->websocket_connected_callback.has_value() or this->websocket_connected_callback != nullptr) and
+           (!this->websocket_disconnected_callback.has_value() or this->websocket_disconnected_callback != nullptr);
 }
 
 ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
@@ -866,8 +866,11 @@ void ChargePoint::init_websocket() {
                                                     AttributeEnum::Actual, std::to_string(security_profile));
         }
 
-        // call the registered websocket connected callback
-        this->callbacks.websocket_connected_callback(network_connection_profile);
+        // call the registered websocket connected callback if it exists
+        if(this->callbacks.websocket_connected_callback.has_value())
+        {
+            this->callbacks.websocket_connected_callback.value()(network_connection_profile);
+        }
 
         if (this->registration_status == RegistrationStatusEnum::Accepted and
             this->time_disconnected.time_since_epoch() != 0s) {
@@ -904,7 +907,11 @@ void ChargePoint::init_websocket() {
             // Get the current time point using steady_clock
             this->time_disconnected = std::chrono::steady_clock::now();
         }
-        this->callbacks.websocket_disconnected_callback();
+        //call the disconnected callback if it exists
+        if(this->callbacks.websocket_disconnected_callback.has_value())
+        {
+            this->callbacks.websocket_disconnected_callback.value();
+        }
         this->client_certificate_expiration_check_timer.stop();
         this->v2g_certificate_expiration_check_timer.stop();
     });

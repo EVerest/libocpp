@@ -164,10 +164,11 @@ struct Callbacks {
 
     /* Callbacks for networking */
     /// \brief register a \p callback that is called when the websocket is connected successfully
-    std::function < void(std::optional<NetworkConnectionProfile> network_profile)> websocket_connected_callback;
+    std::optional<std::function<void(const std::optional<NetworkConnectionProfile>& network_connection_profile)>>
+        websocket_connected_callback;
 
     /// \brief register a \p callback that is called when the websocket connection is disconnected
-    std::function<void()>websocket_disconnected_callback;
+    std::optional<std::function<void()>> websocket_disconnected_callback;
 
     // callback is called when receiving a SetNetworkProfile.req from the CSMS
     std::optional<std::function<SetNetworkProfileStatusEnum(
