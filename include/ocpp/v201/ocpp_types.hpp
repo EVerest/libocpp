@@ -861,6 +861,10 @@ void from_json(const json& j, NetworkConnectionProfile& k);
 /// \returns an output stream with the NetworkConnectionProfile written to
 std::ostream& operator<<(std::ostream& os, const NetworkConnectionProfile& k);
 
+struct ConfigNetworkResult {
+    std::optional<CiString<32>> interface_adress;
+    bool success;
+};
 struct SetMonitoringData {
     float value;
     MonitorEnum type;

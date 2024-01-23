@@ -812,9 +812,6 @@ bool ChargePoint::send(CallError call_error) {
 }
 
 void ChargePoint::init_websocket() {
-
-    std::promise<int> network_promise;
-
     if (this->device_model->get_value<std::string>(ControllerComponentVariables::ChargePointId).find(':') !=
         std::string::npos) {
         EVLOG_AND_THROW(std::runtime_error("ChargePointId must not contain \':\'"));
@@ -827,10 +824,28 @@ void ChargePoint::init_websocket() {
     const auto connection_options = this->get_ws_connection_options(std::stoi(configuration_slot));
     const auto network_connection_profile = this->get_network_connection_profile(std::stoi(configuration_slot));
 
-    if (!network_connection_profile.has_value() or
-        (this->callbacks.configure_network_connection_profile_callback.has_value() and
-         !this->callbacks.configure_network_connection_profile_callback.value()(network_connection_profile.value(),
-                                                                                network_promise))) {
+    if (this->callbacks.configure_network_connection_profile_callback.has_value() and network_connection_profile) {
+        auto config_status = this->callbacks.configure_network_connection_profile_callback.value()(
+            network_connection_profile.value()); /*  */
+
+        if (config_status.wait_for(5s) == std::future_status::timeout) {
+            EVLOG_info << " timeout!!!";
+            EVLOG_warning
+                << "NetworkConnectionProfile could not be retrieved or configuration of network with the given "
+                   "profile failed";
+            this->websocket_timer.timeout(
+                [this]() {
+                    this->next_network_configuration_priority();
+                    this->start_websocket();
+                },
+                WEBSOCKET_INIT_DELAY);
+            return;
+        } else if (config_status.wait_for(5s) == std::future_status::timeout) {
+            ; // do nothing?
+        } else {
+            EVLOG_info << "config status -------> :  " << config_status.get().success;
+        }
+    } else {
         EVLOG_warning << "NetworkConnectionProfile could not be retrieved or configuration of network with the given "
                          "profile failed";
         this->websocket_timer.timeout(
@@ -867,8 +882,7 @@ void ChargePoint::init_websocket() {
         }
 
         // call the registered websocket connected callback if it exists
-        if(this->callbacks.websocket_connected_callback.has_value())
-        {
+        if (this->callbacks.websocket_connected_callback.has_value()) {
             this->callbacks.websocket_connected_callback.value()(network_connection_profile);
         }
 
@@ -907,9 +921,8 @@ void ChargePoint::init_websocket() {
             // Get the current time point using steady_clock
             this->time_disconnected = std::chrono::steady_clock::now();
         }
-        //call the disconnected callback if it exists
-        if(this->callbacks.websocket_disconnected_callback.has_value())
-        {
+        // call the disconnected callback if it exists
+        if (this->callbacks.websocket_disconnected_callback.has_value()) {
             this->callbacks.websocket_disconnected_callback.value();
         }
         this->client_certificate_expiration_check_timer.stop();

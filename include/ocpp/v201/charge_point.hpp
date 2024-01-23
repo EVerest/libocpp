@@ -174,8 +174,10 @@ struct Callbacks {
     std::optional<std::function<SetNetworkProfileStatusEnum(
         const int32_t configuration_slot, const NetworkConnectionProfile& network_connection_profile)>>
         validate_network_profile_callback;
-    std::optional<std::function<bool(const NetworkConnectionProfile& network_connection_profile,
-                                     std::promise<int>& network_promise)>>
+
+    /// @brief register a \p cllback that is called when the network connection profile is to be configured.
+    std::optional<
+        std::function<std::future<ConfigNetworkResult>(const NetworkConnectionProfile& network_connection_profile)>>
         configure_network_connection_profile_callback;
 
     /// \breif Callback function that is called when a transaction_event was sent to the CSMS
