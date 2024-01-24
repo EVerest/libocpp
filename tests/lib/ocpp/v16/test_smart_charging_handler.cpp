@@ -22,7 +22,8 @@ namespace v16 {
  * - PB03 Valid Profile No startSchedule & handler allows no startSchedule & profile.chargingProfileKind == Relative
  * - PB04 Absolute ChargePointMaxProfile Profile with connector id 0
  * - PB05 Absolute TxDefaultProfile 
- * - PB06 Absolute TxProfile && connector transaction != nullptr && transaction_id matches SKIPPED: was not able to test
+ * - PB06 Absolute TxProfile ignore_no_transaction == true
+ * - PB07 Absolute TxProfile && connector transaction != nullptr && transaction_id matches SKIPPED: was not able to test
  * 
  * Negative Boundary Conditions:
  * - NB01 Valid Profile, ConnectorID gt this->connectors.size()
@@ -169,6 +170,8 @@ protected:
 
 /**
  * PB01 Valid Profile
+ *
+ * Happy path simple test
  */
 TEST_F(ChargepointTestFixture, ValidateProfile) {
     auto profile = createChargingProfile(createChargeSchedule(ChargingRateUnit::A));
@@ -417,7 +420,7 @@ TEST_F(ChargepointTestFixture, ValidateProfile__RecurringNoStartScheduleNotAllow
  * 
  * Absolute ChargePointMaxProfile Profile need a connector id of 0
  */
-TEST_F(ChargepointTestFixture, ValidateProfile__ValidProfile_NotRecurrencyKindConnectorId0__ReturnsFalse) {
+TEST_F(ChargepointTestFixture, ValidateProfile__ValidProfile_NotRecurrencyKindConnectorId0__ReturnsTrue) {
     auto profile = createChargingProfile(createChargeSchedule(ChargingRateUnit::A));
     const std::vector<ChargingRateUnit>& charging_schedule_allowed_charging_rate_units{ChargingRateUnit::A};
     auto handler = createSmartChargingHandler();
@@ -471,7 +474,7 @@ TEST_F(ChargepointTestFixture, ValidateProfile__ValidProfileTxDefaultProfile__Re
 }
 
 /**
- * PB05 Absolute TxProfile ignore_no_transaction == true
+ * PB06 Absolute TxProfile ignore_no_transaction == true
  */
 TEST_F(ChargepointTestFixture, ValidateProfile__AbsoluteTxProfileIgnoreNoTransaction__ReturnsTrue) {
     auto profile = createChargingProfile(createChargeSchedule(ChargingRateUnit::A));
