@@ -266,6 +266,12 @@
                     "Actual": "Enabled,Active,Available"
                 }
             },
+            "NetworkConfigTimeout": {
+                "variable_name": "NetworkConfigTimeout",
+                "attributes": {
+                    "Actual": "160"
+                }
+            },
             "UpdateCertificateSymlinks": {
                 "variable_name": "UpdateCertificateSymlinks",
                 "attributes": {

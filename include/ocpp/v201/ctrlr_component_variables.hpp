@@ -55,6 +55,7 @@ extern const RequiredComponentVariable& LogMessagesFormat;
 extern const ComponentVariable& SupportedChargingProfilePurposeTypes;
 extern const ComponentVariable& SupportedCriteria;
 extern const ComponentVariable& RoundClockAlignedTimestamps;
+extern const ComponentVariable& NetworkConfigTimeout;
 extern const ComponentVariable& MaxCompositeScheduleDuration;
 extern const RequiredComponentVariable& NumberOfConnectors;
 extern const ComponentVariable& UseSslDefaultVerifyPaths;

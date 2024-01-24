@@ -175,7 +175,7 @@ struct Callbacks {
         const int32_t configuration_slot, const NetworkConnectionProfile& network_connection_profile)>>
         validate_network_profile_callback;
 
-    /// @brief register a \p cllback that is called when the network connection profile is to be configured.
+    /// @brief register a \p callback that is called when the network connection profile is to be configured.
     std::optional<
         std::function<std::future<ConfigNetworkResult>(const NetworkConnectionProfile& network_connection_profile)>>
         configure_network_connection_profile_callback;
