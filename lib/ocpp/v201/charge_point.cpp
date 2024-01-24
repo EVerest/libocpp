@@ -825,25 +825,31 @@ void ChargePoint::init_websocket() {
     const auto network_connection_profile = this->get_network_connection_profile(std::stoi(configuration_slot));
 
     if (this->callbacks.configure_network_connection_profile_callback.has_value() and network_connection_profile) {
-        auto config_status = this->callbacks.configure_network_connection_profile_callback.value()(
-            network_connection_profile.value()); /*  */
+        auto config_status =
+            this->callbacks.configure_network_connection_profile_callback.value()(network_connection_profile.value());
+        auto config_timeout =
+            this->device_model->get_optional_value<int>(ControllerComponentVariables::NetworkConfigTimeout);
+        std::future_status status;
 
-        if (config_status.wait_for(5s) == std::future_status::timeout) {
-            EVLOG_info << " timeout!!!";
-            EVLOG_warning
-                << "NetworkConnectionProfile could not be retrieved or configuration of network with the given "
-                   "profile failed";
-            this->websocket_timer.timeout(
-                [this]() {
-                    this->next_network_configuration_priority();
-                    this->start_websocket();
-                },
-                WEBSOCKET_INIT_DELAY);
-            return;
-        } else if (config_status.wait_for(5s) == std::future_status::timeout) {
-            ; // do nothing?
-        } else {
-            EVLOG_info << "config status -------> :  " << config_status.get().success;
+        if (config_timeout.has_value()) {
+            switch (status = config_status.wait_for(std::chrono::seconds(config_timeout.value())); status) {
+            case std::future_status::deferred:
+            case std::future_status::timeout:
+                EVLOG_info << "timeout or deferred";
+                EVLOG_warning
+                    << "NetworkConnectionProfile could not be retrieved or configuration of network with the given "
+                       "profile failed";
+                this->websocket_timer.timeout(
+                    [this]() {
+                        this->next_network_configuration_priority();
+                        this->start_websocket();
+                    },
+                    WEBSOCKET_INIT_DELAY);
+                return;
+            case std::future_status::ready:
+                EVLOG_info << "ready!";
+                break;
+            }
         }
     } else {
         EVLOG_warning << "NetworkConnectionProfile could not be retrieved or configuration of network with the given "
