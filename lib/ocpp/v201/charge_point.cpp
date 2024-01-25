@@ -746,6 +746,15 @@ void ChargePoint::init_websocket() {
             }
         });
 
+    this->websocket->register_connection_failed_callback([this](ConnectionFailedReason reason) {
+        switch (reason) {
+        case ConnectionFailedReason::InvalidCSMSCertificate:
+            this->security_event_notification_req(CiString<50>(ocpp::security_events::INVALIDCSMSCERTIFICATE),
+                                                  std::nullopt, true, true);
+            break;
+        }
+    });
+
     this->websocket->register_message_callback([this](const std::string& message) { this->message_callback(message); });
 }
 
