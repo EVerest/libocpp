@@ -51,21 +51,23 @@ bool WebsocketPlain::connect() {
     websocket_thread.reset(new websocketpp::lib::thread(&client::run, &this->ws_client));
 
     this->reconnect_callback = [this](const websocketpp::lib::error_code& ec) {
-        EVLOG_info << "Reconnecting to plain websocket at uri: " << this->connection_options.csms_uri.string()
-                   << " with security profile: " << this->connection_options.security_profile;
+        if (!this->shutting_down) {
+            EVLOG_info << "Reconnecting to plain websocket at uri: " << this->connection_options.csms_uri.string()
+                       << " with security profile: " << this->connection_options.security_profile;
 
-        // close connection before reconnecting
-        if (this->m_is_connected) {
-            try {
-                EVLOG_info << "Closing websocket connection before reconnecting";
-                this->ws_client.close(this->handle, websocketpp::close::status::normal, "");
-            } catch (std::exception& e) {
-                EVLOG_error << "Error on plain close: " << e.what();
+            // close connection before reconnecting
+            if (this->m_is_connected) {
+                try {
+                    EVLOG_info << "Closing websocket connection before reconnecting";
+                    this->ws_client.close(this->handle, websocketpp::close::status::normal, "");
+                } catch (std::exception& e) {
+                    EVLOG_error << "Error on plain close: " << e.what();
+                }
             }
-        }
 
-        this->cancel_reconnect_timer();
-        this->connect_plain();
+            this->cancel_reconnect_timer();
+            this->connect_plain();
+        }
     };
 
     this->connect_plain();
@@ -255,14 +257,16 @@ void WebsocketPlain::close(websocketpp::close::status::value code, const std::st
     websocketpp::lib::error_code ec;
     this->cancel_reconnect_timer();
 
-    this->ws_client.stop_perpetual();
-    this->ws_client.close(this->handle, code, reason, ec);
-    if (ec) {
-        EVLOG_error << "Error initiating close of plain websocket: " << ec.message();
-        // on_close_plain won't be called here so we have to call the closed_callback manually
-        this->closed_callback(websocketpp::close::status::abnormal_close);
-    } else {
-        EVLOG_info << "Closed plain websocket successfully.";
+    if (this->is_connected()) {
+        this->ws_client.stop_perpetual();
+        this->ws_client.close(this->handle, code, reason, ec);
+        if (ec) {
+            EVLOG_error << "Error initiating close of plain websocket: " << ec.message();
+            // on_close_plain won't be called here so we have to call the closed_callback manually
+            this->closed_callback(websocketpp::close::status::abnormal_close);
+        } else {
+            EVLOG_info << "Closed plain websocket successfully.";
+        }
     }
 }
 
