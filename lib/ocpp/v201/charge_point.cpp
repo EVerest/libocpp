@@ -821,6 +821,9 @@ void ChargePoint::init_websocket() {
         ocpp::get_vector_from_csv(
             this->device_model->get_value<std::string>(ControllerComponentVariables::NetworkConfigurationPriority))
             .at(this->network_configuration_priority);
+
+    EVLOG_info << "congfig -------> :  " << configuration_slot.size();
+    
     const auto connection_options = this->get_ws_connection_options(std::stoi(configuration_slot));
     const auto network_connection_profile = this->get_network_connection_profile(std::stoi(configuration_slot));
 
@@ -3239,6 +3242,10 @@ void ChargePoint::set_connector_operative_status(int32_t evse_id, int32_t connec
     this->evses.at(evse_id)->set_connector_operative_status(connector_id, new_status, persist);
 }
 
+bool ChargePoint::on_try_switch_network_connection_profile(const std::string configuration_slot) {
+    EVLOG_info <<  "=============on_try_switch_network_profile============" << configuration_slot;
+    return false;
+}
 bool ChargePoint::are_all_connectors_effectively_inoperative() {
     // Check that all connectors on all EVSEs are inoperative
     for (auto& [evse_id, evse] : this->evses) {

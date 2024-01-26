@@ -771,6 +771,8 @@ public:
     /// change
     std::map<SetVariableData, SetVariableResult>
     set_variables(const std::vector<SetVariableData>& set_variable_data_vector);
+
+    bool on_try_switch_network_connection_profile(const std::string configuration_slot);
 };
 
 } // namespace v201
