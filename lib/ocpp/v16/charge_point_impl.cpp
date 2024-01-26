@@ -993,7 +993,11 @@ void ChargePointImpl::message_callback(const std::string& message) {
                 if (enhanced_message.messageType == MessageType::BootNotificationResponse) {
                     this->handleBootNotificationResponse(json_message);
                 } else {
-                    this->handle_message(enhanced_message);
+                    if (enhanced_message.messageType == MessageType::GetConfiguration ||
+                        enhanced_message.messageType == MessageType::ChangeConfiguration ||
+                        enhanced_message.messageType == MessageType::TriggerMessage) {
+                        this->handle_message(enhanced_message);
+                    }
                 }
             }
             break;
@@ -2008,6 +2012,11 @@ void ChargePointImpl::handleTriggerMessageRequest(ocpp::Call<TriggerMessageReque
     if (connector < 0 || connector > this->configuration->getNumberOfConnectors()) {
         response.status = TriggerMessageStatus::Rejected;
         valid = false;
+    }
+
+    if (this->connection_state = ChargePointConnectionState::Pending) {
+        EVLOG_debug << "Set connection_state from pending to accepted";
+        this->connection_state = ChargePointConnectionState::Booted;
     }
 
     ocpp::CallResult<TriggerMessageResponse> call_result(response, call.uniqueId);
