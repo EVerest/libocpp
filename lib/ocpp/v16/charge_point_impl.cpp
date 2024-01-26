@@ -997,6 +997,9 @@ void ChargePointImpl::message_callback(const std::string& message) {
                         enhanced_message.messageType == MessageType::ChangeConfiguration ||
                         enhanced_message.messageType == MessageType::TriggerMessage) {
                         this->handle_message(enhanced_message);
+                    } else {
+                        auto call_error = CallError(enhanced_message.uniqueId, "NotSupported", "", json({}, true));
+                        this->send(call_error);
                     }
                 }
             }
