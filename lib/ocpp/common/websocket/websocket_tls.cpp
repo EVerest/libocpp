@@ -455,17 +455,15 @@ void WebsocketTLS::close(websocketpp::close::status::value code, const std::stri
     websocketpp::lib::error_code ec;
     this->cancel_reconnect_timer();
 
-    if (this->is_connected()) {
-        this->wss_client.stop_perpetual();
-        this->wss_client.close(this->handle, code, reason, ec);
+    this->wss_client.stop_perpetual();
+    this->wss_client.close(this->handle, code, reason, ec);
 
-        if (ec) {
-            EVLOG_error << "Error initiating close of TLS websocket: " << ec.message();
-            // on_close_tls wont be called here so we have to call the closed_callback manually
-            this->closed_callback(websocketpp::close::status::abnormal_close);
-        } else {
-            EVLOG_info << "Closed TLS websocket successfully.";
-        }
+    if (ec) {
+        EVLOG_error << "Error initiating close of TLS websocket: " << ec.message();
+        // on_close_tls wont be called here so we have to call the closed_callback manually
+        this->closed_callback(websocketpp::close::status::abnormal_close);
+    } else {
+        EVLOG_info << "Closed TLS websocket successfully.";
     }
 }
 

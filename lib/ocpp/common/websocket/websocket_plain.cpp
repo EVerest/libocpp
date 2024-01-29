@@ -257,16 +257,14 @@ void WebsocketPlain::close(websocketpp::close::status::value code, const std::st
     websocketpp::lib::error_code ec;
     this->cancel_reconnect_timer();
 
-    if (this->is_connected()) {
-        this->ws_client.stop_perpetual();
-        this->ws_client.close(this->handle, code, reason, ec);
-        if (ec) {
-            EVLOG_error << "Error initiating close of plain websocket: " << ec.message();
-            // on_close_plain won't be called here so we have to call the closed_callback manually
-            this->closed_callback(websocketpp::close::status::abnormal_close);
-        } else {
-            EVLOG_info << "Closed plain websocket successfully.";
-        }
+    this->ws_client.stop_perpetual();
+    this->ws_client.close(this->handle, code, reason, ec);
+    if (ec) {
+        EVLOG_error << "Error initiating close of plain websocket: " << ec.message();
+        // on_close_plain won't be called here so we have to call the closed_callback manually
+        this->closed_callback(websocketpp::close::status::abnormal_close);
+    } else {
+        EVLOG_info << "Closed plain websocket successfully.";
     }
 }
 
