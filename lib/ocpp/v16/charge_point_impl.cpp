@@ -2017,11 +2017,6 @@ void ChargePointImpl::handleTriggerMessageRequest(ocpp::Call<TriggerMessageReque
         valid = false;
     }
 
-    if (this->connection_state = ChargePointConnectionState::Pending) {
-        EVLOG_debug << "Set connection_state from pending to accepted";
-        this->connection_state = ChargePointConnectionState::Booted;
-    }
-
     ocpp::CallResult<TriggerMessageResponse> call_result(response, call.uniqueId);
     this->send<TriggerMessageResponse>(call_result);
 
