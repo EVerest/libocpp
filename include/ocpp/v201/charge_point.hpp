@@ -272,7 +272,10 @@ private:
     bool send(CallError call_error);
 
     // internal helper functions
-    void init_websocket();
+
+    /// @brief Initialize the websocket connection.
+    /// @param configuration_slot Optional configuration slot to initialize the websocket to.
+    void init_websocket(std::optional<std::string> config_slot = std::nullopt);
     WebsocketConnectionOptions get_ws_connection_options(const int32_t configuration_slot);
     void init_certificate_expiration_check_timers();
     void scheduled_check_client_certificate_expiration();
@@ -590,8 +593,9 @@ public:
     /// \brief Stops the ChargePoint. Disconnects the websocket connection and stops MessageQueue and all timers
     void stop();
 
-    /// \brief Initializes the websocket and connects to CSMS if it is not yet connected
-    void connect_websocket();
+    /// @brief Initializes the websocket and connects to CSMS if it is not yet connected.
+    /// @param configuration_slot Optional configuration slot to connect to
+    void connect_websocket(std::optional<std::string> config_slot = std::nullopt);
 
     /// \brief Disconnects the the websocket connection to the CSMS if it is connected
     /// \param code Optional websocket close status code (default: normal).
@@ -772,6 +776,10 @@ public:
     std::map<SetVariableData, SetVariableResult>
     set_variables(const std::vector<SetVariableData>& set_variable_data_vector);
 
+    /// @brief Switch to a specifc network connection profile given the configuration slot.
+    /// This disregards the prority
+    /// @param configuration_slot Slot in which the configuration is stored
+    /// @return true if the switch is possible.
     bool on_try_switch_network_connection_profile(const std::string configuration_slot);
 };
 
