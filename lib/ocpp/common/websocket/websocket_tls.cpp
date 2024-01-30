@@ -45,7 +45,8 @@ static std::vector<std::string> get_subject_alt_names(const X509* x509) {
     return list;
 }
 
-bool WebsocketTLS::verify_csms_cn(const std::string& hostname, bool preverified, boost::asio::ssl::verify_context& ctx) {
+bool WebsocketTLS::verify_csms_cn(const std::string& hostname, bool preverified,
+                                  boost::asio::ssl::verify_context& ctx) {
 
     // Error depth gives the depth in the chain (with 0 = leaf certificate) where
     // a potential (!) error occurred; error here means current error code and can also be "OK".
@@ -292,7 +293,7 @@ tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connect
 
         context->set_verify_mode(boost::asio::ssl::verify_peer);
         if (this->connection_options.verify_csms_common_name) {
-            context->set_verify_callback([this, hostname](bool preverified, boost::asio::ssl::verify_context& ctx){
+            context->set_verify_callback([this, hostname](bool preverified, boost::asio::ssl::verify_context& ctx) {
                 return this->verify_csms_cn(hostname, preverified, ctx);
             });
 
