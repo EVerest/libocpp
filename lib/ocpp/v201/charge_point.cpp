@@ -758,7 +758,7 @@ void ChargePoint::init_websocket() {
                                                       std::nullopt, true, true);
                 this->skip_invalid_csms_certificate_notifications = true;
             } else {
-                EVLOG_info << "Skipping InvalidCsmsCertificate SecurityEvent since it has been sent already";
+                EVLOG_debug << "Skipping InvalidCsmsCertificate SecurityEvent since it has been sent already";
             }
             break;
         }
