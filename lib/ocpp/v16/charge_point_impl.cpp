@@ -1185,7 +1185,9 @@ void ChargePointImpl::handleBootNotificationResponse(ocpp::CallResult<BootNotifi
                                       ocpp::DateTime());
         }
 
-        this->message_queue->get_transaction_messages_from_db();
+        // push transaction messages including SecurityEventNotification.req onto the message queue
+        this->message_queue->get_transaction_messages_from_db(
+            this->configuration->getDisableSecurityEventNotifications());
 
         if (this->is_pnc_enabled()) {
             this->ocsp_request_timer->timeout(INITIAL_CERTIFICATE_REQUESTS_DELAY);
@@ -2377,8 +2379,10 @@ void ChargePointImpl::securityEventNotification(const std::string& type, const s
 
     this->logging->security(json(req).dump());
 
-    ocpp::Call<SecurityEventNotificationRequest> call(req, this->message_queue->createMessageId());
-    this->send<SecurityEventNotificationRequest>(call);
+    if (!this->configuration->getDisableSecurityEventNotifications()) {
+        ocpp::Call<SecurityEventNotificationRequest> call(req, this->message_queue->createMessageId());
+        this->send<SecurityEventNotificationRequest>(call);
+    }
 
     if (triggered_internally and this->security_event_callback != nullptr) {
         this->security_event_callback(type, tech_info);

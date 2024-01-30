@@ -335,7 +335,6 @@ public:
     void setDisableSecurityEventNotifications(bool disable_security_event_notifications);
     KeyValue getDisableSecurityEventNotificationsKeyValue();
 
-
     // Local Auth List Management Profile
     bool getLocalAuthListEnabled();
     void setLocalAuthListEnabled(bool local_auth_list_enabled);
