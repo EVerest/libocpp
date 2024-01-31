@@ -38,7 +38,9 @@ struct MessageQueueConfig {
     bool queue_all_messages; // cf. OCPP 2.0.1. "QueueAllMessages" in OCPPCommCtrlr
 
     int message_timeout_seconds = 30;
-    int boot_notification_retry_interval_seconds = 60; // no retry interval defined in the spec
+    int boot_notification_retry_interval_seconds =
+        60; // interval for BootNotification.req in case response by CSMS is CALLERROR or CSMS does not respond at all
+            // (within specified MessageTimeout)
 };
 
 /// \brief Contains a OCPP message in json form with additional information
@@ -698,7 +700,7 @@ public:
             // Generate a new message ID for the retry
             this->in_flight->message[MESSAGE_ID] = this->createMessageId();
             // Spec does not define how to handle retries for BootNotification.req: We use the
-            // transaction_message_retry_interval
+            // the boot_notification_retry_interval_seconds
             this->in_flight->timestamp =
                 DateTime(this->in_flight->timestamp.to_time_point() +
                          std::chrono::seconds(this->config.boot_notification_retry_interval_seconds));
