@@ -39,7 +39,9 @@ bool Callbacks::all_callbacks_valid() const {
             this->configure_network_connection_profile_callback.value() != nullptr) and
            (!this->time_sync_callback.has_value() or this->time_sync_callback.value() != nullptr) and
            (!this->boot_notification_callback.has_value() or this->boot_notification_callback.value() != nullptr) and
-           (!this->ocpp_messages_callback.has_value() or this->ocpp_messages_callback.value() != nullptr);
+           (!this->ocpp_messages_callback.has_value() or this->ocpp_messages_callback.value() != nullptr) and
+           (!this->interrupted_transactions_callback.has_value() or
+            this->interrupted_transactions_callback.value() != nullptr);
 }
 
 ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
@@ -180,6 +182,14 @@ void ChargePoint::start(BootReasonEnum bootreason) {
     this->boot_notification_req(bootreason);
     this->start_websocket();
     this->ocsp_updater.start();
+
+    // Get any interrupted transactions from the database
+    auto inter_transactions = this->database_handler->get_ongoing_transactions();
+    // store into the global
+    if (inter_transactions.has_active_transaction) {
+        interrupted_transactions.push_back(inter_transactions);
+    }
+
     // FIXME(piet): Run state machine with correct initial state
 }
 
@@ -332,6 +342,25 @@ void ChargePoint::on_transaction_started(
     this->transaction_event_req(TransactionEventEnum::Started, timestamp, transaction, trigger_reason,
                                 enhanced_transaction->get_seq_no(), std::nullopt, evse, enhanced_transaction->id_token,
                                 opt_meter_value, std::nullopt, this->is_offline(), reservation_id);
+
+    this->database_handler->insert_transaction(
+        "DEADBEEF", enhanced_transaction->get_seq_no(), enhanced_transaction->transactionId.get(), "Started",
+        enhanced_transaction->id_token.idToken.get(), evse_id, connector_id, timestamp.to_rfc3339());
+}
+
+void ChargePoint::on_transaction_resumed(std::string transaction_id, ChargingStateEnum charging_state) {
+
+    EVLOG_info << "Trying to Resume interrupted transaction";
+
+    //  Find details of the interrupted transaction
+    for (auto const& active_transactions : this->interrupted_transactions) {
+        if (active_transactions.transaction_id == transaction_id) {
+            this->evses.at(active_transactions.evse_id)
+                ->resume_transaction(active_transactions.transaction_id, active_transactions.connector_id,
+                                     active_transactions.timestamp, active_transactions.meter_start,
+                                     active_transactions.id_token, std::nullopt, std::nullopt, charging_state);
+        }
+    }
 }
 
 void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime& timestamp,
@@ -375,6 +404,7 @@ void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime&
                                 meter_values, std::nullopt, this->is_offline(), std::nullopt);
 
     this->database_handler->transaction_metervalues_clear(transaction_id);
+    this->database_handler->clear_transaction(transaction_id);
 
     bool send_reset = false;
     if (this->reset_scheduled) {
@@ -811,7 +841,6 @@ bool ChargePoint::send(CallError call_error) {
 }
 
 void ChargePoint::init_websocket() {
-
     if (this->device_model->get_value<std::string>(ControllerComponentVariables::ChargePointId).find(':') !=
         std::string::npos) {
         EVLOG_AND_THROW(std::runtime_error("ChargePointId must not contain \':\'"));
@@ -2125,6 +2154,15 @@ void ChargePoint::handle_boot_notification_response(CallResult<BootNotificationR
 
         this->remove_network_connection_profiles_below_actual_security_profile();
 
+        // check if there are any ongoing trasnactions that were interrupted and call the registered callback
+        //  if(this->has_interrupted_transactions())
+        //  {
+        //      if (this->callbacks.interrupted_transactions_callback)
+        //      {
+        //          this->callbacks.interrupted_transactions_callback.value();
+        //      }
+        //  }
+
         // get transaction messages from db (if there are any) so they can be sent again.
         message_queue->get_transaction_messages_from_db();
 
@@ -3278,6 +3316,21 @@ std::map<SetVariableData, SetVariableResult>
 ChargePoint::set_variables(const std::vector<SetVariableData>& set_variable_data_vector) {
     // set variables and allow setting of ReadOnly variables
     return this->set_variables_internal(set_variable_data_vector, true);
+}
+
+std::string ChargePoint::has_interrupted_transactions(int32_t connector_id) {
+
+    // Find details of the interrupted transaction
+
+    for (auto const& active_transactions : this->interrupted_transactions) {
+        if (active_transactions.connector_id == connector_id) {
+            EVLOG_info << "Found Transaction with id " << active_transactions.transaction_id;
+            return active_transactions.transaction_id;
+        } else {
+            EVLOG_error << "Found no transaction at connector id: " << connector_id;
+            return "";
+        }
+    }
 }
 
 } // namespace v201

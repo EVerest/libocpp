@@ -184,6 +184,9 @@ private:
     // reference to evses
     std::map<int32_t, std::unique_ptr<Evse>> evses;
 
+    // Interrupted transactions
+    std::vector<TransactionInterruptedResponse>interrupted_transactions;
+
     // utility
     std::unique_ptr<MessageQueue<v201::MessageType>> message_queue;
     std::unique_ptr<DeviceModel> device_model;
@@ -532,6 +535,7 @@ private:
     void execute_change_availability_request(ChangeAvailabilityRequest request, bool persist);
 
 public:
+
     /// \brief Construct a new ChargePoint object
     /// \param evse_connector_structure Map that defines the structure of EVSE and connectors of the chargepoint. The
     /// key represents the id of the EVSE and the value represents the number of connectors for this EVSE. The ids of
@@ -629,6 +633,8 @@ public:
                                  const ReasonEnum reason, const std::optional<IdToken>& id_token,
                                  const std::optional<std::string>& signed_meter_value,
                                  const ChargingStateEnum charging_state);
+
+    void on_transaction_resumed(std::string transaction_id, ChargingStateEnum charging_state);
 
     /// \brief Event handler that should be called when a session has finished
     /// \param evse_id
@@ -758,6 +764,8 @@ public:
     /// change
     std::map<SetVariableData, SetVariableResult>
     set_variables(const std::vector<SetVariableData>& set_variable_data_vector);
+
+    std::string has_interrupted_transactions(int32_t connector_id);
 };
 
 } // namespace v201
