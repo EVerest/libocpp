@@ -861,9 +861,11 @@ void from_json(const json& j, NetworkConnectionProfile& k);
 /// \returns an output stream with the NetworkConnectionProfile written to
 std::ostream& operator<<(std::ostream& os, const NetworkConnectionProfile& k);
 
+/// @brief The result of a configuration of a network profile.
 struct ConfigNetworkResult {
-    std::optional<CiString<32>> interface_adress;
-    bool success;
+    NetworkConnectionProfile network_profile;       ///< network profile used to configure the connection to the BO
+    std::optional<CiString<32>> interface_address; ///< ip address or interface string
+    bool success;                                  ///< true if the configuration was sucessful
 };
 struct SetMonitoringData {
     float value;

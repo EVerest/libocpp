@@ -27,7 +27,7 @@ const auto DEFAULT_MAX_MESSAGE_SIZE = 65000;
 bool Callbacks::all_callbacks_valid() const {
     return this->is_reset_allowed_callback != nullptr and this->reset_callback != nullptr and
            this->stop_transaction_callback != nullptr and this->pause_charging_callback != nullptr and
-           //    this->connector_effective_operative_status_changed_callback != nullptr and
+           this->connector_effective_operative_status_changed_callback != nullptr and
            this->get_log_request_callback != nullptr and this->unlock_connector_callback != nullptr and
            this->remote_start_transaction_callback != nullptr and this->is_reservation_for_token_callback != nullptr and
            this->update_firmware_request_callback != nullptr and
@@ -855,6 +855,21 @@ void ChargePoint::init_websocket(std::optional<std::string> config_slot) {
                 return;
             case std::future_status::ready:
                 EVLOG_info << "ready!";
+                // store the future output
+                this->config_network_profile_result = config_status.get();
+
+                if (!this->config_network_profile_result.success) {
+                    EVLOG_warning
+                        << "NetworkConnectionProfile could not be retrieved or configuration of network with the given "
+                           "profile failed";
+                    this->websocket_timer.timeout(
+                        [this]() {
+                            this->next_network_configuration_priority();
+                            this->start_websocket();
+                        },
+                        WEBSOCKET_INIT_DELAY);
+                    return;
+                }
                 break;
             }
         }
@@ -3249,25 +3264,21 @@ void ChargePoint::set_connector_operative_status(int32_t evse_id, int32_t connec
 }
 
 bool ChargePoint::on_try_switch_network_connection_profile(const std::string configuration_slot) {
-    EVLOG_info <<  "=============on_try_switch_network_profile============" << configuration_slot;
+    EVLOG_info << "=============on_try_switch_network_profile============" << configuration_slot;
 
     // check if the configuration slot is valid
-    try
-    {
-        //call disconnect
-        this->disconnect_websocket(); //normal close
-        while (!this->is_offline())
-        {
+    try {
+        // call disconnect
+        this->disconnect_websocket(); // normal close
+        while (!this->is_offline()) {
             /* code */
         }
-        
-        //call connect with the config_slot option
+
+        // call connect with the config_slot option
         this->connect_websocket(configuration_slot);
         return true;
-        
-    }
-    catch(std::exception &e)
-    {
+
+    } catch (std::exception& e) {
         EVLOG_info << "ERROR===============>";
         return false;
     }
