@@ -1,31 +1,31 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
+#include <evse_security/crypto/openssl/openssl_tpm.hpp>
 #include <ocpp/common/websocket/websocket_tls_tpm.hpp>
-
-#include <evse_security/detail/openssl/openssl_types.hpp>
 
 #include <everest/logging.hpp>
 
 #include <libwebsockets.h>
-#include <openssl/provider.h>
 
 #include <chrono>
 #include <memory>
 #include <stdexcept>
 #include <string>
 
+#include <openssl/opensslv.h>
+#include <openssl/ssl.h>
+#define USING_OPENSSL_3 (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+
+#if USING_OPENSSL_3
+#include <openssl/provider.h>
+#else
+#define SSL_CTX_new_ex(LIB, PROP, METHOD) SSL_CTX_new(METHOD)
+#endif
+
 template <> class std::default_delete<lws_context> {
 public:
     void operator()(lws_context* ptr) const {
         ::lws_context_destroy(ptr);
-    }
-};
-
-template <> class std::default_delete<OSSL_LIB_CTX> {
-public:
-    void operator()(OSSL_LIB_CTX* ptr) const {
-        ::OPENSSL_thread_stop_ex(ptr);
-        ::OSSL_LIB_CTX_free(ptr);
     }
 };
 
@@ -37,6 +37,9 @@ public:
 };
 
 namespace ocpp {
+
+using evse_security::is_tpm_key_filename;
+using evse_security::OpenSSLProvider;
 
 enum class EConnectionState {
     INITIALIZE, ///< Initialization state
@@ -114,7 +117,6 @@ public:
     // This public block will only be used from client loop thread, no locking needed
     // Openssl context, must be destroyed in this order
     std::unique_ptr<SSL_CTX> sec_context;
-    std::unique_ptr<OSSL_LIB_CTX> sec_lib_context;
     // libwebsockets state
     std::unique_ptr<lws_context> lws_ctx;
 
@@ -211,57 +213,8 @@ constexpr auto local_protocol_name = "lws-everest-client";
 static const struct lws_protocols protocols[] = {{local_protocol_name, callback_minimal, 0, 0, 0, NULL, 0},
                                                  LWS_PROTOCOL_LIST_TERM};
 
-static void create_sec_context(bool use_tpm, OSSL_LIB_CTX*& out_libctx, SSL_CTX*& out_ctx) {
-    OSSL_LIB_CTX* libctx = OSSL_LIB_CTX_new();
-
-    if (libctx == nullptr) {
-        EVLOG_AND_THROW(std::runtime_error("Unable to create ssl lib ctx."));
-    }
-
-    out_libctx = libctx;
-
-    if (use_tpm) {
-        OSSL_PROVIDER* prov_tpm2 = nullptr;
-        OSSL_PROVIDER* prov_default = nullptr;
-
-        if ((prov_tpm2 = OSSL_PROVIDER_load(libctx, "tpm2")) == nullptr) {
-            EVLOG_AND_THROW(std::runtime_error("Could not load provider tpm2."));
-        }
-
-        if (!OSSL_PROVIDER_self_test(prov_tpm2)) {
-            EVLOG_AND_THROW(std::runtime_error("Could not self-test provider tpm2."));
-        }
-
-        if ((prov_default = OSSL_PROVIDER_load(libctx, "default")) == nullptr) {
-            EVLOG_AND_THROW(std::runtime_error("Could not load provider default."));
-        }
-
-        if (!OSSL_PROVIDER_self_test(prov_default)) {
-            EVLOG_AND_THROW(std::runtime_error("Could not self-test provider default."));
-        }
-    }
-
-    const SSL_METHOD* method = SSLv23_client_method();
-    SSL_CTX* ctx = SSL_CTX_new_ex(libctx, nullptr, method);
-
-    if (ctx == nullptr) {
-        EVLOG_AND_THROW(std::runtime_error("Unable to create ssl ctx."));
-    }
-
-    out_ctx = ctx;
-}
-
-void WebsocketTlsTPM::tls_init() {
-    SSL_CTX* ctx = nullptr;
-
-    if (auto* data = conn_data.get()) {
-        ctx = data->sec_context.get();
-    }
-
-    if (nullptr == ctx) {
-        EVLOG_AND_THROW(std::runtime_error("Invalid SSL context!"));
-    }
-
+void WebsocketTlsTPM::tls_init(SSL_CTX* ctx, const char* path_chain, const char* path_key, bool tpm_key,
+                               std::optional<std::string>& password) {
     auto rc = SSL_CTX_set_cipher_list(ctx, this->connection_options.supported_ciphers_12.c_str());
     if (rc != 1) {
         EVLOG_debug << "SSL_CTX_set_cipher_list return value: " << rc;
@@ -276,29 +229,27 @@ void WebsocketTlsTPM::tls_init() {
     SSL_CTX_set_ecdh_auto(ctx, 1);
 
     if (this->connection_options.security_profile == 3) {
-        const char* path_key = nullptr;
-        const char* path_chain = nullptr;
-
-        const auto certificate_key_pair =
-            this->evse_security->get_key_pair(CertificateSigningUseEnum::ChargingStationCertificate);
-
-        if (!certificate_key_pair.has_value()) {
-            EVLOG_AND_THROW(std::runtime_error(
-                "Connecting with security profile 3 but no client side certificate is present or valid"));
+        if ((path_chain == nullptr) || (path_key == nullptr)) {
+            EVLOG_error << "Cert chain: " << path_chain << " key: " << path_key;
+            EVLOG_AND_THROW(std::runtime_error("No certificate and key for SSL"));
         }
 
-        path_chain = certificate_key_pair.value().certificate_path.c_str();
-        path_key = certificate_key_pair.value().key_path.c_str();
-
         if (1 != SSL_CTX_use_certificate_chain_file(ctx, path_chain)) {
+            ERR_print_errors_fp(stderr);
             EVLOG_AND_THROW(std::runtime_error("Could not use client certificate file within SSL context"));
         }
 
+        OpenSSLProvider provider;
+
+        SSL_CTX_set_default_passwd_cb_userdata(ctx, reinterpret_cast<void*>(password.value_or("").data()));
+
         if (1 != SSL_CTX_use_PrivateKey_file(ctx, path_key, SSL_FILETYPE_PEM)) {
+            ERR_print_errors_fp(stderr);
             EVLOG_AND_THROW(std::runtime_error("Could not set private key file within SSL context"));
         }
 
         if (false == SSL_CTX_check_private_key(ctx)) {
+            ERR_print_errors_fp(stderr);
             EVLOG_AND_THROW(std::runtime_error("Could not check private key within SSL context"));
         }
     }
@@ -338,7 +289,7 @@ void WebsocketTlsTPM::recv_loop() {
         return;
     }
 
-    EVLOG_debug << "Init recv loop with ID: " << std::this_thread::get_id();
+    EVLOG_debug << "Init recv loop with ID: " << std::hex << std::this_thread::get_id();
 
     while (false == data->is_interupted()) {
         // Process all messages
@@ -367,7 +318,7 @@ void WebsocketTlsTPM::recv_loop() {
         }
     }
 
-    EVLOG_debug << "Exit recv loop with ID: " << std::this_thread::get_id();
+    EVLOG_debug << "Exit recv loop with ID: " << std::hex << std::this_thread::get_id();
 }
 
 void WebsocketTlsTPM::client_loop() {
@@ -398,23 +349,66 @@ void WebsocketTlsTPM::client_loop() {
 
     info.fd_limit_per_thread = 1 + 1 + 1;
 
-    bool use_tpm = connection_options.use_tpm_tls;
+    const bool use_tpm = connection_options.use_tpm_tls;
 
-    // Setup context
-    OSSL_LIB_CTX* lib_ctx;
-    SSL_CTX* ssl_ctx;
+    // Setup context - need to know the key type first
 
-    create_sec_context(use_tpm, lib_ctx, ssl_ctx);
+    std::string path_key;
+    std::string path_chain;
+    std::optional<std::string> password;
 
-    // Connection acquire the contexts
-    conn_data->sec_lib_context = std::unique_ptr<OSSL_LIB_CTX>(lib_ctx);
-    conn_data->sec_context = std::unique_ptr<SSL_CTX>(ssl_ctx);
+    if (this->connection_options.security_profile == 3) {
+
+        const auto certificate_key_pair =
+            this->evse_security->get_key_pair(CertificateSigningUseEnum::ChargingStationCertificate);
+
+        if (!certificate_key_pair.has_value()) {
+            EVLOG_AND_THROW(std::runtime_error(
+                "Connecting with security profile 3 but no client side certificate is present or valid"));
+        }
+
+        path_chain = std::string(certificate_key_pair.value().certificate_path.c_str());
+        path_key = std::string(certificate_key_pair.value().key_path.c_str());
+        password = certificate_key_pair.value().password;
+    }
+
+    SSL_CTX* ssl_ctx = nullptr;
+    bool tpm_key = false;
+
+    {
+        OpenSSLProvider provider;
+
+        if (!path_key.empty()) {
+            tpm_key = is_tpm_key_filename(path_key.c_str());
+#ifdef DEBUG
+            EVLOG_info << "TPM Key: " << tpm_key;
+#endif
+        }
+
+        if (tpm_key) {
+            provider.set_tls_mode(OpenSSLProvider::mode_t::tpm2_provider);
+        } else {
+            provider.set_tls_mode(OpenSSLProvider::mode_t::default_provider);
+        }
+
+        EVLOG_info << "Using TLS propquery: " << provider.propquery_tls_str();
+        const SSL_METHOD* method = SSLv23_client_method();
+        ssl_ctx = SSL_CTX_new_ex(provider, provider.propquery_tls_str(), method);
+
+        if (ssl_ctx == nullptr) {
+            ERR_print_errors_fp(stderr);
+            EVLOG_AND_THROW(std::runtime_error("Unable to create ssl ctx."));
+        }
+    }
 
     // Init TLS data
-    tls_init();
+    tls_init(ssl_ctx, path_chain.c_str(), path_key.c_str(), tpm_key, password);
 
     // Setup our context
     info.provided_client_ssl_ctx = ssl_ctx;
+
+    // Connection acquire the contexts
+    conn_data->sec_context = std::unique_ptr<SSL_CTX>(ssl_ctx);
 
     lws_context* lws_ctx = lws_create_context(&info);
     if (nullptr == lws_ctx) {
@@ -466,7 +460,7 @@ void WebsocketTlsTPM::client_loop() {
         data->update_state(EConnectionState::FINALIZED);
     }
 
-    EVLOG_debug << "Init client loop with ID: " << std::this_thread::get_id();
+    EVLOG_debug << "Init client loop with ID: " << std::hex << std::this_thread::get_id();
 
     // Process while we're running
     int n = 0;
@@ -486,7 +480,7 @@ void WebsocketTlsTPM::client_loop() {
     }
 
     // Client loop finished for our tid
-    EVLOG_debug << "Exit client loop with ID: " << std::this_thread::get_id();
+    EVLOG_debug << "Exit client loop with ID: " << std::hex << std::this_thread::get_id();
 }
 
 // Will be called from external threads as well
@@ -965,6 +959,7 @@ int WebsocketTlsTPM::process_callback(void* wsi_ptr, int callback_reason, void* 
 
     case LWS_CALLBACK_CLIENT_CONNECTION_ERROR:
         EVLOG_error << "CLIENT_CONNECTION_ERROR: " << (in ? reinterpret_cast<char*>(in) : "(null)");
+        ERR_print_errors_fp(stderr);
 
         if (data->get_state() == EConnectionState::CONNECTING) {
             data->update_state(EConnectionState::ERROR);

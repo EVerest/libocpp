@@ -6,7 +6,11 @@
 #include <ocpp/common/evse_security.hpp>
 #include <ocpp/common/websocket/websocket_base.hpp>
 
+#include <optional>
 #include <queue>
+
+struct ssl_ctx_st;
+
 namespace ocpp {
 
 struct ConnectionData;
@@ -46,7 +50,8 @@ public:
     int process_callback(void* wsi_ptr, int callback_reason, void* user, void* in, size_t len);
 
 private:
-    void tls_init();
+    void tls_init(struct ssl_ctx_st* ctx, const char* path_chain, const char* path_key, bool tpm_key,
+                  std::optional<std::string>& password);
     void client_loop();
     void recv_loop();
 
