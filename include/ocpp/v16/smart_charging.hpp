@@ -33,6 +33,36 @@ struct PeriodDateTimePair {
     ocpp::DateTime end_time;
 };
 
+/// \brief Enhances ChargingSchedulePeriod with stackLevel
+struct EnhancedChargingSchedulePeriod {
+    int32_t startPeriod;
+    float limit;
+    std::optional<int32_t> numberPhases;
+    int32_t stackLevel;
+};
+
+/// \brief Conversion from a given EnhancedChargingSchedulePeriod \p k to a given json object \p j
+void to_json(json& j, const EnhancedChargingSchedulePeriod& k);
+
+/// \brief Conversion from a given json object \p j to a given EnhancedChargingSchedulePeriod \p k
+void from_json(const json& j, EnhancedChargingSchedulePeriod& k);
+
+/// \brief Enhances ChargingSchedule by containing std::vector<EnhancedChargingSchedulePeriods> instead of
+/// std::vector<ChargingSchedulePeriod>
+struct EnhancedChargingSchedule {
+    ChargingRateUnit chargingRateUnit;
+    std::vector<EnhancedChargingSchedulePeriod> chargingSchedulePeriod;
+    std::optional<int32_t> duration;
+    std::optional<ocpp::DateTime> startSchedule;
+    std::optional<float> minChargingRate;
+};
+
+/// \brief Conversion from a given EnhancedChargingSchedule \p k to a given json object \p j
+void to_json(json& j, const EnhancedChargingSchedule& k);
+
+/// \brief Conversion from a given json object \p j to a given EnhancedChargingSchedule \p k
+void from_json(const json& j, EnhancedChargingSchedule& k);
+
 /// \brief This class handles and maintains incoming ChargingProfiles and contains the logic
 /// to calculate the composite schedules
 class SmartChargingHandler {
@@ -127,6 +157,12 @@ public:
     ///
     /// \brief Calculates the composite schedule for the given \p valid_profiles and the given \p connector_id .
     ///
+    EnhancedChargingSchedule calculate_enhanced_composite_schedule(std::vector<ChargingProfile> valid_profiles,
+                                                                   const ocpp::DateTime& start_time,
+                                                                   const ocpp::DateTime& end_time,
+                                                                   const int connector_id,
+                                                                   std::optional<ChargingRateUnit> charging_rate_unit);
+
     ChargingSchedule calculate_composite_schedule(std::vector<ChargingProfile> valid_profiles,
                                                   const ocpp::DateTime& start_time, const ocpp::DateTime& end_time,
                                                   const int connector_id,

@@ -8,6 +8,68 @@ using namespace std::chrono;
 namespace ocpp {
 namespace v16 {
 
+/// \brief Conversion from a given ChargingSchedulePeriod \p k to a given json object \p j
+void to_json(json& j, const EnhancedChargingSchedulePeriod& k) {
+    // the required parts of the message
+    j = json{{"startPeriod", k.startPeriod}, {"limit", k.limit}, {"stackLevel", k.stackLevel}};
+    // the optional parts of the message
+    if (k.numberPhases) {
+        j["numberPhases"] = k.numberPhases.value();
+    }
+}
+
+/// \brief Conversion from a given json object \p j to a given ChargingSchedulePeriod \p k
+void from_json(const json& j, EnhancedChargingSchedulePeriod& k) {
+    // the required parts of the message
+    k.startPeriod = j.at("startPeriod");
+    k.limit = j.at("limit");
+    k.stackLevel = j.at("stackLevel");
+
+    // the optional parts of the message
+    if (j.contains("numberPhases")) {
+        k.numberPhases.emplace(j.at("numberPhases"));
+    }
+}
+
+/// \brief Conversion from a given ChargingSchedule \p k to a given json object \p j
+void to_json(json& j, const EnhancedChargingSchedule& k) {
+    // the required parts of the message
+    j = json{
+        {"chargingRateUnit", conversions::charging_rate_unit_to_string(k.chargingRateUnit)},
+        {"chargingSchedulePeriod", k.chargingSchedulePeriod},
+    };
+    // the optional parts of the message
+    if (k.duration) {
+        j["duration"] = k.duration.value();
+    }
+    if (k.startSchedule) {
+        j["startSchedule"] = k.startSchedule.value().to_rfc3339();
+    }
+    if (k.minChargingRate) {
+        j["minChargingRate"] = k.minChargingRate.value();
+    }
+}
+
+/// \brief Conversion from a given json object \p j to a given ChargingSchedule \p k
+void from_json(const json& j, EnhancedChargingSchedule& k) {
+    // the required parts of the message
+    k.chargingRateUnit = conversions::string_to_charging_rate_unit(j.at("chargingRateUnit"));
+    for (auto val : j.at("chargingSchedulePeriod")) {
+        k.chargingSchedulePeriod.push_back(val);
+    }
+
+    // the optional parts of the message
+    if (j.contains("duration")) {
+        k.duration.emplace(j.at("duration"));
+    }
+    if (j.contains("startSchedule")) {
+        k.startSchedule.emplace(j.at("startSchedule").get<std::string>());
+    }
+    if (j.contains("minChargingRate")) {
+        k.minChargingRate.emplace(j.at("minChargingRate"));
+    }
+}
+
 bool validate_schedule(const ChargingSchedule& schedule, const int charging_schedule_max_periods,
                        const std::vector<ChargingRateUnit>& charging_schedule_allowed_charging_rate_units) {
 
@@ -172,22 +234,42 @@ int SmartChargingHandler::get_number_installed_profiles() {
 ChargingSchedule SmartChargingHandler::calculate_composite_schedule(
     std::vector<ChargingProfile> valid_profiles, const ocpp::DateTime& start_time, const ocpp::DateTime& end_time,
     const int connector_id, std::optional<ChargingRateUnit> charging_rate_unit) {
+    const auto enhanced_composite_schedule = this->calculate_enhanced_composite_schedule(
+        valid_profiles, start_time, end_time, connector_id, charging_rate_unit);
+    ChargingSchedule composite_schedule;
+    composite_schedule.chargingRateUnit = enhanced_composite_schedule.chargingRateUnit;
+    composite_schedule.duration = enhanced_composite_schedule.duration;
+    composite_schedule.startSchedule = enhanced_composite_schedule.startSchedule;
+    composite_schedule.minChargingRate = enhanced_composite_schedule.minChargingRate;
+    for (const auto enhanced_period : enhanced_composite_schedule.chargingSchedulePeriod) {
+        ChargingSchedulePeriod period;
+        period.startPeriod = enhanced_period.startPeriod;
+        period.limit = enhanced_period.limit;
+        period.numberPhases = enhanced_period.numberPhases;
+        composite_schedule.chargingSchedulePeriod.push_back(period);
+    }
+    return composite_schedule;
+}
+
+EnhancedChargingSchedule SmartChargingHandler::calculate_enhanced_composite_schedule(
+    std::vector<ChargingProfile> valid_profiles, const ocpp::DateTime& start_time, const ocpp::DateTime& end_time,
+    const int connector_id, std::optional<ChargingRateUnit> charging_rate_unit) {
     // return in amps if not given
     if (!charging_rate_unit) {
         charging_rate_unit.emplace(ChargingRateUnit::A);
     }
 
-    ChargingSchedule composite_schedule; // the schedule that will be returned
+    EnhancedChargingSchedule composite_schedule; // the schedule that will be returned
     composite_schedule.chargingRateUnit = charging_rate_unit.value();
     composite_schedule.duration.emplace(
         duration_cast<seconds>(end_time.to_time_point() - start_time.to_time_point()).count());
 
-    std::vector<ChargingSchedulePeriod> periods;
+    std::vector<EnhancedChargingSchedulePeriod> periods;
 
     ocpp::DateTime temp_time(start_time);
     ocpp::DateTime last_period_end_time(end_time);
     auto current_period_limit = std::numeric_limits<int>::max();
-    auto lowest_limit_for_this_period = std::numeric_limits<int>::max();
+    LimitStackLevelPair significant_limit_stack_level_pair = {std::numeric_limits<int>::max(), -1};
 
     // calculate every ChargingSchedulePeriod of result within this while loop
     while (duration_cast<seconds>(end_time.to_time_point() - temp_time.to_time_point()).count() > 0) {
@@ -225,34 +307,38 @@ ChargingSchedule SmartChargingHandler::calculate_composite_schedule(
             }
         }
 
-        int tx_limit;
         // if there is a limit with purpose TxProfile it overrules the limit of purpose TxDefaultProfile
         if (current_purpose_and_stack_limits.at(ChargingProfilePurposeType::TxProfile).limit !=
             std::numeric_limits<int>::max()) {
-            tx_limit = current_purpose_and_stack_limits.at(ChargingProfilePurposeType::TxProfile).limit;
+            significant_limit_stack_level_pair =
+                current_purpose_and_stack_limits.at(ChargingProfilePurposeType::TxProfile);
         } else {
-            tx_limit = current_purpose_and_stack_limits.at(ChargingProfilePurposeType::TxDefaultProfile).limit;
+            significant_limit_stack_level_pair =
+                current_purpose_and_stack_limits.at(ChargingProfilePurposeType::TxDefaultProfile);
         }
 
-        // lowest limit for this period is minimum of ChargePointMaxProfile limit or tx_limit
-        lowest_limit_for_this_period = std::min(
-            current_purpose_and_stack_limits.at(ChargingProfilePurposeType::ChargePointMaxProfile).limit, tx_limit);
+        if (current_purpose_and_stack_limits.at(ChargingProfilePurposeType::ChargePointMaxProfile).limit <
+            significant_limit_stack_level_pair.limit) {
+            significant_limit_stack_level_pair =
+                current_purpose_and_stack_limits.at(ChargingProfilePurposeType::ChargePointMaxProfile);
+        }
 
         // insert new period to result only if limit changed or period was found
-        if (lowest_limit_for_this_period != current_period_limit and
-            lowest_limit_for_this_period != std::numeric_limits<int>::max()) {
+        if (significant_limit_stack_level_pair.limit != current_period_limit and
+            significant_limit_stack_level_pair.limit != std::numeric_limits<int>::max()) {
 
-            ChargingSchedulePeriod new_period;
+            EnhancedChargingSchedulePeriod new_period;
             const auto start_period =
                 duration_cast<seconds>(temp_time.to_time_point() - start_time.to_time_point()).count();
             new_period.startPeriod = start_period;
-            new_period.limit =
-                get_requested_limit(lowest_limit_for_this_period, temp_number_phases, charging_rate_unit.value());
+            new_period.limit = get_requested_limit(significant_limit_stack_level_pair.limit, temp_number_phases,
+                                                   charging_rate_unit.value());
             new_period.numberPhases = temp_number_phases;
+            new_period.stackLevel = significant_limit_stack_level_pair.stack_level;
             periods.push_back(new_period);
 
             last_period_end_time = temp_period_end_time;
-            current_period_limit = lowest_limit_for_this_period;
+            current_period_limit = significant_limit_stack_level_pair.limit;
         }
         temp_time = this->get_next_temp_time(temp_time, valid_profiles, connector_id);
     }
