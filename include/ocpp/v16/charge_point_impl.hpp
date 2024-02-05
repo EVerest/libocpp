@@ -129,7 +129,7 @@ private:
     std::map<std::string, std::function<void(Call<DataTransferRequest> call)>> data_transfer_pnc_callbacks;
     std::mutex data_transfer_callbacks_mutex;
     std::map<CiString<50>, std::function<void(const KeyValue& key_value)>> configuration_key_changed_callbacks;
-    std::function<void(const CiString<50>& key, const CiString<500>& value)> configuration_key_changed_callback;
+    std::function<void(const CiString<50>& key, const CiString<500>& value)> generic_configuration_key_changed_callback;
 
     std::mutex stop_transaction_mutex;
     std::condition_variable stop_transaction_cv;
