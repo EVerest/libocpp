@@ -491,11 +491,28 @@ bool WebsocketTlsTPM::connect() {
 
     // Wait old thread for a clean state
     if (this->websocket_thread) {
+        // Awake libwebsockets thread to quickly exit
+        request_write();
         this->websocket_thread->join();
     }
 
     if (this->recv_message_thread) {
+        // Awake the receiving message thread to finish
+        recv_message_cv.notify_one();
         this->recv_message_thread->join();
+    }
+
+    // Clear any pending messages on a new connection
+    {
+        std::lock_guard<std::mutex> lock(queue_mutex);
+        std::queue<std::shared_ptr<WebsocketMessage>> empty;
+        empty.swap(message_queue);
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(recv_mutex);
+        std::queue<std::string> empty;
+        empty.swap(recv_message_queue);
     }
 
     // Bind reconnect callback
