@@ -537,6 +537,21 @@
           "description": "List of criteria supported for a get custom report. Enabled,Active,Problem,Available",
           "default": "Enabled,Active,Problem,Available",
           "type": "string"
+      },
+      "RoundClockAlignedTimestamps": {
+          "variable_name": "RoundClockAlignedTimestamps",
+          "characteristics": {
+              "supportsMonitoring": false,
+              "dataType": "boolean"
+          },
+          "attributes": [
+              {
+                  "type": "Actual",
+                  "mutability": "ReadOnly"
+              }
+          ],
+          "default": "0",
+          "type": "boolean"
       }
   },
   "required": [

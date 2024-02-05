@@ -126,7 +126,11 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
                 for (auto& item : meter_value.sampledValue) {
                     item.context = ReadingContextEnum::Sample_Clock;
                 }
-                meter_value.timestamp = utils::align_timestamp(DateTime{}, aligned_data_tx_updated_interval);
+                if (this->device_model
+                        .get_optional_value<bool>(ControllerComponentVariables::RoundClockAlignedTimestamps)
+                        .value_or(false)) {
+                    meter_value.timestamp = utils::align_timestamp(DateTime{}, aligned_data_tx_updated_interval);
+                }
                 this->transaction_meter_value_req(meter_value, this->transaction->get_transaction(),
                                                   transaction->get_seq_no(), this->transaction->reservation_id);
                 this->aligned_data_updated.clear_values();
@@ -147,7 +151,11 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
                 for (auto& item : meter_value.sampledValue) {
                     item.context = ReadingContextEnum::Sample_Clock;
                 }
-                meter_value.timestamp = utils::align_timestamp(DateTime{}, aligned_data_tx_ended_interval);
+                if (this->device_model
+                        .get_optional_value<bool>(ControllerComponentVariables::RoundClockAlignedTimestamps)
+                        .value_or(false)) {
+                    meter_value.timestamp = utils::align_timestamp(DateTime{}, aligned_data_tx_ended_interval);
+                }
                 this->database_handler->transaction_metervalues_insert(this->transaction->transactionId.get(),
                                                                        meter_value);
                 this->aligned_data_tx_end.clear_values();

@@ -1235,13 +1235,19 @@ void ChargePoint::update_aligned_data_interval() {
                 }
             }
 
+            const bool align_timestamps =
+                this->device_model->get_optional_value<bool>(ControllerComponentVariables::RoundClockAlignedTimestamps)
+                    .value_or(false);
+
             // send evseID = 0 values
             auto meter_value = get_latest_meter_value_filtered(this->aligned_data_evse0.retrieve_processed_values(),
                                                                ReadingContextEnum::Sample_Clock,
                                                                ControllerComponentVariables::AlignedDataMeasurands);
 
             if (!meter_value.sampledValue.empty()) {
-                meter_value.timestamp = utils::align_timestamp(DateTime{}, interval);
+                if (align_timestamps) {
+                    meter_value.timestamp = utils::align_timestamp(DateTime{}, interval);
+                }
                 this->meter_values_req(0, std::vector<ocpp::v201::MeterValue>(1, meter_value));
             }
             this->aligned_data_evse0.clear_values();
@@ -1256,7 +1262,10 @@ void ChargePoint::update_aligned_data_interval() {
                 auto meter_value =
                     get_latest_meter_value_filtered(evse->get_idle_meter_value(), ReadingContextEnum::Sample_Clock,
                                                     ControllerComponentVariables::AlignedDataMeasurands);
-                meter_value.timestamp = utils::align_timestamp(DateTime{}, interval);
+
+                if (align_timestamps) {
+                    meter_value.timestamp = utils::align_timestamp(DateTime{}, interval);
+                }
 
                 if (!meter_value.sampledValue.empty()) {
                     // J01.FR.14 this is the only case where we send a MeterValue.req
