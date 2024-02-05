@@ -289,9 +289,9 @@ void ChargePoint::register_configuration_key_changed_callback(
     this->charge_point->register_configuration_key_changed_callback(key, callback);
 }
 
-void ChargePoint::register_configuration_key_changed_callback(
-    const std::function<void(const CiString<50>& key, const CiString<500>& valuee)>& callback) {
-    this->charge_point->register_configuration_key_changed_callback(callback);
+void ChargePoint::register_generic_configuration_key_changed_callback(
+    const std::function<void(const CiString<50>& key, const CiString<500>& value)>& callback) {
+    this->charge_point->register_generic_configuration_key_changed_callback(callback);
 }
 
 void ChargePoint::register_security_event_callback(
