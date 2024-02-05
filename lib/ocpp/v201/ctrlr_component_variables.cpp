@@ -151,6 +151,13 @@ const RequiredComponentVariable& LogMessagesFormat = {
         "LogMessagesFormat",
     }),
 };
+const ComponentVariable& SupportedCriteria = {
+    ControllerComponents::InternalCtrlr,
+    std::nullopt,
+    std::optional<Variable>({
+        "SupportedCriteria",
+    }),
+};
 const ComponentVariable& SupportedChargingProfilePurposeTypes = {
     ControllerComponents::InternalCtrlr,
     std::nullopt,
@@ -233,6 +240,20 @@ const ComponentVariable& ClientCertificateExpireCheckIntervalSeconds = {
     std::nullopt,
     std::optional<Variable>({
         "ClientCertificateExpireCheckIntervalSeconds",
+    }),
+};
+const ComponentVariable& MessageQueueSizeThreshold = {
+    ControllerComponents::InternalCtrlr,
+    std::nullopt,
+    std::optional<Variable>({
+        "MessageQueueSizeThreshold",
+    }),
+};
+const ComponentVariable& MaxMessageSize = {
+    ControllerComponents::InternalCtrlr,
+    std::nullopt,
+    std::optional<Variable>({
+        "MaxMessageSize",
     }),
 };
 const ComponentVariable& AlignedDataCtrlrEnabled = {
@@ -611,6 +632,13 @@ const ComponentVariable& RequestMeteringReceipt = {
         "RequestMeteringReceipt",
     }),
 };
+const ComponentVariable& ISO15118CtrlrSeccId = {
+    ControllerComponents::ISO15118Ctrlr,
+    std::nullopt,
+    std::optional<Variable>({
+        "SeccId",
+    }),
+};
 const ComponentVariable& ISO15118CtrlrCountryName = {
     ControllerComponents::ISO15118Ctrlr,
     std::nullopt,
@@ -657,7 +685,7 @@ const RequiredComponentVariable& BytesPerMessageSendLocalList = {
     ControllerComponents::LocalAuthListCtrlr,
     std::nullopt,
     std::optional<Variable>({
-        "BytesPerMessageSendLocalList",
+        "BytesPerMessage",
     }),
 };
 const ComponentVariable& LocalAuthListCtrlrEnabled = {
@@ -678,7 +706,7 @@ const RequiredComponentVariable& ItemsPerMessageSendLocalList = {
     ControllerComponents::LocalAuthListCtrlr,
     std::nullopt,
     std::optional<Variable>({
-        "ItemsPerMessageSendLocalList",
+        "ItemsPerMessage",
     }),
 };
 const ComponentVariable& LocalAuthListCtrlrStorage = {
@@ -959,6 +987,13 @@ const ComponentVariable& MaxCertificateChainSize = {
     std::nullopt,
     std::optional<Variable>({
         "MaxCertificateChainSize",
+    }),
+};
+const ComponentVariable& UpdateCertificateSymlinks = {
+    ControllerComponents::InternalCtrlr,
+    std::nullopt,
+    std::optional<Variable>({
+        "UpdateCertificateSymlinks",
     }),
 };
 const RequiredComponentVariable& OrganizationName = {

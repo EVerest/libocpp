@@ -30,20 +30,22 @@ target_sources(ocpp
         ocpp/v16/enums.cpp
         ocpp/v16/ocpp_types.cpp
         ocpp/v16/types.cpp
-        ocpp/v201/charge_point.cpp
-        ocpp/v201/database_handler.cpp
-        ocpp/v201/device_model_storage_sqlite.cpp
-        ocpp/v201/device_model.cpp
-        ocpp/v201/transaction.cpp
-        ocpp/v201/enums.cpp
-        ocpp/v201/ocpp_types.cpp
-        ocpp/v201/types.cpp
-        ocpp/v201/connector.cpp
-        ocpp/v201/evse.cpp
-        ocpp/v201/utils.cpp
-        ocpp/v201/ctrlr_component_variables.cpp
-        ocpp/v201/ocsp_updater.cpp
         ocpp/v201/average_meter_values.cpp
+        ocpp/v201/charge_point.cpp
+        ocpp/v201/connector.cpp
+        ocpp/v201/ctrlr_component_variables.cpp
+        ocpp/v201/database_handler.cpp
+        ocpp/v201/device_model.cpp
+        ocpp/v201/device_model_storage_sqlite.cpp
+        ocpp/v201/enums.cpp
+        ocpp/v201/evse.cpp
+        ocpp/v201/notify_report_requests_splitter.cpp
+        ocpp/v201/ocpp_types.cpp
+        ocpp/v201/ocsp_updater.cpp
+        ocpp/v201/transaction.cpp
+        ocpp/v201/types.cpp
+        ocpp/v201/utils.cpp
+        ocpp/v201/component_state_manager.cpp
 )
 
 add_subdirectory(ocpp/common/websocket)
@@ -51,6 +53,7 @@ add_subdirectory(ocpp/v16/messages)
 add_subdirectory(ocpp/v201/messages)
 
 option(LIBOCPP_USE_BOOST_FILESYSTEM "Usage of boost/filesystem.hpp instead of std::filesystem" OFF)
+option(LIBOCPP_ENABLE_LIBWEBSOCKETS "Usage of libwebsockets instead of websockets++" OFF)
 
 target_include_directories(ocpp
     PUBLIC
@@ -102,13 +105,25 @@ target_link_libraries(ocpp
         date::date-tz
 )
 
+if(LIBOCPP_ENABLE_LIBWEBSOCKETS)
+    find_package(libwebsockets REQUIRED)
+    target_link_libraries(ocpp
+    PUBLIC
+        websockets_shared
+    )
+    target_compile_definitions(ocpp
+        PRIVATE
+            LIBOCPP_ENABLE_LIBWEBSOCKETS
+    )
+endif()
+
 if(LIBOCPP_USE_BOOST_FILESYSTEM)
     find_package(Boost REQUIRED COMPONENTS filesystem)
     target_link_libraries(ocpp
         PRIVATE
             Boost::filesystem
     )
-    target_compile_definitions(log
+    target_compile_definitions(ocpp
         PRIVATE
             LIBOCPP_USE_BOOST_FILESYSTEM
     )

@@ -14,6 +14,98 @@
 
 namespace ocpp {
 
+static std::vector<std::string> get_subject_alt_names(const X509* x509) {
+    std::vector<std::string> list;
+    GENERAL_NAMES* subject_alt_names =
+        static_cast<GENERAL_NAMES*>(X509_get_ext_d2i(x509, NID_subject_alt_name, NULL, NULL));
+    if (subject_alt_names == nullptr) {
+        return list;
+    }
+    for (int i = 0; i < sk_GENERAL_NAME_num(subject_alt_names); i++) {
+        GENERAL_NAME* gen = sk_GENERAL_NAME_value(subject_alt_names, i);
+        if (gen == nullptr) {
+            continue;
+        }
+        if (gen->type == GEN_URI || gen->type == GEN_DNS || gen->type == GEN_EMAIL) {
+            ASN1_IA5STRING* asn1_str = gen->d.uniformResourceIdentifier;
+            std::string san = std::string(reinterpret_cast<const char*>(ASN1_STRING_get0_data(asn1_str)),
+                                          ASN1_STRING_length(asn1_str));
+            list.push_back(san);
+        } else if (gen->type == GEN_IPADD) {
+            unsigned char* ip = gen->d.ip->data;
+            if (gen->d.ip->length == 4) { // only support IPv4 for now
+                std::stringstream ip_stream;
+                ip_stream << static_cast<int>(ip[0]) << '.' << static_cast<int>(ip[1]) << '.' << static_cast<int>(ip[2])
+                          << '.' << static_cast<int>(ip[3]);
+                list.push_back(ip_stream.str());
+            }
+        }
+    }
+    GENERAL_NAMES_free(subject_alt_names);
+    return list;
+}
+
+bool WebsocketTLS::verify_csms_cn(const std::string& hostname, bool preverified,
+                                  boost::asio::ssl::verify_context& ctx) {
+
+    // Error depth gives the depth in the chain (with 0 = leaf certificate) where
+    // a potential (!) error occurred; error here means current error code and can also be "OK".
+    // This thus gives also the position (in the chain)  of the currently to be verified certificate.
+    // If depth is 0, we need to check the leaf certificate;
+    // If depth > 0, we are verifying a CA (or SUB-CA) certificate and thus trust "preverified"
+    int depth = X509_STORE_CTX_get_error_depth(ctx.native_handle());
+
+    if (!preverified) {
+        int error = X509_STORE_CTX_get_error(ctx.native_handle());
+        EVLOG_warning << "Invalid certificate error '" << X509_verify_cert_error_string(error) << "' (at chain depth '"
+                      << depth << "')";
+
+        this->connection_failed_callback(ConnectionFailedReason::InvalidCSMSCertificate);
+    }
+
+    // only check for CSMS server certificate
+    if (depth == 0 and preverified) {
+        // Get server certificate
+        X509* server_cert = X509_STORE_CTX_get_current_cert(ctx.native_handle());
+
+        // Extract CN from csms server's certificate
+        X509_NAME* subject_name = X509_get_subject_name(server_cert);
+        char common_name[256];
+        if (X509_NAME_get_text_by_NID(subject_name, NID_commonName, common_name, sizeof(common_name)) <= 0) {
+            EVLOG_error << "Could not extract CN from CSMS server certificate";
+            this->connection_failed_callback(ConnectionFailedReason::InvalidCSMSCertificate);
+            return false;
+        }
+
+        auto alt_names = get_subject_alt_names(server_cert);
+
+        // Compare the extracted CN with the expected FQDN
+        if (hostname == common_name) {
+            EVLOG_debug << "FQDN matches CN of server certificate: " << hostname;
+            return true;
+        }
+
+        // If the CN does not match, go through all alternative names
+        for (auto name : alt_names) {
+            if (hostname == name) {
+                EVLOG_debug << "FQDN matches alternative name of server certificate: " << hostname;
+                return true;
+            }
+        }
+
+        std::stringstream s;
+        s << "FQDN '" << hostname << "' does not match CN '" << common_name << "' or any alternative names";
+        for (auto alt_name : alt_names) {
+            s << " '" << alt_name << "'";
+        }
+        EVLOG_warning << s.str();
+        this->connection_failed_callback(ConnectionFailedReason::InvalidCSMSCertificate);
+        return false;
+    }
+
+    return preverified;
+}
+
 WebsocketTLS::WebsocketTLS(const WebsocketConnectionOptions& connection_options,
                            std::shared_ptr<EvseSecurity> evse_security) :
     WebsocketBase(), evse_security(evse_security) {
@@ -40,7 +132,6 @@ void WebsocketTLS::set_connection_options(const WebsocketConnectionOptions& conn
 
     this->connection_options.csms_uri.set_secure(true);
 }
-
 bool WebsocketTLS::connect() {
     if (!this->initialized()) {
         return false;
@@ -188,11 +279,12 @@ tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connect
                 EVLOG_AND_THROW(std::runtime_error(
                     "Connecting with security profile 3 but no client side certificate is present or valid"));
             }
-            if (SSL_CTX_use_certificate_file(context->native_handle(),
-                                             certificate_key_pair.value().certificate_path.c_str(),
-                                             SSL_FILETYPE_PEM) != 1) {
+            EVLOG_info << "Using certificate: " << certificate_key_pair.value().certificate_path;
+            if (SSL_CTX_use_certificate_chain_file(context->native_handle(),
+                                                   certificate_key_pair.value().certificate_path.c_str()) != 1) {
                 EVLOG_AND_THROW(std::runtime_error("Could not use client certificate file within SSL context"));
             }
+            EVLOG_info << "Using key file: " << certificate_key_pair.value().key_path;
             if (SSL_CTX_use_PrivateKey_file(context->native_handle(), certificate_key_pair.value().key_path.c_str(),
                                             SSL_FILETYPE_PEM) != 1) {
                 EVLOG_AND_THROW(std::runtime_error("Could not set private key file within SSL context"));
@@ -200,6 +292,15 @@ tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connect
         }
 
         context->set_verify_mode(boost::asio::ssl::verify_peer);
+        if (this->connection_options.verify_csms_common_name) {
+            context->set_verify_callback([this, hostname](bool preverified, boost::asio::ssl::verify_context& ctx) {
+                return this->verify_csms_cn(hostname, preverified, ctx);
+            });
+
+        } else {
+            EVLOG_warning << "Not verifying the CSMS certificates commonName with the Fully Qualified Domain Name "
+                             "(FQDN) of the server because it has been explicitly turned off via the configuration!";
+        }
         if (this->evse_security->is_ca_certificate_installed(ocpp::CaCertificateType::CSMS)) {
             EVLOG_info << "Loading ca csms bundle to verify server certificate: "
                        << this->evse_security->get_verify_file(ocpp::CaCertificateType::CSMS);
@@ -319,14 +420,14 @@ void WebsocketTLS::on_close_tls(tls_client* c, websocketpp::connection_hdl hdl) 
 }
 void WebsocketTLS::on_fail_tls(tls_client* c, websocketpp::connection_hdl hdl) {
     std::lock_guard<std::mutex> lk(this->connection_mutex);
+    if (this->m_is_connected) {
+        this->disconnected_callback();
+    }
     this->m_is_connected = false;
-    this->disconnected_callback();
     this->connection_attempts += 1;
     tls_client::connection_ptr con = c->get_con_from_hdl(hdl);
     const auto ec = con->get_ec();
     this->log_on_fail(ec, con->get_transport_ec(), con->get_response_code());
-
-    // TODO(piet): Trigger SecurityEvent in case InvalidCentralSystemCertificate
 
     // -1 indicates to always attempt to reconnect
     if (this->connection_options.max_connection_attempts == -1 or

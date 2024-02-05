@@ -1,4 +1,5 @@
 # C++ implementation of OCPP
+![Github Actions](https://github.com/EVerest/libocpp/actions/workflows/build_and_test.yaml/badge.svg)
 
 This is a C++ library implementation of OCPP for version 1.6 (https://www.openchargealliance.org/protocols/ocpp-16/) and 2.0.1 (https://www.openchargealliance.org/protocols/ocpp-201/). It enables charging stations to communicate with cloud backends for remote control, monitoring and billing of charging processes.
 
@@ -9,9 +10,10 @@ Libocpp provides a complete implementation of OCPP 1.6. The implementation of OC
 ## Table of contents
 - [C++ implementation of OCPP](#c-implementation-of-ocpp)
   - [Table of contents](#table-of-contents)
-  - [Feature Support](#feature-support)
+  - [OCPP 1.6 Support](#feature-support)
     - [Feature Profile Support OCPP 1.6](#feature-profile-support-ocpp-16)
-    - [Support for OCPP 2.0.1](#support-for-ocpp-201)
+  - [Support for OCPP 2.0.1](#support-for-ocpp-201)
+    - [Feature Profile Support OCPP 2.0.1](#feature-profile-support-ocpp-201)
   - [CSMS Compatibility](#csms-compatibility)
     - [CSMS Compatibility OCPP 1.6](#csms-compatibility-ocpp-16)
     - [CSMS Compatibility OCPP 2.0.1](#csms-compatibility-ocpp-201)
@@ -33,10 +35,11 @@ Libocpp provides a complete implementation of OCPP 1.6. The implementation of OC
   - [Building the doxygen documentation](#building-the-doxygen-documentation)
   - [Unit testing](#unit-testing)
   - [Building with FetchContent instead of EDM](#building-with-fetchcontent-instead-of-edm)
+  - [Support for security profile 2 and 3 with TPM in OCPP 1.6 using libwebsockets](#support-for-security-profile-2-and-3-with-tpm-in-ocpp-16-using-libwebsockets)
 
-## Feature Support
+## OCPP 1.6 Support
 
-The following tables show the current support for the listed feature profiles / functional blocks and application notes.
+The following tables show the current support for the listed OCPP 1.6 feature profiles / functional blocks and application notes.
 
 All documentation and the issue tracking can be found in our main repository here: https://github.com/EVerest/
 
@@ -51,15 +54,35 @@ All documentation and the issue tracking can be found in our main repository her
 | Smart Charging             | :heavy_check_mark: yes    |
 | Remote Trigger             | :heavy_check_mark: yes    |
 
-| Whitepapers                                                                                                                               | Supported              |
+| Whitepapers & Application Notes                                                                                                                              | Supported              |
 | ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
 | [OCPP 1.6 Security Whitepaper (3rd edition)](https://www.openchargealliance.org/uploads/files/OCPP-1.6-security-whitepaper-edition-3.zip) | :heavy_check_mark: yes |
 | [Using ISO 15118 Plug & Charge with OCPP 1.6](https://www.openchargealliance.org/uploads/files/ocpp_1_6_ISO_15118_v10.pdf)                | :heavy_check_mark: yes                    |
+| [OCPP & California Pricing Requirements](https://www.openchargealliance.org/uploads/files/ocpp_and_dms_evse_regulation-v2.0.pdf)                |                               |
 
-### Support for OCPP 2.0.1
+## Support for OCPP 2.0.1
 
-The development of OCPP2.0.1 has already started and is in progress. See also the general roadmap of EVerest:
-https://github.com/EVerest/EVerest/blob/main/tsc/ROADMAP.md
+The development of OCPP2.0.1 is in progress. 
+[For details, see the sheet with the current implementation status.](https://docs.google.com/spreadsheets/d/1NXEa7d0pkT4_1L9lZ9RpiLHGPtTKoqwPsKLJPjTZ_vM/edit?usp=sharing)
+
+### Feature Profile Support OCPP 2.0.1
+
+| Feature Profile            | Supported                 |
+| -------------------------- | ------------------------- |
+| Core                       | :heavy_check_mark: yes    |
+| Advanced Security          | WIP                       |
+| Local Auth List Management |                           |
+| Smart Charging             | WIP                       |
+| Advanced Device Management |                           |
+| Advanced User Interface    |                           |
+| Reservation                |                           |
+| ISO 15118 support          | WIP                       |
+
+| Whitepapers & Application Notes                                                                                                                              | Supported              |
+| ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| [OCPP & California Pricing Requirements](https://www.openchargealliance.org/uploads/files/ocpp_and_dms_evse_regulation-v2.0.pdf)                |                               |
+
+
 
 ## CSMS Compatibility
 
@@ -81,7 +104,7 @@ If you provide a CSMS that is not yet listed here, feel free to
 -   ev.energy
 -   eDRV
 -   Fastned
--   GraphDefined
+-   [Open Charging Cloud (GraphDefined)](https://github.com/OpenChargingCloud/WWCP_OCPP)
 -   Electrip Global
 -   EnergyStacks
 -   EV-Meter
@@ -95,7 +118,7 @@ If you provide a CSMS that is not yet listed here, feel free to
 -   PUMP (PUMP Connect)
 -   Scoptvision (Scopt Powerconnect)
 -   Siemens
--   SteVe
+-   [SteVe](https://github.com/steve-community/steve)
 -   Syntech
 -   Trialog
 -   ubitricity
@@ -109,6 +132,7 @@ few CSMS and is continuously tested against OCTT2.
 Additionally, the implementation has been tested against those CSMS:
 
 -   Current
+-   [Open Charging Cloud (GraphDefined)](https://github.com/OpenChargingCloud/WWCP_OCPP)
 
 ## Integration with EVerest
 
@@ -119,6 +143,7 @@ If you run libocpp with OCPP1.6 with EVerest, the build process of [everest-core
 
 ### Run OCPP2.0.1 with EVerest
 If you run libocpp with OCPP1.6 with EVerest, the build process of [everest-core](https://github.com/EVerest/everest-core) will take care of installing all necessary dependencies for you. This includes the initialization of the device model database using the [config.json](config/v201/config.json) file.
+
 ## Integrate this library with your Charging Station Implementation for OCPP1.6
 
 OCPP is a protocol that affects, controls and monitors many areas of a charging station's operation.
@@ -498,19 +523,18 @@ The main reference for the integration of libocpp for OCPP1.6 is the ocpp::v16::
 
 ## Unit testing
 
-If you want to run the unit tests in the tests subdirectory: install the needed dependencies.
-For Debian GNU/Linux 11 you can install it like this:
-
-```bash
-sudo apt install libgtest-dev lcov
-python3 -m pip install gcovr
-```
-
-Run the unit tests
-  
-```bash
-  cmake .. -DBUILD_TESTING=ON
-```
+GTest is required for building the test cases target.
+To build the target and run the tests you can reference the script `.ci/build-kit/install_and_test.sh`.
+The script allows the GitHub Actions runner to execute.
+Local testing is still in progress.
 
 ## Building with FetchContent instead of EDM
 In [doc/build-with-fetchcontent](doc/build-with-fetchcontent) you can find an example how to build libocpp with FetchContent instead of EDM.
+
+## Support for security profile 2 and 3 with TPM in OCPP 1.6 using libwebsockets
+
+If you want to try the new websocket implementation based on libwebsockets (supporting security profile 2 and 3 with TPM) you can set the following cmake option.
+
+```bash
+  cmake .. -DLIBOCPP_ENABLE_LIBWEBSOCKETS=ON
+```

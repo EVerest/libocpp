@@ -18,6 +18,7 @@
 #include <ocpp/v16/messages/UpdateFirmware.hpp>
 
 // for OCPP1.6 PnC
+#include "ocpp/v16/messages/ChangeAvailability.hpp"
 #include <ocpp/v201/messages/Authorize.hpp>
 #include <ocpp/v201/messages/CertificateSigned.hpp>
 #include <ocpp/v201/messages/DeleteCertificate.hpp>
@@ -72,15 +73,19 @@ public:
     /// \param connector_status_map initial state of connectors including connector 0 with reduced set of states
     /// (Available, Unavailable, Faulted). connector_status_map is empty, last availability states from the persistant
     /// storage will be used
+    /// \param bootreason reason for calling the start function
     /// \return
-    bool start(const std::map<int, ChargePointStatus>& connector_status_map = {});
+    bool start(const std::map<int, ChargePointStatus>& connector_status_map = {},
+               BootReasonEnum bootreason = BootReasonEnum::PowerUp);
 
     /// \brief Restarts the ChargePoint if it has been stopped before. The ChargePoint is reinitialized, connects to the
     /// websocket and starts to communicate OCPP messages again
     /// \param connector_status_map initial state of connectors including connector 0 with reduced set of states
     /// (Available, Unavailable, Faulted). connector_status_map is empty, last availability states from the persistant
     /// storage will be used
-    bool restart(const std::map<int, ChargePointStatus>& connector_status_map = {});
+    /// \param bootreason reason for calling the start function
+    bool restart(const std::map<int, ChargePointStatus>& connector_status_map = {},
+                 BootReasonEnum bootreason = BootReasonEnum::ApplicationReset);
 
     // \brief Resets the internal state machine for the connectors using the given \p connector_status_map
     /// \param connector_status_map state of connectors including connector 0 with reduced set of states (Available,
@@ -167,9 +172,9 @@ public:
     /// authorization or the connection of cable and/or EV to the given \p connector
     /// \param connector
     /// \param session_id unique id of the session
-    /// \param reason "Authorized" or "EVConnected" TODO(piet): Convert to enum
+    /// \param reason for the initiation of the session
     /// \param session_logging_path optional filesystem path to where the session log should be written
-    void on_session_started(int32_t connector, const std::string& session_id, const std::string& reason,
+    void on_session_started(int32_t connector, const std::string& session_id, const SessionStartedReason reason,
                             const std::optional<std::string>& session_logging_path);
 
     /// \brief Notifies chargepoint that a session has been stopped at the given \p connector. This function must be
@@ -224,12 +229,23 @@ public:
     /// the state machine.
     /// \param connector
     /// \param error_code
-    void on_error(int32_t connector, const ChargePointErrorCode& error_code);
+    /// \param info Additional free format information related to the error
+    /// \param vendor_id This identifies the vendor-specific implementation
+    /// \param vendor_error_code This contains the vendor-specific error code
+    void on_error(int32_t connector, const ChargePointErrorCode& error_code,
+                  const std::optional<CiString<50>>& info = std::nullopt,
+                  const std::optional<CiString<255>>& vendor_id = std::nullopt,
+                  const std::optional<CiString<50>>& vendor_error_code = std::nullopt);
 
     /// \brief This function should be called if a fault is detected that prevents further charging operations. The \p
     /// error_code indicates the reason for the fault.
-    /// \param error_code
-    void on_fault(int32_t connector, const ChargePointErrorCode& error_code);
+    /// \param info Additional free format information related to the error
+    /// \param vendor_id This identifies the vendor-specific implementation
+    /// \param vendor_error_code This contains the vendor-specific error code
+    void on_fault(int32_t connector, const ChargePointErrorCode& error_code,
+                  const std::optional<CiString<50>>& info = std::nullopt,
+                  const std::optional<CiString<255>>& vendor_id = std::nullopt,
+                  const std::optional<CiString<50>>& vendor_error_code = std::nullopt);
 
     /// \brief Chargepoint notifies about new log status \p log_status . This function should be called during a
     /// Diagnostics / Log upload to indicate the current \p log_status .
@@ -275,6 +291,10 @@ public:
     /// \param type type of the security event
     /// \param tech_info additional info of the security event
     void on_security_event(const std::string& type, const std::string& tech_info);
+
+    /// \brief Handles an internal ChangeAvailabilityRequest (in the same way as if it was emitted by the CSMS).
+    /// \param request
+    ChangeAvailabilityResponse on_change_availability(const ChangeAvailabilityRequest& request);
 
     /// registers a \p callback function that can be used to receive a arbitrary data transfer for the given \p
     /// vendorId and \p messageId
@@ -430,7 +450,8 @@ public:
         const std::function<void(const int32_t connector, const int32_t transaction_id)>& callback);
 
     /// \brief registers a \p callback function that can be used to react on changed configuration keys. This
-    /// callback is called when a configuration key has been changed by the CSMS
+    /// callback is called when a configuration key has been successfully changed by the CSMS or internally using the
+    /// set_custom_configuration_key function
     /// \param key the configuration key for which the callback is registered
     /// \param callback executed when this configuration key changed
     void register_configuration_key_changed_callback(const CiString<50>& key,
@@ -464,6 +485,10 @@ public:
     /// \param callback
     void register_is_token_reserved_for_connector_callback(
         const std::function<bool(const int32_t connector, const std::string& id_token)>& callback);
+
+    /// \brief Delay draining the message queue after reconnecting, so the CSMS can perform post-reconnect checks first
+    /// \param delay The delay period (seconds)
+    void set_message_queue_resume_delay(std::chrono::seconds delay);
 };
 
 } // namespace v16

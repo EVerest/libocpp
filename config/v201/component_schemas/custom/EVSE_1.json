@@ -24,7 +24,8 @@
       "variable_name": "AvailabilityState",
       "characteristics": {
         "supportsMonitoring": true,
-        "dataType": "OptionList"
+        "dataType": "OptionList",
+        "valuesList": "Available,Occupied,Reserved,Unavailable,Faulted"
       },
       "attributes": [
         {
@@ -70,6 +71,7 @@
       "variable_name": "Power",
       "characteristics": {
         "unit": "W",
+        "maxLimit": 22000,
         "supportsMonitoring": true,
         "dataType": "decimal"
       },

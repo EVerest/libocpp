@@ -13,27 +13,39 @@ namespace v201 {
 bool DeviceModel::component_criteria_match(const Component& component,
                                            const std::vector<ComponentCriterionEnum>& component_criteria) {
     if (component_criteria.empty()) {
-        return true;
+        return false;
     }
     for (const auto& criteria : component_criteria) {
         const Variable variable = {conversions::component_criterion_enum_to_string(criteria)};
-        // B08.FR.07
-        // B08.FR.08
-        // B08.FR.09
-        // B08.FR.10
-        if (!this->device_model.at(component).count(variable)) {
+
+        const auto response = this->request_value<bool>(component, variable, AttributeEnum::Actual);
+        auto value = response.value;
+        if (response.status == GetVariableStatusEnum::Accepted and value.has_value() and value.value()) {
             return true;
-        } else {
-            const auto response = this->request_value<bool>(component, variable, AttributeEnum::Actual);
-            auto value = response.value;
-            if (response.status == GetVariableStatusEnum::Accepted and value.has_value() and value.value()) {
-                return true;
-            }
+        }
+        // also send true if the component crietria isn't part of the component except "problem"
+        else if (!value.has_value() and (variable.name != "Problem")) {
+            return true;
         }
     }
     return false;
 }
+bool DeviceModel::component_variables_match(const std::vector<ComponentVariable>& component_variables,
+                                            const ocpp::v201::Component& component,
+                                            const ocpp::v201::Variable& variable) {
 
+    return std::find_if(
+               component_variables.begin(), component_variables.end(), [component, variable](ComponentVariable v) {
+                   return (component == v.component and !v.variable.has_value()) or // if component has no variable
+                          (component == v.component and v.variable.has_value() and
+                           variable == v.variable.value()) or                       // if component has variables
+                          (component == v.component and v.variable.has_value() and
+                           !v.variable.value().instance.has_value() and
+                           variable.name == v.variable.value().name) or // if component has no variable instances
+                          (!v.component.evse.has_value() and (component.name == v.component.name) and
+                           (component.instance == v.component.instance) and (variable == v.variable)); // B08.FR.23
+               }) != component_variables.end();
+}
 bool validate_value(const VariableCharacteristics& characteristics, const std::string& value) {
     switch (characteristics.dataType) {
     case DataEnum::string:
@@ -72,8 +84,7 @@ bool validate_value(const VariableCharacteristics& characteristics, const std::s
         return true;
     }
     case DataEnum::dateTime: {
-        DateTime d(value);
-        return true;
+        return is_rfc3339_datetime(value);
     }
     case DataEnum::boolean:
         return (value == "true" or value == "false");
@@ -110,6 +121,7 @@ GetVariableStatusEnum DeviceModel::request_value_internal(const Component& compo
                                                           bool allow_write_only) {
     const auto component_it = this->device_model.find(component_id);
     if (component_it == this->device_model.end()) {
+        EVLOG_warning << "unknown component in " << component_id.name << "." << variable_id.name;
         return GetVariableStatusEnum::UnknownComponent;
     }
 
@@ -117,6 +129,7 @@ GetVariableStatusEnum DeviceModel::request_value_internal(const Component& compo
     const auto& variable_it = component.find(variable_id);
 
     if (variable_it == component.end()) {
+        EVLOG_warning << "unknown variable in " << component_id.name << "." << variable_id.name;
         return GetVariableStatusEnum::UnknownVariable;
     }
 
@@ -193,7 +206,7 @@ SetVariableStatusEnum DeviceModel::set_read_only_value(const Component& componen
                                                        const AttributeEnum& attribute_enum, const std::string& value) {
 
     if (component == ControllerComponents::AuthCacheCtrlr or component == ControllerComponents::LocalAuthListCtrlr or
-        component == ControllerComponents::SecurityCtrlr) {
+        component == ControllerComponents::OCPPCommCtrlr or component == ControllerComponents::SecurityCtrlr) {
         return this->set_value_internal(component, variable, attribute_enum, value, true);
     }
     throw std::invalid_argument("Not allowed to set read only value for component " + component.name.get());
@@ -208,44 +221,62 @@ std::optional<VariableMetaData> DeviceModel::get_variable_meta_data(const Compon
     }
 }
 
-std::vector<ReportData>
-DeviceModel::get_report_data(const std::optional<ReportBaseEnum>& report_base,
-                             const std::optional<std::vector<ComponentVariable>>& component_variables,
-                             const std::optional<std::vector<ComponentCriterionEnum>>& component_criteria) {
+std::vector<ReportData> DeviceModel::get_base_report_data(const ReportBaseEnum& report_base) {
     std::vector<ReportData> report_data_vec;
 
     for (auto const& [component, variable_map] : this->device_model) {
-        // check if this component should be reported based on the component criteria
+        for (auto const& [variable, variable_meta_data] : variable_map) {
+
+            ReportData report_data;
+            report_data.component = component;
+            report_data.variable = variable;
+
+            // request the variable attribute from the device model storage
+            const auto variable_attributes = this->storage->get_variable_attributes(component, variable);
+
+            // iterate over possibly (Actual, Target, MinSet, MaxSet)
+            for (const auto& variable_attribute : variable_attributes) {
+                // FIXME(piet): Right now this reports only FullInventory and ConfigurationInventory (ReadWrite
+                // or WriteOnly) correctly
+                // TODO(piet): SummaryInventory
+                if (report_base == ReportBaseEnum::FullInventory or
+                    variable_attribute.mutability == MutabilityEnum::ReadWrite or
+                    variable_attribute.mutability == MutabilityEnum::WriteOnly) {
+                    report_data.variableAttribute.push_back(variable_attribute);
+                    report_data.variableCharacteristics = variable_map.at(variable).characteristics;
+                }
+            }
+            if (!report_data.variableAttribute.empty()) {
+                report_data_vec.push_back(report_data);
+            }
+        }
+    }
+    return report_data_vec;
+}
+
+std::vector<ReportData>
+DeviceModel::get_custom_report_data(const std::optional<std::vector<ComponentVariable>>& component_variables,
+                                    const std::optional<std::vector<ComponentCriterionEnum>>& component_criteria) {
+    std::vector<ReportData> report_data_vec;
+
+    for (auto const& [component, variable_map] : this->device_model) {
         if (!component_criteria.has_value() or component_criteria_match(component, component_criteria.value())) {
+
             for (auto const& [variable, variable_meta_data] : variable_map) {
-                // check if this variable should be reported based on the given component_variables
-                auto variable_ = variable;
-                auto component_ = component;
                 if (!component_variables.has_value() or
-                    std::find_if(component_variables.value().begin(), component_variables.value().end(),
-                                 [variable_, component_](ComponentVariable v) {
-                                     return component_ == v.component and v.variable.has_value() and
-                                            variable_ == v.variable.value();
-                                 }) != component_variables.value().end()) {
+                    component_variables_match(component_variables.value(), component, variable)) {
                     ReportData report_data;
                     report_data.component = component;
                     report_data.variable = variable;
 
-                    // request the variable attribute from the device model storage
+                    //  request the variable attribute from the device model storage
                     const auto variable_attributes = this->storage->get_variable_attributes(component, variable);
 
-                    // iterate over possibly (Actual, Target, MinSet, MaxSet)
                     for (const auto& variable_attribute : variable_attributes) {
-                        // FIXME(piet): Right now this reports only FullInventory and ConfigurationInventory (ReadWrite
-                        // or WriteOnly) correctly
-                        // TODO(piet): SummaryInventory
-                        if (report_base == ReportBaseEnum::FullInventory or
-                            variable_attribute.mutability == MutabilityEnum::ReadWrite or
-                            variable_attribute.mutability == MutabilityEnum::WriteOnly) {
-                            report_data.variableAttribute.push_back(variable_attribute);
-                            report_data.variableCharacteristics = variable_map.at(variable).characteristics;
-                        }
+                        report_data.variableAttribute.push_back(variable_attribute);
+                        report_data.variableCharacteristics = variable_map.at(variable).characteristics;
                     }
+
                     if (!report_data.variableAttribute.empty()) {
                         report_data_vec.push_back(report_data);
                     }

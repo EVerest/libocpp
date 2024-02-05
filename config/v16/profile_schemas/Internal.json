@@ -104,6 +104,11 @@
                 "TLS_AES_128_GCM_SHA256"
             ]
         },
+        "UseTPM": {
+            "type": "boolean",
+            "readOnly": true,
+            "default": false
+        },
         "RetryBackoffRandomRange": {
             "$comment": "maximum value for the random part of the websocket reconnect back-off time",
             "type": "integer",
@@ -135,7 +140,7 @@
             "default": true
         },
         "LogMessagesFormat": {
-            "$comment": "Supported log formats are console, log, html, console_detailed and session_logging",
+            "$comment": "Supported log formats are console, log, html, console_detailed, session_logging, callback and security. \"security\" logs security events into a seperate logfile",
             "type": "array",
             "items": {
                 "type": "string"
@@ -144,7 +149,8 @@
             "default": [
                 "log",
                 "html",
-                "session_logging"
+                "session_logging",
+                "security"
             ]
         },
         "SupportedChargingProfilePurposeTypes": {
@@ -180,6 +186,12 @@
         },
         "UseSslDefaultVerifyPaths": {
             "$comment": "Use default verify paths for validating CSMS server certificate",
+            "type": "boolean",
+            "readOnly": true,
+            "default": true
+        },
+        "VerifyCsmsCommonName": {
+            "$comment": "Verify that the CSMS certificates commonName matches the CSMS FQDN",
             "type": "boolean",
             "readOnly": true,
             "default": true
@@ -222,6 +234,17 @@
             "readOnly": false,
             "minimum": 0,
             "default": 60
+        },
+        "QueueAllMessages": {
+            "$comment": "If set to true, also non-transactional messages are queued in memory in case they cannot be sent immediately.",
+            "type": "boolean",
+            "readOnly": true
+        },
+        "MessageQueueSizeThreshold": {
+            "$comment": "Threshold for the size of in-memory message queues used to buffer messages (and store e.g. while offline). If threshold is exceeded, messages  will be dropped according to OCPP specification to avoid memory issues.",
+            "type": "integer",
+            "readOnly": true,
+            "minimum": 1
         }
     },
     "additionalProperties": false

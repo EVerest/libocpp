@@ -21,12 +21,12 @@ ChargePoint::ChargePoint(const std::string& config, const fs::path& share_path, 
 
 ChargePoint::~ChargePoint() = default;
 
-bool ChargePoint::start(const std::map<int, ChargePointStatus>& connector_status_map) {
-    return this->charge_point->start(connector_status_map);
+bool ChargePoint::start(const std::map<int, ChargePointStatus>& connector_status_map, BootReasonEnum bootreason) {
+    return this->charge_point->start(connector_status_map, bootreason);
 }
 
-bool ChargePoint::restart(const std::map<int, ChargePointStatus>& connector_status_map) {
-    return this->charge_point->restart(connector_status_map);
+bool ChargePoint::restart(const std::map<int, ChargePointStatus>& connector_status_map, BootReasonEnum bootreason) {
+    return this->charge_point->restart(connector_status_map, bootreason);
 }
 
 bool ChargePoint::stop() {
@@ -83,7 +83,8 @@ void ChargePoint::on_max_current_offered(int32_t connector, int32_t max_current)
     this->charge_point->on_max_current_offered(connector, max_current);
 }
 
-void ChargePoint::on_session_started(int32_t connector, const std::string& session_id, const std::string& reason,
+void ChargePoint::on_session_started(int32_t connector, const std::string& session_id,
+                                     const ocpp::SessionStartedReason reason,
                                      const std::optional<std::string>& session_logging_path) {
 
     this->charge_point->on_session_started(connector, session_id, reason, session_logging_path);
@@ -121,12 +122,16 @@ void ChargePoint::on_resume_charging(int32_t connector) {
     this->charge_point->on_resume_charging(connector);
 }
 
-void ChargePoint::on_error(int32_t connector, const ChargePointErrorCode& error_code) {
-    this->charge_point->on_error(connector, error_code);
+void ChargePoint::on_error(int32_t connector, const ChargePointErrorCode& error_code,
+                           const std::optional<CiString<50>>& info, const std::optional<CiString<255>>& vendor_id,
+                           const std::optional<CiString<50>>& vendor_error_code) {
+    this->charge_point->on_error(connector, error_code, info, vendor_id, vendor_error_code);
 }
 
-void ChargePoint::on_fault(int32_t connector, const ChargePointErrorCode& error_code) {
-    this->charge_point->on_fault(connector, error_code);
+void ChargePoint::on_fault(int32_t connector, const ChargePointErrorCode& error_code,
+                           const std::optional<CiString<50>>& info, const std::optional<CiString<255>>& vendor_id,
+                           const std::optional<CiString<50>>& vendor_error_code) {
+    this->charge_point->on_fault(connector, error_code, info, vendor_id, vendor_error_code);
 }
 
 void ChargePoint::on_log_status_notification(int32_t request_id, std::string log_status) {
@@ -160,6 +165,10 @@ void ChargePoint::on_plugin_timeout(int32_t connector) {
 
 void ChargePoint::on_security_event(const std::string& type, const std::string& tech_info) {
     this->charge_point->on_security_event(type, tech_info);
+}
+
+ChangeAvailabilityResponse ChargePoint::on_change_availability(const ChangeAvailabilityRequest& request) {
+    return this->charge_point->on_change_availability(request);
 }
 
 void ChargePoint::register_data_transfer_callback(
@@ -301,6 +310,10 @@ ConfigurationStatus ChargePoint::set_custom_configuration_key(CiString<50> key, 
 void ChargePoint::register_is_token_reserved_for_connector_callback(
     const std::function<bool(const int32_t connector, const std::string& id_token)>& callback) {
     this->charge_point->register_is_token_reserved_for_connector_callback(callback);
+}
+
+void ChargePoint::set_message_queue_resume_delay(std::chrono::seconds delay) {
+    this->charge_point->set_message_queue_resume_delay(delay);
 }
 
 } // namespace v16

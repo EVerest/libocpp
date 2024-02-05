@@ -27,7 +27,21 @@
 
 namespace ocpp {
 
-const auto STANDARD_MESSAGE_TIMEOUT = std::chrono::seconds(30);
+struct MessageQueueConfig {
+    int transaction_message_attempts;
+    int transaction_message_retry_interval; // seconds
+
+    // threshold for the accumulated sizes of the queues; if the queues exceed this limit,
+    // messages are potentially dropped in accordance with OCPP 2.0.1. Specification (cf. QueueAllMessages parameter)
+    int queues_total_size_threshold;
+
+    bool queue_all_messages; // cf. OCPP 2.0.1. "QueueAllMessages" in OCPPCommCtrlr
+
+    int message_timeout_seconds = 30;
+    int boot_notification_retry_interval_seconds =
+        60; // interval for BootNotification.req in case response by CSMS is CALLERROR or CSMS does not respond at all
+            // (within specified MessageTimeout)
+};
 
 /// \brief Contains a OCPP message in json form with additional information
 template <typename M> struct EnhancedMessage {
@@ -56,32 +70,43 @@ template <typename M> struct ControlMessage {
     DateTime timestamp;                       ///< A timestamp that shows when this message can be sent
 
     /// \brief Creates a new ControlMessage object from the provided \p message
-    explicit ControlMessage(json message);
+    explicit ControlMessage(const json& message);
 
     /// \brief Provides the unique message ID stored in the message
     /// \returns the unique ID of the contained message
-    MessageId uniqueId() const {
+    [[nodiscard]] MessageId uniqueId() const {
         return this->message[MESSAGE_ID];
     }
+
+    /// \brief Determine whether message is considered as transaction-related.
+    bool isTransactionMessage() const;
+
+    /// \brief True for transactional messages containing updates (measurements) for a transaction
+    bool isTransactionUpdateMessage() const;
+
+    /// \brief Determine whether message is a BootNotification.
+    bool isBootNotificationMessage() const;
 };
 
 /// \brief contains a message queue that makes sure that OCPPs synchronicity requirements are met
 template <typename M> class MessageQueue {
 private:
+    MessageQueueConfig config;
     std::shared_ptr<ocpp::common::DatabaseHandlerBase> database_handler;
-    int transaction_message_attempts;
-    int transaction_message_retry_interval; // seconds
+
     std::thread worker_thread;
     /// message deque for transaction related messages
     std::deque<std::shared_ptr<ControlMessage<M>>> transaction_message_queue;
     /// message queue for non-transaction related messages
-    std::queue<std::shared_ptr<ControlMessage<M>>> normal_message_queue;
+    std::deque<std::shared_ptr<ControlMessage<M>>> normal_message_queue;
     std::shared_ptr<ControlMessage<M>> in_flight;
-    std::mutex message_mutex;
-    std::condition_variable cv;
+    std::recursive_mutex message_mutex;
+    std::condition_variable_any cv;
     std::function<bool(json message)> send_callback;
     std::vector<M> external_notify;
     bool paused;
+    // Transiently true while the queue is paused, but is waiting to unpause
+    bool resuming;
     bool running;
     bool new_message;
     boost::uuids::random_generator uuid_generator;
@@ -89,6 +114,12 @@ private:
 
     Everest::SteadyTimer in_flight_timeout_timer;
     Everest::SteadyTimer notify_queue_timer;
+
+    // This timer schedules the resumption of the message queue
+    Everest::SteadyTimer resume_timer;
+    // Counts the number of pause()/resume() calls.
+    // Used by the resume timer callback to abort itself in case the timer triggered before it could be cancelled.
+    u_int64_t pause_resume_ctr = 0;
 
     // key is the message id of the stop transaction and the value is the transaction id
     // this map is used for StopTransaction.req that have been put on the message queue without having received a
@@ -127,14 +158,18 @@ private:
         return false;
     }
 
-    bool isTransactionMessage(const std::shared_ptr<ControlMessage<M>> message) const;
-
     void add_to_normal_message_queue(std::shared_ptr<ControlMessage<M>> message) {
         EVLOG_debug << "Adding message to normal message queue";
         {
-            std::lock_guard<std::mutex> lk(this->message_mutex);
-            this->normal_message_queue.push(message);
+            std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
+            // A BootNotification message should always jump the queue
+            if (message->messageType == M::BootNotification) {
+                this->normal_message_queue.push_front(message);
+            } else {
+                this->normal_message_queue.push_back(message);
+            }
             this->new_message = true;
+            this->check_queue_sizes();
         }
         this->cv.notify_all();
         EVLOG_debug << "Notified message queue worker";
@@ -142,28 +177,115 @@ private:
     void add_to_transaction_message_queue(std::shared_ptr<ControlMessage<M>> message) {
         EVLOG_debug << "Adding message to transaction message queue";
         {
-            std::lock_guard<std::mutex> lk(this->message_mutex);
+            std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
             this->transaction_message_queue.push_back(message);
             ocpp::common::DBTransactionMessage db_message{message->message, messagetype_to_string(message->messageType),
                                                           message->message_attempts, message->timestamp,
                                                           message->uniqueId()};
             this->database_handler->insert_transaction_message(db_message);
             this->new_message = true;
+            this->check_queue_sizes();
         }
         this->cv.notify_all();
         EVLOG_debug << "Notified message queue worker";
     }
 
+    void check_queue_sizes() {
+        if (this->transaction_message_queue.size() + this->normal_message_queue.size() <=
+            this->config.queues_total_size_threshold) {
+            return;
+        }
+        EVLOG_warning << "Queue sizes exceed threshold (" << this->config.queues_total_size_threshold << ") with "
+                      << this->transaction_message_queue.size() << " transaction and "
+                      << this->normal_message_queue.size() << " normal messages in queue";
+
+        while (this->transaction_message_queue.size() + this->normal_message_queue.size() >
+                   this->config.queues_total_size_threshold &&
+               !this->normal_message_queue.empty()) {
+            this->drop_messages_from_normal_message_queue();
+        }
+
+        while (this->transaction_message_queue.size() + this->normal_message_queue.size() >
+                   this->config.queues_total_size_threshold &&
+               this->drop_update_messages_from_transactional_message_queue()) {
+        }
+    }
+
+    void drop_messages_from_normal_message_queue() {
+        // try to drop approx 10% of the allowed size (at least 1)
+        int number_of_dropped_messages = std::min((int)this->normal_message_queue.size(),
+                                                  std::max(this->config.queues_total_size_threshold / 10, 1));
+
+        EVLOG_warning << "Dropping " << number_of_dropped_messages << " messages from normal message queue.";
+
+        for (int i = 0; i < number_of_dropped_messages; i++) {
+            this->normal_message_queue.pop_front();
+        }
+    }
+
+    /**
+     *  Heuristically drops every second update messag.
+     *  Drops every first, third, ... update message in between two non-update message; disregards transaction
+     * ids etc!
+     * Cf. OCPP 2.0.1. specification 2.1.9 "QueueAllMessages"
+     */
+    bool drop_update_messages_from_transactional_message_queue() {
+        int drop_count = 0;
+        std::deque<std::shared_ptr<ControlMessage<M>>> temporary_swap_queue;
+        bool remove_next_update_message = true;
+        while (!transaction_message_queue.empty()) {
+            auto element = transaction_message_queue.front();
+            transaction_message_queue.pop_front();
+            // drop every second update message (except last one)
+            if (remove_next_update_message && element->isTransactionUpdateMessage() &&
+                transaction_message_queue.size() > 1) {
+                EVLOG_debug << "Drop transactional message " << element->uniqueId();
+                database_handler->remove_transaction_message(element->uniqueId());
+                drop_count++;
+                remove_next_update_message = false;
+            } else {
+                remove_next_update_message = true;
+                temporary_swap_queue.push_back(element);
+            }
+        }
+
+        std::swap(transaction_message_queue, temporary_swap_queue);
+
+        if (drop_count > 0) {
+            EVLOG_warning << "Dropped " << drop_count << " transactional update messages to reduce queue size.";
+            return true;
+        } else {
+            EVLOG_warning << "There are no further transaction update messages to drop!";
+            return false;
+        }
+    }
+
+    // The public resume() delegates the actual resumption to this method
+    void resume_now(u_int64_t expected_pause_resume_ctr) {
+        std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
+        if (this->pause_resume_ctr == expected_pause_resume_ctr) {
+            this->paused = false;
+            this->resuming = false;
+            this->cv.notify_one();
+            EVLOG_debug << "resume() notified message queue";
+        }
+    }
+
+    // Computes the current message timeout = interval * attempt + message timeout
+    std::chrono::seconds current_message_timeout(unsigned int attempt) {
+        return std::chrono::seconds(this->config.message_timeout_seconds +
+                                    (this->config.transaction_message_retry_interval * attempt));
+    }
+
 public:
     /// \brief Creates a new MessageQueue object with the provided \p configuration and \p send_callback
-    MessageQueue(const std::function<bool(json message)>& send_callback, const int transaction_message_attempts,
-                 const int transaction_message_retry_interval, const std::vector<M>& external_notify,
-                 std::shared_ptr<common::DatabaseHandlerBase> database_handler) :
-        database_handler(database_handler),
-        transaction_message_attempts(transaction_message_attempts),
-        transaction_message_retry_interval(transaction_message_retry_interval),
+    MessageQueue(const std::function<bool(json message)>& send_callback, const MessageQueueConfig& config,
+                 const std::vector<M>& external_notify, std::shared_ptr<common::DatabaseHandlerBase> database_handler) :
+        database_handler(std::move(database_handler)),
+        config(config),
         external_notify(external_notify),
         paused(true),
+        resuming(false),
         running(true),
         new_message(false),
         uuid_generator(boost::uuids::random_generator()) {
@@ -175,8 +297,9 @@ public:
             while (this->running) {
                 EVLOG_debug << "Waiting for a message from the message queue";
 
-                std::unique_lock<std::mutex> lk(this->message_mutex);
+                std::unique_lock<std::recursive_mutex> lk(this->message_mutex);
                 using namespace std::chrono_literals;
+                // It's safe to wait on the cv here because we're guaranteed to only lock this->message_mutex once
                 this->cv.wait(lk, [this]() {
                     return !this->running || (!this->paused && this->new_message && this->in_flight == nullptr);
                 });
@@ -229,7 +352,8 @@ public:
                             queue_type = QueueType::Transaction;
                         }
                     } else {
-                        if (transaction_message->timestamp <= message->timestamp) {
+                        if (transaction_message->timestamp <= message->timestamp and
+                            message->messageType != M::BootNotification) {
                             EVLOG_debug << "transaction message timestamp <= normal message timestamp";
                             message = transaction_message;
                             queue_type = QueueType::Transaction;
@@ -268,29 +392,32 @@ public:
                 if (!this->send_callback(this->in_flight->message)) {
                     this->paused = true;
                     EVLOG_error << "Could not send message, this is most likely because the charge point is offline.";
-                    if (this->isTransactionMessage(this->in_flight)) {
+                    if (this->in_flight && this->in_flight->isTransactionMessage()) {
                         EVLOG_info << "The message in flight is transaction related and will be sent again once the "
                                       "connection can be established again.";
                         if (this->in_flight->message.at(CALL_ACTION) == "TransactionEvent") {
-                            this->in_flight->message.at(3)["offline"] = true;
+                            this->in_flight->message.at(CALL_PAYLOAD)["offline"] = true;
                         }
+                    } else if (this->config.queue_all_messages) {
+                        EVLOG_info << "The message in flight  will be sent again once the connection can be "
+                                      "established again since QueueAllMessages is set to 'true'.";
                     } else {
                         EVLOG_info << "The message in flight is not transaction related and will be dropped";
                         if (queue_type == QueueType::Normal) {
                             EnhancedMessage<M> enhanced_message;
                             enhanced_message.offline = true;
                             this->in_flight->promise.set_value(enhanced_message);
-                            this->normal_message_queue.pop();
+                            this->normal_message_queue.pop_front();
                         }
                     }
                     this->reset_in_flight();
                 } else {
                     EVLOG_debug << "Successfully sent message. UID: " << this->in_flight->uniqueId();
                     this->in_flight_timeout_timer.timeout([this]() { this->handle_timeout_or_callerror(std::nullopt); },
-                                                          STANDARD_MESSAGE_TIMEOUT);
+                                                          this->current_message_timeout(message->message_attempts));
                     switch (queue_type) {
                     case QueueType::Normal:
-                        this->normal_message_queue.pop();
+                        this->normal_message_queue.pop_front();
                         break;
                     case QueueType::Transaction:
                         this->transaction_message_queue.pop_front();
@@ -310,25 +437,30 @@ public:
         });
     }
 
-    MessageQueue(const std::function<bool(json message)>& send_callback, const int transaction_message_attempts,
-                 const int transaction_message_retry_interval,
+    MessageQueue(const std::function<bool(json message)>& send_callback, const MessageQueueConfig& config,
                  std::shared_ptr<common::DatabaseHandlerBase> databaseHandler) :
-        MessageQueue(send_callback, transaction_message_attempts, transaction_message_retry_interval, {},
-                     databaseHandler) {
+        MessageQueue(send_callback, config, {}, databaseHandler) {
     }
 
-    void get_transaction_messages_from_db() {
+    void get_transaction_messages_from_db(bool ignore_security_event_notifications = false) {
         std::vector<ocpp::common::DBTransactionMessage> transaction_messages =
             database_handler->get_transaction_messages();
 
         if (!transaction_messages.empty()) {
             for (auto& transaction_message : transaction_messages) {
-                std::shared_ptr<ControlMessage<M>> message =
-                    std::make_shared<ControlMessage<M>>(transaction_message.json_message);
-                message->messageType = string_to_messagetype(transaction_message.message_type);
-                message->timestamp = transaction_message.timestamp;
-                message->message_attempts = transaction_message.message_attempts;
-                transaction_message_queue.push_back(message);
+
+                if (ignore_security_event_notifications &&
+                    transaction_message.message_type == "SecurityEventNotification") {
+                    // remove from database in case SecurityEventNotification.req should not be sent
+                    this->database_handler->remove_transaction_message(transaction_message.unique_id);
+                } else {
+                    std::shared_ptr<ControlMessage<M>> message =
+                        std::make_shared<ControlMessage<M>>(transaction_message.json_message);
+                    message->messageType = string_to_messagetype(transaction_message.message_type);
+                    message->timestamp = transaction_message.timestamp;
+                    message->message_attempts = transaction_message.message_attempts;
+                    transaction_message_queue.push_back(message);
+                }
             }
 
             this->new_message = true;
@@ -340,20 +472,29 @@ public:
         if (!running) {
             return;
         }
+        json call_json = call;
+        push(call_json);
+    }
 
-        auto message = std::make_shared<ControlMessage<M>>(call);
-        if (this->isTransactionMessage(message)) {
+    void push(const json& message) {
+        if (!running) {
+            return;
+        }
+
+        auto control_message = std::make_shared<ControlMessage<M>>(message);
+        if (control_message->isTransactionMessage()) {
             // according to the spec the "transaction related messages" StartTransaction, StopTransaction and
             // MeterValues have to be delivered in chronological order
 
             // intentionally break this message for testing...
             // message->message[CALL_PAYLOAD]["broken"] = this->createMessageId();
-            this->add_to_transaction_message_queue(message);
+            this->add_to_transaction_message_queue(control_message);
         } else {
             // all other messages are allowed to "jump the queue" to improve user experience
             // TODO: decide if we only want to allow this for a subset of messages
-            if (!this->paused || message->messageType == M::BootNotification) {
-                this->add_to_normal_message_queue(message);
+            if (!this->paused || this->resuming || this->config.queue_all_messages ||
+                control_message->messageType == M::BootNotification) {
+                this->add_to_normal_message_queue(control_message);
             }
         }
         this->cv.notify_all();
@@ -400,14 +541,14 @@ public:
             auto enhanced_message = EnhancedMessage<M>();
             enhanced_message.offline = true;
             message->promise.set_value(enhanced_message);
-        } else if (this->isTransactionMessage(message)) {
+        } else if (message->isTransactionMessage()) {
             // according to the spec the "transaction related messages" StartTransaction, StopTransaction and
             // MeterValues have to be delivered in chronological order
             this->add_to_transaction_message_queue(message);
         } else {
             // all other messages are allowed to "jump the queue" to improve user experience
             // TODO: decide if we only want to allow this for a subset of messages
-            if (this->paused && message->messageType != M::BootNotification) {
+            if (this->paused && !this->resuming && message->messageType != M::BootNotification) {
                 // do not add a normal message to the queue if the queue is paused/offline
                 auto enhanced_message = EnhancedMessage<M>();
                 enhanced_message.offline = true;
@@ -446,7 +587,7 @@ public:
                 // we need to remove Call messages from in_flight if we receive a CallResult OR a CallError
 
                 // TODO(kai): we need to do some error handling in the CallError case
-                std::unique_lock<std::mutex> lk(this->message_mutex);
+                std::unique_lock<std::recursive_mutex> lk(this->message_mutex);
                 if (this->in_flight == nullptr) {
                     EVLOG_error
                         << "Received a CALLRESULT OR CALLERROR without a message in flight, this should not happen";
@@ -488,7 +629,7 @@ public:
                 this->in_flight->message.at(CALL_ACTION).template get<std::string>() + std::string("Response"));
             this->in_flight->promise.set_value(enhanced_message);
 
-            if (isTransactionMessage(this->in_flight)) {
+            if (this->in_flight->isTransactionMessage()) {
                 // We only remove the message as soon as a response is received. Otherwise we might miss a message if
                 // the charging station just boots after sending, but before receiving the result.
                 this->database_handler->remove_transaction_message(this->in_flight->uniqueId());
@@ -508,20 +649,29 @@ public:
 
     /// \brief Handles a message timeout or a CALLERROR. \p enhanced_message_opt is set only in case of CALLERROR
     void handle_timeout_or_callerror(const std::optional<EnhancedMessage<M>>& enhanced_message_opt) {
-        std::lock_guard<std::mutex> lk(this->message_mutex);
-        EVLOG_warning << "Message timeout or CALLERROR for: " << this->in_flight->messageType << " ("
-                      << this->in_flight->uniqueId() << ")";
-        if (this->isTransactionMessage(this->in_flight)) {
-            if (this->in_flight->message_attempts < this->transaction_message_attempts) {
+        std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
+        // We got a timeout iff enhanced_message_opt is empty. Otherwise, enhanced_message_opt contains the CallError.
+        bool timeout = !enhanced_message_opt.has_value();
+        if (timeout) {
+            EVLOG_warning << "Message timeout for: " << this->in_flight->messageType << " ("
+                          << this->in_flight->uniqueId() << ")";
+        } else {
+            EVLOG_warning << "CALLERROR for: " << this->in_flight->messageType << " (" << this->in_flight->uniqueId()
+                          << ")";
+        }
+
+        if (this->in_flight->isTransactionMessage()) {
+            if (this->in_flight->message_attempts < this->config.transaction_message_attempts) {
                 EVLOG_warning << "Message is transaction related and will therefore be sent again";
+                // Generate a new message ID for the retry
                 this->in_flight->message[MESSAGE_ID] = this->createMessageId();
-                if (this->transaction_message_retry_interval > 0) {
+                if (this->config.transaction_message_retry_interval > 0) {
                     // exponential backoff
                     this->in_flight->timestamp =
                         DateTime(this->in_flight->timestamp.to_time_point() +
-                                 std::chrono::seconds(this->transaction_message_retry_interval) *
+                                 std::chrono::seconds(this->config.transaction_message_retry_interval) *
                                      this->in_flight->message_attempts);
-                    EVLOG_debug << "Retry interval > 0: " << this->transaction_message_retry_interval
+                    EVLOG_debug << "Retry interval > 0: " << this->config.transaction_message_retry_interval
                                 << " attempting to retry message at: " << this->in_flight->timestamp;
                 } else {
                     // immediate retry
@@ -530,7 +680,7 @@ public:
                 }
 
                 EVLOG_warning << "Attempt: " << this->in_flight->message_attempts + 1 << "/"
-                              << this->transaction_message_attempts << " will be sent at "
+                              << this->config.transaction_message_attempts << " will be sent at "
                               << this->in_flight->timestamp;
 
                 this->transaction_message_queue.push_front(this->in_flight);
@@ -551,6 +701,22 @@ public:
                     this->in_flight->promise.set_value(enhanced_message);
                 }
             }
+        } else if (this->in_flight->isBootNotificationMessage()) {
+            EVLOG_warning << "Message is BootNotification.req and will therefore be sent again";
+            // Generate a new message ID for the retry
+            this->in_flight->message[MESSAGE_ID] = this->createMessageId();
+            // Spec does not define how to handle retries for BootNotification.req: We use the
+            // the boot_notification_retry_interval_seconds
+            this->in_flight->timestamp =
+                DateTime(this->in_flight->timestamp.to_time_point() +
+                         std::chrono::seconds(this->config.boot_notification_retry_interval_seconds));
+            this->transaction_message_queue.push_front(this->in_flight);
+            this->notify_queue_timer.at(
+                [this]() {
+                    this->new_message = true;
+                    this->cv.notify_all();
+                },
+                this->in_flight->timestamp.to_time_point());
         } else {
             EVLOG_warning << "Message is not transaction related, dropping it";
             if (enhanced_message_opt) {
@@ -578,28 +744,42 @@ public:
     /// \brief Pauses the message queue
     void pause() {
         EVLOG_debug << "pause()";
-        std::lock_guard<std::mutex> lk(this->message_mutex);
+        std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
+        this->pause_resume_ctr++;
+        this->resume_timer.stop();
         this->paused = true;
+        this->resuming = false;
         this->cv.notify_one();
         EVLOG_debug << "pause() notified message queue";
     }
 
     /// \brief Resumes the message queue
-    void resume() {
-        EVLOG_debug << "resume()";
-        std::lock_guard<std::mutex> lk(this->message_mutex);
-        this->paused = false;
-        this->cv.notify_one();
-        EVLOG_debug << "resume() notified message queue";
+    void resume(std::chrono::seconds delay_on_reconnect) {
+        EVLOG_debug << "resume() called";
+        std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
+        if (!this->paused) {
+            return;
+        }
+        this->pause_resume_ctr++;
+        // Do not delay if this is the first call to resume(), i.e. this is the initial connection
+        if (this->pause_resume_ctr > 1 && delay_on_reconnect > std::chrono::seconds(0)) {
+            this->resuming = true;
+            EVLOG_debug << "Delaying message queue resume by " << delay_on_reconnect.count() << " seconds";
+            u_int64_t expected_pause_resume_ctr = this->pause_resume_ctr;
+            this->resume_timer.timeout(
+                [this, expected_pause_resume_ctr] { this->resume_now(expected_pause_resume_ctr); }, delay_on_reconnect);
+        } else {
+            this->resume_now(this->pause_resume_ctr);
+        }
     }
 
     bool is_transaction_message_queue_empty() {
-        std::lock_guard<std::mutex> lk(this->message_mutex);
+        std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
         return this->transaction_message_queue.empty();
     }
 
     bool contains_transaction_messages(const CiString<36> transaction_id) {
-        std::lock_guard<std::mutex> lk(this->message_mutex);
+        std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
         for (const auto control_message : this->transaction_message_queue) {
             if (control_message->messageType == v201::MessageType::TransactionEvent) {
                 v201::TransactionEventRequest req = control_message->message.at(CALL_PAYLOAD);
@@ -612,7 +792,7 @@ public:
     }
 
     bool contains_stop_transaction_message(const int32_t transaction_id) {
-        std::lock_guard<std::mutex> lk(this->message_mutex);
+        std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
         for (const auto control_message : this->transaction_message_queue) {
             if (control_message->messageType == v16::MessageType::StopTransaction) {
                 v16::StopTransactionRequest req = control_message->message.at(CALL_PAYLOAD);
@@ -626,12 +806,17 @@ public:
 
     /// \brief Set transaction_message_attempts to given \p transaction_message_attempts
     void update_transaction_message_attempts(const int transaction_message_attempts) {
-        this->transaction_message_attempts = transaction_message_attempts;
+        this->config.transaction_message_attempts = transaction_message_attempts;
     }
 
     /// \brief Set transaction_message_retry_interval to given \p transaction_message_retry_interval in seconds
     void update_transaction_message_retry_interval(const int transaction_message_retry_interval) {
-        this->transaction_message_retry_interval = transaction_message_retry_interval;
+        this->config.transaction_message_retry_interval = transaction_message_retry_interval;
+    }
+
+    /// \brief Set message_timeout to given \p timeout (in seconds)
+    void update_message_timeout(const int timeout) {
+        this->config.message_timeout_seconds = timeout;
     }
 
     /// \brief Creates a unique message ID
@@ -667,7 +852,7 @@ public:
 
         // replace transaction id in meter values if start_transaction_message_id is present in map
         // this is necessary when the chargepoint queued MeterValue.req for a transaction with unknown transaction_id
-        std::lock_guard<std::mutex> lk(this->message_mutex);
+        std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
         if (this->start_transaction_mid_meter_values_mid_map.count(start_transaction_message_id)) {
             for (auto it = this->transaction_message_queue.begin(); it != transaction_message_queue.end(); ++it) {
                 for (const auto& meter_value_message_id :

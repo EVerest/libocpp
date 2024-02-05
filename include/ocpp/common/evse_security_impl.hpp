@@ -21,6 +21,9 @@ struct SecurityConfiguration {
     fs::path csms_leaf_key_directory;
     fs::path secc_leaf_cert_directory;
     fs::path secc_leaf_key_directory;
+    fs::path secc_leaf_cert_link;
+    fs::path secc_leaf_key_link;
+    fs::path cpo_cert_chain_link;
     std::optional<std::string> private_key_password;
 };
 
@@ -46,8 +49,9 @@ public:
     bool is_ca_certificate_installed(const CaCertificateType& certificate_type) override;
     std::string generate_certificate_signing_request(const CertificateSigningUseEnum& certificate_type,
                                                      const std::string& country, const std::string& organization,
-                                                     const std::string& common) override;
+                                                     const std::string& common, bool use_tpm) override;
     std::optional<KeyPair> get_key_pair(const CertificateSigningUseEnum& certificate_type) override;
+    bool update_certificate_links(const CertificateSigningUseEnum& certificate_type) override;
     std::string get_verify_file(const CaCertificateType& certificate_type) override;
     int get_leaf_expiry_days_count(const CertificateSigningUseEnum& certificate_type) override;
 };

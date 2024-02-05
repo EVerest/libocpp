@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
+#pragma once
+
 #include <future>
 #include <set>
 
@@ -54,6 +56,8 @@
 #include <ocpp/v201/messages/UnlockConnector.hpp>
 #include <ocpp/v201/messages/UpdateFirmware.hpp>
 
+#include "component_state_manager.hpp"
+
 namespace ocpp {
 namespace v201 {
 
@@ -78,16 +82,32 @@ struct Callbacks {
     std::function<void(const std::optional<const int32_t> evse_id, const ResetEnum& reset_type)> reset_callback;
     std::function<void(const int32_t evse_id, const ReasonEnum& stop_reason)> stop_transaction_callback;
     std::function<void(const int32_t evse_id)> pause_charging_callback;
-    ///
-    /// \brief Change availability of charging station / evse / connector.
-    /// \param request The request.
-    /// \param persist True to persist the status after reboot.
-    ///
-    /// Persist is set to 'false' if the status does not need to be stored after restarting. Otherwise it is true.
-    /// False is for example during a reset OnIdle where first an 'unavailable' is sent until the charging session
-    /// stopped. True is for example when the CSMS sent an 'inoperative' request.
-    ///
-    std::function<void(const ChangeAvailabilityRequest& request, const bool persist)> change_availability_callback;
+
+    /// \brief Used to notify the user of libocpp that the Operative/Inoperative state of the charging station changed
+    /// If as a result the state of EVSEs or connectors changed as well, libocpp will additionally call the
+    /// evse_effective_operative_status_changed_callback once for each EVSE whose status changed, and
+    /// connector_effective_operative_status_changed_callback once for each connector whose status changed.
+    /// If left empty, the callback is ignored.
+    /// \param new_status The operational status the CS switched to
+    std::optional<std::function<void(const OperationalStatusEnum new_status)>>
+        cs_effective_operative_status_changed_callback;
+
+    /// \brief Used to notify the user of libocpp that the Operative/Inoperative state of an EVSE changed
+    /// If as a result the state of connectors changed as well, libocpp will additionally call the
+    /// connector_effective_operative_status_changed_callback once for each connector whose status changed.
+    /// If left empty, the callback is ignored.
+    /// \param evse_id The id of the EVSE
+    /// \param new_status The operational status the EVSE switched to
+    std::optional<std::function<void(const int32_t evse_id, const OperationalStatusEnum new_status)>>
+        evse_effective_operative_status_changed_callback;
+
+    /// \brief Used to notify the user of libocpp that the Operative/Inoperative state of a connector changed.
+    /// \param evse_id The id of the EVSE
+    /// \param connector_id The ID of the connector within the EVSE
+    /// \param new_status The operational status the connector switched to
+    std::function<void(const int32_t evse_id, const int32_t connector_id, const OperationalStatusEnum new_status)>
+        connector_effective_operative_status_changed_callback;
+
     std::function<GetLogResponse(const GetLogRequest& request)> get_log_request_callback;
     std::function<UnlockConnectorResponse(const int32_t evse_id, const int32_t connecor_id)> unlock_connector_callback;
     // callback to be called when the request can be accepted. authorize_remote_start indicates if Authorize.req needs
@@ -142,6 +162,10 @@ struct Callbacks {
 
     /// \brief Callback function that can be called when all connectors are unavailable
     std::optional<std::function<void()>> all_connectors_unavailable_callback;
+
+    /// \brief Callback function that can be used to handle arbitrary data transfers for all vendorId and
+    /// messageId
+    std::optional<std::function<DataTransferResponse(const DataTransferRequest& request)>> data_transfer_callback;
 };
 
 /// \brief Combines ChangeAvailabilityRequest with persist flag for scheduled Availability changes
@@ -164,11 +188,6 @@ private:
 
     std::map<int32_t, AvailabilityChange> scheduled_change_availability_requests;
 
-    std::map<std::string,
-             std::map<std::string, std::function<DataTransferResponse(const std::optional<std::string>& msg)>>>
-        data_transfer_callbacks;
-    std::mutex data_transfer_callbacks_mutex;
-
     std::map<int32_t, std::pair<IdToken, int32_t>> remote_start_id_per_evse;
 
     // timers
@@ -185,15 +204,20 @@ private:
 
     // states
     RegistrationStatusEnum registration_status;
-    OperationalStatusEnum operational_state;
     FirmwareStatusEnum firmware_status;
-    int32_t firmware_status_id;
+    // The request ID in the last firmware update status received
+    std::optional<int32_t> firmware_status_id;
+    // The last firmware status which will be posted before the firmware is installed.
     FirmwareStatusEnum firmware_status_before_installing = FirmwareStatusEnum::SignatureVerified;
     UploadLogStatusEnum upload_log_status;
     int32_t upload_log_status_id;
     BootReasonEnum bootreason;
     int network_configuration_priority;
     bool disable_automatic_websocket_reconnects;
+    bool skip_invalid_csms_certificate_notifications;
+
+    /// \brief Component responsible for maintaining and persisting the operational status of CS, EVSEs, and connectors.
+    std::shared_ptr<ComponentStateManager> component_state_manager;
 
     // store the connector status
     struct EvseConnectorPair {
@@ -210,7 +234,6 @@ private:
         }
     };
 
-    std::map<EvseConnectorPair, ConnectorStatusEnum> conn_state_per_evse;
     std::chrono::time_point<std::chrono::steady_clock> time_disconnected;
     AverageMeterValues aligned_data_evse0; // represents evseId = 0 meter value
 
@@ -227,6 +250,8 @@ private:
 
     /// \brief Handler for automatic or explicit OCSP cache updates
     OcspUpdater ocsp_updater;
+    /// \brief optional delay to resumption of message queue after reconnecting to the CSMS
+    std::chrono::seconds message_queue_resume_delay = std::chrono::seconds(0);
 
     bool send(CallError call_error);
 
@@ -366,7 +391,7 @@ private:
 
     // Functional Block B: Provisioning
     void boot_notification_req(const BootReasonEnum& reason);
-    void notify_report_req(const int request_id, const int seq_no, const std::vector<ReportData>& report_data);
+    void notify_report_req(const int request_id, const std::vector<ReportData>& report_data);
 
     // Functional Block C: Authorization
     AuthorizeResponse authorize_req(const IdToken id_token, const std::optional<CiString<5500>>& certificate,
@@ -405,7 +430,7 @@ private:
     void handle_set_variables_req(Call<SetVariablesRequest> call);
     void handle_get_variables_req(const EnhancedMessage<v201::MessageType>& message);
     void handle_get_base_report_req(Call<GetBaseReportRequest> call);
-    void handle_get_report_req(Call<GetReportRequest> call);
+    void handle_get_report_req(const EnhancedMessage<v201::MessageType>& message);
     void handle_set_network_profile_req(Call<SetNetworkProfileRequest> call);
     void handle_reset_req(Call<ResetRequest> call);
 
@@ -474,6 +499,21 @@ private:
             return call_result.msg;
         };
     };
+
+    /// \brief Checks if all connectors are effectively inoperative.
+    /// If this is the case, calls the all_connectors_unavailable_callback
+    /// This is used e.g. to allow firmware updates once all transactions have finished
+    bool are_all_connectors_effectively_inoperative();
+
+    /// \brief Returns a pointer to the EVSE with ID \param evse_id
+    Evse* get_evse(int32_t evse_id);
+
+    /// \brief Returns a pointer to the connector with ID \param connector_id in the EVSE with ID \param evse_id
+    Connector* get_connector(int32_t evse_id, int32_t connector_id);
+
+    /// \brief Immediately execute the given \param request to change the operational state of a component
+    /// If \param persist is set to true, the change will be persisted across a reboot
+    void execute_change_availability_request(ChangeAvailabilityRequest request, bool persist);
 
 public:
     /// \brief Construct a new ChargePoint object
@@ -570,7 +610,7 @@ public:
     /// \param id_token
     /// \param signed_meter_value
     void on_transaction_finished(const int32_t evse_id, const DateTime& timestamp, const MeterValue& meter_stop,
-                                 const ReasonEnum reason, const std::optional<std::string>& id_token,
+                                 const ReasonEnum reason, const std::optional<IdToken>& id_token,
                                  const std::optional<std::string>& signed_meter_value,
                                  const ChargingStateEnum charging_state);
 
@@ -588,9 +628,9 @@ public:
     /// becomes unavailable
     void on_unavailable(const int32_t evse_id, const int32_t connector_id);
 
-    /// \brief Event handler that should be called when the connector on the given \p evse_id and \p connector_id
-    /// becomes operative again
-    void on_operative(const int32_t evse_id, const int32_t connector_id);
+    /// \brief Event handler that should be called when the connector returns from unavailable on the given \p evse_id
+    /// and \p connector_id .
+    void on_enabled(const int32_t evse_id, const int32_t connector_id);
 
     /// \brief Event handler that should be called when the connector on the given evse_id and connector_id is faulted.
     /// \param evse_id          Faulted EVSE id
@@ -642,8 +682,47 @@ public:
     /// \param messageId
     /// \param data
     /// \return DataTransferResponse contaning the result from CSMS
-    DataTransferResponse data_transfer_req(const CiString<255>& vendorId, const CiString<50>& messageId,
-                                           const std::string& data);
+    DataTransferResponse data_transfer_req(const CiString<255>& vendorId, const std::optional<CiString<50>>& messageId,
+                                           const std::optional<std::string>& data);
+
+    /// \brief Switches the operative status of the CS
+    /// \param new_status: The new operative status to switch to
+    /// \param persist: True if the updated state should be persisted in the database
+    void set_cs_operative_status(OperationalStatusEnum new_status, bool persist);
+
+    /// \brief Switches the operative status of an EVSE
+    /// \param evse_id: The ID of the EVSE, empty if the CS is addressed
+    /// \param new_status: The new operative status to switch to
+    /// \param persist: True if the updated state should be persisted in the database
+    void set_evse_operative_status(int32_t evse_id, OperationalStatusEnum new_status, bool persist);
+
+    /// \brief Switches the operative status of the CS, an EVSE, or a connector, and recomputes effective statuses
+    /// \param evse_id: The ID of the EVSE, empty if the CS is addressed
+    /// \param connector_id: The ID of the connector, empty if an EVSE or the CS is addressed
+    /// \param new_status: The new operative status to switch to
+    /// \param persist: True if the updated state should be persisted in the database
+    void set_connector_operative_status(int32_t evse_id, int32_t connector_id, OperationalStatusEnum new_status,
+                                        bool persist);
+
+    /// \brief Delay draining the message queue after reconnecting, so the CSMS can perform post-reconnect checks first
+    /// \param delay The delay period (seconds)
+    void set_message_queue_resume_delay(std::chrono::seconds delay) {
+        this->message_queue_resume_delay = delay;
+    }
+
+    /// \brief Requests a value of a VariableAttribute specified by combination of \p component_id and \p variable_id
+    /// from the device model
+    /// \tparam T datatype of the value that is requested
+    /// \param component_id
+    /// \param variable_id
+    /// \param attribute_enum
+    /// \return Response to request that contains status of the request and the requested value as std::optional<T> .
+    /// The value is present if the status is GetVariableStatusEnum::Accepted
+    template <typename T>
+    RequestDeviceModelResponse<T> request_value(const Component& component_id, const Variable& variable_id,
+                                                const AttributeEnum& attribute_enum) {
+        return this->device_model->request_value<T>(component_id, variable_id, attribute_enum);
+    }
 };
 
 } // namespace v201

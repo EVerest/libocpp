@@ -19,6 +19,8 @@ The schema files of both folders will be used to create the tables and entries f
 components and variables.
 """
 
+from __future__ import annotations
+
 import argparse
 import json
 import sqlite3
@@ -163,7 +165,7 @@ class DeviceModelDatabaseInitializer:
         data = (
             DATATYPE_ENCODING.get(characteristics.get("dataType")), characteristics.get("maxLimit"),
             characteristics.get(
-                "minLimit"), characteristics.get("supportsMonitoring"), None, characteristics.get("valuesList"))
+                "minLimit"), characteristics.get("supportsMonitoring"), characteristics.get("unit"), characteristics.get("valuesList"))
         cur.execute(("INSERT OR REPLACE INTO VARIABLE_CHARACTERISTICS (DATATYPE_ID, MAX_LIMIT, MIN_LIMIT,"
                      "SUPPORTS_MONITORING, UNIT, VALUES_LIST) VALUES(?,?,?,?,?,?)"), data)
 

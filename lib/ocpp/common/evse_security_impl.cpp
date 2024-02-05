@@ -16,6 +16,10 @@ EvseSecurityImpl::EvseSecurityImpl(const SecurityConfiguration& security_configu
     file_paths.directories.secc_leaf_cert_directory = security_configuration.secc_leaf_cert_directory;
     file_paths.directories.secc_leaf_key_directory = security_configuration.secc_leaf_key_directory;
 
+    file_paths.links.secc_leaf_cert_link = security_configuration.secc_leaf_cert_link;
+    file_paths.links.secc_leaf_key_link = security_configuration.secc_leaf_key_link;
+    file_paths.links.cpo_cert_chain_link = security_configuration.cpo_cert_chain_link;
+
     this->evse_security =
         std::make_unique<evse_security::EvseSecurity>(file_paths, security_configuration.private_key_password);
 }
@@ -82,9 +86,9 @@ bool EvseSecurityImpl::is_ca_certificate_installed(const CaCertificateType& cert
 std::string EvseSecurityImpl::generate_certificate_signing_request(const CertificateSigningUseEnum& certificate_type,
                                                                    const std::string& country,
                                                                    const std::string& organization,
-                                                                   const std::string& common) {
-    return this->evse_security->generate_certificate_signing_request(evse_security::LeafCertificateType::CSMS, country,
-                                                                     organization, common);
+                                                                   const std::string& common, bool use_tpm) {
+    return this->evse_security->generate_certificate_signing_request(conversions::from_ocpp(certificate_type), country,
+                                                                     organization, common, use_tpm);
 }
 
 std::optional<KeyPair> EvseSecurityImpl::get_key_pair(const CertificateSigningUseEnum& certificate_type) {
@@ -96,6 +100,10 @@ std::optional<KeyPair> EvseSecurityImpl::get_key_pair(const CertificateSigningUs
     } else {
         return std::nullopt;
     }
+}
+
+bool EvseSecurityImpl::update_certificate_links(const CertificateSigningUseEnum& certificate_type) {
+    return this->evse_security->update_certificate_links(conversions::from_ocpp(certificate_type));
 }
 
 std::string EvseSecurityImpl::get_verify_file(const CaCertificateType& certificate_type) {
