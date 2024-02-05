@@ -68,20 +68,23 @@ public:
 
     template <class Rep, class Period>
     system_time_point interval_starting_from(const std::function<void()>& callback,
-                                const std::chrono::duration<Rep, Period> interval, system_time_point start_point) {
+                                             const std::chrono::duration<Rep, Period> interval,
+                                             system_time_point start_point) {
         this->callback = callback;
         return this->interval_starting_from(interval, start_point);
     }
 
     template <class Rep, class Period>
-    system_time_point interval_starting_from(const std::chrono::duration<Rep, Period> interval, system_time_point start_point) {
+    system_time_point interval_starting_from(const std::chrono::duration<Rep, Period> interval,
+                                             system_time_point start_point) {
         this->start_point = start_point;
         this->call_interval = interval;
 
         return this->call_next();
     }
 
-    template <class Rep, class Period> system_time_point set_interval(const std::chrono::duration<Rep, Period>& interval) {
+    template <class Rep, class Period>
+    system_time_point set_interval(const std::chrono::duration<Rep, Period>& interval) {
         this->call_interval = interval;
         return this->call_next();
     }

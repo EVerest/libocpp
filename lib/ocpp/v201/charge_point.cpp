@@ -355,7 +355,7 @@ void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime&
             this->device_model->get_value<std::string>(ControllerComponentVariables::SampledDataTxEndedMeasurands)),
         utils::get_measurands_vec(
             this->device_model->get_value<std::string>(ControllerComponentVariables::AlignedDataTxEndedMeasurands)),
-            timestamp));
+        timestamp));
 
     if (meter_values.value().empty()) {
         meter_values.reset();

@@ -95,8 +95,7 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
                 this->transaction_meter_value_req(this->get_meter_value(), this->transaction->get_transaction(),
                                                   transaction->get_seq_no(), this->transaction->reservation_id);
             },
-            sampled_data_tx_updated_interval,
-            date::utc_clock::to_sys(timestamp.to_time_point()));
+            sampled_data_tx_updated_interval, date::utc_clock::to_sys(timestamp.to_time_point()));
     }
 
     if (sampled_data_tx_ended_interval > 0s) {
@@ -105,8 +104,7 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
                 this->database_handler->transaction_metervalues_insert(this->transaction->transactionId.get(),
                                                                        this->get_meter_value());
             },
-            sampled_data_tx_ended_interval,
-            date::utc_clock::to_sys(timestamp.to_time_point()));
+            sampled_data_tx_ended_interval, date::utc_clock::to_sys(timestamp.to_time_point()));
     }
 
     if (aligned_data_tx_updated_interval > 0s) {
@@ -141,25 +139,23 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
 
     if (aligned_data_tx_ended_interval > 0s) {
         auto store_aligned_metervalue = [this, aligned_data_tx_ended_interval] {
-                auto meter_value = this->aligned_data_tx_end.retrieve_processed_values();
+            auto meter_value = this->aligned_data_tx_end.retrieve_processed_values();
 
-                // If empty fallback on last updated metervalue
-                if (meter_value.sampledValue.empty()) {
-                    meter_value = get_meter_value();
-                }
+            // If empty fallback on last updated metervalue
+            if (meter_value.sampledValue.empty()) {
+                meter_value = get_meter_value();
+            }
 
-                for (auto& item : meter_value.sampledValue) {
-                    item.context = ReadingContextEnum::Sample_Clock;
-                }
-                if (this->device_model
-                        .get_optional_value<bool>(ControllerComponentVariables::RoundClockAlignedTimestamps)
-                        .value_or(false)) {
-                    meter_value.timestamp = utils::align_timestamp(DateTime{}, aligned_data_tx_ended_interval);
-                }
-                this->database_handler->transaction_metervalues_insert(this->transaction->transactionId.get(),
-                                                                       meter_value);
-                this->aligned_data_tx_end.clear_values();
-            };
+            for (auto& item : meter_value.sampledValue) {
+                item.context = ReadingContextEnum::Sample_Clock;
+            }
+            if (this->device_model.get_optional_value<bool>(ControllerComponentVariables::RoundClockAlignedTimestamps)
+                    .value_or(false)) {
+                meter_value.timestamp = utils::align_timestamp(DateTime{}, aligned_data_tx_ended_interval);
+            }
+            this->database_handler->transaction_metervalues_insert(this->transaction->transactionId.get(), meter_value);
+            this->aligned_data_tx_end.clear_values();
+        };
 
         auto next_interval = transaction->aligned_tx_ended_meter_values_timer.interval_starting_from(
             store_aligned_metervalue, aligned_data_tx_ended_interval,

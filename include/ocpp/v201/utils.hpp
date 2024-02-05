@@ -33,11 +33,9 @@ MeterValue get_meter_value_with_measurands_applied(const MeterValue& _meter_valu
 /// Sample_Clock will be filtered using \p aligned_tx_ended_measurands
 /// Any metervalue after \p max_timestamp will also be removed.
 ///\retval filtered meter values
-std::vector<MeterValue>
-get_meter_values_with_measurands_applied(const std::vector<MeterValue>& meter_values,
-                                         const std::vector<MeasurandEnum>& sampled_tx_ended_measurands,
-                                         const std::vector<MeasurandEnum>& aligned_tx_ended_measurands,
-                                         ocpp::DateTime max_timestamp);
+std::vector<MeterValue> get_meter_values_with_measurands_applied(
+    const std::vector<MeterValue>& meter_values, const std::vector<MeasurandEnum>& sampled_tx_ended_measurands,
+    const std::vector<MeasurandEnum>& aligned_tx_ended_measurands, ocpp::DateTime max_timestamp);
 
 /// \brief Converts the given \p stop_reason to a TriggerReasonEnum
 /// \param stop_reason

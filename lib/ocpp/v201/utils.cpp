@@ -51,11 +51,9 @@ MeterValue get_meter_value_with_measurands_applied(const MeterValue& _meter_valu
     return meter_value;
 }
 
-std::vector<MeterValue>
-get_meter_values_with_measurands_applied(const std::vector<MeterValue>& meter_values,
-                                         const std::vector<MeasurandEnum>& sampled_tx_ended_measurands,
-                                         const std::vector<MeasurandEnum>& aligned_tx_ended_measurands,
-                                         ocpp::DateTime max_timestamp) {
+std::vector<MeterValue> get_meter_values_with_measurands_applied(
+    const std::vector<MeterValue>& meter_values, const std::vector<MeasurandEnum>& sampled_tx_ended_measurands,
+    const std::vector<MeasurandEnum>& aligned_tx_ended_measurands, ocpp::DateTime max_timestamp) {
     std::vector<MeterValue> meter_values_result;
 
     for (const auto& meter_value : meter_values) {
