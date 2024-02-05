@@ -2260,8 +2260,7 @@ void ChargePointImpl::handleGetInstalledCertificateIdsRequest(ocpp::Call<GetInst
     }
     // this is common CertificateHashDataChain
     const auto certificate_hash_data_chains = this->evse_security->get_installed_certificates(certificate_types);
-    if(!certificate_hash_data_chains.empty())
-    {
+    if (!certificate_hash_data_chains.empty()) {
         // convert ocpp::CertificateHashData to v16::CertificateHashData
         std::optional<std::vector<CertificateHashDataType>> certificate_hash_data_16_vec_opt;
         std::vector<CertificateHashDataType> certificate_hash_data_16_vec;
