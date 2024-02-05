@@ -21,7 +21,7 @@ add_test(${PROJECT_NAME}_database_tests ${PROJECT_NAME}_database_tests)
 add_executable(${PROJECT_NAME}_unit_tests
         lib/ocpp/v201/test_component_state_manager.cpp)
 
-add_custom_command(TARGET ${PROJECT_NAME}__unit_tests POST_BUILD
+add_custom_command(TARGET ${PROJECT_NAME}_unit_tests POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/resources/unittest_device_model.db ${CMAKE_CURRENT_BINARY_DIR}/resources/unittest_device_model.db
         COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/resources/unittest_device_model_missing_required.db ${CMAKE_CURRENT_BINARY_DIR}/resources/unittest_device_model_missing_required.db
 )
