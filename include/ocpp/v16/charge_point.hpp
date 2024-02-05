@@ -458,7 +458,8 @@ public:
                                                      const std::function<void(const KeyValue& key_value)>& callback);
 
     /// \brief registers a \p callback function that can be used to react on changed configuration key and value. This
-    /// callback is called when a configuration key has been changed by the CSMS, where no key based callback is assigned
+    /// callback is called when a configuration key has been changed by the CSMS, where no key based callback is
+    /// assigned
     /// \param callback executed when this configuration key and its value changed
     void register_generic_configuration_key_changed_callback(
         const std::function<void(const CiString<50>& key, const CiString<500>& value)>& callback);
