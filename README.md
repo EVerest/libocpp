@@ -9,7 +9,7 @@ Libocpp provides a complete implementation of OCPP 1.6. The implementation of OC
 
 ## Get Involved
 
-See the [COMMUNITY.md](COMMUNITY.md) and [COMMUNITY.md](COMMUNITY.md) of the EVerest project to get involved.
+See the [COMMUNITY.md](https://github.com/EVerest/EVerest/blob/main/COMMUNITY.md) and [CONTRIBUTING.md](https://github.com/EVerest/EVerest/blob/main/CONTRIBUTING.md) of the EVerest project to get involved.
 
 ## Table of contents
 - [C++ implementation of OCPP](#c-implementation-of-ocpp)
