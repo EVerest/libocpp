@@ -1446,8 +1446,8 @@ void ChargePointImpl::handleChangeConfigurationRequest(ocpp::Call<ChangeConfigur
         kv.value().value = call.msg.value;
         this->configuration_key_changed_callbacks[call.msg.key](kv.value());
     } else {
-        if (this->configuration_key_changed_callback != nullptr and response.status == ConfigurationStatus::Accepted) {
-            this->configuration_key_changed_callback(call.msg.key, kv.value().value.value());
+        if (this->generic_configuration_key_changed_callback != nullptr and response.status == ConfigurationStatus::Accepted) {
+            this->generic_configuration_key_changed_callback(call.msg.key, kv.value().value.value());
         }
     }
 }
