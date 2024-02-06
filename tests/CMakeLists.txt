@@ -16,7 +16,11 @@ target_link_libraries(${PROJECT_NAME}_database_tests PRIVATE
     )
 
 
-add_test(${PROJECT_NAME}_database_tests ${PROJECT_NAME}_database_tests)
+add_test(
+    NAME ${PROJECT_NAME}_database_tests
+    COMMAND ${PROJECT_NAME}_database_tests
+)
+
 
 add_executable(${PROJECT_NAME}_unit_tests
         lib/ocpp/v201/test_component_state_manager.cpp)
@@ -26,7 +30,10 @@ add_custom_command(TARGET ${PROJECT_NAME}_unit_tests POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/resources/unittest_device_model_missing_required.db ${CMAKE_CURRENT_BINARY_DIR}/resources/unittest_device_model_missing_required.db
 )
 
-add_test(${PROJECT_NAME}_unit_tests ${PROJECT_NAME}_unit_tests)
+add_test(
+    NAME ${PROJECT_NAME}_unit_tests
+    COMMAND ${PROJECT_NAME}_unit_tests
+)
 
 target_include_directories(${PROJECT_NAME}_unit_tests PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${GTEST_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME}_unit_tests PRIVATE
@@ -52,4 +59,7 @@ target_link_libraries(${PROJECT_NAME}_utils_tests PRIVATE
         ${GTEST_MAIN_LIBRARIES}
 )
 
-add_test(${PROJECT_NAME}_utils_tests ${PROJECT_NAME}_utils_tests)
+add_test(
+    NAME ${PROJECT_NAME}_utils_tests
+    COMMAND ${PROJECT_NAME}_utils_tests
+)

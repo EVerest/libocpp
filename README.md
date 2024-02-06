@@ -535,6 +535,7 @@ Run the unit tests
   
 ```bash
   cmake .. -DBUILD_TESTING=ON
+  make test
 ```
 
 ## Building with FetchContent instead of EDM
