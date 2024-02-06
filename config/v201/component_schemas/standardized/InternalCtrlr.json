@@ -550,6 +550,7 @@
                   "mutability": "ReadOnly"
               }
           ],
+          "description": "If enabled the metervalues configured with the AlignedDataCtrlr will be rounded to the exact time intervals",
           "default": "0",
           "type": "boolean"
       }
