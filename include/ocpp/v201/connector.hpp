@@ -46,6 +46,7 @@ private:
 
     /// \brief status mutex to protect the status of the connector against concurrent updates
     std::mutex status_mutex;
+
 public:
     /// \brief Construct a new Connector object
     /// \param evse_id id of the EVSE the connector is ap art of
