@@ -286,7 +286,7 @@ tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connect
             if (certificate_path.empty()) {
                 certificate_path = certificate_key_pair.value().certificate_single_path;
             }
-            
+
             EVLOG_info << "Using certificate: " << certificate_path;
             if (SSL_CTX_use_certificate_chain_file(context->native_handle(), certificate_path.c_str()) != 1) {
                 EVLOG_AND_THROW(std::runtime_error("Could not use client certificate file within SSL context"));
