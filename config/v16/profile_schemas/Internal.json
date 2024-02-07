@@ -18,7 +18,7 @@
         },
         "CentralSystemURI": {
             "type": "string",
-            "readOnly": true,
+            "readOnly": false,
             "minLength": 1
         },
         "ChargeBoxSerialNumber": {

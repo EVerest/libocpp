@@ -42,6 +42,7 @@ public:
     std::string getChargePointId();
     KeyValue getChargePointIdKeyValue();
     std::string getCentralSystemURI();
+    void setCentralSystemURI(std::string central_system_uri);
     KeyValue getCentralSystemURIKeyValue();
     std::string getChargeBoxSerialNumber();
     KeyValue getChargeBoxSerialNumberKeyValue();
