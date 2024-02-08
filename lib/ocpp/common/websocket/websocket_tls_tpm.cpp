@@ -632,7 +632,8 @@ void WebsocketTlsTPM::on_conn_close() {
     this->disconnected_callback();
     this->cancel_reconnect_timer();
 
-    this->closed_callback(websocketpp::close::status::normal);
+    std::thread closing([this]() { this->closed_callback(websocketpp::close::status::normal); });
+    closing.detach();
 }
 
 void WebsocketTlsTPM::on_conn_fail() {
