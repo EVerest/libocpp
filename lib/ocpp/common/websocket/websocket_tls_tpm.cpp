@@ -610,7 +610,8 @@ void WebsocketTlsTPM::close(websocketpp::close::status::value code, const std::s
     }
 
     this->m_is_connected = false;
-    this->closed_callback(websocketpp::close::status::normal);
+    std::thread closing([this]() { this->closed_callback(websocketpp::close::status::normal); });
+    closing.detach();
 }
 
 void WebsocketTlsTPM::on_conn_connected() {
@@ -641,7 +642,8 @@ void WebsocketTlsTPM::on_conn_fail() {
 
     std::lock_guard<std::mutex> lk(this->connection_mutex);
     if (this->m_is_connected) {
-        this->disconnected_callback();
+        std::thread disconnect([this]() { this->disconnected_callback(); });
+        disconnect.detach();
     }
 
     this->m_is_connected = false;
