@@ -741,7 +741,6 @@ void WebsocketTlsTPM::on_writable() {
         return;
     }
 
-    
     // Execute while we have messages that were polled
     while (true) {
         WebsocketMessage* message = nullptr;
