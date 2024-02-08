@@ -1489,10 +1489,7 @@ void ChargePoint::set_evse_connectors_unavailable(const std::unique_ptr<Evse>& e
     uint32_t number_of_connectors = evse->get_number_of_connectors();
 
     for (uint32_t i = 1; i <= number_of_connectors; ++i) {
-
-
-        evse->set_connector_operative_status(static_cast<int32_t>(i), OperationalStatusEnum::Inoperative,
-                                             persist);
+        evse->set_connector_operative_status(static_cast<int32_t>(i), OperationalStatusEnum::Inoperative, persist);
     }
 }
 
