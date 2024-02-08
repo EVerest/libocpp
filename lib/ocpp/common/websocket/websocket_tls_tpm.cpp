@@ -741,14 +741,18 @@ void WebsocketTlsTPM::on_writable() {
         return;
     }
 
+    
+    // Execute while we have messages that were polled
     while (true) {
         WebsocketMessage* message = nullptr;
 
         {
             std::lock_guard<std::mutex> lock(this->queue_mutex);
-            if (message_queue.empty()) {
+
+            // Break if we have en empty queue
+            if (message_queue.empty())
                 break;
-            }
+
             message = message_queue.front().get();
         }
 
@@ -756,7 +760,7 @@ void WebsocketTlsTPM::on_writable() {
             EVLOG_AND_THROW(std::runtime_error("Null message in queue, fatal error!"));
         }
 
-        // Pop all sent messages
+        // This message was polled in a previous iteration
         if (message->sent_bytes >= message->payload.length()) {
             EVLOG_info << "Websocket message fully written, popping processing thread from queue!";
 
@@ -773,18 +777,45 @@ void WebsocketTlsTPM::on_writable() {
             // Notify any waiting thread to check it's state
             msg_send_cv.notify_all();
         } else {
-            EVLOG_debug << "Client writable, sending message part!";
-
-            // Continue sending message part, for a single message only
-            bool sent = send_internal(data->get_conn(), message);
-
-            // If we failed, attempt again later
-            if (false == sent) {
-                message->sent_bytes = 0;
-            }
-
-            // Break loop
+            // If the message was not polled, we reached the first unpolled and break
             break;
+        }
+    }
+
+    // If we still have message ONLY poll a single one that can be processed in the invoke of the function
+    // libwebsockets is designed so that when a message is sent to the wire from the internal buffer it
+    // will invoke 'on_writable' again and we can execute the code above
+    bool any_message_polled;
+    {
+        std::lock_guard<std::mutex> lock(this->queue_mutex);
+        any_message_polled = not message_queue.empty();
+    }
+
+    // Poll a single message
+    if (any_message_polled) {
+        EVLOG_debug << "Client writable, sending message part!";
+
+        WebsocketMessage* message = nullptr;
+
+        {
+            std::lock_guard<std::mutex> lock(this->queue_mutex);
+            message = message_queue.front().get();
+        }
+
+        if (message == nullptr) {
+            EVLOG_AND_THROW(std::runtime_error("Null message in queue, fatal error!"));
+        }
+
+        if (message->sent_bytes >= message->payload.length()) {
+            EVLOG_AND_THROW(std::runtime_error("Already polled message should be handled above, fatal error!"));
+        }
+
+        // Continue sending message part, for a single message only
+        bool sent = send_internal(data->get_conn(), message);
+
+        // If we failed, attempt again later
+        if (false == sent) {
+            message->sent_bytes = 0;
         }
     }
 }
