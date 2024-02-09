@@ -24,6 +24,12 @@ public:
 
     /// \brief Closes the database connection.
     void close_connection();
+
+    /// \brief Start a transaction on the database.
+    void begin_transaction();
+
+    /// \brief Commits the transaction on the database.
+    void commit_transaction();
 };
 
 } // namespace ocpp
