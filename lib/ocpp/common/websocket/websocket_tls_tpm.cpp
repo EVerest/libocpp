@@ -522,6 +522,12 @@ bool WebsocketTlsTPM::connect() {
         this->recv_message_thread->join();
     }
 
+    // Stop any pending reconnect timer
+    {
+        std::lock_guard<std::mutex> lk(this->reconnect_mutex);
+        this->reconnect_timer_tpm.stop();
+    }
+
     // Clear any pending messages on a new connection
     {
         std::lock_guard<std::mutex> lock(queue_mutex);
