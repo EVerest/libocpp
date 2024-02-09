@@ -6,7 +6,8 @@
 
 namespace ocpp::common {
 
-DatabaseHandlerBase::DatabaseHandlerBase() noexcept : db(nullptr) {
+DatabaseHandlerBase::DatabaseHandlerBase(const fs::path& database_file_path) noexcept :
+    DatabaseConnection(database_file_path) {
 }
 
 DatabaseHandlerBase::~DatabaseHandlerBase() {
