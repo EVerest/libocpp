@@ -33,4 +33,24 @@ void DatabaseConnection::close_connection() {
     }
 }
 
+void DatabaseConnection::begin_transaction() {
+    char* err_msg = nullptr;
+    if (sqlite3_exec(this->db, "BEGIN TRANSACTION", NULL, NULL, &err_msg) != SQLITE_OK) {
+        std::string error = "Could not begin transaction: ";
+        error + err_msg;
+        sqlite3_free(err_msg);
+        throw std::runtime_error(error);
+    }
+}
+
+void DatabaseConnection::commit_transaction() {
+    char* err_msg = nullptr;
+    if (sqlite3_exec(this->db, "COMMIT TRANSACTION", NULL, NULL, &err_msg) != SQLITE_OK) {
+        std::string error = "Could not commit transaction: ";
+        error + err_msg;
+        sqlite3_free(err_msg);
+        throw std::runtime_error(error);
+    }
+}
+
 } // namespace ocpp

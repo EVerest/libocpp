@@ -73,9 +73,7 @@ void DatabaseHandler::init_enum_table_inner(const std::string& table_name, const
         throw std::runtime_error("Table does not exist.");
     }
 
-    if (sqlite3_exec(this->db, "BEGIN TRANSACTION", NULL, NULL, &err_msg) != SQLITE_OK) {
-        throw std::runtime_error("Could not begin transaction.");
-    }
+    this->begin_transaction();
 
     std::string sql = "INSERT INTO " + table_name + " VALUES (@id, @value);";
     SQLiteStatement insert_stmt(this->db, sql);
@@ -93,9 +91,7 @@ void DatabaseHandler::init_enum_table_inner(const std::string& table_name, const
         insert_stmt.reset();
     }
 
-    if (sqlite3_exec(this->db, "COMMIT TRANSACTION", NULL, NULL, &err_msg) != SQLITE_OK) {
-        throw std::runtime_error("Could not commit transaction.");
-    }
+    this->commit_transaction();
 }
 
 template <typename T>
@@ -377,9 +373,7 @@ bool DatabaseHandler::transaction_metervalues_insert(const std::string& transact
                        "@phase, @location, @custom_data, @unit_custom_data, @unit_text, @unit_multiplier, "
                        "@signed_meter_data, @signing_method, @encoding_method, @public_key);";
 
-    if (sqlite3_exec(this->db, "BEGIN TRANSACTION", NULL, NULL, &err_msg) != SQLITE_OK) {
-        throw std::runtime_error("Could not begin transaction.");
-    }
+    this->begin_transaction();
 
     SQLiteStatement insert_stmt(this->db, sql2);
 
@@ -445,9 +439,7 @@ bool DatabaseHandler::transaction_metervalues_insert(const std::string& transact
         insert_stmt.reset();
     }
 
-    if (sqlite3_exec(this->db, "COMMIT TRANSACTION", NULL, NULL, &err_msg) != SQLITE_OK) {
-        throw std::runtime_error("Could not commit transaction.");
-    }
+    this->commit_transaction();
 
     return true;
 }
