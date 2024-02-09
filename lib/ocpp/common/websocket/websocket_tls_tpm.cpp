@@ -546,11 +546,6 @@ bool WebsocketTlsTPM::connect() {
             this->close(websocketpp::close::status::abnormal_close, "Reconnect");
         }
 
-        {
-            std::lock_guard<std::mutex> lk(this->reconnect_mutex);
-            this->reconnect_timer_tpm.stop();
-        }
-
         this->connect();
     };
 
@@ -594,7 +589,6 @@ void WebsocketTlsTPM::reconnect(std::error_code reason, long delay) {
         return;
     }
 
-    std::lock_guard<std::mutex> lk(this->reconnect_mutex);
     if (this->m_is_connected) {
         EVLOG_info << "Closing websocket connection before reconnecting";
         this->close(websocketpp::close::status::abnormal_close, "Reconnect");
@@ -603,8 +597,11 @@ void WebsocketTlsTPM::reconnect(std::error_code reason, long delay) {
     EVLOG_info << "Reconnecting in: " << delay << "ms"
                << ", attempt: " << this->connection_attempts;
 
-    this->reconnect_timer_tpm.timeout([this]() { this->reconnect_callback(websocketpp::lib::error_code()); },
-                                      std::chrono::milliseconds(delay));
+    {
+        std::lock_guard<std::mutex> lk(this->reconnect_mutex);
+        this->reconnect_timer_tpm.timeout([this]() { this->reconnect_callback(websocketpp::lib::error_code()); },
+                                          std::chrono::milliseconds(delay));
+    }
 }
 
 void WebsocketTlsTPM::close(websocketpp::close::status::value code, const std::string& reason) {
