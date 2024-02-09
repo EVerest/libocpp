@@ -30,6 +30,9 @@ public:
 
     /// \brief Commits the transaction on the database.
     void commit_transaction();
+
+    /// \brief Rolls back the transaction on the database.
+    void rollback_transaction();
 };
 
 } // namespace ocpp

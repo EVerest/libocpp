@@ -14,6 +14,7 @@ target_sources(ocpp
         ocpp/common/charging_station_base.cpp
         ocpp/common/database_connection.cpp
         ocpp/common/database_handler_base.cpp
+        ocpp/common/database_schema_updater.cpp
         ocpp/common/message_queue.cpp
         ocpp/common/ocpp_logging.cpp
         ocpp/common/schemas.cpp

@@ -15,6 +15,10 @@ DatabaseConnection::~DatabaseConnection() {
 }
 
 void DatabaseConnection::open_connection() {
+    if (this->db != nullptr) {
+        EVLOG_debug << "Connection already open to Database: " << this->database_file_path;
+        return;
+    }
     if (sqlite3_open(this->database_file_path.c_str(), &this->db) != SQLITE_OK) {
         EVLOG_error << "Error opening database at " << this->database_file_path.c_str() << ": " << sqlite3_errmsg(db);
         throw std::runtime_error("Could not open database at provided path.");
@@ -47,6 +51,16 @@ void DatabaseConnection::commit_transaction() {
     char* err_msg = nullptr;
     if (sqlite3_exec(this->db, "COMMIT TRANSACTION", NULL, NULL, &err_msg) != SQLITE_OK) {
         std::string error = "Could not commit transaction: ";
+        error + err_msg;
+        sqlite3_free(err_msg);
+        throw std::runtime_error(error);
+    }
+}
+
+void DatabaseConnection::rollback_transaction() {
+    char* err_msg = nullptr;
+    if (sqlite3_exec(this->db, "ROLLBACK TRANSACTION", NULL, NULL, &err_msg) != SQLITE_OK) {
+        std::string error = "Could not rollback transaction: ";
         error + err_msg;
         sqlite3_free(err_msg);
         throw std::runtime_error(error);
