@@ -28,7 +28,8 @@ void DatabaseHandler::sql_init() {
 
     DatabaseSchemaUpdater updater{this->database_file_path};
 
-    if (!updater.apply_migration_files(this->sql_init_path, 1)) {
+    // if (!updater.apply_migration_files(this->sql_init_path, 1)) {
+    if (!updater.apply_migration_files("/usr/share/everest/modules/OCPP201/core_migrations", 1)) {
         EVLOG_AND_THROW(std::runtime_error("SQL migration failed"));
     }
 

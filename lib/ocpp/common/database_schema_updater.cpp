@@ -96,6 +96,34 @@ bool is_migration_file_sequence_valid(const std::vector<MigrationFile>& list, Di
     }
 }
 
+std::optional<std::vector<MigrationFile>> get_migration_file_sequence(const fs::path& migration_file_directory,
+                                                                      Direction direction, uint32_t current_version,
+                                                                      uint32_t target_version) {
+    auto list = get_migration_file_list(migration_file_directory);
+
+    EVLOG_info << "Migration list:";
+
+    for (auto& item : list) {
+        EVLOG_info << item;
+    }
+
+    const auto lowest = std::min(current_version, target_version) + 1;
+    const auto highest = std::max(current_version, target_version);
+
+    filter_and_sort_migration_file_list(list, direction, lowest, highest);
+
+    EVLOG_info << "Migration files to apply:";
+
+    for (auto& item : list) {
+        EVLOG_info << item;
+    }
+
+    if (!is_migration_file_sequence_valid(list, direction, lowest, highest)) {
+        return std::nullopt;
+    }
+    return list;
+}
+
 DatabaseSchemaUpdater::DatabaseSchemaUpdater(const fs::path& database_path) noexcept :
     DatabaseConnection(database_path) {
 }
@@ -124,6 +152,11 @@ bool DatabaseSchemaUpdater::apply_migration_files(const fs::path& migration_file
         return false;
     }
 
+    if (target_version == 0) {
+        EVLOG_error << "Migration target_version 0 is invalid";
+        return false;
+    }
+
     uint32_t current_version = 0;
 
     try {
@@ -147,28 +180,9 @@ bool DatabaseSchemaUpdater::apply_migration_files(const fs::path& migration_file
         direction = Direction::Down;
     }
 
-    auto list = get_migration_file_list("/usr/share/everest/modules/OCPP201/core_migrations");
+    auto list = get_migration_file_sequence(migration_file_directory, direction, current_version, target_version);
 
-    EVLOG_info << "Migration list:";
-
-    for (auto& item : list) {
-        EVLOG_info << item;
-    }
-
-    const auto lowest = std::min(current_version, target_version) + 1;
-    const auto highest = std::max(current_version, target_version);
-
-    filter_and_sort_migration_file_list(list, direction, lowest, highest);
-
-    EVLOG_info << "Migration files to apply:";
-
-    for (auto& item : list) {
-        EVLOG_info << item;
-    }
-
-    bool sequence_valid = is_migration_file_sequence_valid(list, direction, lowest, highest);
-
-    if (!sequence_valid) {
+    if (!list.has_value()) {
         EVLOG_error << "Missing migration files in sequence";
         this->close_connection();
         return false;
@@ -177,14 +191,13 @@ bool DatabaseSchemaUpdater::apply_migration_files(const fs::path& migration_file
     try {
         this->begin_transaction();
 
-        for (const auto& item : list) {
+        for (const auto& item : list.value()) {
             std::ifstream stream{item.path};
             std::stringstream init_sql;
 
             init_sql << stream.rdbuf();
 
             char* err = NULL;
-
             if (sqlite3_exec(this->db, init_sql.str().c_str(), NULL, NULL, &err) != SQLITE_OK) {
                 EVLOG_error << "Could not apply migration file [" << item.path.c_str()
                             << "]: " << sqlite3_errmsg(this->db);
