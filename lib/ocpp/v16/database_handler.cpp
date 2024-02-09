@@ -11,21 +11,15 @@ namespace v16 {
 
 DatabaseHandler::DatabaseHandler(const std::string& chargepoint_id, const fs::path& database_path,
                                  const fs::path& init_script_path) :
-    ocpp::common::DatabaseHandlerBase() {
-    const auto sqlite_db_filename = chargepoint_id + ".db";
+    ocpp::common::DatabaseHandlerBase(database_path / (chargepoint_id + ".db")) {
     if (!fs::exists(database_path)) {
         fs::create_directories(database_path);
     }
-    this->db_path = database_path / sqlite_db_filename;
     this->init_script_path = init_script_path;
 }
 
-void DatabaseHandler::open_db_connection(int32_t number_of_connectors) {
-    if (sqlite3_open(this->db_path.c_str(), &this->db) != SQLITE_OK) {
-        EVLOG_error << "Error opening database: " << sqlite3_errmsg(db);
-        throw std::runtime_error("Could not open database at provided path.");
-    }
-    EVLOG_debug << "Established connection to Database.";
+void DatabaseHandler::open_connection(int32_t number_of_connectors) {
+    this->DatabaseConnection::open_connection();
     this->run_sql_init();
     this->init_connector_table(number_of_connectors);
     this->insert_or_ignore_local_list_version(0);

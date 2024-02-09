@@ -54,7 +54,7 @@ public:
 
     /// \brief Opens the database connection, runs initialization script and initializes the CONNECTORS and
     /// AUTH_LIST_VERSION table.
-    void open_db_connection(int32_t number_of_connectors);
+    void open_connection(int32_t number_of_connectors);
 
     /// \brief Closes the database connection.
     void close_db_connection();

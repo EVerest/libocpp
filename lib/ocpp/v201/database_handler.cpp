@@ -11,11 +11,10 @@ namespace ocpp {
 namespace v201 {
 
 DatabaseHandler::DatabaseHandler(const fs::path& database_path, const fs::path& sql_init_path) :
-    ocpp::common::DatabaseHandlerBase(), sql_init_path(sql_init_path) {
+    ocpp::common::DatabaseHandlerBase(database_path / "cp.db"), sql_init_path(sql_init_path) {
     if (!fs::exists(database_path)) {
         fs::create_directories(database_path);
     }
-    this->database_file_path = database_path / "cp.db";
 };
 
 void DatabaseHandler::sql_init() {
@@ -116,20 +115,8 @@ bool DatabaseHandler::clear_table(const std::string& table_name) {
 }
 
 void DatabaseHandler::open_connection() {
-    if (sqlite3_open(this->database_file_path.c_str(), &this->db) != SQLITE_OK) {
-        EVLOG_error << "Error opening database at " << this->database_file_path.c_str() << ": " << sqlite3_errmsg(db);
-        throw std::runtime_error("Could not open database at provided path.");
-    }
-    EVLOG_debug << "Established connection to Database: " << this->database_file_path;
+    this->DatabaseConnection::open_connection();
     this->sql_init();
-}
-
-void DatabaseHandler::close_connection() {
-    if (sqlite3_close_v2(this->db) == SQLITE_OK) {
-        EVLOG_debug << "Successfully closed database: " << this->database_file_path;
-    } else {
-        EVLOG_error << "Error closing database file: " << sqlite3_errmsg(this->db);
-    }
 }
 
 void DatabaseHandler::authorization_cache_insert_entry(const std::string& id_token_hash,

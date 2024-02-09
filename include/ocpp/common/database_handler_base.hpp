@@ -5,9 +5,9 @@
 
 #include <deque>
 #include <memory>
-#include <sqlite3.h>
 #include <string>
 
+#include <ocpp/common/database_connection.hpp>
 #include <ocpp/common/types.hpp>
 
 namespace ocpp::common {
@@ -20,10 +20,7 @@ struct DBTransactionMessage {
     std::string unique_id;
 };
 
-class DatabaseHandlerBase {
-protected:
-    sqlite3* db;
-
+class DatabaseHandlerBase : public DatabaseConnection {
 public:
     ///
     /// \brief Base database handler class.
@@ -33,7 +30,7 @@ public:
     ///
     /// \warning The 'db' variable is not initialized, the deriving class should do that.
     ///
-    DatabaseHandlerBase() noexcept;
+    DatabaseHandlerBase(const fs::path &database_file_path) noexcept;
 
     ~DatabaseHandlerBase();
 
