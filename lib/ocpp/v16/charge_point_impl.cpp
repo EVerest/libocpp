@@ -40,7 +40,7 @@ ChargePointImpl::ChargePointImpl(const std::string& config, const fs::path& shar
     this->heartbeat_interval = this->configuration->getHeartbeatInterval();
     this->database_handler =
         std::make_shared<DatabaseHandler>(this->configuration->getChargePointId(), database_path, sql_init_path);
-    this->database_handler->open_db_connection(this->configuration->getNumberOfConnectors());
+    this->database_handler->open_connection(this->configuration->getNumberOfConnectors());
     this->transaction_handler = std::make_unique<TransactionHandler>(this->configuration->getNumberOfConnectors());
     this->external_notify = {v16::MessageType::StartTransactionResponse};
     this->message_queue = this->create_message_queue();
@@ -805,7 +805,7 @@ bool ChargePointImpl::start(const std::map<int, ChargePointStatus>& connector_st
 bool ChargePointImpl::restart(const std::map<int, ChargePointStatus>& connector_status_map, BootReasonEnum bootreason) {
     if (this->stopped) {
         EVLOG_info << "Restarting OCPP Chargepoint";
-        this->database_handler->open_db_connection(this->configuration->getNumberOfConnectors());
+        this->database_handler->open_connection(this->configuration->getNumberOfConnectors());
         // instantiating new message queue on restart
         this->message_queue = this->create_message_queue();
         this->initialized = true;
@@ -894,7 +894,7 @@ bool ChargePointImpl::stop() {
 
         this->stop_all_transactions();
 
-        this->database_handler->close_db_connection();
+        this->database_handler->close_connection();
         this->websocket->disconnect(websocketpp::close::status::normal);
         this->message_queue->stop();
 

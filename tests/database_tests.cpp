@@ -55,7 +55,7 @@ protected:
     void SetUp() override {
         this->db_handler = std::make_unique<DatabaseHandler>(CP_ID, std::filesystem::path("/tmp"),
                                                              std::filesystem::path(SQL_INIT_FILE));
-        this->db_handler->open_db_connection(2);
+        this->db_handler->open_connection(2);
     }
 
     void TearDown() override {

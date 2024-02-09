@@ -20,7 +20,6 @@ namespace v201 {
 class DatabaseHandler : public ocpp::common::DatabaseHandlerBase {
 
 private:
-    fs::path database_file_path;
     fs::path sql_init_path;
 
     void sql_init();
@@ -45,9 +44,6 @@ public:
 
     /// \brief Opens connection to database file
     void open_connection();
-
-    /// \brief Closes connection to database file
-    void close_connection();
 
     // Authorization cache management
 
