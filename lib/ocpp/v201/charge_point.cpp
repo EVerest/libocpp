@@ -829,7 +829,8 @@ void ChargePoint::init_websocket(std::optional<std::string> config_slot) {
     }
     EVLOG_info << "config -------> :  " << configuration_slot.size();
     const auto connection_options = this->get_ws_connection_options(std::stoi(configuration_slot));
-    const auto network_connection_profile = this->get_network_connection_profile(std::stoi(configuration_slot));
+    const int configuration_slot_int = std::stoi(configuration_slot);
+    const auto network_connection_profile = this->get_network_connection_profile(configuration_slot_int);
 
     if (this->callbacks.configure_network_connection_profile_callback.has_value() and network_connection_profile) {
         auto config_status =
@@ -900,7 +901,8 @@ void ChargePoint::init_websocket(std::optional<std::string> config_slot) {
     }
 
     this->websocket = std::make_unique<Websocket>(connection_options, this->evse_security, this->logging);
-    this->websocket->register_connected_callback([this, network_connection_profile](const int security_profile) {
+    this->websocket->register_connected_callback([this, configuration_slot_int,
+                                                  network_connection_profile](const int security_profile) {
         this->message_queue->resume(this->message_queue_resume_delay);
 
         const auto& security_profile_cv = ControllerComponentVariables::SecurityProfile;
@@ -911,7 +913,9 @@ void ChargePoint::init_websocket(std::optional<std::string> config_slot) {
 
         // call the registered websocket connected callback if it exists
         if (this->callbacks.websocket_connected_callback.has_value()) {
-            this->callbacks.websocket_connected_callback.value()(network_connection_profile);
+            // TODO Hmm will this parameters go out of scope?
+            this->callbacks.websocket_connected_callback.value()(configuration_slot_int,
+                                                                 network_connection_profile.value());
         }
 
         if (this->registration_status == RegistrationStatusEnum::Accepted and
@@ -941,7 +945,7 @@ void ChargePoint::init_websocket(std::optional<std::string> config_slot) {
         this->skip_invalid_csms_certificate_notifications = false;
     });
 
-    this->websocket->register_disconnected_callback([this]() {
+    this->websocket->register_disconnected_callback([this, configuration_slot_int, network_connection_profile]() {
         this->message_queue->pause();
 
         // check if offline threshold has been defined
@@ -951,7 +955,9 @@ void ChargePoint::init_websocket(std::optional<std::string> config_slot) {
         }
         // call the disconnected callback if it exists
         if (this->callbacks.websocket_disconnected_callback.has_value()) {
-            this->callbacks.websocket_disconnected_callback.value()();
+            // TODO: Hmm will this parameters (configuration_slot_int and network_connection_profile) go out of scope??
+            this->callbacks.websocket_disconnected_callback.value()(configuration_slot_int,
+                                                                    network_connection_profile.value());
         }
         this->client_certificate_expiration_check_timer.stop();
         this->v2g_certificate_expiration_check_timer.stop();
