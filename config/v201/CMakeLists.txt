@@ -1,5 +1,3 @@
-set(SQL_INIT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/init_core.sql")
-
 # find all migration files, store only the filenames by showing relative to the folder
 file(GLOB MIGRATION_FILE_LIST RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/core_migrations" "${CMAKE_CURRENT_SOURCE_DIR}/core_migrations/*.sql")
 list(SORT MIGRATION_FILE_LIST)
@@ -53,7 +51,8 @@ install(
      DESTINATION ${CMAKE_INSTALL_DATADIR}/everest/modules/OCPP201
 )
 
-install(FILES ${SQL_INIT_FILE} DESTINATION ${CMAKE_INSTALL_DATADIR}/everest/modules/OCPP201)
+list(TRANSFORM MIGRATION_FILE_LIST PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/core_migrations/")
+install(FILES ${MIGRATION_FILE_LIST} DESTINATION ${CMAKE_INSTALL_DATADIR}/everest/modules/OCPP201/core_migrations)
 
 if (LIBOCPP_INSTALL_DEVICE_MODEL_DATABASE)
      set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/config.json)
