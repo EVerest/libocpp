@@ -1,23 +1,45 @@
 set(SQL_INIT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/init_core.sql")
 
 # find all migration files, store only the filenames by showing relative to the folder
-file(GLOB TEST_VAR RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/core_migrations" "${CMAKE_CURRENT_SOURCE_DIR}/core_migrations/*.sql")
+file(GLOB MIGRATION_FILE_LIST RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/core_migrations" "${CMAKE_CURRENT_SOURCE_DIR}/core_migrations/*.sql")
+list(SORT MIGRATION_FILE_LIST)
 
-include(CMakePrintHelpers)
-cmake_print_variables(TEST_VAR)
+# The first file should always start with 1_up so make use of that fact.
+# Next we always check the next number "down" and then "up" which come in order since we sorted
+set(CURRENT_MIGRATION_FILE_ID 1)
+set(NEXT_MIGRATION_FILE_TYPE "up")
 
-# set()
+foreach(MIGRATION_FILE ${MIGRATION_FILE_LIST})
+     string(REGEX MATCH "^([0-9]+)_(up|down)(|-.+)\.sql$" MIGRATION_FILE_MATCHED ${MIGRATION_FILE})
+     if (MIGRATION_FILE_MATCHED STREQUAL "")
+          message(FATAL_ERROR "Migration filename does not match specification: " ${MIGRATION_FILE})
+     endif()
 
-foreach(path ${TEST_VAR})
-     string(REGEX MATCH "^([0-9]+)_(up|down)(|-.+)\.sql$" path2 ${path})
-     message(${path})
-     if (path2 STREQUAL "")
-          message(FATAL_ERROR "Migration filename does not match specification: " ${path})
+     string(CONCAT NEXT_ID "^" ${CURRENT_MIGRATION_FILE_ID} "_")
+     if(NOT ${MIGRATION_FILE_MATCHED} MATCHES ${NEXT_ID})
+          message(FATAL_ERROR "Skipped migration file ID, expected " ${CURRENT_MIGRATION_FILE_ID} "_*.sql, but got " ${MIGRATION_FILE_MATCHED})
+     endif()
+
+     string(APPEND NEXT_ID ${NEXT_MIGRATION_FILE_TYPE})
+     if(NOT ${MIGRATION_FILE_MATCHED} MATCHES ${NEXT_ID})
+          message(FATAL_ERROR "Missing " ${NEXT_MIGRATION_FILE_TYPE} " migration file: " ${MIGRATION_FILE_MATCHED})
+     endif()
+
+     if(NEXT_MIGRATION_FILE_TYPE STREQUAL "up")
+          math(EXPR CURRENT_MIGRATION_FILE_ID "${CURRENT_MIGRATION_FILE_ID}+1")
+          set(NEXT_MIGRATION_FILE_TYPE "down")
+     elseif(NEXT_MIGRATION_FILE_TYPE STREQUAL "down")
+          set(NEXT_MIGRATION_FILE_TYPE "up")
      endif()
 endforeach()
 
+if (NEXT_MIGRATION_FILE_TYPE STREQUAL "up")
+     message(FATAL_ERROR "Down migration file " ${CURRENT_MIGRATION_FILE_ID} "_*.sql is missing up migration file")
+endif()
 
-set(MIGRATION_FILE_VERSION 3 PARENT_SCOPE)
+# Since we always add on the up file we need to subtract one here
+math(EXPR CURRENT_MIGRATION_FILE_ID "${CURRENT_MIGRATION_FILE_ID}-1")
+set(MIGRATION_FILE_VERSION ${CURRENT_MIGRATION_FILE_ID} PARENT_SCOPE)
 
 option(LIBOCPP_INSTALL_DEVICE_MODEL_DATABASE "Install device model database for OCPP201" ON)
 
