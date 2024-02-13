@@ -563,7 +563,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
         return response;
     }
 
-   // C07: Authorization using contract certifates
+   // C07: Authorization using contract certificates
     if (id_token.type == IdTokenEnum::eMAID) {
         // Temporary variable that is set to true to avoid immediate response to allow the local auth list or auth cache to be tried
         bool tryLocalAuthListOrCache = false;
@@ -575,6 +575,8 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
 
             bool CentralContractValidationAllowed = this->device_model->get_optional_value<bool>(ControllerComponentVariables::CentralContractValidationAllowed).value_or(true);
             bool ContractValidationOffline = this->device_model->get_optional_value<bool>(ControllerComponentVariables::ContractValidationOffline).value_or(true);
+            bool LocalAuthorizeOffline = this->device_model->get_optional_value<bool>(ControllerComponentVariables::LocalAuthorizeOffline).value_or(true);
+
             // C07.FR.01: When CS is online, it shall send an AuthorizeRequest
             // C07.FR.02: The AuthorizeRequest shall at least contain the OCSP data
             if (this->websocket->is_connected()) {
@@ -594,7 +596,14 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
                     switch (localVerifyResult) {
                         // C07.FR.09: CS shall lookup the eMAID in Local Auth List or Auth Cache when local validation succeeded
                         case InstallCertificateResult::Accepted:
-                            tryLocalAuthListOrCache = true;
+                            // In C07.FR.09 LocalAuthorizeOffline is mentioned, this seems to be a generic config item that applies
+                            // to Local Auth List and Auth Cache, but since there are no requirements about it, lets check it here
+                            if (LocalAuthorizeOffline) {
+                                tryLocalAuthListOrCache = true;
+                            } else {
+                                // No requirement states what to do when ContractValidationOffline is true and LocalAuthorizeOffline is false
+                                response.idTokenInfo.status = AuthorizationStatusEnum::NotAtThisTime;
+                            }
                             break;
                         case InstallCertificateResult::Expired:
                             response.idTokenInfo.status = AuthorizationStatusEnum::Expired;
