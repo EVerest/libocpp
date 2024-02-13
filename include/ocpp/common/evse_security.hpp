@@ -25,6 +25,8 @@ public:
     virtual InstallCertificateResult install_ca_certificate(const std::string& certificate,
                                                             const CaCertificateType& certificate_type) = 0;
 
+    virtual DeleteCertificateResult delete_certificate_csms_fallback() = 0;
+
     /// \brief Deletes the certificate specified by \p certificate_hash_data . This function respects the
     /// requirements of OCPP specified for the CSMS initiated message DeleteCertificate.req
     /// \param certificate_hash_data specifies the certificate to be deleted
@@ -102,10 +104,15 @@ public:
     /// \return CA certificate file
     virtual std::string get_verify_file(const CaCertificateType& certificate_type) = 0;
 
+    virtual std::string get_csms_verify_file(bool attempt_fallback = false) = 0;
+
     /// \brief Gets the expiry day count for the leaf certificate of the given \p certificate_type
     /// \param certificate_type
     /// \return day count until the leaf certificate expires
     virtual int get_leaf_expiry_days_count(const CertificateSigningUseEnum& certificate_type) = 0;
+    
+    virtual bool set_configuration_value(std::string& name, std::string& value) = 0;
+
 };
 
 namespace evse_security_conversions {

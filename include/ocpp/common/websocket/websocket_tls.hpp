@@ -26,6 +26,10 @@ private:
     tls_client wss_client;
     std::shared_ptr<EvseSecurity> evse_security;
     websocketpp::lib::shared_ptr<websocketpp::lib::thread> websocket_thread;
+
+    bool attempt_with_fallback;
+    bool _csms_fallback_used;
+
     /// \brief Called when a TLS websocket connection gets initialized, manages the supported TLS versions, cipher lists
     /// and how verification of the server certificate is handled
     tls_context on_tls_init(std::string hostname, websocketpp::connection_hdl hdl, int32_t security_profile);
@@ -77,6 +81,9 @@ public:
 
     /// \brief send a websocket ping
     void ping() override;
+
+    /// \brief Indicates if the fallback was used for the last connection attempt
+    bool csms_fallback_used();
 };
 
 } // namespace ocpp

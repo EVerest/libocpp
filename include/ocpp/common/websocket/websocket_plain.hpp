@@ -68,6 +68,9 @@ public:
 
     /// \brief send a websocket ping
     void ping() override;
+
+    /// \brief Indicates if the fallback was used for the last connection attempt
+    bool csms_fallback_used();
 };
 
 } // namespace ocpp

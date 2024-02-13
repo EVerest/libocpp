@@ -36,6 +36,7 @@ struct WebsocketConnectionOptions {
     std::optional<std::string> hostName;
     bool verify_csms_common_name;
     bool use_tpm_tls;
+    bool new_csms_root_installed;
 };
 
 enum class ConnectionFailedReason {
@@ -139,6 +140,9 @@ public:
 
     /// \brief set the \p authorization_key of the connection_options
     void set_authorization_key(const std::string& authorization_key);
+
+    /// \brief Indicates if the fallback was used for the last connection attempt
+    virtual bool csms_fallback_used() = 0;
 };
 
 } // namespace ocpp

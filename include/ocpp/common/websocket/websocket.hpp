@@ -67,6 +67,11 @@ public:
 
     /// \brief set the \p authorization_key of the connection_options
     void set_authorization_key(const std::string& authorization_key);
+
+    void set_new_csms_root_ca_installed();
+
+    /// \brief Indicates if the fallback was used for the last connection attempt
+    bool csms_fallback_used();
 };
 
 } // namespace ocpp

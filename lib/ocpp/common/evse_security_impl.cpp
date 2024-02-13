@@ -30,6 +30,10 @@ InstallCertificateResult EvseSecurityImpl::install_ca_certificate(const std::str
         this->evse_security->install_ca_certificate(certificate, conversions::from_ocpp(certificate_type)));
 }
 
+DeleteCertificateResult EvseSecurityImpl::delete_certificate_csms_fallback() {
+    return conversions::to_ocpp(this->evse_security->delete_certificate_csms_fallback());
+}
+
 DeleteCertificateResult EvseSecurityImpl::delete_certificate(const CertificateHashDataType& certificate_hash_data) {
     return conversions::to_ocpp(this->evse_security->delete_certificate(conversions::from_ocpp(certificate_hash_data)));
 }
@@ -110,8 +114,16 @@ std::string EvseSecurityImpl::get_verify_file(const CaCertificateType& certifica
     return this->evse_security->get_verify_file(conversions::from_ocpp(certificate_type));
 }
 
+std::string EvseSecurityImpl::get_csms_verify_file(bool attempt_fallback) {
+    return this->evse_security->get_csms_verify_file(attempt_fallback);
+}
+
 int EvseSecurityImpl::get_leaf_expiry_days_count(const CertificateSigningUseEnum& certificate_type) {
     return this->evse_security->get_leaf_expiry_days_count(conversions::from_ocpp(certificate_type));
+}
+
+bool EvseSecurityImpl::set_configuration_value(std::string& name, std::string& value) {
+    return this->evse_security->set_configuration_value(name, value);
 }
 
 namespace conversions {

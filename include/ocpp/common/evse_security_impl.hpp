@@ -36,6 +36,7 @@ public:
     explicit EvseSecurityImpl(const SecurityConfiguration& file_paths);
     InstallCertificateResult install_ca_certificate(const std::string& certificate,
                                                     const CaCertificateType& certificate_type) override;
+    DeleteCertificateResult delete_certificate_csms_fallback() override;
     DeleteCertificateResult delete_certificate(const CertificateHashDataType& certificate_hash_data) override;
     InstallCertificateResult update_leaf_certificate(const std::string& certificate_chain,
                                                      const CertificateSigningUseEnum& certificate_type) override;
@@ -53,7 +54,9 @@ public:
     std::optional<KeyPair> get_key_pair(const CertificateSigningUseEnum& certificate_type) override;
     bool update_certificate_links(const CertificateSigningUseEnum& certificate_type) override;
     std::string get_verify_file(const CaCertificateType& certificate_type) override;
+    std::string get_csms_verify_file(bool attempt_fallback) override;
     int get_leaf_expiry_days_count(const CertificateSigningUseEnum& certificate_type) override;
+    bool set_configuration_value(std::string& name, std::string& value) override;
 };
 
 namespace conversions {

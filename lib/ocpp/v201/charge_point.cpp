@@ -60,6 +60,7 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
     network_configuration_priority(0),
     disable_automatic_websocket_reconnects(false),
     skip_invalid_csms_certificate_notifications(false),
+    new_csms_root_installed(false),
     reset_scheduled(false),
     reset_scheduled_evseids{},
     firmware_status(FirmwareStatusEnum::Idle),
@@ -692,6 +693,14 @@ void ChargePoint::init_websocket() {
     this->websocket = std::make_unique<Websocket>(connection_options, this->evse_security, this->logging);
     this->websocket->register_connected_callback([this](const int security_profile) {
         this->message_queue->resume(this->message_queue_resume_delay);
+
+        const auto additional_root_certificate_check = this->device_model->get_optional_value<bool>(ControllerComponentVariables::AdditionalRootCertificateCheck)
+            .value_or(false);
+        
+        if (additional_root_certificate_check and !this->websocket->csms_fallback_used()) {
+            EVLOG_info << "Deleting CSMS Root fallback certificate!";
+            this->evse_security->delete_certificate_csms_fallback();
+        }
 
         const auto& security_profile_cv = ControllerComponentVariables::SecurityProfile;
         if (security_profile_cv.variable.has_value()) {

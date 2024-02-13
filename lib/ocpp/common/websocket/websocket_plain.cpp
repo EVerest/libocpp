@@ -274,4 +274,8 @@ void WebsocketPlain::ping() {
     }
 }
 
+bool WebsocketPlain::csms_fallback_used() {
+    return false;
+}
+
 } // namespace ocpp

@@ -105,4 +105,8 @@ void Websocket::set_authorization_key(const std::string& authorization_key) {
     this->websocket->set_authorization_key(authorization_key);
 }
 
+bool Websocket::csms_fallback_used() {
+    return this->websocket->csms_fallback_used();
+}
+
 } // namespace ocpp

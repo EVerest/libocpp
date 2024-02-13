@@ -108,7 +108,7 @@ bool WebsocketTLS::verify_csms_cn(const std::string& hostname, bool preverified,
 
 WebsocketTLS::WebsocketTLS(const WebsocketConnectionOptions& connection_options,
                            std::shared_ptr<EvseSecurity> evse_security) :
-    WebsocketBase(), evse_security(evse_security) {
+    WebsocketBase(), evse_security(evse_security), attempt_with_fallback(false) {
 
     set_connection_options(connection_options);
 
@@ -145,10 +145,6 @@ bool WebsocketTLS::connect() {
     this->wss_client.init_asio();
     this->wss_client.start_perpetual();
     websocket_thread.reset(new websocketpp::lib::thread(&tls_client::run, &this->wss_client));
-
-    this->wss_client.set_tls_init_handler(
-        websocketpp::lib::bind(&WebsocketTLS::on_tls_init, this, this->connection_options.csms_uri.get_hostname(),
-                               websocketpp::lib::placeholders::_1, this->connection_options.security_profile));
 
     this->reconnect_callback = [this](const websocketpp::lib::error_code& ec) {
         EVLOG_info << "Reconnecting to TLS websocket at uri: " << this->connection_options.csms_uri.string()
@@ -308,12 +304,21 @@ tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connect
             EVLOG_warning << "Not verifying the CSMS certificates commonName with the Fully Qualified Domain Name "
                              "(FQDN) of the server because it has been explicitly turned off via the configuration!";
         }
+
         if (this->evse_security->is_ca_certificate_installed(ocpp::CaCertificateType::CSMS)) {
+            if (this->attempt_with_fallback) {
+                EVLOG_info << "Attempting to use fallback CSMS Root certificate";
+                this->_csms_fallback_used = true;
+            } else {
+                EVLOG_info << "Using latest CSMS Root certificate";
+                this->_csms_fallback_used = false;
+            }
+
             EVLOG_info << "Loading ca csms bundle to verify server certificate: "
-                       << this->evse_security->get_verify_file(ocpp::CaCertificateType::CSMS);
+                       << this->evse_security->get_csms_verify_file(this->attempt_with_fallback);
             rc = SSL_CTX_load_verify_locations(
-                context->native_handle(), this->evse_security->get_verify_file(ocpp::CaCertificateType::CSMS).c_str(),
-                NULL);
+                context->native_handle(),
+                this->evse_security->get_csms_verify_file(this->attempt_with_fallback).c_str(), NULL);
         }
 
         if (rc != 1) {
@@ -338,6 +343,10 @@ tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connect
 }
 void WebsocketTLS::connect_tls() {
     websocketpp::lib::error_code ec;
+
+    this->wss_client.set_tls_init_handler(
+        websocketpp::lib::bind(&WebsocketTLS::on_tls_init, this, this->connection_options.csms_uri.get_hostname(),
+                               websocketpp::lib::placeholders::_1, this->connection_options.security_profile));
 
     const tls_client::connection_ptr con = this->wss_client.get_connection(
         std::make_shared<websocketpp::uri>(this->connection_options.csms_uri.get_websocketpp_uri()), ec);
@@ -386,12 +395,19 @@ void WebsocketTLS::connect_tls() {
     this->wss_client.connect(con);
 }
 void WebsocketTLS::on_open_tls(tls_client* c, websocketpp::connection_hdl hdl) {
-    (void)c;                       // tls_client is not used in this function
-    EVLOG_info << "OCPP client successfully connected to TLS websocket server";
+    (void)c; // tls_client is not used in this function
+
+    if (this->_csms_fallback_used) {
+        EVLOG_info << "OCPP client successfully connected to TLS websocket server using the CSMS fallback CA";
+    } else {
+        EVLOG_info << "OCPP client successfully connected to TLS websocket server";
+    }
+
     this->connection_attempts = 1; // reset connection attempts
     this->m_is_connected = true;
     this->reconnecting = false;
     this->set_websocket_ping_interval(this->connection_options.ping_interval_s);
+
     this->connected_callback(this->connection_options.security_profile);
 }
 void WebsocketTLS::on_message_tls(websocketpp::connection_hdl hdl, tls_client::message_ptr msg) {
@@ -427,6 +443,14 @@ void WebsocketTLS::on_close_tls(tls_client* c, websocketpp::connection_hdl hdl) 
 }
 void WebsocketTLS::on_fail_tls(tls_client* c, websocketpp::connection_hdl hdl) {
     std::lock_guard<std::mutex> lk(this->connection_mutex);
+
+    // only attempt with fallback once
+    if (this->_csms_fallback_used) {
+        this->attempt_with_fallback = false;
+    } else {
+        this->attempt_with_fallback = true;
+    }
+
     if (this->m_is_connected) {
         this->disconnected_callback();
     }
@@ -470,6 +494,10 @@ void WebsocketTLS::ping() {
         websocketpp::lib::error_code error_code;
         con->ping(this->connection_options.ping_payload, error_code);
     }
+}
+
+bool WebsocketTLS::csms_fallback_used() {
+    return this->_csms_fallback_used;
 }
 
 } // namespace ocpp
