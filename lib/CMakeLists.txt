@@ -8,6 +8,11 @@ target_compile_options(ocpp
         -Wimplicit-fallthrough  # avoid unintended fallthroughs
 )
 
+target_compile_definitions(ocpp
+    PRIVATE
+        MIGRATION_FILE_VERSION=${MIGRATION_FILE_VERSION}
+)
+
 target_sources(ocpp
     PRIVATE
         ocpp/common/call_types.cpp

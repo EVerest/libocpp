@@ -1,5 +1,24 @@
 set(SQL_INIT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/init_core.sql")
 
+# find all migration files, store only the filenames by showing relative to the folder
+file(GLOB TEST_VAR RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/core_migrations" "${CMAKE_CURRENT_SOURCE_DIR}/core_migrations/*.sql")
+
+include(CMakePrintHelpers)
+cmake_print_variables(TEST_VAR)
+
+# set()
+
+foreach(path ${TEST_VAR})
+     string(REGEX MATCH "^([0-9]+)_(up|down)(|-.+)\.sql$" path2 ${path})
+     message(${path})
+     if (path2 STREQUAL "")
+          message(FATAL_ERROR "Migration filename does not match specification: " ${path})
+     endif()
+endforeach()
+
+
+set(MIGRATION_FILE_VERSION 3 PARENT_SCOPE)
+
 option(LIBOCPP_INSTALL_DEVICE_MODEL_DATABASE "Install device model database for OCPP201" ON)
 
 list(APPEND CONFIGS
