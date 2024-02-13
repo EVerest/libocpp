@@ -563,6 +563,61 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
         return response;
     }
 
+   // C07: Authorization using contract certifates
+    if (id_token.type == IdTokenEnum::eMAID) {
+        // Temporary variable that is set to true to avoid immediate response to allow the local auth list or auth cache to be tried
+        bool tryLocalAuthListOrCache = false;
+
+        // First try to validate the contract certificate locally
+        if (certificate.has_value()) {
+            InstallCertificateResult localVerifyResult = this->evse_security->verify_certificate(certificate.value().get(), ocpp::CertificateSigningUseEnum::V2GCertificate);
+            EVLOG_info << "Local contract validation result: " << localVerifyResult;
+
+            bool CentralContractValidationAllowed = this->device_model->get_optional_value<bool>(ControllerComponentVariables::CentralContractValidationAllowed).value_or(true);
+            bool ContractValidationOffline = this->device_model->get_optional_value<bool>(ControllerComponentVariables::ContractValidationOffline).value_or(true);
+            // C07.FR.01: When CS is online, it shall send an AuthorizeRequest
+            // C07.FR.02: The AuthorizeRequest shall at least contain the OCSP data
+            if (this->websocket->is_connected()) {
+                // C07.FR.06: Pass contract validation to CSMS when no contract root is found
+                if (CentralContractValidationAllowed and localVerifyResult == InstallCertificateResult::NoRootCertificateInstalled) {
+                    EVLOG_info << "Online: No local contract root found. Pass contract validation to CSMS";
+                    response = this->authorize_req(id_token, certificate, ocsp_request_data);
+                } else {
+                    EVLOG_info << "Online: Pass OCSP data to CSMS";
+                    response = this->authorize_req(id_token, std::nullopt, ocsp_request_data);
+                    // TODO: local validation results are ignored, response is based only on OCSP data, is that acceptable?
+                }
+            } else {    // Offline
+                // C07.FR.08: CS shall try to validate the contract locally
+                if (ContractValidationOffline) {
+                    EVLOG_info << "Offline: contract " << localVerifyResult;
+                    switch (localVerifyResult) {
+                        // C07.FR.09: CS shall lookup the eMAID in Local Auth List or Auth Cache when local validation succeeded
+                        case InstallCertificateResult::Accepted:
+                            tryLocalAuthListOrCache = true;
+                            break;
+                        case InstallCertificateResult::Expired:
+                            response.idTokenInfo.status = AuthorizationStatusEnum::Expired;
+                            break;
+                        default:
+                            response.idTokenInfo.status = AuthorizationStatusEnum::Invalid;
+                            break;
+                    }
+                } else {
+                    // C07.FR.07: CS shall not allow charging
+                    response.idTokenInfo.status = AuthorizationStatusEnum::NotAtThisTime;
+                }
+            }
+        } else {
+            EVLOG_warning << "Can not validate eMAID without certificate chain";
+            response.idTokenInfo.status = AuthorizationStatusEnum::Invalid;
+        }
+        // For eMAID, we will respond here, unless the local auth list or auth cache is tried
+        if (!tryLocalAuthListOrCache) {
+            return response;            
+        }
+    }
+
     if (this->device_model->get_optional_value<bool>(ControllerComponentVariables::LocalAuthListCtrlrEnabled)
             .value_or(false)) {
         const auto id_token_info = this->database_handler->get_local_authorization_list_entry(id_token);
