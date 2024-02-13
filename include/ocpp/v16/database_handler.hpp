@@ -49,7 +49,6 @@ private:
 
 public:
     DatabaseHandler(const std::string& chargepoint_id, const fs::path& database_path, const fs::path& init_script_path);
-    ~DatabaseHandler();
 
     /// \brief Opens the database connection, runs initialization script and initializes the CONNECTORS and
     /// AUTH_LIST_VERSION table.
