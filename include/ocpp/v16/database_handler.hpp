@@ -110,6 +110,9 @@ public:
 
     // local auth list management
 
+    /// \brief Inserts or ignores the given \p version in the AUTH_LIST_VERSION table.
+    void insert_or_ignore_local_list_version(int32_t version);
+
     /// \brief Inserts or updates the given \p version in the AUTH_LIST_VERSION table.
     void insert_or_update_local_list_version(int32_t version);
 

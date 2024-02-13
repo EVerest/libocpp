@@ -28,7 +28,7 @@ void DatabaseHandler::open_db_connection(int32_t number_of_connectors) {
     EVLOG_debug << "Established connection to Database.";
     this->run_sql_init();
     this->init_connector_table(number_of_connectors);
-    this->insert_or_update_local_list_version(0);
+    this->insert_or_ignore_local_list_version(0);
 }
 
 void DatabaseHandler::run_sql_init() {
@@ -352,9 +352,20 @@ std::map<int32_t, v16::AvailabilityType> DatabaseHandler::get_connector_availabi
     return availability_map;
 }
 
+void DatabaseHandler::insert_or_ignore_local_list_version(int32_t version) {
+    std::string sql = "INSERT OR IGNORE INTO AUTH_LIST_VERSION (ID, VERSION) VALUES (0, @version)";
+    SQLiteStatement stmt(this->db, sql);
+
+    stmt.bind_int("@version", version);
+    if (stmt.step() != SQLITE_DONE) {
+        EVLOG_error << "Could not insert into table: " << sqlite3_errmsg(db);
+        throw std::runtime_error("db access error");
+    }
+}
+
 // local auth list management
 void DatabaseHandler::insert_or_update_local_list_version(int32_t version) {
-    std::string sql = "INSERT OR IGNORE INTO AUTH_LIST_VERSION (ID, VERSION) VALUES (0, @version)";
+    std::string sql = "INSERT OR REPLACE INTO AUTH_LIST_VERSION (ID, VERSION) VALUES (0, @version)";
     SQLiteStatement stmt(this->db, sql);
 
     stmt.bind_int("@version", version);
