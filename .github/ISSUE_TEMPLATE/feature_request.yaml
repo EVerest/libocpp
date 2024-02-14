@@ -25,7 +25,7 @@ body:
       required: true
 
   - type: textarea
-    id: reproduction
+    id: solution
     attributes:
       label: Describe your solution
       description: Describe the solution you'd like
