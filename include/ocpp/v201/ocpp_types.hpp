@@ -863,9 +863,10 @@ std::ostream& operator<<(std::ostream& os, const NetworkConnectionProfile& k);
 
 /// @brief The result of a configuration of a network profile.
 struct ConfigNetworkResult {
+    uint8_t network_profile_slot;                   ///< @brief Network profile slot.
     NetworkConnectionProfile network_profile;       ///< network profile used to configure the connection to the BO
-    std::optional<CiString<32>> interface_address; ///< ip address or interface string
-    bool success;                                  ///< true if the configuration was sucessful
+    std::optional<CiString<32>> interface_address;  ///< ip address or interface string
+    bool success;                                   ///< true if the configuration was sucessful
 };
 struct SetMonitoringData {
     float value;
