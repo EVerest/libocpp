@@ -834,7 +834,8 @@ void ChargePoint::init_websocket(std::optional<std::string> config_slot) {
 
     if (this->callbacks.configure_network_connection_profile_callback.has_value() and network_connection_profile) {
         auto config_status =
-            this->callbacks.configure_network_connection_profile_callback.value()(network_connection_profile.value());
+            this->callbacks.configure_network_connection_profile_callback.value()(configuration_slot_int,
+                                                                                  network_connection_profile.value());
         auto config_timeout =
             this->device_model->get_optional_value<int>(ControllerComponentVariables::NetworkConfigTimeout);
         std::future_status status;
@@ -3289,6 +3290,20 @@ bool ChargePoint::on_try_switch_network_connection_profile(const std::string con
         return false;
     }
 }
+
+void ChargePoint::on_network_disconnected(const std::optional<int32_t> configuration_slot,
+                                          const std::optional<OCPPInterfaceEnum> ocpp_interface) {
+    if (!configuration_slot.has_value() && !ocpp_interface.has_value()) {
+        EVLOG_info << "Not clear which network is disconnected: configuration slot and ocpp interface are empty";
+    }
+
+    // TODO implementation:
+    // - Check if configuration slot is valid
+    // - Check if configuration_slot and ocpp_interface are pointing to the same ocpp interface
+    // - Check if configuration slot and / or ocpp interface is in use
+    // - If that is the case, disconnect websocket
+}
+
 bool ChargePoint::are_all_connectors_effectively_inoperative() {
     // Check that all connectors on all EVSEs are inoperative
     for (auto& [evse_id, evse] : this->evses) {

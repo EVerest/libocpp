@@ -180,7 +180,8 @@ struct Callbacks {
 
     /// @brief register a \p callback that is called when the network connection profile is to be configured.
     std::optional<
-        std::function<std::future<ConfigNetworkResult>(const NetworkConnectionProfile& network_connection_profile)>>
+        std::function<std::future<ConfigNetworkResult>(const int32_t configurationSlot,
+                                                       const NetworkConnectionProfile& network_connection_profile)>>
         configure_network_connection_profile_callback;
 
     /// \breif Callback function that is called when a transaction_event was sent to the CSMS
@@ -781,11 +782,27 @@ public:
     std::map<SetVariableData, SetVariableResult>
     set_variables(const std::vector<SetVariableData>& set_variable_data_vector);
 
-    /// @brief Switch to a specifc network connection profile given the configuration slot.
+    /// \brief Switch to a specifc network connection profile given the configuration slot.
     /// This disregards the prority
-    /// @param configuration_slot Slot in which the configuration is stored
-    /// @return true if the switch is possible.
+    /// \param configuration_slot Slot in which the configuration is stored
+    /// \return true if the switch is possible.
     bool on_try_switch_network_connection_profile(const std::string configuration_slot);
+
+    ///
+    /// \brief Called when a network is disconnected, for example when an ethernet cable is removed.
+    ///
+    /// This callback is introduced because the system might see a lot earlier when a network cable is disconnected
+    /// than the websocket. For the websocket it might take several minutes while the system might know within seconds
+    /// or even earlier. So when the system detects a disconnect of the network, it can call this function. If the
+    /// websocket is connected with the network profile in this slot, it can disconnect the websocket.
+    ///
+    /// \param configuration_slot   The slot of the network connection profile that is disconnected.
+    /// \param ocpp_interface       The interface that is disconnected.
+    ///
+    /// \note At least one of the two params must be provided, otherwise libocpp will not know which interface is down.
+    ///
+    void on_network_disconnected(const std::optional<int32_t> configuration_slot,
+                                 const std::optional<OCPPInterfaceEnum> ocpp_interface);
 };
 
 } // namespace v201
