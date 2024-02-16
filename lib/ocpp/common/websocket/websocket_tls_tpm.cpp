@@ -7,7 +7,7 @@
 
 #include <libwebsockets.h>
 
-#include <chrono>
+#include <atomic>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -213,7 +213,7 @@ constexpr auto local_protocol_name = "lws-everest-client";
 static const struct lws_protocols protocols[] = {{local_protocol_name, callback_minimal, 0, 0, 0, NULL, 0},
                                                  LWS_PROTOCOL_LIST_TERM};
 
-void WebsocketTlsTPM::tls_init(SSL_CTX* ctx, const char* path_chain, const char* path_key, bool tpm_key,
+void WebsocketTlsTPM::tls_init(SSL_CTX* ctx, const std::string& path_chain, const std::string& path_key, bool tpm_key,
                                std::optional<std::string>& password) {
     auto rc = SSL_CTX_set_cipher_list(ctx, this->connection_options.supported_ciphers_12.c_str());
     if (rc != 1) {
@@ -229,21 +229,19 @@ void WebsocketTlsTPM::tls_init(SSL_CTX* ctx, const char* path_chain, const char*
     SSL_CTX_set_ecdh_auto(ctx, 1);
 
     if (this->connection_options.security_profile == 3) {
-        if ((path_chain == nullptr) || (path_key == nullptr)) {
+        if ((path_chain.empty()) || (path_key.empty())) {
             EVLOG_error << "Cert chain: " << path_chain << " key: " << path_key;
             EVLOG_AND_THROW(std::runtime_error("No certificate and key for SSL"));
         }
 
-        if (1 != SSL_CTX_use_certificate_chain_file(ctx, path_chain)) {
+        if (1 != SSL_CTX_use_certificate_chain_file(ctx, path_chain.c_str())) {
             ERR_print_errors_fp(stderr);
             EVLOG_AND_THROW(std::runtime_error("Could not use client certificate file within SSL context"));
         }
 
-        OpenSSLProvider provider;
-
         SSL_CTX_set_default_passwd_cb_userdata(ctx, reinterpret_cast<void*>(password.value_or("").data()));
 
-        if (1 != SSL_CTX_use_PrivateKey_file(ctx, path_key, SSL_FILETYPE_PEM)) {
+        if (1 != SSL_CTX_use_PrivateKey_file(ctx, path_key.c_str(), SSL_FILETYPE_PEM)) {
             ERR_print_errors_fp(stderr);
             EVLOG_AND_THROW(std::runtime_error("Could not set private key file within SSL context"));
         }
@@ -365,8 +363,11 @@ void WebsocketTlsTPM::client_loop() {
                 "Connecting with security profile 3 but no client side certificate is present or valid"));
         }
 
-        path_chain = std::string(certificate_key_pair.value().certificate_path.c_str());
-        path_key = std::string(certificate_key_pair.value().key_path.c_str());
+        path_chain = certificate_key_pair.value().certificate_path;
+        if (path_chain.empty()) {
+            path_chain = certificate_key_pair.value().certificate_single_path;
+        }
+        path_key = certificate_key_pair.value().key_path;
         password = certificate_key_pair.value().password;
     }
 
@@ -374,14 +375,14 @@ void WebsocketTlsTPM::client_loop() {
     bool tpm_key = false;
 
     {
-        OpenSSLProvider provider;
-
         if (!path_key.empty()) {
-            tpm_key = is_tpm_key_filename(path_key.c_str());
+            tpm_key = is_tpm_key_filename(path_key);
 #ifdef DEBUG
             EVLOG_info << "TPM Key: " << tpm_key;
 #endif
         }
+
+        OpenSSLProvider provider;
 
         if (tpm_key) {
             provider.set_tls_mode(OpenSSLProvider::mode_t::tpm2_provider);
@@ -400,7 +401,7 @@ void WebsocketTlsTPM::client_loop() {
     }
 
     // Init TLS data
-    tls_init(ssl_ctx, path_chain.c_str(), path_key.c_str(), tpm_key, password);
+    tls_init(ssl_ctx, path_chain, path_key, tpm_key, password);
 
     // Setup our context
     info.provided_client_ssl_ctx = ssl_ctx;
