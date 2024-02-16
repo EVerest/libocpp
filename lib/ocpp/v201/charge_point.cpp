@@ -600,6 +600,13 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
                 EVLOG_info << "Found valid entry in AuthCache";
                 response.idTokenInfo = cache_entry.value();
                 return response;
+            } else if (this->device_model
+                           ->get_optional_value<bool>(ControllerComponentVariables::AuthCacheDisablePostAuthorize)
+                           .value_or(false)) {
+                EVLOG_info << "Found invalid entry in AuthCache: Not sending new request because "
+                              "AuthCacheDisablePostAuthorize is enabled";
+                response.idTokenInfo = cache_entry.value();
+                return response;
             } else {
                 EVLOG_info << "Found invalid entry in AuthCache: Sending new request";
             }
@@ -614,14 +621,24 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
         return response;
     }
 
-    response = this->authorize_req(id_token, certificate, ocsp_request_data);
+    // When set to true this instructs the Charging Station to not issue any AuthorizationRequests, but only use
+    // Authorization Cache and Local Authorization List to determine validity of idTokens.
+    if (!this->device_model->get_optional_value<bool>(ControllerComponentVariables::DisableRemoteAuthorization)
+             .value_or(false)) {
+        response = this->authorize_req(id_token, certificate, ocsp_request_data);
 
-    if (auth_cache_enabled) {
-        this->update_id_token_cache_lifetime(response.idTokenInfo);
-        this->database_handler->authorization_cache_insert_entry(hashed_id_token, response.idTokenInfo);
-        this->update_authorization_cache_size();
+        if (auth_cache_enabled) {
+            this->update_id_token_cache_lifetime(response.idTokenInfo);
+            this->database_handler->authorization_cache_insert_entry(hashed_id_token, response.idTokenInfo);
+            this->update_authorization_cache_size();
+        }
+
+        return response;
     }
 
+    EVLOG_info << "Remote authorization disabled: Not sending Authorize.req";
+
+    response.idTokenInfo.status = AuthorizationStatusEnum::Unknown;
     return response;
 }
 
