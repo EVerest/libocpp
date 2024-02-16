@@ -349,8 +349,6 @@ void WebsocketTlsTPM::client_loop() {
 
     info.fd_limit_per_thread = 1 + 1 + 1;
 
-    const bool use_tpm = connection_options.use_tpm_tls;
-
     // Setup context - need to know the key type first
 
     std::string path_key;
