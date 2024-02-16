@@ -116,6 +116,10 @@ bool DatabaseHandler::clear_table(const std::string& table_name) {
 }
 
 void DatabaseHandler::open_connection() {
+    if (sqlite3_threadsafe() != 1) {
+        throw std::logic_error("SQLite must be in serialized thread mode");
+    }
+
     if (sqlite3_open(this->database_file_path.c_str(), &this->db) != SQLITE_OK) {
         EVLOG_error << "Error opening database at " << this->database_file_path.c_str() << ": " << sqlite3_errmsg(db);
         throw std::runtime_error("Could not open database at provided path.");
@@ -134,17 +138,37 @@ void DatabaseHandler::close_connection() {
 
 void DatabaseHandler::authorization_cache_insert_entry(const std::string& id_token_hash,
                                                        const IdTokenInfo& id_token_info) {
-    std::string sql = "INSERT OR REPLACE INTO AUTH_CACHE (ID_TOKEN_HASH, ID_TOKEN_INFO) VALUES "
-                      "(@id_token_hash, @id_token_info)";
+    std::string sql = "INSERT OR REPLACE INTO AUTH_CACHE (ID_TOKEN_HASH, ID_TOKEN_INFO, LAST_USED, EXPIRY_DATE) VALUES "
+                      "(@id_token_hash, @id_token_info, @last_used, @expiry_date)";
     SQLiteStatement insert_stmt(this->db, sql);
 
     insert_stmt.bind_text("@id_token_hash", id_token_hash);
     insert_stmt.bind_text("@id_token_info", json(id_token_info).dump(), SQLiteString::Transient);
+    if (id_token_info.cacheExpiryDateTime.has_value()) {
+        insert_stmt.bind_datetime("@expiry_date", id_token_info.cacheExpiryDateTime.value());
+    } else {
+        insert_stmt.bind_null("@expiry_date");
+    }
+    insert_stmt.bind_datetime("@last_used", DateTime());
 
     if (insert_stmt.step() != SQLITE_DONE) {
         EVLOG_error << "Could not insert into AUTH_CACHE table: " << sqlite3_errmsg(db);
         return;
     }
+}
+
+bool DatabaseHandler::authorization_cache_update_last_used(const std::string& id_token_hash) {
+    std::string sql = "UPDATE AUTH_CACHE SET LAST_USED = @last_used WHERE ID_TOKEN_HASH = @id_token_hash";
+    SQLiteStatement insert_stmt(this->db, sql);
+
+    insert_stmt.bind_datetime("@last_used", DateTime());
+    insert_stmt.bind_text("@id_token_hash", id_token_hash);
+
+    if (insert_stmt.step() != SQLITE_DONE) {
+        EVLOG_error << "Could not update AUTH_CACHE item: " << sqlite3_errmsg(this->db);
+        return false;
+    }
+    return true;
 }
 
 std::optional<IdTokenInfo> DatabaseHandler::authorization_cache_get_entry(const std::string& id_token_hash) {
@@ -179,6 +203,44 @@ void DatabaseHandler::authorization_cache_delete_entry(const std::string& id_tok
         }
     } catch (const std::exception& e) {
         EVLOG_error << "Exception while deleting from auth cache table: " << e.what();
+    }
+}
+
+bool DatabaseHandler::authorization_cache_delete_nr_of_oldest_entries(size_t nr_to_remove) {
+    try {
+        std::string sql = "DELETE FROM AUTH_CACHE WHERE ID_TOKEN_HASH IN (SELECT ID_TOKEN_HASH FROM AUTH_CACHE ORDER "
+                          "BY LAST_USED ASC LIMIT @nr_to_remove)";
+        SQLiteStatement delete_stmt(this->db, sql);
+
+        delete_stmt.bind_int("@nr_to_remove", nr_to_remove);
+
+        if (delete_stmt.step() != SQLITE_DONE) {
+            EVLOG_error << "Could not delete from table: " << sqlite3_errmsg(this->db);
+            return false;
+        }
+        return true;
+    } catch (const std::exception& e) {
+        EVLOG_error << "Exception while deleting from auth cache table: " << e.what();
+        return false;
+    }
+}
+
+bool DatabaseHandler::authorization_cache_delete_entries_with_expiry_date_before(DateTime now) {
+    try {
+        std::string sql = "DELETE FROM AUTH_CACHE WHERE ID_TOKEN_HASH IN (SELECT ID_TOKEN_HASH FROM AUTH_CACHE WHERE "
+                          "EXPIRY_DATE < @now)";
+        SQLiteStatement delete_stmt(this->db, sql);
+
+        delete_stmt.bind_datetime("@now", now);
+
+        if (delete_stmt.step() != SQLITE_DONE) {
+            EVLOG_error << "Could not delete from table: " << sqlite3_errmsg(this->db);
+            return false;
+        }
+        return true;
+    } catch (const std::exception& e) {
+        EVLOG_error << "Exception while deleting from auth cache table: " << e.what();
+        return false;
     }
 }
 

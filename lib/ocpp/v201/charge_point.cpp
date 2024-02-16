@@ -168,6 +168,36 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
                 .value_or(false),
             this->device_model->get_value<int>(ControllerComponentVariables::MessageTimeout)},
         this->database_handler);
+
+    this->auth_cache_cleanup_thread = std::thread([this]() {
+        while (true) {
+            // Wait for next wakeup or timeout
+            std::unique_lock<std::mutex> lk(this->auth_cache_cleanup_mutex);
+            auto wakeup_reason = this->auth_cache_cleanup_cv.wait_for(lk, std::chrono::minutes(15));
+
+            if (wakeup_reason == std::cv_status::timeout) {
+                EVLOG_debug << "Time based authorization cache cleanup";
+            } else {
+                EVLOG_debug << "Triggered authorization cache cleanup";
+            }
+
+            this->database_handler->authorization_cache_delete_entries_with_expiry_date_before(DateTime());
+
+            auto max_storage =
+                this->device_model
+                    ->get_variable_meta_data(ControllerComponentVariables::AuthCacheStorage.component,
+                                             ControllerComponentVariables::AuthCacheStorage.variable.value())
+                    .value()
+                    .characteristics.maxLimit;
+            if (max_storage.has_value()) {
+                while (this->database_handler->authorization_cache_get_binary_size() > max_storage.value()) {
+                    this->database_handler->authorization_cache_delete_nr_of_oldest_entries(1);
+                }
+            }
+
+            this->update_authorization_cache_size();
+        }
+    });
 }
 
 void ChargePoint::start(BootReasonEnum bootreason) {
@@ -598,6 +628,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
             } else if (this->device_model->get_value<bool>(ControllerComponentVariables::LocalPreAuthorize) and
                        cache_entry.value().status == AuthorizationStatusEnum::Accepted) {
                 EVLOG_info << "Found valid entry in AuthCache";
+                this->database_handler->authorization_cache_update_last_used(hashed_id_token);
                 response.idTokenInfo = cache_entry.value();
                 return response;
             } else {
@@ -619,7 +650,9 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
     if (auth_cache_enabled) {
         this->update_id_token_cache_lifetime(response.idTokenInfo);
         this->database_handler->authorization_cache_insert_entry(hashed_id_token, response.idTokenInfo);
-        this->update_authorization_cache_size();
+
+        // Trigger auth cache cleanup since we added a new token. This will also update the used memory for the cache.
+        this->auth_cache_cleanup_cv.notify_one();
     }
 
     return response;
