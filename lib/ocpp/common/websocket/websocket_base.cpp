@@ -44,7 +44,7 @@ void WebsocketBase::register_disconnected_callback(const std::function<void()>& 
 }
 
 void WebsocketBase::register_closed_callback(
-    const std::function<void(const websocketpp::close::status::value reason)>& callback) {
+    const std::function<void(const WebsocketCloseReason reason)>& callback) {
     this->closed_callback = callback;
 }
 
@@ -73,21 +73,13 @@ bool WebsocketBase::initialized() {
     return true;
 }
 
-void WebsocketBase::disconnect(websocketpp::close::status::value code) {
+void WebsocketBase::disconnect(WebsocketCloseReason code) {
     if (!this->initialized()) {
         EVLOG_error << "Cannot disconnect a websocket that was not initialized";
         return;
     }
-
-    {
-        std::lock_guard<std::mutex> lk(this->reconnect_mutex);
-        if (code == websocketpp::close::status::normal) {
-            this->shutting_down = true;
-        }
-
-        if (this->reconnect_timer) {
-            this->reconnect_timer.get()->cancel();
-        }
+    if (code == WebsocketCloseReason::Normal) {
+        this->shutting_down = true;
     }
 
     if (this->ping_timer) {
@@ -173,7 +165,7 @@ void WebsocketBase::on_pong_timeout(websocketpp::connection_hdl hdl, std::string
     if (!this->reconnecting) {
         EVLOG_info << "Reconnecting because of a pong timeout after " << this->connection_options.pong_timeout_s << "s";
         this->reconnecting = true;
-        this->close(websocketpp::close::status::going_away, "Pong timeout");
+        this->close(WebsocketCloseReason::GoingAway, "Pong timeout");
     }
 }
 

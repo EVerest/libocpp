@@ -55,14 +55,13 @@ bool WebsocketPlain::connect() {
             EVLOG_info << "Reconnecting to plain websocket at uri: " << this->connection_options.csms_uri.string()
                        << " with security profile: " << this->connection_options.security_profile;
 
-            // close connection before reconnecting
-            if (this->m_is_connected) {
-                try {
-                    EVLOG_info << "Closing websocket connection before reconnecting";
-                    this->ws_client.close(this->handle, websocketpp::close::status::normal, "");
-                } catch (std::exception& e) {
-                    EVLOG_error << "Error on plain close: " << e.what();
-                }
+        // close connection before reconnecting
+        if (this->m_is_connected) {
+            try {
+                EVLOG_info << "Closing websocket connection before reconnecting";
+                this->ws_client.close(this->handle, WebsocketCloseReason::Normal, "");
+            } catch (std::exception& e) {
+                EVLOG_error << "Error on plain close: " << e.what();
             }
 
             this->cancel_reconnect_timer();
@@ -109,7 +108,7 @@ void WebsocketPlain::reconnect(std::error_code reason, long delay) {
         if (this->m_is_connected) {
             try {
                 EVLOG_info << "Closing websocket connection before reconnecting";
-                this->ws_client.close(this->handle, websocketpp::close::status::normal, "");
+                this->ws_client.close(this->handle, WebsocketCloseReason::Normal, "");
             } catch (std::exception& e) {
                 EVLOG_error << "Error on plain close: " << e.what();
             }
@@ -127,7 +126,7 @@ void WebsocketPlain::reconnect(std::error_code reason, long delay) {
     // TODO(kai): complete error handling, especially making sure that a reconnect is only attempted in reasonable
     // circumstances
     switch (reason.value()) {
-    case websocketpp::close::status::force_tcp_drop:
+    case WebsocketCloseReason::ForceTcpDrop:
         /* code */
         break;
 
@@ -225,7 +224,7 @@ void WebsocketPlain::on_close_plain(client* c, websocketpp::connection_hdl hdl) 
                << websocketpp::close::status::get_string(con->get_remote_close_code())
                << "), reason: " << con->get_remote_close_reason();
     // dont reconnect on normal code
-    if (con->get_remote_close_code() != websocketpp::close::status::normal) {
+    if (con->get_remote_close_code() != WebsocketCloseReason::Normal) {
         this->reconnect(error_code, this->get_reconnect_interval());
     } else {
         this->closed_callback(con->get_remote_close_code());
@@ -248,11 +247,11 @@ void WebsocketPlain::on_fail_plain(client* c, websocketpp::connection_hdl hdl) {
         this->connection_attempts <= this->connection_options.max_connection_attempts) {
         this->reconnect(ec, this->get_reconnect_interval());
     } else {
-        this->close(websocketpp::close::status::normal, "Connection failed");
+        this->close(WebsocketCloseReason::Normal, "Connection failed");
     }
 }
 
-void WebsocketPlain::close(websocketpp::close::status::value code, const std::string& reason) {
+void WebsocketPlain::close(WebsocketCloseReason code, const std::string& reason) {
     EVLOG_info << "Closing plain websocket.";
     websocketpp::lib::error_code ec;
     this->cancel_reconnect_timer();
@@ -262,7 +261,7 @@ void WebsocketPlain::close(websocketpp::close::status::value code, const std::st
     if (ec) {
         EVLOG_error << "Error initiating close of plain websocket: " << ec.message();
         // on_close_plain won't be called here so we have to call the closed_callback manually
-        this->closed_callback(websocketpp::close::status::abnormal_close);
+        this->closed_callback(WebsocketCloseReason::AbnormalClose);
     } else {
         EVLOG_info << "Closed plain websocket successfully.";
     }

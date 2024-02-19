@@ -60,7 +60,7 @@ public:
     void reconnect(std::error_code reason, long delay) override;
 
     /// \brief Closes a plaintext websocket connection
-    void close(websocketpp::close::status::value code, const std::string& reason) override;
+    void close(WebsocketCloseReason code, const std::string& reason) override;
 
     /// \brief send a \p message over the websocket
     /// \returns true if the message was sent successfully

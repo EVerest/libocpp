@@ -184,7 +184,7 @@ void ChargePointImpl::init_websocket() {
             this->v2g_certificate_timer->stop();
         }
     });
-    this->websocket->register_closed_callback([this](const websocketpp::close::status::value reason) {
+    this->websocket->register_closed_callback([this](const WebsocketCloseReason reason) {
         if (this->switch_security_profile_callback != nullptr) {
             this->switch_security_profile_callback();
         }
@@ -256,7 +256,7 @@ void ChargePointImpl::connect_websocket() {
 
 void ChargePointImpl::disconnect_websocket() {
     if (this->websocket->is_connected()) {
-        this->websocket->disconnect(websocketpp::close::status::normal);
+        this->websocket->disconnect(WebsocketCloseReason::Normal);
     }
 }
 
@@ -905,7 +905,7 @@ bool ChargePointImpl::stop() {
         this->stop_all_transactions();
 
         this->database_handler->close_connection();
-        this->websocket->disconnect(websocketpp::close::status::normal);
+        this->websocket->disconnect(WebsocketCloseReason::Normal);
         this->message_queue->stop();
 
         this->stopped = true;
@@ -1422,7 +1422,7 @@ void ChargePointImpl::handleChangeConfigurationRequest(ocpp::Call<ChangeConfigur
                                 this->switchSecurityProfile(security_profile, 1);
                             };
                             // disconnected_callback will trigger security_profile_callback when it is set
-                            this->websocket->disconnect(websocketpp::close::status::normal);
+                            this->websocket->disconnect(WebsocketCloseReason::Normal);
                         }
                     } catch (const std::invalid_argument& e) {
                         response.status = ConfigurationStatus::Rejected;
