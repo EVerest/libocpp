@@ -16,7 +16,8 @@ protected:
     const RequiredComponentVariable cv = ControllerComponentVariables::AlignedDataInterval;
 
     void SetUp() override {
-        dm = std::make_unique<DeviceModel>(std::move(std::make_unique<DeviceModelStorageSqlite>(DEVICE_MODEL_DATABASE)));
+        dm =
+            std::make_unique<DeviceModel>(std::move(std::make_unique<DeviceModelStorageSqlite>(DEVICE_MODEL_DATABASE)));
     }
 
     void TearDown() override {
