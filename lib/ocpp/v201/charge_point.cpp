@@ -568,6 +568,12 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
                 // C14.FR.02: If found in local list we shall start charging without an AuthorizeRequest
                 EVLOG_info << "Found valid entry in local authorization list";
                 response.idTokenInfo = id_token_info.value();
+            } else if (!this->device_model
+                            ->get_optional_value<bool>(ControllerComponentVariables::DisableRemoteAuthorization)
+                            .value_or(false)) {
+                EVLOG_info << "Found invalid entry in local authorization list but not sending Authorize.req because "
+                              "RemoteAuthorization is disabled";
+                response.idTokenInfo.status = AuthorizationStatusEnum::Unknown;
             } else if (this->websocket->is_connected()) {
                 // C14.FR.03: If a value found but not valid we shall send an authorize request
                 EVLOG_info << "Found invalid entry in local authorization list: Sending Authorize.req";
@@ -636,7 +642,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
         return response;
     }
 
-    EVLOG_info << "Remote authorization disabled: Not sending Authorize.req";
+    EVLOG_info << "Not sending Authorize.req because RemoteAuthorization is disabled";
 
     response.idTokenInfo.status = AuthorizationStatusEnum::Unknown;
     return response;
