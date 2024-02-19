@@ -4,7 +4,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <ocpp/v201/device_model_storage_sqlite.hpp>
-#include <ocpp/v201/ctrlr_component_variables.hpp>
 
 namespace ocpp {
 namespace v201 {
