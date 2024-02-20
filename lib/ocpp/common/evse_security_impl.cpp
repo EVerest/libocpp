@@ -281,6 +281,8 @@ evse_security::LeafCertificateType from_ocpp(CertificateSigningUseEnum other) {
         return evse_security::LeafCertificateType::V2G;
     case CertificateSigningUseEnum::ManufacturerCertificate:
         return evse_security::LeafCertificateType::MF;
+    case CertificateSigningUseEnum::CombinedCertificate:
+        return evse_security::LeafCertificateType::Combined;
     default:
         throw std::runtime_error("Could not convert CertificateSigningUseEnum to evse_security::LeafCertificateType");
     }

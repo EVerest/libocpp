@@ -1601,10 +1601,16 @@ void ChargePoint::sign_certificate_req(const ocpp::CertificateSigningUseEnum& ce
         return;
     }
 
+    EVLOG_info << "csr info: " << common.value() << " " << organization.value() << " " << country.value();
+
     // TODO: use_tpm is hardcoded false here, see if it will require change
     const auto csr = this->evse_security->generate_certificate_signing_request(
         certificate_signing_use, country.value(), organization.value(), common.value(), false);
     req.csr = csr;
+
+    if(certificate_signing_use == ocpp::CertificateSigningUseEnum::V2GCertificate) {
+        req.certificateType = CertificateSigningUseEnum::V2GCertificate;
+    }
 
     this->awaited_certificate_signing_use_enum = certificate_signing_use;
 
@@ -2480,7 +2486,9 @@ void ChargePoint::handle_trigger_message(Call<TriggerMessageRequest> call) {
         // TODO:
         // PublishFirmwareStatusNotification
         // SignCombinedCertificate
-
+    case MessageTriggerEnum::SignCombinedCertificate:
+        response.status = TriggerMessageStatusEnum::Accepted;
+        break;
     default:
         response.status = TriggerMessageStatusEnum::NotImplemented;
         break;
@@ -2594,6 +2602,9 @@ void ChargePoint::handle_trigger_message(Call<TriggerMessageRequest> call) {
 
     case MessageTriggerEnum::SignV2GCertificate: {
         sign_certificate_req(ocpp::CertificateSigningUseEnum::V2GCertificate);
+    } break;
+    case MessageTriggerEnum::SignCombinedCertificate: {        
+        sign_certificate_req(ocpp::CertificateSigningUseEnum::CombinedCertificate);
     } break;
 
     default:

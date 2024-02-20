@@ -480,7 +480,9 @@ std::ostream& operator<<(std::ostream& os, const OcppProtocolVersion& ocpp_proto
 enum class CertificateSigningUseEnum {
     ChargingStationCertificate,
     V2GCertificate,
-    ManufacturerCertificate
+    ManufacturerCertificate,
+    // Certificate used for both V2G and CSMS
+    CombinedCertificate
 };
 
 namespace conversions {

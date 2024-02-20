@@ -842,6 +842,8 @@ std::string certificate_signing_use_enum_to_string(CertificateSigningUseEnum e) 
         return "V2GCertificate";
     case CertificateSigningUseEnum::ManufacturerCertificate:
         return "ManufacturerCertificate";
+    case CertificateSigningUseEnum::CombinedCertificate:
+        return "CombinedCertificate";
     }
 
     throw std::out_of_range("No known string conversion for provided enum of type CertificateSigningUseEnum");
@@ -856,6 +858,9 @@ CertificateSigningUseEnum string_to_certificate_signing_use_enum(const std::stri
     }
     if (s == "ManufacturerCertificate") {
         return CertificateSigningUseEnum::ManufacturerCertificate;
+    }
+    if (s == "CombinedCertificate") {
+        return CertificateSigningUseEnum::CombinedCertificate;
     }
 
     throw std::out_of_range("Provided string " + s +
