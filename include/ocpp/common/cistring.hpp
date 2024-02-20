@@ -23,10 +23,7 @@ public:
     CiString(const char* data) : String<L>(data) {
     }
 
-    CiString(json data) : String<L>(data.get<std::string>()) {
-    }
-
-    template <size_t LL> CiString(const CiString<LL>& data) : String<L>(data.get()) {
+    CiString(const CiString<L>& data) : String<L>(data.get()) {
     }
 
     /// \brief Creates a string
