@@ -12,6 +12,9 @@
 
 namespace ocpp {
 
+extern websocketpp::close::status::value close_reason_to_value(WebsocketCloseReason reason);
+extern WebsocketCloseReason value_to_close_reason(websocketpp::close::status::value value);
+
 WebsocketPlain::WebsocketPlain(const WebsocketConnectionOptions& connection_options) : WebsocketBase() {
     set_connection_options(connection_options);
 
@@ -59,7 +62,7 @@ bool WebsocketPlain::connect() {
         if (this->m_is_connected) {
             try {
                 EVLOG_info << "Closing websocket connection before reconnecting";
-                this->ws_client.close(this->handle, WebsocketCloseReason::Normal, "");
+                this->ws_client.close(this->handle, websocketpp::close::status::normal, "");
             } catch (std::exception& e) {
                 EVLOG_error << "Error on plain close: " << e.what();
             }
@@ -108,7 +111,7 @@ void WebsocketPlain::reconnect(std::error_code reason, long delay) {
         if (this->m_is_connected) {
             try {
                 EVLOG_info << "Closing websocket connection before reconnecting";
-                this->ws_client.close(this->handle, WebsocketCloseReason::Normal, "");
+                this->ws_client.close(this->handle, websocketpp::close::status::normal, "");
             } catch (std::exception& e) {
                 EVLOG_error << "Error on plain close: " << e.what();
             }
@@ -125,7 +128,7 @@ void WebsocketPlain::reconnect(std::error_code reason, long delay) {
 
     // TODO(kai): complete error handling, especially making sure that a reconnect is only attempted in reasonable
     // circumstances
-    switch (reason.value()) {
+    switch (static_cast<WebsocketCloseReason>(reason.value())) {
     case WebsocketCloseReason::ForceTcpDrop:
         /* code */
         break;
@@ -224,10 +227,10 @@ void WebsocketPlain::on_close_plain(client* c, websocketpp::connection_hdl hdl) 
                << websocketpp::close::status::get_string(con->get_remote_close_code())
                << "), reason: " << con->get_remote_close_reason();
     // dont reconnect on normal code
-    if (con->get_remote_close_code() != WebsocketCloseReason::Normal) {
+    if (con->get_remote_close_code() != websocketpp::close::status::normal) {
         this->reconnect(error_code, this->get_reconnect_interval());
     } else {
-        this->closed_callback(con->get_remote_close_code());
+        this->closed_callback(value_to_close_reason(con->get_remote_close_code()));
     }
 }
 
@@ -257,7 +260,7 @@ void WebsocketPlain::close(WebsocketCloseReason code, const std::string& reason)
     this->cancel_reconnect_timer();
 
     this->ws_client.stop_perpetual();
-    this->ws_client.close(this->handle, code, reason, ec);
+    this->ws_client.close(this->handle, close_reason_to_value(code), reason, ec);
     if (ec) {
         EVLOG_error << "Error initiating close of plain websocket: " << ec.message();
         // on_close_plain won't be called here so we have to call the closed_callback manually

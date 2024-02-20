@@ -16,6 +16,40 @@
 
 namespace ocpp {
 
+websocketpp::close::status::value close_reason_to_value(WebsocketCloseReason reason) {
+    switch(reason) {
+    case WebsocketCloseReason::Normal:
+        return websocketpp::close::status::normal;
+    case WebsocketCloseReason::ForceTcpDrop:
+        return websocketpp::close::status::force_tcp_drop;
+    case WebsocketCloseReason::GoingAway:
+        return websocketpp::close::status::going_away;
+    case WebsocketCloseReason::AbnormalClose:
+        return websocketpp::close::status::abnormal_close;
+    case WebsocketCloseReason::ServiceRestart:
+        return websocketpp::close::status::service_restart;
+    }
+
+    throw std::out_of_range("No known conversion for provided enum of type WebsocketCloseReason");
+}
+
+WebsocketCloseReason value_to_close_reason(websocketpp::close::status::value value) {
+    switch(value) {
+    case websocketpp::close::status::normal:
+        return WebsocketCloseReason::Normal;
+    case websocketpp::close::status::force_tcp_drop:
+        return WebsocketCloseReason::ForceTcpDrop;
+    case websocketpp::close::status::going_away:
+        return WebsocketCloseReason::GoingAway;
+    case websocketpp::close::status::abnormal_close:
+        return WebsocketCloseReason::AbnormalClose;
+    case websocketpp::close::status::service_restart:
+        return WebsocketCloseReason::ServiceRestart;
+    }
+
+    throw std::out_of_range("No known conversion for provided enum of type websocketpp::close::status::value");
+}
+
 WebsocketTLS::WebsocketTLS(const WebsocketConnectionOptions& connection_options,
                            std::shared_ptr<EvseSecurity> evse_security) :
     WebsocketBase(), evse_security(evse_security) {
@@ -70,7 +104,7 @@ bool WebsocketTLS::connect() {
         if (this->m_is_connected) {
             try {
                 EVLOG_info << "Closing websocket connection before reconnecting";
-                this->wss_client.close(this->handle, WebsocketCloseReason::Normal, "");
+                this->wss_client.close(this->handle, websocketpp::close::status::normal, "");
             } catch (std::exception& e) {
                 EVLOG_error << "Error on TLS close: " << e.what();
             }
@@ -118,7 +152,7 @@ void WebsocketTLS::reconnect(std::error_code reason, long delay) {
         if (this->m_is_connected) {
             try {
                 EVLOG_info << "Closing websocket connection before reconnecting";
-                this->wss_client.close(this->handle, WebsocketCloseReason::Normal, "");
+                this->wss_client.close(this->handle, websocketpp::close::status::normal, "");
             } catch (std::exception& e) {
                 EVLOG_error << "Error on plain close: " << e.what();
             }
@@ -134,8 +168,8 @@ void WebsocketTLS::reconnect(std::error_code reason, long delay) {
     }
 
     // TODO(kai): complete error handling, especially making sure that a reconnect is only attempted in reasonable
-    // circumstances
-    switch (reason.value()) {
+    // circumstances    
+    switch (static_cast<WebsocketCloseReason>(reason.value())) {
     case WebsocketCloseReason::ForceTcpDrop:
         /* code */
         break;
@@ -343,11 +377,12 @@ void WebsocketTLS::on_close_tls(tls_client* c, websocketpp::connection_hdl hdl) 
     EVLOG_info << "Closed TLS websocket connection with code: " << error_code << " ("
                << websocketpp::close::status::get_string(con->get_remote_close_code())
                << "), reason: " << con->get_remote_close_reason();
+
     // dont reconnect on normal close
-    if (con->get_remote_close_code() != WebsocketCloseReason::Normal) {
+    if (con->get_remote_close_code() != websocketpp::close::status::normal) {
         this->reconnect(error_code, this->get_reconnect_interval());
     } else {
-        this->closed_callback(con->get_remote_close_code());
+        this->closed_callback(value_to_close_reason(con->get_remote_close_code()));
     }
 }
 void WebsocketTLS::on_fail_tls(tls_client* c, websocketpp::connection_hdl hdl) {
@@ -378,7 +413,7 @@ void WebsocketTLS::close(WebsocketCloseReason code, const std::string& reason) {
     this->cancel_reconnect_timer();
 
     this->wss_client.stop_perpetual();
-    this->wss_client.close(this->handle, code, reason, ec);
+    this->wss_client.close(this->handle, close_reason_to_value(code), reason, ec);
 
     if (ec) {
         EVLOG_error << "Error initiating close of TLS websocket: " << ec.message();
