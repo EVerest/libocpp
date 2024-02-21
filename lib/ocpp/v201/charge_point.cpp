@@ -208,6 +208,7 @@ void ChargePoint::connect_websocket(std::optional<int32_t> config_slot) {
         this->disable_automatic_websocket_reconnects = false;
         this->init_websocket(config_slot);
         // TODO this should be removed?? It should connect when the future is filled and returned
+        // TODO already done in init_websocket. Should we combine those functions?
         // this->websocket->connect();
     }
 }
@@ -829,7 +830,7 @@ void ChargePoint::init_websocket(std::optional<int32_t> config_slot) {
                                  .at(this->network_configuration_priority);
     }
     EVLOG_info << "config -------> :  " << configuration_slot.size();
-    const auto connection_options = this->get_ws_connection_options(std::stoi(configuration_slot));
+    auto connection_options = this->get_ws_connection_options(std::stoi(configuration_slot));
     const int configuration_slot_int = std::stoi(configuration_slot);
     const auto network_connection_profile = this->get_network_connection_profile(configuration_slot_int);
 
@@ -872,6 +873,10 @@ void ChargePoint::init_websocket(std::optional<int32_t> config_slot) {
                         },
                         WEBSOCKET_INIT_DELAY);
                     return;
+                }
+                else
+                {
+                    connection_options.iface_or_ip = this->config_network_profile_result.interface_address;
                 }
                 break;
             }
@@ -3274,14 +3279,54 @@ void ChargePoint::set_connector_operative_status(int32_t evse_id, int32_t connec
 bool ChargePoint::on_try_switch_network_connection_profile(const int32_t configuration_slot) {
     EVLOG_info << "=============on_try_switch_network_profile============" << configuration_slot;
 
-    // TODO check if the configuration slot is valid
-    // TODO check if configuration slot has higher priority
+    if (this->network_configuration_priority == 0)
+    {
+        // Can not connect to a lower configuration priority than it is currently connected to.
+        return false;
+    }
+
+    // Convert to string as a vector of strings is used.
+    const std::string configuration_slot_string = std::to_string(configuration_slot);
+
+    // Check if configuration slot is valid and has higher priority.
+    const std::vector<std::string> network_connection_priorities = ocpp::get_vector_from_csv(
+        this->device_model->get_value<std::string>(ControllerComponentVariables::NetworkConfigurationPriority));
+    if (network_connection_priorities.size() > 1) {
+        if (network_connection_priorities.at(this->network_configuration_priority) == configuration_slot_string)
+        {
+            // This configuration slot is already connected.
+            return true;
+        }
+
+        auto it = std::find(network_connection_priorities.begin(), network_connection_priorities.end(), configuration_slot_string);
+        if (it != network_connection_priorities.end())
+        {
+            const uint32_t index = it - network_connection_priorities.begin();
+            if (index < this->network_configuration_priority)
+            {
+                // Priority is indeed higher
+                EVLOG_debug << "Trying to connect with higher priority network connection profile (new priority: " << index + 1
+                            << ", was: " << this->network_configuration_priority << ").";
+            }
+        }
+        else
+        {
+            // Slot not found.
+            return false;
+        }
+    }
+
+    const std::optional<NetworkConnectionProfile> network_connection_profile_opt =
+        this->get_network_connection_profile(configuration_slot);
+    if (!network_connection_profile_opt.has_value())
+    {
+        return false;
+    }
+
     try {
+        // TODO implement
         // call disconnect
         this->disconnect_websocket(); // normal close
-        while (!this->is_offline()) {
-            /* code */
-        }
 
         // TODO call configure network connection profile callback
 

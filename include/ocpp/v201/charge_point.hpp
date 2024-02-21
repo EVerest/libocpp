@@ -232,7 +232,7 @@ private:
     UploadLogStatusEnum upload_log_status;
     int32_t upload_log_status_id;
     BootReasonEnum bootreason;
-    int network_configuration_priority;
+    uint32_t network_configuration_priority;
     bool disable_automatic_websocket_reconnects;
     bool skip_invalid_csms_certificate_notifications;
 
