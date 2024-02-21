@@ -281,7 +281,7 @@ private:
 
     /// @brief Initialize the websocket connection.
     /// @param configuration_slot Optional configuration slot to initialize the websocket to.
-    void init_websocket(std::optional<std::string> config_slot = std::nullopt);
+    void init_websocket(std::optional<int32_t> config_slot = std::nullopt);
     WebsocketConnectionOptions get_ws_connection_options(const int32_t configuration_slot);
     void init_certificate_expiration_check_timers();
     void scheduled_check_client_certificate_expiration();
@@ -601,7 +601,7 @@ public:
 
     /// @brief Initializes the websocket and connects to CSMS if it is not yet connected.
     /// @param configuration_slot Optional configuration slot to connect to
-    void connect_websocket(std::optional<std::string> config_slot = std::nullopt);
+    void connect_websocket(std::optional<int32_t> config_slot = std::nullopt);
 
     /// \brief Disconnects the the websocket connection to the CSMS if it is connected
     /// \param code Optional websocket close status code (default: normal).
@@ -786,7 +786,7 @@ public:
     /// This disregards the prority
     /// \param configuration_slot Slot in which the configuration is stored
     /// \return true if the switch is possible.
-    bool on_try_switch_network_connection_profile(const std::string configuration_slot);
+    bool on_try_switch_network_connection_profile(const int32_t configuration_slot);
 
     ///
     /// \brief Called when a network is disconnected, for example when an ethernet cable is removed.

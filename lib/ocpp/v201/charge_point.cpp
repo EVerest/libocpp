@@ -203,11 +203,12 @@ void ChargePoint::stop() {
     this->message_queue->stop();
 }
 
-void ChargePoint::connect_websocket(std::optional<std::string> config_slot) {
+void ChargePoint::connect_websocket(std::optional<int32_t> config_slot) {
     if (!this->websocket->is_connected()) {
         this->disable_automatic_websocket_reconnects = false;
         this->init_websocket(config_slot);
-        this->websocket->connect();
+        // TODO this should be removed?? It should connect when the future is filled and returned
+        // this->websocket->connect();
     }
 }
 
@@ -811,7 +812,7 @@ bool ChargePoint::send(CallError call_error) {
     return true;
 }
 
-void ChargePoint::init_websocket(std::optional<std::string> config_slot) {
+void ChargePoint::init_websocket(std::optional<int32_t> config_slot) {
 
     std::string configuration_slot;
     if (this->device_model->get_value<std::string>(ControllerComponentVariables::ChargePointId).find(':') !=
@@ -3270,16 +3271,19 @@ void ChargePoint::set_connector_operative_status(int32_t evse_id, int32_t connec
     this->evses.at(evse_id)->set_connector_operative_status(connector_id, new_status, persist);
 }
 
-bool ChargePoint::on_try_switch_network_connection_profile(const std::string configuration_slot) {
+bool ChargePoint::on_try_switch_network_connection_profile(const int32_t configuration_slot) {
     EVLOG_info << "=============on_try_switch_network_profile============" << configuration_slot;
 
-    // check if the configuration slot is valid
+    // TODO check if the configuration slot is valid
+    // TODO check if configuration slot has higher priority
     try {
         // call disconnect
         this->disconnect_websocket(); // normal close
         while (!this->is_offline()) {
             /* code */
         }
+
+        // TODO call configure network connection profile callback
 
         // call connect with the config_slot option
         this->connect_websocket(configuration_slot);
