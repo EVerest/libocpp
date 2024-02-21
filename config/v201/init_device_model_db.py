@@ -351,8 +351,8 @@ if __name__ == '__main__':
     database_initializer = DeviceModelDatabaseInitializer(database_file)
 
     if "init" in commands:
-        tmp_path = Path("/tmp/ocpp201")
-        if tmp_path == database_file or tmp_path in database_file.parents: # nosec
+        tmp_path = Path("/tmp/ocpp201") # nosec
+        if tmp_path == database_file or tmp_path in database_file.parents:
             tmp_path.mkdir(parents=True, exist_ok=True)
         database_initializer.initialize_database(schemas_path)
 
