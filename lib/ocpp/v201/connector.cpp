@@ -38,6 +38,7 @@ Connector::Connector(const int32_t evse_id, const int32_t connector_id,
 }
 
 void Connector::submit_event(ConnectorEvent event) {
+    std::lock_guard lk(this->status_mutex);
     switch (event) {
     case ConnectorEvent::PlugIn:
         this->component_state_manager->set_connector_occupied(this->evse_id, this->connector_id, true);
@@ -69,6 +70,13 @@ void Connector::submit_event(ConnectorEvent event) {
 void Connector::set_connector_operative_status(OperationalStatusEnum new_status, bool persist) {
     this->component_state_manager->set_connector_individual_operational_status(this->evse_id, this->connector_id,
                                                                                new_status, persist);
+}
+
+void Connector::restore_connector_operative_status() {
+    auto persisted_status =
+        this->component_state_manager->get_connector_persisted_operational_status(this->evse_id, this->connector_id);
+    this->component_state_manager->set_connector_individual_operational_status(this->evse_id, this->connector_id,
+                                                                               persisted_status, false);
 }
 
 OperationalStatusEnum Connector::get_effective_operational_status() {

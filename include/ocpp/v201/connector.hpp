@@ -44,6 +44,9 @@ private:
     /// \brief Component responsible for maintaining and monitoring the operational status of CS, EVSEs, and connectors.
     std::shared_ptr<ComponentStateManager> component_state_manager;
 
+    /// \brief status mutex to protect the status of the connector against concurrent updates
+    std::mutex status_mutex;
+
 public:
     /// \brief Construct a new Connector object
     /// \param evse_id id of the EVSE the connector is ap art of
@@ -65,6 +68,10 @@ public:
     /// \param new_status: The operative status to switch to
     /// \param persist: True if the updated operative status setting should be persisted
     void set_connector_operative_status(OperationalStatusEnum new_status, bool persist);
+
+    /// \brief Restores the operative status of the connector to the persisted status and recomputes its effective
+    /// status
+    void restore_connector_operative_status();
 };
 
 } // namespace v201

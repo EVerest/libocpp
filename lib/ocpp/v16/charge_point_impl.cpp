@@ -680,6 +680,14 @@ std::optional<MeterValue> ChargePointImpl::get_latest_meter_value(int32_t connec
                 sample.value = ocpp::conversions::double_to_string(this->connectors.at(connector)->max_current_offered);
                 break;
             }
+            case Measurand::Power_Offered: {
+                // power offered to EV
+                sample.unit.emplace(UnitOfMeasure::W);
+                sample.location.emplace(Location::Outlet);
+
+                sample.value = ocpp::conversions::double_to_string(this->connectors.at(connector)->max_power_offered);
+                break;
+            }
             case Measurand::SoC: {
                 // state of charge
                 const auto soc = measurement.soc_Percent;
@@ -894,7 +902,7 @@ bool ChargePointImpl::stop() {
 
         this->stop_all_transactions();
 
-        this->database_handler->close_db_connection();
+        this->database_handler->close_connection();
         this->websocket->disconnect(websocketpp::close::status::normal);
         this->message_queue->stop();
 
@@ -2183,6 +2191,7 @@ void ChargePointImpl::handleExtendedTriggerMessageRequest(ocpp::Call<ExtendedTri
 void ChargePointImpl::sign_certificate(const ocpp::CertificateSigningUseEnum& certificate_signing_use,
                                        bool initiated_by_trigger_message) {
 
+    EVLOG_info << "Create CSR (TPM=" << this->configuration->getUseTPM() << ")";
     SignCertificateRequest req;
 
     const auto csr = this->evse_security->generate_certificate_signing_request(
@@ -2263,19 +2272,20 @@ void ChargePointImpl::handleGetInstalledCertificateIdsRequest(ocpp::Call<GetInst
     if (call.msg.certificateType == CertificateUseEnumType::ManufacturerRootCertificate) {
         certificate_types.push_back(ocpp::CertificateType::MFRootCertificate);
     }
-
     // this is common CertificateHashDataChain
     const auto certificate_hash_data_chains = this->evse_security->get_installed_certificates(certificate_types);
-    // convert ocpp::CertificateHashData to v16::CertificateHashData
-    std::optional<std::vector<CertificateHashDataType>> certificate_hash_data_16_vec_opt;
-    std::vector<CertificateHashDataType> certificate_hash_data_16_vec;
-    for (const auto certificate_hash_data_chain_entry : certificate_hash_data_chains) {
-        certificate_hash_data_16_vec.push_back(
-            CertificateHashDataType(json(certificate_hash_data_chain_entry.certificateHashData)));
+    if (!certificate_hash_data_chains.empty()) {
+        // convert ocpp::CertificateHashData to v16::CertificateHashData
+        std::optional<std::vector<CertificateHashDataType>> certificate_hash_data_16_vec_opt;
+        std::vector<CertificateHashDataType> certificate_hash_data_16_vec;
+        for (const auto certificate_hash_data_chain_entry : certificate_hash_data_chains) {
+            certificate_hash_data_16_vec.push_back(
+                CertificateHashDataType(json(certificate_hash_data_chain_entry.certificateHashData)));
+        }
+        certificate_hash_data_16_vec_opt.emplace(certificate_hash_data_16_vec);
+        response.certificateHashData = certificate_hash_data_16_vec_opt;
+        response.status = GetInstalledCertificateStatusEnumType::Accepted;
     }
-    certificate_hash_data_16_vec_opt.emplace(certificate_hash_data_16_vec);
-    response.certificateHashData = certificate_hash_data_16_vec_opt;
-    response.status = GetInstalledCertificateStatusEnumType::Accepted;
 
     ocpp::CallResult<GetInstalledCertificateIdsResponse> call_result(response, call.uniqueId);
     this->send<GetInstalledCertificateIdsResponse>(call_result);
@@ -2665,6 +2675,26 @@ std::map<int32_t, ChargingSchedule> ChargePointImpl::get_all_composite_charging_
         const auto valid_profiles =
             this->smart_charging_handler->get_valid_profiles(start_time, end_time, connector_id);
         const auto composite_schedule = this->smart_charging_handler->calculate_composite_schedule(
+            valid_profiles, start_time, end_time, connector_id, ChargingRateUnit::A);
+        charging_schedules[connector_id] = composite_schedule;
+    }
+
+    return charging_schedules;
+}
+
+std::map<int32_t, EnhancedChargingSchedule>
+ChargePointImpl::get_all_enhanced_composite_charging_schedules(const int32_t duration_s) {
+
+    std::map<int32_t, EnhancedChargingSchedule> charging_schedules;
+
+    for (int connector_id = 0; connector_id <= this->configuration->getNumberOfConnectors(); connector_id++) {
+        const auto start_time = ocpp::DateTime();
+        const auto duration = std::chrono::seconds(duration_s);
+        const auto end_time = ocpp::DateTime(start_time.to_time_point() + duration);
+
+        const auto valid_profiles =
+            this->smart_charging_handler->get_valid_profiles(start_time, end_time, connector_id);
+        const auto composite_schedule = this->smart_charging_handler->calculate_enhanced_composite_schedule(
             valid_profiles, start_time, end_time, connector_id, ChargingRateUnit::A);
         charging_schedules[connector_id] = composite_schedule;
     }
@@ -3145,6 +3175,13 @@ void ChargePointImpl::on_max_current_offered(int32_t connector, int32_t max_curr
     // TODO(kai): uses power meter mutex because the reading context is similar, think about storing
     // this information in a unified struct
     this->connectors.at(connector)->max_current_offered = max_current;
+}
+
+void ChargePointImpl::on_max_power_offered(int32_t connector, int32_t max_power) {
+    std::lock_guard<std::mutex> lock(measurement_mutex);
+    // TODO(kai): uses power meter mutex because the reading context is similar, think about storing
+    // this information in a unified struct
+    this->connectors.at(connector)->max_power_offered = max_power;
 }
 
 void ChargePointImpl::start_transaction(std::shared_ptr<Transaction> transaction) {
