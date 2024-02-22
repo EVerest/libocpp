@@ -60,7 +60,6 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
     ocpp::ChargingStationBase(evse_security),
     registration_status(RegistrationStatusEnum::Rejected),
     network_configuration_priority(0),
-    disable_automatic_websocket_reconnects(false),
     skip_invalid_csms_certificate_notifications(false),
     reset_scheduled(false),
     reset_scheduled_evseids{},
@@ -160,6 +159,9 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
     // configure logging
     this->configure_message_logging_format(message_log_path);
 
+    this->connectivity_manager =
+        std::make_unique<ConnectivityManager>(*this->device_model.get(), evse_security, logging);
+
     this->message_queue = std::make_unique<ocpp::MessageQueue<v201::MessageType>>(
         [this](json message) -> bool { return this->websocket->send(message.dump()); },
         MessageQueueConfig{
@@ -178,17 +180,10 @@ void ChargePoint::start(BootReasonEnum bootreason) {
     // Trigger all initial status notifications and callbacks related to component state
     // Should be done before sending the BootNotification.req so that the correct states can be reported
     this->component_state_manager->trigger_all_effective_availability_changed_callbacks();
+    this->connectivity_manager->start_websocket();
     this->boot_notification_req(bootreason);
-    this->start_websocket();
     this->ocsp_updater.start();
     // FIXME(piet): Run state machine with correct initial state
-}
-
-void ChargePoint::start_websocket() {
-    this->init_websocket();
-    if (this->websocket != nullptr) {
-        this->websocket->connect();
-    }
 }
 
 void ChargePoint::stop() {
@@ -199,25 +194,16 @@ void ChargePoint::stop() {
     this->websocket_timer.stop();
     this->client_certificate_expiration_check_timer.stop();
     this->v2g_certificate_expiration_check_timer.stop();
-    this->disconnect_websocket(WebsocketCloseReason::Normal);
+    this->connectivity_manager->disconnect_websocket(WebsocketCloseReason::Normal);
     this->message_queue->stop();
 }
 
 void ChargePoint::connect_websocket(std::optional<int32_t> config_slot) {
-    if (!this->websocket->is_connected()) {
-        this->disable_automatic_websocket_reconnects = false;
-        this->init_websocket(config_slot);
-        // TODO this should be removed?? It should connect when the future is filled and returned
-        // TODO already done in init_websocket. Should we combine those functions?
-        // this->websocket->connect();
-    }
+    this->connectivity_manager->connect_websocket(config_slot);
 }
 
 void ChargePoint::disconnect_websocket(WebsocketCloseReason code) {
-    if (this->websocket != nullptr) {
-        this->disable_automatic_websocket_reconnects = true;
-        this->websocket->disconnect(code);
-    }
+    this->connectivity_manager->disconnect_websocket(code);
 }
 
 void ChargePoint::on_firmware_update_status_notification(int32_t request_id,
@@ -823,7 +809,7 @@ void ChargePoint::init_websocket(std::optional<int32_t> config_slot) {
 
     if (config_slot.has_value()) {
         EVLOG_info << " using configuration slot --->" << config_slot.value();
-        configuration_slot = config_slot.value();
+        configuration_slot = std::to_string(config_slot.value());
     } else {
         configuration_slot = ocpp::get_vector_from_csv(this->device_model->get_value<std::string>(
                                                            ControllerComponentVariables::NetworkConfigurationPriority))
@@ -853,7 +839,7 @@ void ChargePoint::init_websocket(std::optional<int32_t> config_slot) {
                 this->websocket_timer.timeout(
                     [this]() {
                         this->next_network_configuration_priority();
-                        this->start_websocket();
+                        this->connectivity_manager->start_websocket();
                     },
                     WEBSOCKET_INIT_DELAY);
                 return;
@@ -869,7 +855,7 @@ void ChargePoint::init_websocket(std::optional<int32_t> config_slot) {
                     this->websocket_timer.timeout(
                         [this]() {
                             this->next_network_configuration_priority();
-                            this->start_websocket();
+                            this->connectivity_manager->start_websocket();
                         },
                         WEBSOCKET_INIT_DELAY);
                     return;
@@ -887,7 +873,7 @@ void ChargePoint::init_websocket(std::optional<int32_t> config_slot) {
         this->websocket_timer.timeout(
             [this]() {
                 this->next_network_configuration_priority();
-                this->start_websocket();
+                this->connectivity_manager->start_websocket();
             },
             WEBSOCKET_INIT_DELAY);
         return;
@@ -976,18 +962,18 @@ void ChargePoint::init_websocket(std::optional<int32_t> config_slot) {
                           << this->network_configuration_priority + 1
                           << " which is configurationSlot: " << configuration_slot;
 
-            if (!this->disable_automatic_websocket_reconnects) {
-                this->websocket_timer.timeout(
-                    [this, reason]() {
-                        if (reason != WebsocketCloseReason::ServiceRestart) {
-                            this->next_network_configuration_priority();
-                            EVLOG_info << "next network config ---->";
-                        }
-                        EVLOG_info << "start websocket after close---->";
-                        this->start_websocket();
-                    },
-                    WEBSOCKET_INIT_DELAY);
-            }
+            // if (!this->disable_automatic_websocket_reconnects) {
+            //     this->websocket_timer.timeout(
+            //         [this, reason]() {
+            //             if (reason != WebsocketCloseReason::ServiceRestart) {
+            //                 this->next_network_configuration_priority();
+            //                 EVLOG_info << "next network config ---->";
+            //             }
+            //             EVLOG_info << "start websocket after close---->";
+            //             this->start_websocket();
+            //         },
+            //         WEBSOCKET_INIT_DELAY);
+            // }
         });
 
     this->websocket->register_connection_failed_callback([this](ConnectionFailedReason reason) {
@@ -3277,80 +3263,12 @@ void ChargePoint::set_connector_operative_status(int32_t evse_id, int32_t connec
 }
 
 bool ChargePoint::on_try_switch_network_connection_profile(const int32_t configuration_slot) {
-    EVLOG_info << "=============on_try_switch_network_profile============" << configuration_slot;
-
-    if (this->network_configuration_priority == 0)
-    {
-        // Can not connect to a lower configuration priority than it is currently connected to.
-        return false;
-    }
-
-    // Convert to string as a vector of strings is used.
-    const std::string configuration_slot_string = std::to_string(configuration_slot);
-
-    // Check if configuration slot is valid and has higher priority.
-    const std::vector<std::string> network_connection_priorities = ocpp::get_vector_from_csv(
-        this->device_model->get_value<std::string>(ControllerComponentVariables::NetworkConfigurationPriority));
-    if (network_connection_priorities.size() > 1) {
-        if (network_connection_priorities.at(this->network_configuration_priority) == configuration_slot_string)
-        {
-            // This configuration slot is already connected.
-            return true;
-        }
-
-        auto it = std::find(network_connection_priorities.begin(), network_connection_priorities.end(), configuration_slot_string);
-        if (it != network_connection_priorities.end())
-        {
-            const uint32_t index = it - network_connection_priorities.begin();
-            if (index < this->network_configuration_priority)
-            {
-                // Priority is indeed higher
-                EVLOG_debug << "Trying to connect with higher priority network connection profile (new priority: " << index + 1
-                            << ", was: " << this->network_configuration_priority << ").";
-            }
-        }
-        else
-        {
-            // Slot not found.
-            return false;
-        }
-    }
-
-    const std::optional<NetworkConnectionProfile> network_connection_profile_opt =
-        this->get_network_connection_profile(configuration_slot);
-    if (!network_connection_profile_opt.has_value())
-    {
-        return false;
-    }
-
-    try {
-        // TODO implement
-        // call disconnect
-        this->disconnect_websocket(); // normal close
-
-        // TODO call configure network connection profile callback
-
-        // call connect with the config_slot option
-        this->connect_websocket(configuration_slot);
-        return true;
-
-    } catch (std::exception& e) {
-        EVLOG_info << "ERROR===============>";
-        return false;
-    }
+    return connectivity_manager->on_try_switch_network_connection_profile(configuration_slot);
 }
 
 void ChargePoint::on_network_disconnected(const std::optional<int32_t> configuration_slot,
                                           const std::optional<OCPPInterfaceEnum> ocpp_interface) {
-    if (!configuration_slot.has_value() && !ocpp_interface.has_value()) {
-        EVLOG_info << "Not clear which network is disconnected: configuration slot and ocpp interface are empty";
-    }
-
-    // TODO implementation:
-    // - Check if configuration slot is valid
-    // - Check if configuration_slot and ocpp_interface are pointing to the same ocpp interface
-    // - Check if configuration slot and / or ocpp interface is in use
-    // - If that is the case, disconnect websocket
+    connectivity_manager->on_network_disconnected(configuration_slot, ocpp_interface);
 }
 
 bool ChargePoint::are_all_connectors_effectively_inoperative() {

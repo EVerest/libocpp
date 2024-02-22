@@ -20,6 +20,7 @@
 #include <ocpp/v201/types.hpp>
 #include <ocpp/v201/utils.hpp>
 
+#include "ocpp/v201/connectivity_manager.h"
 #include "ocpp/v201/messages/Get15118EVCertificate.hpp"
 #include <ocpp/v201/messages/Authorize.hpp>
 #include <ocpp/v201/messages/BootNotification.hpp>
@@ -205,6 +206,7 @@ private:
     std::unique_ptr<MessageQueue<v201::MessageType>> message_queue;
     std::unique_ptr<DeviceModel> device_model;
     std::shared_ptr<DatabaseHandler> database_handler;
+    std::unique_ptr<ConnectivityManager> connectivity_manager;
 
     std::map<int32_t, AvailabilityChange> scheduled_change_availability_requests;
 
@@ -233,7 +235,6 @@ private:
     int32_t upload_log_status_id;
     BootReasonEnum bootreason;
     uint32_t network_configuration_priority;
-    bool disable_automatic_websocket_reconnects;
     bool skip_invalid_csms_certificate_notifications;
 
     /// \brief Component responsible for maintaining and persisting the operational status of CS, EVSEs, and connectors.

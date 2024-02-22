@@ -1,0 +1,115 @@
+#pragma once
+
+#include <functional>
+#include <future>
+#include <optional>
+
+#include "ocpp/common/websocket/websocket.hpp"
+#include "ocpp/common/websocket/websocket_base.hpp"
+#include "ocpp/v201/ocpp_types.hpp"
+
+namespace ocpp {
+namespace v201 {
+
+class DeviceModel;
+
+class ConnectivityManager {
+private: // Members
+    DeviceModel &device_model;
+    std::shared_ptr<EvseSecurity> evse_security;
+    std::shared_ptr<MessageLogging> logging;
+    uint32_t network_configuration_priority;
+    bool disable_automatic_websocket_reconnects;
+    std::unique_ptr<Websocket> websocket;
+    /// \brief The potential interface to use requested by libocpp, but not 'approved' by 'core' yet.
+    int32_t requested_network_slot;
+    /// \brief The interface which will be used to connect
+    int32_t pending_network_slot;
+    /// \brief The interface which is currently in use by the websocket
+    int32_t active_network_slot;
+
+public:
+    ConnectivityManager(DeviceModel &device_model, std::shared_ptr<EvseSecurity> evse_security, std::shared_ptr<MessageLogging> logging);
+    void set_websocket_connected_callback(
+        std::function<void(const int configuration_slot, const NetworkConnectionProfile& network_connection_profile)>
+            websocket_connected_callback);
+    void set_websocket_disconnected_callback(
+        std::function<void(const int configuration_slot, const NetworkConnectionProfile& network_connection_profile)>
+            websocket_disconnected_callback);
+    void set_configure_network_connection_profile_callback(
+        std::function<std::future<ConfigNetworkResult>(const int32_t configurationSlot,
+                                                       const NetworkConnectionProfile& network_connection_profile)>
+            configure_network_connection_profile_callback);
+
+    /// \brief Starts the websocket
+    void start_websocket();
+
+    /// \brief Stops the ChargePoint. Disconnects the websocket connection and stops MessageQueue and all timers
+    void stop();
+
+    /// @brief Initializes the websocket and connects to CSMS if it is not yet connected.
+    /// @param configuration_slot Optional configuration slot to connect to
+    void connect_websocket(std::optional<int32_t> config_slot = std::nullopt);
+
+    /// \brief Disconnects the the websocket connection to the CSMS if it is connected
+    /// \param code Optional websocket close status code (default: normal).
+    void disconnect_websocket(WebsocketCloseReason code = WebsocketCloseReason::Normal);
+
+    /// \brief Switch to a specifc network connection profile given the configuration slot.
+    /// This disregards the prority
+    /// \param configuration_slot Slot in which the configuration is stored
+    /// \return true if the switch is possible.
+    bool on_try_switch_network_connection_profile(const int32_t configuration_slot);
+
+    ///
+    /// \brief Called when a network is disconnected, for example when an ethernet cable is removed.
+    ///
+    /// This callback is introduced because the system might see a lot earlier when a network cable is disconnected
+    /// than the websocket. For the websocket it might take several minutes while the system might know within seconds
+    /// or even earlier. So when the system detects a disconnect of the network, it can call this function. If the
+    /// websocket is connected with the network profile in this slot, it can disconnect the websocket.
+    ///
+    /// \param configuration_slot   The slot of the network connection profile that is disconnected.
+    /// \param ocpp_interface       The interface that is disconnected.
+    ///
+    /// \note At least one of the two params must be provided, otherwise libocpp will not know which interface is down.
+    ///
+    void on_network_disconnected(const std::optional<int32_t> configuration_slot,
+                                 const std::optional<OCPPInterfaceEnum> ocpp_interface);
+
+private: // Functions
+    /* Callbacks for networking */
+    /// \brief register a \p callback that is called when the websocket is connected successfully
+    std::optional<
+        std::function<void(const int configuration_slot, const NetworkConnectionProfile& network_connection_profile)>>
+        websocket_connected_callback;
+
+    /// \brief register a \p callback that is called when the websocket connection is disconnected
+    std::optional<
+        std::function<void(const int configuration_slot, const NetworkConnectionProfile& network_connection_profile)>>
+        websocket_disconnected_callback;
+
+    /// @brief register a \p callback that is called when the network connection profile is to be configured.
+    std::optional<std::function<std::future<ConfigNetworkResult>(
+        const int32_t configurationSlot, const NetworkConnectionProfile& network_connection_profile)>>
+        configure_network_connection_profile_callback;
+
+    /// @brief Initialize the websocket connection.
+    /// @param configuration_slot Optional configuration slot to initialize the websocket to.
+    void init_websocket(std::optional<int32_t> config_slot = std::nullopt);
+    WebsocketConnectionOptions get_ws_connection_options(const int32_t configuration_slot);
+
+    /// \brief Gets the configured NetworkConnectionProfile based on the given \p configuration_slot . The
+    /// central system uri ofthe connection options will not contain ws:// or wss:// because this method removes it if
+    /// present \param network_configuration_priority \return
+    std::optional<NetworkConnectionProfile> get_network_connection_profile(const int32_t configuration_slot);
+    /// \brief Moves websocket network_configuration_priority to next profile
+    void next_network_configuration_priority();
+
+    /// @brief Removes all network connection profiles below the actual security profile and stores the new list in the
+    /// device model
+    void remove_network_connection_profiles_below_actual_security_profile();
+};
+
+} // namespace v201
+} // namespace ocpp
