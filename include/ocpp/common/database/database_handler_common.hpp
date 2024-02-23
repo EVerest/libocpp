@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <memory>
 #include <vector>
 #include <string>
 
@@ -21,7 +22,7 @@ struct DBTransactionMessage {
 
 class DatabaseHandlerCommon {
 protected:
-    DatabaseConnectionInterface &database;
+    std::shared_ptr<DatabaseConnectionInterface> database;
 
 public:
     ///
@@ -32,7 +33,7 @@ public:
     ///
     /// \warning The 'db' variable is not initialized, the deriving class should do that.
     ///
-    DatabaseHandlerCommon(DatabaseConnectionInterface &database) noexcept;
+    DatabaseHandlerCommon(std::shared_ptr<DatabaseConnectionInterface> database) noexcept;
 
     ~DatabaseHandlerCommon() = default;
 
