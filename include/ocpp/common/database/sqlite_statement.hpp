@@ -17,16 +17,18 @@ enum class SQLiteString {
     Transient /// Indicates string might change during statement, SQLite should make a copy
 };
 
-/// \brief Interface for SQLiteStatement wrapper class that handles finalization, step, binding and column access of sqlite3_stmt
-class SQLiteStatementInterface
-{
+/// \brief Interface for SQLiteStatement wrapper class that handles finalization, step, binding and column access of
+/// sqlite3_stmt
+class SQLiteStatementInterface {
 public:
     virtual ~SQLiteStatementInterface() = default;
-    virtual sqlite3_stmt* get() const = 0;
+
     virtual int step() = 0;
     virtual int reset() = 0;
+
     virtual int bind_text(const int idx, const std::string& val, SQLiteString lifetime = SQLiteString::Static) = 0;
-    virtual int bind_text(const std::string& param, const std::string& val, SQLiteString lifetime = SQLiteString::Static) = 0;
+    virtual int bind_text(const std::string& param, const std::string& val,
+                          SQLiteString lifetime = SQLiteString::Static) = 0;
     virtual int bind_int(const int idx, const int val) = 0;
     virtual int bind_int(const std::string& param, const int val) = 0;
     virtual int bind_datetime(const int idx, const ocpp::DateTime val) = 0;
@@ -35,6 +37,7 @@ public:
     virtual int bind_double(const std::string& param, const double val) = 0;
     virtual int bind_null(const int idx) = 0;
     virtual int bind_null(const std::string& param) = 0;
+
     virtual int column_type(const int idx) = 0;
     virtual std::string column_text(const int idx) = 0;
     virtual std::optional<std::string> column_text_nullable(const int idx) = 0;
@@ -43,7 +46,6 @@ public:
     virtual double column_double(const int idx) = 0;
 };
 
-
 /// \brief RAII wrapper class that handles finalization, step, binding and column access of sqlite3_stmt
 class SQLiteStatement : public SQLiteStatementInterface {
 private:
@@ -51,125 +53,30 @@ private:
     sqlite3* db;
 
 public:
-    SQLiteStatement(sqlite3* db, const std::string& query) : db(db), stmt(nullptr) {
-        if (sqlite3_prepare_v2(db, query.c_str(), query.size(), &this->stmt, nullptr) != SQLITE_OK) {
-            EVLOG_error << sqlite3_errmsg(db);
-            EVLOG_AND_THROW(std::runtime_error("Could not prepare statement for database."));
-        }
-    }
+    SQLiteStatement(sqlite3* db, const std::string& query);
+    ~SQLiteStatement();
 
-    ~SQLiteStatement() {
-        if (this->stmt != nullptr) {
-            if (sqlite3_finalize(this->stmt) != SQLITE_OK) {
-                EVLOG_error << "Error finalizing statement: " << sqlite3_errmsg(this->db);
-            }
-        }
-    }
+    int step() override;
+    int reset() override;
 
-    sqlite3_stmt* get() const override {
-        return this->stmt;
-    }
+    int bind_text(const int idx, const std::string& val, SQLiteString lifetime = SQLiteString::Static) override;
+    int bind_text(const std::string& param, const std::string& val,
+                  SQLiteString lifetime = SQLiteString::Static) override;
+    int bind_int(const int idx, const int val) override;
+    int bind_int(const std::string& param, const int val) override;
+    int bind_datetime(const int idx, const ocpp::DateTime val) override;
+    int bind_datetime(const std::string& param, const ocpp::DateTime val) override;
+    int bind_double(const int idx, const double val) override;
+    int bind_double(const std::string& param, const double val) override;
+    int bind_null(const int idx) override;
+    int bind_null(const std::string& param) override;
 
-    int step() override {
-        return sqlite3_step(this->stmt);
-    }
-
-    int reset() override {
-        return sqlite3_reset(this->stmt);
-    }
-
-    int bind_text(const int idx, const std::string& val, SQLiteString lifetime = SQLiteString::Static) override {
-        return sqlite3_bind_text(this->stmt, idx, val.c_str(), val.length(),
-                                 lifetime == SQLiteString::Static ? SQLITE_STATIC : SQLITE_TRANSIENT);
-    }
-
-    int bind_text(const std::string& param, const std::string& val, SQLiteString lifetime = SQLiteString::Static) override {
-        int index = sqlite3_bind_parameter_index(this->stmt, param.c_str());
-        if (index <= 0) {
-            throw std::out_of_range("Parameter not found in SQL query");
-        }
-        return bind_text(index, val, lifetime);
-    }
-
-    int bind_int(const int idx, const int val) override {
-        return sqlite3_bind_int(this->stmt, idx, val);
-    }
-
-    int bind_int(const std::string& param, const int val) override {
-        int index = sqlite3_bind_parameter_index(this->stmt, param.c_str());
-        if (index <= 0) {
-            throw std::out_of_range("Parameter not found in SQL query");
-        }
-        return bind_int(index, val);
-    }
-
-    int bind_datetime(const int idx, const ocpp::DateTime val) override {
-        return sqlite3_bind_int64(
-            this->stmt, idx,
-            std::chrono::duration_cast<std::chrono::milliseconds>(val.to_time_point().time_since_epoch()).count());
-    }
-
-    int bind_datetime(const std::string& param, const ocpp::DateTime val) override {
-        int index = sqlite3_bind_parameter_index(this->stmt, param.c_str());
-        if (index <= 0) {
-            throw std::out_of_range("Parameter not found in SQL query");
-        }
-        return bind_datetime(index, val);
-    }
-
-    int bind_double(const int idx, const double val) override {
-        return sqlite3_bind_double(this->stmt, idx, val);
-    }
-
-    int bind_double(const std::string& param, const double val) override {
-        int index = sqlite3_bind_parameter_index(this->stmt, param.c_str());
-        if (index <= 0) {
-            throw std::out_of_range("Parameter not found in SQL query");
-        }
-        return bind_double(index, val);
-    }
-
-    int bind_null(const int idx) override {
-        return sqlite3_bind_null(this->stmt, idx);
-    }
-
-    int bind_null(const std::string& param) override {
-        int index = sqlite3_bind_parameter_index(this->stmt, param.c_str());
-        if (index <= 0) {
-            throw std::out_of_range("Parameter not found in SQL query");
-        }
-        return bind_null(index);
-    }
-
-    int column_type(const int idx) override {
-        return sqlite3_column_type(this->stmt, idx);
-    }
-
-    std::string column_text(const int idx) override {
-        return reinterpret_cast<const char*>(sqlite3_column_text(this->stmt, idx));
-    }
-
-    std::optional<std::string> column_text_nullable(const int idx) override {
-        auto p = sqlite3_column_text(this->stmt, idx);
-        if (p != nullptr) {
-            return reinterpret_cast<const char*>(p);
-        } else {
-            return std::optional<std::string>{};
-        }
-    }
-
-    int column_int(const int idx) override {
-        return sqlite3_column_int(this->stmt, idx);
-    }
-
-    ocpp::DateTime column_datetime(const int idx) override {
-        int64_t time = sqlite3_column_int64(this->stmt, idx);
-        return DateTime(date::utc_clock::time_point(std::chrono::milliseconds(time)));
-    }
-
-    double column_double(const int idx) override {
-        return sqlite3_column_double(this->stmt, idx);
-    }
+    int column_type(const int idx) override;
+    std::string column_text(const int idx) override;
+    std::optional<std::string> column_text_nullable(const int idx) override;
+    int column_int(const int idx) override;
+    ocpp::DateTime column_datetime(const int idx) override;
+    double column_double(const int idx) override;
 };
 
 } // namespace ocpp::common
