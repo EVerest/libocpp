@@ -21,6 +21,7 @@ target_sources(ocpp
         ocpp/common/evse_security.cpp
         ocpp/common/database/database_connection.cpp
         ocpp/common/database/database_handler_common.cpp
+        ocpp/common/database/sqlite_statement.cpp
         ocpp/v16/charge_point.cpp
         ocpp/v16/database_handler.cpp
         ocpp/v16/charge_point_impl.cpp
