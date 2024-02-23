@@ -3,11 +3,10 @@
 
 #pragma once
 
-#include <deque>
-#include <memory>
+#include <vector>
 #include <string>
 
-#include <ocpp/common/database_connection.hpp>
+#include <ocpp/common/database/database_connection.hpp>
 #include <ocpp/common/types.hpp>
 
 namespace ocpp::common {
@@ -20,7 +19,10 @@ struct DBTransactionMessage {
     std::string unique_id;
 };
 
-class DatabaseHandlerBase : public DatabaseConnection {
+class DatabaseHandlerCommon {
+protected:
+    DatabaseConnectionInterface &database;
+
 public:
     ///
     /// \brief Base database handler class.
@@ -30,11 +32,9 @@ public:
     ///
     /// \warning The 'db' variable is not initialized, the deriving class should do that.
     ///
-    DatabaseHandlerBase(const fs::path &database_file_path) noexcept;
+    DatabaseHandlerCommon(DatabaseConnectionInterface &database) noexcept;
 
-    ~DatabaseHandlerBase();
-
-    void close_connection();
+    ~DatabaseHandlerCommon() = default;
 
     /// \brief Get transaction messages from transaction messages queue table.
     /// \return The transaction messages.

@@ -9,7 +9,7 @@
 #include <everest/logging.hpp>
 #include <ocpp/common/types.hpp>
 
-namespace ocpp {
+namespace ocpp::common {
 
 /// @brief Type used to indicate if SQLite should make a internal copy of a string
 enum class SQLiteString {
@@ -17,8 +17,35 @@ enum class SQLiteString {
     Transient /// Indicates string might change during statement, SQLite should make a copy
 };
 
+/// \brief Interface for SQLiteStatement wrapper class that handles finalization, step, binding and column access of sqlite3_stmt
+class SQLiteStatementInterface
+{
+public:
+    virtual ~SQLiteStatementInterface() = default;
+    virtual sqlite3_stmt* get() const = 0;
+    virtual int step() = 0;
+    virtual int reset() = 0;
+    virtual int bind_text(const int idx, const std::string& val, SQLiteString lifetime = SQLiteString::Static) = 0;
+    virtual int bind_text(const std::string& param, const std::string& val, SQLiteString lifetime = SQLiteString::Static) = 0;
+    virtual int bind_int(const int idx, const int val) = 0;
+    virtual int bind_int(const std::string& param, const int val) = 0;
+    virtual int bind_datetime(const int idx, const ocpp::DateTime val) = 0;
+    virtual int bind_datetime(const std::string& param, const ocpp::DateTime val) = 0;
+    virtual int bind_double(const int idx, const double val) = 0;
+    virtual int bind_double(const std::string& param, const double val) = 0;
+    virtual int bind_null(const int idx) = 0;
+    virtual int bind_null(const std::string& param) = 0;
+    virtual int column_type(const int idx) = 0;
+    virtual std::string column_text(const int idx) = 0;
+    virtual std::optional<std::string> column_text_nullable(const int idx) = 0;
+    virtual int column_int(const int idx) = 0;
+    virtual ocpp::DateTime column_datetime(const int idx) = 0;
+    virtual double column_double(const int idx) = 0;
+};
+
+
 /// \brief RAII wrapper class that handles finalization, step, binding and column access of sqlite3_stmt
-class SQLiteStatement {
+class SQLiteStatement : public SQLiteStatementInterface {
 private:
     sqlite3_stmt* stmt;
     sqlite3* db;
@@ -145,6 +172,6 @@ public:
     }
 };
 
-} // namespace ocpp
+} // namespace ocpp::common
 
 #endif // DEVICE_MODEL_STORAGE_SQLITE_HPP
