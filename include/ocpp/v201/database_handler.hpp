@@ -38,7 +38,7 @@ private:
     OperationalStatusEnum get_availability(int32_t evse_id, int32_t connector_id);
 
 public:
-    DatabaseHandler(common::DatabaseConnectionInterface &database, const fs::path& sql_init_path);
+    DatabaseHandler(std::shared_ptr<common::DatabaseConnectionInterface> database, const fs::path& sql_init_path);
 
     /// \brief Opens connection to database file
     void open_connection();

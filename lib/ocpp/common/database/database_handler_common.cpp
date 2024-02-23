@@ -6,7 +6,7 @@
 
 namespace ocpp::common {
 
-DatabaseHandlerCommon::DatabaseHandlerCommon(DatabaseConnectionInterface& database) noexcept :
+DatabaseHandlerCommon::DatabaseHandlerCommon(std::shared_ptr<DatabaseConnectionInterface> database) noexcept :
     database(database) {
 }
 
@@ -17,7 +17,7 @@ std::vector<DBTransactionMessage> DatabaseHandlerCommon::get_transaction_message
         std::string sql =
             "SELECT UNIQUE_ID, MESSAGE, MESSAGE_TYPE, MESSAGE_ATTEMPTS, MESSAGE_TIMESTAMP FROM TRANSACTION_QUEUE";
 
-        auto stmt = this->database.new_statement(sql);
+        auto stmt = this->database->new_statement(sql);
 
         int status;
         while ((status = stmt->step()) == SQLITE_ROW) {
@@ -61,7 +61,7 @@ bool DatabaseHandlerCommon::insert_transaction_message(const DBTransactionMessag
         "INSERT INTO TRANSACTION_QUEUE (UNIQUE_ID, MESSAGE, MESSAGE_TYPE, MESSAGE_ATTEMPTS, MESSAGE_TIMESTAMP) VALUES "
         "(@unique_id, @message, @message_type, @message_attempts, @message_timestamp)";
 
-    auto stmt = this->database.new_statement(sql);
+    auto stmt = this->database->new_statement(sql);
 
     const std::string message = transaction_message.json_message.dump();
     stmt->bind_text("@unique_id", transaction_message.unique_id);
@@ -71,7 +71,7 @@ bool DatabaseHandlerCommon::insert_transaction_message(const DBTransactionMessag
     stmt->bind_text("@message_timestamp", transaction_message.timestamp.to_rfc3339(), SQLiteString::Transient);
 
     if (stmt->step() != SQLITE_DONE) {
-        EVLOG_error << "Could not insert into TRANSACTION_QUEUE table: " << database.get_error_message();
+        EVLOG_error << "Could not insert into TRANSACTION_QUEUE table: " << database->get_error_message();
         return false;
     }
 
@@ -82,12 +82,12 @@ void DatabaseHandlerCommon::remove_transaction_message(const std::string& unique
     try {
         std::string sql = "DELETE FROM TRANSACTION_QUEUE WHERE UNIQUE_ID = @unique_id";
 
-        auto stmt = this->database.new_statement(sql);
+        auto stmt = this->database->new_statement(sql);
 
         stmt->bind_text("@unique_id", unique_id);
 
         if (stmt->step() != SQLITE_DONE) {
-            EVLOG_error << "Could not delete from table: " << database.get_error_message();
+            EVLOG_error << "Could not delete from table: " << database->get_error_message();
         }
     } catch (const std::exception& e) {
         EVLOG_error << "Exception while deleting from transaction queue table: " << e.what();

@@ -11,19 +11,19 @@ using namespace common;
 
 namespace v16 {
 
-DatabaseHandler::DatabaseHandler(DatabaseConnectionInterface& database, const fs::path& init_script_path) :
+DatabaseHandler::DatabaseHandler(std::shared_ptr<DatabaseConnectionInterface> database, const fs::path& init_script_path) :
     DatabaseHandlerCommon(database), init_script_path(init_script_path) {
 }
 
 void DatabaseHandler::open_connection(int32_t number_of_connectors) {
-    this->database.open_connection();
+    this->database->open_connection();
     this->run_sql_init();
     this->init_connector_table(number_of_connectors);
     this->insert_or_ignore_local_list_version(0);
 }
 
 void DatabaseHandler::close_connection() {
-    this->database.close_connection();
+    this->database->close_connection();
 }
 
 void DatabaseHandler::run_sql_init() {
@@ -33,8 +33,8 @@ void DatabaseHandler::run_sql_init() {
 
     init_sql << t.rdbuf();
 
-    if (!this->database.execute_statement(init_sql.str())) {
-        EVLOG_error << "Could not create tables: " << this->database.get_error_message();
+    if (!this->database->execute_statement(init_sql.str())) {
+        EVLOG_error << "Could not create tables: " << this->database->get_error_message();
         throw std::runtime_error("Database access error");
     }
 }
@@ -42,13 +42,13 @@ void DatabaseHandler::run_sql_init() {
 void DatabaseHandler::init_connector_table(int32_t number_of_connectors) {
     for (int32_t connector = 0; connector <= number_of_connectors; connector++) {
         std::string sql = "INSERT OR IGNORE INTO CONNECTORS (ID, AVAILABILITY) VALUES (@connector, @availability_type)";
-        auto stmt = this->database.new_statement(sql);
+        auto stmt = this->database->new_statement(sql);
 
         stmt->bind_int("@connector", connector);
         stmt->bind_text("@availability_type", "Operative", SQLiteString::Transient);
 
         if (stmt->step() != SQLITE_DONE) {
-            EVLOG_error << "Could not insert into table: " << this->database.get_error_message();
+            EVLOG_error << "Could not insert into table: " << this->database->get_error_message();
             throw std::runtime_error("db access error");
         }
     }
@@ -65,7 +65,7 @@ void DatabaseHandler::insert_transaction(const std::string& session_id, const in
         "CSMS_ACK, METER_LAST, METER_LAST_TIME, LAST_UPDATE, RESERVATION_ID, START_TRANSACTION_MESSAGE_ID) VALUES "
         "(@session_id, @transaction_id, @connector, @id_tag_start, @time_start, @meter_start, @csms_ack, "
         "@meter_last, @meter_last_time, @last_update, @reservation_id, @start_transaction_message_id)";
-    auto stmt = this->database.new_statement(sql);
+    auto stmt = this->database->new_statement(sql);
 
     stmt->bind_text("@session_id", session_id);
     stmt->bind_int("@transaction_id", transaction_id);
@@ -86,7 +86,7 @@ void DatabaseHandler::insert_transaction(const std::string& session_id, const in
     }
 
     if (stmt->step() != SQLITE_DONE) {
-        EVLOG_error << "Could not insert into table: " << this->database.get_error_message();
+        EVLOG_error << "Could not insert into table: " << this->database->get_error_message();
         throw std::runtime_error("db access error");
     }
 }
@@ -96,7 +96,7 @@ void DatabaseHandler::update_transaction(const std::string& session_id, int32_t 
 
     std::string sql = "UPDATE TRANSACTIONS SET TRANSACTION_ID=@transaction_id, PARENT_ID_TAG=@parent_id_tag, "
                       "LAST_UPDATE=@last_update WHERE ID==@session_id";
-    auto stmt = this->database.new_statement(sql);
+    auto stmt = this->database->new_statement(sql);
 
     // bindings
     stmt->bind_int("@transaction_id", transaction_id);
@@ -107,7 +107,7 @@ void DatabaseHandler::update_transaction(const std::string& session_id, int32_t 
     stmt->bind_text("@session_id", session_id);
 
     if (stmt->step() != SQLITE_DONE) {
-        EVLOG_error << "Could not insert into table: " << this->database.get_error_message();
+        EVLOG_error << "Could not insert into table: " << this->database->get_error_message();
         throw std::runtime_error("db access error");
     }
 }
@@ -118,7 +118,7 @@ void DatabaseHandler::update_transaction(const std::string& session_id, int32_t 
     std::string sql = "UPDATE TRANSACTIONS SET METER_STOP=@meter_stop, TIME_END=@time_end, "
                       "ID_TAG_END=@id_tag_end, STOP_REASON=@stop_reason, LAST_UPDATE=@last_update, "
                       "STOP_TRANSACTION_MESSAGE_ID=@stop_transaction_message_id WHERE ID==@session_id";
-    auto stmt = this->database.new_statement(sql);
+    auto stmt = this->database->new_statement(sql);
 
     stmt->bind_int("@meter_stop", meter_stop);
     stmt->bind_text("@time_end", time_end);
@@ -134,7 +134,7 @@ void DatabaseHandler::update_transaction(const std::string& session_id, int32_t 
     stmt->bind_text("@stop_transaction_message_id", stop_transaction_message_id, SQLiteString::Transient);
 
     if (stmt->step() != SQLITE_DONE) {
-        EVLOG_error << "Could not insert into table: " << this->database.get_error_message() << std::endl;
+        EVLOG_error << "Could not insert into table: " << this->database->get_error_message() << std::endl;
         throw std::runtime_error("db access error");
     }
 }
@@ -142,13 +142,13 @@ void DatabaseHandler::update_transaction(const std::string& session_id, int32_t 
 void DatabaseHandler::update_transaction_csms_ack(const int32_t transaction_id) {
     std::string sql =
         "UPDATE TRANSACTIONS SET CSMS_ACK=1, LAST_UPDATE=@last_update WHERE TRANSACTION_ID==@transaction_id";
-    auto stmt = this->database.new_statement(sql);
+    auto stmt = this->database->new_statement(sql);
 
     stmt->bind_text("@last_update", ocpp::DateTime().to_rfc3339(), SQLiteString::Transient);
     stmt->bind_int("@transaction_id", transaction_id);
 
     if (stmt->step() != SQLITE_DONE) {
-        EVLOG_error << "Could not insert into table: " << this->database.get_error_message() << std::endl;
+        EVLOG_error << "Could not insert into table: " << this->database->get_error_message() << std::endl;
         throw std::runtime_error("db access error");
     }
 }
@@ -157,7 +157,7 @@ void DatabaseHandler::update_transaction_meter_value(const std::string& session_
                                                      const std::string& last_meter_time) {
     std::string sql = "UPDATE TRANSACTIONS SET METER_LAST=@meter_last, METER_LAST_TIME=@meter_last_time, "
                       "LAST_UPDATE=@last_update WHERE ID==@session_id";
-    auto stmt = this->database.new_statement(sql);
+    auto stmt = this->database->new_statement(sql);
 
     stmt->bind_int("@meter_last", value);
     stmt->bind_text("@meter_last_time", last_meter_time);
@@ -165,7 +165,7 @@ void DatabaseHandler::update_transaction_meter_value(const std::string& session_
     stmt->bind_text("@session_id", session_id);
 
     if (stmt->step() != SQLITE_DONE) {
-        EVLOG_error << "Could not insert into table: " << this->database.get_error_message();
+        EVLOG_error << "Could not insert into table: " << this->database->get_error_message();
         throw std::runtime_error("db access error");
     }
 }
@@ -179,7 +179,7 @@ std::vector<TransactionEntry> DatabaseHandler::get_transactions(bool filter_inco
         sql += " WHERE CSMS_ACK==0";
     }
 
-    auto stmt = this->database.new_statement(sql);
+    auto stmt = this->database->new_statement(sql);
 
     while (stmt->step() != SQLITE_DONE) {
         TransactionEntry transaction_entry;
@@ -230,7 +230,7 @@ void DatabaseHandler::insert_or_update_authorization_cache_entry(const CiString<
 
     std::string sql = "INSERT OR REPLACE INTO AUTH_CACHE (ID_TAG, AUTH_STATUS, EXPIRY_DATE, PARENT_ID_TAG) VALUES "
                       "(@id_tag, @auth_status, @expiry_date, @parent_id_tag)";
-    auto stmt = this->database.new_statement(sql);
+    auto stmt = this->database->new_statement(sql);
 
     stmt->bind_text("@id_tag", id_tag.get(), SQLiteString::Transient);
     stmt->bind_text("@auth_status", v16::conversions::authorization_status_to_string(id_tag_info.status),
@@ -243,7 +243,7 @@ void DatabaseHandler::insert_or_update_authorization_cache_entry(const CiString<
     }
 
     if (stmt->step() != SQLITE_DONE) {
-        EVLOG_error << "Could not insert into table: " << this->database.get_error_message();
+        EVLOG_error << "Could not insert into table: " << this->database->get_error_message();
         throw std::runtime_error("db access error");
     }
 }
@@ -253,7 +253,7 @@ std::optional<v16::IdTagInfo> DatabaseHandler::get_authorization_cache_entry(con
     // TODO(piet): Only call this when authorization cache is enabled!
 
     std::string sql = "SELECT ID_TAG, AUTH_STATUS, EXPIRY_DATE, PARENT_ID_TAG FROM AUTH_CACHE WHERE ID_TAG = @id_tag";
-    auto stmt = this->database.new_statement(sql);
+    auto stmt = this->database->new_statement(sql);
 
     stmt->bind_text("@id_tag", id_tag.get(), SQLiteString::Transient);
 
@@ -289,20 +289,20 @@ std::optional<v16::IdTagInfo> DatabaseHandler::get_authorization_cache_entry(con
 
 bool DatabaseHandler::clear_authorization_cache() {
     // TODO(piet): Only call this when authorization cache is enabled!
-    return this->database.clear_table("AUTH_CACHE");
+    return this->database->clear_table("AUTH_CACHE");
 }
 
 void DatabaseHandler::insert_or_update_connector_availability(int32_t connector,
                                                               const v16::AvailabilityType& availability_type) {
     std::string sql = "INSERT OR REPLACE INTO CONNECTORS (ID, AVAILABILITY) VALUES (@id, @availability)";
-    auto stmt = this->database.new_statement(sql);
+    auto stmt = this->database->new_statement(sql);
 
     stmt->bind_int("@id", connector);
     stmt->bind_text("@availability", v16::conversions::availability_type_to_string(availability_type),
                    SQLiteString::Transient);
 
     if (stmt->step() != SQLITE_DONE) {
-        EVLOG_error << "Could not insert into table: " << this->database.get_error_message();
+        EVLOG_error << "Could not insert into table: " << this->database->get_error_message();
         throw std::runtime_error("db access error");
     }
 }
@@ -317,11 +317,11 @@ void DatabaseHandler::insert_or_update_connector_availability(const std::vector<
 
 v16::AvailabilityType DatabaseHandler::get_connector_availability(int32_t connector) {
     std::string sql = "SELECT AVAILABILITY FROM CONNECTORS WHERE ID = @connector";
-    auto stmt = this->database.new_statement(sql);
+    auto stmt = this->database->new_statement(sql);
 
     stmt->bind_int("@connector", connector);
     if (stmt->step() != SQLITE_ROW) {
-        EVLOG_error << "Error selecting availability of connector: " << this->database.get_error_message();
+        EVLOG_error << "Error selecting availability of connector: " << this->database->get_error_message();
         throw std::runtime_error("db access error");
     }
 
@@ -331,7 +331,7 @@ v16::AvailabilityType DatabaseHandler::get_connector_availability(int32_t connec
 std::map<int32_t, v16::AvailabilityType> DatabaseHandler::get_connector_availability() {
     std::map<int32_t, v16::AvailabilityType> availability_map;
     const std::string sql = "SELECT ID, AVAILABILITY FROM CONNECTORS";
-    auto stmt = this->database.new_statement(sql);
+    auto stmt = this->database->new_statement(sql);
 
     while (stmt->step() != SQLITE_DONE) {
         auto connector = stmt->column_int(0);
@@ -343,11 +343,11 @@ std::map<int32_t, v16::AvailabilityType> DatabaseHandler::get_connector_availabi
 
 void DatabaseHandler::insert_or_ignore_local_list_version(int32_t version) {
     std::string sql = "INSERT OR IGNORE INTO AUTH_LIST_VERSION (ID, VERSION) VALUES (0, @version)";
-    auto stmt = this->database.new_statement(sql);
+    auto stmt = this->database->new_statement(sql);
 
     stmt->bind_int("@version", version);
     if (stmt->step() != SQLITE_DONE) {
-        EVLOG_error << "Could not insert into table: " << this->database.get_error_message();
+        EVLOG_error << "Could not insert into table: " << this->database->get_error_message();
         throw std::runtime_error("db access error");
     }
 }
@@ -355,21 +355,21 @@ void DatabaseHandler::insert_or_ignore_local_list_version(int32_t version) {
 // local auth list management
 void DatabaseHandler::insert_or_update_local_list_version(int32_t version) {
     std::string sql = "INSERT OR REPLACE INTO AUTH_LIST_VERSION (ID, VERSION) VALUES (0, @version)";
-    auto stmt = this->database.new_statement(sql);
+    auto stmt = this->database->new_statement(sql);
 
     stmt->bind_int("@version", version);
     if (stmt->step() != SQLITE_DONE) {
-        EVLOG_error << "Could not insert into table: " << this->database.get_error_message();
+        EVLOG_error << "Could not insert into table: " << this->database->get_error_message();
         throw std::runtime_error("db access error");
     }
 }
 
 int32_t DatabaseHandler::get_local_list_version() {
     std::string sql = "SELECT VERSION FROM AUTH_LIST_VERSION WHERE ID = 0";
-    auto stmt = this->database.new_statement(sql);
+    auto stmt = this->database->new_statement(sql);
 
     if (stmt->step() != SQLITE_ROW) {
-        EVLOG_error << "Error selecting auth list version: " << this->database.get_error_message();
+        EVLOG_error << "Error selecting auth list version: " << this->database->get_error_message();
         throw std::runtime_error("db access error");
     }
 
@@ -381,7 +381,7 @@ void DatabaseHandler::insert_or_update_local_authorization_list_entry(const CiSt
     // add or replace
     std::string sql = "INSERT OR REPLACE INTO AUTH_LIST (ID_TAG, AUTH_STATUS, EXPIRY_DATE, PARENT_ID_TAG) VALUES "
                       "(@id_tag, @auth_status, @expiry_date, @parent_id_tag)";
-    auto stmt = this->database.new_statement(sql);
+    auto stmt = this->database->new_statement(sql);
 
     stmt->bind_text("@id_tag", id_tag.get(), SQLiteString::Transient);
     stmt->bind_text("@auth_status", v16::conversions::authorization_status_to_string(id_tag_info.status),
@@ -394,7 +394,7 @@ void DatabaseHandler::insert_or_update_local_authorization_list_entry(const CiSt
     }
 
     if (stmt->step() != SQLITE_DONE) {
-        EVLOG_error << "Could not insert into table: " << this->database.get_error_message();
+        EVLOG_error << "Could not insert into table: " << this->database->get_error_message();
         throw std::runtime_error("db access error");
     }
 }
@@ -413,17 +413,17 @@ void DatabaseHandler::insert_or_update_local_authorization_list(
 
 void DatabaseHandler::delete_local_authorization_list_entry(const std::string& id_tag) {
     std::string sql = "DELETE FROM AUTH_LIST WHERE ID_TAG = @id_tag;";
-    auto stmt = this->database.new_statement(sql);
+    auto stmt = this->database->new_statement(sql);
 
     stmt->bind_text("@id_tag", id_tag);
     if (stmt->step() != SQLITE_DONE) {
-        EVLOG_error << "Could not delete from table: " << this->database.get_error_message();
+        EVLOG_error << "Could not delete from table: " << this->database->get_error_message();
     }
 }
 
 std::optional<v16::IdTagInfo> DatabaseHandler::get_local_authorization_list_entry(const CiString<20>& id_tag) {
     std::string sql = "SELECT ID_TAG, AUTH_STATUS, EXPIRY_DATE, PARENT_ID_TAG FROM AUTH_LIST WHERE ID_TAG = @id_tag";
-    auto stmt = this->database.new_statement(sql);
+    auto stmt = this->database->new_statement(sql);
 
     stmt->bind_text("@id_tag", id_tag.get(), SQLiteString::Transient);
 
@@ -443,7 +443,7 @@ std::optional<v16::IdTagInfo> DatabaseHandler::get_local_authorization_list_entr
     }
 
     if (stmt->step() != SQLITE_DONE) {
-        EVLOG_error << "Could not insert into table: " << this->database.get_error_message();
+        EVLOG_error << "Could not insert into table: " << this->database->get_error_message();
         throw std::runtime_error("db access error");
     }
 
@@ -463,14 +463,14 @@ std::optional<v16::IdTagInfo> DatabaseHandler::get_local_authorization_list_entr
 }
 
 bool DatabaseHandler::clear_local_authorization_list() {
-    return this->database.clear_table("AUTH_LIST");
+    return this->database->clear_table("AUTH_LIST");
 }
 
 void DatabaseHandler::insert_or_update_charging_profile(const int connector_id, const v16::ChargingProfile& profile) {
     // add or replace
     std::string sql = "INSERT OR REPLACE INTO CHARGING_PROFILES (ID, CONNECTOR_ID, PROFILE) VALUES "
                       "(@id, @connector_id, @profile)";
-    auto stmt = this->database.new_statement(sql);
+    auto stmt = this->database->new_statement(sql);
 
     json json_profile(profile);
 
@@ -479,30 +479,30 @@ void DatabaseHandler::insert_or_update_charging_profile(const int connector_id, 
     stmt->bind_text("@profile", json_profile.dump(), SQLiteString::Transient);
 
     if (stmt->step() != SQLITE_DONE) {
-        EVLOG_error << "Could not insert into table: " << this->database.get_error_message();
+        EVLOG_error << "Could not insert into table: " << this->database->get_error_message();
         throw std::runtime_error("db access error");
     }
 }
 
 void DatabaseHandler::delete_charging_profile(const int profile_id) {
     std::string sql = "DELETE FROM CHARGING_PROFILES WHERE ID = @id;";
-    auto stmt = this->database.new_statement(sql);
+    auto stmt = this->database->new_statement(sql);
 
     stmt->bind_int("@id", profile_id);
     if (stmt->step() != SQLITE_DONE) {
-        EVLOG_error << "Could not delete from table: " << this->database.get_error_message();
+        EVLOG_error << "Could not delete from table: " << this->database->get_error_message();
     }
 }
 
 void DatabaseHandler::delete_charging_profiles() {
-    this->database.clear_table("CHARGING_PROFILES");
+    this->database->clear_table("CHARGING_PROFILES");
 }
 
 std::vector<v16::ChargingProfile> DatabaseHandler::get_charging_profiles() {
 
     std::vector<v16::ChargingProfile> profiles;
     std::string sql = "SELECT * FROM CHARGING_PROFILES";
-    auto stmt = this->database.new_statement(sql);
+    auto stmt = this->database->new_statement(sql);
 
     while (stmt->step() != SQLITE_DONE) {
         profiles.emplace_back(json::parse(stmt->column_text(2)));
@@ -513,7 +513,7 @@ std::vector<v16::ChargingProfile> DatabaseHandler::get_charging_profiles() {
 
 int DatabaseHandler::get_connector_id(const int profile_id) {
     std::string sql = "SELECT CONNECTOR_ID FROM CHARGING_PROFILES WHERE ID = @profile_id";
-    auto stmt = this->database.new_statement(sql);
+    auto stmt = this->database->new_statement(sql);
 
     stmt->bind_int("@profile_id", profile_id);
 
@@ -528,19 +528,19 @@ int DatabaseHandler::get_connector_id(const int profile_id) {
 void DatabaseHandler::insert_ocsp_update() {
     std::string sql = "INSERT OR REPLACE INTO OCSP_REQUEST (LAST_UPDATE) VALUES "
                       "(@last_update)";
-    auto stmt = this->database.new_statement(sql);
+    auto stmt = this->database->new_statement(sql);
 
     stmt->bind_text("@last_update", DateTime().to_rfc3339(), SQLiteString::Transient);
 
     if (stmt->step() != SQLITE_DONE) {
-        EVLOG_error << "Could not insert into table: " << this->database.get_error_message();
+        EVLOG_error << "Could not insert into table: " << this->database->get_error_message();
         throw std::runtime_error("db access error");
     }
 }
 
 std::optional<DateTime> DatabaseHandler::get_last_ocsp_update() {
     std::string sql = "SELECT LAST_UPDATE FROM OCSP_REQUEST";
-    auto stmt = this->database.new_statement(sql);
+    auto stmt = this->database->new_statement(sql);
 
     if (stmt->step() != SQLITE_ROW) {
         return std::nullopt;

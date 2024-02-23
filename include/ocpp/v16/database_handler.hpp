@@ -49,7 +49,7 @@ private:
     void init_connector_table(int32_t number_of_connectors);
 
 public:
-    DatabaseHandler(common::DatabaseConnectionInterface &database, const fs::path& init_script_path);
+    DatabaseHandler(std::shared_ptr<common::DatabaseConnectionInterface> database, const fs::path& init_script_path);
 
     /// \brief Opens the database connection, runs initialization script and initializes the CONNECTORS and
     /// AUTH_LIST_VERSION table.
