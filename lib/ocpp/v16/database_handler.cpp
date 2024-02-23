@@ -16,7 +16,9 @@ DatabaseHandler::DatabaseHandler(std::shared_ptr<DatabaseConnectionInterface> da
 }
 
 void DatabaseHandler::open_connection(int32_t number_of_connectors) {
-    this->database->open_connection();
+    if (!this->database->open_connection()) {
+        throw std::runtime_error("Could not open database at provided path.");
+    }
     this->run_sql_init();
     this->init_connector_table(number_of_connectors);
     this->insert_or_ignore_local_list_version(0);

@@ -16,23 +16,24 @@ DatabaseConnection::~DatabaseConnection() {
     close_connection();
 }
 
-void DatabaseConnection::open_connection() {
+bool DatabaseConnection::open_connection() {
     if (!fs::exists(this->database_file_path)) {
         fs::create_directories(this->database_file_path);
     }
 
     if (sqlite3_open(this->database_file_path.c_str(), &this->db) != SQLITE_OK) {
-        EVLOG_error << "Error opening database at " << this->database_file_path.c_str() << ": " << sqlite3_errmsg(db);
-        throw std::runtime_error("Could not open database at provided path.");
+        EVLOG_error << "Error opening database at " << this->database_file_path << ": " << sqlite3_errmsg(db);
+        return false;
     }
     EVLOG_info << "Established connection to Database: " << this->database_file_path;
+    return true;
 }
 
-void DatabaseConnection::close_connection() {
+bool DatabaseConnection::close_connection() {
     EVLOG_info << "Closing database connection...";
     if (this->db == nullptr) {
         EVLOG_info << "Already closed";
-        return;
+        return true;
     }
 
     // forcefully finalize all statements before calling sqlite3_close
@@ -41,16 +42,16 @@ void DatabaseConnection::close_connection() {
         sqlite3_finalize(stmt);
     }
 
-    if (sqlite3_close_v2(this->db) == SQLITE_OK) {
-        EVLOG_info << "Successfully closed database: " << this->database_file_path;
-        this->db = nullptr;
-    } else {
+    if (sqlite3_close_v2(this->db) != SQLITE_OK) {
         EVLOG_error << "Error closing database file: " << this->get_error_message();
+        return false;
     }
+    EVLOG_info << "Successfully closed database: " << this->database_file_path;
+    this->db = nullptr;
+    return true;
 }
 
-bool DatabaseConnection::execute_statement(const std::string& statement)
-{
+bool DatabaseConnection::execute_statement(const std::string& statement) {
     char* err_msg = nullptr;
     if (sqlite3_exec(this->db, statement.c_str(), NULL, NULL, &err_msg) != SQLITE_OK) {
         EVLOG_error << "Could not execute statement \"" << statement << "\": " << err_msg;
@@ -60,34 +61,27 @@ bool DatabaseConnection::execute_statement(const std::string& statement)
     return true;
 }
 
-const char* DatabaseConnection::get_error_message()
-{
+const char* DatabaseConnection::get_error_message() {
     return sqlite3_errmsg(this->db);
 }
 
-void DatabaseConnection::begin_transaction() {
-    if (!this->execute_statement("BEGIN TRANSACTION")) {
-        throw std::runtime_error("Could not begin transaction");
-    }
+bool DatabaseConnection::begin_transaction() {
+    return this->execute_statement("BEGIN TRANSACTION");
 }
 
-void DatabaseConnection::commit_transaction() {
-    if (!this->execute_statement("COMMIT TRANSACTION")) {
-        throw std::runtime_error("Could not commit transaction");
-    }
+bool DatabaseConnection::commit_transaction() {
+    return this->execute_statement("COMMIT TRANSACTION");
 }
 
-void DatabaseConnection::rollback_transaction() {
-    if (!this->execute_statement("ROLLBACK TRANSACTION")) {
-        throw std::runtime_error("Could not rollback transaction");
-    }
+bool DatabaseConnection::rollback_transaction() {
+    return this->execute_statement("ROLLBACK TRANSACTION");
 }
 
-std::unique_ptr<SQLiteStatementInterface> DatabaseConnection::new_statement(const std::string &sql) {
+std::unique_ptr<SQLiteStatementInterface> DatabaseConnection::new_statement(const std::string& sql) {
     return std::make_unique<SQLiteStatement>(this->db, sql);
 }
 
-bool DatabaseConnection::clear_table(const std::string &table) {
+bool DatabaseConnection::clear_table(const std::string& table) {
     return this->execute_statement("DELETE FROM "s + table);
 }
 
@@ -95,4 +89,4 @@ int64_t DatabaseConnection::get_last_inserted_rowid() {
     return sqlite3_last_insert_rowid(this->db);
 }
 
-} // namespace ocpp
+} // namespace ocpp::common

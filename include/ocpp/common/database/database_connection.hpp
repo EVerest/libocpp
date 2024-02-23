@@ -15,29 +15,35 @@ class DatabaseConnectionInterface {
 public:
     virtual ~DatabaseConnectionInterface() = default;
 
-    /// \brief Opens the database connection.
-    virtual void open_connection() = 0;
+    /// \brief Opens the database connection. Returns true if succeeded.
+    virtual bool open_connection() = 0;
 
-    /// \brief Closes the database connection.
-    virtual void close_connection() = 0;
+    /// \brief Closes the database connection. Returns true if succeeded.
+    virtual bool close_connection() = 0;
 
-    /// \brief Start a transaction on the database.
-    virtual void begin_transaction() = 0;
+    /// \brief Start a transaction on the database. Returns true if succeeded.
+    virtual bool begin_transaction() = 0;
 
-    /// \brief Commits the transaction on the database.
-    virtual void commit_transaction() = 0;
+    /// \brief Commits the transaction on the database. Returns true if succeeded.
+    virtual bool commit_transaction() = 0;
 
-    /// \brief Rolls back the transaction on the database.
-    virtual void rollback_transaction() = 0;
+    /// \brief Rolls back the transaction on the database. Returns true if succeeded.
+    virtual bool rollback_transaction() = 0;
 
+    /// \brief Immediately executes \p statement. Returns true if succeeded.
     virtual bool execute_statement(const std::string& statement) = 0;
 
-    virtual std::unique_ptr<SQLiteStatementInterface> new_statement(const std::string &sql) = 0;
+    /// \brief Returns a new SQLiteStatementInterface to be used to perform more advanced sql statements.
+    /// \note Will throw an std::runtime_error if the statement can't be prepared
+    virtual std::unique_ptr<SQLiteStatementInterface> new_statement(const std::string& sql) = 0;
 
+    /// \brief Returns the latest error message from sqlite3.
     virtual const char* get_error_message() = 0;
 
-    virtual bool clear_table(const std::string &table) = 0;
+    /// \brief Clears the table with name \p table. Returns true if succeeded.
+    virtual bool clear_table(const std::string& table) = 0;
 
+    /// \brief Gets the last inserted rowid.
     virtual int64_t get_last_inserted_rowid() = 0;
 };
 
@@ -51,29 +57,21 @@ public:
 
     virtual ~DatabaseConnection();
 
-    /// \brief Opens the database connection.
-    void open_connection();
+    bool open_connection() override;
+    bool close_connection() override;
 
-    /// \brief Closes the database connection.
-    void close_connection();
+    bool begin_transaction() override;
+    bool commit_transaction() override;
+    bool rollback_transaction() override;
 
-    /// \brief Start a transaction on the database.
-    void begin_transaction();
+    bool execute_statement(const std::string& statement) override;
+    std::unique_ptr<SQLiteStatementInterface> new_statement(const std::string& sql) override;
 
-    /// \brief Commits the transaction on the database.
-    void commit_transaction();
+    const char* get_error_message() override;
 
-    void rollback_transaction();
+    bool clear_table(const std::string& table) override;
 
-    bool execute_statement(const std::string& statement);
-
-    std::unique_ptr<SQLiteStatementInterface> new_statement(const std::string &sql);
-
-    const char* get_error_message();
-
-    bool clear_table(const std::string &table);
-
-    int64_t get_last_inserted_rowid();
+    int64_t get_last_inserted_rowid() override;
 };
 
 } // namespace ocpp::common

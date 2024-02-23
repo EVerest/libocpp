@@ -70,7 +70,9 @@ void DatabaseHandler::init_enum_table_inner(const std::string& table_name, const
         throw std::runtime_error("Table does not exist.");
     }
 
-    this->database->begin_transaction();
+    if (!this->database->begin_transaction()) {
+        throw std::runtime_error("Could not begin transaction");
+    }
 
     std::string sql = "INSERT INTO " + table_name + " VALUES (@id, @value);";
     auto insert_stmt = this->database->new_statement(sql);
@@ -88,7 +90,9 @@ void DatabaseHandler::init_enum_table_inner(const std::string& table_name, const
         insert_stmt->reset();
     }
 
-    this->database->commit_transaction();
+    if (!this->database->commit_transaction()) {
+        throw std::runtime_error("Could not commit transaction");
+    }
 }
 
 template <typename T>
@@ -100,7 +104,9 @@ void DatabaseHandler::init_enum_table(const std::string& table_name, T begin, T 
 
 
 void DatabaseHandler::open_connection() {
-    this->database->open_connection();
+    if (!this->database->open_connection()) {
+        throw std::runtime_error("Could not open database at provided path.");
+    }
     this->sql_init();
 }
 
@@ -360,7 +366,9 @@ bool DatabaseHandler::transaction_metervalues_insert(const std::string& transact
                        "UNIT_CUSTOM_DATA, UNIT_TEXT, UNIT_MULTIPLIER) VALUES (@meter_value_id, @value, @measurand, "
                        "@phase, @location, @custom_data, @unit_custom_data, @unit_text, @unit_multiplier);";
 
-    this->database->begin_transaction();
+    if (!this->database->begin_transaction()) {
+        throw std::runtime_error("Could not begin transaction");
+    }
 
     auto insert_stmt = this->database->new_statement(sql2);
 
@@ -411,7 +419,9 @@ bool DatabaseHandler::transaction_metervalues_insert(const std::string& transact
         insert_stmt->reset();
     }
 
-    this->database->commit_transaction();
+    if (!this->database->commit_transaction()) {
+        throw std::runtime_error("Could not commit transaction");
+    }
 
     return true;
 }
