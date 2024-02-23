@@ -9,7 +9,8 @@
 #include <memory>
 #include <ocpp/common/support_older_cpp_versions.hpp>
 
-#include <ocpp/common/database_handler_base.hpp>
+#include <ocpp/common/database/database_connection.hpp>
+#include <ocpp/common/database/database_handler_common.hpp>
 #include <ocpp/v201/ocpp_types.hpp>
 
 #include <everest/logging.hpp>
@@ -17,7 +18,7 @@
 namespace ocpp {
 namespace v201 {
 
-class DatabaseHandler : public ocpp::common::DatabaseHandlerBase {
+class DatabaseHandler : public common::DatabaseHandlerCommon {
 
 private:
     fs::path sql_init_path;
@@ -30,8 +31,6 @@ private:
     template <typename T>
     void init_enum_table(const std::string& table_name, T begin, T end, std::function<std::string(T)> conversion);
 
-    bool clear_table(const std::string& table_name);
-
     // Availability management (internal helpers)
     // Setting evse_id to 0 addresses the whole CS, setting evse_id > 0 and connector_id=0 addresses a whole EVSE
     void insert_availability(int32_t evse_id, int32_t connector_id, OperationalStatusEnum operational_status,
@@ -39,10 +38,12 @@ private:
     OperationalStatusEnum get_availability(int32_t evse_id, int32_t connector_id);
 
 public:
-    DatabaseHandler(const fs::path& database_path, const fs::path& sql_init_path);
+    DatabaseHandler(common::DatabaseConnectionInterface &database, const fs::path& sql_init_path);
 
     /// \brief Opens connection to database file
     void open_connection();
+
+    void close_connection();
 
     // Authorization cache management
 
