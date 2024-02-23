@@ -11,10 +11,11 @@ find_package(everest-cmake 0.1 REQUIRED
 )
 
 # options
-option(BUILD_TESTING "Run unit tests" OFF)
 option(CMAKE_RUN_CLANG_TIDY "Run clang-tidy" OFF)
-option(LIBOCPP_BUILD_EXAMPLES "Build charge_point and central_system binaries." OFF)
-option(OCPP_INSTALL "Install the library (shared data might be installed anyway)" ${EVC_MAIN_PROJECT})
+option(${PROJECT_NAME}_BUILD_EXAMPLES "Build charge_point and central_system binaries." OFF)
+option(${PROJECT_NAME}_INSTALL "Install the library (shared data might be installed anyway)" ${EVC_MAIN_PROJECT})
+option(${PROJECT_NAME}_BUILD_TESTING "Build unit tests, used if included as dependency" OFF)
+option(BUILD_TESTING "Build unit tests, used if standalone project" OFF)
 
 # dependencies
 find_package(Boost COMPONENTS program_options regex system thread REQUIRED)
@@ -25,7 +26,7 @@ if(NOT DISABLE_EDM)
     evc_setup_edm()
 
     # In EDM mode, we can't install exports (because the dependencies usually do not install their exports)
-    set(OCPP_INSTALL OFF)
+    set(${PROJECT_NAME}_INSTALL OFF)
 
     # FIXME (aw): websocketpp doesn't play well with EDM/CPM
     add_library(websocketpp::websocketpp INTERFACE IMPORTED)
@@ -51,7 +52,7 @@ add_subdirectory(config)
 
 
 # packaging
-if (OCPP_INSTALL)
+if (${PROJECT_NAME}_INSTALL)
     install(
         TARGETS ocpp
         EXPORT ocpp-targets
@@ -103,8 +104,9 @@ if(CMAKE_RUN_CLANG_TIDY)
     -export-fixes=clang-tidy-fixes.yaml)
 endif()
 
-if(BUILD_TESTING)
+if((${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME} OR ${PROJECT_NAME}_BUILD_TESTING) AND BUILD_TESTING)
     include(CTest)
+    enable_testing()
     add_subdirectory(tests)
 endif()
 
