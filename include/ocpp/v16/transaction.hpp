@@ -38,6 +38,7 @@ private:
     std::optional<int32_t> reservation_id;
     bool active;
     bool finished;
+    bool has_signed_meter_values;
     std::unique_ptr<Everest::SteadyTimer> meter_values_sample_timer;
     std::string start_transaction_message_id;
     std::string stop_transaction_message_id;
