@@ -21,6 +21,7 @@ Transaction::Transaction(const int32_t& connector, const std::string& session_id
     reservation_id(reservation_id),
     active(true),
     finished(false),
+    has_signed_meter_values(false),
     meter_values_sample_timer(std::move(meter_values_sample_timer)),
     start_transaction_message_id(""),
     stop_transaction_message_id("") {
@@ -229,6 +230,16 @@ std::optional<CiString<20>> TransactionHandler::get_authorized_id_tag(const std:
 
 bool TransactionHandler::transaction_active(int32_t connector) {
     return this->get_transaction(connector) != nullptr && this->get_transaction(connector)->is_active();
+}
+
+void set_has_signed_meter_values() {
+    std::lock_guard<std::mutex> lock(this->meter_values_mutex)
+    this->has_signed_meter_values = true;
+}
+
+bool get_has_signed_meter_values() {
+    std::lock_guard<std::mutex> lock(this->meter_values_mutex)
+    return this->has_signed_meter_values;
 }
 
 } // namespace v16

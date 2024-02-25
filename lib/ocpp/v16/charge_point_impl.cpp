@@ -3278,10 +3278,7 @@ void ChargePointImpl::on_transaction_started(const int32_t& connector, const std
         const auto meter_value =
             this->get_signed_meter_value(signed_meter_value.value(), ReadingContext::Transaction_Begin, timestamp);
         transaction->add_meter_value(meter_value);
-        {
-            std::lock_guard<std::mutex> lock(meter_values_mutex);
-            transaction->has_signed_meter_values = true; 
-        }
+        transaction->set_has_signed_meter_values();
     }
 
     this->database_handler->insert_transaction(session_id, transaction->get_transaction_id(), connector, id_token,
@@ -3306,10 +3303,7 @@ void ChargePointImpl::on_transaction_stopped(const int32_t connector, const std:
         const auto meter_value =
             this->get_signed_meter_value(signed_meter_value.value(), ReadingContext::Transaction_End, timestamp);
         transaction->add_meter_value(meter_value);
-        {
-            std::lock_guard<std::mutex> lock(meter_values_mutex);
-            transaction->has_signed_meter_values = true;
-        }
+        transaction->set_has_signed_meter_values();
     }
     const auto stop_energy_wh = std::make_shared<StampedEnergyWh>(timestamp, energy_wh_import);
     transaction->add_stop_energy_wh(stop_energy_wh);
@@ -3387,7 +3381,7 @@ ChargePointImpl::get_filtered_transaction_data(const std::shared_ptr<Transaction
 
     std::vector<TransactionData> filtered_transaction_data_vec;
 
-    if (!stop_txn_sampled_data_measurands.empty() or !stop_txn_aligned_data_measurands.empty() or transaction->has_signed_meter_values) {
+    if (!stop_txn_sampled_data_measurands.empty() or !stop_txn_aligned_data_measurands.empty() or transaction->get_has_signed_meter_values()) {
         std::vector<TransactionData> transaction_data_vec = transaction->get_transaction_data();
         for (const auto& entry : transaction_data_vec) {
             std::vector<SampledValue> sampled_values;
