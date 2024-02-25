@@ -210,10 +210,8 @@ void ChargePoint::connect_websocket() {
 
 void ChargePoint::disconnect_websocket(websocketpp::close::status::value code) {
     if (this->websocket != nullptr) {
-        if (this->websocket->is_connected()) {
-            this->disable_automatic_websocket_reconnects = true;
-            this->websocket->disconnect(code);
-        }
+        this->disable_automatic_websocket_reconnects = true;
+        this->websocket->disconnect(code);
     }
 }
 
@@ -355,7 +353,11 @@ void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime&
             this->device_model->get_value<std::string>(ControllerComponentVariables::SampledDataTxEndedMeasurands)),
         utils::get_measurands_vec(
             this->device_model->get_value<std::string>(ControllerComponentVariables::AlignedDataTxEndedMeasurands)),
-        timestamp));
+        timestamp,
+        this->device_model->get_optional_value<bool>(ControllerComponentVariables::SampledDataSignReadings)
+            .value_or(false),
+        this->device_model->get_optional_value<bool>(ControllerComponentVariables::AlignedDataSignReadings)
+            .value_or(false)));
 
     if (meter_values.value().empty()) {
         meter_values.reset();
