@@ -3278,6 +3278,10 @@ void ChargePointImpl::on_transaction_started(const int32_t& connector, const std
         const auto meter_value =
             this->get_signed_meter_value(signed_meter_value.value(), ReadingContext::Transaction_Begin, timestamp);
         transaction->add_meter_value(meter_value);
+        {
+            std::lock_guard<std::mutex> lock(meter_values_mutex);
+            transaction->has_signed_meter_values = true; 
+        }
     }
 
     this->database_handler->insert_transaction(session_id, transaction->get_transaction_id(), connector, id_token,
