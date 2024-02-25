@@ -1459,7 +1459,6 @@ void ChargePointImpl::handleChangeConfigurationRequest(ocpp::Call<ChangeConfigur
         this->generic_configuration_key_changed_callback(kv.value());
     }
 }
-}
 
 void ChargePointImpl::switchSecurityProfile(int32_t new_security_profile, int32_t max_connection_attempts) {
     EVLOG_info << "Switching security profile from " << this->configuration->getSecurityProfile() << " to "
