@@ -119,6 +119,16 @@ void Transaction::add_stop_energy_wh(std::shared_ptr<StampedEnergyWh> stop_energ
     this->stop();
 }
 
+void Transaction::set_has_signed_meter_values() {
+    std::lock_guard<std::mutex> lock(this->meter_values_mutex)
+    this->has_signed_meter_values = true;
+}
+
+bool Transaction::get_has_signed_meter_values() {
+    std::lock_guard<std::mutex> lock(this->meter_values_mutex)
+    return this->has_signed_meter_values;
+}
+
 std::shared_ptr<StampedEnergyWh> Transaction::get_stop_energy_wh() {
     return this->stop_energy_wh;
 }
@@ -232,15 +242,6 @@ bool TransactionHandler::transaction_active(int32_t connector) {
     return this->get_transaction(connector) != nullptr && this->get_transaction(connector)->is_active();
 }
 
-void set_has_signed_meter_values() {
-    std::lock_guard<std::mutex> lock(this->meter_values_mutex)
-    this->has_signed_meter_values = true;
-}
-
-bool get_has_signed_meter_values() {
-    std::lock_guard<std::mutex> lock(this->meter_values_mutex)
-    return this->has_signed_meter_values;
-}
 
 } // namespace v16
 } // namespace ocpp
