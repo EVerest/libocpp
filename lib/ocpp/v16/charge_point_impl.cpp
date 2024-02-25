@@ -1453,13 +1453,12 @@ void ChargePointImpl::handleChangeConfigurationRequest(ocpp::Call<ChangeConfigur
         response.status == ConfigurationStatus::Accepted) {
         kv.value().value = call.msg.value;
         this->configuration_key_changed_callbacks[call.msg.key](kv.value());
-    } else {
-        if (this->generic_configuration_key_changed_callback != nullptr and
-            response.status == ConfigurationStatus::Accepted) {
-            kv.value().value = call.msg.value;
-            this->generic_configuration_key_changed_callback(kv.value());
-        }
+    } else if (this->generic_configuration_key_changed_callback != nullptr and
+               response.status == ConfigurationStatus::Accepted) {
+        kv.value().value = call.msg.value;
+        this->generic_configuration_key_changed_callback(kv.value());
     }
+}
 }
 
 void ChargePointImpl::switchSecurityProfile(int32_t new_security_profile, int32_t max_connection_attempts) {
