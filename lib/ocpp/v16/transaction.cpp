@@ -120,12 +120,12 @@ void Transaction::add_stop_energy_wh(std::shared_ptr<StampedEnergyWh> stop_energ
 }
 
 void Transaction::set_has_signed_meter_values() {
-    std::lock_guard<std::mutex> lock(this->meter_values_mutex)
+    std::lock_guard<std::mutex> lock(this->meter_values_mutex);
     this->has_signed_meter_values = true;
 }
 
 bool Transaction::get_has_signed_meter_values() {
-    std::lock_guard<std::mutex> lock(this->meter_values_mutex)
+    std::lock_guard<std::mutex> lock(this->meter_values_mutex);
     return this->has_signed_meter_values;
 }
 
