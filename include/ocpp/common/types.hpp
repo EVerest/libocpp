@@ -335,6 +335,31 @@ CaCertificateType string_to_ca_certificate_type(const std::string& s);
 /// \returns an output stream with the CaCertificateType written to
 std::ostream& operator<<(std::ostream& os, const CaCertificateType& ca_certificate_type);
 
+enum class CertificateValidationResult {
+    Accepted,
+    Expired,
+    InvalidSignature,
+    IssuerNotFound,
+    InvalidLeafSignature,
+    InvalidChain,
+    Unknown,
+};
+
+namespace conversions {
+/// \brief Converts the given InstallCertificateResult \p e to human readable string
+/// \returns a string representation of the InstallCertificateResult
+std::string certificate_validation_result_to_string(CertificateValidationResult e);
+
+/// \brief Converts the given std::string \p s to InstallCertificateResult
+/// \returns a InstallCertificateResult from a string representation
+CertificateValidationResult string_to_certificate_validation_result(const std::string& s);
+} // namespace conversions
+
+/// \brief Writes the string representation of the given InstallCertificateResult \p
+/// install_certificate_result to the given output stream \p os \returns an output stream with the
+/// InstallCertificateResult written to
+std::ostream& operator<<(std::ostream& os, const CertificateValidationResult& certificate_validation_result);
+
 enum class InstallCertificateResult {
     InvalidSignature,
     InvalidCertificateChain,

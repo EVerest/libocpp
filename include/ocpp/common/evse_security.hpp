@@ -47,7 +47,7 @@ public:
     /// \param certificate_type type of the leaf certificate
     /// \return result of the operation
     virtual CertificateValidationResult verify_certificate(const std::string& certificate_chain,
-                                                           const CertificateSigningUseEnum& certificate_type) = 0;
+                                                        const CaCertificateType& certificate_type) = 0;
 
     /// \brief Retrieves all certificates installed on the filesystem applying the \p certificate_types filter. This
     /// function respects the requirements of OCPP specified for the CSMS initiated message
