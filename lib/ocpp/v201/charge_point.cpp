@@ -570,7 +570,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
 
         // First try to validate the contract certificate locally
         if (certificate.has_value()) {
-            CertificateValidationResult localVerifyResult = this->evse_security->verify_certificate(certificate.value().get(), ocpp::CaCertificateType::V2G);
+            CertificateValidationResult localVerifyResult = this->evse_security->verify_certificate(certificate.value().get(), ocpp::CaCertificateType::MO);
             EVLOG_info << "Local contract validation result: " << localVerifyResult;
 
             bool CentralContractValidationAllowed = this->device_model->get_optional_value<bool>(ControllerComponentVariables::CentralContractValidationAllowed).value_or(true);
