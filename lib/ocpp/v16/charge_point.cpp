@@ -21,12 +21,12 @@ ChargePoint::ChargePoint(const std::string& config, const fs::path& share_path, 
 
 ChargePoint::~ChargePoint() = default;
 
-bool ChargePoint::start(const std::map<int, ChargePointStatus>& connector_status_map) {
-    return this->charge_point->start(connector_status_map);
+bool ChargePoint::start(const std::map<int, ChargePointStatus>& connector_status_map, BootReasonEnum bootreason) {
+    return this->charge_point->start(connector_status_map, bootreason);
 }
 
-bool ChargePoint::restart(const std::map<int, ChargePointStatus>& connector_status_map) {
-    return this->charge_point->restart(connector_status_map);
+bool ChargePoint::restart(const std::map<int, ChargePointStatus>& connector_status_map, BootReasonEnum bootreason) {
+    return this->charge_point->restart(connector_status_map, bootreason);
 }
 
 bool ChargePoint::stop() {
@@ -71,8 +71,12 @@ DataTransferResponse ChargePoint::data_transfer(const CiString<255>& vendorId,
 }
 
 std::map<int32_t, ChargingSchedule> ChargePoint::get_all_composite_charging_schedules(const int32_t duration_s) {
-
     return this->charge_point->get_all_composite_charging_schedules(duration_s);
+}
+
+std::map<int32_t, EnhancedChargingSchedule>
+ChargePoint::get_all_enhanced_composite_charging_schedules(const int32_t duration_s) {
+    return this->charge_point->get_all_enhanced_composite_charging_schedules(duration_s);
 }
 
 void ChargePoint::on_meter_values(int32_t connector, const Measurement& measurement) {
@@ -81,6 +85,10 @@ void ChargePoint::on_meter_values(int32_t connector, const Measurement& measurem
 
 void ChargePoint::on_max_current_offered(int32_t connector, int32_t max_current) {
     this->charge_point->on_max_current_offered(connector, max_current);
+}
+
+void ChargePoint::on_max_power_offered(int32_t connector, int32_t max_power) {
+    this->charge_point->on_max_power_offered(connector, max_power);
 }
 
 void ChargePoint::on_session_started(int32_t connector, const std::string& session_id,

@@ -186,6 +186,49 @@ struct AvailabilityChange {
     bool persist;
 };
 
+/// \brief BootReasonEnum contains the different boot reasons of the charge point (copied from OCPP2.0.1 definition)
+enum BootReasonEnum {
+    ApplicationReset,
+    FirmwareUpdate,
+    LocalReset,
+    PowerUp,
+    RemoteReset,
+    ScheduledReset,
+    Triggered,
+    Unknown,
+    Watchdog
+};
+
+/// \brief Enhances ChargingSchedulePeriod with stackLevel
+struct EnhancedChargingSchedulePeriod {
+    int32_t startPeriod;
+    float limit;
+    std::optional<int32_t> numberPhases;
+    int32_t stackLevel;
+};
+
+/// \brief Conversion from a given EnhancedChargingSchedulePeriod \p k to a given json object \p j
+void to_json(json& j, const EnhancedChargingSchedulePeriod& k);
+
+/// \brief Conversion from a given json object \p j to a given EnhancedChargingSchedulePeriod \p k
+void from_json(const json& j, EnhancedChargingSchedulePeriod& k);
+
+/// \brief Enhances ChargingSchedule by containing std::vector<EnhancedChargingSchedulePeriods> instead of
+/// std::vector<ChargingSchedulePeriod>
+struct EnhancedChargingSchedule {
+    ChargingRateUnit chargingRateUnit;
+    std::vector<EnhancedChargingSchedulePeriod> chargingSchedulePeriod;
+    std::optional<int32_t> duration;
+    std::optional<ocpp::DateTime> startSchedule;
+    std::optional<float> minChargingRate;
+};
+
+/// \brief Conversion from a given EnhancedChargingSchedule \p k to a given json object \p j
+void to_json(json& j, const EnhancedChargingSchedule& k);
+
+/// \brief Conversion from a given json object \p j to a given EnhancedChargingSchedule \p k
+void from_json(const json& j, EnhancedChargingSchedule& k);
+
 } // namespace v16
 } // namespace ocpp
 

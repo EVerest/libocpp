@@ -45,8 +45,8 @@ static std::vector<std::string> get_subject_alt_names(const X509* x509) {
     return list;
 }
 
-// verify that the csms certificate's commonName matches the CSMS FQDN
-bool verify_csms_cn(const std::string& hostname, bool preverified, boost::asio::ssl::verify_context& ctx) {
+bool WebsocketTLS::verify_csms_cn(const std::string& hostname, bool preverified,
+                                  boost::asio::ssl::verify_context& ctx) {
 
     // Error depth gives the depth in the chain (with 0 = leaf certificate) where
     // a potential (!) error occurred; error here means current error code and can also be "OK".
@@ -59,6 +59,8 @@ bool verify_csms_cn(const std::string& hostname, bool preverified, boost::asio::
         int error = X509_STORE_CTX_get_error(ctx.native_handle());
         EVLOG_warning << "Invalid certificate error '" << X509_verify_cert_error_string(error) << "' (at chain depth '"
                       << depth << "')";
+
+        this->connection_failed_callback(ConnectionFailedReason::InvalidCSMSCertificate);
     }
 
     // only check for CSMS server certificate
@@ -71,6 +73,7 @@ bool verify_csms_cn(const std::string& hostname, bool preverified, boost::asio::
         char common_name[256];
         if (X509_NAME_get_text_by_NID(subject_name, NID_commonName, common_name, sizeof(common_name)) <= 0) {
             EVLOG_error << "Could not extract CN from CSMS server certificate";
+            this->connection_failed_callback(ConnectionFailedReason::InvalidCSMSCertificate);
             return false;
         }
 
@@ -96,6 +99,7 @@ bool verify_csms_cn(const std::string& hostname, bool preverified, boost::asio::
             s << " '" << alt_name << "'";
         }
         EVLOG_warning << s.str();
+        this->connection_failed_callback(ConnectionFailedReason::InvalidCSMSCertificate);
         return false;
     }
 
@@ -128,6 +132,7 @@ void WebsocketTLS::set_connection_options(const WebsocketConnectionOptions& conn
 
     this->connection_options.csms_uri.set_secure(true);
 }
+
 bool WebsocketTLS::connect() {
     if (!this->initialized()) {
         return false;
@@ -147,21 +152,23 @@ bool WebsocketTLS::connect() {
                                websocketpp::lib::placeholders::_1, this->connection_options.security_profile));
 
     this->reconnect_callback = [this](const websocketpp::lib::error_code& ec) {
-        EVLOG_info << "Reconnecting to TLS websocket at uri: " << this->connection_options.csms_uri.string()
-                   << " with security profile: " << this->connection_options.security_profile;
+        if (!this->shutting_down) {
+            EVLOG_info << "Reconnecting to TLS websocket at uri: " << this->connection_options.csms_uri.string()
+                       << " with security profile: " << this->connection_options.security_profile;
 
-        // close connection before reconnecting
-        if (this->m_is_connected) {
-            try {
-                EVLOG_info << "Closing websocket connection before reconnecting";
-                this->wss_client.close(this->handle, websocketpp::close::status::normal, "");
-            } catch (std::exception& e) {
-                EVLOG_error << "Error on TLS close: " << e.what();
+            // close connection before reconnecting
+            if (this->m_is_connected) {
+                try {
+                    EVLOG_info << "Closing websocket connection before reconnecting";
+                    this->wss_client.close(this->handle, websocketpp::close::status::normal, "");
+                } catch (std::exception& e) {
+                    EVLOG_error << "Error on TLS close: " << e.what();
+                }
             }
-        }
 
-        this->cancel_reconnect_timer();
-        this->connect_tls();
+            this->cancel_reconnect_timer();
+            this->connect_tls();
+        }
     };
 
     this->connect_tls();
@@ -275,9 +282,16 @@ tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connect
                 EVLOG_AND_THROW(std::runtime_error(
                     "Connecting with security profile 3 but no client side certificate is present or valid"));
             }
-            EVLOG_info << "Using certificate: " << certificate_key_pair.value().certificate_path;
-            if (SSL_CTX_use_certificate_chain_file(context->native_handle(),
-                                                   certificate_key_pair.value().certificate_path.c_str()) != 1) {
+
+            // certificate_path contains the chain if not empty. Use certificate chain if available, else use
+            // certificate_single_path
+            auto certificate_path = certificate_key_pair.value().certificate_path;
+            if (certificate_path.empty()) {
+                certificate_path = certificate_key_pair.value().certificate_single_path;
+            }
+
+            EVLOG_info << "Using certificate: " << certificate_path;
+            if (SSL_CTX_use_certificate_chain_file(context->native_handle(), certificate_path.c_str()) != 1) {
                 EVLOG_AND_THROW(std::runtime_error("Could not use client certificate file within SSL context"));
             }
             EVLOG_info << "Using key file: " << certificate_key_pair.value().key_path;
@@ -289,8 +303,9 @@ tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connect
 
         context->set_verify_mode(boost::asio::ssl::verify_peer);
         if (this->connection_options.verify_csms_common_name) {
-            context->set_verify_callback(websocketpp::lib::bind(
-                &verify_csms_cn, hostname, websocketpp::lib::placeholders::_1, websocketpp::lib::placeholders::_2));
+            context->set_verify_callback([this, hostname](bool preverified, boost::asio::ssl::verify_context& ctx) {
+                return this->verify_csms_cn(hostname, preverified, ctx);
+            });
 
         } else {
             EVLOG_warning << "Not verifying the CSMS certificates commonName with the Fully Qualified Domain Name "
@@ -423,8 +438,6 @@ void WebsocketTLS::on_fail_tls(tls_client* c, websocketpp::connection_hdl hdl) {
     tls_client::connection_ptr con = c->get_con_from_hdl(hdl);
     const auto ec = con->get_ec();
     this->log_on_fail(ec, con->get_transport_ec(), con->get_response_code());
-
-    // TODO(piet): Trigger SecurityEvent in case InvalidCentralSystemCertificate
 
     // -1 indicates to always attempt to reconnect
     if (this->connection_options.max_connection_attempts == -1 or

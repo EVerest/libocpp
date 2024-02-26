@@ -214,6 +214,7 @@ private:
     BootReasonEnum bootreason;
     int network_configuration_priority;
     bool disable_automatic_websocket_reconnects;
+    bool skip_invalid_csms_certificate_notifications;
 
     /// \brief Component responsible for maintaining and persisting the operational status of CS, EVSEs, and connectors.
     std::shared_ptr<ComponentStateManager> component_state_manager;
@@ -297,6 +298,9 @@ private:
     /// If all connectors are unavailable signal to the firmware updater that installation of the firmware update can
     /// proceed
     void change_all_connectors_to_unavailable_for_firmware_update();
+
+    /// \brief Restores all connectors to their persisted state
+    void restore_all_connector_states();
 
     /// \brief Sets the cache lifetime value in \param id_token_info with configured AuthCacheLifeTime
     /// if it was not already set

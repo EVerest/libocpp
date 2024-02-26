@@ -507,9 +507,10 @@ struct OCSPRequestData {
 };
 
 struct KeyPair {
-    fs::path certificate_path;
-    fs::path key_path;
-    std::optional<std::string> password;
+    fs::path certificate_path;           // path to the full certificate chain
+    fs::path certificate_single_path;    // path to the single leaf certificate
+    fs::path key_path;                   // path to private key of the leaf certificate
+    std::optional<std::string> password; // optional password for the private key
 };
 
 namespace conversions {
@@ -593,6 +594,7 @@ inline const std::string INVALIDFIRMWARESIGNATURE = "InvalidFirmwareSignature";
 inline const std::string INVALIDFIRMWARESIGNINGCERTIFICATE = "InvalidFirmwareSigningCertificate";
 inline const std::string INVALIDCSMSCERTIFICATE = "InvalidCsmsCertificate";
 inline const std::string INVALIDCHARGINGSTATIONCERTIFICATE = "InvalidChargingStationCertificate";
+inline const std::string INVALIDCHARGEPOINTCERTIFICATE = "InvalidChargePointCertificate"; // for OCPP1.6
 inline const std::string INVALIDTLSVERSION = "InvalidTLSVersion";
 inline const std::string INVALIDTLSCIPHERSUITE = "InvalidTLSCipherSuite";
 } // namespace security_events

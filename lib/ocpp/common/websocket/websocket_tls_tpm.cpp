@@ -1,31 +1,31 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
+#include <evse_security/crypto/openssl/openssl_tpm.hpp>
 #include <ocpp/common/websocket/websocket_tls_tpm.hpp>
-
-#include <evse_security/detail/openssl/openssl_types.hpp>
 
 #include <everest/logging.hpp>
 
 #include <libwebsockets.h>
-#include <openssl/provider.h>
 
-#include <chrono>
+#include <atomic>
 #include <memory>
 #include <stdexcept>
 #include <string>
+
+#include <openssl/opensslv.h>
+#include <openssl/ssl.h>
+#define USING_OPENSSL_3 (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+
+#if USING_OPENSSL_3
+#include <openssl/provider.h>
+#else
+#define SSL_CTX_new_ex(LIB, PROP, METHOD) SSL_CTX_new(METHOD)
+#endif
 
 template <> class std::default_delete<lws_context> {
 public:
     void operator()(lws_context* ptr) const {
         ::lws_context_destroy(ptr);
-    }
-};
-
-template <> class std::default_delete<OSSL_LIB_CTX> {
-public:
-    void operator()(OSSL_LIB_CTX* ptr) const {
-        ::OPENSSL_thread_stop_ex(ptr);
-        ::OSSL_LIB_CTX_free(ptr);
     }
 };
 
@@ -38,6 +38,9 @@ public:
 
 namespace ocpp {
 
+using evse_security::is_tpm_key_filename;
+using evse_security::OpenSSLProvider;
+
 enum class EConnectionState {
     INITIALIZE, ///< Initialization state
     CONNECTING, ///< Trying to connect
@@ -46,15 +49,20 @@ enum class EConnectionState {
     FINALIZED,  ///< We finalized the connection and we're never going to connect again
 };
 
+/// \brief Message to return in the callback to close the socket connection
+static constexpr int LWS_CLOSE_SOCKET_RESPONSE_MESSAGE = -1;
+
 /// \brief Per thread connection data
 struct ConnectionData {
-    ConnectionData() : is_running(true), state(EConnectionState::INITIALIZE), wsi(nullptr) {
+    ConnectionData() :
+        is_running(true), is_marked_close(false), state(EConnectionState::INITIALIZE), wsi(nullptr), owner(nullptr) {
     }
 
     ~ConnectionData() {
         state = EConnectionState::FINALIZED;
         is_running = false;
         wsi = nullptr;
+        owner = nullptr;
     }
 
     void bind_thread(std::thread::id id) {
@@ -73,39 +81,55 @@ struct ConnectionData {
         is_running = false;
     }
 
+    void request_close() {
+        is_marked_close = true;
+    }
+
     bool is_interupted() {
         return (is_running == false);
     }
 
     bool is_connecting() {
-        return (state == EConnectionState::CONNECTING);
+        return (state.load() == EConnectionState::CONNECTING);
+    }
+
+    bool is_close_requested() {
+        return is_marked_close;
     }
 
     auto get_state() {
-        return state;
+        return state.load();
     }
 
     lws* get_conn() {
         return wsi;
     }
 
-    lws_context* get_ctx() {
-        return lws_ctx.get();
+    WebsocketTlsTPM* get_owner() {
+        return owner.load();
+    }
+
+    void set_owner(WebsocketTlsTPM* o) {
+        owner = o;
     }
 
 public:
-    // openssl context
+    // This public block will only be used from client loop thread, no locking needed
+    // Openssl context, must be destroyed in this order
     std::unique_ptr<SSL_CTX> sec_context;
-    std::unique_ptr<OSSL_LIB_CTX> sec_lib_context;
-
     // libwebsockets state
     std::unique_ptr<lws_context> lws_ctx;
+
     lws* wsi;
 
 private:
+    std::atomic<WebsocketTlsTPM*> owner;
+
     std::thread::id lws_thread_id;
-    bool is_running;
-    EConnectionState state;
+
+    std::atomic_bool is_running;
+    std::atomic_bool is_marked_close;
+    std::atomic<EConnectionState> state;
 };
 
 struct WebsocketMessage {
@@ -124,7 +148,7 @@ public:
     // just that these were sent to libwebsockets
     size_t sent_bytes;
     // If libwebsockets has sent all the bytes through the wire
-    volatile bool message_sent;
+    std::atomic_bool message_sent;
 };
 
 WebsocketTlsTPM::WebsocketTlsTPM(const WebsocketConnectionOptions& connection_options,
@@ -170,10 +194,15 @@ void WebsocketTlsTPM::set_connection_options(const WebsocketConnectionOptions& c
 }
 
 static int callback_minimal(struct lws* wsi, enum lws_callback_reasons reason, void* user, void* in, size_t len) {
-    // Get user safely, since on some callbacks (void *user) can be different
+    // Get user safely, since on some callbacks (void *user) can be different than what we set
     if (wsi != nullptr) {
-        if (WebsocketTlsTPM* websocket = reinterpret_cast<WebsocketTlsTPM*>(lws_wsi_user(wsi))) {
-            return websocket->process_callback(wsi, static_cast<int>(reason), user, in, len);
+        if (ConnectionData* data = reinterpret_cast<ConnectionData*>(lws_wsi_user(wsi))) {
+            auto owner = data->get_owner();
+            if (owner not_eq nullptr) {
+                return data->get_owner()->process_callback(wsi, static_cast<int>(reason), user, in, len);
+            } else {
+                EVLOG_error << "callback_minimal called, but data->owner is nullptr";
+            }
         }
     }
 
@@ -184,57 +213,8 @@ constexpr auto local_protocol_name = "lws-everest-client";
 static const struct lws_protocols protocols[] = {{local_protocol_name, callback_minimal, 0, 0, 0, NULL, 0},
                                                  LWS_PROTOCOL_LIST_TERM};
 
-static void create_sec_context(bool use_tpm, OSSL_LIB_CTX*& out_libctx, SSL_CTX*& out_ctx) {
-    OSSL_LIB_CTX* libctx = OSSL_LIB_CTX_new();
-
-    if (libctx == nullptr) {
-        EVLOG_AND_THROW(std::runtime_error("Unable to create ssl lib ctx."));
-    }
-
-    out_libctx = libctx;
-
-    if (use_tpm) {
-        OSSL_PROVIDER* prov_tpm2 = nullptr;
-        OSSL_PROVIDER* prov_default = nullptr;
-
-        if ((prov_tpm2 = OSSL_PROVIDER_load(libctx, "tpm2")) == nullptr) {
-            EVLOG_AND_THROW(std::runtime_error("Could not load provider tpm2."));
-        }
-
-        if (!OSSL_PROVIDER_self_test(prov_tpm2)) {
-            EVLOG_AND_THROW(std::runtime_error("Could not self-test provider tpm2."));
-        }
-
-        if ((prov_default = OSSL_PROVIDER_load(libctx, "default")) == nullptr) {
-            EVLOG_AND_THROW(std::runtime_error("Could not load provider default."));
-        }
-
-        if (!OSSL_PROVIDER_self_test(prov_default)) {
-            EVLOG_AND_THROW(std::runtime_error("Could not self-test provider default."));
-        }
-    }
-
-    const SSL_METHOD* method = SSLv23_client_method();
-    SSL_CTX* ctx = SSL_CTX_new_ex(libctx, nullptr, method);
-
-    if (ctx == nullptr) {
-        EVLOG_AND_THROW(std::runtime_error("Unable to create ssl ctx."));
-    }
-
-    out_ctx = ctx;
-}
-
-void WebsocketTlsTPM::tls_init() {
-    SSL_CTX* ctx = nullptr;
-
-    if (auto* data = conn_data.get()) {
-        ctx = data->sec_context.get();
-    }
-
-    if (nullptr == ctx) {
-        EVLOG_AND_THROW(std::runtime_error("Invalid SSL context!"));
-    }
-
+void WebsocketTlsTPM::tls_init(SSL_CTX* ctx, const std::string& path_chain, const std::string& path_key, bool tpm_key,
+                               std::optional<std::string>& password) {
     auto rc = SSL_CTX_set_cipher_list(ctx, this->connection_options.supported_ciphers_12.c_str());
     if (rc != 1) {
         EVLOG_debug << "SSL_CTX_set_cipher_list return value: " << rc;
@@ -249,29 +229,25 @@ void WebsocketTlsTPM::tls_init() {
     SSL_CTX_set_ecdh_auto(ctx, 1);
 
     if (this->connection_options.security_profile == 3) {
-        const char* path_key = nullptr;
-        const char* path_chain = nullptr;
-
-        const auto certificate_key_pair =
-            this->evse_security->get_key_pair(CertificateSigningUseEnum::ChargingStationCertificate);
-
-        if (!certificate_key_pair.has_value()) {
-            EVLOG_AND_THROW(std::runtime_error(
-                "Connecting with security profile 3 but no client side certificate is present or valid"));
+        if ((path_chain.empty()) || (path_key.empty())) {
+            EVLOG_error << "Cert chain: " << path_chain << " key: " << path_key;
+            EVLOG_AND_THROW(std::runtime_error("No certificate and key for SSL"));
         }
 
-        path_chain = certificate_key_pair.value().certificate_path.c_str();
-        path_key = certificate_key_pair.value().key_path.c_str();
-
-        if (1 != SSL_CTX_use_certificate_chain_file(ctx, path_chain)) {
+        if (1 != SSL_CTX_use_certificate_chain_file(ctx, path_chain.c_str())) {
+            ERR_print_errors_fp(stderr);
             EVLOG_AND_THROW(std::runtime_error("Could not use client certificate file within SSL context"));
         }
 
-        if (1 != SSL_CTX_use_PrivateKey_file(ctx, path_key, SSL_FILETYPE_PEM)) {
+        SSL_CTX_set_default_passwd_cb_userdata(ctx, reinterpret_cast<void*>(password.value_or("").data()));
+
+        if (1 != SSL_CTX_use_PrivateKey_file(ctx, path_key.c_str(), SSL_FILETYPE_PEM)) {
+            ERR_print_errors_fp(stderr);
             EVLOG_AND_THROW(std::runtime_error("Could not set private key file within SSL context"));
         }
 
         if (false == SSL_CTX_check_private_key(ctx)) {
+            ERR_print_errors_fp(stderr);
             EVLOG_AND_THROW(std::runtime_error("Could not check private key within SSL context"));
         }
     }
@@ -311,14 +287,18 @@ void WebsocketTlsTPM::recv_loop() {
         return;
     }
 
-    EVLOG_debug << "Init recv loop with ID: " << std::this_thread::get_id();
+    EVLOG_debug << "Init recv loop with ID: " << std::hex << std::this_thread::get_id();
 
     while (false == data->is_interupted()) {
-        if (false == recv_message_queue.empty()) {
+        // Process all messages
+        while (true) {
             std::string message{};
 
             {
                 std::lock_guard lk(this->recv_mutex);
+                if (recv_message_queue.empty())
+                    break;
+
                 message = std::move(recv_message_queue.front());
                 recv_message_queue.pop();
             }
@@ -326,14 +306,17 @@ void WebsocketTlsTPM::recv_loop() {
             // Invoke our processing callback, that might trigger a send back that
             // can cause a deadlock if is not managed on a different thread
             this->message_callback(message);
-        } else {
+        }
+
+        // While we are empty, sleep
+        {
             std::unique_lock<std::mutex> lock(this->recv_mutex);
-            recv_message_cv.wait_for(lock, std::chrono::seconds(10),
+            recv_message_cv.wait_for(lock, std::chrono::seconds(1),
                                      [&]() { return (false == recv_message_queue.empty()); });
         }
     }
 
-    EVLOG_debug << "Exit recv loop with ID: " << std::this_thread::get_id();
+    EVLOG_debug << "Exit recv loop with ID: " << std::hex << std::this_thread::get_id();
 }
 
 void WebsocketTlsTPM::client_loop() {
@@ -358,27 +341,73 @@ void WebsocketTlsTPM::client_loop() {
     info.options = LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
     info.port = CONTEXT_PORT_NO_LISTEN; /* we do not run any server */
     info.protocols = protocols;
-    info.user = this;
+
+    // Set reference to ConnectionData since 'data' can go away in the websocket
+    info.user = data;
 
     info.fd_limit_per_thread = 1 + 1 + 1;
 
-    bool use_tpm = connection_options.use_tpm_tls;
+    // Setup context - need to know the key type first
 
-    // Setup context
-    OSSL_LIB_CTX* lib_ctx;
-    SSL_CTX* ssl_ctx;
+    std::string path_key;
+    std::string path_chain;
+    std::optional<std::string> password;
 
-    create_sec_context(use_tpm, lib_ctx, ssl_ctx);
+    if (this->connection_options.security_profile == 3) {
 
-    // Connection acquire the contexts
-    conn_data->sec_lib_context = std::unique_ptr<OSSL_LIB_CTX>(lib_ctx);
-    conn_data->sec_context = std::unique_ptr<SSL_CTX>(ssl_ctx);
+        const auto certificate_key_pair =
+            this->evse_security->get_key_pair(CertificateSigningUseEnum::ChargingStationCertificate);
+
+        if (!certificate_key_pair.has_value()) {
+            EVLOG_AND_THROW(std::runtime_error(
+                "Connecting with security profile 3 but no client side certificate is present or valid"));
+        }
+
+        path_chain = certificate_key_pair.value().certificate_path;
+        if (path_chain.empty()) {
+            path_chain = certificate_key_pair.value().certificate_single_path;
+        }
+        path_key = certificate_key_pair.value().key_path;
+        password = certificate_key_pair.value().password;
+    }
+
+    SSL_CTX* ssl_ctx = nullptr;
+    bool tpm_key = false;
+
+    {
+        if (!path_key.empty()) {
+            tpm_key = is_tpm_key_filename(path_key);
+#ifdef DEBUG
+            EVLOG_info << "TPM Key: " << tpm_key;
+#endif
+        }
+
+        OpenSSLProvider provider;
+
+        if (tpm_key) {
+            provider.set_tls_mode(OpenSSLProvider::mode_t::tpm2_provider);
+        } else {
+            provider.set_tls_mode(OpenSSLProvider::mode_t::default_provider);
+        }
+
+        EVLOG_info << "Using TLS propquery: " << provider.propquery_tls_str();
+        const SSL_METHOD* method = SSLv23_client_method();
+        ssl_ctx = SSL_CTX_new_ex(provider, provider.propquery_tls_str(), method);
+
+        if (ssl_ctx == nullptr) {
+            ERR_print_errors_fp(stderr);
+            EVLOG_AND_THROW(std::runtime_error("Unable to create ssl ctx."));
+        }
+    }
 
     // Init TLS data
-    tls_init();
+    tls_init(ssl_ctx, path_chain, path_key, tpm_key, password);
 
     // Setup our context
     info.provided_client_ssl_ctx = ssl_ctx;
+
+    // Connection acquire the contexts
+    conn_data->sec_context = std::unique_ptr<SSL_CTX>(ssl_ctx);
 
     lws_context* lws_ctx = lws_create_context(&info);
     if (nullptr == lws_ctx) {
@@ -413,7 +442,7 @@ void WebsocketTlsTPM::client_loop() {
     i.protocol = strdup(conversions::ocpp_protocol_version_to_string(this->connection_options.ocpp_version).c_str());
     i.local_protocol_name = local_protocol_name;
     i.pwsi = &conn_data->wsi;
-    i.userdata = this;
+    i.userdata = data; // See lws_context 'user'
 
     // TODO (ioan): See if we need retry policy since we handle this manually
     // i.retry_and_idle_policy = &retry;
@@ -430,23 +459,30 @@ void WebsocketTlsTPM::client_loop() {
         data->update_state(EConnectionState::FINALIZED);
     }
 
-    EVLOG_debug << "Init client loop with ID: " << std::this_thread::get_id();
+    EVLOG_debug << "Init client loop with ID: " << std::hex << std::this_thread::get_id();
 
     // Process while we're running
     int n = 0;
 
     while (n >= 0 && (false == data->is_interupted())) {
-        n = lws_service(data->get_ctx(), 0);
+        // Set to -1 for continuous servicing, of required, not recommended
+        n = lws_service(data->lws_ctx.get(), 0);
 
-        if (false == message_queue.empty()) {
+        bool message_queue_empty;
+        {
+            std::lock_guard<std::mutex> lock(this->queue_mutex);
+            message_queue_empty = message_queue.empty();
+        }
+        if (false == message_queue_empty) {
             lws_callback_on_writable(data->get_conn());
         }
     }
 
     // Client loop finished for our tid
-    EVLOG_debug << "Exit client loop with ID: " << std::this_thread::get_id();
+    EVLOG_debug << "Exit client loop with ID: " << std::hex << std::this_thread::get_id();
 }
 
+// Will be called from external threads as well
 bool WebsocketTlsTPM::connect() {
     if (!this->initialized()) {
         return false;
@@ -462,16 +498,55 @@ bool WebsocketTlsTPM::connect() {
     }
 
     auto conn_data = new ConnectionData();
+    conn_data->set_owner(this);
+
     this->conn_data.reset(conn_data);
 
     // Wait old thread for a clean state
     if (this->websocket_thread) {
+        // Awake libwebsockets thread to quickly exit
+        request_write();
         this->websocket_thread->join();
     }
 
     if (this->recv_message_thread) {
+        // Awake the receiving message thread to finish
+        recv_message_cv.notify_one();
         this->recv_message_thread->join();
     }
+
+    // Stop any pending reconnect timer
+    {
+        std::lock_guard<std::mutex> lk(this->reconnect_mutex);
+        this->reconnect_timer_tpm.stop();
+    }
+
+    // Clear any pending messages on a new connection
+    {
+        std::lock_guard<std::mutex> lock(queue_mutex);
+        std::queue<std::shared_ptr<WebsocketMessage>> empty;
+        empty.swap(message_queue);
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(recv_mutex);
+        std::queue<std::string> empty;
+        empty.swap(recv_message_queue);
+    }
+
+    // Bind reconnect callback
+    this->reconnect_callback = [this](const websocketpp::lib::error_code& ec) {
+        EVLOG_info << "Reconnecting to TLS websocket at uri: " << this->connection_options.csms_uri.string()
+                   << " with security profile: " << this->connection_options.security_profile;
+
+        // close connection before reconnecting
+        if (this->m_is_connected) {
+            EVLOG_info << "Closing websocket connection before reconnecting";
+            this->close(websocketpp::close::status::abnormal_close, "Reconnect");
+        }
+
+        this->connect();
+    };
 
     std::unique_lock<std::mutex> lock(connection_mutex);
 
@@ -502,51 +577,29 @@ bool WebsocketTlsTPM::connect() {
         this->conn_data.reset();
     }
 
-    this->reconnect_callback = [this](const websocketpp::lib::error_code& ec) {
-        EVLOG_info << "Reconnecting to TLS websocket at uri: " << this->connection_options.csms_uri.string()
-                   << " with security profile: " << this->connection_options.security_profile;
-
-        // close connection before reconnecting
-        if (this->m_is_connected) {
-            EVLOG_info << "Closing websocket connection before reconnecting";
-            this->close(websocketpp::close::status::abnormal_close, "Reconnect");
-        }
-
-        {
-            std::lock_guard<std::mutex> lk(this->reconnect_mutex);
-            if (this->reconnect_timer_tpm) {
-                this->reconnect_timer_tpm->stop();
-            }
-            this->reconnect_timer_tpm = nullptr;
-        }
-
-        this->connect();
-    };
-
     return (connected);
 }
 
 void WebsocketTlsTPM::reconnect(std::error_code reason, long delay) {
+    EVLOG_info << "Attempting TLS TPM reconnect with reason: " << reason << " and delay:" << delay;
+
     if (this->shutting_down) {
         EVLOG_info << "Not reconnecting because the websocket is being shutdown.";
         return;
     }
 
-    std::lock_guard<std::mutex> lk(this->reconnect_mutex);
     if (this->m_is_connected) {
         EVLOG_info << "Closing websocket connection before reconnecting";
         this->close(websocketpp::close::status::abnormal_close, "Reconnect");
     }
 
-    if (!this->reconnect_timer_tpm) {
-        EVLOG_info << "Reconnecting in: " << delay << "ms"
-                   << ", attempt: " << this->connection_attempts;
+    EVLOG_info << "Reconnecting in: " << delay << "ms"
+               << ", attempt: " << this->connection_attempts;
 
-        this->reconnect_timer_tpm = std::make_unique<Everest::SteadyTimer>(
-            [this]() { this->reconnect_callback(websocketpp::lib::error_code()); });
-        this->reconnect_timer_tpm->timeout(std::chrono::seconds(delay));
-    } else {
-        EVLOG_info << "Reconnect timer already running";
+    {
+        std::lock_guard<std::mutex> lk(this->reconnect_mutex);
+        this->reconnect_timer_tpm.timeout([this]() { this->reconnect_callback(websocketpp::lib::error_code()); },
+                                          std::chrono::milliseconds(delay));
     }
 }
 
@@ -555,15 +608,13 @@ void WebsocketTlsTPM::close(websocketpp::close::status::value code, const std::s
 
     {
         std::lock_guard<std::mutex> lk(this->reconnect_mutex);
-        if (this->reconnect_timer_tpm) {
-            this->reconnect_timer_tpm->stop();
-        }
-        this->reconnect_timer_tpm = nullptr;
+        this->reconnect_timer_tpm.stop();
     }
 
     if (conn_data) {
         if (auto* data = conn_data.get()) {
-            // lws_close_reason(data->get_conn(), LWS_CLOSE_STATUS_NORMAL, NULL, 0);
+            // Set the trigger from us
+            data->request_close();
             data->do_interrupt();
         }
 
@@ -572,7 +623,8 @@ void WebsocketTlsTPM::close(websocketpp::close::status::value code, const std::s
     }
 
     this->m_is_connected = false;
-    this->closed_callback(websocketpp::close::status::normal);
+    std::thread closing([this]() { this->closed_callback(websocketpp::close::status::normal); });
+    closing.detach();
 }
 
 void WebsocketTlsTPM::on_conn_connected() {
@@ -582,7 +634,8 @@ void WebsocketTlsTPM::on_conn_connected() {
     this->m_is_connected = true;
     this->reconnecting = false;
 
-    this->connected_callback(this->connection_options.security_profile);
+    std::thread connected([this]() { this->connected_callback(this->connection_options.security_profile); });
+    connected.detach();
 }
 
 void WebsocketTlsTPM::on_conn_close() {
@@ -593,7 +646,8 @@ void WebsocketTlsTPM::on_conn_close() {
     this->disconnected_callback();
     this->cancel_reconnect_timer();
 
-    this->closed_callback(websocketpp::close::status::normal);
+    std::thread closing([this]() { this->closed_callback(websocketpp::close::status::normal); });
+    closing.detach();
 }
 
 void WebsocketTlsTPM::on_conn_fail() {
@@ -601,15 +655,19 @@ void WebsocketTlsTPM::on_conn_fail() {
 
     std::lock_guard<std::mutex> lk(this->connection_mutex);
     if (this->m_is_connected) {
-        this->disconnected_callback();
+        std::thread disconnect([this]() { this->disconnected_callback(); });
+        disconnect.detach();
     }
+
     this->m_is_connected = false;
-    this->connection_attempts += 1;
 
     // -1 indicates to always attempt to reconnect
     if (this->connection_options.max_connection_attempts == -1 or
         this->connection_attempts <= this->connection_options.max_connection_attempts) {
         this->reconnect(std::error_code(), this->get_reconnect_interval());
+
+        // Increment reconn attempts
+        this->connection_attempts += 1;
     } else {
         EVLOG_info << "Closed TLS websocket, reconnect attempts exhausted";
         this->close(websocketpp::close::status::normal, "Connection failed");
@@ -693,12 +751,64 @@ void WebsocketTlsTPM::on_writable() {
         return;
     }
 
-    if (data->get_state() == EConnectionState::FINALIZED) {
-        EVLOG_error << "Trying to write message to finalized state!";
+    if (data->is_interupted() || data->get_state() == EConnectionState::FINALIZED) {
+        EVLOG_error << "Trying to write message to interrupted/finalized state!";
         return;
     }
 
-    while (false == message_queue.empty()) {
+    // Execute while we have messages that were polled
+    while (true) {
+        WebsocketMessage* message = nullptr;
+
+        {
+            std::lock_guard<std::mutex> lock(this->queue_mutex);
+
+            // Break if we have en empty queue
+            if (message_queue.empty())
+                break;
+
+            message = message_queue.front().get();
+        }
+
+        if (message == nullptr) {
+            EVLOG_AND_THROW(std::runtime_error("Null message in queue, fatal error!"));
+        }
+
+        // This message was polled in a previous iteration
+        if (message->sent_bytes >= message->payload.length()) {
+            EVLOG_info << "Websocket message fully written, popping processing thread from queue!";
+
+            // If we have written all bytes to libwebsockets it means that if we received
+            // this writable callback everything is sent over the wire, mark the message
+            // as 'sent' and remove it from the queue
+            {
+                std::lock_guard<std::mutex> lock(this->queue_mutex);
+                message->message_sent = true;
+                message_queue.pop();
+            }
+
+            EVLOG_debug << "Notifying waiting thread!";
+            // Notify any waiting thread to check it's state
+            msg_send_cv.notify_all();
+        } else {
+            // If the message was not polled, we reached the first unpolled and break
+            break;
+        }
+    }
+
+    // If we still have message ONLY poll a single one that can be processed in the invoke of the function
+    // libwebsockets is designed so that when a message is sent to the wire from the internal buffer it
+    // will invoke 'on_writable' again and we can execute the code above
+    bool any_message_polled;
+    {
+        std::lock_guard<std::mutex> lock(this->queue_mutex);
+        any_message_polled = not message_queue.empty();
+    }
+
+    // Poll a single message
+    if (any_message_polled) {
+        EVLOG_debug << "Client writable, sending message part!";
+
         WebsocketMessage* message = nullptr;
 
         {
@@ -710,34 +820,16 @@ void WebsocketTlsTPM::on_writable() {
             EVLOG_AND_THROW(std::runtime_error("Null message in queue, fatal error!"));
         }
 
-        // Pop all sent messages
         if (message->sent_bytes >= message->payload.length()) {
-            EVLOG_debug << "Message fully written, popping from queue!";
+            EVLOG_AND_THROW(std::runtime_error("Already polled message should be handled above, fatal error!"));
+        }
 
-            // If we have written all bytes to libwebsockets it means that if we received
-            // this writable callback everything is sent over the wire, mark the message
-            // as 'sent' and remove it from the queue
-            {
-                std::lock_guard<std::mutex> lock(this->queue_mutex);
-                message->message_sent = true;
-                message_queue.pop();
-            }
+        // Continue sending message part, for a single message only
+        bool sent = send_internal(data->get_conn(), message);
 
-            // Notify any waiting thread to check it's state
-            msg_send_cv.notify_one();
-        } else {
-            EVLOG_debug << "Client writable, sending message part!";
-
-            // Continue sending message part, for a single message only
-            bool sent = send_internal(data->get_conn(), message);
-
-            // If we failed, attempt again later
-            if (false == sent) {
-                message->sent_bytes = 0;
-            }
-
-            // Break loop
-            break;
+        // If we failed, attempt again later
+        if (false == sent) {
+            message->sent_bytes = 0;
         }
     }
 }
@@ -745,13 +837,19 @@ void WebsocketTlsTPM::on_writable() {
 void WebsocketTlsTPM::request_write() {
     if (this->m_is_connected) {
         if (auto* data = conn_data.get()) {
-            if (data->get_conn())
-                lws_callback_on_writable(data->get_conn());
+            if (data->get_conn()) {
+                // Notify waiting processing thread to wake up. According to docs it is ok to call from another
+                // thread.
+                lws_cancel_service(data->lws_ctx.get());
+            }
         }
+    } else {
+        EVLOG_warning << "Requested write with offline TLS websocket!";
     }
 }
 
-void WebsocketTlsTPM::poll_message(const std::shared_ptr<WebsocketMessage>& msg, bool wait_send) {
+void WebsocketTlsTPM::poll_message(const std::shared_ptr<WebsocketMessage>& msg) {
+
     if (std::this_thread::get_id() == conn_data->get_lws_thread_id()) {
         EVLOG_AND_THROW(std::runtime_error("Deadlock detected, polling send from client lws thread!"));
     }
@@ -766,17 +864,17 @@ void WebsocketTlsTPM::poll_message(const std::shared_ptr<WebsocketMessage>& msg,
     // Request a write callback
     request_write();
 
-    if (wait_send) {
-        std::unique_lock lock(this->queue_mutex);
-        msg_send_cv.wait_for(lock, std::chrono::seconds(10), [&] { return (true == msg->message_sent); });
+    {
+        std::unique_lock lock(this->msg_send_cv_mutex);
+        if (msg_send_cv.wait_for(lock, std::chrono::seconds(20), [&] { return (true == msg->message_sent); })) {
+            EVLOG_info << "Successfully sent last message over TLS websocket!";
+        } else {
+            EVLOG_warning << "Could not send last message over TLS websocket!";
+        }
     }
-
-    if (msg->message_sent)
-        EVLOG_debug << "Successfully sent last message over TLS websocket!";
-    else
-        EVLOG_warning << "Could not send last message over TLS websocket!";
 }
 
+// Will be called from external threads
 bool WebsocketTlsTPM::send(const std::string& message) {
     if (!this->initialized()) {
         EVLOG_error << "Could not send message because websocket is not properly initialized.";
@@ -787,7 +885,7 @@ bool WebsocketTlsTPM::send(const std::string& message) {
     msg->payload = std::move(message);
     msg->protocol = LWS_WRITE_TEXT;
 
-    poll_message(msg, true);
+    poll_message(msg);
 
     return msg->message_sent;
 }
@@ -801,18 +899,22 @@ void WebsocketTlsTPM::ping() {
     msg->payload = this->connection_options.ping_payload;
     msg->protocol = LWS_WRITE_PING;
 
-    poll_message(msg, true);
+    poll_message(msg);
 }
 
 int WebsocketTlsTPM::process_callback(void* wsi_ptr, int callback_reason, void* user, void* in, size_t len) {
+    enum lws_callback_reasons reason = static_cast<lws_callback_reasons>(callback_reason);
+
     lws* wsi = reinterpret_cast<lws*>(wsi_ptr);
 
-    enum lws_callback_reasons reason = static_cast<lws_callback_reasons>(callback_reason);
-    ConnectionData* data = this->conn_data.get();
+    // The ConnectionData is thread bound, so that if we clear it in the 'WebsocketTlsTPM'
+    // we still have a chance to close the connection here
+    ConnectionData* data = reinterpret_cast<ConnectionData*>(lws_wsi_user(wsi));
 
     // If we are in the process of deletion, just close socket and return
-    if (nullptr == data)
-        return -1;
+    if (nullptr == data) {
+        return LWS_CLOSE_SOCKET_RESPONSE_MESSAGE;
+    }
 
     switch (reason) {
     // TODO: If required in the future
@@ -856,6 +958,7 @@ int WebsocketTlsTPM::process_callback(void* wsi_ptr, int callback_reason, void* 
 
     case LWS_CALLBACK_CLIENT_CONNECTION_ERROR:
         EVLOG_error << "CLIENT_CONNECTION_ERROR: " << (in ? reinterpret_cast<char*>(in) : "(null)");
+        ERR_print_errors_fp(stderr);
 
         if (data->get_state() == EConnectionState::CONNECTING) {
             data->update_state(EConnectionState::ERROR);
@@ -886,15 +989,34 @@ int WebsocketTlsTPM::process_callback(void* wsi_ptr, int callback_reason, void* 
         std::string close_reason(reinterpret_cast<char*>(in), len);
         unsigned char* pp = reinterpret_cast<unsigned char*>(in);
         unsigned short close_code = (unsigned short)((pp[0] << 8) | pp[1]);
-        EVLOG_info << "Client close reason: " << close_reason << " close code: " << close_code;
+
+        EVLOG_info << "Unsolicited client close reason: " << close_reason << " close code: " << close_code;
+
+        if (close_code != LWS_CLOSE_STATUS_NORMAL) {
+            data->update_state(EConnectionState::ERROR);
+            data->do_interrupt();
+            on_conn_fail();
+        }
+
         // Return 0 to print peer close reason
         return 0;
     }
 
     case LWS_CALLBACK_CLIENT_CLOSED:
-        data->update_state(EConnectionState::FINALIZED);
-        data->do_interrupt();
-        on_conn_close();
+        EVLOG_info << "Client closed, was requested: " << data->is_close_requested();
+
+        // Determine if the close connection was requested or if the server went away
+        if (data->is_close_requested()) {
+            data->update_state(EConnectionState::FINALIZED);
+            data->do_interrupt();
+            on_conn_close();
+        } else {
+            // It means the server went away, attempt to reconnect
+            data->update_state(EConnectionState::ERROR);
+            data->do_interrupt();
+            on_conn_fail();
+        }
+
         break;
 
     case LWS_CALLBACK_WS_CLIENT_DROP_PROTOCOL:
@@ -902,23 +1024,63 @@ int WebsocketTlsTPM::process_callback(void* wsi_ptr, int callback_reason, void* 
 
     case LWS_CALLBACK_CLIENT_WRITEABLE:
         on_writable();
-
-        if (false == message_queue.empty())
-            lws_callback_on_writable(wsi);
+        {
+            bool message_queue_empty;
+            {
+                std::lock_guard<std::mutex> lock(this->queue_mutex);
+                message_queue_empty = message_queue.empty();
+            }
+            if (false == message_queue_empty) {
+                lws_callback_on_writable(wsi);
+            }
+        }
         break;
+
+    case LWS_CALLBACK_CLIENT_RECEIVE_PONG: {
+        bool message_queue_empty;
+        {
+            std::lock_guard<std::mutex> lock(this->queue_mutex);
+            message_queue_empty = message_queue.empty();
+        }
+        if (false == message_queue_empty) {
+            lws_callback_on_writable(data->get_conn());
+        }
+    } break;
 
     case LWS_CALLBACK_CLIENT_RECEIVE:
         on_message(in, len);
+        {
+            bool message_queue_empty;
+            {
+                std::lock_guard<std::mutex> lock(this->queue_mutex);
+                message_queue_empty = message_queue.empty();
+            }
+            if (false == message_queue_empty) {
+                lws_callback_on_writable(data->get_conn());
+            }
+        }
         break;
+
+    case LWS_CALLBACK_EVENT_WAIT_CANCELLED: {
+        bool message_queue_empty;
+        {
+            std::lock_guard<std::mutex> lock(this->queue_mutex);
+            message_queue_empty = message_queue.empty();
+        }
+        if (false == message_queue_empty) {
+            lws_callback_on_writable(data->get_conn());
+        }
+    } break;
 
     default:
         EVLOG_info << "Callback with unhandled reason: " << reason;
         break;
     }
 
+    // If we are interrupted, close the socket cleanly
     if (data->is_interupted()) {
-        EVLOG_info << "Conn interrupted, closing socket!";
-        return -1;
+        EVLOG_info << "Conn interrupted/closed, closing socket!";
+        return LWS_CLOSE_SOCKET_RESPONSE_MESSAGE;
     }
 
     // Return -1 on fatal error (-1 is request to close the socket)

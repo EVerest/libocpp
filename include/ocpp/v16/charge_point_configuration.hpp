@@ -3,6 +3,7 @@
 #ifndef OCPP_V16_CHARGE_POINT_CONFIGURATION_HPP
 #define OCPP_V16_CHARGE_POINT_CONFIGURATION_HPP
 
+#include <mutex>
 #include <set>
 
 #include <ocpp/common/support_older_cpp_versions.hpp>
@@ -25,6 +26,7 @@ private:
     std::map<SupportedFeatureProfiles, std::set<MessageType>> supported_message_types_from_central_system;
     std::set<MessageType> supported_message_types_sending;
     std::set<MessageType> supported_message_types_receiving;
+    std::recursive_mutex configuration_mutex;
 
     std::vector<MeasurandWithPhase> csv_to_measurand_with_phase_vector(std::string csv);
     bool validate_measurands(const json& config);
@@ -329,6 +331,11 @@ public:
     int32_t getSecurityProfile();
     void setSecurityProfile(int32_t security_profile);
     KeyValue getSecurityProfileKeyValue();
+
+    // // Security profile - optional with default
+    bool getDisableSecurityEventNotifications();
+    void setDisableSecurityEventNotifications(bool disable_security_event_notifications);
+    KeyValue getDisableSecurityEventNotificationsKeyValue();
 
     // Local Auth List Management Profile
     bool getLocalAuthListEnabled();

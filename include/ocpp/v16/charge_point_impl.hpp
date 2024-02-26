@@ -86,6 +86,7 @@ namespace v16 {
 class ChargePointImpl : ocpp::ChargingStationBase {
 private:
     bool initialized;
+    BootReasonEnum bootreason;
     ChargePointConnectionState connection_state;
     bool boot_notification_callerror;
     RegistrationStatus registration_status;
@@ -373,15 +374,18 @@ public:
     /// \brief Starts the ChargePoint, initializes and connects to the Websocket endpoint and initializes a
     /// BootNotification.req
     /// \param connector_status_map initial state of connectors including connector 0 with reduced set of states
-    /// (Available, Unavailable, Faulted) \return
-    bool start(const std::map<int, ChargePointStatus>& connector_status_map);
+    /// (Available, Unavailable, Faulted)
+    /// \param bootreason reason for calling the start function
+    /// \return
+    bool start(const std::map<int, ChargePointStatus>& connector_status_map, BootReasonEnum bootreason);
 
     /// \brief Restarts the ChargePoint if it has been stopped before. The ChargePoint is reinitialized, connects to the
     /// websocket and starts to communicate OCPP messages again
     /// \param connector_status_map initial state of connectors including connector 0 with reduced set of states
     /// (Available, Unavailable, Faulted). connector_status_map is empty, last availability states from the persistant
     /// storage will be used
-    bool restart(const std::map<int, ChargePointStatus>& connector_status_map);
+    /// \param bootreason reason for calling the restart function
+    bool restart(const std::map<int, ChargePointStatus>& connector_status_map, BootReasonEnum bootreason);
 
     /// \brief Resets the internal state machine for the connectors using the given \p connector_status_map
     /// \param connector_status_map state of connectors including connector 0 with reduced set of states (Available,
@@ -449,6 +453,13 @@ public:
     /// \return ChargingSchedules of all connectors
     std::map<int32_t, ChargingSchedule> get_all_composite_charging_schedules(const int32_t duration_s);
 
+    /// \brief Calculates EnhancedChargingSchedule(s) configured by the CSMS of all connectors from now until now +
+    /// given \p duration_s . EnhancedChargingSchedules contain EnhancedChargingSchedulePeriod(s) that are enhanced by
+    /// the stackLevel that was provided for the ChargingProfile
+    /// \param duration_s
+    /// \return ChargingSchedules of all connectors
+    std::map<int32_t, EnhancedChargingSchedule> get_all_enhanced_composite_charging_schedules(const int32_t duration_s);
+
     /// \brief Stores the given \p powermeter values for the given \p connector . This function can be called when a new
     /// meter value is present.
     /// \param connector
@@ -461,6 +472,13 @@ public:
     /// \param connector
     /// \param max_current in Amps
     void on_max_current_offered(int32_t connector, int32_t max_current);
+
+    /// \brief Stores the given \p max_power for the given \p connector offered to the EV. This function can be called
+    /// when the value for the maximum power for the connector changes. It will be used to report the Measurand
+    /// Power_Offered if it is configured
+    /// \param connector
+    /// \param max_power in Watts
+    void on_max_power_offered(int32_t connector, int32_t max_power);
 
     /// \brief Notifies chargepoint that a new session with the given \p session_id has been started at the given \p
     /// connector with the given \p reason . The logs of the session will be written into \p session_logging_path if

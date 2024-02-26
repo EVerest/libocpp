@@ -38,6 +38,9 @@ struct MessageQueueConfig {
     bool queue_all_messages; // cf. OCPP 2.0.1. "QueueAllMessages" in OCPPCommCtrlr
 
     int message_timeout_seconds = 30;
+    int boot_notification_retry_interval_seconds =
+        60; // interval for BootNotification.req in case response by CSMS is CALLERROR or CSMS does not respond at all
+            // (within specified MessageTimeout)
 };
 
 /// \brief Contains a OCPP message in json form with additional information
@@ -80,6 +83,9 @@ template <typename M> struct ControlMessage {
 
     /// \brief True for transactional messages containing updates (measurements) for a transaction
     bool isTransactionUpdateMessage() const;
+
+    /// \brief Determine whether message is a BootNotification.
+    bool isBootNotificationMessage() const;
 };
 
 /// \brief contains a message queue that makes sure that OCPPs synchronicity requirements are met
@@ -92,7 +98,7 @@ private:
     /// message deque for transaction related messages
     std::deque<std::shared_ptr<ControlMessage<M>>> transaction_message_queue;
     /// message queue for non-transaction related messages
-    std::queue<std::shared_ptr<ControlMessage<M>>> normal_message_queue;
+    std::deque<std::shared_ptr<ControlMessage<M>>> normal_message_queue;
     std::shared_ptr<ControlMessage<M>> in_flight;
     std::recursive_mutex message_mutex;
     std::condition_variable_any cv;
@@ -104,6 +110,7 @@ private:
     bool running;
     bool new_message;
     boost::uuids::random_generator uuid_generator;
+    std::recursive_mutex next_message_mutex;
     std::optional<MessageId> next_message_to_send;
 
     Everest::SteadyTimer in_flight_timeout_timer;
@@ -156,7 +163,12 @@ private:
         EVLOG_debug << "Adding message to normal message queue";
         {
             std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
-            this->normal_message_queue.push(message);
+            // A BootNotification message should always jump the queue
+            if (message->messageType == M::BootNotification) {
+                this->normal_message_queue.push_front(message);
+            } else {
+                this->normal_message_queue.push_back(message);
+            }
             this->new_message = true;
             this->check_queue_sizes();
         }
@@ -208,7 +220,7 @@ private:
         EVLOG_warning << "Dropping " << number_of_dropped_messages << " messages from normal message queue.";
 
         for (int i = 0; i < number_of_dropped_messages; i++) {
-            this->normal_message_queue.pop();
+            this->normal_message_queue.pop_front();
         }
     }
 
@@ -341,7 +353,8 @@ public:
                             queue_type = QueueType::Transaction;
                         }
                     } else {
-                        if (transaction_message->timestamp <= message->timestamp) {
+                        if (transaction_message->timestamp <= message->timestamp and
+                            message->messageType != M::BootNotification) {
                             EVLOG_debug << "transaction message timestamp <= normal message timestamp";
                             message = transaction_message;
                             queue_type = QueueType::Transaction;
@@ -356,12 +369,15 @@ public:
                     continue;
                 }
 
-                if (next_message_to_send.has_value()) {
-                    if (next_message_to_send.value() != message->uniqueId()) {
-                        EVLOG_debug << "Message with id " << message->uniqueId()
-                                    << " held back because message with id " << next_message_to_send.value()
-                                    << " should be sent first";
-                        continue;
+                {
+                    std::lock_guard<std::recursive_mutex> lk(this->next_message_mutex);
+                    if (next_message_to_send.has_value()) {
+                        if (next_message_to_send.value() != message->uniqueId()) {
+                            EVLOG_debug << "Message with id " << message->uniqueId()
+                                        << " held back because message with id " << next_message_to_send.value()
+                                        << " should be sent first";
+                            continue;
+                        }
                     }
                 }
 
@@ -395,7 +411,7 @@ public:
                             EnhancedMessage<M> enhanced_message;
                             enhanced_message.offline = true;
                             this->in_flight->promise.set_value(enhanced_message);
-                            this->normal_message_queue.pop();
+                            this->normal_message_queue.pop_front();
                         }
                     }
                     this->reset_in_flight();
@@ -405,7 +421,7 @@ public:
                                                           this->current_message_timeout(message->message_attempts));
                     switch (queue_type) {
                     case QueueType::Normal:
-                        this->normal_message_queue.pop();
+                        this->normal_message_queue.pop_front();
                         break;
                     case QueueType::Transaction:
                         this->transaction_message_queue.pop_front();
@@ -430,18 +446,25 @@ public:
         MessageQueue(send_callback, config, {}, databaseHandler) {
     }
 
-    void get_transaction_messages_from_db() {
+    void get_transaction_messages_from_db(bool ignore_security_event_notifications = false) {
         std::vector<ocpp::common::DBTransactionMessage> transaction_messages =
             database_handler->get_transaction_messages();
 
         if (!transaction_messages.empty()) {
             for (auto& transaction_message : transaction_messages) {
-                std::shared_ptr<ControlMessage<M>> message =
-                    std::make_shared<ControlMessage<M>>(transaction_message.json_message);
-                message->messageType = string_to_messagetype(transaction_message.message_type);
-                message->timestamp = transaction_message.timestamp;
-                message->message_attempts = transaction_message.message_attempts;
-                transaction_message_queue.push_back(message);
+
+                if (ignore_security_event_notifications &&
+                    transaction_message.message_type == "SecurityEventNotification") {
+                    // remove from database in case SecurityEventNotification.req should not be sent
+                    this->database_handler->remove_transaction_message(transaction_message.unique_id);
+                } else {
+                    std::shared_ptr<ControlMessage<M>> message =
+                        std::make_shared<ControlMessage<M>>(transaction_message.json_message);
+                    message->messageType = string_to_messagetype(transaction_message.message_type);
+                    message->timestamp = transaction_message.timestamp;
+                    message->message_attempts = transaction_message.message_attempts;
+                    transaction_message_queue.push_back(message);
+                }
             }
 
             this->new_message = true;
@@ -488,9 +511,12 @@ public:
         }
 
         this->send_callback(call_result);
-        if (next_message_to_send.has_value()) {
-            if (next_message_to_send.value() == call_result.uniqueId) {
-                next_message_to_send.reset();
+        {
+            std::lock_guard<std::recursive_mutex> lk(this->next_message_mutex);
+            if (next_message_to_send.has_value()) {
+                if (next_message_to_send.value() == call_result.uniqueId) {
+                    next_message_to_send.reset();
+                }
             }
         }
 
@@ -504,9 +530,12 @@ public:
         }
 
         this->send_callback(call_error);
-        if (next_message_to_send.has_value()) {
-            if (next_message_to_send.value() == call_error.uniqueId) {
-                next_message_to_send.reset();
+        {
+            std::lock_guard<std::recursive_mutex> lk(this->next_message_mutex);
+            if (next_message_to_send.has_value()) {
+                if (next_message_to_send.value() == call_error.uniqueId) {
+                    next_message_to_send.reset();
+                }
             }
         }
 
@@ -556,15 +585,21 @@ public:
                 enhanced_message.messageType = this->string_to_messagetype(enhanced_message.message.at(CALL_ACTION));
                 enhanced_message.call_message = enhanced_message.message;
 
-                // save the uid of the message we just received to ensure the next message we send is a response to this
-                // message
-                next_message_to_send.emplace(enhanced_message.uniqueId);
+                {
+                    std::lock_guard<std::recursive_mutex> lk(this->next_message_mutex);
+                    // save the uid of the message we just received to ensure the next message we send is a response to
+                    // this message
+                    next_message_to_send.emplace(enhanced_message.uniqueId);
+                }
             }
 
             // TODO(kai): what happens if we receive a CallResult or CallError out of order?
             if (enhanced_message.messageTypeId == MessageTypeId::CALLRESULT ||
                 enhanced_message.messageTypeId == MessageTypeId::CALLERROR) {
-                next_message_to_send.reset();
+                {
+                    std::lock_guard<std::recursive_mutex> lk(this->next_message_mutex);
+                    next_message_to_send.reset();
+                }
                 // we need to remove Call messages from in_flight if we receive a CallResult OR a CallError
 
                 // TODO(kai): we need to do some error handling in the CallError case
@@ -682,6 +717,22 @@ public:
                     this->in_flight->promise.set_value(enhanced_message);
                 }
             }
+        } else if (this->in_flight->isBootNotificationMessage()) {
+            EVLOG_warning << "Message is BootNotification.req and will therefore be sent again";
+            // Generate a new message ID for the retry
+            this->in_flight->message[MESSAGE_ID] = this->createMessageId();
+            // Spec does not define how to handle retries for BootNotification.req: We use the
+            // the boot_notification_retry_interval_seconds
+            this->in_flight->timestamp =
+                DateTime(this->in_flight->timestamp.to_time_point() +
+                         std::chrono::seconds(this->config.boot_notification_retry_interval_seconds));
+            this->transaction_message_queue.push_front(this->in_flight);
+            this->notify_queue_timer.at(
+                [this]() {
+                    this->new_message = true;
+                    this->cv.notify_all();
+                },
+                this->in_flight->timestamp.to_time_point());
         } else {
             EVLOG_warning << "Message is not transaction related, dropping it";
             if (enhanced_message_opt) {
