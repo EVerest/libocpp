@@ -570,7 +570,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
 
         // First try to validate the contract certificate locally
         if (certificate.has_value()) {
-            InstallCertificateResult localVerifyResult = this->evse_security->verify_certificate(certificate.value().get(), ocpp::CertificateSigningUseEnum::V2GCertificate);
+            CertificateValidationResult localVerifyResult = this->evse_security->verify_certificate(certificate.value().get(), ocpp::CaCertificateType::V2G);
             EVLOG_info << "Local contract validation result: " << localVerifyResult;
 
             bool CentralContractValidationAllowed = this->device_model->get_optional_value<bool>(ControllerComponentVariables::CentralContractValidationAllowed).value_or(true);
@@ -581,12 +581,17 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
             // C07.FR.02: The AuthorizeRequest shall at least contain the OCSP data
             if (this->websocket->is_connected()) {
                 // C07.FR.06: Pass contract validation to CSMS when no contract root is found
-                if (CentralContractValidationAllowed and localVerifyResult == InstallCertificateResult::NoRootCertificateInstalled) {
+                if (CentralContractValidationAllowed and localVerifyResult == CertificateValidationResult::IssuerNotFound) {
                     EVLOG_info << "Online: No local contract root found. Pass contract validation to CSMS";
                     response = this->authorize_req(id_token, certificate, ocsp_request_data);
                 } else {
                     EVLOG_info << "Online: Pass OCSP data to CSMS";
-                    response = this->authorize_req(id_token, std::nullopt, ocsp_request_data);
+                    if (!ocsp_request_data.has_value()) {
+                        EVLOG_warning << "OCSP data is missing";
+                        response.idTokenInfo.status = AuthorizationStatusEnum::Invalid;
+                    } else {
+                        response = this->authorize_req(id_token, std::nullopt, ocsp_request_data);
+                    }
                     // TODO: local validation results are ignored, response is based only on OCSP data, is that acceptable?
                 }
             } else {    // Offline
@@ -595,7 +600,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
                     EVLOG_info << "Offline: contract " << localVerifyResult;
                     switch (localVerifyResult) {
                         // C07.FR.09: CS shall lookup the eMAID in Local Auth List or Auth Cache when local validation succeeded
-                        case InstallCertificateResult::Accepted:
+                        case CertificateValidationResult::Accepted:
                             // In C07.FR.09 LocalAuthorizeOffline is mentioned, this seems to be a generic config item that applies
                             // to Local Auth List and Auth Cache, but since there are no requirements about it, lets check it here
                             if (LocalAuthorizeOffline) {
@@ -603,10 +608,12 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
                             } else {
                                 // No requirement states what to do when ContractValidationOffline is true and LocalAuthorizeOffline is false
                                 response.idTokenInfo.status = AuthorizationStatusEnum::NotAtThisTime;
+                                response.certificateStatus = AuthorizeCertificateStatusEnum::Accepted;
                             }
                             break;
-                        case InstallCertificateResult::Expired:
+                        case CertificateValidationResult::Expired:
                             response.idTokenInfo.status = AuthorizationStatusEnum::Expired;
+                            response.certificateStatus = AuthorizeCertificateStatusEnum::CertificateExpired;
                             break;
                         default:
                             response.idTokenInfo.status = AuthorizationStatusEnum::Invalid;

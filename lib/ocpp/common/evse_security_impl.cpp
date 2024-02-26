@@ -40,8 +40,8 @@ InstallCertificateResult EvseSecurityImpl::update_leaf_certificate(const std::st
         this->evse_security->update_leaf_certificate(certificate_chain, conversions::from_ocpp(certificate_type)));
 }
 
-InstallCertificateResult EvseSecurityImpl::verify_certificate(const std::string& certificate_chain,
-                                                              const CertificateSigningUseEnum& certificate_type) {
+CertificateValidationResult EvseSecurityImpl::verify_certificate(const std::string& certificate_chain,
+                                                              const CaCertificateType& certificate_type) {
     return conversions::to_ocpp(
         this->evse_security->verify_certificate(certificate_chain, conversions::from_ocpp(certificate_type)));
 }
@@ -171,6 +171,28 @@ HashAlgorithmEnumType to_ocpp(evse_security::HashAlgorithm other) {
         return HashAlgorithmEnumType::SHA512;
     default:
         throw std::runtime_error("Could not convert evse_security::HashAlgorithm to HashAlgorithmEnumType");
+    }
+}
+
+CertificateValidationResult to_ocpp(evse_security::CertificateValidationError other) {
+    switch (other) {
+    case evse_security::CertificateValidationError::NoError:
+        return CertificateValidationResult::Accepted;
+    case evse_security::CertificateValidationError::Expired:
+        return CertificateValidationResult::Expired;
+    case evse_security::CertificateValidationError::InvalidSignature:
+        return CertificateValidationResult::InvalidSignature;
+    case evse_security::CertificateValidationError::IssuerNotFound:
+        return CertificateValidationResult::IssuerNotFound;
+    case evse_security::CertificateValidationError::InvalidLeafSignature:
+        return CertificateValidationResult::InvalidLeafSignature;
+    case evse_security::CertificateValidationError::InvalidChain:
+        return CertificateValidationResult::InvalidChain;
+    case evse_security::CertificateValidationError::Unknown:
+        return CertificateValidationResult::Unknown;
+    default:
+        throw std::runtime_error(
+            "Could not convert evse_security::CertificateValidationError to CertificateValidationResult");
     }
 }
 
