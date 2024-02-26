@@ -996,7 +996,8 @@ void ChargePointImpl::message_callback(const std::string& message) {
                         enhanced_message.messageType == MessageType::TriggerMessage) {
                         this->handle_message(enhanced_message);
                     } else {
-                        auto call_error = CallError(enhanced_message.uniqueId, "InPendingState", "", json({}, true));
+                        auto call_error = CallError(enhanced_message.uniqueId, "GenericError",
+                                                    "ChargePoint in pending state", json({}, true));
                         this->send(call_error);
                     }
                 }
