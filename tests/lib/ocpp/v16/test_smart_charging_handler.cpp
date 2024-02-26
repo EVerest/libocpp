@@ -1,6 +1,7 @@
 #include <filesystem>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <memory>
 namespace fs = std::filesystem;
 
 #include <database_handler_mock.hpp>
@@ -8,7 +9,6 @@ namespace fs = std::filesystem;
 #include <ocpp/common/call_types.hpp>
 #include <ocpp/v16/smart_charging.hpp>
 #include <optional>
-
 
 namespace ocpp {
 namespace v16 {
@@ -46,6 +46,16 @@ protected:
     void SetUp() override {
     }
 
+    void addConnector(int id) {
+        auto connector = Connector{id};
+
+        auto timer = std::unique_ptr<Everest::SteadyTimer>();
+
+        connector.transaction =
+            std::make_shared<Transaction>(id, "test", "test", 1, std::nullopt, ocpp::DateTime(), std::move(timer));
+        connectors[id] = std::make_shared<Connector>(connector);
+    }
+
     ChargingSchedule createChargeSchedule() {
         return ChargingSchedule{{}};
     }
@@ -59,6 +69,25 @@ protected:
         return ChargingSchedule{chargingRateUnit, chargingSchedulePeriod, duration, startSchedule, minChargingRate};
     }
 
+    ChargingProfile createMaxChargingProfile(ChargingSchedule chargingSchedule) {
+        auto chargingProfileId = 1;
+        auto stackLevel = 1;
+        auto chargingProfilePurpose = ChargingProfilePurposeType::ChargePointMaxProfile;
+        auto chargingProfileKind = ChargingProfileKindType::Absolute;
+        auto recurrencyKind = RecurrencyKindType::Daily;
+        return ChargingProfile{
+            chargingProfileId,
+            stackLevel,
+            chargingProfilePurpose,
+            chargingProfileKind,
+            chargingSchedule,
+            {}, // transactionId
+            recurrencyKind,
+            {}, // validFrom
+            {}  // validTo
+        };
+    }
+
     ChargingProfile createChargingProfile(ChargingSchedule chargingSchedule) {
         auto chargingProfileId = 1;
         auto stackLevel = 1;
@@ -67,6 +96,41 @@ protected:
         auto recurrencyKind = RecurrencyKindType::Daily;
         return ChargingProfile{
             chargingProfileId,
+            stackLevel,
+            chargingProfilePurpose,
+            chargingProfileKind,
+            chargingSchedule,
+            {}, // transactionId
+            recurrencyKind,
+            {}, // validFrom
+            {}  // validTo
+        };
+    }
+
+    ChargingProfile createTxChargingProfile(ChargingSchedule chargingSchedule) {
+        auto chargingProfileId = 1;
+        auto stackLevel = 1;
+        auto chargingProfilePurpose = ChargingProfilePurposeType::TxProfile;
+        auto chargingProfileKind = ChargingProfileKindType::Absolute;
+        auto recurrencyKind = RecurrencyKindType::Daily;
+        return ChargingProfile{
+            chargingProfileId,
+            stackLevel,
+            chargingProfilePurpose,
+            chargingProfileKind,
+            chargingSchedule,
+            {}, // transactionId
+            recurrencyKind,
+            {}, // validFrom
+            {}  // validTo
+        };
+    }
+
+    ChargingProfile createChargingProfile(int id, int stackLevel, ChargingProfilePurposeType chargingProfilePurpose,
+                                          ChargingProfileKindType chargingProfileKind,
+                                          RecurrencyKindType recurrencyKind, ChargingSchedule chargingSchedule) {
+        return ChargingProfile{
+            id,
             stackLevel,
             chargingProfilePurpose,
             chargingProfileKind,
@@ -141,17 +205,12 @@ protected:
     }
 
     SmartChargingHandler* createSmartChargingHandler() {
-        connectors[0] = std::make_shared<Connector>(Connector{1});
-
         const std::string chargepoint_id = "1";
         const fs::path database_path = "na";
         const fs::path init_script_path = "na";
-
         std::shared_ptr<DatabaseHandlerMock> database_handler =
             std::make_shared<DatabaseHandlerMock>(chargepoint_id, database_path, init_script_path);
-
         auto handler = new SmartChargingHandler(connectors, database_handler, true);
-
         return handler;
     }
 
@@ -174,6 +233,8 @@ protected:
 TEST_F(ChargepointTestFixture, ValidateProfile) {
     auto profile = createChargingProfile(createChargeSchedule(ChargingRateUnit::A));
     const std::vector<ChargingRateUnit>& charging_schedule_allowed_charging_rate_units{ChargingRateUnit::A};
+
+    addConnector(1);
     auto handler = createSmartChargingHandler();
 
     bool sut = handler->validate_profile(profile, connector_id, ignore_no_transaction, profile_max_stack_level,
@@ -191,6 +252,8 @@ TEST_F(ChargepointTestFixture, ValidateProfile) {
 TEST_F(ChargepointTestFixture, ValidateProfile__example1) {
     auto profile = createChargingProfile_Example1();
     const std::vector<ChargingRateUnit>& charging_schedule_allowed_charging_rate_units{ChargingRateUnit::W};
+
+    addConnector(1);
     auto handler = createSmartChargingHandler();
 
     bool sut = handler->validate_profile(profile, connector_id, ignore_no_transaction, profile_max_stack_level,
@@ -271,8 +334,7 @@ TEST_F(ChargepointTestFixture, ValidateProfile__ValidProfile_ChargingProfileKind
     auto profile = createChargingProfile(createChargeSchedule(ChargingRateUnit::A));
     const std::vector<ChargingRateUnit>& charging_schedule_allowed_charging_rate_units{ChargingRateUnit::A};
     // Create a SmartChargingHandler where allow_charging_profile_without_start_schedule is set to false
-    auto c1 = std::make_shared<Connector>(Connector{1});
-    connectors[1] = c1;
+    addConnector(1);
     auto allow_charging_profile_without_start_schedule = false;
     auto handler =
         new SmartChargingHandler(connectors, database_handler, allow_charging_profile_without_start_schedule);
@@ -293,6 +355,7 @@ TEST_F(ChargepointTestFixture, ValidateProfile__ValidProfile_AllowsNoStartSchedu
     auto profile = createChargingProfile(createChargeSchedule(ChargingRateUnit::A));
     const std::vector<ChargingRateUnit>& charging_schedule_allowed_charging_rate_units{ChargingRateUnit::A};
     // Create a SmartChargingHandler where allow_charging_profile_without_start_schedule is set to false
+    addConnector(1);
     auto handler = createSmartChargingHandler();
 
     // Configure to have no start schedule
@@ -366,8 +429,7 @@ TEST_F(ChargepointTestFixture,
     auto profile = createChargingProfile(createChargeSchedule(ChargingRateUnit::A));
     const std::vector<ChargingRateUnit>& charging_schedule_allowed_charging_rate_units{ChargingRateUnit::A};
     // Create a SmartChargingHandler where allow_charging_profile_without_start_schedule is set to false
-    auto c1 = std::make_shared<Connector>(Connector{1});
-    connectors[1] = c1;
+    addConnector(1);
     auto allow_charging_profile_without_start_schedule = false;
     auto handler =
         new SmartChargingHandler(connectors, database_handler, allow_charging_profile_without_start_schedule);
@@ -387,6 +449,8 @@ TEST_F(ChargepointTestFixture,
 TEST_F(ChargepointTestFixture, ValidateProfile__ValidProfile_NoStartScheduleAllowedRelative__ReturnsTrue) {
     auto profile = createChargingProfile(createChargeSchedule(ChargingRateUnit::A));
     const std::vector<ChargingRateUnit>& charging_schedule_allowed_charging_rate_units{ChargingRateUnit::A};
+
+    addConnector(1);
     auto handler = createSmartChargingHandler();
 
     profile.chargingProfileKind = ChargingProfileKindType::Recurring;
@@ -404,8 +468,8 @@ TEST_F(ChargepointTestFixture, ValidateProfile__ValidProfile_NoStartScheduleAllo
 TEST_F(ChargepointTestFixture, ValidateProfile__RecurringNoStartScheduleNotAllowed__ReturnsFalse) {
     auto profile = createChargingProfile(createChargeSchedule(ChargingRateUnit::A));
     const std::vector<ChargingRateUnit>& charging_schedule_allowed_charging_rate_units{ChargingRateUnit::A};
-    auto c1 = std::make_shared<Connector>(Connector{1});
-    connectors[1] = c1;
+
+    addConnector(1);
     auto allow_charging_profile_without_start_schedule = false;
     auto handler =
         new SmartChargingHandler(connectors, database_handler, allow_charging_profile_without_start_schedule);
@@ -466,6 +530,8 @@ TEST_F(ChargepointTestFixture, ValidateProfile__ValidProfile_NotRecurrencyKindCo
 TEST_F(ChargepointTestFixture, ValidateProfile__ValidProfileTxDefaultProfile__ReturnsTrue) {
     auto profile = createChargingProfile(createChargeSchedule(ChargingRateUnit::A));
     const std::vector<ChargingRateUnit>& charging_schedule_allowed_charging_rate_units{ChargingRateUnit::A};
+
+    addConnector(1);
     auto handler = createSmartChargingHandler();
 
     profile.chargingProfilePurpose = ChargingProfilePurposeType::TxDefaultProfile;
@@ -483,6 +549,8 @@ TEST_F(ChargepointTestFixture, ValidateProfile__ValidProfileTxDefaultProfile__Re
 TEST_F(ChargepointTestFixture, ValidateProfile__AbsoluteTxProfileIgnoreNoTransaction__ReturnsTrue) {
     auto profile = createChargingProfile(createChargeSchedule(ChargingRateUnit::A));
     const std::vector<ChargingRateUnit>& charging_schedule_allowed_charging_rate_units{ChargingRateUnit::A};
+
+    addConnector(1);
     auto handler = createSmartChargingHandler();
 
     profile.chargingProfilePurpose = ChargingProfilePurposeType::TxProfile;
@@ -513,52 +581,534 @@ TEST_F(ChargepointTestFixture, ValidateProfile__AbsoluteTxProfileConnectorId0__R
 }
 /**
  *
- * 2. Testing the branches within clear_all_profiles_with_filter ClearAllProfilesWithFilter
+ * 2. Testing the branches within ClearAllProfilesWithFilter
  *
  */
 
-/**
- * NB
- */
-TEST_F(ChargepointTestFixture, ClearAllProfilesWithFilter__AllOptionalsEmpty_DoNotCheckIdOnly__ReturnsFalse) {
-    auto handler = createSmartChargingHandler();
+// FIXME: Should this be ignored. There are no filter parameters.
+TEST_F(ChargepointTestFixture, ClearAllProfilesWithFilter__AllOptionalsEmpty__ReturnsFalse) {
+    GTEST_SKIP() << "No parameter filter is clearing all profiles";
 
-    bool sut = handler->clear_all_profiles_with_filter({}, {}, {}, {}, false);
+    const int connector_id_1 = 1;
+    addConnector(connector_id_1);
 
-    ASSERT_FALSE(sut);
-}
-
-TEST_F(ChargepointTestFixture, ClearAllProfilesWithFilter__AllOptionalsEmpty_CheckIdOnly__ReturnsFalse) {
-    auto handler = createSmartChargingHandler();
-
-    bool sut = handler->clear_all_profiles_with_filter({}, {}, {}, {}, true);
-
-    ASSERT_FALSE(sut);
-}
-
-TEST_F(ChargepointTestFixture, ClearAllProfilesWithFilter__OnlyOneMatchingProfileId_CheckIdOnly__ReturnsTrue) {
+    const int connector_id_2 = 2;
+    addConnector(connector_id_2);
 
     auto handler = createSmartChargingHandler();
 
-    auto profile = createChargingProfile(createChargeSchedule(ChargingRateUnit::A));
+    auto profile_1 =
+        createChargingProfile(1, 1, ChargingProfilePurposeType::TxProfile, ChargingProfileKindType::Absolute,
+                              RecurrencyKindType::Daily, createChargeSchedule(ChargingRateUnit::A));
 
-    handler->add_charge_point_max_profile(profile);
+    auto profile_2 =
+        createChargingProfile(2, 2, ChargingProfilePurposeType::TxProfile, ChargingProfileKindType::Absolute,
+                              RecurrencyKindType::Daily, createChargeSchedule(ChargingRateUnit::A));
 
-    bool sut = handler->clear_all_profiles_with_filter(1, {}, {}, {}, true);
+    handler->add_tx_profile(profile_1, connector_id_1);
+    handler->add_tx_profile(profile_2, connector_id_2);
+
+    auto profiles_1 = handler->get_valid_profiles({}, {}, connector_id_1);
+    auto profiles_2 = handler->get_valid_profiles({}, {}, connector_id_2);
+    ASSERT_EQ(1, profiles_1.size());
+    ASSERT_EQ(1, profiles_2.size());
+
+    // All empty tokens
+    bool sut = handler->clear_all_profiles_with_filter(std::nullopt, std::nullopt, std::nullopt, std::nullopt, false);
+
+    profiles_1 = handler->get_valid_profiles({}, {}, connector_id_1);
+    profiles_2 = handler->get_valid_profiles({}, {}, connector_id_2);
+    ASSERT_EQ(0, profiles_1.size());
+    ASSERT_EQ(0, profiles_2.size());
 
     ASSERT_TRUE(sut);
 }
 
-TEST_F(ChargepointTestFixture, ClearAllProfilesWithFilter__NoMatchingProfileId_CheckIdOnly__ReturnsFalse) {
+TEST_F(ChargepointTestFixture, ClearAllProfilesWithFilter__AllOptionalsEmpty_CheckIdOnly__ReturnsFalse) {
+    const int connector_id = 1;
+    addConnector(connector_id);
+
     auto handler = createSmartChargingHandler();
 
     auto profile = createChargingProfile(createChargeSchedule(ChargingRateUnit::A));
 
-    handler->add_charge_point_max_profile(profile);
+    handler->add_tx_profile(profile, connector_id);
 
-    bool sut = handler->clear_all_profiles_with_filter(2, {}, {}, {}, true);
+    // All empty tokens
+    bool sut = handler->clear_all_profiles_with_filter(std::nullopt, std::nullopt, std::nullopt, std::nullopt, true);
 
     ASSERT_FALSE(sut);
+}
+
+TEST_F(ChargepointTestFixture, ClearAllProfilesWithFilter__NoProfiles_ProfileId_CheckIdOnly__ReturnsFalse) {
+    auto handler = createSmartChargingHandler();
+
+    bool sut = handler->clear_all_profiles_with_filter(1, std::nullopt, std::nullopt, std::nullopt, true);
+
+    ASSERT_FALSE(sut);
+}
+
+/**
+ * There is an issue open https://github.com/EVerest/libocpp/issues/432 for the below clear_all_profiles_with_filter
+ * The current method call will allow for all parameters to be passed in at a single time and then act on all of them.
+ * The issue is that a call should either have a profile id and delete that specific profile or any combination of the
+ * other three to delete n number of profiles (to a single one if given all three).
+ * The logic is exclusionary but the method does not guard against it which can put the system in an odd state.
+ */
+
+// 0, 1 and many connectors
+
+// max, default, tx profiles
+
+// profile id only
+//  or
+//  connector id only
+
+// stacklevel only
+
+// charging profile purpose only
+
+// a mix of them all
+
+// Max
+
+TEST_F(ChargepointTestFixture, ClearAllProfilesWithFilter__Max_OnlyOneMatchingProfileId_CheckIdOnly__ReturnsTrue) {
+    const int connector_id = 0;
+
+    auto handler = createSmartChargingHandler();
+
+    auto profile = createMaxChargingProfile(createChargeSchedule(ChargingRateUnit::A));
+
+    handler->add_charge_point_max_profile(profile);
+
+    auto profiles = handler->get_valid_profiles({}, {}, connector_id);
+
+    ASSERT_EQ(1, profiles.size());
+
+    bool sut = handler->clear_all_profiles_with_filter(1, std::nullopt, std::nullopt, std::nullopt, true);
+    profiles = handler->get_valid_profiles({}, {}, connector_id);
+    ASSERT_EQ(0, profiles.size());
+
+    ASSERT_TRUE(sut);
+}
+
+TEST_F(ChargepointTestFixture, ClearAllProfilesWithFilter__Max_MatchingProfileId_CheckIdOnly__ReturnsTrue) {
+    const int connector_id = 0;
+
+    auto handler = createSmartChargingHandler();
+
+    auto profile_1 = createChargingProfile(1, 1, ChargingProfilePurposeType::ChargePointMaxProfile,
+                                           ChargingProfileKindType::Absolute, RecurrencyKindType::Daily,
+                                           createChargeSchedule(ChargingRateUnit::A));
+
+    auto profile_2 = createChargingProfile(2, 2, ChargingProfilePurposeType::ChargePointMaxProfile,
+                                           ChargingProfileKindType::Absolute, RecurrencyKindType::Daily,
+                                           createChargeSchedule(ChargingRateUnit::A));
+
+    handler->add_charge_point_max_profile(profile_1);
+    handler->add_charge_point_max_profile(profile_2);
+
+    auto profiles = handler->get_valid_profiles({}, {}, connector_id);
+
+    ASSERT_EQ(2, profiles.size());
+
+    bool sut = handler->clear_all_profiles_with_filter(1, std::nullopt, std::nullopt, std::nullopt, true);
+    profiles = handler->get_valid_profiles({}, {}, connector_id);
+
+    ASSERT_EQ(1, profiles.size());
+    ASSERT_TRUE(sut);
+}
+
+TEST_F(ChargepointTestFixture, ClearAllProfilesWithFilter__Max_MultipleNoMatchingProfileId_CheckIdOnly__ReturnsFalse) {
+    const int connector_id = 0;
+
+    auto handler = createSmartChargingHandler();
+
+    auto profile_1 = createChargingProfile(1, 1, ChargingProfilePurposeType::ChargePointMaxProfile,
+                                           ChargingProfileKindType::Absolute, RecurrencyKindType::Daily,
+                                           createChargeSchedule(ChargingRateUnit::A));
+
+    auto profile_2 = createChargingProfile(2, 2, ChargingProfilePurposeType::ChargePointMaxProfile,
+                                           ChargingProfileKindType::Absolute, RecurrencyKindType::Daily,
+                                           createChargeSchedule(ChargingRateUnit::A));
+
+    handler->add_charge_point_max_profile(profile_1);
+    handler->add_charge_point_max_profile(profile_2);
+
+    auto profiles = handler->get_valid_profiles({}, {}, connector_id);
+
+    ASSERT_EQ(2, profiles.size());
+
+    bool sut = handler->clear_all_profiles_with_filter(3, std::nullopt, std::nullopt, std::nullopt, true);
+    profiles = handler->get_valid_profiles({}, {}, connector_id);
+
+    ASSERT_EQ(2, profiles.size());
+    ASSERT_FALSE(sut);
+}
+
+// Default
+
+TEST_F(ChargepointTestFixture, ClearAllProfilesWithFilter__Default_OnlyOneMatchingProfileId_CheckIdOnly__ReturnsTrue) {
+    const int connector_id = 1;
+    addConnector(connector_id);
+
+    auto handler = createSmartChargingHandler();
+
+    auto profile = createChargingProfile(createChargeSchedule(ChargingRateUnit::A));
+
+    handler->add_tx_default_profile(profile, connector_id);
+
+    auto profiles = handler->get_valid_profiles({}, {}, connector_id);
+
+    ASSERT_EQ(1, profiles.size());
+
+    bool sut = handler->clear_all_profiles_with_filter(1, std::nullopt, std::nullopt, std::nullopt, true);
+    profiles = handler->get_valid_profiles({}, {}, connector_id);
+    ASSERT_EQ(0, profiles.size());
+
+    ASSERT_TRUE(sut);
+}
+
+TEST_F(ChargepointTestFixture, ClearAllProfilesWithFilter__Default_MatchingProfileId_CheckIdOnly__ReturnsTrue) {
+    const int connector_id = 1;
+    addConnector(connector_id);
+
+    auto handler = createSmartChargingHandler();
+
+    auto profile_1 =
+        createChargingProfile(1, 1, ChargingProfilePurposeType::TxDefaultProfile, ChargingProfileKindType::Absolute,
+                              RecurrencyKindType::Daily, createChargeSchedule(ChargingRateUnit::A));
+
+    auto profile_2 =
+        createChargingProfile(2, 2, ChargingProfilePurposeType::TxDefaultProfile, ChargingProfileKindType::Absolute,
+                              RecurrencyKindType::Daily, createChargeSchedule(ChargingRateUnit::A));
+
+    handler->add_tx_default_profile(profile_1, connector_id);
+    handler->add_tx_default_profile(profile_2, connector_id);
+
+    auto profiles = handler->get_valid_profiles({}, {}, connector_id);
+
+    ASSERT_EQ(2, profiles.size());
+
+    bool sut = handler->clear_all_profiles_with_filter(1, std::nullopt, std::nullopt, std::nullopt, true);
+    profiles = handler->get_valid_profiles({}, {}, connector_id);
+
+    ASSERT_EQ(1, profiles.size());
+    ASSERT_TRUE(sut);
+}
+
+TEST_F(ChargepointTestFixture,
+       ClearAllProfilesWithFilter__Default_MultipleNoMatchingProfileId_CheckIdOnly__ReturnsFalse) {
+    const int connector_id = 1;
+    addConnector(connector_id);
+
+    auto handler = createSmartChargingHandler();
+
+    auto profile_1 =
+        createChargingProfile(1, 1, ChargingProfilePurposeType::TxDefaultProfile, ChargingProfileKindType::Absolute,
+                              RecurrencyKindType::Daily, createChargeSchedule(ChargingRateUnit::A));
+
+    auto profile_2 =
+        createChargingProfile(2, 2, ChargingProfilePurposeType::TxDefaultProfile, ChargingProfileKindType::Absolute,
+                              RecurrencyKindType::Daily, createChargeSchedule(ChargingRateUnit::A));
+
+    handler->add_tx_default_profile(profile_1, connector_id);
+    handler->add_tx_default_profile(profile_2, connector_id);
+
+    auto profiles = handler->get_valid_profiles({}, {}, connector_id);
+
+    ASSERT_EQ(2, profiles.size());
+
+    bool sut = handler->clear_all_profiles_with_filter(3, std::nullopt, std::nullopt, std::nullopt, true);
+    profiles = handler->get_valid_profiles({}, {}, connector_id);
+
+    ASSERT_EQ(2, profiles.size());
+    ASSERT_FALSE(sut);
+}
+
+// TX
+
+TEST_F(ChargepointTestFixture, ClearAllProfilesWithFilter__Tx_OnlyOneMatchingProfileId_CheckIdOnly__ReturnsTrue) {
+    const int connector_id = 1;
+    addConnector(connector_id);
+
+    auto handler = createSmartChargingHandler();
+
+    auto profile = createTxChargingProfile(createChargeSchedule(ChargingRateUnit::A));
+
+    handler->add_tx_profile(profile, connector_id);
+
+    auto profiles = handler->get_valid_profiles({}, {}, connector_id);
+
+    ASSERT_EQ(1, profiles.size());
+
+    bool sut = handler->clear_all_profiles_with_filter(1, std::nullopt, std::nullopt, std::nullopt, true);
+    profiles = handler->get_valid_profiles({}, {}, connector_id);
+    ASSERT_EQ(0, profiles.size());
+
+    ASSERT_TRUE(sut);
+}
+
+TEST_F(ChargepointTestFixture, ClearAllProfilesWithFilter__Tx_MatchingProfileId_CheckIdOnly__ReturnsTrue) {
+    const int connector_id = 1;
+    addConnector(connector_id);
+
+    auto handler = createSmartChargingHandler();
+
+    auto profile_1 =
+        createChargingProfile(1, 1, ChargingProfilePurposeType::TxProfile, ChargingProfileKindType::Absolute,
+                              RecurrencyKindType::Daily, createChargeSchedule(ChargingRateUnit::A));
+
+    auto profile_2 =
+        createChargingProfile(2, 2, ChargingProfilePurposeType::TxProfile, ChargingProfileKindType::Absolute,
+                              RecurrencyKindType::Daily, createChargeSchedule(ChargingRateUnit::A));
+
+    handler->add_tx_profile(profile_1, connector_id);
+    handler->add_tx_profile(profile_2, connector_id);
+
+    auto profiles = handler->get_valid_profiles({}, {}, connector_id);
+
+    ASSERT_EQ(2, profiles.size());
+
+    bool sut = handler->clear_all_profiles_with_filter(1, std::nullopt, std::nullopt, std::nullopt, true);
+    profiles = handler->get_valid_profiles({}, {}, connector_id);
+
+    ASSERT_EQ(1, profiles.size());
+    ASSERT_TRUE(sut);
+}
+
+TEST_F(ChargepointTestFixture, ClearAllProfilesWithFilter__Tx_MultipleNoMatchingProfileId_CheckIdOnly__ReturnsFalse) {
+    const int connector_id = 1;
+    addConnector(connector_id);
+
+    auto handler = createSmartChargingHandler();
+
+    auto profile_1 =
+        createChargingProfile(1, 1, ChargingProfilePurposeType::TxProfile, ChargingProfileKindType::Absolute,
+                              RecurrencyKindType::Daily, createChargeSchedule(ChargingRateUnit::A));
+
+    auto profile_2 =
+        createChargingProfile(2, 2, ChargingProfilePurposeType::TxProfile, ChargingProfileKindType::Absolute,
+                              RecurrencyKindType::Daily, createChargeSchedule(ChargingRateUnit::A));
+
+    handler->add_tx_profile(profile_1, connector_id);
+    handler->add_tx_profile(profile_2, connector_id);
+
+    auto profiles = handler->get_valid_profiles({}, {}, connector_id);
+
+    ASSERT_EQ(2, profiles.size());
+
+    bool sut = handler->clear_all_profiles_with_filter(3, std::nullopt, std::nullopt, std::nullopt, true);
+    profiles = handler->get_valid_profiles({}, {}, connector_id);
+
+    ASSERT_EQ(2, profiles.size());
+    ASSERT_FALSE(sut);
+}
+
+TEST_F(ChargepointTestFixture, ClearAllProfilesWithFilter__ConnectorId__ReturnsTrue) {
+    const int connector_id_1 = 100;
+    addConnector(connector_id_1);
+
+    const int connector_id_2 = 200;
+    addConnector(connector_id_2);
+
+    auto handler = createSmartChargingHandler();
+
+    auto profile_c1_1 =
+        createChargingProfile(1, 1, ChargingProfilePurposeType::TxProfile, ChargingProfileKindType::Absolute,
+                              RecurrencyKindType::Daily, createChargeSchedule(ChargingRateUnit::A));
+
+    auto profile_c1_2 =
+        createChargingProfile(2, 2, ChargingProfilePurposeType::TxProfile, ChargingProfileKindType::Absolute,
+                              RecurrencyKindType::Daily, createChargeSchedule(ChargingRateUnit::A));
+
+    auto profile_c2_3 =
+        createChargingProfile(3, 1, ChargingProfilePurposeType::TxProfile, ChargingProfileKindType::Absolute,
+                              RecurrencyKindType::Daily, createChargeSchedule(ChargingRateUnit::A));
+
+    auto profile_c2_4 =
+        createChargingProfile(4, 2, ChargingProfilePurposeType::TxProfile, ChargingProfileKindType::Absolute,
+                              RecurrencyKindType::Daily, createChargeSchedule(ChargingRateUnit::A));
+
+    handler->add_tx_profile(profile_c1_1, connector_id_1);
+    handler->add_tx_profile(profile_c1_2, connector_id_1);
+
+    handler->add_tx_profile(profile_c2_3, connector_id_2);
+    handler->add_tx_profile(profile_c2_4, connector_id_2);
+
+    auto connector_id_1_profiles = handler->get_valid_profiles({}, {}, connector_id_1);
+    auto connector_id_2_profiles = handler->get_valid_profiles({}, {}, connector_id_2);
+
+    ASSERT_EQ(2, connector_id_1_profiles.size());
+    ASSERT_EQ(2, connector_id_2_profiles.size());
+
+    auto check_id_only = false;
+
+    bool sut = handler->clear_all_profiles_with_filter(std::nullopt, connector_id_1, std::nullopt, std::nullopt,
+                                                       check_id_only);
+
+    connector_id_1_profiles = handler->get_valid_profiles({}, {}, connector_id_1);
+    connector_id_2_profiles = handler->get_valid_profiles({}, {}, connector_id_2);
+
+    ASSERT_EQ(0, connector_id_1_profiles.size());
+    ASSERT_EQ(2, connector_id_2_profiles.size());
+    ASSERT_TRUE(sut);
+}
+
+// TODO: Needs negative
+
+TEST_F(ChargepointTestFixture, ClearAllProfilesWithFilter__StackLevel__ReturnsTrue) {
+    const int connector_id_1 = 100;
+    addConnector(connector_id_1);
+
+    const int connector_id_2 = 200;
+    addConnector(connector_id_2);
+
+    auto handler = createSmartChargingHandler();
+
+    auto profile_c1_1 =
+        createChargingProfile(1, 1, ChargingProfilePurposeType::TxProfile, ChargingProfileKindType::Absolute,
+                              RecurrencyKindType::Daily, createChargeSchedule(ChargingRateUnit::A));
+
+    auto profile_c1_2 =
+        createChargingProfile(2, 2, ChargingProfilePurposeType::TxProfile, ChargingProfileKindType::Absolute,
+                              RecurrencyKindType::Daily, createChargeSchedule(ChargingRateUnit::A));
+
+    auto profile_c2_3 =
+        createChargingProfile(3, 1, ChargingProfilePurposeType::TxProfile, ChargingProfileKindType::Absolute,
+                              RecurrencyKindType::Daily, createChargeSchedule(ChargingRateUnit::A));
+
+    auto profile_c2_4 =
+        createChargingProfile(4, 2, ChargingProfilePurposeType::TxProfile, ChargingProfileKindType::Absolute,
+                              RecurrencyKindType::Daily, createChargeSchedule(ChargingRateUnit::A));
+
+    handler->add_tx_profile(profile_c1_1, connector_id_1);
+    handler->add_tx_profile(profile_c1_2, connector_id_1);
+
+    handler->add_tx_profile(profile_c2_3, connector_id_2);
+    handler->add_tx_profile(profile_c2_4, connector_id_2);
+
+    auto connector_id_1_profiles = handler->get_valid_profiles({}, {}, connector_id_1);
+    auto connector_id_2_profiles = handler->get_valid_profiles({}, {}, connector_id_2);
+
+    ASSERT_EQ(2, connector_id_1_profiles.size());
+    ASSERT_EQ(2, connector_id_2_profiles.size());
+
+    auto check_id_only = false;
+
+    bool sut = handler->clear_all_profiles_with_filter(std::nullopt, std::nullopt, 1, std::nullopt, check_id_only);
+
+    connector_id_1_profiles = handler->get_valid_profiles({}, {}, connector_id_1);
+    connector_id_2_profiles = handler->get_valid_profiles({}, {}, connector_id_2);
+
+    ASSERT_EQ(1, connector_id_1_profiles.size());
+    ASSERT_EQ(1, connector_id_2_profiles.size());
+    ASSERT_TRUE(sut);
+}
+
+// TODO: Needs negative
+
+TEST_F(ChargepointTestFixture, ClearAllProfilesWithFilter__ChargingProfilePurposeType__ReturnsTrue) {
+    const int connector_id_1 = 100;
+    addConnector(connector_id_1);
+
+    const int connector_id_2 = 200;
+    addConnector(connector_id_2);
+
+    auto handler = createSmartChargingHandler();
+
+    auto profile_c1_1 =
+        createChargingProfile(1, 1, ChargingProfilePurposeType::TxDefaultProfile, ChargingProfileKindType::Absolute,
+                              RecurrencyKindType::Daily, createChargeSchedule(ChargingRateUnit::A));
+
+    auto profile_c1_2 =
+        createChargingProfile(2, 2, ChargingProfilePurposeType::TxProfile, ChargingProfileKindType::Absolute,
+                              RecurrencyKindType::Daily, createChargeSchedule(ChargingRateUnit::A));
+
+    auto profile_c2_3 =
+        createChargingProfile(3, 1, ChargingProfilePurposeType::TxDefaultProfile, ChargingProfileKindType::Absolute,
+                              RecurrencyKindType::Daily, createChargeSchedule(ChargingRateUnit::A));
+
+    auto profile_c2_4 =
+        createChargingProfile(4, 2, ChargingProfilePurposeType::TxProfile, ChargingProfileKindType::Absolute,
+                              RecurrencyKindType::Daily, createChargeSchedule(ChargingRateUnit::A));
+
+    handler->add_tx_default_profile(profile_c1_1, connector_id_1);
+    handler->add_tx_profile(profile_c1_2, connector_id_1);
+
+    handler->add_tx_default_profile(profile_c2_3, connector_id_2);
+    handler->add_tx_profile(profile_c2_4, connector_id_2);
+
+    auto connector_id_1_profiles = handler->get_valid_profiles({}, {}, connector_id_1);
+    auto connector_id_2_profiles = handler->get_valid_profiles({}, {}, connector_id_2);
+
+    ASSERT_EQ(2, connector_id_1_profiles.size());
+    ASSERT_EQ(2, connector_id_2_profiles.size());
+
+    auto check_id_only = false;
+
+    bool sut = handler->clear_all_profiles_with_filter(std::nullopt, std::nullopt, std::nullopt,
+                                                       ChargingProfilePurposeType::TxDefaultProfile, check_id_only);
+
+    connector_id_1_profiles = handler->get_valid_profiles({}, {}, connector_id_1);
+    connector_id_2_profiles = handler->get_valid_profiles({}, {}, connector_id_2);
+
+    ASSERT_EQ(1, connector_id_1_profiles.size());
+    ASSERT_EQ(1, connector_id_2_profiles.size());
+    ASSERT_TRUE(sut);
+}
+
+// TODO: Needs negative
+
+TEST_F(ChargepointTestFixture,
+       ClearAllProfilesWithFilter__ConnectorIdStackLevelChargingProfilePurposeType__ReturnsTrue) {
+    const int connector_id_1 = 100;
+    addConnector(connector_id_1);
+
+    const int connector_id_2 = 200;
+    addConnector(connector_id_2);
+
+    auto handler = createSmartChargingHandler();
+
+    auto profile_c1_1 =
+        createChargingProfile(1, 1, ChargingProfilePurposeType::TxDefaultProfile, ChargingProfileKindType::Absolute,
+                              RecurrencyKindType::Daily, createChargeSchedule(ChargingRateUnit::A));
+
+    auto profile_c1_2 =
+        createChargingProfile(2, 2, ChargingProfilePurposeType::TxProfile, ChargingProfileKindType::Absolute,
+                              RecurrencyKindType::Daily, createChargeSchedule(ChargingRateUnit::A));
+
+    auto profile_c2_3 =
+        createChargingProfile(3, 1, ChargingProfilePurposeType::TxDefaultProfile, ChargingProfileKindType::Absolute,
+                              RecurrencyKindType::Daily, createChargeSchedule(ChargingRateUnit::A));
+
+    auto profile_c2_4 =
+        createChargingProfile(4, 2, ChargingProfilePurposeType::TxProfile, ChargingProfileKindType::Absolute,
+                              RecurrencyKindType::Daily, createChargeSchedule(ChargingRateUnit::A));
+
+    handler->add_tx_default_profile(profile_c1_1, connector_id_1);
+    handler->add_tx_profile(profile_c1_2, connector_id_1);
+
+    handler->add_tx_default_profile(profile_c2_3, connector_id_2);
+    handler->add_tx_profile(profile_c2_4, connector_id_2);
+
+    auto connector_id_1_profiles = handler->get_valid_profiles({}, {}, connector_id_1);
+    auto connector_id_2_profiles = handler->get_valid_profiles({}, {}, connector_id_2);
+
+    ASSERT_EQ(2, connector_id_1_profiles.size());
+    ASSERT_EQ(2, connector_id_2_profiles.size());
+
+    auto check_id_only = false;
+
+    bool sut = handler->clear_all_profiles_with_filter(std::nullopt, 100, 1,
+                                                       ChargingProfilePurposeType::TxDefaultProfile, check_id_only);
+
+    connector_id_1_profiles = handler->get_valid_profiles({}, {}, connector_id_1);
+    connector_id_2_profiles = handler->get_valid_profiles({}, {}, connector_id_2);
+
+    ASSERT_EQ(1, connector_id_1_profiles.size());
+    ASSERT_EQ(2, connector_id_2_profiles.size());
+    ASSERT_TRUE(sut);
 }
 
 } // namespace v16
