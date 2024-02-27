@@ -75,17 +75,15 @@ protected:
         auto chargingProfilePurpose = ChargingProfilePurposeType::ChargePointMaxProfile;
         auto chargingProfileKind = ChargingProfileKindType::Absolute;
         auto recurrencyKind = RecurrencyKindType::Daily;
-        return ChargingProfile{
-            chargingProfileId,
-            stackLevel,
-            chargingProfilePurpose,
-            chargingProfileKind,
-            chargingSchedule,
-            {}, // transactionId
-            recurrencyKind,
-            {}, // validFrom
-            {}  // validTo
-        };
+        return ChargingProfile{chargingProfileId,
+                               stackLevel,
+                               chargingProfilePurpose,
+                               chargingProfileKind,
+                               chargingSchedule,
+                               {}, // transactionId
+                               recurrencyKind,
+                               ocpp::DateTime("2024-01-01T00:00:00"),
+                               ocpp::DateTime("2024-03-19T00:00:00")};
     }
 
     ChargingProfile createChargingProfile(ChargingSchedule chargingSchedule) {
@@ -94,17 +92,15 @@ protected:
         auto chargingProfilePurpose = ChargingProfilePurposeType::TxDefaultProfile;
         auto chargingProfileKind = ChargingProfileKindType::Absolute;
         auto recurrencyKind = RecurrencyKindType::Daily;
-        return ChargingProfile{
-            chargingProfileId,
-            stackLevel,
-            chargingProfilePurpose,
-            chargingProfileKind,
-            chargingSchedule,
-            {}, // transactionId
-            recurrencyKind,
-            {}, // validFrom
-            {}  // validTo
-        };
+        return ChargingProfile{chargingProfileId,
+                               stackLevel,
+                               chargingProfilePurpose,
+                               chargingProfileKind,
+                               chargingSchedule,
+                               {}, // transactionId
+                               recurrencyKind,
+                               ocpp::DateTime("2024-01-01T00:00:00"),
+                               ocpp::DateTime("2024-03-19T00:00:00")};
     }
 
     ChargingProfile createTxChargingProfile(ChargingSchedule chargingSchedule) {
@@ -113,33 +109,29 @@ protected:
         auto chargingProfilePurpose = ChargingProfilePurposeType::TxProfile;
         auto chargingProfileKind = ChargingProfileKindType::Absolute;
         auto recurrencyKind = RecurrencyKindType::Daily;
-        return ChargingProfile{
-            chargingProfileId,
-            stackLevel,
-            chargingProfilePurpose,
-            chargingProfileKind,
-            chargingSchedule,
-            {}, // transactionId
-            recurrencyKind,
-            {}, // validFrom
-            {}  // validTo
-        };
+        return ChargingProfile{chargingProfileId,
+                               stackLevel,
+                               chargingProfilePurpose,
+                               chargingProfileKind,
+                               chargingSchedule,
+                               {}, // transactionId
+                               recurrencyKind,
+                               ocpp::DateTime("2024-01-01T00:00:00"),
+                               ocpp::DateTime("2024-03-19T00:00:00")};
     }
 
     ChargingProfile createChargingProfile(int id, int stackLevel, ChargingProfilePurposeType chargingProfilePurpose,
                                           ChargingProfileKindType chargingProfileKind,
                                           RecurrencyKindType recurrencyKind, ChargingSchedule chargingSchedule) {
-        return ChargingProfile{
-            id,
-            stackLevel,
-            chargingProfilePurpose,
-            chargingProfileKind,
-            chargingSchedule,
-            {}, // transactionId
-            recurrencyKind,
-            {}, // validFrom
-            {}  // validTo
-        };
+        return ChargingProfile{id,
+                               stackLevel,
+                               chargingProfilePurpose,
+                               chargingProfileKind,
+                               chargingSchedule,
+                               {}, // transactionId
+                               recurrencyKind,
+                               ocpp::DateTime("2024-01-01T00:00:00"),
+                               ocpp::DateTime("2024-03-19T00:00:00")};
     }
 
     /**
@@ -161,17 +153,15 @@ protected:
         auto chargingProfilePurpose = ChargingProfilePurposeType::TxDefaultProfile;
         auto chargingProfileKind = ChargingProfileKindType::Absolute;
         auto recurrencyKind = RecurrencyKindType::Daily;
-        return ChargingProfile{
-            chargingProfileId,
-            stackLevel,
-            chargingProfilePurpose,
-            chargingProfileKind,
-            chargingSchedule,
-            {}, // transactionId
-            recurrencyKind,
-            {}, // validFrom
-            {}  // validTo
-        };
+        return ChargingProfile{chargingProfileId,
+                               stackLevel,
+                               chargingProfilePurpose,
+                               chargingProfileKind,
+                               chargingSchedule,
+                               {}, // transactionId
+                               recurrencyKind,
+                               ocpp::DateTime("2024-01-01T00:00:00"),
+                               ocpp::DateTime("2024-03-19T00:00:00")};
     }
 
     /**
@@ -200,8 +190,8 @@ protected:
                                chargingSchedule,
                                {}, // transactionId
                                recurrencyKind,
-                               {},
-                               {}};
+                               ocpp::DateTime("2024-01-01T00:00:00"),
+                               ocpp::DateTime("2024-03-19T00:00:00")};
     }
 
     SmartChargingHandler* createSmartChargingHandler() {
@@ -223,6 +213,8 @@ protected:
     const int profile_max_stack_level = 1;
     const int max_charging_profiles_installed = 1;
     const int charging_schedule_max_periods = 1;
+    const DateTime date_start_range = ocpp::DateTime("2023-01-01T00:00:00");
+    const DateTime date_end_range = ocpp::DateTime("2024-03-19T00:00:00");
 };
 
 /**
@@ -608,16 +600,16 @@ TEST_F(ChargepointTestFixture, ClearAllProfilesWithFilter__AllOptionalsEmpty__Re
     handler->add_tx_profile(profile_1, connector_id_1);
     handler->add_tx_profile(profile_2, connector_id_2);
 
-    auto profiles_1 = handler->get_valid_profiles({}, {}, connector_id_1);
-    auto profiles_2 = handler->get_valid_profiles({}, {}, connector_id_2);
+    auto profiles_1 = handler->get_valid_profiles(date_start_range, date_end_range, connector_id_1);
+    auto profiles_2 = handler->get_valid_profiles(date_start_range, date_end_range, connector_id_2);
     ASSERT_EQ(1, profiles_1.size());
     ASSERT_EQ(1, profiles_2.size());
 
     // All empty tokens
     bool sut = handler->clear_all_profiles_with_filter(std::nullopt, std::nullopt, std::nullopt, std::nullopt, false);
 
-    profiles_1 = handler->get_valid_profiles({}, {}, connector_id_1);
-    profiles_2 = handler->get_valid_profiles({}, {}, connector_id_2);
+    profiles_1 = handler->get_valid_profiles(date_start_range, date_end_range, connector_id_1);
+    profiles_2 = handler->get_valid_profiles(date_start_range, date_end_range, connector_id_2);
     ASSERT_EQ(0, profiles_1.size());
     ASSERT_EQ(0, profiles_2.size());
 
@@ -681,12 +673,12 @@ TEST_F(ChargepointTestFixture, ClearAllProfilesWithFilter__Max_OnlyOneMatchingPr
 
     handler->add_charge_point_max_profile(profile);
 
-    auto profiles = handler->get_valid_profiles({}, {}, connector_id);
+    auto profiles = handler->get_valid_profiles(date_start_range, date_end_range, connector_id);
 
     ASSERT_EQ(1, profiles.size());
 
     bool sut = handler->clear_all_profiles_with_filter(1, std::nullopt, std::nullopt, std::nullopt, true);
-    profiles = handler->get_valid_profiles({}, {}, connector_id);
+    profiles = handler->get_valid_profiles(date_start_range, date_end_range, connector_id);
     ASSERT_EQ(0, profiles.size());
 
     ASSERT_TRUE(sut);
@@ -708,12 +700,12 @@ TEST_F(ChargepointTestFixture, ClearAllProfilesWithFilter__Max_MatchingProfileId
     handler->add_charge_point_max_profile(profile_1);
     handler->add_charge_point_max_profile(profile_2);
 
-    auto profiles = handler->get_valid_profiles({}, {}, connector_id);
+    auto profiles = handler->get_valid_profiles(date_start_range, date_end_range, connector_id);
 
     ASSERT_EQ(2, profiles.size());
 
     bool sut = handler->clear_all_profiles_with_filter(1, std::nullopt, std::nullopt, std::nullopt, true);
-    profiles = handler->get_valid_profiles({}, {}, connector_id);
+    profiles = handler->get_valid_profiles(date_start_range, date_end_range, connector_id);
 
     ASSERT_EQ(1, profiles.size());
     ASSERT_TRUE(sut);
@@ -735,12 +727,12 @@ TEST_F(ChargepointTestFixture, ClearAllProfilesWithFilter__Max_MultipleNoMatchin
     handler->add_charge_point_max_profile(profile_1);
     handler->add_charge_point_max_profile(profile_2);
 
-    auto profiles = handler->get_valid_profiles({}, {}, connector_id);
+    auto profiles = handler->get_valid_profiles(date_start_range, date_end_range, connector_id);
 
     ASSERT_EQ(2, profiles.size());
 
     bool sut = handler->clear_all_profiles_with_filter(3, std::nullopt, std::nullopt, std::nullopt, true);
-    profiles = handler->get_valid_profiles({}, {}, connector_id);
+    profiles = handler->get_valid_profiles(date_start_range, date_end_range, connector_id);
 
     ASSERT_EQ(2, profiles.size());
     ASSERT_FALSE(sut);
@@ -758,12 +750,12 @@ TEST_F(ChargepointTestFixture, ClearAllProfilesWithFilter__Default_OnlyOneMatchi
 
     handler->add_tx_default_profile(profile, connector_id);
 
-    auto profiles = handler->get_valid_profiles({}, {}, connector_id);
+    auto profiles = handler->get_valid_profiles(date_start_range, date_end_range, connector_id);
 
     ASSERT_EQ(1, profiles.size());
 
     bool sut = handler->clear_all_profiles_with_filter(1, std::nullopt, std::nullopt, std::nullopt, true);
-    profiles = handler->get_valid_profiles({}, {}, connector_id);
+    profiles = handler->get_valid_profiles(date_start_range, date_end_range, connector_id);
     ASSERT_EQ(0, profiles.size());
 
     ASSERT_TRUE(sut);
@@ -786,12 +778,12 @@ TEST_F(ChargepointTestFixture, ClearAllProfilesWithFilter__Default_MatchingProfi
     handler->add_tx_default_profile(profile_1, connector_id);
     handler->add_tx_default_profile(profile_2, connector_id);
 
-    auto profiles = handler->get_valid_profiles({}, {}, connector_id);
+    auto profiles = handler->get_valid_profiles(date_start_range, date_end_range, connector_id);
 
     ASSERT_EQ(2, profiles.size());
 
     bool sut = handler->clear_all_profiles_with_filter(1, std::nullopt, std::nullopt, std::nullopt, true);
-    profiles = handler->get_valid_profiles({}, {}, connector_id);
+    profiles = handler->get_valid_profiles(date_start_range, date_end_range, connector_id);
 
     ASSERT_EQ(1, profiles.size());
     ASSERT_TRUE(sut);
@@ -815,12 +807,12 @@ TEST_F(ChargepointTestFixture,
     handler->add_tx_default_profile(profile_1, connector_id);
     handler->add_tx_default_profile(profile_2, connector_id);
 
-    auto profiles = handler->get_valid_profiles({}, {}, connector_id);
+    auto profiles = handler->get_valid_profiles(date_start_range, date_end_range, connector_id);
 
     ASSERT_EQ(2, profiles.size());
 
     bool sut = handler->clear_all_profiles_with_filter(3, std::nullopt, std::nullopt, std::nullopt, true);
-    profiles = handler->get_valid_profiles({}, {}, connector_id);
+    profiles = handler->get_valid_profiles(date_start_range, date_end_range, connector_id);
 
     ASSERT_EQ(2, profiles.size());
     ASSERT_FALSE(sut);
@@ -838,12 +830,12 @@ TEST_F(ChargepointTestFixture, ClearAllProfilesWithFilter__Tx_OnlyOneMatchingPro
 
     handler->add_tx_profile(profile, connector_id);
 
-    auto profiles = handler->get_valid_profiles({}, {}, connector_id);
+    auto profiles = handler->get_valid_profiles(date_start_range, date_end_range, connector_id);
 
     ASSERT_EQ(1, profiles.size());
 
     bool sut = handler->clear_all_profiles_with_filter(1, std::nullopt, std::nullopt, std::nullopt, true);
-    profiles = handler->get_valid_profiles({}, {}, connector_id);
+    profiles = handler->get_valid_profiles(date_start_range, date_end_range, connector_id);
     ASSERT_EQ(0, profiles.size());
 
     ASSERT_TRUE(sut);
@@ -866,12 +858,12 @@ TEST_F(ChargepointTestFixture, ClearAllProfilesWithFilter__Tx_MatchingProfileId_
     handler->add_tx_profile(profile_1, connector_id);
     handler->add_tx_profile(profile_2, connector_id);
 
-    auto profiles = handler->get_valid_profiles({}, {}, connector_id);
+    auto profiles = handler->get_valid_profiles(date_start_range, date_end_range, connector_id);
 
     ASSERT_EQ(2, profiles.size());
 
     bool sut = handler->clear_all_profiles_with_filter(1, std::nullopt, std::nullopt, std::nullopt, true);
-    profiles = handler->get_valid_profiles({}, {}, connector_id);
+    profiles = handler->get_valid_profiles(date_start_range, date_end_range, connector_id);
 
     ASSERT_EQ(1, profiles.size());
     ASSERT_TRUE(sut);
@@ -894,12 +886,12 @@ TEST_F(ChargepointTestFixture, ClearAllProfilesWithFilter__Tx_MultipleNoMatching
     handler->add_tx_profile(profile_1, connector_id);
     handler->add_tx_profile(profile_2, connector_id);
 
-    auto profiles = handler->get_valid_profiles({}, {}, connector_id);
+    auto profiles = handler->get_valid_profiles(date_start_range, date_end_range, connector_id);
 
     ASSERT_EQ(2, profiles.size());
 
     bool sut = handler->clear_all_profiles_with_filter(3, std::nullopt, std::nullopt, std::nullopt, true);
-    profiles = handler->get_valid_profiles({}, {}, connector_id);
+    profiles = handler->get_valid_profiles(date_start_range, date_end_range, connector_id);
 
     ASSERT_EQ(2, profiles.size());
     ASSERT_FALSE(sut);
@@ -936,8 +928,8 @@ TEST_F(ChargepointTestFixture, ClearAllProfilesWithFilter__ConnectorId__ReturnsT
     handler->add_tx_profile(profile_c2_3, connector_id_2);
     handler->add_tx_profile(profile_c2_4, connector_id_2);
 
-    auto connector_id_1_profiles = handler->get_valid_profiles({}, {}, connector_id_1);
-    auto connector_id_2_profiles = handler->get_valid_profiles({}, {}, connector_id_2);
+    auto connector_id_1_profiles = handler->get_valid_profiles(date_start_range, date_end_range, connector_id_1);
+    auto connector_id_2_profiles = handler->get_valid_profiles(date_start_range, date_end_range, connector_id_2);
 
     ASSERT_EQ(2, connector_id_1_profiles.size());
     ASSERT_EQ(2, connector_id_2_profiles.size());
@@ -947,8 +939,8 @@ TEST_F(ChargepointTestFixture, ClearAllProfilesWithFilter__ConnectorId__ReturnsT
     bool sut = handler->clear_all_profiles_with_filter(std::nullopt, connector_id_1, std::nullopt, std::nullopt,
                                                        check_id_only);
 
-    connector_id_1_profiles = handler->get_valid_profiles({}, {}, connector_id_1);
-    connector_id_2_profiles = handler->get_valid_profiles({}, {}, connector_id_2);
+    connector_id_1_profiles = handler->get_valid_profiles(date_start_range, date_end_range, connector_id_1);
+    connector_id_2_profiles = handler->get_valid_profiles(date_start_range, date_end_range, connector_id_2);
 
     ASSERT_EQ(0, connector_id_1_profiles.size());
     ASSERT_EQ(2, connector_id_2_profiles.size());
@@ -988,8 +980,8 @@ TEST_F(ChargepointTestFixture, ClearAllProfilesWithFilter__StackLevel__ReturnsTr
     handler->add_tx_profile(profile_c2_3, connector_id_2);
     handler->add_tx_profile(profile_c2_4, connector_id_2);
 
-    auto connector_id_1_profiles = handler->get_valid_profiles({}, {}, connector_id_1);
-    auto connector_id_2_profiles = handler->get_valid_profiles({}, {}, connector_id_2);
+    auto connector_id_1_profiles = handler->get_valid_profiles(date_start_range, date_end_range, connector_id_1);
+    auto connector_id_2_profiles = handler->get_valid_profiles(date_start_range, date_end_range, connector_id_2);
 
     ASSERT_EQ(2, connector_id_1_profiles.size());
     ASSERT_EQ(2, connector_id_2_profiles.size());
@@ -998,8 +990,8 @@ TEST_F(ChargepointTestFixture, ClearAllProfilesWithFilter__StackLevel__ReturnsTr
 
     bool sut = handler->clear_all_profiles_with_filter(std::nullopt, std::nullopt, 1, std::nullopt, check_id_only);
 
-    connector_id_1_profiles = handler->get_valid_profiles({}, {}, connector_id_1);
-    connector_id_2_profiles = handler->get_valid_profiles({}, {}, connector_id_2);
+    connector_id_1_profiles = handler->get_valid_profiles(date_start_range, date_end_range, connector_id_1);
+    connector_id_2_profiles = handler->get_valid_profiles(date_start_range, date_end_range, connector_id_2);
 
     ASSERT_EQ(1, connector_id_1_profiles.size());
     ASSERT_EQ(1, connector_id_2_profiles.size());
@@ -1039,8 +1031,8 @@ TEST_F(ChargepointTestFixture, ClearAllProfilesWithFilter__ChargingProfilePurpos
     handler->add_tx_default_profile(profile_c2_3, connector_id_2);
     handler->add_tx_profile(profile_c2_4, connector_id_2);
 
-    auto connector_id_1_profiles = handler->get_valid_profiles({}, {}, connector_id_1);
-    auto connector_id_2_profiles = handler->get_valid_profiles({}, {}, connector_id_2);
+    auto connector_id_1_profiles = handler->get_valid_profiles(date_start_range, date_end_range, connector_id_1);
+    auto connector_id_2_profiles = handler->get_valid_profiles(date_start_range, date_end_range, connector_id_2);
 
     ASSERT_EQ(2, connector_id_1_profiles.size());
     ASSERT_EQ(2, connector_id_2_profiles.size());
@@ -1050,8 +1042,8 @@ TEST_F(ChargepointTestFixture, ClearAllProfilesWithFilter__ChargingProfilePurpos
     bool sut = handler->clear_all_profiles_with_filter(std::nullopt, std::nullopt, std::nullopt,
                                                        ChargingProfilePurposeType::TxDefaultProfile, check_id_only);
 
-    connector_id_1_profiles = handler->get_valid_profiles({}, {}, connector_id_1);
-    connector_id_2_profiles = handler->get_valid_profiles({}, {}, connector_id_2);
+    connector_id_1_profiles = handler->get_valid_profiles(date_start_range, date_end_range, connector_id_1);
+    connector_id_2_profiles = handler->get_valid_profiles(date_start_range, date_end_range, connector_id_2);
 
     ASSERT_EQ(1, connector_id_1_profiles.size());
     ASSERT_EQ(1, connector_id_2_profiles.size());
@@ -1092,8 +1084,8 @@ TEST_F(ChargepointTestFixture,
     handler->add_tx_default_profile(profile_c2_3, connector_id_2);
     handler->add_tx_profile(profile_c2_4, connector_id_2);
 
-    auto connector_id_1_profiles = handler->get_valid_profiles({}, {}, connector_id_1);
-    auto connector_id_2_profiles = handler->get_valid_profiles({}, {}, connector_id_2);
+    auto connector_id_1_profiles = handler->get_valid_profiles(date_start_range, date_end_range, connector_id_1);
+    auto connector_id_2_profiles = handler->get_valid_profiles(date_start_range, date_end_range, connector_id_2);
 
     ASSERT_EQ(2, connector_id_1_profiles.size());
     ASSERT_EQ(2, connector_id_2_profiles.size());
@@ -1103,8 +1095,8 @@ TEST_F(ChargepointTestFixture,
     bool sut = handler->clear_all_profiles_with_filter(std::nullopt, 100, 1,
                                                        ChargingProfilePurposeType::TxDefaultProfile, check_id_only);
 
-    connector_id_1_profiles = handler->get_valid_profiles({}, {}, connector_id_1);
-    connector_id_2_profiles = handler->get_valid_profiles({}, {}, connector_id_2);
+    connector_id_1_profiles = handler->get_valid_profiles(date_start_range, date_end_range, connector_id_1);
+    connector_id_2_profiles = handler->get_valid_profiles(date_start_range, date_end_range, connector_id_2);
 
     ASSERT_EQ(1, connector_id_1_profiles.size());
     ASSERT_EQ(2, connector_id_2_profiles.size());
