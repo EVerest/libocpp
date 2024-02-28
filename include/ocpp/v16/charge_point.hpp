@@ -339,7 +339,7 @@ public:
     /// \brief registers a \p callback function that can be used to pause charging. The pause_charging_callback is
     /// called when the idTagInfo.status of a StartTransaction.conf is not Accepted
     /// \param callback
-    void register_pause_charging_callback(const std::function<bool(int32_t connector)>& callback);
+    void register_pause_charging_callback(const std::function<bool(int32_t connector, IdTagInfo idTagInfo)>& callback);
 
     /// \brief registers a \p callback function that can be used to resume charging
     /// \param callback
