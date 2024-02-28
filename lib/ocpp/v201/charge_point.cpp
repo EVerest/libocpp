@@ -544,6 +544,32 @@ bool ChargePoint::on_charging_state_changed(const uint32_t evse_id, ChargingStat
     return false;
 }
 
+std::vector<OCSPRequestData> ChargePoint::generate_ocsp_data(const CiString<5500>& certificate) {
+    std::vector<OCSPRequestData> ocsp_request_data_list;
+    const auto ocsp_data_list = this->evse_security->get_ocsp_request_data(certificate.get(), ocpp::CaCertificateType::MO);
+    for (const auto& ocsp_data : ocsp_data_list) {
+        OCSPRequestData request;
+        switch (ocsp_data.hashAlgorithm) {
+        case HashAlgorithmEnumType::SHA256:
+            request.hashAlgorithm = ocpp::v201::HashAlgorithmEnum::SHA256;
+            break;
+        case HashAlgorithmEnumType::SHA384:
+            request.hashAlgorithm = ocpp::v201::HashAlgorithmEnum::SHA384;
+            break;
+        case HashAlgorithmEnumType::SHA512:
+            request.hashAlgorithm = ocpp::v201::HashAlgorithmEnum::SHA512;
+            break;
+        }
+        request.issuerKeyHash = ocsp_data.issuerKeyHash;
+        request.issuerNameHash = ocsp_data.issuerNameHash;
+        request.responderURL = ocsp_data.responderUrl;
+        request.serialNumber = ocsp_data.serialNumber;
+        ocsp_request_data_list.push_back(request);
+    }
+    return ocsp_request_data_list;
+}
+
+
 AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std::optional<CiString<5500>>& certificate,
                                               const std::optional<std::vector<OCSPRequestData>>& ocsp_request_data) {
     // TODO(piet): C01.FR.14
@@ -585,12 +611,20 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
                     EVLOG_info << "Online: No local contract root found. Pass contract validation to CSMS";
                     response = this->authorize_req(id_token, certificate, ocsp_request_data);
                 } else {
-                    EVLOG_info << "Online: Pass OCSP data to CSMS";
-                    if (!ocsp_request_data.has_value()) {
-                        EVLOG_warning << "OCSP data is missing";
-                        response.idTokenInfo.status = AuthorizationStatusEnum::Invalid;
-                    } else {
+                    // If OCSP data was provided as argument, use it
+                    // Else, try to generate the OCSP data from the certificate chain and use that
+                    if (ocsp_request_data.has_value()) {
+                        EVLOG_info << "Online: Pass provided OCSP data to CSMS";
                         response = this->authorize_req(id_token, std::nullopt, ocsp_request_data);
+                    } else {
+                        std::vector<OCSPRequestData> generated_ocsp_request_data_list = generate_ocsp_data(certificate.value());
+                        if (generated_ocsp_request_data_list.size() > 0) {
+                            EVLOG_info << "Online: Pass generated OCSP data to CSMS";
+                            response = this->authorize_req(id_token, std::nullopt, generated_ocsp_request_data_list);
+                        } else {
+                            EVLOG_warning << "Online: OCSP data could not be generated";
+                            response.idTokenInfo.status = AuthorizationStatusEnum::Invalid;
+                        }
                     }
                     // TODO: local validation results are ignored, response is based only on OCSP data, is that acceptable?
                 }

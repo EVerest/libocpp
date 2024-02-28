@@ -74,6 +74,19 @@ std::vector<OCSPRequestData> EvseSecurityImpl::get_ocsp_request_data() {
 
     return result;
 }
+
+std::vector<OCSPRequestData> EvseSecurityImpl::get_ocsp_request_data(const std::string& certificate_chain,
+                                                              const CaCertificateType& certificate_type) {
+    std::vector<OCSPRequestData> result;
+
+    const auto ocsp_request_data = this->evse_security->get_ocsp_request_data(certificate_chain, conversions::from_ocpp(certificate_type));
+    for (const auto& ocsp_request_entry : ocsp_request_data.ocsp_request_data_list) {
+        result.push_back(conversions::to_ocpp(ocsp_request_entry));
+    }
+
+    return result;
+}
+
 void EvseSecurityImpl::update_ocsp_cache(const CertificateHashDataType& certificate_hash_data,
                                          const std::string& ocsp_response) {
     this->evse_security->update_ocsp_cache(conversions::from_ocpp(certificate_hash_data), ocsp_response);
