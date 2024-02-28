@@ -28,6 +28,12 @@ enum class ProfileValidationResultEnum {
     ChargingProfileExtraneousStartSchedule,
     ChargingSchedulePeriodsOutOfOrder,
     ChargingSchedulePeriodInvalidPhaseToUse,
+    DuplicateTxDefaultProfileFound
+};
+
+struct EvseProfile {
+    int32_t evse_id;
+    ChargingProfile profile;
 };
 
 /// \brief This class handles and maintains incoming ChargingProfiles and contains the logic
@@ -38,7 +44,8 @@ private:
 
     std::shared_ptr<ocpp::v201::DatabaseHandler> database_handler;
     // cppcheck-suppress unusedStructMember
-    std::vector<ChargingProfile> charging_profiles;
+    std::vector<EvseProfile> charging_profiles;
+    std::vector<ChargingProfile> station_wide_charging_profiles;
 
 public:
     explicit SmartChargingHandler(std::map<int32_t, std::unique_ptr<EvseInterface>>& evses);
@@ -51,13 +58,25 @@ public:
     ///
     /// \brief validates the given \p profile according to the specification
     ///
+    ProfileValidationResultEnum validate_tx_default_profile(const ChargingProfile& profile,
+                                                            std::optional<EvseInterface*> evse_opt) const;
+
+    ///
+    /// \brief validates the given \p profile according to the specification
+    ///
     ProfileValidationResultEnum validate_tx_profile(const ChargingProfile& profile, EvseInterface& evse) const;
 
     /// \brief validates that the given \p profile has valid charging schedules
     ProfileValidationResultEnum validate_profile_schedules(const ChargingProfile& profile) const;
 
+    ///
     /// \brief Adds a given \p profile to our stored list of profiles
-    void add_profile(const ChargingProfile& profile);
+    ///
+    void add_profile(int32_t evse_id, ChargingProfile& profile);
+
+private:
+    std::vector<ChargingProfile> get_evse_specific_tx_default_profiles() const;
+    std::vector<ChargingProfile> get_station_wide_tx_default_profiles() const;
 };
 
 } // namespace ocpp::v201
