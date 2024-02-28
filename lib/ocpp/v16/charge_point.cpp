@@ -300,7 +300,7 @@ void ChargePoint::register_transaction_stopped_callback(
 }
 
 void ChargePoint::register_transaction_updated_callback(
-    const std::function<void(const int32_t connector, const std::string& session_id, const int32_t transaction_id)>&
+    const std::function<void(const int32_t connector, const std::string& session_id, const int32_t transaction_id,  const IdTagInfo& id_tag_info)>&
         callback) {
     this->charge_point->register_transaction_updated_callback(callback);
 }
