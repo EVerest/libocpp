@@ -1071,6 +1071,9 @@ void ChargePoint::message_callback(const std::string& message) {
                     EVLOG_warning << "Received invalid MessageType: "
                                   << conversions::messagetype_to_string(enhanced_message.messageType)
                                   << " from CSMS while in state Pending";
+                    // B02.FR.09 send CALLERROR SecurityError
+                    const auto call_error = CallError(enhanced_message.uniqueId, "SecurityError", "", json({}));
+                    this->send(call_error);
                 }
             }
         } else if (this->registration_status == RegistrationStatusEnum::Rejected) {
