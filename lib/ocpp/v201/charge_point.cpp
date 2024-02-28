@@ -210,10 +210,8 @@ void ChargePoint::connect_websocket() {
 
 void ChargePoint::disconnect_websocket(websocketpp::close::status::value code) {
     if (this->websocket != nullptr) {
-        if (this->websocket->is_connected()) {
-            this->disable_automatic_websocket_reconnects = true;
-            this->websocket->disconnect(code);
-        }
+        this->disable_automatic_websocket_reconnects = true;
+        this->websocket->disconnect(code);
     }
 }
 
@@ -251,6 +249,9 @@ void ChargePoint::on_firmware_update_status_notification(int32_t request_id,
             CiString<50>(ocpp::security_events::INVALIDFIRMWARESIGNATURE),
             std::optional<CiString<255>>("Signature of the provided firmware is not valid!"), true,
             true); // L01.FR.03 - critical because TC_L_06_CS requires this message to be sent
+    } else if (req.status == FirmwareStatusEnum::InstallVerificationFailed ||
+               req.status == FirmwareStatusEnum::InstallationFailed) {
+        this->restore_all_connector_states();
     }
 
     if (this->firmware_status_before_installing == req.status) {
@@ -351,7 +352,12 @@ void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime&
         utils::get_measurands_vec(
             this->device_model->get_value<std::string>(ControllerComponentVariables::SampledDataTxEndedMeasurands)),
         utils::get_measurands_vec(
-            this->device_model->get_value<std::string>(ControllerComponentVariables::AlignedDataTxEndedMeasurands))));
+            this->device_model->get_value<std::string>(ControllerComponentVariables::AlignedDataTxEndedMeasurands)),
+        timestamp,
+        this->device_model->get_optional_value<bool>(ControllerComponentVariables::SampledDataSignReadings)
+            .value_or(false),
+        this->device_model->get_optional_value<bool>(ControllerComponentVariables::AlignedDataSignReadings)
+            .value_or(false)));
 
     if (meter_values.value().empty()) {
         meter_values.reset();
@@ -564,6 +570,12 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
                 // C14.FR.02: If found in local list we shall start charging without an AuthorizeRequest
                 EVLOG_info << "Found valid entry in local authorization list";
                 response.idTokenInfo = id_token_info.value();
+            } else if (this->device_model
+                           ->get_optional_value<bool>(ControllerComponentVariables::DisableRemoteAuthorization)
+                           .value_or(false)) {
+                EVLOG_info << "Found invalid entry in local authorization list but not sending Authorize.req because "
+                              "RemoteAuthorization is disabled";
+                response.idTokenInfo.status = AuthorizationStatusEnum::Unknown;
             } else if (this->websocket->is_connected()) {
                 // C14.FR.03: If a value found but not valid we shall send an authorize request
                 EVLOG_info << "Found invalid entry in local authorization list: Sending Authorize.req";
@@ -596,6 +608,13 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
                 EVLOG_info << "Found valid entry in AuthCache";
                 response.idTokenInfo = cache_entry.value();
                 return response;
+            } else if (this->device_model
+                           ->get_optional_value<bool>(ControllerComponentVariables::AuthCacheDisablePostAuthorize)
+                           .value_or(false)) {
+                EVLOG_info << "Found invalid entry in AuthCache: Not sending new request because "
+                              "AuthCacheDisablePostAuthorize is enabled";
+                response.idTokenInfo = cache_entry.value();
+                return response;
             } else {
                 EVLOG_info << "Found invalid entry in AuthCache: Sending new request";
             }
@@ -610,14 +629,24 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
         return response;
     }
 
-    response = this->authorize_req(id_token, certificate, ocsp_request_data);
+    // When set to true this instructs the Charging Station to not issue any AuthorizationRequests, but only use
+    // Authorization Cache and Local Authorization List to determine validity of idTokens.
+    if (!this->device_model->get_optional_value<bool>(ControllerComponentVariables::DisableRemoteAuthorization)
+             .value_or(false)) {
+        response = this->authorize_req(id_token, certificate, ocsp_request_data);
 
-    if (auth_cache_enabled) {
-        this->update_id_token_cache_lifetime(response.idTokenInfo);
-        this->database_handler->authorization_cache_insert_entry(hashed_id_token, response.idTokenInfo);
-        this->update_authorization_cache_size();
+        if (auth_cache_enabled) {
+            this->update_id_token_cache_lifetime(response.idTokenInfo);
+            this->database_handler->authorization_cache_insert_entry(hashed_id_token, response.idTokenInfo);
+            this->update_authorization_cache_size();
+        }
+
+        return response;
     }
 
+    EVLOG_info << "Not sending Authorize.req because RemoteAuthorization is disabled";
+
+    response.idTokenInfo.status = AuthorizationStatusEnum::Unknown;
     return response;
 }
 
@@ -1123,6 +1152,16 @@ void ChargePoint::change_all_connectors_to_unavailable_for_firmware_update() {
     }
 }
 
+void ChargePoint::restore_all_connector_states() {
+    for (auto const& [evse_id, evse] : this->evses) {
+        uint32_t number_of_connectors = evse->get_number_of_connectors();
+
+        for (uint32_t i = 1; i <= number_of_connectors; ++i) {
+            evse->restore_connector_operative_status(static_cast<int32_t>(i));
+        }
+    }
+}
+
 void ChargePoint::update_id_token_cache_lifetime(IdTokenInfo& id_token_info) {
     // C10.FR.08
     // when CSMS does not set cacheExpiryDateTime and config variable for AuthCacheLifeTime is present use the
@@ -1209,7 +1248,7 @@ void ChargePoint::update_aligned_data_interval() {
     }
 
     this->aligned_meter_values_timer.interval_starting_from(
-        [this]() {
+        [this, interval]() {
             // J01.FR.20 if AlignedDataSendDuringIdle is true and any transaction is active, don't send clock aligned
             // meter values
             if (this->device_model->get_optional_value<bool>(ControllerComponentVariables::AlignedDataSendDuringIdle)
@@ -1221,12 +1260,19 @@ void ChargePoint::update_aligned_data_interval() {
                 }
             }
 
+            const bool align_timestamps =
+                this->device_model->get_optional_value<bool>(ControllerComponentVariables::RoundClockAlignedTimestamps)
+                    .value_or(false);
+
             // send evseID = 0 values
-            const auto meter_value = get_latest_meter_value_filtered(
-                this->aligned_data_evse0.retrieve_processed_values(), ReadingContextEnum::Sample_Clock,
-                ControllerComponentVariables::AlignedDataMeasurands);
+            auto meter_value = get_latest_meter_value_filtered(this->aligned_data_evse0.retrieve_processed_values(),
+                                                               ReadingContextEnum::Sample_Clock,
+                                                               ControllerComponentVariables::AlignedDataMeasurands);
 
             if (!meter_value.sampledValue.empty()) {
+                if (align_timestamps) {
+                    meter_value.timestamp = utils::align_timestamp(DateTime{}, interval);
+                }
                 this->meter_values_req(0, std::vector<ocpp::v201::MeterValue>(1, meter_value));
             }
             this->aligned_data_evse0.clear_values();
@@ -1238,9 +1284,13 @@ void ChargePoint::update_aligned_data_interval() {
 
                 // this will apply configured measurands and possibly reduce the entries of sampledValue
                 // according to the configuration
-                const auto meter_value =
+                auto meter_value =
                     get_latest_meter_value_filtered(evse->get_idle_meter_value(), ReadingContextEnum::Sample_Clock,
                                                     ControllerComponentVariables::AlignedDataMeasurands);
+
+                if (align_timestamps) {
+                    meter_value.timestamp = utils::align_timestamp(DateTime{}, interval);
+                }
 
                 if (!meter_value.sampledValue.empty()) {
                     // J01.FR.14 this is the only case where we send a MeterValue.req
@@ -1489,15 +1539,7 @@ void ChargePoint::set_evse_connectors_unavailable(const std::unique_ptr<Evse>& e
     uint32_t number_of_connectors = evse->get_number_of_connectors();
 
     for (uint32_t i = 1; i <= number_of_connectors; ++i) {
-        bool should_persist = persist;
-        // TODO: Why is this condition here? What requirement does it fulfill?
-        if (!should_persist && evse->get_connector(static_cast<int32_t>(i))->get_effective_connector_status() ==
-                                   ocpp::v201::ConnectorStatusEnum::Unavailable) {
-            should_persist = true;
-        }
-
-        evse->set_connector_operative_status(static_cast<int32_t>(i), OperationalStatusEnum::Inoperative,
-                                             should_persist);
+        evse->set_connector_operative_status(static_cast<int32_t>(i), OperationalStatusEnum::Inoperative, persist);
     }
 }
 
@@ -3043,12 +3085,12 @@ void ChargePoint::execute_change_availability_request(ChangeAvailabilityRequest 
     if (request.evse.has_value()) {
         if (request.evse.value().connectorId.has_value()) {
             this->set_connector_operative_status(request.evse.value().id, request.evse.value().connectorId.value(),
-                                                 request.operationalStatus, true);
+                                                 request.operationalStatus, persist);
         } else {
-            this->set_evse_operative_status(request.evse.value().id, request.operationalStatus, true);
+            this->set_evse_operative_status(request.evse.value().id, request.operationalStatus, persist);
         }
     } else {
-        this->set_cs_operative_status(request.operationalStatus, true);
+        this->set_cs_operative_status(request.operationalStatus, persist);
     }
 }
 

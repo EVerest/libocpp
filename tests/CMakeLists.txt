@@ -10,8 +10,7 @@ target_link_libraries(${PROJECT_NAME}_database_tests PRIVATE
     date::date
     nlohmann_json::nlohmann_json
     nlohmann_json_schema_validator
-    ${GTEST_LIBRARIES} 
-    ${GTEST_MAIN_LIBRARIES} 
+    GTest::gtest_main
     pthread
     )
 
@@ -39,8 +38,7 @@ target_include_directories(${PROJECT_NAME}_unit_tests PUBLIC ${CMAKE_CURRENT_SOU
 target_link_libraries(${PROJECT_NAME}_unit_tests PRIVATE
         ocpp
         GTest::gmock_main
-        ${GTEST_LIBRARIES}
-        ${GTEST_MAIN_LIBRARIES}
+        GTest::gtest_main
 )
 target_sources(${PROJECT_NAME}_unit_tests PRIVATE
         comparators.cpp)
@@ -55,8 +53,7 @@ target_include_directories(${PROJECT_NAME}_utils_tests PUBLIC ${GTEST_INCLUDE_DI
 
 target_link_libraries(${PROJECT_NAME}_utils_tests PRIVATE
         ocpp
-        ${GTEST_LIBRARIES}
-        ${GTEST_MAIN_LIBRARIES}
+        GTest::gtest_main
 )
 
 add_test(

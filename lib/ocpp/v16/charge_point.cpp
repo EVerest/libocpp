@@ -71,8 +71,12 @@ DataTransferResponse ChargePoint::data_transfer(const CiString<255>& vendorId,
 }
 
 std::map<int32_t, ChargingSchedule> ChargePoint::get_all_composite_charging_schedules(const int32_t duration_s) {
-
     return this->charge_point->get_all_composite_charging_schedules(duration_s);
+}
+
+std::map<int32_t, EnhancedChargingSchedule>
+ChargePoint::get_all_enhanced_composite_charging_schedules(const int32_t duration_s) {
+    return this->charge_point->get_all_enhanced_composite_charging_schedules(duration_s);
 }
 
 void ChargePoint::on_meter_values(int32_t connector, const Measurement& measurement) {
@@ -81,6 +85,10 @@ void ChargePoint::on_meter_values(int32_t connector, const Measurement& measurem
 
 void ChargePoint::on_max_current_offered(int32_t connector, int32_t max_current) {
     this->charge_point->on_max_current_offered(connector, max_current);
+}
+
+void ChargePoint::on_max_power_offered(int32_t connector, int32_t max_power) {
+    this->charge_point->on_max_power_offered(connector, max_power);
 }
 
 void ChargePoint::on_session_started(int32_t connector, const std::string& session_id,
@@ -287,6 +295,11 @@ void ChargePoint::register_transaction_started_callback(
 void ChargePoint::register_configuration_key_changed_callback(
     const CiString<50>& key, const std::function<void(const KeyValue& key_value)>& callback) {
     this->charge_point->register_configuration_key_changed_callback(key, callback);
+}
+
+void ChargePoint::register_generic_configuration_key_changed_callback(
+    const std::function<void(const KeyValue& key_value)>& callback) {
+    this->charge_point->register_generic_configuration_key_changed_callback(callback);
 }
 
 void ChargePoint::register_security_event_callback(

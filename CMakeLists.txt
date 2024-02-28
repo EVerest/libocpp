@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.14)
 
 project(ocpp
-    VERSION 0.9.7
+    VERSION 0.9.8
     DESCRIPTION "A C++ implementation of the Open Charge Point Protocol"
     LANGUAGES CXX
 )
@@ -11,11 +11,16 @@ find_package(everest-cmake 0.1 REQUIRED
 )
 
 # options
+
 option(CMAKE_RUN_CLANG_TIDY "Run clang-tidy" OFF)
 option(${PROJECT_NAME}_BUILD_EXAMPLES "Build charge_point and central_system binaries." OFF)
 option(${PROJECT_NAME}_INSTALL "Install the library (shared data might be installed anyway)" ${EVC_MAIN_PROJECT})
 option(${PROJECT_NAME}_BUILD_TESTING "Build unit tests, used if included as dependency" OFF)
 option(BUILD_TESTING "Build unit tests, used if standalone project" OFF)
+
+if((${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME} OR ${PROJECT_NAME}_BUILD_TESTING) AND BUILD_TESTING)
+    set(LIBOCPP_BUILD_TESTING ON)
+endif()
 
 # dependencies
 find_package(Boost COMPONENTS program_options regex system thread REQUIRED)
@@ -104,7 +109,7 @@ if(CMAKE_RUN_CLANG_TIDY)
     -export-fixes=clang-tidy-fixes.yaml)
 endif()
 
-if((${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME} OR ${PROJECT_NAME}_BUILD_TESTING) AND BUILD_TESTING)
+if(LIBOCPP_BUILD_TESTING)
     include(CTest)
     enable_testing()
     add_subdirectory(tests)

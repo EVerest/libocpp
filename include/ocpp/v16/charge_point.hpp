@@ -8,6 +8,7 @@
 #include <ocpp/common/evse_security_impl.hpp>
 #include <ocpp/common/support_older_cpp_versions.hpp>
 #include <ocpp/v16/ocpp_types.hpp>
+#include <ocpp/v16/smart_charging.hpp>
 #include <ocpp/v16/types.hpp>
 
 #include <ocpp/v16/messages/DataTransfer.hpp>
@@ -153,6 +154,13 @@ public:
     /// \return ChargingSchedules of all connectors
     std::map<int32_t, ChargingSchedule> get_all_composite_charging_schedules(const int32_t duration_s);
 
+    /// \brief Calculates EnhancedChargingSchedule(s) configured by the CSMS of all connectors from now until now +
+    /// given \p duration_s . EnhancedChargingSchedules contain EnhancedChargingSchedulePeriod(s) that are enhanced by
+    /// the stackLevel that was provided for the ChargingProfile
+    /// \param duration_s
+    /// \return ChargingSchedules of all connectors
+    std::map<int32_t, EnhancedChargingSchedule> get_all_enhanced_composite_charging_schedules(const int32_t duration_s);
+
     /// \brief Stores the given \p powermeter values for the given \p connector . This function can be called when a new
     /// meter value is present.
     /// \param connector
@@ -165,6 +173,13 @@ public:
     /// \param connector
     /// \param max_current in Amps
     void on_max_current_offered(int32_t connector, int32_t max_current);
+
+    /// \brief Stores the given \p max_power for the given \p connector offered to the EV. This function can be called
+    /// when the value for the maximum power for the connector changes. It will be used to report the Measurand
+    /// Power_Offered if it is configured
+    /// \param connector
+    /// \param max_power in Watts
+    void on_max_power_offered(int32_t connector, int32_t max_power);
 
     /// \brief Notifies chargepoint that a new session with the given \p session_id has been started at the given \p
     /// connector with the given \p reason . The logs of the session will be written into \p session_logging_path if
@@ -456,6 +471,13 @@ public:
     /// \param callback executed when this configuration key changed
     void register_configuration_key_changed_callback(const CiString<50>& key,
                                                      const std::function<void(const KeyValue& key_value)>& callback);
+
+    /// \brief registers a \p callback function that can be used to react on changed configuration key and value. This
+    /// callback is called when a configuration key has been changed by the CSMS, where no key based callback is
+    /// assigned
+    /// \param callback executed when this configuration key and its value changed
+    void
+    register_generic_configuration_key_changed_callback(const std::function<void(const KeyValue& key_value)>& callback);
 
     /// \brief registers a \p callback function that can be used to react to a security event callback. This callback is
     /// called only if the SecurityEvent occured internally within libocpp

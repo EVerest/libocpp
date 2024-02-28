@@ -158,6 +158,13 @@ const ComponentVariable& SupportedCriteria = {
         "SupportedCriteria",
     }),
 };
+const ComponentVariable& RoundClockAlignedTimestamps = {
+    ControllerComponents::InternalCtrlr,
+    std::nullopt,
+    std::optional<Variable>({
+        "RoundClockAlignedTimestamps",
+    }),
+};
 const ComponentVariable& SupportedChargingProfilePurposeTypes = {
     ControllerComponents::InternalCtrlr,
     std::nullopt,
@@ -319,6 +326,13 @@ const ComponentVariable& AuthCacheCtrlrAvailable = {
         "Available",
     }),
 };
+const ComponentVariable& AuthCacheDisablePostAuthorize = {
+    ControllerComponents::AuthCacheCtrlr,
+    std::nullopt,
+    std::optional<Variable>({
+        "DisablePostAuthorize",
+    }),
+};
 const ComponentVariable& AuthCacheCtrlrEnabled = {
     ControllerComponents::AuthCacheCtrlr,
     std::nullopt,
@@ -380,6 +394,13 @@ const RequiredComponentVariable& LocalPreAuthorize = {
     std::nullopt,
     std::optional<Variable>({
         "LocalPreAuthorize",
+    }),
+};
+const ComponentVariable& DisableRemoteAuthorization = {
+    ControllerComponents::AuthCtrlr,
+    std::nullopt,
+    std::optional<Variable>({
+        "DisableRemoteAuthorization",
     }),
 };
 const ComponentVariable& MasterPassGroupId = {

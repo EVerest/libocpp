@@ -6,7 +6,13 @@
 #include <ocpp/common/evse_security.hpp>
 #include <ocpp/common/websocket/websocket_base.hpp>
 
+#include <condition_variable>
+#include <optional>
 #include <queue>
+#include <string>
+
+struct ssl_ctx_st;
+
 namespace ocpp {
 
 struct ConnectionData;
@@ -46,7 +52,8 @@ public:
     int process_callback(void* wsi_ptr, int callback_reason, void* user, void* in, size_t len);
 
 private:
-    void tls_init();
+    void tls_init(struct ssl_ctx_st* ctx, const std::string& path_chain, const std::string& path_key, bool tpm_key,
+                  std::optional<std::string>& password);
     void client_loop();
     void recv_loop();
 
@@ -67,7 +74,7 @@ private:
 
     void request_write();
 
-    void poll_message(const std::shared_ptr<WebsocketMessage>& msg, bool wait_sendaf);
+    void poll_message(const std::shared_ptr<WebsocketMessage>& msg);
 
 private:
     std::shared_ptr<EvseSecurity> evse_security;
@@ -79,8 +86,10 @@ private:
     std::condition_variable conn_cv;
 
     std::mutex queue_mutex;
+
     std::queue<std::shared_ptr<WebsocketMessage>> message_queue;
     std::condition_variable msg_send_cv;
+    std::mutex msg_send_cv_mutex;
 
     std::unique_ptr<std::thread> recv_message_thread;
     std::mutex recv_mutex;
