@@ -3615,7 +3615,7 @@ void ChargePointImpl::register_get_15118_ev_certificate_response_callback(
 }
 
 void ChargePointImpl::register_transaction_started_callback(
-    const std::function<void(const int32_t connector, const int32_t transaction_id)>& callback) {
+    const std::function<void(const int32_t connector, const int32_t trans_id, const IdTagInfo idTagInfo)>& callback) {
     this->transaction_started_callback = callback;
 }
 
