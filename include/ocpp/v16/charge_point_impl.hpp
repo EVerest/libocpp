@@ -146,8 +146,8 @@ private:
 
     // callbacks
     std::function<bool(int32_t connector)> enable_evse_callback;
-    std::function<bool(int32_t connector, IdTagInfo idTagInfo)> disable_evse_callback;
-    std::function<bool(int32_t connector)> pause_charging_callback;
+    std::function<bool(int32_t connector)> disable_evse_callback;
+    std::function<bool(int32_t connector, IdTagInfo idTagInfo)> pause_charging_callback;
     std::function<bool(int32_t connector)> resume_charging_callback;
     std::function<void(const std::string& id_token, std::vector<int32_t> referenced_connectors, bool prevalidated)>
         provide_token_callback;
