@@ -176,8 +176,7 @@ private:
     std::function<GetLogResponse(GetLogRequest msg)> upload_logs_callback;
     std::function<void(int32_t connection_timeout)> set_connection_timeout_callback;
 
-    std::function<void(const int32_t connector, const int32_t transaction_id,
-                       const IdTagInfo idTagInfo)> transaction_started_callback;
+    std::function<void(const int32_t con, const int32_t trans, const IdTagInfo idTag)> transaction_started_callback;
     std::function<bool(const int32_t connector, const std::string& id_token)> is_token_reserved_for_connector_callback;
 
     // iso15118 callback
