@@ -62,6 +62,13 @@ public:
     /// \return contains OCSP request data
     virtual std::vector<OCSPRequestData> get_ocsp_request_data() = 0;
 
+    /// \brief Retrieves the OCSP request data of a certificate chain.
+    /// \param certificate_chain PEM formatted certificate or certificate chain
+    /// \param certificate_type type of the leaf certificate
+    /// \return contains OCSP request data
+    virtual std::vector<OCSPRequestData> get_ocsp_request_data(const std::string& certificate_chain,
+                                                        const CaCertificateType& certificate_type) = 0;
+
     /// \brief Updates the OCSP cache for the given \p certificate_hash_data with the given \p ocsp_response
     /// \param certificate_hash_data identifies the certificate for which the \p ocsp_response is specified
     /// \param ocsp_response the actual OCSP data
