@@ -9,6 +9,7 @@
 #include <ocpp/v201/messages/LogStatusNotification.hpp>
 #include <ocpp/v201/notify_report_requests_splitter.hpp>
 
+#include <optional>
 #include <stdexcept>
 #include <string>
 
@@ -1498,6 +1499,15 @@ std::optional<int32_t> ChargePoint::get_transaction_evseid(const CiString<36>& t
         }
     }
 
+    return std::nullopt;
+}
+
+std::optional<CiString<36>> ChargePoint::get_evseid_transaction_id(int32_t evseid) {
+    if (const auto& itt = evses.find(evseid); itt != evses.end()) {
+        if (itt->second->has_active_transaction()) {
+            return itt->second->get_transaction()->get_transaction().transactionId;
+        }
+    }
     return std::nullopt;
 }
 

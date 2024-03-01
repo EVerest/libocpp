@@ -4,6 +4,7 @@
 #pragma once
 
 #include <future>
+#include <optional>
 #include <set>
 
 #include <ocpp/common/charging_station_base.hpp>
@@ -570,6 +571,14 @@ public:
     /// \brief Disconnects the the websocket connection to the CSMS if it is connected
     /// \param code Optional websocket close status code (default: normal).
     void disconnect_websocket(websocketpp::close::status::value code = websocketpp::close::status::normal);
+
+    ///
+    /// \brief Get transaction_id for the given evseid.
+    /// \param evseid_id   The evse ID
+    /// \return The transaction id belonging the the evse id. std::nullopt if there is no transaction on the given
+    ///         evse ID.
+    ///
+    std::optional<CiString<36>> get_evseid_transaction_id(int32_t evseid);
 
     /// \brief Chargepoint notifies about new firmware update status firmware_update_status. This function should be
     ///        called during a Firmware Update to indicate the current firmware_update_status.
