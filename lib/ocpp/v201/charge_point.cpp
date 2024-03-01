@@ -893,6 +893,8 @@ void ChargePoint::init_websocket(std::optional<int32_t> config_slot) {
                                                 std::to_string(network_connection_profile.value().securityProfile));
     }
 
+    // TODO set connectivity manager callbacks (add callbacks as functions?) and implement with below code.
+
     this->websocket = std::make_unique<Websocket>(connection_options, this->evse_security, this->logging);
     this->websocket->register_connected_callback([this, configuration_slot_int,
                                                   network_connection_profile](const int security_profile) {
