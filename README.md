@@ -142,6 +142,7 @@ Additionally, the implementation has been tested against those CSMS:
 -   Current
 -   ihomer (Infuse CPMS)
 -   Instituto Tecnológico de la Energía (ITE)
+-   [MaEVe (Thoughtworks)](https://github.com/thoughtworks/maeve-csms)
 -   [Monta](https://monta.com)
 -   [Open Charging Cloud (GraphDefined)](https://github.com/OpenChargingCloud/WWCP_OCPP)
 
