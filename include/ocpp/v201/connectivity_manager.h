@@ -15,10 +15,14 @@ class DeviceModel;
 
 class ConnectivityManager {
 private: // Members
+    std::thread connectivity_thread;
+    std::atomic_bool running;
+    std::atomic_bool try_reconnect;
+    mutable std::mutex config_slot_mutex;
+    std::condition_variable reconnect_condition_variable;
     DeviceModel &device_model;
     std::shared_ptr<EvseSecurity> evse_security;
     std::shared_ptr<MessageLogging> logging;
-    uint32_t network_configuration_priority;
     bool disable_automatic_websocket_reconnects;
     std::unique_ptr<Websocket> websocket;
     /// \brief The potential interface to use requested by libocpp, but not 'approved' by 'core' yet.
@@ -50,6 +54,7 @@ public:
     ConnectivityManager(DeviceModel &device_model, std::shared_ptr<EvseSecurity> evse_security,
                         std::shared_ptr<MessageLogging> logging,
                         std::function<void(const std::string& message)> message_callback);
+    ~ConnectivityManager();
     void set_websocket_connected_callback(
         std::function<void(const int configuration_slot, const NetworkConnectionProfile& network_connection_profile)>
             websocket_connected_callback);
@@ -62,7 +67,7 @@ public:
             configure_network_connection_profile_callback);
 
     /// \brief Starts the websocket
-    void start_websocket();
+    void start();
 
     /// \brief Stops the ChargePoint. Disconnects the websocket connection and stops MessageQueue and all timers
     void stop();
@@ -98,6 +103,8 @@ public:
                                  const std::optional<OCPPInterfaceEnum> ocpp_interface);
 
 private: // Functions
+    void run();
+
     /// @brief Initialize the websocket connection.
     /// @param configuration_slot Optional configuration slot to initialize the websocket to.
     void init_websocket(std::optional<int32_t> config_slot = std::nullopt);
@@ -105,10 +112,12 @@ private: // Functions
 
     /// \brief Gets the configured NetworkConnectionProfile based on the given \p configuration_slot . The
     /// central system uri ofthe connection options will not contain ws:// or wss:// because this method removes it if
-    /// present \param network_configuration_priority \return
+    /// present
+    /// \param configuration_slot   The network profile slot to get the network connection profile from.
+    /// \return The network connection profile belonging to the slot or std::nullopt if not found.
     std::optional<NetworkConnectionProfile> get_network_connection_profile(const int32_t configuration_slot);
-    /// \brief Moves websocket network_configuration_priority to next profile
-    void next_network_configuration_priority();
+    /// \brief Get next network slot for next priority.
+    int32_t get_next_network_configuration_priority_slot(const int32_t configuration_slot);
 
     /// @brief Removes all network connection profiles below the actual security profile and stores the new list in the
     /// device model
@@ -121,6 +130,22 @@ private: // Functions
     void on_websocket_closed_callback(const int configuration_slot,
                                       const std::optional<NetworkConnectionProfile> network_connection_profile,
                                       const WebsocketCloseReason reason);
+
+    ///
+    /// \brief Get the active network configuration slot in use.
+    /// \return The active slot the network is connected to or the pending slot.
+    ///
+    int32_t get_active_network_configuration_slot() const;
+
+    std::optional<int32_t> get_configuration_slot_priority(const int32_t configuration_slot);
+
+    ///
+    /// \brief Returns true if the provided configuration slot is of higher priority compared to the one currently
+    ///        in use.
+    /// \param new_configuration_slot   The configuration slot to check.
+    /// \return True when given slot is of higher priority.
+    ///
+    bool is_higher_priority_profile(const int32_t new_configuration_slot);
 };
 
 } // namespace v201

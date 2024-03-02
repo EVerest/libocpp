@@ -180,7 +180,7 @@ void ChargePoint::start(BootReasonEnum bootreason) {
     // Trigger all initial status notifications and callbacks related to component state
     // Should be done before sending the BootNotification.req so that the correct states can be reported
     this->component_state_manager->trigger_all_effective_availability_changed_callbacks();
-    this->connectivity_manager->start_websocket();
+    this->connectivity_manager->start();
     this->boot_notification_req(bootreason);
     this->ocsp_updater.start();
     // FIXME(piet): Run state machine with correct initial state
@@ -839,7 +839,7 @@ void ChargePoint::init_websocket(std::optional<int32_t> config_slot) {
                 this->websocket_timer.timeout(
                     [this]() {
                         this->next_network_configuration_priority();
-                        this->connectivity_manager->start_websocket();
+                        this->connectivity_manager->start();
                     },
                     WEBSOCKET_INIT_DELAY);
                 return;
@@ -855,7 +855,7 @@ void ChargePoint::init_websocket(std::optional<int32_t> config_slot) {
                     this->websocket_timer.timeout(
                         [this]() {
                             this->next_network_configuration_priority();
-                            this->connectivity_manager->start_websocket();
+                            this->connectivity_manager->start();
                         },
                         WEBSOCKET_INIT_DELAY);
                     return;
@@ -873,7 +873,7 @@ void ChargePoint::init_websocket(std::optional<int32_t> config_slot) {
         this->websocket_timer.timeout(
             [this]() {
                 this->next_network_configuration_priority();
-                this->connectivity_manager->start_websocket();
+                this->connectivity_manager->start();
             },
             WEBSOCKET_INIT_DELAY);
         return;
