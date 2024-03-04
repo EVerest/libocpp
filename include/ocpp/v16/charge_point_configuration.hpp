@@ -85,6 +85,8 @@ public:
     bool getVerifyCsmsCommonName();
     KeyValue getVerifyCsmsCommonNameKeyValue();
     bool getVerifyCsmsAllowWildcards();
+    void setVerifyCsmsAllowWildcards(bool verify_csms_allow_wildcards);
+    KeyValue getVerifyCsmsAllowWildcardsKeyValue();
     bool getUseTPM();
     std::string getSupportedMeasurands();
     KeyValue getSupportedMeasurandsKeyValue();

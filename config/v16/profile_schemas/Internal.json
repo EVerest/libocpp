@@ -193,13 +193,13 @@
         "VerifyCsmsCommonName": {
             "$comment": "Verify that the CSMS certificates commonName matches the CSMS FQDN",
             "type": "boolean",
-            "readOnly": true,
+            "readOnly": false,
             "default": true
         },
         "VerifyCsmsAllowWildcards": {
             "$comment": "Allow wildcards when verifying the CSMS commonName",
             "type": "boolean",
-            "readOnly": true,
+            "readOnly": false,
             "default": false
         },        
         "OcspRequestInterval": {

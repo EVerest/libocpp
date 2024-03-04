@@ -243,8 +243,7 @@ WebsocketConnectionOptions ChargePointImpl::get_ws_connection_options() {
                                                   this->configuration->getHostName(),
                                                   this->configuration->getVerifyCsmsCommonName(),
                                                   this->configuration->getUseTPM(),
-                                                  this->configuration->getVerifyCsmsAllowWildcards()
-                                                  };
+                                                  this->configuration->getVerifyCsmsAllowWildcards()};
     return connection_options;
 }
 

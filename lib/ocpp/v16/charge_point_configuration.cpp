@@ -356,6 +356,10 @@ bool ChargePointConfiguration::getVerifyCsmsAllowWildcards() {
     return this->config["Internal"]["VerifyCsmsAllowWildcards"];
 }
 
+void ChargePointConfiguration::setVerifyCsmsAllowWildcards(bool verify_csms_allow_wildcards) {
+    this->config["Internal"]["VerifyCsmsAllowWildcards"] = verify_csms_allow_wildcards;
+    this->setInUserConfig("Internal", "VerifyCsmsAllowWildcards", verify_csms_allow_wildcards);
+}
 
 std::string ChargePointConfiguration::getSupportedMeasurands() {
     return this->config["Internal"]["SupportedMeasurands"];
@@ -547,6 +551,14 @@ KeyValue ChargePointConfiguration::getVerifyCsmsCommonNameKeyValue() {
     kv.key = "VerifyCsmsCommonName";
     kv.readonly = true;
     kv.value.emplace(ocpp::conversions::bool_to_string(this->getVerifyCsmsCommonName()));
+    return kv;
+}
+
+KeyValue ChargePointConfiguration::getVerifyCsmsAllowWildcardsKeyValue() {
+    KeyValue kv;
+    kv.key = "VerifyCsmsAllowWildcards";
+    kv.readonly = true;
+    kv.value.emplace(ocpp::conversions::bool_to_string(this->getVerifyCsmsAllowWildcards()));
     return kv;
 }
 
@@ -2256,6 +2268,9 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
     if (key == "VerifyCsmsCommonName") {
         return this->getVerifyCsmsCommonNameKeyValue();
     }
+    if (key == "VerifyCsmsAllowWildcards") {
+        return this->getVerifyCsmsAllowWildcardsKeyValue();
+    }
     if (key == "OcspRequestInterval") {
         return this->getOcspRequestIntervalKeyValue();
     }
@@ -2838,6 +2853,14 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
             }
         } else {
             return ConfigurationStatus::NotSupported;
+        }
+    }
+
+    if (key == "VerifyCsmsAllowWildcards") {
+        if (isBool(value.get())) {
+            this->setVerifyCsmsAllowWildcards(ocpp::conversions::string_to_bool(value.get()));
+        } else {
+            return ConfigurationStatus::Rejected;
         }
     }
 
