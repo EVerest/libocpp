@@ -146,6 +146,7 @@ Additionally, the implementation has been tested against those CSMS:
 -   [MaEVe (Thoughtworks)](https://github.com/thoughtworks/maeve-csms)
 -   [Monta](https://monta.com)
 -   [Open Charging Cloud (GraphDefined)](https://github.com/OpenChargingCloud/WWCP_OCPP)
+-   Switch EV
 
 ## Integration with EVerest
 
