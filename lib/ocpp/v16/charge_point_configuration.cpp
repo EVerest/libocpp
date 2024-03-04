@@ -352,6 +352,11 @@ bool ChargePointConfiguration::getUseTPM() {
     return this->config["Internal"]["UseTPM"];
 }
 
+bool ChargePointConfiguration::getVerifyCsmsAllowWildcards() {
+    return this->config["Internal"]["VerifyCsmsAllowWildcards"];
+}
+
+
 std::string ChargePointConfiguration::getSupportedMeasurands() {
     return this->config["Internal"]["SupportedMeasurands"];
 }

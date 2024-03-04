@@ -84,6 +84,7 @@ public:
     KeyValue getUseSslDefaultVerifyPathsKeyValue();
     bool getVerifyCsmsCommonName();
     KeyValue getVerifyCsmsCommonNameKeyValue();
+    bool getVerifyCsmsAllowWildcards();
     bool getUseTPM();
     std::string getSupportedMeasurands();
     KeyValue getSupportedMeasurandsKeyValue();

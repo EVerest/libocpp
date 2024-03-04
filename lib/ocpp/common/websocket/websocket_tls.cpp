@@ -310,7 +310,11 @@ tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connect
             // Verify hostname
             X509_VERIFY_PARAM *param = X509_VERIFY_PARAM_new();
 
-            X509_VERIFY_PARAM_set_hostflags(param, X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS);
+            if(this->connection_options.verify_csms_allow_wildcards) {
+                X509_VERIFY_PARAM_set_hostflags(param, X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS);
+            } else {
+                X509_VERIFY_PARAM_set_hostflags(param, X509_CHECK_FLAG_NO_WILDCARDS);
+            }
 
             // Set the host and parameter check
             X509_VERIFY_PARAM_set1_host(param, hostname.c_str(), hostname.length());

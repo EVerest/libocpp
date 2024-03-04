@@ -861,7 +861,9 @@ WebsocketConnectionOptions ChargePoint::get_ws_connection_options(const int32_t 
         this->device_model->get_optional_value<bool>(ControllerComponentVariables::AdditionalRootCertificateCheck)
             .value_or(false),
         std::nullopt, // hostName
-        true          // verify_csms_common_name
+        true,          // verify_csms_common_name
+        false,          // use tpm
+        false           // verify_csms_allow_wildcards
     };
 
     return connection_options;
