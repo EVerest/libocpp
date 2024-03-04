@@ -282,11 +282,12 @@ private:
 
     /// @brief Initialize the websocket connection.
     /// @param configuration_slot Optional configuration slot to initialize the websocket to.
-    void init_websocket(std::optional<int32_t> config_slot = std::nullopt);
     WebsocketConnectionOptions get_ws_connection_options(const int32_t configuration_slot);
     void init_certificate_expiration_check_timers();
     void scheduled_check_client_certificate_expiration();
     void scheduled_check_v2g_certificate_expiration();
+    void websocket_connected_callback(const int configuration_slot, const NetworkConnectionProfile& network_connection_profile);
+    void websocket_disconnected_callback(const int configuration_slot, const NetworkConnectionProfile& network_connection_profile);
 
     /// \brief Gets the configured NetworkConnectionProfile based on the given \p configuration_slot . The
     /// central system uri ofthe connection options will not contain ws:// or wss:// because this method removes it if
@@ -537,7 +538,7 @@ private:
             ocpp::CallResult<ResponseType> call_result = enhanced_response.message;
             return call_result.msg;
         };
-    };
+    }
 
     /// \brief Checks if all connectors are effectively inoperative.
     /// If this is the case, calls the all_connectors_unavailable_callback
@@ -594,19 +595,8 @@ public:
     /// \param bootreason   Optional bootreason (default: PowerUp).
     void start(BootReasonEnum bootreason = BootReasonEnum::PowerUp);
 
-    /// \brief Starts the websocket
-    void start_websocket();
-
     /// \brief Stops the ChargePoint. Disconnects the websocket connection and stops MessageQueue and all timers
     void stop();
-
-    /// @brief Initializes the websocket and connects to CSMS if it is not yet connected.
-    /// @param configuration_slot Optional configuration slot to connect to
-    void connect_websocket(std::optional<int32_t> config_slot = std::nullopt);
-
-    /// \brief Disconnects the the websocket connection to the CSMS if it is connected
-    /// \param code Optional websocket close status code (default: normal).
-    void disconnect_websocket(WebsocketCloseReason code = WebsocketCloseReason::Normal);
 
     /// \brief Chargepoint notifies about new firmware update status firmware_update_status. This function should be
     ///        called during a Firmware Update to indicate the current firmware_update_status.

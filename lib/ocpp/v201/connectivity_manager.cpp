@@ -8,6 +8,9 @@ namespace ocpp {
 namespace v201 {
 
 constexpr int32_t default_network_config_timeout_seconds = 60;
+/// \brief If no network connection profile is set, we will retry every x seconds if there already is a network
+///        connection profile.
+constexpr int32_t default_retry_network_connection_profile_seconds = 300;
 
 ConnectivityManager::ConnectivityManager(DeviceModel& device_model, std::shared_ptr<EvseSecurity> evse_security,
                                          std::shared_ptr<MessageLogging> logging,
@@ -197,7 +200,8 @@ void ConnectivityManager::init_websocket(std::optional<int32_t> config_slot) {
         }
         else
         {
-            // TODO no network connection profiles, what to do here??? Throw? Return? Sleep?
+            // No network connection profile. Retry connecting after some time, maybe it is set manually.
+            sleep(default_retry_network_connection_profile_seconds);
             return;
         }
     }
@@ -256,6 +260,8 @@ void ConnectivityManager::init_websocket(std::optional<int32_t> config_slot) {
         }
     } else {
         // No callback configured, just connect to this profile.
+
+        // TODO what if there is no network connection profile at all???
     }
 
     this->websocket = std::make_unique<Websocket>(connection_options, this->evse_security, this->logging);
@@ -273,8 +279,6 @@ void ConnectivityManager::init_websocket(std::optional<int32_t> config_slot) {
         });
 
     this->websocket->register_message_callback([this](const std::string& message) { this->message_callback(message); });
-
-    // TODO implement
 }
 
 WebsocketConnectionOptions ConnectivityManager::get_ws_connection_options(const int32_t configuration_slot) {

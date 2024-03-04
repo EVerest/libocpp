@@ -160,7 +160,23 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
     this->configure_message_logging_format(message_log_path);
 
     this->connectivity_manager =
-        std::make_unique<ConnectivityManager>(*this->device_model.get(), evse_security, logging);
+        std::make_unique<ConnectivityManager>(*this->device_model.get(), evse_security, logging,
+                                              [this](const std::string& message) { this->message_callback(message); });
+    this->connectivity_manager->set_websocket_connected_callback(
+        [this](const int configuration_slot, NetworkConnectionProfile network_connection_profile) {
+            this->websocket_connected_callback(configuration_slot, network_connection_profile);
+        });
+    this->connectivity_manager->set_websocket_disconnected_callback(
+        [this](const int configuration_slot, NetworkConnectionProfile network_connection_profile) {
+            this->websocket_disconnected_callback(configuration_slot, network_connection_profile);
+        });
+    if (this->callbacks.configure_network_connection_profile_callback.has_value()) {
+        this->connectivity_manager->set_configure_network_connection_profile_callback(
+            [this](const int32_t configuration_slot, const NetworkConnectionProfile& network_connection_profile) {
+                return this->callbacks.configure_network_connection_profile_callback.value()(
+                    configuration_slot, network_connection_profile);
+            });
+    }
 
     this->message_queue = std::make_unique<ocpp::MessageQueue<v201::MessageType>>(
         [this](json message) -> bool { return this->websocket->send(message.dump()); },
@@ -196,14 +212,6 @@ void ChargePoint::stop() {
     this->v2g_certificate_expiration_check_timer.stop();
     this->connectivity_manager->disconnect_websocket(WebsocketCloseReason::Normal);
     this->message_queue->stop();
-}
-
-void ChargePoint::connect_websocket(std::optional<int32_t> config_slot) {
-    this->connectivity_manager->connect_websocket(config_slot);
-}
-
-void ChargePoint::disconnect_websocket(WebsocketCloseReason code) {
-    this->connectivity_manager->disconnect_websocket(code);
 }
 
 void ChargePoint::on_firmware_update_status_notification(int32_t request_id,
@@ -797,202 +805,6 @@ void ChargePoint::on_security_event(const CiString<50>& event_type, const std::o
 bool ChargePoint::send(CallError call_error) {
     this->message_queue->push(call_error);
     return true;
-}
-
-void ChargePoint::init_websocket(std::optional<int32_t> config_slot) {
-
-    std::string configuration_slot;
-    if (this->device_model->get_value<std::string>(ControllerComponentVariables::ChargePointId).find(':') !=
-        std::string::npos) {
-        EVLOG_AND_THROW(std::runtime_error("ChargePointId must not contain \':\'"));
-    }
-
-    if (config_slot.has_value()) {
-        EVLOG_info << " using configuration slot --->" << config_slot.value();
-        configuration_slot = std::to_string(config_slot.value());
-    } else {
-        configuration_slot = ocpp::get_vector_from_csv(this->device_model->get_value<std::string>(
-                                                           ControllerComponentVariables::NetworkConfigurationPriority))
-                                 .at(this->network_configuration_priority);
-    }
-    EVLOG_info << "config -------> :  " << configuration_slot.size();
-    auto connection_options = this->get_ws_connection_options(std::stoi(configuration_slot));
-    const int configuration_slot_int = std::stoi(configuration_slot);
-    const auto network_connection_profile = this->get_network_connection_profile(configuration_slot_int);
-
-    if (this->callbacks.configure_network_connection_profile_callback.has_value() and network_connection_profile) {
-        auto config_status =
-            this->callbacks.configure_network_connection_profile_callback.value()(configuration_slot_int,
-                                                                                  network_connection_profile.value());
-        auto config_timeout =
-            this->device_model->get_optional_value<int>(ControllerComponentVariables::NetworkConfigTimeout);
-        std::future_status status;
-
-        if (config_timeout.has_value()) {
-            switch (status = config_status.wait_for(std::chrono::seconds(config_timeout.value())); status) {
-            case std::future_status::deferred:
-            case std::future_status::timeout:
-                EVLOG_info << "========timeout or deferred========";
-                EVLOG_warning
-                    << "NetworkConnectionProfile could not be retrieved or configuration of network with the given "
-                       "profile failed";
-                this->websocket_timer.timeout(
-                    [this]() {
-                        this->next_network_configuration_priority();
-                        this->connectivity_manager->start();
-                    },
-                    WEBSOCKET_INIT_DELAY);
-                return;
-            case std::future_status::ready:
-                EVLOG_info << "ready!";
-                // store the future output
-                this->config_network_profile_result = config_status.get();
-
-                if (!this->config_network_profile_result.success) {
-                    EVLOG_warning
-                        << "NetworkConnectionProfile could not be retrieved or configuration of network with the given "
-                           "profile failed";
-                    this->websocket_timer.timeout(
-                        [this]() {
-                            this->next_network_configuration_priority();
-                            this->connectivity_manager->start();
-                        },
-                        WEBSOCKET_INIT_DELAY);
-                    return;
-                }
-                else
-                {
-                    connection_options.iface_or_ip = this->config_network_profile_result.interface_address;
-                }
-                break;
-            }
-        }
-    } else {
-        EVLOG_warning << "NetworkConnectionProfile could not be retrieved or configuration of network with the given "
-                         "profile failed";
-        this->websocket_timer.timeout(
-            [this]() {
-                this->next_network_configuration_priority();
-                this->connectivity_manager->start();
-            },
-            WEBSOCKET_INIT_DELAY);
-        return;
-    }
-
-    const auto& active_network_profile_cv = ControllerComponentVariables::ActiveNetworkProfile;
-    if (active_network_profile_cv.variable.has_value()) {
-        this->device_model->set_read_only_value(active_network_profile_cv.component,
-                                                active_network_profile_cv.variable.value(), AttributeEnum::Actual,
-                                                configuration_slot);
-    }
-
-    const auto& security_profile_cv = ControllerComponentVariables::SecurityProfile;
-    if (security_profile_cv.variable.has_value()) {
-        this->device_model->set_read_only_value(security_profile_cv.component, security_profile_cv.variable.value(),
-                                                AttributeEnum::Actual,
-                                                std::to_string(network_connection_profile.value().securityProfile));
-    }
-
-    // TODO set connectivity manager callbacks (add callbacks as functions?) and implement with below code.
-
-    this->websocket = std::make_unique<Websocket>(connection_options, this->evse_security, this->logging);
-    this->websocket->register_connected_callback([this, configuration_slot_int,
-                                                  network_connection_profile](const int security_profile) {
-        this->message_queue->resume(this->message_queue_resume_delay);
-
-        const auto& security_profile_cv = ControllerComponentVariables::SecurityProfile;
-        if (security_profile_cv.variable.has_value()) {
-            this->device_model->set_read_only_value(security_profile_cv.component, security_profile_cv.variable.value(),
-                                                    AttributeEnum::Actual, std::to_string(security_profile));
-        }
-
-        // call the registered websocket connected callback if it exists
-        if (this->callbacks.websocket_connected_callback.has_value()) {
-            // TODO Hmm will this parameters go out of scope?
-            this->callbacks.websocket_connected_callback.value()(configuration_slot_int,
-                                                                 network_connection_profile.value());
-        }
-
-        if (this->registration_status == RegistrationStatusEnum::Accepted and
-            this->time_disconnected.time_since_epoch() != 0s) {
-            // handle offline threshold
-            //  Get the current time point using steady_clock
-            auto offline_duration = std::chrono::steady_clock::now() - this->time_disconnected;
-
-            // B04.FR.01
-            // If offline period exceeds offline threshold then send the status notification for all connectors
-            if (offline_duration > std::chrono::seconds(this->device_model->get_value<int>(
-                                       ControllerComponentVariables::OfflineThreshold))) {
-                EVLOG_debug << "offline for more than offline threshold ";
-                this->component_state_manager->send_status_notification_all_connectors();
-            } else {
-                // B04.FR.02
-                // If offline period doesn't exceed offline threshold then send the status notification for all
-                // connectors that changed state
-                EVLOG_debug << "offline for less than offline threshold ";
-                this->component_state_manager->send_status_notification_changed_connectors();
-            }
-            this->init_certificate_expiration_check_timers(); // re-init as timers are stopped on disconnect
-        }
-        this->time_disconnected = std::chrono::time_point<std::chrono::steady_clock>();
-
-        // We have a connection again so next time it fails we should send the notification again
-        this->skip_invalid_csms_certificate_notifications = false;
-    });
-
-    this->websocket->register_disconnected_callback([this, configuration_slot_int, network_connection_profile]() {
-        this->message_queue->pause();
-
-        // check if offline threshold has been defined
-        if (this->device_model->get_value<int>(ControllerComponentVariables::OfflineThreshold) != 0) {
-            // Get the current time point using steady_clock
-            this->time_disconnected = std::chrono::steady_clock::now();
-        }
-        // call the disconnected callback if it exists
-        if (this->callbacks.websocket_disconnected_callback.has_value()) {
-            // TODO: Hmm will this parameters (configuration_slot_int and network_connection_profile) go out of scope??
-            this->callbacks.websocket_disconnected_callback.value()(configuration_slot_int,
-                                                                    network_connection_profile.value());
-        }
-        this->client_certificate_expiration_check_timer.stop();
-        this->v2g_certificate_expiration_check_timer.stop();
-    });
-
-    this->websocket->register_closed_callback(
-        [this, connection_options, configuration_slot](const WebsocketCloseReason reason) {
-            EVLOG_warning << "Closed websocket of NetworkConfigurationPriority: "
-                          << this->network_configuration_priority + 1
-                          << " which is configurationSlot: " << configuration_slot;
-
-            // if (!this->disable_automatic_websocket_reconnects) {
-            //     this->websocket_timer.timeout(
-            //         [this, reason]() {
-            //             if (reason != WebsocketCloseReason::ServiceRestart) {
-            //                 this->next_network_configuration_priority();
-            //                 EVLOG_info << "next network config ---->";
-            //             }
-            //             EVLOG_info << "start websocket after close---->";
-            //             this->start_websocket();
-            //         },
-            //         WEBSOCKET_INIT_DELAY);
-            // }
-        });
-
-    this->websocket->register_connection_failed_callback([this](ConnectionFailedReason reason) {
-        switch (reason) {
-        case ConnectionFailedReason::InvalidCSMSCertificate:
-            if (!this->skip_invalid_csms_certificate_notifications) {
-                this->security_event_notification_req(CiString<50>(ocpp::security_events::INVALIDCSMSCERTIFICATE),
-                                                      std::nullopt, true, true);
-                this->skip_invalid_csms_certificate_notifications = true;
-            } else {
-                EVLOG_debug << "Skipping InvalidCsmsCertificate SecurityEvent since it has been sent already";
-            }
-            break;
-        }
-    });
-
-    this->websocket->register_message_callback([this](const std::string& message) { this->message_callback(message); });
 }
 
 void ChargePoint::init_certificate_expiration_check_timers() {
@@ -3249,6 +3061,63 @@ void ChargePoint::scheduled_check_v2g_certificate_expiration() {
         this->device_model
             ->get_optional_value<int>(ControllerComponentVariables::V2GCertificateExpireCheckIntervalSeconds)
             .value_or(12 * 60 * 60)));
+}
+
+void ChargePoint::websocket_connected_callback(const int configuration_slot,
+                                               const NetworkConnectionProfile& network_connection_profile) {
+    this->message_queue->resume(this->message_queue_resume_delay);
+
+    const auto& security_profile_cv = ControllerComponentVariables::SecurityProfile;
+    if (security_profile_cv.variable.has_value()) {
+        this->device_model->set_read_only_value(security_profile_cv.component, security_profile_cv.variable.value(),
+                                                AttributeEnum::Actual, std::to_string(network_connection_profile.securityProfile));
+    }
+
+    // call the registered websocket connected callback if it exists
+    if (this->callbacks.websocket_connected_callback.has_value()) {
+        this->callbacks.websocket_connected_callback.value()(configuration_slot, network_connection_profile);
+    }
+
+    if (this->registration_status == RegistrationStatusEnum::Accepted and
+        this->time_disconnected.time_since_epoch() != 0s) {
+        // handle offline threshold
+        //  Get the current time point using steady_clock
+        auto offline_duration = std::chrono::steady_clock::now() - this->time_disconnected;
+
+        // B04.FR.01
+        // If offline period exceeds offline threshold then send the status notification for all connectors
+        if (offline_duration > std::chrono::seconds(this->device_model->get_value<int>(
+                                   ControllerComponentVariables::OfflineThreshold))) {
+            EVLOG_debug << "offline for more than offline threshold ";
+            this->component_state_manager->send_status_notification_all_connectors();
+        } else {
+            // B04.FR.02
+            // If offline period doesn't exceed offline threshold then send the status notification for all
+            // connectors that changed state
+            EVLOG_debug << "offline for less than offline threshold ";
+            this->component_state_manager->send_status_notification_changed_connectors();
+        }
+        this->init_certificate_expiration_check_timers(); // re-init as timers are stopped on disconnect
+    }
+    this->time_disconnected = std::chrono::time_point<std::chrono::steady_clock>();
+}
+
+void ChargePoint::websocket_disconnected_callback(const int configuration_slot,
+                                                  const NetworkConnectionProfile& network_connection_profile) {
+    this->message_queue->pause();
+
+    // check if offline threshold has been defined
+    if (this->device_model->get_value<int>(ControllerComponentVariables::OfflineThreshold) != 0) {
+        // Get the current time point using steady_clock
+        this->time_disconnected = std::chrono::steady_clock::now();
+    }
+
+    if (this->callbacks.websocket_disconnected_callback.has_value()) {
+        this->callbacks.websocket_disconnected_callback.value()(configuration_slot, network_connection_profile);
+    }
+
+    this->client_certificate_expiration_check_timer.stop();
+    this->v2g_certificate_expiration_check_timer.stop();
 }
 
 void ChargePoint::set_cs_operative_status(OperationalStatusEnum new_status, bool persist) {
