@@ -593,9 +593,15 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
     if (id_token.type == IdTokenEnum::eMAID) {
         // Temporary variable that is set to true to avoid immediate response to allow the local auth list or auth cache to be tried
         bool tryLocalAuthListOrCache = false;
+        bool forwardToCsms = false;
 
-        // First try to validate the contract certificate locally
-        if (certificate.has_value()) {
+        // If OCSP data is provided as argument, use it
+        if (this->websocket->is_connected() and ocsp_request_data.has_value()) {
+            EVLOG_info << "Online: Pass provided OCSP data to CSMS";
+            response = this->authorize_req(id_token, std::nullopt, ocsp_request_data);
+            forwardToCsms = true;
+        } else if (certificate.has_value()) {
+            // First try to validate the contract certificate locally
             CertificateValidationResult localVerifyResult = this->evse_security->verify_certificate(certificate.value().get(), ocpp::CaCertificateType::MO);
             EVLOG_info << "Local contract validation result: " << localVerifyResult;
 
@@ -605,28 +611,30 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
 
             // C07.FR.01: When CS is online, it shall send an AuthorizeRequest
             // C07.FR.02: The AuthorizeRequest shall at least contain the OCSP data
+            // TODO: local validation results are ignored if response is based only on OCSP data, is that acceptable?
             if (this->websocket->is_connected()) {
-                // C07.FR.06: Pass contract validation to CSMS when no contract root is found
-                if (CentralContractValidationAllowed and localVerifyResult == CertificateValidationResult::IssuerNotFound) {
-                    EVLOG_info << "Online: No local contract root found. Pass contract validation to CSMS";
-                    response = this->authorize_req(id_token, certificate, ocsp_request_data);
-                } else {
-                    // If OCSP data was provided as argument, use it
-                    // Else, try to generate the OCSP data from the certificate chain and use that
-                    if (ocsp_request_data.has_value()) {
-                        EVLOG_info << "Online: Pass provided OCSP data to CSMS";
-                        response = this->authorize_req(id_token, std::nullopt, ocsp_request_data);
+                // If no OCSP data was provided, check for a contract root
+                if (localVerifyResult == CertificateValidationResult::IssuerNotFound) {
+                    // C07.FR.06: Pass contract validation to CSMS when no contract root is found
+                    if (CentralContractValidationAllowed) {
+                        EVLOG_info << "Online: No local contract root found. Pass contract validation to CSMS";
+                        response = this->authorize_req(id_token, certificate, std::nullopt);
+                        forwardToCsms = true;
                     } else {
-                        std::vector<OCSPRequestData> generated_ocsp_request_data_list = generate_ocsp_data(certificate.value());
-                        if (generated_ocsp_request_data_list.size() > 0) {
-                            EVLOG_info << "Online: Pass generated OCSP data to CSMS";
-                            response = this->authorize_req(id_token, std::nullopt, generated_ocsp_request_data_list);
-                        } else {
-                            EVLOG_warning << "Online: OCSP data could not be generated";
-                            response.idTokenInfo.status = AuthorizationStatusEnum::Invalid;
-                        }
+                        EVLOG_warning << "Online: Central Contract Validation not allowed";
+                        response.idTokenInfo.status = AuthorizationStatusEnum::Invalid;
                     }
-                    // TODO: local validation results are ignored, response is based only on OCSP data, is that acceptable?
+                } else {
+                    // Try to generate the OCSP data from the certificate chain and use that
+                    std::vector<OCSPRequestData> generated_ocsp_request_data_list = generate_ocsp_data(certificate.value());
+                    if (generated_ocsp_request_data_list.size() > 0) {
+                        EVLOG_info << "Online: Pass generated OCSP data to CSMS";
+                        response = this->authorize_req(id_token, std::nullopt, generated_ocsp_request_data_list);
+                        forwardToCsms = true;
+                    } else {
+                        EVLOG_warning << "Online: OCSP data could not be generated";
+                        response.idTokenInfo.status = AuthorizationStatusEnum::Invalid;
+                    }
                 }
             } else {    // Offline
                 // C07.FR.08: CS shall try to validate the contract locally
@@ -661,6 +669,13 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
         } else {
             EVLOG_warning << "Can not validate eMAID without certificate chain";
             response.idTokenInfo.status = AuthorizationStatusEnum::Invalid;
+        }
+        if (forwardToCsms) {
+            // AuthorizeRequest sent to CSMS, let's show the results
+            EVLOG_info << "CSMS idToken status: " << response.idTokenInfo.status;
+            if (response.certificateStatus.has_value()) {
+                EVLOG_info << "CSMS certificate status: " << response.certificateStatus.value();
+            }
         }
         // For eMAID, we will respond here, unless the local auth list or auth cache is tried
         if (!tryLocalAuthListOrCache) {
