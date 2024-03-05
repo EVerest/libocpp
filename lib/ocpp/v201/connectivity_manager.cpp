@@ -80,7 +80,6 @@ void ConnectivityManager::connect_websocket(std::optional<int32_t> config_slot) 
     // TODO check if websocket is connected???
     if (!this->websocket->is_connected()) {
         this->init_websocket(config_slot);
-        // TODO this should be removed?? It should connect when the future is filled and returned
         this->websocket->connect();
     }
 }
@@ -97,7 +96,6 @@ void ConnectivityManager::disconnect_websocket(WebsocketCloseReason code) {
 }
 
 bool ConnectivityManager::on_try_switch_network_connection_profile(const int32_t configuration_slot) {
-    // TODO remove and check priority via index.
     if (is_higher_priority_profile(configuration_slot)) {
         // Priority is indeed higher
         EVLOG_debug
@@ -137,8 +135,25 @@ void ConnectivityManager::on_network_disconnected(const std::optional<int32_t> c
         return;
     }
 
-    // TODO in this if: check if network slot is up as well!??
-    if (active_network_slot == configuration_slot || pending_network_slot == configuration_slot) {
+    int32_t disconnected_network_slot = 0;
+
+    if (configuration_slot.has_value()) {
+        disconnected_network_slot = configuration_slot.value();
+    } else {
+        // Find slot belonging to ocpp interface. That's only interesting if it is an active or pending network slot.
+        const int32_t current_network_slot =
+            this->active_network_slot != 0 ? this->active_network_slot : this->pending_network_slot;
+        if (current_network_slot != 0) {
+            std::optional<NetworkConnectionProfile> profile =
+                this->get_network_connection_profile(current_network_slot);
+            if (profile.has_value() && profile.value().ocppInterface == ocpp_interface) {
+                disconnected_network_slot = current_network_slot;
+            }
+        }
+    }
+
+    if (this->active_network_slot == disconnected_network_slot ||
+        this->pending_network_slot == disconnected_network_slot) {
         // Websocket is indeed connecting with the given slot or already connected.
         std::unique_lock<std::mutex> lock(this->config_slot_mutex);
         this->disconnect_websocket(); // normal close
@@ -215,15 +230,12 @@ void ConnectivityManager::init_websocket(std::optional<int32_t> config_slot) {
         config_slot_int = config_slot.value();
     } else {
         // Get first available config slot.
-        const std::vector<std::string> config_slot_vector = ocpp::get_vector_from_csv(this->device_model.get_value<std::string>(
-            ControllerComponentVariables::NetworkConfigurationPriority));
-        if (config_slot_vector.size() > 0)
-        {
+        const std::vector<std::string> config_slot_vector = ocpp::get_vector_from_csv(
+            this->device_model.get_value<std::string>(ControllerComponentVariables::NetworkConfigurationPriority));
+        if (config_slot_vector.size() > 0) {
             configuration_slot = config_slot_vector.at(0);
             config_slot_int = std::stoi(configuration_slot);
-        }
-        else
-        {
+        } else {
             // No network connection profile. Retry connecting after some time, maybe it is set manually.
             sleep(default_retry_network_connection_profile_seconds);
             return;
@@ -233,7 +245,17 @@ void ConnectivityManager::init_websocket(std::optional<int32_t> config_slot) {
     WebsocketConnectionOptions connection_options = this->get_ws_connection_options(config_slot_int);
     const std::optional<NetworkConnectionProfile> network_connection_profile =
         this->get_network_connection_profile(config_slot_int);
-    if (this->configure_network_connection_profile_callback.has_value() and network_connection_profile) {
+
+    if (!network_connection_profile.has_value()) {
+        // No network connection profile found, what to connect to then? So get next profile and try to connect with
+        // that one.
+        this->requested_network_slot = this->get_next_network_configuration_priority_slot(config_slot_int);
+        this->try_reconnect.store(true);
+        this->reconnect_condition_variable.notify_all();
+        return;
+    }
+
+    if (this->configure_network_connection_profile_callback.has_value()) {
         this->requested_network_slot = config_slot_int;
         std::future<ConfigNetworkResult> config_status = this->configure_network_connection_profile_callback.value()(
             config_slot_int, network_connection_profile.value());
@@ -284,8 +306,6 @@ void ConnectivityManager::init_websocket(std::optional<int32_t> config_slot) {
         }
     } else {
         // No callback configured, just connect to this profile.
-
-        // TODO what if there is no network connection profile at all???
     }
 
     this->websocket = std::make_unique<Websocket>(connection_options, this->evse_security, this->logging);
@@ -567,34 +587,29 @@ std::optional<int32_t> ConnectivityManager::get_configuration_slot_priority(cons
 bool ConnectivityManager::is_higher_priority_profile(const int32_t new_configuration_slot) {
 
     const int32_t current_slot = get_active_network_configuration_slot();
-    if (current_slot == 0)
-    {
+    if (current_slot == 0) {
         // No slot in use, new is always higher priority.
         return true;
     }
 
-    if (current_slot == new_configuration_slot)
-    {
+    if (current_slot == new_configuration_slot) {
         // Slot is the same, probably already connected
         return false;
     }
 
     const std::optional<int32_t> new_priority = get_configuration_slot_priority(new_configuration_slot);
-    if (!new_priority.has_value())
-    {
+    if (!new_priority.has_value()) {
         // Slot not found.
         return false;
     }
 
     const std::optional<int32_t> current_priority = get_configuration_slot_priority(current_slot);
-    if (!current_priority.has_value())
-    {
+    if (!current_priority.has_value()) {
         // Slot not found.
         return false;
     }
 
-    if (new_configuration_slot < current_slot)
-    {
+    if (new_configuration_slot < current_slot) {
         // Priority is indeed higher (lower index means higher priority)
         return true;
     }
