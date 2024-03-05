@@ -822,6 +822,17 @@ bool ChargePointImpl::start(const std::map<int, ChargePointStatus>& connector_st
     this->load_charging_profiles();
     this->call_set_connection_timeout();
 
+    if (this->bootreason == BootReasonEnum::RemoteReset) {
+        this->securityEventNotification(CiString<50>(ocpp::security_events::RESET_OR_REBOOT),
+                                        "Charging Station rebooted due to requested remote reset!", true);
+    } else if (this->bootreason == BootReasonEnum::ScheduledReset) {
+        this->securityEventNotification(CiString<50>(ocpp::security_events::RESET_OR_REBOOT),
+                                        "Charging Station rebooted due to a scheduled reset!", true);
+    } else if (this->bootreason == BootReasonEnum::PowerUp) {
+        this->securityEventNotification(CiString<50>(ocpp::security_events::STARTUP_OF_THE_DEVICE),
+                                        "The Charge Point has booted", true);
+    }
+
     this->stopped = false;
     return true;
 }
@@ -1238,17 +1249,6 @@ void ChargePointImpl::handleBootNotificationResponse(ocpp::CallResult<BootNotifi
 
         if (this->is_pnc_enabled()) {
             this->ocsp_request_timer->timeout(INITIAL_CERTIFICATE_REQUESTS_DELAY);
-        }
-
-        if (this->bootreason == BootReasonEnum::RemoteReset) {
-            this->securityEventNotification(CiString<50>(ocpp::security_events::RESET_OR_REBOOT),
-                                            "Charging Station rebooted due to requested remote reset!", true);
-        } else if (this->bootreason == BootReasonEnum::ScheduledReset) {
-            this->securityEventNotification(CiString<50>(ocpp::security_events::RESET_OR_REBOOT),
-                                            "Charging Station rebooted due to a scheduled reset!", true);
-        } else if (this->bootreason == BootReasonEnum::PowerUp) {
-            this->securityEventNotification(CiString<50>(ocpp::security_events::STARTUP_OF_THE_DEVICE),
-                                            "The Charge Point has booted", true);
         }
 
         this->stop_pending_transactions();
