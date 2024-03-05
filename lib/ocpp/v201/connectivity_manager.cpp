@@ -57,7 +57,6 @@ void ConnectivityManager::start() {
         connectivity_thread = std::thread([this]() {
             while (this->running) {
                 this->run();
-                // TODO sleep???
             }
         });
     }
@@ -66,6 +65,7 @@ void ConnectivityManager::start() {
 void ConnectivityManager::stop() {
     if (running) {
         running = false;
+        disconnect_websocket(WebsocketCloseReason::Normal);
         reconnect_condition_variable.notify_all();
         if (connectivity_thread.joinable()) {
             connectivity_thread.join();
@@ -138,8 +138,7 @@ void ConnectivityManager::on_network_disconnected(const std::optional<int32_t> c
     }
 
     // TODO in this if: check if network slot is up as well!??
-    if (active_network_slot == configuration_slot || pending_network_slot == configuration_slot)
-    {
+    if (active_network_slot == configuration_slot || pending_network_slot == configuration_slot) {
         // Websocket is indeed connecting with the given slot or already connected.
         std::unique_lock<std::mutex> lock(this->config_slot_mutex);
         this->disconnect_websocket(); // normal close
@@ -150,6 +149,31 @@ void ConnectivityManager::on_network_disconnected(const std::optional<int32_t> c
         // Notify main thread that it should reconnect.
         this->try_reconnect.store(true);
         this->reconnect_condition_variable.notify_all();
+    }
+}
+
+bool ConnectivityManager::is_websocket_connected() {
+    return this->websocket != nullptr && this->websocket->is_connected();
+}
+
+bool ConnectivityManager::send_websocket_message(const std::string& message) {
+    if (this->websocket == nullptr) {
+        return false;
+    }
+
+    return this->websocket->send(message);
+}
+
+void ConnectivityManager::set_websocket_authorization_key(const std::string& authorization_key) {
+    if (this->websocket != nullptr) {
+        this->websocket->set_authorization_key(authorization_key);
+    }
+}
+
+void ConnectivityManager::set_websocket_connection_options(const WebsocketConnectionOptions &connection_options)
+{
+    if (this->websocket != nullptr) {
+        this->websocket->set_connection_options(connection_options);
     }
 }
 

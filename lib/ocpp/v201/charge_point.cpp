@@ -87,7 +87,7 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
     // Set up the component state manager
     this->component_state_manager = std::make_shared<ComponentStateManager>(
         evse_connector_structure, database_handler, [this](auto evse_id, auto connector_id, auto status) {
-            if (this->websocket == nullptr || !this->websocket->is_connected() ||
+            if (this->connectivity_manager == nullptr || !this->connectivity_manager->is_websocket_connected() ||
                 this->registration_status != RegistrationStatusEnum::Accepted) {
                 return false;
             } else {
@@ -179,7 +179,10 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
     }
 
     this->message_queue = std::make_unique<ocpp::MessageQueue<v201::MessageType>>(
-        [this](json message) -> bool { return this->websocket->send(message.dump()); },
+        [this](json message) -> bool {
+            return this->connectivity_manager != nullptr &&
+                   this->connectivity_manager->send_websocket_message(message.dump());
+        },
         MessageQueueConfig{
             this->device_model->get_value<int>(ControllerComponentVariables::MessageAttempts),
             this->device_model->get_value<int>(ControllerComponentVariables::MessageAttemptInterval),
@@ -210,7 +213,7 @@ void ChargePoint::stop() {
     this->websocket_timer.stop();
     this->client_certificate_expiration_check_timer.stop();
     this->v2g_certificate_expiration_check_timer.stop();
-    this->connectivity_manager->disconnect_websocket(WebsocketCloseReason::Normal);
+    this->connectivity_manager->stop();
     this->message_queue->stop();
 }
 
@@ -707,7 +710,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
                 EVLOG_info << "Found invalid entry in local authorization list but not sending Authorize.req because "
                               "RemoteAuthorization is disabled";
                 response.idTokenInfo.status = AuthorizationStatusEnum::Unknown;
-            } else if (this->websocket->is_connected()) {
+            } else if (this->connectivity_manager != nullptr && this->connectivity_manager->is_websocket_connected()) {
                 // C14.FR.03: If a value found but not valid we shall send an authorize request
                 EVLOG_info << "Found invalid entry in local authorization list: Sending Authorize.req";
                 response = this->authorize_req(id_token, certificate, ocsp_request_data);
@@ -752,7 +755,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
         }
     }
 
-    if (!this->websocket->is_connected() and
+    if ((this->connectivity_manager == nullptr || !this->connectivity_manager->is_websocket_connected()) and
         this->device_model->get_optional_value<bool>(ControllerComponentVariables::OfflineTxForUnknownIdEnabled)
             .value_or(false)) {
         EVLOG_info << "Offline authorization due to OfflineTxForUnknownIdEnabled being enabled";
@@ -1398,8 +1401,11 @@ void ChargePoint::handle_variable_changed(const SetVariableData& set_variable_da
     if (component_variable == ControllerComponentVariables::BasicAuthPassword) {
         if (this->device_model->get_value<int>(ControllerComponentVariables::SecurityProfile) < 3) {
             // TODO: A01.FR.11 log the change of BasicAuth in Security Log
-            this->websocket->set_authorization_key(set_variable_data.attributeValue.get());
-            this->websocket->disconnect(WebsocketCloseReason::ServiceRestart);
+            if (this->connectivity_manager != nullptr)
+            {
+                this->connectivity_manager->set_websocket_authorization_key(set_variable_data.attributeValue.get());
+                this->connectivity_manager->disconnect_websocket(WebsocketCloseReason::ServiceRestart);
+            }
         }
     }
     if (component_variable == ControllerComponentVariables::HeartbeatInterval and
@@ -1424,7 +1430,9 @@ void ChargePoint::handle_variable_changed(const SetVariableData& set_variable_da
                 this->device_model->get_value<std::string>(ControllerComponentVariables::NetworkConfigurationPriority))
                 .at(this->network_configuration_priority);
         const auto connection_options = this->get_ws_connection_options(std::stoi(configuration_slot));
-        this->websocket->set_connection_options(connection_options);
+        if (connectivity_manager != nullptr) {
+            this->connectivity_manager->set_websocket_connection_options(connection_options);
+        }
     }
 
     if (component_variable == ControllerComponentVariables::MessageAttemptInterval) {
@@ -1604,7 +1612,7 @@ void ChargePoint::set_evse_connectors_unavailable(const std::unique_ptr<Evse>& e
 
 bool ChargePoint::is_offline() {
     bool offline = false; // false by default
-    if (!this->websocket->is_connected()) {
+    if (this->connectivity_manager == nullptr || !this->connectivity_manager->is_websocket_connected()) {
         offline = true;
     }
     return offline;
@@ -1917,7 +1925,9 @@ void ChargePoint::handle_certificate_signed_req(Call<CertificateSignedRequest> c
     if (response.status == CertificateSignedStatusEnum::Accepted and
         cert_signing_use == ocpp::CertificateSigningUseEnum::ChargingStationCertificate and
         this->device_model->get_value<int>(ControllerComponentVariables::SecurityProfile) == 3) {
-        this->websocket->disconnect(WebsocketCloseReason::ServiceRestart);
+        if (this->connectivity_manager != nullptr) {
+            this->connectivity_manager->disconnect_websocket(WebsocketCloseReason::ServiceRestart);
+        }
     }
 }
 

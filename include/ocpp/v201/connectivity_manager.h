@@ -102,6 +102,31 @@ public:
     void on_network_disconnected(const std::optional<int32_t> configuration_slot,
                                  const std::optional<OCPPInterfaceEnum> ocpp_interface);
 
+    ///
+    /// \brief Check if websocket is currently connected
+    /// \return True if websocket is connected.
+    ///
+    bool is_websocket_connected();
+
+    ///
+    /// \brief Send a message over the websocket
+    /// \param message  The message to send.
+    /// \return True if the message was sent successfully.
+    ///
+    bool send_websocket_message(const std::string& message);
+
+    ///
+    /// \brief Set the authorization key of the connection_options in Websocket instance
+    /// \param authorization_key    Authorization key to set.
+    ///
+    void set_websocket_authorization_key(const std::string& authorization_key);
+
+    ///
+    /// \brief Set connection options for websocket.
+    /// \param Connection options.
+    ///
+    void set_websocket_connection_options(const WebsocketConnectionOptions& connection_options);
+
 private: // Functions
     void run();
 
