@@ -55,7 +55,7 @@ static constexpr int LWS_CLOSE_SOCKET_RESPONSE_MESSAGE = -1;
 /// \brief Per thread connection data
 struct ConnectionData {
     ConnectionData() :
-        is_running(true), is_marked_close(false), state(EConnectionState::INITIALIZE), wsi(nullptr), owner(nullptr) {
+        wsi(nullptr), owner(nullptr), is_running(true), is_marked_close(false), state(EConnectionState::INITIALIZE) {
     }
 
     ~ConnectionData() {
@@ -813,6 +813,13 @@ static bool send_internal(lws* wsi, WebsocketMessage* msg) {
 
     auto sent = lws_write(wsi, reinterpret_cast<unsigned char*>(&buff[LWS_PRE]), message_len, msg->protocol);
 
+    if (sent < 0) {
+        // Fatal error, conn closed
+        EVLOG_error << "Error sending message over TLS websocket, conn closed.";
+        msg->sent_bytes = 0;
+        return false;
+    }
+
     // Even if we have written all the bytes to lws, it doesn't mean that it has been sent over
     // the wire. According to the function comment (lws_write), until everything has been
     // sent, the 'LWS_CALLBACK_CLIENT_WRITEABLE' callback will be suppressed. When we received
@@ -820,13 +827,7 @@ static bool send_internal(lws* wsi, WebsocketMessage* msg) {
     // as certainly 'sent' over the wire
     msg->sent_bytes = sent;
 
-    if (sent < 0) {
-        // Fatal error, conn closed
-        EVLOG_error << "Error sending message over TLS websocket, conn closed.";
-        return false;
-    }
-
-    if (sent < message_len) {
+    if (static_cast<size_t>(sent) < message_len) {
         EVLOG_error << "Error sending message over TLS websocket. Sent bytes: " << sent
                     << " Total to send: " << message_len;
         return false;
