@@ -140,6 +140,7 @@ few CSMS and is continuously tested against OCTT2.
 Additionally, the implementation has been tested against those CSMS:
 
 -   [CitrineOS](https://lfenergy.org/projects/citrineos/)
+-   Chargepoint
 -   Current
 -   ihomer (Infuse CPMS)
 -   Instituto Tecnológico de la Energía (ITE)
