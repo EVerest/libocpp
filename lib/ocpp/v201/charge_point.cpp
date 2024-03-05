@@ -179,6 +179,22 @@ void ChargePoint::start(BootReasonEnum bootreason) {
     this->start_websocket();
     this->ocsp_updater.start();
     // FIXME(piet): Run state machine with correct initial state
+
+    if (this->bootreason == BootReasonEnum::RemoteReset) {
+        this->security_event_notification_req(
+            CiString<50>(ocpp::security_events::RESET_OR_REBOOT),
+            std::optional<CiString<255>>("Charging Station rebooted due to requested remote reset!"), true, true);
+    } else if (this->bootreason == BootReasonEnum::ScheduledReset) {
+        this->security_event_notification_req(
+            CiString<50>(ocpp::security_events::RESET_OR_REBOOT),
+            std::optional<CiString<255>>("Charging Station rebooted due to a scheduled reset!"), true, true);
+    } else {
+        std::string startup_message = "Charging Station powered up! Firmware version: ";
+        startup_message.append(
+            this->device_model->get_value<std::string>(ControllerComponentVariables::FirmwareVersion));
+        this->security_event_notification_req(CiString<50>(ocpp::security_events::STARTUP_OF_THE_DEVICE),
+                                              std::optional<CiString<255>>(startup_message), true, true);
+    }
 }
 
 void ChargePoint::start_websocket() {
@@ -1938,22 +1954,6 @@ void ChargePoint::handle_boot_notification_response(CallResult<BootNotificationR
         this->init_certificate_expiration_check_timers();
         this->update_aligned_data_interval();
         this->component_state_manager->send_status_notification_all_connectors();
-
-        if (this->bootreason == BootReasonEnum::RemoteReset) {
-            this->security_event_notification_req(
-                CiString<50>(ocpp::security_events::RESET_OR_REBOOT),
-                std::optional<CiString<255>>("Charging Station rebooted due to requested remote reset!"), true, true);
-        } else if (this->bootreason == BootReasonEnum::ScheduledReset) {
-            this->security_event_notification_req(
-                CiString<50>(ocpp::security_events::RESET_OR_REBOOT),
-                std::optional<CiString<255>>("Charging Station rebooted due to a scheduled reset!"), true, true);
-        } else {
-            std::string startup_message = "Charging Station powered up! Firmware version: ";
-            startup_message.append(
-                this->device_model->get_value<std::string>(ControllerComponentVariables::FirmwareVersion));
-            this->security_event_notification_req(CiString<50>(ocpp::security_events::STARTUP_OF_THE_DEVICE),
-                                                  std::optional<CiString<255>>(startup_message), true, true);
-        }
     } else {
         auto retry_interval = DEFAULT_BOOT_NOTIFICATION_RETRY_INTERVAL;
         if (msg.interval > 0) {
