@@ -85,7 +85,6 @@ private:
     Everest::SteadyTimer reconnect_timer_tpm;
     std::unique_ptr<std::thread> websocket_thread;
     std::shared_ptr<ConnectionData> conn_data;
-    std::mutex conn_data_mutex;
     std::condition_variable conn_cv;
 
     std::mutex queue_mutex;

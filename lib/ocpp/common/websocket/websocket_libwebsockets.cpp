@@ -248,11 +248,9 @@ WebsocketTlsTPM::WebsocketTlsTPM(const WebsocketConnectionOptions& connection_op
 }
 
 WebsocketTlsTPM::~WebsocketTlsTPM() {
-    {
-        std::lock_guard<std::mutex> lock(conn_data_mutex);
-        if (conn_data != nullptr) {
-            conn_data->do_interrupt();
-        }
+    std::shared_ptr<ConnectionData> local_data = conn_data;
+    if (local_data != nullptr) {
+        local_data->do_interrupt();
     }
 
     if (websocket_thread != nullptr) {
@@ -367,9 +365,7 @@ void WebsocketTlsTPM::tls_init(SSL_CTX* ctx, const std::string& path_chain, cons
 }
 
 void WebsocketTlsTPM::recv_loop() {
-    conn_data_mutex.lock();
     std::shared_ptr<ConnectionData> local_data = conn_data;
-    conn_data_mutex.unlock();
 
     if (local_data == nullptr) {
         EVLOG_error << "Failed recv loop context init!";
@@ -409,9 +405,7 @@ void WebsocketTlsTPM::recv_loop() {
 }
 
 void WebsocketTlsTPM::client_loop() {
-    conn_data_mutex.lock();
     std::shared_ptr<ConnectionData> local_data = conn_data;
-    conn_data_mutex.unlock();
 
     if (local_data == nullptr) {
         EVLOG_error << "Failed client loop context init!";
@@ -584,16 +578,18 @@ bool WebsocketTlsTPM::connect() {
                << " with security-profile " << this->connection_options.security_profile
                << " with TPM keys: " << this->connection_options.use_tpm_tls;
 
+    // new connection context
     std::shared_ptr<ConnectionData> local_data = std::make_shared<ConnectionData>();
     local_data->set_owner(this);
-    {
-        std::lock_guard<std::mutex> lock(conn_data_mutex);
-        // Interrupt any previous connection
-        if (this->conn_data != nullptr) {
-            this->conn_data->do_interrupt();
-        }
-        this->conn_data = local_data;
+
+    // Interrupt any previous connection
+    std::shared_ptr<ConnectionData> tmp_data = conn_data;
+    if (tmp_data != nullptr) {
+        tmp_data->do_interrupt();
     }
+
+    // use new connection context
+    conn_data = local_data;
 
     // Wait old thread for a clean state
     if (this->websocket_thread) {
@@ -664,13 +660,13 @@ bool WebsocketTlsTPM::connect() {
 
     if (!connected) {
         EVLOG_error << "Conn failed, interrupting.";
-        std::lock_guard<std::mutex> lock(conn_data_mutex);
-
         // Interrupt and drop the connection data
-        if (this->conn_data != nullptr) {
-            this->conn_data->do_interrupt();
-            this->conn_data.reset();
+        std::shared_ptr<ConnectionData> local_data = conn_data;
+        if (local_data != nullptr) {
+            local_data->do_interrupt();
         }
+
+        conn_data.reset();
     }
 
     return (connected);
@@ -707,17 +703,14 @@ void WebsocketTlsTPM::close(websocketpp::close::status::value code, const std::s
         this->reconnect_timer_tpm.stop();
     }
 
-    {
-        std::lock_guard<std::mutex> lock(conn_data_mutex);
-        if (conn_data != nullptr) {
-            // Set the trigger from us
-            conn_data->request_close();
-            conn_data->do_interrupt();
-
-            // Release the connection data
-            conn_data.reset();
-        }
+    std::shared_ptr<ConnectionData> local_data = conn_data;
+    if (local_data != nullptr) {
+        // Set the trigger from us
+        local_data->request_close();
+        local_data->do_interrupt();
     }
+    // Release the connection data
+    conn_data.reset();
 
     this->m_is_connected = false;
     std::thread closing([this]() { this->closed_callback(websocketpp::close::status::normal); });
@@ -842,9 +835,7 @@ void WebsocketTlsTPM::on_writable() {
         return;
     }
 
-    conn_data_mutex.lock();
     std::shared_ptr<ConnectionData> local_data = conn_data;
-    conn_data_mutex.unlock();
 
     if (local_data == nullptr) {
         EVLOG_error << "Message sending TLS websocket with null connection data!";
@@ -935,13 +926,13 @@ void WebsocketTlsTPM::on_writable() {
 }
 
 void WebsocketTlsTPM::request_write() {
+    std::shared_ptr<ConnectionData> local_data = conn_data;
     if (this->m_is_connected) {
-        std::lock_guard<std::mutex> lock(conn_data_mutex);
-        if (conn_data != nullptr) {
-            if (conn_data->get_conn()) {
+        if (local_data != nullptr) {
+            if (local_data->get_conn()) {
                 // Notify waiting processing thread to wake up. According to docs it is ok to call from another
                 // thread.
-                lws_cancel_service(conn_data->lws_ctx.get());
+                lws_cancel_service(local_data->lws_ctx.get());
             }
         }
     } else {
@@ -950,12 +941,13 @@ void WebsocketTlsTPM::request_write() {
 }
 
 void WebsocketTlsTPM::poll_message(const std::shared_ptr<WebsocketMessage>& msg) {
-    conn_data_mutex.lock();
-    auto cd_tid = conn_data->get_lws_thread_id();
-    conn_data_mutex.unlock();
+    std::shared_ptr<ConnectionData> local_data = conn_data;
+    if (local_data != nullptr) {
+        auto cd_tid = local_data->get_lws_thread_id();
 
-    if (std::this_thread::get_id() == cd_tid) {
-        EVLOG_AND_THROW(std::runtime_error("Deadlock detected, polling send from client lws thread!"));
+        if (std::this_thread::get_id() == cd_tid) {
+            EVLOG_AND_THROW(std::runtime_error("Deadlock detected, polling send from client lws thread!"));
+        }
     }
 
     EVLOG_info << "Queueing message over TLS websocket: " << msg->payload;
@@ -1202,6 +1194,12 @@ int WebsocketTlsTPM::process_callback(void* wsi_ptr, int callback_reason, void* 
             lws_callback_on_writable(data->get_conn());
         }
     } break;
+
+    // not interested in these callbacks
+    case LWS_CALLBACK_WSI_DESTROY:
+    case LWS_CALLBACK_SERVER_NEW_CLIENT_INSTANTIATED:
+    case LWS_CALLBACK_CLIENT_HTTP_DROP_PROTOCOL:
+        break;
 
     default:
         EVLOG_info << "Callback with unhandled reason: " << reason;
