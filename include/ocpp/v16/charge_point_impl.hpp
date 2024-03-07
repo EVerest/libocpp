@@ -147,7 +147,7 @@ private:
     // callbacks
     std::function<bool(int32_t connector)> enable_evse_callback;
     std::function<bool(int32_t connector)> disable_evse_callback;
-    std::function<bool(int32_t connector)> pause_charging_callback;
+    std::function<bool(int32_t connector, IdTagInfo idTagInfo)> pause_charging_callback;
     std::function<bool(int32_t connector)> resume_charging_callback;
     std::function<void(const std::string& id_token, std::vector<int32_t> referenced_connectors, bool prevalidated)>
         provide_token_callback;
@@ -176,7 +176,7 @@ private:
     std::function<GetLogResponse(GetLogRequest msg)> upload_logs_callback;
     std::function<void(int32_t connection_timeout)> set_connection_timeout_callback;
 
-    std::function<void(const int32_t connector, const int32_t transaction_id)> transaction_started_callback;
+    std::function<void(const int32_t con, const int32_t trans, const IdTagInfo idTag)> transaction_started_callback;
     std::function<bool(const int32_t connector, const std::string& id_token)> is_token_reserved_for_connector_callback;
 
     // iso15118 callback
@@ -635,7 +635,7 @@ public:
     /// \brief registers a \p callback function that can be used to pause charging. The pause_charging_callback is
     /// called when the idTagInfo.status of a StartTransaction.conf is not Accepted
     /// \param callback
-    void register_pause_charging_callback(const std::function<bool(int32_t connector)>& callback);
+    void register_pause_charging_callback(const std::function<bool(int32_t connector, IdTagInfo idTagInfo)>& callback);
 
     /// \brief registers a \p callback function that can be used to resume charging
     /// \param callback
@@ -758,7 +758,7 @@ public:
     /// \brief registers a \p callback function that can be used to publish the response when transaction starts respone
     /// is received \param callback
     void register_transaction_started_callback(
-        const std::function<void(int32_t connector, int32_t transaction_id)>& callback);
+        const std::function<void(int32_t connector, int32_t transaction_id, const IdTagInfo idTagInfo)>& callback);
 
     /// \brief registers a \p callback function that can be used to react on changed configuration keys. This
     /// callback is called when a configuration key has been changed by the CSMS

@@ -339,7 +339,7 @@ public:
     /// \brief registers a \p callback function that can be used to pause charging. The pause_charging_callback is
     /// called when the idTagInfo.status of a StartTransaction.conf is not Accepted
     /// \param callback
-    void register_pause_charging_callback(const std::function<bool(int32_t connector)>& callback);
+    void register_pause_charging_callback(const std::function<bool(int32_t connector, IdTagInfo idTagInfo)>& callback);
 
     /// \brief registers a \p callback function that can be used to resume charging
     /// \param callback
@@ -462,7 +462,7 @@ public:
     /// \brief registers a \p callback function that can be used to publish the response when transaction starts
     /// \param callback
     void register_transaction_started_callback(
-        const std::function<void(const int32_t connector, const int32_t transaction_id)>& callback);
+        const std::function<void(const int32_t con, const int32_t trans, const IdTagInfo idTagInfo)>& callback);
 
     /// \brief registers a \p callback function that can be used to react on changed configuration keys. This
     /// callback is called when a configuration key has been successfully changed by the CSMS or internally using the

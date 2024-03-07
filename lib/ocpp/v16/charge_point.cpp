@@ -198,7 +198,8 @@ void ChargePoint::register_disable_evse_callback(const std::function<bool(int32_
     this->charge_point->register_disable_evse_callback(callback);
 }
 
-void ChargePoint::register_pause_charging_callback(const std::function<bool(int32_t connector)>& callback) {
+void ChargePoint::register_pause_charging_callback(
+    const std::function<bool(int32_t connector, IdTagInfo idTagInfo)>& callback) {
     this->charge_point->register_pause_charging_callback(callback);
 }
 
@@ -288,7 +289,7 @@ void ChargePoint::register_get_15118_ev_certificate_response_callback(
 }
 
 void ChargePoint::register_transaction_started_callback(
-    const std::function<void(const int32_t connector, const int32_t transaction_id)>& callback) {
+    const std::function<void(const int32_t connector, const int32_t trans_id, const IdTagInfo idTag)>& callback) {
     this->charge_point->register_transaction_started_callback(callback);
 }
 

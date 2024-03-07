@@ -152,7 +152,7 @@ int main(int argc, char* argv[]) {
         return true;
     });
 
-    charge_point->register_pause_charging_callback([](int32_t connector) {
+    charge_point->register_pause_charging_callback([](int32_t connector, ocpp::v16::IdTagInfo idTagInfo) {
         std::cout << "Callback: "
                   << "Pausing charging at connector#" << connector;
         return true;
@@ -247,7 +247,7 @@ int main(int argc, char* argv[]) {
                   << "Setting charging profiles" << std::endl;
     });
 
-    charge_point->register_transaction_started_callback([](int32_t connector, int32_t transaction_id) {
+    charge_point->register_transaction_started_callback([](int32_t connector, int32_t tran, const IdTagInfo idTag) {
         std::cout << "Callback: "
                   << "Transaction started at connector#" << connector << " and transaction id: " << transaction_id
                   << std::endl;
