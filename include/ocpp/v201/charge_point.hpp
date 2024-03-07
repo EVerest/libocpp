@@ -4,7 +4,6 @@
 #pragma once
 
 #include <future>
-#include <optional>
 #include <set>
 
 #include <ocpp/common/charging_station_base.hpp>
@@ -167,6 +166,9 @@ struct Callbacks {
     /// \brief Callback function that can be used to handle arbitrary data transfers for all vendorId and
     /// messageId
     std::optional<std::function<DataTransferResponse(const DataTransferRequest& request)>> data_transfer_callback;
+
+    /// \breif Callback function that is called when a transaction_event was sent to the CSMS
+    std::optional<std::function<void(const TransactionEventRequest& transaction_event)>> transaction_event_callback;
 };
 
 /// \brief Combines ChangeAvailabilityRequest with persist flag for scheduled Availability changes
@@ -571,14 +573,6 @@ public:
     /// \brief Disconnects the the websocket connection to the CSMS if it is connected
     /// \param code Optional websocket close status code (default: normal).
     void disconnect_websocket(websocketpp::close::status::value code = websocketpp::close::status::normal);
-
-    ///
-    /// \brief Get transaction_id for the given evseid.
-    /// \param evseid_id   The evse ID
-    /// \return The transaction id belonging the the evse id. std::nullopt if there is no transaction on the given
-    ///         evse ID.
-    ///
-    std::optional<CiString<36>> get_evseid_transaction_id(int32_t evseid);
 
     /// \brief Chargepoint notifies about new firmware update status firmware_update_status. This function should be
     ///        called during a Firmware Update to indicate the current firmware_update_status.

@@ -117,9 +117,9 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
             }
         };
         // used by evse when TransactionEvent.req to transmit meter values
-        auto transaction_meter_value_callback = [this](const MeterValue& _meter_value, const Transaction& transaction,
-                                                       const int32_t seq_no,
-                                                       const std::optional<int32_t> reservation_id) {
+        auto transaction_meter_value_callback = [this, evse_id_](const MeterValue& _meter_value,
+                                                                 const Transaction& transaction, const int32_t seq_no,
+                                                                 const std::optional<int32_t> reservation_id) {
             if (_meter_value.sampledValue.empty() or !_meter_value.sampledValue.at(0).context.has_value()) {
                 EVLOG_info << "Not sending MeterValue due to no values";
                 return;
@@ -141,10 +141,10 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
             if (!filtered_meter_value.sampledValue.empty()) {
                 const auto trigger = type == ReadingContextEnum::Sample_Clock ? TriggerReasonEnum::MeterValueClock
                                                                               : TriggerReasonEnum::MeterValuePeriodic;
-                this->transaction_event_req(TransactionEventEnum::Updated, DateTime(), transaction, trigger, seq_no,
-                                            std::nullopt, std::nullopt, std::nullopt,
-                                            std::vector<MeterValue>(1, filtered_meter_value), std::nullopt,
-                                            this->is_offline(), reservation_id);
+                this->transaction_event_req(
+                    TransactionEventEnum::Updated, DateTime(), transaction, trigger, seq_no, std::nullopt,
+                    this->evses.at(static_cast<int32_t>(evse_id_))->get_evse_info(), std::nullopt,
+                    std::vector<MeterValue>(1, filtered_meter_value), std::nullopt, this->is_offline(), reservation_id);
             }
         };
 
@@ -371,8 +371,8 @@ void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime&
     const auto trigger_reason = utils::stop_reason_to_trigger_reason_enum(reason);
 
     this->transaction_event_req(TransactionEventEnum::Ended, timestamp, transaction, trigger_reason, seq_no,
-                                std::nullopt, std::nullopt, id_token, meter_values, std::nullopt, this->is_offline(),
-                                std::nullopt);
+                                std::nullopt, this->evses.at(static_cast<int32_t>(evse_id))->get_evse_info(), id_token,
+                                meter_values, std::nullopt, this->is_offline(), std::nullopt);
 
     this->database_handler->transaction_metervalues_clear(transaction_id);
 
@@ -1502,15 +1502,6 @@ std::optional<int32_t> ChargePoint::get_transaction_evseid(const CiString<36>& t
     return std::nullopt;
 }
 
-std::optional<CiString<36>> ChargePoint::get_evseid_transaction_id(int32_t evseid) {
-    if (const auto& itt = evses.find(evseid); itt != evses.end()) {
-        if (itt->second->has_active_transaction()) {
-            return itt->second->get_transaction()->get_transaction().transactionId;
-        }
-    }
-    return std::nullopt;
-}
-
 bool ChargePoint::is_evse_reserved_for_other(const std::unique_ptr<Evse>& evse, const IdToken& id_token,
                                              const std::optional<IdToken>& group_id_token) const {
     const uint32_t connectors = evse->get_number_of_connectors();
@@ -1775,6 +1766,11 @@ void ChargePoint::transaction_event_req(const TransactionEventEnum& event_type, 
     }
 
     this->send<TransactionEventRequest>(call);
+
+    if (this->callbacks.transaction_event_callback.has_value()) {
+        EVLOG_info << "Calling callback";
+        this->callbacks.transaction_event_callback.value()(req);
+    }
 }
 
 void ChargePoint::meter_values_req(const int32_t evse_id, const std::vector<MeterValue>& meter_values) {
@@ -2564,8 +2560,8 @@ void ChargePoint::handle_trigger_message(Call<TriggerMessageRequest> call) {
 
             this->transaction_event_req(TransactionEventEnum::Updated, DateTime(),
                                         enhanced_transaction->get_transaction(), TriggerReasonEnum::Trigger,
-                                        enhanced_transaction->get_seq_no(), std::nullopt, std::nullopt, std::nullopt,
-                                        opt_meter_value, std::nullopt, this->is_offline(), std::nullopt);
+                                        enhanced_transaction->get_seq_no(), std::nullopt, evse.get_evse_info(),
+                                        std::nullopt, opt_meter_value, std::nullopt, this->is_offline(), std::nullopt);
         };
         send_evse_message(send_transaction);
     } break;
