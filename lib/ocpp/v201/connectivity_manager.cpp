@@ -152,8 +152,8 @@ void ConnectivityManager::on_network_disconnected(const std::optional<int32_t> c
         }
     }
 
-    if (this->active_network_slot == disconnected_network_slot ||
-        this->pending_network_slot == disconnected_network_slot) {
+    if (disconnected_network_slot != 0 && (this->active_network_slot == disconnected_network_slot ||
+                                           this->pending_network_slot == disconnected_network_slot)) {
         // Websocket is indeed connecting with the given slot or already connected.
         std::unique_lock<std::mutex> lock(this->config_slot_mutex);
         this->disconnect_websocket(); // normal close
