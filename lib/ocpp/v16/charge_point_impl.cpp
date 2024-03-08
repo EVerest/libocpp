@@ -3278,7 +3278,6 @@ void ChargePointImpl::on_transaction_started(const int32_t& connector, const std
         const auto meter_value =
             this->get_signed_meter_value(signed_meter_value.value(), ReadingContext::Transaction_Begin, timestamp);
         transaction->add_meter_value(meter_value);
-        transaction->set_has_signed_meter_values();
     }
 
     this->database_handler->insert_transaction(session_id, transaction->get_transaction_id(), connector, id_token,
@@ -3303,7 +3302,6 @@ void ChargePointImpl::on_transaction_stopped(const int32_t connector, const std:
         const auto meter_value =
             this->get_signed_meter_value(signed_meter_value.value(), ReadingContext::Transaction_End, timestamp);
         transaction->add_meter_value(meter_value);
-        transaction->set_has_signed_meter_values();
     }
     const auto stop_energy_wh = std::make_shared<StampedEnergyWh>(timestamp, energy_wh_import);
     transaction->add_stop_energy_wh(stop_energy_wh);

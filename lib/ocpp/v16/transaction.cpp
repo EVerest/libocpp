@@ -39,6 +39,13 @@ void Transaction::add_meter_value(MeterValue meter_value) {
     if (this->active) {
         std::lock_guard<std::mutex> lock(this->meter_values_mutex);
         this->meter_values.push_back(meter_value);
+
+        if (std::find_if(meter_value.sampledValue.begin(), meter_value.sampledValue.end(),
+                         [](SampledValue const& SampledValueItem) {
+                             return SampledValueItem.format == ValueFormat::SignedData;
+                         }) != meter_value.sampledValue.end()) {
+            this->set_has_signed_meter_values();
+        }
     }
 }
 
@@ -120,7 +127,6 @@ void Transaction::add_stop_energy_wh(std::shared_ptr<StampedEnergyWh> stop_energ
 }
 
 void Transaction::set_has_signed_meter_values() {
-    std::lock_guard<std::mutex> lock(this->meter_values_mutex);
     this->has_signed_meter_values = true;
 }
 
