@@ -54,7 +54,7 @@ public:
     ConnectivityManager(DeviceModel &device_model, std::shared_ptr<EvseSecurity> evse_security,
                         std::shared_ptr<MessageLogging> logging,
                         std::function<void(const std::string& message)> message_callback);
-    ~ConnectivityManager();
+    virtual ~ConnectivityManager();
     void set_websocket_connected_callback(
         std::function<void(const int configuration_slot, const NetworkConnectionProfile& network_connection_profile)>
             websocket_connected_callback);
@@ -128,6 +128,11 @@ public:
     void set_websocket_connection_options(const WebsocketConnectionOptions& connection_options);
 
 private: // Functions
+    // Disable copy constructor.
+    ConnectivityManager(const ConnectivityManager&) = delete;
+    // Disable assignment operator.
+    ConnectivityManager operator=(const ConnectivityManager&) = delete;
+
     void run();
 
     /// @brief Initialize the websocket connection.

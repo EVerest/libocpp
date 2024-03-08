@@ -66,6 +66,7 @@ void ConnectivityManager::stop() {
     if (running) {
         running = false;
         disconnect_websocket(WebsocketCloseReason::Normal);
+        this->websocket = nullptr;
         reconnect_condition_variable.notify_all();
         if (connectivity_thread.joinable()) {
             connectivity_thread.join();
@@ -135,14 +136,17 @@ void ConnectivityManager::on_network_disconnected(const std::optional<int32_t> c
         return;
     }
 
+    EVLOG_debug << "Network disconnected: " << configuration_slot.value();
+
     int32_t disconnected_network_slot = 0;
+
+    // Find slot belonging to ocpp interface. That's only interesting if it is an active or pending network slot.
+    const int32_t current_network_slot =
+        this->active_network_slot != 0 ? this->active_network_slot : this->pending_network_slot;
 
     if (configuration_slot.has_value()) {
         disconnected_network_slot = configuration_slot.value();
     } else {
-        // Find slot belonging to ocpp interface. That's only interesting if it is an active or pending network slot.
-        const int32_t current_network_slot =
-            this->active_network_slot != 0 ? this->active_network_slot : this->pending_network_slot;
         if (current_network_slot != 0) {
             std::optional<NetworkConnectionProfile> profile =
                 this->get_network_connection_profile(current_network_slot);
@@ -152,12 +156,14 @@ void ConnectivityManager::on_network_disconnected(const std::optional<int32_t> c
         }
     }
 
-    if (disconnected_network_slot != 0 && (this->active_network_slot == disconnected_network_slot ||
-                                           this->pending_network_slot == disconnected_network_slot)) {
+    if ((disconnected_network_slot != 0) && (current_network_slot == disconnected_network_slot)) {
         // Websocket is indeed connecting with the given slot or already connected.
         std::unique_lock<std::mutex> lock(this->config_slot_mutex);
-        this->disconnect_websocket(); // normal close
-        this->get_next_network_configuration_priority_slot(configuration_slot.value());
+        this->disconnect_websocket(WebsocketCloseReason::Normal); // normal close???
+
+        // TODO should I set the websocket to nullptr? Otherwise it is reconnecting later and websocketpp crashes with 'invalid state'. But now the application crashes
+        this->websocket = nullptr;
+        this->requested_network_slot = this->get_next_network_configuration_priority_slot(configuration_slot.value());
         this->active_network_slot = 0;
         this->pending_network_slot = 0;
 
@@ -193,15 +199,17 @@ void ConnectivityManager::set_websocket_connection_options(const WebsocketConnec
 }
 
 void ConnectivityManager::run() {
+    EVLOG_debug << "Run! Requested network slot: " << this->requested_network_slot << ", active network slot: "
+                << this->active_network_slot << ", pending network slot: " << this->pending_network_slot;
     if (this->requested_network_slot != 0) {
-        this->init_websocket(this->requested_network_slot);
         this->try_reconnect.store(false);
+        this->init_websocket(this->requested_network_slot);
         if (this->websocket != nullptr) {
             this->websocket->connect();
         }
     } else if (this->active_network_slot == 0 && this->pending_network_slot == 0) {
-        this->init_websocket();
         this->try_reconnect.store(false);
+        this->init_websocket();
         if (this->websocket != nullptr) {
             this->websocket->connect();
         }
@@ -211,9 +219,11 @@ void ConnectivityManager::run() {
     std::unique_lock<std::mutex> lock(config_slot_mutex);
     // Return when 'running' is set to false (we want to stop the thread) or 'try_reconnect' is true (we want to
     // reconnect to the websocket).
+    EVLOG_debug << "Wait!! Try reconnect = " << (try_reconnect.load() ? "true" : "false");
     reconnect_condition_variable.wait(lock, [this] { return !this->running.load() || this->try_reconnect.load(); });
     // At this point we want to re-run this function. Since 'run' is called in a while loop, it will be called again
     // directly after returning this function.
+    EVLOG_debug << "After wait!";
 }
 
 void ConnectivityManager::init_websocket(std::optional<int32_t> config_slot) {
@@ -225,16 +235,18 @@ void ConnectivityManager::init_websocket(std::optional<int32_t> config_slot) {
 
     int32_t config_slot_int;
     if (config_slot.has_value()) {
-        EVLOG_info << " using configuration slot --->" << config_slot.value();
+        EVLOG_info << "init websocket using configuration slot ---> " << config_slot.value();
         configuration_slot = std::to_string(config_slot.value());
         config_slot_int = config_slot.value();
     } else {
+        EVLOG_debug << "Init websocket without config slot, use first available";
         // Get first available config slot.
         const std::vector<std::string> config_slot_vector = ocpp::get_vector_from_csv(
             this->device_model.get_value<std::string>(ControllerComponentVariables::NetworkConfigurationPriority));
         if (config_slot_vector.size() > 0) {
             configuration_slot = config_slot_vector.at(0);
             config_slot_int = std::stoi(configuration_slot);
+            EVLOG_debug << "First available is: " << config_slot_int;
         } else {
             // No network connection profile. Retry connecting after some time, maybe it is set manually.
             sleep(default_retry_network_connection_profile_seconds);
@@ -267,11 +279,13 @@ void ConnectivityManager::init_websocket(std::optional<int32_t> config_slot) {
         switch (status) {
         case std::future_status::deferred:
         case std::future_status::timeout: {
+            EVLOG_debug << "Timeout or deferred for config slot: " << config_slot_int;
             // Connect to next network configuration priority
             std::unique_lock<std::mutex> lock(this->config_slot_mutex);
             this->requested_network_slot = this->get_next_network_configuration_priority_slot(config_slot_int);
             this->active_network_slot = 0;
             this->pending_network_slot = 0;
+            sleep(2);
 
             // Notify main thread that it should reconnect.
             this->try_reconnect.store(true);
@@ -281,22 +295,32 @@ void ConnectivityManager::init_websocket(std::optional<int32_t> config_slot) {
             return;
         }
         case std::future_status::ready: {
+            EVLOG_debug << "Ready for config slot: " << config_slot_int;
             ConfigNetworkResult result = config_status.get();
             if (result.success) {
+                std::unique_lock<std::mutex> lock(this->config_slot_mutex);
+
+                EVLOG_debug << "Ready for config slot: " << config_slot_int << " and result.success = true";
                 connection_options.iface_or_ip = result.interface_address;
                 this->pending_network_slot = config_slot_int;
                 this->requested_network_slot = 0;
             } else {
+                EVLOG_debug << "Ready for config slot: " << config_slot_int << " and result.success = false";
                 // No success, network could not be initialized?
                 // Connect to next network configuration priority
                 std::unique_lock<std::mutex> lock(this->config_slot_mutex);
                 this->requested_network_slot = this->get_next_network_configuration_priority_slot(config_slot_int);
+                EVLOG_debug << "Requested network slot: " << this->requested_network_slot;
                 this->active_network_slot = 0;
                 this->pending_network_slot = 0;
 
                 // Notify main thread that it should reconnect.
+                sleep(2);
+                EVLOG_debug << "Try reconnect store set to true";
                 this->try_reconnect.store(true);
+                EVLOG_debug << "reconnect condition variable notify";
                 this->reconnect_condition_variable.notify_all();
+                EVLOG_debug << "after reconnect condition variable notify. Running = " << (running.load() ? "true" : "false") << ", try_reconnect = " << (try_reconnect.load() ? "true" : "false");
                 // TODO: in the old code there was a timeout for this. Should we do that???
                 // TODO check if this works ok, etc
                 return;
@@ -510,6 +534,9 @@ void ConnectivityManager::on_websocket_disconnected_callback(
         std::unique_lock<std::mutex> lock(this->config_slot_mutex);
         this->pending_network_slot = this->active_network_slot; // TODO is this correct?
         this->active_network_slot = 0;
+        // TODO is below correct???
+        this->try_reconnect.store(true);
+        this->reconnect_condition_variable.notify_all();
     }
 
     // TODO what to do here? Get next available profile? Call init? Set indeed pending_network_slot? ???
