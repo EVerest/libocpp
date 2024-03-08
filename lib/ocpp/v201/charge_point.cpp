@@ -1768,7 +1768,6 @@ void ChargePoint::transaction_event_req(const TransactionEventEnum& event_type, 
     this->send<TransactionEventRequest>(call);
 
     if (this->callbacks.transaction_event_callback.has_value()) {
-        EVLOG_info << "Calling callback";
         this->callbacks.transaction_event_callback.value()(req);
     }
 }
