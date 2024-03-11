@@ -259,6 +259,10 @@ std::vector<ReportData> DeviceModel::get_base_report_data(const ReportBaseEnum& 
                     variable_attribute.mutability == MutabilityEnum::ReadWrite or
                     variable_attribute.mutability == MutabilityEnum::WriteOnly) {
                     report_data.variableAttribute.push_back(variable_attribute);
+                    // scrub WriteOnly value from report
+                    if (variable_attribute.mutability == MutabilityEnum::WriteOnly) {
+                        report_data.variableAttribute.back().value.reset();
+                    }
                     report_data.variableCharacteristics = variable_map.at(variable).characteristics;
                 }
             }
