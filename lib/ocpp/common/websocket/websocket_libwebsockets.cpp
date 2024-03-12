@@ -172,7 +172,9 @@ static bool verify_csms_cn(const std::string& hostname, bool preverified, const 
         // Get server certificate
         X509* server_cert = X509_STORE_CTX_get_current_cert(ctx);
 
-        // TODO (ioan): remove this function after the libwebsocket parameter issue is solved
+        // TODO (ioan): this manual verification is done because libwebsocket does not take into account
+        // the host parameter that we are setting during 'tls_init'. This function should be removed
+        // when we can make libwebsocket take custom verification parameter
 
         // Verify host-name manually
         int result;
@@ -324,7 +326,9 @@ void WebsocketTlsTPM::tls_init(SSL_CTX* ctx, const std::string& path_chain, cons
     }
 
     // TODO (ioan): libwebsockets seems not to take this parameters into account
-    // and this code should be re-introduced after the issue is solved
+    // and this code should be re-introduced after the issue is solved. At the moment a
+    // manual work-around is used, the check is manually done using 'X509_check_host'
+
     /*
     if (this->connection_options.verify_csms_common_name) {
         // Verify hostname
@@ -1005,8 +1009,10 @@ int WebsocketTlsTPM::process_callback(void* wsi_ptr, int callback_reason, void* 
     switch (reason) {
     case LWS_CALLBACK_OPENSSL_PERFORM_SERVER_CERT_VERIFICATION:
 
+        // TODO (ioan): remove this option after we figure out why libwebsockets does not take the param set
+        // at 'tls_init' into account
         if (this->connection_options.verify_csms_common_name) {
-            // user is X509_STORE and and len is preverify_ok
+            // 'user' is X509_STORE and 'len' is preverify_ok (1) in case the pre-verification was successful
             EVLOG_info << "Verifying server certs!";
 
             if (false == verify_csms_cn(this->connection_options.csms_uri.get_hostname(), (len == 1),
