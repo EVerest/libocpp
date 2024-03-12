@@ -193,7 +193,7 @@
         "VerifyCsmsCommonName": {
             "$comment": "Verify that the CSMS certificates commonName matches the CSMS FQDN",
             "type": "boolean",
-            "readOnly": false,
+            "readOnly": true,
             "default": true
         },
         "VerifyCsmsAllowWildcards": {
