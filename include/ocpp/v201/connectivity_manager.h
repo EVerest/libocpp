@@ -31,6 +31,11 @@ private: // Members
     int32_t pending_network_slot;
     /// \brief The interface which is currently in use by the websocket
     int32_t active_network_slot;
+    Everest::SteadyTimer reconnect_timer;
+    WebsocketConnectionOptions current_connection_options;
+    int connection_attempts;
+    long reconnect_backoff_ms;
+
 
     /* Callbacks for networking */
     std::function<void(const std::string& message)> message_callback;
@@ -176,6 +181,9 @@ private: // Functions
     /// \return True when given slot is of higher priority.
     ///
     bool is_higher_priority_profile(const int32_t new_configuration_slot);
+
+    void set_retry_connection_timer(const std::chrono::seconds timeout);
+    long get_reconnect_interval();
 };
 
 } // namespace v201

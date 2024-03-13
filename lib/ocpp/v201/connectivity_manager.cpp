@@ -28,6 +28,10 @@ ConnectivityManager::ConnectivityManager(DeviceModel& device_model, std::shared_
     requested_network_slot(0),
     pending_network_slot(0),
     active_network_slot(0),
+    reconnect_timer(),
+    current_connection_options(),
+    connection_attempts(0), // TODO don't forget to reset when new websocket is created.
+    reconnect_backoff_ms(0),
     message_callback(message_callback) {
 }
 
@@ -55,6 +59,7 @@ void ConnectivityManager::start() {
     if (!running) {
         running = true;
         connectivity_thread = std::thread([this]() {
+            pthread_setname_np(pthread_self(), "ConnMann");
             while (this->running) {
                 this->run();
             }
@@ -65,6 +70,7 @@ void ConnectivityManager::start() {
 void ConnectivityManager::stop() {
     if (running) {
         running = false;
+        reconnect_timer.stop();
         disconnect_websocket(WebsocketCloseReason::Normal);
         this->websocket = nullptr;
         reconnect_condition_variable.notify_all();
@@ -112,6 +118,9 @@ bool ConnectivityManager::on_try_switch_network_connection_profile(const int32_t
     }
 
     try {
+        // Stop reconnect timer, if it is running -> we will reconnect with another websocket.
+        reconnect_timer.stop();
+
         std::unique_lock<std::mutex> lock(this->config_slot_mutex);
         this->disconnect_websocket(); // normal close
         this->active_network_slot = 0;
@@ -161,7 +170,8 @@ void ConnectivityManager::on_network_disconnected(const std::optional<int32_t> c
         std::unique_lock<std::mutex> lock(this->config_slot_mutex);
         this->disconnect_websocket(WebsocketCloseReason::Normal); // normal close???
 
-        // TODO should I set the websocket to nullptr? Otherwise it is reconnecting later and websocketpp crashes with 'invalid state'. But now the application crashes
+        // TODO should I set the websocket to nullptr? Otherwise it is reconnecting later and websocketpp crashes with
+        // 'invalid state'. But now the application crashes
         this->websocket = nullptr;
         this->requested_network_slot = this->get_next_network_configuration_priority_slot(configuration_slot.value());
         this->active_network_slot = 0;
@@ -191,16 +201,17 @@ void ConnectivityManager::set_websocket_authorization_key(const std::string& aut
     }
 }
 
-void ConnectivityManager::set_websocket_connection_options(const WebsocketConnectionOptions &connection_options)
-{
+void ConnectivityManager::set_websocket_connection_options(const WebsocketConnectionOptions& connection_options) {
+    current_connection_options = connection_options;
     if (this->websocket != nullptr) {
         this->websocket->set_connection_options(connection_options);
     }
 }
 
 void ConnectivityManager::run() {
-    EVLOG_debug << "Run! Requested network slot: " << this->requested_network_slot << ", active network slot: "
-                << this->active_network_slot << ", pending network slot: " << this->pending_network_slot;
+    EVLOG_debug << "Run! Requested network slot: " << this->requested_network_slot
+                << ", active network slot: " << this->active_network_slot
+                << ", pending network slot: " << this->pending_network_slot;
     if (this->requested_network_slot != 0) {
         this->try_reconnect.store(false);
         this->init_websocket(this->requested_network_slot);
@@ -212,6 +223,17 @@ void ConnectivityManager::run() {
         this->init_websocket();
         if (this->websocket != nullptr) {
             this->websocket->connect();
+        }
+    } else if (this->pending_network_slot != 0) {
+        this->try_reconnect.store(false);
+        // There is a network slot pending, maybe because it wants to try a reconnect, try to connect the websocket now.
+        if (this->websocket != nullptr) {
+            this->websocket->connect();
+        } else {
+            this->init_websocket(this->pending_network_slot);
+            if (this->websocket != nullptr) {
+                this->websocket->connect();
+            }
         }
     }
 
@@ -320,7 +342,9 @@ void ConnectivityManager::init_websocket(std::optional<int32_t> config_slot) {
                 this->try_reconnect.store(true);
                 EVLOG_debug << "reconnect condition variable notify";
                 this->reconnect_condition_variable.notify_all();
-                EVLOG_debug << "after reconnect condition variable notify. Running = " << (running.load() ? "true" : "false") << ", try_reconnect = " << (try_reconnect.load() ? "true" : "false");
+                EVLOG_debug << "after reconnect condition variable notify. Running = "
+                            << (running.load() ? "true" : "false")
+                            << ", try_reconnect = " << (try_reconnect.load() ? "true" : "false");
                 // TODO: in the old code there was a timeout for this. Should we do that???
                 // TODO check if this works ok, etc
                 return;
@@ -332,6 +356,9 @@ void ConnectivityManager::init_websocket(std::optional<int32_t> config_slot) {
         // No callback configured, just connect to this profile.
     }
 
+    this->current_connection_options = connection_options;
+    this->connection_attempts = 0;
+    this->reconnect_backoff_ms = 0;
     this->websocket = std::make_unique<Websocket>(connection_options, this->evse_security, this->logging);
     this->websocket->register_connected_callback([this, network_connection_profile](const int configuration_slot) {
         this->on_websocket_connected_callback(configuration_slot, network_connection_profile);
@@ -420,17 +447,14 @@ int32_t ConnectivityManager::get_next_network_configuration_priority_slot(const 
     }
 
     const std::optional<int32_t> prio = this->get_configuration_slot_priority(configuration_slot);
-    if (!prio.has_value())
-    {
+    if (!prio.has_value()) {
         // TODO euh... there is no priority for this configuration slot, so is it invalid then?
         return 0;
     }
 
-    const int32_t new_prio =
-        (prio.value() + 1) % (static_cast<int32_t>(network_connection_priorities.size()));
+    const int32_t new_prio = (prio.value() + 1) % (static_cast<int32_t>(network_connection_priorities.size()));
 
-    if (new_prio < 0)
-    {
+    if (new_prio < 0) {
         return 0;
     }
 
@@ -507,7 +531,6 @@ void ConnectivityManager::on_websocket_connected_callback(
         this->pending_network_slot = 0;
     }
 
-
     if (this->websocket_connected_callback.has_value()) {
         this->websocket_connected_callback.value()(this->active_network_slot, profile);
     }
@@ -515,6 +538,9 @@ void ConnectivityManager::on_websocket_connected_callback(
 
 void ConnectivityManager::on_websocket_disconnected_callback(
     const int configuration_slot, const std::optional<NetworkConnectionProfile> network_connection_profile) {
+
+    EVLOG_info << "Websocket disconnected: " << configuration_slot;
+
     NetworkConnectionProfile profile;
     if (this->active_network_slot != configuration_slot || !network_connection_profile.has_value()) {
         const std::optional<NetworkConnectionProfile> network_connection_profile_opt =
@@ -530,11 +556,19 @@ void ConnectivityManager::on_websocket_disconnected_callback(
         profile = network_connection_profile.value();
     }
 
+    // TODO the whole reconnect timeout stuff. When to reconnect and when to connect to new slot and when to wait for
+    // a timeout and when not?
+    if (true) // TODO check needs to reconnect (instead of 'true')
     {
+        using namespace std::chrono_literals;
         std::unique_lock<std::mutex> lock(this->config_slot_mutex);
-        this->pending_network_slot = this->active_network_slot; // TODO is this correct?
+        this->pending_network_slot = this->active_network_slot;
         this->active_network_slot = 0;
-        // TODO is below correct???
+        set_retry_connection_timer(20s);
+    } else {
+        this->requested_network_slot = this->get_next_network_configuration_priority_slot(configuration_slot);
+        this->active_network_slot = 0;
+        this->pending_network_slot = 0;
         this->try_reconnect.store(true);
         this->reconnect_condition_variable.notify_all();
     }
@@ -542,6 +576,8 @@ void ConnectivityManager::on_websocket_disconnected_callback(
     // TODO what to do here? Get next available profile? Call init? Set indeed pending_network_slot? ???
 
     if (this->websocket_disconnected_callback.has_value()) {
+        // TODO in this callback, the interface should not yet been closed. That should be done in the 'closed'
+        // callback??? Add websocket_closed_callback as well then (for external sources)???
         this->websocket_disconnected_callback.value()(this->active_network_slot, profile);
     }
 }
@@ -549,6 +585,9 @@ void ConnectivityManager::on_websocket_disconnected_callback(
 void ConnectivityManager::on_websocket_closed_callback(
     const int configuration_slot, const std::optional<NetworkConnectionProfile> network_connection_profile,
     const WebsocketCloseReason reason) {
+
+    // TODO when is 'closed' exactly called? After max retries?
+    EVLOG_info << "Websocket closed: " << configuration_slot;
     // TODO there was a timout here, put it back???
     if (reason != WebsocketCloseReason::ServiceRestart) {
         std::unique_lock<std::mutex> lock(this->config_slot_mutex);
@@ -589,14 +628,12 @@ void ConnectivityManager::on_websocket_closed_callback(
     this->reconnect_condition_variable.notify_all();
 }
 
-int32_t ConnectivityManager::get_active_network_configuration_slot() const
-{
+int32_t ConnectivityManager::get_active_network_configuration_slot() const {
     std::unique_lock<std::mutex> lock(this->config_slot_mutex);
     return (active_network_slot != 0 ? active_network_slot : pending_network_slot);
 }
 
-std::optional<int32_t> ConnectivityManager::get_configuration_slot_priority(const int32_t configuration_slot)
-{
+std::optional<int32_t> ConnectivityManager::get_configuration_slot_priority(const int32_t configuration_slot) {
     // Convert to string as a vector of strings is used.
     const std::string configuration_slot_string = std::to_string(configuration_slot);
 
@@ -642,6 +679,39 @@ bool ConnectivityManager::is_higher_priority_profile(const int32_t new_configura
     }
 
     return false;
+}
+
+void ConnectivityManager::set_retry_connection_timer(const std::chrono::seconds timeout) {
+    this->reconnect_timer.timeout(
+        [this]() {
+            std::unique_lock<std::mutex> lock(this->config_slot_mutex);
+            // Notify main thread that it should reconnect.
+            this->try_reconnect.store(true);
+            this->reconnect_condition_variable.notify_all();
+        },
+        timeout);
+}
+
+long ConnectivityManager::get_reconnect_interval() {
+    // We need to add 1 to the repeat times since the first try is already connection_attempt 1
+    if (this->connection_attempts > (this->current_connection_options.retry_backoff_repeat_times + 1)) {
+        return this->reconnect_backoff_ms;
+    }
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> distr(0, this->current_connection_options.retry_backoff_random_range_s);
+
+    int random_number = distr(gen);
+
+    if (this->connection_attempts == 1) {
+        this->reconnect_backoff_ms =
+            (this->current_connection_options.retry_backoff_wait_minimum_s + random_number) * 1000;
+        return this->reconnect_backoff_ms;
+    }
+
+    this->reconnect_backoff_ms = this->reconnect_backoff_ms * 2 + (random_number * 1000);
+    return this->reconnect_backoff_ms;
 }
 
 } // namespace v201
