@@ -40,12 +40,12 @@ public:
     InstallCertificateResult update_leaf_certificate(const std::string& certificate_chain,
                                                      const CertificateSigningUseEnum& certificate_type) override;
     CertificateValidationResult verify_certificate(const std::string& certificate_chain,
-                                                const CaCertificateType& certificate_type) override;
+                                                   const CaCertificateType& certificate_type) override;
     std::vector<CertificateHashDataChain>
     get_installed_certificates(const std::vector<CertificateType>& certificate_types) override;
     std::vector<OCSPRequestData> get_ocsp_request_data() override;
     std::vector<OCSPRequestData> get_ocsp_request_data(const std::string& certificate_chain,
-                                                const CaCertificateType& certificate_type) override;
+                                                       const CaCertificateType& certificate_type) override;
     void update_ocsp_cache(const CertificateHashDataType& certificate_hash_data,
                            const std::string& ocsp_response) override;
     bool is_ca_certificate_installed(const CaCertificateType& certificate_type) override;

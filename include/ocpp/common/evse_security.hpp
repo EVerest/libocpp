@@ -47,7 +47,7 @@ public:
     /// \param certificate_type type of the leaf certificate
     /// \return result of the operation
     virtual CertificateValidationResult verify_certificate(const std::string& certificate_chain,
-                                                        const CaCertificateType& certificate_type) = 0;
+                                                           const CaCertificateType& certificate_type) = 0;
 
     /// \brief Retrieves all certificates installed on the filesystem applying the \p certificate_types filter. This
     /// function respects the requirements of OCPP specified for the CSMS initiated message
@@ -67,7 +67,7 @@ public:
     /// \param certificate_type type of the leaf certificate
     /// \return contains OCSP request data
     virtual std::vector<OCSPRequestData> get_ocsp_request_data(const std::string& certificate_chain,
-                                                        const CaCertificateType& certificate_type) = 0;
+                                                               const CaCertificateType& certificate_type) = 0;
 
     /// \brief Updates the OCSP cache for the given \p certificate_hash_data with the given \p ocsp_response
     /// \param certificate_hash_data identifies the certificate for which the \p ocsp_response is specified
