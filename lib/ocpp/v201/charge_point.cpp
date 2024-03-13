@@ -570,7 +570,6 @@ std::vector<OCSPRequestData> ChargePoint::generate_ocsp_data(const CiString<5500
     return ocsp_request_data_list;
 }
 
-
 AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std::optional<CiString<5500>>& certificate,
                                               const std::optional<std::vector<OCSPRequestData>>& ocsp_request_data) {
     // TODO(piet): C01.FR.14
