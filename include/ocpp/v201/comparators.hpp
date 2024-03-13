@@ -67,6 +67,5 @@ inline bool operator<(const SetVariableData& lhs, const SetVariableData& rhs) {
     return lhs.component < rhs.component;
 }
 
-
 } // namespace v201
 } // namespace ocpp
