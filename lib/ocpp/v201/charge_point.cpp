@@ -636,7 +636,8 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
                     }
                 } else {
                     // Try to generate the OCSP data from the certificate chain and use that
-                    std::vector<OCSPRequestData> generated_ocsp_request_data_list = generate_ocsp_data(certificate.value());
+                    std::vector<OCSPRequestData> generated_ocsp_request_data_list =
+                        generate_ocsp_data(certificate.value());
                     if (generated_ocsp_request_data_list.size() > 0) {
                         EVLOG_info << "Online: Pass generated OCSP data to CSMS";
                         response = this->authorize_req(id_token, std::nullopt, generated_ocsp_request_data_list);
@@ -651,14 +652,17 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
                 if (ContractValidationOffline) {
                     EVLOG_info << "Offline: contract " << localVerifyResult;
                     switch (localVerifyResult) {
-                    // C07.FR.09: CS shall lookup the eMAID in Local Auth List or Auth Cache when local validation succeeded
+                    // C07.FR.09: CS shall lookup the eMAID in Local Auth List or Auth Cache when
+                    // local validation succeeded
                     case CertificateValidationResult::Accepted:
-                        // In C07.FR.09 LocalAuthorizeOffline is mentioned, this seems to be a generic config item that applies
-                        // to Local Auth List and Auth Cache, but since there are no requirements about it, lets check it here
+                        // In C07.FR.09 LocalAuthorizeOffline is mentioned, this seems to be a generic config item
+                        // that applies to Local Auth List and Auth Cache, but since there are no requirements about
+                        // it, lets check it here
                         if (LocalAuthorizeOffline) {
                             tryLocalAuthListOrCache = true;
                         } else {
-                            // No requirement states what to do when ContractValidationOffline is true and LocalAuthorizeOffline is false
+                            // No requirement states what to do when ContractValidationOffline is true
+                            // and LocalAuthorizeOffline is false
                             response.idTokenInfo.status = AuthorizationStatusEnum::NotAtThisTime;
                             response.certificateStatus = AuthorizeCertificateStatusEnum::Accepted;
                         }
