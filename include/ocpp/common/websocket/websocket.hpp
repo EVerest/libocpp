@@ -23,6 +23,7 @@ private:
     std::function<void(const int security_profile)> connected_callback;
     std::function<void()> disconnected_callback;
     std::function<void(const WebsocketCloseReason reason)> closed_callback;
+    std::function<void(const WebsocketCloseReason reason)> failed_callback;
     std::function<void(const std::string& message)> message_callback;
     std::shared_ptr<MessageLogging> logging;
 
@@ -55,6 +56,13 @@ public:
     /// \brief register a \p callback that is called when the websocket connection has been closed and will not attempt
     /// to reconnect
     void register_closed_callback(const std::function<void(const WebsocketCloseReason reason)>& callback);
+
+    ///
+    /// \brief Register a callback that is called when the websocket tried to connect, but could not make a connection
+    ///        or was already connected and a failure occured.
+    /// \param callback The callback.
+    ///
+    void register_failed_callback(const std::function<void(const WebsocketCloseReason reason)>& callback);
 
     /// \brief register a \p callback that is called when the websocket receives a message
     void register_message_callback(const std::function<void(const std::string& message)>& callback);

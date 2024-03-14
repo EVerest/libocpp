@@ -20,7 +20,7 @@ private: // Members
     std::atomic_bool try_reconnect;
     mutable std::mutex config_slot_mutex;
     std::condition_variable reconnect_condition_variable;
-    DeviceModel &device_model;
+    DeviceModel& device_model;
     std::shared_ptr<EvseSecurity> evse_security;
     std::shared_ptr<MessageLogging> logging;
     bool disable_automatic_websocket_reconnects;
@@ -34,8 +34,7 @@ private: // Members
     Everest::SteadyTimer reconnect_timer;
     WebsocketConnectionOptions current_connection_options;
     int connection_attempts;
-    long reconnect_backoff_ms;
-
+    std::chrono::seconds reconnect_backoff_ms;
 
     /* Callbacks for networking */
     std::function<void(const std::string& message)> message_callback;
@@ -50,13 +49,13 @@ private: // Members
         std::function<void(const int configuration_slot, const NetworkConnectionProfile& network_connection_profile)>>
         websocket_disconnected_callback;
 
-     /// @brief register a \p callback that is called when the network connection profile is to be configured.
+    /// @brief register a \p callback that is called when the network connection profile is to be configured.
     std::optional<std::function<std::future<ConfigNetworkResult>(
         const int32_t configurationSlot, const NetworkConnectionProfile& network_connection_profile)>>
         configure_network_connection_profile_callback;
 
 public:
-    ConnectivityManager(DeviceModel &device_model, std::shared_ptr<EvseSecurity> evse_security,
+    ConnectivityManager(DeviceModel& device_model, std::shared_ptr<EvseSecurity> evse_security,
                         std::shared_ptr<MessageLogging> logging,
                         std::function<void(const std::string& message)> message_callback);
     virtual ~ConnectivityManager();
@@ -165,6 +164,9 @@ private: // Functions
     void on_websocket_closed_callback(const int configuration_slot,
                                       const std::optional<NetworkConnectionProfile> network_connection_profile,
                                       const WebsocketCloseReason reason);
+    void on_websocket_failed_callback(const int configuration_slot,
+                                      const std::optional<NetworkConnectionProfile> network_connection_profile,
+                                      const WebsocketCloseReason reason);
 
     ///
     /// \brief Get the active network configuration slot in use.
@@ -183,7 +185,8 @@ private: // Functions
     bool is_higher_priority_profile(const int32_t new_configuration_slot);
 
     void set_retry_connection_timer(const std::chrono::seconds timeout);
-    long get_reconnect_interval();
+    std::chrono::seconds get_reconnect_interval();
+    void reconnect(const int32_t configuration_slot, const bool next_profile);
 };
 
 } // namespace v201

@@ -48,6 +48,11 @@ void WebsocketBase::register_closed_callback(
     this->closed_callback = callback;
 }
 
+void WebsocketBase::register_failed_callback(const std::function<void (const WebsocketCloseReason)> &callback)
+{
+    this->failed_callback = callback;
+}
+
 void WebsocketBase::register_message_callback(const std::function<void(const std::string& message)>& callback) {
     this->message_callback = callback;
 }

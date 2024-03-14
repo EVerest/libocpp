@@ -354,11 +354,12 @@ void ConnectivityManager::init_websocket(std::optional<int32_t> config_slot) {
         }
     } else {
         // No callback configured, just connect to this profile.
+        this->requested_network_slot = 0;
     }
 
     this->current_connection_options = connection_options;
     this->connection_attempts = 0;
-    this->reconnect_backoff_ms = 0;
+    this->reconnect_backoff_ms = std::chrono::seconds(0);
     this->websocket = std::make_unique<Websocket>(connection_options, this->evse_security, this->logging);
     this->websocket->register_connected_callback([this, network_connection_profile](const int configuration_slot) {
         this->on_websocket_connected_callback(configuration_slot, network_connection_profile);
@@ -371,6 +372,11 @@ void ConnectivityManager::init_websocket(std::optional<int32_t> config_slot) {
     this->websocket->register_closed_callback(
         [this, config_slot_int, network_connection_profile](const WebsocketCloseReason reason) {
             this->on_websocket_closed_callback(config_slot_int, network_connection_profile, reason);
+        });
+
+    this->websocket->register_failed_callback(
+        [this, config_slot_int, network_connection_profile](const WebsocketCloseReason reason) {
+            this->on_websocket_failed_callback(config_slot_int, network_connection_profile, reason);
         });
 
     this->websocket->register_message_callback([this](const std::string& message) { this->message_callback(message); });
@@ -524,6 +530,10 @@ void ConnectivityManager::on_websocket_connected_callback(
         profile = network_connection_profile.value();
     }
 
+    // Reset connection attempts
+    this->connection_attempts = 1;
+    // TODO something with calling ping? set ping interval etc?
+
     {
         std::unique_lock<std::mutex> lock(this->config_slot_mutex);
 
@@ -536,51 +546,38 @@ void ConnectivityManager::on_websocket_connected_callback(
     }
 }
 
-void ConnectivityManager::on_websocket_disconnected_callback(
-    const int configuration_slot, const std::optional<NetworkConnectionProfile> network_connection_profile) {
+// void ConnectivityManager::on_websocket_disconnected_callback(
+//     const int configuration_slot, const std::optional<NetworkConnectionProfile> network_connection_profile) {
 
-    EVLOG_info << "Websocket disconnected: " << configuration_slot;
+//     EVLOG_info << "Websocket disconnected: " << configuration_slot;
 
-    NetworkConnectionProfile profile;
-    if (this->active_network_slot != configuration_slot || !network_connection_profile.has_value()) {
-        const std::optional<NetworkConnectionProfile> network_connection_profile_opt =
-            this->get_network_connection_profile(configuration_slot);
-        if (!network_connection_profile_opt.has_value()) {
-            EVLOG_error << "Could not find network connection profile that websocket is connected to.";
-            // TODO what to do here??? Pending = active, active = 0???
-            return;
-        }
+//     NetworkConnectionProfile profile;
+//     if (this->active_network_slot != configuration_slot || !network_connection_profile.has_value()) {
+//         const std::optional<NetworkConnectionProfile> network_connection_profile_opt =
+//             this->get_network_connection_profile(configuration_slot);
+//         if (!network_connection_profile_opt.has_value()) {
+//             EVLOG_error << "Could not find network connection profile that websocket is connected to.";
+//             // TODO what to do here??? Pending = active, active = 0???
+//             return;
+//         }
 
-        profile = network_connection_profile_opt.value();
-    } else {
-        profile = network_connection_profile.value();
-    }
+//         profile = network_connection_profile_opt.value();
+//     } else {
+//         profile = network_connection_profile.value();
+//     }
 
-    // TODO the whole reconnect timeout stuff. When to reconnect and when to connect to new slot and when to wait for
-    // a timeout and when not?
-    if (true) // TODO check needs to reconnect (instead of 'true')
-    {
-        using namespace std::chrono_literals;
-        std::unique_lock<std::mutex> lock(this->config_slot_mutex);
-        this->pending_network_slot = this->active_network_slot;
-        this->active_network_slot = 0;
-        set_retry_connection_timer(20s);
-    } else {
-        this->requested_network_slot = this->get_next_network_configuration_priority_slot(configuration_slot);
-        this->active_network_slot = 0;
-        this->pending_network_slot = 0;
-        this->try_reconnect.store(true);
-        this->reconnect_condition_variable.notify_all();
-    }
+//     // TODO the whole reconnect timeout stuff. When to reconnect and when to connect to new slot and when to wait for
+//     // a timeout and when not?
+//     reconnect(configuration_slot);
 
-    // TODO what to do here? Get next available profile? Call init? Set indeed pending_network_slot? ???
+//     // TODO what to do here? Get next available profile? Call init? Set indeed pending_network_slot? ???
 
-    if (this->websocket_disconnected_callback.has_value()) {
-        // TODO in this callback, the interface should not yet been closed. That should be done in the 'closed'
-        // callback??? Add websocket_closed_callback as well then (for external sources)???
-        this->websocket_disconnected_callback.value()(this->active_network_slot, profile);
-    }
-}
+//     if (this->websocket_disconnected_callback.has_value()) {
+//         // TODO in this callback, the interface should not yet been closed. That should be done in the 'closed'
+//         // callback??? Add websocket_closed_callback as well then (for external sources)???
+//         this->websocket_disconnected_callback.value()(this->active_network_slot, profile);
+//     }
+// }
 
 void ConnectivityManager::on_websocket_closed_callback(
     const int configuration_slot, const std::optional<NetworkConnectionProfile> network_connection_profile,
@@ -589,43 +586,51 @@ void ConnectivityManager::on_websocket_closed_callback(
     // TODO when is 'closed' exactly called? After max retries?
     EVLOG_info << "Websocket closed: " << configuration_slot;
     // TODO there was a timout here, put it back???
-    if (reason != WebsocketCloseReason::ServiceRestart) {
-        std::unique_lock<std::mutex> lock(this->config_slot_mutex);
-        // TODO what if requested_network_slot is now also 0???
-        this->requested_network_slot = this->get_next_network_configuration_priority_slot(configuration_slot);
-        this->active_network_slot = 0;
-        this->pending_network_slot = 0;
+    if (reason != WebsocketCloseReason::Normal) {
+        reconnect(configuration_slot, false);
+    } else {
+        NetworkConnectionProfile profile;
+        if (this->active_network_slot != configuration_slot || !network_connection_profile.has_value()) {
+            const std::optional<NetworkConnectionProfile> network_connection_profile_opt =
+                this->get_network_connection_profile(configuration_slot);
+            if (!network_connection_profile_opt.has_value()) {
+                EVLOG_error << "Could not find network connection profile that websocket is connected to.";
+                // TODO what to do here???
+                return;
+            }
 
-        EVLOG_info << "next network config ---->";
-    }
-    EVLOG_info << "start websocket after close---->";
-    // this->start();
-
-    // TODO below is a copy from on_websocket_disconnected_callback. Check if that function can be called here??
-
-    NetworkConnectionProfile profile;
-    if (this->active_network_slot != configuration_slot || !network_connection_profile.has_value()) {
-        const std::optional<NetworkConnectionProfile> network_connection_profile_opt =
-            this->get_network_connection_profile(configuration_slot);
-        if (!network_connection_profile_opt.has_value()) {
-            EVLOG_error << "Could not find network connection profile that websocket is connected to.";
-            // TODO what to do here???
-            return;
+            profile = network_connection_profile_opt.value();
+        } else {
+            profile = network_connection_profile.value();
         }
 
-        profile = network_connection_profile_opt.value();
-    } else {
-        profile = network_connection_profile.value();
+        if (this->websocket_disconnected_callback.has_value()) {
+            this->websocket_disconnected_callback.value()(configuration_slot, profile);
+        }
+
+        reconnect(configuration_slot, true);
     }
 
-    if (this->websocket_disconnected_callback.has_value()) {
-        this->websocket_disconnected_callback.value()(configuration_slot, profile);
-    }
+    // TODO why this if for service restart???
+    // if (reason != WebsocketCloseReason::ServiceRestart) {
+    //     std::unique_lock<std::mutex> lock(this->config_slot_mutex);
+    //     // TODO what if requested_network_slot is now also 0???
+    //     this->requested_network_slot = this->get_next_network_configuration_priority_slot(configuration_slot);
+    //     this->active_network_slot = 0;
+    //     this->pending_network_slot = 0;
 
-    std::unique_lock<std::mutex> lock(this->config_slot_mutex);
-    // Notify main thread that it should reconnect.
-    this->try_reconnect.store(true);
-    this->reconnect_condition_variable.notify_all();
+    //     EVLOG_info << "next network config ---->";
+    // }
+
+    EVLOG_info << "start websocket after close---->";
+    // this->start();
+}
+
+void ConnectivityManager::on_websocket_failed_callback(
+    const int configuration_slot, const std::optional<NetworkConnectionProfile> network_connection_profile,
+    const WebsocketCloseReason reason) {
+
+    reconnect(configuration_slot, false);
 }
 
 int32_t ConnectivityManager::get_active_network_configuration_slot() const {
@@ -692,7 +697,7 @@ void ConnectivityManager::set_retry_connection_timer(const std::chrono::seconds 
         timeout);
 }
 
-long ConnectivityManager::get_reconnect_interval() {
+std::chrono::seconds ConnectivityManager::get_reconnect_interval() {
     // We need to add 1 to the repeat times since the first try is already connection_attempt 1
     if (this->connection_attempts > (this->current_connection_options.retry_backoff_repeat_times + 1)) {
         return this->reconnect_backoff_ms;
@@ -705,13 +710,47 @@ long ConnectivityManager::get_reconnect_interval() {
     int random_number = distr(gen);
 
     if (this->connection_attempts == 1) {
-        this->reconnect_backoff_ms =
-            (this->current_connection_options.retry_backoff_wait_minimum_s + random_number) * 1000;
+        this->reconnect_backoff_ms = std::chrono::seconds(
+            (this->current_connection_options.retry_backoff_wait_minimum_s + random_number) * 1000);
         return this->reconnect_backoff_ms;
     }
 
-    this->reconnect_backoff_ms = this->reconnect_backoff_ms * 2 + (random_number * 1000);
+    this->reconnect_backoff_ms = this->reconnect_backoff_ms * 2 + std::chrono::seconds(random_number * 1000);
     return this->reconnect_backoff_ms;
+}
+
+void ConnectivityManager::reconnect(const int32_t configuration_slot, const bool next_profile) {
+    if (!next_profile || (this->current_connection_options.max_connection_attempts == -1 ||
+                          this->connection_attempts <= this->current_connection_options.max_connection_attempts)) {
+        std::unique_lock<std::mutex> lock(this->config_slot_mutex);
+        if (configuration_slot == this->active_network_slot) {
+            this->pending_network_slot = this->active_network_slot;
+            this->active_network_slot = 0;
+            this->connection_attempts += 1;
+            set_retry_connection_timer(get_reconnect_interval());
+        } else {
+            // TODO what to do here? Think of different scenario's when 'reconnect' is called.
+        }
+    } else {
+        // Try next profile.
+        // First remove current websocket.
+        this->websocket = nullptr;
+        // And call disconnected callback.
+        if (this->websocket_disconnected_callback.has_value()) {
+            std::optional<NetworkConnectionProfile> disconnected_profile =
+                this->get_network_connection_profile(configuration_slot);
+            if (disconnected_profile.has_value()) {
+                this->websocket_disconnected_callback.value()(
+                    configuration_slot, get_network_connection_profile(configuration_slot).value());
+            }
+        }
+        this->requested_network_slot = this->get_next_network_configuration_priority_slot(configuration_slot);
+        this->connection_attempts = 1;
+        this->active_network_slot = 0;
+        this->pending_network_slot = 0;
+        this->try_reconnect.store(true);
+        this->reconnect_condition_variable.notify_all();
+    }
 }
 
 } // namespace v201

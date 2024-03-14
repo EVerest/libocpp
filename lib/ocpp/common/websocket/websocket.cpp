@@ -81,6 +81,13 @@ void Websocket::register_closed_callback(
         [this](const WebsocketCloseReason reason) { this->closed_callback(reason); });
 }
 
+void Websocket::register_failed_callback(const std::function<void (const WebsocketCloseReason)> &callback)
+{
+    this->failed_callback = callback;
+    this->websocket->register_failed_callback(
+        [this](const WebsocketCloseReason reason) { this->failed_callback(reason); });
+}
+
 void Websocket::register_message_callback(const std::function<void(const std::string& message)>& callback) {
     this->message_callback = callback;
 
