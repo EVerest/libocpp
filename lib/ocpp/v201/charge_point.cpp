@@ -1449,7 +1449,7 @@ void ChargePoint::handle_variable_changed(const SetVariableData& set_variable_da
     // TODO(piet): other special handling of changed variables can be added here...
 }
 
-void ChargePoint::handle_variables_changed(const std::map<SetVariableData, SetVariableResult> set_variable_results) {
+void ChargePoint::handle_variables_changed(const std::map<SetVariableData, SetVariableResult>& set_variable_results) {
     // iterate over set_variable_results
     for (const auto& [set_variable_data, set_variable_result] : set_variable_results) {
         if (set_variable_result.attributeStatus == SetVariableStatusEnum::Accepted) {
@@ -1509,7 +1509,7 @@ bool ChargePoint::validate_set_variable(const SetVariableData& set_variable_data
 }
 
 std::map<SetVariableData, SetVariableResult>
-ChargePoint::set_variables_internal(const std::vector<SetVariableData> set_variable_data_vector,
+ChargePoint::set_variables_internal(const std::vector<SetVariableData>& set_variable_data_vector,
                                     const bool allow_read_only) {
     std::map<SetVariableData, SetVariableResult> response;
 
@@ -3121,7 +3121,8 @@ void ChargePoint::execute_change_availability_request(ChangeAvailabilityRequest 
     }
 }
 
-std::vector<GetVariableResult> ChargePoint::get_variables(const std::vector<GetVariableData> get_variable_data_vector) {
+std::vector<GetVariableResult>
+ChargePoint::get_variables(const std::vector<GetVariableData>& get_variable_data_vector) {
     std::vector<GetVariableResult> response;
     for (const auto& get_variable_data : get_variable_data_vector) {
         GetVariableResult get_variable_result;
@@ -3142,7 +3143,7 @@ std::vector<GetVariableResult> ChargePoint::get_variables(const std::vector<GetV
 }
 
 std::map<SetVariableData, SetVariableResult>
-ChargePoint::set_variables(const std::vector<SetVariableData> set_variable_data_vector) {
+ChargePoint::set_variables(const std::vector<SetVariableData>& set_variable_data_vector) {
     // set variables and allow setting of ReadOnly variables
     return this->set_variables_internal(set_variable_data_vector, true);
 }
