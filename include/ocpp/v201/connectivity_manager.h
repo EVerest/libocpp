@@ -34,7 +34,7 @@ private: // Members
     Everest::SteadyTimer reconnect_timer;
     WebsocketConnectionOptions current_connection_options;
     int connection_attempts;
-    std::chrono::seconds reconnect_backoff_ms;
+    std::chrono::milliseconds reconnect_backoff_ms;
 
     /* Callbacks for networking */
     std::function<void(const std::string& message)> message_callback;
@@ -141,7 +141,7 @@ private: // Functions
 
     /// @brief Initialize the websocket connection.
     /// @param configuration_slot Optional configuration slot to initialize the websocket to.
-    void init_websocket(std::optional<int32_t> config_slot = std::nullopt);
+    bool init_websocket(std::optional<int32_t> config_slot = std::nullopt);
     WebsocketConnectionOptions get_ws_connection_options(const int32_t configuration_slot);
 
     /// \brief Gets the configured NetworkConnectionProfile based on the given \p configuration_slot . The
@@ -159,8 +159,8 @@ private: // Functions
 
     void on_websocket_connected_callback(const int configuration_slot,
                                          const std::optional<NetworkConnectionProfile> network_connection_profile);
-    void on_websocket_disconnected_callback(const int configuration_slot,
-                                            const std::optional<NetworkConnectionProfile> network_connection_profile);
+    // void on_websocket_disconnected_callback(const int configuration_slot,
+    //                                         const std::optional<NetworkConnectionProfile> network_connection_profile);
     void on_websocket_closed_callback(const int configuration_slot,
                                       const std::optional<NetworkConnectionProfile> network_connection_profile,
                                       const WebsocketCloseReason reason);
@@ -184,8 +184,8 @@ private: // Functions
     ///
     bool is_higher_priority_profile(const int32_t new_configuration_slot);
 
-    void set_retry_connection_timer(const std::chrono::seconds timeout);
-    std::chrono::seconds get_reconnect_interval();
+    void set_retry_connection_timer(const std::chrono::milliseconds timeout);
+    std::chrono::milliseconds get_reconnect_interval();
     void reconnect(const int32_t configuration_slot, const bool next_profile);
 };
 
