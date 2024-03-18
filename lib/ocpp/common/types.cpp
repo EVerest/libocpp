@@ -606,8 +606,8 @@ std::ostream& operator<<(std::ostream& os, const CaCertificateType& ca_certifica
 namespace conversions {
 std::string certificate_validation_result_to_string(CertificateValidationResult e) {
     switch (e) {
-    case CertificateValidationResult::Accepted:
-        return "Accepted";
+    case CertificateValidationResult::Valid:
+        return "Valid";
     case CertificateValidationResult::Expired:
         return "Expired";
     case CertificateValidationResult::InvalidSignature:
@@ -626,8 +626,8 @@ std::string certificate_validation_result_to_string(CertificateValidationResult 
 }
 
 CertificateValidationResult string_to_certificate_validation_result(const std::string& s) {
-    if (s == "Accepted") {
-        return CertificateValidationResult::Accepted;
+    if (s == "Valid") {
+        return CertificateValidationResult::Valid;
     }
     if (s == "Expired") {
         return CertificateValidationResult::Expired;

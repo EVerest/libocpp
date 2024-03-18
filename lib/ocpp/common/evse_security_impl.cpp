@@ -41,7 +41,8 @@ InstallCertificateResult EvseSecurityImpl::update_leaf_certificate(const std::st
 }
 
 CertificateValidationResult EvseSecurityImpl::verify_certificate(const std::string& certificate_chain,
-                                                                 const CaCertificateType& certificate_type) {
+                                                                 const LeafCertificateType& certificate_type) {
+    
     return conversions::to_ocpp(
         this->evse_security->verify_certificate(certificate_chain, conversions::from_ocpp(certificate_type)));
 }
@@ -64,10 +65,10 @@ EvseSecurityImpl::get_installed_certificates(const std::vector<CertificateType>&
     return result;
 }
 
-std::vector<OCSPRequestData> EvseSecurityImpl::get_ocsp_request_data() {
+std::vector<OCSPRequestData> EvseSecurityImpl::get_v2g_ocsp_request_data() {
     std::vector<OCSPRequestData> result;
 
-    const auto ocsp_request_data = this->evse_security->get_ocsp_request_data();
+    const auto ocsp_request_data = this->evse_security->get_v2g_ocsp_request_data();
     for (const auto& ocsp_request_entry : ocsp_request_data.ocsp_request_data_list) {
         result.push_back(conversions::to_ocpp(ocsp_request_entry));
     }
@@ -75,12 +76,11 @@ std::vector<OCSPRequestData> EvseSecurityImpl::get_ocsp_request_data() {
     return result;
 }
 
-std::vector<OCSPRequestData> EvseSecurityImpl::get_ocsp_request_data(const std::string& certificate_chain,
-                                                                     const CaCertificateType& certificate_type) {
+std::vector<OCSPRequestData> EvseSecurityImpl::get_ocsp_request_data(const std::string& certificate_chain) {
     std::vector<OCSPRequestData> result;
 
     const auto ocsp_request_data =
-        this->evse_security->get_ocsp_request_data(certificate_chain, conversions::from_ocpp(certificate_type));
+        this->evse_security->get_ocsp_request_data(certificate_chain);
     for (const auto& ocsp_request_entry : ocsp_request_data.ocsp_request_data_list) {
         result.push_back(conversions::to_ocpp(ocsp_request_entry));
     }
@@ -185,28 +185,6 @@ HashAlgorithmEnumType to_ocpp(evse_security::HashAlgorithm other) {
         return HashAlgorithmEnumType::SHA512;
     default:
         throw std::runtime_error("Could not convert evse_security::HashAlgorithm to HashAlgorithmEnumType");
-    }
-}
-
-CertificateValidationResult to_ocpp(evse_security::CertificateValidationError other) {
-    switch (other) {
-    case evse_security::CertificateValidationError::NoError:
-        return CertificateValidationResult::Accepted;
-    case evse_security::CertificateValidationError::Expired:
-        return CertificateValidationResult::Expired;
-    case evse_security::CertificateValidationError::InvalidSignature:
-        return CertificateValidationResult::InvalidSignature;
-    case evse_security::CertificateValidationError::IssuerNotFound:
-        return CertificateValidationResult::IssuerNotFound;
-    case evse_security::CertificateValidationError::InvalidLeafSignature:
-        return CertificateValidationResult::InvalidLeafSignature;
-    case evse_security::CertificateValidationError::InvalidChain:
-        return CertificateValidationResult::InvalidChain;
-    case evse_security::CertificateValidationError::Unknown:
-        return CertificateValidationResult::Unknown;
-    default:
-        throw std::runtime_error(
-            "Could not convert evse_security::CertificateValidationError to CertificateValidationResult");
     }
 }
 
@@ -326,6 +304,21 @@ evse_security::CaCertificateType from_ocpp(CaCertificateType other) {
         return evse_security::CaCertificateType::CSMS;
     case CaCertificateType::MF:
         return evse_security::CaCertificateType::MF;
+    default:
+        throw std::runtime_error("Could not convert evse_security::CaCertificateType to CaCertificateType");
+    }
+}
+
+evse_security::LeafCertificateType from_ocpp(LeafCertificateType other) {
+    switch (other) {
+    case LeafCertificateType::V2G:
+        return evse_security::LeafCertificateType::V2G;
+    case LeafCertificateType::MO:
+        return evse_security::LeafCertificateType::MO;
+    case LeafCertificateType::CSMS:
+        return evse_security::LeafCertificateType::CSMS;
+    case LeafCertificateType::MF:
+        return evse_security::LeafCertificateType::MF;
     default:
         throw std::runtime_error("Could not convert evse_security::CaCertificateType to CaCertificateType");
     }

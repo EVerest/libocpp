@@ -547,7 +547,7 @@ bool ChargePoint::on_charging_state_changed(const uint32_t evse_id, ChargingStat
 std::vector<OCSPRequestData> ChargePoint::generate_ocsp_data(const CiString<5500>& certificate) {
     std::vector<OCSPRequestData> ocsp_request_data_list;
     const auto ocsp_data_list =
-        this->evse_security->get_ocsp_request_data(certificate.get(), ocpp::CaCertificateType::MO);
+        this->evse_security->get_ocsp_request_data(certificate.get());
     for (const auto& ocsp_data : ocsp_data_list) {
         OCSPRequestData request;
         switch (ocsp_data.hashAlgorithm) {
@@ -604,7 +604,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
         } else if (certificate.has_value()) {
             // First try to validate the contract certificate locally
             CertificateValidationResult localVerifyResult =
-                this->evse_security->verify_certificate(certificate.value().get(), ocpp::CaCertificateType::MO);
+                this->evse_security->verify_certificate(certificate.value().get(), ocpp::LeafCertificateType::MO);
             EVLOG_info << "Local contract validation result: " << localVerifyResult;
 
             bool CentralContractValidationAllowed =
@@ -653,7 +653,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
                     switch (localVerifyResult) {
                     // C07.FR.09: CS shall lookup the eMAID in Local Auth List or Auth Cache when
                     // local validation succeeded
-                    case CertificateValidationResult::Accepted:
+                    case CertificateValidationResult::Valid:
                         // In C07.FR.09 LocalAuthorizeOffline is mentioned, this seems to be a generic config item
                         // that applies to Local Auth List and Auth Cache, but since there are no requirements about
                         // it, lets check it here

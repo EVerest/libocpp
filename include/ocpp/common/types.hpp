@@ -336,7 +336,7 @@ CaCertificateType string_to_ca_certificate_type(const std::string& s);
 std::ostream& operator<<(std::ostream& os, const CaCertificateType& ca_certificate_type);
 
 enum class CertificateValidationResult {
-    Accepted,
+    Valid,
     Expired,
     InvalidSignature,
     IssuerNotFound,
@@ -370,16 +370,6 @@ enum class InstallCertificateResult {
     CertificateStoreMaxLengthExceeded,
     WriteError,
     Accepted
-};
-
-enum class CertificateValidationResult {
-    Valid,
-    Expired,
-    InvalidSignature,
-    IssuerNotFound,
-    InvalidLeafSignature,
-    InvalidChain,
-    Unknown
 };
 
 namespace conversions {
@@ -546,6 +536,13 @@ struct KeyPair {
     fs::path certificate_single_path;    // path to the single leaf certificate
     fs::path key_path;                   // path to private key of the leaf certificate
     std::optional<std::string> password; // optional password for the private key
+};
+
+enum class LeafCertificateType {
+    CSMS, // Charging Station Management System
+    V2G, // Vehicle to grid
+    MF, // Manufacturer
+    MO // Mobility Operator
 };
 
 namespace conversions {
