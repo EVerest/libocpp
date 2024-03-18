@@ -33,6 +33,12 @@ Websocket::Websocket(const WebsocketConnectionOptions& connection_options, std::
 }
 
 Websocket::~Websocket() {
+    if (this->websocket != nullptr)
+    {
+        this->websocket->disconnect(WebsocketCloseReason::GoingAway);
+        this->websocket->close(WebsocketCloseReason::GoingAway, "", true);
+        this->websocket = nullptr;
+    }
 }
 
 bool Websocket::connect() {
