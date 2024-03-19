@@ -59,7 +59,6 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
                          const Callbacks& callbacks) :
     ocpp::ChargingStationBase(evse_security),
     registration_status(RegistrationStatusEnum::Rejected),
-    network_configuration_priority(0),
     skip_invalid_csms_certificate_notifications(false),
     reset_scheduled(false),
     reset_scheduled_evseids{},
@@ -895,16 +894,6 @@ std::optional<NetworkConnectionProfile> ChargePoint::get_network_connection_prof
     return std::nullopt;
 }
 
-void ChargePoint::next_network_configuration_priority() {
-    const auto network_connection_priorities = ocpp::get_vector_from_csv(
-        this->device_model->get_value<std::string>(ControllerComponentVariables::NetworkConfigurationPriority));
-    if (network_connection_priorities.size() > 1) {
-        EVLOG_info << "Switching to next network configuration priority";
-    }
-    this->network_configuration_priority =
-        (this->network_configuration_priority + 1) % (network_connection_priorities.size());
-}
-
 void ChargePoint::remove_network_connection_profiles_below_actual_security_profile() {
     // Remove all the profiles that are a lower security level than security_level
     const auto security_level = this->device_model->get_value<int>(ControllerComponentVariables::SecurityProfile);
@@ -1424,10 +1413,14 @@ void ChargePoint::handle_variable_changed(const SetVariableData& set_variable_da
 
     if (component_variable_change_requires_websocket_option_update_without_reconnect(component_variable)) {
         EVLOG_debug << "Reconfigure websocket due to relevant change of ControllerComponentVariable";
+        uint32_t active_slot = 0;
+        if (connectivity_manager != nullptr) {
+            active_slot = static_cast<uint32_t>(connectivity_manager->get_active_network_configuration_slot());
+        }
         const auto configuration_slot =
             ocpp::get_vector_from_csv(
                 this->device_model->get_value<std::string>(ControllerComponentVariables::NetworkConfigurationPriority))
-                .at(this->network_configuration_priority);
+                .at(active_slot);
         const auto connection_options = this->get_ws_connection_options(std::stoi(configuration_slot));
         if (connectivity_manager != nullptr) {
             this->connectivity_manager->set_websocket_connection_options(connection_options);

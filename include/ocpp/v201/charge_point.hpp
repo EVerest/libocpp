@@ -233,7 +233,6 @@ private:
     UploadLogStatusEnum upload_log_status;
     int32_t upload_log_status_id;
     BootReasonEnum bootreason;
-    uint32_t network_configuration_priority;
     bool skip_invalid_csms_certificate_notifications;
 
     /// \brief Component responsible for maintaining and persisting the operational status of CS, EVSEs, and connectors.

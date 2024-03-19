@@ -198,6 +198,11 @@ void ConnectivityManager::set_websocket_connection_options(const WebsocketConnec
     }
 }
 
+int32_t ConnectivityManager::get_active_network_configuration_slot() const {
+    std::unique_lock<std::recursive_mutex> lock(this->config_slot_mutex);
+    return (active_network_slot != 0 ? active_network_slot : pending_network_slot);
+}
+
 void ConnectivityManager::run() {
     {
         std::unique_lock<std::mutex> lock(reconnect_mutex);
@@ -320,7 +325,7 @@ bool ConnectivityManager::init_websocket(std::optional<int32_t> config_slot) {
         }
         case std::future_status::ready: {
             ConfigNetworkResult result = config_status.get();
-            if (result.success) {
+            if (result.success && result.network_profile_slot == config_slot_int) {
                 EVLOG_debug << "Config slot " << config_slot_int << " is configured, try to connect";
                 connection_options.iface_or_ip = result.interface_address;
                 this->pending_network_slot = config_slot_int;
@@ -461,51 +466,6 @@ int32_t ConnectivityManager::get_next_network_configuration_priority_slot(const 
     return std::stoi(new_prio_string);
 }
 
-void ConnectivityManager::remove_network_connection_profiles_below_actual_security_profile() {
-    // Remove all the profiles that are a lower security level than security_level
-    const auto security_level = this->device_model.get_value<int>(ControllerComponentVariables::SecurityProfile);
-
-    auto network_connection_profiles =
-        json::parse(this->device_model.get_value<std::string>(ControllerComponentVariables::NetworkConnectionProfiles));
-
-    auto is_lower_security_level = [security_level](const SetNetworkProfileRequest& item) {
-        return item.connectionData.securityProfile < security_level;
-    };
-
-    network_connection_profiles.erase(
-        std::remove_if(network_connection_profiles.begin(), network_connection_profiles.end(), is_lower_security_level),
-        network_connection_profiles.end());
-
-    this->device_model.set_value(ControllerComponentVariables::NetworkConnectionProfiles.component,
-                                 ControllerComponentVariables::NetworkConnectionProfiles.variable.value(),
-                                 AttributeEnum::Actual, network_connection_profiles.dump());
-
-    // Update the NetworkConfigurationPriority so only remaining profiles are in there
-    const auto network_priority = ocpp::get_vector_from_csv(
-        this->device_model.get_value<std::string>(ControllerComponentVariables::NetworkConfigurationPriority));
-
-    auto in_network_profiles = [&network_connection_profiles](const std::string& item) {
-        auto is_same_slot = [&item](const SetNetworkProfileRequest& profile) {
-            return std::to_string(profile.configurationSlot) == item;
-        };
-        return std::any_of(network_connection_profiles.begin(), network_connection_profiles.end(), is_same_slot);
-    };
-
-    std::string new_network_priority;
-    for (const auto& item : network_priority) {
-        if (in_network_profiles(item)) {
-            if (!new_network_priority.empty()) {
-                new_network_priority += ',';
-            }
-            new_network_priority += item;
-        }
-    }
-
-    this->device_model.set_value(ControllerComponentVariables::NetworkConfigurationPriority.component,
-                                 ControllerComponentVariables::NetworkConfigurationPriority.variable.value(),
-                                 AttributeEnum::Actual, new_network_priority);
-}
-
 void ConnectivityManager::on_websocket_connected_callback(
     const int configuration_slot, const std::optional<NetworkConnectionProfile> network_connection_profile) {
     NetworkConnectionProfile profile;
@@ -587,11 +547,6 @@ void ConnectivityManager::on_websocket_failed_callback(
 
     EVLOG_debug << "Websocket failed, reason: " << static_cast<uint32_t>(reason);
     reconnect(configuration_slot, false);
-}
-
-int32_t ConnectivityManager::get_active_network_configuration_slot() const {
-    std::unique_lock<std::recursive_mutex> lock(this->config_slot_mutex);
-    return (active_network_slot != 0 ? active_network_slot : pending_network_slot);
 }
 
 std::optional<int32_t> ConnectivityManager::get_configuration_slot_priority(const int32_t configuration_slot) {

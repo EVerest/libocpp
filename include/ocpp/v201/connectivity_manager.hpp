@@ -190,6 +190,12 @@ public:
     ///
     void set_websocket_connection_options(const WebsocketConnectionOptions& connection_options);
 
+    ///
+    /// \brief Get the active network configuration slot in use.
+    /// \return The active slot the network is connected to or the pending slot.
+    ///
+    int32_t get_active_network_configuration_slot() const;
+
 private: // Functions
     // Disable copy constructor.
     ConnectivityManager(const ConnectivityManager&) = delete;
@@ -211,10 +217,6 @@ private: // Functions
     std::optional<NetworkConnectionProfile> get_network_connection_profile(const int32_t configuration_slot);
     /// \brief Get next network slot for next priority.
     int32_t get_next_network_configuration_priority_slot(const int32_t configuration_slot);
-
-    /// @brief Removes all network connection profiles below the actual security profile and stores the new list in the
-    /// device model
-    void remove_network_connection_profiles_below_actual_security_profile();
 
     ///
     /// \brief Called when the websocket is connected.
@@ -243,12 +245,6 @@ private: // Functions
     void on_websocket_failed_callback(const int configuration_slot,
                                       const std::optional<NetworkConnectionProfile> network_connection_profile,
                                       const WebsocketCloseReason reason);
-
-    ///
-    /// \brief Get the active network configuration slot in use.
-    /// \return The active slot the network is connected to or the pending slot.
-    ///
-    int32_t get_active_network_configuration_slot() const;
 
     ///
     /// \brief Get the priority of the given configuration slot.
