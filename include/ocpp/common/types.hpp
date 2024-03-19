@@ -639,8 +639,7 @@ enum class MessageDirection {
 ///
 /// \brief Reason why a websocket closes its connection
 ///
-enum class WebsocketCloseReason : uint8_t
-{
+enum class WebsocketCloseReason : uint8_t {
     /// Normal closure, meaning that the purpose for which the connection was
     /// established has been fulfilled.
     Normal = 1,

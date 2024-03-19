@@ -180,9 +180,8 @@ struct Callbacks {
         validate_network_profile_callback;
 
     /// @brief register a \p callback that is called when the network connection profile is to be configured.
-    std::optional<
-        std::function<std::future<ConfigNetworkResult>(const int32_t configurationSlot,
-                                                       const NetworkConnectionProfile& network_connection_profile)>>
+    std::optional<std::function<std::future<ConfigNetworkResult>(
+        const int32_t configurationSlot, const NetworkConnectionProfile& network_connection_profile)>>
         configure_network_connection_profile_callback;
 
     /// \breif Callback function that is called when a transaction_event was sent to the CSMS
@@ -286,8 +285,10 @@ private:
     void init_certificate_expiration_check_timers();
     void scheduled_check_client_certificate_expiration();
     void scheduled_check_v2g_certificate_expiration();
-    void websocket_connected_callback(const int configuration_slot, const NetworkConnectionProfile& network_connection_profile);
-    void websocket_disconnected_callback(const int configuration_slot, const NetworkConnectionProfile& network_connection_profile);
+    void websocket_connected_callback(const int configuration_slot,
+                                      const NetworkConnectionProfile& network_connection_profile);
+    void websocket_disconnected_callback(const int configuration_slot,
+                                         const NetworkConnectionProfile& network_connection_profile);
 
     /// \brief Gets the configured NetworkConnectionProfile based on the given \p configuration_slot . The
     /// central system uri ofthe connection options will not contain ws:// or wss:// because this method removes it if

@@ -211,9 +211,7 @@ void ConnectivityManager::run() {
         EVLOG_debug << "Init and connect websocket for requested network slot: " << this->requested_network_slot;
         if (this->init_websocket(this->requested_network_slot) && this->websocket != nullptr) {
             this->websocket->connect();
-        }
-        else
-        {
+        } else {
             // TODO what to do here???
         }
         // else set try reconnect to true???
@@ -234,9 +232,7 @@ void ConnectivityManager::run() {
         } else {
             if (this->init_websocket(this->pending_network_slot) && this->websocket != nullptr) {
                 this->websocket->connect();
-            }
-            else
-            {
+            } else {
                 // TODO what to do here???
             }
         }
@@ -349,8 +345,7 @@ bool ConnectivityManager::init_websocket(std::optional<int32_t> config_slot) {
 
     this->current_connection_options = connection_options;
     this->connection_attempts = 0;
-    if (this->websocket != nullptr)
-    {
+    if (this->websocket != nullptr) {
         this->websocket->disconnect(WebsocketCloseReason::ServiceRestart);
     }
 
@@ -555,13 +550,10 @@ void ConnectivityManager::on_websocket_closed_callback(
         return;
     }
 
-
-    if (reason == WebsocketCloseReason::ServiceRestart || reason == WebsocketCloseReason::GoingAway)
-    {
+    if (reason == WebsocketCloseReason::ServiceRestart || reason == WebsocketCloseReason::GoingAway) {
         EVLOG_debug << "Websocket closed, service restart or going away reason, do nothing...";
         // TODO Do nothing?? Because we did this ourselves in our own process so we will reconnect ourselves as well...
-    }
-    else if (reason != WebsocketCloseReason::Normal) {
+    } else if (reason != WebsocketCloseReason::Normal) {
         // TODO only call this when we did not initiate the close ourselves...
         reconnect(configuration_slot, false);
     } else {
@@ -686,8 +678,7 @@ std::chrono::milliseconds ConnectivityManager::get_reconnect_interval() {
 }
 
 void ConnectivityManager::reconnect(const int32_t configuration_slot, const bool next_profile) {
-    if (!running)
-    {
+    if (!running) {
         EVLOG_debug << "Not reconnecting, because connectivity manager stopped running.";
         this->try_reconnect.store(true);
         this->reconnect_condition_variable.notify_all();
@@ -698,8 +689,7 @@ void ConnectivityManager::reconnect(const int32_t configuration_slot, const bool
                           this->connection_attempts <= this->current_connection_options.max_connection_attempts)) {
         std::unique_lock<std::recursive_mutex> lock(this->config_slot_mutex);
         if (configuration_slot == this->active_network_slot || configuration_slot == this->pending_network_slot) {
-            if (this->active_network_slot != 0)
-            {
+            if (this->active_network_slot != 0) {
                 // Set pending network slot to current active network slot.
                 // TODO is that correct? Or should we do that somewhere else than here?
                 this->pending_network_slot = this->active_network_slot;
@@ -712,9 +702,7 @@ void ConnectivityManager::reconnect(const int32_t configuration_slot, const bool
             // Probably in the state to get information from the system if the requested network is up.
             this->connection_attempts += 1;
             set_retry_connection_timer(get_reconnect_interval());
-        }
-        else
-        {
+        } else {
             // TODO what to do here? Think of different scenario's when 'reconnected' is called.
         }
     } else {

@@ -1401,8 +1401,7 @@ void ChargePoint::handle_variable_changed(const SetVariableData& set_variable_da
     if (component_variable == ControllerComponentVariables::BasicAuthPassword) {
         if (this->device_model->get_value<int>(ControllerComponentVariables::SecurityProfile) < 3) {
             // TODO: A01.FR.11 log the change of BasicAuth in Security Log
-            if (this->connectivity_manager != nullptr)
-            {
+            if (this->connectivity_manager != nullptr) {
                 this->connectivity_manager->set_websocket_authorization_key(set_variable_data.attributeValue.get());
                 this->connectivity_manager->disconnect_websocket(WebsocketCloseReason::ServiceRestart);
             }
@@ -3080,7 +3079,8 @@ void ChargePoint::websocket_connected_callback(const int configuration_slot,
     const auto& security_profile_cv = ControllerComponentVariables::SecurityProfile;
     if (security_profile_cv.variable.has_value()) {
         this->device_model->set_read_only_value(security_profile_cv.component, security_profile_cv.variable.value(),
-                                                AttributeEnum::Actual, std::to_string(network_connection_profile.securityProfile));
+                                                AttributeEnum::Actual,
+                                                std::to_string(network_connection_profile.securityProfile));
     }
 
     // call the registered websocket connected callback if it exists
@@ -3096,8 +3096,8 @@ void ChargePoint::websocket_connected_callback(const int configuration_slot,
 
         // B04.FR.01
         // If offline period exceeds offline threshold then send the status notification for all connectors
-        if (offline_duration > std::chrono::seconds(this->device_model->get_value<int>(
-                                   ControllerComponentVariables::OfflineThreshold))) {
+        if (offline_duration >
+            std::chrono::seconds(this->device_model->get_value<int>(ControllerComponentVariables::OfflineThreshold))) {
             EVLOG_debug << "offline for more than offline threshold ";
             this->component_state_manager->send_status_notification_all_connectors();
         } else {
