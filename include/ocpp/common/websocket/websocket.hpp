@@ -21,7 +21,6 @@ private:
     // unique_ptr holds address of base - requires WebSocketBase to have a virtual destructor
     std::unique_ptr<WebsocketBase> websocket;
     std::function<void(const int security_profile)> connected_callback;
-    // std::function<void()> disconnected_callback;
     std::function<void(const WebsocketCloseReason reason)> closed_callback;
     std::function<void(const WebsocketCloseReason reason)> failed_callback;
     std::function<void(const std::string& message)> message_callback;
@@ -42,7 +41,6 @@ public:
     void disconnect(const WebsocketCloseReason code);
 
     // \brief reconnects the websocket after the delay
-    // void reconnect(std::error_code reason, long delay);
     void reconnect();
 
     /// \brief indicates if the websocket is connected
@@ -50,9 +48,6 @@ public:
 
     /// \brief register a \p callback that is called when the websocket is connected successfully
     void register_connected_callback(const std::function<void(const int security_profile)>& callback);
-
-    /// \brief register a \p callback that is called when the websocket connection is disconnected
-    // void register_disconnected_callback(const std::function<void()>& callback);
 
     /// \brief register a \p callback that is called when the websocket connection has been closed and will not attempt
     /// to reconnect

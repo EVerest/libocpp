@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
+
 #pragma once
 
 #include <functional>
@@ -42,7 +45,9 @@ private: // Members
     ///        variable.
     std::atomic_bool try_reconnect;
     /// \brief Mutex for the requested, pending and active network slot.
-    mutable std::mutex config_slot_mutex;
+    mutable std::recursive_mutex config_slot_mutex;
+    /// \brief Mutex for the condition variable.
+    mutable std::mutex reconnect_mutex;
     /// \brief Condition variable that waits until it gets a sign to reconnect.
     std::condition_variable reconnect_condition_variable;
     /// \brief Reference to the device model class.
@@ -55,7 +60,7 @@ private: // Members
     std::unique_ptr<Websocket> websocket;
     /// \brief The potential interface to use requested by libocpp, but not 'approved' by 'core' yet.
     int32_t requested_network_slot;
-    /// \brief The interface which will be used to connect
+    /// \brief The interface which will be used to connect, pending connection at the websocket.
     int32_t pending_network_slot;
     /// \brief The interface which is currently in use by the websocket
     int32_t active_network_slot;
@@ -132,16 +137,14 @@ public:
     /// \brief Stops the ChargePoint. Disconnects the websocket connection and stops MessageQueue and all timers
     void stop();
 
-    /// @brief Initializes the websocket and connects to CSMS if it is not yet connected.
-    /// @param configuration_slot Optional configuration slot to connect to
-    void connect_websocket(std::optional<int32_t> config_slot = std::nullopt);
-
     /// \brief Disconnects the the websocket connection to the CSMS if it is connected
     /// \param code Optional websocket close status code (default: normal).
     void disconnect_websocket(WebsocketCloseReason code = WebsocketCloseReason::Normal);
 
     /// \brief Switch to a specifc network connection profile given the configuration slot.
-    /// This disregards the prority
+    ///
+    /// Switch will only be done when the configuration slot has a higher priority.
+    ///
     /// \param configuration_slot Slot in which the configuration is stored
     /// \return true if the switch is possible.
     bool on_try_switch_network_connection_profile(const int32_t configuration_slot);

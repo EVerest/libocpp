@@ -20,7 +20,7 @@
 #include <ocpp/v201/types.hpp>
 #include <ocpp/v201/utils.hpp>
 
-#include "ocpp/v201/connectivity_manager.h"
+#include "ocpp/v201/connectivity_manager.hpp"
 #include "ocpp/v201/messages/Get15118EVCertificate.hpp"
 #include <ocpp/v201/messages/Authorize.hpp>
 #include <ocpp/v201/messages/BootNotification.hpp>
