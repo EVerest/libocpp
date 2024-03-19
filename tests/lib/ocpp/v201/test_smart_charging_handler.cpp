@@ -249,67 +249,6 @@ TEST_F(ChargepointTestFixtureV201, K01FR09_IfTxProfileEvseHasNoActiveTransaction
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::TxProfileEvseHasNoActiveTransaction));
 }
 
-TEST_F(ChargepointTestFixtureV201,
-       K01FR06_IfTxProfileHasSameTransactionAndStackLevelAsAnotherTxProfile_ThenProfileIsInvalid) {
-    create_evse_with_id(DEFAULT_EVSE_ID);
-    std::string transaction_id = uuid();
-    open_evse_transaction(DEFAULT_EVSE_ID, transaction_id);
-
-    auto same_stack_level = 42;
-    auto profile_1 = create_charging_profile(DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
-                                             create_charge_schedule(ChargingRateUnitEnum::A), transaction_id,
-                                             ChargingProfileKindEnum::Absolute, same_stack_level);
-    auto profile_2 = create_charging_profile(DEFAULT_PROFILE_ID + 1, ChargingProfilePurposeEnum::TxProfile,
-                                             create_charge_schedule(ChargingRateUnitEnum::A), transaction_id,
-                                             ChargingProfileKindEnum::Absolute, same_stack_level);
-    handler.add_profile(DEFAULT_EVSE_ID, profile_2);
-    auto sut = handler.validate_tx_profile(profile_1, *evses[DEFAULT_EVSE_ID]);
-
-    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::TxProfileConflictingStackLevel));
-}
-
-TEST_F(ChargepointTestFixtureV201,
-       K01FR06_IfTxProfileHasDifferentTransactionButSameStackLevelAsAnotherTxProfile_ThenProfileIsValid) {
-    create_evse_with_id(DEFAULT_EVSE_ID);
-    std::string transaction_id = uuid();
-    std::string different_transaction_id = uuid();
-    open_evse_transaction(DEFAULT_EVSE_ID, transaction_id);
-
-    auto same_stack_level = 42;
-    auto profile_1 = create_charging_profile(DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
-                                             create_charge_schedule(ChargingRateUnitEnum::A), transaction_id,
-                                             ChargingProfileKindEnum::Absolute, same_stack_level);
-    auto profile_2 = create_charging_profile(DEFAULT_PROFILE_ID + 1, ChargingProfilePurposeEnum::TxProfile,
-                                             create_charge_schedule(ChargingRateUnitEnum::A), different_transaction_id,
-                                             ChargingProfileKindEnum::Absolute, same_stack_level);
-    handler.add_profile(DEFAULT_EVSE_ID, profile_2);
-    auto sut = handler.validate_tx_profile(profile_1, *evses[DEFAULT_EVSE_ID]);
-
-    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::Valid));
-}
-
-TEST_F(ChargepointTestFixtureV201,
-       K01FR06_IfTxProfileHasSameTransactionButDifferentStackLevelAsAnotherTxProfile_ThenProfileIsValid) {
-    create_evse_with_id(DEFAULT_EVSE_ID);
-    std::string same_transaction_id = uuid();
-    open_evse_transaction(DEFAULT_EVSE_ID, same_transaction_id);
-
-    auto stack_level_1 = 42;
-    auto stack_level_2 = 43;
-
-    auto profile_1 = create_charging_profile(DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
-                                             create_charge_schedule(ChargingRateUnitEnum::A), same_transaction_id,
-                                             ChargingProfileKindEnum::Absolute, stack_level_1);
-    auto profile_2 = create_charging_profile(DEFAULT_PROFILE_ID + 1, ChargingProfilePurposeEnum::TxProfile,
-                                             create_charge_schedule(ChargingRateUnitEnum::A), same_transaction_id,
-                                             ChargingProfileKindEnum::Absolute, stack_level_2);
-
-    handler.add_profile(DEFAULT_EVSE_ID, profile_2);
-    auto sut = handler.validate_tx_profile(profile_1, *evses[DEFAULT_EVSE_ID]);
-
-    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::Valid));
-}
-
 TEST_F(ChargepointTestFixtureV201, K01FR19_NumberPhasesOtherThan1AndPhaseToUseSet_ThenProfileInvalid) {
     auto periods = create_charging_schedule_periods_with_phases(0, 0, 1);
     auto profile = create_charging_profile(
@@ -349,6 +288,59 @@ TEST_F(ChargepointTestFixtureV201, K01FR35_IfChargingSchedulePeriodsAreNotInChon
     auto sut = handler.validate_profile_schedules(profile);
 
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::ChargingSchedulePeriodsOutOfOrder));
+}
+
+TEST_F(ChargepointTestFixtureV201,
+       K01FR39_IfTxProfileHasSameTransactionAndStackLevelAsAnotherTxProfile_ThenProfileIsInvalid) {
+    create_evse_with_id(evse_id);
+    std::string transaction_id = uuid();
+    open_evse_transaction(evse_id, transaction_id);
+
+    auto same_stack_level = 42;
+    auto profile_1 =
+        create_tx_profile(create_charge_schedule(ChargingRateUnitEnum::A), transaction_id, same_stack_level);
+    auto profile_2 =
+        create_tx_profile(create_charge_schedule(ChargingRateUnitEnum::A), transaction_id, same_stack_level);
+    handler.add_profile(profile_2);
+    auto sut = handler.validate_tx_profile(profile_1, *evses[evse_id]);
+
+    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::TxProfileConflictingStackLevel));
+}
+
+TEST_F(ChargepointTestFixtureV201,
+       K01FR39_IfTxProfileHasDifferentTransactionButSameStackLevelAsAnotherTxProfile_ThenProfileIsValid) {
+    create_evse_with_id(evse_id);
+    std::string transaction_id = uuid();
+    std::string different_transaction_id = uuid();
+    open_evse_transaction(evse_id, transaction_id);
+
+    auto same_stack_level = 42;
+    auto profile_1 =
+        create_tx_profile(create_charge_schedule(ChargingRateUnitEnum::A), transaction_id, same_stack_level);
+    auto profile_2 =
+        create_tx_profile(create_charge_schedule(ChargingRateUnitEnum::A), different_transaction_id, same_stack_level);
+    handler.add_profile(profile_2);
+    auto sut = handler.validate_tx_profile(profile_1, *evses[evse_id]);
+
+    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::Valid));
+}
+
+TEST_F(ChargepointTestFixtureV201,
+       K01FR39_IfTxProfileHasSameTransactionButDifferentStackLevelAsAnotherTxProfile_ThenProfileIsValid) {
+    create_evse_with_id(evse_id);
+    std::string same_transaction_id = uuid();
+    open_evse_transaction(evse_id, same_transaction_id);
+
+    auto stack_level_1 = 42;
+    auto stack_level_2 = 43;
+    auto profile_1 =
+        create_tx_profile(create_charge_schedule(ChargingRateUnitEnum::A), same_transaction_id, stack_level_1);
+    auto profile_2 =
+        create_tx_profile(create_charge_schedule(ChargingRateUnitEnum::A), same_transaction_id, stack_level_2);
+    handler.add_profile(profile_2);
+    auto sut = handler.validate_tx_profile(profile_1, *evses[evse_id]);
+
+    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::Valid));
 }
 
 TEST_F(ChargepointTestFixtureV201,
