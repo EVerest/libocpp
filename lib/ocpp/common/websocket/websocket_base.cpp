@@ -24,7 +24,6 @@ WebsocketBase::WebsocketBase() :
 }
 
 WebsocketBase::~WebsocketBase() {
-    this->cancel_reconnect_timer();
 }
 
 void WebsocketBase::set_connection_options_base(const WebsocketConnectionOptions& connection_options) {
