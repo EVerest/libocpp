@@ -5,8 +5,7 @@
 
 #include <ocpp/common/evse_security.hpp>
 #include <ocpp/common/ocpp_logging.hpp>
-#include <ocpp/common/websocket/websocket_plain.hpp>
-#include <ocpp/common/websocket/websocket_tls.hpp>
+#include <ocpp/common/websocket/websocket_base.hpp>
 
 namespace ocpp {
 

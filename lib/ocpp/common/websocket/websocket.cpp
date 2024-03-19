@@ -7,6 +7,9 @@
 
 #ifdef LIBOCPP_ENABLE_LIBWEBSOCKETS
 #include <ocpp/common/websocket/websocket_libwebsockets.hpp>
+#else
+#include <ocpp/common/websocket/websocket_plain.hpp>
+#include <ocpp/common/websocket/websocket_tls.hpp>
 #endif
 
 #include <boost/algorithm/string.hpp>
