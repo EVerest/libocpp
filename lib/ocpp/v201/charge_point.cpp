@@ -594,13 +594,13 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
         // Temporary variable that is set to true to avoid immediate response to allow the local auth list
         // or auth cache to be tried
         bool tryLocalAuthListOrCache = false;
-        bool forwardToCsms = false;
+        bool forwardedToCsms = false;
 
         // If OCSP data is provided as argument, use it
         if (this->websocket->is_connected() and ocsp_request_data.has_value()) {
             EVLOG_info << "Online: Pass provided OCSP data to CSMS";
             response = this->authorize_req(id_token, std::nullopt, ocsp_request_data);
-            forwardToCsms = true;
+            forwardedToCsms = true;
         } else if (certificate.has_value()) {
             // First try to validate the contract certificate locally
             CertificateValidationResult localVerifyResult =
@@ -628,7 +628,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
                     if (CentralContractValidationAllowed) {
                         EVLOG_info << "Online: No local contract root found. Pass contract validation to CSMS";
                         response = this->authorize_req(id_token, certificate, std::nullopt);
-                        forwardToCsms = true;
+                        forwardedToCsms = true;
                     } else {
                         EVLOG_warning << "Online: Central Contract Validation not allowed";
                         response.idTokenInfo.status = AuthorizationStatusEnum::Invalid;
@@ -640,7 +640,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
                     if (generated_ocsp_request_data_list.size() > 0) {
                         EVLOG_info << "Online: Pass generated OCSP data to CSMS";
                         response = this->authorize_req(id_token, std::nullopt, generated_ocsp_request_data_list);
-                        forwardToCsms = true;
+                        forwardedToCsms = true;
                     } else {
                         EVLOG_warning << "Online: OCSP data could not be generated";
                         response.idTokenInfo.status = AuthorizationStatusEnum::Invalid;
@@ -683,7 +683,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
             EVLOG_warning << "Can not validate eMAID without certificate chain";
             response.idTokenInfo.status = AuthorizationStatusEnum::Invalid;
         }
-        if (forwardToCsms) {
+        if (forwardedToCsms) {
             // AuthorizeRequest sent to CSMS, let's show the results
             EVLOG_info << "CSMS idToken status: " << response.idTokenInfo.status;
             if (response.certificateStatus.has_value()) {
