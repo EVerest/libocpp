@@ -63,7 +63,7 @@ public:
     ProfileValidationResultEnum validate_tx_profile(const ChargingProfile& profile, EvseInterface& evse) const;
 
     /// \brief validates that the given \p profile has valid charging schedules
-    ProfileValidationResultEnum validate_profile_schedules(const ChargingProfile& profile,
+    ProfileValidationResultEnum validate_profile_schedules(ChargingProfile& profile,
                                                            std::optional<EvseInterface*> evse_opt = std::nullopt) const;
 
     /// \brief Adds a given \p profile to our stored list of profiles
