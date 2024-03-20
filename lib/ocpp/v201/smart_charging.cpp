@@ -44,6 +44,8 @@ std::string profile_validation_result_to_string(ProfileValidationResultEnum e) {
         return "ChargingSchedulePeriodsOutOfOrder";
     case ProfileValidationResultEnum::ChargingSchedulePeriodInvalidPhaseToUse:
         return "ChargingSchedulePeriodInvalidPhaseToUse";
+    case ProfileValidationResultEnum::ChargingSchedulePeriodUnsupportedNumberPhases:
+        return "ChargingSchedulePeriodUnsupportedNumberPhases";
     case ProfileValidationResultEnum::ChargingSchedulePeriodExtraneousPhaseValues:
         return "ChargingSchedulePeriodExtraneousPhaseValues";
     case ProfileValidationResultEnum::DuplicateTxDefaultProfileFound:
@@ -121,7 +123,6 @@ ProfileValidationResultEnum SmartChargingHandler::validate_tx_profile(const Char
  * - K01.FR.20
  * - K01.FR.34
  * - K01.FR.43
- * - K01.FR.45
  * - K01.FR.48
  */
 ProfileValidationResultEnum
@@ -156,14 +157,21 @@ SmartChargingHandler::validate_profile_schedules(const ChargingProfile& profile,
                 }
             }
 
-            // K01.FR.44 for EVSEs; We reject profiles that provide invalid numberPhases/phaseToUse instead
-            // of silently acccepting them.
             if (evse_opt.has_value()) {
                 auto evse = evse_opt.value();
+                // K01.FR.44 for EVSEs; We reject profiles that provide invalid numberPhases/phaseToUse instead
+                // of silently acccepting them.
                 if (evse->get_current_phase_type() == CurrentPhaseType::DC &&
                     (charging_schedule_period.numberPhases.has_value() ||
                      charging_schedule_period.phaseToUse.has_value())) {
                     return ProfileValidationResultEnum::ChargingSchedulePeriodExtraneousPhaseValues;
+                }
+
+                if (evse->get_current_phase_type() == CurrentPhaseType::AC) {
+                    // K01.FR.45; Once again rejecting invalid values
+                    if (charging_schedule_period.numberPhases.has_value() && charging_schedule_period.numberPhases > DEFAULT_AND_MAX_NUMBER_PHASES) {
+                        return ProfileValidationResultEnum::ChargingSchedulePeriodUnsupportedNumberPhases;
+                    }
                 }
             }
         }
