@@ -33,5 +33,6 @@ public:
     MOCK_METHOD(void, set_connector_operative_status,
                 (int32_t connector_id, OperationalStatusEnum new_status, bool persist));
     MOCK_METHOD(void, restore_connector_operative_status, (int32_t connector_id));
+    MOCK_METHOD(CurrentPhaseType, get_current_phase_type, ());
 };
 } // namespace ocpp::v201
