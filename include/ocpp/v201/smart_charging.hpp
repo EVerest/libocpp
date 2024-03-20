@@ -30,6 +30,11 @@ enum class ProfileValidationResultEnum {
     ChargingSchedulePeriodInvalidPhaseToUse,
 };
 
+inline std::ostream& operator<<(std::ostream& os, const ProfileValidationResultEnum validation_result) {
+    os << static_cast<int>(validation_result);
+    return os;
+}
+
 /// \brief This class handles and maintains incoming ChargingProfiles and contains the logic
 /// to calculate the composite schedules
 class SmartChargingHandler {
