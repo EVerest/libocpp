@@ -2,15 +2,20 @@
 #include "ocpp/v201/ctrlr_component_variables.hpp"
 #include "ocpp/v201/device_model_storage_sqlite.hpp"
 #include "ocpp/v201/ocpp_types.hpp"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
+#include <cstdint>
 #include <filesystem>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <map>
 #include <memory>
 
 #include <component_state_manager_mock.hpp>
 #include <device_model_storage_mock.hpp>
+#include <evse_mock.hpp>
 #include <evse_security_mock.hpp>
 #include <ocpp/common/call_types.hpp>
 #include <ocpp/v201/enums.hpp>
@@ -19,6 +24,7 @@
 #include <optional>
 
 #include <sstream>
+#include <utility>
 #include <vector>
 
 namespace ocpp::v201 {
@@ -75,9 +81,13 @@ protected:
         };
     }
 
-    std::vector<ChargingSchedulePeriod> create_charging_schedule_periods(int32_t start_period) {
+    std::vector<ChargingSchedulePeriod>
+    create_charging_schedule_periods(int32_t start_period, std::optional<int32_t> number_phases = std::nullopt,
+                                     std::optional<int32_t> phase_to_use = std::nullopt) {
         auto charging_schedule_period = ChargingSchedulePeriod{
             .startPeriod = start_period,
+            .numberPhases = number_phases,
+            .phaseToUse = phase_to_use,
         };
 
         return {charging_schedule_period};
@@ -479,6 +489,34 @@ TEST_F(ChargepointTestFixtureV201, K01FR53_TxDefaultProfileValidIfAppliedToDiffe
     auto sut = handler.validate_tx_default_profile(profile, DEFAULT_EVSE_ID + 1);
 
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::Valid));
+}
+
+TEST_F(ChargepointTestFixtureV201, K01FR44_IfNumberPhasesProvidedForDCEVSE_ThenProfileIsInvalid) {
+    auto mock_evse = testing::NiceMock<EvseMock>();
+    ON_CALL(mock_evse, get_current_phase_type).WillByDefault(testing::Return(CurrentPhaseType::DC));
+
+    auto periods = create_charging_schedule_periods(0, 1);
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), uuid());
+
+    auto sut = handler.validate_profile_schedules(profile, &mock_evse);
+
+    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::ChargingSchedulePeriodExtraneousPhaseValues));
+}
+
+TEST_F(ChargepointTestFixtureV201, K01FR44_IfPhaseToUseProvidedForDCEVSE_ThenProfileIsInvalid) {
+    auto mock_evse = testing::NiceMock<EvseMock>();
+    ON_CALL(mock_evse, get_current_phase_type).WillByDefault(testing::Return(CurrentPhaseType::DC));
+
+    auto periods = create_charging_schedule_periods(0, 1, 1);
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), uuid());
+
+    auto sut = handler.validate_profile_schedules(profile, &mock_evse);
+
+    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::ChargingSchedulePeriodExtraneousPhaseValues));
 }
 
 } // namespace ocpp::v201

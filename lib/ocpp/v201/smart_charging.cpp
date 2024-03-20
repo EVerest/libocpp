@@ -44,6 +44,8 @@ std::string profile_validation_result_to_string(ProfileValidationResultEnum e) {
         return "ChargingSchedulePeriodsOutOfOrder";
     case ProfileValidationResultEnum::ChargingSchedulePeriodInvalidPhaseToUse:
         return "ChargingSchedulePeriodInvalidPhaseToUse";
+    case ProfileValidationResultEnum::ChargingSchedulePeriodExtraneousPhaseValues:
+        return "ChargingSchedulePeriodExtraneousPhaseValues";
     case ProfileValidationResultEnum::DuplicateTxDefaultProfileFound:
         return "DuplicateTxDefaultProfileFound";
     }
@@ -122,7 +124,9 @@ ProfileValidationResultEnum SmartChargingHandler::validate_tx_profile(const Char
  * - K01.FR.45
  * - K01.FR.48
  */
-ProfileValidationResultEnum SmartChargingHandler::validate_profile_schedules(const ChargingProfile& profile) const {
+ProfileValidationResultEnum
+SmartChargingHandler::validate_profile_schedules(const ChargingProfile& profile,
+                                                 std::optional<EvseInterface*> evse_opt) const {
     auto schedules = profile.chargingSchedule;
 
     for (auto schedule : schedules) {
@@ -149,6 +153,17 @@ ProfileValidationResultEnum SmartChargingHandler::validate_profile_schedules(con
                     return ProfileValidationResultEnum::ChargingSchedulePeriodsOutOfOrder;
                 } else {
                     charging_schedule_period = next_charging_schedule_period;
+                }
+            }
+
+            // K01.FR.44 for EVSEs; We reject profiles that provide invalid numberPhases/phaseToUse instead
+            // of silently acccepting them.
+            if (evse_opt.has_value()) {
+                auto evse = evse_opt.value();
+                if (evse->get_current_phase_type() == CurrentPhaseType::DC &&
+                    (charging_schedule_period.numberPhases.has_value() ||
+                     charging_schedule_period.phaseToUse.has_value())) {
+                    return ProfileValidationResultEnum::ChargingSchedulePeriodExtraneousPhaseValues;
                 }
             }
         }
