@@ -44,7 +44,7 @@ public:
     std::vector<CertificateHashDataChain>
     get_installed_certificates(const std::vector<CertificateType>& certificate_types) override;
     std::vector<OCSPRequestData> get_v2g_ocsp_request_data() override;
-    std::vector<OCSPRequestData> get_ocsp_request_data(const std::string& certificate_chain) override;
+    std::vector<OCSPRequestData> get_mo_ocsp_request_data(const std::string& certificate_chain) override;
     void update_ocsp_cache(const CertificateHashDataType& certificate_hash_data,
                            const std::string& ocsp_response) override;
     bool is_ca_certificate_installed(const CaCertificateType& certificate_type) override;

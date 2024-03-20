@@ -544,10 +544,9 @@ bool ChargePoint::on_charging_state_changed(const uint32_t evse_id, ChargingStat
     return false;
 }
 
-std::vector<OCSPRequestData> ChargePoint::generate_ocsp_data(const CiString<5500>& certificate) {
+std::vector<OCSPRequestData> ChargePoint::generate_mo_ocsp_data(const CiString<5500>& certificate) {
     std::vector<OCSPRequestData> ocsp_request_data_list;
-    const auto ocsp_data_list =
-        this->evse_security->get_ocsp_request_data(certificate.get());
+    const auto ocsp_data_list = this->evse_security->get_mo_ocsp_request_data(certificate.get());
     for (const auto& ocsp_data : ocsp_data_list) {
         OCSPRequestData request;
         switch (ocsp_data.hashAlgorithm) {
@@ -636,7 +635,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
                 } else {
                     // Try to generate the OCSP data from the certificate chain and use that
                     std::vector<OCSPRequestData> generated_ocsp_request_data_list =
-                        generate_ocsp_data(certificate.value());
+                        generate_mo_ocsp_data(certificate.value());
                     if (generated_ocsp_request_data_list.size() > 0) {
                         EVLOG_info << "Online: Pass generated OCSP data to CSMS";
                         response = this->authorize_req(id_token, std::nullopt, generated_ocsp_request_data_list);

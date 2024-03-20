@@ -667,7 +667,7 @@ public:
     /// \brief Generates OCSP request data from a (contract) certificate chain
     /// \param certificate
     /// \return vector with OCSP request data
-    std::vector<OCSPRequestData> generate_ocsp_data(const CiString<5500>& certificate);
+    std::vector<OCSPRequestData> generate_mo_ocsp_data(const CiString<5500>& certificate);
 
     /// \brief Validates provided \p id_token \p certificate and \p ocsp_request_data using CSMS, AuthCache or AuthList
     /// \param id_token

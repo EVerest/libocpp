@@ -540,9 +540,9 @@ struct KeyPair {
 
 enum class LeafCertificateType {
     CSMS, // Charging Station Management System
-    V2G, // Vehicle to grid
-    MF, // Manufacturer
-    MO // Mobility Operator
+    V2G,  // Vehicle to grid
+    MF,   // Manufacturer
+    MO    // Mobility Operator
 };
 
 namespace conversions {

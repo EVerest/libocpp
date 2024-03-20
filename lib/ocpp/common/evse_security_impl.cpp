@@ -42,7 +42,7 @@ InstallCertificateResult EvseSecurityImpl::update_leaf_certificate(const std::st
 
 CertificateValidationResult EvseSecurityImpl::verify_certificate(const std::string& certificate_chain,
                                                                  const LeafCertificateType& certificate_type) {
-    
+
     return conversions::to_ocpp(
         this->evse_security->verify_certificate(certificate_chain, conversions::from_ocpp(certificate_type)));
 }
@@ -76,11 +76,10 @@ std::vector<OCSPRequestData> EvseSecurityImpl::get_v2g_ocsp_request_data() {
     return result;
 }
 
-std::vector<OCSPRequestData> EvseSecurityImpl::get_ocsp_request_data(const std::string& certificate_chain) {
+std::vector<OCSPRequestData> EvseSecurityImpl::get_mo_ocsp_request_data(const std::string& certificate_chain) {
     std::vector<OCSPRequestData> result;
 
-    const auto ocsp_request_data =
-        this->evse_security->get_ocsp_request_data(certificate_chain);
+    const auto ocsp_request_data = this->evse_security->get_mo_ocsp_request_data(certificate_chain);
     for (const auto& ocsp_request_entry : ocsp_request_data.ocsp_request_data_list) {
         result.push_back(conversions::to_ocpp(ocsp_request_entry));
     }
