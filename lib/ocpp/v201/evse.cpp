@@ -309,5 +309,19 @@ Connector* Evse::get_connector(int32_t connector_id) {
     return this->id_connector_map.at(connector_id).get();
 }
 
+CurrentPhaseType Evse::get_current_phase_type() {
+    auto supply_phases = this->device_model.get_value<int32_t*>(ControllerComponentVariables::EVSESupplyPhases);
+    if (supply_phases == nullptr) {
+        return CurrentPhaseType::Unknown;
+    } else if (*supply_phases == 1 || *supply_phases == 3) {
+        return CurrentPhaseType::AC;
+    } else if (*supply_phases == 0) {
+        return CurrentPhaseType::DC;
+    }
+
+    // NOTE: SupplyPhases should never be a value that isn't NULL, 1, 3, or 0.
+    return CurrentPhaseType::Unknown;
+}
+
 } // namespace v201
 } // namespace ocpp
