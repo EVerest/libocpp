@@ -2,15 +2,11 @@
 #include "ocpp/v201/ctrlr_component_variables.hpp"
 #include "ocpp/v201/device_model_storage_sqlite.hpp"
 #include "ocpp/v201/ocpp_types.hpp"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
-#include <cstdint>
 #include <filesystem>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <map>
 #include <memory>
 
 #include <component_state_manager_mock.hpp>
@@ -24,7 +20,6 @@
 #include <optional>
 
 #include <sstream>
-#include <utility>
 #include <vector>
 
 namespace ocpp::v201 {
@@ -531,6 +526,23 @@ TEST_F(ChargepointTestFixtureV201, K01FR45_IfNumberPhasesGreaterThanMaxNumberPha
     auto sut = handler.validate_profile_schedules(profile, &mock_evse);
 
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::ChargingSchedulePeriodUnsupportedNumberPhases));
+}
+
+TEST_F(ChargepointTestFixtureV201, K01FR49_IfNumberPhasesMissingForACEVSE_ThenSetNumberPhasesToThree) {
+    auto mock_evse = testing::NiceMock<EvseMock>();
+    ON_CALL(mock_evse, get_current_phase_type).WillByDefault(testing::Return(CurrentPhaseType::AC));
+
+    auto periods = create_charging_schedule_periods(0);
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), uuid());
+
+    auto sut = handler.validate_profile_schedules(profile, &mock_evse);
+
+    auto numberPhases = profile.chargingSchedule[0].chargingSchedulePeriod[0].numberPhases;
+
+    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::Valid));
+    EXPECT_THAT(numberPhases, testing::Eq(3));
 }
 
 } // namespace ocpp::v201
