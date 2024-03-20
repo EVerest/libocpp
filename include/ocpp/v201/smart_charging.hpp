@@ -31,6 +31,14 @@ enum class ProfileValidationResultEnum {
     DuplicateTxDefaultProfileFound
 };
 
+namespace conversions {
+/// \brief Converts the given ProfileValidationResultEnum \p e to human readable string
+/// \returns a string representation of the ProfileValidationResultEnum
+std::string profile_validation_result_to_string(ProfileValidationResultEnum e);
+} // namespace conversions
+
+std::ostream& operator<<(std::ostream& os, const ProfileValidationResultEnum validation_result);
+
 /// \brief This class handles and maintains incoming ChargingProfiles and contains the logic
 /// to calculate the composite schedules
 class SmartChargingHandler {

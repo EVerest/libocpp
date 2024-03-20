@@ -15,6 +15,48 @@ using namespace std::chrono;
 
 namespace ocpp::v201 {
 
+namespace conversions {
+std::string profile_validation_result_to_string(ProfileValidationResultEnum e) {
+    switch (e) {
+    case ProfileValidationResultEnum::Valid:
+        return "Valid";
+    case ProfileValidationResultEnum::EvseDoesNotExist:
+        return "EvseDoesNotExist";
+    case ProfileValidationResultEnum::TxProfileMissingTransactionId:
+        return "TxProfileMissingTransactionId";
+    case ProfileValidationResultEnum::TxProfileEvseIdNotGreaterThanZero:
+        return "TxProfileEvseIdNotGreaterThanZero";
+    case ProfileValidationResultEnum::TxProfileTransactionNotOnEvse:
+        return "TxProfileTransactionNotOnEvse";
+    case ProfileValidationResultEnum::TxProfileEvseHasNoActiveTransaction:
+        return "TxProfileEvseHasNoActiveTransaction";
+    case ProfileValidationResultEnum::TxProfileConflictingStackLevel:
+        return "TxProfileConflictingStackLevel";
+    case ProfileValidationResultEnum::ChargingProfileNoChargingSchedulePeriods:
+        return "ChargingProfileNoChargingSchedulePeriods";
+    case ProfileValidationResultEnum::ChargingProfileFirstStartScheduleIsNotZero:
+        return "ChargingProfileFirstStartScheduleIsNotZero";
+    case ProfileValidationResultEnum::ChargingProfileMissingRequiredStartSchedule:
+        return "ChargingProfileMissingRequiredStartSchedule";
+    case ProfileValidationResultEnum::ChargingProfileExtraneousStartSchedule:
+        return "ChargingProfileExtraneousStartSchedule";
+    case ProfileValidationResultEnum::ChargingSchedulePeriodsOutOfOrder:
+        return "ChargingSchedulePeriodsOutOfOrder";
+    case ProfileValidationResultEnum::ChargingSchedulePeriodInvalidPhaseToUse:
+        return "ChargingSchedulePeriodInvalidPhaseToUse";
+    case ProfileValidationResultEnum::DuplicateTxDefaultProfileFound:
+        return "DuplicateTxDefaultProfileFound";
+    }
+
+    throw std::out_of_range("No known string conversion for provided enum of type ProfileValidationResultEnum");
+}
+} // namespace conversions
+
+std::ostream& operator<<(std::ostream& os, const ProfileValidationResultEnum validation_result) {
+    os << conversions::profile_validation_result_to_string(validation_result);
+    return os;
+}
+
 const int32_t STATION_WIDE_ID = 0;
 
 SmartChargingHandler::SmartChargingHandler(std::map<int32_t, std::unique_ptr<EvseInterface>>& evses) : evses(evses) {
