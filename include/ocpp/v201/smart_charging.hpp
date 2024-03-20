@@ -14,6 +14,8 @@
 
 namespace ocpp::v201 {
 
+const int DEFAULT_AND_MAX_NUMBER_PHASES = 3;
+
 enum class ProfileValidationResultEnum {
     Valid,
     EvseDoesNotExist,
@@ -29,6 +31,7 @@ enum class ProfileValidationResultEnum {
     ChargingSchedulePeriodsOutOfOrder,
     ChargingSchedulePeriodInvalidPhaseToUse,
     ChargingSchedulePeriodExtraneousPhaseValues,
+    ChargingSchedulePeriodUnsupportedNumberPhases,
 };
 
 inline std::ostream& operator<<(std::ostream& os, const ProfileValidationResultEnum validation_result) {
