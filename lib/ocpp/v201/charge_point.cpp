@@ -661,7 +661,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
                         } else {
                             // No requirement states what to do when ContractValidationOffline is true
                             // and LocalAuthorizeOffline is false
-                            response.idTokenInfo.status = AuthorizationStatusEnum::NotAtThisTime;
+                            response.idTokenInfo.status = AuthorizationStatusEnum::Unknown;
                             response.certificateStatus = AuthorizeCertificateStatusEnum::Accepted;
                         }
                         break;
@@ -670,7 +670,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
                         response.certificateStatus = AuthorizeCertificateStatusEnum::CertificateExpired;
                         break;
                     default:
-                        response.idTokenInfo.status = AuthorizationStatusEnum::Invalid;
+                        response.idTokenInfo.status = AuthorizationStatusEnum::Unknown;
                         break;
                     }
                 } else {
