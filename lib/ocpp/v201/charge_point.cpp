@@ -592,28 +592,28 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
     if (id_token.type == IdTokenEnum::eMAID) {
         // Temporary variable that is set to true to avoid immediate response to allow the local auth list
         // or auth cache to be tried
-        bool tryLocalAuthListOrCache = false;
-        bool forwardedToCsms = false;
+        bool try_local_auth_list_or_cache = false;
+        bool forwarded_to_csms = false;
 
         // If OCSP data is provided as argument, use it
         if (this->websocket->is_connected() and ocsp_request_data.has_value()) {
             EVLOG_info << "Online: Pass provided OCSP data to CSMS";
             response = this->authorize_req(id_token, std::nullopt, ocsp_request_data);
-            forwardedToCsms = true;
+            forwarded_to_csms = true;
         } else if (certificate.has_value()) {
             // First try to validate the contract certificate locally
-            CertificateValidationResult localVerifyResult =
+            CertificateValidationResult local_verify_result =
                 this->evse_security->verify_certificate(certificate.value().get(), ocpp::LeafCertificateType::MO);
-            EVLOG_info << "Local contract validation result: " << localVerifyResult;
+            EVLOG_info << "Local contract validation result: " << local_verify_result;
 
-            bool CentralContractValidationAllowed =
+            bool central_contract_validation_allowed =
                 this->device_model
                     ->get_optional_value<bool>(ControllerComponentVariables::CentralContractValidationAllowed)
                     .value_or(true);
-            bool ContractValidationOffline =
+            bool contract_validation_offline =
                 this->device_model->get_optional_value<bool>(ControllerComponentVariables::ContractValidationOffline)
                     .value_or(true);
-            bool LocalAuthorizeOffline =
+            bool local_authorize_offline =
                 this->device_model->get_optional_value<bool>(ControllerComponentVariables::LocalAuthorizeOffline)
                     .value_or(true);
 
@@ -622,12 +622,12 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
             // TODO: local validation results are ignored if response is based only on OCSP data, is that acceptable?
             if (this->websocket->is_connected()) {
                 // If no OCSP data was provided, check for a contract root
-                if (localVerifyResult == CertificateValidationResult::IssuerNotFound) {
+                if (local_verify_result == CertificateValidationResult::IssuerNotFound) {
                     // C07.FR.06: Pass contract validation to CSMS when no contract root is found
-                    if (CentralContractValidationAllowed) {
+                    if (central_contract_validation_allowed) {
                         EVLOG_info << "Online: No local contract root found. Pass contract validation to CSMS";
                         response = this->authorize_req(id_token, certificate, std::nullopt);
-                        forwardedToCsms = true;
+                        forwarded_to_csms = true;
                     } else {
                         EVLOG_warning << "Online: Central Contract Validation not allowed";
                         response.idTokenInfo.status = AuthorizationStatusEnum::Invalid;
@@ -639,7 +639,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
                     if (generated_ocsp_request_data_list.size() > 0) {
                         EVLOG_info << "Online: Pass generated OCSP data to CSMS";
                         response = this->authorize_req(id_token, std::nullopt, generated_ocsp_request_data_list);
-                        forwardedToCsms = true;
+                        forwarded_to_csms = true;
                     } else {
                         EVLOG_warning << "Online: OCSP data could not be generated";
                         response.idTokenInfo.status = AuthorizationStatusEnum::Invalid;
@@ -647,17 +647,17 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
                 }
             } else { // Offline
                 // C07.FR.08: CS shall try to validate the contract locally
-                if (ContractValidationOffline) {
-                    EVLOG_info << "Offline: contract " << localVerifyResult;
-                    switch (localVerifyResult) {
+                if (contract_validation_offline) {
+                    EVLOG_info << "Offline: contract " << local_verify_result;
+                    switch (local_verify_result) {
                     // C07.FR.09: CS shall lookup the eMAID in Local Auth List or Auth Cache when
                     // local validation succeeded
                     case CertificateValidationResult::Valid:
                         // In C07.FR.09 LocalAuthorizeOffline is mentioned, this seems to be a generic config item
                         // that applies to Local Auth List and Auth Cache, but since there are no requirements about
                         // it, lets check it here
-                        if (LocalAuthorizeOffline) {
-                            tryLocalAuthListOrCache = true;
+                        if (local_authorize_offline) {
+                            try_local_auth_list_or_cache = true;
                         } else {
                             // No requirement states what to do when ContractValidationOffline is true
                             // and LocalAuthorizeOffline is false
@@ -682,7 +682,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
             EVLOG_warning << "Can not validate eMAID without certificate chain";
             response.idTokenInfo.status = AuthorizationStatusEnum::Invalid;
         }
-        if (forwardedToCsms) {
+        if (forwarded_to_csms) {
             // AuthorizeRequest sent to CSMS, let's show the results
             EVLOG_info << "CSMS idToken status: " << response.idTokenInfo.status;
             if (response.certificateStatus.has_value()) {
@@ -690,7 +690,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
             }
         }
         // For eMAID, we will respond here, unless the local auth list or auth cache is tried
-        if (!tryLocalAuthListOrCache) {
+        if (!try_local_auth_list_or_cache) {
             return response;
         }
     }
