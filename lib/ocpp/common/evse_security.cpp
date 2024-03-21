@@ -143,7 +143,6 @@ std::vector<ocpp::v201::OCSPRequestData> to_ocpp_v201(const std::vector<ocpp::OC
     return ocsp_request_data_list;
 }
 
-
 ocpp::CertificateType from_ocpp_v201(ocpp::v201::GetCertificateIdUseEnum other) {
     switch (other) {
     case ocpp::v201::GetCertificateIdUseEnum::V2GRootCertificate:

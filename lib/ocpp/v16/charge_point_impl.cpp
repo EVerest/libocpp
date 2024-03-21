@@ -2867,7 +2867,6 @@ ocpp::v201::AuthorizeResponse ChargePointImpl::data_transfer_pnc_authorize(
                 EVLOG_warning << "Could not parse data of DataTransfer message Authorize.conf: " << e.what();
             } catch (const std::exception& e) {
                 EVLOG_error << "Unknown Error while handling DataTransfer message Authorize.conf: " << e.what();
-                
             }
         } else if (enhanced_message.offline) {
             EVLOG_warning << "No response received for DataTransfer.req(Authorize) from CSMS";
