@@ -169,6 +169,11 @@ struct Callbacks {
 
     /// \breif Callback function that is called when a transaction_event was sent to the CSMS
     std::optional<std::function<void(const TransactionEventRequest& transaction_event)>> transaction_event_callback;
+
+    /// \brief Callback function that is called when a transaction_event_response was received from the CSMS
+    std::optional<std::function<void(const TransactionEventRequest& transaction_event,
+                                     const TransactionEventResponse& transaction_event_response)>>
+        transaction_event_response_callback;
 };
 
 /// \brief Combines ChangeAvailabilityRequest with persist flag for scheduled Availability changes

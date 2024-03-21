@@ -2479,6 +2479,10 @@ void ChargePoint::handle_start_transaction_event_response(const EnhancedMessage<
     const Call<TransactionEventRequest>& original_call = message.call_message;
     const auto& original_msg = original_call.msg;
 
+    if (this->callbacks.transaction_event_response_callback.has_value()) {
+        this->callbacks.transaction_event_response_callback.value()(original_msg, call_result.msg);
+    }
+
     if (original_msg.eventType != TransactionEventEnum::Started) {
         return;
     }
