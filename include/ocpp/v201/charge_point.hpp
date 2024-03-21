@@ -709,7 +709,7 @@ public:
     /// \param data
     /// \return DataTransferResponse contaning the result from CSMS
     DataTransferResponse data_transfer_req(const CiString<255>& vendorId, const std::optional<CiString<50>>& messageId,
-                                           const std::optional<std::string>& data);
+                                           const std::optional<json>& data);
 
     /// \brief Switches the operative status of the CS
     /// \param new_status: The new operative status to switch to

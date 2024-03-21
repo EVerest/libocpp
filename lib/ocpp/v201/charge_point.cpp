@@ -3090,7 +3090,7 @@ void ChargePoint::handle_data_transfer_req(Call<DataTransferRequest> call) {
 
 DataTransferResponse ChargePoint::data_transfer_req(const CiString<255>& vendorId,
                                                     const std::optional<CiString<50>>& messageId,
-                                                    const std::optional<std::string>& data) {
+                                                    const std::optional<json>& data) {
     DataTransferRequest req;
     req.vendorId = vendorId;
     req.messageId = messageId;
