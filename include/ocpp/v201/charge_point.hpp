@@ -167,7 +167,7 @@ struct Callbacks {
     /// messageId
     std::optional<std::function<DataTransferResponse(const DataTransferRequest& request)>> data_transfer_callback;
 
-    /// \breif Callback function that is called when a transaction_event was sent to the CSMS
+    /// \brief Callback function that is called when a transaction_event was sent to the CSMS
     std::optional<std::function<void(const TransactionEventRequest& transaction_event)>> transaction_event_callback;
 
     /// \brief Callback function that is called when a transaction_event_response was received from the CSMS
