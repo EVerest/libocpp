@@ -44,6 +44,9 @@ struct {{type.name}} {
 {% endfor %}
 {%- endif %}
 {% if last %}
+{% if namespace == "v201" %}
+    struct RequiredComponentVariable : ComponentVariable {};
+{% endif %}
 } // namespace {{namespace}}
 } // namespace ocpp
 
