@@ -53,7 +53,7 @@ public:
     /// \param evse_id id of the evse
     /// \param number_of_connectors of the evse
     /// \param device_model reference to the device model
-    /// \param status_notification_callback that is called when the status of a connector changes
+    /// \param component_state_manager that is called when the status of a connector changes
     /// \param pause_charging_callback that is called when the charging should be paused due to max energy on
     /// invalid id being exceeded
     Evse(const int32_t evse_id, const int32_t number_of_connectors, DeviceModel& device_model,
