@@ -190,6 +190,8 @@ public:
     ///
     void set_websocket_connection_options(const WebsocketConnectionOptions& connection_options);
 
+    void set_websocket_connection_options_without_reconnect();
+
     ///
     /// \brief Get the active network configuration slot in use.
     /// \return The active slot the network is connected to or the pending slot.

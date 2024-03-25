@@ -278,9 +278,6 @@ private:
 
     // internal helper functions
 
-    /// @brief Initialize the websocket connection.
-    /// @param configuration_slot Optional configuration slot to initialize the websocket to.
-    WebsocketConnectionOptions get_ws_connection_options(const int32_t configuration_slot);
     void init_certificate_expiration_check_timers();
     void scheduled_check_client_certificate_expiration();
     void scheduled_check_v2g_certificate_expiration();

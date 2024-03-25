@@ -830,49 +830,6 @@ void ChargePoint::init_certificate_expiration_check_timers() {
             .value_or(60)));
 }
 
-WebsocketConnectionOptions ChargePoint::get_ws_connection_options(const int32_t configuration_slot) {
-    const auto network_connection_profile_opt = this->get_network_connection_profile(configuration_slot);
-
-    if (!network_connection_profile_opt.has_value()) {
-        EVLOG_critical << "Could not retrieve NetworkProfile of configurationSlot: " << configuration_slot;
-        throw std::runtime_error("Could not retrieve NetworkProfile");
-    }
-
-    const auto network_connection_profile = network_connection_profile_opt.value();
-
-    auto uri = Uri::parse_and_validate(
-        network_connection_profile.ocppCsmsUrl.get(),
-        this->device_model->get_value<std::string>(ControllerComponentVariables::SecurityCtrlrIdentity),
-        network_connection_profile.securityProfile);
-
-    WebsocketConnectionOptions connection_options{
-        OcppProtocolVersion::v201,
-        uri,
-        network_connection_profile.securityProfile,
-        this->device_model->get_optional_value<std::string>(ControllerComponentVariables::BasicAuthPassword),
-        this->device_model->get_value<int>(ControllerComponentVariables::RetryBackOffRandomRange),
-        this->device_model->get_value<int>(ControllerComponentVariables::RetryBackOffRepeatTimes),
-        this->device_model->get_value<int>(ControllerComponentVariables::RetryBackOffWaitMinimum),
-        this->device_model->get_value<int>(ControllerComponentVariables::NetworkProfileConnectionAttempts),
-        this->device_model->get_value<std::string>(ControllerComponentVariables::SupportedCiphers12),
-        this->device_model->get_value<std::string>(ControllerComponentVariables::SupportedCiphers13),
-        this->device_model->get_value<int>(ControllerComponentVariables::WebSocketPingInterval),
-        this->device_model->get_optional_value<std::string>(ControllerComponentVariables::WebsocketPingPayload)
-            .value_or("payload"),
-        this->device_model->get_optional_value<int>(ControllerComponentVariables::WebsocketPongTimeout).value_or(5),
-        this->device_model->get_optional_value<bool>(ControllerComponentVariables::UseSslDefaultVerifyPaths)
-            .value_or(true),
-        this->device_model->get_optional_value<bool>(ControllerComponentVariables::AdditionalRootCertificateCheck)
-            .value_or(false),
-        std::nullopt, // hostName
-        this->device_model->get_optional_value<bool>(ControllerComponentVariables::VerifyCsmsCommonName).value_or(true),
-        this->device_model->get_optional_value<bool>(ControllerComponentVariables::UseTPM).value_or(false),
-        this->device_model->get_optional_value<bool>(ControllerComponentVariables::VerifyCsmsAllowWildcards)
-            .value_or(false)};
-
-    return connection_options;
-}
-
 std::optional<NetworkConnectionProfile> ChargePoint::get_network_connection_profile(const int32_t configuration_slot) {
     std::vector<SetNetworkProfileRequest> network_connection_profiles = json::parse(
         this->device_model->get_value<std::string>(ControllerComponentVariables::NetworkConnectionProfiles));
@@ -1413,17 +1370,8 @@ void ChargePoint::handle_variable_changed(const SetVariableData& set_variable_da
 
     if (component_variable_change_requires_websocket_option_update_without_reconnect(component_variable)) {
         EVLOG_debug << "Reconfigure websocket due to relevant change of ControllerComponentVariable";
-        uint32_t active_slot = 0;
         if (connectivity_manager != nullptr) {
-            active_slot = static_cast<uint32_t>(connectivity_manager->get_active_network_configuration_slot());
-        }
-        const auto configuration_slot =
-            ocpp::get_vector_from_csv(
-                this->device_model->get_value<std::string>(ControllerComponentVariables::NetworkConfigurationPriority))
-                .at(active_slot);
-        const auto connection_options = this->get_ws_connection_options(std::stoi(configuration_slot));
-        if (connectivity_manager != nullptr) {
-            this->connectivity_manager->set_websocket_connection_options(connection_options);
+            this->connectivity_manager->set_websocket_connection_options_without_reconnect();
         }
     }
 

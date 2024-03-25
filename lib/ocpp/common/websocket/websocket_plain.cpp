@@ -196,7 +196,7 @@ void WebsocketPlain::on_fail_plain(client* c, websocketpp::connection_hdl hdl) {
 }
 
 void WebsocketPlain::close(WebsocketCloseReason code, const std::string& reason, const bool stop_perpetual) {
-    if (closed) {
+    if (this->closed) {
         // Already closed...
         return;
     }

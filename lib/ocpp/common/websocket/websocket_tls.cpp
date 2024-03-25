@@ -52,7 +52,7 @@ WebsocketCloseReason value_to_close_reason(websocketpp::close::status::value val
 
 WebsocketTLS::WebsocketTLS(const WebsocketConnectionOptions& connection_options,
                            std::shared_ptr<EvseSecurity> evse_security) :
-    WebsocketBase(), evse_security(evse_security) {
+    WebsocketBase(), evse_security(evse_security), closed(false) {
 
     set_connection_options(connection_options);
 
@@ -336,6 +336,11 @@ void WebsocketTLS::on_fail_tls(tls_client* c, websocketpp::connection_hdl hdl) {
 }
 
 void WebsocketTLS::close(WebsocketCloseReason code, const std::string& reason, bool stop_perpetual) {
+    if (this->closed)
+    {
+        // Already closed...
+        return;
+    }
 
     EVLOG_info << "Closing TLS websocket.";
 
@@ -344,6 +349,8 @@ void WebsocketTLS::close(WebsocketCloseReason code, const std::string& reason, b
     if (stop_perpetual) {
         this->wss_client.stop_perpetual();
     }
+
+    this->closed = true;
 
     this->wss_client.close(this->handle, close_reason_to_value(code), reason, ec);
 

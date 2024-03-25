@@ -192,10 +192,32 @@ void ConnectivityManager::set_websocket_authorization_key(const std::string& aut
 }
 
 void ConnectivityManager::set_websocket_connection_options(const WebsocketConnectionOptions& connection_options) {
-    current_connection_options = connection_options;
+    this->current_connection_options = connection_options;
     if (this->websocket != nullptr) {
         this->websocket->set_connection_options(connection_options);
     }
+}
+
+void ConnectivityManager::set_websocket_connection_options_without_reconnect()
+{
+    if (this->websocket == nullptr) {
+        return;
+    }
+
+    const int32_t active_slot = this->get_active_network_configuration_slot();
+
+    WebsocketConnectionOptions connection_options =
+        this->get_ws_connection_options(active_slot);
+    if (this->current_connection_options.iface_or_ip.has_value())
+    {
+        // This is set later and not retrieved from the get_ws_connection_options function, so copy from the current
+        // connection options.
+        connection_options.iface_or_ip = this->current_connection_options.iface_or_ip.value();
+    }
+
+
+    this->current_connection_options = connection_options;
+    this->websocket->set_connection_options(connection_options);
 }
 
 int32_t ConnectivityManager::get_active_network_configuration_slot() const {
@@ -354,7 +376,23 @@ bool ConnectivityManager::init_websocket(std::optional<int32_t> config_slot) {
         this->websocket->disconnect(WebsocketCloseReason::ServiceRestart);
     }
 
+    // TODO this sometimes let the application hang (a thread not closing or something???)
     this->websocket = nullptr;
+
+    const auto& active_network_profile_cv = ControllerComponentVariables::ActiveNetworkProfile;
+    if (active_network_profile_cv.variable.has_value()) {
+        this->device_model.set_read_only_value(active_network_profile_cv.component,
+                                               active_network_profile_cv.variable.value(), AttributeEnum::Actual,
+                                               configuration_slot);
+    }
+
+    const auto& security_profile_cv = ControllerComponentVariables::SecurityProfile;
+    if (security_profile_cv.variable.has_value()) {
+        this->device_model.set_read_only_value(security_profile_cv.component, security_profile_cv.variable.value(),
+                                                AttributeEnum::Actual,
+                                                std::to_string(network_connection_profile.value().securityProfile));
+    }
+
     this->websocket = std::make_unique<Websocket>(connection_options, this->evse_security, this->logging);
     this->websocket->register_connected_callback(
         [this, config_slot_int, network_connection_profile](const int security_profile) {
