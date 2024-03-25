@@ -14,9 +14,7 @@
 namespace ocpp {
 namespace v201 {
 
-struct CustomData {
-    CiString<255> vendorId;
-};
+using CustomData = nlohmann::json;
 /// \brief Conversion from a given CustomData \p k to a given json object \p j
 void to_json(json& j, const CustomData& k);
 
