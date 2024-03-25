@@ -41,7 +41,7 @@ void DatabaseHandler::sql_init() {
         throw std::runtime_error("Database access error");
     }
 
-    if (this->get_ongoing_transactions().transaction_id.empty()) {
+    if (!this->get_ongoing_transactions().has_active_transaction) {
         this->inintialize_enum_tables();
     }
     else
@@ -618,14 +618,13 @@ OperationalStatusEnum DatabaseHandler::get_connector_availability(int32_t evse_i
 }
 
 // transactions
-void DatabaseHandler::insert_transaction(const std::string& session_id, int32_t seq_no, const std::string& transaction_id,
+void DatabaseHandler::insert_transaction(int32_t seq_no, const std::string& transaction_id,
                                          const std::string event_type, const std::string& id_tag_start, int32_t evse_id,
                                          int32_t connector_id, const std::string& time_start) {
     std::string sql = "INSERT INTO TRANSACTIONS (ID, SEQ_NO, TRANSACTION_ID, MESSAGE_TYPE,EVSE_ID, CONNECTOR_ID, ID_TOKEN, TIME_START) VALUES"
-                      "(@session_id, @seq_no, @transaction_id, @event_type, @evse_id, @connector_id, @id_tag_start, @time_start)";
+                      "(@seq_no, @transaction_id, @event_type, @evse_id, @connector_id, @id_tag_start, @time_start)";
     SQLiteStatement stmt(this->db, sql);
 
-    stmt.bind_text("@session_id", session_id);
     stmt.bind_int("@seq_no", seq_no);
     stmt.bind_text("@transaction_id", transaction_id);
     stmt.bind_text("@event_type", event_type);
@@ -686,8 +685,8 @@ TransactionInterruptedResponse DatabaseHandler::get_ongoing_transactions() {
         throw std::runtime_error(std::string("Could not get queued transaction messages from database: ") + e.what());
     }
 
-    //get the meter values
-    if (!active_response.transaction_id.empty())
+    //get the meter values if there was an active transaction
+    if (active_response.has_active_transaction)
     {
         active_response.meter_start = transaction_metervalues_get_all(active_response.transaction_id).back();
     }

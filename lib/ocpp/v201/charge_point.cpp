@@ -39,9 +39,7 @@ bool Callbacks::all_callbacks_valid() const {
             this->configure_network_connection_profile_callback.value() != nullptr) and
            (!this->time_sync_callback.has_value() or this->time_sync_callback.value() != nullptr) and
            (!this->boot_notification_callback.has_value() or this->boot_notification_callback.value() != nullptr) and
-           (!this->ocpp_messages_callback.has_value() or this->ocpp_messages_callback.value() != nullptr) and
-           (!this->interrupted_transactions_callback.has_value() or
-            this->interrupted_transactions_callback.value() != nullptr);
+           (!this->ocpp_messages_callback.has_value() or this->ocpp_messages_callback.value() != nullptr);
 }
 
 ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
@@ -344,7 +342,8 @@ void ChargePoint::on_transaction_started(
                                 opt_meter_value, std::nullopt, this->is_offline(), reservation_id);
 
     this->database_handler->insert_transaction(
-        "DEADBEEF", enhanced_transaction->get_seq_no(), enhanced_transaction->transactionId.get(), "Started",
+        enhanced_transaction->get_seq_no(), enhanced_transaction->transactionId.get(),
+        conversions::transaction_event_enum_to_string(TransactionEventEnum::Started),
         enhanced_transaction->id_token.idToken.get(), evse_id, connector_id, timestamp.to_rfc3339());
 }
 
@@ -841,6 +840,7 @@ bool ChargePoint::send(CallError call_error) {
 }
 
 void ChargePoint::init_websocket() {
+
     if (this->device_model->get_value<std::string>(ControllerComponentVariables::ChargePointId).find(':') !=
         std::string::npos) {
         EVLOG_AND_THROW(std::runtime_error("ChargePointId must not contain \':\'"));
@@ -2153,15 +2153,6 @@ void ChargePoint::handle_boot_notification_response(CallResult<BootNotificationR
         }
 
         this->remove_network_connection_profiles_below_actual_security_profile();
-
-        // check if there are any ongoing trasnactions that were interrupted and call the registered callback
-        //  if(this->has_interrupted_transactions())
-        //  {
-        //      if (this->callbacks.interrupted_transactions_callback)
-        //      {
-        //          this->callbacks.interrupted_transactions_callback.value();
-        //      }
-        //  }
 
         // get transaction messages from db (if there are any) so they can be sent again.
         message_queue->get_transaction_messages_from_db();

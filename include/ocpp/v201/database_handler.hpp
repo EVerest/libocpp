@@ -131,7 +131,7 @@ public:
 
     // transactions
     /// \brief Inserts a transaction with the given parameter to the TRANSACTIONS table.
-    void insert_transaction(const std::string& session_id, int32_t seq_no, const std::string& transaction_id,
+    void insert_transaction(int32_t seq_no, const std::string& transaction_id,
                             const std::string event_type, const std::string& id_tag_start, int32_t evse_id,
                             int32_t connector_id, const std::string& time_start);
     
