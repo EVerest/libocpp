@@ -185,7 +185,7 @@ private:
     std::map<int32_t, std::unique_ptr<Evse>> evses;
 
     // Interrupted transactions
-    std::vector<TransactionInterruptedResponse>interrupted_transactions;
+    std::vector<TransactionInterruptedResponse> interrupted_transactions;
 
     // utility
     std::unique_ptr<MessageQueue<v201::MessageType>> message_queue;
@@ -535,7 +535,6 @@ private:
     void execute_change_availability_request(ChangeAvailabilityRequest request, bool persist);
 
 public:
-
     /// \brief Construct a new ChargePoint object
     /// \param evse_connector_structure Map that defines the structure of EVSE and connectors of the chargepoint. The
     /// key represents the id of the EVSE and the value represents the number of connectors for this EVSE. The ids of

@@ -43,9 +43,7 @@ void DatabaseHandler::sql_init() {
 
     if (!this->get_ongoing_transactions().has_active_transaction) {
         this->inintialize_enum_tables();
-    }
-    else
-    {
+    } else {
         EVLOG_info << "Not clearing tables as there is an ongoing transaction";
     }
 }
@@ -621,7 +619,8 @@ OperationalStatusEnum DatabaseHandler::get_connector_availability(int32_t evse_i
 void DatabaseHandler::insert_transaction(int32_t seq_no, const std::string& transaction_id,
                                          const std::string event_type, const std::string& id_tag_start, int32_t evse_id,
                                          int32_t connector_id, const std::string& time_start) {
-    std::string sql = "INSERT INTO TRANSACTIONS (ID, SEQ_NO, TRANSACTION_ID, MESSAGE_TYPE,EVSE_ID, CONNECTOR_ID, ID_TOKEN, TIME_START) VALUES"
+    std::string sql = "INSERT INTO TRANSACTIONS (ID, SEQ_NO, TRANSACTION_ID, MESSAGE_TYPE,EVSE_ID, CONNECTOR_ID, "
+                      "ID_TOKEN, TIME_START) VALUES"
                       "(@seq_no, @transaction_id, @event_type, @evse_id, @connector_id, @id_tag_start, @time_start)";
     SQLiteStatement stmt(this->db, sql);
 
@@ -657,7 +656,7 @@ TransactionInterruptedResponse DatabaseHandler::get_ongoing_transactions() {
 
     try {
 
-        //TODO: maybe this can be simplified?
+        // TODO: maybe this can be simplified?
         std::string sql =
             "SELECT A.* FROM TRANSACTIONS A WHERE A.MESSAGE_TYPE = \"Started\" AND A.TRANSACTION_ID NOT IN ("
             "SELECT B.TRANSACTION_ID FROM TRANSACTIONS B WHERE B.MESSAGE_TYPE = \"Ended\")";
@@ -669,7 +668,8 @@ TransactionInterruptedResponse DatabaseHandler::get_ongoing_transactions() {
                 active_response.transaction_id = stmt.column_text(2);
                 active_response.evse_id = stmt.column_int(4);
                 active_response.connector_id = stmt.column_int(5);
-                active_response.id_token.idToken = stmt.column_text(6); //TODO: maybe just store the whole IDtoken type?
+                active_response.id_token.idToken = stmt.column_text(6); // TODO: maybe just store the whole IDtoken
+                                                                        // type?
                 active_response.timestamp = ocpp::DateTime(stmt.column_text(7));
                 active_response.has_active_transaction = true;
             } catch (const std::exception& e) {
@@ -685,12 +685,10 @@ TransactionInterruptedResponse DatabaseHandler::get_ongoing_transactions() {
         throw std::runtime_error(std::string("Could not get queued transaction messages from database: ") + e.what());
     }
 
-    //get the meter values if there was an active transaction
-    if (active_response.has_active_transaction)
-    {
+    // get the meter values if there was an active transaction
+    if (active_response.has_active_transaction) {
         active_response.meter_start = transaction_metervalues_get_all(active_response.transaction_id).back();
     }
-    
 
     return active_response;
 }
