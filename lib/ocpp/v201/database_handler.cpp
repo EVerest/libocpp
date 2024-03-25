@@ -619,7 +619,7 @@ OperationalStatusEnum DatabaseHandler::get_connector_availability(int32_t evse_i
 void DatabaseHandler::insert_transaction(int32_t seq_no, const std::string& transaction_id,
                                          const std::string event_type, const std::string& id_tag_start, int32_t evse_id,
                                          int32_t connector_id, const std::string& time_start) {
-    std::string sql = "INSERT INTO TRANSACTIONS (ID, SEQ_NO, TRANSACTION_ID, MESSAGE_TYPE,EVSE_ID, CONNECTOR_ID, "
+    std::string sql = "INSERT INTO TRANSACTIONS (SEQ_NO, TRANSACTION_ID, MESSAGE_TYPE,EVSE_ID, CONNECTOR_ID, "
                       "ID_TOKEN, TIME_START) VALUES"
                       "(@seq_no, @transaction_id, @event_type, @evse_id, @connector_id, @id_tag_start, @time_start)";
     SQLiteStatement stmt(this->db, sql);
@@ -640,7 +640,7 @@ void DatabaseHandler::insert_transaction(int32_t seq_no, const std::string& tran
 
 bool DatabaseHandler::clear_transaction(const std::string& transaction_id) {
 
-    //since there can be multiple transactions active in a station only remove the correct one
+    // since there can be multiple transactions active in a station only remove the correct one
     std::string sql = "DELETE FROM TRANSACTIONS WHERE TRANSACTION_ID = @transaction_id";
     SQLiteStatement delete_stmt(this->db, sql);
     delete_stmt.bind_text("@transaction_id", transaction_id);
@@ -658,8 +658,7 @@ TransactionInterruptedResponse DatabaseHandler::get_ongoing_transactions() {
 
         // TODO: maybe this can be simplified?
         std::string sql =
-            "SELECT A.* FROM TRANSACTIONS A WHERE A.MESSAGE_TYPE = \"Started\" AND A.TRANSACTION_ID NOT IN ("
-            "SELECT B.TRANSACTION_ID FROM TRANSACTIONS B WHERE B.MESSAGE_TYPE = \"Ended\")";
+            "SELECT A.* FROM TRANSACTIONS A WHERE A.MESSAGE_TYPE = \"Started\" ";
         SQLiteStatement stmt(this->db, sql);
 
         int status;
