@@ -664,12 +664,12 @@ TransactionInterruptedResponse DatabaseHandler::get_ongoing_transactions() {
         int status;
         while ((status = stmt.step()) == SQLITE_ROW) {
             try {
-                active_response.transaction_id = stmt.column_text(2);
-                active_response.evse_id = stmt.column_int(4);
-                active_response.connector_id = stmt.column_int(5);
-                active_response.id_token.idToken = stmt.column_text(6); // TODO: maybe just store the whole IDtoken
+                active_response.transaction_id = stmt.column_text(1);
+                active_response.evse_id = stmt.column_int(3);
+                active_response.connector_id = stmt.column_int(4);
+                active_response.id_token.idToken = stmt.column_text(5); // TODO: maybe just store the whole IDtoken
                                                                         // type?
-                active_response.timestamp = ocpp::DateTime(stmt.column_text(7));
+                active_response.timestamp = ocpp::DateTime(stmt.column_text(6));
                 active_response.has_active_transaction = true;
             } catch (const std::exception& e) {
                 EVLOG_error << "can not get queued transaction message from database: "
