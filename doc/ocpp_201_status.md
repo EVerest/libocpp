@@ -5,7 +5,7 @@
 | FR.01 | :heavy_check_mark: yes |  |
 | FR.02 | :heavy_check_mark: yes |  |
 | FR.03 | :heavy_check_mark: yes |  |
-| FR.04 | :no_entry_sign: n/a |  |
+| FR.04 | n/a |  |
 | FR.05 |  |  |
 ## Security - Generic Security Profile requirements
 
@@ -21,13 +21,13 @@
 
 | ID | Status | Remark |
 | --- | --- | --- |
-| A00.FR.201 | :no_entry_sign: n/a |  |
+| A00.FR.201 | n/a |  |
 | A00.FR.202 | :heavy_check_mark: yes |  |
 | A00.FR.203 | :heavy_check_mark: yes |  |
 | A00.FR.204 | :heavy_check_mark: yes |  |
 | A00.FR.205 | :heavy_check_mark: yes |  |
 | A00.FR.206 | :heavy_check_mark: yes |  |
-| A00.FR.207 | :no_entry_sign: n/a |  |
+| A00.FR.207 | n/a |  |
 ## Security - TLS with Basic Authentication Profile
 
 | ID | Status | Remark |
@@ -36,8 +36,8 @@
 | A00.FR.302 | :heavy_check_mark: yes |  |
 | A00.FR.303 | :heavy_check_mark: yes |  |
 | A00.FR.304 | :heavy_check_mark: yes |  |
-| A00.FR.306 | :no_entry_sign: n/a |  |
-| A00.FR.307 | :no_entry_sign: n/a |  |
+| A00.FR.306 | n/a |  |
+| A00.FR.307 | n/a |  |
 | A00.FR.308 | :heavy_check_mark: yes |  |
 | A00.FR.309 |  |  |
 | A00.FR.310 |  |  |
@@ -45,30 +45,30 @@
 | A00.FR.312 | :heavy_check_mark: yes |  |
 | A00.FR.313 | :heavy_check_mark: yes |  |
 | A00.FR.314 | :heavy_check_mark: yes |  |
-| A00.FR.315 | :no_entry_sign: n/a |  |
+| A00.FR.315 | n/a |  |
 | A00.FR.316 |  |  |
 | A00.FR.317 | :heavy_check_mark: yes |  |
-| A00.FR.318 | :no_entry_sign: n/a |  |
+| A00.FR.318 | n/a |  |
 | A00.FR.319 | :heavy_check_mark: yes | is configurable |
 | A00.FR.320 | :heavy_check_mark: yes |  |
 | A00.FR.321 | :heavy_check_mark: yes |  |
-| A00.FR.322 | :no_entry_sign: n/a |  |
+| A00.FR.322 | n/a |  |
 | A00.FR.323 |  |  |
-| A00.FR.324 | :no_entry_sign: n/a |  |
+| A00.FR.324 | n/a |  |
 ## Security - TLS with Client Side Certificates Profile
 
 | ID | Status | Remark |
 | --- | --- | --- |
 | A00.FR.401 | :heavy_check_mark: yes |  |
 | A00.FR.402 | :heavy_check_mark: yes |  |
-| A00.FR.403 | :no_entry_sign: n/a |  |
-| A00.FR.404 | :no_entry_sign: n/a |  |
-| A00.FR.405 | :no_entry_sign: n/a |  |
-| A00.FR.406 | :no_entry_sign: n/a |  |
-| A00.FR.407 | :no_entry_sign: n/a |  |
-| A00.FR.408 | :no_entry_sign: n/a |  |
-| A00.FR.409 | :no_entry_sign: n/a |  |
-| A00.FR.410 | :no_entry_sign: n/a |  |
+| A00.FR.403 | n/a |  |
+| A00.FR.404 | n/a |  |
+| A00.FR.405 | n/a |  |
+| A00.FR.406 | n/a |  |
+| A00.FR.407 | n/a |  |
+| A00.FR.408 | n/a |  |
+| A00.FR.409 | n/a |  |
+| A00.FR.410 | n/a |  |
 | A00.FR.411 | :heavy_check_mark: yes |  |
 | A00.FR.412 |  |  |
 | A00.FR.413 |  |  |
@@ -76,18 +76,18 @@
 | A00.FR.415 | :heavy_check_mark: yes |  |
 | A00.FR.416 | :heavy_check_mark: yes |  |
 | A00.FR.417 | :heavy_check_mark: yes |  |
-| A00.FR.418 | :no_entry_sign: n/a |  |
+| A00.FR.418 | n/a |  |
 | A00.FR.419 |  |  |
 | A00.FR.420 | :heavy_check_mark: yes |  |
-| A00.FR.421 | :no_entry_sign: n/a |  |
+| A00.FR.421 | n/a |  |
 | A00.FR.422 | :heavy_check_mark: yes |  |
 | A00.FR.423 | :heavy_check_mark: yes |  |
 | A00.FR.424 | :heavy_check_mark: yes |  |
-| A00.FR.425 | :no_entry_sign: n/a |  |
+| A00.FR.425 | n/a |  |
 | A00.FR.426 |  |  |
-| A00.FR.427 | :no_entry_sign: n/a |  |
-| A00.FR.428 | :no_entry_sign: n/a |  |
-| A00.FR.429 | :no_entry_sign: n/a |  |
+| A00.FR.427 | n/a |  |
+| A00.FR.428 | n/a |  |
+| A00.FR.429 | n/a |  |
 ## Security - Certificate Properties
 
 | ID | Status | Remark |
@@ -96,58 +96,58 @@
 | A00.FR.502 | :heavy_check_mark: yes |  |
 | A00.FR.503 | :heavy_check_mark: yes |  |
 | A00.FR.504 | :heavy_check_mark: yes |  |
-| A00.FR.505 | :no_entry_sign: n/a |  |
+| A00.FR.505 | n/a |  |
 | A00.FR.506 | :heavy_check_mark: yes |  |
 | A00.FR.507 | :heavy_check_mark: yes |  |
-| A00.FR.508 | :no_entry_sign: n/a |  |
-| A00.FR.509 | :no_entry_sign: n/a |  |
-| A00.FR.510 | :no_entry_sign: n/a |  |
-| A00.FR.511 | :no_entry_sign: n/a |  |
-| A00.FR.512 | :no_entry_sign: n/a |  |
-| A00.FR.513 | :no_entry_sign: n/a |  |
-| A00.FR.514 | :no_entry_sign: n/a |  |
+| A00.FR.508 | n/a |  |
+| A00.FR.509 | n/a |  |
+| A00.FR.510 | n/a |  |
+| A00.FR.511 | n/a |  |
+| A00.FR.512 | n/a |  |
+| A00.FR.513 | n/a |  |
+| A00.FR.514 | n/a |  |
 ## Security - Certificate Hierachy
 
 | ID | Status | Remark |
 | --- | --- | --- |
-| A00.FR.601 | :no_entry_sign: n/a |  |
-| A00.FR.602 | :no_entry_sign: n/a |  |
-| A00.FR.603 | :no_entry_sign: n/a |  |
+| A00.FR.601 | n/a |  |
+| A00.FR.602 | n/a |  |
+| A00.FR.603 | n/a |  |
 | A00.FR.604 | :heavy_check_mark: yes |  |
 ## Security - Certificate Revocation
 
 | ID | Status | Remark |
 | --- | --- | --- |
-| A00.FR.701 | :no_entry_sign: n/a |  |
-| A00.FR.702 | :no_entry_sign: n/a |  |
-| A00.FR.703 | :no_entry_sign: n/a |  |
-| A00.FR.704 | :no_entry_sign: n/a |  |
-| A00.FR.705 | :no_entry_sign: n/a |  |
-| A00.FR.707 | :no_entry_sign: n/a |  |
+| A00.FR.701 | n/a |  |
+| A00.FR.702 | n/a |  |
+| A00.FR.703 | n/a |  |
+| A00.FR.704 | n/a |  |
+| A00.FR.705 | n/a |  |
+| A00.FR.707 | n/a |  |
 ## Security - Installation
 
 | ID | Status | Remark |
 | --- | --- | --- |
-| A00.FR.801 | :no_entry_sign: n/a |  |
-| A00.FR.802 | :no_entry_sign: n/a |  |
-| A00.FR.803 | :no_entry_sign: n/a |  |
-| A00.FR.804 | :no_entry_sign: n/a |  |
-| A00.FR.805 | :no_entry_sign: n/a |  |
-| A00.FR.806 | :no_entry_sign: n/a |  |
-| A00.FR.807 | :no_entry_sign: n/a |  |
+| A00.FR.801 | n/a |  |
+| A00.FR.802 | n/a |  |
+| A00.FR.803 | n/a |  |
+| A00.FR.804 | n/a |  |
+| A00.FR.805 | n/a |  |
+| A00.FR.806 | n/a |  |
+| A00.FR.807 | n/a |  |
 ## Security - Update Charging Station Password for HTTP Basic Authentication
 
 | ID | Status | Remark |
 | --- | --- | --- |
 | A01.FR.01 | :heavy_check_mark: yes |  |
 | A01.FR.02 | :heavy_check_mark: yes |  |
-| A01.FR.03 | :no_entry_sign: n/a |  |
-| A01.FR.04 | :no_entry_sign: n/a |  |
-| A01.FR.05 | :no_entry_sign: n/a |  |
-| A01.FR.06 | :no_entry_sign: n/a |  |
-| A01.FR.07 | :no_entry_sign: n/a |  |
-| A01.FR.08 | :no_entry_sign: n/a |  |
-| A01.FR.09 | :no_entry_sign: n/a |  |
+| A01.FR.03 | n/a |  |
+| A01.FR.04 | n/a |  |
+| A01.FR.05 | n/a |  |
+| A01.FR.06 | n/a |  |
+| A01.FR.07 | n/a |  |
+| A01.FR.08 | n/a |  |
+| A01.FR.09 | n/a |  |
 | A01.FR.10 | :heavy_check_mark: yes |  |
 | A01.FR.11 |  |  |
 | A01.FR.12 | :heavy_check_mark: yes |  |
@@ -205,8 +205,8 @@
 | --- | --- | --- |
 | A04.FR.01 | :heavy_check_mark: yes |  |
 | A04.FR.02 | :heavy_check_mark: yes |  |
-| A04.FR.03 | :no_entry_sign: n/a | CSMS is responsible |
-| A04.FR.04 | :no_entry_sign: n/a | Storing security events in log needs to be implemented outside of libOCPP |
+| A04.FR.03 | n/a | CSMS is responsible |
+| A04.FR.04 | n/a | Storing security events in log needs to be implemented outside of libOCPP |
 ## Security - Upgrade Charging Station Security Profile
 
 | ID | Status | Remark |
@@ -216,13 +216,13 @@
 | A05.FR.04 | :heavy_check_mark: yes |  |
 | A05.FR.05 | :heavy_check_mark: yes |  |
 | A05.FR.06 |  |  |
-| A05.FR.07 | :no_entry_sign: n/a |  |
+| A05.FR.07 | n/a |  |
 ## Provisioning - Cold Boot Charging Station
 
 | ID | Status | Remark |
 | --- | --- | --- |
 | B01.FR.01 | :heavy_check_mark: yes |  |
-| B01.FR.02 | :no_entry_sign: n/a |  |
+| B01.FR.02 | n/a |  |
 | B01.FR.03 | :heavy_check_mark: yes |  |
 | B01.FR.04 | :heavy_check_mark: yes |  |
 | B01.FR.05 | :heavy_check_mark: yes |  |
@@ -230,9 +230,9 @@
 | B01.FR.07 |  |  |
 | B01.FR.08 | :heavy_check_mark: yes |  |
 | B01.FR.09 |  |  |
-| B01.FR.10 | :no_entry_sign: n/a |  |
-| B01.FR.11 | :no_entry_sign: n/a |  |
-| B01.FR.12 | :no_entry_sign: n/a |  |
+| B01.FR.10 | n/a |  |
+| B01.FR.11 | n/a |  |
+| B01.FR.12 | n/a |  |
 | B01.FR.13 |  |  |
 ## Provisioning - Cold Boot Charging Station – Pending
 
@@ -246,18 +246,18 @@
 | B02.FR.06 | :heavy_check_mark: yes |  |
 | B02.FR.07 | :heavy_check_mark: yes |  |
 | B02.FR.08 | :heavy_check_mark: yes |  |
-| B02.FR.09 | :no_entry_sign: n/a |  |
+| B02.FR.09 | n/a |  |
 ## Provisioning - Cold Boot Charging Station – Rejected
 
 | ID | Status | Remark |
 | --- | --- | --- |
 | B03.FR.01 |  |  |
 | B03.FR.02 | :heavy_check_mark: yes |  |
-| B03.FR.03 | :no_entry_sign: n/a |  |
+| B03.FR.03 | n/a |  |
 | B03.FR.04 | :heavy_check_mark: yes |  |
 | B03.FR.05 | :heavy_check_mark: yes |  |
 | B03.FR.06 | :heavy_check_mark: yes |  |
-| B03.FR.07 | :no_entry_sign: n/a |  |
+| B03.FR.07 | n/a |  |
 | B03.FR.08 | :heavy_check_mark: yes |  |
 ## Provisioning - Offline Behavior Idle Charging Station
 
@@ -279,7 +279,7 @@
 | B05.FR.08 | :heavy_check_mark: yes |  |
 | B05.FR.09 | :heavy_check_mark: yes |  |
 | B05.FR.10 | :heavy_check_mark: yes |  |
-| B05.FR.11 | :no_entry_sign: n/a |  |
+| B05.FR.11 | n/a |  |
 | B05.FR.12 | :heavy_check_mark: yes |  |
 | B05.FR.13 | :heavy_check_mark: yes |  |
 ## Provisioning - Get Variables
@@ -318,8 +318,8 @@
 | B07.FR.10 | :heavy_check_mark: yes |  |
 | B07.FR.11 | :heavy_check_mark: yes |  |
 | B07.FR.12 | :heavy_check_mark: yes |  |
-| B07.FR.13 | :no_entry_sign: n/a | tbd if this is applicable |
-| B07.FR.14 | :no_entry_sign: n/a |  |
+| B07.FR.13 | n/a | tbd if this is applicable |
+| B07.FR.14 | n/a |  |
 ## Provisioning - Get Custom Report
 
 | ID | Status | Remark |
@@ -329,7 +329,7 @@
 | B08.FR.03 | :heavy_check_mark: yes |  |
 | B08.FR.04 | :heavy_check_mark: yes |  |
 | B08.FR.05 | :heavy_check_mark: yes |  |
-| B08.FR.06 | :no_entry_sign: n/a |  |
+| B08.FR.06 | n/a |  |
 | B08.FR.07 | :heavy_check_mark: yes |  |
 | B08.FR.08 | :heavy_check_mark: yes |  |
 | B08.FR.09 | :heavy_check_mark: yes |  |
@@ -361,9 +361,9 @@
 | B10.FR.02 | :heavy_check_mark: yes |  |
 | B10.FR.03 | :heavy_check_mark: yes |  |
 | B10.FR.04 | :heavy_check_mark: yes |  |
-| B10.FR.05 | :no_entry_sign: n/a |  |
+| B10.FR.05 | n/a |  |
 | B10.FR.06 | :heavy_check_mark: yes |  |
-| B10.FR.07 | :no_entry_sign: n/a | tbd. we're looping over priorities and attempt to reconnect |
+| B10.FR.07 | n/a | tbd. we're looping over priorities and attempt to reconnect |
 ## Provisioning - Reset - Without Ongoing Transaction
 
 | ID | Status | Remark |
@@ -423,9 +423,9 @@
 
 | ID | Status | Remark |
 | --- | --- | --- |
-| C02.FR.01 | :no_entry_sign: n/a |  |
-| C02.FR.02 | :no_entry_sign: n/a |  |
-| C02.FR.03 | :no_entry_sign: n/a |  |
+| C02.FR.01 | n/a |  |
+| C02.FR.02 | n/a |  |
+| C02.FR.03 | n/a |  |
 ## Authorization - Authorization using credit/debit card
 
 | ID | Status | Remark |
@@ -436,12 +436,12 @@
 
 | ID | Status | Remark |
 | --- | --- | --- |
-| C04.FR.01 | :no_entry_sign: n/a |  |
-| C04.FR.02 | :no_entry_sign: n/a |  |
-| C04.FR.03 | :no_entry_sign: n/a |  |
-| C04.FR.04 | :no_entry_sign: n/a |  |
-| C04.FR.05 | :no_entry_sign: n/a |  |
-| C04.FR.06 | :no_entry_sign: n/a |  |
+| C04.FR.01 | n/a |  |
+| C04.FR.02 | n/a |  |
+| C04.FR.03 | n/a |  |
+| C04.FR.04 | n/a |  |
+| C04.FR.05 | n/a |  |
+| C04.FR.06 | n/a |  |
 ## Authorization - Authorization for CSMS initiated transactions
 
 | ID | Status | Remark |
@@ -484,15 +484,15 @@
 
 | ID | Status | Remark |
 | --- | --- | --- |
-| C09.FR.02 | :no_entry_sign: n/a |  |
+| C09.FR.02 | n/a |  |
 | C09.FR.03 | :heavy_check_mark: yes |  |
 | C09.FR.04 | :heavy_check_mark: yes |  |
 | C09.FR.05 | In Progress | Still needs local list test cases |
 | C09.FR.07 | :heavy_check_mark: yes |  |
-| C09.FR.09 | :no_entry_sign: n/a |  |
-| C09.FR.10 | :no_entry_sign: n/a |  |
+| C09.FR.09 | n/a |  |
+| C09.FR.10 | n/a |  |
 | C09.FR.11 | :heavy_check_mark: yes |  |
-| C09.FR.12 | :no_entry_sign: n/a |  |
+| C09.FR.12 | n/a |  |
 ## Authorization - Store Authorization Data in the Authorization Cache
 
 | ID | Status | Remark |
@@ -559,7 +559,7 @@
 
 | ID | Status | Remark |
 | --- | --- | --- |
-| C16.FR.01 | :no_entry_sign: n/a |  |
+| C16.FR.01 | n/a |  |
 | C16.FR.02 | In Progress | Core changes ? |
 | C16.FR.03 | In Progress | Core changes |
 | C16.FR.04 |  |  |
@@ -570,7 +570,7 @@
 | --- | --- | --- |
 | D01.FR.01 | :heavy_check_mark: yes |  |
 | D01.FR.02 | :heavy_check_mark: yes |  |
-| D01.FR.03 | :no_entry_sign: n/a | CSMS responsible |
+| D01.FR.03 | n/a | CSMS responsible |
 | D01.FR.04 | :heavy_check_mark: yes |  |
 | D01.FR.05 | :heavy_check_mark: yes |  |
 | D01.FR.06 | :heavy_check_mark: yes |  |
@@ -595,26 +595,26 @@
 
 | ID | Status | Remark |
 | --- | --- | --- |
-| E01.FR.01 | :no_entry_sign: n/a |  |
-| E01.FR.02 | :no_entry_sign: n/a |  |
-| E01.FR.03 | :no_entry_sign: n/a |  |
-| E01.FR.04 | :no_entry_sign: n/a |  |
+| E01.FR.01 | n/a |  |
+| E01.FR.02 | n/a |  |
+| E01.FR.03 | n/a |  |
+| E01.FR.04 | n/a |  |
 | E01.FR.05 | :heavy_check_mark: yes |  |
-| E01.FR.06 | :no_entry_sign: n/a |  |
+| E01.FR.06 | n/a |  |
 | E01.FR.07 | :heavy_check_mark: yes |  |
 | E01.FR.08 | :heavy_check_mark: yes |  |
 | E01.FR.09 | :heavy_check_mark: yes |  |
 | E01.FR.10 | :heavy_check_mark: yes |  |
-| E01.FR.11 | :no_entry_sign: n/a |  |
-| E01.FR.12 | :no_entry_sign: n/a |  |
+| E01.FR.11 | n/a |  |
+| E01.FR.12 | n/a |  |
 | E01.FR.13 |  |  |
 | E01.FR.14 | :heavy_check_mark: yes |  |
 | E01.FR.15 | :heavy_check_mark: yes |  |
 | E01.FR.16 | :heavy_check_mark: yes |  |
-| E01.FR.17 | :no_entry_sign: n/a |  |
+| E01.FR.17 | n/a |  |
 | E01.FR.18 | :heavy_check_mark: yes |  |
 | E01.FR.19 | :heavy_check_mark: yes |  |
-| E01.FR.20 | :no_entry_sign: n/a | tbd |
+| E01.FR.20 | n/a | tbd |
 ## Transactions - Start Transaction - Cable Plugin First
 
 | ID | Status | Remark |
@@ -624,12 +624,12 @@
 | E02.FR.03 |  |  |
 | E02.FR.04 | :heavy_check_mark: yes |  |
 | E02.FR.05 | :heavy_check_mark: yes |  |
-| E02.FR.06 | :no_entry_sign: n/a |  |
+| E02.FR.06 | n/a |  |
 | E02.FR.07 | :heavy_check_mark: yes |  |
 | E02.FR.08 | :heavy_check_mark: yes |  |
 | E02.FR.09 | :heavy_check_mark: yes |  |
 | E02.FR.10 | :heavy_check_mark: yes |  |
-| E02.FR.11 | :no_entry_sign: n/a | tbd |
+| E02.FR.11 | n/a | tbd |
 | E02.FR.13 | :heavy_check_mark: yes |  |
 | E02.FR.14 |  |  |
 | E02.FR.15 | :heavy_check_mark: yes |  |
@@ -637,7 +637,7 @@
 | E02.FR.17 | :heavy_check_mark: yes |  |
 | E02.FR.18 |  |  |
 | E02.FR.19 |  |  |
-| E02.FR.20 | :no_entry_sign: n/a |  |
+| E02.FR.20 | n/a |  |
 | E02.FR.21 | :heavy_check_mark: yes |  |
 ## Transactions - Start Transaction - IdToken First
 
@@ -646,17 +646,17 @@
 | E03.FR.01 | :heavy_check_mark: yes |  |
 | E03.FR.02 | :heavy_check_mark: yes |  |
 | E03.FR.03 |  |  |
-| E03.FR.05 | :no_entry_sign: n/a |  |
+| E03.FR.05 | n/a |  |
 | E03.FR.06 | :heavy_check_mark: yes |  |
 | E03.FR.07 | :heavy_check_mark: yes |  |
 | E03.FR.08 | :heavy_check_mark: yes |  |
-| E03.FR.09 | :no_entry_sign: n/a | tbd |
+| E03.FR.09 | n/a | tbd |
 | E03.FR.10 |  |  |
 | E03.FR.11 | :heavy_check_mark: yes |  |
 | E03.FR.12 | :heavy_check_mark: yes |  |
 | E03.FR.13 |  |  |
 | E03.FR.14 |  |  |
-| E03.FR.15 | :no_entry_sign: n/a |  |
+| E03.FR.15 | n/a |  |
 ## Transactions - Transaction started while Charging Station is offline
 
 | ID | Status | Remark |
@@ -669,9 +669,9 @@
 | E04.FR.06 | :heavy_check_mark: yes |  |
 | E04.FR.07 |  | tbd |
 | E04.FR.08 |  | tbd |
-| E04.FR.09 | :no_entry_sign: n/a | tbd |
-| E04.FR.10 | :no_entry_sign: n/a | tbd |
-| E04.FR.11 | :no_entry_sign: n/a |  |
+| E04.FR.09 | n/a | tbd |
+| E04.FR.10 | n/a | tbd |
+| E04.FR.11 | n/a |  |
 ## Transactions - Start Transaction - Id not Accepted
 
 | ID | Status | Remark |
@@ -683,26 +683,26 @@
 | E05.FR.05 | :heavy_check_mark: yes |  |
 | E05.FR.06 |  |  |
 | E05.FR.08 | :heavy_check_mark: yes |  |
-| E05.FR.09 | :no_entry_sign: n/a |  |
+| E05.FR.09 | n/a |  |
 | E05.FR.10 | :heavy_check_mark: yes |  |
 | E05.FR.11 |  |  |
 ## Transactions - Stop Transaction options
 
 | ID | Status | Remark |
 | --- | --- | --- |
-| E06.FR.01 | :no_entry_sign: n/a |  |
+| E06.FR.01 | n/a |  |
 | E06.FR.02 | :heavy_check_mark: yes |  |
 | E06.FR.03 | :heavy_check_mark: yes |  |
 | E06.FR.04 | :heavy_check_mark: yes |  |
-| E06.FR.05 | :no_entry_sign: n/a |  |
-| E06.FR.06 | :no_entry_sign: n/a |  |
-| E06.FR.07 | :no_entry_sign: n/a |  |
+| E06.FR.05 | n/a |  |
+| E06.FR.06 | n/a |  |
+| E06.FR.07 | n/a |  |
 | E06.FR.08 | :heavy_check_mark: yes |  |
 | E06.FR.09 | :heavy_check_mark: yes |  |
-| E06.FR.10 | :no_entry_sign: n/a |  |
+| E06.FR.10 | n/a |  |
 | E06.FR.11 | :heavy_check_mark: yes |  |
-| E06.FR.12 | :no_entry_sign: n/a | tbd |
-| E06.FR.13 | :no_entry_sign: n/a | tbd |
+| E06.FR.12 | n/a | tbd |
+| E06.FR.13 | n/a | tbd |
 | E06.FR.14 | :heavy_check_mark: yes |  |
 | E06.FR.15 | :heavy_check_mark: yes |  |
 | E06.FR.16 |  |  |
@@ -715,7 +715,7 @@
 | E07.FR.04 | :heavy_check_mark: yes |  |
 | E07.FR.05 | :heavy_check_mark: yes |  |
 | E07.FR.06 | :heavy_check_mark: yes |  |
-| E07.FR.07 | :no_entry_sign: n/a |  |
+| E07.FR.07 | n/a |  |
 | E07.FR.08 | :heavy_check_mark: yes |  |
 | E07.FR.09 | :heavy_check_mark: yes |  |
 | E07.FR.10 | :heavy_check_mark: yes |  |
@@ -727,7 +727,7 @@
 | --- | --- | --- |
 | E08.FR.01 | :heavy_check_mark: yes |  |
 | E08.FR.02 | :heavy_check_mark: yes |  |
-| E08.FR.03 | :no_entry_sign: n/a |  |
+| E08.FR.03 | n/a |  |
 | E08.FR.04 | :heavy_check_mark: yes |  |
 | E08.FR.05 | :heavy_check_mark: yes |  |
 | E08.FR.06 | :heavy_check_mark: yes |  |
@@ -760,9 +760,9 @@
 | E10.FR.02 | :heavy_check_mark: yes |  |
 | E10.FR.03 | :heavy_check_mark: yes |  |
 | E10.FR.04 | :heavy_check_mark: yes |  |
-| E10.FR.05 | :no_entry_sign: n/a | tbd |
-| E10.FR.06 | :no_entry_sign: n/a | tbd |
-| E10.FR.07 | :no_entry_sign: n/a | tbd |
+| E10.FR.05 | n/a | tbd |
+| E10.FR.06 | n/a | tbd |
+| E10.FR.07 | n/a | tbd |
 ## Transactions - Connection Loss During Transaction
 
 | ID | Status | Remark |
@@ -814,8 +814,8 @@
 | ID | Status | Remark |
 | --- | --- | --- |
 | E15.FR.01 | :heavy_check_mark: yes |  |
-| E15.FR.02 | :no_entry_sign: n/a | tbd |
-| E15.FR.03 | :no_entry_sign: n/a | tbd |
+| E15.FR.02 | n/a | tbd |
+| E15.FR.03 | n/a | tbd |
 | E15.FR.04 | :heavy_check_mark: yes |  |
 ## RemoteControl - Remote Start Transaction - Cable Plugin First
 
@@ -915,8 +915,8 @@
 
 | ID | Status | Remark |
 | --- | --- | --- |
-| F06.FR.01 | :no_entry_sign: n/a |  |
-| F06.FR.02 | :no_entry_sign: n/a |  |
+| F06.FR.01 | n/a |  |
+| F06.FR.02 | n/a |  |
 | F06.FR.03 | :heavy_check_mark: yes |  |
 | F06.FR.04 | :heavy_check_mark: yes |  |
 | F06.FR.05 | :heavy_check_mark: yes |  |
@@ -937,7 +937,7 @@
 | ID | Status | Remark |
 | --- | --- | --- |
 | G01.FR.01 | :heavy_check_mark: yes |  |
-| G01.FR.02 | :no_entry_sign: n/a | Charging station is responsible??? |
+| G01.FR.02 | n/a | Charging station is responsible??? |
 | G01.FR.03 | :heavy_check_mark: yes |  |
 | G01.FR.04 |  |  |
 | G01.FR.05 |  |  |
@@ -950,8 +950,8 @@
 | --- | --- | --- |
 | G02.FR.01 | :heavy_check_mark: yes |  |
 | G02.FR.02 | :heavy_check_mark: yes |  |
-| G02.FR.03 | :no_entry_sign: n/a |  |
-| G02.FR.04 | :no_entry_sign: n/a |  |
+| G02.FR.03 | n/a |  |
+| G02.FR.04 | n/a |  |
 | G02.FR.05 |  | Not mandatory, so we can leave like this |
 | G02.FR.06 |  |  |
 | G02.FR.07 |  |  |
@@ -966,7 +966,7 @@
 | G03.FR.05 | :heavy_check_mark: yes |  |
 | G03.FR.06 | :heavy_check_mark: yes |  |
 | G03.FR.07 | :heavy_check_mark: yes |  |
-| G03.FR.08 | :no_entry_sign: n/a | OCPP201 Module should take care of persisting this information, libocpp will just listen to events |
+| G03.FR.08 | n/a | OCPP201 Module should take care of persisting this information, libocpp will just listen to events |
 ## Availability - Change Availability Charging Station
 
 | ID | Status | Remark |
@@ -986,8 +986,8 @@
 | --- | --- | --- |
 | G05.FR.01 | :heavy_check_mark: yes | Charging station is responsible??? |
 | G05.FR.02 | :heavy_check_mark: yes | Charging station is responsible??? |
-| G05.FR.03 | :no_entry_sign: n/a | Charging station is responsible??? |
-| G05.FR.04 | :no_entry_sign: n/a | Charging station is responsible??? |
+| G05.FR.03 | n/a | Charging station is responsible??? |
+| G05.FR.04 | n/a | Charging station is responsible??? |
 ## Reservation - Reservation
 
 | ID | Status | Remark |
@@ -1095,12 +1095,12 @@
 | J01.FR.11 | :heavy_check_mark: yes |  |
 | J01.FR.13 | In Progress | Added phase rotation configuration variable |
 | J01.FR.14 | :heavy_check_mark: yes |  |
-| J01.FR.15 | :no_entry_sign: n/a | tbd |
+| J01.FR.15 | n/a | tbd |
 | J01.FR.17 | :heavy_check_mark: yes |  |
 | J01.FR.18 | :heavy_check_mark: yes |  |
 | J01.FR.19 | :heavy_check_mark: yes |  |
 | J01.FR.20 | :heavy_check_mark: yes |  |
-| J01.FR.21 | :no_entry_sign: n/a | not valid |
+| J01.FR.21 | n/a | not valid |
 ## MeterValues - Sending transaction related Meter Values
 
 | ID | Status | Remark |
@@ -1115,15 +1115,15 @@
 | J02.FR.09 | In Progress | Added phase rotation configuration variable |
 | J02.FR.10 | :heavy_check_mark: yes |  |
 | J02.FR.11 | :heavy_check_mark: yes |  |
-| J02.FR.12 | :no_entry_sign: n/a | tbd |
-| J02.FR.13 | :no_entry_sign: n/a | tbd |
-| J02.FR.14 | :no_entry_sign: n/a | tbd |
-| J02.FR.16 | :no_entry_sign: n/a |  |
-| J02.FR.17 | :no_entry_sign: n/a | tbd |
+| J02.FR.12 | n/a | tbd |
+| J02.FR.13 | n/a | tbd |
+| J02.FR.14 | n/a | tbd |
+| J02.FR.16 | n/a |  |
+| J02.FR.17 | n/a | tbd |
 | J02.FR.18 | :heavy_check_mark: yes |  |
 | J02.FR.19 | :heavy_check_mark: yes |  |
 | J02.FR.20 | :heavy_check_mark: yes |  |
-| J02.FR.21 | :no_entry_sign: n/a | signed meter values are not yet applicable |
+| J02.FR.21 | n/a | signed meter values are not yet applicable |
 ## MeterValues - Charging Loop with metering information exchange
 
 | ID | Status | Remark |
@@ -1376,10 +1376,10 @@
 | L01.FR.05 |  | Charging Station is responsible |
 | L01.FR.06 |  | Charging Station is responsible |
 | L01.FR.07 |  | Charging Station is responsible |
-| L01.FR.08 | :no_entry_sign: n/a | Recommendation, not a requirement |
-| L01.FR.09 | :no_entry_sign: n/a | Requirement on the firmware file itself |
+| L01.FR.08 | n/a | Recommendation, not a requirement |
+| L01.FR.09 | n/a | Requirement on the firmware file itself |
 | L01.FR.10 |  | Charging Station is responsible |
-| L01.FR.11 | :no_entry_sign: n/a |  |
+| L01.FR.11 | n/a |  |
 | L01.FR.12 |  | Charging Station is responsible |
 | L01.FR.13 |  | Charging Station is responsible |
 | L01.FR.14 |  | Charging Station is responsible |
@@ -1397,7 +1397,7 @@
 | L01.FR.29 |  |  |
 | L01.FR.30 |  |  |
 | L01.FR.31 | :heavy_check_mark: yes |  |
-| L01.FR.32 | :no_entry_sign: n/a | Not a requirement |
+| L01.FR.32 | n/a | Not a requirement |
 ## FirmwareManagement - Non-Secure Firmware Update
 
 | ID | Status | Remark |
@@ -1734,11 +1734,11 @@
 | --- | --- | --- |
 | P01.FR.01 |  | There is no way yet to register a data transfer callback. |
 | P01.FR.02 |  | ??? Not clear by me (Maaike) |
-| P01.FR.03 | :no_entry_sign: n/a |  |
-| P01.FR.04 | :no_entry_sign: n/a |  |
+| P01.FR.03 | n/a |  |
+| P01.FR.04 | n/a |  |
 | P01.FR.05 | :heavy_check_mark: yes |  |
 | P01.FR.06 | :heavy_check_mark: yes |  |
-| P01.FR.07 | :no_entry_sign: n/a |  |
+| P01.FR.07 | n/a |  |
 ## DataTransfer - Data Transfer to the CSMS
 
 | ID | Status | Remark |
@@ -1747,7 +1747,7 @@
 | P02.FR.02 | :heavy_check_mark: yes | Charging station is responsible |
 | P02.FR.03 |  | ??? Not clear by me (Maaike) |
 | P02.FR.04 | :heavy_check_mark: yes | Charging station is responsible |
-| P02.FR.05 | :no_entry_sign: n/a |  |
-| P02.FR.06 | :no_entry_sign: n/a |  |
-| P02.FR.07 | :no_entry_sign: n/a |  |
-| P02.FR.08 | :no_entry_sign: n/a |  |
+| P02.FR.05 | n/a |  |
+| P02.FR.06 | n/a |  |
+| P02.FR.07 | n/a |  |
+| P02.FR.08 | n/a |  |
