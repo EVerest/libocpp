@@ -3096,8 +3096,12 @@ DataTransferResponse ChargePoint::data_transfer_req(const CiString<255>& vendorI
     req.messageId = messageId;
     req.data = data;
 
+    return this->data_transfer_req(req);
+}
+
+DataTransferResponse ChargePoint::data_transfer_req(const DataTransferRequest& request) {
     DataTransferResponse response;
-    ocpp::Call<DataTransferRequest> call(req, this->message_queue->createMessageId());
+    ocpp::Call<DataTransferRequest> call(request, this->message_queue->createMessageId());
     auto data_transfer_future = this->send_async<DataTransferRequest>(call);
 
     auto enhanced_message = data_transfer_future.get();
