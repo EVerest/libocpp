@@ -180,14 +180,6 @@ void ChargePoint::start(BootReasonEnum bootreason) {
     this->boot_notification_req(bootreason);
     this->start_websocket();
     this->ocsp_updater.start();
-
-    // Get any interrupted transactions from the database
-    auto inter_transactions = this->database_handler->get_ongoing_transactions();
-    // store into the global
-    if (inter_transactions.has_active_transaction) {
-        interrupted_transactions.push_back(inter_transactions);
-    }
-
     // FIXME(piet): Run state machine with correct initial state
 }
 
@@ -2157,6 +2149,14 @@ void ChargePoint::handle_boot_notification_response(CallResult<BootNotificationR
         // get transaction messages from db (if there are any) so they can be sent again.
         message_queue->get_transaction_messages_from_db();
 
+        // Get any interrupted transactions from the database
+        auto inter_transactions = this->database_handler->get_ongoing_transactions();
+        // store into the global
+        if (inter_transactions.has_active_transaction) {
+            interrupted_transactions.push_back(inter_transactions);
+            on_transaction_resumed(inter_transactions.transaction_id, ChargingStateEnum::Charging);
+        }
+        
         // set timers
         if (msg.interval > 0) {
             this->heartbeat_timer.interval([this]() { this->heartbeat_req(); }, std::chrono::seconds(msg.interval));
