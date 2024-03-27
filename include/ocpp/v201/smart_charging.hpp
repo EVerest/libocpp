@@ -69,7 +69,7 @@ public:
     ProfileValidationResultEnum validate_profile_schedules(const ChargingProfile& profile) const;
 
     ///
-    /// \brief Adds a given \p profile to our stored list of profiles
+    /// \brief Adds a given \p profile and associated \p evse_id to our stored list of profiles
     ///
     void add_profile(int32_t evse_id, ChargingProfile& profile);
 
