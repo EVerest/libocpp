@@ -42,6 +42,11 @@ private:
     /// \brief function to check if the max energy has been exceeded, calls pause_charging_callback if so.
     void check_max_energy_on_invalid_id();
 
+    void restart_metering_timers(const DateTime& timestamp, const std::chrono::seconds sampled_data_tx_updated_interval,
+                                 const std::chrono::seconds sampled_data_tx_ended_interval,
+                                 const std::chrono::seconds aligned_data_tx_updated_interval,
+                                 const std::chrono::seconds aligned_data_tx_ended_interval);
+
     AverageMeterValues aligned_data_updated;
     AverageMeterValues aligned_data_tx_end;
 
@@ -94,6 +99,20 @@ public:
     /// \param meter_stop
     /// \param reason
     void close_transaction(const DateTime& timestamp, const MeterValue& meter_stop, const ReasonEnum& reason);
+
+    /// @brief Resume a given transaction.
+    /// @param transaction_id
+    /// @param connector_id
+    /// @param timestamp
+    /// @param meter_start
+    /// @param id_token
+    /// @param group_id_token
+    /// @param reservation_id
+    /// @param charging_state
+    void resume_transaction(const std::string& transaction_id, const int32_t connector_id, const DateTime& timestamp,
+                            const MeterValue& meter_start, const IdToken& id_token,
+                            const std::optional<IdToken>& group_id_token, const std::optional<int32_t> reservation_id,
+                            ChargingStateEnum charging_state);
 
     /// \brief Start checking if the max energy on invalid id has exceeded.
     ///        Will call pause_charging_callback when that happens.

@@ -66,6 +66,37 @@ uint32_t Evse::get_number_of_connectors() {
     return static_cast<uint32_t>(this->id_connector_map.size());
 }
 
+void Evse::resume_transaction(const std::string& transaction_id, const int32_t connector_id, const DateTime& timestamp,
+                              const MeterValue& meter_start, const IdToken& id_token,
+                              const std::optional<IdToken>& group_id_token, const std::optional<int32_t> reservation_id,
+                              ChargingStateEnum charging_state) {
+
+    this->transaction = std::make_unique<EnhancedTransaction>();
+    this->transaction->transactionId = transaction_id;
+    this->transaction->reservation_id = reservation_id;
+    this->transaction->connector_id = connector_id;
+    this->transaction->id_token = id_token;
+    this->transaction->group_id_token = group_id_token;
+    this->transaction->chargingState = charging_state; // TODO: can't we just hardcode this here?
+    this->transaction->active_energy_import_start_value = this->get_active_import_register_meter_value();
+
+    // Restart the clock timers
+    restart_metering_timers(
+        timestamp,
+        std::chrono::seconds(
+            this->device_model.get_value<int>(ControllerComponentVariables::SampledDataTxUpdatedInterval)),
+        std::chrono::seconds(
+            this->device_model.get_value<int>(ControllerComponentVariables::SampledDataTxEndedInterval)),
+        std::chrono::seconds(this->device_model.get_value<int>(ControllerComponentVariables::AlignedDataInterval)),
+        std::chrono::seconds(
+            this->device_model.get_value<int>(ControllerComponentVariables::AlignedDataTxEndedInterval)));
+
+    // // get the meter values if there was an active transaction
+    // if (active_response.has_active_transaction) {
+    //     active_response.meter_start = transaction_metervalues_get_all(active_response.transaction_id).back();
+    // }
+}
+
 void Evse::open_transaction(const std::string& transaction_id, const int32_t connector_id, const DateTime& timestamp,
                             const MeterValue& meter_start, const IdToken& id_token,
                             const std::optional<IdToken>& group_id_token, const std::optional<int32_t> reservation_id,
@@ -86,89 +117,9 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
 
     this->database_handler->transaction_metervalues_insert(this->transaction->transactionId.get(), meter_start);
 
-    this->aligned_data_updated.clear_values();
-    this->aligned_data_tx_end.clear_values();
-
-    if (sampled_data_tx_updated_interval > 0s) {
-        transaction->sampled_tx_updated_meter_values_timer.interval_starting_from(
-            [this] {
-                this->transaction_meter_value_req(this->get_meter_value(), this->transaction->get_transaction(),
-                                                  transaction->get_seq_no(), this->transaction->reservation_id);
-            },
-            sampled_data_tx_updated_interval, date::utc_clock::to_sys(timestamp.to_time_point()));
-    }
-
-    if (sampled_data_tx_ended_interval > 0s) {
-        transaction->sampled_tx_ended_meter_values_timer.interval_starting_from(
-            [this] {
-                this->database_handler->transaction_metervalues_insert(this->transaction->transactionId.get(),
-                                                                       this->get_meter_value());
-            },
-            sampled_data_tx_ended_interval, date::utc_clock::to_sys(timestamp.to_time_point()));
-    }
-
-    if (aligned_data_tx_updated_interval > 0s) {
-        transaction->aligned_tx_updated_meter_values_timer.interval_starting_from(
-            [this, aligned_data_tx_updated_interval] {
-                if (this->device_model.get_optional_value<bool>(ControllerComponentVariables::AlignedDataSendDuringIdle)
-                        .value_or(false)) {
-                    return;
-                }
-                auto meter_value = this->aligned_data_updated.retrieve_processed_values();
-
-                // If empty fallback on last updated metervalue
-                if (meter_value.sampledValue.empty()) {
-                    meter_value = get_meter_value();
-                }
-
-                for (auto& item : meter_value.sampledValue) {
-                    item.context = ReadingContextEnum::Sample_Clock;
-                }
-                if (this->device_model
-                        .get_optional_value<bool>(ControllerComponentVariables::RoundClockAlignedTimestamps)
-                        .value_or(false)) {
-                    meter_value.timestamp = utils::align_timestamp(DateTime{}, aligned_data_tx_updated_interval);
-                }
-                this->transaction_meter_value_req(meter_value, this->transaction->get_transaction(),
-                                                  transaction->get_seq_no(), this->transaction->reservation_id);
-                this->aligned_data_updated.clear_values();
-            },
-            aligned_data_tx_updated_interval,
-            std::chrono::floor<date::days>(date::utc_clock::to_sys(date::utc_clock::now())));
-    }
-
-    if (aligned_data_tx_ended_interval > 0s) {
-        auto store_aligned_metervalue = [this, aligned_data_tx_ended_interval] {
-            auto meter_value = this->aligned_data_tx_end.retrieve_processed_values();
-
-            // If empty fallback on last updated metervalue
-            if (meter_value.sampledValue.empty()) {
-                meter_value = get_meter_value();
-            }
-
-            for (auto& item : meter_value.sampledValue) {
-                item.context = ReadingContextEnum::Sample_Clock;
-            }
-            if (this->device_model.get_optional_value<bool>(ControllerComponentVariables::RoundClockAlignedTimestamps)
-                    .value_or(false)) {
-                meter_value.timestamp = utils::align_timestamp(DateTime{}, aligned_data_tx_ended_interval);
-            }
-            this->database_handler->transaction_metervalues_insert(this->transaction->transactionId.get(), meter_value);
-            this->aligned_data_tx_end.clear_values();
-        };
-
-        auto next_interval = transaction->aligned_tx_ended_meter_values_timer.interval_starting_from(
-            store_aligned_metervalue, aligned_data_tx_ended_interval,
-            std::chrono::floor<date::days>(date::utc_clock::to_sys(date::utc_clock::now())));
-
-        // Store an extra aligned metervalue to fix the edge case where a transaction is started just before an interval
-        // but this code is processed just after the interval.
-        // For example, aligned interval = 1 min, transaction started at 11:59:59.500 and we get here on 12:00:00.100.
-        // There is still the expectation for us to add a metervalue at timepoint 12:00:00.000 which we do with this.
-        if (date::utc_clock::to_sys(timestamp.to_time_point()) <= (next_interval - aligned_data_tx_ended_interval)) {
-            store_aligned_metervalue();
-        }
-    }
+    // start the metering timers
+    restart_metering_timers(timestamp, sampled_data_tx_updated_interval, sampled_data_tx_ended_interval,
+                            aligned_data_tx_updated_interval, aligned_data_tx_ended_interval);
 }
 
 void Evse::close_transaction(const DateTime& timestamp, const MeterValue& meter_stop, const ReasonEnum& reason) {
@@ -281,6 +232,96 @@ void Evse::check_max_energy_on_invalid_id() {
     }
 }
 
+void Evse::restart_metering_timers(const DateTime& timestamp,
+                                   const std::chrono::seconds sampled_data_tx_updated_interval,
+                                   const std::chrono::seconds sampled_data_tx_ended_interval,
+                                   const std::chrono::seconds aligned_data_tx_updated_interval,
+                                   const std::chrono::seconds aligned_data_tx_ended_interval) {
+
+    this->aligned_data_updated.clear_values();
+    this->aligned_data_tx_end.clear_values();
+
+    if (sampled_data_tx_updated_interval > 0s) {
+        transaction->sampled_tx_updated_meter_values_timer.interval_starting_from(
+            [this] {
+                this->transaction_meter_value_req(this->get_meter_value(), this->transaction->get_transaction(),
+                                                  transaction->get_seq_no(), this->transaction->reservation_id);
+            },
+            sampled_data_tx_updated_interval, date::utc_clock::to_sys(timestamp.to_time_point()));
+    }
+
+    if (sampled_data_tx_ended_interval > 0s) {
+        transaction->sampled_tx_ended_meter_values_timer.interval_starting_from(
+            [this] {
+                this->database_handler->transaction_metervalues_insert(this->transaction->transactionId.get(),
+                                                                       this->get_meter_value());
+            },
+            sampled_data_tx_ended_interval, date::utc_clock::to_sys(timestamp.to_time_point()));
+    }
+
+    if (aligned_data_tx_updated_interval > 0s) {
+        transaction->aligned_tx_updated_meter_values_timer.interval_starting_from(
+            [this, aligned_data_tx_updated_interval] {
+                if (this->device_model.get_optional_value<bool>(ControllerComponentVariables::AlignedDataSendDuringIdle)
+                        .value_or(false)) {
+                    return;
+                }
+                auto meter_value = this->aligned_data_updated.retrieve_processed_values();
+
+                // If empty fallback on last updated metervalue
+                if (meter_value.sampledValue.empty()) {
+                    meter_value = get_meter_value();
+                }
+
+                for (auto& item : meter_value.sampledValue) {
+                    item.context = ReadingContextEnum::Sample_Clock;
+                }
+                if (this->device_model
+                        .get_optional_value<bool>(ControllerComponentVariables::RoundClockAlignedTimestamps)
+                        .value_or(false)) {
+                    meter_value.timestamp = utils::align_timestamp(DateTime{}, aligned_data_tx_updated_interval);
+                }
+                this->transaction_meter_value_req(meter_value, this->transaction->get_transaction(),
+                                                  transaction->get_seq_no(), this->transaction->reservation_id);
+                this->aligned_data_updated.clear_values();
+            },
+            aligned_data_tx_updated_interval,
+            std::chrono::floor<date::days>(date::utc_clock::to_sys(date::utc_clock::now())));
+    }
+
+    if (aligned_data_tx_ended_interval > 0s) {
+        auto store_aligned_metervalue = [this, aligned_data_tx_ended_interval] {
+            auto meter_value = this->aligned_data_tx_end.retrieve_processed_values();
+
+            // If empty fallback on last updated metervalue
+            if (meter_value.sampledValue.empty()) {
+                meter_value = get_meter_value();
+            }
+
+            for (auto& item : meter_value.sampledValue) {
+                item.context = ReadingContextEnum::Sample_Clock;
+            }
+            if (this->device_model.get_optional_value<bool>(ControllerComponentVariables::RoundClockAlignedTimestamps)
+                    .value_or(false)) {
+                meter_value.timestamp = utils::align_timestamp(DateTime{}, aligned_data_tx_ended_interval);
+            }
+            this->database_handler->transaction_metervalues_insert(this->transaction->transactionId.get(), meter_value);
+            this->aligned_data_tx_end.clear_values();
+        };
+
+        auto next_interval = transaction->aligned_tx_ended_meter_values_timer.interval_starting_from(
+            store_aligned_metervalue, aligned_data_tx_ended_interval,
+            std::chrono::floor<date::days>(date::utc_clock::to_sys(date::utc_clock::now())));
+
+        // Store an extra aligned metervalue to fix the edge case where a transaction is started just before an interval
+        // but this code is processed just after the interval.
+        // For example, aligned interval = 1 min, transaction started at 11:59:59.500 and we get here on 12:00:00.100.
+        // There is still the expectation for us to add a metervalue at timepoint 12:00:00.000 which we do with this.
+        if (date::utc_clock::to_sys(timestamp.to_time_point()) <= (next_interval - aligned_data_tx_ended_interval)) {
+            store_aligned_metervalue();
+        }
+    }
+}
 void Evse::set_evse_operative_status(OperationalStatusEnum new_status, bool persist) {
     this->component_state_manager->set_evse_individual_operational_status(this->evse_id, new_status, persist);
 }

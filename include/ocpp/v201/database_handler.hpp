@@ -39,6 +39,10 @@ private:
                              bool replace);
     OperationalStatusEnum get_availability(int32_t evse_id, int32_t connector_id);
 
+    // Interrupted transactions
+    std::vector<TransactionInterruptedResponse> interrupted_transactions;
+    void process_interrupted_transactions();
+
 public:
     DatabaseHandler(const fs::path& database_path, const fs::path& sql_init_path);
 
@@ -128,6 +132,22 @@ public:
 
     /// \brief Remove all metervalue entries linked to transaction with id \p transaction_id
     bool transaction_metervalues_clear(const std::string& transaction_id);
+
+    // transactions
+    /// \brief Inserts a transaction with the given parameter to the TRANSACTIONS table.
+    void insert_transaction(int32_t seq_no, const std::string& transaction_id, const std::string event_type,
+                            const std::string& id_tag_start, int32_t evse_id, int32_t connector_id,
+                            const std::string& time_start);
+
+    /// @brief Clear all the transactions from the TRANSACTIONS table.
+    /// @param transaction_id transaction id of the transaction to clear from.
+    /// @return true if suceeded
+    bool clear_transaction(const std::string& transaction_id);
+
+    /// @brief Check if there was an on_going_transaction that hasn't ended.
+    /// @return TransactionInterruptedResponse
+    std::vector<TransactionInterruptedResponse> get_ongoing_transactions();
+
 };
 
 } // namespace v201

@@ -954,6 +954,17 @@ void from_json(const json& j, Transaction& k);
 /// \returns an output stream with the Transaction written to
 std::ostream& operator<<(std::ostream& os, const Transaction& k);
 
+struct TransactionInterruptedResponse {
+    bool has_active_transaction;
+    std::string transaction_id;
+    int32_t evse_id;
+    int32_t connector_id;
+    MeterValue meter_start;
+    IdToken id_token;
+    DateTime timestamp;
+    int32_t seq_no;
+};
+
 struct Firmware {
     CiString<512> location;
     ocpp::DateTime retrieveDateTime;

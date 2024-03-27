@@ -184,6 +184,9 @@ private:
     // reference to evses
     std::map<int32_t, std::unique_ptr<Evse>> evses;
 
+    // Interrupted transactions
+    std::vector<TransactionInterruptedResponse> interrupted_transactions;
+
     // utility
     std::unique_ptr<MessageQueue<v201::MessageType>> message_queue;
     std::unique_ptr<DeviceModel> device_model;
@@ -531,20 +534,19 @@ private:
     /// If \param persist is set to true, the change will be persisted across a reboot
     void execute_change_availability_request(ChangeAvailabilityRequest request, bool persist);
 
+    void resume_interrupted_transactions();
+
 public:
     /// \brief Construct a new ChargePoint object
-    /// \param evse_connector_structure Map that defines the structure of EVSE and connectors of the chargepoint. The
-    /// key represents the id of the EVSE and the value represents the number of connectors for this EVSE. The ids of
-    /// the EVSEs have to increment starting with 1.
-    /// \param device_model_storage_address address to device model storage (e.g. location of SQLite database)
-    /// \param ocpp_main_path Path where utility files for OCPP are read and written to
-    /// \param core_database_path Path to directory where core database is located
-    /// \param message_log_path Path to where logfiles are written to
-    /// \param evse_security Pointer to evse_security that manages security related operations; if nullptr
-    /// security_configuration must be set
-    /// \param callbacks Callbacks that will be registered for ChargePoint
-    /// \param security_configuration specifies the file paths that are required to set up the internal evse_security
-    /// implementation
+    /// \param evse_connector_structure Map that defines the structure of EVSE and connectors of the chargepoint.
+    /// The key represents the id of the EVSE and the value represents the number of connectors for this EVSE. The
+    /// ids of the EVSEs have to increment starting with 1. \param device_model_storage_address address to device
+    /// model storage (e.g. location of SQLite database) \param ocpp_main_path Path where utility files for OCPP are
+    /// read and written to \param core_database_path Path to directory where core database is located \param
+    /// message_log_path Path to where logfiles are written to \param evse_security Pointer to evse_security that
+    /// manages security related operations; if nullptr security_configuration must be set \param callbacks
+    /// Callbacks that will be registered for ChargePoint \param security_configuration specifies the file paths
+    /// that are required to set up the internal evse_security implementation
     ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
                 const std::string& device_model_storage_address, const std::string& ocpp_main_path,
                 const std::string& core_database_path, const std::string& sql_init_path,
@@ -758,6 +760,8 @@ public:
     /// change
     std::map<SetVariableData, SetVariableResult>
     set_variables(const std::vector<SetVariableData>& set_variable_data_vector);
+
+    std::string has_interrupted_transactions(int32_t connector_id);
 };
 
 } // namespace v201
