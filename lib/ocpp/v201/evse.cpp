@@ -90,6 +90,11 @@ void Evse::resume_transaction(const std::string& transaction_id, const int32_t c
         std::chrono::seconds(this->device_model.get_value<int>(ControllerComponentVariables::AlignedDataInterval)),
         std::chrono::seconds(
             this->device_model.get_value<int>(ControllerComponentVariables::AlignedDataTxEndedInterval)));
+
+    // // get the meter values if there was an active transaction
+    // if (active_response.has_active_transaction) {
+    //     active_response.meter_start = transaction_metervalues_get_all(active_response.transaction_id).back();
+    // }
 }
 
 void Evse::open_transaction(const std::string& transaction_id, const int32_t connector_id, const DateTime& timestamp,

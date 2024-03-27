@@ -962,6 +962,7 @@ struct TransactionInterruptedResponse {
     MeterValue meter_start;
     IdToken id_token;
     DateTime timestamp;
+    int32_t seq_no;
 };
 
 struct Firmware {

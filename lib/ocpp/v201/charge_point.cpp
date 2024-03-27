@@ -339,20 +339,7 @@ void ChargePoint::on_transaction_started(
         enhanced_transaction->id_token.idToken.get(), evse_id, connector_id, timestamp.to_rfc3339());
 }
 
-void ChargePoint::on_transaction_resumed(std::string transaction_id, ChargingStateEnum charging_state) {
 
-    EVLOG_info << "Trying to Resume interrupted transaction";
-
-    //  Find details of the interrupted transaction
-    for (auto const& active_transactions : this->interrupted_transactions) {
-        if (active_transactions.transaction_id == transaction_id) {
-            this->evses.at(active_transactions.evse_id)
-                ->resume_transaction(active_transactions.transaction_id, active_transactions.connector_id,
-                                     active_transactions.timestamp, active_transactions.meter_start,
-                                     active_transactions.id_token, std::nullopt, std::nullopt, charging_state);
-        }
-    }
-}
 
 void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime& timestamp,
                                           const MeterValue& meter_stop, const ReasonEnum reason,
@@ -2149,14 +2136,9 @@ void ChargePoint::handle_boot_notification_response(CallResult<BootNotificationR
         // get transaction messages from db (if there are any) so they can be sent again.
         message_queue->get_transaction_messages_from_db();
 
-        // Get any interrupted transactions from the database
-        auto inter_transactions = this->database_handler->get_ongoing_transactions();
-        // store into the global
-        if (inter_transactions.has_active_transaction) {
-            interrupted_transactions.push_back(inter_transactions);
-            on_transaction_resumed(inter_transactions.transaction_id, ChargingStateEnum::Charging);
-        }
-        
+        // Get any interrupted transactions from the database and resume them if possible
+        this->resume_interrupted_transactions();
+
         // set timers
         if (msg.interval > 0) {
             this->heartbeat_timer.interval([this]() { this->heartbeat_req(); }, std::chrono::seconds(msg.interval));
@@ -3279,6 +3261,23 @@ void ChargePoint::execute_change_availability_request(ChangeAvailabilityRequest 
         }
     } else {
         this->set_cs_operative_status(request.operationalStatus, persist);
+    }
+}
+
+void ChargePoint::resume_interrupted_transactions() {
+
+    EVLOG_info << "Trying to Resume interrupted transaction";
+
+    this->interrupted_transactions = this->database_handler->get_ongoing_transactions();
+
+    //  Find details of the interrupted transaction
+    for (auto const& active_transactions : this->interrupted_transactions) {
+        if (active_transactions.has_active_transaction == true) {
+            this->evses.at(active_transactions.evse_id)
+                ->resume_transaction(active_transactions.transaction_id, active_transactions.connector_id,
+                                     active_transactions.timestamp, active_transactions.meter_start,
+                                     active_transactions.id_token, std::nullopt, std::nullopt, ChargingStateEnum::Charging);
+        }
     }
 }
 

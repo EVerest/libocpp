@@ -41,13 +41,18 @@ void DatabaseHandler::sql_init() {
         throw std::runtime_error("Database access error");
     }
 
-    if (!this->get_ongoing_transactions().has_active_transaction) {
-        this->inintialize_enum_tables();
-    } else {
+    //process any interrupted transactions before initializing
+    process_interrupted_transactions();
+
+    if (std::find_if(interrupted_transactions.begin(), interrupted_transactions.end(),
+                     [](TransactionInterruptedResponse r) { return r.has_active_transaction == true; }) !=
+        interrupted_transactions.end()) {
         EVLOG_info << "Not clearing tables as there is an ongoing transaction";
+    } else {
+
+        this->inintialize_enum_tables();
     }
 }
-
 void DatabaseHandler::inintialize_enum_tables() {
 
     // TODO: Don't throw away all meter value items to allow resuming transactions
@@ -228,6 +233,40 @@ void DatabaseHandler::insert_availability(int32_t evse_id, int32_t connector_id,
     if (insert_stmt.step() != SQLITE_DONE) {
         EVLOG_error << "Could not insert into AVAILABILITY table: " << sqlite3_errmsg(db);
         return;
+    }
+}
+
+void DatabaseHandler::process_interrupted_transactions() {
+    TransactionInterruptedResponse active_response;
+
+    try {
+        std::string sql = "SELECT A.* FROM TRANSACTIONS A WHERE A.MESSAGE_TYPE = \"Started\" ";
+        SQLiteStatement stmt(this->db, sql);
+
+        int status;
+        while ((status = stmt.step()) == SQLITE_ROW) {
+            try {
+                active_response.transaction_id = stmt.column_text(0);
+                active_response.seq_no = stmt.column_int(1);
+                active_response.evse_id = stmt.column_int(3);
+                active_response.connector_id = stmt.column_int(4);
+                active_response.id_token.idToken = stmt.column_text(5); // TODO: maybe just store the whole IDtoken
+                                                                        // type?
+                active_response.timestamp = ocpp::DateTime(stmt.column_text(6));
+                active_response.has_active_transaction = true;
+
+                interrupted_transactions.push_back(active_response);
+            } catch (const std::exception& e) {
+                EVLOG_error << "can not get queued transaction message from database: "
+                            << "(" << e.what() << ")";
+            }
+        }
+
+        if (status != SQLITE_DONE) {
+            EVLOG_error << "Could not get (all) queued transaction messages from database";
+        }
+    } catch (const std::exception& e) {
+        throw std::runtime_error(std::string("Could not get queued transaction messages from database: ") + e.what());
     }
 }
 
@@ -650,46 +689,8 @@ bool DatabaseHandler::clear_transaction(const std::string& transaction_id) {
     return true;
 }
 
-TransactionInterruptedResponse DatabaseHandler::get_ongoing_transactions() {
-
-    TransactionInterruptedResponse active_response;
-
-    try {
-
-        // TODO: maybe this can be simplified?
-        std::string sql =
-            "SELECT A.* FROM TRANSACTIONS A WHERE A.MESSAGE_TYPE = \"Started\" ";
-        SQLiteStatement stmt(this->db, sql);
-
-        int status;
-        while ((status = stmt.step()) == SQLITE_ROW) {
-            try {
-                active_response.transaction_id = stmt.column_text(1);
-                active_response.evse_id = stmt.column_int(3);
-                active_response.connector_id = stmt.column_int(4);
-                active_response.id_token.idToken = stmt.column_text(5); // TODO: maybe just store the whole IDtoken
-                                                                        // type?
-                active_response.timestamp = ocpp::DateTime(stmt.column_text(6));
-                active_response.has_active_transaction = true;
-            } catch (const std::exception& e) {
-                EVLOG_error << "can not get queued transaction message from database: "
-                            << "(" << e.what() << ")";
-            }
-        }
-
-        if (status != SQLITE_DONE) {
-            EVLOG_error << "Could not get (all) queued transaction messages from database";
-        }
-    } catch (const std::exception& e) {
-        throw std::runtime_error(std::string("Could not get queued transaction messages from database: ") + e.what());
-    }
-
-    // get the meter values if there was an active transaction
-    if (active_response.has_active_transaction) {
-        active_response.meter_start = transaction_metervalues_get_all(active_response.transaction_id).back();
-    }
-
-    return active_response;
+std::vector<TransactionInterruptedResponse> DatabaseHandler::get_ongoing_transactions() {
+    return interrupted_transactions;
 }
 } // namespace v201
 } // namespace ocpp

@@ -39,6 +39,10 @@ private:
                              bool replace);
     OperationalStatusEnum get_availability(int32_t evse_id, int32_t connector_id);
 
+    // Interrupted transactions
+    std::vector<TransactionInterruptedResponse> interrupted_transactions;
+    void process_interrupted_transactions();
+
 public:
     DatabaseHandler(const fs::path& database_path, const fs::path& sql_init_path);
 
@@ -142,7 +146,8 @@ public:
 
     /// @brief Check if there was an on_going_transaction that hasn't ended.
     /// @return TransactionInterruptedResponse
-    TransactionInterruptedResponse get_ongoing_transactions();
+    std::vector<TransactionInterruptedResponse> get_ongoing_transactions();
+
 };
 
 } // namespace v201
