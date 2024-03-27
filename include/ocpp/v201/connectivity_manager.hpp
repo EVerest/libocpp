@@ -72,6 +72,8 @@ private: // Members
     int connection_attempts;
     /// \brief The last reconnect wait time.
     std::chrono::milliseconds reconnect_backoff_ms;
+    /// \brief Something is waiting to reconnect, do not reconnect in the meantime.
+    std::atomic_bool wait_for_reconnect;
 
     /* Callbacks for networking */
     /// \brief The message callback.

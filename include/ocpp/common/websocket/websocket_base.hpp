@@ -58,7 +58,6 @@ protected:
     std::function<void(ConnectionFailedReason)> connection_failed_callback;
     std::unique_ptr<Everest::SteadyTimer> ping_timer;
     websocketpp::connection_hdl handle;
-    std::mutex reconnect_mutex;
     std::mutex connection_mutex;
     bool shutting_down;
 

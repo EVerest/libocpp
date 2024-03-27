@@ -124,10 +124,16 @@ target_link_libraries(ocpp
 )
 
 if(LIBOCPP_ENABLE_LIBWEBSOCKETS)
+    set(LIBWEBSOCKETS_LIBRARY)
+    if(LWS_WITH_STATIC)
+        set(LIBOCPP_LIBWEBSOCKETS_LIBRARY ${LIBWEBSOCKETS_LIBRARIES_STATIC})
+    else()
+        set(LIBOCPP_LIBWEBSOCKETS_LIBRARY ${LIBWEBSOCKETS_LIBRARIES_SHARED})
+    endif()
     find_package(libwebsockets REQUIRED)
     target_link_libraries(ocpp
     PUBLIC
-        websockets_shared
+        ${LIBOCPP_LIBWEBSOCKETS_LIBRARY}
     )
     target_compile_definitions(ocpp
         PRIVATE

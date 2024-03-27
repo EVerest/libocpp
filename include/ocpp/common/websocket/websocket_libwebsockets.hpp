@@ -27,7 +27,7 @@ public:
     explicit WebsocketTlsTPM(const WebsocketConnectionOptions& connection_options,
                              std::shared_ptr<EvseSecurity> evse_security);
 
-    ~WebsocketTlsTPM();
+    virtual ~WebsocketTlsTPM() override;
 
     void set_connection_options(const WebsocketConnectionOptions& connection_options) override;
 
@@ -38,10 +38,10 @@ public:
     /// \brief Reconnects the websocket using the delay, a reason for this reconnect can be provided with the
     /// \param reason parameter
     /// \param delay delay of the reconnect attempt
-    void reconnect(std::error_code reason, long delay) override;
+    void reconnect() override;
 
     /// \brief closes the websocket
-    void close(WebsocketCloseReason code, const std::string& reason) override;
+    void close(WebsocketCloseReason code, const std::string& reason, const bool stop_perpetual = false) override;
 
     /// \brief send a \p message over the websocket
     /// \returns true if the message was sent successfully
@@ -82,7 +82,6 @@ private:
     std::shared_ptr<EvseSecurity> evse_security;
 
     // Connection related data
-    Everest::SteadyTimer reconnect_timer_tpm;
     std::unique_ptr<std::thread> websocket_thread;
     std::shared_ptr<ConnectionData> conn_data;
     std::condition_variable conn_cv;
@@ -97,6 +96,8 @@ private:
     std::mutex recv_mutex;
     std::queue<std::string> recv_message_queue;
     std::condition_variable recv_message_cv;
+
+    std::atomic_bool stopped;
 };
 
 } // namespace ocpp

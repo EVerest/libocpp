@@ -26,6 +26,8 @@ private:
     tls_client wss_client;
     std::shared_ptr<EvseSecurity> evse_security;
     websocketpp::lib::shared_ptr<websocketpp::lib::thread> websocket_thread;
+    std::atomic_bool closed;
+
     /// \brief Called when a TLS websocket connection gets initialized, manages the supported TLS versions, cipher lists
     /// and how verification of the server certificate is handled
     tls_context on_tls_init(std::string hostname, websocketpp::connection_hdl hdl, int32_t security_profile);

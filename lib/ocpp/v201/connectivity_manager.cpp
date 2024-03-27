@@ -40,6 +40,7 @@ ConnectivityManager::ConnectivityManager(DeviceModel& device_model, std::shared_
     current_connection_options(),
     connection_attempts(0), // TODO don't forget to reset when new websocket is created.
     reconnect_backoff_ms(0),
+    wait_for_reconnect(false),
     message_callback(message_callback) {
 }
 
@@ -198,18 +199,15 @@ void ConnectivityManager::set_websocket_connection_options(const WebsocketConnec
     }
 }
 
-void ConnectivityManager::set_websocket_connection_options_without_reconnect()
-{
+void ConnectivityManager::set_websocket_connection_options_without_reconnect() {
     if (this->websocket == nullptr) {
         return;
     }
 
     const int32_t active_slot = this->get_active_network_configuration_slot();
 
-    WebsocketConnectionOptions connection_options =
-        this->get_ws_connection_options(active_slot);
-    if (this->current_connection_options.iface_or_ip.has_value())
-    {
+    WebsocketConnectionOptions connection_options = this->get_ws_connection_options(active_slot);
+    if (this->current_connection_options.iface_or_ip.has_value()) {
         // This is set later and not retrieved from the get_ws_connection_options function, so copy from the current
         // connection options.
         connection_options.iface_or_ip = this->current_connection_options.iface_or_ip.value();
@@ -377,7 +375,7 @@ bool ConnectivityManager::init_websocket(std::optional<int32_t> config_slot) {
     }
 
     // TODO this sometimes let the application hang (a thread not closing or something???)
-    this->websocket = nullptr;
+    // this->websocket = nullptr;
 
     const auto& active_network_profile_cv = ControllerComponentVariables::ActiveNetworkProfile;
     if (active_network_profile_cv.variable.has_value()) {
@@ -637,8 +635,10 @@ bool ConnectivityManager::is_higher_priority_profile(const int32_t new_configura
 
 void ConnectivityManager::set_retry_connection_timer(const std::chrono::milliseconds timeout) {
     EVLOG_info << "Trying to reconnect in " << timeout.count() / 1000 << " seconds";
+    this->wait_for_reconnect = true;
     this->reconnect_timer.timeout(
         [this]() {
+            this->wait_for_reconnect = false;
             EVLOG_debug << "Timer timed out, reconnecting.";
             std::unique_lock<std::mutex> lock(this->reconnect_mutex);
             // Notify main thread that it should reconnect.
@@ -675,6 +675,11 @@ void ConnectivityManager::reconnect(const int32_t configuration_slot, const bool
         EVLOG_debug << "Not reconnecting, because connectivity manager stopped running.";
         this->try_reconnect.store(true);
         this->reconnect_condition_variable.notify_all();
+        return;
+    }
+
+    if (this->wait_for_reconnect) {
+        // Already waiting for reconnection, wait for that so it is not reconnecting again.
         return;
     }
 
