@@ -56,10 +56,9 @@ public:
     ProfileValidationResultEnum validate_evse_exists(int32_t evse_id) const;
 
     ///
-    /// \brief validates the given \p profile according to the specification
+    /// \brief validates the given \p profile and associated \p evse_id according to the specification
     ///
-    ProfileValidationResultEnum validate_tx_default_profile(const ChargingProfile& profile,
-                                                            std::optional<EvseInterface*> evse_opt) const;
+    ProfileValidationResultEnum validate_tx_default_profile(const ChargingProfile& profile, int32_t evse_id) const;
 
     ///
     /// \brief validates the given \p profile according to the specification

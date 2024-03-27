@@ -417,7 +417,7 @@ TEST_P(ChargepointTestFixtureV201_FR52, K01FR52_TxDefaultProfileValidationV201Te
     auto profile = create_charging_profile(added_profile_id, ChargingProfilePurposeEnum::TxDefaultProfile,
                                            create_charge_schedule(ChargingRateUnitEnum::A), uuid(),
                                            ChargingProfileKindEnum::Absolute, added_stack_level);
-    auto sut = handler.validate_tx_default_profile(profile, {});
+    auto sut = handler.validate_tx_default_profile(profile, STATION_WIDE_ID);
 
     EXPECT_THAT(sut, testing::Eq(expected));
 }
@@ -442,7 +442,7 @@ TEST_P(ChargepointTestFixtureV201_FR53, K01FR53_TxDefaultProfileValidationV201Te
     auto profile = create_charging_profile(added_profile_id, ChargingProfilePurposeEnum::TxDefaultProfile,
                                            create_charge_schedule(ChargingRateUnitEnum::A), uuid(),
                                            ChargingProfileKindEnum::Absolute, added_stack_level);
-    auto sut = handler.validate_tx_default_profile(profile, &*evses[DEFAULT_EVSE_ID]);
+    auto sut = handler.validate_tx_default_profile(profile, DEFAULT_EVSE_ID);
 
     EXPECT_THAT(sut, testing::Eq(expected));
 }
@@ -453,7 +453,7 @@ TEST_F(ChargepointTestFixtureV201, K01FR52_TxDefaultProfileValidIfAppliedToWhole
     auto profile = create_charging_profile(DEFAULT_PROFILE_ID + 1, ChargingProfilePurposeEnum::TxDefaultProfile,
                                            create_charge_schedule(ChargingRateUnitEnum::A), uuid(),
                                            ChargingProfileKindEnum::Absolute, DEFAULT_STACK_LEVEL);
-    auto sut = handler.validate_tx_default_profile(profile, {});
+    auto sut = handler.validate_tx_default_profile(profile, STATION_WIDE_ID);
 
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::Valid));
 }
@@ -464,7 +464,7 @@ TEST_F(ChargepointTestFixtureV201, K01FR53_TxDefaultProfileValidIfAppliedToExist
     auto profile = create_charging_profile(DEFAULT_PROFILE_ID + 1, ChargingProfilePurposeEnum::TxDefaultProfile,
                                            create_charge_schedule(ChargingRateUnitEnum::A), uuid(),
                                            ChargingProfileKindEnum::Absolute, DEFAULT_STACK_LEVEL);
-    auto sut = handler.validate_tx_default_profile(profile, &*evses[DEFAULT_EVSE_ID]);
+    auto sut = handler.validate_tx_default_profile(profile, DEFAULT_EVSE_ID);
 
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::Valid));
 }

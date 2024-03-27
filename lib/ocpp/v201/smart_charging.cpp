@@ -26,9 +26,8 @@ ProfileValidationResultEnum SmartChargingHandler::validate_evse_exists(int32_t e
 }
 
 ProfileValidationResultEnum SmartChargingHandler::validate_tx_default_profile(const ChargingProfile& profile,
-                                                                              std::optional<EvseInterface*> evse_opt) const {
-    auto profiles =
-        !evse_opt.has_value() ? get_evse_specific_tx_default_profiles() : get_station_wide_tx_default_profiles();
+                                                                              int32_t evse_id) const {
+    auto profiles = evse_id == 0 ? get_evse_specific_tx_default_profiles() : get_station_wide_tx_default_profiles();
     for (auto iter = profiles.begin(); iter != profiles.end(); ++iter) {
         if (iter->stackLevel == profile.stackLevel) {
             if (iter->id != profile.id) {
