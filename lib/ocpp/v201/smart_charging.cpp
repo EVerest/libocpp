@@ -28,9 +28,9 @@ ProfileValidationResultEnum SmartChargingHandler::validate_evse_exists(int32_t e
 ProfileValidationResultEnum SmartChargingHandler::validate_tx_default_profile(const ChargingProfile& profile,
                                                                               int32_t evse_id) const {
     auto profiles = evse_id == 0 ? get_evse_specific_tx_default_profiles() : get_station_wide_tx_default_profiles();
-    for (auto iter = profiles.begin(); iter != profiles.end(); ++iter) {
-        if (iter->stackLevel == profile.stackLevel) {
-            if (iter->id != profile.id) {
+    for (auto candidate : profiles) {
+        if (candidate.stackLevel == profile.stackLevel) {
+            if (candidate.id != profile.id) {
                 return ProfileValidationResultEnum::DuplicateTxDefaultProfileFound;
             }
         }
@@ -59,9 +59,9 @@ ProfileValidationResultEnum SmartChargingHandler::validate_tx_profile(const Char
         return ProfileValidationResultEnum::TxProfileTransactionNotOnEvse;
     }
 
-    auto conflicts_with = [&profile](const EvseProfile& candidate) {
-        return candidate.profile.transactionId == profile.transactionId &&
-               candidate.profile.stackLevel == profile.stackLevel;
+    auto conflicts_with = [&profile](const std::pair<int32_t, ChargingProfile>& candidate) {
+        return candidate.second.transactionId == profile.transactionId &&
+               candidate.second.stackLevel == profile.stackLevel;
     };
     if (std::any_of(charging_profiles.begin(), charging_profiles.end(), conflicts_with)) {
         return ProfileValidationResultEnum::TxProfileConflictingStackLevel;
@@ -125,15 +125,16 @@ void SmartChargingHandler::add_profile(int32_t evse_id, ChargingProfile& profile
     if (STATION_WIDE_ID == evse_id) {
         station_wide_charging_profiles.push_back(profile);
     } else {
-        charging_profiles.push_back(EvseProfile{evse_id = evse_id, profile = profile});
+        charging_profiles[evse_id] = profile;
     }
 }
 
 std::vector<ChargingProfile> SmartChargingHandler::get_evse_specific_tx_default_profiles() const {
     std::vector<ChargingProfile> evse_specific_tx_default_profiles;
-    for (auto iter = charging_profiles.begin(); iter != charging_profiles.end(); ++iter) {
-        if (iter->profile.chargingProfilePurpose == ChargingProfilePurposeEnum::TxDefaultProfile) {
-            evse_specific_tx_default_profiles.push_back(iter->profile);
+
+    for (auto evse_profile_pair : charging_profiles) {
+        if (evse_profile_pair.second.chargingProfilePurpose == ChargingProfilePurposeEnum::TxDefaultProfile) {
+            evse_specific_tx_default_profiles.push_back(evse_profile_pair.second);
         }
     }
 
@@ -142,9 +143,9 @@ std::vector<ChargingProfile> SmartChargingHandler::get_evse_specific_tx_default_
 
 std::vector<ChargingProfile> SmartChargingHandler::get_station_wide_tx_default_profiles() const {
     std::vector<ChargingProfile> station_wide_tx_default_profiles;
-    for (auto iter = station_wide_charging_profiles.begin(); iter != station_wide_charging_profiles.end(); ++iter) {
-        if (iter->chargingProfilePurpose == ChargingProfilePurposeEnum::TxDefaultProfile) {
-            station_wide_tx_default_profiles.push_back(*iter);
+    for (auto profile : station_wide_charging_profiles) {
+        if (profile.chargingProfilePurpose == ChargingProfilePurposeEnum::TxDefaultProfile) {
+            station_wide_tx_default_profiles.push_back(profile);
         }
     }
 

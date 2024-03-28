@@ -31,11 +31,6 @@ enum class ProfileValidationResultEnum {
     DuplicateTxDefaultProfileFound
 };
 
-struct EvseProfile {
-    int32_t evse_id;
-    ChargingProfile profile;
-};
-
 /// \brief This class handles and maintains incoming ChargingProfiles and contains the logic
 /// to calculate the composite schedules
 class SmartChargingHandler {
@@ -44,7 +39,7 @@ private:
 
     std::shared_ptr<ocpp::v201::DatabaseHandler> database_handler;
     // cppcheck-suppress unusedStructMember
-    std::vector<EvseProfile> charging_profiles;
+    std::map<int32_t, ChargingProfile> charging_profiles;
     std::vector<ChargingProfile> station_wide_charging_profiles;
 
 public:
