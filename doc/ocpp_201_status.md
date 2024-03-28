@@ -1,0 +1,1753 @@
+## General - General
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| FR.01 | :heavy_check_mark: yes |  |
+| FR.02 | :heavy_check_mark: yes |  |
+| FR.03 | :heavy_check_mark: yes |  |
+| FR.04 | n/a |  |
+| FR.05 |  |  |
+## Security - Generic Security Profile requirements
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| A00.FR.001 | :heavy_check_mark: yes |  |
+| A00.FR.002 | :heavy_check_mark: yes |  |
+| A00.FR.003 | :heavy_check_mark: yes |  |
+| A00.FR.004 | :heavy_check_mark: yes |  |
+| A00.FR.005 | :heavy_check_mark: yes |  |
+| A00.FR.006 | :heavy_check_mark: yes |  |
+## Security - Unsecured Transport with Basic Authentication Profile
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| A00.FR.201 | n/a |  |
+| A00.FR.202 | :heavy_check_mark: yes |  |
+| A00.FR.203 | :heavy_check_mark: yes |  |
+| A00.FR.204 | :heavy_check_mark: yes |  |
+| A00.FR.205 | :heavy_check_mark: yes |  |
+| A00.FR.206 | :heavy_check_mark: yes |  |
+| A00.FR.207 | n/a |  |
+## Security - TLS with Basic Authentication Profile
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| A00.FR.301 | :heavy_check_mark: yes |  |
+| A00.FR.302 | :heavy_check_mark: yes |  |
+| A00.FR.303 | :heavy_check_mark: yes |  |
+| A00.FR.304 | :heavy_check_mark: yes |  |
+| A00.FR.306 | n/a |  |
+| A00.FR.307 | n/a |  |
+| A00.FR.308 | :heavy_check_mark: yes |  |
+| A00.FR.309 |  |  |
+| A00.FR.310 |  |  |
+| A00.FR.311 | :heavy_check_mark: yes |  |
+| A00.FR.312 | :heavy_check_mark: yes |  |
+| A00.FR.313 | :heavy_check_mark: yes |  |
+| A00.FR.314 | :heavy_check_mark: yes |  |
+| A00.FR.315 | n/a |  |
+| A00.FR.316 |  |  |
+| A00.FR.317 | :heavy_check_mark: yes |  |
+| A00.FR.318 | n/a |  |
+| A00.FR.319 | :heavy_check_mark: yes | is configurable |
+| A00.FR.320 | :heavy_check_mark: yes |  |
+| A00.FR.321 | :heavy_check_mark: yes |  |
+| A00.FR.322 | n/a |  |
+| A00.FR.323 |  |  |
+| A00.FR.324 | n/a |  |
+## Security - TLS with Client Side Certificates Profile
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| A00.FR.401 | :heavy_check_mark: yes |  |
+| A00.FR.402 | :heavy_check_mark: yes |  |
+| A00.FR.403 | n/a |  |
+| A00.FR.404 | n/a |  |
+| A00.FR.405 | n/a |  |
+| A00.FR.406 | n/a |  |
+| A00.FR.407 | n/a |  |
+| A00.FR.408 | n/a |  |
+| A00.FR.409 | n/a |  |
+| A00.FR.410 | n/a |  |
+| A00.FR.411 | :heavy_check_mark: yes |  |
+| A00.FR.412 |  |  |
+| A00.FR.413 |  |  |
+| A00.FR.414 | :heavy_check_mark: yes |  |
+| A00.FR.415 | :heavy_check_mark: yes |  |
+| A00.FR.416 | :heavy_check_mark: yes |  |
+| A00.FR.417 | :heavy_check_mark: yes |  |
+| A00.FR.418 | n/a |  |
+| A00.FR.419 |  |  |
+| A00.FR.420 | :heavy_check_mark: yes |  |
+| A00.FR.421 | n/a |  |
+| A00.FR.422 | :heavy_check_mark: yes |  |
+| A00.FR.423 | :heavy_check_mark: yes |  |
+| A00.FR.424 | :heavy_check_mark: yes |  |
+| A00.FR.425 | n/a |  |
+| A00.FR.426 |  |  |
+| A00.FR.427 | n/a |  |
+| A00.FR.428 | n/a |  |
+| A00.FR.429 | n/a |  |
+## Security - Certificate Properties
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| A00.FR.501 | :heavy_check_mark: yes |  |
+| A00.FR.502 | :heavy_check_mark: yes |  |
+| A00.FR.503 | :heavy_check_mark: yes |  |
+| A00.FR.504 | :heavy_check_mark: yes |  |
+| A00.FR.505 | n/a |  |
+| A00.FR.506 | :heavy_check_mark: yes |  |
+| A00.FR.507 | :heavy_check_mark: yes |  |
+| A00.FR.508 | n/a |  |
+| A00.FR.509 | n/a |  |
+| A00.FR.510 | n/a |  |
+| A00.FR.511 | n/a |  |
+| A00.FR.512 | n/a |  |
+| A00.FR.513 | n/a |  |
+| A00.FR.514 | n/a |  |
+## Security - Certificate Hierachy
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| A00.FR.601 | n/a |  |
+| A00.FR.602 | n/a |  |
+| A00.FR.603 | n/a |  |
+| A00.FR.604 | :heavy_check_mark: yes |  |
+## Security - Certificate Revocation
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| A00.FR.701 | n/a |  |
+| A00.FR.702 | n/a |  |
+| A00.FR.703 | n/a |  |
+| A00.FR.704 | n/a |  |
+| A00.FR.705 | n/a |  |
+| A00.FR.707 | n/a |  |
+## Security - Installation
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| A00.FR.801 | n/a |  |
+| A00.FR.802 | n/a |  |
+| A00.FR.803 | n/a |  |
+| A00.FR.804 | n/a |  |
+| A00.FR.805 | n/a |  |
+| A00.FR.806 | n/a |  |
+| A00.FR.807 | n/a |  |
+## Security - Update Charging Station Password for HTTP Basic Authentication
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| A01.FR.01 | :heavy_check_mark: yes |  |
+| A01.FR.02 | :heavy_check_mark: yes |  |
+| A01.FR.03 | n/a |  |
+| A01.FR.04 | n/a |  |
+| A01.FR.05 | n/a |  |
+| A01.FR.06 | n/a |  |
+| A01.FR.07 | n/a |  |
+| A01.FR.08 | n/a |  |
+| A01.FR.09 | n/a |  |
+| A01.FR.10 | :heavy_check_mark: yes |  |
+| A01.FR.11 |  |  |
+| A01.FR.12 | :heavy_check_mark: yes |  |
+## Security - Update Charging Station Certificate by request of CSMS
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| A02.FR.01 | In Progress |  |
+| A02.FR.02 | In Progress |  |
+| A02.FR.03 | In Progress |  |
+| A02.FR.04 | In Progress |  |
+| A02.FR.05 | In Progress |  |
+| A02.FR.06 | In Progress |  |
+| A02.FR.07 | In Progress |  |
+| A02.FR.08 | In Progress |  |
+| A02.FR.09 | In Progress |  |
+| A02.FR.10 | In Progress |  |
+| A02.FR.11 | In Progress |  |
+| A02.FR.12 | In Progress |  |
+| A02.FR.13 | In Progress |  |
+| A02.FR.14 | In Progress |  |
+| A02.FR.15 | In Progress |  |
+| A02.FR.16 | In Progress |  |
+| A02.FR.17 | In Progress |  |
+| A02.FR.18 | In Progress |  |
+| A02.FR.19 | In Progress |  |
+| A02.FR.20 | In Progress |  |
+| A02.FR.21 | In Progress |  |
+## Security - Update Charging Station Certificate initiated by the Charging Station
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| A03.FR.01 | In Progress |  |
+| A03.FR.02 | In Progress |  |
+| A03.FR.03 | In Progress |  |
+| A03.FR.04 | In Progress |  |
+| A03.FR.05 | In Progress |  |
+| A03.FR.06 | In Progress |  |
+| A03.FR.07 | In Progress |  |
+| A03.FR.08 | In Progress |  |
+| A03.FR.09 | In Progress |  |
+| A03.FR.10 | In Progress |  |
+| A03.FR.11 | In Progress |  |
+| A03.FR.12 | In Progress |  |
+| A03.FR.13 | In Progress |  |
+| A03.FR.14 | In Progress |  |
+| A03.FR.15 | In Progress |  |
+| A03.FR.16 | In Progress |  |
+| A03.FR.17 | In Progress |  |
+| A03.FR.18 | In Progress |  |
+| A03.FR.19 | In Progress |  |
+## Security - Security Event Notification
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| A04.FR.01 | :heavy_check_mark: yes |  |
+| A04.FR.02 | :heavy_check_mark: yes |  |
+| A04.FR.03 | n/a | CSMS is responsible |
+| A04.FR.04 | n/a | Storing security events in log needs to be implemented outside of libOCPP |
+## Security - Upgrade Charging Station Security Profile
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| A05.FR.02 | :heavy_check_mark: yes |  |
+| A05.FR.03 | :heavy_check_mark: yes |  |
+| A05.FR.04 | :heavy_check_mark: yes |  |
+| A05.FR.05 | :heavy_check_mark: yes |  |
+| A05.FR.06 |  |  |
+| A05.FR.07 | n/a |  |
+## Provisioning - Cold Boot Charging Station
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| B01.FR.01 | :heavy_check_mark: yes |  |
+| B01.FR.02 | n/a |  |
+| B01.FR.03 | :heavy_check_mark: yes |  |
+| B01.FR.04 | :heavy_check_mark: yes |  |
+| B01.FR.05 | :heavy_check_mark: yes |  |
+| B01.FR.06 | In Progress |  |
+| B01.FR.07 |  |  |
+| B01.FR.08 | :heavy_check_mark: yes |  |
+| B01.FR.09 |  |  |
+| B01.FR.10 | n/a |  |
+| B01.FR.11 | n/a |  |
+| B01.FR.12 | n/a |  |
+| B01.FR.13 |  |  |
+## Provisioning - Cold Boot Charging Station – Pending
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| B02.FR.01 | :heavy_check_mark: yes |  |
+| B02.FR.02 | In Progress | To be tested manually (probably alrady has been) |
+| B02.FR.03 | :heavy_check_mark: yes |  |
+| B02.FR.04 | :heavy_check_mark: yes |  |
+| B02.FR.05 | :heavy_check_mark: yes |  |
+| B02.FR.06 | :heavy_check_mark: yes |  |
+| B02.FR.07 | :heavy_check_mark: yes |  |
+| B02.FR.08 | :heavy_check_mark: yes |  |
+| B02.FR.09 | n/a |  |
+## Provisioning - Cold Boot Charging Station – Rejected
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| B03.FR.01 |  |  |
+| B03.FR.02 | :heavy_check_mark: yes |  |
+| B03.FR.03 | n/a |  |
+| B03.FR.04 | :heavy_check_mark: yes |  |
+| B03.FR.05 | :heavy_check_mark: yes |  |
+| B03.FR.06 | :heavy_check_mark: yes |  |
+| B03.FR.07 | n/a |  |
+| B03.FR.08 | :heavy_check_mark: yes |  |
+## Provisioning - Offline Behavior Idle Charging Station
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| B04.FR.01 | :heavy_check_mark: yes |  |
+| B04.FR.02 | :heavy_check_mark: yes |  |
+## Provisioning - Set Variables
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| B05.FR.01 | :heavy_check_mark: yes |  |
+| B05.FR.02 | :heavy_check_mark: yes |  |
+| B05.FR.03 | :heavy_check_mark: yes |  |
+| B05.FR.04 | :heavy_check_mark: yes |  |
+| B05.FR.05 | :heavy_check_mark: yes |  |
+| B05.FR.06 | :heavy_check_mark: yes |  |
+| B05.FR.07 | :heavy_check_mark: yes | Add catch around validation validate_value in device_model.cpp |
+| B05.FR.08 | :heavy_check_mark: yes |  |
+| B05.FR.09 | :heavy_check_mark: yes |  |
+| B05.FR.10 | :heavy_check_mark: yes |  |
+| B05.FR.11 | n/a |  |
+| B05.FR.12 | :heavy_check_mark: yes |  |
+| B05.FR.13 | :heavy_check_mark: yes |  |
+## Provisioning - Get Variables
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| B06.FR.01 | :heavy_check_mark: yes |  |
+| B06.FR.02 | :heavy_check_mark: yes |  |
+| B06.FR.03 | :heavy_check_mark: yes |  |
+| B06.FR.04 | :heavy_check_mark: yes |  |
+| B06.FR.05 | :heavy_check_mark: yes |  |
+| B06.FR.06 | :heavy_check_mark: yes |  |
+| B06.FR.07 | :heavy_check_mark: yes |  |
+| B06.FR.08 | :heavy_check_mark: yes |  |
+| B06.FR.09 | In Progress |  |
+| B06.FR.10 | :heavy_check_mark: yes |  |
+| B06.FR.11 | :heavy_check_mark: yes |  |
+| B06.FR.13 | :heavy_check_mark: yes |  |
+| B06.FR.14 | :heavy_check_mark: yes |  |
+| B06.FR.15 | :heavy_check_mark: yes |  |
+| B06.FR.16 | In Progress |  |
+| B06.FR.17 | In Progress |  |
+## Provisioning - Get Base Report
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| B07.FR.01 | :heavy_check_mark: yes |  |
+| B07.FR.02 |  |  |
+| B07.FR.03 | :heavy_check_mark: yes |  |
+| B07.FR.04 | :heavy_check_mark: yes |  |
+| B07.FR.05 |  |  |
+| B07.FR.06 | :heavy_check_mark: yes |  |
+| B07.FR.07 | :heavy_check_mark: yes |  |
+| B07.FR.08 | :heavy_check_mark: yes |  |
+| B07.FR.09 | :heavy_check_mark: yes |  |
+| B07.FR.10 | :heavy_check_mark: yes |  |
+| B07.FR.11 | :heavy_check_mark: yes |  |
+| B07.FR.12 | :heavy_check_mark: yes |  |
+| B07.FR.13 | n/a | tbd if this is applicable |
+| B07.FR.14 | n/a |  |
+## Provisioning - Get Custom Report
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| B08.FR.01 | :heavy_check_mark: yes |  |
+| B08.FR.02 |  |  |
+| B08.FR.03 | :heavy_check_mark: yes |  |
+| B08.FR.04 | :heavy_check_mark: yes |  |
+| B08.FR.05 | :heavy_check_mark: yes |  |
+| B08.FR.06 | n/a |  |
+| B08.FR.07 | :heavy_check_mark: yes |  |
+| B08.FR.08 | :heavy_check_mark: yes |  |
+| B08.FR.09 | :heavy_check_mark: yes |  |
+| B08.FR.10 | :heavy_check_mark: yes |  |
+| B08.FR.11 | :heavy_check_mark: yes |  |
+| B08.FR.12 | :heavy_check_mark: yes |  |
+| B08.FR.13 | :heavy_check_mark: yes |  |
+| B08.FR.14 |  |  |
+| B08.FR.15 | :heavy_check_mark: yes |  |
+| B08.FR.16 | :heavy_check_mark: yes |  |
+| B08.FR.17 |  |  |
+| B08.FR.18 |  |  |
+| B08.FR.19 |  |  |
+| B08.FR.20 |  |  |
+| B08.FR.21 |  |  |
+## Provisioning - Setting a new NetworkConnectionProfile
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| B09.FR.01 | :heavy_check_mark: yes |  |
+| B09.FR.02 | :heavy_check_mark: yes |  |
+| B09.FR.03 | :heavy_check_mark: yes |  |
+| B09.FR.04 | :heavy_check_mark: yes |  |
+## Provisioning - Migrate to new CSMS
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| B10.FR.01 | :heavy_check_mark: yes |  |
+| B10.FR.02 | :heavy_check_mark: yes |  |
+| B10.FR.03 | :heavy_check_mark: yes |  |
+| B10.FR.04 | :heavy_check_mark: yes |  |
+| B10.FR.05 | n/a |  |
+| B10.FR.06 | :heavy_check_mark: yes |  |
+| B10.FR.07 | n/a | tbd. we're looping over priorities and attempt to reconnect |
+## Provisioning - Reset - Without Ongoing Transaction
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| B11.FR.01 | :heavy_check_mark: yes |  |
+| B11.FR.02 |  |  |
+| B11.FR.03 | :heavy_check_mark: yes |  |
+| B11.FR.04 | :heavy_check_mark: yes |  |
+| B11.FR.05 |  |  |
+| B11.FR.06 | :heavy_check_mark: yes | System module is responsible |
+| B11.FR.07 | :heavy_check_mark: yes | System module is responsible |
+| B11.FR.08 | :heavy_check_mark: yes |  |
+| B11.FR.09 |  |  |
+| B11.FR.10 |  |  |
+## Provisioning - Reset - With Ongoing Transaction
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| B12.FR.01 | :heavy_check_mark: yes |  |
+| B12.FR.02 | :heavy_check_mark: yes |  |
+| B12.FR.03 | :heavy_check_mark: yes |  |
+| B12.FR.04 | :heavy_check_mark: yes |  |
+| B12.FR.05 | :heavy_check_mark: yes |  |
+| B12.FR.06 | :heavy_check_mark: yes | Charging station is responsible to send the correct state after booting |
+| B12.FR.07 | :heavy_check_mark: yes |  |
+| B12.FR.08 | :heavy_check_mark: yes |  |
+| B12.FR.09 | :heavy_check_mark: yes | Charging Station is 'responsible': should response with a 'rejected' on is_reset_allowed_callback |
+## Authorization - EV Driver Authorization using RFID
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| C01.FR.01 | :heavy_check_mark: yes |  |
+| C01.FR.02 | :heavy_check_mark: yes |  |
+| C01.FR.03 | :heavy_check_mark: yes |  |
+| C01.FR.04 | :heavy_check_mark: yes |  |
+| C01.FR.05 | :heavy_check_mark: yes |  |
+| C01.FR.06 | :heavy_check_mark: yes |  |
+| C01.FR.07 | :heavy_check_mark: yes |  |
+| C01.FR.08 |  | This to FR.17 are all language related usecases |
+| C01.FR.09 |  |  |
+| C01.FR.10 |  |  |
+| C01.FR.11 |  |  |
+| C01.FR.12 |  |  |
+| C01.FR.13 |  |  |
+| C01.FR.14 |  |  |
+| C01.FR.15 |  |  |
+| C01.FR.16 |  |  |
+| C01.FR.17 |  |  |
+| C01.FR.18 | :heavy_check_mark: yes |  |
+| C01.FR.19 | :heavy_check_mark: yes |  |
+| C01.FR.20 | :heavy_check_mark: yes |  |
+| C01.FR.21 | :heavy_check_mark: yes | Auth module takes care of that |
+| C01.FR.22 | :heavy_check_mark: yes |  |
+| C01.FR.23 | :heavy_check_mark: yes |  |
+| C01.FR.24 | :heavy_check_mark: yes |  |
+## Authorization - Authorization using a start button
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| C02.FR.01 | n/a |  |
+| C02.FR.02 | n/a |  |
+| C02.FR.03 | n/a |  |
+## Authorization - Authorization using credit/debit card
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| C03.FR.01 |  |  |
+| C03.FR.02 |  |  |
+## Authorization - Authorization using PIN-code
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| C04.FR.01 | n/a |  |
+| C04.FR.02 | n/a |  |
+| C04.FR.03 | n/a |  |
+| C04.FR.04 | n/a |  |
+| C04.FR.05 | n/a |  |
+| C04.FR.06 | n/a |  |
+## Authorization - Authorization for CSMS initiated transactions
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| C05.FR.01 | :heavy_check_mark: yes |  |
+| C05.FR.02 | In Progress | Still needs to be checked in the test |
+| C05.FR.03 | :heavy_check_mark: yes | Charging station is responsible |
+| C05.FR.04 |  |  |
+| C05.FR.05 | :heavy_check_mark: yes |  |
+## Authorization - Authorization using local id type
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| C06.FR.01 |  |  |
+| C06.FR.02 |  |  |
+| C06.FR.03 |  |  |
+| C06.FR.04 |  |  |
+## Authorization - Authorization using Contract Certificates
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| C07.FR.01 |  |  |
+| C07.FR.02 |  |  |
+| C07.FR.04 |  |  |
+| C07.FR.05 |  |  |
+| C07.FR.06 |  |  |
+| C07.FR.07 |  |  |
+| C07.FR.08 |  |  |
+| C07.FR.09 |  |  |
+| C07.FR.10 |  |  |
+| C07.FR.11 |  |  |
+| C07.FR.12 |  |  |
+## Authorization - Authorization at EVSE using ISO 15118 External Identification Means (EIM)
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| C08.FR.01 |  |  |
+| C08.FR.02 |  |  |
+## Authorization - Authorization by GroupId
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| C09.FR.02 | n/a |  |
+| C09.FR.03 | :heavy_check_mark: yes |  |
+| C09.FR.04 | :heavy_check_mark: yes |  |
+| C09.FR.05 | In Progress | Still needs local list test cases |
+| C09.FR.07 | :heavy_check_mark: yes |  |
+| C09.FR.09 | n/a |  |
+| C09.FR.10 | n/a |  |
+| C09.FR.11 | :heavy_check_mark: yes |  |
+| C09.FR.12 | n/a |  |
+## Authorization - Store Authorization Data in the Authorization Cache
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| C10.FR.01 | :heavy_check_mark: yes |  |
+| C10.FR.02 | :heavy_check_mark: yes |  |
+| C10.FR.03 | :heavy_check_mark: yes |  |
+| C10.FR.04 | :heavy_check_mark: yes |  |
+| C10.FR.05 | :heavy_check_mark: yes |  |
+| C10.FR.06 |  | Reservation |
+| C10.FR.07 |  | deferred |
+| C10.FR.08 | :heavy_check_mark: yes |  |
+| C10.FR.09 |  | deferred |
+| C10.FR.10 | :heavy_check_mark: yes |  |
+| C10.FR.11 | :heavy_check_mark: yes |  |
+| C10.FR.12 | :heavy_check_mark: yes |  |
+## Authorization - Clear Authorization Data in Authorization Cache
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| C11.FR.01 | :heavy_check_mark: yes |  |
+| C11.FR.02 | :heavy_check_mark: yes |  |
+| C11.FR.03 | :heavy_check_mark: yes |  |
+| C11.FR.04 | :heavy_check_mark: yes |  |
+| C11.FR.05 | :heavy_check_mark: yes |  |
+## Authorization - Start Transaction - Cached Id
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| C12.FR.02 | :heavy_check_mark: yes |  |
+| C12.FR.03 | :heavy_check_mark: yes |  |
+| C12.FR.04 | :heavy_check_mark: yes |  |
+| C12.FR.05 | :heavy_check_mark: yes |  |
+| C12.FR.06 | :heavy_check_mark: yes |  |
+| C12.FR.09 |  | unclear to me (piet) |
+## Authorization - Offline Authorization through Local Authorization List
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| C13.FR.01 | :heavy_check_mark: yes |  |
+| C13.FR.02 | :heavy_check_mark: yes |  |
+| C13.FR.03 | :heavy_check_mark: yes |  |
+| C13.FR.04 | :heavy_check_mark: yes |  |
+## Authorization - Online Authorization through Local Authorization List
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| C14.FR.01 | :heavy_check_mark: yes |  |
+| C14.FR.02 | :heavy_check_mark: yes |  |
+| C14.FR.03 | :heavy_check_mark: yes |  |
+## Authorization - Offline Authorization of unknown Id
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| C15.FR.01 | :heavy_check_mark: yes |  |
+| C15.FR.02 | :heavy_check_mark: yes |  |
+| C15.FR.03 | :heavy_check_mark: yes |  |
+| C15.FR.04 | :heavy_check_mark: yes |  |
+| C15.FR.05 |  |  |
+| C15.FR.06 | :heavy_check_mark: yes |  |
+| C15.FR.07 |  |  |
+| C15.FR.08 | :heavy_check_mark: yes |  |
+## Authorization - Stop Transaction with a Master Pass
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| C16.FR.01 | n/a |  |
+| C16.FR.02 | In Progress | Core changes ? |
+| C16.FR.03 | In Progress | Core changes |
+| C16.FR.04 |  |  |
+| C16.FR.05 |  |  |
+## LocalAuthorizationListManagement - Send Local Authorization List
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| D01.FR.01 | :heavy_check_mark: yes |  |
+| D01.FR.02 | :heavy_check_mark: yes |  |
+| D01.FR.03 | n/a | CSMS responsible |
+| D01.FR.04 | :heavy_check_mark: yes |  |
+| D01.FR.05 | :heavy_check_mark: yes |  |
+| D01.FR.06 | :heavy_check_mark: yes |  |
+| D01.FR.09 | :heavy_check_mark: yes |  |
+| D01.FR.10 | :heavy_check_mark: yes |  |
+| D01.FR.11 | :heavy_check_mark: yes |  |
+| D01.FR.12 | :heavy_check_mark: yes |  |
+| D01.FR.13 | :heavy_check_mark: yes |  |
+| D01.FR.15 | :heavy_check_mark: yes |  |
+| D01.FR.16 | :heavy_check_mark: yes |  |
+| D01.FR.17 | :heavy_check_mark: yes |  |
+| D01.FR.18 | :heavy_check_mark: yes |  |
+| D01.FR.19 | :heavy_check_mark: yes |  |
+## LocalAuthorizationListManagement - Get Local List Version
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| D02.FR.01 | :heavy_check_mark: yes |  |
+| D02.FR.02 | :heavy_check_mark: yes |  |
+| D02.FR.03 | :heavy_check_mark: yes |  |
+## Transactions - Start Transaction Options
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| E01.FR.01 | n/a |  |
+| E01.FR.02 | n/a |  |
+| E01.FR.03 | n/a |  |
+| E01.FR.04 | n/a |  |
+| E01.FR.05 | :heavy_check_mark: yes |  |
+| E01.FR.06 | n/a |  |
+| E01.FR.07 | :heavy_check_mark: yes |  |
+| E01.FR.08 | :heavy_check_mark: yes |  |
+| E01.FR.09 | :heavy_check_mark: yes |  |
+| E01.FR.10 | :heavy_check_mark: yes |  |
+| E01.FR.11 | n/a |  |
+| E01.FR.12 | n/a |  |
+| E01.FR.13 |  |  |
+| E01.FR.14 | :heavy_check_mark: yes |  |
+| E01.FR.15 | :heavy_check_mark: yes |  |
+| E01.FR.16 | :heavy_check_mark: yes |  |
+| E01.FR.17 | n/a |  |
+| E01.FR.18 | :heavy_check_mark: yes |  |
+| E01.FR.19 | :heavy_check_mark: yes |  |
+| E01.FR.20 | n/a | tbd |
+## Transactions - Start Transaction - Cable Plugin First
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| E02.FR.01 | :heavy_check_mark: yes |  |
+| E02.FR.02 | :heavy_check_mark: yes |  |
+| E02.FR.03 |  |  |
+| E02.FR.04 | :heavy_check_mark: yes |  |
+| E02.FR.05 | :heavy_check_mark: yes |  |
+| E02.FR.06 | n/a |  |
+| E02.FR.07 | :heavy_check_mark: yes |  |
+| E02.FR.08 | :heavy_check_mark: yes |  |
+| E02.FR.09 | :heavy_check_mark: yes |  |
+| E02.FR.10 | :heavy_check_mark: yes |  |
+| E02.FR.11 | n/a | tbd |
+| E02.FR.13 | :heavy_check_mark: yes |  |
+| E02.FR.14 |  |  |
+| E02.FR.15 | :heavy_check_mark: yes |  |
+| E02.FR.16 | :heavy_check_mark: yes |  |
+| E02.FR.17 | :heavy_check_mark: yes |  |
+| E02.FR.18 |  |  |
+| E02.FR.19 |  |  |
+| E02.FR.20 | n/a |  |
+| E02.FR.21 | :heavy_check_mark: yes |  |
+## Transactions - Start Transaction - IdToken First
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| E03.FR.01 | :heavy_check_mark: yes |  |
+| E03.FR.02 | :heavy_check_mark: yes |  |
+| E03.FR.03 |  |  |
+| E03.FR.05 | n/a |  |
+| E03.FR.06 | :heavy_check_mark: yes |  |
+| E03.FR.07 | :heavy_check_mark: yes |  |
+| E03.FR.08 | :heavy_check_mark: yes |  |
+| E03.FR.09 | n/a | tbd |
+| E03.FR.10 |  |  |
+| E03.FR.11 | :heavy_check_mark: yes |  |
+| E03.FR.12 | :heavy_check_mark: yes |  |
+| E03.FR.13 |  |  |
+| E03.FR.14 |  |  |
+| E03.FR.15 | n/a |  |
+## Transactions - Transaction started while Charging Station is offline
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| E04.FR.01 | :heavy_check_mark: yes |  |
+| E04.FR.02 | :heavy_check_mark: yes |  |
+| E04.FR.03 | :heavy_check_mark: yes |  |
+| E04.FR.04 | :heavy_check_mark: yes |  |
+| E04.FR.05 | :heavy_check_mark: yes |  |
+| E04.FR.06 | :heavy_check_mark: yes |  |
+| E04.FR.07 |  | tbd |
+| E04.FR.08 |  | tbd |
+| E04.FR.09 | n/a | tbd |
+| E04.FR.10 | n/a | tbd |
+| E04.FR.11 | n/a |  |
+## Transactions - Start Transaction - Id not Accepted
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| E05.FR.01 | :heavy_check_mark: yes |  |
+| E05.FR.02 |  |  |
+| E05.FR.03 |  |  |
+| E05.FR.04 | :heavy_check_mark: yes |  |
+| E05.FR.05 | :heavy_check_mark: yes |  |
+| E05.FR.06 |  |  |
+| E05.FR.08 | :heavy_check_mark: yes |  |
+| E05.FR.09 | n/a |  |
+| E05.FR.10 | :heavy_check_mark: yes |  |
+| E05.FR.11 |  |  |
+## Transactions - Stop Transaction options
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| E06.FR.01 | n/a |  |
+| E06.FR.02 | :heavy_check_mark: yes |  |
+| E06.FR.03 | :heavy_check_mark: yes |  |
+| E06.FR.04 | :heavy_check_mark: yes |  |
+| E06.FR.05 | n/a |  |
+| E06.FR.06 | n/a |  |
+| E06.FR.07 | n/a |  |
+| E06.FR.08 | :heavy_check_mark: yes |  |
+| E06.FR.09 | :heavy_check_mark: yes |  |
+| E06.FR.10 | n/a |  |
+| E06.FR.11 | :heavy_check_mark: yes |  |
+| E06.FR.12 | n/a | tbd |
+| E06.FR.13 | n/a | tbd |
+| E06.FR.14 | :heavy_check_mark: yes |  |
+| E06.FR.15 | :heavy_check_mark: yes |  |
+| E06.FR.16 |  |  |
+## Transactions - Transaction locally stopped by IdToken
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| E07.FR.01 | :heavy_check_mark: yes |  |
+| E07.FR.02 | :heavy_check_mark: yes |  |
+| E07.FR.04 | :heavy_check_mark: yes |  |
+| E07.FR.05 | :heavy_check_mark: yes |  |
+| E07.FR.06 | :heavy_check_mark: yes |  |
+| E07.FR.07 | n/a |  |
+| E07.FR.08 | :heavy_check_mark: yes |  |
+| E07.FR.09 | :heavy_check_mark: yes |  |
+| E07.FR.10 | :heavy_check_mark: yes |  |
+| E07.FR.11 | :heavy_check_mark: yes |  |
+| E07.FR.12 |  |  |
+## Transactions - Transaction stopped while Charging Station is offline
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| E08.FR.01 | :heavy_check_mark: yes |  |
+| E08.FR.02 | :heavy_check_mark: yes |  |
+| E08.FR.03 | n/a |  |
+| E08.FR.04 | :heavy_check_mark: yes |  |
+| E08.FR.05 | :heavy_check_mark: yes |  |
+| E08.FR.06 | :heavy_check_mark: yes |  |
+| E08.FR.07 |  |  |
+| E08.FR.08 | :heavy_check_mark: yes |  |
+| E08.FR.09 | :heavy_check_mark: yes |  |
+| E08.FR.10 | :heavy_check_mark: yes |  |
+| E08.FR.11 | :heavy_check_mark: yes |  |
+| E08.FR.12 |  |  |
+## Transactions - When cable disconnected on EV-side: Stop Transaction
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| E09.FR.01 | :heavy_check_mark: yes | StopTxOnEVSideDisconnect is RO for our implementation so far |
+| E09.FR.02 | In Progress | Has to be tested manually |
+| E09.FR.03 | In Progress | Has to be tested manually |
+| E09.FR.04 | :heavy_check_mark: yes |  |
+| E09.FR.05 | :heavy_check_mark: yes |  |
+| E09.FR.06 | :heavy_check_mark: yes |  |
+| E09.FR.07 | :heavy_check_mark: yes |  |
+## Transactions -  When cable disconnected on EV-side: Suspend Transaction
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| E10.FR.01 | In Progress | Has to be tested manually |
+## Transactions - When cable disconnected on EV-side: Stop Transaction
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| E10.FR.02 | :heavy_check_mark: yes |  |
+| E10.FR.03 | :heavy_check_mark: yes |  |
+| E10.FR.04 | :heavy_check_mark: yes |  |
+| E10.FR.05 | n/a | tbd |
+| E10.FR.06 | n/a | tbd |
+| E10.FR.07 | n/a | tbd |
+## Transactions - Connection Loss During Transaction
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| E11.FR.01 | :heavy_check_mark: yes |  |
+| E11.FR.02 |  |  |
+| E11.FR.03 | :heavy_check_mark: yes |  |
+| E11.FR.04 | :heavy_check_mark: yes |  |
+| E11.FR.05 | :heavy_check_mark: yes |  |
+| E11.FR.06 | :heavy_check_mark: yes |  |
+| E11.FR.07 |  |  |
+| E11.FR.08 |  |  |
+## Transactions - Inform CSMS of an Offline Occurred Transaction
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| E12.FR.01 | :heavy_check_mark: yes |  |
+| E12.FR.02 | :heavy_check_mark: yes |  |
+| E12.FR.03 | :heavy_check_mark: yes |  |
+| E12.FR.04 | :heavy_check_mark: yes |  |
+| E12.FR.05 | :heavy_check_mark: yes |  |
+| E12.FR.06 | :heavy_check_mark: yes |  |
+| E12.FR.07 | :heavy_check_mark: yes |  |
+| E12.FR.08 | :heavy_check_mark: yes |  |
+| E12.FR.09 | :heavy_check_mark: yes |  |
+| E12.FR.10 |  |  |
+## Transactions - Transaction-related message not accepted by CSMS
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| E13.FR.01 | :heavy_check_mark: yes |  |
+| E13.FR.02 | :heavy_check_mark: yes |  |
+| E13.FR.03 | :heavy_check_mark: yes |  |
+| E13.FR.04 | :heavy_check_mark: yes |  |
+## Transactions - Check transaction status
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| E14.FR.01 | In Progress |  |
+| E14.FR.02 |  |  |
+| E14.FR.03 |  |  |
+| E14.FR.04 |  |  |
+| E14.FR.05 |  |  |
+| E14.FR.06 |  |  |
+| E14.FR.07 |  |  |
+| E14.FR.08 |  |  |
+## Transactions - End of charging process
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| E15.FR.01 | :heavy_check_mark: yes |  |
+| E15.FR.02 | n/a | tbd |
+| E15.FR.03 | n/a | tbd |
+| E15.FR.04 | :heavy_check_mark: yes |  |
+## RemoteControl - Remote Start Transaction - Cable Plugin First
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| F01.FR.01 | :heavy_check_mark: yes | Charging station is responsible |
+| F01.FR.02 | :heavy_check_mark: yes | Charging station is responsible |
+| F01.FR.03 | :heavy_check_mark: yes | Charging station is responsible |
+| F01.FR.04 | :heavy_check_mark: yes | Charging station is responsible |
+| F01.FR.05 | :heavy_check_mark: yes | Charging station is responsible |
+| F01.FR.06 | :heavy_check_mark: yes |  |
+| F01.FR.07 | :heavy_check_mark: yes | Currently always rejected |
+| F01.FR.08 |  |  |
+| F01.FR.09 |  |  |
+| F01.FR.10 |  |  |
+| F01.FR.11 |  |  |
+| F01.FR.12 |  |  |
+| F01.FR.13 | :heavy_check_mark: yes | Charging station is responsible |
+| F01.FR.14 | :heavy_check_mark: yes | Charging station is responsible |
+| F01.FR.15 | :heavy_check_mark: yes | Charging station is responsible |
+| F01.FR.16 | :heavy_check_mark: yes | Charging station is responsible |
+| F01.FR.17 | :heavy_check_mark: yes | Charging station is responsible |
+| F01.FR.18 | :heavy_check_mark: yes | Charging station is responsible |
+| F01.FR.19 | :heavy_check_mark: yes | Charging station is responsible |
+| F01.FR.20 | :heavy_check_mark: yes | Currently when no evse id is given, request is rejected |
+| F01.FR.21 | :heavy_check_mark: yes |  |
+| F01.FR.22 | :heavy_check_mark: yes |  |
+| F01.FR.23 | :heavy_check_mark: yes |  |
+| F01.FR.24 | :heavy_check_mark: yes |  |
+| F01.FR.25 | :heavy_check_mark: yes | Charging station is responsible |
+| F01.FR.26 |  |  |
+## RemoteControl - Remote Start Transaction - Remote Start First
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| F02.FR.01 | :heavy_check_mark: yes | Charging station is responsible |
+| F02.FR.02 | :heavy_check_mark: yes | Charging station is responsible |
+| F02.FR.03 | :heavy_check_mark: yes | Charging station is responsible |
+| F02.FR.04 | :heavy_check_mark: yes | Charging station is responsible |
+| F02.FR.05 | :heavy_check_mark: yes | Charging station is responsible |
+| F02.FR.06 | :heavy_check_mark: yes | Charging station is responsible |
+| F02.FR.07 | :heavy_check_mark: yes | Charging station is responsible |
+| F02.FR.08 | :heavy_check_mark: yes | Charging station is responsible |
+| F02.FR.09 | :heavy_check_mark: yes | Charging station is responsible |
+| F02.FR.10 | :heavy_check_mark: yes | Charging station is responsible |
+| F02.FR.11 | :heavy_check_mark: yes | Charging station or libocpp??? |
+| F02.FR.12 | :heavy_check_mark: yes | Charging station is responsible |
+| F02.FR.13 | :heavy_check_mark: yes | Charging station is responsible |
+| F02.FR.14 | :heavy_check_mark: yes |  |
+| F02.FR.15 | :heavy_check_mark: yes | Currently always rejected |
+| F02.FR.16 |  |  |
+| F02.FR.17 |  |  |
+| F02.FR.18 |  |  |
+| F02.FR.19 |  |  |
+| F02.FR.20 |  |  |
+| F02.FR.21 | :heavy_check_mark: yes | Charging station is responsible |
+| F02.FR.22 | :heavy_check_mark: yes | Currently when no evse id is given, request is rejected |
+| F02.FR.23 | :heavy_check_mark: yes |  |
+| F02.FR.24 | :heavy_check_mark: yes |  |
+| F02.FR.25 | :heavy_check_mark: yes |  |
+| F02.FR.26 | :heavy_check_mark: yes |  |
+| F02.FR.27 |  |  |
+## RemoteControl - Remote Stop Transaction
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| F03.FR.01 | :heavy_check_mark: yes |  |
+| F03.FR.02 | :heavy_check_mark: yes | Charging station should send TransactionEventRequest |
+| F03.FR.03 | :heavy_check_mark: yes | Charging station is responsible |
+| F03.FR.04 | :heavy_check_mark: yes | Charging station is responsible |
+| F03.FR.05 | :heavy_check_mark: yes | Charging station is responsible |
+| F03.FR.06 | :heavy_check_mark: yes | Charging station is responsible |
+| F03.FR.07 | :heavy_check_mark: yes |  |
+| F03.FR.08 | :heavy_check_mark: yes |  |
+| F03.FR.09 | :heavy_check_mark: yes | Charging station is responsible |
+## RemoteControl - Remote Stop ISO 15118 Charging from CSMS
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| F04.FR.01 |  |  |
+| F04.FR.02 |  |  |
+| F04.FR.03 |  |  |
+| F04.FR.04 |  |  |
+| F04.FR.05 |  |  |
+| F04.FR.06 |  |  |
+## RemoteControl - Remotely Unlock Connector
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| F05.FR.01 | :heavy_check_mark: yes |  |
+| F05.FR.02 | :heavy_check_mark: yes | Charging station is responsible |
+| F05.FR.03 | :heavy_check_mark: yes | Charging station is responsible |
+| F05.FR.04 | :heavy_check_mark: yes | Charging station is responsible |
+| F05.FR.05 | :heavy_check_mark: yes | Charging station is responsible |
+| F05.FR.06 | :heavy_check_mark: yes | Charging station is responsible |
+## RemoteControl - Trigger Message
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| F06.FR.01 | n/a |  |
+| F06.FR.02 | n/a |  |
+| F06.FR.03 | :heavy_check_mark: yes |  |
+| F06.FR.04 | :heavy_check_mark: yes |  |
+| F06.FR.05 | :heavy_check_mark: yes |  |
+| F06.FR.06 | :heavy_check_mark: yes |  |
+| F06.FR.07 | :heavy_check_mark: yes |  |
+| F06.FR.08 | :heavy_check_mark: yes |  |
+| F06.FR.09 | :heavy_check_mark: yes |  |
+| F06.FR.10 | :heavy_check_mark: yes |  |
+| F06.FR.11 | :heavy_check_mark: yes |  |
+| F06.FR.12 | :heavy_check_mark: yes |  |
+| F06.FR.13 | :heavy_check_mark: yes |  |
+| F06.FR.14 | :heavy_check_mark: yes |  |
+| F06.FR.15 | :heavy_check_mark: yes |  |
+| F06.FR.16 | :heavy_check_mark: yes |  |
+| F06.FR.17 | :heavy_check_mark: yes |  |
+## Availability - Status Notification
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| G01.FR.01 | :heavy_check_mark: yes |  |
+| G01.FR.02 | n/a | Charging station is responsible??? |
+| G01.FR.03 | :heavy_check_mark: yes |  |
+| G01.FR.04 |  |  |
+| G01.FR.05 |  |  |
+| G01.FR.06 |  |  |
+| G01.FR.07 |  |  |
+| G01.FR.08 |  | Charging station is responsible??? |
+## Availability - Heartbeat
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| G02.FR.01 | :heavy_check_mark: yes |  |
+| G02.FR.02 | :heavy_check_mark: yes |  |
+| G02.FR.03 | n/a |  |
+| G02.FR.04 | n/a |  |
+| G02.FR.05 |  | Not mandatory, so we can leave like this |
+| G02.FR.06 |  |  |
+| G02.FR.07 |  |  |
+## Availability - Change Availability EVSE/Connector
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| G03.FR.01 | :heavy_check_mark: yes |  |
+| G03.FR.02 | :heavy_check_mark: yes |  |
+| G03.FR.03 | :heavy_check_mark: yes |  |
+| G03.FR.04 | :heavy_check_mark: yes |  |
+| G03.FR.05 | :heavy_check_mark: yes |  |
+| G03.FR.06 | :heavy_check_mark: yes |  |
+| G03.FR.07 | :heavy_check_mark: yes |  |
+| G03.FR.08 | n/a | OCPP201 Module should take care of persisting this information, libocpp will just listen to events |
+## Availability - Change Availability Charging Station
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| G04.FR.01 | :heavy_check_mark: yes | Charging station is also responsible? |
+| G04.FR.02 | :heavy_check_mark: yes |  |
+| G04.FR.03 | :heavy_check_mark: yes |  |
+| G04.FR.04 | :heavy_check_mark: yes |  |
+| G04.FR.05 | :heavy_check_mark: yes | Charging station is responsible |
+| G04.FR.06 | :heavy_check_mark: yes |  |
+| G04.FR.07 | :heavy_check_mark: yes |  |
+| G04.FR.08 |  | ?? Not clear to me (Maaike) |
+| G04.FR.09 | :heavy_check_mark: yes | Charging station is responsible |
+## Availability - Lock Failure
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| G05.FR.01 | :heavy_check_mark: yes | Charging station is responsible??? |
+| G05.FR.02 | :heavy_check_mark: yes | Charging station is responsible??? |
+| G05.FR.03 | n/a | Charging station is responsible??? |
+| G05.FR.04 | n/a | Charging station is responsible??? |
+## Reservation - Reservation
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| H01.FR.01 |  |  |
+| H01.FR.02 |  |  |
+| H01.FR.03 |  |  |
+| H01.FR.04 |  |  |
+| H01.FR.06 |  |  |
+| H01.FR.07 |  |  |
+| H01.FR.09 |  |  |
+| H01.FR.11 |  |  |
+| H01.FR.12 |  |  |
+| H01.FR.14 |  |  |
+| H01.FR.15 |  |  |
+| H01.FR.16 |  |  |
+| H01.FR.17 |  |  |
+| H01.FR.18 |  |  |
+| H01.FR.19 |  |  |
+| H01.FR.20 |  |  |
+| H01.FR.23 |  |  |
+| H01.FR.24 |  |  |
+## Reservation - Cancel Reservation
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| H02.FR.01 |  |  |
+| H02.FR.02 |  |  |
+## Reservation - Use a reserved EVSE
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| H03.FR.01 |  |  |
+| H03.FR.02 |  |  |
+| H03.FR.03 |  |  |
+| H03.FR.04 |  |  |
+| H03.FR.05 |  |  |
+| H03.FR.06 |  |  |
+| H03.FR.07 |  |  |
+| H03.FR.08 |  |  |
+## Reservation - Reservation Ended, not used
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| H04.FR.01 |  |  |
+| H04.FR.02 |  |  |
+| H04.FR.03 |  |  |
+## TariffAndCost - Show EV Driver-specific Tariff Information
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| I01.FR.01 |  |  |
+| I01.FR.02 |  |  |
+| I01.FR.03 |  |  |
+## TariffAndCost - Show EV Driver Running Total Cost During Charging
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| I02.FR.01 |  |  |
+| I02.FR.02 |  |  |
+| I02.FR.03 |  |  |
+| I02.FR.04 |  |  |
+## TariffAndCost -  Show EV Driver Final Total Cost After Charging
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| I03.FR.01 |  |  |
+| I03.FR.02 |  |  |
+| I03.FR.03 |  |  |
+| I03.FR.04 |  |  |
+| I03.FR.05 |  |  |
+## TariffAndCost - Show Fallback Tariff Information
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| I04.FR.01 |  |  |
+| I04.FR.02 |  |  |
+## TariffAndCost - Show Fallback Total Cost Message
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| I05.FR.01 |  |  |
+| I05.FR.02 |  |  |
+## TariffAndCost - Update Tariff Information During Transaction
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| I06.FR.01 |  |  |
+| I06.FR.02 |  |  |
+| I06.FR.03 |  |  |
+## MeterValues - Sending Meter Values not related to a transaction
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| J01.FR.01 | :heavy_check_mark: yes |  |
+| J01.FR.02 | :heavy_check_mark: yes |  |
+| J01.FR.03 | :heavy_check_mark: yes |  |
+| J01.FR.04 | :heavy_check_mark: yes |  |
+| J01.FR.05 | :heavy_check_mark: yes |  |
+| J01.FR.06 | :heavy_check_mark: yes |  |
+| J01.FR.07 | :heavy_check_mark: yes |  |
+| J01.FR.08 | :heavy_check_mark: yes |  |
+| J01.FR.09 | In Progress | It looks like the location is already specified in the meterValues message |
+| J01.FR.10 | :heavy_check_mark: yes |  |
+| J01.FR.11 | :heavy_check_mark: yes |  |
+| J01.FR.13 | In Progress | Added phase rotation configuration variable |
+| J01.FR.14 | :heavy_check_mark: yes |  |
+| J01.FR.15 | n/a | tbd |
+| J01.FR.17 | :heavy_check_mark: yes |  |
+| J01.FR.18 | :heavy_check_mark: yes |  |
+| J01.FR.19 | :heavy_check_mark: yes |  |
+| J01.FR.20 | :heavy_check_mark: yes |  |
+| J01.FR.21 | n/a | not valid |
+## MeterValues - Sending transaction related Meter Values
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| J02.FR.01 | :heavy_check_mark: yes |  |
+| J02.FR.02 | :heavy_check_mark: yes |  |
+| J02.FR.03 | :heavy_check_mark: yes |  |
+| J02.FR.04 | :heavy_check_mark: yes |  |
+| J02.FR.05 | :heavy_check_mark: yes |  |
+| J02.FR.06 | :heavy_check_mark: yes |  |
+| J02.FR.07 | :heavy_check_mark: yes |  |
+| J02.FR.09 | In Progress | Added phase rotation configuration variable |
+| J02.FR.10 | :heavy_check_mark: yes |  |
+| J02.FR.11 | :heavy_check_mark: yes |  |
+| J02.FR.12 | n/a | tbd |
+| J02.FR.13 | n/a | tbd |
+| J02.FR.14 | n/a | tbd |
+| J02.FR.16 | n/a |  |
+| J02.FR.17 | n/a | tbd |
+| J02.FR.18 | :heavy_check_mark: yes |  |
+| J02.FR.19 | :heavy_check_mark: yes |  |
+| J02.FR.20 | :heavy_check_mark: yes |  |
+| J02.FR.21 | n/a | signed meter values are not yet applicable |
+## MeterValues - Charging Loop with metering information exchange
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| J03.FR.04 |  |  |
+## SmartCharging - SetChargingProfile
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| K01.FR.01 |  |  |
+| K01.FR.02 |  |  |
+| K01.FR.03 |  |  |
+| K01.FR.04 |  |  |
+| K01.FR.05 |  |  |
+| K01.FR.06 |  |  |
+| K01.FR.07 |  |  |
+| K01.FR.08 |  |  |
+| K01.FR.09 |  |  |
+| K01.FR.10 |  |  |
+| K01.FR.11 |  |  |
+| K01.FR.12 |  |  |
+| K01.FR.13 |  |  |
+| K01.FR.14 |  |  |
+| K01.FR.15 |  |  |
+| K01.FR.16 |  |  |
+| K01.FR.17 |  |  |
+| K01.FR.19 |  |  |
+| K01.FR.20 |  |  |
+| K01.FR.21 |  |  |
+| K01.FR.22 |  |  |
+| K01.FR.26 |  |  |
+| K01.FR.27 |  |  |
+| K01.FR.28 |  |  |
+| K01.FR.29 |  |  |
+| K01.FR.30 |  |  |
+| K01.FR.31 |  |  |
+| K01.FR.32 |  |  |
+| K01.FR.33 |  |  |
+| K01.FR.34 |  |  |
+| K01.FR.35 |  |  |
+| K01.FR.36 |  |  |
+| K01.FR.37 |  |  |
+| K01.FR.38 |  |  |
+| K01.FR.39 |  |  |
+| K01.FR.40 |  |  |
+| K01.FR.41 |  |  |
+| K01.FR.42 |  |  |
+| K01.FR.43 |  |  |
+| K01.FR.44 |  |  |
+| K01.FR.45 |  |  |
+| K01.FR.46 |  |  |
+| K01.FR.47 |  |  |
+| K01.FR.48 |  |  |
+| K01.FR.49 |  |  |
+| K01.FR.50 |  |  |
+| K01.FR.51 |  |  |
+| K01.FR.52 |  |  |
+| K01.FR.53 |  |  |
+## SmartCharging - Central Smart Charging
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| K02.FR.01 |  |  |
+| K02.FR.02 |  |  |
+| K02.FR.03 |  |  |
+| K02.FR.04 |  |  |
+| K02.FR.05 |  |  |
+| K02.FR.06 |  |  |
+| K02.FR.07 |  |  |
+| K02.FR.08 |  |  |
+## SmartCharging - Local Smart Charging
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| K03.FR.01 |  |  |
+| K03.FR.02 |  |  |
+| K03.FR.03 |  |  |
+| K03.FR.04 |  |  |
+| K03.FR.05 |  |  |
+| K03.FR.06 |  |  |
+| K03.FR.07 |  |  |
+| K03.FR.08 |  |  |
+## SmartCharging - Internal Load Balancing
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| K04.FR.01 |  |  |
+| K04.FR.02 |  |  |
+| K04.FR.03 |  |  |
+| K04.FR.04 |  |  |
+| K04.FR.05 |  |  |
+## SmartCharging - Remote Start Transaction with Charging Profile
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| K05.FR.01 |  |  |
+| K05.FR.02 |  |  |
+| K05.FR.03 |  |  |
+| K05.FR.04 |  |  |
+| K05.FR.05 |  |  |
+## SmartCharging - Offline Behavior Smart Charging During Transaction
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| K06.FR.01 |  |  |
+| K06.FR.02 |  |  |
+## SmartCharging - Offline Behavior Smart Charging at Start of Transaction
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| K07.FR.01 |  |  |
+## SmartCharging - Get Composite Schedule
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| K08.FR.01 |  |  |
+| K08.FR.02 |  |  |
+| K08.FR.03 |  |  |
+| K08.FR.04 |  |  |
+| K08.FR.05 |  |  |
+| K08.FR.06 |  |  |
+| K08.FR.07 |  |  |
+## SmartCharging - Get Charging Profiles
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| K09.FR.01 |  |  |
+| K09.FR.02 |  |  |
+| K09.FR.03 |  |  |
+| K09.FR.04 |  |  |
+| K09.FR.05 |  |  |
+| K09.FR.06 |  |  |
+## SmartCharging - Clear Charging Profile
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| K10.FR.01 |  |  |
+| K10.FR.02 |  |  |
+| K10.FR.03 |  |  |
+| K10.FR.04 |  |  |
+| K10.FR.05 |  |  |
+| K10.FR.06 |  |  |
+| K10.FR.07 |  |  |
+| K10.FR.08 |  |  |
+| K10.FR.09 |  |  |
+## SmartCharging - Set / Update External Charging Limit With Ongoing Transaction
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| K11.FR.01 |  |  |
+| K11.FR.02 |  |  |
+| K11.FR.03 |  |  |
+| K11.FR.04 |  |  |
+| K11.FR.05 |  |  |
+| K11.FR.06 |  |  |
+## SmartCharging - Set / Update External Charging Limit Without Ongoing Transaction
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| K12.FR.01 |  |  |
+| K12.FR.02 |  |  |
+| K12.FR.03 |  |  |
+| K12.FR.04 |  |  |
+| K12.FR.05 |  |  |
+## SmartCharging - Reset / Release External Charging Limit
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| K13.FR.01 |  |  |
+| K13.FR.02 |  |  |
+| K13.FR.03 |  |  |
+## SmartCharging - External Charging Limit with Local Controller
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| K14.FR.01 |  |  |
+| K14.FR.02 |  |  |
+| K14.FR.03 |  |  |
+| K14.FR.04 |  |  |
+| K14.FR.05 |  |  |
+| K14.FR.06 |  |  |
+## SmartCharging - Charging with load leveling based on High Level Communication
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| K15.FR.01 |  |  |
+| K15.FR.02 |  |  |
+| K15.FR.03 |  |  |
+| K15.FR.04 |  |  |
+| K15.FR.05 |  |  |
+| K15.FR.06 |  |  |
+| K15.FR.07 |  |  |
+| K15.FR.08 |  |  |
+| K15.FR.09 |  |  |
+| K15.FR.10 |  |  |
+| K15.FR.11 |  |  |
+| K15.FR.12 |  |  |
+| K15.FR.13 |  |  |
+| K15.FR.14 |  |  |
+| K15.FR.15 |  |  |
+| K15.FR.16 |  |  |
+| K15.FR.17 |  |  |
+| K15.FR.18 |  |  |
+| K15.FR.19 |  |  |
+## SmartCharging - Renegotiation initiated by CSMS
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| K16.FR.01 |  |  |
+| K16.FR.02 |  |  |
+| K16.FR.03 |  |  |
+| K16.FR.04 |  |  |
+| K16.FR.05 |  |  |
+| K16.FR.06 |  |  |
+| K16.FR.07 |  |  |
+| K16.FR.08 |  |  |
+| K16.FR.09 |  |  |
+| K16.FR.10 |  |  |
+| K16.FR.11 |  |  |
+| K16.FR.12 |  |  |
+| K16.FR.13 |  |  |
+## SmartCharging - Renegotiation initiated by EV
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| K17.FR.01 |  |  |
+| K17.FR.02 |  |  |
+| K17.FR.03 |  |  |
+| K17.FR.04 |  |  |
+| K17.FR.05 |  |  |
+| K17.FR.06 |  |  |
+| K17.FR.07 |  |  |
+| K17.FR.08 |  |  |
+| K17.FR.09 |  |  |
+| K17.FR.10 |  |  |
+| K17.FR.11 |  |  |
+| K17.FR.12 |  |  |
+| K17.FR.13 |  |  |
+| K17.FR.14 |  |  |
+| K17.FR.15 |  |  |
+| K17.FR.16 |  |  |
+## FirmwareManagement - Secure Firmware Update
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| L01.FR.01 |  | Charging Station is responsible |
+| L01.FR.02 | :heavy_check_mark: yes | Security Notification is send by libOCPP |
+| L01.FR.03 | :heavy_check_mark: yes | Security Notification is send by libOCPP |
+| L01.FR.04 |  | Charging Station is responsible |
+| L01.FR.05 |  | Charging Station is responsible |
+| L01.FR.06 |  | Charging Station is responsible |
+| L01.FR.07 |  | Charging Station is responsible |
+| L01.FR.08 | n/a | Recommendation, not a requirement |
+| L01.FR.09 | n/a | Requirement on the firmware file itself |
+| L01.FR.10 |  | Charging Station is responsible |
+| L01.FR.11 | n/a |  |
+| L01.FR.12 |  | Charging Station is responsible |
+| L01.FR.13 |  | Charging Station is responsible |
+| L01.FR.14 |  | Charging Station is responsible |
+| L01.FR.15 |  | Charging Station is responsible |
+| L01.FR.16 |  | Charging Station is responsible |
+| L01.FR.20 | :heavy_check_mark: yes |  |
+| L01.FR.21 |  | Charging Station is responsible |
+| L01.FR.22 |  | Charging Station is responsible |
+| L01.FR.23 |  | Charging Station is responsible |
+| L01.FR.24 |  | Charging Station is responsible |
+| L01.FR.25 | :heavy_check_mark: yes |  |
+| L01.FR.26 | :heavy_check_mark: yes |  |
+| L01.FR.27 |  |  |
+| L01.FR.28 |  | Charging Station is responsible |
+| L01.FR.29 |  |  |
+| L01.FR.30 |  |  |
+| L01.FR.31 | :heavy_check_mark: yes |  |
+| L01.FR.32 | n/a | Not a requirement |
+## FirmwareManagement - Non-Secure Firmware Update
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| L02.FR.01 | :heavy_check_mark: yes | Charging Station is responsible |
+| L02.FR.02 | :heavy_check_mark: yes | Charging Station is responsible |
+| L02.FR.03 | :heavy_check_mark: yes | Charging Station is responsible |
+| L02.FR.04 | :heavy_check_mark: yes | Charging Station is responsible |
+| L02.FR.05 | :heavy_check_mark: yes | Charging Station is responsible |
+| L02.FR.06 | :heavy_check_mark: yes | Charging Station is responsible |
+| L02.FR.07 | :heavy_check_mark: yes | Charging Station is responsible |
+| L02.FR.08 | :heavy_check_mark: yes | Charging Station is responsible |
+| L02.FR.09 | :heavy_check_mark: yes | Charging Station is responsible |
+| L02.FR.10 | :heavy_check_mark: yes | Charging Station is responsible |
+| L02.FR.14 | :heavy_check_mark: yes | Charging Station is responsible |
+| L02.FR.15 | :heavy_check_mark: yes | Charging Station is responsible |
+| L02.FR.16 |  |  |
+| L02.FR.17 |  |  |
+| L02.FR.18 | :heavy_check_mark: yes | Charging Station is responsible |
+| L02.FR.19 | :heavy_check_mark: yes | Charging Station is responsible |
+| L02.FR.20 | :heavy_check_mark: yes | Charging Station is responsible |
+| L02.FR.21 | :heavy_check_mark: yes | Charging Station is responsible |
+## FirmwareManagement - Publish Firmware file on Local Controller
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| L03.FR.01 |  |  |
+| L03.FR.02 |  |  |
+| L03.FR.03 |  |  |
+| L03.FR.04 |  |  |
+| L03.FR.05 |  |  |
+| L03.FR.06 |  |  |
+| L03.FR.07 |  |  |
+| L03.FR.08 |  |  |
+| L03.FR.09 |  |  |
+| L03.FR.10 |  |  |
+| L03.FR.11 |  |  |
+## FirmwareManagement - Unpublish Firmware file on Local Controller
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| L04.FR.01 |  |  |
+| L04.FR.02 |  |  |
+| L04.FR.03 |  |  |
+| L04.FR.04 |  |  |
+## ISO 15118 CertificateManagement - Certificate installation EV
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| M01.FR.01 |  |  |
+## ISO 15118 CertificateManagement - Certificate Update EV
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| M02.FR.01 |  |  |
+## ISO 15118 CertificateManagement - Retrieve list of available certificates from a Charging Station
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| M03.FR.01 | :heavy_check_mark: yes |  |
+| M03.FR.02 | :heavy_check_mark: yes |  |
+| M03.FR.03 | :heavy_check_mark: yes |  |
+| M03.FR.04 | :heavy_check_mark: yes |  |
+| M03.FR.05 | In Progress |  |
+## ISO 15118 CertificateManagement - Delete a specific certificate from a Charging Station
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| M04.FR.01 |  |  |
+| M04.FR.02 |  |  |
+| M04.FR.03 |  |  |
+| M04.FR.04 |  |  |
+| M04.FR.05 |  |  |
+| M04.FR.06 |  |  |
+| M04.FR.07 |  |  |
+| M04.FR.08 |  |  |
+## ISO 15118 CertificateManagement - Install CA certificate in a Charging Station
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| M05.FR.01 | :heavy_check_mark: yes |  |
+| M05.FR.02 | :heavy_check_mark: yes |  |
+| M05.FR.03 | :heavy_check_mark: yes |  |
+| M05.FR.06 |  |  |
+| M05.FR.07 | :heavy_check_mark: yes |  |
+| M05.FR.09 |  |  |
+| M05.FR.10 |  |  |
+| M05.FR.11 |  |  |
+| M05.FR.12 |  |  |
+| M05.FR.13 |  |  |
+| M05.FR.14 |  |  |
+| M05.FR.15 |  |  |
+| M05.FR.16 |  |  |
+| M05.FR.17 |  |  |
+## ISO 15118 CertificateManagement - Get V2G Charging Station Certificate status
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| M06.FR.01 |  |  |
+| M06.FR.02 |  |  |
+| M06.FR.03 |  |  |
+| M06.FR.04 |  |  |
+| M06.FR.06 |  |  |
+| M06.FR.07 |  |  |
+| M06.FR.08 |  |  |
+| M06.FR.09 |  |  |
+| M06.FR.10 |  |  |
+## Diagnostics - Retrieve Log Information
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| N01.FR.01 | :heavy_check_mark: yes |  |
+| N01.FR.02 | :heavy_check_mark: yes | Charging Station is responsible |
+| N01.FR.03 | :heavy_check_mark: yes | Charging Station is responsible |
+| N01.FR.04 | :heavy_check_mark: yes | Charging Station is responsible |
+| N01.FR.05 | :heavy_check_mark: yes | Charging Station is responsible |
+| N01.FR.06 | :heavy_check_mark: yes | Charging Station is responsible |
+| N01.FR.07 | :heavy_check_mark: yes | Charging Station is responsible |
+| N01.FR.08 | :heavy_check_mark: yes | Charging Station is responsible |
+| N01.FR.09 | :heavy_check_mark: yes | Charging Station is responsible |
+| N01.FR.10 | :heavy_check_mark: yes | Charging Station is responsible |
+| N01.FR.11 | :heavy_check_mark: yes | Charging Station is responsible |
+| N01.FR.12 | :heavy_check_mark: yes | Charging Station is responsible |
+| N01.FR.13 | :heavy_check_mark: yes | Charging Station is responsible |
+| N01.FR.14 | :heavy_check_mark: yes | Charging Station is responsible |
+| N01.FR.15 | :heavy_check_mark: yes | Charging Station is responsible |
+| N01.FR.16 | :heavy_check_mark: yes | Charging Station is responsible |
+| N01.FR.17 | :heavy_check_mark: yes | Charging Station is responsible |
+| N01.FR.18 | :heavy_check_mark: yes | Charging Station is responsible |
+| N01.FR.19 | :heavy_check_mark: yes | Charging Station is responsible |
+| N01.FR.20 | :heavy_check_mark: yes | Charging Station is responsible |
+## Diagnostics - Get Monitoring report
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| N02.FR.01 |  |  |
+| N02.FR.02 |  |  |
+| N02.FR.03 |  |  |
+| N02.FR.04 |  |  |
+| N02.FR.05 |  |  |
+| N02.FR.06 |  |  |
+| N02.FR.07 |  |  |
+| N02.FR.08 |  |  |
+| N02.FR.09 |  |  |
+| N02.FR.10 |  |  |
+| N02.FR.11 |  |  |
+| N02.FR.12 |  |  |
+| N02.FR.13 |  |  |
+| N02.FR.14 |  |  |
+| N02.FR.15 |  |  |
+| N02.FR.16 |  |  |
+| N02.FR.17 |  |  |
+## Diagnostics - Set Monitoring Base
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| N03.FR.01 |  |  |
+| N03.FR.02 |  |  |
+| N03.FR.03 |  |  |
+| N03.FR.04 |  |  |
+| N03.FR.05 |  |  |
+## Diagnostics - Set Variable Monitoring
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| N04.FR.01 |  |  |
+| N04.FR.02 |  |  |
+| N04.FR.03 |  |  |
+| N04.FR.04 |  |  |
+| N04.FR.05 |  |  |
+| N04.FR.06 |  |  |
+| N04.FR.07 |  |  |
+| N04.FR.08 |  |  |
+| N04.FR.09 |  |  |
+| N04.FR.10 |  |  |
+| N04.FR.11 |  |  |
+| N04.FR.12 |  |  |
+| N04.FR.13 |  |  |
+| N04.FR.14 |  |  |
+| N04.FR.15 |  |  |
+| N04.FR.16 |  |  |
+| N04.FR.17 |  |  |
+| N04.FR.18 |  |  |
+| N04.FR.19 |  |  |
+## Diagnostics - Set Monitoring Level
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| N05.FR.01 |  |  |
+| N05.FR.02 |  |  |
+| N05.FR.03 |  |  |
+## Diagnostics - Clear / Remove Monitoring
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| N06.FR.01 |  |  |
+| N06.FR.02 |  |  |
+| N06.FR.03 |  |  |
+| N06.FR.04 |  |  |
+| N06.FR.05 |  |  |
+| N06.FR.06 |  |  |
+| N06.FR.07 |  |  |
+## Diagnostics - Alert Event
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| N07.FR.02 |  |  |
+| N07.FR.03 |  |  |
+| N07.FR.04 |  |  |
+| N07.FR.05 |  |  |
+| N07.FR.06 |  |  |
+| N07.FR.07 |  |  |
+| N07.FR.10 |  |  |
+| N07.FR.11 |  |  |
+| N07.FR.12 |  |  |
+| N07.FR.13 |  |  |
+| N07.FR.14 |  |  |
+| N07.FR.15 |  |  |
+| N07.FR.16 |  |  |
+| N07.FR.17 |  |  |
+| N07.FR.18 |  |  |
+| N07.FR.19 |  |  |
+## Diagnostics - Periodic Event
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| N08.FR.02 |  |  |
+| N08.FR.03 |  |  |
+| N08.FR.04 |  |  |
+| N08.FR.05 |  |  |
+| N08.FR.06 |  |  |
+| N08.FR.07 |  |  |
+## Diagnostics - Get Customer Information
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| N09.FR.01 |  |  |
+| N09.FR.02 |  |  |
+| N09.FR.03 |  |  |
+| N09.FR.04 |  |  |
+| N09.FR.05 |  |  |
+| N09.FR.06 |  |  |
+| N09.FR.07 |  |  |
+| N09.FR.08 |  |  |
+## Diagnostics - Clear Customer Information
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| N10.FR.01 |  |  |
+| N10.FR.02 |  |  |
+| N10.FR.03 |  |  |
+| N10.FR.04 |  |  |
+| N10.FR.05 |  |  |
+| N10.FR.06 |  |  |
+| N10.FR.07 |  |  |
+| N10.FR.08 |  |  |
+| N10.FR.09 |  |  |
+## DisplayMessage - Set DisplayMessage
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| O01.FR.01 |  |  |
+| O01.FR.02 |  |  |
+| O01.FR.03 |  |  |
+| O01.FR.04 |  |  |
+| O01.FR.05 |  |  |
+| O01.FR.06 |  |  |
+| O01.FR.07 |  |  |
+| O01.FR.08 |  |  |
+| O01.FR.09 |  |  |
+| O01.FR.10 |  |  |
+| O01.FR.11 |  |  |
+| O01.FR.12 |  |  |
+| O01.FR.13 |  |  |
+| O01.FR.14 |  |  |
+| O01.FR.15 |  |  |
+| O01.FR.16 |  |  |
+| O01.FR.17 |  |  |
+## DisplayMessage - Set DisplayMessage for Transaction
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| O02.FR.01 |  |  |
+| O02.FR.02 |  |  |
+| O02.FR.03 |  |  |
+| O02.FR.04 |  |  |
+| O02.FR.05 |  |  |
+| O02.FR.06 |  |  |
+| O02.FR.07 |  |  |
+| O02.FR.08 |  |  |
+| O02.FR.09 |  |  |
+| O02.FR.10 |  |  |
+| O02.FR.11 |  |  |
+| O02.FR.12 |  |  |
+| O02.FR.14 |  |  |
+| O02.FR.15 |  |  |
+| O02.FR.16 |  |  |
+| O02.FR.17 |  |  |
+| O02.FR.18 |  |  |
+## DisplayMessage - Get All DisplayMessages
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| O03.FR.02 |  |  |
+| O03.FR.03 |  |  |
+| O03.FR.04 |  |  |
+| O03.FR.05 |  |  |
+| O03.FR.06 |  |  |
+## DisplayMessage - Get Specific DisplayMessages
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| O04.FR.01 |  |  |
+| O04.FR.02 |  |  |
+| O04.FR.03 |  |  |
+| O04.FR.04 |  |  |
+| O04.FR.05 |  |  |
+| O04.FR.06 |  |  |
+| O04.FR.07 |  |  |
+## DisplayMessage - Clear a DisplayMessage
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| O05.FR.01 |  |  |
+| O05.FR.02 |  |  |
+## DisplayMessage - Replace DisplayMessage
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| O06.FR.01 |  |  |
+## DataTransfer - Data Transfer to the Charging Station
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| P01.FR.01 |  | There is no way yet to register a data transfer callback. |
+| P01.FR.02 |  | ??? Not clear by me (Maaike) |
+| P01.FR.03 | n/a |  |
+| P01.FR.04 | n/a |  |
+| P01.FR.05 | :heavy_check_mark: yes |  |
+| P01.FR.06 | :heavy_check_mark: yes |  |
+| P01.FR.07 | n/a |  |
+## DataTransfer - Data Transfer to the CSMS
+
+| ID | Status | Remark |
+| --- | --- | --- |
+| P02.FR.01 | :heavy_check_mark: yes | Charging station is responsible |
+| P02.FR.02 | :heavy_check_mark: yes | Charging station is responsible |
+| P02.FR.03 |  | ??? Not clear by me (Maaike) |
+| P02.FR.04 | :heavy_check_mark: yes | Charging station is responsible |
+| P02.FR.05 | n/a |  |
+| P02.FR.06 | n/a |  |
+| P02.FR.07 | n/a |  |
+| P02.FR.08 | n/a |  |
