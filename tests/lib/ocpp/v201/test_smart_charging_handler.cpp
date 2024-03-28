@@ -469,4 +469,16 @@ TEST_F(ChargepointTestFixtureV201, K01FR53_TxDefaultProfileValidIfAppliedToExist
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::Valid));
 }
 
+TEST_F(ChargepointTestFixtureV201, K01FR53_TxDefaultProfileValidIfAppliedToDifferentEvse) {
+    install_profile_on_evse(DEFAULT_EVSE_ID, DEFAULT_PROFILE_ID);
+    create_evse_with_id(DEFAULT_EVSE_ID + 1);
+
+    auto profile = create_charging_profile(DEFAULT_PROFILE_ID + 1, ChargingProfilePurposeEnum::TxDefaultProfile,
+                                           create_charge_schedule(ChargingRateUnitEnum::A), uuid(),
+                                           ChargingProfileKindEnum::Absolute, DEFAULT_STACK_LEVEL);
+    auto sut = handler.validate_tx_default_profile(profile, DEFAULT_EVSE_ID + 1);
+
+    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::Valid));
+}
+
 } // namespace ocpp::v201
