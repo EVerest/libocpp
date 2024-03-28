@@ -1005,7 +1005,15 @@ void ChargePointImpl::message_callback(const std::string& message) {
                                                                                       enhanced_message.uniqueId);
                     this->send<RemoteStopTransactionResponse>(call_result);
                 } else {
-                    this->handle_message(enhanced_message);
+                    if (enhanced_message.messageType == MessageType::GetConfiguration ||
+                        enhanced_message.messageType == MessageType::ChangeConfiguration ||
+                        enhanced_message.messageType == MessageType::TriggerMessage) {
+                        this->handle_message(enhanced_message);
+                    } else {
+                        auto call_error = CallError(enhanced_message.uniqueId, "GenericError",
+                                                    "ChargePoint in pending state", json({}, true));
+                        this->send(call_error);
+                    }
                 }
             }
             break;
