@@ -43,7 +43,8 @@ public:
     explicit SmartChargingHandler();
 
     ///
-    /// \brief validates the given \p profile according to the specification
+    /// \brief validates requirements that apply only to the ChargingStationMaxProfile \p profile
+    /// according to the specification
     ///
     ProfileValidationResultEnum validate_charge_point_max_profile(const ChargingProfile& profile) const;
 
