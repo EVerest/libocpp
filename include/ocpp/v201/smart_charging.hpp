@@ -16,6 +16,7 @@ namespace ocpp::v201 {
 
 enum class ProfileValidationResultEnum {
     Valid,
+    InvalidProfileType,
     TxProfileMissingTransactionId,
     TxProfileEvseIdNotGreaterThanZero,
     TxProfileTransactionNotOnEvse,
@@ -27,6 +28,7 @@ enum class ProfileValidationResultEnum {
     ChargingProfileExtraneousStartSchedule,
     ChargingSchedulePeriodsOutOfOrder,
     ChargingSchedulePeriodInvalidPhaseToUse,
+    ChargingStationMaxProfileCannotBeRelative,
 };
 
 /// \brief This class handles and maintains incoming ChargingProfiles and contains the logic
@@ -39,6 +41,11 @@ private:
 
 public:
     explicit SmartChargingHandler();
+
+    ///
+    /// \brief validates the given \p profile according to the specification
+    ///
+    ProfileValidationResultEnum validate_charge_point_max_profile(const ChargingProfile& profile) const;
 
     ///
     /// \brief validates the given \p profile according to the specification

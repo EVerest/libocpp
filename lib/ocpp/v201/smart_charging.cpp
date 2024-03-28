@@ -16,6 +16,19 @@ namespace ocpp::v201 {
 SmartChargingHandler::SmartChargingHandler() {
 }
 
+ProfileValidationResultEnum
+SmartChargingHandler::validate_charge_point_max_profile(const ChargingProfile& profile) const {
+    if (profile.chargingProfilePurpose != ChargingProfilePurposeEnum::ChargingStationMaxProfile) {
+        return ProfileValidationResultEnum::InvalidProfileType;
+    }
+
+    if (profile.chargingProfileKind == ChargingProfileKindEnum::Relative) {
+        return ProfileValidationResultEnum::ChargingStationMaxProfileCannotBeRelative;
+    }
+
+    return ProfileValidationResultEnum::Valid;
+}
+
 ProfileValidationResultEnum SmartChargingHandler::validate_tx_profile(const ChargingProfile& profile,
                                                                       Evse& evse) const {
     if (!profile.transactionId.has_value()) {
@@ -31,8 +44,8 @@ ProfileValidationResultEnum SmartChargingHandler::validate_tx_profile(const Char
         return ProfileValidationResultEnum::TxProfileEvseHasNoActiveTransaction;
     }
 
-    auto& transaction = evse.get_transaction();
-    if (transaction->transactionId != profile.transactionId.value()) {
+    auto& transaction = evse.get_transaction()->transactionId;
+    if (transaction != profile.transactionId.value()) {
         return ProfileValidationResultEnum::TxProfileTransactionNotOnEvse;
     }
 
