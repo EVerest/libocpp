@@ -20,6 +20,7 @@
 #include <ocpp/v201/types.hpp>
 #include <ocpp/v201/utils.hpp>
 
+#include "ocpp/v201/connectivity_manager.hpp"
 #include "ocpp/v201/messages/Get15118EVCertificate.hpp"
 #include <ocpp/v201/messages/Authorize.hpp>
 #include <ocpp/v201/messages/BootNotification.hpp>
@@ -125,12 +126,7 @@ struct Callbacks {
     std::function<UpdateFirmwareResponse(const UpdateFirmwareRequest& request)> update_firmware_request_callback;
     // callback to be called when a variable has been changed by the CSMS
     std::optional<std::function<void(const SetVariableData& set_variable_data)>> variable_changed_callback;
-    // callback is called when receiving a SetNetworkProfile.req from the CSMS
-    std::optional<std::function<SetNetworkProfileStatusEnum(
-        const int32_t configuration_slot, const NetworkConnectionProfile& network_connection_profile)>>
-        validate_network_profile_callback;
-    std::optional<std::function<bool(const NetworkConnectionProfile& network_connection_profile)>>
-        configure_network_connection_profile_callback;
+
     std::optional<std::function<void(const ocpp::DateTime& currentTime)>> time_sync_callback;
 
     /// \brief callback to be called to congfigure ocpp message logging
@@ -167,6 +163,27 @@ struct Callbacks {
     /// messageId
     std::optional<std::function<DataTransferResponse(const DataTransferRequest& request)>> data_transfer_callback;
 
+    /* Callbacks for networking */
+    /// \brief register a \p callback that is called when the websocket is connected successfully
+    std::optional<
+        std::function<void(const int configuration_slot, const NetworkConnectionProfile& network_connection_profile)>>
+        websocket_connected_callback;
+
+    /// \brief register a \p callback that is called when the websocket connection is disconnected
+    std::optional<
+        std::function<void(const int configuration_slot, const NetworkConnectionProfile& network_connection_profile)>>
+        websocket_disconnected_callback;
+
+    // callback is called when receiving a SetNetworkProfile.req from the CSMS
+    std::optional<std::function<SetNetworkProfileStatusEnum(
+        const int32_t configuration_slot, const NetworkConnectionProfile& network_connection_profile)>>
+        validate_network_profile_callback;
+
+    /// @brief register a \p callback that is called when the network connection profile is to be configured.
+    std::optional<std::function<std::future<ConfigNetworkResult>(
+        const int32_t configurationSlot, const NetworkConnectionProfile& network_connection_profile)>>
+        configure_network_connection_profile_callback;
+
     /// \breif Callback function that is called when a transaction_event was sent to the CSMS
     std::optional<std::function<void(const TransactionEventRequest& transaction_event)>> transaction_event_callback;
 };
@@ -188,6 +205,7 @@ private:
     std::unique_ptr<MessageQueue<v201::MessageType>> message_queue;
     std::unique_ptr<DeviceModel> device_model;
     std::shared_ptr<DatabaseHandler> database_handler;
+    std::unique_ptr<ConnectivityManager> connectivity_manager;
 
     std::map<int32_t, AvailabilityChange> scheduled_change_availability_requests;
 
@@ -215,8 +233,6 @@ private:
     UploadLogStatusEnum upload_log_status;
     int32_t upload_log_status_id;
     BootReasonEnum bootreason;
-    int network_configuration_priority;
-    bool disable_automatic_websocket_reconnects;
     bool skip_invalid_csms_certificate_notifications;
 
     /// \brief Component responsible for maintaining and persisting the operational status of CS, EVSEs, and connectors.
@@ -258,12 +274,17 @@ private:
 
     bool send(CallError call_error);
 
+    ConfigNetworkResult config_network_profile_result;
+
     // internal helper functions
-    void init_websocket();
-    WebsocketConnectionOptions get_ws_connection_options(const int32_t configuration_slot);
+
     void init_certificate_expiration_check_timers();
     void scheduled_check_client_certificate_expiration();
     void scheduled_check_v2g_certificate_expiration();
+    void websocket_connected_callback(const int configuration_slot,
+                                      const NetworkConnectionProfile& network_connection_profile);
+    void websocket_disconnected_callback(const int configuration_slot,
+                                         const NetworkConnectionProfile& network_connection_profile);
 
     /// \brief Gets the configured NetworkConnectionProfile based on the given \p configuration_slot . The
     /// central system uri ofthe connection options will not contain ws:// or wss:// because this method removes it if
@@ -514,7 +535,7 @@ private:
             ocpp::CallResult<ResponseType> call_result = enhanced_response.message;
             return call_result.msg;
         };
-    };
+    }
 
     /// \brief Checks if all connectors are effectively inoperative.
     /// If this is the case, calls the all_connectors_unavailable_callback
@@ -571,18 +592,8 @@ public:
     /// \param bootreason   Optional bootreason (default: PowerUp).
     void start(BootReasonEnum bootreason = BootReasonEnum::PowerUp);
 
-    /// \brief Starts the websocket
-    void start_websocket();
-
     /// \brief Stops the ChargePoint. Disconnects the websocket connection and stops MessageQueue and all timers
     void stop();
-
-    /// \brief Initializes the websocket and connects to CSMS if it is not yet connected
-    void connect_websocket();
-
-    /// \brief Disconnects the the websocket connection to the CSMS if it is connected
-    /// \param code Optional websocket close status code (default: normal).
-    void disconnect_websocket(websocketpp::close::status::value code = websocketpp::close::status::normal);
 
     /// \brief Chargepoint notifies about new firmware update status firmware_update_status. This function should be
     ///        called during a Firmware Update to indicate the current firmware_update_status.
@@ -758,6 +769,28 @@ public:
     /// change
     std::map<SetVariableData, SetVariableResult>
     set_variables(const std::vector<SetVariableData>& set_variable_data_vector);
+
+    /// \brief Switch to a specifc network connection profile given the configuration slot.
+    /// This disregards the prority
+    /// \param configuration_slot Slot in which the configuration is stored
+    /// \return true if the switch is possible.
+    bool on_try_switch_network_connection_profile(const int32_t configuration_slot);
+
+    ///
+    /// \brief Called when a network is disconnected, for example when an ethernet cable is removed.
+    ///
+    /// This callback is introduced because the system might see a lot earlier when a network cable is disconnected
+    /// than the websocket. For the websocket it might take several minutes while the system might know within seconds
+    /// or even earlier. So when the system detects a disconnect of the network, it can call this function. If the
+    /// websocket is connected with the network profile in this slot, it can disconnect the websocket.
+    ///
+    /// \param configuration_slot   The slot of the network connection profile that is disconnected.
+    /// \param ocpp_interface       The interface that is disconnected.
+    ///
+    /// \note At least one of the two params must be provided, otherwise libocpp will not know which interface is down.
+    ///
+    void on_network_disconnected(const std::optional<int32_t> configuration_slot,
+                                 const std::optional<OCPPInterfaceEnum> ocpp_interface);
 };
 
 } // namespace v201

@@ -33,6 +33,7 @@ target_sources(ocpp
         ocpp/v201/average_meter_values.cpp
         ocpp/v201/charge_point.cpp
         ocpp/v201/smart_charging.cpp
+        ocpp/v201/connectivity_manager.cpp
         ocpp/v201/connector.cpp
         ocpp/v201/ctrlr_component_variables.cpp
         ocpp/v201/database_handler.cpp
@@ -123,10 +124,16 @@ target_link_libraries(ocpp
 )
 
 if(LIBOCPP_ENABLE_LIBWEBSOCKETS)
+    set(LIBWEBSOCKETS_LIBRARY)
+    if(LWS_WITH_STATIC)
+        set(LIBOCPP_LIBWEBSOCKETS_LIBRARY ${LIBWEBSOCKETS_LIBRARIES_STATIC})
+    else()
+        set(LIBOCPP_LIBWEBSOCKETS_LIBRARY ${LIBWEBSOCKETS_LIBRARIES_SHARED})
+    endif()
     find_package(libwebsockets REQUIRED)
     target_link_libraries(ocpp
     PUBLIC
-        websockets_shared
+        ${LIBOCPP_LIBWEBSOCKETS_LIBRARY}
     )
     target_compile_definitions(ocpp
         PRIVATE

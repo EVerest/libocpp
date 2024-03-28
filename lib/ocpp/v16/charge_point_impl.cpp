@@ -169,22 +169,22 @@ void ChargePointImpl::init_websocket() {
         this->message_queue->resume(this->message_queue_resume_delay);
         this->connected_callback();
     });
-    this->websocket->register_disconnected_callback([this]() {
-        if (this->connection_state_changed_callback != nullptr) {
-            this->connection_state_changed_callback(false);
-        }
-        this->message_queue->pause();
-        if (this->ocsp_request_timer != nullptr) {
-            this->ocsp_request_timer->stop();
-        }
-        if (this->client_certificate_timer != nullptr) {
-            this->client_certificate_timer->stop();
-        }
-        if (this->v2g_certificate_timer != nullptr) {
-            this->v2g_certificate_timer->stop();
-        }
-    });
-    this->websocket->register_closed_callback([this](const websocketpp::close::status::value reason) {
+    // this->websocket->register_disconnected_callback([this]() {
+    //     if (this->connection_state_changed_callback != nullptr) {
+    //         this->connection_state_changed_callback(false);
+    //     }
+    //     this->message_queue->pause();
+    //     if (this->ocsp_request_timer != nullptr) {
+    //         this->ocsp_request_timer->stop();
+    //     }
+    //     if (this->client_certificate_timer != nullptr) {
+    //         this->client_certificate_timer->stop();
+    //     }
+    //     if (this->v2g_certificate_timer != nullptr) {
+    //         this->v2g_certificate_timer->stop();
+    //     }
+    // });
+    this->websocket->register_closed_callback([this](const WebsocketCloseReason reason) {
         if (this->switch_security_profile_callback != nullptr) {
             this->switch_security_profile_callback();
         }
@@ -256,7 +256,7 @@ void ChargePointImpl::connect_websocket() {
 
 void ChargePointImpl::disconnect_websocket() {
     if (this->websocket->is_connected()) {
-        this->websocket->disconnect(websocketpp::close::status::normal);
+        this->websocket->disconnect(WebsocketCloseReason::Normal);
     }
 }
 
@@ -905,7 +905,7 @@ bool ChargePointImpl::stop() {
         this->stop_all_transactions();
 
         this->database_handler->close_connection();
-        this->websocket->disconnect(websocketpp::close::status::normal);
+        this->websocket->disconnect(WebsocketCloseReason::Normal);
         this->message_queue->stop();
 
         this->stopped = true;
@@ -1383,7 +1383,7 @@ void ChargePointImpl::handleChangeConfigurationRequest(ocpp::Call<ChangeConfigur
                         ocpp::CallResult<ChangeConfigurationResponse> call_result(response, call.uniqueId);
                         this->send<ChangeConfigurationResponse>(call_result);
                         responded = true;
-                        this->websocket->reconnect(std::error_code(), 1000);
+                        // this->websocket->reconnect(std::error_code(), 1000);
                     } else {
                         EVLOG_info << "AuthorizationKey was changed while on security profile 3. Nothing to do.";
                     }
@@ -1422,7 +1422,7 @@ void ChargePointImpl::handleChangeConfigurationRequest(ocpp::Call<ChangeConfigur
                                 this->switchSecurityProfile(security_profile, 1);
                             };
                             // disconnected_callback will trigger security_profile_callback when it is set
-                            this->websocket->disconnect(websocketpp::close::status::normal);
+                            this->websocket->disconnect(WebsocketCloseReason::Normal);
                         }
                     } catch (const std::invalid_argument& e) {
                         response.status = ConfigurationStatus::Rejected;
@@ -2277,7 +2277,7 @@ void ChargePointImpl::handleCertificateSignedRequest(ocpp::Call<CertificateSigne
     // reconnect with new certificate if valid and security profile is 3
     if (response.status == CertificateSignedStatusEnumType::Accepted &&
         this->configuration->getSecurityProfile() == 3) {
-        this->websocket->reconnect(std::error_code(), 1000);
+        // this->websocket->reconnect(std::error_code(), 1000);
     }
 }
 

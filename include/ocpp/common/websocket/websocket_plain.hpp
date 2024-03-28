@@ -5,6 +5,7 @@
 
 #include <thread>
 
+#include <everest/logging.hpp>
 #include <websocketpp/client.hpp>
 #include <websocketpp/config/asio_client.hpp>
 
@@ -25,6 +26,9 @@ class WebsocketPlain final : public WebsocketBase {
 private:
     client ws_client;
     websocketpp::lib::shared_ptr<websocketpp::lib::thread> websocket_thread;
+
+    /// \brief Set to true if websocket is already closed and should not close it again.
+    std::atomic_bool closed;
 
     /// \brief Connect to a plain websocket
     void connect_plain();
@@ -48,6 +52,11 @@ public:
     explicit WebsocketPlain(const WebsocketConnectionOptions& connection_options);
 
     ~WebsocketPlain() {
+        this->close(WebsocketCloseReason::Normal, "", true);
+        if (!this->ws_client.stopped()) {
+            this->ws_client.stop();
+        }
+
         this->websocket_thread->join();
     }
 
@@ -57,10 +66,10 @@ public:
 
     /// \brief Reconnects the websocket using the delay, a reason for this reconnect can be provided with the
     /// \p reason parameter
-    void reconnect(std::error_code reason, long delay) override;
+    void reconnect() override;
 
     /// \brief Closes a plaintext websocket connection
-    void close(websocketpp::close::status::value code, const std::string& reason) override;
+    void close(WebsocketCloseReason code, const std::string& reason, const bool stop_perpetual = false) override;
 
     /// \brief send a \p message over the websocket
     /// \returns true if the message was sent successfully

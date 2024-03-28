@@ -598,6 +598,24 @@
           "description": "If enabled the metervalues configured with the AlignedDataCtrlr will be rounded to the exact time intervals",
           "default": false,
           "type": "boolean"
+      },
+      "NetworkConfigTimeout": {
+          "variable_name": "NetworkConfigTimeout",
+          "characteristics": {
+              "supportsMonitoring": true,
+              "dataType": "integer",
+              "minLimit": 1
+          },
+          "attributes": [
+              {
+                  "type": "Actual",
+                  "mutability": "ReadWrite"
+              }
+          ],
+          "description": "Timeout value in seconds to wait for a response from a network configuration request",
+          "minimum": 1,
+          "default": "160",
+          "type": "integer"
       }
   },
   "required": [

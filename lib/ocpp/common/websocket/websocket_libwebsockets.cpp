@@ -206,7 +206,7 @@ static bool verify_csms_cn(const std::string& hostname, bool preverified, const 
 
 WebsocketTlsTPM::WebsocketTlsTPM(const WebsocketConnectionOptions& connection_options,
                                  std::shared_ptr<EvseSecurity> evse_security) :
-    WebsocketBase(), evse_security(evse_security) {
+    WebsocketBase(), evse_security(evse_security), stopped(false) {
 
     set_connection_options(connection_options);
 
@@ -232,17 +232,18 @@ void WebsocketTlsTPM::set_connection_options(const WebsocketConnectionOptions& c
     switch (connection_options.security_profile) { // `switch` used to lint on missing enum-values
     case security::SecurityProfile::OCPP_1_6_ONLY_UNSECURED_TRANSPORT_WITHOUT_BASIC_AUTHENTICATION:
     case security::SecurityProfile::UNSECURED_TRANSPORT_WITH_BASIC_AUTHENTICATION:
+        set_connection_options_base(connection_options);
+        this->connection_options.csms_uri.set_secure(false);
+        break;
     case security::SecurityProfile::TLS_WITH_BASIC_AUTHENTICATION:
     case security::SecurityProfile::TLS_WITH_CLIENT_SIDE_CERTIFICATES:
+        set_connection_options_base(connection_options);
+        this->connection_options.csms_uri.set_secure(true);
         break;
     default:
         throw std::invalid_argument("unknown `security_profile`, value = " +
                                     std::to_string(connection_options.security_profile));
     }
-
-    set_connection_options_base(connection_options);
-
-    this->connection_options.csms_uri.set_secure(true);
 }
 
 static int callback_minimal(struct lws* wsi, enum lws_callback_reasons reason, void* user, void* in, size_t len) {
@@ -362,6 +363,10 @@ void WebsocketTlsTPM::tls_init(SSL_CTX* ctx, const std::string& path_chain, cons
 }
 
 void WebsocketTlsTPM::recv_loop() {
+    if (stopped) {
+        return;
+    }
+
     std::shared_ptr<ConnectionData> local_data = conn_data;
 
     if (local_data == nullptr) {
@@ -402,6 +407,10 @@ void WebsocketTlsTPM::recv_loop() {
 }
 
 void WebsocketTlsTPM::client_loop() {
+    if (stopped) {
+        return;
+    }
+
     std::shared_ptr<ConnectionData> local_data = conn_data;
 
     if (local_data == nullptr) {
@@ -427,6 +436,15 @@ void WebsocketTlsTPM::client_loop() {
     info.user = local_data.get();
 
     info.fd_limit_per_thread = 1 + 1 + 1;
+
+#ifdef LWS_WITH_NETWORK
+    if (connection_options.iface_or_ip.has_value()) {
+        info.iface = connection_options.iface_or_ip.value().c_str();
+        // TODO make bind_iface work.
+        // See ticket https://github.com/EVerest/libocpp/issues/542
+        // info.bind_iface = 1;
+    }
+#endif
 
     if (this->connection_options.security_profile == 2 || this->connection_options.security_profile == 3) {
         // Setup context - need to know the key type first
@@ -598,12 +616,6 @@ bool WebsocketTlsTPM::connect() {
         this->recv_message_thread->join();
     }
 
-    // Stop any pending reconnect timer
-    {
-        std::lock_guard<std::mutex> lk(this->reconnect_mutex);
-        this->reconnect_timer_tpm.stop();
-    }
-
     // Clear any pending messages on a new connection
     {
         std::lock_guard<std::mutex> lock(queue_mutex);
@@ -616,20 +628,6 @@ bool WebsocketTlsTPM::connect() {
         std::queue<std::string> empty;
         empty.swap(recv_message_queue);
     }
-
-    // Bind reconnect callback
-    this->reconnect_callback = [this](const websocketpp::lib::error_code& ec) {
-        EVLOG_info << "Reconnecting to TLS websocket at uri: " << this->connection_options.csms_uri.string()
-                   << " with security profile: " << this->connection_options.security_profile;
-
-        // close connection before reconnecting
-        if (this->m_is_connected) {
-            EVLOG_info << "Closing websocket connection before reconnecting";
-            this->close(websocketpp::close::status::abnormal_close, "Reconnect");
-        }
-
-        this->connect();
-    };
 
     std::unique_lock<std::mutex> lock(connection_mutex);
 
@@ -666,36 +664,19 @@ bool WebsocketTlsTPM::connect() {
     return (connected);
 }
 
-void WebsocketTlsTPM::reconnect(std::error_code reason, long delay) {
-    EVLOG_info << "Attempting TLS TPM reconnect with reason: " << reason << " and delay:" << delay;
+// void WebsocketTlsTPM::reconnect(std::error_code reason, long delay) {
+void WebsocketTlsTPM::reconnect() {
 
     if (this->shutting_down) {
         EVLOG_info << "Not reconnecting because the websocket is being shutdown.";
         return;
     }
 
-    if (this->m_is_connected) {
-        EVLOG_info << "Closing websocket connection before reconnecting";
-        this->close(websocketpp::close::status::abnormal_close, "Reconnect");
+    this->connect();
     }
 
-    EVLOG_info << "Reconnecting in: " << delay << "ms"
-               << ", attempt: " << this->connection_attempts;
-
-    {
-        std::lock_guard<std::mutex> lk(this->reconnect_mutex);
-        this->reconnect_timer_tpm.timeout([this]() { this->reconnect_callback(websocketpp::lib::error_code()); },
-                                          std::chrono::milliseconds(delay));
-    }
-}
-
-void WebsocketTlsTPM::close(websocketpp::close::status::value code, const std::string& reason) {
+void WebsocketTlsTPM::close(WebsocketCloseReason code, const std::string& reason, const bool /*stop_perpetual*/) {
     EVLOG_info << "Closing TLS TPM websocket with reason: " << reason;
-
-    {
-        std::lock_guard<std::mutex> lk(this->reconnect_mutex);
-        this->reconnect_timer_tpm.stop();
-    }
 
     std::shared_ptr<ConnectionData> local_data = conn_data;
     if (local_data != nullptr) {
@@ -707,16 +688,15 @@ void WebsocketTlsTPM::close(websocketpp::close::status::value code, const std::s
     conn_data.reset();
 
     this->m_is_connected = false;
-    std::thread closing([this]() { this->closed_callback(websocketpp::close::status::normal); });
+    std::thread closing([this]() { this->closed_callback(WebsocketCloseReason::Normal); });
     closing.detach();
+    stopped = true;
 }
 
 void WebsocketTlsTPM::on_conn_connected() {
     EVLOG_info << "OCPP client successfully connected to TLS websocket server";
 
-    this->connection_attempts = 1; // reset connection attempts
     this->m_is_connected = true;
-    this->reconnecting = false;
 
     std::thread connected([this]() { this->connected_callback(this->connection_options.security_profile); });
     connected.detach();
@@ -727,10 +707,8 @@ void WebsocketTlsTPM::on_conn_close() {
 
     std::lock_guard<std::mutex> lk(this->connection_mutex);
     this->m_is_connected = false;
-    this->disconnected_callback();
-    this->cancel_reconnect_timer();
 
-    std::thread closing([this]() { this->closed_callback(websocketpp::close::status::normal); });
+    std::thread closing([this]() { this->closed_callback(WebsocketCloseReason::Normal); });
     closing.detach();
 }
 
@@ -738,24 +716,11 @@ void WebsocketTlsTPM::on_conn_fail() {
     EVLOG_error << "OCPP client connection failed to TLS websocket server";
 
     std::lock_guard<std::mutex> lk(this->connection_mutex);
-    if (this->m_is_connected) {
-        std::thread disconnect([this]() { this->disconnected_callback(); });
-        disconnect.detach();
-    }
+
+    std::thread disconnect([this]() { this->failed_callback(WebsocketCloseReason::Normal); });
+    disconnect.detach();
 
     this->m_is_connected = false;
-
-    // -1 indicates to always attempt to reconnect
-    if (this->connection_options.max_connection_attempts == -1 or
-        this->connection_attempts <= this->connection_options.max_connection_attempts) {
-        this->reconnect(std::error_code(), this->get_reconnect_interval());
-
-        // Increment reconn attempts
-        this->connection_attempts += 1;
-    } else {
-        EVLOG_info << "Closed TLS websocket, reconnect attempts exhausted";
-        this->close(websocketpp::close::status::normal, "Connection failed");
-    }
 }
 
 void WebsocketTlsTPM::on_message(void* msg, size_t len) {
