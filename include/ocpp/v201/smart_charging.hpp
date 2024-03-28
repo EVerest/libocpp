@@ -14,6 +14,8 @@
 
 namespace ocpp::v201 {
 
+const int DEFAULT_AND_MAX_NUMBER_PHASES = 3;
+
 enum class ProfileValidationResultEnum {
     Valid,
     EvseDoesNotExist,
@@ -28,7 +30,14 @@ enum class ProfileValidationResultEnum {
     ChargingProfileExtraneousStartSchedule,
     ChargingSchedulePeriodsOutOfOrder,
     ChargingSchedulePeriodInvalidPhaseToUse,
+    ChargingSchedulePeriodExtraneousPhaseValues,
+    ChargingSchedulePeriodUnsupportedNumberPhases,
 };
+
+inline std::ostream& operator<<(std::ostream& os, const ProfileValidationResultEnum validation_result) {
+    os << static_cast<int>(validation_result);
+    return os;
+}
 
 /// \brief This class handles and maintains incoming ChargingProfiles and contains the logic
 /// to calculate the composite schedules
@@ -54,7 +63,8 @@ public:
     ProfileValidationResultEnum validate_tx_profile(const ChargingProfile& profile, EvseInterface& evse) const;
 
     /// \brief validates that the given \p profile has valid charging schedules
-    ProfileValidationResultEnum validate_profile_schedules(const ChargingProfile& profile) const;
+    ProfileValidationResultEnum validate_profile_schedules(ChargingProfile& profile,
+                                                           std::optional<EvseInterface*> evse_opt = std::nullopt) const;
 
     /// \brief Adds a given \p profile to our stored list of profiles
     void add_profile(const ChargingProfile& profile);
