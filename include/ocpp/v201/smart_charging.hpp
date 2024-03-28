@@ -65,7 +65,8 @@ public:
     ProfileValidationResultEnum validate_tx_default_profile(const ChargingProfile& profile, int32_t evse_id) const;
 
     ///
-    /// \brief validates the given \p profile according to the specification
+    /// \brief validates requirements that apply only to the ChargingStationMaxProfile \p profile
+    /// according to the specification
     ///
     ProfileValidationResultEnum validate_tx_profile(const ChargingProfile& profile, EvseInterface& evse) const;
 
