@@ -56,6 +56,19 @@ ProfileValidationResultEnum SmartChargingHandler::validate_tx_default_profile(co
     return ProfileValidationResultEnum::Valid;
 }
 
+ProfileValidationResultEnum
+SmartChargingHandler::validate_charge_point_max_profile(const ChargingProfile& profile) const {
+    if (profile.chargingProfilePurpose != ChargingProfilePurposeEnum::ChargingStationMaxProfile) {
+        return ProfileValidationResultEnum::InvalidProfileType;
+    }
+
+    if (profile.chargingProfileKind == ChargingProfileKindEnum::Relative) {
+        return ProfileValidationResultEnum::ChargingStationMaxProfileCannotBeRelative;
+    }
+
+    return ProfileValidationResultEnum::Valid;
+}
+
 ProfileValidationResultEnum SmartChargingHandler::validate_tx_profile(const ChargingProfile& profile,
                                                                       EvseInterface& evse) const {
     if (!profile.transactionId.has_value()) {
