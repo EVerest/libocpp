@@ -39,7 +39,7 @@ private:
 
     std::shared_ptr<ocpp::v201::DatabaseHandler> database_handler;
     // cppcheck-suppress unusedStructMember
-    std::map<int32_t, ChargingProfile> charging_profiles;
+    std::map<int32_t, std::vector<ChargingProfile>> charging_profiles;
     std::vector<ChargingProfile> station_wide_charging_profiles;
 
 public:

@@ -59,9 +59,12 @@ ProfileValidationResultEnum SmartChargingHandler::validate_tx_profile(const Char
         return ProfileValidationResultEnum::TxProfileTransactionNotOnEvse;
     }
 
-    auto conflicts_with = [&profile](const std::pair<int32_t, ChargingProfile>& candidate) {
-        return candidate.second.transactionId == profile.transactionId &&
-               candidate.second.stackLevel == profile.stackLevel;
+    auto conflicts_with = [&profile](const std::pair<int32_t, std::vector<ChargingProfile>>& candidate) {
+        return std::any_of(candidate.second.begin(), candidate.second.end(),
+                           [&profile](const ChargingProfile& candidateProfile) {
+                               return candidateProfile.transactionId == profile.transactionId &&
+                                      candidateProfile.stackLevel == profile.stackLevel;
+                           });
     };
     if (std::any_of(charging_profiles.begin(), charging_profiles.end(), conflicts_with)) {
         return ProfileValidationResultEnum::TxProfileConflictingStackLevel;
@@ -125,7 +128,7 @@ void SmartChargingHandler::add_profile(int32_t evse_id, ChargingProfile& profile
     if (STATION_WIDE_ID == evse_id) {
         station_wide_charging_profiles.push_back(profile);
     } else {
-        charging_profiles[evse_id] = profile;
+        charging_profiles[evse_id].push_back(profile);
     }
 }
 
@@ -133,9 +136,10 @@ std::vector<ChargingProfile> SmartChargingHandler::get_evse_specific_tx_default_
     std::vector<ChargingProfile> evse_specific_tx_default_profiles;
 
     for (auto evse_profile_pair : charging_profiles) {
-        if (evse_profile_pair.second.chargingProfilePurpose == ChargingProfilePurposeEnum::TxDefaultProfile) {
-            evse_specific_tx_default_profiles.push_back(evse_profile_pair.second);
-        }
+        for (auto profile : evse_profile_pair.second)
+            if (profile.chargingProfilePurpose == ChargingProfilePurposeEnum::TxDefaultProfile) {
+                evse_specific_tx_default_profiles.push_back(profile);
+            }
     }
 
     return evse_specific_tx_default_profiles;
