@@ -206,11 +206,21 @@ private: // Functions
     // Disable assignment operator.
     ConnectivityManager operator=(const ConnectivityManager&) = delete;
 
+    /// @brief Run main thread.
+    ///
+    /// This will check if the websocket must be initialized, initialize and connect the websocket and then wait
+    /// until it is woken up by another method / thread to connect again for example.
     void run();
 
     /// @brief Initialize the websocket connection.
     /// @param configuration_slot Optional configuration slot to initialize the websocket to.
     bool init_websocket(std::optional<int32_t> config_slot = std::nullopt);
+
+    ///
+    /// \brief Get websocket connection options for this specific configuration slot.
+    /// \param configuration_slot   The configuration slot to get the options for.
+    /// \return The websocket connection options.
+    ///
     WebsocketConnectionOptions get_ws_connection_options(const int32_t configuration_slot);
 
     /// \brief Gets the configured NetworkConnectionProfile based on the given \p configuration_slot . The
@@ -219,6 +229,7 @@ private: // Functions
     /// \param configuration_slot   The network profile slot to get the network connection profile from.
     /// \return The network connection profile belonging to the slot or std::nullopt if not found.
     std::optional<NetworkConnectionProfile> get_network_connection_profile(const int32_t configuration_slot);
+
     /// \brief Get next network slot for next priority.
     int32_t get_next_network_configuration_priority_slot(const int32_t configuration_slot);
 

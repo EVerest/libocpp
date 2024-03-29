@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
 
+/// For the network connectivity, there is a readme in the doc/networkconnectivity folder. There the whole process
+/// and calls will be explained.
+
 #include "ocpp/v201/messages/SetNetworkProfile.hpp"
 #include <everest/logging.hpp>
 #include <ocpp/v201/connectivity_manager.hpp>
@@ -227,7 +230,7 @@ void ConnectivityManager::run() {
     {
         std::unique_lock<std::mutex> lock(reconnect_mutex);
         // Try_reconnect was set by the function that wanted to 'wake up' the thread an run this function again. We
-        // set it to false so it will not continuously fun this function.
+        // set it to false so it will not continuously run this function.
         this->try_reconnect.store(false);
     }
 
@@ -237,6 +240,8 @@ void ConnectivityManager::run() {
         if (this->init_websocket(this->requested_network_slot) && this->websocket != nullptr) {
             this->websocket->connect();
         } else {
+            EVLOG_warning << "Could not initialize websocket with requested network slot: "
+                          << this->requested_network_slot;
             // TODO what to do here???
         }
         // else set try reconnect to true???
@@ -258,6 +263,8 @@ void ConnectivityManager::run() {
             if (this->init_websocket(this->pending_network_slot) && this->websocket != nullptr) {
                 this->websocket->connect();
             } else {
+                EVLOG_warning << "Could not initialize websocket with pending network slot: "
+                              << this->pending_network_slot;
                 // TODO what to do here???
             }
         }
@@ -289,7 +296,7 @@ bool ConnectivityManager::init_websocket(std::optional<int32_t> config_slot) {
         configuration_slot = std::to_string(config_slot.value());
         config_slot_int = config_slot.value();
     } else {
-        // Get first available config slot.
+        // No config slot given. Get first available config slot.
         const std::vector<std::string> config_slot_vector = ocpp::get_vector_from_csv(
             this->device_model.get_value<std::string>(ControllerComponentVariables::NetworkConfigurationPriority));
         if (config_slot_vector.size() > 0) {
@@ -305,6 +312,7 @@ bool ConnectivityManager::init_websocket(std::optional<int32_t> config_slot) {
     }
 
     std::unique_lock<std::recursive_mutex> config_slot_lock(this->config_slot_mutex);
+    // Get websocket connection options and network connection profile belonging to this config slot.
     WebsocketConnectionOptions connection_options = this->get_ws_connection_options(config_slot_int);
     const std::optional<NetworkConnectionProfile> network_connection_profile =
         this->get_network_connection_profile(config_slot_int);
@@ -327,6 +335,7 @@ bool ConnectivityManager::init_websocket(std::optional<int32_t> config_slot) {
     if (this->configure_network_connection_profile_callback.has_value()) {
         EVLOG_debug << "Request to configure network connection profile " << config_slot_int;
         this->requested_network_slot = config_slot_int;
+        // Callback to configure network connection profile. It will return a future.
         std::future<ConfigNetworkResult> config_status = this->configure_network_connection_profile_callback.value()(
             config_slot_int, network_connection_profile.value());
         const int32_t config_timeout =
@@ -347,6 +356,7 @@ bool ConnectivityManager::init_websocket(std::optional<int32_t> config_slot) {
             ConfigNetworkResult result = config_status.get();
             if (result.success && result.network_profile_slot == config_slot_int) {
                 EVLOG_debug << "Config slot " << config_slot_int << " is configured, try to connect";
+                // Set interface or ip to connection options.
                 connection_options.iface_or_ip = result.interface_address;
                 this->pending_network_slot = config_slot_int;
                 this->requested_network_slot = 0;
@@ -368,15 +378,19 @@ bool ConnectivityManager::init_websocket(std::optional<int32_t> config_slot) {
 
     config_slot_lock.unlock();
 
+    // Store connection options to private member. This is done here because above the interface or ip can be set, so
+    // that's why it is not done earlier.
     this->current_connection_options = connection_options;
     this->connection_attempts = 0;
     if (this->websocket != nullptr) {
         this->websocket->disconnect(WebsocketCloseReason::ServiceRestart);
     }
 
-    // TODO this sometimes let the application hang (a thread not closing or something???)
+    // TODO this sometimes let the application hang (a thread not closing or something???) and with libwebsockets this
+    // will let the application crash. So it is really needed to set websocket to nullptr with websocketpp??
     // this->websocket = nullptr;
 
+    // Set Variables to current state.
     const auto& active_network_profile_cv = ControllerComponentVariables::ActiveNetworkProfile;
     if (active_network_profile_cv.variable.has_value()) {
         this->device_model.set_read_only_value(active_network_profile_cv.component,
@@ -387,11 +401,14 @@ bool ConnectivityManager::init_websocket(std::optional<int32_t> config_slot) {
     const auto& security_profile_cv = ControllerComponentVariables::SecurityProfile;
     if (security_profile_cv.variable.has_value()) {
         this->device_model.set_read_only_value(security_profile_cv.component, security_profile_cv.variable.value(),
-                                                AttributeEnum::Actual,
-                                                std::to_string(network_connection_profile.value().securityProfile));
+                                               AttributeEnum::Actual,
+                                               std::to_string(network_connection_profile.value().securityProfile));
     }
 
+    // Make a new websocket connection. This is normally only done when we should connect with a new network profile /
+    // config slot.
     this->websocket = std::make_unique<Websocket>(connection_options, this->evse_security, this->logging);
+    // Register callbacks.
     this->websocket->register_connected_callback(
         [this, config_slot_int, network_connection_profile](const int security_profile) {
             this->on_websocket_connected_callback(config_slot_int, network_connection_profile);
@@ -524,6 +541,8 @@ void ConnectivityManager::on_websocket_connected_callback(
     this->connection_attempts = 0;
     // TODO something with calling ping? set ping interval etc?
 
+    // We now have an active connection. Set active network slot to the current slot and remove the pending network
+    // slot.
     this->active_network_slot = configuration_slot;
     this->pending_network_slot = 0;
 
