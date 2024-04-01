@@ -577,7 +577,6 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
     // TODO(piet): C01.FR.17
 
     // TODO(piet): C10.FR.06
-    // TODO(piet): C10.FR.07
 
     AuthorizeResponse response;
 
@@ -2226,9 +2225,6 @@ void ChargePoint::handle_get_variables_req(const EnhancedMessage<v201::MessageTy
 }
 
 void ChargePoint::handle_get_base_report_req(Call<GetBaseReportRequest> call) {
-    // TODO(piet): B07.FR.02
-    // TODO(piet): B07.FR.13
-
     const auto msg = call.msg;
     GetBaseReportResponse response;
     response.status = GenericDeviceModelStatusEnum::Accepted;
@@ -2241,8 +2237,6 @@ void ChargePoint::handle_get_base_report_req(Call<GetBaseReportRequest> call) {
     this->send<GetBaseReportResponse>(call_result);
 
     if (response.status == GenericDeviceModelStatusEnum::Accepted) {
-        // TODO(piet): Propably split this up into several NotifyReport.req depending on ItemsPerMessage /
-        // BytesPerMessage
         const auto report_data = this->device_model->get_base_report_data(msg.reportBase);
         this->notify_report_req(msg.requestId, report_data);
     }
@@ -2381,10 +2375,7 @@ void ChargePoint::handle_set_network_profile_req(Call<SetNetworkProfileRequest> 
 }
 
 void ChargePoint::handle_reset_req(Call<ResetRequest> call) {
-    // TODO(piet): B11.FR.02
     // TODO(piet): B11.FR.05
-    // TODO(piet): B11.FR.09
-    // TODO(piet): B11.FR.10
 
     // TODO(piet): B12.FR.05
     // TODO(piet): B12.FR.06
