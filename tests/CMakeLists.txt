@@ -1,7 +1,8 @@
+set(TEST_TARGET_NAME ${PROJECT_NAME}_database_tests)
 add_definitions(-D_SQL_INIT_FILE="${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/everest/modules/OCPP/init.sql")
-add_executable(database_tests database_tests.cpp)
+add_executable(${TEST_TARGET_NAME} database_tests.cpp)
 
-target_link_libraries(database_tests PRIVATE
+target_link_libraries(${TEST_TARGET_NAME} PRIVATE
     ocpp
     date::date
     nlohmann_json::nlohmann_json
@@ -11,7 +12,7 @@ target_link_libraries(database_tests PRIVATE
     )
 
 
-add_test(database_tests database_tests)
+add_test(${TEST_TARGET_NAME} ${TEST_TARGET_NAME})
 
 add_executable(libocpp_unit_tests
         lib/ocpp/v201/test_component_state_manager.cpp)
@@ -36,12 +37,12 @@ add_subdirectory(lib/ocpp/v16)
 add_subdirectory(lib/ocpp/v201)
 add_subdirectory(lib/ocpp/common)
 
+set(TEST_TARGET_NAME ${PROJECT_NAME}_utils_tests)
+add_executable(${TEST_TARGET_NAME} utils_tests.cpp)
 
-add_executable(utils_tests utils_tests.cpp)
-
-target_link_libraries(utils_tests PRIVATE
+target_link_libraries(${TEST_TARGET_NAME} PRIVATE
         ocpp
         GTest::gtest_main
 )
 
-add_test(utils_tests utils_tests)
+add_test(${TEST_TARGET_NAME} ${TEST_TARGET_NAME})
