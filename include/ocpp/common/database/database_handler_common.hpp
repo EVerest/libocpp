@@ -33,7 +33,7 @@ public:
     ///
     /// \warning The 'db' variable is not initialized, the deriving class should do that.
     ///
-    DatabaseHandlerCommon(std::shared_ptr<DatabaseConnectionInterface> database) noexcept;
+    explicit DatabaseHandlerCommon(std::shared_ptr<DatabaseConnectionInterface> database) noexcept;
 
     ~DatabaseHandlerCommon() = default;
 

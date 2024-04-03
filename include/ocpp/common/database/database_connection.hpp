@@ -53,7 +53,7 @@ private:
     const fs::path database_file_path;
 
 public:
-    DatabaseConnection(const fs::path& database_file_path) noexcept;
+    explicit DatabaseConnection(const fs::path& database_file_path) noexcept;
 
     virtual ~DatabaseConnection();
 
