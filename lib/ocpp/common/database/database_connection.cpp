@@ -18,8 +18,8 @@ DatabaseConnection::~DatabaseConnection() {
 }
 
 bool DatabaseConnection::open_connection() {
-    if (!fs::exists(this->database_file_path)) {
-        fs::create_directories(this->database_file_path);
+    if (!fs::exists(this->database_file_path.parent_path())) {
+        fs::create_directories(this->database_file_path.parent_path());
     }
 
     if (sqlite3_open(this->database_file_path.c_str(), &this->db) != SQLITE_OK) {
