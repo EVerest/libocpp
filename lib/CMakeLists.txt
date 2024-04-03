@@ -8,6 +8,11 @@ target_compile_options(ocpp
         -Wimplicit-fallthrough  # avoid unintended fallthroughs
 )
 
+target_compile_definitions(ocpp
+    PRIVATE
+        MIGRATION_FILE_VERSION=${MIGRATION_FILE_VERSION}
+)
+
 target_sources(ocpp
     PRIVATE
         ocpp/common/call_types.cpp
@@ -21,6 +26,7 @@ target_sources(ocpp
         ocpp/common/evse_security.cpp
         ocpp/common/database/database_connection.cpp
         ocpp/common/database/database_handler_common.cpp
+        ocpp/common/database/database_schema_updater.cpp
         ocpp/common/database/sqlite_statement.cpp
         ocpp/v16/charge_point.cpp
         ocpp/v16/database_handler.cpp

@@ -2,6 +2,7 @@
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
 #include <ocpp/common/message_queue.hpp>
+#include <ocpp/common/database/database_schema_updater.hpp>
 #include <ocpp/v201/database_handler.hpp>
 #include <ocpp/v201/types.hpp>
 #include <ocpp/v201/utils.hpp>
@@ -17,24 +18,10 @@ DatabaseHandler::DatabaseHandler(std::unique_ptr<DatabaseConnectionInterface> da
 }
 
 void DatabaseHandler::init_sql() {
-    EVLOG_debug << "Running SQL initialization script: " << this->sql_init_path;
+    DatabaseSchemaUpdater updater{this->database};
 
-    if (!fs::exists(this->sql_init_path)) {
-        EVLOG_AND_THROW(std::runtime_error("SQL initialization script does not exist"));
-    }
-
-    if (fs::file_size(this->sql_init_path) == 0) {
-        EVLOG_AND_THROW(std::runtime_error("SQL initialization script empty"));
-    }
-
-    std::ifstream t(this->sql_init_path.string());
-    std::stringstream init_sql;
-
-    init_sql << t.rdbuf();
-
-    if (!this->database->execute_statement(init_sql.str())) {
-        EVLOG_error << "Could not create tables: " << this->database->get_error_message();
-        throw std::runtime_error("Database access error");
+    if (!updater.apply_migration_files(this->sql_init_path, MIGRATION_FILE_VERSION)) {
+        EVLOG_AND_THROW(std::runtime_error("SQL migration failed"));
     }
 
     this->inintialize_enum_tables();
