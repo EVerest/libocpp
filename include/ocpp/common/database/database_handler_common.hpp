@@ -4,8 +4,8 @@
 #pragma once
 
 #include <memory>
-#include <vector>
 #include <string>
+#include <vector>
 
 #include <ocpp/common/database/database_connection.hpp>
 #include <ocpp/common/types.hpp>
