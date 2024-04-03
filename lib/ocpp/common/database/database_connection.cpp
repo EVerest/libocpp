@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
 
-#include <everest/logging.hpp>
 #include <ocpp/common/database/database_connection.hpp>
+#include <everest/logging.hpp>
 
 using namespace std::string_literals;
 

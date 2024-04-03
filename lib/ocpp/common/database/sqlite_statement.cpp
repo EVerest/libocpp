@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
-#include <everest/logging.hpp>
 #include <ocpp/common/database/sqlite_statement.hpp>
+#include <everest/logging.hpp>
 
 namespace ocpp::common {
 
@@ -20,10 +20,6 @@ SQLiteStatement::~SQLiteStatement() {
         }
     }
 }
-
-// sqlite3_stmt* get() const {
-//     return this->stmt;
-// }
 
 int SQLiteStatement::step() {
     return sqlite3_step(this->stmt);

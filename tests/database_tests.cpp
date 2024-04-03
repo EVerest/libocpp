@@ -53,8 +53,9 @@ ChargingProfile get_sample_charging_profile() {
 class DatabaseTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        this->db_handler = std::make_unique<DatabaseHandler>(CP_ID, std::filesystem::path("/tmp"),
-                                                             std::filesystem::path(SQL_INIT_FILE));
+        auto database_connection =
+            std::make_shared<common::DatabaseConnection>(std::filesystem::path("/tmp") / (CP_ID + ".db"));
+        this->db_handler = std::make_unique<DatabaseHandler>(database_connection, std::filesystem::path(SQL_INIT_FILE));
         this->db_handler->open_connection(2);
     }
 

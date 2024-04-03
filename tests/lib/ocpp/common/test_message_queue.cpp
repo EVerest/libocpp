@@ -220,8 +220,11 @@ TEST_F(ControlMessageV201Test, test_is_transactional_update) {
  * MessageQueueTest
  */
 
-class DatabaseHandlerBaseMock : public common::DatabaseHandlerBase {
+class DatabaseHandlerBaseMock : public common::DatabaseHandlerCommon {
 public:
+    DatabaseHandlerBaseMock() : common::DatabaseHandlerCommon(std::shared_ptr<common::DatabaseConnectionInterface>()) {
+    }
+
     MOCK_METHOD(std::vector<common::DBTransactionMessage>, get_transaction_messages, (), (override));
     MOCK_METHOD(bool, insert_transaction_message, (const common::DBTransactionMessage&), (override));
     MOCK_METHOD(void, remove_transaction_message, (const std::string&), (override));

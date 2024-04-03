@@ -11,7 +11,8 @@ using namespace common;
 
 namespace v16 {
 
-DatabaseHandler::DatabaseHandler(std::shared_ptr<DatabaseConnectionInterface> database, const fs::path& init_script_path) :
+DatabaseHandler::DatabaseHandler(std::shared_ptr<DatabaseConnectionInterface> database,
+                                 const fs::path& init_script_path) :
     DatabaseHandlerCommon(database), init_script_path(init_script_path) {
 }
 
@@ -129,7 +130,7 @@ void DatabaseHandler::update_transaction(const std::string& session_id, int32_t 
     }
     if (stop_reason.has_value()) {
         stmt->bind_text("@stop_reason", v16::conversions::reason_to_string(stop_reason.value()),
-                       SQLiteString::Transient);
+                        SQLiteString::Transient);
     }
     stmt->bind_text("@last_update", ocpp::DateTime().to_rfc3339(), SQLiteString::Transient);
     stmt->bind_text("@session_id", session_id);
@@ -236,7 +237,7 @@ void DatabaseHandler::insert_or_update_authorization_cache_entry(const CiString<
 
     stmt->bind_text("@id_tag", id_tag.get(), SQLiteString::Transient);
     stmt->bind_text("@auth_status", v16::conversions::authorization_status_to_string(id_tag_info.status),
-                   SQLiteString::Transient);
+                    SQLiteString::Transient);
     if (id_tag_info.expiryDate.has_value()) {
         stmt->bind_text("@expiry_date", id_tag_info.expiryDate.value().to_rfc3339(), SQLiteString::Transient);
     }
@@ -301,7 +302,7 @@ void DatabaseHandler::insert_or_update_connector_availability(int32_t connector,
 
     stmt->bind_int("@id", connector);
     stmt->bind_text("@availability", v16::conversions::availability_type_to_string(availability_type),
-                   SQLiteString::Transient);
+                    SQLiteString::Transient);
 
     if (stmt->step() != SQLITE_DONE) {
         EVLOG_error << "Could not insert into table: " << this->database->get_error_message();
@@ -387,7 +388,7 @@ void DatabaseHandler::insert_or_update_local_authorization_list_entry(const CiSt
 
     stmt->bind_text("@id_tag", id_tag.get(), SQLiteString::Transient);
     stmt->bind_text("@auth_status", v16::conversions::authorization_status_to_string(id_tag_info.status),
-                   SQLiteString::Transient);
+                    SQLiteString::Transient);
     if (id_tag_info.expiryDate.has_value()) {
         stmt->bind_text("@expiry_date", id_tag_info.expiryDate.value().to_rfc3339(), SQLiteString::Transient);
     }

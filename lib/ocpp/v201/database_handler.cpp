@@ -102,7 +102,6 @@ void DatabaseHandler::init_enum_table(const std::string& table_name, T begin, T 
     init_enum_table_inner(table_name, static_cast<int>(begin), static_cast<int>(end), conversion_func);
 }
 
-
 void DatabaseHandler::open_connection() {
     if (!this->database->open_connection()) {
         throw std::runtime_error("Could not open database at provided path.");
@@ -201,7 +200,7 @@ void DatabaseHandler::insert_availability(int32_t evse_id, int32_t connector_id,
     insert_stmt->bind_int("@connector_id", connector_id);
 
     insert_stmt->bind_text("@operational_status", conversions::operational_status_enum_to_string(operational_status),
-                          SQLiteString::Transient);
+                           SQLiteString::Transient);
 
     if (insert_stmt->step() != SQLITE_DONE) {
         EVLOG_error << "Could not insert into AVAILABILITY table: " << this->database->get_error_message();
@@ -407,7 +406,7 @@ bool DatabaseHandler::transaction_metervalues_insert(const std::string& transact
 
             if (unitOfMeasure.customData.has_value()) {
                 insert_stmt->bind_text("@unit_custom_data", unitOfMeasure.customData.value().vendorId.get(),
-                                      SQLiteString::Transient);
+                                       SQLiteString::Transient);
             }
             if (unitOfMeasure.unit.has_value()) {
                 insert_stmt->bind_text("@unit_text", unitOfMeasure.unit.value().get(), SQLiteString::Transient);
@@ -421,7 +420,7 @@ bool DatabaseHandler::transaction_metervalues_insert(const std::string& transact
             const auto& signedMeterValue = item.signedMeterValue.value();
 
             insert_stmt->bind_text("@signed_meter_data", signedMeterValue.signedMeterData.get(),
-                                  SQLiteString::Transient);
+                                   SQLiteString::Transient);
             insert_stmt->bind_text("@signing_method", signedMeterValue.signingMethod.get(), SQLiteString::Transient);
             insert_stmt->bind_text("@encoding_method", signedMeterValue.encodingMethod.get(), SQLiteString::Transient);
             insert_stmt->bind_text("@public_key", signedMeterValue.publicKey.get(), SQLiteString::Transient);

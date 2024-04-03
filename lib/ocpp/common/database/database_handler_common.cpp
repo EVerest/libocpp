@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
-#include <everest/logging.hpp>
 #include <ocpp/common/database/database_handler_common.hpp>
+#include <everest/logging.hpp>
 
 namespace ocpp::common {
 

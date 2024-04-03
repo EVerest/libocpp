@@ -281,7 +281,8 @@ private:
 public:
     /// \brief Creates a new MessageQueue object with the provided \p configuration and \p send_callback
     MessageQueue(const std::function<bool(json message)>& send_callback, const MessageQueueConfig& config,
-                 const std::vector<M>& external_notify, std::shared_ptr<common::DatabaseHandlerCommon> database_handler) :
+                 const std::vector<M>& external_notify,
+                 std::shared_ptr<common::DatabaseHandlerCommon> database_handler) :
         database_handler(std::move(database_handler)),
         config(config),
         external_notify(external_notify),
