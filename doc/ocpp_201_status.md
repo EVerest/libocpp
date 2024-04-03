@@ -1,9 +1,10 @@
+This document contains the status of which OCPP 2.0.1 numbered requirements have been implemented in libOCPP. This does not cover if the functionality is also implemented in EVerest-core.
+
 ## Legend
 
 | Status | Description |
 | --- | --- |
 | :white_check_mark: | Done |
-| :fast_forward: | In progress |
 | :no_entry_sign: | Not applicable |
 
 ## General - General
