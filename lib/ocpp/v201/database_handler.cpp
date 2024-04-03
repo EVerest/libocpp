@@ -509,13 +509,13 @@ std::vector<MeterValue> DatabaseHandler::transaction_metervalues_get_all(const s
                 sampled_value.unitOfMeasure.emplace(unit);
             }
 
-            if (select_stmt2.column_type(9) == SQLITE_TEXT and select_stmt2.column_type(10) == SQLITE_TEXT and
-                select_stmt2.column_type(11) == SQLITE_TEXT and select_stmt2.column_type(12) == SQLITE_TEXT) {
+            if (select_stmt2->column_type(9) == SQLITE_TEXT and select_stmt2->column_type(10) == SQLITE_TEXT and
+                select_stmt2->column_type(11) == SQLITE_TEXT and select_stmt2->column_type(12) == SQLITE_TEXT) {
                 SignedMeterValue signed_meter_value;
-                signed_meter_value.signedMeterData = select_stmt2.column_text(9);
-                signed_meter_value.signingMethod = select_stmt2.column_text(10);
-                signed_meter_value.encodingMethod = select_stmt2.column_text(11);
-                signed_meter_value.publicKey = select_stmt2.column_text(12);
+                signed_meter_value.signedMeterData = select_stmt2->column_text(9);
+                signed_meter_value.signingMethod = select_stmt2->column_text(10);
+                signed_meter_value.encodingMethod = select_stmt2->column_text(11);
+                signed_meter_value.publicKey = select_stmt2->column_text(12);
 
                 sampled_value.signedMeterValue.emplace(signed_meter_value);
             }
