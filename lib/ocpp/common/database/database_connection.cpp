@@ -10,7 +10,7 @@ using namespace std::string_literals;
 namespace ocpp::common {
 
 DatabaseConnection::DatabaseConnection(const fs::path& database_file_path) noexcept :
-    db(nullptr), database_file_path(database_file_path) {
+    db(nullptr), database_file_path(database_file_path), open_count(0) {
 }
 
 DatabaseConnection::~DatabaseConnection() {
@@ -18,6 +18,11 @@ DatabaseConnection::~DatabaseConnection() {
 }
 
 bool DatabaseConnection::open_connection() {
+    if (this->open_count.fetch_add(1) != 0) {
+        EVLOG_debug << "Connection already opened";
+        return true;
+    }
+
     // Add special exception for databases in ram; we don't need to create a path for them
     if (this->database_file_path.string().find(":memory:") == std::string::npos and
         !fs::exists(this->database_file_path.parent_path())) {
@@ -28,14 +33,18 @@ bool DatabaseConnection::open_connection() {
         EVLOG_error << "Error opening database at " << this->database_file_path << ": " << sqlite3_errmsg(db);
         return false;
     }
-    EVLOG_info << "Established connection to Database: " << this->database_file_path;
+    EVLOG_info << "Established connection to database: " << this->database_file_path;
     return true;
 }
 
 bool DatabaseConnection::close_connection() {
-    EVLOG_info << "Closing database connection...";
+    if (this->open_count.fetch_sub(1) != 1) {
+        EVLOG_debug << "Connection should remain open for other users";
+        return true;
+    }
+
     if (this->db == nullptr) {
-        EVLOG_info << "Already closed";
+        EVLOG_info << "Database file " << this->database_file_path << " is already closed";
         return true;
     }
 
@@ -46,7 +55,7 @@ bool DatabaseConnection::close_connection() {
     }
 
     if (sqlite3_close_v2(this->db) != SQLITE_OK) {
-        EVLOG_error << "Error closing database file: " << this->get_error_message();
+        EVLOG_error << "Error closing database file " << this->database_file_path << ": " << this->get_error_message();
         return false;
     }
     EVLOG_info << "Successfully closed database: " << this->database_file_path;

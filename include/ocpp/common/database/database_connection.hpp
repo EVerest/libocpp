@@ -51,6 +51,7 @@ class DatabaseConnection : public DatabaseConnectionInterface {
 private:
     sqlite3* db;
     const fs::path database_file_path;
+    std::atomic_uint32_t open_count;
 
 public:
     explicit DatabaseConnection(const fs::path& database_file_path) noexcept;
