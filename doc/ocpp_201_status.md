@@ -1142,13 +1142,13 @@ This document contains the status of which OCPP 2.0.1 numbered requirements have
 | K01.FR.01 |  |  |
 | K01.FR.02 |  |  |
 | K01.FR.03 |  |  |
-| K01.FR.04 |  |  |
+| K01.FR.04 | :white_check_mark: |  |
 | K01.FR.05 |  |  |
 | K01.FR.06 |  |  |
 | K01.FR.07 |  |  |
 | K01.FR.08 |  |  |
 | K01.FR.09 |  |  |
-| K01.FR.10 |  |  |
+| K01.FR.10 | :white_check_mark: |  |
 | K01.FR.11 |  |  |
 | K01.FR.12 |  |  |
 | K01.FR.13 |  |  |
@@ -1157,7 +1157,7 @@ This document contains the status of which OCPP 2.0.1 numbered requirements have
 | K01.FR.16 |  |  |
 | K01.FR.17 |  |  |
 | K01.FR.19 |  |  |
-| K01.FR.20 |  |  |
+| K01.FR.20 | :white_check_mark: |  |
 | K01.FR.21 |  |  |
 | K01.FR.22 |  |  |
 | K01.FR.26 |  |  |
@@ -1166,16 +1166,16 @@ This document contains the status of which OCPP 2.0.1 numbered requirements have
 | K01.FR.29 |  |  |
 | K01.FR.30 |  |  |
 | K01.FR.31 |  |  |
-| K01.FR.32 |  |  |
+| K01.FR.32 | :white_check_mark: |  |
 | K01.FR.33 |  |  |
-| K01.FR.34 |  |  |
+| K01.FR.34 | :white_check_mark: |  |
 | K01.FR.35 |  |  |
-| K01.FR.36 |  |  |
+| K01.FR.36 | :white_check_mark: |  |
 | K01.FR.37 |  |  |
 | K01.FR.38 |  |  |
-| K01.FR.39 |  |  |
-| K01.FR.40 |  |  |
-| K01.FR.41 |  |  |
+| K01.FR.39 | :white_check_mark: |  |
+| K01.FR.40 | :white_check_mark: |  |
+| K01.FR.41 | :white_check_mark: |  |
 | K01.FR.42 |  |  |
 | K01.FR.43 |  |  |
 | K01.FR.44 |  |  |
@@ -1186,8 +1186,8 @@ This document contains the status of which OCPP 2.0.1 numbered requirements have
 | K01.FR.49 |  |  |
 | K01.FR.50 |  |  |
 | K01.FR.51 |  |  |
-| K01.FR.52 |  |  |
-| K01.FR.53 |  |  |
+| K01.FR.52 | :white_check_mark: |  |
+| K01.FR.53 | :white_check_mark: |  |
 ## SmartCharging - Central Smart Charging
 
 | ID | Status | Remark |
