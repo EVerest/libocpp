@@ -790,13 +790,14 @@ void ChargePointImpl::send_meter_value(int32_t connector, MeterValue meter_value
     req.connectorId = connector;
     std::ostringstream oss;
     oss << "Gathering measurands of connector: " << connector;
+
     if (connector > 0) {
         auto transaction = this->transaction_handler->get_transaction(connector);
-        if (transaction != nullptr && transaction->get_transaction_id() > 0) {
+        if (transaction != nullptr and transaction->get_transaction_id().has_value()) {
             // transactions with a positive transaction id have been acknowledged by CSMS
-            auto transaction_id = transaction->get_transaction_id();
+            auto transaction_id = transaction->get_transaction_id().value();
             req.transactionId.emplace(transaction_id);
-        } else if (transaction != nullptr and transaction->get_transaction_id() < 0) {
+        } else if (transaction != nullptr) {
             // this means a transaction is active but we have not received a transaction_id from CSMS yet
             this->message_queue->add_meter_value_message_id(transaction->get_start_transaction_message_id(),
                                                             message_id.get());
@@ -3307,9 +3308,9 @@ void ChargePointImpl::start_transaction(std::shared_ptr<Transaction> transaction
     req.timestamp = transaction->get_start_energy_wh()->timestamp;
     const auto message_id = this->message_queue->createMessageId();
 
-    this->database_handler->insert_transaction(transaction->get_session_id(), transaction->get_transaction_id(),
-                                               req.connectorId, req.idTag.get(), req.timestamp, req.meterStart, false,
-                                               transaction->get_reservation_id(), message_id);
+    this->database_handler->insert_transaction(
+        transaction->get_session_id(), transaction->get_internal_transaction_id(), req.connectorId, req.idTag.get(),
+        req.timestamp, req.meterStart, false, transaction->get_reservation_id(), message_id);
     this->transaction_handler->add_transaction(transaction);
     this->connectors.at(req.connectorId)->transaction = transaction;
 
@@ -3455,7 +3456,7 @@ void ChargePointImpl::stop_transaction(int32_t connector, Reason reason, std::op
     req.meterStop = std::round(energyWhStamped->energy_Wh);
     req.timestamp = energyWhStamped->timestamp;
     req.reason.emplace(reason);
-    req.transactionId = transaction->get_transaction_id();
+    req.transactionId = transaction->get_transaction_id().value_or(transaction->get_internal_transaction_id());
 
     if (id_tag_end) {
         req.idTag.emplace(id_tag_end.value());
@@ -3475,7 +3476,9 @@ void ChargePointImpl::stop_transaction(int32_t connector, Reason reason, std::op
     }
 
     if (this->transaction_stopped_callback != nullptr) {
-        this->transaction_stopped_callback(connector, transaction->get_session_id(), transaction->get_transaction_id());
+        this->transaction_stopped_callback(
+            connector, transaction->get_session_id(),
+            transaction->get_transaction_id().value_or(transaction->get_internal_transaction_id()));
     }
 
     transaction->set_finished();

@@ -31,7 +31,8 @@ struct StampedEnergyWh {
 /// \brief Contains all transaction related data, such as the ID and power meter values
 class Transaction {
 private:
-    int32_t transaction_id;
+    std::optional<int32_t> transaction_id;
+    int32_t internal_transaction_id;
     int32_t connector;
     std::string session_id;
     CiString<20> id_token;
@@ -93,7 +94,10 @@ public:
 
     /// \brief Provides the id of this transaction
     /// \returns the transaction id
-    int32_t get_transaction_id();
+    std::optional<int32_t> get_transaction_id();
+
+    /// \brief Returns the internal transaction id
+    int32_t get_internal_transaction_id();
 
     /// \brief Provides the id of this session
     /// \returns the session_id
