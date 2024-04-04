@@ -1,0 +1,281 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
+
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+#include <ocpp/common/database/database_schema_updater.hpp>
+#include <fstream>
+
+using namespace ocpp;
+using namespace ocpp::common;
+using namespace std::string_literals;
+
+struct MigrationFile {
+    std::string_view name;
+    std::string_view content;
+};
+
+static constexpr MigrationFile migration_file_up_1_valid{
+    "1_up-initial.sql",
+    "PRAGMA foreign_keys = ON; CREATE TABLE TEST_TABLE1(FIELD1 TEXT PRIMARY KEY NOT NULL, FIELD2 INT NOT NULL);"
+};
+
+static constexpr MigrationFile migration_file_up_1_invalid{
+    "1_up-initial.sql",
+    "PRAGMA foreign_keys = ON; CREATE TABLE <invalid> TEST_TABLE1(FIELD1 TEXT PRIMARY KEY NOT NULL, FIELD2 INT NOT NULL);"
+};
+
+static constexpr MigrationFile migration_file_up_2_valid{
+    "2_up-add_column.sql",
+    "CREATE TABLE TEST_TABLE2(FIELD1 TEXT PRIMARY KEY NOT NULL, FIELD2 INT NOT NULL);"
+};
+
+static constexpr MigrationFile migration_file_down_2_valid{
+    "2_down-drop_column.sql",
+    "DROP TABLE TEST_TABLE2;"
+};
+
+static constexpr MigrationFile migration_file_up_3_valid{
+    "3_up-add_table.sql",
+    "CREATE TABLE TEST_TABLE3(FIELD1 TEXT PRIMARY KEY NOT NULL, FIELD2 INT NOT NULL);"
+};
+
+static constexpr MigrationFile migration_file_down_3_valid{
+    "3_down-drop_table.sql",
+    "DROP TABLE TEST_TABLE3;"
+};
+
+static constexpr std::string_view table1{"TEST_TABLE1"};
+static constexpr std::string_view table2{"TEST_TABLE2"};
+static constexpr std::string_view table3{"TEST_TABLE3"};
+
+
+class DatabaseSchemaUpdaterTest : public ::testing::Test {
+
+protected:
+    std::shared_ptr<DatabaseConnectionInterface> database;
+    std::filesystem::path migration_files_path;
+
+public:
+    DatabaseSchemaUpdaterTest() :
+        database(std::make_shared<DatabaseConnection>(":memory:")),
+        migration_files_path(std::filesystem::temp_directory_path() / "database_schema_test" / "core_migrations") {
+        std::filesystem::create_directories(migration_files_path);
+        EXPECT_EQ(this->database->open_connection(), true);
+    }
+
+    ~DatabaseSchemaUpdaterTest() {
+        std::filesystem::remove_all(migration_files_path);
+    }
+
+    void WriteMigrationFile(const MigrationFile& file) {
+        std::ofstream stream{this->migration_files_path / file.name};
+        stream << file.content;
+    }
+
+    void ExpectUserVersion(uint32_t expected_version) {
+        auto statement = this->database->new_statement("PRAGMA user_version");
+
+        EXPECT_EQ(statement->step(), SQLITE_ROW);
+        EXPECT_EQ(statement->column_int(0), expected_version);
+    }
+
+    void SetUserVersion(uint32_t user_version) {
+        EXPECT_EQ(this->database->execute_statement("PRAGMA user_version = "s + std::to_string(user_version)), true);
+    }
+
+    bool DoesTableExist(std::string_view table) {
+        return this->database->clear_table(table.data());
+    }
+};
+
+TEST_F(DatabaseSchemaUpdaterTest, FolderDoesNotExist) {
+    DatabaseSchemaUpdater updater{this->database};
+    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path / "invalid", 1), false);
+}
+
+TEST_F(DatabaseSchemaUpdaterTest, TargetVersionInvalid) {
+    DatabaseSchemaUpdater updater{this->database};
+    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 0), false);
+}
+
+TEST_F(DatabaseSchemaUpdaterTest, ApplyInitialMigrationFile) {
+
+    this->WriteMigrationFile(migration_file_up_1_valid);
+
+    DatabaseSchemaUpdater updater{this->database};
+
+    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 1), true);
+
+    this->ExpectUserVersion(1);
+    EXPECT_EQ(this->DoesTableExist(table1), true);
+}
+
+TEST_F(DatabaseSchemaUpdaterTest, ApplyInitialMigrationFileAlreadyUpToDate) {
+
+    this->WriteMigrationFile(migration_file_up_1_valid);
+    this->SetUserVersion(1);
+
+    DatabaseSchemaUpdater updater{this->database};
+
+    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 1), true);
+
+    this->ExpectUserVersion(1);
+    EXPECT_EQ(this->DoesTableExist(table1), false); // Database was not changed
+}
+
+TEST_F(DatabaseSchemaUpdaterTest, ApplyInitialMigrationFileVersionToHigh) {
+
+    this->WriteMigrationFile(migration_file_up_1_valid);
+    this->SetUserVersion(2);
+
+    DatabaseSchemaUpdater updater{this->database};
+
+    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 1), false);
+
+    this->ExpectUserVersion(2);
+    EXPECT_EQ(this->DoesTableExist(table1), false); // Database was not changed
+}
+
+TEST_F(DatabaseSchemaUpdaterTest, ApplyInvalidInitialMigrationFile) {
+
+    this->WriteMigrationFile(migration_file_up_1_invalid);
+
+    DatabaseSchemaUpdater updater{this->database};
+
+    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 1), false);
+
+    this->ExpectUserVersion(0);
+    EXPECT_EQ(this->DoesTableExist(table1), false); // Database was not changed
+}
+
+TEST_F(DatabaseSchemaUpdaterTest, SequenceNotValidMissingDownFile) {
+
+    this->WriteMigrationFile(migration_file_up_1_valid);
+    this->WriteMigrationFile(migration_file_up_2_valid);
+    this->WriteMigrationFile(migration_file_up_3_valid);
+    this->WriteMigrationFile(migration_file_down_3_valid);
+
+    DatabaseSchemaUpdater updater{this->database};
+
+    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 1), false);
+    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 2), false);
+    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 3), false);
+
+    this->ExpectUserVersion(0);
+    EXPECT_EQ(this->DoesTableExist(table1), false); // Database was not changed
+}
+
+TEST_F(DatabaseSchemaUpdaterTest, SequenceNotValidMissingUpFile) {
+
+    this->WriteMigrationFile(migration_file_up_1_valid);
+    this->WriteMigrationFile(migration_file_up_2_valid);
+    this->WriteMigrationFile(migration_file_down_2_valid);
+    this->WriteMigrationFile(migration_file_down_3_valid);
+
+    DatabaseSchemaUpdater updater{this->database};
+
+    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 1), false);
+    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 2), false);
+    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 3), false);
+
+    this->ExpectUserVersion(0);
+    EXPECT_EQ(this->DoesTableExist(table1), false); // Database was not changed
+}
+
+TEST_F(DatabaseSchemaUpdaterTest, ApplyMultipleMigrationFilesStepByStep) {
+
+    this->WriteMigrationFile(migration_file_up_1_valid);
+    this->WriteMigrationFile(migration_file_up_2_valid);
+    this->WriteMigrationFile(migration_file_up_3_valid);
+    this->WriteMigrationFile(migration_file_down_2_valid);
+    this->WriteMigrationFile(migration_file_down_3_valid);
+
+    DatabaseSchemaUpdater updater{this->database};
+
+    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 1), true);
+    this->ExpectUserVersion(1);
+    EXPECT_EQ(this->DoesTableExist(table1), true);
+    EXPECT_EQ(this->DoesTableExist(table2), false);
+    EXPECT_EQ(this->DoesTableExist(table3), false);
+
+    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 2), true);
+    this->ExpectUserVersion(2);
+    EXPECT_EQ(this->DoesTableExist(table1), true);
+    EXPECT_EQ(this->DoesTableExist(table2), true);
+    EXPECT_EQ(this->DoesTableExist(table3), false);
+
+    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 3), true);
+    this->ExpectUserVersion(3);
+    EXPECT_EQ(this->DoesTableExist(table1), true);
+    EXPECT_EQ(this->DoesTableExist(table2), true);
+    EXPECT_EQ(this->DoesTableExist(table3), true);
+
+    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 2), true);
+    this->ExpectUserVersion(2);
+    EXPECT_EQ(this->DoesTableExist(table1), true);
+    EXPECT_EQ(this->DoesTableExist(table2), true);
+    EXPECT_EQ(this->DoesTableExist(table3), false);
+
+    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 1), true);
+    this->ExpectUserVersion(1);
+    EXPECT_EQ(this->DoesTableExist(table1), true);
+    EXPECT_EQ(this->DoesTableExist(table2), false);
+    EXPECT_EQ(this->DoesTableExist(table3), false);
+}
+
+TEST_F(DatabaseSchemaUpdaterTest, ApplyMultipleMigrationFilesAtOnce) {
+
+    this->WriteMigrationFile(migration_file_up_1_valid);
+    this->WriteMigrationFile(migration_file_up_2_valid);
+    this->WriteMigrationFile(migration_file_up_3_valid);
+    this->WriteMigrationFile(migration_file_down_2_valid);
+    this->WriteMigrationFile(migration_file_down_3_valid);
+
+    DatabaseSchemaUpdater updater{this->database};
+
+    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 3), true);
+    this->ExpectUserVersion(3);
+    EXPECT_EQ(this->DoesTableExist(table1), true);
+    EXPECT_EQ(this->DoesTableExist(table2), true);
+    EXPECT_EQ(this->DoesTableExist(table3), true);
+
+    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 1), true);
+    this->ExpectUserVersion(1);
+    EXPECT_EQ(this->DoesTableExist(table1), true);
+    EXPECT_EQ(this->DoesTableExist(table2), false);
+    EXPECT_EQ(this->DoesTableExist(table3), false);
+}
+
+TEST_F(DatabaseSchemaUpdaterTest, ApplyMultipleMigrationFilesAtOnceWithFailure) {
+
+    this->WriteMigrationFile(migration_file_up_1_valid);
+    this->WriteMigrationFile(migration_file_up_2_valid);
+    this->WriteMigrationFile(migration_file_up_3_valid);
+    this->WriteMigrationFile(migration_file_down_2_valid);
+    this->WriteMigrationFile(migration_file_down_3_valid);
+
+    DatabaseSchemaUpdater updater{this->database};
+
+    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 1), true);
+    this->ExpectUserVersion(1);
+    EXPECT_EQ(this->DoesTableExist(table1), true);
+    EXPECT_EQ(this->DoesTableExist(table2), false);
+
+    EXPECT_EQ(this->database->execute_statement(migration_file_up_2_valid.content.data()), true);
+
+    EXPECT_EQ(this->DoesTableExist(table2), true);
+
+    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 3), false);
+
+    EXPECT_EQ(this->DoesTableExist(table3), false);
+
+    this->ExpectUserVersion(1);
+}
+
+// Test multiple update sequences
+//   To higher version
+//   To lower version
+//   To same version
+// Test the user_version field each time
+// Test no change when update fails
