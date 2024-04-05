@@ -45,7 +45,7 @@ std::vector<DBTransactionMessage> DatabaseHandlerCommon::get_transaction_message
                 DBTransactionMessage control_message;
                 control_message.message_attempts = message_attempts;
                 control_message.timestamp = message_timestamp;
-                control_message.message_type = /*conversions::string_to_messagetype(*/ message_type;
+                control_message.message_type = message_type;
                 control_message.unique_id = unique_id;
                 control_message.json_message = json_message;
                 transaction_messages.push_back(std::move(control_message));
