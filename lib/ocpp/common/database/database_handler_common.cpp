@@ -7,8 +7,8 @@
 
 namespace ocpp::common {
 
-DatabaseHandlerCommon::DatabaseHandlerCommon(std::shared_ptr<DatabaseConnectionInterface> database) noexcept :
-    database(database) {
+DatabaseHandlerCommon::DatabaseHandlerCommon(std::unique_ptr<DatabaseConnectionInterface> database) noexcept :
+    database(std::move(database)) {
 }
 
 void DatabaseHandlerCommon::open_connection() {

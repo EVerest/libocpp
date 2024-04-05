@@ -12,8 +12,8 @@ using namespace common;
 
 namespace v201 {
 
-DatabaseHandler::DatabaseHandler(std::shared_ptr<DatabaseConnectionInterface> database, const fs::path& sql_init_path) :
-    DatabaseHandlerCommon(database), sql_init_path(sql_init_path) {
+DatabaseHandler::DatabaseHandler(std::unique_ptr<DatabaseConnectionInterface> database, const fs::path& sql_init_path) :
+    DatabaseHandlerCommon(std::move(database)), sql_init_path(sql_init_path) {
 }
 
 void DatabaseHandler::init_sql() {

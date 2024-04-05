@@ -11,9 +11,9 @@ using namespace common;
 
 namespace v16 {
 
-DatabaseHandler::DatabaseHandler(std::shared_ptr<DatabaseConnectionInterface> database,
+DatabaseHandler::DatabaseHandler(std::unique_ptr<DatabaseConnectionInterface> database,
                                  const fs::path& init_script_path, int32_t number_of_connectors) :
-    DatabaseHandlerCommon(database), init_script_path(init_script_path), number_of_connectors(number_of_connectors) {
+    DatabaseHandlerCommon(std::move(database)), init_script_path(init_script_path), number_of_connectors(number_of_connectors) {
 }
 
 void DatabaseHandler::init_sql() {

@@ -22,7 +22,7 @@ struct DBTransactionMessage {
 
 class DatabaseHandlerCommon {
 protected:
-    std::shared_ptr<DatabaseConnectionInterface> database;
+    std::unique_ptr<DatabaseConnectionInterface> database;
 
     /// \brief Perform the initialization needed to use the database. Will be called by open_connection()
     virtual void init_sql() = 0;
@@ -36,7 +36,7 @@ public:
     ///
     /// \warning The 'db' variable is not initialized, the deriving class should do that.
     ///
-    explicit DatabaseHandlerCommon(std::shared_ptr<DatabaseConnectionInterface> database) noexcept;
+    explicit DatabaseHandlerCommon(std::unique_ptr<DatabaseConnectionInterface> database) noexcept;
 
     ~DatabaseHandlerCommon() = default;
 

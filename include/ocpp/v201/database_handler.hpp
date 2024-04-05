@@ -38,7 +38,7 @@ private:
     OperationalStatusEnum get_availability(int32_t evse_id, int32_t connector_id);
 
 public:
-    DatabaseHandler(std::shared_ptr<common::DatabaseConnectionInterface> database, const fs::path& sql_init_path);
+    DatabaseHandler(std::unique_ptr<common::DatabaseConnectionInterface> database, const fs::path& sql_init_path);
 
     // Authorization cache management
 
