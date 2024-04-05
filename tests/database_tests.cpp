@@ -51,21 +51,15 @@ ChargingProfile get_sample_charging_profile() {
 }
 
 class DatabaseTest : public ::testing::Test {
-protected:
-    void SetUp() override {
-        auto database_connection =
-            std::make_shared<common::DatabaseConnection>(std::filesystem::path("/tmp") / (CP_ID + ".db"));
+public:
+    DatabaseTest() {
+        auto database_connection = std::make_unique<common::DatabaseConnection>("file::memory:");
         this->db_handler =
-            std::make_unique<DatabaseHandler>(database_connection, std::filesystem::path(SQL_INIT_FILE), 2);
+            std::make_unique<DatabaseHandler>(std::move(database_connection), std::filesystem::path(SQL_INIT_FILE), 2);
         this->db_handler->open_connection();
     }
 
-    void TearDown() override {
-        std::filesystem::remove("/tmp/" + CP_ID + ".db");
-    }
-
     std::unique_ptr<DatabaseHandler> db_handler;
-    const std::string CP_ID = "cp001";
 };
 
 TEST_F(DatabaseTest, test_init_connector_table) {

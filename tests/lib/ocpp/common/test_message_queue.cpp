@@ -222,7 +222,8 @@ TEST_F(ControlMessageV201Test, test_is_transactional_update) {
 
 class DatabaseHandlerBaseMock : public common::DatabaseHandlerCommon {
 private:
-    void init_sql() override {}
+    void init_sql() override {
+    }
 
 public:
     DatabaseHandlerBaseMock() : common::DatabaseHandlerCommon(nullptr) {
