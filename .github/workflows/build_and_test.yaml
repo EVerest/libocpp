@@ -63,4 +63,9 @@ jobs:
         with:
           name: ctest-report
           path: ${{ github.workspace }}/ctest-report
-
+      - name: Archive coverage data
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: lcov_coverage
+          path: ${{ github.workspace }}/lcov_coverage.info
