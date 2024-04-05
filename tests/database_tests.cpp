@@ -55,7 +55,8 @@ protected:
     void SetUp() override {
         auto database_connection =
             std::make_shared<common::DatabaseConnection>(std::filesystem::path("/tmp") / (CP_ID + ".db"));
-        this->db_handler = std::make_unique<DatabaseHandler>(database_connection, std::filesystem::path(SQL_INIT_FILE), 2);
+        this->db_handler =
+            std::make_unique<DatabaseHandler>(database_connection, std::filesystem::path(SQL_INIT_FILE), 2);
         this->db_handler->open_connection();
     }
 
