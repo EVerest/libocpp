@@ -20,7 +20,7 @@ DatabaseConnection::~DatabaseConnection() {
 bool DatabaseConnection::open_connection() {
     // Add special exception for databases in ram; we don't need to create a path for them
     if (this->database_file_path.string().find(":memory:") == std::string::npos and
-        fs::exists(this->database_file_path.parent_path())) {
+        !fs::exists(this->database_file_path.parent_path())) {
         fs::create_directories(this->database_file_path.parent_path());
     }
 
