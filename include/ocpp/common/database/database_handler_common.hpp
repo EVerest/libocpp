@@ -24,6 +24,9 @@ class DatabaseHandlerCommon {
 protected:
     std::shared_ptr<DatabaseConnectionInterface> database;
 
+    /// \brief Perform the initialization needed to use the database. Will be called by open_connection()
+    virtual void init_sql() = 0;
+
 public:
     ///
     /// \brief Base database handler class.
@@ -36,6 +39,12 @@ public:
     explicit DatabaseHandlerCommon(std::shared_ptr<DatabaseConnectionInterface> database) noexcept;
 
     ~DatabaseHandlerCommon() = default;
+
+    /// \brief Opens connection to database file and performs the initialization by calling init_sql()
+    void open_connection();
+
+    /// \brief Closes the database connection.
+    void close_connection();
 
     /// \brief Get transaction messages from transaction messages queue table.
     /// \return The transaction messages.

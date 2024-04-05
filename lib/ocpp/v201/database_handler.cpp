@@ -16,7 +16,7 @@ DatabaseHandler::DatabaseHandler(std::shared_ptr<DatabaseConnectionInterface> da
     DatabaseHandlerCommon(database), sql_init_path(sql_init_path) {
 }
 
-void DatabaseHandler::sql_init() {
+void DatabaseHandler::init_sql() {
     EVLOG_debug << "Running SQL initialization script: " << this->sql_init_path;
 
     if (!fs::exists(this->sql_init_path)) {
@@ -100,17 +100,6 @@ void DatabaseHandler::init_enum_table(const std::string& table_name, T begin, T 
                                       std::function<std::string(T)> conversion) {
     auto conversion_func = [conversion](int value) { return conversion(static_cast<T>(value)); };
     init_enum_table_inner(table_name, static_cast<int>(begin), static_cast<int>(end), conversion_func);
-}
-
-void DatabaseHandler::open_connection() {
-    if (!this->database->open_connection()) {
-        throw std::runtime_error("Could not open database at provided path.");
-    }
-    this->sql_init();
-}
-
-void DatabaseHandler::close_connection() {
-    this->database->close_connection();
 }
 
 void DatabaseHandler::authorization_cache_insert_entry(const std::string& id_token_hash,

@@ -11,6 +11,17 @@ DatabaseHandlerCommon::DatabaseHandlerCommon(std::shared_ptr<DatabaseConnectionI
     database(database) {
 }
 
+void DatabaseHandlerCommon::open_connection() {
+    if (!this->database->open_connection()) {
+        throw std::runtime_error("Could not open database at provided path.");
+    }
+    this->init_sql();
+}
+
+void DatabaseHandlerCommon::close_connection() {
+    this->database->close_connection();
+}
+
 std::vector<DBTransactionMessage> DatabaseHandlerCommon::get_transaction_messages() {
     std::vector<DBTransactionMessage> transaction_messages;
 

@@ -23,7 +23,7 @@ class DatabaseHandler : public common::DatabaseHandlerCommon {
 private:
     fs::path sql_init_path;
 
-    void sql_init();
+    void init_sql() override;
 
     void inintialize_enum_tables();
     void init_enum_table_inner(const std::string& table_name, const int begin, const int end,
@@ -39,11 +39,6 @@ private:
 
 public:
     DatabaseHandler(std::shared_ptr<common::DatabaseConnectionInterface> database, const fs::path& sql_init_path);
-
-    /// \brief Opens connection to database file
-    void open_connection();
-
-    void close_connection();
 
     // Authorization cache management
 

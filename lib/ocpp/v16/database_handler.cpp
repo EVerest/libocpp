@@ -12,24 +12,11 @@ using namespace common;
 namespace v16 {
 
 DatabaseHandler::DatabaseHandler(std::shared_ptr<DatabaseConnectionInterface> database,
-                                 const fs::path& init_script_path) :
-    DatabaseHandlerCommon(database), init_script_path(init_script_path) {
+                                 const fs::path& init_script_path, int32_t number_of_connectors) :
+    DatabaseHandlerCommon(database), init_script_path(init_script_path), number_of_connectors(number_of_connectors) {
 }
 
-void DatabaseHandler::open_connection(int32_t number_of_connectors) {
-    if (!this->database->open_connection()) {
-        throw std::runtime_error("Could not open database at provided path.");
-    }
-    this->run_sql_init();
-    this->init_connector_table(number_of_connectors);
-    this->insert_or_ignore_local_list_version(0);
-}
-
-void DatabaseHandler::close_connection() {
-    this->database->close_connection();
-}
-
-void DatabaseHandler::run_sql_init() {
+void DatabaseHandler::init_sql() {
     EVLOG_debug << "Running SQL initialization script.";
     std::ifstream t(this->init_script_path.string());
     std::stringstream init_sql;
@@ -40,10 +27,13 @@ void DatabaseHandler::run_sql_init() {
         EVLOG_error << "Could not create tables: " << this->database->get_error_message();
         throw std::runtime_error("Database access error");
     }
+
+    this->init_connector_table();
+    this->insert_or_ignore_local_list_version(0);
 }
 
-void DatabaseHandler::init_connector_table(int32_t number_of_connectors) {
-    for (int32_t connector = 0; connector <= number_of_connectors; connector++) {
+void DatabaseHandler::init_connector_table() {
+    for (int32_t connector = 0; connector <= this->number_of_connectors; connector++) {
         std::string sql = "INSERT OR IGNORE INTO CONNECTORS (ID, AVAILABILITY) VALUES (@connector, @availability_type)";
         auto stmt = this->database->new_statement(sql);
 
