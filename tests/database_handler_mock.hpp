@@ -12,9 +12,9 @@ namespace ocpp {
 
 class DatabaseHandlerMock : public v16::DatabaseHandler {
 public:
-    DatabaseHandlerMock(std::shared_ptr<common::DatabaseConnectionInterface> database,
+    DatabaseHandlerMock(std::unique_ptr<common::DatabaseConnectionInterface> database,
                         const fs::path& init_script_path) :
-        DatabaseHandler(database, init_script_path){};
+        DatabaseHandler(std::move(database), init_script_path, 2){};
     MOCK_METHOD(void, insert_or_update_charging_profile, (const int, const v16::ChargingProfile&), (override));
     MOCK_METHOD(void, delete_charging_profile, (const int profile_id), (override));
 };
