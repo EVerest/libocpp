@@ -15,9 +15,19 @@ add_test(database_tests database_tests)
 
 add_executable(libocpp_unit_tests)
 
+set(MIGRATION_FILES_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/resources/migration_files")
+
+target_compile_definitions(libocpp_unit_tests
+    PRIVATE
+    MIGRATION_FILES_LOCATION="${MIGRATION_FILES_LOCATION}"
+    MIGRATION_FILE_VERSION=${MIGRATION_FILE_VERSION}
+)
+
 add_custom_command(TARGET libocpp_unit_tests POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/resources/unittest_device_model.db ${CMAKE_CURRENT_BINARY_DIR}/resources/unittest_device_model.db
         COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/resources/unittest_device_model_missing_required.db ${CMAKE_CURRENT_BINARY_DIR}/resources/unittest_device_model_missing_required.db
+        COMMAND ${CMAKE_COMMAND} -E remove_directory ${MIGRATION_FILES_LOCATION}
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${MIGRATION_FILES_SOURCE_DIR} ${MIGRATION_FILES_LOCATION}
 )
 
 add_test(libocpp_unit_tests libocpp_unit_tests)

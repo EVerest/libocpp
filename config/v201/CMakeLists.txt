@@ -1,5 +1,6 @@
 # find all migration files, store only the filenames by showing relative to the folder
-file(GLOB MIGRATION_FILE_LIST RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/core_migrations" "${CMAKE_CURRENT_SOURCE_DIR}/core_migrations/*.sql")
+set(MIGRATION_FILES_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/core_migrations")
+file(GLOB MIGRATION_FILE_LIST RELATIVE ${MIGRATION_FILES_LOCATION} "${MIGRATION_FILES_LOCATION}/*.sql")
 list(SORT MIGRATION_FILE_LIST)
 
 # The first file should always start with 1_up so make use of that fact.
@@ -38,6 +39,7 @@ endif()
 # Since we always add on the up file we need to subtract one here
 math(EXPR CURRENT_MIGRATION_FILE_ID "${CURRENT_MIGRATION_FILE_ID}-1")
 set(MIGRATION_FILE_VERSION ${CURRENT_MIGRATION_FILE_ID} PARENT_SCOPE)
+set(MIGRATION_FILES_SOURCE_DIR ${MIGRATION_FILES_LOCATION} PARENT_SCOPE)
 
 option(LIBOCPP_INSTALL_DEVICE_MODEL_DATABASE "Install device model database for OCPP201" ON)
 
