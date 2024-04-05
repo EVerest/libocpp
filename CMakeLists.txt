@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.14)
 project(ocpp
     VERSION 0.10.0
     DESCRIPTION "A C++ implementation of the Open Charge Point Protocol"
-    LANGUAGES CXX
+    LANGUAGES CXX C
 )
 
 find_package(everest-cmake 0.1 REQUIRED
@@ -19,6 +19,11 @@ option(OCPP_INSTALL "Install the library (shared data might be installed anyway)
 
 if((${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME} OR ${PROJECT_NAME}_BUILD_TESTING) AND BUILD_TESTING)
     set(LIBOCPP_BUILD_TESTING ON)
+endif()
+
+if(LIBOCPP_BUILD_TESTING)
+    evc_include(CodeCoverage)
+    append_coverage_compiler_flags()
 endif()
 
 # dependencies
@@ -111,6 +116,14 @@ endif()
 if(LIBOCPP_BUILD_TESTING)
     include(CTest)
     add_subdirectory(tests)
+
+    setup_target_for_coverage_lcov(
+        NAME lcov_coverage
+        EXECUTABLE ctest
+        DEPENDENCIES all_tests
+        LCOV_ARGS "--no-external"
+        EXCLUDE "tests/*"
+    )
 endif()
 
 # build doxygen documentation if doxygen is available
