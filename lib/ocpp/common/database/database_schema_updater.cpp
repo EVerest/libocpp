@@ -71,28 +71,41 @@ void filter_and_sort_migration_file_list(std::vector<MigrationFile>& list, Direc
     });
 }
 
-bool is_migration_file_sequence_valid(const std::vector<MigrationFile>& list, Direction direction, uint32_t min_version,
-                                      uint32_t max_version) {
-    auto test_sequence = [direction, &list](uint32_t start, uint32_t end) {
-        auto version = start;
-        for (const auto& item : list) {
-            if (item.version != version) {
-                return false;
-            }
-            version += direction == Direction::Up ? 1 : -1;
-        }
-        if (list.back().version != end) {
-            EVLOG_error << "Missing last migration step";
+bool is_migration_file_list_valid(std::vector<MigrationFile>& list, uint32_t max_version) {
+    auto expected_files = (max_version * 2) - 1;
+    if (list.size() < expected_files) {
+        EVLOG_error << "Expected " << expected_files << " files but only found: " << list.size();
+        return false;
+    }
+    if (list.size() % 2 == 0) {
+        EVLOG_error << "Nr of migration files should always be uneven: 1 initial file + n pairs";
+        return false;
+    }
+
+    std::sort(list.begin(), list.end(), [](const auto& a, const auto& b) {
+        return std::tie(a.version, a.direction) < std::tie(b.version, b.direction);
+    });
+
+    if (list.at(0).version != 1 or list.at(0).direction != Direction::Up) {
+        EVLOG_error << "Invalid initial migration file";
+        return false;
+    }
+
+    for (size_t i = 1; i < list.size(); i += 2) {
+        uint32_t expected_version = (i / 2) + 2;
+        const auto& up = list.at(i);
+        const auto& down = list.at(i + 1);
+        if (up.version != expected_version || up.direction != Direction::Up) {
+            EVLOG_error << "Expected migration file " << expected_version << "_up.sql but got: " << up.path.filename();
             return false;
         }
-        return true;
-    };
-
-    if (direction == Direction::Up) {
-        return test_sequence(min_version, max_version);
-    } else {
-        return test_sequence(max_version, min_version);
+        if (down.version != expected_version || down.direction != Direction::Down) {
+            EVLOG_error << "Expected migration file " << expected_version
+                        << "_down.sql but got: " << down.path.filename();
+            return false;
+        }
     }
+    return true;
 }
 
 std::optional<std::vector<MigrationFile>> get_migration_file_sequence(const fs::path& migration_file_directory,
@@ -100,10 +113,14 @@ std::optional<std::vector<MigrationFile>> get_migration_file_sequence(const fs::
                                                                       uint32_t target_version) {
     auto list = get_migration_file_list(migration_file_directory);
 
-    EVLOG_info << "Migration list:";
+    EVLOG_debug << "Migration list:";
 
     for (auto& item : list) {
-        EVLOG_info << item;
+        EVLOG_debug << item;
+    }
+
+    if (!is_migration_file_list_valid(list, std::max(current_version, target_version))) {
+        return std::nullopt;
     }
 
     const auto lowest = std::min(current_version, target_version) + 1;
@@ -115,10 +132,6 @@ std::optional<std::vector<MigrationFile>> get_migration_file_sequence(const fs::
 
     for (auto& item : list) {
         EVLOG_info << item;
-    }
-
-    if (!is_migration_file_sequence_valid(list, direction, lowest, highest)) {
-        return std::nullopt;
     }
     return list;
 }
@@ -167,7 +180,7 @@ bool DatabaseSchemaUpdater::apply_migration_files(const fs::path& migration_file
     }
 
     if (current_version == target_version) {
-        EVLOG_info << "No migrations to apply since versions match: " << current_version;
+        EVLOG_info << "No migrations to apply since versions match";
         this->database->close_connection();
         return true;
     }
@@ -181,7 +194,7 @@ bool DatabaseSchemaUpdater::apply_migration_files(const fs::path& migration_file
     auto list = get_migration_file_sequence(migration_file_directory, direction, current_version, target_version);
 
     if (!list.has_value()) {
-        EVLOG_error << "Missing migration files in sequence";
+        EVLOG_error << "Missing migration files in sequence, no actions performed";
         this->database->close_connection();
         return false;
     }
@@ -213,4 +226,4 @@ bool DatabaseSchemaUpdater::apply_migration_files(const fs::path& migration_file
     return true;
 }
 
-} // namespace ocpp
+} // namespace ocpp::common

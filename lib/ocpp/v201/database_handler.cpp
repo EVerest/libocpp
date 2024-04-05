@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
-#include <ocpp/common/message_queue.hpp>
 #include <ocpp/common/database/database_schema_updater.hpp>
+#include <ocpp/common/message_queue.hpp>
 #include <ocpp/v201/database_handler.hpp>
 #include <ocpp/v201/types.hpp>
 #include <ocpp/v201/utils.hpp>
