@@ -794,7 +794,6 @@ void ChargePointImpl::send_meter_value(int32_t connector, MeterValue meter_value
     if (connector > 0) {
         auto transaction = this->transaction_handler->get_transaction(connector);
         if (transaction != nullptr and transaction->get_transaction_id().has_value()) {
-            // transactions with a positive transaction id have been acknowledged by CSMS
             auto transaction_id = transaction->get_transaction_id().value();
             req.transactionId.emplace(transaction_id);
         } else if (transaction != nullptr) {
