@@ -55,7 +55,7 @@ protected:
 
 public:
     DatabaseSchemaUpdaterTest() :
-        database(std::make_shared<DatabaseConnection>("file::memory:?cache=shared")),
+        database(std::make_unique<DatabaseConnection>("file::memory:?cache=shared")),
         migration_files_path(std::filesystem::temp_directory_path() / "database_schema_test" / "core_migrations") {
         std::filesystem::create_directories(migration_files_path);
         EXPECT_EQ(this->database->open_connection(), true);
@@ -87,12 +87,12 @@ public:
 };
 
 TEST_F(DatabaseSchemaUpdaterTest, FolderDoesNotExist) {
-    DatabaseSchemaUpdater updater{this->database};
+    DatabaseSchemaUpdater updater{this->database.get()};
     EXPECT_EQ(updater.apply_migration_files(this->migration_files_path / "invalid", 1), false);
 }
 
 TEST_F(DatabaseSchemaUpdaterTest, TargetVersionInvalid) {
-    DatabaseSchemaUpdater updater{this->database};
+    DatabaseSchemaUpdater updater{this->database.get()};
     EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 0), false);
 }
 
@@ -100,7 +100,7 @@ TEST_F(DatabaseSchemaUpdaterTest, ApplyInitialMigrationFile) {
 
     this->WriteMigrationFile(migration_file_up_1_valid);
 
-    DatabaseSchemaUpdater updater{this->database};
+    DatabaseSchemaUpdater updater{this->database.get()};
 
     EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 1), true);
 
@@ -112,7 +112,7 @@ TEST_F(DatabaseSchemaUpdaterTest, ApplyInitialMigrationFileEmptyName) {
 
     this->WriteMigrationFile(migration_file_up_1_valid_empty_name);
 
-    DatabaseSchemaUpdater updater{this->database};
+    DatabaseSchemaUpdater updater{this->database.get()};
 
     EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 1), true);
 
@@ -125,7 +125,7 @@ TEST_F(DatabaseSchemaUpdaterTest, ApplyInitialMigrationFileAlreadyUpToDate) {
     this->WriteMigrationFile(migration_file_up_1_valid);
     this->SetUserVersion(1);
 
-    DatabaseSchemaUpdater updater{this->database};
+    DatabaseSchemaUpdater updater{this->database.get()};
 
     EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 1), true);
 
@@ -138,7 +138,7 @@ TEST_F(DatabaseSchemaUpdaterTest, ApplyInitialMigrationFileVersionToHigh) {
     this->WriteMigrationFile(migration_file_up_1_valid);
     this->SetUserVersion(2);
 
-    DatabaseSchemaUpdater updater{this->database};
+    DatabaseSchemaUpdater updater{this->database.get()};
 
     EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 1), false);
 
@@ -150,7 +150,7 @@ TEST_F(DatabaseSchemaUpdaterTest, ApplyInvalidInitialMigrationFile) {
 
     this->WriteMigrationFile(migration_file_up_1_invalid);
 
-    DatabaseSchemaUpdater updater{this->database};
+    DatabaseSchemaUpdater updater{this->database.get()};
 
     EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 1), false);
 
@@ -162,7 +162,7 @@ TEST_F(DatabaseSchemaUpdaterTest, MissingInitialMigrationFile) {
 
     this->WriteMigrationFile(migration_file_up_2_valid);
 
-    DatabaseSchemaUpdater updater{this->database};
+    DatabaseSchemaUpdater updater{this->database.get()};
 
     EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 1), false);
 
@@ -177,7 +177,7 @@ TEST_F(DatabaseSchemaUpdaterTest, SequenceNotValidUnevenNrOfFiles) {
     this->WriteMigrationFile(migration_file_up_3_valid);
     this->WriteMigrationFile(migration_file_down_3_valid);
 
-    DatabaseSchemaUpdater updater{this->database};
+    DatabaseSchemaUpdater updater{this->database.get()};
 
     EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 1), false);
     EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 2), false);
@@ -193,7 +193,7 @@ TEST_F(DatabaseSchemaUpdaterTest, SequenceNotValidNotEnoughFiles) {
     this->WriteMigrationFile(migration_file_up_2_valid);
     this->WriteMigrationFile(migration_file_down_2_valid);
 
-    DatabaseSchemaUpdater updater{this->database};
+    DatabaseSchemaUpdater updater{this->database.get()};
 
     EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 3), false);
 
@@ -209,7 +209,7 @@ TEST_F(DatabaseSchemaUpdaterTest, SequenceNotValidMissingDownFile) {
     this->WriteMigrationFile(migration_file_up_4_valid);
     this->WriteMigrationFile(migration_file_down_3_valid);
 
-    DatabaseSchemaUpdater updater{this->database};
+    DatabaseSchemaUpdater updater{this->database.get()};
 
     EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 1), false);
     EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 2), false);
@@ -227,7 +227,7 @@ TEST_F(DatabaseSchemaUpdaterTest, SequenceNotValidMissingUpFile) {
     this->WriteMigrationFile(migration_file_down_3_valid);
     this->WriteMigrationFile(migration_file_down_4_valid);
 
-    DatabaseSchemaUpdater updater{this->database};
+    DatabaseSchemaUpdater updater{this->database.get()};
 
     EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 1), false);
     EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 2), false);
@@ -245,7 +245,7 @@ TEST_F(DatabaseSchemaUpdaterTest, ApplyMultipleMigrationFilesStepByStep) {
     this->WriteMigrationFile(migration_file_down_2_valid);
     this->WriteMigrationFile(migration_file_down_3_valid);
 
-    DatabaseSchemaUpdater updater{this->database};
+    DatabaseSchemaUpdater updater{this->database.get()};
 
     EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 1), true);
     this->ExpectUserVersion(1);
@@ -286,7 +286,7 @@ TEST_F(DatabaseSchemaUpdaterTest, ApplyMultipleMigrationFilesAtOnce) {
     this->WriteMigrationFile(migration_file_down_2_valid);
     this->WriteMigrationFile(migration_file_down_3_valid);
 
-    DatabaseSchemaUpdater updater{this->database};
+    DatabaseSchemaUpdater updater{this->database.get()};
 
     EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 3), true);
     this->ExpectUserVersion(3);
@@ -309,7 +309,7 @@ TEST_F(DatabaseSchemaUpdaterTest, ApplyMultipleMigrationFilesAtOnceWithFailure) 
     this->WriteMigrationFile(migration_file_down_2_valid);
     this->WriteMigrationFile(migration_file_down_3_valid);
 
-    DatabaseSchemaUpdater updater{this->database};
+    DatabaseSchemaUpdater updater{this->database.get()};
 
     EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 1), true);
     this->ExpectUserVersion(1);

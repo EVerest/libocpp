@@ -18,7 +18,7 @@ DatabaseHandler::DatabaseHandler(std::unique_ptr<DatabaseConnectionInterface> da
 }
 
 void DatabaseHandler::init_sql() {
-    DatabaseSchemaUpdater updater{this->database};
+    DatabaseSchemaUpdater updater{this->database.get()};
 
     if (!updater.apply_migration_files(this->sql_init_path, MIGRATION_FILE_VERSION)) {
         EVLOG_AND_THROW(std::runtime_error("SQL migration failed"));

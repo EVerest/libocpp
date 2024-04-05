@@ -10,13 +10,13 @@ namespace ocpp::common {
 
 class DatabaseSchemaUpdater {
 private:
-    std::shared_ptr<DatabaseConnectionInterface> database;
+    DatabaseConnectionInterface* database;
 
     uint32_t get_user_version();
     void set_user_version(uint32_t version);
 
 public:
-    explicit DatabaseSchemaUpdater(std::shared_ptr<DatabaseConnectionInterface> database) noexcept;
+    explicit DatabaseSchemaUpdater(DatabaseConnectionInterface* database) noexcept;
 
     bool apply_migration_files(const fs::path& migration_file_directory, uint32_t target_version);
 };

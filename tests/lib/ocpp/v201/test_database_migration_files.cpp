@@ -17,7 +17,7 @@ protected:
 
 public:
     DatabaseMigrationFilesTest() :
-        database(std::make_shared<DatabaseConnection>("file::memory:?cache=shared")),
+        database(std::make_unique<DatabaseConnection>("file::memory:?cache=shared")),
         migration_files_path(MIGRATION_FILES_LOCATION),
         max_version(MIGRATION_FILE_VERSION) {
         EXPECT_EQ(this->database->open_connection(), true);
@@ -32,7 +32,7 @@ public:
 };
 
 TEST_F(DatabaseMigrationFilesTest, ApplyMigrationFilesStepByStep) {
-    DatabaseSchemaUpdater updater{this->database};
+    DatabaseSchemaUpdater updater{this->database.get()};
 
     for (uint32_t i = 1; i <= this->max_version; i++) {
         EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, i), true);
@@ -46,7 +46,7 @@ TEST_F(DatabaseMigrationFilesTest, ApplyMigrationFilesStepByStep) {
 }
 
 TEST_F(DatabaseMigrationFilesTest, ApplyMigrationFilesAtOnce) {
-    DatabaseSchemaUpdater updater{this->database};
+    DatabaseSchemaUpdater updater{this->database.get()};
 
     EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, this->max_version), true);
     this->ExpectUserVersion(this->max_version);
