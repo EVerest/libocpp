@@ -60,3 +60,4 @@ target_link_libraries(${TEST_TARGET_NAME} PRIVATE
 )
 
 add_test(${TEST_TARGET_NAME} ${TEST_TARGET_NAME})
+add_dependencies(all_tests ${TEST_TARGET_NAME})

@@ -22,6 +22,7 @@ if((${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME} OR ${PROJECT_NAME}_BUILD_TEST
 endif()
 
 if(LIBOCPP_BUILD_TESTING)
+    enable_testing()
     evc_include(CodeCoverage)
     append_coverage_compiler_flags()
 endif()
