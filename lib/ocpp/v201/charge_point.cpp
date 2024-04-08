@@ -1943,12 +1943,6 @@ void ChargePoint::transaction_event_req(const TransactionEventEnum& event_type, 
         remote_start_id_per_evse.erase(it);
     }
 
-    if (event_type == TransactionEventEnum::Started and (!evse.has_value())) {
-        EVLOG_error << "Request to send TransactionEvent(Started) without given evse. This property "
-                       "is required for this eventType \"Started\"!";
-        return;
-    }
-
     this->send<TransactionEventRequest>(call);
 
     if (this->callbacks.transaction_event_callback.has_value()) {
@@ -2478,20 +2472,15 @@ void ChargePoint::handle_transaction_event_response(const EnhancedMessage<v201::
     const Call<TransactionEventRequest>& original_call = message.call_message;
     const auto& original_msg = original_call.msg;
 
-    if (original_msg.eventType != TransactionEventEnum::Started) {
+    if (original_msg.eventType == TransactionEventEnum::Ended) {
+        // nothing to do for TransactionEventEnum::Ended
         return;
     }
-
-    if (!original_msg.evse.has_value()) {
-        EVLOG_error << "Start transaction event sent without without evse id";
-        return;
-    }
-
-    const int32_t evse_id = original_msg.evse.value().id;
 
     const auto msg = call_result.msg;
 
     if (!msg.idTokenInfo.has_value()) {
+        // nothing to do when the response does not contain idTokenInfo
         return;
     }
 
@@ -2513,7 +2502,28 @@ void ChargePoint::handle_transaction_event_response(const EnhancedMessage<v201::
         this->database_handler->authorization_cache_insert_entry(utils::generate_token_hash(id_token), id_token_info);
         this->update_authorization_cache_size();
     }
-    if (msg.idTokenInfo.value().status != AuthorizationStatusEnum::Accepted) {
+
+    if (msg.idTokenInfo.value().status == AuthorizationStatusEnum::Accepted) {
+        // nothing to do in case status is accepted
+        return;
+    }
+
+    std::vector<int32_t> evse_ids; // this is a vector because the id token could be active for multiple transactions
+    if (original_msg.evse.has_value()) {
+        evse_ids.push_back(original_msg.evse.value().id);
+    } else {
+        // add every evse_id with active transaction and given token
+        for (const auto& [evse_id, evse] : this->evses) {
+            if (evse->get_transaction() != nullptr and evse->get_transaction()->id_token.has_value()) {
+                if (evse->get_transaction()->id_token.value().idToken.get() == id_token.idToken.get()) {
+                    evse_ids.push_back(evse_id);
+                }
+            }
+        }
+    }
+
+    // post handling of transactions in case status is not Accepted
+    for (const auto evse_id : evse_ids) {
         if (this->device_model->get_value<bool>(ControllerComponentVariables::StopTxOnInvalidId)) {
             this->callbacks.stop_transaction_callback(evse_id, ReasonEnum::DeAuthorized);
         } else {
