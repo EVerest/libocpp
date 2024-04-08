@@ -55,6 +55,7 @@ libwebsockets:
     - LWS_WITHOUT_TEST_SERVER_EXTPOLL ON
     - LWS_WITHOUT_TEST_PING ON
     - LWS_WITHOUT_TEST_CLIENT ON
+    - LWS_WITH_NETWORK ON
 gtest:
   # GoogleTest now follows the Abseil Live at Head philosophy. We recommend updating to the latest commit in the main branch as often as possible.
   git: https://github.com/google/googletest.git

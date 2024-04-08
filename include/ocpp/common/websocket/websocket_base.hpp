@@ -37,6 +37,7 @@ struct WebsocketConnectionOptions {
     bool verify_csms_common_name;
     bool use_tpm_tls;
     bool verify_csms_allow_wildcards;
+    std::optional<std::string> iface_or_ip; ///< The interface of the connection or the ip address of the interface
 };
 
 enum class ConnectionFailedReason {
@@ -51,20 +52,14 @@ protected:
     std::atomic_bool m_is_connected;
     WebsocketConnectionOptions connection_options;
     std::function<void(const int security_profile)> connected_callback;
-    std::function<void()> disconnected_callback;
-    std::function<void(const websocketpp::close::status::value reason)> closed_callback;
+    std::function<void(const WebsocketCloseReason reason)> closed_callback;
+    std::function<void(const WebsocketCloseReason reason)> failed_callback;
     std::function<void(const std::string& message)> message_callback;
     std::function<void(ConnectionFailedReason)> connection_failed_callback;
-    websocketpp::lib::shared_ptr<boost::asio::steady_timer> reconnect_timer;
     std::unique_ptr<Everest::SteadyTimer> ping_timer;
     websocketpp::connection_hdl handle;
-    std::mutex reconnect_mutex;
     std::mutex connection_mutex;
-    std::atomic_int reconnect_backoff_ms;
-    websocketpp::transport::timer_handler reconnect_callback;
-    std::atomic_int connection_attempts;
-    std::atomic_bool shutting_down;
-    std::atomic_bool reconnecting;
+    bool shutting_down;
 
     /// \brief Indicates if the required callbacks are registered
     /// \returns true if the websocket is properly initialized
@@ -75,13 +70,6 @@ protected:
 
     /// \brief Logs websocket connection error
     void log_on_fail(const std::error_code& ec, const boost::system::error_code& transport_ec, const int http_status);
-
-    /// \brief Calculates and returns the reconnect interval based on int retry_backoff_random_range_s,
-    /// retry_backoff_repeat_times, int retry_backoff_wait_minimum_s of the WebsocketConnectionOptions
-    long get_reconnect_interval();
-
-    // \brief cancels the reconnect timer
-    void cancel_reconnect_timer();
 
     /// \brief send a websocket ping
     virtual void ping() = 0;
@@ -103,27 +91,34 @@ public:
     virtual void set_connection_options(const WebsocketConnectionOptions& connection_options) = 0;
     void set_connection_options_base(const WebsocketConnectionOptions& connection_options);
 
-    /// \brief reconnect the websocket after the delay
-    virtual void reconnect(std::error_code reason, long delay) = 0;
+    /// \brief reconnect the websocket.
+    ///
+    /// This is needed because of websocketpp: we can not just call 'connect' because the websocket might be in a wrong
+    /// state here.
+    virtual void reconnect() = 0;
 
     /// \brief disconnect the websocket
-    void disconnect(websocketpp::close::status::value code);
+    void disconnect(WebsocketCloseReason code);
 
     /// \brief indicates if the websocket is connected
     bool is_connected();
 
     /// \brief closes the websocket
-    virtual void close(websocketpp::close::status::value code, const std::string& reason) = 0;
+    virtual void close(WebsocketCloseReason code, const std::string& reason, const bool stop_perpetual) = 0;
 
     /// \brief register a \p callback that is called when the websocket is connected successfully
     void register_connected_callback(const std::function<void(const int security_profile)>& callback);
 
-    /// \brief register a \p callback that is called when the websocket connection is disconnected
-    void register_disconnected_callback(const std::function<void()>& callback);
-
     /// \brief register a \p callback that is called when the websocket connection has been closed and will not attempt
     /// to reconnect
-    void register_closed_callback(const std::function<void(const websocketpp::close::status::value reason)>& callback);
+    void register_closed_callback(const std::function<void(const WebsocketCloseReason reason)>& callback);
+
+    ///
+    /// \brief Register a callback that is called when the websocket tried to connect, but could not make a connection
+    ///        or was already connected and a failure occured.
+    /// \param callback The callback.
+    ///
+    void register_failed_callback(const std::function<void(const WebsocketCloseReason reason)>& callback);
 
     /// \brief register a \p callback that is called when the websocket receives a message
     void register_message_callback(const std::function<void(const std::string& message)>& callback);

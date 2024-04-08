@@ -7,6 +7,9 @@
 
 #ifdef LIBOCPP_ENABLE_LIBWEBSOCKETS
 #include <ocpp/common/websocket/websocket_libwebsockets.hpp>
+#else
+#include <ocpp/common/websocket/websocket_plain.hpp>
+#include <ocpp/common/websocket/websocket_tls.hpp>
 #endif
 
 #include <boost/algorithm/string.hpp>
@@ -31,6 +34,10 @@ Websocket::Websocket(const WebsocketConnectionOptions& connection_options, std::
 }
 
 Websocket::~Websocket() {
+    if (this->websocket != nullptr) {
+        this->websocket->disconnect(WebsocketCloseReason::GoingAway);
+        this->websocket = nullptr;
+    }
 }
 
 bool Websocket::connect() {
@@ -42,14 +49,13 @@ void Websocket::set_connection_options(const WebsocketConnectionOptions& connect
     this->websocket->set_connection_options(connection_options);
 }
 
-void Websocket::disconnect(websocketpp::close::status::value code) {
+void Websocket::disconnect(const WebsocketCloseReason code) {
     this->logging->sys("Disconnecting");
     this->websocket->disconnect(code);
 }
 
-void Websocket::reconnect(std::error_code reason, long delay) {
-    this->logging->sys("Reconnecting");
-    this->websocket->reconnect(reason, delay);
+void Websocket::reconnect() {
+    this->websocket->reconnect();
 }
 
 bool Websocket::is_connected() {
@@ -65,20 +71,16 @@ void Websocket::register_connected_callback(const std::function<void(const int s
     });
 }
 
-void Websocket::register_disconnected_callback(const std::function<void()>& callback) {
-    this->disconnected_callback = callback;
-
-    this->websocket->register_disconnected_callback([this]() {
-        this->logging->sys("Disconnected");
-        this->disconnected_callback();
-    });
-}
-
-void Websocket::register_closed_callback(
-    const std::function<void(const websocketpp::close::status::value reason)>& callback) {
+void Websocket::register_closed_callback(const std::function<void(const WebsocketCloseReason reason)>& callback) {
     this->closed_callback = callback;
     this->websocket->register_closed_callback(
-        [this](const websocketpp::close::status::value reason) { this->closed_callback(reason); });
+        [this](const WebsocketCloseReason reason) { this->closed_callback(reason); });
+}
+
+void Websocket::register_failed_callback(const std::function<void(const WebsocketCloseReason)>& callback) {
+    this->failed_callback = callback;
+    this->websocket->register_failed_callback(
+        [this](const WebsocketCloseReason reason) { this->failed_callback(reason); });
 }
 
 void Websocket::register_message_callback(const std::function<void(const std::string& message)>& callback) {

@@ -5,10 +5,13 @@
 
 #include <ocpp/common/evse_security.hpp>
 #include <ocpp/common/ocpp_logging.hpp>
-#include <ocpp/common/websocket/websocket_plain.hpp>
-#include <ocpp/common/websocket/websocket_tls.hpp>
+#include <ocpp/common/websocket/websocket_base.hpp>
 
 namespace ocpp {
+
+class WebsocketBase;
+struct WebsocketConnectionOptions;
+
 ///
 /// \brief contains a websocket abstraction that can connect to TLS and non-TLS websocket endpoints
 ///
@@ -17,8 +20,8 @@ private:
     // unique_ptr holds address of base - requires WebSocketBase to have a virtual destructor
     std::unique_ptr<WebsocketBase> websocket;
     std::function<void(const int security_profile)> connected_callback;
-    std::function<void()> disconnected_callback;
-    std::function<void(const websocketpp::close::status::value reason)> closed_callback;
+    std::function<void(const WebsocketCloseReason reason)> closed_callback;
+    std::function<void(const WebsocketCloseReason reason)> failed_callback;
     std::function<void(const std::string& message)> message_callback;
     std::shared_ptr<MessageLogging> logging;
 
@@ -34,10 +37,10 @@ public:
     void set_connection_options(const WebsocketConnectionOptions& connection_options);
 
     /// \brief disconnect the websocket
-    void disconnect(websocketpp::close::status::value code);
+    void disconnect(const WebsocketCloseReason code);
 
     // \brief reconnects the websocket after the delay
-    void reconnect(std::error_code reason, long delay);
+    void reconnect();
 
     /// \brief indicates if the websocket is connected
     bool is_connected();
@@ -45,12 +48,16 @@ public:
     /// \brief register a \p callback that is called when the websocket is connected successfully
     void register_connected_callback(const std::function<void(const int security_profile)>& callback);
 
-    /// \brief register a \p callback that is called when the websocket connection is disconnected
-    void register_disconnected_callback(const std::function<void()>& callback);
-
     /// \brief register a \p callback that is called when the websocket connection has been closed and will not attempt
     /// to reconnect
-    void register_closed_callback(const std::function<void(const websocketpp::close::status::value reason)>& callback);
+    void register_closed_callback(const std::function<void(const WebsocketCloseReason reason)>& callback);
+
+    ///
+    /// \brief Register a callback that is called when the websocket tried to connect, but could not make a connection
+    ///        or was already connected and a failure occured.
+    /// \param callback The callback.
+    ///
+    void register_failed_callback(const std::function<void(const WebsocketCloseReason reason)>& callback);
 
     /// \brief register a \p callback that is called when the websocket receives a message
     void register_message_callback(const std::function<void(const std::string& message)>& callback);
