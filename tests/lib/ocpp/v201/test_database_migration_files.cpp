@@ -19,7 +19,7 @@ public:
     DatabaseMigrationFilesTest() :
         database(std::make_unique<DatabaseConnection>("file::memory:?cache=shared")),
         migration_files_path(MIGRATION_FILES_LOCATION),
-        max_version(MIGRATION_FILE_VERSION) {
+        max_version(MIGRATION_FILE_VERSION_V201) {
         EXPECT_EQ(this->database->open_connection(), true);
     }
 

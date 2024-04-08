@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
-#include <ocpp/common/database/database_schema_updater.hpp>
 #include <ocpp/common/message_queue.hpp>
 #include <ocpp/v201/database_handler.hpp>
 #include <ocpp/v201/types.hpp>
@@ -13,17 +12,12 @@ using namespace common;
 
 namespace v201 {
 
-DatabaseHandler::DatabaseHandler(std::unique_ptr<DatabaseConnectionInterface> database, const fs::path& sql_init_path) :
-    DatabaseHandlerCommon(std::move(database)), sql_init_path(sql_init_path) {
+DatabaseHandler::DatabaseHandler(std::unique_ptr<DatabaseConnectionInterface> database,
+                                 const fs::path& sql_migration_files_path) :
+    DatabaseHandlerCommon(std::move(database), sql_migration_files_path, MIGRATION_FILE_VERSION_V201) {
 }
 
 void DatabaseHandler::init_sql() {
-    DatabaseSchemaUpdater updater{this->database.get()};
-
-    if (!updater.apply_migration_files(this->sql_init_path, MIGRATION_FILE_VERSION)) {
-        EVLOG_AND_THROW(std::runtime_error("SQL migration failed"));
-    }
-
     this->inintialize_enum_tables();
 }
 

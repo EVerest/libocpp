@@ -10,7 +10,8 @@ target_compile_options(ocpp
 
 target_compile_definitions(ocpp
     PRIVATE
-        MIGRATION_FILE_VERSION=${MIGRATION_FILE_VERSION}
+        MIGRATION_FILE_VERSION_V16=${MIGRATION_FILE_VERSION_V16}
+        MIGRATION_FILE_VERSION_V201=${MIGRATION_FILE_VERSION_V201}
 )
 
 target_sources(ocpp
