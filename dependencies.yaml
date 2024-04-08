@@ -27,7 +27,7 @@ date:
   options: ["BUILD_TZ_LIB ON", "HAS_REMOTE_API 0", "USE_AUTOLOAD 0", "USE_SYSTEM_TZ_DB ON"]
 websocketpp:
   git: https://github.com/zaphoyd/websocketpp.git
-  git_tag: 0.8.2  
+  git_tag: 0.8.2
 libevse-security:
   git: https://github.com/EVerest/libevse-security.git
   git_tag: v0.5.0
