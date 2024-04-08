@@ -129,7 +129,7 @@ PUBLIC
     websockets_shared
 )
 
-if(LIBOCPP_ENABLE_DEPRECATED_WEBSOCKETPP)        
+if(LIBOCPP_ENABLE_DEPRECATED_WEBSOCKETPP)
     target_compile_definitions(ocpp
         PRIVATE
             LIBOCPP_ENABLE_DEPRECATED_WEBSOCKETPP
