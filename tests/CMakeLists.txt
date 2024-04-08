@@ -1,4 +1,6 @@
-add_definitions(-D_SQL_INIT_FILE="${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/everest/modules/OCPP/init.sql")
+set(MIGRATION_FILES_LOCATION_V16 "${CMAKE_CURRENT_BINARY_DIR}/resources/v16/migration_files")
+set(MIGRATION_FILES_LOCATION_V201 "${CMAKE_CURRENT_BINARY_DIR}/resources/v201/migration_files")
+
 add_executable(database_tests database_tests.cpp)
 
 target_link_libraries(database_tests PRIVATE
@@ -15,19 +17,29 @@ add_test(database_tests database_tests)
 
 add_executable(libocpp_unit_tests)
 
-set(MIGRATION_FILES_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/resources/migration_files")
+target_compile_definitions(database_tests
+    PRIVATE
+    MIGRATION_FILES_LOCATION_V16="${MIGRATION_FILES_LOCATION_V16}"
+    MIGRATION_FILES_LOCATION_V201="${MIGRATION_FILES_LOCATION_V201}"
+    MIGRATION_FILE_VERSION_V16=${MIGRATION_FILE_VERSION_V16}
+    MIGRATION_FILE_VERSION_V201=${MIGRATION_FILE_VERSION_V201}
+)
 
 target_compile_definitions(libocpp_unit_tests
     PRIVATE
-    MIGRATION_FILES_LOCATION="${MIGRATION_FILES_LOCATION}"
+    MIGRATION_FILES_LOCATION_V16="${MIGRATION_FILES_LOCATION_V16}"
+    MIGRATION_FILES_LOCATION_V201="${MIGRATION_FILES_LOCATION_V201}"
+    MIGRATION_FILE_VERSION_V16=${MIGRATION_FILE_VERSION_V16}
     MIGRATION_FILE_VERSION_V201=${MIGRATION_FILE_VERSION_V201}
 )
 
 add_custom_command(TARGET libocpp_unit_tests POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/resources/unittest_device_model.db ${CMAKE_CURRENT_BINARY_DIR}/resources/unittest_device_model.db
         COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/resources/unittest_device_model_missing_required.db ${CMAKE_CURRENT_BINARY_DIR}/resources/unittest_device_model_missing_required.db
-        COMMAND ${CMAKE_COMMAND} -E remove_directory ${MIGRATION_FILES_LOCATION}
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${MIGRATION_FILES_SOURCE_DIR} ${MIGRATION_FILES_LOCATION}
+        COMMAND ${CMAKE_COMMAND} -E remove_directory ${MIGRATION_FILES_LOCATION_V16}
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${MIGRATION_FILES_SOURCE_DIR_V16} ${MIGRATION_FILES_LOCATION_V16}
+        COMMAND ${CMAKE_COMMAND} -E remove_directory ${MIGRATION_FILES_LOCATION_V201}
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${MIGRATION_FILES_SOURCE_DIR_V201} ${MIGRATION_FILES_LOCATION_V201}
 )
 
 add_test(libocpp_unit_tests libocpp_unit_tests)
