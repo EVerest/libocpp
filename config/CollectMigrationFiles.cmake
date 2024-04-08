@@ -8,9 +8,13 @@ function(COLLECT_MIGRATION_FILES)
         message(FATAL_ERROR "No LOCATION provided, can't parse files")
     endif()
 
+    if(NOT ${ARG_LOCATION} MATCHES "/$")
+        set(ARG_LOCATION "${ARG_LOCATION}/")
+    endif()
+
     message("Parsing migration files in folder: ${ARG_LOCATION}")
 
-    file(GLOB MIGRATION_FILE_LIST RELATIVE ${ARG_LOCATION} "${ARG_LOCATION}/*.sql")
+    file(GLOB MIGRATION_FILE_LIST RELATIVE ${ARG_LOCATION} "${ARG_LOCATION}*.sql") # ARG_LOCATION already contains the slash
     list(SORT MIGRATION_FILE_LIST)
 
     # The first file should always start with 1_up so make use of that fact.
