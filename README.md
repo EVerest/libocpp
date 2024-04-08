@@ -553,7 +553,7 @@ In order to use the TPM keys, it is mandatory to use the default libwebsocket im
 
 ## Support for websocket++
 
-The old old websocket++ implmentation has been deprecated. For enabling old websocket++ support use the following cmake option:
+The old websocket++ implementation has been deprecated. For enabling websocket++ support use the following cmake option:
 
 ```bash
   cmake .. -DLIBOCPP_ENABLE_DEPRECATED_WEBSOCKETPP=ON
