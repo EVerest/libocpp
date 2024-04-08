@@ -53,6 +53,8 @@ private:
     const fs::path database_file_path;
     std::atomic_uint32_t open_count;
 
+    bool close_connection_internal(bool force_close);
+
 public:
     explicit DatabaseConnection(const fs::path& database_file_path) noexcept;
 

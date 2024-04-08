@@ -14,7 +14,7 @@ DatabaseConnection::DatabaseConnection(const fs::path& database_file_path) noexc
 }
 
 DatabaseConnection::~DatabaseConnection() {
-    close_connection();
+    close_connection_internal(true);
 }
 
 bool DatabaseConnection::open_connection() {
@@ -38,7 +38,11 @@ bool DatabaseConnection::open_connection() {
 }
 
 bool DatabaseConnection::close_connection() {
-    if (this->open_count.fetch_sub(1) != 1) {
+    return this->close_connection_internal(false);
+}
+
+bool DatabaseConnection::close_connection_internal(bool force_close) {
+    if (!force_close && this->open_count.fetch_sub(1) != 1) {
         EVLOG_debug << "Connection should remain open for other users";
         return true;
     }
