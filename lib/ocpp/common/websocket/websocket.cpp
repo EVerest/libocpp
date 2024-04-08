@@ -7,10 +7,6 @@
 
 #include <ocpp/common/websocket/websocket_libwebsockets.hpp>
 
-#ifdef LIBOCPP_ENABLE_DEPRECATED_WEBSOCKETPP
-#include <ocpp/common
-#endif
-
 #include <boost/algorithm/string.hpp>
 
 using json = nlohmann::json;
