@@ -56,7 +56,7 @@ add_subdirectory(ocpp/v16/messages)
 add_subdirectory(ocpp/v201/messages)
 
 option(LIBOCPP_USE_BOOST_FILESYSTEM "Usage of boost/filesystem.hpp instead of std::filesystem" OFF)
-option(LIBOCPP_ENABLE_DEPRECATED_WEBSOCKETPP "Usage of deprecated websocket++ instad of libwebsockets" OFF)
+option(LIBOCPP_ENABLE_DEPRECATED_WEBSOCKETPP "Usage of deprecated websocket++ instead of libwebsockets" OFF)
 
 target_include_directories(ocpp
     PUBLIC
