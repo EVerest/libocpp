@@ -2514,8 +2514,9 @@ void ChargePoint::handle_transaction_event_response(const EnhancedMessage<v201::
     } else {
         // add every evse_id with active transaction and given token
         for (const auto& [evse_id, evse] : this->evses) {
-            if (evse->get_transaction() != nullptr and evse->get_transaction()->id_token.has_value()) {
-                if (evse->get_transaction()->id_token.value().idToken.get() == id_token.idToken.get()) {
+            const auto& transaction = evse->get_transaction();
+            if (transaction != nullptr and transaction->id_token.has_value()) {
+                if (transaction->id_token.value().idToken.get() == id_token.idToken.get()) {
                     evse_ids.push_back(evse_id);
                 }
             }
