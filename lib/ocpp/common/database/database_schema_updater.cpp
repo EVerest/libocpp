@@ -136,8 +136,7 @@ std::optional<std::vector<MigrationFile>> get_migration_file_sequence(const fs::
     return list;
 }
 
-DatabaseSchemaUpdater::DatabaseSchemaUpdater(DatabaseConnectionInterface* database) noexcept :
-    database(database) {
+DatabaseSchemaUpdater::DatabaseSchemaUpdater(DatabaseConnectionInterface* database) noexcept : database(database) {
 }
 
 uint32_t DatabaseSchemaUpdater::get_user_version() {

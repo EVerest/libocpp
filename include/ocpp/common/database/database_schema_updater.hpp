@@ -21,4 +21,4 @@ public:
     bool apply_migration_files(const fs::path& migration_file_directory, uint32_t target_version);
 };
 
-} // namespace ocpp
+} // namespace ocpp::common

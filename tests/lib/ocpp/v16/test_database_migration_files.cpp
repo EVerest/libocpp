@@ -4,22 +4,16 @@
 #include <lib/ocpp/common/test_database_migration_files.h>
 
 // Apply generic test cases to v16 migrations
-INSTANTIATE_TEST_SUITE_P(
-    V16,
-    DatabaseMigrationFilesTest,
-    ::testing::Values(
-        std::make_tuple(std::filesystem::path(MIGRATION_FILES_LOCATION_V16), MIGRATION_FILE_VERSION_V16)
-    ));
+INSTANTIATE_TEST_SUITE_P(V16, DatabaseMigrationFilesTest,
+                         ::testing::Values(std::make_tuple(std::filesystem::path(MIGRATION_FILES_LOCATION_V16),
+                                                           MIGRATION_FILE_VERSION_V16)));
 
 // Apply v16 specific test cases to migrations
 using DatabaseMigrationFilesTestV16 = DatabaseMigrationFilesTest;
 
-INSTANTIATE_TEST_SUITE_P(
-    V16,
-    DatabaseMigrationFilesTestV16,
-    ::testing::Values(
-        std::make_tuple(std::filesystem::path(MIGRATION_FILES_LOCATION_V16), MIGRATION_FILE_VERSION_V16)
-    ));
+INSTANTIATE_TEST_SUITE_P(V16, DatabaseMigrationFilesTestV16,
+                         ::testing::Values(std::make_tuple(std::filesystem::path(MIGRATION_FILES_LOCATION_V16),
+                                                           MIGRATION_FILE_VERSION_V16)));
 
 TEST_P(DatabaseMigrationFilesTestV16, V16_MigrationFile2) {
     DatabaseSchemaUpdater updater{this->database.get()};

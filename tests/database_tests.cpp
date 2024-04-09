@@ -54,8 +54,8 @@ public:
     DatabaseTest() {
         auto database_connection = std::make_unique<common::DatabaseConnection>("file::memory:?cache=shared");
         database_connection->open_connection(); // Open connection so memory stays shared
-        this->db_handler =
-            std::make_unique<DatabaseHandler>(std::move(database_connection), std::filesystem::path(MIGRATION_FILES_LOCATION_V16), 2);
+        this->db_handler = std::make_unique<DatabaseHandler>(std::move(database_connection),
+                                                             std::filesystem::path(MIGRATION_FILES_LOCATION_V16), 2);
         this->db_handler->open_connection();
     }
 
