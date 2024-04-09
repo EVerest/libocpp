@@ -9,15 +9,17 @@
 namespace ocpp::common {
 
 DatabaseHandlerCommon::DatabaseHandlerCommon(std::unique_ptr<DatabaseConnectionInterface> database,
-                                             const fs::path& sql_migration_files_path, uint32_t target_version) noexcept
-    :
-    database(std::move(database)), sql_migration_files_path(sql_migration_files_path), target_version(target_version) {
+                                             const fs::path& sql_migration_files_path,
+                                             uint32_t target_schema_version) noexcept :
+    database(std::move(database)),
+    sql_migration_files_path(sql_migration_files_path),
+    target_schema_version(target_schema_version) {
 }
 
 void DatabaseHandlerCommon::open_connection() {
     DatabaseSchemaUpdater updater{this->database.get()};
 
-    if (!updater.apply_migration_files(this->sql_migration_files_path, target_version)) {
+    if (!updater.apply_migration_files(this->sql_migration_files_path, target_schema_version)) {
         EVLOG_AND_THROW(std::runtime_error("SQL migration failed"));
     }
 

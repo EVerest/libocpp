@@ -156,13 +156,14 @@ void DatabaseSchemaUpdater::set_user_version(uint32_t version) {
     }
 }
 
-bool DatabaseSchemaUpdater::apply_migration_files(const fs::path& migration_file_directory, uint32_t target_version) {
+bool DatabaseSchemaUpdater::apply_migration_files(const fs::path& migration_file_directory,
+                                                  uint32_t target_schema_version) {
     if (!fs::is_directory(migration_file_directory)) {
         EVLOG_error << "Migration files must be in a directory: " << migration_file_directory.c_str();
         return false;
     }
 
-    if (target_version == 0) {
+    if (target_schema_version == 0) {
         EVLOG_error << "Migration target_version 0 is invalid";
         return false;
     }
@@ -172,13 +173,13 @@ bool DatabaseSchemaUpdater::apply_migration_files(const fs::path& migration_file
     try {
         this->database->open_connection();
         current_version = this->get_user_version();
-        EVLOG_info << "Target version: " << target_version << ", current version: " << current_version;
+        EVLOG_info << "Target version: " << target_schema_version << ", current version: " << current_version;
     } catch (std::runtime_error e) {
         EVLOG_error << "Failure during migration file apply: " << e.what();
         return false;
     }
 
-    if (current_version == target_version) {
+    if (current_version == target_schema_version) {
         EVLOG_info << "No migrations to apply since versions match";
         this->database->close_connection();
         return true;
@@ -186,7 +187,7 @@ bool DatabaseSchemaUpdater::apply_migration_files(const fs::path& migration_file
 
     Direction direction = Direction::Up;
 
-    if (current_version > target_version) {
+    if (current_version > target_schema_version) {
         direction = Direction::Down;
     }
 
@@ -213,9 +214,10 @@ bool DatabaseSchemaUpdater::apply_migration_files(const fs::path& migration_file
             }
         }
 
-        this->set_user_version(target_version);
+        this->set_user_version(target_schema_version);
         this->database->commit_transaction();
     } catch (std::exception e) {
+        this->database->rollback_transaction();
         this->database->close_connection();
         EVLOG_error << "Failure during migration file apply: " << e.what();
         return false;

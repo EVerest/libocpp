@@ -1,6 +1,5 @@
 set(OCPP1_6_PROFILE_SCHEMAS_DIR "profile_schemas/")
 set(USER_CONFIG_FILE "user_config/user_config.json")
-# set(SQL_INIT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/init.sql")
 set(CERTS_DIR "../certs/")
 
 # find all migration files, store only the filenames by showing relative to the folder
@@ -48,8 +47,6 @@ install(
      FILES ${CONFIGS}
      DESTINATION ${CMAKE_INSTALL_DATADIR}/everest/modules/OCPP
 )
-
-# install(FILES ${SQL_INIT_FILE} DESTINATION ${CMAKE_INSTALL_DATADIR}/everest/modules/OCPP)
 
 if(EXISTS ${USER_CONFIG_FILE})
      install(
