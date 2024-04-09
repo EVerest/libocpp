@@ -71,7 +71,7 @@ All documentation and the issue tracking can be found in our main repository her
 ## Support for OCPP 2.0.1
 
 The development of OCPP2.0.1 is in progress. 
-[For details, see the sheet with the current implementation status.](https://docs.google.com/spreadsheets/d/1NXEa7d0pkT4_1L9lZ9RpiLHGPtTKoqwPsKLJPjTZ_vM/edit?usp=sharing)
+[Current implementation status.](/doc/ocpp_201_status.md)
 
 ### Feature Profile Support OCPP 2.0.1
 
@@ -547,14 +547,14 @@ Local testing is still in progress.
 ## Building with FetchContent instead of EDM
 In [doc/build-with-fetchcontent](doc/build-with-fetchcontent) you can find an example how to build libocpp with FetchContent instead of EDM.
 
-## Support for libwebsockets
-
-A new websocket implementation based on libwebsockets will deprecate the old websocket++ implmentation. It supports all security profiles, along with TPM usage.
-
 ### Support for TPM keys
 
-In order to use the TPM keys, it is mandatory to use the libwebsocket implementation with the following cmake option.
+In order to use the TPM keys, it is mandatory to use the default libwebsocket implementation.
+
+## Support for websocket++
+
+The old websocket++ implementation has been deprecated. For enabling websocket++ support use the following cmake option:
 
 ```bash
-  cmake .. -DLIBOCPP_ENABLE_LIBWEBSOCKETS=ON
+  cmake .. -DLIBOCPP_ENABLE_DEPRECATED_WEBSOCKETPP=ON
 ```

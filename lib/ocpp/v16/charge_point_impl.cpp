@@ -6,6 +6,7 @@
 #include <ocpp/v16/charge_point.hpp>
 #include <ocpp/v16/charge_point_configuration.hpp>
 #include <ocpp/v16/charge_point_impl.hpp>
+#include <ocpp/v201/utils.hpp>
 
 #include <optional>
 
@@ -39,9 +40,11 @@ ChargePointImpl::ChargePointImpl(const std::string& config, const fs::path& shar
     this->configuration = std::make_shared<ocpp::v16::ChargePointConfiguration>(config, share_path, user_config_path);
     this->heartbeat_timer = std::make_unique<Everest::SteadyTimer>(&this->io_service, [this]() { this->heartbeat(); });
     this->heartbeat_interval = this->configuration->getHeartbeatInterval();
-    this->database_handler =
-        std::make_shared<DatabaseHandler>(this->configuration->getChargePointId(), database_path, sql_init_path);
-    this->database_handler->open_db_connection(this->configuration->getNumberOfConnectors());
+    auto database_connection =
+        std::make_unique<common::DatabaseConnection>(database_path / (this->configuration->getChargePointId() + ".db"));
+    this->database_handler = std::make_shared<DatabaseHandler>(std::move(database_connection), sql_init_path,
+                                                               this->configuration->getNumberOfConnectors());
+    this->database_handler->open_connection();
     this->transaction_handler = std::make_unique<TransactionHandler>(this->configuration->getNumberOfConnectors());
     this->external_notify = {v16::MessageType::StartTransactionResponse};
     this->message_queue = this->create_message_queue();
@@ -337,9 +340,9 @@ void ChargePointImpl::stop_pending_transactions() {
 
     for (const auto& transaction_entry : transactions) {
         std::shared_ptr<Transaction> transaction = std::make_shared<Transaction>(
-            transaction_entry.connector, transaction_entry.session_id, CiString<20>(transaction_entry.id_tag_start),
-            transaction_entry.meter_start, transaction_entry.reservation_id,
-            ocpp::DateTime(transaction_entry.time_start), nullptr);
+            this->transaction_handler->get_negative_random_transaction_id(), transaction_entry.connector,
+            transaction_entry.session_id, CiString<20>(transaction_entry.id_tag_start), transaction_entry.meter_start,
+            transaction_entry.reservation_id, ocpp::DateTime(transaction_entry.time_start), nullptr);
         ocpp::DateTime timestamp;
         int meter_stop = 0;
         if (transaction_entry.time_end.has_value() and transaction_entry.meter_stop.has_value()) {
@@ -353,16 +356,25 @@ void ChargePointImpl::stop_pending_transactions() {
         const auto stop_energy_wh = std::make_shared<StampedEnergyWh>(timestamp, meter_stop);
         transaction->add_stop_energy_wh(stop_energy_wh);
         transaction->set_transaction_id(transaction_entry.transaction_id);
+        // we need this in order to handle a StartTransaction.conf
+        transaction->set_start_transaction_message_id(transaction_entry.start_transaction_message_id);
+        if (transaction_entry.stop_transaction_message_id.has_value()) {
+            // we need this in order to handle a StopTransaction.conf
+            transaction->set_stop_transaction_message_id(transaction_entry.stop_transaction_message_id.value());
+        }
+
+        this->transaction_handler->add_transaction(transaction);
 
         // StopTransaction.req is not yet queued for the transaction in the database, so we add the transaction to the
         // transaction_handler and initiate a StopTransaction.req
         if (!this->message_queue->contains_stop_transaction_message(transaction_entry.transaction_id)) {
-            EVLOG_info << "Sending StopTransaction.req for transaction with id: " << transaction_entry.transaction_id
+            EVLOG_info << "Queuing StopTransaction.req for transaction with id: " << transaction_entry.transaction_id
                        << " because it hasn't been acknowledged by CSMS.";
-            this->transaction_handler->add_transaction(transaction);
             this->stop_transaction(transaction_entry.connector, Reason::PowerLoss, std::nullopt);
-            this->database_handler->update_transaction(transaction_entry.session_id, meter_stop, timestamp.to_rfc3339(),
-                                                       std::nullopt, Reason::PowerLoss);
+        } else {
+            // mark the transaction as stopped
+            transaction->set_finished();
+            this->transaction_handler->add_stopped_transaction(transaction->get_connector());
         }
     }
 }
@@ -780,12 +792,13 @@ void ChargePointImpl::send_meter_value(int32_t connector, MeterValue meter_value
     req.connectorId = connector;
     std::ostringstream oss;
     oss << "Gathering measurands of connector: " << connector;
+
     if (connector > 0) {
         auto transaction = this->transaction_handler->get_transaction(connector);
-        if (transaction != nullptr && transaction->get_transaction_id() != -1) {
-            auto transaction_id = transaction->get_transaction_id();
+        if (transaction != nullptr and transaction->get_transaction_id().has_value()) {
+            auto transaction_id = transaction->get_transaction_id().value();
             req.transactionId.emplace(transaction_id);
-        } else if (transaction != nullptr and transaction->get_transaction_id() == -1) {
+        } else if (transaction != nullptr) {
             // this means a transaction is active but we have not received a transaction_id from CSMS yet
             this->message_queue->add_meter_value_message_id(transaction->get_start_transaction_message_id(),
                                                             message_id.get());
@@ -815,7 +828,7 @@ bool ChargePointImpl::start(const std::map<int, ChargePointStatus>& connector_st
 bool ChargePointImpl::restart(const std::map<int, ChargePointStatus>& connector_status_map, BootReasonEnum bootreason) {
     if (this->stopped) {
         EVLOG_info << "Restarting OCPP Chargepoint";
-        this->database_handler->open_db_connection(this->configuration->getNumberOfConnectors());
+        this->database_handler->open_connection();
         // instantiating new message queue on restart
         this->message_queue = this->create_message_queue();
         this->initialized = true;
@@ -2629,7 +2642,7 @@ void ChargePointImpl::status_notification(const int32_t connector, const ChargeP
 
 // public API for Core profile
 
-IdTagInfo ChargePointImpl::authorize_id_token(CiString<20> idTag) {
+IdTagInfo ChargePointImpl::authorize_id_token(CiString<20> idTag, const bool authorize_only_locally) {
     // only do authorize req when authorization locally not enabled or fails
     // proritize auth list over auth cache for same idTags
 
@@ -2654,6 +2667,10 @@ IdTagInfo ChargePointImpl::authorize_id_token(CiString<20> idTag) {
                 return this->database_handler->get_authorization_cache_entry(idTag).value();
             }
         }
+    }
+
+    if (authorize_only_locally) {
+        return {AuthorizationStatus::Invalid};
     }
 
     AuthorizeRequest req;
@@ -2743,8 +2760,6 @@ ocpp::v201::AuthorizeResponse ChargePointImpl::data_transfer_pnc_authorize(
         return authorize_response;
     }
 
-    // FIXME(piet): Handle C07.FR.06 - C07.FR.12
-
     DataTransferRequest req;
     req.vendorId = ISO15118_PNC_VENDOR_ID;
     req.messageId.emplace(CiString<50>(std::string("Authorize")));
@@ -2754,58 +2769,136 @@ ocpp::v201::AuthorizeResponse ChargePointImpl::data_transfer_pnc_authorize(
 
     id_token.type = ocpp::v201::IdTokenEnum::eMAID;
     id_token.idToken = emaid;
-    authorize_req.iso15118CertificateHashData = iso15118_certificate_hash_data;
     authorize_req.idToken = id_token;
 
-    // C07.FR.06: If Charging Station is not able to validate a contract certificate, because it does not have the
-    // associated root certificate AND CentralContractValidationAllowed is true
-    // certificate.has_value() implies that ISO module could not validate certificate, otherwise certificate would not
-    // be set
-    if (certificate.has_value() and this->configuration->getCentralContractValidationAllowed().has_value() and
-        this->configuration->getCentralContractValidationAllowed().value()) {
-        authorize_req.certificate = certificate;
-    }
+    // Temporary variable that is set to true to avoid immediate response to allow the local auth list
+    // or auth cache to be tried
+    bool try_local_auth_list_or_cache = false;
+    bool forward_to_csms = false;
 
-    req.data.emplace(json(authorize_req).dump());
+    if (this->websocket->is_connected() and iso15118_certificate_hash_data.has_value()) {
+        authorize_req.iso15118CertificateHashData = iso15118_certificate_hash_data;
+        forward_to_csms = true;
+    } else if (certificate.has_value()) {
+        // First try to validate the contract certificate locally
+        CertificateValidationResult local_verify_result =
+            this->evse_security->verify_certificate(certificate.value(), ocpp::LeafCertificateType::MO);
+        EVLOG_info << "Local contract validation result: " << local_verify_result;
+        const auto central_contract_validation_allowed =
+            this->configuration->getCentralContractValidationAllowed().value_or(false);
+        const auto contract_validation_offline = this->configuration->getContractValidationOffline();
+        const auto local_authorize_offline = this->configuration->getLocalAuthorizeOffline();
 
-    Call<DataTransferRequest> call(req, this->message_queue->createMessageId());
-    auto authorize_future = this->send_async<DataTransferRequest>(call);
-
-    auto enhanced_message = authorize_future.get();
-
-    if (enhanced_message.messageType == MessageType::DataTransferResponse) {
-        try {
-            // parse and return authorize response
-            ocpp::CallResult<DataTransferResponse> call_result = enhanced_message.message;
-            if (call_result.msg.data.has_value()) {
-                authorize_response = json::parse(call_result.msg.data.value());
-                return authorize_response;
+        // C07.FR.01: When CS is online, it shall send an AuthorizeRequest
+        // C07.FR.02: The AuthorizeRequest shall at least contain the OCSP data
+        if (this->websocket->is_connected()) {
+            if (local_verify_result == CertificateValidationResult::IssuerNotFound) {
+                // C07.FR.06: Pass contract validation to CSMS when no contract root is found
+                if (central_contract_validation_allowed) {
+                    EVLOG_info << "Online: No local contract root found. Pass contract validation to CSMS";
+                    authorize_req.certificate = certificate.value();
+                    forward_to_csms = true;
+                } else {
+                    EVLOG_warning << "Online: Central Contract Validation not allowed";
+                    authorize_response.idTokenInfo.status = ocpp::v201::AuthorizationStatusEnum::Invalid;
+                }
             } else {
-                EVLOG_warning << "CSMS response of DataTransferRequest(Authorize) did not include data";
+                // Try to generate the OCSP data from the certificate chain and use that
+                const auto generated_ocsp_request_data_list = ocpp::evse_security_conversions::to_ocpp_v201(
+                    this->evse_security->get_mo_ocsp_request_data(certificate.value()));
+                if (generated_ocsp_request_data_list.size() > 0) {
+                    EVLOG_info << "Online: Pass generated OCSP data to CSMS";
+                    authorize_req.iso15118CertificateHashData = generated_ocsp_request_data_list;
+                    forward_to_csms = true;
+                } else {
+                    EVLOG_warning << "Online: OCSP data could not be generated";
+                    authorize_response.idTokenInfo.status = ocpp::v201::AuthorizationStatusEnum::Invalid;
+                }
             }
-        } catch (const json::exception& e) {
-            EVLOG_warning << "Could not parse data of DataTransfer message Authorize.conf: " << e.what();
-        } catch (const std::exception& e) {
-            EVLOG_error << "Unknown Error while handling DataTransfer message Authorize.conf: " << e.what();
-        }
-
-    } else if (enhanced_message.offline) {
-        if (this->configuration->getContractValidationOffline()) {
-            // C07.FR.08
-            // The Charging Station SHALL try to validate the contract certificate locally.
-
-            // if valid: C07.FR.09
-            if (this->configuration->getLocalAuthorizeOffline()) {
-                // use auth cache to look up emaid
+        } else { // Offline
+            // C07.FR.08: CS shall try to validate the contract locally
+            if (contract_validation_offline) {
+                EVLOG_info << "Offline: contract " << local_verify_result;
+                switch (local_verify_result) {
+                // C07.FR.09: CS shall lookup the eMAID in Local Auth List or Auth Cache when
+                // local validation succeeded
+                case CertificateValidationResult::Valid:
+                    // In C07.FR.09 LocalAuthorizeOffline is mentioned, this seems to be a generic config item
+                    // that applies to Local Auth List and Auth Cache, but since there are no requirements about
+                    // it, lets check it here
+                    if (local_authorize_offline) {
+                        try_local_auth_list_or_cache = true;
+                    } else {
+                        // No requirement states what to do when ContractValidationOffline is true
+                        // and LocalAuthorizeOffline is false
+                        authorize_response.idTokenInfo.status = ocpp::v201::AuthorizationStatusEnum::Unknown;
+                        authorize_response.certificateStatus = ocpp::v201::AuthorizeCertificateStatusEnum::Accepted;
+                    }
+                    break;
+                case CertificateValidationResult::Expired:
+                    authorize_response.idTokenInfo.status = ocpp::v201::AuthorizationStatusEnum::Expired;
+                    authorize_response.certificateStatus =
+                        ocpp::v201::AuthorizeCertificateStatusEnum::CertificateExpired;
+                    break;
+                default:
+                    authorize_response.idTokenInfo.status = ocpp::v201::AuthorizationStatusEnum::Unknown;
+                    break;
+                }
+            } else {
+                EVLOG_warning << "Offline: ContractValidationOffline is disabled. Validation not allowed";
+                // C07.FR.07: CS shall not allow charging
+                authorize_response.idTokenInfo.status = ocpp::v201::AuthorizationStatusEnum::NotAtThisTime;
             }
-        } else {
-            // C07.FR.07
-            // The Charging Station SHALL NOT allow charging.
         }
     } else {
-        EVLOG_warning << "CSMS response of DataTransferRequest(Authorize) was not DataTransferResponse";
+        EVLOG_warning << "Can not validate eMAID without certificate chain";
+        authorize_response.idTokenInfo.status = ocpp::v201::AuthorizationStatusEnum::Invalid;
     }
-    return authorize_response; // FIXME(piet)
+
+    if (forward_to_csms) {
+        authorize_response.idTokenInfo.status = ocpp::v201::AuthorizationStatusEnum::Unknown;
+        // AuthorizeRequest sent to CSMS, let's show the results
+        req.data.emplace(json(authorize_req).dump());
+
+        // Send the DataTransfer(Authorize) to the CSMS
+        Call<DataTransferRequest> call(req, this->message_queue->createMessageId());
+        auto authorize_future = this->send_async<DataTransferRequest>(call);
+
+        auto enhanced_message = authorize_future.get();
+
+        if (enhanced_message.messageType == MessageType::DataTransferResponse) {
+            try {
+                // parse and return authorize response
+                ocpp::CallResult<DataTransferResponse> call_result = enhanced_message.message;
+                if (call_result.msg.data.has_value()) {
+                    authorize_response = json::parse(call_result.msg.data.value());
+                } else {
+                    EVLOG_warning << "CSMS response of DataTransferRequest(Authorize) did not include data";
+                }
+            } catch (const json::exception& e) {
+                EVLOG_warning << "Could not parse data of DataTransfer message Authorize.conf: " << e.what();
+            } catch (const std::exception& e) {
+                EVLOG_error << "Unknown Error while handling DataTransfer message Authorize.conf: " << e.what();
+            }
+        } else if (enhanced_message.offline) {
+            EVLOG_warning << "No response received for DataTransfer.req(Authorize) from CSMS";
+        } else {
+            EVLOG_warning << "CSMS response of DataTransferRequest(Authorize) was not DataTransferResponse";
+        }
+        return authorize_response;
+    }
+    // For eMAID, we will respond here, unless the local auth list or auth cache is tried
+    if (!try_local_auth_list_or_cache) {
+        return authorize_response;
+    } else {
+        const auto local_authorize_result = this->authorize_id_token(emaid, true);
+        if (local_authorize_result.status == AuthorizationStatus::Accepted) {
+            authorize_response.idTokenInfo.status = ocpp::v201::AuthorizationStatusEnum::Accepted;
+        } else {
+            authorize_response.idTokenInfo.status = ocpp::v201::AuthorizationStatusEnum::Invalid;
+        }
+        return authorize_response;
+    }
 }
 
 void ChargePointImpl::data_transfer_pnc_sign_certificate() {
@@ -3215,6 +3308,13 @@ void ChargePointImpl::start_transaction(std::shared_ptr<Transaction> transaction
     req.meterStart = std::round(transaction->get_start_energy_wh()->energy_Wh);
     req.timestamp = transaction->get_start_energy_wh()->timestamp;
     const auto message_id = this->message_queue->createMessageId();
+
+    this->database_handler->insert_transaction(
+        transaction->get_session_id(), transaction->get_internal_transaction_id(), req.connectorId, req.idTag.get(),
+        req.timestamp, req.meterStart, false, transaction->get_reservation_id(), message_id);
+    this->transaction_handler->add_transaction(transaction);
+    this->connectors.at(req.connectorId)->transaction = transaction;
+
     ocpp::Call<StartTransactionRequest> call(req, message_id);
 
     if (transaction->get_reservation_id()) {
@@ -3303,19 +3403,14 @@ void ChargePointImpl::on_transaction_started(const int32_t& connector, const std
         }
     });
     meter_values_sample_timer->interval(std::chrono::seconds(this->configuration->getMeterValueSampleInterval()));
-    std::shared_ptr<Transaction> transaction =
-        std::make_shared<Transaction>(connector, session_id, CiString<20>(id_token), meter_start, reservation_id,
-                                      timestamp, std::move(meter_values_sample_timer));
+    std::shared_ptr<Transaction> transaction = std::make_shared<Transaction>(
+        this->transaction_handler->get_negative_random_transaction_id(), connector, session_id, CiString<20>(id_token),
+        meter_start, reservation_id, timestamp, std::move(meter_values_sample_timer));
     if (signed_meter_value) {
         const auto meter_value =
             this->get_signed_meter_value(signed_meter_value.value(), ReadingContext::Transaction_Begin, timestamp);
         transaction->add_meter_value(meter_value);
     }
-
-    this->database_handler->insert_transaction(session_id, transaction->get_transaction_id(), connector, id_token,
-                                               timestamp.to_rfc3339(), meter_start, false, reservation_id);
-    this->transaction_handler->add_transaction(transaction);
-    this->connectors.at(connector)->transaction = transaction;
 
     this->start_transaction(transaction);
 }
@@ -3340,8 +3435,6 @@ void ChargePointImpl::on_transaction_stopped(const int32_t connector, const std:
 
     this->status->submit_event(connector, FSMEvent::TransactionStoppedAndUserActionRequired, ocpp::DateTime());
     this->stop_transaction(connector, reason, id_tag_end);
-    this->database_handler->update_transaction(session_id, energy_wh_import, timestamp.to_rfc3339(), id_tag_end,
-                                               reason);
     this->transaction_handler->remove_active_transaction(connector);
     this->smart_charging_handler->clear_all_profiles_with_filter(std::nullopt, connector, std::nullopt,
                                                                  ChargingProfilePurposeType::TxProfile, false);
@@ -3364,7 +3457,7 @@ void ChargePointImpl::stop_transaction(int32_t connector, Reason reason, std::op
     req.meterStop = std::round(energyWhStamped->energy_Wh);
     req.timestamp = energyWhStamped->timestamp;
     req.reason.emplace(reason);
-    req.transactionId = transaction->get_transaction_id();
+    req.transactionId = transaction->get_transaction_id().value_or(transaction->get_internal_transaction_id());
 
     if (id_tag_end) {
         req.idTag.emplace(id_tag_end.value());
@@ -3384,12 +3477,16 @@ void ChargePointImpl::stop_transaction(int32_t connector, Reason reason, std::op
     }
 
     if (this->transaction_stopped_callback != nullptr) {
-        this->transaction_stopped_callback(connector, transaction->get_session_id(), transaction->get_transaction_id());
+        this->transaction_stopped_callback(
+            connector, transaction->get_session_id(),
+            transaction->get_transaction_id().value_or(transaction->get_internal_transaction_id()));
     }
 
     transaction->set_finished();
     transaction->set_stop_transaction_message_id(message_id.get());
     this->transaction_handler->add_stopped_transaction(transaction->get_connector());
+    this->database_handler->update_transaction(transaction->get_session_id(), req.meterStop, req.timestamp.to_rfc3339(),
+                                               id_tag_end, reason, message_id.get());
 }
 
 std::vector<Measurand> ChargePointImpl::get_measurands_vec(const std::string& measurands_csv) {

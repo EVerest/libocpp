@@ -12,7 +12,6 @@ target_sources(ocpp
     PRIVATE
         ocpp/common/call_types.cpp
         ocpp/common/charging_station_base.cpp
-        ocpp/common/database_handler_base.cpp
         ocpp/common/message_queue.cpp
         ocpp/common/ocpp_logging.cpp
         ocpp/common/schemas.cpp
@@ -20,6 +19,9 @@ target_sources(ocpp
         ocpp/common/utils.cpp
         ocpp/common/evse_security_impl.cpp
         ocpp/common/evse_security.cpp
+        ocpp/common/database/database_connection.cpp
+        ocpp/common/database/database_handler_common.cpp
+        ocpp/common/database/sqlite_statement.cpp
         ocpp/v16/charge_point.cpp
         ocpp/v16/database_handler.cpp
         ocpp/v16/charge_point_impl.cpp
@@ -54,7 +56,7 @@ add_subdirectory(ocpp/v16/messages)
 add_subdirectory(ocpp/v201/messages)
 
 option(LIBOCPP_USE_BOOST_FILESYSTEM "Usage of boost/filesystem.hpp instead of std::filesystem" OFF)
-option(LIBOCPP_ENABLE_LIBWEBSOCKETS "Usage of libwebsockets instead of websockets++" OFF)
+option(LIBOCPP_ENABLE_DEPRECATED_WEBSOCKETPP "Usage of deprecated websocket++ instead of libwebsockets" OFF)
 
 target_include_directories(ocpp
     PUBLIC
@@ -108,10 +110,10 @@ endif()
  
 target_link_libraries(ocpp
     PUBLIC
-        everest::timer
-        websocketpp::websocketpp
+        everest::timer        
         nlohmann_json_schema_validator
         everest::evse_security
+        websocketpp::websocketpp
     PRIVATE
         OpenSSL::SSL
         OpenSSL::Crypto
@@ -122,15 +124,15 @@ target_link_libraries(ocpp
         date::date-tz
 )
 
-if(LIBOCPP_ENABLE_LIBWEBSOCKETS)
-    find_package(libwebsockets REQUIRED)
-    target_link_libraries(ocpp
-    PUBLIC
-        websockets_shared
-    )
+target_link_libraries(ocpp
+PUBLIC
+    websockets_shared
+)
+
+if(LIBOCPP_ENABLE_DEPRECATED_WEBSOCKETPP)
     target_compile_definitions(ocpp
         PRIVATE
-            LIBOCPP_ENABLE_LIBWEBSOCKETS
+            LIBOCPP_ENABLE_DEPRECATED_WEBSOCKETPP
     )
 endif()
 

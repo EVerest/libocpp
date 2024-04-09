@@ -23,6 +23,8 @@
 
 namespace ocpp::v201 {
 
+static const int DEFAULT_EVSE_ID = 1;
+
 class ChargepointTestFixtureV201 : public testing::Test {
 protected:
     void SetUp() override {
@@ -175,7 +177,7 @@ protected:
     }
 
     SmartChargingHandler create_smart_charging_handler() {
-        return SmartChargingHandler();
+        return SmartChargingHandler(evses);
     }
 
     std::string uuid() {
@@ -196,7 +198,7 @@ protected:
     }
 
     // Default values used within the tests
-    std::map<int32_t, std::unique_ptr<Evse>> evses;
+    std::map<int32_t, std::unique_ptr<EvseInterface>> evses;
     std::shared_ptr<DatabaseHandler> database_handler;
 
     const int evse_id = 1;
@@ -420,6 +422,17 @@ TEST_F(ChargepointTestFixtureV201,
     auto sut = handler.validate_profile_schedules(profile);
 
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::ChargingProfileExtraneousStartSchedule));
+}
+
+TEST_F(ChargepointTestFixtureV201, K01FR28_WhenEvseDoesNotExistThenReject) {
+    auto sut = handler.validate_evse_exists(DEFAULT_EVSE_ID);
+    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::EvseDoesNotExist));
+}
+
+TEST_F(ChargepointTestFixtureV201, K01FR28_WhenEvseDoesExistThenAccept) {
+    create_evse_with_id(DEFAULT_EVSE_ID);
+    auto sut = handler.validate_evse_exists(DEFAULT_EVSE_ID);
+    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::Valid));
 }
 
 } // namespace ocpp::v201
