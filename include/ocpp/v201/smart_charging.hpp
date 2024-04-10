@@ -30,6 +30,7 @@ enum class ProfileValidationResultEnum {
     ChargingSchedulePeriodsOutOfOrder,
     ChargingSchedulePeriodInvalidPhaseToUse,
     ChargingStationMaxProfileCannotBeRelative,
+    ChargingStationMaxProfileGreaterThanZero,
 };
 
 /// \brief This class handles and maintains incoming ChargingProfiles and contains the logic
@@ -54,7 +55,8 @@ public:
     /// \brief validates requirements that apply only to the ChargingStationMaxProfile \p profile
     /// according to the specification
     ///
-    ProfileValidationResultEnum validate_charge_point_max_profile(const ChargingProfile& profile) const;
+    ProfileValidationResultEnum validate_charge_point_max_profile(const ChargingProfile& profile,
+                                                                  EvseInterface& evse) const;
 
     ///
     /// \brief validates the given \p profile according to the specification

@@ -23,6 +23,7 @@
 
 namespace ocpp::v201 {
 
+static const int MAX_PROFILE_EVSE_ID = 0;
 static const int DEFAULT_EVSE_ID = 1;
 
 class ChargepointTestFixtureV201 : public testing::Test {
@@ -340,52 +341,51 @@ TEST_F(ChargepointTestFixtureV201, K01FR35_IfChargingSchedulePeriodsAreNotInChon
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::ChargingSchedulePeriodsOutOfOrder));
 }
 
-TEST_F(ChargepointTestFixtureV201, ValidateChargingStationMaxProfile_NotChargingStationMaxProfile_Invalid) {
-    const int MAX_PROFILE_EVSE = 0;
-    create_evse_with_id(MAX_PROFILE_EVSE);
+TEST_F(ChargepointTestFixtureV201, K01_ValidateChargingStationMaxProfile_NotChargingStationMaxProfile_Invalid) {
+    create_evse_with_id(MAX_PROFILE_EVSE_ID);
     auto periods = create_charging_schedule_periods({0, 2, 1});
     auto profile = create_tx_profile(create_charge_schedule(ChargingRateUnitEnum::A, periods), uuid());
 
-    auto sut = handler.validate_charge_point_max_profile(profile);
+    auto sut = handler.validate_charge_point_max_profile(profile, *evses[MAX_PROFILE_EVSE_ID]);
 
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::InvalidProfileType));
 }
 
 TEST_F(ChargepointTestFixtureV201, K01FR38_ChargingProfilePurposeIsChargingStationMaxProfile_KindIsAbsolute_Valid) {
-    create_evse_with_id(evse_id);
+    create_evse_with_id(MAX_PROFILE_EVSE_ID);
     std::string same_transaction_id = uuid();
 
-    open_evse_transaction(evse_id, same_transaction_id);
+    open_evse_transaction(MAX_PROFILE_EVSE_ID, same_transaction_id);
     auto profile =
         create_charging_station_max_profile(create_charge_schedule(ChargingRateUnitEnum::A), same_transaction_id, 1);
 
-    auto sut = handler.validate_charge_point_max_profile(profile);
+    auto sut = handler.validate_charge_point_max_profile(profile, *evses[MAX_PROFILE_EVSE_ID]);
 
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::Valid));
 }
 
 TEST_F(ChargepointTestFixtureV201, K01FR38_ChargingProfilePurposeIsChargingStationMaxProfile_KindIsRecurring_Valid) {
-    create_evse_with_id(evse_id);
+    create_evse_with_id(MAX_PROFILE_EVSE_ID);
     std::string same_transaction_id = uuid();
 
-    open_evse_transaction(evse_id, same_transaction_id);
+    open_evse_transaction(MAX_PROFILE_EVSE_ID, same_transaction_id);
     auto profile = create_charging_station_max_profile(create_charge_schedule(ChargingRateUnitEnum::A),
                                                        same_transaction_id, 1, ChargingProfileKindEnum::Recurring);
 
-    auto sut = handler.validate_charge_point_max_profile(profile);
+    auto sut = handler.validate_charge_point_max_profile(profile, *evses[MAX_PROFILE_EVSE_ID]);
 
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::Valid));
 }
 
 TEST_F(ChargepointTestFixtureV201, K01FR38_ChargingProfilePurposeIsChargingStationMaxProfile_KindIsRelative_Invalid) {
-    create_evse_with_id(evse_id);
+    create_evse_with_id(MAX_PROFILE_EVSE_ID);
     std::string same_transaction_id = uuid();
 
-    open_evse_transaction(evse_id, same_transaction_id);
+    open_evse_transaction(MAX_PROFILE_EVSE_ID, same_transaction_id);
     auto profile = create_charging_station_max_profile(create_charge_schedule(ChargingRateUnitEnum::A),
                                                        same_transaction_id, 1, ChargingProfileKindEnum::Relative);
 
-    auto sut = handler.validate_charge_point_max_profile(profile);
+    auto sut = handler.validate_charge_point_max_profile(profile, *evses[MAX_PROFILE_EVSE_ID]);
 
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::ChargingStationMaxProfileCannotBeRelative));
 }

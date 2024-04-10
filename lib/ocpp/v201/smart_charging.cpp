@@ -21,10 +21,14 @@ ProfileValidationResultEnum SmartChargingHandler::validate_evse_exists(int32_t e
                                               : ProfileValidationResultEnum::Valid;
 }
 
-ProfileValidationResultEnum
-SmartChargingHandler::validate_charge_point_max_profile(const ChargingProfile& profile) const {
+ProfileValidationResultEnum SmartChargingHandler::validate_charge_point_max_profile(const ChargingProfile& profile,
+                                                                                    EvseInterface& evse) const {
     if (profile.chargingProfilePurpose != ChargingProfilePurposeEnum::ChargingStationMaxProfile) {
         return ProfileValidationResultEnum::InvalidProfileType;
+    }
+    int32_t evseId = evse.get_evse_info().id;
+    if (evseId > 0) {
+        return ProfileValidationResultEnum::ChargingStationMaxProfileGreaterThanZero;
     }
 
     if (profile.chargingProfileKind == ChargingProfileKindEnum::Relative) {
