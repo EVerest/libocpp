@@ -174,7 +174,7 @@ bool DatabaseSchemaUpdater::apply_migration_files(const fs::path& migration_file
         this->database->open_connection();
         current_version = this->get_user_version();
         EVLOG_info << "Target version: " << target_schema_version << ", current version: " << current_version;
-    } catch (std::runtime_error e) {
+    } catch (std::runtime_error& e) {
         EVLOG_error << "Failure during migration file apply: " << e.what();
         return false;
     }
@@ -217,7 +217,7 @@ bool DatabaseSchemaUpdater::apply_migration_files(const fs::path& migration_file
 
         this->set_user_version(target_schema_version);
         this->database->commit_transaction();
-    } catch (std::exception e) {
+    } catch (std::exception& e) {
         this->database->rollback_transaction();
         this->database->close_connection();
         EVLOG_error << "Failure during migration file apply: " << e.what();
