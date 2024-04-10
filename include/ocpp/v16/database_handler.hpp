@@ -7,7 +7,7 @@
 #include <fstream>
 #include <iostream>
 
-#include <ocpp/common/database_handler_base.hpp>
+#include <ocpp/common/database/database_handler_common.hpp>
 #include <ocpp/common/schemas.hpp>
 #include <ocpp/common/support_older_cpp_versions.hpp>
 #include <ocpp/common/types.hpp>
@@ -29,6 +29,8 @@ struct TransactionEntry {
     int32_t meter_last;
     std::string meter_last_time;
     std::string last_update;
+    std::string start_transaction_message_id;
+    std::optional<std::string> stop_transaction_message_id;
     std::optional<int32_t> reservation_id = std::nullopt;
     std::optional<std::string> parent_id_tag = std::nullopt;
     std::optional<int32_t> meter_stop = std::nullopt;
@@ -38,30 +40,25 @@ struct TransactionEntry {
 };
 
 /// \brief This class handles the connection and operations of the SQLite database
-class DatabaseHandler : public ocpp::common::DatabaseHandlerBase {
+class DatabaseHandler : public ocpp::common::DatabaseHandlerCommon {
 private:
-    fs::path db_path;          // directory where the database file is located
     fs::path init_script_path; // full path of init sql script
+    const int32_t number_of_connectors;
 
-    void run_sql_init();
-    bool clear_table(const std::string& table_name);
-    void init_connector_table(int32_t number_of_connectors);
+    // Runs initialization script and initializes the CONNECTORS and AUTH_LIST_VERSION table.
+    void init_sql() override;
+    void init_connector_table();
 
 public:
-    DatabaseHandler(const std::string& chargepoint_id, const fs::path& database_path, const fs::path& init_script_path);
-
-    /// \brief Opens the database connection, runs initialization script and initializes the CONNECTORS and
-    /// AUTH_LIST_VERSION table.
-    void open_db_connection(int32_t number_of_connectors);
-
-    /// \brief Closes the database connection.
-    void close_db_connection();
+    DatabaseHandler(std::unique_ptr<common::DatabaseConnectionInterface> database, const fs::path& init_script_path,
+                    int32_t number_of_connectors);
 
     // transactions
     /// \brief Inserts a transaction with the given parameter to the TRANSACTIONS table.
     void insert_transaction(const std::string& session_id, const int32_t transaction_id, const int32_t connector,
                             const std::string& id_tag_start, const std::string& time_start, const int32_t meter_start,
-                            const bool csms_ack, const std::optional<int32_t> reservation_id);
+                            const bool csms_ack, const std::optional<int32_t> reservation_id,
+                            const std::string& start_transaction_message_id);
 
     /// \brief Updates the given parameters for the transaction with the given \p session_id in the TRANSACTIONS table.
     void update_transaction(const std::string& session_id, int32_t transaction_id,
@@ -69,7 +66,8 @@ public:
 
     /// \brief Updates the given parameters for the transaction with the given \p session_id in the TRANSACTIONS table.
     void update_transaction(const std::string& session_id, int32_t meter_stop, const std::string& time_end,
-                            std::optional<CiString<20>> id_tag_end, std::optional<v16::Reason> stop_reason);
+                            std::optional<CiString<20>> id_tag_end, std::optional<v16::Reason> stop_reason,
+                            const std::string& stop_transaction_message_id);
 
     /// \brief Updates the CSMS_ACK column for the transaction with the given \p transaction_id in the TRANSACTIONS
     /// table

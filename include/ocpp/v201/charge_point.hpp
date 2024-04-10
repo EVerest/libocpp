@@ -187,7 +187,7 @@ class ChargePoint : ocpp::ChargingStationBase {
 
 private:
     // reference to evses
-    std::map<int32_t, std::unique_ptr<Evse>> evses;
+    std::map<int32_t, std::unique_ptr<EvseInterface>> evses;
 
     // utility
     std::unique_ptr<MessageQueue<v201::MessageType>> message_queue;
@@ -269,6 +269,9 @@ private:
     void init_certificate_expiration_check_timers();
     void scheduled_check_client_certificate_expiration();
     void scheduled_check_v2g_certificate_expiration();
+    void update_dm_availability_state(const int32_t evse_id, const int32_t connector_id,
+                                      const ConnectorStatusEnum status);
+    void update_dm_evse_power(const int32_t evse_id, const MeterValue& meter_value);
 
     /// \brief Gets the configured NetworkConnectionProfile based on the given \p configuration_slot . The
     /// central system uri ofthe connection options will not contain ws:// or wss:// because this method removes it if
@@ -355,7 +358,7 @@ private:
     ///         If id_token is equal to reserved id_token or group_id_token is equal, return false.
     ///         If there is no reservation, return false.
     ///
-    bool is_evse_reserved_for_other(const std::unique_ptr<Evse>& evse, const IdToken& id_token,
+    bool is_evse_reserved_for_other(const std::unique_ptr<EvseInterface>& evse, const IdToken& id_token,
                                     const std::optional<IdToken>& group_id_token) const;
 
     ///
@@ -364,7 +367,7 @@ private:
     /// \param evse Evse to check.
     /// \return True if at least one connector is not faulted or unavailable.
     ///
-    bool is_evse_connector_available(const std::unique_ptr<Evse>& evse) const;
+    bool is_evse_connector_available(const std::unique_ptr<EvseInterface>& evse) const;
 
     ///
     /// \brief Set all connectors of a given evse to unavailable.
@@ -372,7 +375,7 @@ private:
     /// \param persist  True if unavailability should persist. If it is set to false, there will be a check per
     ///                 connector if it was already set to true and if that is the case, it will be persisted anyway.
     ///
-    void set_evse_connectors_unavailable(const std::unique_ptr<Evse>& evse, bool persist);
+    void set_evse_connectors_unavailable(const std::unique_ptr<EvseInterface>& evse, bool persist);
 
     /// \brief Get the value optional offline flag
     /// \return true if the charge point is offline. std::nullopt if it is online;
@@ -463,7 +466,7 @@ private:
     void handle_get_local_authorization_list_version_req(Call<GetLocalListVersionRequest> call);
 
     // Functional Block E: Transaction
-    void handle_start_transaction_event_response(const EnhancedMessage<v201::MessageType>& message);
+    void handle_transaction_event_response(const EnhancedMessage<v201::MessageType>& message);
     void handle_get_transaction_status(const Call<GetTransactionStatusRequest> call);
 
     // Function Block F: Remote transaction control
@@ -527,7 +530,7 @@ private:
     bool are_all_connectors_effectively_inoperative();
 
     /// \brief Returns a pointer to the EVSE with ID \param evse_id
-    Evse* get_evse(int32_t evse_id);
+    EvseInterface* get_evse(int32_t evse_id);
 
     /// \brief Returns a pointer to the connector with ID \param connector_id in the EVSE with ID \param evse_id
     Connector* get_connector(int32_t evse_id, int32_t connector_id);
@@ -618,7 +621,7 @@ public:
     /// \param charging_state   The new charging state
     void on_transaction_started(const int32_t evse_id, const int32_t connector_id, const std::string& session_id,
                                 const DateTime& timestamp, const ocpp::v201::TriggerReasonEnum trigger_reason,
-                                const MeterValue& meter_start, const IdToken& id_token,
+                                const MeterValue& meter_start, const std::optional<IdToken>& id_token,
                                 const std::optional<IdToken>& group_id_token,
                                 const std::optional<int32_t>& reservation_id,
                                 const std::optional<int32_t>& remote_start_id, const ChargingStateEnum charging_state);
@@ -639,6 +642,9 @@ public:
     /// \param evse_id
     /// \param connector_id
     void on_session_finished(const int32_t evse_id, const int32_t connector_id);
+
+    /// \brief Event handler that should be called when the given \p id_token is authorized
+    void on_authorized(const int32_t evse_id, const int32_t connector_id, const IdToken& id_token);
 
     /// \brief Event handler that should be called when a new meter value is present
     /// \param evse_id
@@ -666,13 +672,10 @@ public:
     /// \brief Event handler that will update the charging state internally when it has been changed.
     /// \param evse_id          The evse id of which the charging state has changed.
     /// \param charging_state   The new charging state.
+    /// \param trigger_reason   The trigger reason of the event. Defaults to ChargingStateChanged
     /// \return True on success. False if evse id does not exist.
-    bool on_charging_state_changed(const uint32_t evse_id, ChargingStateEnum charging_state);
-
-    /// \brief Generates OCSP request data from a (contract) certificate chain
-    /// \param certificate
-    /// \return vector with OCSP request data
-    std::vector<OCSPRequestData> generate_mo_ocsp_data(const CiString<5500>& certificate);
+    bool on_charging_state_changed(const uint32_t evse_id, const ChargingStateEnum charging_state,
+                                   const TriggerReasonEnum trigger_reason = TriggerReasonEnum::ChargingStateChanged);
 
     /// \brief Validates provided \p id_token \p certificate and \p ocsp_request_data using CSMS, AuthCache or AuthList
     /// \param id_token

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.14)
 
 project(ocpp
-    VERSION 0.9.8
+    VERSION 0.10.0
     DESCRIPTION "A C++ implementation of the Open Charge Point Protocol"
     LANGUAGES CXX
 )
@@ -41,6 +41,7 @@ else()
     find_package(nlohmann_json REQUIRED)
     find_package(nlohmann_json_schema_validator REQUIRED)
     find_package(websocketpp REQUIRED)
+    find_package(libwebsockets REQUIRED)
     
     find_package(fsm REQUIRED)
     find_package(everest-timer REQUIRED)
