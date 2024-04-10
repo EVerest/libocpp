@@ -370,8 +370,6 @@ TEST_F(ChargepointTestFixtureV201, K01_ValidateChargingStationMaxProfile_NotChar
 
     auto sut = handler.validate_charge_point_max_profile(profile, *evses[STATION_WIDE_ID]);
 
-    auto sut = handler.validate_charge_point_max_profile(profile);
-
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::InvalidProfileType));
 }
 
