@@ -191,7 +191,7 @@ bool DatabaseSchemaUpdater::apply_migration_files(const fs::path& migration_file
         direction = Direction::Down;
     }
 
-    auto list = get_migration_file_sequence(migration_file_directory, direction, current_version, target_version);
+    auto list = get_migration_file_sequence(migration_file_directory, direction, current_version, target_schema_version);
 
     if (!list.has_value()) {
         EVLOG_error << "Missing migration files in sequence, no actions performed";
