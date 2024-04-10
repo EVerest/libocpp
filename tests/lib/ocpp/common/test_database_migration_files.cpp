@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
 
-#include "test_database_migration_files.h"
+#include "test_database_migration_files.hpp"
 
 TEST_P(DatabaseMigrationFilesTest, ApplyMigrationFilesStepByStep) {
     DatabaseSchemaUpdater updater{this->database.get()};

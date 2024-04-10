@@ -5,24 +5,19 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <ocpp/common/database/database_schema_updater.hpp>
+#include <ocpp/common/database/database_connection.hpp>
 
 using namespace ocpp;
 using namespace ocpp::common;
 using namespace std::string_literals;
 
-class DatabaseMigrationFilesTest : public ::testing::TestWithParam<std::tuple<std::filesystem::path, uint32_t>> {
+class DatabaseTestingUtils : public ::testing::Test {
 
 protected:
-    std::shared_ptr<DatabaseConnectionInterface> database;
-    const std::filesystem::path migration_files_path;
-    const uint32_t max_version;
+    std::unique_ptr<DatabaseConnectionInterface> database;
 
 public:
-    DatabaseMigrationFilesTest() :
-        database(std::make_unique<DatabaseConnection>("file::memory:?cache=shared")),
-        migration_files_path(std::get<std::filesystem::path>(GetParam())),
-        max_version(std::get<uint32_t>(GetParam())) {
+    DatabaseTestingUtils() : database(std::make_unique<DatabaseConnection>("file::memory:?cache=shared")) {
         EXPECT_EQ(this->database->open_connection(), true);
     }
 
@@ -31,6 +26,10 @@ public:
 
         EXPECT_EQ(statement->step(), SQLITE_ROW);
         EXPECT_EQ(statement->column_int(0), expected_version);
+    }
+
+    void SetUserVersion(uint32_t user_version) {
+        EXPECT_EQ(this->database->execute_statement("PRAGMA user_version = "s + std::to_string(user_version)), true);
     }
 
     bool DoesTableExist(std::string_view table) {

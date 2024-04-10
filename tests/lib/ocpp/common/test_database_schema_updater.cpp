@@ -1,14 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
 
+#include "database_testing_utils.hpp"
 #include <fstream>
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
 #include <ocpp/common/database/database_schema_updater.hpp>
-
-using namespace ocpp;
-using namespace ocpp::common;
-using namespace std::string_literals;
 
 struct MigrationFile {
     std::string_view name;
@@ -47,15 +42,14 @@ static constexpr std::string_view table2{"TEST_TABLE2"};
 static constexpr std::string_view table3{"TEST_TABLE3"};
 static constexpr std::string_view table4{"TEST_TABLE3"};
 
-class DatabaseSchemaUpdaterTest : public ::testing::Test {
+class DatabaseSchemaUpdaterTest : public DatabaseTestingUtils {
 
 protected:
-    std::shared_ptr<DatabaseConnectionInterface> database;
     std::filesystem::path migration_files_path;
 
 public:
     DatabaseSchemaUpdaterTest() :
-        database(std::make_unique<DatabaseConnection>("file::memory:?cache=shared")),
+        DatabaseTestingUtils(),
         migration_files_path(std::filesystem::temp_directory_path() / "database_schema_test" / "core_migrations") {
         std::filesystem::create_directories(migration_files_path);
         EXPECT_EQ(this->database->open_connection(), true);
@@ -68,21 +62,6 @@ public:
     void WriteMigrationFile(const MigrationFile& file) {
         std::ofstream stream{this->migration_files_path / file.name};
         stream << file.content;
-    }
-
-    void ExpectUserVersion(uint32_t expected_version) {
-        auto statement = this->database->new_statement("PRAGMA user_version");
-
-        EXPECT_EQ(statement->step(), SQLITE_ROW);
-        EXPECT_EQ(statement->column_int(0), expected_version);
-    }
-
-    void SetUserVersion(uint32_t user_version) {
-        EXPECT_EQ(this->database->execute_statement("PRAGMA user_version = "s + std::to_string(user_version)), true);
-    }
-
-    bool DoesTableExist(std::string_view table) {
-        return this->database->clear_table(table.data());
     }
 };
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
 
-#include <lib/ocpp/common/test_database_migration_files.h>
+#include <lib/ocpp/common/test_database_migration_files.hpp>
 
 // Apply generic test cases to v201 migrations
 INSTANTIATE_TEST_SUITE_P(V201, DatabaseMigrationFilesTest,
