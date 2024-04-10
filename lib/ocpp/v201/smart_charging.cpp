@@ -28,7 +28,7 @@ ProfileValidationResultEnum SmartChargingHandler::validate_charge_point_max_prof
     }
     int32_t evseId = evse.get_evse_info().id;
     if (evseId > 0) {
-        return ProfileValidationResultEnum::ChargingStationMaxProfileGreaterThanZero;
+        return ProfileValidationResultEnum::ChargingStationMaxProfileEvseIdGreaterThanZero;
     }
 
     if (profile.chargingProfileKind == ChargingProfileKindEnum::Relative) {

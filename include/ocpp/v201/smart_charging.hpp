@@ -30,7 +30,7 @@ enum class ProfileValidationResultEnum {
     ChargingSchedulePeriodsOutOfOrder,
     ChargingSchedulePeriodInvalidPhaseToUse,
     ChargingStationMaxProfileCannotBeRelative,
-    ChargingStationMaxProfileGreaterThanZero,
+    ChargingStationMaxProfileEvseIdGreaterThanZero,
 };
 
 /// \brief This class handles and maintains incoming ChargingProfiles and contains the logic
