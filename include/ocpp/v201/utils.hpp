@@ -61,8 +61,8 @@ std::string generate_token_hash(const IdToken& token);
 /// \return DateTime type timestamp
 ocpp::DateTime align_timestamp(const DateTime timestamp, std::chrono::seconds align_interval);
 
-/// \brief Returns the total Power_Active_Import value from the \p meter_value or 0 if it is not present
-float get_total_power_active_import(const MeterValue& meter_value);
+/// \brief Returns the total Power_Active_Import value from the \p meter_value or std::nullopt if it is not present
+std::optional<float> get_total_power_active_import(const MeterValue& meter_value);
 
 } // namespace utils
 } // namespace v201

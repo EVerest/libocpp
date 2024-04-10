@@ -3191,11 +3191,18 @@ void ChargePoint::update_dm_availability_state(const int32_t evse_id, const int3
 void ChargePoint::update_dm_evse_power(const int32_t evse_id, const MeterValue& meter_value) {
     ComponentVariable evse_power_cv =
         EvseComponentVariables::get_component_variable(evse_id, EvseComponentVariables::Power);
-    if (evse_power_cv.variable.has_value()) {
-        this->device_model->set_read_only_value(evse_power_cv.component, evse_power_cv.variable.value(),
-                                                AttributeEnum::Actual,
-                                                std::to_string(utils::get_total_power_active_import(meter_value)));
+
+    if (!evse_power_cv.variable.has_value()) {
+        return;
     }
+
+    const auto power = utils::get_total_power_active_import(meter_value);
+    if (!power.has_value()) {
+        return;
+    }
+
+    this->device_model->set_read_only_value(evse_power_cv.component, evse_power_cv.variable.value(),
+                                            AttributeEnum::Actual, std::to_string(power.value()));
 }
 
 void ChargePoint::set_cs_operative_status(OperationalStatusEnum new_status, bool persist) {
