@@ -31,6 +31,7 @@ enum class ProfileValidationResultEnum {
     ChargingSchedulePeriodInvalidPhaseToUse,
     ChargingStationMaxProfileCannotBeRelative,
     ChargingStationMaxProfileEvseIdGreaterThanZero,
+    DuplicateTxDefaultProfileFound
 };
 
 /// \brief This class handles and maintains incoming ChargingProfiles and contains the logic
@@ -41,7 +42,8 @@ private:
 
     std::shared_ptr<ocpp::v201::DatabaseHandler> database_handler;
     // cppcheck-suppress unusedStructMember
-    std::vector<ChargingProfile> charging_profiles;
+    std::map<int32_t, std::vector<ChargingProfile>> charging_profiles;
+    std::vector<ChargingProfile> station_wide_charging_profiles;
 
 public:
     explicit SmartChargingHandler(std::map<int32_t, std::unique_ptr<EvseInterface>>& evses);
@@ -57,6 +59,10 @@ public:
     ///
     ProfileValidationResultEnum validate_charge_point_max_profile(const ChargingProfile& profile,
                                                                   EvseInterface& evse) const;
+  
+    /// \brief validates the given \p profile and associated \p evse_id according to the specification
+    ///
+    ProfileValidationResultEnum validate_tx_default_profile(const ChargingProfile& profile, int32_t evse_id) const;
 
     ///
     /// \brief validates the given \p profile according to the specification
@@ -66,8 +72,14 @@ public:
     /// \brief validates that the given \p profile has valid charging schedules
     ProfileValidationResultEnum validate_profile_schedules(const ChargingProfile& profile) const;
 
-    /// \brief Adds a given \p profile to our stored list of profiles
-    void add_profile(const ChargingProfile& profile);
+    ///
+    /// \brief Adds a given \p profile and associated \p evse_id to our stored list of profiles
+    ///
+    void add_profile(int32_t evse_id, ChargingProfile& profile);
+
+private:
+    std::vector<ChargingProfile> get_evse_specific_tx_default_profiles() const;
+    std::vector<ChargingProfile> get_station_wide_tx_default_profiles() const;
 };
 
 } // namespace ocpp::v201
