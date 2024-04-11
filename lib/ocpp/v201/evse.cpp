@@ -60,8 +60,14 @@ Evse::Evse(const int32_t evse_id, const int32_t number_of_connectors, DeviceMode
     }
 }
 
-EVSE Evse::get_evse_info() {
-    EVSE evse{evse_id};
+EVSE Evse::get_evse_info(const std::optional<int32_t> connector_id) {
+    if (connector_id.has_value() and
+        (connector_id.value() <= 0 || connector_id.value() > this->get_number_of_connectors())) {
+        std::stringstream err_msg;
+        err_msg << "ConnectorID " << connector_id.value() << " out of bounds for EVSE " << this->evse_id;
+        throw std::logic_error(err_msg.str());
+    }
+    EVSE evse{evse_id, std::nullopt, connector_id};
     return evse;
 }
 

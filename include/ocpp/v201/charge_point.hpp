@@ -666,10 +666,12 @@ public:
 
     /// \brief Event handler that will update the charging state internally when it has been changed.
     /// \param evse_id          The evse id of which the charging state has changed.
+    /// \param connector_id     The connector id of which the charging state has changed.
     /// \param charging_state   The new charging state.
     /// \param trigger_reason   The trigger reason of the event. Defaults to ChargingStateChanged
     /// \return True on success. False if evse id does not exist.
-    bool on_charging_state_changed(const uint32_t evse_id, const ChargingStateEnum charging_state,
+    bool on_charging_state_changed(const uint32_t evse_id, const int32_t connector_id,
+                                   const ChargingStateEnum charging_state,
                                    const TriggerReasonEnum trigger_reason = TriggerReasonEnum::ChargingStateChanged);
 
     /// \brief Validates provided \p id_token \p certificate and \p ocsp_request_data using CSMS, AuthCache or AuthList

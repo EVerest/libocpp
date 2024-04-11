@@ -545,7 +545,8 @@ void ChargePoint::on_reserved(const int32_t evse_id, const int32_t connector_id)
     this->evses.at(evse_id)->submit_event(connector_id, ConnectorEvent::Reserve);
 }
 
-bool ChargePoint::on_charging_state_changed(const uint32_t evse_id, const ChargingStateEnum charging_state,
+bool ChargePoint::on_charging_state_changed(const uint32_t evse_id, const int32_t connector_id,
+                                            const ChargingStateEnum charging_state,
                                             const TriggerReasonEnum trigger_reason) {
     if (this->evses.find(static_cast<int32_t>(evse_id)) != this->evses.end()) {
         std::unique_ptr<EnhancedTransaction>& transaction =
@@ -557,7 +558,7 @@ bool ChargePoint::on_charging_state_changed(const uint32_t evse_id, const Chargi
                 transaction->chargingState = charging_state;
                 this->transaction_event_req(TransactionEventEnum::Updated, DateTime(), transaction->get_transaction(),
                                             trigger_reason, transaction->get_seq_no(), std::nullopt,
-                                            this->evses.at(static_cast<int32_t>(evse_id))->get_evse_info(),
+                                            this->evses.at(static_cast<int32_t>(evse_id))->get_evse_info(connector_id),
                                             std::nullopt, std::nullopt, std::nullopt, this->is_offline(), std::nullopt);
             }
             return true;

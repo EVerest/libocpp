@@ -23,8 +23,9 @@ public:
     virtual ~EvseInterface();
 
     /// \brief Returns an OCPP2.0.1 EVSE type
+    /// \param connector_id
     /// \return
-    virtual EVSE get_evse_info() = 0;
+    virtual EVSE get_evse_info(const std::optional<int32_t> connector_id = std::nullopt) = 0;
 
     /// \brief Returns the number of connectors of this EVSE
     /// \return
@@ -165,7 +166,7 @@ public:
                                   const std::optional<int32_t> reservation_id)>& transaction_meter_value_req,
          const std::function<void()> pause_charging_callback);
 
-    EVSE get_evse_info();
+    EVSE get_evse_info(const std::optional<int32_t> connector_id = std::nullopt);
 
     uint32_t get_number_of_connectors();
 
