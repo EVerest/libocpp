@@ -14,6 +14,8 @@ on:
         options:
           - 'ubuntu-22.04'
           - 'large-ubuntu-22.04-xxl'
+env:
+  build-kit-image: ghcr.io/everest/build-kit-alpine:feature/add-code-coverage
 jobs:
   lint:
     name: Lint
@@ -49,8 +51,8 @@ jobs:
           rsync -a source/.ci/build-kit/ scripts
       - name: Pull docker container
         run: |
-          docker pull --platform=linux/x86_64 --quiet ghcr.io/everest/build-kit-alpine:latest
-          docker image tag ghcr.io/everest/build-kit-alpine:latest build-kit
+          docker pull --platform=linux/x86_64 --quiet ${{ env.build-kit-image }}
+          docker image tag ${{ env.build-kit-image }} build-kit
       - name: Run install with tests
         run: |
           docker run \
