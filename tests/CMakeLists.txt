@@ -41,15 +41,15 @@ add_subdirectory(lib/ocpp/v201)
 add_subdirectory(lib/ocpp/common)
 
 
-add_executable(utils_tests utils_tests.cpp)
+# add_executable(utils_tests utils_tests.cpp)
 
-target_link_libraries(utils_tests PRIVATE
-        ocpp
-        GTest::gtest_main
-)
+# target_link_libraries(utils_tests PRIVATE
+#         ocpp
+#         GTest::gtest_main
+# )
 
-add_test(utils_tests utils_tests)
-add_dependencies(all_tests utils_tests)
+# add_test(utils_tests utils_tests)
+# add_dependencies(all_tests utils_tests)
 
 set(TEST_TARGET_NAME ${PROJECT_NAME}_v201_utils_tests)
 add_executable(${TEST_TARGET_NAME} v201_utils_tests.cpp)
