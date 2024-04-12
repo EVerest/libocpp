@@ -14,6 +14,8 @@
 
 #include <openssl/opensslv.h>
 #include <openssl/ssl.h>
+#include <openssl/x509v3.h>
+
 #define USING_OPENSSL_3 (OPENSSL_VERSION_NUMBER >= 0x30000000L)
 
 #if USING_OPENSSL_3
@@ -622,14 +624,14 @@ bool WebsocketTlsTPM::connect() {
     }
 
     // Bind reconnect callback
-    this->reconnect_callback = [this](const websocketpp::lib::error_code& ec) {
+    this->reconnect_callback = [this]() {
         EVLOG_info << "Reconnecting to TLS websocket at uri: " << this->connection_options.csms_uri.string()
                    << " with security profile: " << this->connection_options.security_profile;
 
         // close connection before reconnecting
         if (this->m_is_connected) {
             EVLOG_info << "Closing websocket connection before reconnecting";
-            this->close(websocketpp::close::status::abnormal_close, "Reconnect");
+            this->close(WebsocketCloseReason::AbnormalClose, "Reconnect");
         }
 
         this->connect();
@@ -680,7 +682,7 @@ void WebsocketTlsTPM::reconnect(std::error_code reason, long delay) {
 
     if (this->m_is_connected) {
         EVLOG_info << "Closing websocket connection before reconnecting";
-        this->close(websocketpp::close::status::abnormal_close, "Reconnect");
+        this->close(WebsocketCloseReason::AbnormalClose, "Reconnect");
     }
 
     EVLOG_info << "Reconnecting in: " << delay << "ms"
@@ -688,12 +690,11 @@ void WebsocketTlsTPM::reconnect(std::error_code reason, long delay) {
 
     {
         std::lock_guard<std::mutex> lk(this->reconnect_mutex);
-        this->reconnect_timer_tpm.timeout([this]() { this->reconnect_callback(websocketpp::lib::error_code()); },
-                                          std::chrono::milliseconds(delay));
+        this->reconnect_timer_tpm.timeout([this]() { this->reconnect_callback(); }, std::chrono::milliseconds(delay));
     }
 }
 
-void WebsocketTlsTPM::close(websocketpp::close::status::value code, const std::string& reason) {
+void WebsocketTlsTPM::close(WebsocketCloseReason code, const std::string& reason) {
     EVLOG_info << "Closing TLS TPM websocket with reason: " << reason;
 
     {
@@ -718,7 +719,7 @@ void WebsocketTlsTPM::close(websocketpp::close::status::value code, const std::s
     // Clear any irrelevant data after a DC
     recv_buffered_message.clear();
 
-    std::thread closing([this]() { this->closed_callback(websocketpp::close::status::normal); });
+    std::thread closing([this]() { this->closed_callback(WebsocketCloseReason::Normal); });
     closing.detach();
 }
 
@@ -750,7 +751,7 @@ void WebsocketTlsTPM::on_conn_close() {
     // Clear any irrelevant data after a DC
     recv_buffered_message.clear();
 
-    std::thread closing([this]() { this->closed_callback(websocketpp::close::status::normal); });
+    std::thread closing([this]() { this->closed_callback(WebsocketCloseReason::Normal); });
     closing.detach();
 }
 
@@ -775,7 +776,7 @@ void WebsocketTlsTPM::on_conn_fail() {
         this->connection_attempts += 1;
     } else {
         EVLOG_info << "Closed TLS websocket, reconnect attempts exhausted";
-        this->close(websocketpp::close::status::normal, "Connection failed");
+        this->close(WebsocketCloseReason::Normal, "Connection failed");
     }
 }
 

@@ -636,6 +636,41 @@ enum class MessageDirection {
     ChargingStationToCSMS
 };
 
+enum class ConnectionFailedReason {
+    InvalidCSMSCertificate = 0,
+};
+
+///
+/// \brief Reason why a websocket closes its connection
+///
+enum class WebsocketCloseReason : uint8_t {
+    /// Normal closure, meaning that the purpose for which the connection was
+    /// established has been fulfilled.
+    Normal = 1,
+    /// Close the connection with a forced TCP drop.
+    /**
+     * This special value requests that the WebSocket connection be closed by
+     * forcibly dropping the TCP connection. This will leave the other side of
+     * the connection with a broken connection and some expensive timeouts. this
+     * should not be done except in extreme cases or in cases of malicious
+     * remote endpoints.
+     */
+    ForceTcpDrop,
+    /// The endpoint was "going away", such as a server going down or a browser
+    /// navigating away from a page.
+    GoingAway,
+    /// A dummy value to indicate that the connection was closed abnormally.
+    /**
+     * In such a case there was no close frame to extract a value from. This
+     * value is illegal on the wire.
+     */
+    AbnormalClose,
+    /// Indicates that the service is restarted. A client may reconnect and if
+    /// if it chooses to do so, should reconnect using a randomized delay of
+    /// 5-30s
+    ServiceRestart
+};
+
 } // namespace ocpp
 
 #endif

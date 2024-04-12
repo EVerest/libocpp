@@ -41,7 +41,7 @@ public:
     void reconnect(std::error_code reason, long delay) override;
 
     /// \brief closes the websocket
-    void close(websocketpp::close::status::value code, const std::string& reason) override;
+    void close(WebsocketCloseReason code, const std::string& reason) override;
 
     /// \brief send a \p message over the websocket
     /// \returns true if the message was sent successfully
@@ -80,6 +80,8 @@ private:
 
 private:
     std::shared_ptr<EvseSecurity> evse_security;
+
+    std::function<void()> reconnect_callback;
 
     // Connection related data
     Everest::SteadyTimer reconnect_timer_tpm;

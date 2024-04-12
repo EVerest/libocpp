@@ -9,8 +9,9 @@
 #include <thread>
 
 #include <everest/timer.hpp>
-#include <websocketpp/client.hpp>
-#include <websocketpp/config/asio_client.hpp>
+
+// #include <websocketpp/client.hpp>
+// #include <websocketpp/config/asio_client.hpp>
 
 #include <ocpp/common/types.hpp>
 #include <ocpp/common/websocket/websocket_uri.hpp>
@@ -39,10 +40,6 @@ struct WebsocketConnectionOptions {
     bool verify_csms_allow_wildcards;
 };
 
-enum class ConnectionFailedReason {
-    InvalidCSMSCertificate = 0,
-};
-
 ///
 /// \brief contains a websocket abstraction
 ///
@@ -52,16 +49,14 @@ protected:
     WebsocketConnectionOptions connection_options;
     std::function<void(const int security_profile)> connected_callback;
     std::function<void()> disconnected_callback;
-    std::function<void(const websocketpp::close::status::value reason)> closed_callback;
+    std::function<void(const WebsocketCloseReason reason)> closed_callback;
     std::function<void(const std::string& message)> message_callback;
     std::function<void(ConnectionFailedReason)> connection_failed_callback;
-    websocketpp::lib::shared_ptr<boost::asio::steady_timer> reconnect_timer;
+    std::shared_ptr<boost::asio::steady_timer> reconnect_timer;
     std::unique_ptr<Everest::SteadyTimer> ping_timer;
-    websocketpp::connection_hdl handle;
     std::mutex reconnect_mutex;
     std::mutex connection_mutex;
     std::atomic_int reconnect_backoff_ms;
-    websocketpp::transport::timer_handler reconnect_callback;
     std::atomic_int connection_attempts;
     std::atomic_bool shutting_down;
     std::atomic_bool reconnecting;
@@ -87,7 +82,7 @@ protected:
     virtual void ping() = 0;
 
     /// \brief Called when a websocket pong timeout is received
-    void on_pong_timeout(websocketpp::connection_hdl hdl, std::string msg);
+    void on_pong_timeout(std::string msg);
 
 public:
     /// \brief Creates a new WebsocketBase object. The `connection_options` must be initialised with
@@ -107,13 +102,13 @@ public:
     virtual void reconnect(std::error_code reason, long delay) = 0;
 
     /// \brief disconnect the websocket
-    void disconnect(websocketpp::close::status::value code);
+    void disconnect(WebsocketCloseReason code);
 
     /// \brief indicates if the websocket is connected
     bool is_connected();
 
     /// \brief closes the websocket
-    virtual void close(websocketpp::close::status::value code, const std::string& reason) = 0;
+    virtual void close(WebsocketCloseReason code, const std::string& reason) = 0;
 
     /// \brief register a \p callback that is called when the websocket is connected successfully
     void register_connected_callback(const std::function<void(const int security_profile)>& callback);
@@ -123,7 +118,7 @@ public:
 
     /// \brief register a \p callback that is called when the websocket connection has been closed and will not attempt
     /// to reconnect
-    void register_closed_callback(const std::function<void(const websocketpp::close::status::value reason)>& callback);
+    void register_closed_callback(const std::function<void(const WebsocketCloseReason reason)>& callback);
 
     /// \brief register a \p callback that is called when the websocket receives a message
     void register_message_callback(const std::function<void(const std::string& message)>& callback);
