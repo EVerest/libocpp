@@ -14,9 +14,10 @@ cmake \
 ninja -j$(nproc) -C build install
 
 trap "cp build/Testing/Temporary/LastTest.log /ext/ctest-report" EXIT
-trap "cp build/lcov_coverage.info /ext/lcov_coverage.info" EXIT
 
 ninja -j$(nproc) -C build test
+
+trap "cp build/lcov_coverage.info /ext/lcov_coverage.info" EXIT
 
 ninja -j$(nproc) -C build lcov_coverage
 
