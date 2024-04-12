@@ -770,7 +770,7 @@ public:
     /// chargepoint
     /// \param callback
     void register_transaction_stopped_callback(
-        const std::function<void(const int32_t connector, const std::string& session_id, const int32_t transaction_id)>
+        const std::function<void(const int32_t connector, const std::string& session_id, const int32_t transaction_id)>&
             callback);
 
     /// \brief registers a \p callback function that is called when a StartTransaction.conf message is received by the
