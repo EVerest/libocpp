@@ -52,7 +52,7 @@ public:
         DatabaseTestingUtils(),
         migration_files_path(std::filesystem::temp_directory_path() / "database_schema_test" / "core_migrations") {
         std::filesystem::create_directories(migration_files_path);
-        EXPECT_EQ(this->database->open_connection(), true);
+        EXPECT_TRUE(this->database->open_connection());
     }
 
     ~DatabaseSchemaUpdaterTest() {
@@ -67,12 +67,12 @@ public:
 
 TEST_F(DatabaseSchemaUpdaterTest, FolderDoesNotExist) {
     DatabaseSchemaUpdater updater{this->database.get()};
-    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path / "invalid", 1), false);
+    EXPECT_FALSE(updater.apply_migration_files(this->migration_files_path / "invalid", 1));
 }
 
 TEST_F(DatabaseSchemaUpdaterTest, TargetVersionInvalid) {
     DatabaseSchemaUpdater updater{this->database.get()};
-    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 0), false);
+    EXPECT_FALSE(updater.apply_migration_files(this->migration_files_path, 0));
 }
 
 TEST_F(DatabaseSchemaUpdaterTest, ApplyInitialMigrationFile) {
@@ -81,10 +81,10 @@ TEST_F(DatabaseSchemaUpdaterTest, ApplyInitialMigrationFile) {
 
     DatabaseSchemaUpdater updater{this->database.get()};
 
-    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 1), true);
+    EXPECT_TRUE(updater.apply_migration_files(this->migration_files_path, 1));
 
     this->ExpectUserVersion(1);
-    EXPECT_EQ(this->DoesTableExist(table1), true);
+    EXPECT_TRUE(this->DoesTableExist(table1));
 }
 
 TEST_F(DatabaseSchemaUpdaterTest, ApplyInitialMigrationFileEmptyName) {
@@ -93,10 +93,10 @@ TEST_F(DatabaseSchemaUpdaterTest, ApplyInitialMigrationFileEmptyName) {
 
     DatabaseSchemaUpdater updater{this->database.get()};
 
-    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 1), true);
+    EXPECT_TRUE(updater.apply_migration_files(this->migration_files_path, 1));
 
     this->ExpectUserVersion(1);
-    EXPECT_EQ(this->DoesTableExist(table1), true);
+    EXPECT_TRUE(this->DoesTableExist(table1));
 }
 
 TEST_F(DatabaseSchemaUpdaterTest, ApplyInitialMigrationFileAlreadyUpToDate) {
@@ -106,10 +106,10 @@ TEST_F(DatabaseSchemaUpdaterTest, ApplyInitialMigrationFileAlreadyUpToDate) {
 
     DatabaseSchemaUpdater updater{this->database.get()};
 
-    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 1), true);
+    EXPECT_TRUE(updater.apply_migration_files(this->migration_files_path, 1));
 
     this->ExpectUserVersion(1);
-    EXPECT_EQ(this->DoesTableExist(table1), false); // Database was not changed
+    EXPECT_FALSE(this->DoesTableExist(table1)); // Database was not changed
 }
 
 TEST_F(DatabaseSchemaUpdaterTest, ApplyInitialMigrationFileVersionToHigh) {
@@ -119,10 +119,10 @@ TEST_F(DatabaseSchemaUpdaterTest, ApplyInitialMigrationFileVersionToHigh) {
 
     DatabaseSchemaUpdater updater{this->database.get()};
 
-    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 1), false);
+    EXPECT_FALSE(updater.apply_migration_files(this->migration_files_path, 1));
 
     this->ExpectUserVersion(2);
-    EXPECT_EQ(this->DoesTableExist(table1), false); // Database was not changed
+    EXPECT_FALSE(this->DoesTableExist(table1)); // Database was not changed
 }
 
 TEST_F(DatabaseSchemaUpdaterTest, ApplyInvalidInitialMigrationFile) {
@@ -131,10 +131,10 @@ TEST_F(DatabaseSchemaUpdaterTest, ApplyInvalidInitialMigrationFile) {
 
     DatabaseSchemaUpdater updater{this->database.get()};
 
-    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 1), false);
+    EXPECT_FALSE(updater.apply_migration_files(this->migration_files_path, 1));
 
     this->ExpectUserVersion(0);
-    EXPECT_EQ(this->DoesTableExist(table1), false); // Database was not changed
+    EXPECT_FALSE(this->DoesTableExist(table1)); // Database was not changed
 }
 
 TEST_F(DatabaseSchemaUpdaterTest, MissingInitialMigrationFile) {
@@ -143,10 +143,10 @@ TEST_F(DatabaseSchemaUpdaterTest, MissingInitialMigrationFile) {
 
     DatabaseSchemaUpdater updater{this->database.get()};
 
-    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 1), false);
+    EXPECT_FALSE(updater.apply_migration_files(this->migration_files_path, 1));
 
     this->ExpectUserVersion(0);
-    EXPECT_EQ(this->DoesTableExist(table1), false);
+    EXPECT_FALSE(this->DoesTableExist(table1));
 }
 
 TEST_F(DatabaseSchemaUpdaterTest, SequenceNotValidUnevenNrOfFiles) {
@@ -158,12 +158,12 @@ TEST_F(DatabaseSchemaUpdaterTest, SequenceNotValidUnevenNrOfFiles) {
 
     DatabaseSchemaUpdater updater{this->database.get()};
 
-    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 1), false);
-    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 2), false);
-    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 3), false);
+    EXPECT_FALSE(updater.apply_migration_files(this->migration_files_path, 1));
+    EXPECT_FALSE(updater.apply_migration_files(this->migration_files_path, 2));
+    EXPECT_FALSE(updater.apply_migration_files(this->migration_files_path, 3));
 
     this->ExpectUserVersion(0);
-    EXPECT_EQ(this->DoesTableExist(table1), false); // Database was not changed
+    EXPECT_FALSE(this->DoesTableExist(table1)); // Database was not changed
 }
 
 TEST_F(DatabaseSchemaUpdaterTest, SequenceNotValidNotEnoughFiles) {
@@ -174,10 +174,10 @@ TEST_F(DatabaseSchemaUpdaterTest, SequenceNotValidNotEnoughFiles) {
 
     DatabaseSchemaUpdater updater{this->database.get()};
 
-    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 3), false);
+    EXPECT_FALSE(updater.apply_migration_files(this->migration_files_path, 3));
 
     this->ExpectUserVersion(0);
-    EXPECT_EQ(this->DoesTableExist(table1), false); // Database was not changed
+    EXPECT_FALSE(this->DoesTableExist(table1)); // Database was not changed
 }
 
 TEST_F(DatabaseSchemaUpdaterTest, SequenceNotValidMissingDownFile) {
@@ -190,12 +190,12 @@ TEST_F(DatabaseSchemaUpdaterTest, SequenceNotValidMissingDownFile) {
 
     DatabaseSchemaUpdater updater{this->database.get()};
 
-    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 1), false);
-    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 2), false);
-    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 3), false);
+    EXPECT_FALSE(updater.apply_migration_files(this->migration_files_path, 1));
+    EXPECT_FALSE(updater.apply_migration_files(this->migration_files_path, 2));
+    EXPECT_FALSE(updater.apply_migration_files(this->migration_files_path, 3));
 
     this->ExpectUserVersion(0);
-    EXPECT_EQ(this->DoesTableExist(table1), false); // Database was not changed
+    EXPECT_FALSE(this->DoesTableExist(table1)); // Database was not changed
 }
 
 TEST_F(DatabaseSchemaUpdaterTest, SequenceNotValidMissingUpFile) {
@@ -208,12 +208,12 @@ TEST_F(DatabaseSchemaUpdaterTest, SequenceNotValidMissingUpFile) {
 
     DatabaseSchemaUpdater updater{this->database.get()};
 
-    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 1), false);
-    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 2), false);
-    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 3), false);
+    EXPECT_FALSE(updater.apply_migration_files(this->migration_files_path, 1));
+    EXPECT_FALSE(updater.apply_migration_files(this->migration_files_path, 2));
+    EXPECT_FALSE(updater.apply_migration_files(this->migration_files_path, 3));
 
     this->ExpectUserVersion(0);
-    EXPECT_EQ(this->DoesTableExist(table1), false); // Database was not changed
+    EXPECT_FALSE(this->DoesTableExist(table1)); // Database was not changed
 }
 
 TEST_F(DatabaseSchemaUpdaterTest, ApplyMultipleMigrationFilesStepByStep) {
@@ -226,35 +226,35 @@ TEST_F(DatabaseSchemaUpdaterTest, ApplyMultipleMigrationFilesStepByStep) {
 
     DatabaseSchemaUpdater updater{this->database.get()};
 
-    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 1), true);
+    EXPECT_TRUE(updater.apply_migration_files(this->migration_files_path, 1));
     this->ExpectUserVersion(1);
-    EXPECT_EQ(this->DoesTableExist(table1), true);
-    EXPECT_EQ(this->DoesTableExist(table2), false);
-    EXPECT_EQ(this->DoesTableExist(table3), false);
+    EXPECT_TRUE(this->DoesTableExist(table1));
+    EXPECT_FALSE(this->DoesTableExist(table2));
+    EXPECT_FALSE(this->DoesTableExist(table3));
 
-    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 2), true);
+    EXPECT_TRUE(updater.apply_migration_files(this->migration_files_path, 2));
     this->ExpectUserVersion(2);
-    EXPECT_EQ(this->DoesTableExist(table1), true);
-    EXPECT_EQ(this->DoesTableExist(table2), true);
-    EXPECT_EQ(this->DoesTableExist(table3), false);
+    EXPECT_TRUE(this->DoesTableExist(table1));
+    EXPECT_TRUE(this->DoesTableExist(table2));
+    EXPECT_FALSE(this->DoesTableExist(table3));
 
-    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 3), true);
+    EXPECT_TRUE(updater.apply_migration_files(this->migration_files_path, 3));
     this->ExpectUserVersion(3);
-    EXPECT_EQ(this->DoesTableExist(table1), true);
-    EXPECT_EQ(this->DoesTableExist(table2), true);
-    EXPECT_EQ(this->DoesTableExist(table3), true);
+    EXPECT_TRUE(this->DoesTableExist(table1));
+    EXPECT_TRUE(this->DoesTableExist(table2));
+    EXPECT_TRUE(this->DoesTableExist(table3));
 
-    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 2), true);
+    EXPECT_TRUE(updater.apply_migration_files(this->migration_files_path, 2));
     this->ExpectUserVersion(2);
-    EXPECT_EQ(this->DoesTableExist(table1), true);
-    EXPECT_EQ(this->DoesTableExist(table2), true);
-    EXPECT_EQ(this->DoesTableExist(table3), false);
+    EXPECT_TRUE(this->DoesTableExist(table1));
+    EXPECT_TRUE(this->DoesTableExist(table2));
+    EXPECT_FALSE(this->DoesTableExist(table3));
 
-    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 1), true);
+    EXPECT_TRUE(updater.apply_migration_files(this->migration_files_path, 1));
     this->ExpectUserVersion(1);
-    EXPECT_EQ(this->DoesTableExist(table1), true);
-    EXPECT_EQ(this->DoesTableExist(table2), false);
-    EXPECT_EQ(this->DoesTableExist(table3), false);
+    EXPECT_TRUE(this->DoesTableExist(table1));
+    EXPECT_FALSE(this->DoesTableExist(table2));
+    EXPECT_FALSE(this->DoesTableExist(table3));
 }
 
 TEST_F(DatabaseSchemaUpdaterTest, ApplyMultipleMigrationFilesAtOnce) {
@@ -267,17 +267,17 @@ TEST_F(DatabaseSchemaUpdaterTest, ApplyMultipleMigrationFilesAtOnce) {
 
     DatabaseSchemaUpdater updater{this->database.get()};
 
-    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 3), true);
+    EXPECT_TRUE(updater.apply_migration_files(this->migration_files_path, 3));
     this->ExpectUserVersion(3);
-    EXPECT_EQ(this->DoesTableExist(table1), true);
-    EXPECT_EQ(this->DoesTableExist(table2), true);
-    EXPECT_EQ(this->DoesTableExist(table3), true);
+    EXPECT_TRUE(this->DoesTableExist(table1));
+    EXPECT_TRUE(this->DoesTableExist(table2));
+    EXPECT_TRUE(this->DoesTableExist(table3));
 
-    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 1), true);
+    EXPECT_TRUE(updater.apply_migration_files(this->migration_files_path, 1));
     this->ExpectUserVersion(1);
-    EXPECT_EQ(this->DoesTableExist(table1), true);
-    EXPECT_EQ(this->DoesTableExist(table2), false);
-    EXPECT_EQ(this->DoesTableExist(table3), false);
+    EXPECT_TRUE(this->DoesTableExist(table1));
+    EXPECT_FALSE(this->DoesTableExist(table2));
+    EXPECT_FALSE(this->DoesTableExist(table3));
 }
 
 TEST_F(DatabaseSchemaUpdaterTest, ApplyMultipleMigrationFilesAtOnceWithFailure) {
@@ -290,20 +290,20 @@ TEST_F(DatabaseSchemaUpdaterTest, ApplyMultipleMigrationFilesAtOnceWithFailure) 
 
     DatabaseSchemaUpdater updater{this->database.get()};
 
-    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 1), true);
+    EXPECT_TRUE(updater.apply_migration_files(this->migration_files_path, 1));
     this->ExpectUserVersion(1);
-    EXPECT_EQ(this->DoesTableExist(table1), true);
-    EXPECT_EQ(this->DoesTableExist(table2), false);
+    EXPECT_TRUE(this->DoesTableExist(table1));
+    EXPECT_FALSE(this->DoesTableExist(table2));
 
-    EXPECT_EQ(this->database->execute_statement(migration_file_up_2_valid.content.data()), true);
+    EXPECT_TRUE(this->database->execute_statement(migration_file_up_2_valid.content.data()));
 
-    EXPECT_EQ(this->DoesTableExist(table2), true);
+    EXPECT_TRUE(this->DoesTableExist(table2));
 
-    EXPECT_EQ(updater.apply_migration_files(this->migration_files_path, 3), false);
+    EXPECT_FALSE(updater.apply_migration_files(this->migration_files_path, 3));
 
-    EXPECT_EQ(this->DoesTableExist(table1), true);
-    EXPECT_EQ(this->DoesTableExist(table2), true);
-    EXPECT_EQ(this->DoesTableExist(table3), false);
+    EXPECT_TRUE(this->DoesTableExist(table1));
+    EXPECT_TRUE(this->DoesTableExist(table2));
+    EXPECT_FALSE(this->DoesTableExist(table3));
 
     this->ExpectUserVersion(1);
 }

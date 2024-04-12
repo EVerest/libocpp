@@ -18,6 +18,6 @@ public:
         DatabaseTestingUtils(),
         migration_files_path(std::get<std::filesystem::path>(GetParam())),
         max_version(std::get<uint32_t>(GetParam())) {
-        EXPECT_EQ(this->database->open_connection(), true);
+        EXPECT_TRUE(this->database->open_connection());
     }
 };

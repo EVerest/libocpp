@@ -18,7 +18,7 @@ protected:
 
 public:
     DatabaseTestingUtils() : database(std::make_unique<DatabaseConnection>("file::memory:?cache=shared")) {
-        EXPECT_EQ(this->database->open_connection(), true);
+        EXPECT_TRUE(this->database->open_connection());
     }
 
     void ExpectUserVersion(uint32_t expected_version) {
@@ -29,7 +29,7 @@ public:
     }
 
     void SetUserVersion(uint32_t user_version) {
-        EXPECT_EQ(this->database->execute_statement("PRAGMA user_version = "s + std::to_string(user_version)), true);
+        EXPECT_TRUE(this->database->execute_statement("PRAGMA user_version = "s + std::to_string(user_version)));
     }
 
     bool DoesTableExist(std::string_view table) {
