@@ -38,3 +38,6 @@ trap copy_lcov_coverage EXIT
 ninja -j$(nproc) -C build lcov_coverage
 trap EXIT
 copy_lcov_coverage
+
+ninja -j$(nproc) -C build gcovr_html_coverage
+ninja -j$(nproc) -C build gcovr_xml_coverage
