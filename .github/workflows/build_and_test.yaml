@@ -56,7 +56,7 @@ jobs:
       - name: Run install with tests
         run: |
           docker run \
-          --volume "$(pwd):/ext" \
+          --volume "${{ github.workspace }}:/ext" \
           --name test-container \
           build-kit run-script install_and_test
       - name: Archive test results
