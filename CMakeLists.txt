@@ -125,6 +125,20 @@ if(LIBOCPP_BUILD_TESTING)
         LCOV_ARGS "--no-external;--rc=genhtml_html_gzip=0"
         EXCLUDE "tests/*"
     )
+
+    setup_target_for_coverage_gcovr_html(
+        NAME gcovr_html_coverage
+        EXECUTABLE ctest
+        DEPENDENCIES all_tests
+        EXCLUDE "tests/*"
+    )
+
+    setup_target_for_coverage_gcovr_xml(
+        NAME gcovr_xml_coverage
+        EXECUTABLE ctest
+        DEPENDENCIES all_tests
+        EXCLUDE "tests/*"
+    )
 endif()
 
 # build doxygen documentation if doxygen is available
