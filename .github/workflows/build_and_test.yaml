@@ -15,7 +15,7 @@ on:
           - 'ubuntu-22.04'
           - 'large-ubuntu-22.04-xxl'
 env:
-  build-kit-image: ghcr.io/everest/build-kit-alpine:feature/add-code-coverage
+  build-kit-image: ghcr.io/everest/build-kit-alpine:add-code-coverage
 jobs:
   lint:
     name: Lint
