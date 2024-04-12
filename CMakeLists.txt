@@ -122,7 +122,7 @@ if(LIBOCPP_BUILD_TESTING)
         NAME lcov_coverage
         EXECUTABLE ctest
         DEPENDENCIES all_tests
-        LCOV_ARGS "--no-external;--ignore-errors=inconsistent,inconsistent"
+        LCOV_ARGS "--no-external;--ignore-errors=inconsistent,inconsistent,mismatch"
         EXCLUDE "tests/*"
     )
 
