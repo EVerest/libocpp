@@ -2603,8 +2603,8 @@ void ChargePoint::handle_trigger_message(Call<TriggerMessageRequest> call) {
                 response.status = TriggerMessageStatusEnum::Accepted;
             }
         } else {
-            const auto measurands = utils::get_measurands_vec(this->device_model->get_value<std::string>(
-                ControllerComponentVariables::AlignedDataMeasurands));
+            const auto measurands = utils::get_measurands_vec(
+                this->device_model->get_value<std::string>(ControllerComponentVariables::AlignedDataMeasurands));
             for (auto const& [evse_id, evse] : this->evses) {
                 if (utils::meter_value_has_any_measurand(evse->get_meter_value(), measurands)) {
                     response.status = TriggerMessageStatusEnum::Accepted;
