@@ -147,7 +147,7 @@ private:
     // callbacks
     std::function<bool(int32_t connector)> enable_evse_callback;
     std::function<bool(int32_t connector)> disable_evse_callback;
-    std::function<bool(int32_t connector, IdTagInfo idTagInfo)> pause_charging_callback;
+    std::function<bool(int32_t connector)> pause_charging_callback;
     std::function<bool(int32_t connector)> resume_charging_callback;
     std::function<void(const std::string& id_token, std::vector<int32_t> referenced_connectors, bool prevalidated)>
         provide_token_callback;
@@ -640,7 +640,7 @@ public:
     /// \brief registers a \p callback function that can be used to pause charging. The pause_charging_callback is
     /// called when the idTagInfo.status of a StartTransaction.conf is not Accepted
     /// \param callback
-    void register_pause_charging_callback(const std::function<bool(int32_t connector, IdTagInfo idTagInfo)>& callback);
+    void register_pause_charging_callback(const std::function<bool(int32_t connector)>& callback);
 
     /// \brief registers a \p callback function that can be used to resume charging
     /// \param callback

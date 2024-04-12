@@ -1817,7 +1817,7 @@ void ChargePointImpl::handleStartTransactionResponse(ocpp::CallResult<StartTrans
         this->database_handler->insert_or_update_authorization_cache_entry(idTag, start_transaction_response.idTagInfo);
 
         if (start_transaction_response.idTagInfo.status != AuthorizationStatus::Accepted) {
-            this->pause_charging_callback(connector, start_transaction_response.idTagInfo);
+            this->pause_charging_callback(connector);
             if (this->configuration->getStopTransactionOnInvalidId()) {
                 this->stop_transaction_callback(connector, Reason::DeAuthorized);
             }
@@ -3658,7 +3658,7 @@ void ChargePointImpl::register_disable_evse_callback(const std::function<bool(in
 }
 
 void ChargePointImpl::register_pause_charging_callback(
-    const std::function<bool(int32_t connector, IdTagInfo idTagInfo)>& callback) {
+    const std::function<bool(int32_t connector)>& callback) {
     this->pause_charging_callback = callback;
 }
 
