@@ -2,6 +2,14 @@
 
 set -e
 
+echo "\n\n\n"
+echo "--------------------------------"
+gcc --version
+lcov --version
+gcov --version
+echo "--------------------------------"
+echo "\n\n\n"
+
 copy_ctest_report() {
     cp build/Testing/Temporary/LastTest.log /ext/ctest-report
 }
