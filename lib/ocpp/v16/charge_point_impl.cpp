@@ -3657,8 +3657,7 @@ void ChargePointImpl::register_disable_evse_callback(const std::function<bool(in
     this->disable_evse_callback = callback;
 }
 
-void ChargePointImpl::register_pause_charging_callback(
-    const std::function<bool(int32_t connector)>& callback) {
+void ChargePointImpl::register_pause_charging_callback(const std::function<bool(int32_t connector)>& callback) {
     this->pause_charging_callback = callback;
 }
 
