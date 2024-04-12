@@ -122,7 +122,21 @@ if(LIBOCPP_BUILD_TESTING)
         NAME lcov_coverage
         EXECUTABLE ctest
         DEPENDENCIES all_tests
-        LCOV_ARGS "--no-external;--rc=genhtml_html_gzip=0"
+        LCOV_ARGS "--no-external;--ignore-errors=inconsistent,inconsistent,mismatch"
+        EXCLUDE "tests/*"
+    )
+
+    setup_target_for_coverage_gcovr_html(
+        NAME gcovr_html_coverage
+        EXECUTABLE ctest
+        DEPENDENCIES all_tests
+        EXCLUDE "tests/*"
+    )
+
+    setup_target_for_coverage_gcovr_xml(
+        NAME gcovr_xml_coverage
+        EXECUTABLE ctest
+        DEPENDENCIES all_tests
         EXCLUDE "tests/*"
     )
 endif()

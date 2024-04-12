@@ -14,6 +14,8 @@ on:
         options:
           - 'ubuntu-22.04'
           - 'large-ubuntu-22.04-xxl'
+env:
+  build-kit-image: ghcr.io/everest/build-kit-alpine:add-code-coverage
 jobs:
   lint:
     name: Lint
@@ -49,12 +51,12 @@ jobs:
           rsync -a source/.ci/build-kit/ scripts
       - name: Pull docker container
         run: |
-          docker pull --platform=linux/x86_64 --quiet ghcr.io/everest/build-kit-alpine:latest
-          docker image tag ghcr.io/everest/build-kit-alpine:latest build-kit
+          docker pull --platform=linux/x86_64 --quiet ${{ env.build-kit-image }}
+          docker image tag ${{ env.build-kit-image }} build-kit
       - name: Run install with tests
         run: |
           docker run \
-          --volume "$(pwd):/ext" \
+          --volume "${{ github.workspace }}:/ext" \
           --name test-container \
           build-kit run-script install_and_test
       - name: Archive test results
@@ -63,9 +65,11 @@ jobs:
         with:
           name: ctest-report
           path: ${{ github.workspace }}/ctest-report
+          if-no-files-found: error
       - name: Archive coverage data
         if: always()
         uses: actions/upload-artifact@v3
         with:
           name: lcov_coverage
           path: ${{ github.workspace }}/lcov_coverage.info
+          if-no-files-found: error
