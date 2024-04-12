@@ -1,4 +1,4 @@
-function(COLLECT_MIGRATION_FILES)
+function(collect_migration_files)
     set(options "")
     set(oneValueArgs LOCATION INSTALL_DESTINATION)
     set(multiValueArgs "")

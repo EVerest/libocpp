@@ -3,7 +3,7 @@ set(MIGRATION_FILES_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/core_migrations")
 
 include(../CollectMigrationFiles.cmake)
 
-COLLECT_MIGRATION_FILES(
+collect_migration_files(
      LOCATION ${MIGRATION_FILES_LOCATION}
      INSTALL_DESTINATION ${CMAKE_INSTALL_DATADIR}/everest/modules/OCPP201/core_migrations
      )
