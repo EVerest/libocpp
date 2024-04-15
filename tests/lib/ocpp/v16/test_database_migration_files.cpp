@@ -35,6 +35,10 @@ TEST_P(DatabaseMigrationFilesTestV16, V16_MigrationFile2) {
         "(55, 1,         \"\",         \"\",       1,           0,        0,          \"\",            \"\")";
     EXPECT_TRUE(this->database->execute_statement(sql));
 
+    // We added a row with CSMS_ACK=0 so we should not find anything
+    auto stmt = this->database->new_statement("SELECT ID FROM TRANSACTIONS WHERE CSMS_ACK=1;");
+    EXPECT_EQ(stmt->step(), SQLITE_DONE);
+
     // After applying the migration we expect to be at version 2
     EXPECT_TRUE(updater.apply_migration_files(this->migration_files_path, 2));
     this->ExpectUserVersion(2);
@@ -49,6 +53,12 @@ TEST_P(DatabaseMigrationFilesTestV16, V16_MigrationFile2) {
     EXPECT_TRUE(this->database->execute_statement(
         "UPDATE TRANSACTIONS SET START_TRANSACTION_MESSAGE_ID=\"test2\" WHERE ID=55"));
 
+    // The migration should have set all rows to CSMS_ACK=1 so we should find 1 row with ID=55 here
+    stmt = this->database->new_statement("SELECT ID FROM TRANSACTIONS WHERE CSMS_ACK=1;");
+    EXPECT_EQ(stmt->step(), SQLITE_ROW);
+    EXPECT_EQ(stmt->column_int(0), 55);
+    EXPECT_EQ(stmt->step(), SQLITE_DONE);
+
     // After applying the down migration we expect to be at version 1
     EXPECT_TRUE(updater.apply_migration_files(this->migration_files_path, 1));
     this->ExpectUserVersion(1);
@@ -62,4 +72,10 @@ TEST_P(DatabaseMigrationFilesTestV16, V16_MigrationFile2) {
     // We should not be able to update the field from version 2 any longer
     EXPECT_FALSE(this->database->execute_statement(
         "UPDATE TRANSACTIONS SET START_TRANSACTION_MESSAGE_ID=\"test2\" WHERE ID=55"));
+
+    // The down migration should not have touched CSMS_ACK=1 so we should still find 1 row with ID=55 here
+    stmt = this->database->new_statement("SELECT ID FROM TRANSACTIONS WHERE CSMS_ACK=1;");
+    EXPECT_EQ(stmt->step(), SQLITE_ROW);
+    EXPECT_EQ(stmt->column_int(0), 55);
+    EXPECT_EQ(stmt->step(), SQLITE_DONE);
 }
