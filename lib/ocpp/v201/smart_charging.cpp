@@ -144,8 +144,10 @@ SmartChargingHandler::validate_profile_schedules(ChargingProfile& profile,
             // K01.FR.31
             if (i == 0 && charging_schedule_period.startPeriod != 0) {
                 return ProfileValidationResultEnum::ChargingProfileFirstStartScheduleIsNotZero;
-                // K01.FR.35
-            } else if (i != 0 && i + 1 < schedule.chargingSchedulePeriod.size()) {
+            }
+
+            // K01.FR.35
+            if (i + 1 < schedule.chargingSchedulePeriod.size()) {
                 auto next_charging_schedule_period = schedule.chargingSchedulePeriod[i + 1];
                 if (next_charging_schedule_period.startPeriod <= charging_schedule_period.startPeriod) {
                     return ProfileValidationResultEnum::ChargingSchedulePeriodsOutOfOrder;
