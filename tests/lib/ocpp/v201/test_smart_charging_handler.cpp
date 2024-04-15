@@ -383,7 +383,6 @@ TEST_F(ChargepointTestFixtureV201, K04FR04_ValidateChargingStationMaxProfile_Evs
     create_evse_with_id(DEFAULT_EVSE_ID);
     std::string same_transaction_id = uuid();
     open_evse_transaction(DEFAULT_EVSE_ID, same_transaction_id);
-
     auto periods = create_charging_schedule_periods({0, 2, 1});
     auto profile =
         create_charging_station_max_profile(create_charge_schedule(ChargingRateUnitEnum::A, periods), uuid());
