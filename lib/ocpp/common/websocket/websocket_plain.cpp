@@ -120,7 +120,7 @@ bool WebsocketPlain::send(const std::string& message) {
     if (ec) {
         EVLOG_error << "Error sending message over plain websocket: " << ec.message();
 
-        this->reconnect(ec, this->get_reconnect_interval());
+        this->reconnect(this->get_reconnect_interval());
         EVLOG_info << "(plain) Called reconnect()";
         return false;
     }
@@ -130,7 +130,7 @@ bool WebsocketPlain::send(const std::string& message) {
     return true;
 }
 
-void WebsocketPlain::reconnect(std::error_code reason, long delay) {
+void WebsocketPlain::reconnect(long delay) {
     if (this->shutting_down) {
         EVLOG_info << "Not reconnecting because the websocket is being shutdown.";
         return;
@@ -156,17 +156,6 @@ void WebsocketPlain::reconnect(std::error_code reason, long delay) {
         } else {
             EVLOG_info << "Reconnect timer already running";
         }
-    }
-
-    // TODO(kai): complete error handling, especially making sure that a reconnect is only attempted in reasonable
-    // circumstances
-    switch (reason.value()) {
-    case websocketpp::close::status::force_tcp_drop:
-        /* code */
-        break;
-
-    default:
-        break;
     }
 
     // TODO: spec-conform reconnect, refer to status codes from:

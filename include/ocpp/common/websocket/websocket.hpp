@@ -8,9 +8,6 @@
 
 #include <ocpp/common/websocket/websocket_base.hpp>
 
-// #include <ocpp/common/websocket/websocket_plain.hpp>
-// #include <ocpp/common/websocket/websocket_tls.hpp>
-
 namespace ocpp {
 ///
 /// \brief contains a websocket abstraction that can connect to TLS and non-TLS websocket endpoints
@@ -40,7 +37,7 @@ public:
     void disconnect(WebsocketCloseReason code);
 
     // \brief reconnects the websocket after the delay
-    void reconnect(std::error_code reason, long delay);
+    void reconnect(long delay);
 
     /// \brief indicates if the websocket is connected
     bool is_connected();

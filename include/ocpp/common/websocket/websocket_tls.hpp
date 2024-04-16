@@ -59,6 +59,10 @@ public:
     explicit WebsocketTLS(const WebsocketConnectionOptions& connection_options,
                           std::shared_ptr<EvseSecurity> evse_security);
 
+    ~WebsocketTLS() {
+        this->websocket_thread->join();
+    }
+
     /// \brief connect to a TLS websocket
     /// \returns true if the websocket is initialized and a connection attempt is made
     bool connect() override;
@@ -66,7 +70,7 @@ public:
     /// \brief Reconnects the websocket using the delay, a reason for this reconnect can be provided with the
     /// \param reason parameter
     /// \param delay delay of the reconnect attempt
-    void reconnect(std::error_code reason, long delay) override;
+    void reconnect(long delay) override;
 
     /// \brief closes the websocket
     void close(WebsocketCloseReason code, const std::string& reason) override;

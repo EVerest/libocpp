@@ -672,8 +672,8 @@ bool WebsocketTlsTPM::connect() {
     return (connected);
 }
 
-void WebsocketTlsTPM::reconnect(std::error_code reason, long delay) {
-    EVLOG_info << "Attempting TLS TPM reconnect with reason: " << reason << " and delay:" << delay;
+void WebsocketTlsTPM::reconnect(long delay) {
+    EVLOG_info << "Attempting TLS TPM reconnect with delay:" << delay;
 
     if (this->shutting_down) {
         EVLOG_info << "Not reconnecting because the websocket is being shutdown.";
@@ -719,7 +719,7 @@ void WebsocketTlsTPM::close(WebsocketCloseReason code, const std::string& reason
     // Clear any irrelevant data after a DC
     recv_buffered_message.clear();
 
-    std::thread closing([this]() { this->closed_callback(WebsocketCloseReason::Normal); });
+    std::thread closing([this, code]() { this->closed_callback(code); });
     closing.detach();
 }
 
@@ -770,7 +770,7 @@ void WebsocketTlsTPM::on_conn_fail() {
     // -1 indicates to always attempt to reconnect
     if (this->connection_options.max_connection_attempts == -1 or
         this->connection_attempts <= this->connection_options.max_connection_attempts) {
-        this->reconnect(std::error_code(), this->get_reconnect_interval());
+        this->reconnect(this->get_reconnect_interval());
 
         // Increment reconn attempts
         this->connection_attempts += 1;

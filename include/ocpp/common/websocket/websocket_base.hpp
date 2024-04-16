@@ -99,7 +99,7 @@ public:
     void set_connection_options_base(const WebsocketConnectionOptions& connection_options);
 
     /// \brief reconnect the websocket after the delay
-    virtual void reconnect(std::error_code reason, long delay) = 0;
+    virtual void reconnect(long delay) = 0;
 
     /// \brief disconnect the websocket
     void disconnect(WebsocketCloseReason code);

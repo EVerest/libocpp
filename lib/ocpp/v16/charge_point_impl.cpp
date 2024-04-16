@@ -1403,7 +1403,7 @@ void ChargePointImpl::handleChangeConfigurationRequest(ocpp::Call<ChangeConfigur
                         ocpp::CallResult<ChangeConfigurationResponse> call_result(response, call.uniqueId);
                         this->send<ChangeConfigurationResponse>(call_result);
                         responded = true;
-                        this->websocket->reconnect(std::error_code(), 1000);
+                        this->websocket->reconnect(1000);
                     } else {
                         EVLOG_info << "AuthorizationKey was changed while on security profile 3. Nothing to do.";
                     }
@@ -2298,7 +2298,7 @@ void ChargePointImpl::handleCertificateSignedRequest(ocpp::Call<CertificateSigne
     // reconnect with new certificate if valid and security profile is 3
     if (response.status == CertificateSignedStatusEnumType::Accepted &&
         this->configuration->getSecurityProfile() == 3) {
-        this->websocket->reconnect(std::error_code(), 1000);
+        this->websocket->reconnect(1000);
     }
 }
 

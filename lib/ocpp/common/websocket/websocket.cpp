@@ -50,9 +50,9 @@ void Websocket::disconnect(WebsocketCloseReason code) {
     this->websocket->disconnect(code);
 }
 
-void Websocket::reconnect(std::error_code reason, long delay) {
+void Websocket::reconnect(long delay) {
     this->logging->sys("Reconnecting");
-    this->websocket->reconnect(reason, delay);
+    this->websocket->reconnect(delay);
 }
 
 bool Websocket::is_connected() {

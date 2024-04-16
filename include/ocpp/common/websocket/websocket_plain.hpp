@@ -60,7 +60,7 @@ public:
 
     /// \brief Reconnects the websocket using the delay, a reason for this reconnect can be provided with the
     /// \p reason parameter
-    void reconnect(std::error_code reason, long delay) override;
+    void reconnect(long delay) override;
 
     /// \brief Closes a plaintext websocket connection
     void close(WebsocketCloseReason code, const std::string& reason) override;

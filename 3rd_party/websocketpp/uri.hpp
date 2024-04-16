@@ -149,12 +149,10 @@ public:
             ++it;
         }
 
-        m_port = get_port_from_string(port);
+        m_port = get_port_from_string(port, m_valid);
 
         m_resource = "/";
         m_resource.append(it, uri_string.end());
-
-        m_valid = true;
     }
 
     uri(bool secure, std::string const& host, uint16_t port, std::string const& resource) :
@@ -177,7 +175,7 @@ public:
 
     uri(bool secure, std::string const& host, std::string const& port, std::string const& resource) :
         m_scheme(secure ? "wss" : "ws"), m_host(host), m_resource(resource.empty() ? "/" : resource), m_secure(secure) {
-        m_port = get_port_from_string(port);
+        m_port = get_port_from_string(port, m_valid);
     }
 
     uri(std::string const& scheme, std::string const& host, uint16_t port, std::string const& resource) :
@@ -203,7 +201,7 @@ public:
         m_host(host),
         m_resource(resource.empty() ? "/" : resource),
         m_secure(scheme == "wss" || scheme == "https") {
-        m_port = get_port_from_string(port);
+        m_port = get_port_from_string(port, m_valid);
     }
 
     bool get_valid() const {
@@ -281,25 +279,9 @@ public:
         }
     }
 
-    // get fragment
-
-    // hi <3
-
-    // get the string representation of this URI
-
-    // std::string base() const; // is this still needed?
-
-    // setter methods set some or all (in the case of parse) based on the input.
-    // These functions throw a uri_exception on failure.
-    /*void set_uri(const std::string& uri);
-
-    void set_secure(bool secure);
-    void set_host(const std::string& host);
-    void set_port(uint16_t port);
-    void set_port(const std::string& port);
-    void set_resource(const std::string& resource);*/
 private:
-    uint16_t get_port_from_string(std::string const& port) const {
+    uint16_t get_port_from_string(std::string const& port, bool& out_valid) const {
+        out_valid = true;
         if (port.empty()) {
             return (m_secure ? uri_default_secure_port : uri_default_port);
         }
@@ -307,11 +289,11 @@ private:
         unsigned int t_port = static_cast<unsigned int>(atoi(port.c_str()));
 
         if (t_port > 65535) {
-            throw new std::runtime_error("Invalid port");
+            out_valid = false;
         }
 
         if (t_port == 0) {
-            throw new std::runtime_error("Invalid port");
+            out_valid = false;
         }
 
         return static_cast<uint16_t>(t_port);
