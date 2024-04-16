@@ -1825,7 +1825,8 @@ void ChargePointImpl::handleStartTransactionResponse(ocpp::CallResult<StartTrans
 
         if (this->transaction_updated_callback != nullptr) {
             this->transaction_updated_callback(connector, transaction->get_session_id(),
-                                               start_transaction_response.transactionId);
+                                               start_transaction_response.transactionId,
+                                               start_transaction_response.idTagInfo);
         }
     } else {
         EVLOG_warning << "Received StartTransaction.conf for transaction that is not known to transaction_handler";
