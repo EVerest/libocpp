@@ -70,6 +70,11 @@ target_include_directories(ocpp
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
+target_include_directories(ocpp
+    PUBLIC
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/3rd_party>
+)
+
 #############
 # Logging configuration
 #

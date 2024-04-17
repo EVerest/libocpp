@@ -33,7 +33,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace websocketpp_utils {
+namespace ocpp {
 
 // TODO: figure out why this fixes horrible linking errors.
 
@@ -307,6 +307,6 @@ private:
     bool m_valid;
 };
 
-} // namespace websocketpp_utils
+} // namespace ocpp
 
 #endif // WEBSOCKETPP_URI_HPP

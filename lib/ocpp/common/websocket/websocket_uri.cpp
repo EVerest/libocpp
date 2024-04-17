@@ -49,7 +49,7 @@ Uri Uri::parse_and_validate(std::string uri, std::string chargepoint_id, int sec
         uri = "ws://" + uri;
     }
 
-    auto uri_temp = websocketpp_utils::uri(uri);
+    auto uri_temp = ev_uri(uri);
     if (!uri_temp.get_valid()) {
         throw std::invalid_argument("given `uri` is invalid");
     }

@@ -6,9 +6,19 @@
 #include <string>
 #include <string_view>
 
-#include <../3rd_party/websocketpp/uri.hpp>
+#if LIBOCPP_ENABLE_DEPRECATED_WEBSOCKETPP
+#include <websocketpp/uri.hpp>
+#else
+#include <websocketpp_utils/uri.hpp>
+#endif
 
 namespace ocpp {
+
+#if LIBOCPP_ENABLE_DEPRECATED_WEBSOCKETPP
+typedef websocketpp::uri ev_uri;
+#else
+typedef ocpp::uri ev_uri;
+#endif
 
 class Uri {
 public:
@@ -54,10 +64,9 @@ public:
         return uri.str();
     }
 
-    websocketpp_utils::uri get_websocketpp_uri() { // FIXME: wrap needed `websocketpp:uri` functionality inside `Uri`
-        return websocketpp_utils::uri(this->secure, this->host, this->port,
-                                      this->path_without_chargepoint_id /* is normalized with ending slash */ +
-                                          this->chargepoint_id);
+    ev_uri get_websocketpp_uri() { // FIXME: wrap needed `websocketpp:uri` functionality inside `Uri`
+        return ev_uri(this->secure, this->host, this->port,
+                      this->path_without_chargepoint_id /* is normalized with ending slash */ + this->chargepoint_id);
     }
 
 private:

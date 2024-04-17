@@ -416,7 +416,6 @@ void WebsocketTlsTPM::client_loop() {
 
     // lws_set_log_level(LLL_ERR | LLL_WARN | LLL_NOTICE | LLL_INFO | LLL_DEBUG | LLL_PARSER | LLL_HEADER | LLL_EXT |
     //                          LLL_CLIENT | LLL_LATENCY | LLL_THREAD | LLL_USER, nullptr);
-    lws_set_log_level(LLL_USER | LLL_ERR | LLL_WARN | LLL_NOTICE, nullptr);
 
     lws_context_creation_info info;
     memset(&info, 0, sizeof(lws_context_creation_info));

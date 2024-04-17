@@ -38,7 +38,7 @@
 
 #include <string>
 
-namespace websocketpp_utils {
+namespace ocpp {
 
 static std::string const base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                                         "abcdefghijklmnopqrstuvwxyz"
@@ -166,6 +166,6 @@ inline std::string base64_decode(std::string const& input) {
     return ret;
 }
 
-} // namespace websocketpp_utils
+} // namespace ocpp
 
 #endif // _BASE64_HPP_

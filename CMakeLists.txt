@@ -61,9 +61,6 @@ add_subdirectory(config/v201)
 # library code
 add_subdirectory(lib)
 
-# config and auxillary files
-add_subdirectory(config)
-
 # packaging
 if (OCPP_INSTALL)
     install(

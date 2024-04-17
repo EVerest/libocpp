@@ -248,7 +248,7 @@ void WebsocketPlain::on_close_plain(client* c, websocketpp::connection_hdl hdl) 
                << "), reason: " << con->get_remote_close_reason();
     // dont reconnect on normal code
     if (con->get_remote_close_code() != websocketpp::close::status::normal) {
-        this->reconnect(error_code, this->get_reconnect_interval());
+        this->reconnect(this->get_reconnect_interval());
     } else {
         this->closed_callback(value_to_close_reason(con->get_remote_close_code()));
     }
@@ -268,7 +268,7 @@ void WebsocketPlain::on_fail_plain(client* c, websocketpp::connection_hdl hdl) {
     // -1 indicates to always attempt to reconnect
     if (this->connection_options.max_connection_attempts == -1 or
         this->connection_attempts <= this->connection_options.max_connection_attempts) {
-        this->reconnect(ec, this->get_reconnect_interval());
+        this->reconnect(this->get_reconnect_interval());
     } else {
         this->close(WebsocketCloseReason::Normal, "Connection failed");
     }

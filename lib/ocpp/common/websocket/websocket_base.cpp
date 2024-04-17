@@ -2,9 +2,9 @@
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 #include <random>
 
-#include <../3rd_party/websocketpp/base64.hpp>
 #include <everest/logging.hpp>
 #include <ocpp/common/websocket/websocket_base.hpp>
+#include <websocketpp_utils/base64.hpp>
 namespace ocpp {
 
 WebsocketBase::WebsocketBase() :
@@ -111,7 +111,7 @@ std::optional<std::string> WebsocketBase::getAuthorizationHeader() {
             this->connection_options.csms_uri.get_chargepoint_id() + ":" + authorization_key.value();
 
         // TODO (ioan): replace with libevse-security usage
-        auth_header.emplace(std::string("Basic ") + websocketpp_utils::base64_encode(plain_auth_header));
+        auth_header.emplace(std::string("Basic ") + ocpp::base64_encode(plain_auth_header));
 
         EVLOG_debug << "Basic Auth header: " << auth_header.value();
     }
