@@ -688,4 +688,81 @@ TEST_F(ChargepointTestFixtureV201, K01FR06_ExisitingProfileHasValidPeriodIncomin
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::DuplicateProfileValidityPeriod));
 }
 
+TEST_F(ChargepointTestFixtureV201, K01_ValidateProfile_IfEvseDoesNotExist_ThenProfileIsInvalid) {
+    auto profile = create_charging_profile(DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+                                           create_charge_schedule(ChargingRateUnitEnum::A), uuid());
+
+    auto sut = handler.validate_profile(profile, DEFAULT_EVSE_ID + 1);
+
+    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::EvseDoesNotExist));
+}
+
+TEST_F(ChargepointTestFixtureV201, K01_ValidateProfile_IfScheduleIsInvalid_ThenProfileIsInvalid) {
+    create_evse_with_id(DEFAULT_EVSE_ID);
+    auto periods = create_charging_schedule_periods(0);
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), uuid(),
+        ChargingProfileKindEnum::Relative, 1);
+
+    auto sut = handler.validate_profile(profile, DEFAULT_EVSE_ID);
+
+    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::ChargingProfileExtraneousStartSchedule));
+}
+
+TEST_F(ChargepointTestFixtureV201, K01_ValidateProfile_IfChargeStationMaxProfileIsInvalid_ThenProfileIsInvalid) {
+    create_evse_with_id(DEFAULT_EVSE_ID);
+    std::string same_transaction_id = uuid();
+    open_evse_transaction(DEFAULT_EVSE_ID, same_transaction_id);
+    auto periods = create_charging_schedule_periods({0, 1, 2});
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::ChargingStationMaxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), uuid());
+
+    auto sut = handler.validate_profile(profile, DEFAULT_EVSE_ID);
+
+    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::ChargingStationMaxProfileEvseIdGreaterThanZero));
+}
+
+TEST_F(ChargepointTestFixtureV201,
+       K01_ValidateProfile_IfDuplicateTxDefaultProfileFoundOnEVSE_IsInvalid_ThenProfileIsInvalid) {
+    install_profile_on_evse(DEFAULT_EVSE_ID, DEFAULT_PROFILE_ID);
+
+    auto periods = create_charging_schedule_periods(0);
+
+    auto profile = create_charging_profile(DEFAULT_PROFILE_ID + 1, ChargingProfilePurposeEnum::TxDefaultProfile,
+                                           create_charge_schedule(ChargingRateUnitEnum::A, periods), uuid(),
+                                           ChargingProfileKindEnum::Relative, DEFAULT_STACK_LEVEL);
+
+    auto sut = handler.validate_profile(profile, STATION_WIDE_ID);
+
+    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::DuplicateTxDefaultProfileFound));
+}
+
+TEST_F(ChargepointTestFixtureV201,
+       K01_ValidateProfile_IfDuplicateTxDefaultProfileFoundOnChargingStation_IsInvalid_ThenProfileIsInvalid) {
+    install_profile_on_evse(STATION_WIDE_ID, DEFAULT_PROFILE_ID);
+    create_evse_with_id(DEFAULT_EVSE_ID);
+
+    auto periods = create_charging_schedule_periods(0);
+
+    auto profile = create_charging_profile(DEFAULT_PROFILE_ID + 1, ChargingProfilePurposeEnum::TxDefaultProfile,
+                                           create_charge_schedule(ChargingRateUnitEnum::A, periods), uuid(),
+                                           ChargingProfileKindEnum::Relative, DEFAULT_STACK_LEVEL);
+
+    auto sut = handler.validate_profile(profile, DEFAULT_EVSE_ID);
+
+    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::DuplicateTxDefaultProfileFound));
+}
+
+TEST_F(ChargepointTestFixtureV201, K01_ValidateProfile_IfTxProfileIsInvalid_ThenProfileIsInvalid) {
+    create_evse_with_id(DEFAULT_EVSE_ID);
+    auto periods = create_charging_schedule_periods(0);
+    auto profile = create_tx_profile_with_missing_transaction_id(
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")));
+    auto sut = handler.validate_profile(profile, DEFAULT_EVSE_ID);
+
+    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::TxProfileMissingTransactionId));
+}
+
 } // namespace ocpp::v201

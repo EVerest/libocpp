@@ -12,6 +12,7 @@
 #include <iterator>
 #include <memory>
 #include <ocpp/v201/smart_charging.hpp>
+#include <optional>
 
 using namespace std::chrono;
 
@@ -74,6 +75,46 @@ std::ostream& operator<<(std::ostream& os, const ProfileValidationResultEnum val
 const int32_t STATION_WIDE_ID = 0;
 
 SmartChargingHandler::SmartChargingHandler(std::map<int32_t, std::unique_ptr<EvseInterface>>& evses) : evses(evses) {
+}
+
+ProfileValidationResultEnum SmartChargingHandler::validate_profile(ChargingProfile& profile, int32_t evse_id) {
+    auto result = ProfileValidationResultEnum::Valid;
+    if (evse_id != STATION_WIDE_ID) {
+        result = this->validate_evse_exists(evse_id);
+        if (result != ProfileValidationResultEnum::Valid) {
+            return result;
+        }
+    }
+
+    if (evse_id != STATION_WIDE_ID) {
+        auto& evse = *evses[evse_id];
+        result = this->validate_profile_schedules(profile, &evse);
+    } else {
+        result = this->validate_profile_schedules(profile);
+    }
+    if (result != ProfileValidationResultEnum::Valid) {
+        return result;
+    }
+
+    switch (profile.chargingProfilePurpose) {
+    case ChargingProfilePurposeEnum::ChargingStationMaxProfile:
+        result = this->validate_charging_station_max_profile(profile, evse_id);
+        break;
+    case ChargingProfilePurposeEnum::TxDefaultProfile:
+        result = this->validate_tx_default_profile(profile, evse_id);
+        break;
+    case ChargingProfilePurposeEnum::TxProfile:
+        result = this->validate_tx_profile(profile, evse_id);
+        break;
+    case ChargingProfilePurposeEnum::ChargingStationExternalConstraints:
+        // TODO: How do we check this? We shouldn't set it in
+        // `SetChargingProfileRequest`, but that doesn't mean they're always
+        // invalid. K01.FR.05 is the only thing that seems relevant.
+        result = ProfileValidationResultEnum::Valid;
+        break;
+    }
+
+    return result;
 }
 
 ProfileValidationResultEnum SmartChargingHandler::validate_evse_exists(int32_t evse_id) const {

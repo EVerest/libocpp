@@ -62,6 +62,11 @@ public:
     explicit SmartChargingHandler(std::map<int32_t, std::unique_ptr<EvseInterface>>& evses);
 
     ///
+    /// \brief validates the given \p profile according to the specification
+    ///
+    ProfileValidationResultEnum validate_profile(ChargingProfile& profile, int32_t evse_id);
+
+    ///
     /// \brief validates the existence of the given \p evse_id according to the specification
     ///
     ProfileValidationResultEnum validate_evse_exists(int32_t evse_id) const;
