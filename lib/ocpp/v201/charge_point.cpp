@@ -174,6 +174,8 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
                 .value_or(false),
             this->device_model->get_value<int>(ControllerComponentVariables::MessageTimeout)},
         this->database_handler);
+
+    this->auth_cache_cleanup_thread = std::thread(&ChargePoint::cache_cleanup_handler, this);
 }
 
 void ChargePoint::start(BootReasonEnum bootreason) {
@@ -803,22 +805,22 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
             const auto cache_entry = this->database_handler->authorization_cache_get_entry(hashed_id_token);
             if (cache_entry.has_value()) {
                 if ((cache_entry.value().cacheExpiryDateTime.has_value() and
-                     cache_entry.value().cacheExpiryDateTime.value().to_time_point() < DateTime().to_time_point())) {
-                    EVLOG_info
-                        << "Found valid entry in AuthCache but expiry date passed: Removing from cache and sending "
-                           "new request";
+                    cache_entry.value().cacheExpiryDateTime.value().to_time_point() < DateTime().to_time_point())) {
+                    EVLOG_info << "Found valid entry in AuthCache but expiry date passed: Removing from cache and sending "
+                                "new request";
                     this->database_handler->authorization_cache_delete_entry(hashed_id_token);
                     this->update_authorization_cache_size();
                 } else if (this->device_model->get_value<bool>(ControllerComponentVariables::LocalPreAuthorize) and
-                           cache_entry.value().status == AuthorizationStatusEnum::Accepted) {
+                        cache_entry.value().status == AuthorizationStatusEnum::Accepted) {
                     EVLOG_info << "Found valid entry in AuthCache";
+                    this->database_handler->authorization_cache_update_last_used(hashed_id_token);
                     response.idTokenInfo = cache_entry.value();
                     return response;
                 } else if (this->device_model
-                               ->get_optional_value<bool>(ControllerComponentVariables::AuthCacheDisablePostAuthorize)
-                               .value_or(false)) {
+                            ->get_optional_value<bool>(ControllerComponentVariables::AuthCacheDisablePostAuthorize)
+                            .value_or(false)) {
                     EVLOG_info << "Found invalid entry in AuthCache: Not sending new request because "
-                                  "AuthCacheDisablePostAuthorize is enabled";
+                                "AuthCacheDisablePostAuthorize is enabled";
                     response.idTokenInfo = cache_entry.value();
                     return response;
                 } else {
@@ -855,7 +857,10 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
             } catch (const QueryExecutionException& e) {
                 EVLOG_error << "Could not insert into authorization cache entry: " << e.what();
             }
-            this->update_authorization_cache_size();
+
+            // Trigger auth cache cleanup since we added a new token. This will also update the used memory for the
+            // cache.
+            this->auth_cache_cleanup_cv.notify_one();
         }
 
         return response;
@@ -2605,7 +2610,9 @@ void ChargePoint::handle_transaction_event_response(const EnhancedMessage<v201::
         } catch (const QueryExecutionException& e) {
             EVLOG_warning << "Could not insert into authorization cache entry: " << e.what();
         }
-        this->update_authorization_cache_size();
+
+        // Trigger auth cache cleanup since we added a new token. This will also update the used memory for the cache.
+        this->auth_cache_cleanup_cv.notify_one();
     }
 
     if (msg.idTokenInfo.value().status == AuthorizationStatusEnum::Accepted) {
@@ -3340,6 +3347,35 @@ void ChargePoint::scheduled_check_v2g_certificate_expiration() {
         this->device_model
             ->get_optional_value<int>(ControllerComponentVariables::V2GCertificateExpireCheckIntervalSeconds)
             .value_or(12 * 60 * 60)));
+}
+
+void ChargePoint::cache_cleanup_handler() {
+    while (true) {
+        // Wait for next wakeup or timeout
+        std::unique_lock lk(this->auth_cache_cleanup_mutex);
+        auto wakeup_reason = this->auth_cache_cleanup_cv.wait_for(lk, std::chrono::minutes(15));
+
+        if (wakeup_reason == std::cv_status::timeout) {
+            EVLOG_debug << "Time based authorization cache cleanup";
+        } else {
+            EVLOG_debug << "Triggered authorization cache cleanup";
+        }
+
+        this->database_handler->authorization_cache_delete_entries_with_expiry_date_before(DateTime());
+
+        auto max_storage = this->device_model
+                               ->get_variable_meta_data(ControllerComponentVariables::AuthCacheStorage.component,
+                                                        ControllerComponentVariables::AuthCacheStorage.variable.value())
+                               .value()
+                               .characteristics.maxLimit;
+        if (max_storage.has_value()) {
+            while (this->database_handler->authorization_cache_get_binary_size() > max_storage.value()) {
+                this->database_handler->authorization_cache_delete_nr_of_oldest_entries(1);
+            }
+        }
+
+        this->update_authorization_cache_size();
+    }
 }
 
 void ChargePoint::update_dm_availability_state(const int32_t evse_id, const int32_t connector_id,

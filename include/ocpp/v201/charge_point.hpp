@@ -412,6 +412,11 @@ private:
 
     Everest::SteadyTimer certificate_signed_timer;
 
+    // threads and synchronization
+    std::condition_variable auth_cache_cleanup_cv;
+    std::mutex auth_cache_cleanup_mutex;
+    std::thread auth_cache_cleanup_thread;
+
     // states
     RegistrationStatusEnum registration_status;
     FirmwareStatusEnum firmware_status;
@@ -474,6 +479,8 @@ private:
     void update_dm_availability_state(const int32_t evse_id, const int32_t connector_id,
                                       const ConnectorStatusEnum status);
     void update_dm_evse_power(const int32_t evse_id, const MeterValue& meter_value);
+
+    void cache_cleanup_handler();
 
     /// \brief Gets the configured NetworkConnectionProfile based on the given \p configuration_slot . The
     /// central system uri ofthe connection options will not contain ws:// or wss:// because this method removes it if
