@@ -69,8 +69,8 @@ public:
     /// \brief validates requirements that apply only to the ChargingStationMaxProfile \p profile
     /// according to the specification
     ///
-    ProfileValidationResultEnum validate_charge_point_max_profile(const ChargingProfile& profile,
-                                                                  EvseInterface& evse) const;
+    ProfileValidationResultEnum validate_charging_station_max_profile(const ChargingProfile& profile,
+                                                                      EvseInterface& evse) const;
 
     ///
     /// \brief validates the given \p profile and associated \p evse_id according to the specification
