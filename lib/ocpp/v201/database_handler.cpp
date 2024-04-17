@@ -18,6 +18,10 @@ DatabaseHandler::DatabaseHandler(std::unique_ptr<DatabaseConnectionInterface> da
 }
 
 void DatabaseHandler::init_sql() {
+    if (sqlite3_threadsafe() != 1) {
+        throw std::logic_error("SQLite must be in serialized thread mode");
+    }
+
     this->inintialize_enum_tables();
 }
 
@@ -82,16 +86,36 @@ void DatabaseHandler::init_enum_table(const std::string& table_name, T begin, T 
 
 void DatabaseHandler::authorization_cache_insert_entry(const std::string& id_token_hash,
                                                        const IdTokenInfo& id_token_info) {
-    std::string sql = "INSERT OR REPLACE INTO AUTH_CACHE (ID_TOKEN_HASH, ID_TOKEN_INFO) VALUES "
-                      "(@id_token_hash, @id_token_info)";
+    std::string sql = "INSERT OR REPLACE INTO AUTH_CACHE (ID_TOKEN_HASH, ID_TOKEN_INFO, LAST_USED, EXPIRY_DATE) VALUES "
+                      "(@id_token_hash, @id_token_info, @last_used, @expiry_date)";
     auto insert_stmt = this->database->new_statement(sql);
 
     insert_stmt->bind_text("@id_token_hash", id_token_hash);
     insert_stmt->bind_text("@id_token_info", json(id_token_info).dump(), SQLiteString::Transient);
+    insert_stmt->bind_datetime("@last_used", DateTime());
+    if (id_token_info.cacheExpiryDateTime.has_value()) {
+        insert_stmt->bind_datetime("@expiry_date", id_token_info.cacheExpiryDateTime.value());
+    } else {
+        insert_stmt->bind_null("@expiry_date");
+    }
 
     if (insert_stmt->step() != SQLITE_DONE) {
         throw QueryExecutionException(this->database->get_error_message());
     }
+}
+
+bool DatabaseHandler::authorization_cache_update_last_used(const std::string& id_token_hash) {
+    std::string sql = "UPDATE AUTH_CACHE SET LAST_USED = @last_used WHERE ID_TOKEN_HASH = @id_token_hash";
+    auto insert_stmt = this->database->new_statement(sql);
+
+    insert_stmt->bind_datetime("@last_used", DateTime());
+    insert_stmt->bind_text("@id_token_hash", id_token_hash);
+
+    if (insert_stmt->step() != SQLITE_DONE) {
+        EVLOG_error << "Could not update AUTH_CACHE item: " << this->database->get_error_message();
+        return false;
+    }
+    return true;
 }
 
 std::optional<IdTokenInfo> DatabaseHandler::authorization_cache_get_entry(const std::string& id_token_hash) {
@@ -124,9 +148,46 @@ void DatabaseHandler::authorization_cache_delete_entry(const std::string& id_tok
     }
 }
 
+bool DatabaseHandler::authorization_cache_delete_nr_of_oldest_entries(size_t nr_to_remove) {
+    try {
+        std::string sql = "DELETE FROM AUTH_CACHE WHERE ID_TOKEN_HASH IN (SELECT ID_TOKEN_HASH FROM AUTH_CACHE ORDER "
+                          "BY LAST_USED ASC LIMIT @nr_to_remove)";
+        auto delete_stmt = this->database->new_statement(sql);
+
+        delete_stmt->bind_int("@nr_to_remove", nr_to_remove);
+
+        if (delete_stmt->step() != SQLITE_DONE) {
+            EVLOG_error << "Could not delete from table: " << this->database->get_error_message();
+            return false;
+        }
+        return true;
+    } catch (const std::exception& e) {
+        EVLOG_error << "Exception while deleting from auth cache table: " << e.what();
+        return false;
+    }
+}
+
+bool DatabaseHandler::authorization_cache_delete_entries_with_expiry_date_before(DateTime before_date) {
+    try {
+        std::string sql = "DELETE FROM AUTH_CACHE WHERE ID_TOKEN_HASH IN (SELECT ID_TOKEN_HASH FROM AUTH_CACHE WHERE "
+                          "EXPIRY_DATE < @before_date)";
+        auto delete_stmt = this->database->new_statement(sql);
+
+        delete_stmt->bind_datetime("@before_date", before_date);
+
+        if (delete_stmt->step() != SQLITE_DONE) {
+            EVLOG_error << "Could not delete from table: " << this->database->get_error_message();
+            return false;
+        }
+        return true;
+    } catch (const std::exception& e) {
+        EVLOG_error << "Exception while deleting from auth cache table: " << e.what();
+        return false;
+    }
+}
+
 void DatabaseHandler::authorization_cache_clear() {
-    const auto retval = this->database->clear_table("AUTH_CACHE");
-    if (retval == false) {
+    if (!this->database->clear_table("AUTH_CACHE")) {
         throw QueryExecutionException(this->database->get_error_message());
     }
 }
