@@ -44,10 +44,10 @@ TEST_P(DatabaseMigrationFilesTestV201, V201_MigrationFile2_AuthCacheManagement) 
     EXPECT_TRUE(
         this->database->execute_statement("UPDATE AUTH_CACHE SET EXPIRY_DATE=9870 WHERE ID_TOKEN_HASH=\"hash\""));
 
-    // The migration should have initialized all rows to LAST_USED=-1 so we should find 1 row with with that value here
+    // The migration should have initialized all rows to LAST_USED=0 so we should find 1 row with with that value here
     auto stmt = this->database->new_statement("SELECT LAST_USED FROM AUTH_CACHE WHERE ID_TOKEN_HASH=\"hash\";");
     EXPECT_EQ(stmt->step(), SQLITE_ROW);
-    EXPECT_EQ(stmt->column_int(0), -1);
+    EXPECT_EQ(stmt->column_int(0), 0);
     EXPECT_EQ(stmt->step(), SQLITE_DONE);
 
     // After applying the down migration we expect to be at version 1
