@@ -32,7 +32,8 @@ enum class ProfileValidationResultEnum {
     ChargingSchedulePeriodInvalidPhaseToUse,
     ChargingSchedulePeriodUnsupportedNumberPhases,
     ChargingSchedulePeriodExtraneousPhaseValues,
-    DuplicateTxDefaultProfileFound
+    DuplicateTxDefaultProfileFound,
+    DuplicateProfileValidityPeriod
 };
 
 namespace conversions {
@@ -65,7 +66,7 @@ public:
     ///
     /// \brief validates the given \p profile and associated \p evse_id according to the specification
     ///
-    ProfileValidationResultEnum validate_tx_default_profile(const ChargingProfile& profile, int32_t evse_id) const;
+    ProfileValidationResultEnum validate_tx_default_profile(ChargingProfile& profile, int32_t evse_id) const;
 
     ///
     /// \brief validates the given \p profile according to the specification
@@ -83,9 +84,16 @@ public:
     ///
     void add_profile(int32_t evse_id, ChargingProfile& profile);
 
+    ///
+    /// \brief Checks a given \p profile and associated \p evse_id validFrom and validTo range
+    /// This method assumes that the existing profile will have dates set for validFrom and validTo
+    ///
+    bool is_overlapping_validity_period(int evse_id, ChargingProfile& profile) const;
+
 private:
     std::vector<ChargingProfile> get_evse_specific_tx_default_profiles() const;
     std::vector<ChargingProfile> get_station_wide_tx_default_profiles() const;
+    void conform_validity_periods(ChargingProfile& profile) const;
 };
 
 } // namespace ocpp::v201

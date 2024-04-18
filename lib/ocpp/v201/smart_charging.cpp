@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
+#include "date/tz.h"
 #include "everest/logging.hpp"
 #include "ocpp/common/types.hpp"
 #include "ocpp/v201/enums.hpp"
 #include "ocpp/v201/evse.hpp"
 #include "ocpp/v201/ocpp_types.hpp"
 #include "ocpp/v201/transaction.hpp"
+#include <algorithm>
 #include <iterator>
 #include <memory>
 #include <ocpp/v201/smart_charging.hpp>
@@ -71,9 +73,14 @@ ProfileValidationResultEnum SmartChargingHandler::validate_evse_exists(int32_t e
                                               : ProfileValidationResultEnum::Valid;
 }
 
-ProfileValidationResultEnum SmartChargingHandler::validate_tx_default_profile(const ChargingProfile& profile,
+ProfileValidationResultEnum SmartChargingHandler::validate_tx_default_profile(ChargingProfile& profile,
                                                                               int32_t evse_id) const {
     auto profiles = evse_id == 0 ? get_evse_specific_tx_default_profiles() : get_station_wide_tx_default_profiles();
+
+    if (is_overlapping_validity_period(evse_id, profile)) {
+        return ProfileValidationResultEnum::DuplicateProfileValidityPeriod;
+    }
+
     for (auto candidate : profiles) {
         if (candidate.stackLevel == profile.stackLevel) {
             if (candidate.id != profile.id) {
@@ -112,6 +119,7 @@ ProfileValidationResultEnum SmartChargingHandler::validate_tx_profile(const Char
                                       candidateProfile.stackLevel == profile.stackLevel;
                            });
     };
+
     if (std::any_of(charging_profiles.begin(), charging_profiles.end(), conflicts_with)) {
         return ProfileValidationResultEnum::TxProfileConflictingStackLevel;
     }
@@ -125,10 +133,12 @@ ProfileValidationResultEnum SmartChargingHandler::validate_tx_profile(const Char
  * - K01.FR.43
  * - K01.FR.48
  */
+
 ProfileValidationResultEnum
 SmartChargingHandler::validate_profile_schedules(ChargingProfile& profile,
                                                  std::optional<EvseInterface*> evse_opt) const {
-    for (ChargingSchedule& schedule : profile.chargingSchedule) {
+    for (auto& schedule : profile.chargingSchedule) {
+
         // A schedule must have at least one chargingSchedulePeriod
         if (schedule.chargingSchedulePeriod.empty()) {
             return ProfileValidationResultEnum::ChargingProfileNoChargingSchedulePeriods;
@@ -222,6 +232,45 @@ std::vector<ChargingProfile> SmartChargingHandler::get_station_wide_tx_default_p
     }
 
     return station_wide_tx_default_profiles;
+}
+
+bool SmartChargingHandler::is_overlapping_validity_period(int candidate_evse_id,
+                                                          ChargingProfile& candidate_profile) const {
+
+    conform_validity_periods(candidate_profile);
+
+    if (candidate_profile.chargingProfilePurpose == ChargingProfilePurposeEnum::TxProfile) {
+        // This only applies to non TxProfile types.
+        return false;
+    }
+
+    auto conflicts_with = [candidate_evse_id, &candidate_profile](
+                              const std::pair<int32_t, std::vector<ChargingProfile>>& existing_profiles) {
+        auto existing_evse_id = existing_profiles.first;
+        if (existing_evse_id == candidate_evse_id) {
+            return std::any_of(existing_profiles.second.begin(), existing_profiles.second.end(),
+                               [&candidate_profile](const ChargingProfile& existing_profile) {
+                                   if (existing_profile.stackLevel == candidate_profile.stackLevel &&
+                                       existing_profile.chargingProfileKind == candidate_profile.chargingProfileKind &&
+                                       existing_profile.id != candidate_profile.id) {
+
+                                       return candidate_profile.validFrom <= existing_profile.validTo &&
+                                              candidate_profile.validTo >= existing_profile.validFrom; // reject
+                                   }
+                                   return false;
+                               });
+        }
+        return false;
+    };
+
+    return std::any_of(charging_profiles.begin(), charging_profiles.end(), conflicts_with);
+}
+
+void SmartChargingHandler::conform_validity_periods(ChargingProfile& profile) const {
+    profile.validFrom =
+        profile.validFrom.has_value() ? profile.validFrom.value() : ocpp::DateTime(date::utc_clock::now());
+    profile.validTo =
+        profile.validTo.has_value() ? profile.validTo.value() : ocpp::DateTime(date::utc_clock::time_point::max());
 }
 
 } // namespace ocpp::v201
