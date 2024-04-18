@@ -723,6 +723,8 @@ public:
                     enhanced_message.offline = true;
                     this->in_flight->promise.set_value(enhanced_message);
                 }
+                // also drop the message from the database
+                this->database_handler->remove_transaction_message(this->in_flight->uniqueId());
             }
         } else if (this->in_flight->isBootNotificationMessage()) {
             EVLOG_warning << "Message is BootNotification.req and will therefore be sent again";
