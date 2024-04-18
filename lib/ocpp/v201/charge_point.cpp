@@ -370,9 +370,17 @@ void ChargePoint::on_transaction_started(const int32_t evse_id, const int32_t co
         opt_meter_value.emplace(1, meter_value);
     }
 
-    this->transaction_event_req(TransactionEventEnum::Started, timestamp, transaction, trigger_reason,
-                                enhanced_transaction->get_seq_no(), std::nullopt, evse, enhanced_transaction->id_token,
-                                opt_meter_value, std::nullopt, this->is_offline(), reservation_id);
+    int32_t seq_no = enhanced_transaction->get_seq_no();
+
+    this->transaction_event_req(TransactionEventEnum::Started, timestamp, transaction, trigger_reason, seq_no,
+                                std::nullopt, evse, enhanced_transaction->id_token, opt_meter_value, std::nullopt,
+                                this->is_offline(), reservation_id);
+
+    this->database_handler->insert_transaction(
+        seq_no, enhanced_transaction->transactionId.get(),
+        conversions::transaction_event_enum_to_string(TransactionEventEnum::Started),
+        enhanced_transaction->id_token.value().idToken, evse_id, connector_id, timestamp,
+        conversions::charging_state_enum_to_string(charging_state));
 }
 
 void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime& timestamp,
@@ -426,8 +434,9 @@ void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime&
                                 this->is_offline(), std::nullopt);
 
     try {
-        this->database_handler->transaction_metervalues_clear(transaction_id);
-    } catch (const DatabaseException& e) {
+    this->database_handler->transaction_metervalues_clear(transaction_id);
+    this->database_handler->clear_transaction(transaction_id);
+    } catch (const QueryExecutionException& e) {
         EVLOG_error << "Could not clear transaction meter values: " << e.what();
     }
 
@@ -612,15 +621,18 @@ void ChargePoint::on_reserved(const int32_t evse_id, const int32_t connector_id)
 bool ChargePoint::on_charging_state_changed(const uint32_t evse_id, const ChargingStateEnum charging_state,
                                             const TriggerReasonEnum trigger_reason) {
     if (this->evses.find(static_cast<int32_t>(evse_id)) != this->evses.end()) {
-        std::unique_ptr<EnhancedTransaction>& transaction =
+        std::unique_ptr<EnhancedTransaction>& enhanced_transaction =
             this->evses.at(static_cast<int32_t>(evse_id))->get_transaction();
-        if (transaction != nullptr) {
-            if (transaction->chargingState == charging_state) {
+        if (enhanced_transaction != nullptr) {
+            if (enhanced_transaction->chargingState == charging_state) {
                 EVLOG_debug << "Trying to send charging state changed without actual change, dropping message";
             } else {
-                transaction->chargingState = charging_state;
-                this->transaction_event_req(TransactionEventEnum::Updated, DateTime(), transaction->get_transaction(),
-                                            trigger_reason, transaction->get_seq_no(), std::nullopt, std::nullopt,
+                enhanced_transaction->update_charging_state(charging_state);
+                int32_t seq_no = enhanced_transaction->get_seq_no();
+                this->transaction_event_req(TransactionEventEnum::Updated, DateTime(),
+                                            enhanced_transaction->get_transaction(),
+                                            trigger_reason, seq_no, std::nullopt,
+                                            this->evses.at(static_cast<int32_t>(evse_id))->get_evse_info(),
                                             std::nullopt, std::nullopt, std::nullopt, this->is_offline(), std::nullopt);
             }
             return true;
@@ -2241,6 +2253,12 @@ void ChargePoint::handle_boot_notification_response(CallResult<BootNotificationR
 
         this->remove_network_connection_profiles_below_actual_security_profile();
 
+        // get transaction messages from db (if there are any) so they can be sent again.
+        message_queue->get_transaction_messages_from_db();
+
+        // Get any interrupted transactions from the database and resume them if possible
+        this->resume_interrupted_transactions();
+
         // set timers
         if (msg.interval > 0) {
             this->heartbeat_timer.interval([this]() { this->heartbeat_req(); }, std::chrono::seconds(msg.interval));
@@ -3735,6 +3753,19 @@ void ChargePoint::execute_change_availability_request(ChangeAvailabilityRequest 
     }
 }
 
+void ChargePoint::resume_interrupted_transactions() {
+
+    this->interrupted_transactions = this->database_handler->get_ongoing_transactions();
+
+    //  Find details of the interrupted transaction
+    for (auto const& active_transactions : this->interrupted_transactions) {
+        if (active_transactions.has_interrupted_transaction == true) {
+            this->evses.at(active_transactions.evse_id)->resume_transaction(active_transactions);
+            EVLOG_info << "Trying to Resume interrupted transaction";
+        }
+    }
+}
+
 std::vector<GetVariableResult>
 ChargePoint::get_variables(const std::vector<GetVariableData>& get_variable_data_vector) {
     std::vector<GetVariableResult> response;
@@ -3762,6 +3793,26 @@ ChargePoint::set_variables(const std::vector<SetVariableData>& set_variable_data
     const auto response = this->set_variables_internal(set_variable_data_vector, true);
     this->handle_variables_changed(response);
     return response;
+}
+
+std::string ChargePoint::has_interrupted_transactions(int32_t connector_id) {
+
+    std::string result = "";
+    // Find details of the interrupted transaction
+    if (!this->interrupted_transactions.empty()) {
+        for (auto const& active_transactions : this->interrupted_transactions) {
+            if (active_transactions.connector_id == connector_id) {
+                EVLOG_info << "Found transaction with id " << active_transactions.transaction_id;
+                result = active_transactions.transaction_id;
+            }
+        }
+    }
+    if (result.empty())
+    {
+        EVLOG_info << "Found no interrupted transaction at connector id: " << connector_id;
+    }
+    
+    return result;
 }
 
 } // namespace v201

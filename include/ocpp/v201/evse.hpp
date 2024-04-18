@@ -62,6 +62,10 @@ public:
     virtual void close_transaction(const DateTime& timestamp, const MeterValue& meter_stop,
                                    const ReasonEnum& reason) = 0;
 
+    /// @brief Resume a given transaction.
+    /// @param interrupted_transaction TransactionInterruptedResponse type.
+    virtual void resume_transaction(TransactionInterruptedResponse interrupted_transaction) = 0;
+
     /// \brief Start checking if the max energy on invalid id has exceeded.
     ///        Will call pause_charging_callback when that happens.
     virtual void start_checking_max_energy_on_invalid_id() = 0;
@@ -153,6 +157,17 @@ private:
     /// \brief function to check if the max energy has been exceeded, calls pause_charging_callback if so.
     void check_max_energy_on_invalid_id();
 
+    /// \brief Restart all metering timers.
+    /// \param timestamp 
+    /// \param sampled_data_tx_updated_interval 
+    /// \param sampled_data_tx_ended_interval 
+    /// \param aligned_data_tx_updated_interval 
+    /// \param aligned_data_tx_ended_interval 
+    void restart_metering_timers(const DateTime& timestamp, const std::chrono::seconds sampled_data_tx_updated_interval,
+                                 const std::chrono::seconds sampled_data_tx_ended_interval,
+                                 const std::chrono::seconds aligned_data_tx_updated_interval,
+                                 const std::chrono::seconds aligned_data_tx_ended_interval);
+
     AverageMeterValues aligned_data_updated;
     AverageMeterValues aligned_data_tx_end;
 
@@ -187,6 +202,12 @@ public:
                           const std::chrono::seconds aligned_data_tx_ended_interval);
     void close_transaction(const DateTime& timestamp, const MeterValue& meter_stop, const ReasonEnum& reason);
 
+    /// @brief Resume a given transaction.
+    /// @param interrupted_transaction TransactionInterruptedResponse type.
+    void resume_transaction(TransactionInterruptedResponse interrupted_transaction);
+
+    /// \brief Start checking if the max energy on invalid id has exceeded.
+    ///        Will call pause_charging_callback when that happens.
     void start_checking_max_energy_on_invalid_id();
 
     bool has_active_transaction();

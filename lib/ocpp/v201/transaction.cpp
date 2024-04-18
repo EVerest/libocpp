@@ -14,8 +14,14 @@ Transaction EnhancedTransaction::get_transaction() {
 }
 
 int32_t EnhancedTransaction::get_seq_no() {
+    enhanced_transaction_database_handler->update_transaction_seq_no(this->transactionId,this->seq_no);
     this->seq_no += 1;
     return this->seq_no - 1;
+}
+
+void EnhancedTransaction::update_charging_state(const ChargingStateEnum charging_state) {
+    this->chargingState = charging_state;
+    enhanced_transaction_database_handler->update_charging_state(this->transactionId, charging_state);
 }
 
 } // namespace v201

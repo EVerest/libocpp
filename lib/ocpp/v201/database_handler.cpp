@@ -22,7 +22,18 @@ void DatabaseHandler::init_sql() {
         throw std::logic_error("SQLite must be in serialized thread mode");
     }
 
-    this->inintialize_enum_tables();
+
+    // process any interrupted transactions before initializing
+    process_interrupted_transactions();
+
+    if (std::find_if(interrupted_transactions.begin(), interrupted_transactions.end(),
+                     [](TransactionInterruptedResponse r) { return r.has_interrupted_transaction == true; }) !=
+        interrupted_transactions.end()) {
+        EVLOG_info << "Not clearing tables as there is an ongoing transaction";
+    } else {
+
+        this->inintialize_enum_tables();
+    }
 }
 
 void DatabaseHandler::inintialize_enum_tables() {
@@ -215,6 +226,41 @@ void DatabaseHandler::insert_availability(int32_t evse_id, int32_t connector_id,
 
     if (insert_stmt->step() != SQLITE_DONE) {
         throw QueryExecutionException(this->database->get_error_message());
+    }
+}
+
+void DatabaseHandler::process_interrupted_transactions() {
+    TransactionInterruptedResponse active_response;
+    try {
+        std::string sql = "SELECT A.* FROM TRANSACTIONS A WHERE A.MESSAGE_TYPE = \"Started\" ";
+        // SQLiteStatement stmt(this->db, sql);
+        auto get_stmt = this->database->new_statement(sql);
+
+        int status;
+        while ((status = get_stmt->step()) == SQLITE_ROW) {
+            try {
+                active_response.transaction_id = get_stmt->column_text(0);
+                active_response.seq_no = get_stmt->column_int(1);
+                active_response.evse_id = get_stmt->column_int(3);
+                active_response.connector_id = get_stmt->column_int(4);
+                active_response.id_token.idToken = get_stmt->column_text(5); // TODO: maybe just store the whole IDtoken
+                                                                             // type?
+                active_response.timestamp = ocpp::DateTime(get_stmt->column_datetime(6));
+                active_response.charging_state = conversions::string_to_charging_state_enum(get_stmt->column_text(7));
+                active_response.has_interrupted_transaction = true;
+
+                interrupted_transactions.push_back(active_response);
+            } catch (const std::exception& e) {
+                EVLOG_error << "can not get queued transaction message from database: "
+                            << "(" << e.what() << ")";
+            }
+        }
+
+        if (status != SQLITE_DONE) {
+            EVLOG_error << "Could not get (all) transactions from database";
+        }
+    } catch (const std::exception& e) {
+        throw std::runtime_error(std::string("Could not get interrupted transactions from database: ") + e.what());
     }
 }
 
@@ -614,6 +660,73 @@ OperationalStatusEnum DatabaseHandler::get_connector_availability(int32_t evse_i
     assert(evse_id > 0);
     assert(connector_id > 0);
     return this->get_availability(evse_id, connector_id);
+}
+
+// transactions
+void DatabaseHandler::insert_transaction(int32_t seq_no, const std::string& transaction_id,
+                                         const std::string& event_type, const std::string& id_tag_start,
+                                         int32_t evse_id, int32_t connector_id, const ocpp::DateTime& time_start,
+                                         std::string charging_state) {
+    std::string sql =
+        "INSERT INTO TRANSACTIONS (SEQ_NO, TRANSACTION_ID, MESSAGE_TYPE,EVSE_ID, CONNECTOR_ID, "
+        "ID_TOKEN, TIME_START, CHARGING_STATE) VALUES"
+        "(@seq_no, @transaction_id, @event_type, @evse_id, @connector_id, @id_tag_start, @time_start, @charging_state)";
+    auto insert_stmt = this->database->new_statement(sql);
+
+    insert_stmt->bind_int("@seq_no", seq_no);
+    insert_stmt->bind_text("@transaction_id", transaction_id);
+    insert_stmt->bind_text("@event_type", event_type);
+    insert_stmt->bind_int("@evse_id", evse_id);
+    insert_stmt->bind_int("@connector_id", connector_id);
+    insert_stmt->bind_text("@id_tag_start", id_tag_start);
+    insert_stmt->bind_datetime("@time_start", time_start);
+    insert_stmt->bind_text("@charging_state", charging_state);
+
+    if (insert_stmt->step() != SQLITE_DONE) {
+        EVLOG_error << "Could not insert into table: " << this->database->get_error_message();
+        throw std::runtime_error("db access error");
+    }
+}
+
+bool DatabaseHandler::clear_transaction(const std::string& transaction_id) {
+
+    // since there can be multiple transactions active in a station only remove the correct one
+    std::string sql = "DELETE FROM TRANSACTIONS WHERE TRANSACTION_ID = @transaction_id";
+    auto delete_stmt = this->database->new_statement(sql);
+    delete_stmt->bind_text("@transaction_id", transaction_id);
+    if (delete_stmt->step() != SQLITE_DONE) {
+        EVLOG_error << "Could not delete from table: " << this->database->get_error_message();
+    }
+    return true;
+}
+
+std::vector<TransactionInterruptedResponse> DatabaseHandler::get_ongoing_transactions() {
+    return interrupted_transactions;
+}
+
+void DatabaseHandler::update_transaction_seq_no(const std::string& transaction_id, int32_t seq_no) {
+    std::string sql = "UPDATE TRANSACTIONS SET SEQ_NO = @seq_no WHERE TRANSACTION_ID = @transaction_id";
+    auto update_stmt = this->database->new_statement(sql);
+
+    update_stmt->bind_int("@seq_no", seq_no);
+    update_stmt->bind_text("@transaction_id", transaction_id);
+
+    if (update_stmt->step() != SQLITE_DONE) {
+        EVLOG_error << "Could not insert into table: " << this->database->get_error_message();
+        throw std::runtime_error("db access error");
+    }
+}
+void DatabaseHandler::update_charging_state(const std::string& transaction_id, const ChargingStateEnum charging_state) {
+    std::string sql = "UPDATE TRANSACTIONS SET CHARGING_STATE = @charging_state WHERE TRANSACTION_ID = @transaction_id";
+    auto update_stmt = this->database->new_statement(sql);
+
+    update_stmt->bind_text("@charging_state", conversions::charging_state_enum_to_string(charging_state));
+    update_stmt->bind_text("@transaction_id", transaction_id);
+
+    if (update_stmt->step() != SQLITE_DONE) {
+        EVLOG_error << "Could not insert into table: " << this->database->get_error_message();
+        throw std::runtime_error("db access error");
+    }
 }
 
 } // namespace v201

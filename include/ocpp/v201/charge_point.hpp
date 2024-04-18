@@ -398,6 +398,8 @@ private:
     // reference to evses
     std::map<int32_t, std::unique_ptr<EvseInterface>> evses;
 
+    // Interrupted transactions
+    std::vector<TransactionInterruptedResponse> interrupted_transactions;
     // utility
     std::unique_ptr<MessageQueue<v201::MessageType>> message_queue;
     std::shared_ptr<DeviceModel> device_model;
@@ -759,21 +761,20 @@ private:
     /// \brief Immediately execute the given \param request to change the operational state of a component
     /// If \param persist is set to true, the change will be persisted across a reboot
     void execute_change_availability_request(ChangeAvailabilityRequest request, bool persist);
+    /// \brief Perform a check to see if there are any interrupted transactions and resume them.
+    void resume_interrupted_transactions();
 
 public:
     /// \brief Construct a new ChargePoint object
-    /// \param evse_connector_structure Map that defines the structure of EVSE and connectors of the chargepoint. The
-    /// key represents the id of the EVSE and the value represents the number of connectors for this EVSE. The ids of
-    /// the EVSEs have to increment starting with 1.
-    /// \param device_model_storage_address address to device model storage (e.g. location of SQLite database)
-    /// \param ocpp_main_path Path where utility files for OCPP are read and written to
-    /// \param core_database_path Path to directory where core database is located
-    /// \param message_log_path Path to where logfiles are written to
-    /// \param evse_security Pointer to evse_security that manages security related operations; if nullptr
-    /// security_configuration must be set
-    /// \param callbacks Callbacks that will be registered for ChargePoint
-    /// \param security_configuration specifies the file paths that are required to set up the internal evse_security
-    /// implementation
+    /// \param evse_connector_structure Map that defines the structure of EVSE and connectors of the chargepoint.
+    /// The key represents the id of the EVSE and the value represents the number of connectors for this EVSE. The
+    /// ids of the EVSEs have to increment starting with 1. \param device_model_storage_address address to device
+    /// model storage (e.g. location of SQLite database) \param ocpp_main_path Path where utility files for OCPP are
+    /// read and written to \param core_database_path Path to directory where core database is located \param
+    /// message_log_path Path to where logfiles are written to \param evse_security Pointer to evse_security that
+    /// manages security related operations; if nullptr security_configuration must be set \param callbacks
+    /// Callbacks that will be registered for ChargePoint \param security_configuration specifies the file paths
+    /// that are required to set up the internal evse_security implementation
     ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
                 const std::string& device_model_storage_address, const std::string& ocpp_main_path,
                 const std::string& core_database_path, const std::string& sql_init_path,
@@ -890,6 +891,25 @@ public:
                                                 const AttributeEnum& attribute_enum) {
         return this->device_model->request_value<T>(component_id, variable_id, attribute_enum);
     }
+
+    /// \brief Gets variables specified within \p get_variable_data_vector from the device model and returns the result.
+    /// This function is used internally in order to handle GetVariables.req messages and it can be used to get
+    /// variables externally.
+    /// \param get_variable_data_vector contains data of the variables to get
+    /// \return Vector containing a result for each requested variable
+    std::vector<GetVariableResult> get_variables(const std::vector<GetVariableData>& get_variable_data_vector);
+
+    /// \brief Sets variables specified within \p set_variable_data_vector in the device model and returns the result.
+    /// \param set_variable_data_vector contains data of the variables to set
+    /// \return Map containing the SetVariableData as a key and the  SetVariableResult as a value for each requested
+    /// change
+    std::map<SetVariableData, SetVariableResult>
+    set_variables(const std::vector<SetVariableData>& set_variable_data_vector);
+
+    ///\brief Check if there are any interrupted transactions on the connector id and return the transaction id.
+    /// \param connector_id The connector id to check
+    /// \return std::string containing the transaction id.
+    std::string has_interrupted_transactions(int32_t connector_id);
 };
 
 } // namespace v201
