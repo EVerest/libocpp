@@ -851,7 +851,6 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
         response = this->authorize_req(id_token, certificate, ocsp_request_data);
 
         if (auth_cache_enabled) {
-            this->update_id_token_cache_lifetime(response.idTokenInfo);
             try {
                 this->database_handler->authorization_cache_insert_entry(hashed_id_token, response.idTokenInfo);
             } catch (const QueryExecutionException& e) {
@@ -1398,16 +1397,6 @@ void ChargePoint::restore_all_connector_states() {
         for (uint32_t i = 1; i <= number_of_connectors; ++i) {
             evse->restore_connector_operative_status(static_cast<int32_t>(i));
         }
-    }
-}
-
-void ChargePoint::update_id_token_cache_lifetime(IdTokenInfo& id_token_info) {
-    // C10.FR.08
-    // when CSMS does not set cacheExpiryDateTime and config variable for AuthCacheLifeTime is present use the
-    // configured AuthCacheLifeTime
-    auto lifetime = this->device_model->get_optional_value<int>(ControllerComponentVariables::AuthCacheLifeTime);
-    if (!id_token_info.cacheExpiryDateTime.has_value() and lifetime.has_value()) {
-        id_token_info.cacheExpiryDateTime = DateTime(date::utc_clock::now() + std::chrono::seconds(lifetime.value()));
     }
 }
 
@@ -2602,11 +2591,9 @@ void ChargePoint::handle_transaction_event_response(const EnhancedMessage<v201::
     if (id_token.type != IdTokenEnum::Central and
         this->device_model->get_optional_value<bool>(ControllerComponentVariables::AuthCacheCtrlrEnabled)
             .value_or(true)) {
-        auto id_token_info = msg.idTokenInfo.value();
-        this->update_id_token_cache_lifetime(id_token_info);
         try {
             this->database_handler->authorization_cache_insert_entry(utils::generate_token_hash(id_token),
-                                                                     id_token_info);
+                                                                     msg.idTokenInfo.value());
         } catch (const QueryExecutionException& e) {
             EVLOG_warning << "Could not insert into authorization cache entry: " << e.what();
         }
@@ -3350,27 +3337,34 @@ void ChargePoint::scheduled_check_v2g_certificate_expiration() {
 }
 
 void ChargePoint::cache_cleanup_handler() {
+    // Run the update once so the ram variable gets initialized
+    this->update_authorization_cache_size();
+
     while (true) {
         // Wait for next wakeup or timeout
         std::unique_lock lk(this->auth_cache_cleanup_mutex);
-        auto wakeup_reason = this->auth_cache_cleanup_cv.wait_for(lk, std::chrono::minutes(15));
+        auto wakeup_reason = this->auth_cache_cleanup_cv.wait_for(lk, std::chrono::minutes(1));
 
         if (wakeup_reason == std::cv_status::timeout) {
-            EVLOG_debug << "Time based authorization cache cleanup";
+            EVLOG_info << "Time based authorization cache cleanup";
         } else {
-            EVLOG_debug << "Triggered authorization cache cleanup";
+            EVLOG_info << "Triggered authorization cache cleanup";
         }
 
-        this->database_handler->authorization_cache_delete_entries_with_expiry_date_before(DateTime());
+        auto lifetime = this->device_model->get_optional_value<int>(ControllerComponentVariables::AuthCacheLifeTime);
+        this->database_handler->authorization_cache_delete_expired_entries(
+            lifetime.has_value() ? std::optional<std::chrono::seconds>(*lifetime) : std::nullopt);
 
-        auto max_storage = this->device_model
-                               ->get_variable_meta_data(ControllerComponentVariables::AuthCacheStorage.component,
-                                                        ControllerComponentVariables::AuthCacheStorage.variable.value())
-                               .value()
-                               .characteristics.maxLimit;
-        if (max_storage.has_value()) {
-            while (this->database_handler->authorization_cache_get_binary_size() > max_storage.value()) {
-                this->database_handler->authorization_cache_delete_nr_of_oldest_entries(1);
+        auto meta_data =
+            this->device_model->get_variable_meta_data(ControllerComponentVariables::AuthCacheStorage.component,
+                                                       ControllerComponentVariables::AuthCacheStorage.variable.value());
+
+        if (meta_data.has_value()) {
+            auto max_storage = meta_data->characteristics.maxLimit;
+            if (max_storage.has_value()) {
+                while (this->database_handler->authorization_cache_get_binary_size() > max_storage.value()) {
+                    this->database_handler->authorization_cache_delete_nr_of_oldest_entries(1);
+                }
             }
         }
 

@@ -66,11 +66,11 @@ public:
     /// \retval True if succeeded
     bool authorization_cache_delete_nr_of_oldest_entries(size_t nr_to_remove);
 
-    /// \brief Removes all entries from the cache that have an expiry date before \p now
+    /// \brief Removes all entries from the cache that have passed their expiry date or auth cache lifetime
     ///
-    /// \param before_date The date to check the expiry for
+    /// \param auth_cache_lifetime The maximum time tokens can stay in the cache without being used
     /// \retval True if succeeded
-    bool authorization_cache_delete_entries_with_expiry_date_before(DateTime before_date);
+    bool authorization_cache_delete_expired_entries(std::optional<std::chrono::seconds> auth_cache_lifetime);
 
     /// \brief Deletes all entries of the AUTH_CACHE table. Returns true if the operation was successful, else false
     void authorization_cache_clear();

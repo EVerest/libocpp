@@ -532,10 +532,6 @@ private:
     /// \brief Restores all connectors to their persisted state
     void restore_all_connector_states();
 
-    /// \brief Sets the cache lifetime value in \param id_token_info with configured AuthCacheLifeTime
-    /// if it was not already set
-    void update_id_token_cache_lifetime(IdTokenInfo& id_token_info);
-
     ///\brief Calculate and update the authorization cache size in the device model
     ///
     void update_authorization_cache_size();

@@ -48,8 +48,6 @@ void DatabaseHandler::inintialize_enum_tables() {
 
 void DatabaseHandler::init_enum_table_inner(const std::string& table_name, const int begin, const int end,
                                             std::function<std::string(int)> conversion) {
-    char* err_msg = 0;
-
     if (!this->database->clear_table(table_name)) {
         EVLOG_critical << "Table \"" + table_name + "\" does not exist";
         throw QueryExecutionException(this->database->get_error_message());
@@ -167,13 +165,21 @@ bool DatabaseHandler::authorization_cache_delete_nr_of_oldest_entries(size_t nr_
     }
 }
 
-bool DatabaseHandler::authorization_cache_delete_entries_with_expiry_date_before(DateTime before_date) {
+bool DatabaseHandler::authorization_cache_delete_expired_entries(
+    std::optional<std::chrono::seconds> auth_cache_lifetime) {
     try {
         std::string sql = "DELETE FROM AUTH_CACHE WHERE ID_TOKEN_HASH IN (SELECT ID_TOKEN_HASH FROM AUTH_CACHE WHERE "
-                          "EXPIRY_DATE < @before_date)";
+                          "EXPIRY_DATE < @before_date OR LAST_USED < @before_last_used)";
         auto delete_stmt = this->database->new_statement(sql);
 
-        delete_stmt->bind_datetime("@before_date", before_date);
+        DateTime now;
+        delete_stmt->bind_datetime("@before_date", now);
+        if (auth_cache_lifetime.has_value()) {
+            delete_stmt->bind_datetime("@before_last_used",
+                                       DateTime(now.to_time_point() - auth_cache_lifetime.value()));
+        } else {
+            delete_stmt->bind_null("@before_last_used");
+        }
 
         if (delete_stmt->step() != SQLITE_DONE) {
             EVLOG_error << "Could not delete from table: " << this->database->get_error_message();
@@ -374,8 +380,6 @@ void DatabaseHandler::transaction_metervalues_insert(const std::string& transact
         }) != meter_value.sampledValue.end()) {
         throw std::invalid_argument("All metervalues must have the same context");
     }
-
-    char* err_msg = 0;
 
     std::string sql1 = "INSERT INTO METER_VALUES (TRANSACTION_ID, TIMESTAMP, READING_CONTEXT, CUSTOM_DATA) VALUES "
                        "(@transaction_id, @timestamp, @context, @custom_data)";
