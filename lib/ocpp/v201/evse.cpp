@@ -267,6 +267,7 @@ void Evse::restart_metering_timers(const DateTime& timestamp,
                 const int32_t seq_no = this->transaction->get_seq_no();
                 this->transaction_meter_value_req(this->get_meter_value(), this->transaction->get_transaction(), seq_no,
                                                   this->transaction->reservation_id);
+                this->database_handler->update_transaction_seq_no(this->transaction->get_transaction().transactionId, seq_no);
             },
             sampled_data_tx_updated_interval, date::utc_clock::to_sys(timestamp.to_time_point()));
     }
@@ -314,6 +315,7 @@ void Evse::restart_metering_timers(const DateTime& timestamp,
                 this->transaction_meter_value_req(meter_value, this->transaction->get_transaction(), seq_no,
                                                   this->transaction->reservation_id);
                 this->aligned_data_updated.clear_values();
+                this->database_handler->update_transaction_seq_no(this->transaction->transactionId, seq_no);
             },
             aligned_data_tx_updated_interval,
             std::chrono::floor<date::days>(date::utc_clock::to_sys(date::utc_clock::now())));

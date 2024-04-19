@@ -14,7 +14,6 @@ Transaction EnhancedTransaction::get_transaction() {
 }
 
 int32_t EnhancedTransaction::get_seq_no() {
-    databse_handler->update_transaction_seq_no(this->transactionId,this->seq_no);
     this->seq_no += 1;
     return this->seq_no - 1;
 }
