@@ -20,7 +20,7 @@ struct EnhancedTransaction : public Transaction {
     int32_t seq_no = 0;
     std::optional<float> active_energy_import_start_value;
     bool check_max_active_import_energy;
-    std::shared_ptr<DatabaseHandler> enhanced_transaction_database_handler;
+    std::shared_ptr<DatabaseHandler> databse_handler;
 
     ClockAlignedTimer sampled_tx_updated_meter_values_timer;
     ClockAlignedTimer sampled_tx_ended_meter_values_timer;

@@ -81,7 +81,7 @@ void Evse::resume_transaction(TransactionInterruptedResponse interrupted_transac
         interrupted_transaction.charging_state; // TODO: can't we just hardcode this here?
     this->transaction->seq_no = interrupted_transaction.seq_no + 1;
     this->transaction->active_energy_import_start_value = this->get_active_import_register_meter_value();
-    this->transaction->enhanced_transaction_database_handler = this->database_handler;
+    this->transaction->databse_handler = this->database_handler;
     // Restart the clock timers
     restart_metering_timers(
         interrupted_transaction.timestamp,
@@ -111,7 +111,7 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
     this->transaction->id_token = id_token;
     this->transaction->group_id_token = group_id_token;
     this->transaction->active_energy_import_start_value = this->get_active_import_register_meter_value();
-    this->transaction->enhanced_transaction_database_handler = this->database_handler;
+    this->transaction->databse_handler = this->database_handler;
 
     try {
         this->database_handler->transaction_metervalues_insert(this->transaction->transactionId.get(), meter_start);

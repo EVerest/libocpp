@@ -3809,7 +3809,7 @@ std::string ChargePoint::has_interrupted_transactions(int32_t connector_id) {
     }
     if (result.empty())
     {
-        EVLOG_info << "Found no interrupted transaction at connector id: " << connector_id;
+        EVLOG_error << "Found no interrupted transaction at connector id: " << connector_id;
     }
     
     return result;
