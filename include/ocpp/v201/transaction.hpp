@@ -28,7 +28,7 @@ struct EnhancedTransaction : public Transaction {
     ClockAlignedTimer aligned_tx_ended_meter_values_timer;
 
     /// @brief Get the current sequnce number of the transaction message.
-    /// @details This method also increments the sequence number and updates the sequence number of the transaction in the database.
+    /// @details This method also increments the sequence number.
     /// @return int32_t seq number
     int32_t get_seq_no();
     Transaction get_transaction();
@@ -37,6 +37,10 @@ struct EnhancedTransaction : public Transaction {
     /// @details ALso update the chargign state in the database
     /// @param charging_state 
     void update_charging_state(const ChargingStateEnum charging_state);
+
+    /// @brief Update the sequnce number of the message in the database
+    /// @param seq_no int32_t sequnce number to write.
+    void update_sequence_number(const int32_t seq_no);
 };
 } // namespace v201
 
