@@ -232,32 +232,35 @@ void DatabaseHandler::insert_availability(int32_t evse_id, int32_t connector_id,
 void DatabaseHandler::process_interrupted_transactions() {
     TransactionInterruptedResponse active_response;
     try {
-        std::string sql = "SELECT A.* FROM TRANSACTIONS A WHERE A.MESSAGE_TYPE = \"Started\" ";
-        // SQLiteStatement stmt(this->db, sql);
+        std::string sql = "SELECT * FROM TRANSACTIONS";
         auto get_stmt = this->database->new_statement(sql);
 
-        int status;
-        while ((status = get_stmt->step()) == SQLITE_ROW) {
-            try {
-                active_response.transaction_id = get_stmt->column_text(0);
-                active_response.seq_no = get_stmt->column_int(1);
-                active_response.evse_id = get_stmt->column_int(3);
-                active_response.connector_id = get_stmt->column_int(4);
-                active_response.id_token.idToken = get_stmt->column_text(5); // TODO: maybe just store the whole IDtoken
-                                                                             // type?
-                active_response.timestamp = ocpp::DateTime(get_stmt->column_datetime(6));
-                active_response.charging_state = conversions::string_to_charging_state_enum(get_stmt->column_text(7));
-                active_response.has_interrupted_transaction = true;
+        int status = get_stmt->step();
+        if (status == SQLITE_DONE) {
+            EVLOG_debug << "No interrupted transactions to retreive";
+        } else if ((status = get_stmt->step()) == SQLITE_ROW) {
+            do {
+                try {
+                    active_response.transaction_id = get_stmt->column_text(0);
+                    active_response.seq_no = get_stmt->column_int(1);
+                    active_response.evse_id = get_stmt->column_int(3);
+                    active_response.connector_id = get_stmt->column_int(4);
+                    active_response.id_token.idToken = get_stmt->column_text(5); // TODO: maybe just store the whole
+                                                                                 // IDtoken type?
+                    active_response.timestamp = ocpp::DateTime(get_stmt->column_datetime(6));
+                    active_response.charging_state =
+                        conversions::string_to_charging_state_enum(get_stmt->column_text(7));
+                    active_response.has_interrupted_transaction = true;
 
-                interrupted_transactions.push_back(active_response);
-            } catch (const std::exception& e) {
-                EVLOG_error << "can not get queued transaction message from database: "
-                            << "(" << e.what() << ")";
+                    interrupted_transactions.push_back(active_response);
+                } catch (const std::exception& e) {
+                    EVLOG_error << "can not get queued transaction message from database: "
+                                << "(" << e.what() << ")";
+                }
+            } while ((status = get_stmt->step()) == SQLITE_ROW);
+            if (status != SQLITE_DONE) {
+                EVLOG_error << "Could not get (all) transactions from database";
             }
-        }
-
-        if (status != SQLITE_DONE) {
-            EVLOG_error << "Could not get (all) transactions from database";
         }
     } catch (const std::exception& e) {
         throw std::runtime_error(std::string("Could not get interrupted transactions from database: ") + e.what());
