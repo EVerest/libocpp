@@ -175,6 +175,9 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
         this->database_handler);
 
     this->auth_cache_cleanup_thread = std::thread(&ChargePoint::cache_cleanup_handler, this);
+
+    // Get any interrupted transactions from the database and resume them if possible
+    this->resume_interrupted_transactions();
 }
 
 void ChargePoint::start(BootReasonEnum bootreason) {
@@ -341,7 +344,7 @@ void ChargePoint::on_transaction_started(const int32_t evse_id, const int32_t co
                                          const ChargingStateEnum charging_state) {
 
     this->evses.at(evse_id)->open_transaction(
-        session_id, connector_id, timestamp, meter_start, id_token, group_id_token, reservation_id,
+        session_id, connector_id, timestamp, meter_start, id_token, group_id_token, reservation_id,charging_state,
         std::chrono::seconds(
             this->device_model->get_value<int>(ControllerComponentVariables::SampledDataTxUpdatedInterval)),
         std::chrono::seconds(
@@ -349,12 +352,12 @@ void ChargePoint::on_transaction_started(const int32_t evse_id, const int32_t co
         std::chrono::seconds(this->device_model->get_value<int>(ControllerComponentVariables::AlignedDataInterval)),
         std::chrono::seconds(
             this->device_model->get_value<int>(ControllerComponentVariables::AlignedDataTxEndedInterval)));
-    const auto& enhanced_transaction = this->evses.at(evse_id)->get_transaction();
-    enhanced_transaction->chargingState = charging_state;
+
     const auto meter_value = utils::get_meter_value_with_measurands_applied(
         meter_start, utils::get_measurands_vec(this->device_model->get_value<std::string>(
                          ControllerComponentVariables::SampledDataTxStartedMeasurands)));
 
+    const auto& enhanced_transaction = this->evses.at(evse_id)->get_transaction();
     Transaction transaction{enhanced_transaction->transactionId};
     transaction.chargingState = charging_state;
     if (remote_start_id.has_value()) {
@@ -375,12 +378,6 @@ void ChargePoint::on_transaction_started(const int32_t evse_id, const int32_t co
     this->transaction_event_req(TransactionEventEnum::Started, timestamp, transaction, trigger_reason, seq_no,
                                 std::nullopt, evse, enhanced_transaction->id_token, opt_meter_value, std::nullopt,
                                 this->is_offline(), reservation_id);
-
-    this->database_handler->insert_transaction(
-        seq_no, enhanced_transaction->transactionId.get(),
-        conversions::transaction_event_enum_to_string(TransactionEventEnum::Started),
-        enhanced_transaction->id_token.value().idToken, evse_id, connector_id, timestamp,
-        conversions::charging_state_enum_to_string(charging_state));
 }
 
 void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime& timestamp,
@@ -2255,9 +2252,6 @@ void ChargePoint::handle_boot_notification_response(CallResult<BootNotificationR
 
         // get transaction messages from db (if there are any) so they can be sent again.
         message_queue->get_transaction_messages_from_db();
-
-        // Get any interrupted transactions from the database and resume them if possible
-        this->resume_interrupted_transactions();
 
         // set timers
         if (msg.interval > 0) {
