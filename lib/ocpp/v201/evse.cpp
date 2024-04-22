@@ -60,7 +60,11 @@ Evse::Evse(const int32_t evse_id, const int32_t number_of_connectors, DeviceMode
         this->id_connector_map.insert(
             std::make_pair(connector_id, std::make_unique<Connector>(evse_id, connector_id, component_state_manager)));
     }
+
+    // Get any interrupted transactions from the database and resume them if possible
+    this->resume_interrupted_transactions();
 }
+
 
 EVSE Evse::get_evse_info() {
     EVSE evse{evse_id};
@@ -360,6 +364,19 @@ void Evse::restart_metering_timers(const DateTime& timestamp,
         // There is still the expectation for us to add a metervalue at timepoint 12:00:00.000 which we do with this.
         if (date::utc_clock::to_sys(timestamp.to_time_point()) <= (next_interval - aligned_data_tx_ended_interval)) {
             store_aligned_metervalue();
+        }
+    }
+}
+
+void Evse::resume_interrupted_transactions() {
+
+    this->interrupted_transactions = this->database_handler->get_ongoing_transactions();
+
+    //  Find details of the interrupted transaction
+    for (auto const& active_transactions : this->interrupted_transactions) {
+        if (active_transactions.has_interrupted_transaction == true) {
+            this->resume_transaction(active_transactions);
+            EVLOG_info << "Trying to Resume interrupted transaction";
         }
     }
 }

@@ -151,6 +151,8 @@ private:
     Everest::SteadyTimer sampled_meter_values_timer;
     std::shared_ptr<DatabaseHandler> database_handler;
 
+    std::vector<TransactionInterruptedResponse> interrupted_transactions; // Interrupted transactions
+
     /// \brief gets the active import energy meter value from meter_value, normalized to Wh.
     std::optional<float> get_active_import_register_meter_value();
 
@@ -170,6 +172,9 @@ private:
 
     AverageMeterValues aligned_data_updated;
     AverageMeterValues aligned_data_tx_end;
+
+    /// \brief Perform a check to see if there are any interrupted transactions and resume them.
+    void resume_interrupted_transactions();
 
     /// \brief Component responsible for maintaining and persisting the operational status of CS, EVSEs, and connectors.
     std::shared_ptr<ComponentStateManagerInterface> component_state_manager;

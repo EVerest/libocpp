@@ -175,9 +175,6 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
         this->database_handler);
 
     this->auth_cache_cleanup_thread = std::thread(&ChargePoint::cache_cleanup_handler, this);
-
-    // Get any interrupted transactions from the database and resume them if possible
-    this->resume_interrupted_transactions();
 }
 
 void ChargePoint::start(BootReasonEnum bootreason) {
@@ -3752,19 +3749,6 @@ void ChargePoint::execute_change_availability_request(ChangeAvailabilityRequest 
     }
 }
 
-void ChargePoint::resume_interrupted_transactions() {
-
-    this->interrupted_transactions = this->database_handler->get_ongoing_transactions();
-
-    //  Find details of the interrupted transaction
-    for (auto const& active_transactions : this->interrupted_transactions) {
-        if (active_transactions.has_interrupted_transaction == true) {
-            this->evses.at(active_transactions.evse_id)->resume_transaction(active_transactions);
-            EVLOG_info << "Trying to Resume interrupted transaction";
-        }
-    }
-}
-
 std::vector<GetVariableResult>
 ChargePoint::get_variables(const std::vector<GetVariableData>& get_variable_data_vector) {
     std::vector<GetVariableResult> response;
@@ -3797,20 +3781,19 @@ ChargePoint::set_variables(const std::vector<SetVariableData>& set_variable_data
 std::string ChargePoint::has_interrupted_transactions(int32_t connector_id) {
 
     std::string result = "";
-    // Find details of the interrupted transaction
-    if (!this->interrupted_transactions.empty()) {
-        for (auto const& active_transactions : this->interrupted_transactions) {
-            if (active_transactions.connector_id == connector_id) {
-                EVLOG_info << "Found transaction with id " << active_transactions.transaction_id;
-                result = active_transactions.transaction_id;
-            }
+
+    for (auto const& [evse_id, evse] : this->evses) {
+        if (evse->has_active_transaction(connector_id)){
+        result = evse->get_transaction()->transactionId;
+        EVLOG_info << "Found transaction with id " << result << " at connector id: " << connector_id;
         }
     }
+
     if (result.empty())
     {
         EVLOG_error << "Found no interrupted transaction at connector id: " << connector_id;
     }
-    
+
     return result;
 }
 
