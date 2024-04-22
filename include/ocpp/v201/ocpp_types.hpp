@@ -946,11 +946,11 @@ struct TransactionInterruptedResponse {
     std::string transaction_id;
     int32_t evse_id;
     int32_t connector_id;
-    MeterValue meter_start;
     IdToken id_token;
     DateTime timestamp;
     int32_t seq_no;
     ocpp::v201::ChargingStateEnum charging_state;
+    const std::optional<int32_t> reservation_id;
 };
 
 struct Firmware {

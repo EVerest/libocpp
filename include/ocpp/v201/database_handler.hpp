@@ -156,7 +156,8 @@ public:
     /// @param charging_state
     void insert_transaction(int32_t seq_no, const std::string& transaction_id, const std::string& event_type,
                             const std::string& id_tag_start, int32_t evse_id, int32_t connector_id,
-                            const ocpp::DateTime& time_start, std::string charging_state);
+                            const ocpp::DateTime& time_start, std::string charging_state,
+                            const std::optional<int32_t> reservation_id);
 
     /// @brief Clear all the transactions from the TRANSACTIONS table.
     /// @param transaction_id transaction id of the transaction to clear from.
