@@ -499,7 +499,7 @@ std::vector<ChargingProfile> SmartChargingHandler::get_valid_profiles(const ocpp
         }
     }
 
-    if (connector_id > 0 and this->connectors.at(connector_id)->transaction != nullptr) {
+    if (connector_id > 0) {
         std::lock_guard<std::mutex> lk_txd(this->tx_default_profiles_map_mutex);
         std::lock_guard<std::mutex> lk_tx(this->tx_profiles_map_mutex);
         for (const auto& [stack_level, profile] : this->connectors.at(connector_id)->stack_level_tx_profiles_map) {
@@ -534,6 +534,8 @@ std::optional<ocpp::DateTime> SmartChargingHandler::get_profile_start_time(const
         if (this->connectors.at(connector_id)->transaction != nullptr) {
             period_start_time.emplace(ocpp::DateTime(floor<seconds>(
                 this->connectors.at(connector_id)->transaction->get_start_energy_wh()->timestamp.to_time_point())));
+        } else {
+            period_start_time.emplace(ocpp::DateTime(time.to_time_point()));
         }
     } else if (profile.chargingProfileKind == ChargingProfileKindType::Recurring) {
         const auto start_schedule = ocpp::DateTime(floor<seconds>(schedule.startSchedule.value().to_time_point()));
