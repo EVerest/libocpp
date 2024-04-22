@@ -169,8 +169,8 @@ public:
     std::vector<TransactionInterruptedResponse> get_ongoing_transactions();
 
     /// @brief Update the sequence number of the given transaction id in the database to retrieve later.
-    /// @param transaction_id 
-    /// @param seq_no 
+    /// @param transaction_id
+    /// @param seq_no
     void update_transaction_seq_no(const std::string& transaction_id, int32_t seq_no);
 
     /// @brief Update the chargign state of the given transaction id in the database to retrieve later.

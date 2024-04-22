@@ -160,11 +160,11 @@ private:
     void check_max_energy_on_invalid_id();
 
     /// \brief Restart all metering timers.
-    /// \param timestamp 
-    /// \param sampled_data_tx_updated_interval 
-    /// \param sampled_data_tx_ended_interval 
-    /// \param aligned_data_tx_updated_interval 
-    /// \param aligned_data_tx_ended_interval 
+    /// \param timestamp
+    /// \param sampled_data_tx_updated_interval
+    /// \param sampled_data_tx_ended_interval
+    /// \param aligned_data_tx_updated_interval
+    /// \param aligned_data_tx_ended_interval
     void restart_metering_timers(const DateTime& timestamp, const std::chrono::seconds sampled_data_tx_updated_interval,
                                  const std::chrono::seconds sampled_data_tx_ended_interval,
                                  const std::chrono::seconds aligned_data_tx_updated_interval,

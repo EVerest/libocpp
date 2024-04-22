@@ -341,7 +341,7 @@ void ChargePoint::on_transaction_started(const int32_t evse_id, const int32_t co
                                          const ChargingStateEnum charging_state) {
 
     this->evses.at(evse_id)->open_transaction(
-        session_id, connector_id, timestamp, meter_start, id_token, group_id_token, reservation_id,charging_state,
+        session_id, connector_id, timestamp, meter_start, id_token, group_id_token, reservation_id, charging_state,
         std::chrono::seconds(
             this->device_model->get_value<int>(ControllerComponentVariables::SampledDataTxUpdatedInterval)),
         std::chrono::seconds(
@@ -3783,14 +3783,13 @@ std::string ChargePoint::has_interrupted_transactions(int32_t connector_id) {
     std::string result = "";
 
     for (auto const& [evse_id, evse] : this->evses) {
-        if (evse->has_active_transaction(connector_id)){
-        result = evse->get_transaction()->transactionId;
-        EVLOG_info << "Found transaction with id " << result << " at connector id: " << connector_id;
+        if (evse->has_active_transaction(connector_id)) {
+            result = evse->get_transaction()->transactionId;
+            EVLOG_info << "Found transaction with id " << result << " at connector id: " << connector_id;
         }
     }
 
-    if (result.empty())
-    {
+    if (result.empty()) {
         EVLOG_error << "Found no interrupted transaction at connector id: " << connector_id;
     }
 

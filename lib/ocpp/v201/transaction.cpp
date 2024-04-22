@@ -24,7 +24,7 @@ void EnhancedTransaction::update_charging_state(const ChargingStateEnum charging
 }
 
 void EnhancedTransaction::update_sequence_number(const int32_t seq_no) {
-    this->databse_handler->update_transaction_seq_no(this->transactionId,seq_no);
+    this->databse_handler->update_transaction_seq_no(this->transactionId, seq_no);
 }
 
 } // namespace v201

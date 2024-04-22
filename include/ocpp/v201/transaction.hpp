@@ -4,8 +4,8 @@
 #define OCPP_V201_TRANSACTION_HANDLER_HPP
 
 #include <ocpp/common/aligned_timer.hpp>
-#include <ocpp/v201/ocpp_types.hpp>
 #include <ocpp/v201/database_handler.hpp>
+#include <ocpp/v201/ocpp_types.hpp>
 
 namespace ocpp {
 
@@ -35,7 +35,7 @@ struct EnhancedTransaction : public Transaction {
 
     /// @brief Update the charging state of the transaction.
     /// @details ALso update the chargign state in the database
-    /// @param charging_state 
+    /// @param charging_state
     void update_charging_state(const ChargingStateEnum charging_state);
 
     /// @brief Update the sequnce number of the message in the database

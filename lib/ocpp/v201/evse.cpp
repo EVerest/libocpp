@@ -65,7 +65,6 @@ Evse::Evse(const int32_t evse_id, const int32_t number_of_connectors, DeviceMode
     this->resume_interrupted_transactions();
 }
 
-
 EVSE Evse::get_evse_info() {
     EVSE evse{evse_id};
     return evse;

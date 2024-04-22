@@ -670,10 +670,10 @@ void DatabaseHandler::insert_transaction(int32_t seq_no, const std::string& tran
                                          const std::string& event_type, const std::string& id_tag_start,
                                          int32_t evse_id, int32_t connector_id, const ocpp::DateTime& time_start,
                                          std::string charging_state, const std::optional<int32_t> reservation_id) {
-    std::string sql =
-        "INSERT INTO TRANSACTIONS (SEQ_NO, TRANSACTION_ID, MESSAGE_TYPE,EVSE_ID, CONNECTOR_ID, "
-        "ID_TOKEN, TIME_START, CHARGING_STATE, RESERVATION_ID) VALUES"
-        "(@seq_no, @transaction_id, @event_type, @evse_id, @connector_id, @id_tag_start, @time_start, @charging_state, @reservation_id)";
+    std::string sql = "INSERT INTO TRANSACTIONS (SEQ_NO, TRANSACTION_ID, MESSAGE_TYPE,EVSE_ID, CONNECTOR_ID, "
+                      "ID_TOKEN, TIME_START, CHARGING_STATE, RESERVATION_ID) VALUES"
+                      "(@seq_no, @transaction_id, @event_type, @evse_id, @connector_id, @id_tag_start, @time_start, "
+                      "@charging_state, @reservation_id)";
     auto insert_stmt = this->database->new_statement(sql);
 
     insert_stmt->bind_int("@seq_no", seq_no);

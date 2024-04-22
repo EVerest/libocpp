@@ -940,7 +940,7 @@ void from_json(const json& j, Transaction& k);
 /// \returns an output stream with the Transaction written to
 std::ostream& operator<<(std::ostream& os, const Transaction& k);
 
-/// \brief Struture to store the details of an interrupted transaction. 
+/// \brief Struture to store the details of an interrupted transaction.
 struct TransactionInterruptedResponse {
     bool has_interrupted_transaction;
     std::string transaction_id;
