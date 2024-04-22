@@ -360,15 +360,16 @@ TEST_F(ChargepointTestFixtureV201, K01_ValidateChargingStationMaxProfile_NotChar
 }
 
 TEST_F(ChargepointTestFixtureV201, K04FR03_ValidateChargingStationMaxProfile_EvseIDgt0_Invalid) {
-    create_evse_with_id(DEFAULT_EVSE_ID);
+    const int EVSE_ID_1 = DEFAULT_EVSE_ID;
+    create_evse_with_id(EVSE_ID_1);
     std::string same_transaction_id = uuid();
-    open_evse_transaction(DEFAULT_EVSE_ID, same_transaction_id);
+    open_evse_transaction(EVSE_ID_1, same_transaction_id);
     auto periods = create_charging_schedule_periods({0, 1, 2});
     auto profile =
         create_charging_profile(DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::ChargingStationMaxProfile,
                                 create_charge_schedule(ChargingRateUnitEnum::A, periods), same_transaction_id);
 
-    auto sut = handler.validate_charging_station_max_profile(profile, *evses[DEFAULT_EVSE_ID]);
+    auto sut = handler.validate_charging_station_max_profile(profile, *evses[EVSE_ID_1]);
 
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::ChargingStationMaxProfileEvseIdGreaterThanZero));
 }
