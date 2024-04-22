@@ -81,7 +81,7 @@ public:
     ///
     /// \brief validates the given \p profile according to the specification
     ///
-    ProfileValidationResultEnum validate_tx_profile(const ChargingProfile& profile, EvseInterface& evse) const;
+    ProfileValidationResultEnum validate_tx_profile(const ChargingProfile& profile, int32_t evse_id) const;
 
     /// \brief validates that the given \p profile has valid charging schedules.
     /// If a profiles charging schedule period does not have a valid numberPhases,

@@ -116,16 +116,22 @@ ProfileValidationResultEnum SmartChargingHandler::validate_tx_default_profile(Ch
 }
 
 ProfileValidationResultEnum SmartChargingHandler::validate_tx_profile(const ChargingProfile& profile,
-                                                                      EvseInterface& evse) const {
+                                                                      int32_t evse_id) const {
     if (!profile.transactionId.has_value()) {
         return ProfileValidationResultEnum::TxProfileMissingTransactionId;
     }
 
-    int32_t evseId = evse.get_evse_info().id;
-    if (evseId <= 0) {
+    if (evse_id <= 0) {
         return ProfileValidationResultEnum::TxProfileEvseIdNotGreaterThanZero;
     }
 
+    // We don't want to retrieve an EVSE that doesn't exist below this point.
+    auto result = this->validate_evse_exists(evse_id);
+    if (result != ProfileValidationResultEnum::Valid) {
+        return result;
+    }
+
+    auto& evse = *evses[evse_id];
     if (!evse.has_active_transaction()) {
         return ProfileValidationResultEnum::TxProfileEvseHasNoActiveTransaction;
     }
