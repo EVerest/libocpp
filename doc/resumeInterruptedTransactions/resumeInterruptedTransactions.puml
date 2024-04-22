@@ -14,24 +14,23 @@ user->core: plug in cable
 core->libocpp: Authorize
 libocpp->core:Authorized
 core->libocpp: on_transaction_started()
-core->core: insert_transaction(transaction_id,\nstart_time,id_token_info)
+libocpp->libocpp: insert transaction details into database
 libocpp->csms: TransactionEventRequest::Started
 libocpp->csms: (Optional) TransactionEventRequest::Updated
 
 == System Failure / Power Outage ==
 core->core: Booting process
-core->libocpp: ChargePoint::start()
-libocpp->csms: BootNotification Request
-csms->libocpp: Bootnotification Response
-libocpp->libocpp: restore values from database
+libocpp->libocpp: Initialize library/ restore transaction values from database
 alt TransactionInteruptedResponse.has_interrupted_transaction = true
 core->core: Restore authorization
 libocpp->libocpp: resume_interrupted_transactions()
 libocpp->csms: (optional) TransactionEventRequest::Updated
-user->core: swipe ID tag
-user->core: unplug cable
+... Do stuff ...
+core->libocpp: (optional) has_interrupted_transactions(connector_id)
+libocpp->core: transaction_id (empty string or valid)
+... Do stuff ...
 core->libocpp: on_transaction_finished()
-libocpp->libocpp: clear_transaction(transaction_id)
+libocpp->libocpp: clear_transaction in database (transaction_id)
 libocpp->csms: TransactionEventRequest::Ended
 
 else TransactionInteruptedResponse.has_interrupted_transaction = false
