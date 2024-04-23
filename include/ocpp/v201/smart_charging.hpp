@@ -81,7 +81,12 @@ public:
     ///
     /// \brief Adds a given \p profile and associated \p evse_id to our stored list of profiles
     ///
-    void add_profile(int32_t evse_id, ChargingProfile& profile);
+    ProfileValidationResultEnum add_profile(int32_t evse_id, ChargingProfile& profile);
+
+    ///
+    /// \brief Retrieves existing profiles on system.
+    ///
+    ChargingProfile get_profiles();
 
 private:
     std::vector<ChargingProfile> get_evse_specific_tx_default_profiles() const;
