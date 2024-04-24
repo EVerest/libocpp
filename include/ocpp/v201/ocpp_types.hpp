@@ -950,7 +950,7 @@ struct TransactionInterruptedResponse {
     DateTime timestamp;
     int32_t seq_no;
     ocpp::v201::ChargingStateEnum charging_state;
-    const std::optional<int32_t> reservation_id;
+    std::optional<int32_t> reservation_id;
 };
 
 struct Firmware {

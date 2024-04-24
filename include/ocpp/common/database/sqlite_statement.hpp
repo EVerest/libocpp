@@ -43,6 +43,7 @@ public:
     virtual std::string column_text(const int idx) = 0;
     virtual std::optional<std::string> column_text_nullable(const int idx) = 0;
     virtual int column_int(const int idx) = 0;
+    virtual std::optional<int> column_int_nullable(const int idx) = 0;
     virtual ocpp::DateTime column_datetime(const int idx) = 0;
     virtual double column_double(const int idx) = 0;
 };
@@ -77,6 +78,7 @@ public:
     std::string column_text(const int idx) override;
     std::optional<std::string> column_text_nullable(const int idx) override;
     int column_int(const int idx) override;
+    std::optional<int> column_int_nullable(const int idx) override;
     ocpp::DateTime column_datetime(const int idx) override;
     double column_double(const int idx) override;
 };

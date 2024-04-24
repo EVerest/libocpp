@@ -250,6 +250,7 @@ void DatabaseHandler::process_interrupted_transactions() {
                     active_response.timestamp = ocpp::DateTime(get_stmt->column_datetime(6));
                     active_response.charging_state =
                         conversions::string_to_charging_state_enum(get_stmt->column_text(7));
+                    active_response.reservation_id = get_stmt->column_int_nullable(8);
                     active_response.has_interrupted_transaction = true;
 
                     interrupted_transactions.push_back(active_response);
