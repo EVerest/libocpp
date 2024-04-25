@@ -951,6 +951,7 @@ struct TransactionInterruptedResponse {
     int32_t seq_no;
     ocpp::v201::ChargingStateEnum charging_state;
     std::optional<int32_t> reservation_id;
+    std::optional<IdToken> group_id_token;
 };
 
 struct Firmware {

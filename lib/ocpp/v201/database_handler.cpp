@@ -251,6 +251,12 @@ void DatabaseHandler::process_interrupted_transactions() {
                     active_response.charging_state =
                         conversions::string_to_charging_state_enum(get_stmt->column_text(7));
                     active_response.reservation_id = get_stmt->column_int_nullable(8);
+
+                    if (auto group_id_token = get_stmt->column_text_nullable(9); group_id_token.has_value()) {
+                        IdToken gp_id_token{};
+                        gp_id_token.idToken = group_id_token.value();
+                        active_response.group_id_token.emplace(gp_id_token);
+                    }
                     active_response.has_interrupted_transaction = true;
 
                     interrupted_transactions.push_back(active_response);
@@ -670,11 +676,12 @@ OperationalStatusEnum DatabaseHandler::get_connector_availability(int32_t evse_i
 void DatabaseHandler::insert_transaction(int32_t seq_no, const std::string& transaction_id,
                                          const std::string& event_type, const std::string& id_tag_start,
                                          int32_t evse_id, int32_t connector_id, const ocpp::DateTime& time_start,
-                                         std::string charging_state, const std::optional<int32_t> reservation_id) {
+                                         std::string charging_state, const std::optional<int32_t> reservation_id,
+                                         const std::optional<IdToken>& group_id_token) {
     std::string sql = "INSERT INTO TRANSACTIONS (SEQ_NO, TRANSACTION_ID, MESSAGE_TYPE,EVSE_ID, CONNECTOR_ID, "
-                      "ID_TOKEN, TIME_START, CHARGING_STATE, RESERVATION_ID) VALUES"
+                      "ID_TOKEN, TIME_START, CHARGING_STATE, RESERVATION_ID,GROUP_ID_TOKEN) VALUES"
                       "(@seq_no, @transaction_id, @event_type, @evse_id, @connector_id, @id_tag_start, @time_start, "
-                      "@charging_state, @reservation_id)";
+                      "@charging_state, @reservation_id, @group_id_token)";
     auto insert_stmt = this->database->new_statement(sql);
 
     insert_stmt->bind_int("@seq_no", seq_no);
@@ -690,6 +697,11 @@ void DatabaseHandler::insert_transaction(int32_t seq_no, const std::string& tran
         insert_stmt->bind_int("@reservation_id", reservation_id.value());
     } else {
         insert_stmt->bind_null("@reservation_id");
+    }
+    if (group_id_token.has_value()) {
+        insert_stmt->bind_text("@group_id_token", group_id_token.value().idToken);
+    } else {
+        insert_stmt->bind_null("@group_id_token");
     }
 
     if (insert_stmt->step() != SQLITE_DONE) {

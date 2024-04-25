@@ -134,7 +134,7 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
     this->database_handler->insert_transaction(
         0, transaction_id, conversions::transaction_event_enum_to_string(TransactionEventEnum::Started),
         id_token.value().idToken, evse_id, connector_id, timestamp,
-        conversions::charging_state_enum_to_string(charging_state), reservation_id);
+        conversions::charging_state_enum_to_string(charging_state), reservation_id, group_id_token);
 }
 
 void Evse::close_transaction(const DateTime& timestamp, const MeterValue& meter_stop, const ReasonEnum& reason) {
