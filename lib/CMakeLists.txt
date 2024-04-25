@@ -14,6 +14,10 @@ target_compile_definitions(ocpp
         MIGRATION_FILE_VERSION_V201=${MIGRATION_FILE_VERSION_V201}
 )
 
+if(LIBOCPP_BUILD_TESTING)
+    target_compile_definitions(ocpp PRIVATE BUILD_TESTING_LIBOCPP)
+endif()
+
 target_sources(ocpp
     PRIVATE
         ocpp/common/call_types.cpp
@@ -35,6 +39,7 @@ target_sources(ocpp
         ocpp/v16/smart_charging.cpp
         ocpp/v16/charge_point_configuration.cpp
         ocpp/v16/charge_point_state_machine.cpp
+        ocpp/v16/profile.cpp
         ocpp/v16/transaction.cpp
         ocpp/v16/enums.cpp
         ocpp/v16/ocpp_types.cpp
@@ -118,10 +123,10 @@ endif()
 #############
 # End logging configuration
 #############
- 
+
 target_link_libraries(ocpp
     PUBLIC
-        everest::timer        
+        everest::timer
         nlohmann_json_schema_validator
         everest::evse_security
         websockets_shared
@@ -137,10 +142,10 @@ target_link_libraries(ocpp
 
 if(LIBOCPP_ENABLE_DEPRECATED_WEBSOCKETPP)
     target_link_libraries(ocpp
-    PUBLIC    
+    PUBLIC
         websocketpp::websocketpp
     )
-    
+
     target_compile_definitions(ocpp
         PRIVATE
             LIBOCPP_ENABLE_DEPRECATED_WEBSOCKETPP
