@@ -622,12 +622,14 @@ TEST_F(ChargepointTestFixtureV201, K01FR06_ExisitingProfileLastForever_RejectInc
     install_profile_on_evse(DEFAULT_EVSE_ID, DEFAULT_PROFILE_ID, ocpp::DateTime(date::utc_clock::time_point::min()),
                             ocpp::DateTime(date::utc_clock::time_point::max()));
 
+    auto periods = create_charging_schedule_periods(0);
     auto profile = create_charging_profile(
         DEFAULT_PROFILE_ID + 1, ChargingProfilePurposeEnum::TxDefaultProfile,
-        create_charge_schedule(ChargingRateUnitEnum::A), uuid(), ChargingProfileKindEnum::Absolute, DEFAULT_STACK_LEVEL,
-        ocpp::DateTime("2024-01-02T13:00:00"), ocpp::DateTime("2024-03-01T13:00:00"));
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), uuid(),
+        ChargingProfileKindEnum::Absolute, DEFAULT_STACK_LEVEL, ocpp::DateTime("2024-01-02T13:00:00"),
+        ocpp::DateTime("2024-03-01T13:00:00"));
 
-    auto sut = handler.validate_tx_default_profile(profile, DEFAULT_EVSE_ID);
+    auto sut = handler.validate_profile(profile, DEFAULT_EVSE_ID);
 
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::DuplicateProfileValidityPeriod));
 }
@@ -636,12 +638,13 @@ TEST_F(ChargepointTestFixtureV201, K01FR06_ExisitingProfileHasValidFromIncomingV
     install_profile_on_evse(DEFAULT_EVSE_ID, DEFAULT_PROFILE_ID, ocpp::DateTime("2024-01-01T13:00:00"),
                             ocpp::DateTime(date::utc_clock::time_point::max()));
 
-    auto profile = create_charging_profile(DEFAULT_PROFILE_ID + 1, ChargingProfilePurposeEnum::TxDefaultProfile,
-                                           create_charge_schedule(ChargingRateUnitEnum::A), uuid(),
-                                           ChargingProfileKindEnum::Absolute, DEFAULT_STACK_LEVEL, {},
-                                           ocpp::DateTime("2024-01-01T13:00:00"));
+    auto periods = create_charging_schedule_periods(0);
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID + 1, ChargingProfilePurposeEnum::TxDefaultProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), uuid(),
+        ChargingProfileKindEnum::Absolute, DEFAULT_STACK_LEVEL, {}, ocpp::DateTime("2024-01-01T13:00:00"));
 
-    auto sut = handler.validate_tx_default_profile(profile, DEFAULT_EVSE_ID);
+    auto sut = handler.validate_profile(profile, DEFAULT_EVSE_ID);
 
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::DuplicateProfileValidityPeriod));
 }
@@ -650,12 +653,13 @@ TEST_F(ChargepointTestFixtureV201, K01FR06_ExisitingProfileHasValidToIncomingVal
     install_profile_on_evse(DEFAULT_EVSE_ID, DEFAULT_PROFILE_ID, ocpp::DateTime("2024-02-01T13:00:00"),
                             ocpp::DateTime(date::utc_clock::time_point::max()));
 
-    auto profile = create_charging_profile(DEFAULT_PROFILE_ID + 1, ChargingProfilePurposeEnum::TxDefaultProfile,
-                                           create_charge_schedule(ChargingRateUnitEnum::A), uuid(),
-                                           ChargingProfileKindEnum::Absolute, DEFAULT_STACK_LEVEL,
-                                           ocpp::DateTime("2024-01-31T13:00:00"), {});
+    auto periods = create_charging_schedule_periods(0);
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID + 1, ChargingProfilePurposeEnum::TxDefaultProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), uuid(),
+        ChargingProfileKindEnum::Absolute, DEFAULT_STACK_LEVEL, ocpp::DateTime("2024-01-31T13:00:00"), {});
 
-    auto sut = handler.validate_tx_default_profile(profile, DEFAULT_EVSE_ID);
+    auto sut = handler.validate_profile(profile, DEFAULT_EVSE_ID);
 
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::DuplicateProfileValidityPeriod));
 }
@@ -665,11 +669,13 @@ TEST_F(ChargepointTestFixtureV201, K01FR06_ExisitingProfileHasValidPeriodIncomin
                             ocpp::DateTime(date::utc_clock::now() - std::chrono::hours(5 * 24)),
                             ocpp::DateTime(date::utc_clock::now() + std::chrono::hours(5 * 24)));
 
-    auto profile = create_charging_profile(DEFAULT_PROFILE_ID + 1, ChargingProfilePurposeEnum::TxDefaultProfile,
-                                           create_charge_schedule(ChargingRateUnitEnum::A), uuid(),
-                                           ChargingProfileKindEnum::Absolute, DEFAULT_STACK_LEVEL, {}, {});
+    auto periods = create_charging_schedule_periods(0);
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID + 1, ChargingProfilePurposeEnum::TxDefaultProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), uuid(),
+        ChargingProfileKindEnum::Absolute, DEFAULT_STACK_LEVEL, {}, {});
 
-    auto sut = handler.validate_tx_default_profile(profile, DEFAULT_EVSE_ID);
+    auto sut = handler.validate_profile(profile, DEFAULT_EVSE_ID);
 
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::DuplicateProfileValidityPeriod));
 }
@@ -678,12 +684,14 @@ TEST_F(ChargepointTestFixtureV201, K01FR06_ExisitingProfileHasValidPeriodIncomin
     install_profile_on_evse(DEFAULT_EVSE_ID, DEFAULT_PROFILE_ID, ocpp::DateTime("2024-01-01T13:00:00"),
                             ocpp::DateTime("2024-02-01T13:00:00"));
 
+    auto periods = create_charging_schedule_periods(0);
     auto profile = create_charging_profile(
         DEFAULT_PROFILE_ID + 1, ChargingProfilePurposeEnum::TxDefaultProfile,
-        create_charge_schedule(ChargingRateUnitEnum::A, {}, {}), uuid(), ChargingProfileKindEnum::Absolute,
-        DEFAULT_STACK_LEVEL, ocpp::DateTime("2024-01-15T13:00:00"), ocpp::DateTime("2024-02-01T13:00:00"));
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), uuid(),
+        ChargingProfileKindEnum::Absolute, DEFAULT_STACK_LEVEL, ocpp::DateTime("2024-01-15T13:00:00"),
+        ocpp::DateTime("2024-02-01T13:00:00"));
 
-    auto sut = handler.validate_tx_default_profile(profile, DEFAULT_EVSE_ID);
+    auto sut = handler.validate_profile(profile, DEFAULT_EVSE_ID);
 
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::DuplicateProfileValidityPeriod));
 }

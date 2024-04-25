@@ -62,7 +62,9 @@ public:
     explicit SmartChargingHandler(std::map<int32_t, std::unique_ptr<EvseInterface>>& evses);
 
     ///
-    /// \brief validates the given \p profile according to the specification
+    /// \brief validates the given \p profile according to the specification.
+    /// If a profile does not have validFrom or validTo set, we conform the values
+    /// to a representation that fits the spec.
     ///
     ProfileValidationResultEnum validate_profile(ChargingProfile& profile, int32_t evse_id);
 
@@ -103,7 +105,7 @@ public:
     /// \brief Checks a given \p profile and associated \p evse_id validFrom and validTo range
     /// This method assumes that the existing profile will have dates set for validFrom and validTo
     ///
-    bool is_overlapping_validity_period(int evse_id, ChargingProfile& profile) const;
+    bool is_overlapping_validity_period(int evse_id, const ChargingProfile& profile) const;
 
 private:
     std::vector<ChargingProfile> get_evse_specific_tx_default_profiles() const;
