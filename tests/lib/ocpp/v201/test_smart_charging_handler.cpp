@@ -495,6 +495,65 @@ TEST_F(ChargepointTestFixtureV201, K01FR53_TxDefaultProfileValidIfAppliedToDiffe
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::Valid));
 }
 
+TEST_F(ChargepointTestFixtureV201, K01FR44_IfNumberPhasesProvidedForDCEVSE_ThenProfileIsInvalid) {
+    auto mock_evse = testing::NiceMock<EvseMock>();
+    ON_CALL(mock_evse, get_current_phase_type).WillByDefault(testing::Return(CurrentPhaseType::DC));
+
+    auto periods = create_charging_schedule_periods(0, 1);
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), uuid());
+
+    auto sut = handler.validate_profile_schedules(profile, &mock_evse);
+
+    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::ChargingSchedulePeriodExtraneousPhaseValues));
+}
+
+TEST_F(ChargepointTestFixtureV201, K01FR44_IfPhaseToUseProvidedForDCEVSE_ThenProfileIsInvalid) {
+    auto mock_evse = testing::NiceMock<EvseMock>();
+    ON_CALL(mock_evse, get_current_phase_type).WillByDefault(testing::Return(CurrentPhaseType::DC));
+
+    auto periods = create_charging_schedule_periods(0, 1, 1);
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), uuid());
+
+    auto sut = handler.validate_profile_schedules(profile, &mock_evse);
+
+    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::ChargingSchedulePeriodExtraneousPhaseValues));
+}
+
+TEST_F(ChargepointTestFixtureV201, K01FR45_IfNumberPhasesGreaterThanMaxNumberPhasesForACEVSE_ThenProfileIsInvalid) {
+    auto mock_evse = testing::NiceMock<EvseMock>();
+    ON_CALL(mock_evse, get_current_phase_type).WillByDefault(testing::Return(CurrentPhaseType::AC));
+
+    auto periods = create_charging_schedule_periods(0, 4);
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), uuid());
+
+    auto sut = handler.validate_profile_schedules(profile, &mock_evse);
+
+    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::ChargingSchedulePeriodUnsupportedNumberPhases));
+}
+
+TEST_F(ChargepointTestFixtureV201, K01FR49_IfNumberPhasesMissingForACEVSE_ThenSetNumberPhasesToThree) {
+    auto mock_evse = testing::NiceMock<EvseMock>();
+    ON_CALL(mock_evse, get_current_phase_type).WillByDefault(testing::Return(CurrentPhaseType::AC));
+
+    auto periods = create_charging_schedule_periods(0);
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), uuid());
+
+    auto sut = handler.validate_profile_schedules(profile, &mock_evse);
+
+    auto numberPhases = profile.chargingSchedule[0].chargingSchedulePeriod[0].numberPhases;
+
+    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::Valid));
+    EXPECT_THAT(numberPhases, testing::Eq(3));
+}
+
 TEST_F(ChargepointTestFixtureV201, K01FR06_ExisitingProfileLastForever_RejectIncoming) {
     install_profile_on_evse(DEFAULT_EVSE_ID, DEFAULT_PROFILE_ID, ocpp::DateTime(date::utc_clock::time_point::min()),
                             ocpp::DateTime(date::utc_clock::time_point::max()));
