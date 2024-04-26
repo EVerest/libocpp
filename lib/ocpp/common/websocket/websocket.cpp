@@ -45,7 +45,7 @@ void Websocket::set_connection_options(const WebsocketConnectionOptions& connect
     this->websocket->set_connection_options(connection_options);
 }
 
-void Websocket::disconnect(WebsocketCloseReason code) {
+void Websocket::disconnect(const WebsocketCloseReason code) {
     this->logging->sys("Disconnecting");
     this->websocket->disconnect(code);
 }

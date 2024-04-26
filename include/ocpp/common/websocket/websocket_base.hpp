@@ -99,13 +99,13 @@ public:
     virtual void reconnect(long delay) = 0;
 
     /// \brief disconnect the websocket
-    void disconnect(WebsocketCloseReason code);
+    void disconnect(const WebsocketCloseReason code);
 
     /// \brief indicates if the websocket is connected
     bool is_connected();
 
     /// \brief closes the websocket
-    virtual void close(WebsocketCloseReason code, const std::string& reason) = 0;
+    virtual void close(const WebsocketCloseReason code, const std::string& reason) = 0;
 
     /// \brief register a \p callback that is called when the websocket is connected successfully
     void register_connected_callback(const std::function<void(const int security_profile)>& callback);

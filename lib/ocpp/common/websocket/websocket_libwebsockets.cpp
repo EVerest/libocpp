@@ -693,7 +693,7 @@ void WebsocketTlsTPM::reconnect(long delay) {
     }
 }
 
-void WebsocketTlsTPM::close(WebsocketCloseReason code, const std::string& reason) {
+void WebsocketTlsTPM::close(const WebsocketCloseReason code, const std::string& reason) {
     EVLOG_info << "Closing TLS TPM websocket with reason: " << reason;
 
     {

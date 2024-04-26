@@ -34,7 +34,7 @@ public:
     void set_connection_options(const WebsocketConnectionOptions& connection_options);
 
     /// \brief disconnect the websocket
-    void disconnect(WebsocketCloseReason code);
+    void disconnect(const WebsocketCloseReason code);
 
     // \brief reconnects the websocket after the delay
     void reconnect(long delay);

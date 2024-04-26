@@ -274,7 +274,7 @@ void WebsocketPlain::on_fail_plain(client* c, websocketpp::connection_hdl hdl) {
     }
 }
 
-void WebsocketPlain::close(WebsocketCloseReason code, const std::string& reason) {
+void WebsocketPlain::close(const WebsocketCloseReason code, const std::string& reason) {
     EVLOG_info << "Closing plain websocket.";
     websocketpp::lib::error_code ec;
     this->cancel_reconnect_timer();

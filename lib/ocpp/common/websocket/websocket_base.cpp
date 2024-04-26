@@ -73,7 +73,7 @@ bool WebsocketBase::initialized() {
     return true;
 }
 
-void WebsocketBase::disconnect(WebsocketCloseReason code) {
+void WebsocketBase::disconnect(const WebsocketCloseReason code) {
     if (!this->initialized()) {
         EVLOG_error << "Cannot disconnect a websocket that was not initialized";
         return;
