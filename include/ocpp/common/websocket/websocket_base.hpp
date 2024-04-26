@@ -10,9 +10,6 @@
 
 #include <everest/timer.hpp>
 
-// #include <websocketpp/client.hpp>
-// #include <websocketpp/config/asio_client.hpp>
-
 #include <ocpp/common/types.hpp>
 #include <ocpp/common/websocket/websocket_uri.hpp>
 
