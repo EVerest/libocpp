@@ -74,13 +74,12 @@ ProfileValidationResultEnum SmartChargingHandler::validate_evse_exists(int32_t e
 }
 
 ProfileValidationResultEnum SmartChargingHandler::validate_charging_station_max_profile(const ChargingProfile& profile,
-                                                                                        EvseInterface& evse) const {
+                                                                                        int32_t evse_id) const {
     if (profile.chargingProfilePurpose != ChargingProfilePurposeEnum::ChargingStationMaxProfile) {
         return ProfileValidationResultEnum::InvalidProfileType;
     }
 
-    int32_t evseId = evse.get_evse_info().id;
-    if (evseId > 0) {
+    if (evse_id > 0) {
         return ProfileValidationResultEnum::ChargingStationMaxProfileEvseIdGreaterThanZero;
     }
 

@@ -71,7 +71,7 @@ public:
     /// according to the specification
     ///
     ProfileValidationResultEnum validate_charging_station_max_profile(const ChargingProfile& profile,
-                                                                      EvseInterface& evse) const;
+                                                                      int32_t evse_id) const;
 
     ///
     /// \brief validates the given \p profile and associated \p evse_id according to the specification
