@@ -363,7 +363,7 @@ void WebsocketTLS::on_fail_tls(tls_client* c, websocketpp::connection_hdl hdl) {
     }
 }
 
-void WebsocketTLS::close(WebsocketCloseReason code, const std::string& reason) {
+void WebsocketTLS::close(const WebsocketCloseReason code, const std::string& reason) {
 
     EVLOG_info << "Closing TLS websocket.";
 
