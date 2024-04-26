@@ -24,6 +24,8 @@ std::string profile_validation_result_to_string(ProfileValidationResultEnum e) {
         return "Valid";
     case ProfileValidationResultEnum::EvseDoesNotExist:
         return "EvseDoesNotExist";
+    case ProfileValidationResultEnum::InvalidProfileType:
+        return "InvalidProfileType";
     case ProfileValidationResultEnum::TxProfileMissingTransactionId:
         return "TxProfileMissingTransactionId";
     case ProfileValidationResultEnum::TxProfileEvseIdNotGreaterThanZero:
@@ -50,6 +52,10 @@ std::string profile_validation_result_to_string(ProfileValidationResultEnum e) {
         return "ChargingSchedulePeriodUnsupportedNumberPhases";
     case ProfileValidationResultEnum::ChargingSchedulePeriodExtraneousPhaseValues:
         return "ChargingSchedulePeriodExtraneousPhaseValues";
+    case ProfileValidationResultEnum::ChargingStationMaxProfileCannotBeRelative:
+        return "ChargingStationMaxProfileCannotBeRelative";
+    case ProfileValidationResultEnum::ChargingStationMaxProfileEvseIdGreaterThanZero:
+        return "ChargingStationMaxProfileEvseIdGreaterThanZero";
     case ProfileValidationResultEnum::DuplicateTxDefaultProfileFound:
         return "DuplicateTxDefaultProfileFound";
     }
