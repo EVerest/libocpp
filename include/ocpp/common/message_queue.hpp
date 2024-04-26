@@ -241,8 +241,8 @@ private:
             // drop every second update message (except last one)
             if (remove_next_update_message && element->isTransactionUpdateMessage() &&
                 transaction_message_queue.size() > 1) {
-                EVLOG_debug << "Drop transactional message " << element->uniqueId();
-                database_handler->remove_transaction_message(element->uniqueId());
+                EVLOG_debug << "Drop transactional message " << element->initial_unique_id;
+                database_handler->remove_transaction_message(element->initial_unique_id);
                 drop_count++;
                 remove_next_update_message = false;
             } else {
