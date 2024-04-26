@@ -73,6 +73,24 @@ ProfileValidationResultEnum SmartChargingHandler::validate_evse_exists(int32_t e
                                               : ProfileValidationResultEnum::Valid;
 }
 
+ProfileValidationResultEnum SmartChargingHandler::validate_charging_station_max_profile(const ChargingProfile& profile,
+                                                                                        EvseInterface& evse) const {
+    if (profile.chargingProfilePurpose != ChargingProfilePurposeEnum::ChargingStationMaxProfile) {
+        return ProfileValidationResultEnum::InvalidProfileType;
+    }
+
+    int32_t evseId = evse.get_evse_info().id;
+    if (evseId > 0) {
+        return ProfileValidationResultEnum::ChargingStationMaxProfileEvseIdGreaterThanZero;
+    }
+
+    if (profile.chargingProfileKind == ChargingProfileKindEnum::Relative) {
+        return ProfileValidationResultEnum::ChargingStationMaxProfileCannotBeRelative;
+    }
+
+    return ProfileValidationResultEnum::Valid;
+}
+
 ProfileValidationResultEnum SmartChargingHandler::validate_tx_default_profile(ChargingProfile& profile,
                                                                               int32_t evse_id) const {
     auto profiles = evse_id == 0 ? get_evse_specific_tx_default_profiles() : get_station_wide_tx_default_profiles();
