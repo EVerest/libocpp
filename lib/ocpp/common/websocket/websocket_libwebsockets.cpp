@@ -40,7 +40,7 @@ public:
 
 namespace ocpp {
 
-using evse_security::is_tpm_key_filename;
+using evse_security::is_tpm_key_file;
 using evse_security::OpenSSLProvider;
 
 enum class EConnectionState {
@@ -457,7 +457,7 @@ void WebsocketTlsTPM::client_loop() {
         bool tpm_key = false;
 
         if (!path_key.empty()) {
-            tpm_key = is_tpm_key_filename(path_key);
+            tpm_key = is_tpm_key_file(path_key);
         }
 
         OpenSSLProvider provider;
@@ -718,7 +718,10 @@ void WebsocketTlsTPM::close(WebsocketCloseReason code, const std::string& reason
     // Clear any irrelevant data after a DC
     recv_buffered_message.clear();
 
-    std::thread closing([this, code]() { this->closed_callback(code); });
+    std::thread closing([this]() {
+        this->closed_callback(websocketpp::close::status::normal);
+        this->disconnected_callback();
+    });
     closing.detach();
 }
 
@@ -750,7 +753,10 @@ void WebsocketTlsTPM::on_conn_close() {
     // Clear any irrelevant data after a DC
     recv_buffered_message.clear();
 
-    std::thread closing([this]() { this->closed_callback(WebsocketCloseReason::Normal); });
+    std::thread closing([this]() {
+        this->closed_callback(websocketpp::close::status::normal);
+        this->disconnected_callback();
+    });
     closing.detach();
 }
 

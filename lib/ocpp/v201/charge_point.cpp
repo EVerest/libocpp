@@ -143,10 +143,10 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
             if (!filtered_meter_value.sampledValue.empty()) {
                 const auto trigger = type == ReadingContextEnum::Sample_Clock ? TriggerReasonEnum::MeterValueClock
                                                                               : TriggerReasonEnum::MeterValuePeriodic;
-                this->transaction_event_req(
-                    TransactionEventEnum::Updated, DateTime(), transaction, trigger, seq_no, std::nullopt,
-                    this->evses.at(static_cast<int32_t>(evse_id_))->get_evse_info(), std::nullopt,
-                    std::vector<MeterValue>(1, filtered_meter_value), std::nullopt, this->is_offline(), reservation_id);
+                this->transaction_event_req(TransactionEventEnum::Updated, DateTime(), transaction, trigger, seq_no,
+                                            std::nullopt, std::nullopt, std::nullopt,
+                                            std::vector<MeterValue>(1, filtered_meter_value), std::nullopt,
+                                            this->is_offline(), reservation_id);
             }
         };
 
@@ -374,9 +374,13 @@ void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime&
 
     const auto trigger_reason = utils::stop_reason_to_trigger_reason_enum(reason);
 
+    // E07.FR.02 The field idToken is provided when the authorization of the transaction has been ended
+    const std::optional<IdToken> transaction_id_token =
+        trigger_reason == ocpp::v201::TriggerReasonEnum::StopAuthorized ? id_token : std::nullopt;
+
     this->transaction_event_req(TransactionEventEnum::Ended, timestamp, transaction, trigger_reason, seq_no,
-                                std::nullopt, this->evses.at(static_cast<int32_t>(evse_id))->get_evse_info(), id_token,
-                                meter_values, std::nullopt, this->is_offline(), std::nullopt);
+                                std::nullopt, std::nullopt, transaction_id_token, meter_values, std::nullopt,
+                                this->is_offline(), std::nullopt);
 
     this->database_handler->transaction_metervalues_clear(transaction_id);
 
@@ -555,8 +559,7 @@ bool ChargePoint::on_charging_state_changed(const uint32_t evse_id, const Chargi
             } else {
                 transaction->chargingState = charging_state;
                 this->transaction_event_req(TransactionEventEnum::Updated, DateTime(), transaction->get_transaction(),
-                                            trigger_reason, transaction->get_seq_no(), std::nullopt,
-                                            this->evses.at(static_cast<int32_t>(evse_id))->get_evse_info(),
+                                            trigger_reason, transaction->get_seq_no(), std::nullopt, std::nullopt,
                                             std::nullopt, std::nullopt, std::nullopt, this->is_offline(), std::nullopt);
             }
             return true;
@@ -1666,9 +1669,6 @@ ChargePoint::set_variables_internal(const std::vector<SetVariableData>& set_vari
         response[set_variable_data] = set_variable_result;
     }
 
-    // post handling of changed variables after the SetVariables.conf has been queued
-    this->handle_variables_changed(response);
-
     return response;
 }
 
@@ -2713,8 +2713,8 @@ void ChargePoint::handle_trigger_message(Call<TriggerMessageRequest> call) {
 
             this->transaction_event_req(TransactionEventEnum::Updated, DateTime(),
                                         enhanced_transaction->get_transaction(), TriggerReasonEnum::Trigger,
-                                        enhanced_transaction->get_seq_no(), std::nullopt, evse.get_evse_info(),
-                                        std::nullopt, opt_meter_value, std::nullopt, this->is_offline(), std::nullopt);
+                                        enhanced_transaction->get_seq_no(), std::nullopt, std::nullopt, std::nullopt,
+                                        opt_meter_value, std::nullopt, this->is_offline(), std::nullopt);
         };
         send_evse_message(send_transaction);
     } break;
@@ -3329,7 +3329,9 @@ ChargePoint::get_variables(const std::vector<GetVariableData>& get_variable_data
 std::map<SetVariableData, SetVariableResult>
 ChargePoint::set_variables(const std::vector<SetVariableData>& set_variable_data_vector) {
     // set variables and allow setting of ReadOnly variables
-    return this->set_variables_internal(set_variable_data_vector, true);
+    const auto response = this->set_variables_internal(set_variable_data_vector, true);
+    this->handle_variables_changed(response);
+    return response;
 }
 
 } // namespace v201
