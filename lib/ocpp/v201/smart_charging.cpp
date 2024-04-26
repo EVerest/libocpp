@@ -315,14 +315,15 @@ SmartChargingHandler::validate_profile_schedules(ChargingProfile& profile,
     return ProfileValidationResultEnum::Valid;
 }
 
-ProfileValidationResultEnum SmartChargingHandler::add_profile(int32_t evse_id, ChargingProfile& profile) {
+SetChargingProfileResponse SmartChargingHandler::add_profile(int32_t evse_id, ChargingProfile& profile) {
     if (STATION_WIDE_ID == evse_id) {
         station_wide_charging_profiles.push_back(profile);
     } else {
         charging_profiles[evse_id].push_back(profile);
     }
-
-    return ProfileValidationResultEnum::Valid;
+    SetChargingProfileResponse response;
+    response.status = ChargingProfileStatusEnum::Accepted;
+    return response;
 }
 
 std::vector<ChargingProfile> SmartChargingHandler::get_profiles() {

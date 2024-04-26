@@ -931,7 +931,7 @@ TEST_F(ChargepointTestFixtureV201,
 
     auto sut = handler.add_profile(STATION_WIDE_ID, profile);
 
-    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::Valid));
+    EXPECT_THAT(sut.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
     EXPECT_THAT(handler.get_profiles(), testing::Contains(profile));
 }
 
@@ -944,7 +944,7 @@ TEST_F(ChargepointTestFixtureV201,
 
     auto sut = handler.add_profile(DEFAULT_EVSE_ID, profile);
 
-    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::Valid));
+    EXPECT_THAT(sut.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
     EXPECT_THAT(handler.get_profiles(), testing::Contains(profile));
 }
 

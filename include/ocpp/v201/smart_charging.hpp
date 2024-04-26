@@ -6,6 +6,7 @@
 
 #include "ocpp/v201/device_model.hpp"
 #include "ocpp/v201/enums.hpp"
+#include "ocpp/v201/messages/SetChargingProfile.hpp"
 #include <limits>
 
 #include <memory>
@@ -76,7 +77,7 @@ public:
     ///
     /// \brief Adds a given \p profile and associated \p evse_id to our stored list of profiles
     ///
-    ProfileValidationResultEnum add_profile(int32_t evse_id, ChargingProfile& profile);
+    SetChargingProfileResponse add_profile(int32_t evse_id, ChargingProfile& profile);
 
     ///
     /// \brief Retrieves existing profiles on system.
