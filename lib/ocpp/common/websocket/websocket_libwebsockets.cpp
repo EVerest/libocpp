@@ -719,7 +719,7 @@ void WebsocketTlsTPM::close(const WebsocketCloseReason code, const std::string& 
     recv_buffered_message.clear();
 
     std::thread closing([this]() {
-        this->closed_callback(websocketpp::close::status::normal);
+        this->closed_callback(WebsocketCloseReason::Normal);
         this->disconnected_callback();
     });
     closing.detach();
@@ -754,7 +754,7 @@ void WebsocketTlsTPM::on_conn_close() {
     recv_buffered_message.clear();
 
     std::thread closing([this]() {
-        this->closed_callback(websocketpp::close::status::normal);
+        this->closed_callback(WebsocketCloseReason::Normal);
         this->disconnected_callback();
     });
     closing.detach();
