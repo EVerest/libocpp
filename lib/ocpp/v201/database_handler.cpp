@@ -51,6 +51,7 @@ void DatabaseHandler::init_enum_table_inner(const std::string& table_name, const
         throw std::runtime_error("Table does not exist.");
     }
 
+    std::scoped_lock lock(this->database_transaction_mutex);
     if (!this->database->begin_transaction()) {
         throw std::runtime_error("Could not begin transaction");
     }
@@ -341,6 +342,7 @@ bool DatabaseHandler::transaction_metervalues_insert(const std::string& transact
                        "@phase, @location, @custom_data, @unit_custom_data, @unit_text, @unit_multiplier, "
                        "@signed_meter_data, @signing_method, @encoding_method, @public_key);";
 
+    std::scoped_lock lock(this->database_transaction_mutex);
     if (!this->database->begin_transaction()) {
         throw std::runtime_error("Could not begin transaction");
     }
