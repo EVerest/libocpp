@@ -948,4 +948,47 @@ TEST_F(ChargepointTestFixtureV201,
     EXPECT_THAT(handler.get_profiles(), testing::Contains(profile));
 }
 
+TEST_F(ChargepointTestFixtureV201,
+       K01FR05_IfProfileWithSameIdExistsAndIsNotChargingStationExternalContraints_ThenProfileIsReplaced) {
+
+    auto profile1 = create_charging_profile(DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxDefaultProfile,
+                                            create_charge_schedule(ChargingRateUnitEnum::A), uuid(),
+                                            ChargingProfileKindEnum::Absolute, DEFAULT_STACK_LEVEL);
+    auto profile2 = create_charging_profile(DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+                                            create_charge_schedule(ChargingRateUnitEnum::A), uuid(),
+                                            ChargingProfileKindEnum::Absolute, DEFAULT_STACK_LEVEL);
+
+    auto sut1 = handler.add_profile(DEFAULT_EVSE_ID, profile1);
+    auto sut2 = handler.add_profile(DEFAULT_EVSE_ID, profile2);
+
+    auto profiles = handler.get_profiles();
+
+    EXPECT_THAT(sut1.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
+    EXPECT_THAT(sut2.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
+    EXPECT_THAT(profiles, testing::Contains(profile2));
+    EXPECT_THAT(profiles, testing::Not(testing::Contains(profile1)));
+}
+
+TEST_F(ChargepointTestFixtureV201,
+       K01FR05_IfProfileWithSameIdExistsAndIsChargingStationExternalContraints_ThenProfileIsAppended) {
+
+    auto profile1 =
+        create_charging_profile(DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::ChargingStationExternalConstraints,
+                                create_charge_schedule(ChargingRateUnitEnum::A), uuid(),
+                                ChargingProfileKindEnum::Absolute, DEFAULT_STACK_LEVEL);
+    auto profile2 = create_charging_profile(DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+                                            create_charge_schedule(ChargingRateUnitEnum::A), uuid(),
+                                            ChargingProfileKindEnum::Absolute, DEFAULT_STACK_LEVEL);
+
+    auto sut1 = handler.add_profile(DEFAULT_EVSE_ID, profile1);
+    auto sut2 = handler.add_profile(DEFAULT_EVSE_ID, profile2);
+
+    auto profiles = handler.get_profiles();
+
+    EXPECT_THAT(sut1.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
+    EXPECT_THAT(sut2.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
+    EXPECT_THAT(profiles, testing::Contains(profile1));
+    EXPECT_THAT(profiles, testing::Contains(profile2));
+}
+
 } // namespace ocpp::v201

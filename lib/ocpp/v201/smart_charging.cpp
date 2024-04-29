@@ -8,6 +8,7 @@
 #include "ocpp/v201/device_model.hpp"
 #include "ocpp/v201/enums.hpp"
 #include "ocpp/v201/evse.hpp"
+#include "ocpp/v201/messages/SetChargingProfile.hpp"
 #include "ocpp/v201/ocpp_types.hpp"
 #include "ocpp/v201/transaction.hpp"
 #include <algorithm>
@@ -316,13 +317,21 @@ SmartChargingHandler::validate_profile_schedules(ChargingProfile& profile,
 }
 
 SetChargingProfileResponse SmartChargingHandler::add_profile(int32_t evse_id, ChargingProfile& profile) {
-    if (STATION_WIDE_ID == evse_id) {
-        station_wide_charging_profiles.push_back(profile);
-    } else {
-        charging_profiles[evse_id].push_back(profile);
-    }
     SetChargingProfileResponse response;
     response.status = ChargingProfileStatusEnum::Accepted;
+
+    auto& profile_storage = (STATION_WIDE_ID == evse_id) ? station_wide_charging_profiles : charging_profiles[evse_id];
+    auto profile_with_id =
+        std::find_if(profile_storage.begin(), profile_storage.end(),
+                     [&profile](const ChargingProfile existing_profile) { return profile.id == existing_profile.id; });
+
+    if (profile_with_id != profile_storage.end() &&
+        profile_with_id->chargingProfilePurpose != ChargingProfilePurposeEnum::ChargingStationExternalConstraints) {
+        *profile_with_id = profile;
+    } else {
+        profile_storage.push_back(profile);
+    }
+
     return response;
 }
 
