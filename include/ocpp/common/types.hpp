@@ -531,11 +531,18 @@ struct OCSPRequestData {
     std::string responderUrl;
 };
 
-struct KeyPair {
-    fs::path certificate_path;           // path to the full certificate chain
-    fs::path certificate_single_path;    // path to the single leaf certificate
-    fs::path key_path;                   // path to private key of the leaf certificate
-    std::optional<std::string> password; // optional password for the private key
+struct CertificateOCSP {
+    CertificateHashDataType hash;
+    std::optional<fs::path> ocsp_path;
+};
+
+struct CertificateInfo {
+    std::optional<fs::path> certificate_path;        // path to the full certificate chain
+    std::optional<fs::path> certificate_single_path; // path to the single leaf certificate
+    int certificate_count;                           // count of certs in the chain
+    fs::path key_path;                               // path to private key of the leaf certificate
+    std::optional<std::string> password;             // optional password for the private key
+    std::vector<CertificateOCSP> ocsp;               // OCSP data if requested
 };
 
 enum class LeafCertificateType {
@@ -618,7 +625,7 @@ inline const std::string RESET_OR_REBOOT = "ResetOrReboot";               // CRI
 inline const std::string STARTUP_OF_THE_DEVICE = "StartupOfTheDevice";    // CRITICAL
 inline const std::string SECURITYLOGWASCLEARED = "SecurityLogWasCleared"; // CRITICAL
 inline const std::string RECONFIGURATIONOFSECURITYPARAMETERS = "ReconfigurationOfSecurityParameters";
-inline const std::string MEMORYEXHAUSTION = "MemoryExhaustion"; // CRITICAL
+inline const std::string MEMORYEXHAUSTION = "MemoryExhaustion";           // CRITICAL
 inline const std::string INVALIDMESSAGES = "InvalidMessages";
 inline const std::string ATTEMPTEDREPLAYATTACKS = "AttemptedReplayAttacks";
 inline const std::string TAMPERDETECTIONACTIVATED = "TamperDetectionActivated"; // CRITICAL

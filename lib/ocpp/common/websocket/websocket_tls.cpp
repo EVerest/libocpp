@@ -171,33 +171,36 @@ tls_context WebsocketTLS::on_tls_init(std::string hostname, websocketpp::connect
         }
 
         if (security_profile == 3) {
-            const auto certificate_key_pair =
-                this->evse_security->get_key_pair(CertificateSigningUseEnum::ChargingStationCertificate);
+            const auto certificate_info =
+                this->evse_security->get_leaf_certificate_info(CertificateSigningUseEnum::ChargingStationCertificate);
 
-            if (certificate_key_pair.has_value() && certificate_key_pair.value().password.has_value()) {
-                std::string passwd = certificate_key_pair.value().password.value();
+            if (certificate_info.has_value() && certificate_info.value().password.has_value()) {
+                std::string passwd = certificate_info.value().password.value();
                 context->set_password_callback(
                     [passwd](auto max_len, auto purpose) { return passwd.substr(0, max_len); });
             }
 
-            if (!certificate_key_pair.has_value()) {
+            if (!certificate_info.has_value()) {
                 EVLOG_AND_THROW(std::runtime_error(
                     "Connecting with security profile 3 but no client side certificate is present or valid"));
             }
 
             // certificate_path contains the chain if not empty. Use certificate chain if available, else use
             // certificate_single_path
-            auto certificate_path = certificate_key_pair.value().certificate_path;
-            if (certificate_path.empty()) {
-                certificate_path = certificate_key_pair.value().certificate_single_path;
+            fs::path certificate_path;
+
+            if (certificate_info.value().certificate_path.has_value()) {
+                certificate_path = certificate_info.value().certificate_path.value();
+            } else {
+                certificate_path = certificate_info.value().certificate_single_path.value();
             }
 
             EVLOG_info << "Using certificate: " << certificate_path;
             if (SSL_CTX_use_certificate_chain_file(context->native_handle(), certificate_path.c_str()) != 1) {
                 EVLOG_AND_THROW(std::runtime_error("Could not use client certificate file within SSL context"));
             }
-            EVLOG_info << "Using key file: " << certificate_key_pair.value().key_path;
-            if (SSL_CTX_use_PrivateKey_file(context->native_handle(), certificate_key_pair.value().key_path.c_str(),
+            EVLOG_info << "Using key file: " << certificate_info.value().key_path;
+            if (SSL_CTX_use_PrivateKey_file(context->native_handle(), certificate_info.value().key_path.c_str(),
                                             SSL_FILETYPE_PEM) != 1) {
                 EVLOG_AND_THROW(std::runtime_error("Could not set private key file within SSL context"));
             }
@@ -304,7 +307,7 @@ void WebsocketTLS::connect_tls() {
     this->wss_client.connect(con);
 }
 void WebsocketTLS::on_open_tls(tls_client* c, websocketpp::connection_hdl hdl) {
-    (void)c; // tls_client is not used in this function
+    (void)c;                       // tls_client is not used in this function
     EVLOG_info << "OCPP client successfully connected to TLS websocket server";
     this->connection_attempts = 1; // reset connection attempts
     this->m_is_connected = true;

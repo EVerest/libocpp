@@ -97,8 +97,10 @@ public:
     /// certificate, this function returns std::nullopt
     /// \param certificate_type type of the leaf certificate
     /// \param encoding specifies PEM or DER format
-    /// \return key pair of certificate and key if present, else std::nullopt
-    virtual std::optional<KeyPair> get_key_pair(const CertificateSigningUseEnum& certificate_type) = 0;
+    /// \param include_ocsp if we should include certificate ocsp data
+    /// \return info of certificate and key if present, else std::nullopt
+    virtual std::optional<CertificateInfo> get_leaf_certificate_info(const CertificateSigningUseEnum& certificate_type,
+                                                                     bool include_ocsp = false) = 0;
 
     /// \brief Updates the certificate and key links for the given \p certificate_type
     virtual bool update_certificate_links(const CertificateSigningUseEnum& certificate_type) = 0;

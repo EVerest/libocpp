@@ -1427,7 +1427,8 @@ void ChargePointImpl::handleChangeConfigurationRequest(ocpp::Call<ChangeConfigur
                             response.status = ConfigurationStatus::Rejected;
                         } else if (security_profile == 3 &&
                                    !this->evse_security
-                                        ->get_key_pair(ocpp::CertificateSigningUseEnum::ChargingStationCertificate)
+                                        ->get_leaf_certificate_info(
+                                            ocpp::CertificateSigningUseEnum::ChargingStationCertificate)
                                         .has_value()) {
                             EVLOG_warning << "New security level set to 3 but no Client Certificate is installed";
                             response.status = ConfigurationStatus::Rejected;

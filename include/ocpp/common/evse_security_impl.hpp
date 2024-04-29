@@ -51,7 +51,8 @@ public:
     std::string generate_certificate_signing_request(const CertificateSigningUseEnum& certificate_type,
                                                      const std::string& country, const std::string& organization,
                                                      const std::string& common, bool use_tpm) override;
-    std::optional<KeyPair> get_key_pair(const CertificateSigningUseEnum& certificate_type) override;
+    std::optional<CertificateInfo> get_leaf_certificate_info(const CertificateSigningUseEnum& certificate_type,
+                                                             bool include_ocsp = false) override;
     bool update_certificate_links(const CertificateSigningUseEnum& certificate_type) override;
     std::string get_verify_file(const CaCertificateType& certificate_type) override;
     int get_leaf_expiry_days_count(const CertificateSigningUseEnum& certificate_type) override;
@@ -70,7 +71,8 @@ DeleteCertificateResult to_ocpp(evse_security::DeleteCertificateResult other);
 CertificateHashDataType to_ocpp(evse_security::CertificateHashData other);
 CertificateHashDataChain to_ocpp(evse_security::CertificateHashDataChain other);
 OCSPRequestData to_ocpp(evse_security::OCSPRequestData other);
-KeyPair to_ocpp(evse_security::KeyPair other);
+CertificateOCSP to_ocpp(evse_security::CertificateOCSP other);
+CertificateInfo to_ocpp(evse_security::CertificateInfo other);
 
 evse_security::CaCertificateType from_ocpp(CaCertificateType other);
 evse_security::LeafCertificateType from_ocpp(LeafCertificateType other);
@@ -83,7 +85,8 @@ evse_security::DeleteCertificateResult from_ocpp(DeleteCertificateResult other);
 evse_security::CertificateHashData from_ocpp(CertificateHashDataType other);
 evse_security::CertificateHashDataChain from_ocpp(CertificateHashDataChain other);
 evse_security::OCSPRequestData from_ocpp(OCSPRequestData other);
-evse_security::KeyPair from_ocpp(KeyPair other);
+evse_security::CertificateOCSP from_ocpp(CertificateOCSP other);
+evse_security::CertificateInfo from_ocpp(CertificateInfo other);
 
 }; // namespace conversions
 
