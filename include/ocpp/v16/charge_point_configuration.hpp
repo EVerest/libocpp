@@ -116,7 +116,10 @@ public:
     std::optional<KeyValue> getHostNameKeyValue();
 
     std::optional<bool> getQueueAllMessages();
+    std::optional<KeyValue> getQueueAllMessagesKeyValue();
+
     std::optional<int> getMessageQueueSizeThreshold();
+    std::optional<KeyValue> getMessageQueueSizeThresholdKeyValue();
 
     // Core Profile - optional
     std::optional<bool> getAllowOfflineTxForUnknownId();
