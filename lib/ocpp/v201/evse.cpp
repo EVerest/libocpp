@@ -79,12 +79,13 @@ void Evse::resume_transaction(TransactionInterruptedResponse interrupted_transac
     this->transaction = std::make_unique<EnhancedTransaction>();
     this->transaction->transactionId = interrupted_transaction.transaction_id;
     this->transaction->connector_id = interrupted_transaction.connector_id;
-    this->transaction->id_token = interrupted_transaction.id_token;
     this->transaction->chargingState = interrupted_transaction.charging_state;
     this->transaction->seq_no = interrupted_transaction.seq_no + 1;
     this->transaction->active_energy_import_start_value = this->get_active_import_register_meter_value();
     this->transaction->databse_handler = this->database_handler;
-    this->transaction->reservation_id = interrupted_transaction.reservation_id;
+
+    //TODO: use id_token_sent
+
     // Restart the clock timers
     restart_metering_timers(
         interrupted_transaction.timestamp,
@@ -131,10 +132,9 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
     restart_metering_timers(timestamp, sampled_data_tx_updated_interval, sampled_data_tx_ended_interval,
                             aligned_data_tx_updated_interval, aligned_data_tx_ended_interval);
 
-    this->database_handler->insert_transaction(
-        0, transaction_id, conversions::transaction_event_enum_to_string(TransactionEventEnum::Started),
-        id_token.value().idToken, evse_id, connector_id, timestamp,
-        conversions::charging_state_enum_to_string(charging_state), reservation_id, group_id_token);
+    this->database_handler->insert_transaction(0, transaction_id, evse_id, connector_id, timestamp,
+                                               conversions::charging_state_enum_to_string(charging_state),
+                                               static_cast<int> (id_token.has_value()));
 }
 
 void Evse::close_transaction(const DateTime& timestamp, const MeterValue& meter_stop, const ReasonEnum& reason) {

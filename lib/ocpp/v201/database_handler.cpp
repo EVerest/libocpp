@@ -243,20 +243,12 @@ void DatabaseHandler::process_interrupted_transactions() {
                 try {
                     active_response.transaction_id = get_stmt->column_text(0);
                     active_response.seq_no = get_stmt->column_int(1);
-                    active_response.evse_id = get_stmt->column_int(3);
-                    active_response.connector_id = get_stmt->column_int(4);
-                    active_response.id_token.idToken = get_stmt->column_text(5); // TODO: maybe just store the whole
-                                                                                 // IDtoken type?
-                    active_response.timestamp = ocpp::DateTime(get_stmt->column_datetime(6));
+                    active_response.evse_id = get_stmt->column_int(2);
+                    active_response.connector_id = get_stmt->column_int(3);
+                    active_response.timestamp = ocpp::DateTime(get_stmt->column_datetime(4));
                     active_response.charging_state =
-                        conversions::string_to_charging_state_enum(get_stmt->column_text(7));
-                    active_response.reservation_id = get_stmt->column_int_nullable(8);
-
-                    if (auto group_id_token = get_stmt->column_text_nullable(9); group_id_token.has_value()) {
-                        IdToken gp_id_token{};
-                        gp_id_token.idToken = group_id_token.value();
-                        active_response.group_id_token.emplace(gp_id_token);
-                    }
+                        conversions::string_to_charging_state_enum(get_stmt->column_text(5));
+                    active_response.id_tag_sent = static_cast<bool>(get_stmt->column_int(6));
                     active_response.has_interrupted_transaction = true;
 
                     interrupted_transactions.push_back(active_response);
@@ -674,35 +666,21 @@ OperationalStatusEnum DatabaseHandler::get_connector_availability(int32_t evse_i
 
 // transactions
 void DatabaseHandler::insert_transaction(int32_t seq_no, const std::string& transaction_id,
-                                         const std::string& event_type, const std::string& id_tag_start,
                                          int32_t evse_id, int32_t connector_id, const ocpp::DateTime& time_start,
-                                         std::string charging_state, const std::optional<int32_t> reservation_id,
-                                         const std::optional<IdToken>& group_id_token) {
-    std::string sql = "INSERT INTO TRANSACTIONS (SEQ_NO, TRANSACTION_ID, MESSAGE_TYPE,EVSE_ID, CONNECTOR_ID, "
-                      "ID_TOKEN, TIME_START, CHARGING_STATE, RESERVATION_ID,GROUP_ID_TOKEN) VALUES"
-                      "(@seq_no, @transaction_id, @event_type, @evse_id, @connector_id, @id_tag_start, @time_start, "
-                      "@charging_state, @reservation_id, @group_id_token)";
+                                         std::string charging_state, int id_tag_sent) {
+    std::string sql = "INSERT INTO TRANSACTIONS (SEQ_NO, TRANSACTION_ID,EVSE_ID, CONNECTOR_ID,"
+                      "TIME_START,CHARGING_STATE,ID_TAG_SENT) VALUES"
+                      "(@seq_no, @transaction_id, @evse_id, @connector_id, @time_start, "
+                      "@charging_state, @id_tag_sent)";
     auto insert_stmt = this->database->new_statement(sql);
 
     insert_stmt->bind_int("@seq_no", seq_no);
     insert_stmt->bind_text("@transaction_id", transaction_id);
-    insert_stmt->bind_text("@event_type", event_type);
     insert_stmt->bind_int("@evse_id", evse_id);
     insert_stmt->bind_int("@connector_id", connector_id);
-    insert_stmt->bind_text("@id_tag_start", id_tag_start);
     insert_stmt->bind_datetime("@time_start", time_start);
     insert_stmt->bind_text("@charging_state", charging_state);
-
-    if (reservation_id.has_value()) {
-        insert_stmt->bind_int("@reservation_id", reservation_id.value());
-    } else {
-        insert_stmt->bind_null("@reservation_id");
-    }
-    if (group_id_token.has_value()) {
-        insert_stmt->bind_text("@group_id_token", group_id_token.value().idToken);
-    } else {
-        insert_stmt->bind_null("@group_id_token");
-    }
+    insert_stmt->bind_int("@id_tag_sent", id_tag_sent);
 
     if (insert_stmt->step() != SQLITE_DONE) {
         EVLOG_error << "Could not insert into table: " << this->database->get_error_message();

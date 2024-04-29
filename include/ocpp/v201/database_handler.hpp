@@ -154,15 +154,13 @@ public:
     /// @param connector_id
     /// @param time_start
     /// @param charging_state
-    void insert_transaction(int32_t seq_no, const std::string& transaction_id, const std::string& event_type,
-                            const std::string& id_tag_start, int32_t evse_id, int32_t connector_id,
-                            const ocpp::DateTime& time_start, std::string charging_state,
-                            const std::optional<int32_t> reservation_id, const std::optional<IdToken>& group_id_token);
+    void insert_transaction(int32_t seq_no, const std::string& transaction_id, int32_t evse_id, int32_t connector_id,
+                            const ocpp::DateTime& time_start, std::string charging_state, int id_tag_sent);
 
-    /// @brief Clear all the transactions from the TRANSACTIONS table.
-    /// @param transaction_id transaction id of the transaction to clear from.
-    /// @return true if suceeded
-    bool clear_transaction(const std::string& transaction_id);
+        /// @brief Clear all the transactions from the TRANSACTIONS table.
+        /// @param transaction_id transaction id of the transaction to clear from.
+        /// @return true if suceeded
+        bool clear_transaction(const std::string& transaction_id);
 
     /// @brief Get any interrupted transactions that hasn't ended.
     /// @return TransactionInterruptedResponse

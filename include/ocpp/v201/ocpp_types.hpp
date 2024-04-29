@@ -946,12 +946,10 @@ struct TransactionInterruptedResponse {
     std::string transaction_id;
     int32_t evse_id;
     int32_t connector_id;
-    IdToken id_token;
     DateTime timestamp;
     int32_t seq_no;
     ocpp::v201::ChargingStateEnum charging_state;
-    std::optional<int32_t> reservation_id;
-    std::optional<IdToken> group_id_token;
+    bool id_tag_sent;
 };
 
 struct Firmware {
