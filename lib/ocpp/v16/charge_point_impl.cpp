@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
+#include "ocpp/common/types.hpp"
 #include <thread>
 
 #include <everest/logging.hpp>
@@ -822,15 +823,29 @@ bool ChargePointImpl::start(const std::map<int, ChargePointStatus>& connector_st
     this->load_charging_profiles();
     this->call_set_connection_timeout();
 
-    if (this->bootreason == BootReasonEnum::RemoteReset) {
+    switch (bootreason) {
+    case BootReasonEnum::RemoteReset:
         this->securityEventNotification(CiString<50>(ocpp::security_events::RESET_OR_REBOOT),
                                         "Charging Station rebooted due to requested remote reset!", true);
-    } else if (this->bootreason == BootReasonEnum::ScheduledReset) {
+        break;
+    case BootReasonEnum::ScheduledReset:
         this->securityEventNotification(CiString<50>(ocpp::security_events::RESET_OR_REBOOT),
                                         "Charging Station rebooted due to a scheduled reset!", true);
-    } else if (this->bootreason == BootReasonEnum::PowerUp) {
+        break;
+    case BootReasonEnum::FirmwareUpdate:
+        this->securityEventNotification(CiString<50>(ocpp::security_events::FIRMWARE_UPDATED),
+                                        "Charging Station rebooted due to firmware update!", true);
+        break;
+    case BootReasonEnum::ApplicationReset:
+    case BootReasonEnum::LocalReset:
+    case BootReasonEnum::PowerUp:
+    case BootReasonEnum::Triggered:
+    case BootReasonEnum::Unknown:
+    case BootReasonEnum::Watchdog:
+    default:
         this->securityEventNotification(CiString<50>(ocpp::security_events::STARTUP_OF_THE_DEVICE),
                                         "The Charge Point has booted", true);
+        break;
     }
 
     this->stopped = false;
