@@ -58,6 +58,8 @@ std::string profile_validation_result_to_string(ProfileValidationResultEnum e) {
         return "ChargingStationMaxProfileEvseIdGreaterThanZero";
     case ProfileValidationResultEnum::DuplicateTxDefaultProfileFound:
         return "DuplicateTxDefaultProfileFound";
+    case ProfileValidationResultEnum::DuplicateProfileValidityPeriod:
+        return "DuplicateProfileValidityPeriod";
     }
 
     throw std::out_of_range("No known string conversion for provided enum of type ProfileValidationResultEnum");
