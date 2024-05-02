@@ -52,9 +52,7 @@ void DatabaseHandler::init_enum_table_inner(const std::string& table_name, const
     }
 
     std::scoped_lock lock(this->database_transaction_mutex);
-    if (!this->database->begin_transaction()) {
-        throw std::runtime_error("Could not begin transaction");
-    }
+    auto transaction = this->database->begin_transaction();
 
     std::string sql = "INSERT INTO " + table_name + " VALUES (@id, @value);";
     auto insert_stmt = this->database->new_statement(sql);
@@ -72,9 +70,7 @@ void DatabaseHandler::init_enum_table_inner(const std::string& table_name, const
         insert_stmt->reset();
     }
 
-    if (!this->database->commit_transaction()) {
-        throw std::runtime_error("Could not commit transaction");
-    }
+    transaction->commit();
 }
 
 template <typename T>
@@ -342,11 +338,7 @@ bool DatabaseHandler::transaction_metervalues_insert(const std::string& transact
                        "@phase, @location, @custom_data, @unit_custom_data, @unit_text, @unit_multiplier, "
                        "@signed_meter_data, @signing_method, @encoding_method, @public_key);";
 
-    std::scoped_lock lock(this->database_transaction_mutex);
-    if (!this->database->begin_transaction()) {
-        throw std::runtime_error("Could not begin transaction");
-    }
-
+    auto transaction = this->database->begin_transaction();
     auto insert_stmt = this->database->new_statement(sql2);
 
     for (const auto& item : meter_value.sampledValue) {
@@ -413,9 +405,7 @@ bool DatabaseHandler::transaction_metervalues_insert(const std::string& transact
         insert_stmt->reset();
     }
 
-    if (!this->database->commit_transaction()) {
-        throw std::runtime_error("Could not commit transaction");
-    }
+    transaction->commit();
 
     return true;
 }

@@ -7,7 +7,6 @@
 #include <deque>
 #include <fstream>
 #include <memory>
-#include <mutex>
 #include <ocpp/common/support_older_cpp_versions.hpp>
 
 #include <ocpp/common/database/database_connection.hpp>
@@ -34,8 +33,6 @@ private:
     void insert_availability(int32_t evse_id, int32_t connector_id, OperationalStatusEnum operational_status,
                              bool replace);
     OperationalStatusEnum get_availability(int32_t evse_id, int32_t connector_id);
-
-    std::mutex database_transaction_mutex;
 
 public:
     DatabaseHandler(std::unique_ptr<common::DatabaseConnectionInterface> database,
