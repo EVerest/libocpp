@@ -916,7 +916,7 @@ void WebsocketTlsTPM::on_writable() {
 
         // This message was polled in a previous iteration
         if (message->sent_bytes >= message->payload.length()) {
-            EVLOG_info << "Websocket message fully written, popping processing thread from queue!";
+            EVLOG_debug << "Websocket message fully written, popping processing thread from queue!";
 
             // If we have written all bytes to libwebsockets it means that if we received
             // this writable callback everything is sent over the wire, mark the message
