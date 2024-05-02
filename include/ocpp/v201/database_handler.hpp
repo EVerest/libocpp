@@ -111,13 +111,13 @@ public:
     // Transaction metervalues
 
     /// \brief Inserts a \p meter_value to the database linked to transaction with id \p transaction_id
-    bool transaction_metervalues_insert(const std::string& transaction_id, const MeterValue& meter_value);
+    void transaction_metervalues_insert(const std::string& transaction_id, const MeterValue& meter_value);
 
     /// \brief Get all metervalues linked to transaction with id \p transaction_id
     std::vector<MeterValue> transaction_metervalues_get_all(const std::string& transaction_id);
 
     /// \brief Remove all metervalue entries linked to transaction with id \p transaction_id
-    bool transaction_metervalues_clear(const std::string& transaction_id);
+    void transaction_metervalues_clear(const std::string& transaction_id);
 };
 
 } // namespace v201
