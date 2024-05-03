@@ -23,6 +23,7 @@ public:
     virtual const char* what() const noexcept {
         return msg.c_str();
     }
+
 protected:
     std::string msg;
 };
