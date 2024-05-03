@@ -1802,7 +1802,14 @@ void ChargePoint::sign_certificate_req(const ocpp::CertificateSigningUseEnum& ce
 
     const auto csr = this->evse_security->generate_certificate_signing_request(
         certificate_signing_use, country.value(), organization.value(), common.value(), should_use_tpm);
-    req.csr = csr;
+
+    if (!csr.has_value()) {
+        EVLOG_error << "CSR generation was unsuccessful for sign request: "
+                    << ocpp::conversions::certificate_signing_use_enum_to_string(certificate_signing_use);
+        return;
+    }
+
+    req.csr = csr.value();
 
     this->awaited_certificate_signing_use_enum = certificate_signing_use;
 

@@ -96,12 +96,19 @@ bool EvseSecurityImpl::is_ca_certificate_installed(const CaCertificateType& cert
     return this->evse_security->is_ca_certificate_installed(conversions::from_ocpp(certificate_type));
 }
 
-std::string EvseSecurityImpl::generate_certificate_signing_request(const CertificateSigningUseEnum& certificate_type,
-                                                                   const std::string& country,
-                                                                   const std::string& organization,
-                                                                   const std::string& common, bool use_tpm) {
-    return this->evse_security->generate_certificate_signing_request(conversions::from_ocpp(certificate_type), country,
-                                                                     organization, common, use_tpm);
+std::optional<std::string>
+EvseSecurityImpl::generate_certificate_signing_request(const CertificateSigningUseEnum& certificate_type,
+                                                       const std::string& country, const std::string& organization,
+                                                       const std::string& common, bool use_tpm) {
+    auto csr_response = this->evse_security->generate_certificate_signing_request(
+        conversions::from_ocpp(certificate_type), country, organization, common, use_tpm);
+
+    if (csr_response.status == evse_security::GetCertificateSignRequestStatus::Accepted &&
+        csr_response.csr.has_value()) {
+        return csr_response.csr;
+    } else {
+        return std::nullopt;
+    }
 }
 
 std::optional<CertificateInfo>

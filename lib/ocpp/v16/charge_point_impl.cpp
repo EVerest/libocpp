@@ -2245,7 +2245,15 @@ void ChargePointImpl::sign_certificate(const ocpp::CertificateSigningUseEnum& ce
         this->configuration->getCpoName().value(), this->configuration->getChargeBoxSerialNumber(),
         this->configuration->getUseTPM());
 
-    req.csr = csr;
+    if (!csr.has_value()) {
+        EVLOG_error << "Create CSR (TPM=" << this->configuration->getUseTPM() << ")"
+                    << " failed for:"
+                    << ocpp::conversions::certificate_signing_use_enum_to_string(certificate_signing_use);
+        return;
+    }
+
+    req.csr = csr.value();
+
     ocpp::Call<SignCertificateRequest> call(req, this->message_queue->createMessageId());
     this->send<SignCertificateRequest>(call, initiated_by_trigger_message);
 }
@@ -2933,7 +2941,12 @@ void ChargePointImpl::data_transfer_pnc_sign_certificate() {
         this->configuration->getSeccLeafSubjectCommonName().value_or(this->configuration->getChargeBoxSerialNumber()),
         this->configuration->getUseTPM());
 
-    csr_req.csr = csr;
+    if (!csr.has_value()) {
+        EVLOG_error << "Could not request new V2GCertificate, because the CSR was not successful.";
+        return;
+    }
+
+    csr_req.csr = csr.value();
     csr_req.certificateType = ocpp::v201::CertificateSigningUseEnum::V2GCertificate;
     req.data.emplace(json(csr_req).dump());
 
