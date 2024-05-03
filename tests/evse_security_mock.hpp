@@ -26,7 +26,7 @@ public:
     MOCK_METHOD(std::vector<OCSPRequestData>, get_mo_ocsp_request_data, (const std::string&), (override));
     MOCK_METHOD(void, update_ocsp_cache, (const CertificateHashDataType&, const std::string&), (override));
     MOCK_METHOD(bool, is_ca_certificate_installed, (const CaCertificateType&), (override));
-    MOCK_METHOD(std::string, generate_certificate_signing_request,
+    MOCK_METHOD(std::optional<std::string>, generate_certificate_signing_request,
                 (const CertificateSigningUseEnum&, const std::string&, const std::string&, const std::string&, bool),
                 (override));
     MOCK_METHOD(std::optional<CertificateInfo>, get_leaf_certificate_info, (const CertificateSigningUseEnum&, bool),
