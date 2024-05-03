@@ -1,6 +1,6 @@
 # Exception Handling of Database Operations
 
-OCPP versions 1.6 and 2.0.1 contain several requirements for the persistent storage and retrieval of data. This library leverages SQLite to fulfill these persistent storage requirements. The DatabaseHandler classes manage all related database operations, including SELECT, INSERT, UPDATE, and DELETE commands.
+OCPP versions 1.6 and 2.0.1 contain several requirements for the persistent storage and retrieval of data. This library leverages SQLite to fulfill these persistent storage requirements. The DatabaseHandler classes manage all related database operations, including CREATE, SELECT, INSERT, UPDATE, and DELETE commands.
 
 ## Exception Design Considerations
 
@@ -10,4 +10,4 @@ SQLite does not natively support exceptions as it is written in C. The DatabaseH
 
 ## Implementation Strategy
 
-The public functions of the DatabaseHandler classes are designed to throw exceptions when SQL operations fail to execute as expected Error Handling: Consumer code must implement try-catch blocks around calls to DatabaseHandler functions. This handling should be tailored to the requirements of the OCPP specification and improve the stability of the application, whether it involves logging errors, retrying operations, etc.
+The public functions of the DatabaseHandler classes are designed to throw exceptions when SQL operations fail to execute as expected Error Handling. Consumer code should implement try-catch blocks around calls to DatabaseHandler functions. This handling should be tailored to the requirements of the OCPP specification and improve the stability of the application, whether it involves the logging errors, retrying operations or other logic.

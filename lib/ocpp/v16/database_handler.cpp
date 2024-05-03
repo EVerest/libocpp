@@ -310,7 +310,14 @@ v16::AvailabilityType DatabaseHandler::get_connector_availability(int32_t connec
     auto stmt = this->database->new_statement(sql);
 
     stmt->bind_int("@connector", connector);
-    if (stmt->step() != SQLITE_ROW) {
+
+    int status = stmt->step();
+
+    if (status == SQLITE_DONE) {
+        throw ExpectedEntryNotFoundException("Connector not found");
+    }
+
+    if (status != SQLITE_ROW) {
         EVLOG_error << "Error while selecting availability of CONNECTORS table";
         throw QueryExecutionException(this->database->get_error_message());
     }
@@ -361,7 +368,12 @@ int32_t DatabaseHandler::get_local_list_version() {
     std::string sql = "SELECT VERSION FROM AUTH_LIST_VERSION WHERE ID = 0";
     auto stmt = this->database->new_statement(sql);
 
-    if (stmt->step() != SQLITE_ROW) {
+    int status = stmt->step();
+    if (status == SQLITE_DONE) {
+        throw ExpectedEntryNotFoundException("Local list version not found");
+    }
+
+    if (status != SQLITE_ROW) {
         throw QueryExecutionException(this->database->get_error_message());
     }
 
@@ -526,7 +538,13 @@ int DatabaseHandler::get_connector_id(const int profile_id) {
 
     stmt->bind_int("@profile_id", profile_id);
 
-    if (stmt->step() != SQLITE_ROW) {
+    int status = stmt->step();
+
+    if (status == SQLITE_DONE) {
+        throw ExpectedEntryNotFoundException("Connector id not found based on charging profile id");
+    }
+
+    if (status != SQLITE_ROW) {
         throw QueryExecutionException(this->database->get_error_message());
     }
 

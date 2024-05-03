@@ -13,6 +13,7 @@
 #include <optional>
 
 using QueryExecutionException = ocpp::common::QueryExecutionException;
+using ExpectedEntryNotFoundException = ocpp::common::ExpectedEntryNotFoundException;
 
 namespace ocpp {
 namespace v16 {
@@ -395,29 +396,35 @@ void ChargePointImpl::load_charging_profiles() {
         EVLOG_info << "Found " << profiles.size() << " charging profile(s) in the database";
         const auto supported_purpose_types = this->configuration->getSupportedChargingProfilePurposeTypes();
         for (auto& profile : profiles) {
-            const auto connector_id = this->database_handler->get_connector_id(profile.chargingProfileId);
-            if (this->smart_charging_handler->validate_profile(
-                    profile, connector_id, false, this->configuration->getChargeProfileMaxStackLevel(),
-                    this->configuration->getMaxChargingProfilesInstalled(),
-                    this->configuration->getChargingScheduleMaxPeriods(),
-                    this->configuration->getChargingScheduleAllowedChargingRateUnitVector()) and
-                std::find(supported_purpose_types.begin(), supported_purpose_types.end(),
-                          profile.chargingProfilePurpose) != supported_purpose_types.end()) {
+            try {
+                const auto connector_id = this->database_handler->get_connector_id(profile.chargingProfileId);
+                if (this->smart_charging_handler->validate_profile(
+                        profile, connector_id, false, this->configuration->getChargeProfileMaxStackLevel(),
+                        this->configuration->getMaxChargingProfilesInstalled(),
+                        this->configuration->getChargingScheduleMaxPeriods(),
+                        this->configuration->getChargingScheduleAllowedChargingRateUnitVector()) and
+                    std::find(supported_purpose_types.begin(), supported_purpose_types.end(),
+                              profile.chargingProfilePurpose) != supported_purpose_types.end()) {
 
-                if (profile.chargingProfilePurpose == ChargingProfilePurposeType::ChargePointMaxProfile) {
-                    this->smart_charging_handler->add_charge_point_max_profile(profile);
-                } else if (profile.chargingProfilePurpose == ChargingProfilePurposeType::TxDefaultProfile) {
-                    this->smart_charging_handler->add_tx_default_profile(profile, connector_id);
-                } else if (profile.chargingProfilePurpose == ChargingProfilePurposeType::TxProfile) {
-                    this->smart_charging_handler->add_tx_profile(profile, connector_id);
+                    if (profile.chargingProfilePurpose == ChargingProfilePurposeType::ChargePointMaxProfile) {
+                        this->smart_charging_handler->add_charge_point_max_profile(profile);
+                    } else if (profile.chargingProfilePurpose == ChargingProfilePurposeType::TxDefaultProfile) {
+                        this->smart_charging_handler->add_tx_default_profile(profile, connector_id);
+                    } else if (profile.chargingProfilePurpose == ChargingProfilePurposeType::TxProfile) {
+                        this->smart_charging_handler->add_tx_profile(profile, connector_id);
+                    }
+                } else {
+                    // delete if not valid anymore
+                    this->database_handler->delete_charging_profile(profile.chargingProfileId);
                 }
-            } else {
-                // delete if not valid anymore
-                this->database_handler->delete_charging_profile(profile.chargingProfileId);
+            } catch (ExpectedEntryNotFoundException& e) {
+                EVLOG_warning << "Could not get connector id from database: " << e.what();
+            } catch (const QueryExecutionException& e) {
+                EVLOG_warning << "Could not get connector id from database: " << e.what();
             }
         }
     } catch (const QueryExecutionException& e) {
-        EVLOG_warning << "Could not request or delete charging profiles from database: " << e.what();
+        EVLOG_warning << "Could not load charging profiles from database: " << e.what();
     } catch (const std::exception& e) {
         EVLOG_warning << "Unknown error while loading charging profiles from database: " << e.what();
     }
@@ -2349,7 +2356,7 @@ void ChargePointImpl::update_ocsp_cache() {
     } catch (const QueryExecutionException& e) {
         EVLOG_warning << "Could not insert OCSP update in database: " << e.what();
     } catch (const std::exception& e) {
-        EVLOG_warning << "Unknown Error while requesting OCSP Response for CSO CAs: " << e.what();
+        EVLOG_warning << "Unknown Error while requesting OCSP Response: " << e.what();
     }
 }
 
@@ -2622,13 +2629,23 @@ void ChargePointImpl::handleSendLocalListRequest(ocpp::Call<SendLocalListRequest
         } else if (call.msg.updateType == UpdateType::Differential) {
             if (call.msg.localAuthorizationList) {
                 auto local_auth_list = call.msg.localAuthorizationList.value();
-                if (this->database_handler->get_local_list_version() < call.msg.listVersion) {
-                    this->database_handler->insert_or_update_local_list_version(call.msg.listVersion);
-                    this->database_handler->insert_or_update_local_authorization_list(local_auth_list);
+                try {
+                    if (this->database_handler->get_local_list_version() < call.msg.listVersion) {
+                        this->database_handler->insert_or_update_local_list_version(call.msg.listVersion);
+                        this->database_handler->insert_or_update_local_authorization_list(local_auth_list);
 
-                    response.status = UpdateStatus::Accepted;
-                } else {
-                    response.status = UpdateStatus::VersionMismatch;
+                        response.status = UpdateStatus::Accepted;
+                    } else {
+                        response.status = UpdateStatus::VersionMismatch;
+                    }
+                } catch (const ExpectedEntryNotFoundException& e) {
+                    try {
+                        // try to recover if no entry for local list version is found
+                        this->database_handler->insert_or_ignore_local_list_version(0);
+                    } catch (QueryExecutionException& e) {
+                        EVLOG_warning << "Could not restore local list version in database";
+                    }
+                    response.status = UpdateStatus::Failed;
                 }
             }
         }
@@ -2650,7 +2667,23 @@ void ChargePointImpl::handleGetLocalListVersionRequest(ocpp::Call<GetLocalListVe
         // if Local Authorization List is not supported, report back -1 as list version
         response.listVersion = -1;
     } else {
-        response.listVersion = this->database_handler->get_local_list_version();
+        try {
+            response.listVersion = this->database_handler->get_local_list_version();
+        } catch (QueryExecutionException& e) {
+            auto call_error = CallError(call.uniqueId, "InternalError", "Could not retrieve listVersion from database",
+                                        json({}, true));
+            this->send(call_error);
+        } catch (ExpectedEntryNotFoundException& e) {
+            try {
+                // try to recover if not entry is found
+                this->database_handler->insert_or_ignore_local_list_version(0);
+            } catch (QueryExecutionException& e) {
+                EVLOG_warning << "Could not restore local list version in database";
+            }
+            auto call_error = CallError(call.uniqueId, "InternalError", "Could not retrieve listVersion from database",
+                                        json({}, true));
+            this->send(call_error);
+        }
     }
 
     ocpp::CallResult<GetLocalListVersionResponse> call_result(response, call.uniqueId);

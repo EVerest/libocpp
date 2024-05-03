@@ -35,10 +35,10 @@ public:
     }
 };
 
-/// \brief Exception for errors during query execution
-class QueryExecutionException : public DatabaseException {
+/// \brief Exception that is used if expected table entries are not found
+class ExpectedEntryNotFoundException : public DatabaseException {
 public:
-    explicit QueryExecutionException(const std::string& message) : DatabaseException(message) {
+    explicit ExpectedEntryNotFoundException(const std::string& message) : DatabaseException(message) {
     }
 };
 

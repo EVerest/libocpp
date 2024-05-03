@@ -172,7 +172,13 @@ OperationalStatusEnum DatabaseHandler::get_availability(int32_t evse_id, int32_t
     select_stmt->bind_int("@evse_id", evse_id);
     select_stmt->bind_int("@connector_id", connector_id);
 
-    if (select_stmt->step() != SQLITE_ROW) {
+    int status = select_stmt->step();
+
+    if (status == SQLITE_DONE) {
+        throw ExpectedEntryNotFoundException("Could not find operational status for connector");
+    }
+
+    if (status != SQLITE_ROW) {
         throw QueryExecutionException(this->database->get_error_message());
     }
     return conversions::string_to_operational_status_enum(select_stmt->column_text(0));

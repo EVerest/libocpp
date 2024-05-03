@@ -25,9 +25,9 @@
 #include <ocpp/v201/messages/TransactionEvent.hpp>
 #include <ocpp/v201/types.hpp>
 
-using QueryExecutionException = ocpp::common::QueryExecutionException;
-
 namespace ocpp {
+
+using QueryExecutionException = common::QueryExecutionException;
 
 struct MessageQueueConfig {
     int transaction_message_attempts;
@@ -189,7 +189,7 @@ private:
             try {
                 this->database_handler->insert_transaction_message(db_message);
             } catch (const QueryExecutionException& e) {
-                EVLOG_warning << "Could not insert into transaction queue: " << e.what();
+                EVLOG_warning << "Could not insert message into transaction queue: " << e.what();
             }
             this->new_message = true;
             this->check_queue_sizes();
@@ -251,9 +251,9 @@ private:
                 try {
                     database_handler->remove_transaction_message(element->initial_unique_id);
                 } catch (const QueryExecutionException& e) {
-                    EVLOG_warning << "Could not delete from transaction queue: " << e.what();
+                    EVLOG_warning << "Could not delete message from transaction queue: " << e.what();
                 } catch (const std::exception& e) {
-                    EVLOG_warning << "Could not delete from transaction queue: " << e.what();
+                    EVLOG_warning << "Could not delete message from transaction queue: " << e.what();
                 }
                 drop_count++;
                 remove_next_update_message = false;
@@ -479,9 +479,9 @@ public:
                         // remove from database in case SecurityEventNotification.req should not be sent
                         this->database_handler->remove_transaction_message(transaction_message.unique_id);
                     } catch (const QueryExecutionException& e) {
-                        EVLOG_warning << "Could not delete from transaction queue: " << e.what();
+                        EVLOG_warning << "Could not delete message from transaction queue: " << e.what();
                     } catch (const std::exception& e) {
-                        EVLOG_warning << "Could not delete from transaction queue: " << e.what();
+                        EVLOG_warning << "Could not delete message from transaction queue: " << e.what();
                     }
                 } else {
                     std::shared_ptr<ControlMessage<M>> message =
@@ -677,9 +677,9 @@ public:
                     // if the charging station just boots after sending, but before receiving the result.
                     this->database_handler->remove_transaction_message(this->in_flight->initial_unique_id);
                 } catch (const QueryExecutionException& e) {
-                    EVLOG_warning << "Could not delete from transaction queue: " << e.what();
+                    EVLOG_warning << "Could not delete message from transaction queue: " << e.what();
                 } catch (const std::exception& e) {
-                    EVLOG_warning << "Could not delete from transaction queue: " << e.what();
+                    EVLOG_warning << "Could not delete message from transaction queue: " << e.what();
                 }
             }
             this->reset_in_flight();
@@ -751,9 +751,9 @@ public:
                     // also drop the message from the database
                     this->database_handler->remove_transaction_message(this->in_flight->initial_unique_id);
                 } catch (const QueryExecutionException& e) {
-                    EVLOG_warning << "Could not delete from transaction queue: " << e.what();
+                    EVLOG_warning << "Could not delete message from transaction queue: " << e.what();
                 } catch (const std::exception& e) {
-                    EVLOG_warning << "Could not delete from transaction queue: " << e.what();
+                    EVLOG_warning << "Could not delete message from transaction queue: " << e.what();
                 }
             }
         } else if (this->in_flight->isBootNotificationMessage()) {
