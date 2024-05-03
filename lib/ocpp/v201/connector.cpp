@@ -7,7 +7,7 @@
 #include <ocpp/v201/connector.hpp>
 
 using QueryExecutionException = ocpp::common::QueryExecutionException;
-using ExpectedEntryNotFoundException = ocpp::common::ExpectedEntryNotFoundException;
+using RequiredEntryNotFoundException = ocpp::common::RequiredEntryNotFoundException;
 
 namespace ocpp {
 namespace v201 {

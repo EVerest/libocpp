@@ -175,7 +175,7 @@ OperationalStatusEnum DatabaseHandler::get_availability(int32_t evse_id, int32_t
     int status = select_stmt->step();
 
     if (status == SQLITE_DONE) {
-        throw ExpectedEntryNotFoundException("Could not find operational status for connector");
+        throw RequiredEntryNotFoundException("Could not find operational status for connector");
     }
 
     if (status != SQLITE_ROW) {

@@ -36,9 +36,9 @@ public:
 };
 
 /// \brief Exception that is used if expected table entries are not found
-class ExpectedEntryNotFoundException : public DatabaseException {
+class RequiredEntryNotFoundException : public DatabaseException {
 public:
-    explicit ExpectedEntryNotFoundException(const std::string& message) : DatabaseException(message) {
+    explicit RequiredEntryNotFoundException(const std::string& message) : DatabaseException(message) {
     }
 };
 

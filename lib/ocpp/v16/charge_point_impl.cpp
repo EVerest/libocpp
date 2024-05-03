@@ -13,7 +13,7 @@
 #include <optional>
 
 using QueryExecutionException = ocpp::common::QueryExecutionException;
-using ExpectedEntryNotFoundException = ocpp::common::ExpectedEntryNotFoundException;
+using RequiredEntryNotFoundException = ocpp::common::RequiredEntryNotFoundException;
 
 namespace ocpp {
 namespace v16 {
@@ -417,7 +417,7 @@ void ChargePointImpl::load_charging_profiles() {
                     // delete if not valid anymore
                     this->database_handler->delete_charging_profile(profile.chargingProfileId);
                 }
-            } catch (ExpectedEntryNotFoundException& e) {
+            } catch (RequiredEntryNotFoundException& e) {
                 EVLOG_warning << "Could not get connector id from database: " << e.what();
             } catch (const QueryExecutionException& e) {
                 EVLOG_warning << "Could not get connector id from database: " << e.what();
@@ -2638,7 +2638,7 @@ void ChargePointImpl::handleSendLocalListRequest(ocpp::Call<SendLocalListRequest
                     } else {
                         response.status = UpdateStatus::VersionMismatch;
                     }
-                } catch (const ExpectedEntryNotFoundException& e) {
+                } catch (const RequiredEntryNotFoundException& e) {
                     try {
                         // try to recover if no entry for local list version is found
                         this->database_handler->insert_or_ignore_local_list_version(0);
@@ -2673,7 +2673,7 @@ void ChargePointImpl::handleGetLocalListVersionRequest(ocpp::Call<GetLocalListVe
             auto call_error = CallError(call.uniqueId, "InternalError", "Could not retrieve listVersion from database",
                                         json({}, true));
             this->send(call_error);
-        } catch (ExpectedEntryNotFoundException& e) {
+        } catch (RequiredEntryNotFoundException& e) {
             try {
                 // try to recover if not entry is found
                 this->database_handler->insert_or_ignore_local_list_version(0);

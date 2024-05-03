@@ -314,7 +314,7 @@ v16::AvailabilityType DatabaseHandler::get_connector_availability(int32_t connec
     int status = stmt->step();
 
     if (status == SQLITE_DONE) {
-        throw ExpectedEntryNotFoundException("Connector not found");
+        throw RequiredEntryNotFoundException("Connector not found");
     }
 
     if (status != SQLITE_ROW) {
@@ -370,7 +370,7 @@ int32_t DatabaseHandler::get_local_list_version() {
 
     int status = stmt->step();
     if (status == SQLITE_DONE) {
-        throw ExpectedEntryNotFoundException("Local list version not found");
+        throw RequiredEntryNotFoundException("Local list version not found");
     }
 
     if (status != SQLITE_ROW) {
@@ -541,7 +541,7 @@ int DatabaseHandler::get_connector_id(const int profile_id) {
     int status = stmt->step();
 
     if (status == SQLITE_DONE) {
-        throw ExpectedEntryNotFoundException("Connector id not found based on charging profile id");
+        throw RequiredEntryNotFoundException("Connector id not found based on charging profile id");
     }
 
     if (status != SQLITE_ROW) {
