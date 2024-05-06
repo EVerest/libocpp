@@ -241,7 +241,7 @@ void DatabaseHandler::insert_or_update_local_authorization_list(
     }
 
     if (!success) {
-        throw QueryExecutionException(this->database->get_error_message());
+        throw QueryExecutionException("At least one insertion or deletion of local authorization list entries failed");
     }
 }
 
@@ -513,7 +513,6 @@ void DatabaseHandler::transaction_metervalues_clear(const std::string& transacti
 
         if (delete_stmt->step() != SQLITE_DONE) {
             throw QueryExecutionException(this->database->get_error_message());
-            ;
         }
         delete_stmt->reset();
     }
