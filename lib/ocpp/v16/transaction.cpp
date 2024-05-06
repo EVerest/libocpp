@@ -248,6 +248,5 @@ bool TransactionHandler::transaction_active(int32_t connector) {
     return this->get_transaction(connector) != nullptr && this->get_transaction(connector)->is_active();
 }
 
-
 } // namespace v16
 } // namespace ocpp
