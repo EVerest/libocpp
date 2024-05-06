@@ -1800,16 +1800,21 @@ void ChargePoint::sign_certificate_req(const ocpp::CertificateSigningUseEnum& ce
     bool should_use_tpm =
         this->device_model->get_optional_value<bool>(ControllerComponentVariables::UseTPM).value_or(false);
 
-    const auto csr = this->evse_security->generate_certificate_signing_request(
+    const auto result = this->evse_security->generate_certificate_signing_request(
         certificate_signing_use, country.value(), organization.value(), common.value(), should_use_tpm);
 
-    if (!csr.has_value()) {
+    if (result.status != GetCertificateSignRequestStatus::Accepted || !result.csr.has_value()) {
         EVLOG_error << "CSR generation was unsuccessful for sign request: "
                     << ocpp::conversions::certificate_signing_use_enum_to_string(certificate_signing_use);
+
+        std::string gen_error = "Sign certificate req failed due to:" +
+                                ocpp::conversions::generate_certificate_signing_request_status_to_string(result.status);
+        this->security_event_notification_req(ocpp::security_events::CSRGENERATIONFAILED,
+                                              std::optional<CiString<255>>(gen_error), true, true);
         return;
     }
 
-    req.csr = csr.value();
+    req.csr = result.csr.value();
 
     this->awaited_certificate_signing_use_enum = certificate_signing_use;
 

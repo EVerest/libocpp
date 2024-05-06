@@ -87,7 +87,7 @@ public:
     /// \param organization
     /// \param common
     /// \return the PEM formatted certificate signing request
-    virtual std::optional<std::string>
+    virtual GetCertificateSignRequestResult
     generate_certificate_signing_request(const CertificateSigningUseEnum& certificate_type, const std::string& country,
                                          const std::string& organization, const std::string& common, bool use_tpm) = 0;
 
