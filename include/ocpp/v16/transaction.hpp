@@ -133,11 +133,11 @@ public:
     void set_finished();
     
     /// \brief Sets the has_signed_meter_value flag for this transaction, this function is called 
-    /// from on_transaction_started and on_transaction_stopped
+    /// from \p on_transaction_started and \p on_transaction_stopped
     void set_has_signed_meter_values();
     
     /// \brief Indicates if this transaction has signed meter values or not, this function is called  
-    /// from on_transaction_started and on_transaction_stopped 
+    /// from \p on_transaction_started and \p on_transaction_stopped 
     /// \returns a boolean value indicating if this transaction has signed meter values or not
     bool get_has_signed_meter_values();
 };
