@@ -52,8 +52,8 @@ protected:
         const fs::path init_script_path = "na";
 
         auto database = std::make_unique<common::DatabaseConnection>(database_path / (chargepoint_id + ".db"));
-        std::shared_ptr<DatabaseHandlerMock> database_handler =
-            std::make_shared<DatabaseHandlerMock>(std::move(database), init_script_path);
+        std::shared_ptr<testing::NiceMock<DatabaseHandlerMock>> database_handler =
+            std::make_shared<testing::NiceMock<DatabaseHandlerMock>>(std::move(database), init_script_path);
 
         auto handler = new SmartChargingHandler(connectors, database_handler, true);
 
@@ -72,10 +72,14 @@ protected:
         return cp;
     }
 
-    void log_duration(int32_t duration) {
+    std::string get_log_duration_string(int32_t duration) {
+        if (duration < 1) {
+            return "0 Seconds ";
+        }
+
         int32_t remaining = duration;
 
-        std::string log_str = "    Duration> ";
+        std::string log_str = "";
 
         if (remaining >= 86400) {
             int32_t days = remaining / 86400;
@@ -99,7 +103,11 @@ protected:
         if (remaining > 0) {
             log_str += std::to_string(remaining) + " Seconds ";
         }
-        EVLOG_info << log_str;
+        return log_str;
+    }
+
+    void log_duration(int32_t duration) {
+        EVLOG_info << get_log_duration_string(duration);
     }
 
     void log_me(ChargingProfile& cp) {
@@ -125,6 +133,28 @@ protected:
         EVLOG_info << "EnhancedChargingSchedule> " << ecs_json.dump(4);
     }
 
+    void log_me(EnhancedChargingSchedule& ecs, const DateTime start_time) {
+        log_me(ecs);
+        EVLOG_info << "Start Time> " << start_time.to_rfc3339();
+
+        int32_t i = 0;
+        for (auto& period : ecs.chargingSchedulePeriod) {
+            i++;
+            int32_t numberPhases = 0;
+            if (period.numberPhases.has_value()) {
+                numberPhases = period.numberPhases.value();
+            }
+            EVLOG_info << "   period #" << i << " {limit: " << period.limit << " numberPhases:" << numberPhases
+                       << " stackLevel:" << period.stackLevel << "} starts "
+                       << get_log_duration_string(period.startPeriod) << "in";
+        }
+        if (ecs.duration.has_value()) {
+            EVLOG_info << "   period #" << i << " ends after " << get_log_duration_string(ecs.duration.value());
+        } else {
+            EVLOG_info << "   period #" << i << " ends in 0 Seconds";
+        }
+    }
+
     /// \brief Returns a vector of ChargingProfiles to be used as a baseline for testing core functionality
     /// of generating an EnhancedChargingSchedule.
     std::vector<ChargingProfile> getBaselineProfileVector() {
@@ -140,9 +170,11 @@ protected:
 };
 
 TEST_F(CompositeScheduleTestFixture, CalculateEnhancedCompositeSchedule_ValidatedBaseline) {
+    // GTEST_SKIP();
     auto handler = createSmartChargingHandler(1);
 
     std::vector<ChargingProfile> profiles = getBaselineProfileVector();
+
     log_me(profiles);
 
     const DateTime my_date_start_range = ocpp::DateTime("2024-01-17T18:01:00");
@@ -154,7 +186,8 @@ TEST_F(CompositeScheduleTestFixture, CalculateEnhancedCompositeSchedule_Validate
     auto composite_schedule = handler->calculate_enhanced_composite_schedule(
         profiles, my_date_start_range, my_date_end_range, 1, profiles.at(0).chargingSchedule.chargingRateUnit);
 
-    log_me(composite_schedule);
+    log_me(composite_schedule, my_date_start_range);
+
     ASSERT_EQ(composite_schedule.chargingRateUnit, ChargingRateUnit::W);
     ASSERT_EQ(composite_schedule.duration, 21540);
     ASSERT_EQ(profiles.size(), 2);
@@ -169,6 +202,25 @@ TEST_F(CompositeScheduleTestFixture, CalculateEnhancedCompositeSchedule_Validate
     ASSERT_EQ(period_02.numberPhases, 3);
     ASSERT_EQ(period_02.stackLevel, 0);
     ASSERT_EQ(period_02.startPeriod, 1020);
+}
+
+TEST_F(CompositeScheduleTestFixture, CalculateEnhancedCompositeSchedule_Baseline__PossibleDefect) {
+    // GTEST_SKIP();
+    auto handler = createSmartChargingHandler(1);
+
+    std::vector<ChargingProfile> profiles = getBaselineProfileVector();
+    log_me(profiles);
+
+    const DateTime my_date_start_range = ocpp::DateTime("2024-01-17T17:59:59");
+    const DateTime my_date_end_range = ocpp::DateTime("2024-01-18T00:00:00");
+
+    EVLOG_info << "    Start> " << my_date_start_range.to_rfc3339();
+    EVLOG_info << "      End> " << my_date_end_range.to_rfc3339();
+
+    auto composite_schedule = handler->calculate_enhanced_composite_schedule(
+        profiles, my_date_start_range, my_date_end_range, 1, profiles.at(0).chargingSchedule.chargingRateUnit);
+
+    log_me(composite_schedule, my_date_start_range);
 }
 
 TEST_F(CompositeScheduleTestFixture, CalculateEnhancedCompositeSchedule_TxProfile) {

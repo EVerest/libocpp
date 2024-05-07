@@ -10,6 +10,8 @@ namespace fs = std::filesystem;
 #include <ocpp/v16/smart_charging.hpp>
 #include <optional>
 
+#include <gtest/gtest.h> // Add this line to include the necessary header file
+
 namespace ocpp {
 namespace v16 {
 
@@ -44,6 +46,7 @@ namespace v16 {
 class ChargepointTestFixture : public testing::Test {
 protected:
     void SetUp() override {
+        testing::FLAGS_gmock_verbose = "error";
     }
 
     void addConnector(int id) {
