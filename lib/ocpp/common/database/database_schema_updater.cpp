@@ -12,8 +12,7 @@ namespace ocpp::common {
 
 // Helper functions
 
-enum class Direction
-{
+enum class Direction {
     Up,
     Down
 };

@@ -51,7 +51,6 @@ void DatabaseHandler::init_enum_table_inner(const std::string& table_name, const
         throw std::runtime_error("Table does not exist.");
     }
 
-    std::scoped_lock lock(this->database_transaction_mutex);
     auto transaction = this->database->begin_transaction();
 
     std::string sql = "INSERT INTO " + table_name + " VALUES (@id, @value);";

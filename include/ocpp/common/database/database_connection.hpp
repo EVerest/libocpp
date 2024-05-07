@@ -17,7 +17,7 @@ namespace ocpp::common {
 class DatabaseTransactionInterface {
 public:
     /// \brief Destructor of transaction: Will by default rollback unless commit() is called
-    virtual ~DatabaseTransactionInterface();
+    virtual ~DatabaseTransactionInterface() = default;
 
     /// \brief Commits the transaction and release the lock on the database interface
     virtual void commit() = 0;
