@@ -4,6 +4,7 @@
 #ifndef OCPP_V201_SMART_CHARGING_HPP
 #define OCPP_V201_SMART_CHARGING_HPP
 
+#include "ocpp/v201/device_model.hpp"
 #include "ocpp/v201/enums.hpp"
 #include <limits>
 
@@ -52,6 +53,7 @@ std::ostream& operator<<(std::ostream& os, const ProfileValidationResultEnum val
 class SmartChargingHandler {
 private:
     std::map<int32_t, std::unique_ptr<EvseInterface>>& evses;
+    std::unique_ptr<DeviceModel>& device_model;
 
     std::shared_ptr<ocpp::v201::DatabaseHandler> database_handler;
     // cppcheck-suppress unusedStructMember
@@ -59,7 +61,8 @@ private:
     std::vector<ChargingProfile> station_wide_charging_profiles;
 
 public:
-    explicit SmartChargingHandler(std::map<int32_t, std::unique_ptr<EvseInterface>>& evses);
+    explicit SmartChargingHandler(std::map<int32_t, std::unique_ptr<EvseInterface>>& evses,
+                                  std::unique_ptr<DeviceModel>& device_model);
 
     ///
     /// \brief validates the given \p profile according to the specification.
@@ -111,6 +114,7 @@ private:
     std::vector<ChargingProfile> get_evse_specific_tx_default_profiles() const;
     std::vector<ChargingProfile> get_station_wide_tx_default_profiles() const;
     void conform_validity_periods(ChargingProfile& profile) const;
+    CurrentPhaseType get_current_phase_type(const std::optional<EvseInterface*> evse_opt) const;
 };
 
 } // namespace ocpp::v201

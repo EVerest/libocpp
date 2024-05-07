@@ -12,6 +12,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <memory>
+#include <sqlite3.h>
 
 #include <component_state_manager_mock.hpp>
 #include <device_model_storage_mock.hpp>
@@ -36,6 +37,10 @@ static const int DEFAULT_STACK_LEVEL = 1;
 class ChargepointTestFixtureV201 : public testing::Test {
 protected:
     void SetUp() override {
+    }
+
+    void TearDown() override {
+        sqlite3_close(this->db_handle);
     }
 
     ChargingSchedule create_charge_schedule(ChargingRateUnitEnum charging_rate_unit) {
@@ -152,11 +157,24 @@ protected:
         };
     }
 
-    DeviceModel create_device_model() {
-        std::unique_ptr<DeviceModelStorageMock> storage_mock =
-            std::make_unique<testing::NiceMock<DeviceModelStorageMock>>();
-        ON_CALL(*storage_mock, get_device_model).WillByDefault(testing::Return(DeviceModelMap()));
-        return DeviceModel(std::move(storage_mock));
+    void create_device_model_db() {
+        sqlite3* source_handle;
+        sqlite3_open(DEVICE_MODEL_DB_LOCATION_V201, &source_handle);
+        sqlite3_open("file:device_model?mode=memory&cache=shared", &db_handle);
+
+        auto* backup = sqlite3_backup_init(db_handle, "main", source_handle, "main");
+        sqlite3_backup_step(backup, -1);
+        sqlite3_backup_finish(backup);
+
+        sqlite3_close(source_handle);
+    }
+
+    std::unique_ptr<DeviceModel> create_device_model() {
+        create_device_model_db();
+        auto device_model_storage =
+            std::make_unique<DeviceModelStorageSqlite>("file:device_model?mode=memory&cache=shared");
+        auto device_model = std::make_unique<DeviceModel>(std::move(device_model_storage));
+        return device_model;
     }
 
     void create_evse_with_id(int id) {
@@ -165,13 +183,13 @@ protected:
             transaction_meter_value_req_mock;
         testing::MockFunction<void()> pause_charging_callback_mock;
         auto e1 = std::make_unique<Evse>(
-            id, 1, device_model, database_handler, std::make_shared<ComponentStateManagerMock>(),
+            id, 1, *device_model, database_handler, std::make_shared<ComponentStateManagerMock>(),
             transaction_meter_value_req_mock.AsStdFunction(), pause_charging_callback_mock.AsStdFunction());
         evses[id] = std::move(e1);
     }
 
     SmartChargingHandler create_smart_charging_handler() {
-        return SmartChargingHandler(evses);
+        return SmartChargingHandler(evses, device_model);
     }
 
     std::string uuid() {
@@ -207,8 +225,10 @@ protected:
     std::map<int32_t, std::unique_ptr<EvseInterface>> evses;
     std::shared_ptr<DatabaseHandler> database_handler;
 
+    sqlite3* db_handle;
+
     bool ignore_no_transaction = true;
-    DeviceModel device_model = create_device_model();
+    std::unique_ptr<DeviceModel> device_model = create_device_model();
     SmartChargingHandler handler = create_smart_charging_handler();
     boost::uuids::random_generator uuid_generator = boost::uuids::random_generator();
 };
@@ -587,6 +607,36 @@ TEST_F(ChargepointTestFixtureV201, K01FR44_IfPhaseToUseProvidedForDCEVSE_ThenPro
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::ChargingSchedulePeriodExtraneousPhaseValues));
 }
 
+TEST_F(ChargepointTestFixtureV201, K01FR44_IfNumberPhasesProvidedForDCChargingStation_ThenProfileIsInvalid) {
+    device_model->set_value(ControllerComponentVariables::ChargingStationSupplyPhases.component,
+                            ControllerComponentVariables::ChargingStationSupplyPhases.variable.value(),
+                            AttributeEnum::Actual, std::to_string(0), true);
+
+    auto periods = create_charging_schedule_periods(0, 1);
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), uuid());
+
+    auto sut = handler.validate_profile_schedules(profile, std::nullopt);
+
+    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::ChargingSchedulePeriodExtraneousPhaseValues));
+}
+
+TEST_F(ChargepointTestFixtureV201, K01FR44_IfPhaseToUseProvidedForDCChargingStation_ThenProfileIsInvalid) {
+    device_model->set_value(ControllerComponentVariables::ChargingStationSupplyPhases.component,
+                            ControllerComponentVariables::ChargingStationSupplyPhases.variable.value(),
+                            AttributeEnum::Actual, std::to_string(0), true);
+
+    auto periods = create_charging_schedule_periods(0, 1, 1);
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), uuid());
+
+    auto sut = handler.validate_profile_schedules(profile, std::nullopt);
+
+    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::ChargingSchedulePeriodExtraneousPhaseValues));
+}
+
 TEST_F(ChargepointTestFixtureV201, K01FR45_IfNumberPhasesGreaterThanMaxNumberPhasesForACEVSE_ThenProfileIsInvalid) {
     auto mock_evse = testing::NiceMock<EvseMock>();
     ON_CALL(mock_evse, get_current_phase_type).WillByDefault(testing::Return(CurrentPhaseType::AC));
@@ -601,6 +651,22 @@ TEST_F(ChargepointTestFixtureV201, K01FR45_IfNumberPhasesGreaterThanMaxNumberPha
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::ChargingSchedulePeriodUnsupportedNumberPhases));
 }
 
+TEST_F(ChargepointTestFixtureV201,
+       K01FR45_IfNumberPhasesGreaterThanMaxNumberPhasesForACChargingStation_ThenProfileIsInvalid) {
+    device_model->set_value(ControllerComponentVariables::ChargingStationSupplyPhases.component,
+                            ControllerComponentVariables::ChargingStationSupplyPhases.variable.value(),
+                            AttributeEnum::Actual, std::to_string(1), true);
+
+    auto periods = create_charging_schedule_periods(0, 4);
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), uuid());
+
+    auto sut = handler.validate_profile_schedules(profile, std::nullopt);
+
+    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::ChargingSchedulePeriodUnsupportedNumberPhases));
+}
+
 TEST_F(ChargepointTestFixtureV201, K01FR49_IfNumberPhasesMissingForACEVSE_ThenSetNumberPhasesToThree) {
     auto mock_evse = testing::NiceMock<EvseMock>();
     ON_CALL(mock_evse, get_current_phase_type).WillByDefault(testing::Return(CurrentPhaseType::AC));
@@ -611,6 +677,24 @@ TEST_F(ChargepointTestFixtureV201, K01FR49_IfNumberPhasesMissingForACEVSE_ThenSe
         create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), uuid());
 
     auto sut = handler.validate_profile_schedules(profile, &mock_evse);
+
+    auto numberPhases = profile.chargingSchedule[0].chargingSchedulePeriod[0].numberPhases;
+
+    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::Valid));
+    EXPECT_THAT(numberPhases, testing::Eq(3));
+}
+
+TEST_F(ChargepointTestFixtureV201, K01FR49_IfNumberPhasesMissingForACChargingStation_ThenSetNumberPhasesToThree) {
+    device_model->set_value(ControllerComponentVariables::ChargingStationSupplyPhases.component,
+                            ControllerComponentVariables::ChargingStationSupplyPhases.variable.value(),
+                            AttributeEnum::Actual, std::to_string(3), true);
+
+    auto periods = create_charging_schedule_periods(0);
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), uuid());
+
+    auto sut = handler.validate_profile_schedules(profile, std::nullopt);
 
     auto numberPhases = profile.chargingSchedule[0].chargingSchedulePeriod[0].numberPhases;
 

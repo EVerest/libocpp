@@ -4,6 +4,8 @@
 #include "date/tz.h"
 #include "everest/logging.hpp"
 #include "ocpp/common/types.hpp"
+#include "ocpp/v201/ctrlr_component_variables.hpp"
+#include "ocpp/v201/device_model.hpp"
 #include "ocpp/v201/enums.hpp"
 #include "ocpp/v201/evse.hpp"
 #include "ocpp/v201/ocpp_types.hpp"
@@ -74,7 +76,25 @@ std::ostream& operator<<(std::ostream& os, const ProfileValidationResultEnum val
 
 const int32_t STATION_WIDE_ID = 0;
 
-SmartChargingHandler::SmartChargingHandler(std::map<int32_t, std::unique_ptr<EvseInterface>>& evses) : evses(evses) {
+CurrentPhaseType SmartChargingHandler::get_current_phase_type(const std::optional<EvseInterface*> evse_opt) const {
+    if (evse_opt.has_value()) {
+        return evse_opt.value()->get_current_phase_type();
+    }
+
+    auto supply_phases =
+        this->device_model->get_value<int32_t>(ControllerComponentVariables::ChargingStationSupplyPhases);
+    if (supply_phases == 1 || supply_phases == 3) {
+        return CurrentPhaseType::AC;
+    } else if (supply_phases == 0) {
+        return CurrentPhaseType::DC;
+    }
+
+    return CurrentPhaseType::Unknown;
+}
+
+SmartChargingHandler::SmartChargingHandler(std::map<int32_t, std::unique_ptr<EvseInterface>>& evses,
+                                           std::unique_ptr<DeviceModel>& device_model) :
+    evses(evses), device_model(device_model) {
 }
 
 ProfileValidationResultEnum SmartChargingHandler::validate_profile(ChargingProfile& profile, int32_t evse_id) {
@@ -242,27 +262,24 @@ SmartChargingHandler::validate_profile_schedules(ChargingProfile& profile,
                 }
             }
 
-            if (evse_opt.has_value()) {
-                auto evse = evse_opt.value();
-                // K01.FR.44 for EVSEs; We reject profiles that provide invalid numberPhases/phaseToUse instead
-                // of silently acccepting them.
-                if (evse->get_current_phase_type() == CurrentPhaseType::DC &&
-                    (charging_schedule_period.numberPhases.has_value() ||
-                     charging_schedule_period.phaseToUse.has_value())) {
-                    return ProfileValidationResultEnum::ChargingSchedulePeriodExtraneousPhaseValues;
+            auto phase_type = this->get_current_phase_type(evse_opt);
+            // K01.FR.44; We reject profiles that provide invalid numberPhases/phaseToUse instead
+            // of silently acccepting them.
+            if (phase_type == CurrentPhaseType::DC && (charging_schedule_period.numberPhases.has_value() ||
+                                                       charging_schedule_period.phaseToUse.has_value())) {
+                return ProfileValidationResultEnum::ChargingSchedulePeriodExtraneousPhaseValues;
+            }
+
+            if (phase_type == CurrentPhaseType::AC) {
+                // K01.FR.45; Once again rejecting invalid values
+                if (charging_schedule_period.numberPhases.has_value() &&
+                    charging_schedule_period.numberPhases > DEFAULT_AND_MAX_NUMBER_PHASES) {
+                    return ProfileValidationResultEnum::ChargingSchedulePeriodUnsupportedNumberPhases;
                 }
 
-                if (evse->get_current_phase_type() == CurrentPhaseType::AC) {
-                    // K01.FR.45; Once again rejecting invalid values
-                    if (charging_schedule_period.numberPhases.has_value() &&
-                        charging_schedule_period.numberPhases > DEFAULT_AND_MAX_NUMBER_PHASES) {
-                        return ProfileValidationResultEnum::ChargingSchedulePeriodUnsupportedNumberPhases;
-                    }
-
-                    // K01.FR.49
-                    if (!charging_schedule_period.numberPhases.has_value()) {
-                        charging_schedule_period.numberPhases.emplace(DEFAULT_AND_MAX_NUMBER_PHASES);
-                    }
+                // K01.FR.49
+                if (!charging_schedule_period.numberPhases.has_value()) {
+                    charging_schedule_period.numberPhases.emplace(DEFAULT_AND_MAX_NUMBER_PHASES);
                 }
             }
         }
