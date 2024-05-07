@@ -538,6 +538,14 @@ enum class GetCertificateSignRequestStatus {
     GenerationError,      ///< Any other error when creating the CSR
 };
 
+enum class GetCertificateInfoStatus {
+    Accepted,
+    Rejected,
+    NotFound,
+    NotFoundValid,
+    PrivateKeyNotFound,
+};
+
 struct GetCertificateSignRequestResult {
     GetCertificateSignRequestStatus status;
     std::optional<std::string> csr;
@@ -555,6 +563,11 @@ struct CertificateInfo {
     fs::path key_path;                               // path to private key of the leaf certificate
     std::optional<std::string> password;             // optional password for the private key
     std::vector<CertificateOCSP> ocsp;               // OCSP data if requested
+};
+
+struct GetCertificateInfoResult {
+    GetCertificateInfoStatus status;
+    std::optional<CertificateInfo> info;
 };
 
 enum class LeafCertificateType {

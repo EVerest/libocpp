@@ -104,25 +104,26 @@ EvseSecurityImpl::generate_certificate_signing_request(const CertificateSigningU
         conversions::from_ocpp(certificate_type), country, organization, common, use_tpm);
 
     GetCertificateSignRequestResult result;
-    result.status = conversions::to_ocpp(csr_response.status);
 
-    if (csr_response.csr.has_value()) {
-        result.csr = csr_response.csr;
-    }
+    result.status = conversions::to_ocpp(csr_response.status);
+    result.csr = csr_response.csr;
 
     return result;
 }
 
-std::optional<CertificateInfo>
-EvseSecurityImpl::get_leaf_certificate_info(const CertificateSigningUseEnum& certificate_type, bool include_ocsp) {
+GetCertificateInfoResult EvseSecurityImpl::get_leaf_certificate_info(const CertificateSigningUseEnum& certificate_type,
+                                                                     bool include_ocsp) {
     const auto info_response = this->evse_security->get_leaf_certificate_info(
         conversions::from_ocpp(certificate_type), evse_security::EncodingFormat::PEM, include_ocsp);
 
-    if (info_response.status == evse_security::GetCertificateInfoStatus::Accepted && info_response.info.has_value()) {
-        return conversions::to_ocpp(info_response.info.value());
-    } else {
-        return std::nullopt;
+    GetCertificateInfoResult result;
+
+    result.status = conversions::to_ocpp(info_response.status);
+    if (info_response.info.has_value()) {
+        result.info = conversions::to_ocpp(info_response.info.value());
     }
+
+    return result;
 }
 
 bool EvseSecurityImpl::update_certificate_links(const CertificateSigningUseEnum& certificate_type) {
@@ -210,6 +211,24 @@ HashAlgorithmEnumType to_ocpp(evse_security::HashAlgorithm other) {
         return HashAlgorithmEnumType::SHA512;
     default:
         throw std::runtime_error("Could not convert evse_security::HashAlgorithm to HashAlgorithmEnumType");
+    }
+}
+
+GetCertificateInfoStatus to_ocpp(evse_security::GetCertificateInfoStatus other) {
+    switch (other) {
+    case evse_security::GetCertificateInfoStatus::Accepted:
+        return GetCertificateInfoStatus::Accepted;
+    case evse_security::GetCertificateInfoStatus::Rejected:
+        return GetCertificateInfoStatus::Rejected;
+    case evse_security::GetCertificateInfoStatus::NotFound:
+        return GetCertificateInfoStatus::NotFound;
+    case evse_security::GetCertificateInfoStatus::NotFoundValid:
+        return GetCertificateInfoStatus::NotFoundValid;
+    case evse_security::GetCertificateInfoStatus::PrivateKeyNotFound:
+        return GetCertificateInfoStatus::PrivateKeyNotFound;
+    default:
+        throw std::runtime_error(
+            "Could not convert evse_security::GetCertificateInfoStatus to GetCertificateInfoStatus");
     }
 }
 

@@ -98,8 +98,8 @@ public:
     /// \param encoding specifies PEM or DER format
     /// \param include_ocsp if we should include certificate ocsp data
     /// \return info of certificate and key if present, else std::nullopt
-    virtual std::optional<CertificateInfo> get_leaf_certificate_info(const CertificateSigningUseEnum& certificate_type,
-                                                                     bool include_ocsp = false) = 0;
+    virtual GetCertificateInfoResult get_leaf_certificate_info(const CertificateSigningUseEnum& certificate_type,
+                                                               bool include_ocsp = false) = 0;
 
     /// \brief Updates the certificate and key links for the given \p certificate_type
     virtual bool update_certificate_links(const CertificateSigningUseEnum& certificate_type) = 0;

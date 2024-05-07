@@ -29,7 +29,7 @@ public:
     MOCK_METHOD(GetCertificateSignRequestResult, generate_certificate_signing_request,
                 (const CertificateSigningUseEnum&, const std::string&, const std::string&, const std::string&, bool),
                 (override));
-    MOCK_METHOD(std::optional<CertificateInfo>, get_leaf_certificate_info, (const CertificateSigningUseEnum&, bool),
+    MOCK_METHOD(GetCertificateInfoResult, get_leaf_certificate_info, (const CertificateSigningUseEnum&, bool),
                 (override));
     MOCK_METHOD(bool, update_certificate_links, (const CertificateSigningUseEnum&), (override));
     MOCK_METHOD(std::string, get_verify_file, (const CaCertificateType&), (override));

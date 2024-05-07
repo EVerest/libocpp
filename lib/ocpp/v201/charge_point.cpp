@@ -1623,9 +1623,9 @@ bool ChargePoint::validate_set_variable(const SetVariableData& set_variable_data
                 }
 
                 if (network_profile.securityProfile == 3 and
-                    !this->evse_security
-                         ->get_leaf_certificate_info(ocpp::CertificateSigningUseEnum::ChargingStationCertificate)
-                         .has_value()) {
+                    this->evse_security
+                            ->get_leaf_certificate_info(ocpp::CertificateSigningUseEnum::ChargingStationCertificate)
+                            .status != ocpp::GetCertificateInfoStatus::Accepted) {
                     EVLOG_warning << "SecurityProfile of configurationSlot: " << configuration_slot
                                   << " is 3 but no CSMS Leaf Certificate is installed";
                     return false;

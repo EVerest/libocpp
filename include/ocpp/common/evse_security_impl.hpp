@@ -52,8 +52,8 @@ public:
     generate_certificate_signing_request(const CertificateSigningUseEnum& certificate_type, const std::string& country,
                                          const std::string& organization, const std::string& common,
                                          bool use_tpm) override;
-    std::optional<CertificateInfo> get_leaf_certificate_info(const CertificateSigningUseEnum& certificate_type,
-                                                             bool include_ocsp = false) override;
+    GetCertificateInfoResult get_leaf_certificate_info(const CertificateSigningUseEnum& certificate_type,
+                                                       bool include_ocsp = false) override;
     bool update_certificate_links(const CertificateSigningUseEnum& certificate_type) override;
     std::string get_verify_file(const CaCertificateType& certificate_type) override;
     int get_leaf_expiry_days_count(const CertificateSigningUseEnum& certificate_type) override;
@@ -66,6 +66,7 @@ CaCertificateType to_ocpp(evse_security::CaCertificateType other);
 CertificateSigningUseEnum to_ocpp(evse_security::LeafCertificateType other);
 CertificateType to_ocpp(evse_security::CertificateType other);
 HashAlgorithmEnumType to_ocpp(evse_security::HashAlgorithm other);
+GetCertificateInfoStatus to_ocpp(evse_security::GetCertificateInfoStatus other);
 InstallCertificateResult to_ocpp(evse_security::InstallCertificateResult other);
 CertificateValidationResult to_ocpp(evse_security::CertificateValidationResult other);
 DeleteCertificateResult to_ocpp(evse_security::DeleteCertificateResult other);
