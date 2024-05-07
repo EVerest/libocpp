@@ -37,6 +37,7 @@ bool Callbacks::all_callbacks_valid() const {
            this->get_log_request_callback != nullptr and this->unlock_connector_callback != nullptr and
            this->remote_start_transaction_callback != nullptr and this->is_reservation_for_token_callback != nullptr and
            this->update_firmware_request_callback != nullptr and
+           this->security_event_callback != nullptr and
            (!this->variable_changed_callback.has_value() or this->variable_changed_callback.value() != nullptr) and
            (!this->validate_network_profile_callback.has_value() or
             this->validate_network_profile_callback.value() != nullptr) and
