@@ -152,6 +152,9 @@ struct Callbacks {
     std::function<void(const CiString<50>& event_type, const std::optional<CiString<255>>& tech_info)>
         security_event_callback;
 
+    /// \brief Callback for indicating when a charging profile is received and was accepted.
+    std::function<void()> set_charging_profiles_callback;
+
     /// \brief  Callback for when a bootnotification response is received
     std::optional<std::function<void(const ocpp::v201::BootNotificationResponse& boot_notification_response)>>
         boot_notification_callback;
