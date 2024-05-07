@@ -448,11 +448,10 @@ void WebsocketTlsTPM::client_loop() {
         std::optional<std::string> password;
 
         if (this->connection_options.security_profile == 3) {
-
             const auto certificate_response =
                 this->evse_security->get_leaf_certificate_info(CertificateSigningUseEnum::ChargingStationCertificate);
 
-            if (certificate_response.status != ocpp::GetCertificateInfoStatus::Accepted &&
+            if (certificate_response.status != ocpp::GetCertificateInfoStatus::Accepted or
                 !certificate_response.info.has_value()) {
                 EVLOG_AND_THROW(std::runtime_error(
                     "Connecting with security profile 3 but no client side certificate is present or valid"));
