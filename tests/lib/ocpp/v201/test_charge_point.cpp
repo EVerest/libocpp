@@ -145,6 +145,4 @@ TEST_F(ChargePointFixture, CallbacksValidityChecksIfSetChargingProfilesCallbackE
     EXPECT_FALSE(callbacks.all_callbacks_valid());
 }
 
-
-
 } // namespace ocpp::v201
