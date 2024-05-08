@@ -7,6 +7,7 @@
 #include <ocpp/v16/charge_point.hpp>
 #include <ocpp/v16/charge_point_configuration.hpp>
 #include <ocpp/v16/charge_point_impl.hpp>
+#include <ocpp/v16/utils.hpp>
 #include <ocpp/v201/utils.hpp>
 
 #include <optional>
@@ -2598,8 +2599,8 @@ bool ChargePointImpl::allowed_to_send_message(json::array_t message, bool initia
     }
 
     if (!this->initialized) {
-        // BootNotification and StopTransaction messages can be queued before receiving a BootNotification.conf
-        if (message_type == MessageType::BootNotification || message_type == MessageType::StopTransaction) {
+        // BootNotification and transaction related messages can be queued before receiving a BootNotification.conf
+        if (message_type == MessageType::BootNotification or utils::is_transaction_message_type(message_type)) {
             return true;
         }
         return false;
