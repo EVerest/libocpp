@@ -52,100 +52,100 @@ public:
     ocpp::v201::Callbacks callbacks;
 };
 
-TEST_F(ChargePointFixture, CallbacksAreInvalidWhenNotProvided) {
+TEST_F(ChargePointFixture, K01FR02_CallbacksAreInvalidWhenNotProvided) {
     EXPECT_FALSE(callbacks.all_callbacks_valid());
 }
 
-TEST_F(ChargePointFixture, CallbacksAreValidWhenAllRequiredCallbacksProvided) {
+TEST_F(ChargePointFixture, K01FR02_CallbacksAreValidWhenAllRequiredCallbacksProvided) {
     configure_callbacks_with_mocks();
     EXPECT_TRUE(callbacks.all_callbacks_valid());
 }
 
-TEST_F(ChargePointFixture, CallbacksValidityChecksIfResetIsAllowedCallbackExists) {
+TEST_F(ChargePointFixture, K01FR02_CallbacksValidityChecksIfResetIsAllowedCallbackExists) {
     configure_callbacks_with_mocks();
     callbacks.is_reset_allowed_callback = nullptr;
 
     EXPECT_FALSE(callbacks.all_callbacks_valid());
 }
 
-TEST_F(ChargePointFixture, CallbacksValidityChecksIfResetCallbackExists) {
+TEST_F(ChargePointFixture, K01FR02_CallbacksValidityChecksIfResetCallbackExists) {
     configure_callbacks_with_mocks();
     callbacks.reset_callback = nullptr;
 
     EXPECT_FALSE(callbacks.all_callbacks_valid());
 }
 
-TEST_F(ChargePointFixture, CallbacksValidityChecksIfStopTransactionCallbackExists) {
+TEST_F(ChargePointFixture, K01FR02_CallbacksValidityChecksIfStopTransactionCallbackExists) {
     configure_callbacks_with_mocks();
     callbacks.stop_transaction_callback = nullptr;
 
     EXPECT_FALSE(callbacks.all_callbacks_valid());
 }
 
-TEST_F(ChargePointFixture, CallbacksValidityChecksIfPauseChargingCallbackExists) {
+TEST_F(ChargePointFixture, K01FR02_CallbacksValidityChecksIfPauseChargingCallbackExists) {
     configure_callbacks_with_mocks();
     callbacks.pause_charging_callback = nullptr;
 
     EXPECT_FALSE(callbacks.all_callbacks_valid());
 }
 
-TEST_F(ChargePointFixture, CallbacksValidityChecksIfConnectorEffectiveOperativeStatusChangedCallbackExists) {
+TEST_F(ChargePointFixture, K01FR02_CallbacksValidityChecksIfConnectorEffectiveOperativeStatusChangedCallbackExists) {
     configure_callbacks_with_mocks();
     callbacks.connector_effective_operative_status_changed_callback = nullptr;
 
     EXPECT_FALSE(callbacks.all_callbacks_valid());
 }
 
-TEST_F(ChargePointFixture, CallbacksValidityChecksIfGetLogRequestCallbackExists) {
+TEST_F(ChargePointFixture, K01FR02_CallbacksValidityChecksIfGetLogRequestCallbackExists) {
     configure_callbacks_with_mocks();
     callbacks.get_log_request_callback = nullptr;
 
     EXPECT_FALSE(callbacks.all_callbacks_valid());
 }
 
-TEST_F(ChargePointFixture, CallbacksValidityChecksIfUnlockConnectorCallbackExists) {
+TEST_F(ChargePointFixture, K01FR02_CallbacksValidityChecksIfUnlockConnectorCallbackExists) {
     configure_callbacks_with_mocks();
     callbacks.unlock_connector_callback = nullptr;
 
     EXPECT_FALSE(callbacks.all_callbacks_valid());
 }
 
-TEST_F(ChargePointFixture, CallbacksValidityChecksIfRemoteStartTransactionCallbackExists) {
+TEST_F(ChargePointFixture, K01FR02_CallbacksValidityChecksIfRemoteStartTransactionCallbackExists) {
     configure_callbacks_with_mocks();
     callbacks.remote_start_transaction_callback = nullptr;
 
     EXPECT_FALSE(callbacks.all_callbacks_valid());
 }
 
-TEST_F(ChargePointFixture, CallbacksValidityChecksIfIsReservationForTokenCallbackExists) {
+TEST_F(ChargePointFixture, K01FR02_CallbacksValidityChecksIfIsReservationForTokenCallbackExists) {
     configure_callbacks_with_mocks();
     callbacks.is_reservation_for_token_callback = nullptr;
 
     EXPECT_FALSE(callbacks.all_callbacks_valid());
 }
 
-TEST_F(ChargePointFixture, CallbacksValidityChecksIfUpdateFirmwareRequestCallbackExists) {
+TEST_F(ChargePointFixture, K01FR02_CallbacksValidityChecksIfUpdateFirmwareRequestCallbackExists) {
     configure_callbacks_with_mocks();
     callbacks.update_firmware_request_callback = nullptr;
 
     EXPECT_FALSE(callbacks.all_callbacks_valid());
 }
 
-TEST_F(ChargePointFixture, CallbacksValidityChecksIfSecurityEventCallbackExists) {
+TEST_F(ChargePointFixture, K01FR02_CallbacksValidityChecksIfSecurityEventCallbackExists) {
     configure_callbacks_with_mocks();
     callbacks.security_event_callback = nullptr;
 
     EXPECT_FALSE(callbacks.all_callbacks_valid());
 }
 
-TEST_F(ChargePointFixture, CallbacksValidityChecksIfSetChargingProfilesCallbackExists) {
+TEST_F(ChargePointFixture, K01FR02_CallbacksValidityChecksIfSetChargingProfilesCallbackExists) {
     configure_callbacks_with_mocks();
     callbacks.set_charging_profiles_callback = nullptr;
 
     EXPECT_FALSE(callbacks.all_callbacks_valid());
 }
 
-TEST_F(ChargePointFixture, CallbacksValidityChecksIfOptionalVariableChangedCallbackIsNotSetOrNotNull) {
+TEST_F(ChargePointFixture, K01FR02_CallbacksValidityChecksIfOptionalVariableChangedCallbackIsNotSetOrNotNull) {
     configure_callbacks_with_mocks();
 
     callbacks.variable_changed_callback = nullptr;
@@ -156,7 +156,7 @@ TEST_F(ChargePointFixture, CallbacksValidityChecksIfOptionalVariableChangedCallb
     EXPECT_TRUE(callbacks.all_callbacks_valid());
 }
 
-TEST_F(ChargePointFixture, CallbacksValidityChecksIfOptionalVariableNetworkProfileCallbackIsNotSetOrNotNull) {
+TEST_F(ChargePointFixture, K01FR02_CallbacksValidityChecksIfOptionalVariableNetworkProfileCallbackIsNotSetOrNotNull) {
     configure_callbacks_with_mocks();
 
     callbacks.validate_network_profile_callback = nullptr;
@@ -170,7 +170,7 @@ TEST_F(ChargePointFixture, CallbacksValidityChecksIfOptionalVariableNetworkProfi
 }
 
 TEST_F(ChargePointFixture,
-       CallbacksValidityChecksIfOptionalConfigureNetworkConnectionProfileCallbackIsNotSetOrNotNull) {
+       K01FR02_CallbacksValidityChecksIfOptionalConfigureNetworkConnectionProfileCallbackIsNotSetOrNotNull) {
     configure_callbacks_with_mocks();
 
     callbacks.configure_network_connection_profile_callback = nullptr;
@@ -183,7 +183,7 @@ TEST_F(ChargePointFixture,
     EXPECT_TRUE(callbacks.all_callbacks_valid());
 }
 
-TEST_F(ChargePointFixture, CallbacksValidityChecksIfOptionalTimeSyncCallbackIsNotSetOrNotNull) {
+TEST_F(ChargePointFixture, K01FR02_CallbacksValidityChecksIfOptionalTimeSyncCallbackIsNotSetOrNotNull) {
     configure_callbacks_with_mocks();
 
     callbacks.time_sync_callback = nullptr;
@@ -194,7 +194,7 @@ TEST_F(ChargePointFixture, CallbacksValidityChecksIfOptionalTimeSyncCallbackIsNo
     EXPECT_TRUE(callbacks.all_callbacks_valid());
 }
 
-TEST_F(ChargePointFixture, CallbacksValidityChecksIfOptionalBootNotificationCallbackIsNotSetOrNotNull) {
+TEST_F(ChargePointFixture, K01FR02_CallbacksValidityChecksIfOptionalBootNotificationCallbackIsNotSetOrNotNull) {
     configure_callbacks_with_mocks();
 
     callbacks.boot_notification_callback = nullptr;
@@ -205,7 +205,7 @@ TEST_F(ChargePointFixture, CallbacksValidityChecksIfOptionalBootNotificationCall
     EXPECT_TRUE(callbacks.all_callbacks_valid());
 }
 
-TEST_F(ChargePointFixture, CallbacksValidityChecksIfOptionalOCPPMessagesCallbackIsNotSetOrNotNull) {
+TEST_F(ChargePointFixture, K01FR02_CallbacksValidityChecksIfOptionalOCPPMessagesCallbackIsNotSetOrNotNull) {
     configure_callbacks_with_mocks();
 
     callbacks.ocpp_messages_callback = nullptr;
