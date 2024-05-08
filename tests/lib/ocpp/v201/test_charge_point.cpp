@@ -162,20 +162,24 @@ TEST_F(ChargePointFixture, CallbacksValidityChecksIfOptionalVariableNetworkProfi
     callbacks.validate_network_profile_callback = nullptr;
     EXPECT_FALSE(callbacks.all_callbacks_valid());
 
-    testing::MockFunction<SetNetworkProfileStatusEnum(
-        const int32_t configuration_slot, const NetworkConnectionProfile& network_connection_profile)> validate_network_profile_callback_mock;
+    testing::MockFunction<SetNetworkProfileStatusEnum(const int32_t configuration_slot,
+                                                      const NetworkConnectionProfile& network_connection_profile)>
+        validate_network_profile_callback_mock;
     callbacks.validate_network_profile_callback = validate_network_profile_callback_mock.AsStdFunction();
     EXPECT_TRUE(callbacks.all_callbacks_valid());
 }
 
-TEST_F(ChargePointFixture, CallbacksValidityChecksIfOptionalConfigureNetworkConnectionProfileCallbackIsNotSetOrNotNull) {
+TEST_F(ChargePointFixture,
+       CallbacksValidityChecksIfOptionalConfigureNetworkConnectionProfileCallbackIsNotSetOrNotNull) {
     configure_callbacks_with_mocks();
 
     callbacks.configure_network_connection_profile_callback = nullptr;
     EXPECT_FALSE(callbacks.all_callbacks_valid());
 
-    testing::MockFunction<bool(const NetworkConnectionProfile& network_connection_profile)> configure_network_connection_profile_callback_mock;
-    callbacks.configure_network_connection_profile_callback = configure_network_connection_profile_callback_mock.AsStdFunction();
+    testing::MockFunction<bool(const NetworkConnectionProfile& network_connection_profile)>
+        configure_network_connection_profile_callback_mock;
+    callbacks.configure_network_connection_profile_callback =
+        configure_network_connection_profile_callback_mock.AsStdFunction();
     EXPECT_TRUE(callbacks.all_callbacks_valid());
 }
 
