@@ -75,7 +75,7 @@ class UnexpectedMessageTypeFromCSMS : public std::runtime_error {
 
 struct Callbacks {
     ///\brief Function to check if the callback struct is completely filled. All std::functions should hold a function,
-    ///       all std::optional<std::functions> should either be emtpy or hold a function.
+    ///       all std::optional<std::functions> should either be empty or hold a function.
     ///
     ///\retval false if any of the normal callbacks are nullptr or any of the optional ones are filled with a nullptr
     ///        true otherwise

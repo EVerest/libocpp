@@ -145,4 +145,71 @@ TEST_F(ChargePointFixture, CallbacksValidityChecksIfSetChargingProfilesCallbackE
     EXPECT_FALSE(callbacks.all_callbacks_valid());
 }
 
+TEST_F(ChargePointFixture, CallbacksValidityChecksIfOptionalVariableChangedCallbackIsNotSetOrNotNull) {
+    configure_callbacks_with_mocks();
+
+    callbacks.variable_changed_callback = nullptr;
+    EXPECT_FALSE(callbacks.all_callbacks_valid());
+
+    testing::MockFunction<void(const SetVariableData& set_variable_data)> variable_changed_callback_mock;
+    callbacks.variable_changed_callback = variable_changed_callback_mock.AsStdFunction();
+    EXPECT_TRUE(callbacks.all_callbacks_valid());
+}
+
+TEST_F(ChargePointFixture, CallbacksValidityChecksIfOptionalVariableNetworkProfileCallbackIsNotSetOrNotNull) {
+    configure_callbacks_with_mocks();
+
+    callbacks.validate_network_profile_callback = nullptr;
+    EXPECT_FALSE(callbacks.all_callbacks_valid());
+
+    testing::MockFunction<SetNetworkProfileStatusEnum(
+        const int32_t configuration_slot, const NetworkConnectionProfile& network_connection_profile)> validate_network_profile_callback_mock;
+    callbacks.validate_network_profile_callback = validate_network_profile_callback_mock.AsStdFunction();
+    EXPECT_TRUE(callbacks.all_callbacks_valid());
+}
+
+TEST_F(ChargePointFixture, CallbacksValidityChecksIfOptionalConfigureNetworkConnectionProfileCallbackIsNotSetOrNotNull) {
+    configure_callbacks_with_mocks();
+
+    callbacks.configure_network_connection_profile_callback = nullptr;
+    EXPECT_FALSE(callbacks.all_callbacks_valid());
+
+    testing::MockFunction<bool(const NetworkConnectionProfile& network_connection_profile)> configure_network_connection_profile_callback_mock;
+    callbacks.configure_network_connection_profile_callback = configure_network_connection_profile_callback_mock.AsStdFunction();
+    EXPECT_TRUE(callbacks.all_callbacks_valid());
+}
+
+TEST_F(ChargePointFixture, CallbacksValidityChecksIfOptionalTimeSyncCallbackIsNotSetOrNotNull) {
+    configure_callbacks_with_mocks();
+
+    callbacks.time_sync_callback = nullptr;
+    EXPECT_FALSE(callbacks.all_callbacks_valid());
+
+    testing::MockFunction<void(const ocpp::DateTime& currentTime)> time_sync_callback_mock;
+    callbacks.time_sync_callback = time_sync_callback_mock.AsStdFunction();
+    EXPECT_TRUE(callbacks.all_callbacks_valid());
+}
+
+TEST_F(ChargePointFixture, CallbacksValidityChecksIfOptionalBootNotificationCallbackIsNotSetOrNotNull) {
+    configure_callbacks_with_mocks();
+
+    callbacks.boot_notification_callback = nullptr;
+    EXPECT_FALSE(callbacks.all_callbacks_valid());
+
+    testing::MockFunction<void(const ocpp::v201::RegistrationStatusEnum& reg_status)> boot_notification_callback_mock;
+    callbacks.boot_notification_callback = boot_notification_callback_mock.AsStdFunction();
+    EXPECT_TRUE(callbacks.all_callbacks_valid());
+}
+
+TEST_F(ChargePointFixture, CallbacksValidityChecksIfOptionalOCPPMessagesCallbackIsNotSetOrNotNull) {
+    configure_callbacks_with_mocks();
+
+    callbacks.ocpp_messages_callback = nullptr;
+    EXPECT_FALSE(callbacks.all_callbacks_valid());
+
+    testing::MockFunction<void(const std::string& message, MessageDirection direction)> ocpp_messages_callback_mock;
+    callbacks.ocpp_messages_callback = ocpp_messages_callback_mock.AsStdFunction();
+    EXPECT_TRUE(callbacks.all_callbacks_valid());
+}
+
 } // namespace ocpp::v201
