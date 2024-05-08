@@ -1072,7 +1072,7 @@ int WebsocketTlsTPM::process_callback(void* wsi_ptr, int callback_reason, void* 
         // at 'tls_init' into account
         if (this->connection_options.verify_csms_common_name) {
             // 'user' is X509_STORE and 'len' is preverify_ok (1) in case the pre-verification was successful
-            EVLOG_info << "Verifying server certs!";
+            EVLOG_debug << "Verifying server certs!";
 
             if (false == verify_csms_cn(this->connection_options.csms_uri.get_hostname(), (len == 1),
                                         reinterpret_cast<X509_STORE_CTX*>(user),
