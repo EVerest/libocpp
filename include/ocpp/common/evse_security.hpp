@@ -96,7 +96,7 @@ public:
     /// matching the certificate, this function returns a GetKeyPairStatus other than "Accepted". The function \ref
     /// update_leaf_certificate will install two files for each leaf, one containing the single leaf and one containing
     /// the leaf including any possible SUBCAs
-    /// \param certificate_type type of the leaf certificate    
+    /// \param certificate_type type of the leaf certificate
     /// \param include_ocsp if OCSP data should be included
     /// \return contains response result, with info related to the certificate chain and response status
     virtual GetCertificateInfoResult get_leaf_certificate_info(const CertificateSigningUseEnum& certificate_type,
