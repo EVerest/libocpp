@@ -547,9 +547,9 @@ void WebsocketTlsTPM::client_loop() {
     }
 
     // Print data for debug
-    EVLOG_debug << "LWS connect with info "
-                << "port: [" << i.port << "] address: [" << i.address << "] path: [" << i.path << "] protocol: ["
-                << i.protocol << "]";
+    EVLOG_info << "LWS connect with info "
+               << "port: [" << i.port << "] address: [" << i.address << "] path: [" << i.path << "] protocol: ["
+               << i.protocol << "]";
 
     if (lws_client_connect_via_info(&i) == nullptr) {
         EVLOG_error << "LWS connect failed!";
@@ -701,12 +701,12 @@ void WebsocketTlsTPM::reconnect(long delay) {
         return;
     }
 
+    EVLOG_info << "Reconnecting in: " << delay << "ms"
+               << ", attempt: " << this->connection_attempts;
+
     if (this->m_is_connected) {
         this->close(WebsocketCloseReason::AbnormalClose, "before reconnecting");
     }
-
-    EVLOG_info << "Reconnecting in: " << delay << "ms"
-               << ", attempt: " << this->connection_attempts;
 
     {
         std::lock_guard<std::mutex> lk(this->reconnect_mutex);
