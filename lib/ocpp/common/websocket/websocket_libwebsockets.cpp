@@ -591,8 +591,8 @@ bool WebsocketTlsTPM::connect() {
         return false;
     }
 
-    EVLOG_info << "Connecting to uri: " << this->connection_options.csms_uri.string()
-               << " with security-profile " << this->connection_options.security_profile
+    EVLOG_info << "Connecting to uri: " << this->connection_options.csms_uri.string() << " with security-profile "
+               << this->connection_options.security_profile
                << (this->connection_options.use_tpm_tls ? " with TPM keys" : "");
 
     // new connection context

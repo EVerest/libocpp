@@ -931,8 +931,8 @@ void ChargePoint::init_websocket() {
     this->websocket->register_closed_callback(
         [this, connection_options, configuration_slot](const WebsocketCloseReason reason) {
             EVLOG_warning << "Closed websocket of NetworkConfigurationPriority: "
-                          << this->network_configuration_priority + 1
-                          << " which is configurationSlot " << configuration_slot;
+                          << this->network_configuration_priority + 1 << " which is configurationSlot "
+                          << configuration_slot;
 
             if (!this->disable_automatic_websocket_reconnects) {
                 this->websocket_timer.timeout(
