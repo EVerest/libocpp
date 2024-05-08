@@ -821,6 +821,9 @@ bool ChargePointImpl::start(const std::map<int, ChargePointStatus>& connector_st
     this->init_websocket();
     this->websocket->connect();
     this->boot_notification();
+    // push transaction messages including SecurityEventNotification.req onto the message queue
+    this->message_queue->get_transaction_messages_from_db(this->configuration->getDisableSecurityEventNotifications());
+    this->stop_pending_transactions();
     this->load_charging_profiles();
     this->call_set_connection_timeout();
 
@@ -1249,10 +1252,6 @@ void ChargePointImpl::handleBootNotificationResponse(ocpp::CallResult<BootNotifi
                                       ocpp::DateTime());
         }
 
-        // push transaction messages including SecurityEventNotification.req onto the message queue
-        this->message_queue->get_transaction_messages_from_db(
-            this->configuration->getDisableSecurityEventNotifications());
-
         if (this->is_pnc_enabled()) {
             this->ocsp_request_timer->timeout(INITIAL_CERTIFICATE_REQUESTS_DELAY);
             this->v2g_certificate_timer->timeout(INITIAL_CERTIFICATE_REQUESTS_DELAY);
@@ -1266,8 +1265,6 @@ void ChargePointImpl::handleBootNotificationResponse(ocpp::CallResult<BootNotifi
         if (this->is_pnc_enabled()) {
             this->ocsp_request_timer->timeout(INITIAL_CERTIFICATE_REQUESTS_DELAY);
         }
-
-        this->stop_pending_transactions();
 
         break;
     }
