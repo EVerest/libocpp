@@ -668,15 +668,14 @@ bool WebsocketTlsTPM::connect() {
         return !local_data->is_connecting() && EConnectionState::INITIALIZE != local_data->get_state();
     });
 
-    EVLOG_debug << "Connect finalized with state: " << (int)local_data->get_state() << " Timeouted: " << timeouted;
     bool connected = (local_data->get_state() == EConnectionState::CONNECTED);
 
     if (!connected) {
-        EVLOG_debug << "Conn failed, interrupting.";
+        EVLOG_info << "Connect failed with state: " << (int)local_data->get_state() << " Timeouted: " << timeouted;
 
         // If we timeouted the on_conn_fail was not dispatched, since it did not had the chance
         if (timeouted && local_data->get_state() != EConnectionState::ERROR) {
-            EVLOG_debug << "Conn failed with timeout, without disconnect dispatch, dispatching manually.";
+            EVLOG_error << "Conn failed with timeout, without disconnect dispatch, dispatching manually.";
             on_conn_fail();
         }
 
