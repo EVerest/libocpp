@@ -547,9 +547,9 @@ void WebsocketTlsTPM::client_loop() {
     }
 
     // Print data for debug
-    EVLOG_info << "LWS connect with info "
-               << "port: [" << i.port << "] address: [" << i.address << "] path: [" << i.path << "] protocol: ["
-               << i.protocol << "]";
+    EVLOG_debug << "LWS connect with info "
+                << "port: [" << i.port << "] address: [" << i.address << "] path: [" << i.path << "] protocol: ["
+                << i.protocol << "]";
 
     if (lws_client_connect_via_info(&i) == nullptr) {
         EVLOG_error << "LWS connect failed!";
@@ -591,9 +591,9 @@ bool WebsocketTlsTPM::connect() {
         return false;
     }
 
-    EVLOG_info << "Connecting tpm TLS websocket to uri: " << this->connection_options.csms_uri.string()
+    EVLOG_info << "Connecting to uri: " << this->connection_options.csms_uri.string()
                << " with security-profile " << this->connection_options.security_profile
-               << " with TPM keys: " << this->connection_options.use_tpm_tls;
+               << (this->connection_options.use_tpm_tls ? " with TPM keys" : "");
 
     // new connection context
     std::shared_ptr<ConnectionData> local_data = std::make_shared<ConnectionData>();
@@ -642,13 +642,9 @@ bool WebsocketTlsTPM::connect() {
 
     // Bind reconnect callback
     this->reconnect_callback = [this]() {
-        EVLOG_info << "Reconnecting to TLS websocket at uri: " << this->connection_options.csms_uri.string()
-                   << " with security profile: " << this->connection_options.security_profile;
-
         // close connection before reconnecting
         if (this->m_is_connected) {
-            EVLOG_info << "Closing websocket connection before reconnecting";
-            this->close(WebsocketCloseReason::AbnormalClose, "Reconnect");
+            this->close(WebsocketCloseReason::AbnormalClose, "before reconnecting");
         }
 
         this->connect();
@@ -672,15 +668,15 @@ bool WebsocketTlsTPM::connect() {
         return !local_data->is_connecting() && EConnectionState::INITIALIZE != local_data->get_state();
     });
 
-    EVLOG_info << "Connect finalized with state: " << (int)local_data->get_state() << " Timeouted: " << timeouted;
+    EVLOG_debug << "Connect finalized with state: " << (int)local_data->get_state() << " Timeouted: " << timeouted;
     bool connected = (local_data->get_state() == EConnectionState::CONNECTED);
 
     if (!connected) {
-        EVLOG_error << "Conn failed, interrupting.";
+        EVLOG_debug << "Conn failed, interrupting.";
 
         // If we timeouted the on_conn_fail was not dispatched, since it did not had the chance
         if (timeouted && local_data->get_state() != EConnectionState::ERROR) {
-            EVLOG_error << "Conn failed with timeout, without disconnect dispatch, dispatching manually.";
+            EVLOG_debug << "Conn failed with timeout, without disconnect dispatch, dispatching manually.";
             on_conn_fail();
         }
 
@@ -701,16 +697,13 @@ bool WebsocketTlsTPM::connect() {
 }
 
 void WebsocketTlsTPM::reconnect(long delay) {
-    EVLOG_info << "Attempting TLS TPM reconnect with delay:" << delay;
-
     if (this->shutting_down) {
         EVLOG_info << "Not reconnecting because the websocket is being shutdown.";
         return;
     }
 
     if (this->m_is_connected) {
-        EVLOG_info << "Closing websocket connection before reconnecting";
-        this->close(WebsocketCloseReason::AbnormalClose, "Reconnect");
+        this->close(WebsocketCloseReason::AbnormalClose, "before reconnecting");
     }
 
     EVLOG_info << "Reconnecting in: " << delay << "ms"
@@ -723,7 +716,7 @@ void WebsocketTlsTPM::reconnect(long delay) {
 }
 
 void WebsocketTlsTPM::close(const WebsocketCloseReason code, const std::string& reason) {
-    EVLOG_info << "Closing TLS TPM websocket with reason: " << reason;
+    EVLOG_info << "Closing websocket: " << reason;
 
     {
         std::lock_guard<std::mutex> lk(this->reconnect_mutex);
@@ -755,7 +748,7 @@ void WebsocketTlsTPM::close(const WebsocketCloseReason code, const std::string& 
 }
 
 void WebsocketTlsTPM::on_conn_connected() {
-    EVLOG_info << "OCPP client successfully connected to TLS websocket server";
+    EVLOG_info << "OCPP client successfully connected to server";
 
     this->connection_attempts = 1; // reset connection attempts
     this->m_is_connected = true;
@@ -769,7 +762,7 @@ void WebsocketTlsTPM::on_conn_connected() {
 }
 
 void WebsocketTlsTPM::on_conn_close() {
-    EVLOG_info << "OCPP client closed connection to TLS websocket server";
+    EVLOG_info << "OCPP client closed connection to server";
 
     std::lock_guard<std::mutex> lk(this->connection_mutex);
     this->m_is_connected = false;
@@ -790,7 +783,7 @@ void WebsocketTlsTPM::on_conn_close() {
 }
 
 void WebsocketTlsTPM::on_conn_fail() {
-    EVLOG_error << "OCPP client connection failed to TLS websocket server";
+    EVLOG_error << "OCPP client connection to server failed";
 
     std::lock_guard<std::mutex> lk(this->connection_mutex);
     if (this->m_is_connected) {
@@ -809,8 +802,7 @@ void WebsocketTlsTPM::on_conn_fail() {
         // Increment reconn attempts
         this->connection_attempts += 1;
     } else {
-        EVLOG_info << "Closed TLS websocket, reconnect attempts exhausted";
-        this->close(WebsocketCloseReason::Normal, "Connection failed");
+        this->close(WebsocketCloseReason::Normal, "reconnect attempts exhausted");
     }
 }
 
@@ -985,13 +977,13 @@ void WebsocketTlsTPM::request_write() {
             }
         }
     } else {
-        EVLOG_warning << "Requested write with offline TLS websocket!";
+        EVLOG_debug << "Requested write with offline TLS websocket!";
     }
 }
 
 void WebsocketTlsTPM::poll_message(const std::shared_ptr<WebsocketMessage>& msg) {
     if (this->m_is_connected == false) {
-        EVLOG_warning << "Trying to poll message without being connected!";
+        EVLOG_debug << "Trying to poll message without being connected!";
         return;
     }
 
@@ -1095,7 +1087,7 @@ int WebsocketTlsTPM::process_callback(void* wsi_ptr, int callback_reason, void* 
         break;
 
     case LWS_CALLBACK_CLIENT_APPEND_HANDSHAKE_HEADER: {
-        EVLOG_info << "Handshake with security profile: " << this->connection_options.security_profile;
+        EVLOG_debug << "Handshake with security profile: " << this->connection_options.security_profile;
 
         unsigned char **ptr = reinterpret_cast<unsigned char**>(in), *end_header = (*ptr) + len;
 
@@ -1148,7 +1140,7 @@ int WebsocketTlsTPM::process_callback(void* wsi_ptr, int callback_reason, void* 
     } break;
 
     case LWS_CALLBACK_CLIENT_CONNECTION_ERROR:
-        EVLOG_error << "CLIENT_CONNECTION_ERROR: " << (in ? reinterpret_cast<char*>(in) : "(null)");
+        EVLOG_debug << "CLIENT_CONNECTION_ERROR: " << (in ? reinterpret_cast<char*>(in) : "(null)");
         ERR_print_errors_fp(stderr);
 
         if (data->get_state() == EConnectionState::CONNECTING) {
@@ -1160,7 +1152,7 @@ int WebsocketTlsTPM::process_callback(void* wsi_ptr, int callback_reason, void* 
         return -1;
 
     case LWS_CALLBACK_CONNECTING:
-        EVLOG_info << "Client connecting...";
+        EVLOG_debug << "Client connecting...";
         data->update_state(EConnectionState::CONNECTING);
         break;
 
@@ -1277,13 +1269,12 @@ int WebsocketTlsTPM::process_callback(void* wsi_ptr, int callback_reason, void* 
         break;
 
     default:
-        EVLOG_info << "Callback with unhandled reason: " << reason;
+        EVLOG_debug << "Callback with unhandled reason: " << reason;
         break;
     }
 
     // If we are interrupted, close the socket cleanly
     if (data->is_interupted()) {
-        EVLOG_info << "Conn interrupted/closed, closing socket!";
         return LWS_CLOSE_SOCKET_RESPONSE_MESSAGE;
     }
 
