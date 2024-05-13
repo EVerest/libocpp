@@ -18,6 +18,7 @@ private:
 public:
     DatabaseTransaction(DatabaseConnection& database, std::unique_lock<std::timed_mutex> mutex) :
         database{database}, mutex{std::move(mutex)} {
+        this->database.execute_statement("BEGIN TRANSACTION");
     }
 
     // Will by default rollback the transaction if destructed
