@@ -13,7 +13,7 @@
 namespace ocpp::common {
 
 /// \brief Helper class for transactions. Will lock the database interface from new transaction until commit() or
-/// rollback() is caller or the object destroyed
+/// rollback() is called or the object destroyed
 class DatabaseTransactionInterface {
 public:
     /// \brief Destructor of transaction: Will by default rollback unless commit() is called
