@@ -210,7 +210,8 @@ WebsocketTlsTPM::WebsocketTlsTPM(const WebsocketConnectionOptions& connection_op
                                  std::shared_ptr<EvseSecurity> evse_security) :
     WebsocketBase(),
     evse_security(evse_security),
-    deferred_callback_handler(&WebsocketTlsTPM::handle_deferred_callback_queue, this) {
+    deferred_callback_thread(&WebsocketTlsTPM::handle_deferred_callback_queue, this),
+    stop_deferred_handler(false) {
 
     set_connection_options(connection_options);
 
@@ -229,6 +230,11 @@ WebsocketTlsTPM::~WebsocketTlsTPM() {
 
     if (recv_message_thread != nullptr) {
         recv_message_thread->join();
+    }
+
+    this->stop_deferred_callback_handler();
+    if (this->deferred_callback_thread.joinable()) {
+        this->deferred_callback_thread.join();
     }
 }
 
@@ -1291,12 +1297,23 @@ void WebsocketTlsTPM::push_deferred_callback(std::function<void()> callback) {
     this->deferred_callback_cv.notify_one();
 }
 
+void WebsocketTlsTPM::stop_deferred_callback_handler() {
+    std::scoped_lock tmp_lock(this->deferred_callback_mutex);
+    this->stop_deferred_handler = true;
+    this->deferred_callback_cv.notify_one();
+}
+
 void WebsocketTlsTPM::handle_deferred_callback_queue() {
     while (true) {
         std::function<void()> callback;
         {
             std::unique_lock lock(this->deferred_callback_mutex);
-            this->deferred_callback_cv.wait(lock, [this]() { return !this->deferred_callback_queue.empty(); });
+            this->deferred_callback_cv.wait(lock, [this]() { return !this->deferred_callback_queue.empty() || !stop_deferred_handler; });
+
+            if (stop_deferred_handler) {
+                break;
+            }
+
             callback = this->deferred_callback_queue.front();
             this->deferred_callback_queue.pop();
         }
