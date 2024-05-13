@@ -1139,7 +1139,7 @@ int WebsocketTlsTPM::process_callback(void* wsi_ptr, int callback_reason, void* 
     } break;
 
     case LWS_CALLBACK_CLIENT_CONNECTION_ERROR:
-        EVLOG_debug << "CLIENT_CONNECTION_ERROR: " << (in ? reinterpret_cast<char*>(in) : "(null)");
+        EVLOG_error << "CLIENT_CONNECTION_ERROR: " << (in ? reinterpret_cast<char*>(in) : "(null)");
         ERR_print_errors_fp(stderr);
 
         if (data->get_state() == EConnectionState::CONNECTING) {
