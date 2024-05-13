@@ -1308,7 +1308,8 @@ void WebsocketTlsTPM::handle_deferred_callback_queue() {
         std::function<void()> callback;
         {
             std::unique_lock lock(this->deferred_callback_mutex);
-            this->deferred_callback_cv.wait(lock, [this]() { return !this->deferred_callback_queue.empty() || !stop_deferred_handler; });
+            this->deferred_callback_cv.wait(
+                lock, [this]() { return !this->deferred_callback_queue.empty() || !stop_deferred_handler; });
 
             if (stop_deferred_handler) {
                 break;
