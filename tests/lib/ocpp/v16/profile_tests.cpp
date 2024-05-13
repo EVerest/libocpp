@@ -346,8 +346,8 @@ struct DatabaseConnectionTest : public common::DatabaseConnectionInterface {
     virtual bool close_connection() {
         return true;
     }
-    virtual bool begin_transaction() {
-        return true;
+    virtual std::unique_ptr<ocpp::common::DatabaseTransactionInterface> begin_transaction() {
+        return std::unique_ptr<ocpp::common::DatabaseTransactionInterface>{};
     }
     virtual bool commit_transaction() {
         return true;
