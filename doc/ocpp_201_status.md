@@ -1,14 +1,16 @@
-This document contains the status of which OCPP 2.0.1 numbered requirements have been implemented in libOCPP. This does not cover if the functionality is also implemented in EVerest-core.
+This document contains the status of which OCPP 2.0.1 numbered functional requirements (FRs) have been implemented in `libocpp`. This does not cover if the functionality is also implemented in `everest-core`.
 
 ## Legend
 
-| Status | Description                                                        |
-|--------|--------------------------------------------------------------------|
-| ✅     | Done                                                               |
-| ⛔️     | Not applicable                                                     |
-| ⛽️     | A functional requirement for other systems in the Charging Station |
-| 🌐     | A functional requirement for the CSMS                              |
-| 💂     | Improper behavior by another actor is guarded against              |
+| Status | Description                                                                    |
+|--------|--------------------------------------------------------------------------------|
+| ✅     | Satisfied                                                                      |
+| ⛔️     | Not applicable                                                                 |
+| ⛽️     | A functional requirement for other systems in the Charging Station             |
+| 🌐     | A functional requirement for the CSMS                                          |
+| 💂     | Improper behavior by another actor is guarded against                          |
+| ❓     | Actor responsible for or status of requirement is unknown                      |
+| 🤓     | Catch-all for FRs that are satisfied for other reasons (see the Remark column) |
 
 
 ## General - General
@@ -403,32 +405,32 @@ This document contains the status of which OCPP 2.0.1 numbered requirements have
 
 ## Provisioning - Reset - Without Ongoing Transaction
 
-| ID        | Status | Remark                        |
-|-----------|--------|-------------------------------|
-| B11.FR.01 | ✅     |                               |
-| B11.FR.02 | ✅     |                               |
-| B11.FR.03 | ✅     |                               |
-| B11.FR.04 | ✅     |                               |
-| B11.FR.05 |        |                               |
-| B11.FR.06 | ✅     | System module is responsible. |
-| B11.FR.07 | ✅     | System module is responsible. |
-| B11.FR.08 | ✅     |                               |
-| B11.FR.09 | ✅     |                               |
-| B11.FR.10 | ✅     | has to be set in device model |
+| ID        | Status | Remark                                        |
+|-----------|--------|-----------------------------------------------|
+| B11.FR.01 | ✅     |                                               |
+| B11.FR.02 | ✅     |                                               |
+| B11.FR.03 | ✅     |                                               |
+| B11.FR.04 | ✅     |                                               |
+| B11.FR.05 |        |                                               |
+| B11.FR.06 | ⛽️     | In EVerest, the System module is responsible. |
+| B11.FR.07 | ⛽️     | In EVerest, the System module is responsible. |
+| B11.FR.08 | ✅     |                                               |
+| B11.FR.09 | ✅     |                                               |
+| B11.FR.10 | ✅     | has to be set in device model                 |
 
 ## Provisioning - Reset - With Ongoing Transaction
 
-| ID        | Status | Remark                                                                                             |
-|-----------|--------|----------------------------------------------------------------------------------------------------|
-| B12.FR.01 | ✅     |                                                                                                    |
-| B12.FR.02 | ✅     |                                                                                                    |
-| B12.FR.03 | ✅     |                                                                                                    |
-| B12.FR.04 | ✅     |                                                                                                    |
-| B12.FR.05 | ✅     |                                                                                                    |
-| B12.FR.06 | ✅     | Charging station is responsible to send the correct state after booting                            |
-| B12.FR.07 | ✅     |                                                                                                    |
-| B12.FR.08 | ✅     |                                                                                                    |
-| B12.FR.09 | ✅     | Charging Station is 'responsible': should respond with a 'rejected' on `is_reset_allowed_callback` |
+| ID        | Status | Remark                                                                           |
+|-----------|--------|----------------------------------------------------------------------------------|
+| B12.FR.01 | ✅     |                                                                                  |
+| B12.FR.02 | ✅     |                                                                                  |
+| B12.FR.03 | ✅     |                                                                                  |
+| B12.FR.04 | ✅     |                                                                                  |
+| B12.FR.05 | ✅     |                                                                                  |
+| B12.FR.06 | ⛽️     | Charging station is responsible to send the correct state after booting          |
+| B12.FR.07 | ✅     |                                                                                  |
+| B12.FR.08 | ✅     |                                                                                  |
+| B12.FR.09 | ⛽️     | Charging Station should respond with a "rejected" on `is_reset_allowed_callback` |
 
 ## Authorization - EV Driver Authorization using RFID
 
@@ -484,13 +486,13 @@ This document contains the status of which OCPP 2.0.1 numbered requirements have
 
 ## Authorization - Authorization for CSMS initiated transactions
 
-| ID        | Status | Remark                           |
-|-----------|--------|----------------------------------|
-| C05.FR.01 | ✅     |                                  |
-| C05.FR.02 | ✅     |                                  |
-| C05.FR.03 | ✅     | Charging station is responsible. |
-| C05.FR.04 |        |                                  |
-| C05.FR.05 | ✅     |                                  |
+| ID        | Status | Remark |
+|-----------|--------|--------|
+| C05.FR.01 | ✅     |        |
+| C05.FR.02 | ✅     |        |
+| C05.FR.03 | ⛽️     |        |
+| C05.FR.04 |        |        |
+| C05.FR.05 | ✅     |        |
 
 ## Authorization - Authorization using local id type
 
@@ -567,14 +569,14 @@ This document contains the status of which OCPP 2.0.1 numbered requirements have
 
 ## Authorization - Start Transaction - Cached Id
 
-| ID        | Status | Remark                         |
-|-----------|--------|--------------------------------|
-| C12.FR.02 | ✅     |                                |
-| C12.FR.03 | ✅     |                                |
-| C12.FR.04 | ✅     |                                |
-| C12.FR.05 | ✅     |                                |
-| C12.FR.06 | ✅     |                                |
-| C12.FR.09 | ⛔️     | Auth mechanism is responsible. |
+| ID        | Status | Remark                                      |
+|-----------|--------|---------------------------------------------|
+| C12.FR.02 | ✅     |                                             |
+| C12.FR.03 | ✅     |                                             |
+| C12.FR.04 | ✅     |                                             |
+| C12.FR.05 | ✅     |                                             |
+| C12.FR.06 | ✅     |                                             |
+| C12.FR.09 | ⛽️     | In EVerest, the Auth module is responsible. |
 
 ## Authorization - Offline Authorization through Local Authorization List
 
@@ -595,47 +597,47 @@ This document contains the status of which OCPP 2.0.1 numbered requirements have
 
 ## Authorization - Offline Authorization of unknown Id
 
-| ID        | Status | Remark                   |
-|-----------|--------|--------------------------|
-| C15.FR.01 | ✅     |                          |
-| C15.FR.02 | ✅     |                          |
-| C15.FR.03 | ✅     |                          |
-| C15.FR.04 | ✅     |                          |
-| C15.FR.05 | ⛔️     | Not handled by `libocpp` |
-| C15.FR.06 | ✅     |                          |
-| C15.FR.07 | ✅     |                          |
-| C15.FR.08 | ✅     |                          |
+| ID        | Status | Remark |
+|-----------|--------|--------|
+| C15.FR.01 | ✅     |        |
+| C15.FR.02 | ✅     |        |
+| C15.FR.03 | ✅     |        |
+| C15.FR.04 | ✅     |        |
+| C15.FR.05 | ⛽️     |        |
+| C15.FR.06 | ✅     |        |
+| C15.FR.07 | ✅     |        |
+| C15.FR.08 | ✅     |        |
 
 ## Authorization - Stop Transaction with a Master Pass
 
 | ID        | Status | Remark        |
 |-----------|--------|---------------|
 | C16.FR.01 |        |               |
-| C16.FR.02 | ✅     | Core changes? |
-| C16.FR.03 | ✅     | Core changes  |
+| C16.FR.02 | ⛽️     | Core changes? |
+| C16.FR.03 | ⛽️     | Core changes  |
 | C16.FR.04 |        |               |
 | C16.FR.05 |        |               |
 
 ## LocalAuthorizationListManagement - Send Local Authorization List
 
-| ID        | Status | Remark               |
-|-----------|--------|----------------------|
-| D01.FR.01 | ✅     |                      |
-| D01.FR.02 | ✅     |                      |
-| D01.FR.03 | ⛔️     | CSMS is responsible. |
-| D01.FR.04 | ✅     |                      |
-| D01.FR.05 | ✅     |                      |
-| D01.FR.06 | ✅     |                      |
-| D01.FR.09 | ✅     |                      |
-| D01.FR.10 | ✅     |                      |
-| D01.FR.11 | ✅     |                      |
-| D01.FR.12 | ✅     |                      |
-| D01.FR.13 | ✅     |                      |
-| D01.FR.15 | ✅     |                      |
-| D01.FR.16 | ✅     |                      |
-| D01.FR.17 | ✅     |                      |
-| D01.FR.18 | ✅     |                      |
-| D01.FR.19 | ✅     |                      |
+| ID        | Status | Remark |
+|-----------|--------|--------|
+| D01.FR.01 | ✅     |        |
+| D01.FR.02 | ✅     |        |
+| D01.FR.03 | 🌐     |        |
+| D01.FR.04 | ✅     |        |
+| D01.FR.05 | ✅     |        |
+| D01.FR.06 | ✅     |        |
+| D01.FR.09 | ✅     |        |
+| D01.FR.10 | ✅     |        |
+| D01.FR.11 | ✅     |        |
+| D01.FR.12 | ✅     |        |
+| D01.FR.13 | ✅     |        |
+| D01.FR.15 | ✅     |        |
+| D01.FR.16 | ✅     |        |
+| D01.FR.17 | ✅     |        |
+| D01.FR.18 | ✅     |        |
+| D01.FR.19 | ✅     |        |
 
 ## LocalAuthorizationListManagement - Get Local List Version
 
@@ -891,11 +893,11 @@ This document contains the status of which OCPP 2.0.1 numbered requirements have
 
 | ID        | Status | Remark                                                   |
 |-----------|--------|----------------------------------------------------------|
-| F01.FR.01 | ✅     | Charging station is responsible.                         |
-| F01.FR.02 | ✅     | Charging station is responsible.                         |
-| F01.FR.03 | ✅     | Charging station is responsible.                         |
-| F01.FR.04 | ✅     | Charging station is responsible.                         |
-| F01.FR.05 | ✅     | Charging station is responsible.                         |
+| F01.FR.01 | ⛽️     |                                                          |
+| F01.FR.02 | ⛽️     |                                                          |
+| F01.FR.03 | ⛽️     |                                                          |
+| F01.FR.04 | ⛽️     |                                                          |
+| F01.FR.05 | ⛽️     |                                                          |
 | F01.FR.06 | ✅     |                                                          |
 | F01.FR.07 | ✅     | Currently always rejected                                |
 | F01.FR.08 |        |                                                          |
@@ -903,38 +905,38 @@ This document contains the status of which OCPP 2.0.1 numbered requirements have
 | F01.FR.10 |        |                                                          |
 | F01.FR.11 |        |                                                          |
 | F01.FR.12 |        |                                                          |
-| F01.FR.13 | ✅     | Charging station is responsible.                         |
-| F01.FR.14 | ✅     | Charging station is responsible.                         |
-| F01.FR.15 | ✅     | Charging station is responsible.                         |
-| F01.FR.16 | ✅     | Charging station is responsible.                         |
-| F01.FR.17 | ✅     | Charging station is responsible.                         |
-| F01.FR.18 | ✅     | Charging station is responsible.                         |
-| F01.FR.19 | ✅     | Charging station is responsible.                         |
+| F01.FR.13 | ⛽️     |                                                          |
+| F01.FR.14 | ⛽️     |                                                          |
+| F01.FR.15 | ⛽️     |                                                          |
+| F01.FR.16 | ⛽️     |                                                          |
+| F01.FR.17 | ⛽️     |                                                          |
+| F01.FR.18 | ⛽️     |                                                          |
+| F01.FR.19 | ⛽️     |                                                          |
 | F01.FR.20 | ✅     | Currently when no EVSE ID is given, request is rejected. |
 | F01.FR.21 | ✅     |                                                          |
 | F01.FR.22 | ✅     |                                                          |
 | F01.FR.23 | ✅     |                                                          |
 | F01.FR.24 | ✅     |                                                          |
-| F01.FR.25 | ✅     | Charging station is responsible.                         |
+| F01.FR.25 | ⛽️     |                                                          |
 | F01.FR.26 |        |                                                          |
 
 ## RemoteControl - Remote Start Transaction - Remote Start First
 
 | ID        | Status | Remark                                                   |
 |-----------|--------|----------------------------------------------------------|
-| F02.FR.01 | ✅     | Charging station is responsible.                         |
-| F02.FR.02 | ✅     | Charging station is responsible.                         |
-| F02.FR.03 | ✅     | Charging station is responsible.                         |
-| F02.FR.04 | ✅     | Charging station is responsible.                         |
-| F02.FR.05 | ✅     | Charging station is responsible.                         |
-| F02.FR.06 | ✅     | Charging station is responsible.                         |
-| F02.FR.07 | ✅     | Charging station is responsible.                         |
-| F02.FR.08 | ✅     | Charging station is responsible.                         |
-| F02.FR.09 | ✅     | Charging station is responsible.                         |
-| F02.FR.10 | ✅     | Charging station is responsible.                         |
-| F02.FR.11 | ✅     | Charging station or libocpp?                             |
-| F02.FR.12 | ✅     | Charging station is responsible.                         |
-| F02.FR.13 | ✅     | Charging station is responsible.                         |
+| F02.FR.01 | ⛽️     |                                                          |
+| F02.FR.02 | ⛽️     |                                                          |
+| F02.FR.03 | ⛽️     |                                                          |
+| F02.FR.04 | ⛽️     |                                                          |
+| F02.FR.05 | ⛽️     |                                                          |
+| F02.FR.06 | ⛽️     |                                                          |
+| F02.FR.07 | ⛽️     |                                                          |
+| F02.FR.08 | ⛽️     |                                                          |
+| F02.FR.09 | ⛽️     |                                                          |
+| F02.FR.10 | ⛽️     |                                                          |
+| F02.FR.11 | ⛽️❓   | Charging station or libocpp?                             |
+| F02.FR.12 | ⛽️     |                                                          |
+| F02.FR.13 | ⛽️     |                                                          |
 | F02.FR.14 | ✅     |                                                          |
 | F02.FR.15 | ✅     | Currently always rejected                                |
 | F02.FR.16 |        |                                                          |
@@ -942,7 +944,7 @@ This document contains the status of which OCPP 2.0.1 numbered requirements have
 | F02.FR.18 |        |                                                          |
 | F02.FR.19 |        |                                                          |
 | F02.FR.20 |        |                                                          |
-| F02.FR.21 | ✅     | Charging station is responsible.                         |
+| F02.FR.21 | ⛽️     |                                                          |
 | F02.FR.22 | ✅     | Currently when no EVSE ID is given, request is rejected. |
 | F02.FR.23 | ✅     |                                                          |
 | F02.FR.24 | ✅     |                                                          |
@@ -952,17 +954,17 @@ This document contains the status of which OCPP 2.0.1 numbered requirements have
 
 ## RemoteControl - Remote Stop Transaction
 
-| ID        | Status | Remark                                                  |
-|-----------|--------|---------------------------------------------------------|
-| F03.FR.01 | ✅     |                                                         |
-| F03.FR.02 | ✅     | Charging station should send `TransactionEventRequest`. |
-| F03.FR.03 | ✅     | Charging station is responsible.                        |
-| F03.FR.04 | ✅     | Charging station is responsible.                        |
-| F03.FR.05 | ✅     | Charging station is responsible.                        |
-| F03.FR.06 | ✅     | Charging station is responsible.                        |
-| F03.FR.07 | ✅     |                                                         |
-| F03.FR.08 | ✅     |                                                         |
-| F03.FR.09 | ✅     | Charging station is responsible.                        |
+| ID        | Status | Remark                                                        |
+|-----------|--------|---------------------------------------------------------------|
+| F03.FR.01 | ✅     |                                                               |
+| F03.FR.02 | ⛽️     | The Charging Station should send a `TransactionEventRequest`. |
+| F03.FR.03 | ⛽️     |                                                               |
+| F03.FR.04 | ⛽️     |                                                               |
+| F03.FR.05 | ⛽️     |                                                               |
+| F03.FR.06 | ⛽️     |                                                               |
+| F03.FR.07 | ✅     |                                                               |
+| F03.FR.08 | ✅     |                                                               |
+| F03.FR.09 | ⛽️     |                                                               |
 
 ## RemoteControl - Remote Stop ISO 15118 Charging from CSMS
 
@@ -977,14 +979,14 @@ This document contains the status of which OCPP 2.0.1 numbered requirements have
 
 ## RemoteControl - Remotely Unlock Connector
 
-| ID        | Status | Remark                           |
-|-----------|--------|----------------------------------|
-| F05.FR.01 | ✅     |                                  |
-| F05.FR.02 | ✅     | Charging station is responsible. |
-| F05.FR.03 | ✅     | Charging station is responsible. |
-| F05.FR.04 | ✅     | Charging station is responsible. |
-| F05.FR.05 | ✅     | Charging station is responsible. |
-| F05.FR.06 | ✅     | Charging station is responsible. |
+| ID        | Status | Remark |
+|-----------|--------|--------|
+| F05.FR.01 | ✅     |        |
+| F05.FR.02 | ⛽️     |        |
+| F05.FR.03 | ⛽️     |        |
+| F05.FR.04 | ⛽️     |        |
+| F05.FR.05 | ⛽️     |        |
+| F05.FR.06 | ⛽️     |        |
 
 ## RemoteControl - Trigger Message
 
@@ -1010,16 +1012,16 @@ This document contains the status of which OCPP 2.0.1 numbered requirements have
 
 ## Availability - Status Notification
 
-| ID        | Status | Remark                           |
-|-----------|--------|----------------------------------|
-| G01.FR.01 | ✅     |                                  |
-| G01.FR.02 | ⛔️     | Charging station is responsible? |
-| G01.FR.03 | ✅     |                                  |
-| G01.FR.04 | ✅     |                                  |
-| G01.FR.05 | ✅     |                                  |
-| G01.FR.06 |        |                                  |
-| G01.FR.07 | ✅     |                                  |
-| G01.FR.08 |        | Charging station is responsible? |
+| ID        | Status | Remark |
+|-----------|--------|--------|
+| G01.FR.01 | ✅     |        |
+| G01.FR.02 | ⛽️❓   |        |
+| G01.FR.03 | ✅     |        |
+| G01.FR.04 | ✅     |        |
+| G01.FR.05 | ✅     |        |
+| G01.FR.06 |        |        |
+| G01.FR.07 | ✅     |        |
+| G01.FR.08 | ⛽️❓   |        |
 
 ## Availability - Heartbeat
 
@@ -1048,26 +1050,26 @@ This document contains the status of which OCPP 2.0.1 numbered requirements have
 
 ## Availability - Change Availability Charging Station
 
-| ID        | Status | Remark                           |
-|-----------|--------|----------------------------------|
-| G04.FR.01 | ✅     | Charging station is responsible? |
-| G04.FR.02 | ✅     |                                  |
-| G04.FR.03 | ✅     |                                  |
-| G04.FR.04 | ✅     |                                  |
-| G04.FR.05 | ✅     | Charging station is responsible. |
-| G04.FR.06 | ✅     |                                  |
-| G04.FR.07 | ✅     |                                  |
-| G04.FR.08 | ✅     |                                  |
-| G04.FR.09 | ✅     | Charging station is responsible. |
+| ID        | Status | Remark |
+|-----------|--------|--------|
+| G04.FR.01 | ⛽️❓   |        |
+| G04.FR.02 | ✅     |        |
+| G04.FR.03 | ✅     |        |
+| G04.FR.04 | ✅     |        |
+| G04.FR.05 | ⛽️     |        |
+| G04.FR.06 | ✅     |        |
+| G04.FR.07 | ✅     |        |
+| G04.FR.08 | ✅     |        |
+| G04.FR.09 | ⛽️     |        |
 
 ## Availability - Lock Failure
 
-| ID        | Status | Remark                           |
-|-----------|--------|----------------------------------|
-| G05.FR.01 | ✅     | Charging station is responsible? |
-| G05.FR.02 | ✅     | Charging station is responsible? |
-| G05.FR.03 | ⛔️     | Charging station is responsible? |
-| G05.FR.04 | ⛔️     | Charging station is responsible? |
+| ID        | Status | Remark |
+|-----------|--------|--------|
+| G05.FR.01 | ⛽️❓   |        |
+| G05.FR.02 | ⛽️❓   |        |
+| G05.FR.03 | 🌐     |        |
+| G05.FR.04 | ⛽️     |        |
 
 ## Reservation - Reservation
 
@@ -1481,58 +1483,58 @@ This document contains the status of which OCPP 2.0.1 numbered requirements have
 
 | ID        | Status | Remark                                      |
 |-----------|--------|---------------------------------------------|
-| L01.FR.01 | ✅     | Charging Station is responsible.            |
+| L01.FR.01 | ⛽️     |                                             |
 | L01.FR.02 | ✅     | Security Notification is sent by `libocpp`. |
 | L01.FR.03 | ✅     | Security Notification is sent by `libocpp`. |
-| L01.FR.04 | ⛔️     | Charging Station is responsible.            |
-| L01.FR.05 | ⛔️     | Charging Station is responsible.            |
-| L01.FR.06 | ⛔️     | Charging Station is responsible.            |
-| L01.FR.07 | ⛔️     | Charging Station is responsible.            |
+| L01.FR.04 | ⛽️     |                                             |
+| L01.FR.05 | ⛽️     |                                             |
+| L01.FR.06 | ⛽️     |                                             |
+| L01.FR.07 | ⛽️     |                                             |
 | L01.FR.08 | ⛔️     | Recommendation, not a requirement           |
-| L01.FR.09 | ⛔️     | Requirement on the firmware file itself.    |
-| L01.FR.10 | ⛔️     | Charging Station is responsible.            |
-| L01.FR.11 | ⛔️     |                                             |
-| L01.FR.12 | ⛔️     | Charging Station is responsible.            |
-| L01.FR.13 | ⛔️     | Charging Station is responsible.            |
-| L01.FR.14 | ⛔️     | Charging Station is responsible.            |
-| L01.FR.15 | ⛔️     | Charging Station is responsible.            |
-| L01.FR.16 | ⛔️     | Charging Station is responsible.            |
+| L01.FR.09 | 🤓     | Requirement on the firmware file itself.    |
+| L01.FR.10 | ⛽️     |                                             |
+| L01.FR.11 | 🌐     |                                             |
+| L01.FR.12 | ⛽️     |                                             |
+| L01.FR.13 | ⛽️     |                                             |
+| L01.FR.14 | ⛽️     |                                             |
+| L01.FR.15 | ⛽️     |                                             |
+| L01.FR.16 | ⛽️     |                                             |
 | L01.FR.20 | ✅     |                                             |
-| L01.FR.21 | ⛔️     | Charging Station is responsible.            |
-| L01.FR.22 | ⛔️     | Charging Station is responsible.            |
-| L01.FR.23 | ⛔️     | Charging Station is responsible.            |
-| L01.FR.24 | ⛔️     | Charging Station is responsible.            |
+| L01.FR.21 | ⛽️     |                                             |
+| L01.FR.22 | ⛽️     |                                             |
+| L01.FR.23 | ⛽️     |                                             |
+| L01.FR.24 | ⛽️     |                                             |
 | L01.FR.25 | ✅     |                                             |
 | L01.FR.26 | ✅     |                                             |
-| L01.FR.27 |        | MAY requirement                             |
-| L01.FR.28 | ⛔️     | Charging Station is responsible.            |
-| L01.FR.29 | ⛔️     | Charging Station is responsible.            |
-| L01.FR.30 | ⛔️     | Charging Station is responsible.            |
+| L01.FR.27 |        | Optional requirement                        |
+| L01.FR.28 | ⛽️     |                                             |
+| L01.FR.29 | ⛽️     |                                             |
+| L01.FR.30 | ⛽️     |                                             |
 | L01.FR.31 | ✅     |                                             |
-| L01.FR.32 | ⛔️     | Not a requirement.                          |
+| L01.FR.32 | ⛔️     | Optional requirement                        |
 
 ## FirmwareManagement - Non-Secure Firmware Update
 
-| ID        | Status | Remark                           |
-|-----------|--------|----------------------------------|
-| L02.FR.01 | ✅     | Charging Station is responsible. |
-| L02.FR.02 | ✅     | Charging Station is responsible. |
-| L02.FR.03 | ✅     | Charging Station is responsible. |
-| L02.FR.04 | ✅     | Charging Station is responsible. |
-| L02.FR.05 | ✅     | Charging Station is responsible. |
-| L02.FR.06 | ✅     | Charging Station is responsible. |
-| L02.FR.07 | ✅     | Charging Station is responsible. |
-| L02.FR.08 | ✅     | Charging Station is responsible. |
-| L02.FR.09 | ✅     | Charging Station is responsible. |
-| L02.FR.10 | ✅     | Charging Station is responsible. |
-| L02.FR.14 | ✅     | Charging Station is responsible. |
-| L02.FR.15 | ✅     | Charging Station is responsible. |
-| L02.FR.16 | ✅     |                                  |
-| L02.FR.17 | ✅     |                                  |
-| L02.FR.18 | ✅     | Charging Station is responsible. |
-| L02.FR.19 | ✅     | Charging Station is responsible. |
-| L02.FR.20 | ✅     | Charging Station is responsible. |
-| L02.FR.21 | ✅     | Charging Station is responsible. |
+| ID        | Status | Remark |
+|-----------|--------|--------|
+| L02.FR.01 | ⛽️     |        |
+| L02.FR.02 | ⛽️     |        |
+| L02.FR.03 | ⛽️     |        |
+| L02.FR.04 | ⛽️     |        |
+| L02.FR.05 | ⛽️     |        |
+| L02.FR.06 | ⛽️     |        |
+| L02.FR.07 | ⛽️     |        |
+| L02.FR.08 | ⛽️     |        |
+| L02.FR.09 | ⛽️     |        |
+| L02.FR.10 | ⛽️     |        |
+| L02.FR.14 | ⛽️     |        |
+| L02.FR.15 | ⛽️     |        |
+| L02.FR.16 | ✅     |        |
+| L02.FR.17 | ✅     |        |
+| L02.FR.18 | ⛽️     |        |
+| L02.FR.19 | ⛽️     |        |
+| L02.FR.20 | ⛽️     |        |
+| L02.FR.21 | ⛽️     |        |
 
 ## FirmwareManagement - Publish Firmware file on Local Controller
 
@@ -1549,6 +1551,7 @@ This document contains the status of which OCPP 2.0.1 numbered requirements have
 | L03.FR.09 |        |        |
 | L03.FR.10 |        |        |
 | L03.FR.11 |        |        |
+
 ## FirmwareManagement - Unpublish Firmware file on Local Controller
 
 | ID        | Status | Remark |
@@ -1582,16 +1585,16 @@ This document contains the status of which OCPP 2.0.1 numbered requirements have
 
 ## ISO 15118 CertificateManagement - Delete a specific certificate from a Charging Station
 
-| ID        | Status | Remark                            |
-|-----------|--------|-----------------------------------|
-| M04.FR.01 | ✅     |                                   |
-| M04.FR.02 | ✅     | libevse-security handles response |
-| M04.FR.03 | ✅     | libevse-security handles response |
-| M04.FR.04 | ✅     | libevse-security handles response |
-| M04.FR.05 | ✅     | libevse-security handles response |
-| M04.FR.06 | ✅     | libevse-security handles response |
-| M04.FR.07 | ✅     | libevse-security handles response |
-| M04.FR.08 | ✅     | libevse-security handles response |
+| ID        | Status | Remark                               |
+|-----------|--------|--------------------------------------|
+| M04.FR.01 | ✅     |                                      |
+| M04.FR.02 | ✅     | `libevse-security` handles response. |
+| M04.FR.03 | ✅     | `libevse-security` handles response. |
+| M04.FR.04 | ✅     | `libevse-security` handles response. |
+| M04.FR.05 | ✅     | `libevse-security` handles response. |
+| M04.FR.06 | ✅     | `libevse-security` handles response. |
+| M04.FR.07 | ✅     | `libevse-security` handles response. |
+| M04.FR.08 | ✅     | `libevse-security` handles response. |
 
 ## ISO 15118 CertificateManagement - Install CA certificate in a Charging Station
 
@@ -1628,28 +1631,28 @@ This document contains the status of which OCPP 2.0.1 numbered requirements have
 
 ## Diagnostics - Retrieve Log Information
 
-| ID        | Status | Remark                           |
-|-----------|--------|----------------------------------|
-| N01.FR.01 | ✅     |                                  |
-| N01.FR.02 | ✅     | Charging Station is responsible. |
-| N01.FR.03 | ✅     | Charging Station is responsible. |
-| N01.FR.04 | ✅     | Charging Station is responsible. |
-| N01.FR.05 | ✅     | Charging Station is responsible. |
-| N01.FR.06 | ✅     | Charging Station is responsible. |
-| N01.FR.07 | ✅     | Charging Station is responsible. |
-| N01.FR.08 | ✅     | Charging Station is responsible. |
-| N01.FR.09 | ✅     | Charging Station is responsible. |
-| N01.FR.10 | ✅     | Charging Station is responsible. |
-| N01.FR.11 | ✅     | Charging Station is responsible. |
-| N01.FR.12 | ✅     | Charging Station is responsible. |
-| N01.FR.13 | ✅     | Charging Station is responsible. |
-| N01.FR.14 | ✅     | Charging Station is responsible. |
-| N01.FR.15 | ✅     | Charging Station is responsible. |
-| N01.FR.16 | ✅     | Charging Station is responsible. |
-| N01.FR.17 | ✅     | Charging Station is responsible. |
-| N01.FR.18 | ✅     | Charging Station is responsible. |
-| N01.FR.19 | ✅     | Charging Station is responsible. |
-| N01.FR.20 | ✅     | Charging Station is responsible. |
+| ID        | Status | Remark |
+|-----------|--------|--------|
+| N01.FR.01 | ✅     |        |
+| N01.FR.02 | ⛽️     |        |
+| N01.FR.03 | ⛽️     |        |
+| N01.FR.04 | ⛽️     |        |
+| N01.FR.05 | ⛽️     |        |
+| N01.FR.06 | ⛽️     |        |
+| N01.FR.07 | ⛽️     |        |
+| N01.FR.08 | ⛽️     |        |
+| N01.FR.09 | ⛽️     |        |
+| N01.FR.10 | ⛽️     |        |
+| N01.FR.11 | ⛽️     |        |
+| N01.FR.12 | ⛽️     |        |
+| N01.FR.13 | ⛽️     |        |
+| N01.FR.14 | ⛽️     |        |
+| N01.FR.15 | ⛽️     |        |
+| N01.FR.16 | ⛽️     |        |
+| N01.FR.17 | ⛽️     |        |
+| N01.FR.18 | ⛽️     |        |
+| N01.FR.19 | ⛽️     |        |
+| N01.FR.20 | ⛽️     |        |
 
 ## Diagnostics - Get Monitoring report
 
@@ -1879,13 +1882,13 @@ This document contains the status of which OCPP 2.0.1 numbered requirements have
 
 ## DataTransfer - Data Transfer to the CSMS
 
-| ID        | Status | Remark                           |
-|-----------|--------|----------------------------------|
-| P02.FR.01 | ✅     | Charging station is responsible. |
-| P02.FR.02 | ✅     | Charging station is responsible. |
-| P02.FR.03 | ⛔️     |                                  |
-| P02.FR.04 | ✅     | Charging station is responsible. |
-| P02.FR.05 | ⛔️     |                                  |
-| P02.FR.06 | ⛔️     |                                  |
-| P02.FR.07 | ⛔️     |                                  |
-| P02.FR.08 | ⛔️     |                                  |
+| ID        | Status | Remark |
+|-----------|--------|--------|
+| P02.FR.01 | ⛽️     |        |
+| P02.FR.02 | ⛽️     |        |
+| P02.FR.03 | ⛔️     |        |
+| P02.FR.04 | ⛽️     |        |
+| P02.FR.05 | ⛔️     |        |
+| P02.FR.06 | ⛔️     |        |
+| P02.FR.07 | ⛔️     |        |
+| P02.FR.08 | ⛔️     |        |
