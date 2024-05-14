@@ -98,7 +98,7 @@ public:
     virtual void remove_transaction_message(const std::string& unique_id);
 
     /// \brief Deletes all entries from TRANSACTION_QUEUE table
-    virtual bool clear_transaction_queue();
+    virtual void clear_transaction_queue();
 };
 
 } // namespace ocpp::common

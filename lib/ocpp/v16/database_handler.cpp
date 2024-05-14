@@ -278,8 +278,11 @@ std::optional<v16::IdTagInfo> DatabaseHandler::get_authorization_cache_entry(con
     throw QueryExecutionException(this->database->get_error_message());
 }
 
-bool DatabaseHandler::clear_authorization_cache() {
-    return this->database->clear_table("AUTH_CACHE");
+void DatabaseHandler::clear_authorization_cache() {
+    const auto retval = this->database->clear_table("AUTH_CACHE");
+    if (retval == false) {
+        throw QueryExecutionException(this->database->get_error_message());
+    }
 }
 
 void DatabaseHandler::insert_or_update_connector_availability(int32_t connector,
@@ -479,8 +482,11 @@ std::optional<v16::IdTagInfo> DatabaseHandler::get_local_authorization_list_entr
     throw QueryExecutionException(this->database->get_error_message());
 }
 
-bool DatabaseHandler::clear_local_authorization_list() {
-    return this->database->clear_table("AUTH_LIST");
+void DatabaseHandler::clear_local_authorization_list() {
+    const auto retval = this->database->clear_table("AUTH_LIST");
+    if (retval == false) {
+        throw QueryExecutionException(this->database->get_error_message());
+    }
 }
 
 void DatabaseHandler::insert_or_update_charging_profile(const int connector_id, const v16::ChargingProfile& profile) {
@@ -511,7 +517,10 @@ void DatabaseHandler::delete_charging_profile(const int profile_id) {
 }
 
 void DatabaseHandler::delete_charging_profiles() {
-    this->database->clear_table("CHARGING_PROFILES");
+    const auto retval = this->database->clear_table("CHARGING_PROFILES");
+    if (retval == false) {
+        throw QueryExecutionException(this->database->get_error_message());
+    }
 }
 
 std::vector<v16::ChargingProfile> DatabaseHandler::get_charging_profiles() {

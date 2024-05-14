@@ -125,7 +125,10 @@ void DatabaseHandler::authorization_cache_delete_entry(const std::string& id_tok
 }
 
 bool DatabaseHandler::authorization_cache_clear() {
-    return this->database->clear_table("AUTH_CACHE");
+    const auto retval = this->database->clear_table("AUTH_CACHE");
+    if (retval == false) {
+        throw QueryExecutionException(this->database->get_error_message());
+    }
 }
 
 size_t DatabaseHandler::authorization_cache_get_binary_size() {
@@ -276,8 +279,11 @@ std::optional<IdTokenInfo> DatabaseHandler::get_local_authorization_list_entry(c
     throw QueryExecutionException(this->database->get_error_message());
 }
 
-bool DatabaseHandler::clear_local_authorization_list() {
-    return this->database->clear_table("AUTH_LIST");
+void DatabaseHandler::clear_local_authorization_list() {
+    const auto retval = this->database->clear_table("AUTH_LIST");
+    if (retval == false) {
+        throw QueryExecutionException(this->database->get_error_message());
+    }
 }
 
 int32_t DatabaseHandler::get_local_authorization_list_number_of_entries() {

@@ -103,7 +103,7 @@ public:
     std::optional<v201::IdTokenInfo> get_local_authorization_list_entry(const IdToken& id_token);
 
     /// \brief Deletes all entries of the AUTH_LIST table.
-    bool clear_local_authorization_list();
+    void clear_local_authorization_list();
 
     /// \brief Get the number of entries currently in the authorization list
     int32_t get_local_authorization_list_number_of_entries();

@@ -1579,8 +1579,15 @@ void ChargePointImpl::handleClearCacheRequest(ocpp::Call<ClearCacheRequest> call
     ClearCacheResponse response;
 
     if (this->configuration->getAuthorizationCacheEnabled()) {
-        this->database_handler->clear_authorization_cache();
-        response.status = ClearCacheStatus::Accepted;
+        try {
+            this->database_handler->clear_authorization_cache();
+            response.status = ClearCacheStatus::Accepted;
+        } catch (QueryExecutionException& e) {
+            auto call_error = CallError(call.uniqueId, "InternalError",
+                                        "Database error while clearing authorization cache", json({}, true));
+            this->send(call_error);
+            return;
+        }
     } else {
         response.status = ClearCacheStatus::Rejected;
     }
@@ -2673,6 +2680,7 @@ void ChargePointImpl::handleGetLocalListVersionRequest(ocpp::Call<GetLocalListVe
             auto call_error = CallError(call.uniqueId, "InternalError", "Could not retrieve listVersion from database",
                                         json({}, true));
             this->send(call_error);
+            return;
         } catch (RequiredEntryNotFoundException& e) {
             try {
                 // try to recover if not entry is found
@@ -2683,6 +2691,7 @@ void ChargePointImpl::handleGetLocalListVersionRequest(ocpp::Call<GetLocalListVe
             auto call_error = CallError(call.uniqueId, "InternalError", "Could not retrieve listVersion from database",
                                         json({}, true));
             this->send(call_error);
+            return;
         }
     }
 

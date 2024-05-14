@@ -1428,8 +1428,13 @@ SendLocalListStatusEnum ChargePoint::apply_local_authorization_list(const SendLo
         // D01.FR.18: Do nothing, not allowed, respond with failed
     } else if (request.updateType == UpdateEnum::Full) {
         if (!request.localAuthorizationList.has_value() or request.localAuthorizationList.value().empty()) {
-            this->database_handler->clear_local_authorization_list();
-            status = SendLocalListStatusEnum::Accepted;
+            try {
+                this->database_handler->clear_local_authorization_list();
+                status = SendLocalListStatusEnum::Accepted;
+            } catch (const QueryExecutionException& e) {
+                status = SendLocalListStatusEnum::Failed;
+                EVLOG_warning << "Clearing of local authorization list failed: " << e.what();
+            }
         } else {
             const auto& list = request.localAuthorizationList.value();
 
@@ -1437,8 +1442,8 @@ SendLocalListStatusEnum ChargePoint::apply_local_authorization_list(const SendLo
 
             if (!has_duplicate_in_list(list) and
                 std::find_if(list.begin(), list.end(), has_no_token_info) == list.end()) {
-                this->database_handler->clear_local_authorization_list();
                 try {
+                    this->database_handler->clear_local_authorization_list();
                     this->database_handler->insert_or_update_local_authorization_list(list);
                     status = SendLocalListStatusEnum::Accepted;
                 } catch (const QueryExecutionException& e) {
@@ -2530,10 +2535,17 @@ void ChargePoint::handle_clear_cache_req(Call<ClearCacheRequest> call) {
     response.status = ClearCacheStatusEnum::Rejected;
 
     if (this->device_model->get_optional_value<bool>(ControllerComponentVariables::AuthCacheCtrlrEnabled)
-            .value_or(true) and
-        this->database_handler->authorization_cache_clear()) {
-        this->update_authorization_cache_size();
-        response.status = ClearCacheStatusEnum::Accepted;
+            .value_or(true)) {
+        try {
+            this->database_handler->authorization_cache_clear();
+            this->update_authorization_cache_size();
+            response.status = ClearCacheStatusEnum::Accepted;
+        } catch (QueryExecutionException& e) {
+            auto call_error = CallError(call.uniqueId, "InternalError",
+                                        "Database error while clearing authorization cache", json({}, true));
+            this->send(call_error);
+            return;
+        }
     }
 
     ocpp::CallResult<ClearCacheResponse> call_result(response, call.uniqueId);

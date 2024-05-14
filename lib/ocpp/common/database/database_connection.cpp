@@ -36,8 +36,11 @@ public:
         }
     }
     void rollback() override {
-        this->database.execute_statement("ROLLBACK TRANSACTION");
+        const auto retval = this->database.execute_statement("ROLLBACK TRANSACTION");
         this->mutex.unlock();
+        if (retval == false) {
+            throw QueryExecutionException(this->database.get_error_message());
+        }
     }
 };
 

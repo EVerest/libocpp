@@ -108,8 +108,11 @@ void DatabaseHandlerCommon::remove_transaction_message(const std::string& unique
     }
 }
 
-bool DatabaseHandlerCommon::clear_transaction_queue() {
-    return this->database->clear_table("TRANSACTION_QUEUE");
+void DatabaseHandlerCommon::clear_transaction_queue() {
+    const auto retval = this->database->clear_table("TRANSACTION_QUEUE");
+    if (retval == false) {
+        throw QueryExecutionException(this->database->get_error_message());
+    }
 }
 
 } // namespace ocpp::common
