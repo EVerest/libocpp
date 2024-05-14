@@ -60,6 +60,12 @@ ocpp::DateTime align_timestamp(const DateTime timestamp, std::chrono::seconds al
 /// \brief Returns the total Power_Active_Import value from the \p meter_value or std::nullopt if it is not present
 std::optional<float> get_total_power_active_import(const MeterValue& meter_value);
 
+std::string to_string(ChargingProfile cp);
+std::string to_string(ChargingSchedule cs);
+std::string to_string(ChargingSchedulePeriod csp);
+std::string to_string(CompositeSchedule& cs);
+std::string get_log_duration_string(int32_t duration);
+
 } // namespace utils
 } // namespace v201
 } // namespace ocpp

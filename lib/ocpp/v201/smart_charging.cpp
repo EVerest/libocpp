@@ -11,7 +11,8 @@
 #include "ocpp/v201/messages/SetChargingProfile.hpp"
 #include "ocpp/v201/ocpp_enums.hpp"
 #include "ocpp/v201/ocpp_types.hpp"
-#include "ocpp/v201/transaction.hpp"
+#include "ocpp/v201/profile.hpp"
+#include "ocpp/v201/utils.hpp"
 #include <algorithm>
 #include <iterator>
 #include <ocpp/v201/smart_charging.hpp>
@@ -509,6 +510,91 @@ SmartChargingHandler::verify_no_conflicting_external_constraints_id(const Chargi
     }
 
     return result;
+}
+
+void log_period_date_time_pair(PeriodDateTimePair period_date_time_pair) {
+    std::string log_str = "PeriodDateTimePair> ";
+
+    if (period_date_time_pair.period.has_value()) {
+        log_str += " period: " + utils::to_string(period_date_time_pair.period.value());
+    }
+    log_str += " end_time: " + period_date_time_pair.end_time.to_rfc3339();
+    EVLOG_info << log_str;
+}
+
+// TODO: The structs type is float but it's being passed in as an int. Significant?
+int get_requested_limit(const int limit, const int nr_phases, const ChargingRateUnitEnum& requested_unit) {
+    if (requested_unit == ChargingRateUnitEnum::A) {
+        return limit / (LOW_VOLTAGE * nr_phases);
+    } else {
+        return limit;
+    }
+}
+
+CompositeSchedule SmartChargingHandler::calculate_composite_schedule(std::vector<ChargingProfile>& valid_profiles,
+                                                                     const ocpp::DateTime& start_time,
+                                                                     const ocpp::DateTime& end_time,
+                                                                     const int32_t evse_id,
+                                                                     ChargingRateUnitEnum charging_rate_unit) {
+
+    std::optional<ocpp::DateTime> session_start{};
+
+    // TODO: This is code that needs to be completed to finish the transition to v2.0.1
+    // 1.6 Connector->Transaction->StampedEnergyWh
+    // if (const auto& itt = connectors.find(connector_id); itt != connectors.end()) {
+    //     // connector exists!
+    //     if (itt->second->transaction) {
+    //         session_start.emplace(ocpp::DateTime(
+    //             floor<seconds>(itt->second->transaction->get_start_energy_wh()->timestamp.to_time_point())));
+    //     }
+    // }
+
+    // 2.0 EvseInterface->get_transaction()->EnhancedTransaction->get_transaction()->Transaction
+    // NOTE: No longer works because now using EVSEManager
+    // if (const auto& itt = this->evses.find(evse_id); itt != this->evses.end()) {
+    //     if (itt->second->get_transaction()) {
+    //         // const ocpp::DateTime now(date::utc_clock::now());
+    //         // EVLOG_info << "   2nd> has transation" << itt->second->get_transaction()->get_transaction();
+    //         session_start.emplace(start_time);
+    //     }
+    // }
+
+    std::vector<period_entry_t> charge_point_max_periods{};
+    std::vector<period_entry_t> tx_default_periods{};
+    std::vector<period_entry_t> tx_periods{};
+
+    for (const auto& profile : valid_profiles) {
+        std::vector<period_entry_t> periods{};
+        periods = ocpp::v201::calculate_profile(start_time, end_time, session_start, profile);
+
+        switch (profile.chargingProfilePurpose) {
+        case ChargingProfilePurposeEnum::ChargingStationMaxProfile:
+            charge_point_max_periods.insert(charge_point_max_periods.end(), periods.begin(), periods.end());
+            break;
+        case ChargingProfilePurposeEnum::TxDefaultProfile:
+            tx_default_periods.insert(tx_default_periods.end(), periods.begin(), periods.end());
+            break;
+        case ChargingProfilePurposeEnum::TxProfile:
+            tx_periods.insert(tx_periods.end(), periods.begin(), periods.end());
+            break;
+        default:
+            break;
+        }
+    }
+
+    auto composite_charge_point_max =
+        ocpp::v201::calculate_composite_schedule(charge_point_max_periods, start_time, end_time, charging_rate_unit);
+    auto composite_tx_default =
+        ocpp::v201::calculate_composite_schedule(tx_default_periods, start_time, end_time, charging_rate_unit);
+    auto composite_tx = ocpp::v201::calculate_composite_schedule(tx_periods, start_time, end_time, charging_rate_unit);
+
+    CompositeSchedule composite_schedule =
+        ocpp::v201::calculate_composite_schedule(composite_charge_point_max, composite_tx_default, composite_tx);
+
+    // Set the EVSE ID for the resulting CompositeSchedule
+    composite_schedule.evseId = evse_id;
+
+    return composite_schedule;
 }
 
 } // namespace ocpp::v201

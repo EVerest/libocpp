@@ -147,6 +147,68 @@ std::optional<float> get_total_power_active_import(const MeterValue& meter_value
     return std::nullopt;
 }
 
+std::string to_string(ChargingProfile cp) {
+    json cp_json;
+    to_json(cp_json, cp);
+
+    return cp_json.dump(4);
+};
+
+std::string to_string(ChargingSchedule cs) {
+    json cs_json;
+    to_json(cs_json, cs);
+
+    return cs_json.dump(4);
+};
+
+std::string to_string(ChargingSchedulePeriod csp) {
+    json csp_json;
+    to_json(csp_json, csp);
+
+    return csp_json.dump(4);
+};
+
+std::string to_string(CompositeSchedule& cs) {
+    json cs_json;
+    to_json(cs_json, cs);
+
+    return cs_json.dump(4);
+}
+
+std::string get_log_duration_string(int32_t duration) {
+    if (duration < 1) {
+        return "0 Seconds ";
+    }
+
+    int32_t remaining = duration;
+
+    std::string log_str = "";
+
+    if (remaining >= 86400) {
+        int32_t days = remaining / 86400;
+        remaining = remaining % 86400;
+        if (days > 1) {
+            log_str += std::to_string(days) + " Days ";
+        } else {
+            log_str += std::to_string(days) + " Day ";
+        }
+    }
+    if (remaining >= 3600) {
+        int32_t hours = remaining / 3600;
+        remaining = remaining % 3600;
+        log_str += std::to_string(hours) + " Hours ";
+    }
+    if (remaining >= 60) {
+        int32_t minutes = remaining / 60;
+        remaining = remaining % 60;
+        log_str += std::to_string(minutes) + " Minutes ";
+    }
+    if (remaining > 0) {
+        log_str += std::to_string(remaining) + " Seconds ";
+    }
+    return log_str;
+}
+
 } // namespace utils
 } // namespace v201
 } // namespace ocpp

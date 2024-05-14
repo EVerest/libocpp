@@ -17,7 +17,16 @@
 
 namespace ocpp::v201 {
 
+const int LOW_VOLTAGE = 230;
 const int DEFAULT_AND_MAX_NUMBER_PHASES = 3;
+const int HOURS_PER_DAY = 24;
+const int SECONDS_PER_HOUR = 3600;
+const int SECONDS_PER_DAY = 86400;
+const int DAYS_PER_WEEK = 7;
+
+const ocpp::DateTime MAX_DATE_TIME =
+    ocpp::DateTime(date::utc_clock::now() + std::chrono::hours(std::numeric_limits<int>::max()));
+const int MAX_PERIOD_LIMIT = std::numeric_limits<int>::max();
 
 enum class ProfileValidationResultEnum {
     Valid,
@@ -56,6 +65,18 @@ std::string profile_validation_result_to_reason_code(ProfileValidationResultEnum
 } // namespace conversions
 
 std::ostream& operator<<(std::ostream& os, const ProfileValidationResultEnum validation_result);
+
+/// \brief Helper struct to calculate Composite Schedule
+struct LimitStackLevelPair {
+    int limit;
+    int stack_level;
+};
+
+/// \brief Helper struct to calculate Composite Schedule
+struct PeriodDateTimePair {
+    std::optional<ChargingSchedulePeriod> period;
+    ocpp::DateTime end_time;
+};
 
 class SmartChargingHandlerInterface {
 public:
@@ -106,6 +127,13 @@ public:
     ///
     std::vector<ChargingProfile> get_profiles() const;
 
+    ///
+    /// \brief Calculates the composite schedule for the given \p valid_profiles and the given \p connector_id
+    ///
+    CompositeSchedule calculate_composite_schedule(std::vector<ChargingProfile>& valid_profiles,
+                                                   const ocpp::DateTime& start_time, const ocpp::DateTime& end_time,
+                                                   const int32_t evse_id, ChargingRateUnitEnum charging_rate_unit);
+
 protected:
     ///
     /// \brief validates the existence of the given \p evse_id according to the specification
@@ -147,12 +175,38 @@ protected:
     ///
     ProfileValidationResultEnum verify_no_conflicting_external_constraints_id(const ChargingProfile& profile) const;
 
+    ///
+    /// \brief Iterates over the periods of the given \p profile and returns a struct that contains the period and the
+    /// absolute end time of the period that refers to the given absoulte \p time as a pair.
+    ///
+    PeriodDateTimePair find_period_at(const ocpp::DateTime& time, const ChargingProfile& profile, const int evse);
+
+    ///
+    /// \brief Iterates over the periods of the given \p valid_profiles and determines the earliest next absolute period
+    /// end time later than \p temp_time
+    ///
+    ocpp::DateTime get_next_temp_time(const ocpp::DateTime temp_time,
+                                      const std::vector<ChargingProfile>& valid_profiles, const int32_t evse_id);
+
+    ocpp::DateTime get_period_end_time(const int period_index, const ocpp::DateTime& period_start_time,
+                                       const ChargingSchedule& schedule);
+
 private:
     std::vector<ChargingProfile> get_station_wide_profiles() const;
     std::vector<ChargingProfile> get_evse_specific_tx_default_profiles() const;
     std::vector<ChargingProfile> get_station_wide_tx_default_profiles() const;
     void conform_validity_periods(ChargingProfile& profile) const;
     CurrentPhaseType get_current_phase_type(const std::optional<EvseInterface*> evse_opt) const;
+    CompositeSchedule initialize_composite_schedule(const ocpp::DateTime& start_time, const ocpp::DateTime& end_time,
+                                                    const int32_t evse_id, ChargingRateUnitEnum charging_rate_unit);
+    std::map<ChargingProfilePurposeEnum, LimitStackLevelPair> get_initial_purpose_and_stack_limits();
+
+    std::optional<ocpp::DateTime> get_absolute_profile_start_time(const std::optional<ocpp::DateTime> startSchedule);
+    std::optional<ocpp::DateTime>
+    get_recurring_profile_start_time(const ocpp::DateTime& time, const std::optional<ocpp::DateTime> startSchedule,
+                                     const std::optional<RecurrencyKindEnum> recurrencyKind);
+    std::optional<ocpp::DateTime> get_relative_profile_start_time(const int32_t evse_id);
+    int get_power_limit(const int limit, const int nr_phases, const ChargingRateUnitEnum& unit_of_limit);
 };
 
 } // namespace ocpp::v201
