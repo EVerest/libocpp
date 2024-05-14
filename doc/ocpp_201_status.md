@@ -1157,10 +1157,10 @@ This document contains the status of which OCPP 2.0.1 numbered requirements have
 | K01.FR.16 |  |  |
 | K01.FR.17 |  |  |
 | K01.FR.19 |  |  |
-| K01.FR.20 | :white_check_mark: |  |
+| K01.FR.20 |  | This requires some feedback from the OCA, as the usage of `ACPhaseSwitchingSupported` is unclear. |
 | K01.FR.21 |  |  |
 | K01.FR.22 |  |  |
-| K01.FR.26 |  |  |
+| K01.FR.26 | :white_check_mark: |  |
 | K01.FR.27 |  |  |
 | K01.FR.28 |  |  |
 | K01.FR.29 |  |  |

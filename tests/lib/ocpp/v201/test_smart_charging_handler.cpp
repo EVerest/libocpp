@@ -174,6 +174,12 @@ protected:
         auto device_model_storage =
             std::make_unique<DeviceModelStorageSqlite>("file:device_model?mode=memory&cache=shared");
         auto device_model = std::make_unique<DeviceModel>(std::move(device_model_storage));
+
+        // Defaults
+        const auto& charging_rate_unit_cv = ControllerComponentVariables::ChargingScheduleChargingRateUnit;
+        device_model->set_value(charging_rate_unit_cv.component, charging_rate_unit_cv.variable.value(),
+                                AttributeEnum::Actual, "A,W", true);
+
         return device_model;
     }
 
@@ -284,6 +290,23 @@ TEST_F(ChargepointTestFixtureV201, K01FR19_NumberPhasesOtherThan1AndPhaseToUseSe
     auto sut = handler.validate_profile_schedules(profile);
 
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::ChargingSchedulePeriodInvalidPhaseToUse));
+}
+
+TEST_F(ChargepointTestFixtureV201,
+       K01FR26_IfChargingRateUnitIsNotInChargingScheduleChargingRateUnits_ThenProfileIsInvalid) {
+    const auto& charging_rate_unit_cv = ControllerComponentVariables::ChargingScheduleChargingRateUnit;
+    device_model->set_value(charging_rate_unit_cv.component, charging_rate_unit_cv.variable.value(),
+                            AttributeEnum::Actual, "W", true);
+
+    auto periods = create_charging_schedule_periods(0, 1, 1);
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), uuid(),
+        ChargingProfileKindEnum::Absolute, 1);
+
+    auto sut = handler.validate_profile_schedules(profile);
+
+    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::ChargingScheduleChargingRateUnitUnsupported));
 }
 
 TEST_F(ChargepointTestFixtureV201, K01_IfChargingSchedulePeriodsAreMissing_ThenProfileIsInvalid) {

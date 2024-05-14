@@ -47,6 +47,8 @@ std::string profile_validation_result_to_string(ProfileValidationResultEnum e) {
         return "ChargingProfileMissingRequiredStartSchedule";
     case ProfileValidationResultEnum::ChargingProfileExtraneousStartSchedule:
         return "ChargingProfileExtraneousStartSchedule";
+    case ProfileValidationResultEnum::ChargingScheduleChargingRateUnitUnsupported:
+        return "ChargingScheduleChargingRateUnitUnsupported";
     case ProfileValidationResultEnum::ChargingSchedulePeriodsOutOfOrder:
         return "ChargingSchedulePeriodsOutOfOrder";
     case ProfileValidationResultEnum::ChargingSchedulePeriodInvalidPhaseToUse:
@@ -236,6 +238,14 @@ ProfileValidationResultEnum
 SmartChargingHandler::validate_profile_schedules(ChargingProfile& profile,
                                                  std::optional<EvseInterface*> evse_opt) const {
     for (auto& schedule : profile.chargingSchedule) {
+        // K01.FR.26; We currently need to do string conversions for this manually because our DeviceModel class does
+        // not let us get a vector of ChargingScheduleChargingRateUnits.
+        auto supported_charging_rate_units =
+            this->device_model->get_value<std::string>(ControllerComponentVariables::ChargingScheduleChargingRateUnit);
+        if (supported_charging_rate_units.find(conversions::charging_rate_unit_enum_to_string(
+                schedule.chargingRateUnit)) == supported_charging_rate_units.npos) {
+            return ProfileValidationResultEnum::ChargingScheduleChargingRateUnitUnsupported;
+        }
 
         // A schedule must have at least one chargingSchedulePeriod
         if (schedule.chargingSchedulePeriod.empty()) {
