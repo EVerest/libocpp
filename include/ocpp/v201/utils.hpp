@@ -63,6 +63,12 @@ std::optional<float> get_total_power_active_import(const MeterValue& meter_value
 /// \brief Determines if a given \p security_event is critical as defined in the OCPP 2.0.1 appendix
 bool is_critical(const std::string& security_event);
 
+std::string to_string(ChargingProfile cp);
+std::string to_string(ChargingSchedule cs);
+std::string to_string(ChargingSchedulePeriod csp);
+std::string to_string(CompositeSchedule& cs);
+std::string get_log_duration_string(int32_t duration);
+
 } // namespace utils
 } // namespace v201
 } // namespace ocpp
