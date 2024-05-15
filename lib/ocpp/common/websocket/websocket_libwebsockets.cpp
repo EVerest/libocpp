@@ -225,10 +225,6 @@ WebsocketTlsTPM::~WebsocketTlsTPM() {
         websocket_thread->join();
     }
 
-    if (recv_message_thread != nullptr) {
-        recv_message_thread->join();
-    }
-
     if (this->deferred_callback_thread != nullptr) {
         {
             std::scoped_lock tmp_lock(this->deferred_callback_mutex);
@@ -374,46 +370,6 @@ void WebsocketTlsTPM::tls_init(SSL_CTX* ctx, const std::string& path_chain, cons
 
     // Extra info
     SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL); // to verify server certificate
-}
-
-void WebsocketTlsTPM::recv_loop() {
-    std::shared_ptr<ConnectionData> local_data = conn_data;
-
-    if (local_data == nullptr) {
-        EVLOG_error << "Failed recv loop context init!";
-        return;
-    }
-
-    EVLOG_debug << "Init recv loop with ID: " << std::hex << std::this_thread::get_id();
-
-    while (!local_data->is_interupted()) {
-        // Process all messages
-        while (true) {
-            std::string message{};
-
-            {
-                std::lock_guard lk(this->recv_mutex);
-                if (recv_message_queue.empty())
-                    break;
-
-                message = std::move(recv_message_queue.front());
-                recv_message_queue.pop();
-            }
-
-            // Invoke our processing callback, that might trigger a send back that
-            // can cause a deadlock if is not managed on a different thread
-            this->message_callback(message);
-        }
-
-        // While we are empty, sleep
-        {
-            std::unique_lock<std::mutex> lock(this->recv_mutex);
-            recv_message_cv.wait_for(lock, std::chrono::seconds(1),
-                                     [&]() { return (false == recv_message_queue.empty()); });
-        }
-    }
-
-    EVLOG_debug << "Exit recv loop with ID: " << std::hex << std::this_thread::get_id();
 }
 
 void WebsocketTlsTPM::client_loop() {
@@ -631,12 +587,6 @@ bool WebsocketTlsTPM::connect() {
         this->websocket_thread->join();
     }
 
-    if (this->recv_message_thread) {
-        // Awake the receiving message thread to finish
-        recv_message_cv.notify_one();
-        this->recv_message_thread->join();
-    }
-
     if (this->deferred_callback_thread == nullptr) {
         this->deferred_callback_thread =
             std::make_unique<std::thread>(&WebsocketTlsTPM::handle_deferred_callback_queue, this);
@@ -655,12 +605,6 @@ bool WebsocketTlsTPM::connect() {
         empty.swap(message_queue);
     }
 
-    {
-        std::lock_guard<std::mutex> lock(recv_mutex);
-        std::queue<std::string> empty;
-        empty.swap(recv_message_queue);
-    }
-
     // Bind reconnect callback
     this->reconnect_callback = [this]() {
         // close connection before reconnecting
@@ -675,14 +619,6 @@ bool WebsocketTlsTPM::connect() {
 
     // Release other threads
     this->websocket_thread.reset(new std::thread(&WebsocketTlsTPM::client_loop, this));
-
-    // TODO(ioan): remove this thread when the fix will be moved into 'MessageQueue'
-    // The reason for having a received message processing thread is that because
-    // if we dispatch a message receive from the client_loop thread, then the callback
-    // will send back another message, and since we're waiting for that message to be
-    // sent over the wire on the client_loop, not giving the opportunity to the loop to
-    // advance we will have a dead-lock
-    this->recv_message_thread.reset(new std::thread(&WebsocketTlsTPM::recv_loop, this));
 
     // Wait until connect or timeout
     bool timeouted = !conn_cv.wait_for(lock, std::chrono::seconds(60), [&]() {
@@ -829,12 +765,7 @@ void WebsocketTlsTPM::on_message(std::string&& message) {
 
     EVLOG_debug << "Received message over TLS websocket polling for process: " << message;
 
-    {
-        std::lock_guard<std::mutex> lock(this->recv_mutex);
-        recv_message_queue.push(std::move(message));
-    }
-
-    recv_message_cv.notify_one();
+    this->push_deferred_callback([this, _message = std::move(message)]() { this->message_callback(_message); });
 }
 
 static bool send_internal(lws* wsi, WebsocketMessage* msg) {

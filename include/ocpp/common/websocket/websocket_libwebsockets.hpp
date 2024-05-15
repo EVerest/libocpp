@@ -57,7 +57,6 @@ private:
     void tls_init(struct ssl_ctx_st* ctx, const std::string& path_chain, const std::string& path_key, bool tpm_key,
                   std::optional<std::string>& password);
     void client_loop();
-    void recv_loop();
 
     /// \brief Called when a TLS websocket connection is established, calls the connected callback
     void on_conn_connected();
@@ -101,10 +100,6 @@ private:
     std::condition_variable msg_send_cv;
     std::mutex msg_send_cv_mutex;
 
-    std::unique_ptr<std::thread> recv_message_thread;
-    std::mutex recv_mutex;
-    std::queue<std::string> recv_message_queue;
-    std::condition_variable recv_message_cv;
     std::string recv_buffered_message;
 
     std::unique_ptr<std::thread> deferred_callback_thread;
