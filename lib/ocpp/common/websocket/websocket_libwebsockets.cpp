@@ -210,7 +210,6 @@ WebsocketTlsTPM::WebsocketTlsTPM(const WebsocketConnectionOptions& connection_op
                                  std::shared_ptr<EvseSecurity> evse_security) :
     WebsocketBase(),
     evse_security(evse_security),
-    deferred_callback_thread(&WebsocketTlsTPM::handle_deferred_callback_queue, this),
     stop_deferred_handler(false) {
 
     set_connection_options(connection_options);
@@ -232,9 +231,10 @@ WebsocketTlsTPM::~WebsocketTlsTPM() {
         recv_message_thread->join();
     }
 
-    this->stop_deferred_callback_handler();
-    if (this->deferred_callback_thread.joinable()) {
-        this->deferred_callback_thread.join();
+    if (this->deferred_callback_thread != nullptr) {
+        this->stop_deferred_handler = true;
+        this->deferred_callback_cv.notify_one();
+        this->deferred_callback_thread->join();
     }
 }
 
@@ -634,6 +634,10 @@ bool WebsocketTlsTPM::connect() {
         // Awake the receiving message thread to finish
         recv_message_cv.notify_one();
         this->recv_message_thread->join();
+    }
+
+    if (this->deferred_callback_thread == nullptr) {
+        this->deferred_callback_thread = std::make_unique<std::thread>(&WebsocketTlsTPM::handle_deferred_callback_queue, this);
     }
 
     // Stop any pending reconnect timer
@@ -1291,15 +1295,9 @@ int WebsocketTlsTPM::process_callback(void* wsi_ptr, int callback_reason, void* 
     return 0;
 }
 
-void WebsocketTlsTPM::push_deferred_callback(std::function<void()> callback) {
+void WebsocketTlsTPM::push_deferred_callback(const std::function<void()> &callback) {
     std::scoped_lock tmp_lock(this->deferred_callback_mutex);
     this->deferred_callback_queue.push(callback);
-    this->deferred_callback_cv.notify_one();
-}
-
-void WebsocketTlsTPM::stop_deferred_callback_handler() {
-    std::scoped_lock tmp_lock(this->deferred_callback_mutex);
-    this->stop_deferred_handler = true;
     this->deferred_callback_cv.notify_one();
 }
 
@@ -1309,9 +1307,9 @@ void WebsocketTlsTPM::handle_deferred_callback_queue() {
         {
             std::unique_lock lock(this->deferred_callback_mutex);
             this->deferred_callback_cv.wait(
-                lock, [this]() { return !this->deferred_callback_queue.empty() || !stop_deferred_handler; });
+                lock, [this]() { return !this->deferred_callback_queue.empty() or stop_deferred_handler; });
 
-            if (stop_deferred_handler) {
+            if (stop_deferred_handler and this->deferred_callback_queue.empty()) {
                 break;
             }
 
