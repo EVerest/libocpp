@@ -82,7 +82,7 @@ private:
     void handle_deferred_callback_queue();
 
     /// \brief Add a callback to the queue of callbacks to be executed. All will be executed from a single thread
-    void push_deferred_callback(const std::function<void()> &callback);
+    void push_deferred_callback(const std::function<void()>& callback);
 
 private:
     std::shared_ptr<EvseSecurity> evse_security;

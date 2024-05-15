@@ -208,9 +208,7 @@ static bool verify_csms_cn(const std::string& hostname, bool preverified, const 
 
 WebsocketTlsTPM::WebsocketTlsTPM(const WebsocketConnectionOptions& connection_options,
                                  std::shared_ptr<EvseSecurity> evse_security) :
-    WebsocketBase(),
-    evse_security(evse_security),
-    stop_deferred_handler(false) {
+    WebsocketBase(), evse_security(evse_security), stop_deferred_handler(false) {
 
     set_connection_options(connection_options);
 
@@ -637,7 +635,8 @@ bool WebsocketTlsTPM::connect() {
     }
 
     if (this->deferred_callback_thread == nullptr) {
-        this->deferred_callback_thread = std::make_unique<std::thread>(&WebsocketTlsTPM::handle_deferred_callback_queue, this);
+        this->deferred_callback_thread =
+            std::make_unique<std::thread>(&WebsocketTlsTPM::handle_deferred_callback_queue, this);
     }
 
     // Stop any pending reconnect timer
@@ -1295,7 +1294,7 @@ int WebsocketTlsTPM::process_callback(void* wsi_ptr, int callback_reason, void* 
     return 0;
 }
 
-void WebsocketTlsTPM::push_deferred_callback(const std::function<void()> &callback) {
+void WebsocketTlsTPM::push_deferred_callback(const std::function<void()>& callback) {
     std::scoped_lock tmp_lock(this->deferred_callback_mutex);
     this->deferred_callback_queue.push(callback);
     this->deferred_callback_cv.notify_one();
