@@ -418,9 +418,9 @@ void WebsocketTlsTPM::client_loop() {
     // Bind thread for checks
     local_data->bind_thread(std::this_thread::get_id());
 
-    // lws_set_log_level(LLL_ERR | LLL_WARN | LLL_NOTICE | LLL_INFO | LLL_DEBUG | LLL_PARSER | LLL_HEADER | LLL_EXT |
-    //                          LLL_CLIENT | LLL_LATENCY | LLL_THREAD | LLL_USER, nullptr);
-    lws_set_log_level(LLL_ERR, nullptr);
+    lws_set_log_level(LLL_ERR | LLL_WARN | LLL_NOTICE | LLL_INFO | LLL_DEBUG | LLL_PARSER | LLL_HEADER | LLL_EXT |
+                              LLL_CLIENT | LLL_LATENCY | LLL_THREAD | LLL_USER, nullptr);
+    //lws_set_log_level(LLL_ERR, nullptr);
 
     lws_context_creation_info info;
     memset(&info, 0, sizeof(lws_context_creation_info));
