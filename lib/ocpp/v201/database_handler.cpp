@@ -129,6 +129,7 @@ bool DatabaseHandler::authorization_cache_clear() {
     if (retval == false) {
         throw QueryExecutionException(this->database->get_error_message());
     }
+    return retval;
 }
 
 size_t DatabaseHandler::authorization_cache_get_binary_size() {

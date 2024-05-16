@@ -7,6 +7,7 @@
 #include <ocpp/common/evse_security.hpp>
 #include <ocpp/common/evse_security_impl.hpp>
 #include <ocpp/common/support_older_cpp_versions.hpp>
+#include <ocpp/v16/charge_point_state_machine.hpp>
 #include <ocpp/v16/ocpp_types.hpp>
 #include <ocpp/v16/smart_charging.hpp>
 #include <ocpp/v16/types.hpp>
@@ -77,7 +78,7 @@ public:
     /// storage will be used
     /// \param bootreason reason for calling the start function
     /// \return
-    bool start(const std::map<int, ChargePointStatus>& connector_status_map = {},
+    bool start(const FSMConnectorStates& connector_status_map = {},
                BootReasonEnum bootreason = BootReasonEnum::PowerUp);
 
     /// \brief Restarts the ChargePoint if it has been stopped before. The ChargePoint is reinitialized, connects to the
@@ -86,7 +87,7 @@ public:
     /// (Available, Unavailable, Faulted). connector_status_map is empty, last availability states from the persistant
     /// storage will be used
     /// \param bootreason reason for calling the start function
-    bool restart(const std::map<int, ChargePointStatus>& connector_status_map = {},
+    bool restart(const FSMConnectorStates& connector_status_map = {},
                  BootReasonEnum bootreason = BootReasonEnum::ApplicationReset);
 
     // \brief Resets the internal state machine for the connectors using the given \p connector_status_map

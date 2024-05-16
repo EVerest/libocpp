@@ -7,6 +7,7 @@
 #include <ocpp/v16/charge_point.hpp>
 #include <ocpp/v16/charge_point_configuration.hpp>
 #include <ocpp/v16/charge_point_impl.hpp>
+#include <ocpp/v16/charge_point_state_machine.hpp>
 #include <ocpp/v16/utils.hpp>
 #include <ocpp/v201/utils.hpp>
 
@@ -200,19 +201,19 @@ void ChargePointImpl::init_websocket() {
 
     this->websocket->register_message_callback([this](const std::string& message) { this->message_callback(message); });
 }
-void ChargePointImpl::init_state_machine(const std::map<int, ChargePointStatus>& connector_status_map) {
+void ChargePointImpl::init_state_machine(const FSMConnectorStates& connector_status_map) {
     // if connector_status_map empty it retrieves the last availablity states from the database
     if (connector_status_map.empty()) {
         auto connector_availability = this->database_handler->get_connector_availability();
-        std::map<int, ChargePointStatus> _connector_status_map;
+        FSMConnectorStates _connector_status_map;
         for (const auto& [connector, availability] : connector_availability) {
             if (availability == AvailabilityType::Operative) {
-                _connector_status_map[connector] = ChargePointStatus::Available;
+                _connector_status_map[connector] = FSMState::Available;
                 if (this->enable_evse_callback != nullptr) {
                     this->enable_evse_callback(connector);
                 }
             } else {
-                _connector_status_map[connector] = ChargePointStatus::Unavailable;
+                _connector_status_map[connector] = FSMState::Inoperative;
                 if (this->disable_evse_callback != nullptr) {
                     this->disable_evse_callback(connector);
                 }
@@ -836,7 +837,7 @@ void ChargePointImpl::send_meter_value(int32_t connector, MeterValue meter_value
     this->send<MeterValuesRequest>(call, initiated_by_trigger_message);
 }
 
-bool ChargePointImpl::start(const std::map<int, ChargePointStatus>& connector_status_map, BootReasonEnum bootreason) {
+bool ChargePointImpl::start(const FSMConnectorStates& connector_status_map, BootReasonEnum bootreason) {
     this->bootreason = bootreason;
     this->init_state_machine(connector_status_map);
     this->init_websocket();
@@ -877,7 +878,7 @@ bool ChargePointImpl::start(const std::map<int, ChargePointStatus>& connector_st
     return true;
 }
 
-bool ChargePointImpl::restart(const std::map<int, ChargePointStatus>& connector_status_map, BootReasonEnum bootreason) {
+bool ChargePointImpl::restart(const FSMConnectorStates& connector_status_map, BootReasonEnum bootreason) {
     if (this->stopped) {
         EVLOG_info << "Restarting OCPP Chargepoint";
         this->database_handler->open_connection();
@@ -892,7 +893,7 @@ bool ChargePointImpl::restart(const std::map<int, ChargePointStatus>& connector_
     }
 }
 
-void ChargePointImpl::reset_state_machine(const std::map<int, ChargePointStatus>& connector_status_map) {
+void ChargePointImpl::reset_state_machine(const FSMConnectorStates& connector_status_map) {
     this->status->reset(connector_status_map);
 }
 
@@ -1378,18 +1379,17 @@ void ChargePointImpl::execute_connectors_availability_change(const std::vector<i
             }
         }
         if (availability == AvailabilityType::Operative) {
-            if (connector == 0 or !evse_changed) {
-                this->status->submit_event(connector, FSMEvent::BecomeAvailable, ocpp::DateTime());
-            }
-
+            this->status->submit_event(
+                connector, (connector == 0 or !evse_changed) ? FSMEvent::Operative : FSMEvent::OperativeQuiet,
+                ocpp::DateTime());
             if (this->enable_evse_callback != nullptr) {
                 this->enable_evse_callback(connector);
             }
         } else {
-            if (connector == 0 or !evse_changed) {
-                this->status->submit_event(connector, FSMEvent::ChangeAvailabilityToUnavailable, ocpp::DateTime());
-            }
-            if (this->disable_evse_callback != nullptr) {
+            this->status->submit_event(
+                connector, (connector == 0 or !evse_changed) ? FSMEvent::Inoperative : FSMEvent::InoperativeQuiet,
+                ocpp::DateTime());
+            if (connector != 0 and this->disable_evse_callback != nullptr) {
                 this->disable_evse_callback(connector);
             }
         }

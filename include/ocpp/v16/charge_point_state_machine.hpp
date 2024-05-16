@@ -25,6 +25,10 @@ enum class FSMEvent {
     ReserveConnector,
     TransactionStoppedAndUserActionRequired,
     ChangeAvailabilityToUnavailable,
+    Operative,
+    OperativeQuiet,
+    Inoperative,
+    InoperativeQuiet,
     // FaultDetected - note: this event is handled via a separate function
     I1_ReturnToAvailable,
     I2_ReturnToPreparing,
@@ -34,9 +38,25 @@ enum class FSMEvent {
     I6_ReturnToFinishing,
     I7_ReturnToReserved,
     I8_ReturnToUnavailable,
+    I9_ReturnToInoperative,
 };
 
-using FSMState = ChargePointStatus;
+enum class FSMState {
+    // ChargePointStatus
+    Available,
+    Preparing,
+    Charging,
+    SuspendedEVSE,
+    SuspendedEV,
+    Finishing,
+    Reserved,
+    Unavailable,
+    Faulted,
+    // not a ChargePointStatus
+    Inoperative,
+};
+
+using FSMConnectorStates = std::map<int, FSMState>;
 
 using FSMStateTransitions = std::map<FSMEvent, FSMState>;
 
@@ -76,7 +96,7 @@ public:
         const ocpp::DateTime& timestamp, const std::optional<CiString<50>>& info,
         const std::optional<CiString<255>>& vendor_id, const std::optional<CiString<50>>& vendor_error_code)>;
     ChargePointStates(const ConnectorStatusCallback& connector_status_callback);
-    void reset(std::map<int, ChargePointStatus> connector_status_map);
+    void reset(const FSMConnectorStates& connector_status_map);
 
     void submit_event(const int connector_id, FSMEvent event, const ocpp::DateTime& timestamp,
                       const std::optional<CiString<50>>& info = std::nullopt);

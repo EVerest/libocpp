@@ -11,6 +11,32 @@
 namespace ocpp {
 namespace v16 {
 
+constexpr ChargePointStatus convert(FSMState state) {
+    switch (state) {
+    case FSMState::Available:
+        return ChargePointStatus::Available;
+    case FSMState::Preparing:
+        return ChargePointStatus::Preparing;
+    case FSMState::Charging:
+        return ChargePointStatus::Charging;
+    case FSMState::SuspendedEVSE:
+        return ChargePointStatus::SuspendedEVSE;
+    case FSMState::SuspendedEV:
+        return ChargePointStatus::SuspendedEV;
+    case FSMState::Finishing:
+        return ChargePointStatus::Finishing;
+    case FSMState::Reserved:
+        return ChargePointStatus::Reserved;
+    case FSMState::Unavailable:
+        return ChargePointStatus::Unavailable;
+    case FSMState::Inoperative:
+        return ChargePointStatus::Unavailable;
+    case FSMState::Faulted:
+    default:
+        return ChargePointStatus::Faulted;
+    }
+}
+
 static const FSMDefinition FSM_DEF = {
     {FSMState::Available,
      {
@@ -20,6 +46,8 @@ static const FSMDefinition FSM_DEF = {
          {FSMEvent::PauseChargingEVSE, FSMState::SuspendedEVSE},
          {FSMEvent::ReserveConnector, FSMState::Reserved},
          {FSMEvent::ChangeAvailabilityToUnavailable, FSMState::Unavailable},
+         {FSMEvent::Inoperative, FSMState::Inoperative},
+         {FSMEvent::InoperativeQuiet, FSMState::Inoperative},
      }},
     {FSMState::Preparing,
      {
@@ -28,6 +56,8 @@ static const FSMDefinition FSM_DEF = {
          {FSMEvent::PauseChargingEV, FSMState::SuspendedEV},
          {FSMEvent::PauseChargingEVSE, FSMState::SuspendedEVSE},
          {FSMEvent::TransactionStoppedAndUserActionRequired, FSMState::Finishing},
+         {FSMEvent::Inoperative, FSMState::Inoperative},
+         {FSMEvent::InoperativeQuiet, FSMState::Inoperative},
      }},
     {FSMState::Charging,
      {
@@ -36,6 +66,8 @@ static const FSMDefinition FSM_DEF = {
          {FSMEvent::PauseChargingEVSE, FSMState::SuspendedEVSE},
          {FSMEvent::TransactionStoppedAndUserActionRequired, FSMState::Finishing},
          {FSMEvent::ChangeAvailabilityToUnavailable, FSMState::Unavailable},
+         {FSMEvent::Inoperative, FSMState::Inoperative},
+         {FSMEvent::InoperativeQuiet, FSMState::Inoperative},
      }},
     {FSMState::SuspendedEV,
      {
@@ -44,6 +76,8 @@ static const FSMDefinition FSM_DEF = {
          {FSMEvent::PauseChargingEVSE, FSMState::SuspendedEVSE},
          {FSMEvent::TransactionStoppedAndUserActionRequired, FSMState::Finishing},
          {FSMEvent::ChangeAvailabilityToUnavailable, FSMState::Unavailable},
+         {FSMEvent::Inoperative, FSMState::Inoperative},
+         {FSMEvent::InoperativeQuiet, FSMState::Inoperative},
      }},
     {FSMState::SuspendedEVSE,
      {
@@ -52,18 +86,24 @@ static const FSMDefinition FSM_DEF = {
          {FSMEvent::PauseChargingEV, FSMState::SuspendedEV},
          {FSMEvent::TransactionStoppedAndUserActionRequired, FSMState::Finishing},
          {FSMEvent::ChangeAvailabilityToUnavailable, FSMState::Unavailable},
+         {FSMEvent::Inoperative, FSMState::Inoperative},
+         {FSMEvent::InoperativeQuiet, FSMState::Inoperative},
      }},
     {FSMState::Finishing,
      {
          {FSMEvent::BecomeAvailable, FSMState::Available},
          {FSMEvent::UsageInitiated, FSMState::Preparing},
          {FSMEvent::ChangeAvailabilityToUnavailable, FSMState::Unavailable},
+         {FSMEvent::Inoperative, FSMState::Inoperative},
+         {FSMEvent::InoperativeQuiet, FSMState::Inoperative},
      }},
     {FSMState::Reserved,
      {
          {FSMEvent::BecomeAvailable, FSMState::Available},
          {FSMEvent::UsageInitiated, FSMState::Preparing},
          {FSMEvent::ChangeAvailabilityToUnavailable, FSMState::Unavailable},
+         {FSMEvent::Inoperative, FSMState::Inoperative},
+         {FSMEvent::InoperativeQuiet, FSMState::Inoperative},
      }},
     {FSMState::Unavailable,
      {
@@ -72,6 +112,8 @@ static const FSMDefinition FSM_DEF = {
          {FSMEvent::StartCharging, FSMState::Charging},
          {FSMEvent::PauseChargingEV, FSMState::SuspendedEV},
          {FSMEvent::PauseChargingEVSE, FSMState::SuspendedEVSE},
+         {FSMEvent::Inoperative, FSMState::Inoperative},
+         {FSMEvent::InoperativeQuiet, FSMState::Inoperative},
      }},
     {FSMState::Faulted,
      {
@@ -83,6 +125,12 @@ static const FSMDefinition FSM_DEF = {
          {FSMEvent::I6_ReturnToFinishing, FSMState::Finishing},
          {FSMEvent::I7_ReturnToReserved, FSMState::Reserved},
          {FSMEvent::I8_ReturnToUnavailable, FSMState::Unavailable},
+         {FSMEvent::I9_ReturnToInoperative, FSMState::Inoperative},
+     }},
+    {FSMState::Inoperative,
+     {
+         {FSMEvent::Operative, FSMState::Available},
+         {FSMEvent::OperativeQuiet, FSMState::Available},
      }},
 };
 
@@ -100,6 +148,12 @@ static const FSMDefinition FSM_DEF_CONNECTOR_ZERO = {
      {
          {FSMEvent::I1_ReturnToAvailable, FSMState::Available},
          {FSMEvent::I8_ReturnToUnavailable, FSMState::Unavailable},
+         {FSMEvent::I9_ReturnToInoperative, FSMState::Inoperative},
+     }},
+    {FSMState::Inoperative,
+     {
+         {FSMEvent::Operative, FSMState::Available},
+         {FSMEvent::OperativeQuiet, FSMState::Available},
      }},
 };
 
@@ -132,8 +186,14 @@ bool ChargePointFSM::handle_event(FSMEvent event, const ocpp::DateTime timestamp
     // fall through: transition found
     state = dest_state_it->second;
 
-    if (!faulted) {
-        status_notification_callback(state, this->error_code, timestamp, info, std::nullopt, std::nullopt);
+    bool bNotify = !faulted;
+
+    if ((event == FSMEvent::OperativeQuiet) || (event == FSMEvent::InoperativeQuiet)) {
+        bNotify = false;
+    }
+
+    if (bNotify) {
+        status_notification_callback(convert(state), this->error_code, timestamp, info, std::nullopt, std::nullopt);
     }
 
     return true;
@@ -151,10 +211,11 @@ bool ChargePointFSM::handle_fault(const ChargePointErrorCode& error_code, const 
     this->error_code = error_code;
     if (this->error_code == ChargePointErrorCode::NoError) {
         faulted = false;
-        status_notification_callback(state, this->error_code, timestamp, info, vendor_id, vendor_error_code);
+        status_notification_callback(convert(state), this->error_code, timestamp, info, vendor_id, vendor_error_code);
     } else {
         faulted = true;
-        status_notification_callback(FSMState::Faulted, error_code, timestamp, info, vendor_id, vendor_error_code);
+        status_notification_callback(ChargePointStatus::Faulted, error_code, timestamp, info, vendor_id,
+                                     vendor_error_code);
     }
 
     return true;
@@ -171,9 +232,10 @@ bool ChargePointFSM::handle_error(const ChargePointErrorCode& error_code, const 
 
     this->error_code = error_code;
     if (!faulted) {
-        status_notification_callback(this->state, error_code, timestamp, info, vendor_id, vendor_error_code);
+        status_notification_callback(convert(this->state), error_code, timestamp, info, vendor_id, vendor_error_code);
     } else {
-        status_notification_callback(FSMState::Faulted, error_code, timestamp, info, vendor_id, vendor_error_code);
+        status_notification_callback(ChargePointStatus::Faulted, error_code, timestamp, info, vendor_id,
+                                     vendor_error_code);
     }
     return true;
 }
@@ -181,17 +243,17 @@ bool ChargePointFSM::handle_error(const ChargePointErrorCode& error_code, const 
 ChargePointStates::ChargePointStates(const ConnectorStatusCallback& callback) : connector_status_callback(callback) {
 }
 
-void ChargePointStates::reset(std::map<int, ChargePointStatus> connector_status_map) {
+void ChargePointStates::reset(const FSMConnectorStates& connector_status_map) {
     const std::lock_guard<std::mutex> lck(state_machines_mutex);
     state_machines.clear();
 
     for (size_t connector_id = 0; connector_id < connector_status_map.size(); ++connector_id) {
         const auto initial_state = connector_status_map.at(connector_id);
 
-        if (connector_id == 0 and initial_state != ChargePointStatus::Available and
-            initial_state != ChargePointStatus::Unavailable and initial_state != ChargePointStatus::Faulted) {
+        if (connector_id == 0 and initial_state != FSMState::Available and initial_state != FSMState::Unavailable and
+            initial_state != FSMState::Faulted and initial_state != FSMState::Inoperative) {
             throw std::runtime_error("Invalid initial status for connector 0: " +
-                                     conversions::charge_point_status_to_string(initial_state));
+                                     conversions::charge_point_status_to_string(convert(initial_state)));
         } else if (connector_id == 0) {
             state_machine_connector_zero = std::make_unique<ChargePointFSM>(
                 [this](const ChargePointStatus status, const ChargePointErrorCode error_code,
@@ -254,9 +316,9 @@ void ChargePointStates::submit_error(const int connector_id, const ChargePointEr
 ChargePointStatus ChargePointStates::get_state(int connector_id) {
     const std::lock_guard<std::mutex> lck(state_machines_mutex);
     if (connector_id > 0 && (size_t)connector_id <= this->state_machines.size()) {
-        return state_machines.at(connector_id - 1).get_state();
+        return convert(state_machines.at(connector_id - 1).get_state());
     } else if (connector_id == 0) {
-        return state_machine_connector_zero->get_state();
+        return convert(state_machine_connector_zero->get_state());
     }
 
     // fall through on invalid id

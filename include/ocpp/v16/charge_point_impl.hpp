@@ -193,7 +193,7 @@ private:
     /// \brief This function is called after a successful connection to the Websocket
     void connected_callback();
     void init_websocket();
-    void init_state_machine(const std::map<int, ChargePointStatus>& connector_status_map);
+    void init_state_machine(const FSMConnectorStates& connector_status_map);
     WebsocketConnectionOptions get_ws_connection_options();
     std::unique_ptr<ocpp::MessageQueue<v16::MessageType>> create_message_queue();
     void message_callback(const std::string& message);
@@ -384,7 +384,7 @@ public:
     /// (Available, Unavailable, Faulted)
     /// \param bootreason reason for calling the start function
     /// \return
-    bool start(const std::map<int, ChargePointStatus>& connector_status_map, BootReasonEnum bootreason);
+    bool start(const FSMConnectorStates& connector_status_map, BootReasonEnum bootreason);
 
     /// \brief Restarts the ChargePoint if it has been stopped before. The ChargePoint is reinitialized, connects to the
     /// websocket and starts to communicate OCPP messages again
@@ -392,12 +392,12 @@ public:
     /// (Available, Unavailable, Faulted). connector_status_map is empty, last availability states from the persistant
     /// storage will be used
     /// \param bootreason reason for calling the restart function
-    bool restart(const std::map<int, ChargePointStatus>& connector_status_map, BootReasonEnum bootreason);
+    bool restart(const FSMConnectorStates& connector_status_map, BootReasonEnum bootreason);
 
     /// \brief Resets the internal state machine for the connectors using the given \p connector_status_map
     /// \param connector_status_map state of connectors including connector 0 with reduced set of states (Available,
     /// Unavailable, Faulted)
-    void reset_state_machine(const std::map<int, ChargePointStatus>& connector_status_map);
+    void reset_state_machine(const FSMConnectorStates& connector_status_map);
 
     /// \brief Stops the ChargePoint, stops timers, transactions and the message queue and disconnects from the
     /// websocket
