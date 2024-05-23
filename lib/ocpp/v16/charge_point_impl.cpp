@@ -3962,10 +3962,14 @@ void ChargePointImpl::on_reservation_end(int32_t connector) {
 }
 
 void ChargePointImpl::on_enabled(int32_t connector) {
+    std::lock_guard<std::mutex> change_availability_lock(change_availability_mutex);
+    this->database_handler->insert_or_update_connector_availability(connector, AvailabilityType::Operative);
     this->status->submit_event(connector, FSMEvent::BecomeAvailable, ocpp::DateTime());
 }
 
 void ChargePointImpl::on_disabled(int32_t connector) {
+    std::lock_guard<std::mutex> change_availability_lock(change_availability_mutex);
+    this->database_handler->insert_or_update_connector_availability(connector, AvailabilityType::Inoperative);
     this->status->submit_event(connector, FSMEvent::ChangeAvailabilityToUnavailable, ocpp::DateTime());
 }
 
