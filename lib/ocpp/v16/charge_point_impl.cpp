@@ -1351,8 +1351,8 @@ void ChargePointImpl::preprocess_change_availability_request(
         }
 
         // We store the queued request already in the database, if powerloss the "new" state is available
-        for (const auto& [connector, availability_status] : this->change_availability_queue) {
-            this->database_handler->insert_or_update_connector_availability(connector, availability_status);
+        for (const auto& [connector, availabilityChange : this->change_availability_queue) {
+            this->database_handler->insert_or_update_connector_availability(connector, availabilityChange.availability);
         }
 
         if (transaction_running) {
