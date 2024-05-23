@@ -2542,7 +2542,8 @@ void ChargePoint::handle_clear_cache_req(Call<ClearCacheRequest> call) {
             response.status = ClearCacheStatusEnum::Accepted;
         } catch (QueryExecutionException& e) {
             auto call_error = CallError(call.uniqueId, "InternalError",
-                                        "Database error while clearing authorization cache", json({}, true));
+                                        std::string("Database error while clearing authorization cache: ") + e.what(),
+                                        json({}, true));
             this->send(call_error);
             return;
         }

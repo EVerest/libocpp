@@ -128,7 +128,7 @@ std::unique_ptr<SQLiteStatementInterface> DatabaseConnection::new_statement(cons
 }
 
 bool DatabaseConnection::clear_table(const std::string& table) {
-    return this->execute_statement("DELETE FROM "s + table);
+    return this->execute_statement("DELETE FROM "s + table); // + " ;"s);
 }
 
 int64_t DatabaseConnection::get_last_inserted_rowid() {
