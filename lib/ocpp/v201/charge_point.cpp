@@ -304,10 +304,11 @@ void ChargePoint::on_session_started(const int32_t evse_id, const int32_t connec
 
 Get15118EVCertificateResponse
 ChargePoint::on_get_15118_ev_certificate_request(const Get15118EVCertificateRequest& request) {
-    if (!this->device_model->get_optional_value<bool>(ControllerComponentVariables::ContractCertificateInstallationEnabled)
-            .value_or(false)) {
+    if (!this->device_model
+             ->get_optional_value<bool>(ControllerComponentVariables::ContractCertificateInstallationEnabled)
+             .value_or(false)) {
         EVLOG_warning << "Can not fulfill Get15118EVCertificateRequest, contract certificate installation is disabled!";
-        
+
         Get15118EVCertificateResponse response;
         response.status = Iso15118EVCertificateStatusEnum::Failed;
         return response;
@@ -325,7 +326,7 @@ ChargePoint::on_get_15118_ev_certificate_request(const Get15118EVCertificateRequ
     }
 
     ocpp::CallResult<Get15118EVCertificateResponse> call_result = response_message.message;
-    return call_result.msg;            
+    return call_result.msg;
 }
 
 void ChargePoint::on_transaction_started(const int32_t evse_id, const int32_t connector_id,
@@ -2753,7 +2754,15 @@ void ChargePoint::handle_trigger_message(Call<TriggerMessageRequest> call) {
         response.status = TriggerMessageStatusEnum::Accepted;
         break;
     case MessageTriggerEnum::SignV2GCertificate:
-        response.status = TriggerMessageStatusEnum::Accepted;
+        if (this->device_model
+                ->get_optional_value<bool>(ControllerComponentVariables::V2GCertificateInstallationEnabled)
+                .value_or(false)) {
+            response.status = TriggerMessageStatusEnum::Accepted;
+        } else {
+            EVLOG_warning << "CSMS requested SignV2GCertificate but the config disabled the operation!";
+            response.status = TriggerMessageStatusEnum::Rejected;
+        }
+
         break;
         // TODO:
         // PublishFirmwareStatusNotification
