@@ -304,6 +304,15 @@ void ChargePoint::on_session_started(const int32_t evse_id, const int32_t connec
 
 Get15118EVCertificateResponse
 ChargePoint::on_get_15118_ev_certificate_request(const Get15118EVCertificateRequest& request) {
+    if (!this->device_model->get_optional_value<bool>(ControllerComponentVariables::ContractCertificateInstallationEnabled)
+            .value_or(false)) {
+        EVLOG_warning << "Can not fulfill Get15118EVCertificateRequest, contract certificate installation is disabled!";
+        
+        Get15118EVCertificateResponse response;
+        response.status = Iso15118EVCertificateStatusEnum::Failed;
+        return response;
+    }
+
     EVLOG_debug << "Received Get15118EVCertificateRequest " << request;
     auto future_res = this->send_async<Get15118EVCertificateRequest>(
         ocpp::Call<Get15118EVCertificateRequest>(request, this->message_queue->createMessageId()));
@@ -316,7 +325,7 @@ ChargePoint::on_get_15118_ev_certificate_request(const Get15118EVCertificateRequ
     }
 
     ocpp::CallResult<Get15118EVCertificateResponse> call_result = response_message.message;
-    return call_result.msg;
+    return call_result.msg;            
 }
 
 void ChargePoint::on_transaction_started(const int32_t evse_id, const int32_t connector_id,
