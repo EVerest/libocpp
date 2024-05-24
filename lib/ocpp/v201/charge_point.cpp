@@ -2759,7 +2759,7 @@ void ChargePoint::handle_trigger_message(Call<TriggerMessageRequest> call) {
                 .value_or(false)) {
             response.status = TriggerMessageStatusEnum::Accepted;
         } else {
-            EVLOG_warning << "CSMS requested SignV2GCertificate but the config disabled the operation!";
+            EVLOG_warning << "CSMS requested SignV2GCertificate but V2GCertificateInstallationEnabled is configured as false, so the TriggerMessage is rejected!";
             response.status = TriggerMessageStatusEnum::Rejected;
         }
 
