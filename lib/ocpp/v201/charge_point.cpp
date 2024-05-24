@@ -307,7 +307,8 @@ ChargePoint::on_get_15118_ev_certificate_request(const Get15118EVCertificateRequ
     if (!this->device_model
              ->get_optional_value<bool>(ControllerComponentVariables::ContractCertificateInstallationEnabled)
              .value_or(false)) {
-        EVLOG_warning << "Can not fulfill Get15118EVCertificateRequest because ContractCertificateInstallationEnabled is configured as false!";
+        EVLOG_warning << "Can not fulfill Get15118EVCertificateRequest because ContractCertificateInstallationEnabled "
+                         "is configured as false!";
 
         Get15118EVCertificateResponse response;
         response.status = Iso15118EVCertificateStatusEnum::Failed;
@@ -2759,7 +2760,8 @@ void ChargePoint::handle_trigger_message(Call<TriggerMessageRequest> call) {
                 .value_or(false)) {
             response.status = TriggerMessageStatusEnum::Accepted;
         } else {
-            EVLOG_warning << "CSMS requested SignV2GCertificate but V2GCertificateInstallationEnabled is configured as false, so the TriggerMessage is rejected!";
+            EVLOG_warning << "CSMS requested SignV2GCertificate but V2GCertificateInstallationEnabled is configured as "
+                             "false, so the TriggerMessage is rejected!";
             response.status = TriggerMessageStatusEnum::Rejected;
         }
 
