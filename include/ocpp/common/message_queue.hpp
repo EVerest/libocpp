@@ -71,9 +71,10 @@ template <typename M> struct ControlMessage {
     std::promise<EnhancedMessage<M>> promise; ///< A promise used by the async send interface
     DateTime timestamp;                       ///< A timestamp that shows when this message can be sent
     MessageId initial_unique_id;
+    bool stall_until_accepted; // if true, message shall be sent only if registration status is accepted
 
     /// \brief Creates a new ControlMessage object from the provided \p message
-    explicit ControlMessage(const json& message);
+    explicit ControlMessage(const json& message, const bool stall_until_accepted = false);
 
     /// \brief Provides the unique message ID stored in the message
     /// \returns the unique ID of the contained message
@@ -112,6 +113,7 @@ private:
     bool resuming;
     bool running;
     bool new_message;
+    bool is_registration_status_accepted;
     boost::uuids::random_generator uuid_generator;
     std::recursive_mutex next_message_mutex;
     std::optional<MessageId> next_message_to_send;
@@ -303,6 +305,7 @@ public:
         resuming(false),
         running(true),
         new_message(false),
+        is_registration_status_accepted(false),
         uuid_generator(boost::uuids::random_generator()) {
 
         this->send_callback = send_callback;
@@ -342,44 +345,52 @@ public:
                 // prioritize the message with the oldest timestamp
                 auto now = DateTime();
                 std::shared_ptr<ControlMessage<M>> message = nullptr;
+                auto selected_normal_message_it = normal_message_queue.end(); // Use as a placeholder
                 QueueType queue_type = QueueType::None;
 
-                if (!this->normal_message_queue.empty()) {
-                    auto& normal_message = this->normal_message_queue.front();
-                    EVLOG_debug << "normal msg timestamp: " << normal_message->timestamp;
-                    if (normal_message->timestamp <= now) {
-                        EVLOG_debug << "normal message timestamp <= now";
-                        message = normal_message;
-                        queue_type = QueueType::Normal;
-                    } else {
-                        EVLOG_error << "A normal message should not have a timestamp in the future: "
-                                    << normal_message->timestamp << " now: " << now;
+                for (auto normal_message_it = normal_message_queue.begin();
+                     normal_message_it != normal_message_queue.end(); ++normal_message_it) {
+
+                    if ((*normal_message_it)->stall_until_accepted and !this->is_registration_status_accepted) {
+                        continue;
                     }
+
+                    if ((*normal_message_it)->timestamp > now) {
+                        continue;
+                    }
+
+                    message = *normal_message_it;
+                    queue_type = QueueType::Normal;
+                    selected_normal_message_it = normal_message_it; // Save iterator to the selected message
+                    break;                                          // Stop searching once a sendable message is found
                 }
 
-                if (!this->transaction_message_queue.empty()) {
-                    auto& transaction_message = this->transaction_message_queue.front();
-                    EVLOG_debug << "transaction msg timestamp: " << transaction_message->timestamp;
-                    if (message == nullptr) {
-                        if (transaction_message->timestamp <= now) {
-                            EVLOG_debug << "transaction message timestamp <= now";
-                            message = transaction_message;
-                            queue_type = QueueType::Transaction;
-                        }
-                    } else {
-                        if (transaction_message->timestamp <= message->timestamp and
-                            message->messageType != M::BootNotification) {
-                            EVLOG_debug << "transaction message timestamp <= normal message timestamp";
-                            message = transaction_message;
-                            queue_type = QueueType::Transaction;
-                        } else {
-                            EVLOG_debug << "Prioritizing newer normal message over older transaction message";
-                        }
+                auto selected_transaction_message_it = transaction_message_queue.end();
+                for (auto transaction_message_it = transaction_message_queue.begin();
+                     transaction_message_it != transaction_message_queue.end(); ++transaction_message_it) {
+
+                    if ((*transaction_message_it)->stall_until_accepted and !this->is_registration_status_accepted) {
+                        continue;
                     }
+
+                    if ((*transaction_message_it)->timestamp > now) {
+                        continue;
+                    }
+
+                    if (message != nullptr and ((*transaction_message_it)->timestamp > message->timestamp or
+                                                message->messageType == M::BootNotification)) {
+                        continue;
+                    }
+
+                    message = *transaction_message_it;
+                    queue_type = QueueType::Transaction;
+                    selected_transaction_message_it = transaction_message_it; // Save iterator to the selected message
+                    break; // Stop searching once a sendable message is found
                 }
 
                 if (message == nullptr) {
                     EVLOG_debug << "No message in queue ready to be sent yet";
+                    this->new_message = false;
                     continue;
                 }
 
@@ -435,10 +446,10 @@ public:
                                                           this->current_message_timeout(message->message_attempts));
                     switch (queue_type) {
                     case QueueType::Normal:
-                        this->normal_message_queue.pop_front();
+                        this->normal_message_queue.erase(selected_normal_message_it);
                         break;
                     case QueueType::Transaction:
-                        this->transaction_message_queue.pop_front();
+                        this->transaction_message_queue.erase(selected_transaction_message_it);
                         break;
 
                     default:
@@ -498,20 +509,20 @@ public:
     }
 
     /// \brief pushes a new \p call message onto the message queue
-    template <class T> void push(Call<T> call) {
+    template <class T> void push(Call<T> call, const bool stall_until_accepted = false) {
         if (!running) {
             return;
         }
         json call_json = call;
-        push(call_json);
+        push(call_json, stall_until_accepted);
     }
 
-    void push(const json& message) {
+    void push(const json& message, const bool stall_until_accepted = false) {
         if (!running) {
             return;
         }
 
-        auto control_message = std::make_shared<ControlMessage<M>>(message);
+        auto control_message = std::make_shared<ControlMessage<M>>(message, stall_until_accepted);
         if (control_message->isTransactionMessage()) {
             // according to the spec the "transaction related messages" StartTransaction, StopTransaction and
             // MeterValues have to be delivered in chronological order
@@ -826,6 +837,12 @@ public:
         } else {
             this->resume_now(this->pause_resume_ctr);
         }
+    }
+
+    void set_registration_status_accepted() {
+        std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
+        this->is_registration_status_accepted = true;
+        this->cv.notify_all();
     }
 
     bool is_transaction_message_queue_empty() {

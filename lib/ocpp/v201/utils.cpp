@@ -192,6 +192,11 @@ std::optional<float> get_total_power_active_import(const MeterValue& meter_value
     return std::nullopt;
 }
 
+bool is_transaction_message_type(const MessageType& message_type) {
+    return message_type == MessageType::TransactionEvent or message_type == MessageType::MeterValues or
+           message_type == MessageType::SecurityEventNotification;
+}
+
 } // namespace utils
 } // namespace v201
 } // namespace ocpp

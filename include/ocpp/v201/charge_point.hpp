@@ -491,11 +491,15 @@ private:
     /// \brief Moves websocket network_configuration_priority to next profile
     void next_network_configuration_priority();
 
-    /// @brief Removes all network connection profiles below the actual security profile and stores the new list in the
+    /// \brief Removes all network connection profiles below the actual security profile and stores the new list in the
     /// device model
     void remove_network_connection_profiles_below_actual_security_profile();
 
     void handle_message(const EnhancedMessage<v201::MessageType>& message);
+
+    /// \brief Helper method to handle messages that shall be send
+    SendAttemptResult get_send_message_attempt_result(const MessageType message_type,
+                                                      const bool initiated_by_trigger_message);
     void message_callback(const std::string& message);
     void update_aligned_data_interval();
 
@@ -618,10 +622,11 @@ private:
     // Functional Block A: Security
     void security_event_notification_req(const CiString<50>& event_type, const std::optional<CiString<255>>& tech_info,
                                          const bool triggered_internally, const bool critical);
-    void sign_certificate_req(const ocpp::CertificateSigningUseEnum& certificate_signing_use);
+    void sign_certificate_req(const ocpp::CertificateSigningUseEnum& certificate_signing_use,
+                              const bool initiated_by_trigger_message = false);
 
     // Functional Block B: Provisioning
-    void boot_notification_req(const BootReasonEnum& reason);
+    void boot_notification_req(const BootReasonEnum& reason, const bool initiated_by_trigger_message = false);
     void notify_report_req(const int request_id, const std::vector<ReportData>& report_data);
 
     // Functional Block C: Authorization
@@ -629,8 +634,9 @@ private:
                                     const std::optional<std::vector<OCSPRequestData>>& ocsp_request_data);
 
     // Functional Block G: Availability
-    void status_notification_req(const int32_t evse_id, const int32_t connector_id, const ConnectorStatusEnum status);
-    void heartbeat_req();
+    void status_notification_req(const int32_t evse_id, const int32_t connector_id, const ConnectorStatusEnum status,
+                                 const bool initiated_by_trigger_message = false);
+    void heartbeat_req(const bool initiated_by_trigger_message = false);
 
     // Functional Block E: Transactions
     void transaction_event_req(const TransactionEventEnum& event_type, const DateTime& timestamp,
@@ -641,10 +647,12 @@ private:
                                const std::optional<ocpp::v201::IdToken>& id_token,
                                const std::optional<std::vector<ocpp::v201::MeterValue>>& meter_value,
                                const std::optional<int32_t>& number_of_phases_used, const bool offline,
-                               const std::optional<int32_t>& reservation_id);
+                               const std::optional<int32_t>& reservation_id,
+                               const bool initiated_by_trigger_message = false);
 
     // Functional Block J: MeterValues
-    void meter_values_req(const int32_t evse_id, const std::vector<MeterValue>& meter_values);
+    void meter_values_req(const int32_t evse_id, const std::vector<MeterValue>& meter_values,
+                          const bool initiated_by_trigger_message = false);
 
     // Functional Block N: Diagnostics
     void notify_event_req(const std::vector<EventData>& events);
@@ -702,12 +710,38 @@ private:
     void handle_data_transfer_req(Call<DataTransferRequest> call);
 
     // general message handling
-    template <class T> bool send(ocpp::Call<T> call) {
-        this->message_queue->push(call);
-        return true;
+    template <class T> bool send(ocpp::Call<T> call, const bool initiated_by_trigger_message = false) {
+        const auto send_message_attempt_result = this->get_send_message_attempt_result(
+            conversions::string_to_messagetype(json(call).at(CALL_ACTION)), initiated_by_trigger_message);
+
+        switch (send_message_attempt_result) {
+        case SendAttemptResult::SEND_IMMEDIATELY:
+            this->message_queue->push(call);
+            return true;
+        case SendAttemptResult::SEND_AFTER_REGISTRATION_STATUS_ACCEPTED:
+            this->message_queue->push(call, true);
+            return true;
+        case SendAttemptResult::DISCARD:
+        default:
+            return false;
+        }
     }
     template <class T> std::future<EnhancedMessage<v201::MessageType>> send_async(ocpp::Call<T> call) {
-        return this->message_queue->push_async(call);
+        const auto send_message_attempt_result = this->get_send_message_attempt_result(
+            conversions::string_to_messagetype(json(call).at(CALL_ACTION)), false);
+
+        switch (send_message_attempt_result) {
+        case SendAttemptResult::SEND_IMMEDIATELY:
+            return this->message_queue->push_async(call);
+        case SendAttemptResult::SEND_AFTER_REGISTRATION_STATUS_ACCEPTED:
+        case SendAttemptResult::DISCARD:
+        default:
+            auto message = std::make_shared<ControlMessage<MessageType>>(call);
+            auto enhanced_message = EnhancedMessage<MessageType>();
+            enhanced_message.offline = true;
+            message->promise.set_value(enhanced_message);
+            return message->promise.get_future();
+        }
     }
     template <class T> bool send(ocpp::CallResult<T> call_result) {
         this->message_queue->push(call_result);

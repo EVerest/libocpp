@@ -7,11 +7,37 @@
 
 namespace ocpp {
 
-template <> ControlMessage<v201::MessageType>::ControlMessage(const json& message) {
+template <> ControlMessage<v16::MessageType>::ControlMessage(const json& message, const bool stall_until_accepted) {
+    this->message = message.get<json::array_t>();
+    this->messageType = v16::conversions::string_to_messagetype(message.at(CALL_ACTION));
+    this->message_attempts = 0;
+    this->initial_unique_id = this->message[MESSAGE_ID];
+    this->stall_until_accepted = stall_until_accepted;
+}
+
+template <> bool ControlMessage<v16::MessageType>::isTransactionMessage() const {
+    if (this->messageType == v16::MessageType::StartTransaction ||
+        this->messageType == v16::MessageType::StopTransaction || this->messageType == v16::MessageType::MeterValues ||
+        this->messageType == v16::MessageType::SecurityEventNotification) {
+        return true;
+    }
+    return false;
+}
+
+template <> bool ControlMessage<v16::MessageType>::isTransactionUpdateMessage() const {
+    return (this->messageType == v16::MessageType::MeterValues);
+}
+
+template <> bool ControlMessage<v16::MessageType>::isBootNotificationMessage() const {
+    return this->messageType == v16::MessageType::BootNotification;
+}
+
+template <> ControlMessage<v201::MessageType>::ControlMessage(const json& message, const bool stall_until_accepted) {
     this->message = message.get<json::array_t>();
     this->messageType = v201::conversions::string_to_messagetype(message.at(CALL_ACTION));
     this->message_attempts = 0;
     this->initial_unique_id = this->message[MESSAGE_ID];
+    this->stall_until_accepted = stall_until_accepted;
 }
 
 template <> bool ControlMessage<v201::MessageType>::isTransactionMessage() const {

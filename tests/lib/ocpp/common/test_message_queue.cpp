@@ -108,7 +108,7 @@ template <> TestMessageType MessageQueue<TestMessageType>::string_to_messagetype
     return to_test_message_type(s);
 }
 
-template <> ControlMessage<TestMessageType>::ControlMessage(const json& message) {
+template <> ControlMessage<TestMessageType>::ControlMessage(const json& message, bool stall_until_accepted) {
     this->message = message.get<json::array_t>();
     EVLOG_info << this->message;
     this->messageType = to_test_message_type(this->message[2]);
@@ -296,6 +296,7 @@ protected:
             message_queue->stop();
         }
         message_queue = std::make_unique<MessageQueue<TestMessageType>>(send_callback_mock.AsStdFunction(), config, db);
+        message_queue->set_registration_status_accepted();
         message_queue->resume(std::chrono::seconds(0));
     }
 
