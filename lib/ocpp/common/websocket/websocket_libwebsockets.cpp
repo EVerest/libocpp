@@ -161,10 +161,11 @@ static bool verify_csms_cn(const std::string& hostname, bool preverified, const 
     // This thus gives also the position (in the chain)  of the currently to be verified certificate.
     // If depth is 0, we need to check the leaf certificate;
     // If depth > 0, we are verifying a CA (or SUB-CA) certificate and thus trust "preverified"
-    int depth = X509_STORE_CTX_get_error_depth(ctx);
+
+    int depth = X509_STORE_CTX_get_error_depth(const_cast<X509_STORE_CTX*>ctx);
 
     if (!preverified) {
-        int error = X509_STORE_CTX_get_error(ctx);
+        int error = X509_STORE_CTX_get_error(const_cast<X509_STORE_CTX*>ctx);
         EVLOG_warning << "Invalid certificate error '" << X509_verify_cert_error_string(error) << "' (at chain depth '"
                       << depth << "')";
     }
@@ -172,7 +173,7 @@ static bool verify_csms_cn(const std::string& hostname, bool preverified, const 
     // only check for CSMS server certificate
     if (depth == 0 and preverified) {
         // Get server certificate
-        X509* server_cert = X509_STORE_CTX_get_current_cert(ctx);
+        X509* server_cert = X509_STORE_CTX_get_current_cert(const_cast<X509_STORE_CTX*>ctx);
 
         // TODO (ioan): this manual verification is done because libwebsocket does not take into account
         // the host parameter that we are setting during 'tls_init'. This function should be removed
