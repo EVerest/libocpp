@@ -307,7 +307,7 @@ ChargePoint::on_get_15118_ev_certificate_request(const Get15118EVCertificateRequ
     if (!this->device_model
              ->get_optional_value<bool>(ControllerComponentVariables::ContractCertificateInstallationEnabled)
              .value_or(false)) {
-        EVLOG_warning << "Can not fulfill Get15118EVCertificateRequest, contract certificate installation is disabled!";
+        EVLOG_warning << "Can not fulfill Get15118EVCertificateRequest because ContractCertificateInstallationEnabled is configured as false!";
 
         Get15118EVCertificateResponse response;
         response.status = Iso15118EVCertificateStatusEnum::Failed;
