@@ -367,5 +367,15 @@ void DeviceModel::check_integrity(const std::map<int32_t, int32_t>& evse_connect
     }
 }
 
+std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<SetMonitoringData> requests) {
+    return {};
+}
+std::vector<MonitoringData> DeviceModel::get_monitors(const std::vector<MonitoringCriterionEnum> criteria, const std::vector<ComponentVariable> component_variables) {
+    return {};
+}
+std::vector<ClearMonitoringResult> DeviceModel::clear_monitors(const std::vector<int> request_ids) {
+    return {};
+}
+
 } // namespace v201
 } // namespace ocpp
