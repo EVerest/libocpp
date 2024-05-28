@@ -880,4 +880,44 @@ TEST_F(ChargepointTestFixtureV201, K01_ValidateProfile_IfTxProfileIsInvalid_Then
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::TxProfileMissingTransactionId));
 }
 
+TEST_F(ChargepointTestFixtureV201, K01_ValidateProfile_IfTxProfileIsValid_ThenProfileIsValid) {
+    auto transaction_id = uuid();
+    auto periods = create_charging_schedule_periods({0, 1, 2});
+
+    create_evse_with_id(DEFAULT_EVSE_ID);
+    open_evse_transaction(DEFAULT_EVSE_ID, transaction_id);
+
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")),
+        transaction_id);
+    auto sut = handler.validate_profile(profile, DEFAULT_EVSE_ID);
+
+    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::Valid));
+}
+
+TEST_F(ChargepointTestFixtureV201, K01_ValidateProfile_IfTxDefaultProfileIsValid_ThenProfileIsValid) {
+    auto periods = create_charging_schedule_periods({0, 1, 2});
+
+    create_evse_with_id(DEFAULT_EVSE_ID);
+
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxDefaultProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), uuid());
+    auto sut = handler.validate_profile(profile, DEFAULT_EVSE_ID);
+
+    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::Valid));
+}
+
+TEST_F(ChargepointTestFixtureV201, K01_ValidateProfile_IfChargeStationMaxProfileIsValid_ThenProfileIsValid) {
+    auto periods = create_charging_schedule_periods({0, 1, 2});
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::ChargingStationMaxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), uuid());
+
+    auto sut = handler.validate_profile(profile, STATION_WIDE_ID);
+
+    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::Valid));
+}
+
 } // namespace ocpp::v201
