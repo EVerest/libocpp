@@ -57,6 +57,8 @@ std::string profile_validation_result_to_string(ProfileValidationResultEnum e) {
         return "ChargingSchedulePeriodUnsupportedNumberPhases";
     case ProfileValidationResultEnum::ChargingSchedulePeriodExtraneousPhaseValues:
         return "ChargingSchedulePeriodExtraneousPhaseValues";
+    case ProfileValidationResultEnum::ChargingSchedulePeriodPhaseToUseACPhaseSwitchingUnsupported:
+        return "ChargingSchedulePeriodPhaseToUseACPhaseSwitchingUnsupported";
     case ProfileValidationResultEnum::ChargingStationMaxProfileCannotBeRelative:
         return "ChargingStationMaxProfileCannotBeRelative";
     case ProfileValidationResultEnum::ChargingStationMaxProfileEvseIdGreaterThanZero:
@@ -228,7 +230,6 @@ ProfileValidationResultEnum SmartChargingHandler::validate_tx_profile(const Char
 }
 
 /* TODO: Implement the following functional requirements:
- * - K01.FR.20
  * - K01.FR.34
  * - K01.FR.43
  * - K01.FR.48
@@ -257,6 +258,13 @@ SmartChargingHandler::validate_profile_schedules(ChargingProfile& profile,
             // K01.FR.19
             if (charging_schedule_period.numberPhases != 1 && charging_schedule_period.phaseToUse.has_value()) {
                 return ProfileValidationResultEnum::ChargingSchedulePeriodInvalidPhaseToUse;
+            }
+
+            // K01.FR.20
+            if (charging_schedule_period.phaseToUse.has_value() &&
+                !device_model->get_optional_value<bool>(ControllerComponentVariables::ACPhaseSwitchingSupported)
+                     .value_or(false)) {
+                return ProfileValidationResultEnum::ChargingSchedulePeriodPhaseToUseACPhaseSwitchingUnsupported;
             }
 
             // K01.FR.31

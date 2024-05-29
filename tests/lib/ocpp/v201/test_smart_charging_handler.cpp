@@ -172,10 +172,10 @@ protected:
         };
     }
 
-    void create_device_model_db() {
+    void create_device_model_db(const std::string& path) {
         sqlite3* source_handle;
         sqlite3_open(DEVICE_MODEL_DB_LOCATION_V201, &source_handle);
-        sqlite3_open("file:device_model?mode=memory&cache=shared", &db_handle);
+        sqlite3_open(path.c_str(), &db_handle);
 
         auto* backup = sqlite3_backup_init(db_handle, "main", source_handle, "main");
         sqlite3_backup_step(backup, -1);
@@ -184,16 +184,21 @@ protected:
         sqlite3_close(source_handle);
     }
 
-    std::shared_ptr<DeviceModel> create_device_model() {
-        create_device_model_db();
-        auto device_model_storage =
-            std::make_unique<DeviceModelStorageSqlite>("file:device_model?mode=memory&cache=shared");
+    std::shared_ptr<DeviceModel>
+    create_device_model(const std::string& path = "file:device_model?mode=memory&cache=shared",
+                        const std::optional<std::string> ac_phase_switching_supported = "true") {
+        create_device_model_db(path);
+        auto device_model_storage = std::make_unique<DeviceModelStorageSqlite>(path);
         auto device_model = std::make_shared<DeviceModel>(std::move(device_model_storage));
 
         // Defaults
         const auto& charging_rate_unit_cv = ControllerComponentVariables::ChargingScheduleChargingRateUnit;
         device_model->set_value(charging_rate_unit_cv.component, charging_rate_unit_cv.variable.value(),
                                 AttributeEnum::Actual, "A,W", true);
+
+        const auto& ac_phase_switching_cv = ControllerComponentVariables::ACPhaseSwitchingSupported;
+        device_model->set_value(ac_phase_switching_cv.component, ac_phase_switching_cv.variable.value(),
+                                AttributeEnum::Actual, ac_phase_switching_supported.value_or(""), true);
 
         return device_model;
     }
@@ -305,6 +310,40 @@ TEST_F(ChargepointTestFixtureV201, K01FR19_NumberPhasesOtherThan1AndPhaseToUseSe
     auto sut = handler.validate_profile_schedules(profile);
 
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::ChargingSchedulePeriodInvalidPhaseToUse));
+}
+
+TEST_F(ChargepointTestFixtureV201, K01FR20_IfPhaseToUseSetAndACPhaseSwitchingSupportedUndefined_ThenProfileIsInvalid) {
+    auto device_model_without_ac_phase_switching =
+        create_device_model("file:device_model2?mode=memory&cache=shared", {});
+    device_model = std::move(device_model_without_ac_phase_switching);
+
+    auto periods = create_charging_schedule_periods_with_phases(0, 1, 1);
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), uuid(),
+        ChargingProfileKindEnum::Absolute, 1);
+
+    auto sut = handler.validate_profile_schedules(profile);
+
+    EXPECT_THAT(sut,
+                testing::Eq(ProfileValidationResultEnum::ChargingSchedulePeriodPhaseToUseACPhaseSwitchingUnsupported));
+}
+
+TEST_F(ChargepointTestFixtureV201, K01FR20_IfPhaseToUseSetAndACPhaseSwitchingSupportedFalse_ThenProfileIsInvalid) {
+    auto device_model_with_false_ac_phase_switching =
+        create_device_model("file:device_model2?mode=memory&cache=shared", "false");
+    device_model = std::move(device_model_with_false_ac_phase_switching);
+
+    auto periods = create_charging_schedule_periods_with_phases(0, 1, 1);
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), uuid(),
+        ChargingProfileKindEnum::Absolute, 1);
+
+    auto sut = handler.validate_profile_schedules(profile);
+
+    EXPECT_THAT(sut,
+                testing::Eq(ProfileValidationResultEnum::ChargingSchedulePeriodPhaseToUseACPhaseSwitchingUnsupported));
 }
 
 TEST_F(ChargepointTestFixtureV201,

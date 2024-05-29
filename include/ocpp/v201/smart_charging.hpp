@@ -36,6 +36,7 @@ enum class ProfileValidationResultEnum {
     ChargingSchedulePeriodInvalidPhaseToUse,
     ChargingSchedulePeriodUnsupportedNumberPhases,
     ChargingSchedulePeriodExtraneousPhaseValues,
+    ChargingSchedulePeriodPhaseToUseACPhaseSwitchingUnsupported,
     ChargingStationMaxProfileCannotBeRelative,
     ChargingStationMaxProfileEvseIdGreaterThanZero,
     DuplicateTxDefaultProfileFound,
