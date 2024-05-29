@@ -283,7 +283,6 @@ void DatabaseHandler::clear_authorization_cache() {
     if (retval == false) {
         throw QueryExecutionException(this->database->get_error_message());
     }
-    return retval;
 }
 
 void DatabaseHandler::insert_or_update_connector_availability(int32_t connector,
