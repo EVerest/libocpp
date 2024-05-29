@@ -124,12 +124,11 @@ void DatabaseHandler::authorization_cache_delete_entry(const std::string& id_tok
     }
 }
 
-bool DatabaseHandler::authorization_cache_clear() {
+void DatabaseHandler::authorization_cache_clear() {
     const auto retval = this->database->clear_table("AUTH_CACHE");
     if (retval == false) {
         throw QueryExecutionException(this->database->get_error_message());
     }
-    return retval;
 }
 
 size_t DatabaseHandler::authorization_cache_get_binary_size() {
