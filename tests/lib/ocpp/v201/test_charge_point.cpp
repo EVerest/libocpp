@@ -200,7 +200,7 @@ TEST_F(ChargePointFixture, K01FR02_CallbacksValidityChecksIfOptionalBootNotifica
     callbacks.boot_notification_callback = nullptr;
     EXPECT_FALSE(callbacks.all_callbacks_valid());
 
-    testing::MockFunction<void(const ocpp::v201::RegistrationStatusEnum& reg_status)> boot_notification_callback_mock;
+    testing::MockFunction<void(const ocpp::v201::BootNotificationResponse& response)> boot_notification_callback_mock;
     callbacks.boot_notification_callback = boot_notification_callback_mock.AsStdFunction();
     EXPECT_TRUE(callbacks.all_callbacks_valid());
 }
