@@ -367,14 +367,97 @@ void DeviceModel::check_integrity(const std::map<int32_t, int32_t>& evse_connect
     }
 }
 
-std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<SetMonitoringData> requests) {
-    return {};
+std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<SetMonitoringData>& requests) {
+    if (requests.size() <= 0) {
+        return {};
+    }
+
+    std::vector<SetMonitoringResult> set_monitors_res;
+
+    for (auto& request : requests) {
+        SetMonitoringResult result;
+
+        if (this->device_model.find(request.component) == this->device_model.end()) {
+            result.status = SetMonitoringStatusEnum::UnknownComponent;
+            set_monitors_res.push_back(result);
+            continue;
+        }
+
+        auto variable_map = this->device_model[request.component];
+
+        if (variable_map.find(request.variable) == variable_map.end()) {
+            result.status = SetMonitoringStatusEnum::UnknownVariable;
+            set_monitors_res.push_back(result);
+            continue;
+        }
+
+        // TODO (ioan): see how we should handle the 'Duplicate' data
+        if (this->storage->set_monitoring_data(request)) {
+            result.status = SetMonitoringStatusEnum::Accepted;
+        } else {
+            result.status = SetMonitoringStatusEnum::Rejected;
+        }
+
+        set_monitors_res.push_back(result);
+    }
+
+    return set_monitors_res;
 }
-std::vector<MonitoringData> DeviceModel::get_monitors(const std::vector<MonitoringCriterionEnum> criteria, const std::vector<ComponentVariable> component_variables) {
-    return {};
+std::vector<MonitoringData> DeviceModel::get_monitors(const std::vector<MonitoringCriterionEnum>& criteria,
+                                                      const std::vector<ComponentVariable>& component_variables) {
+    if (criteria.size() <= 0 || component_variables.size() <= 0) {
+        return {};
+    }
+
+    std::vector<MonitoringData> get_monitors_res;
+
+    for (auto& component_variable : component_variables) {
+        if (component_variable.variable.has_value() == false) {
+            continue;
+        }
+
+        if (this->device_model.find(component_variable.component) == this->device_model.end()) {
+            continue;
+        }
+
+        auto variable_map = this->device_model[component_variable.component];
+
+        if (variable_map.find(component_variable.variable.value()) == variable_map.end()) {
+            continue;
+        }
+
+        // Search for all monitors related to the variable id
+        std::optional<MonitoringData> monitor_data = this->storage->get_monitoring_data(
+            criteria, component_variable.component, component_variable.variable.value());
+
+        if (monitor_data.has_value()) {
+            get_monitors_res.push_back(std::move(monitor_data.value()));
+        }
+    }
+
+    return get_monitors_res;
 }
-std::vector<ClearMonitoringResult> DeviceModel::clear_monitors(const std::vector<int> request_ids) {
-    return {};
+std::vector<ClearMonitoringResult> DeviceModel::clear_monitors(const std::vector<int>& request_ids) {
+    if (request_ids.size() <= 0) {
+        return {};
+    }
+
+    std::vector<ClearMonitoringResult> clear_monitors_vec;
+
+    for (auto& id : request_ids) {
+        ClearMonitoringResult clear_monitor_res;
+        clear_monitor_res.id = id;
+
+        if (this->storage->clear_variable_monitor(id)) {
+            clear_monitor_res.status = ClearMonitoringStatusEnum::Accepted;
+        } else {
+            clear_monitor_res.status = ClearMonitoringStatusEnum::NotFound;
+        }
+
+        clear_monitors_vec.push_back(clear_monitor_res);
+    }
+
+    return clear_monitors_vec;
 }
 
 } // namespace v201
