@@ -111,7 +111,7 @@ private:
     std::queue<std::function<void()>> deferred_callback_queue;
     std::mutex deferred_callback_mutex;
     std::condition_variable deferred_callback_cv;
-    bool stop_deferred_handler;
+    std::atomic_bool stop_deferred_handler;
 };
 
 } // namespace ocpp

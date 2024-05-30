@@ -230,7 +230,10 @@ WebsocketTlsTPM::~WebsocketTlsTPM() {
     }
 
     if (this->deferred_callback_thread != nullptr) {
-        this->stop_deferred_handler = true;
+        {
+            std::scoped_lock tmp_lock(this->deferred_callback_mutex);
+            this->stop_deferred_handler = true;
+        }
         this->deferred_callback_cv.notify_one();
         this->deferred_callback_thread->join();
     }
