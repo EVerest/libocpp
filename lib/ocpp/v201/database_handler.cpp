@@ -146,7 +146,7 @@ void DatabaseHandler::authorization_cache_delete_entry(const std::string& id_tok
 
 void DatabaseHandler::authorization_cache_delete_nr_of_oldest_entries(size_t nr_to_remove) {
     std::string sql = "DELETE FROM AUTH_CACHE WHERE ID_TOKEN_HASH IN (SELECT ID_TOKEN_HASH FROM AUTH_CACHE ORDER "
-                        "BY LAST_USED ASC LIMIT @nr_to_remove)";
+                      "BY LAST_USED ASC LIMIT @nr_to_remove)";
     auto delete_stmt = this->database->new_statement(sql);
 
     delete_stmt->bind_int("@nr_to_remove", nr_to_remove);
@@ -160,14 +160,13 @@ void DatabaseHandler::authorization_cache_delete_expired_entries(
     std::optional<std::chrono::seconds> auth_cache_lifetime) {
 
     std::string sql = "DELETE FROM AUTH_CACHE WHERE ID_TOKEN_HASH IN (SELECT ID_TOKEN_HASH FROM AUTH_CACHE WHERE "
-                        "EXPIRY_DATE < @before_date OR LAST_USED < @before_last_used)";
+                      "EXPIRY_DATE < @before_date OR LAST_USED < @before_last_used)";
     auto delete_stmt = this->database->new_statement(sql);
 
     DateTime now;
     delete_stmt->bind_datetime("@before_date", now);
     if (auth_cache_lifetime.has_value()) {
-        delete_stmt->bind_datetime("@before_last_used",
-                                    DateTime(now.to_time_point() - auth_cache_lifetime.value()));
+        delete_stmt->bind_datetime("@before_last_used", DateTime(now.to_time_point() - auth_cache_lifetime.value()));
     } else {
         delete_stmt->bind_null("@before_last_used");
     }
