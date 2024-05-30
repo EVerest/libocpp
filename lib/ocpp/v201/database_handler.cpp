@@ -102,7 +102,7 @@ void DatabaseHandler::authorization_cache_insert_entry(const std::string& id_tok
     }
 }
 
-bool DatabaseHandler::authorization_cache_update_last_used(const std::string& id_token_hash) {
+void DatabaseHandler::authorization_cache_update_last_used(const std::string& id_token_hash) {
     std::string sql = "UPDATE AUTH_CACHE SET LAST_USED = @last_used WHERE ID_TOKEN_HASH = @id_token_hash";
     auto insert_stmt = this->database->new_statement(sql);
 
@@ -110,10 +110,8 @@ bool DatabaseHandler::authorization_cache_update_last_used(const std::string& id
     insert_stmt->bind_text("@id_token_hash", id_token_hash);
 
     if (insert_stmt->step() != SQLITE_DONE) {
-        EVLOG_error << "Could not update AUTH_CACHE item: " << this->database->get_error_message();
-        return false;
+        throw QueryExecutionException(this->database->get_error_message());
     }
-    return true;
 }
 
 std::optional<IdTokenInfo> DatabaseHandler::authorization_cache_get_entry(const std::string& id_token_hash) {
@@ -146,49 +144,36 @@ void DatabaseHandler::authorization_cache_delete_entry(const std::string& id_tok
     }
 }
 
-bool DatabaseHandler::authorization_cache_delete_nr_of_oldest_entries(size_t nr_to_remove) {
-    try {
-        std::string sql = "DELETE FROM AUTH_CACHE WHERE ID_TOKEN_HASH IN (SELECT ID_TOKEN_HASH FROM AUTH_CACHE ORDER "
-                          "BY LAST_USED ASC LIMIT @nr_to_remove)";
-        auto delete_stmt = this->database->new_statement(sql);
+void DatabaseHandler::authorization_cache_delete_nr_of_oldest_entries(size_t nr_to_remove) {
+    std::string sql = "DELETE FROM AUTH_CACHE WHERE ID_TOKEN_HASH IN (SELECT ID_TOKEN_HASH FROM AUTH_CACHE ORDER "
+                        "BY LAST_USED ASC LIMIT @nr_to_remove)";
+    auto delete_stmt = this->database->new_statement(sql);
 
-        delete_stmt->bind_int("@nr_to_remove", nr_to_remove);
+    delete_stmt->bind_int("@nr_to_remove", nr_to_remove);
 
-        if (delete_stmt->step() != SQLITE_DONE) {
-            EVLOG_error << "Could not delete from table: " << this->database->get_error_message();
-            return false;
-        }
-        return true;
-    } catch (const std::exception& e) {
-        EVLOG_error << "Exception while deleting from auth cache table: " << e.what();
-        return false;
+    if (delete_stmt->step() != SQLITE_DONE) {
+        throw QueryExecutionException(this->database->get_error_message());
     }
 }
 
-bool DatabaseHandler::authorization_cache_delete_expired_entries(
+void DatabaseHandler::authorization_cache_delete_expired_entries(
     std::optional<std::chrono::seconds> auth_cache_lifetime) {
-    try {
-        std::string sql = "DELETE FROM AUTH_CACHE WHERE ID_TOKEN_HASH IN (SELECT ID_TOKEN_HASH FROM AUTH_CACHE WHERE "
-                          "EXPIRY_DATE < @before_date OR LAST_USED < @before_last_used)";
-        auto delete_stmt = this->database->new_statement(sql);
 
-        DateTime now;
-        delete_stmt->bind_datetime("@before_date", now);
-        if (auth_cache_lifetime.has_value()) {
-            delete_stmt->bind_datetime("@before_last_used",
-                                       DateTime(now.to_time_point() - auth_cache_lifetime.value()));
-        } else {
-            delete_stmt->bind_null("@before_last_used");
-        }
+    std::string sql = "DELETE FROM AUTH_CACHE WHERE ID_TOKEN_HASH IN (SELECT ID_TOKEN_HASH FROM AUTH_CACHE WHERE "
+                        "EXPIRY_DATE < @before_date OR LAST_USED < @before_last_used)";
+    auto delete_stmt = this->database->new_statement(sql);
 
-        if (delete_stmt->step() != SQLITE_DONE) {
-            EVLOG_error << "Could not delete from table: " << this->database->get_error_message();
-            return false;
-        }
-        return true;
-    } catch (const std::exception& e) {
-        EVLOG_error << "Exception while deleting from auth cache table: " << e.what();
-        return false;
+    DateTime now;
+    delete_stmt->bind_datetime("@before_date", now);
+    if (auth_cache_lifetime.has_value()) {
+        delete_stmt->bind_datetime("@before_last_used",
+                                    DateTime(now.to_time_point() - auth_cache_lifetime.value()));
+    } else {
+        delete_stmt->bind_null("@before_last_used");
+    }
+
+    if (delete_stmt->step() != SQLITE_DONE) {
+        throw QueryExecutionException(this->database->get_error_message());
     }
 }
 

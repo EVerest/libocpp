@@ -3352,20 +3352,26 @@ void ChargePoint::cache_cleanup_handler() {
         }
 
         auto lifetime = this->device_model->get_optional_value<int>(ControllerComponentVariables::AuthCacheLifeTime);
-        this->database_handler->authorization_cache_delete_expired_entries(
-            lifetime.has_value() ? std::optional<std::chrono::seconds>(*lifetime) : std::nullopt);
+        try {
+            this->database_handler->authorization_cache_delete_expired_entries(
+                lifetime.has_value() ? std::optional<std::chrono::seconds>(*lifetime) : std::nullopt);
 
-        auto meta_data =
-            this->device_model->get_variable_meta_data(ControllerComponentVariables::AuthCacheStorage.component,
-                                                       ControllerComponentVariables::AuthCacheStorage.variable.value());
+            auto meta_data = this->device_model->get_variable_meta_data(
+                ControllerComponentVariables::AuthCacheStorage.component,
+                ControllerComponentVariables::AuthCacheStorage.variable.value());
 
-        if (meta_data.has_value()) {
-            auto max_storage = meta_data->characteristics.maxLimit;
-            if (max_storage.has_value()) {
-                while (this->database_handler->authorization_cache_get_binary_size() > max_storage.value()) {
-                    this->database_handler->authorization_cache_delete_nr_of_oldest_entries(1);
+            if (meta_data.has_value()) {
+                auto max_storage = meta_data->characteristics.maxLimit;
+                if (max_storage.has_value()) {
+                    while (this->database_handler->authorization_cache_get_binary_size() > max_storage.value()) {
+                        this->database_handler->authorization_cache_delete_nr_of_oldest_entries(1);
+                    }
                 }
             }
+        } catch (const QueryExecutionException& e) {
+            EVLOG_warning << "Could not delete expired authorization cache entries from database: " << e.what();
+        } catch (const std::exception& e) {
+            EVLOG_warning << "Could not delete expired authorization cache entries from database: " << e.what();
         }
 
         this->update_authorization_cache_size();

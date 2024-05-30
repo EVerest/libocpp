@@ -49,7 +49,7 @@ public:
     ///
     /// \param id_token_hash
     /// \retval true if entry was updated
-    bool authorization_cache_update_last_used(const std::string& id_token_hash);
+    void authorization_cache_update_last_used(const std::string& id_token_hash);
 
     /// \brief Gets cache entry for given \p id_token_hash if present
     /// \param id_token_hash
@@ -64,13 +64,13 @@ public:
     ///
     /// \param nr_to_remove Number of items to remove from the database
     /// \retval True if succeeded
-    bool authorization_cache_delete_nr_of_oldest_entries(size_t nr_to_remove);
+    void authorization_cache_delete_nr_of_oldest_entries(size_t nr_to_remove);
 
     /// \brief Removes all entries from the cache that have passed their expiry date or auth cache lifetime
     ///
     /// \param auth_cache_lifetime The maximum time tokens can stay in the cache without being used
     /// \retval True if succeeded
-    bool authorization_cache_delete_expired_entries(std::optional<std::chrono::seconds> auth_cache_lifetime);
+    void authorization_cache_delete_expired_entries(std::optional<std::chrono::seconds> auth_cache_lifetime);
 
     /// \brief Deletes all entries of the AUTH_CACHE table. Returns true if the operation was successful, else false
     void authorization_cache_clear();
