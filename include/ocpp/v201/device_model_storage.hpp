@@ -81,6 +81,14 @@ public:
     virtual bool set_variable_attribute_value(const Component& component_id, const Variable& variable_id,
                                               const AttributeEnum& attribute_enum, const std::string& value) = 0;
 
+    virtual bool set_monitoring_data(const SetMonitoringData& data) = 0;
+
+    virtual std::optional<MonitoringData> get_monitoring_data(const std::vector<MonitoringCriterionEnum>& criteria,
+                                                              const Component& component_id,
+                                                              const Variable& variable_id) = 0;
+
+    virtual bool clear_variable_monitor(int monitor_id) = 0;
+
     /// \brief Check data integrity of the stored data:
     /// For "required" variables, assert values exist. Checks might be extended in the future.
     virtual void check_integrity() = 0;
