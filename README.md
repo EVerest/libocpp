@@ -542,6 +542,7 @@ cmake -B build -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFI
 cd build
 make -j$(nproc) install
 ```
+Run any required tests from build/tests.
 
 ## Building with FetchContent instead of EDM
 In [doc/build-with-fetchcontent](doc/build-with-fetchcontent) you can find an example how to build libocpp with FetchContent instead of EDM.
