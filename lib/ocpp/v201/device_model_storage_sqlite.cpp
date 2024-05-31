@@ -282,29 +282,29 @@ DeviceModelStorageSqlite::get_monitoring_data(const std::vector<MonitoringCriter
 
         // Filter based on type first
         monitor.type = static_cast<MonitorEnum>(select_stmt.column_int(0));
-        bool filter_match = true;
+        bool any_filter_match = false;
 
         for (auto& criterion : criteria) {
             switch (criterion) {
             case MonitoringCriterionEnum::DeltaMonitoring:
-                filter_match = (monitor.type == MonitorEnum::Delta);
+                any_filter_match = (monitor.type == MonitorEnum::Delta);
                 break;
             case MonitoringCriterionEnum::ThresholdMonitoring:
-                filter_match =
+                any_filter_match =
                     (monitor.type == MonitorEnum::LowerThreshold || monitor.type == MonitorEnum::UpperThreshold);
                 break;
             case MonitoringCriterionEnum::PeriodicMonitoring:
-                filter_match =
+                any_filter_match =
                     (monitor.type == MonitorEnum::Periodic || monitor.type == MonitorEnum::PeriodicClockAligned);
                 break;
             }
 
-            if (!filter_match) {
+            if (any_filter_match) {
                 break;
             }
         }
 
-        if (filter_match) {
+        if (any_filter_match) {
             monitor.id = select_stmt.column_int(1);
             monitor.severity = select_stmt.column_int(2);
             monitor.transaction = static_cast<bool>(select_stmt.column_int(3));
