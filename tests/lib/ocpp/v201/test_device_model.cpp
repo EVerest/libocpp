@@ -93,7 +93,7 @@ TEST_F(DeviceModelTest, test_set_monitors) {
 
     const Variable variable_comp1 = {.name = "UnitTestPropertyAName"};
     const Variable variable_comp2 = {.name = "Interval"};
-    
+
     const SetMonitoringData req_one{.value = 0.0,
                                     .type = MonitorEnum::PeriodicClockAligned,
                                     .severity = 7,
