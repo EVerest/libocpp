@@ -223,6 +223,7 @@ bool DeviceModelStorageSqlite::set_monitoring_data(const SetMonitoringData& data
     }
 
     // TODO (ioan): see if we already have an existing monitor?
+    auto transaction = this->db->begin_transaction();
 
     std::string insert_query;
 
@@ -236,22 +237,25 @@ bool DeviceModelStorageSqlite::set_monitoring_data(const SetMonitoringData& data
             "VALUES (?, ?, ?, ?, ?, ?)";
     }
 
-    SQLiteStatement insert_stmt(this->db, insert_query);
+    auto insert_stmt = this->db->new_statement(insert_query);
 
-    insert_stmt.bind_int(1, _variable_id);
-    insert_stmt.bind_int(2, data.severity);
-    insert_stmt.bind_int(3, data.transaction.value_or(false));
-    insert_stmt.bind_int(4, static_cast<int>(data.type));
-    insert_stmt.bind_double(5, data.value);
+    insert_stmt->bind_int(1, _variable_id);
+    insert_stmt->bind_int(2, data.severity);
+    insert_stmt->bind_int(3, data.transaction.value_or(false));
+    insert_stmt->bind_int(4, static_cast<int>(data.type));
+    insert_stmt->bind_double(5, data.value);
 
     if (data.id.has_value()) {
-        insert_stmt.bind_int(6, data.id.value());
+        insert_stmt->bind_int(6, data.id.value());
     }
 
-    if (insert_stmt.step() != SQLITE_DONE) {
-        EVLOG_error << sqlite3_errmsg(this->db);
+    if (insert_stmt->step() != SQLITE_DONE) {
+        EVLOG_error << this->db->get_error_message();
         return false;
     }
+
+    transaction->commit();
+
     return true;
 }
 
@@ -272,16 +276,16 @@ DeviceModelStorageSqlite::get_monitoring_data(const std::vector<MonitoringCriter
                                "FROM VARIABLE_MONITORING vm "
                                "WHERE vm.VARIABLE_ID = @variable_id";
 
-    SQLiteStatement select_stmt(this->db, select_query);
-    select_stmt.bind_int(1, _variable_id);
+    auto select_stmt = this->db->new_statement(select_query);
+    select_stmt->bind_int(1, _variable_id);
 
     std::vector<VariableMonitoring> monitors;
 
-    while (select_stmt.step() == SQLITE_ROW) {
+    while (select_stmt->step() == SQLITE_ROW) {
         VariableMonitoring monitor;
 
         // Filter based on type first
-        monitor.type = static_cast<MonitorEnum>(select_stmt.column_int(0));
+        monitor.type = static_cast<MonitorEnum>(select_stmt->column_int(0));
         bool any_filter_match = false;
 
         for (auto& criterion : criteria) {
@@ -305,10 +309,10 @@ DeviceModelStorageSqlite::get_monitoring_data(const std::vector<MonitoringCriter
         }
 
         if (any_filter_match) {
-            monitor.id = select_stmt.column_int(1);
-            monitor.severity = select_stmt.column_int(2);
-            monitor.transaction = static_cast<bool>(select_stmt.column_int(3));
-            monitor.value = static_cast<float>(select_stmt.column_double(4));
+            monitor.id = select_stmt->column_int(1);
+            monitor.severity = select_stmt->column_int(2);
+            monitor.transaction = static_cast<bool>(select_stmt->column_int(3));
+            monitor.value = static_cast<float>(select_stmt->column_double(4));
 
             monitors.push_back(monitor);
         }
@@ -330,16 +334,19 @@ DeviceModelStorageSqlite::get_monitoring_data(const std::vector<MonitoringCriter
 bool DeviceModelStorageSqlite::clear_variable_monitor(int monitor_id) {
     std::string delete_query = "DELETE FROM VARIABLE_MONITORING WHERE ID = ?";
 
-    SQLiteStatement delete_stmt(this->db, delete_query);
+    auto transaction = this->db->begin_transaction();
+    auto delete_stmt = this->db->new_statement(delete_query);
 
-    delete_stmt.bind_int(1, monitor_id);
-    if (delete_stmt.step() != SQLITE_DONE) {
-        EVLOG_error << sqlite3_errmsg(this->db);
+    delete_stmt->bind_int(1, monitor_id);
+    if (delete_stmt->step() != SQLITE_DONE) {
+        EVLOG_error << this->db->get_error_message();
         return false;
     }
 
+    transaction->commit();
+
     // Ensure that we deleted 1 row
-    return (delete_stmt.changes() == 1);
+    return (delete_stmt->changes() == 1);
 }
 
 void DeviceModelStorageSqlite::check_integrity() {
