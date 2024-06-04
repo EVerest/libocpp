@@ -370,10 +370,8 @@ bool SmartChargingHandler::is_overlapping_validity_period(int candidate_evse_id,
 }
 
 void SmartChargingHandler::conform_validity_periods(ChargingProfile& profile) const {
-    profile.validFrom =
-        profile.validFrom.has_value() ? profile.validFrom.value() : ocpp::DateTime(date::utc_clock::now());
-    profile.validTo =
-        profile.validTo.has_value() ? profile.validTo.value() : ocpp::DateTime(date::utc_clock::time_point::max());
+    profile.validFrom = profile.validFrom.value_or(ocpp::DateTime());
+    profile.validTo = profile.validTo.value_or(ocpp::DateTime(date::utc_clock::time_point::max()));
 }
 
 } // namespace ocpp::v201
