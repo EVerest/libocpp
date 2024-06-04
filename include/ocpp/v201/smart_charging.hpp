@@ -8,6 +8,7 @@
 #include "ocpp/v201/enums.hpp"
 #include <limits>
 
+#include <memory>
 #include <ocpp/v201/database_handler.hpp>
 #include <ocpp/v201/evse.hpp>
 #include <ocpp/v201/ocpp_types.hpp>
@@ -54,7 +55,7 @@ std::ostream& operator<<(std::ostream& os, const ProfileValidationResultEnum val
 class SmartChargingHandler {
 private:
     std::map<int32_t, std::unique_ptr<EvseInterface>>& evses;
-    std::unique_ptr<DeviceModel>& device_model;
+    std::shared_ptr<DeviceModel>& device_model;
 
     std::shared_ptr<ocpp::v201::DatabaseHandler> database_handler;
     // cppcheck-suppress unusedStructMember
@@ -63,7 +64,7 @@ private:
 
 public:
     explicit SmartChargingHandler(std::map<int32_t, std::unique_ptr<EvseInterface>>& evses,
-                                  std::unique_ptr<DeviceModel>& device_model);
+                                  std::shared_ptr<DeviceModel>& device_model);
 
     ///
     /// \brief validates the given \p profile according to the specification.

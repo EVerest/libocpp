@@ -44,7 +44,7 @@ public:
     using SmartChargingHandler::validate_tx_profile;
 
     TestSmartChargingHandler(std::map<int32_t, std::unique_ptr<EvseInterface>>& evses,
-                             std::unique_ptr<DeviceModel>& device_model) :
+                             std::shared_ptr<DeviceModel>& device_model) :
         SmartChargingHandler(evses, device_model) {
     }
 };
@@ -184,11 +184,11 @@ protected:
         sqlite3_close(source_handle);
     }
 
-    std::unique_ptr<DeviceModel> create_device_model() {
+    std::shared_ptr<DeviceModel> create_device_model() {
         create_device_model_db();
         auto device_model_storage =
             std::make_unique<DeviceModelStorageSqlite>("file:device_model?mode=memory&cache=shared");
-        auto device_model = std::make_unique<DeviceModel>(std::move(device_model_storage));
+        auto device_model = std::make_shared<DeviceModel>(std::move(device_model_storage));
 
         // Defaults
         const auto& charging_rate_unit_cv = ControllerComponentVariables::ChargingScheduleChargingRateUnit;
@@ -249,7 +249,7 @@ protected:
     sqlite3* db_handle;
 
     bool ignore_no_transaction = true;
-    std::unique_ptr<DeviceModel> device_model = create_device_model();
+    std::shared_ptr<DeviceModel> device_model = create_device_model();
     TestSmartChargingHandler handler = create_smart_charging_handler();
     boost::uuids::random_generator uuid_generator = boost::uuids::random_generator();
 };

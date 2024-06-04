@@ -95,7 +95,7 @@ CurrentPhaseType SmartChargingHandler::get_current_phase_type(const std::optiona
 }
 
 SmartChargingHandler::SmartChargingHandler(std::map<int32_t, std::unique_ptr<EvseInterface>>& evses,
-                                           std::unique_ptr<DeviceModel>& device_model) :
+                                           std::shared_ptr<DeviceModel>& device_model) :
     evses(evses), device_model(device_model) {
 }
 
