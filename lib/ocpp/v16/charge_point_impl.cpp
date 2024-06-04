@@ -34,7 +34,6 @@ ChargePointImpl::ChargePointImpl(const std::string& config, const fs::path& shar
                                  const std::shared_ptr<EvseSecurity> evse_security,
                                  const std::optional<SecurityConfiguration> security_configuration) :
     ocpp::ChargingStationBase(evse_security, security_configuration),
-    initialized(false),
     bootreason(BootReasonEnum::PowerUp),
     connection_state(ChargePointConnectionState::Disconnected),
     registration_status(RegistrationStatus::Pending),
@@ -1239,27 +1238,6 @@ void ChargePointImpl::handle_message(const EnhancedMessage<v16::MessageType>& me
         // TODO(kai): not implemented error?
         break;
     }
-}
-
-SendAttemptResult ChargePointImpl::get_send_message_attempt_result(const MessageType message_type,
-                                                                   const bool initiated_by_trigger_message) {
-    if (this->registration_status == RegistrationStatus::Accepted) {
-        return SendAttemptResult::SEND_IMMEDIATELY;
-    }
-
-    if (message_type == MessageType::BootNotification) {
-        return SendAttemptResult::SEND_IMMEDIATELY;
-    }
-
-    if (initiated_by_trigger_message) {
-        return SendAttemptResult::SEND_IMMEDIATELY;
-    }
-
-    if (utils::is_transaction_message_type(message_type) or
-        this->configuration->getQueueAllMessages().value_or(false)) {
-        return SendAttemptResult::SEND_AFTER_REGISTRATION_STATUS_ACCEPTED;
-    }
-    return SendAttemptResult::DISCARD;
 }
 
 void ChargePointImpl::handleBootNotificationResponse(ocpp::CallResult<BootNotificationResponse> call_result) {
@@ -2731,44 +2709,45 @@ void ChargePointImpl::handleGetLocalListVersionRequest(ocpp::Call<GetLocalListVe
 }
 
 template <class T> bool ChargePointImpl::send(ocpp::Call<T> call, bool initiated_by_trigger_message) {
-    const auto send_message_attempt_result = this->get_send_message_attempt_result(
-        conversions::string_to_messagetype(json(call).at(CALL_ACTION)), initiated_by_trigger_message);
-
-    switch (send_message_attempt_result) {
-    case SendAttemptResult::SEND_IMMEDIATELY:
-        EVLOG_critical << "Pushed immediately: " << call;
+    const auto message_type = conversions::string_to_messagetype(json(call).at(CALL_ACTION));
+    const auto message_transmission_priority = get_message_transmission_priority(
+        is_boot_notification_message(message_type), initiated_by_trigger_message,
+        (this->registration_status == RegistrationStatus::Accepted), is_transaction_message(message_type),
+        this->configuration->getQueueAllMessages().value_or(false));
+    switch (message_transmission_priority) {
+    case MessageTransmissionPriority::SEND_IMMEDIATELY:
         this->message_queue->push(call);
         return true;
-    case SendAttemptResult::SEND_AFTER_REGISTRATION_STATUS_ACCEPTED:
-        EVLOG_critical << "Pushed SEND_AFTER_REGISTRATION_STATUS_ACCEPTED: " << call;
+    case MessageTransmissionPriority::SEND_AFTER_REGISTRATION_STATUS_ACCEPTED:
         this->message_queue->push(call, true);
         return true;
-    case SendAttemptResult::DISCARD:
-    default:
-        EVLOG_critical << "Discarded: " << call;
-
+    case MessageTransmissionPriority::DISCARD:
         return false;
     }
+    throw std::runtime_error("Missing handling for MessageTransmissionPriority");
 }
 
 template <class T>
 std::future<EnhancedMessage<v16::MessageType>> ChargePointImpl::send_async(ocpp::Call<T> call,
                                                                            bool initiated_by_trigger_message) {
-    const auto send_message_attempt_result = this->get_send_message_attempt_result(
-        conversions::string_to_messagetype(json(call).at(CALL_ACTION)), initiated_by_trigger_message);
+    const auto message_type = conversions::string_to_messagetype(json(call).at(CALL_ACTION));
+    const auto message_transmission_priority = get_message_transmission_priority(
+        is_boot_notification_message(message_type), initiated_by_trigger_message,
+        (this->registration_status == RegistrationStatus::Accepted), is_transaction_message(message_type),
+        this->configuration->getQueueAllMessages().value_or(false));
 
-    switch (send_message_attempt_result) {
-    case SendAttemptResult::SEND_IMMEDIATELY:
+    switch (message_transmission_priority) {
+    case MessageTransmissionPriority::SEND_IMMEDIATELY:
         return this->message_queue->push_async(call);
-    case SendAttemptResult::SEND_AFTER_REGISTRATION_STATUS_ACCEPTED:
-    case SendAttemptResult::DISCARD:
-    default:
-        auto message = std::make_shared<ControlMessage<MessageType>>(call);
+    case MessageTransmissionPriority::SEND_AFTER_REGISTRATION_STATUS_ACCEPTED:
+    case MessageTransmissionPriority::DISCARD:
+        auto promise = std::promise<EnhancedMessage<MessageType>>();
         auto enhanced_message = EnhancedMessage<MessageType>();
         enhanced_message.offline = true;
-        message->promise.set_value(enhanced_message);
-        return message->promise.get_future();
+        promise.set_value(enhanced_message);
+        return promise.get_future();
     }
+    throw std::runtime_error("Missing handling for MessageTransmissionPriority");
 }
 
 template <class T> bool ChargePointImpl::send(ocpp::CallResult<T> call_result) {

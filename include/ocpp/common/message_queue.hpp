@@ -63,6 +63,39 @@ enum class QueueType {
     None,
 };
 
+/// \brief Indicates the transmission priority of a message that is being pushed to the message queue
+enum class MessageTransmissionPriority {
+    SEND_IMMEDIATELY,                        // message can be queued and can be send immediately
+    SEND_AFTER_REGISTRATION_STATUS_ACCEPTED, // message can be queued and shall be send only if registration status is
+                                             // accepted
+    DISCARD                                  // message shall be discarded and not be sent
+};
+
+/// \brief Helper function to handle messages that shall be send
+MessageTransmissionPriority get_message_transmission_priority(bool is_boot_notification_message, bool triggered,
+                                                              bool registration_already_accepted,
+                                                              bool is_transaction_related, bool queue_all_message);
+
+/// \brief Indicates if the given \p message_type is a transaction message type
+/// \param message_type
+/// \return true if MessageType is StartTransaction, StopTransaction, MeterValue or SecurityEventNotification
+bool is_transaction_message(const ocpp::v16::MessageType message_type);
+
+/// \brief Indicates if the given \p message_type is a transaction message type
+/// \param message_type
+/// \return true if MessageType is TransactionEvent or SecurityEventNotification
+bool is_transaction_message(const ocpp::v201::MessageType message_type);
+
+/// \brief Indicates if the given \p message_type is a BootNotification
+/// \param message_type
+/// \return true if MessageType is BootNotification
+bool is_boot_notification_message(const ocpp::v16::MessageType message_type);
+
+/// \brief Indicates if the given \p message_type is a BootNotification
+/// \param message_type
+/// \return true if MessageType is BootNotification
+bool is_boot_notification_message(const ocpp::v201::MessageType message_type);
+
 /// \brief This contains an internal control message
 template <typename M> struct ControlMessage {
     json::array_t message;    ///< The OCPP message as a json array
@@ -82,14 +115,8 @@ template <typename M> struct ControlMessage {
         return this->message[MESSAGE_ID];
     }
 
-    /// \brief Determine whether message is considered as transaction-related.
-    bool isTransactionMessage() const;
-
     /// \brief True for transactional messages containing updates (measurements) for a transaction
     bool isTransactionUpdateMessage() const;
-
-    /// \brief Determine whether message is a BootNotification.
-    bool isBootNotificationMessage() const;
 };
 
 /// \brief contains a message queue that makes sure that OCPPs synchronicity requirements are met
@@ -162,6 +189,17 @@ private:
             return true;
         }
         return false;
+    }
+
+    bool allowed_to_send_message(const std::shared_ptr<ControlMessage<M>> message) {
+        if (message->stall_until_accepted and !this->is_registration_status_accepted) {
+            return false;
+        }
+
+        if (message->timestamp > DateTime()) {
+            return false;
+        }
+        return true;
     }
 
     void add_to_normal_message_queue(std::shared_ptr<ControlMessage<M>> message) {
@@ -343,49 +381,44 @@ public:
                 }
 
                 // prioritize the message with the oldest timestamp
-                auto now = DateTime();
                 std::shared_ptr<ControlMessage<M>> message = nullptr;
-                auto selected_normal_message_it = normal_message_queue.end(); // Use as a placeholder
                 QueueType queue_type = QueueType::None;
 
-                for (auto normal_message_it = normal_message_queue.begin();
-                     normal_message_it != normal_message_queue.end(); ++normal_message_it) {
+                // Find the first allowed normal message
+                auto selected_normal_message_it = std::find_if(
+                    normal_message_queue.begin(), normal_message_queue.end(),
+                    [&](const std::shared_ptr<ControlMessage<M>>& msg) { return this->allowed_to_send_message(msg); });
 
-                    if ((*normal_message_it)->stall_until_accepted and !this->is_registration_status_accepted) {
-                        continue;
-                    }
-
-                    if ((*normal_message_it)->timestamp > now) {
-                        continue;
-                    }
-
-                    message = *normal_message_it;
+                if (selected_normal_message_it != normal_message_queue.end()) {
+                    message = *selected_normal_message_it;
                     queue_type = QueueType::Normal;
-                    selected_normal_message_it = normal_message_it; // Save iterator to the selected message
-                    break;                                          // Stop searching once a sendable message is found
                 }
 
-                auto selected_transaction_message_it = transaction_message_queue.end();
-                for (auto transaction_message_it = transaction_message_queue.begin();
-                     transaction_message_it != transaction_message_queue.end(); ++transaction_message_it) {
+                // Find the first allowed transaction message
+                auto selected_transaction_message_it =
+                    std::find_if(transaction_message_queue.begin(), transaction_message_queue.end(),
+                                 [&](const std::shared_ptr<ControlMessage<M>>& msg) {
+                                     if (!this->allowed_to_send_message(msg)) {
+                                         return false;
+                                     }
+                                     // no message selected from normal message queue, so select transaction message
+                                     if (message == nullptr) {
+                                         return true;
+                                     }
+                                     // message from normal message queue is BootNotification, this is prioritized
+                                     if (message->messageType == M::BootNotification) {
+                                         return false;
+                                     }
+                                     // transaction messages is older than normal message, so select transaction message
+                                     if (msg->timestamp <= message->timestamp) {
+                                         return true;
+                                     }
+                                     return false;
+                                 });
 
-                    if ((*transaction_message_it)->stall_until_accepted and !this->is_registration_status_accepted) {
-                        continue;
-                    }
-
-                    if ((*transaction_message_it)->timestamp > now) {
-                        continue;
-                    }
-
-                    if (message != nullptr and ((*transaction_message_it)->timestamp > message->timestamp or
-                                                message->messageType == M::BootNotification)) {
-                        continue;
-                    }
-
-                    message = *transaction_message_it;
+                if (selected_transaction_message_it != transaction_message_queue.end()) {
+                    message = *selected_transaction_message_it;
                     queue_type = QueueType::Transaction;
-                    selected_transaction_message_it = transaction_message_it; // Save iterator to the selected message
-                    break; // Stop searching once a sendable message is found
                 }
 
                 if (message == nullptr) {
@@ -421,7 +454,7 @@ public:
                 if (!this->send_callback(this->in_flight->message)) {
                     this->paused = true;
                     EVLOG_error << "Could not send message, this is most likely because the charge point is offline.";
-                    if (this->in_flight && this->in_flight->isTransactionMessage()) {
+                    if (this->in_flight && is_transaction_message(this->in_flight->messageType)) {
                         EVLOG_info << "The message in flight is transaction related and will be sent again once the "
                                       "connection can be established again.";
                         if (this->in_flight->message.at(CALL_ACTION) == "TransactionEvent") {
@@ -523,7 +556,7 @@ public:
         }
 
         auto control_message = std::make_shared<ControlMessage<M>>(message, stall_until_accepted);
-        if (control_message->isTransactionMessage()) {
+        if (is_transaction_message(control_message->messageType)) {
             // according to the spec the "transaction related messages" StartTransaction, StopTransaction and
             // MeterValues have to be delivered in chronological order
 
@@ -588,7 +621,7 @@ public:
             auto enhanced_message = EnhancedMessage<M>();
             enhanced_message.offline = true;
             message->promise.set_value(enhanced_message);
-        } else if (message->isTransactionMessage()) {
+        } else if (is_transaction_message(message->messageType)) {
             // according to the spec the "transaction related messages" StartTransaction, StopTransaction and
             // MeterValues have to be delivered in chronological order
             this->add_to_transaction_message_queue(message);
@@ -682,7 +715,7 @@ public:
                 this->in_flight->message.at(CALL_ACTION).template get<std::string>() + std::string("Response"));
             this->in_flight->promise.set_value(enhanced_message);
 
-            if (this->in_flight->isTransactionMessage()) {
+            if (is_transaction_message(this->in_flight->messageType)) {
                 try {
                     // We only remove the message as soon as a response is received. Otherwise we might miss a message
                     // if the charging station just boots after sending, but before receiving the result.
@@ -718,7 +751,7 @@ public:
                           << ")";
         }
 
-        if (this->in_flight->isTransactionMessage()) {
+        if (is_transaction_message(this->in_flight->messageType)) {
             if (this->in_flight->message_attempts < this->config.transaction_message_attempts) {
                 EVLOG_warning << "Message is transaction related and will therefore be sent again";
                 // Generate a new message ID for the retry
@@ -767,7 +800,7 @@ public:
                     EVLOG_warning << "Could not delete message from transaction queue: " << e.what();
                 }
             }
-        } else if (this->in_flight->isBootNotificationMessage()) {
+        } else if (is_boot_notification_message(this->in_flight->messageType)) {
             EVLOG_warning << "Message is BootNotification.req and will therefore be sent again";
             // Generate a new message ID for the retry
             this->in_flight->message[MESSAGE_ID] = this->createMessageId();
@@ -840,8 +873,10 @@ public:
     }
 
     void set_registration_status_accepted() {
-        std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
-        this->is_registration_status_accepted = true;
+        {
+            std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
+            this->is_registration_status_accepted = true;
+        }
         this->cv.notify_all();
     }
 

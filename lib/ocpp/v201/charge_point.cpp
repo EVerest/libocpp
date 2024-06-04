@@ -1269,27 +1269,6 @@ void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& messa
     }
 }
 
-SendAttemptResult ChargePoint::get_send_message_attempt_result(const MessageType message_type,
-                                                               const bool initiated_by_trigger_message) {
-    if (this->registration_status == RegistrationStatusEnum::Accepted) {
-        return SendAttemptResult::SEND_IMMEDIATELY;
-    }
-
-    if (message_type == MessageType::BootNotification) {
-        return SendAttemptResult::SEND_IMMEDIATELY;
-    }
-
-    if (initiated_by_trigger_message) {
-        return SendAttemptResult::SEND_IMMEDIATELY;
-    }
-
-    if (utils::is_transaction_message_type(message_type) or
-        this->device_model->get_optional_value<bool>(ControllerComponentVariables::QueueAllMessages).value_or(false)) {
-        return SendAttemptResult::SEND_AFTER_REGISTRATION_STATUS_ACCEPTED;
-    }
-    return SendAttemptResult::DISCARD;
-}
-
 void ChargePoint::message_callback(const std::string& message) {
     auto enhanced_message = this->message_queue->receive(message);
     enhanced_message.message_size = message.size();
@@ -3231,6 +3210,50 @@ void ChargePoint::handle_data_transfer_req(Call<DataTransferRequest> call) {
 
     ocpp::CallResult<DataTransferResponse> call_result(response, call.uniqueId);
     this->send<DataTransferResponse>(call_result);
+}
+
+template <class T> bool ChargePoint::send(ocpp::Call<T> call, const bool initiated_by_trigger_message) {
+    const auto message_type = conversions::string_to_messagetype(json(call).at(CALL_ACTION));
+    const auto message_transmission_priority = get_message_transmission_priority(
+        is_boot_notification_message(message_type), initiated_by_trigger_message,
+        (this->registration_status == RegistrationStatusEnum::Accepted), is_transaction_message(message_type),
+        this->device_model->get_optional_value<bool>(ControllerComponentVariables::QueueAllMessages).value_or(false));
+    switch (message_transmission_priority) {
+    case MessageTransmissionPriority::SEND_IMMEDIATELY:
+        this->message_queue->push(call);
+        return true;
+    case MessageTransmissionPriority::SEND_AFTER_REGISTRATION_STATUS_ACCEPTED:
+        this->message_queue->push(call, true);
+        return true;
+    case MessageTransmissionPriority::DISCARD:
+        return false;
+    }
+    throw std::runtime_error("Missing handling for MessageTransmissionPriority");
+}
+
+template <class T> std::future<EnhancedMessage<v201::MessageType>> ChargePoint::send_async(ocpp::Call<T> call) {
+    const auto message_type = conversions::string_to_messagetype(json(call).at(CALL_ACTION));
+    const auto message_transmission_priority = get_message_transmission_priority(
+        is_boot_notification_message(message_type), false,
+        (this->registration_status == RegistrationStatusEnum::Accepted), is_transaction_message(message_type),
+        this->device_model->get_optional_value<bool>(ControllerComponentVariables::QueueAllMessages).value_or(false));
+    switch (message_transmission_priority) {
+    case MessageTransmissionPriority::SEND_IMMEDIATELY:
+        return this->message_queue->push_async(call);
+    case MessageTransmissionPriority::SEND_AFTER_REGISTRATION_STATUS_ACCEPTED:
+    case MessageTransmissionPriority::DISCARD:
+        auto promise = std::promise<EnhancedMessage<MessageType>>();
+        auto enhanced_message = EnhancedMessage<MessageType>();
+        enhanced_message.offline = true;
+        promise.set_value(enhanced_message);
+        return promise.get_future();
+    }
+    throw std::runtime_error("Missing handling for MessageTransmissionPriority");
+}
+
+template <class T> bool ChargePoint::send(ocpp::CallResult<T> call_result) {
+    this->message_queue->push(call_result);
+    return true;
 }
 
 DataTransferResponse ChargePoint::data_transfer_req(const CiString<255>& vendorId,

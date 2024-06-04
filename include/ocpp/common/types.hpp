@@ -690,14 +690,6 @@ enum class WebsocketCloseReason : uint8_t {
     ServiceRestart
 };
 
-/// \brief Result to the attempt of sending a message
-enum class SendAttemptResult {
-    SEND_IMMEDIATELY,                        // message can be queued and can be send immediately
-    SEND_AFTER_REGISTRATION_STATUS_ACCEPTED, // message can be queued and shall be send only if registration status is
-                                             // accepted
-    DISCARD                                  // message shall be discarded and not be sent
-};
-
 } // namespace ocpp
 
 #endif

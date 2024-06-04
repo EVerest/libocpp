@@ -85,7 +85,6 @@ namespace v16 {
 /// \brief Contains a ChargePoint implementation compatible with OCPP-J 1.6
 class ChargePointImpl : ocpp::ChargingStationBase {
 private:
-    bool initialized;
     BootReasonEnum bootreason;
     ChargePointConnectionState connection_state;
     bool boot_notification_callerror;
@@ -198,9 +197,6 @@ private:
     std::unique_ptr<ocpp::MessageQueue<v16::MessageType>> create_message_queue();
     void message_callback(const std::string& message);
     void handle_message(const EnhancedMessage<v16::MessageType>& message);
-    /// \brief Helper method to handle messages that shall be send
-    SendAttemptResult get_send_message_attempt_result(const MessageType message_type,
-                                                      const bool initiated_by_trigger_message);
     template <class T> bool send(Call<T> call, bool initiated_by_trigger_message = false);
     template <class T>
     std::future<EnhancedMessage<v16::MessageType>> send_async(Call<T> call, bool initiated_by_trigger_message = false);

@@ -497,9 +497,6 @@ private:
 
     void handle_message(const EnhancedMessage<v201::MessageType>& message);
 
-    /// \brief Helper method to handle messages that shall be send
-    SendAttemptResult get_send_message_attempt_result(const MessageType message_type,
-                                                      const bool initiated_by_trigger_message);
     void message_callback(const std::string& message);
     void update_aligned_data_interval();
 
@@ -710,43 +707,12 @@ private:
     void handle_data_transfer_req(Call<DataTransferRequest> call);
 
     // general message handling
-    template <class T> bool send(ocpp::Call<T> call, const bool initiated_by_trigger_message = false) {
-        const auto send_message_attempt_result = this->get_send_message_attempt_result(
-            conversions::string_to_messagetype(json(call).at(CALL_ACTION)), initiated_by_trigger_message);
+    template <class T> bool send(ocpp::Call<T> call, const bool initiated_by_trigger_message = false);
 
-        switch (send_message_attempt_result) {
-        case SendAttemptResult::SEND_IMMEDIATELY:
-            this->message_queue->push(call);
-            return true;
-        case SendAttemptResult::SEND_AFTER_REGISTRATION_STATUS_ACCEPTED:
-            this->message_queue->push(call, true);
-            return true;
-        case SendAttemptResult::DISCARD:
-        default:
-            return false;
-        }
-    }
-    template <class T> std::future<EnhancedMessage<v201::MessageType>> send_async(ocpp::Call<T> call) {
-        const auto send_message_attempt_result = this->get_send_message_attempt_result(
-            conversions::string_to_messagetype(json(call).at(CALL_ACTION)), false);
+    template <class T> std::future<EnhancedMessage<v201::MessageType>> send_async(ocpp::Call<T> call);
 
-        switch (send_message_attempt_result) {
-        case SendAttemptResult::SEND_IMMEDIATELY:
-            return this->message_queue->push_async(call);
-        case SendAttemptResult::SEND_AFTER_REGISTRATION_STATUS_ACCEPTED:
-        case SendAttemptResult::DISCARD:
-        default:
-            auto message = std::make_shared<ControlMessage<MessageType>>(call);
-            auto enhanced_message = EnhancedMessage<MessageType>();
-            enhanced_message.offline = true;
-            message->promise.set_value(enhanced_message);
-            return message->promise.get_future();
-        }
-    }
-    template <class T> bool send(ocpp::CallResult<T> call_result) {
-        this->message_queue->push(call_result);
-        return true;
-    }
+    template <class T> bool send(ocpp::CallResult<T> call_result);
+
     // Generates async sending callbacks
     template <class RequestType, class ResponseType>
     std::function<ResponseType(RequestType)> send_callback(MessageType expected_response_message_type) {
