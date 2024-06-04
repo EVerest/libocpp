@@ -30,6 +30,43 @@ bool allow_set_read_only_value(const Component& component, const Variable& varia
            variable == ConnectorComponentVariables::AvailabilityState;
 }
 
+void filter_criteria_monitors(const std::vector<MonitoringCriterionEnum>& criteria,
+                              std::vector<VariableMonitoring>& monitors) {
+    // N02.FR.11 - if no criteria is provided, all monitors are left
+    if (criteria.empty()) {
+        return;
+    }
+
+    for (auto it = std::begin(monitors); it != std::end(monitors);) {
+        bool any_filter_match = false;
+        auto type = it->type;
+
+        for (auto& criterion : criteria) {
+            switch (criterion) {
+            case MonitoringCriterionEnum::DeltaMonitoring:
+                any_filter_match = (type == MonitorEnum::Delta);
+                break;
+            case MonitoringCriterionEnum::ThresholdMonitoring:
+                any_filter_match = (type == MonitorEnum::LowerThreshold || type == MonitorEnum::UpperThreshold);
+                break;
+            case MonitoringCriterionEnum::PeriodicMonitoring:
+                any_filter_match = (type == MonitorEnum::Periodic || type == MonitorEnum::PeriodicClockAligned);
+                break;
+            }
+
+            if (any_filter_match) {
+                break;
+            }
+        }
+
+        if (any_filter_match == false) {
+            it = monitors.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
 bool DeviceModel::component_criteria_match(const Component& component,
                                            const std::vector<ComponentCriterionEnum>& component_criteria) {
     if (component_criteria.empty()) {
@@ -368,7 +405,7 @@ void DeviceModel::check_integrity(const std::map<int32_t, int32_t>& evse_connect
 }
 
 std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<SetMonitoringData>& requests) {
-    if (requests.size() <= 0) {
+    if (requests.empty()) {
         return {};
     }
 
@@ -383,19 +420,37 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
             continue;
         }
 
-        auto variable_map = this->device_model[request.component];
+        auto& variable_map = this->device_model[request.component];
+        auto variable_it = variable_map.find(request.variable);
 
-        if (variable_map.find(request.variable) == variable_map.end()) {
+        if (variable_it == variable_map.end()) {
             result.status = SetMonitoringStatusEnum::UnknownVariable;
             set_monitors_res.push_back(result);
             continue;
         }
 
         // TODO (ioan): see how we should handle the 'Duplicate' data
-        if (this->storage->set_monitoring_data(request)) {
-            result.status = SetMonitoringStatusEnum::Accepted;
-        } else {
-            result.status = SetMonitoringStatusEnum::Rejected;
+        try {
+            int64_t new_id = this->storage->set_monitoring_data(request);
+
+            if (new_id >= 0) {
+                // If we had a successful insert, add it to the variable monitor map
+                VariableMonitoring monitor;
+
+                monitor.id = new_id;
+                monitor.transaction = request.transaction.value_or(false);
+                monitor.value = request.value;
+                monitor.type = request.type;
+                monitor.severity = request.severity;
+
+                variable_it->second.monitors.insert(std::pair{new_id, monitor});
+                result.status = SetMonitoringStatusEnum::Accepted;
+            } else {
+                result.status = SetMonitoringStatusEnum::Rejected;
+            }
+        } catch (const ocpp::common::QueryExecutionException& e) {
+            EVLOG_error << "Set monitors failed:" << e.what();
+            throw e;
         }
 
         set_monitors_res.push_back(result);
@@ -405,33 +460,69 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
 }
 std::vector<MonitoringData> DeviceModel::get_monitors(const std::vector<MonitoringCriterionEnum>& criteria,
                                                       const std::vector<ComponentVariable>& component_variables) {
-    if (criteria.size() <= 0 || component_variables.size() <= 0) {
-        return {};
-    }
+    std::vector<MonitoringData> get_monitors_res{};
 
-    std::vector<MonitoringData> get_monitors_res;
+    // N02.FR.11 - if criteria and component_variables are empty, return all existing monitors
+    if (criteria.empty() && component_variables.empty()) {
+        for (const auto& [component, variable_map] : this->device_model) {
+            for (const auto& [variable, variable_metadata] : variable_map) {
+                std::vector<VariableMonitoring> monitors;
 
-    for (auto& component_variable : component_variables) {
-        if (component_variable.variable.has_value() == false) {
-            continue;
+                for (const auto& [id, monitor] : variable_metadata.monitors) {
+                    monitors.push_back(monitor);
+                }
+
+                get_monitors_res.push_back({component, variable, monitors, std::nullopt});
+            }
         }
 
-        if (this->device_model.find(component_variable.component) == this->device_model.end()) {
-            continue;
-        }
+        return get_monitors_res;
+    } else {
+        for (auto& component_variable : component_variables) {
+            // Case not handled by spec, skipping
+            if (this->device_model.find(component_variable.component) == this->device_model.end()) {
+                continue;
+            }
 
-        auto variable_map = this->device_model[component_variable.component];
+            auto& variable_map = this->device_model[component_variable.component];
 
-        if (variable_map.find(component_variable.variable.value()) == variable_map.end()) {
-            continue;
-        }
+            // N02.FR.16 - if variable is missing, report all existing variables inside that component
+            if (component_variable.variable.has_value() == false) {
+                for (const auto& [variable, variable_meta] : variable_map) {
+                    MonitoringData monitor_data;
 
-        // Search for all monitors related to the variable id
-        std::optional<MonitoringData> monitor_data = this->storage->get_monitoring_data(
-            criteria, component_variable.component, component_variable.variable.value());
+                    monitor_data.component = component_variable.component;
+                    monitor_data.variable = variable;
 
-        if (monitor_data.has_value()) {
-            get_monitors_res.push_back(std::move(monitor_data.value()));
+                    for (const auto& [id, monitor] : variable_meta.monitors) {
+                        monitor_data.variableMonitoring.push_back(monitor);
+                    }
+                    filter_criteria_monitors(criteria, monitor_data.variableMonitoring);
+
+                    get_monitors_res.push_back(std::move(monitor_data));
+                }
+            } else {
+                auto variable_it = variable_map.find(component_variable.variable.value());
+
+                // Case not handled by spec, skipping
+                if (variable_it == variable_map.end()) {
+                    continue;
+                }
+
+                MonitoringData monitor_data;
+
+                monitor_data.component = component_variable.component;
+                monitor_data.variable = variable_it->first;
+
+                auto& variable_meta = variable_it->second;
+
+                for (const auto& [id, monitor] : variable_meta.monitors) {
+                    monitor_data.variableMonitoring.push_back(monitor);
+                }
+                filter_criteria_monitors(criteria, monitor_data.variableMonitoring);
+
+                get_monitors_res.push_back(std::move(monitor_data));
+            }
         }
     }
 
@@ -449,6 +540,13 @@ std::vector<ClearMonitoringResult> DeviceModel::clear_monitors(const std::vector
         clear_monitor_res.id = id;
 
         if (this->storage->clear_variable_monitor(id)) {
+            // Clear from memory too
+            for (auto& [component, variable_map] : this->device_model) {
+                for (auto& [variable, variable_metadata] : variable_map) {
+                    variable_metadata.monitors.erase(static_cast<int64_t>(id));
+                }
+            }
+
             clear_monitor_res.status = ClearMonitoringStatusEnum::Accepted;
         } else {
             clear_monitor_res.status = ClearMonitoringStatusEnum::NotFound;

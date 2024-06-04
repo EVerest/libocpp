@@ -11,6 +11,9 @@ using namespace common;
 
 namespace v201 {
 
+extern void filter_criteria_monitors(const std::vector<MonitoringCriterionEnum>& criteria,
+                                     std::vector<VariableMonitoring>& monitors);
+
 DeviceModelStorageSqlite::DeviceModelStorageSqlite(const fs::path& db_path) {
     db = std::make_unique<ocpp::common::DatabaseConnection>(db_path);
 
@@ -135,7 +138,13 @@ DeviceModelMap DeviceModelStorageSqlite::get_device_model() {
         VariableMetaData meta_data;
         meta_data.characteristics = characteristics;
 
-        // TODO(ioan): Query monitors for this variable
+        // Query all monitors for this variable
+        auto monitoring = get_monitoring_data({}, component, variable);
+        if (monitoring.has_value()) {
+            for (auto& monitor : monitoring.value().variableMonitoring) {
+                meta_data.monitors.insert(std::pair{monitor.id, monitor});
+            }
+        }
 
         device_model[component][variable] = meta_data;
     }
@@ -216,10 +225,10 @@ bool DeviceModelStorageSqlite::set_variable_attribute_value(const Component& com
     return true;
 }
 
-bool DeviceModelStorageSqlite::set_monitoring_data(const SetMonitoringData& data) {
+int64_t DeviceModelStorageSqlite::set_monitoring_data(const SetMonitoringData& data) {
     const auto _variable_id = this->get_variable_id(data.component, data.variable);
     if (_variable_id == -1) {
-        return false;
+        return -1;
     }
 
     // TODO (ioan): see if we already have an existing monitor?
@@ -251,21 +260,17 @@ bool DeviceModelStorageSqlite::set_monitoring_data(const SetMonitoringData& data
 
     if (insert_stmt->step() != SQLITE_DONE) {
         EVLOG_error << this->db->get_error_message();
-        return false;
+        return -1;
     }
 
     transaction->commit();
 
-    return true;
+    return this->db->get_last_inserted_rowid();
 }
 
 std::optional<MonitoringData>
 DeviceModelStorageSqlite::get_monitoring_data(const std::vector<MonitoringCriterionEnum>& criteria,
                                               const Component& component_id, const Variable& variable_id) {
-    if (criteria.size() <= 0) {
-        return std::nullopt;
-    }
-
     const auto _variable_id = this->get_variable_id(component_id, variable_id);
     if (_variable_id == -1) {
         return std::nullopt;
@@ -284,38 +289,17 @@ DeviceModelStorageSqlite::get_monitoring_data(const std::vector<MonitoringCriter
     while (select_stmt->step() == SQLITE_ROW) {
         VariableMonitoring monitor;
 
-        // Filter based on type first
+        // Retrieve monitor data
         monitor.type = static_cast<MonitorEnum>(select_stmt->column_int(0));
-        bool any_filter_match = false;
+        monitor.id = select_stmt->column_int(1);
+        monitor.severity = select_stmt->column_int(2);
+        monitor.transaction = static_cast<bool>(select_stmt->column_int(3));
+        monitor.value = static_cast<float>(select_stmt->column_double(4));
 
-        for (auto& criterion : criteria) {
-            switch (criterion) {
-            case MonitoringCriterionEnum::DeltaMonitoring:
-                any_filter_match = (monitor.type == MonitorEnum::Delta);
-                break;
-            case MonitoringCriterionEnum::ThresholdMonitoring:
-                any_filter_match =
-                    (monitor.type == MonitorEnum::LowerThreshold || monitor.type == MonitorEnum::UpperThreshold);
-                break;
-            case MonitoringCriterionEnum::PeriodicMonitoring:
-                any_filter_match =
-                    (monitor.type == MonitorEnum::Periodic || monitor.type == MonitorEnum::PeriodicClockAligned);
-                break;
-            }
+        monitors.push_back(monitor);
 
-            if (any_filter_match) {
-                break;
-            }
-        }
-
-        if (any_filter_match) {
-            monitor.id = select_stmt->column_int(1);
-            monitor.severity = select_stmt->column_int(2);
-            monitor.transaction = static_cast<bool>(select_stmt->column_int(3));
-            monitor.value = static_cast<float>(select_stmt->column_double(4));
-
-            monitors.push_back(monitor);
-        }
+        // Filter only required monitors
+        filter_criteria_monitors(criteria, monitors);
     }
 
     if (monitors.size() > 0) {
