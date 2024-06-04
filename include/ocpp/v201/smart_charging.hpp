@@ -73,6 +73,12 @@ public:
     ProfileValidationResultEnum validate_profile(ChargingProfile& profile, int32_t evse_id);
 
     ///
+    /// \brief Adds a given \p profile and associated \p evse_id to our stored list of profiles
+    ///
+    void add_profile(int32_t evse_id, ChargingProfile& profile);
+
+protected:
+    ///
     /// \brief validates the existence of the given \p evse_id according to the specification
     ///
     ProfileValidationResultEnum validate_evse_exists(int32_t evse_id) const;
@@ -99,11 +105,6 @@ public:
     /// we set it to the default value (3).
     ProfileValidationResultEnum validate_profile_schedules(ChargingProfile& profile,
                                                            std::optional<EvseInterface*> evse_opt = std::nullopt) const;
-
-    ///
-    /// \brief Adds a given \p profile and associated \p evse_id to our stored list of profiles
-    ///
-    void add_profile(int32_t evse_id, ChargingProfile& profile);
 
     ///
     /// \brief Checks a given \p profile and associated \p evse_id validFrom and validTo range
