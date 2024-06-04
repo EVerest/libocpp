@@ -189,12 +189,24 @@ TEST_F(DeviceModelTest, test_clear_monitors) {
         {component2, std::nullopt, variable_comp2},
     };
 
-    // We just assume ID 1/2
-    std::vector<int> to_delete = {1, 2};
+    auto current_results = dm->get_monitors(criteria, components);
+
+    // Delete all found IDs
+    std::vector<int> to_delete;
+    for (auto& result : current_results) {
+        for (auto& monitor : result.variableMonitoring) {
+            to_delete.push_back(monitor.id);
+        }
+    }
+
     dm->clear_monitors(to_delete);
 
     auto results = dm->get_monitors(criteria, components);
-    ASSERT_EQ(results.size(), 0);
+    ASSERT_EQ(results.size(), 2);
+
+    for (auto& result : results) {
+        ASSERT_TRUE(result.variableMonitoring.empty());
+    }
 }
 
 } // namespace v201

@@ -40,7 +40,7 @@ public:
     bool set_variable_attribute_value(const Component& component_id, const Variable& variable_id,
                                       const AttributeEnum& attribute_enum, const std::string& value) final;
 
-    bool set_monitoring_data(const SetMonitoringData& data) final;
+    int64_t set_monitoring_data(const SetMonitoringData& data) final;
 
     std::optional<MonitoringData> get_monitoring_data(const std::vector<MonitoringCriterionEnum>& criteria,
                                                       const Component& component_id, const Variable& variable_id) final;

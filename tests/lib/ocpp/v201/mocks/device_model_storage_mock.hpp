@@ -12,7 +12,7 @@ public:
                 (const Component&, const Variable&, const std::optional<AttributeEnum>&));
     MOCK_METHOD(bool, set_variable_attribute_value,
                 (const Component&, const Variable&, const AttributeEnum&, const std::string&));
-    MOCK_METHOD(bool, set_monitoring_data, (const SetMonitoringData&));
+    MOCK_METHOD(int64_t, set_monitoring_data, (const SetMonitoringData&));
     MOCK_METHOD(std::optional<MonitoringData>, get_monitoring_data,
                 (const std::vector<MonitoringCriterionEnum>&, const Component&, const Variable&));
     MOCK_METHOD(bool, clear_variable_monitor, (int));
