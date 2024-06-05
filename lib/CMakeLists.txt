@@ -49,6 +49,7 @@ target_sources(ocpp
         ocpp/v201/device_model_storage_sqlite.cpp
         ocpp/v201/enums.cpp
         ocpp/v201/evse.cpp
+        ocpp/v201/init_device_model_db.cpp
         ocpp/v201/notify_report_requests_splitter.cpp
         ocpp/v201/ocpp_types.cpp
         ocpp/v201/ocsp_updater.cpp
