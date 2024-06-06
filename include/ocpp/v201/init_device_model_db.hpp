@@ -5,17 +5,42 @@
 
 #include <filesystem>
 
+#include <ocpp/common/database/database_handler_common.hpp>
+
 namespace ocpp::v201 {
-class InitDeviceModelDb
+
+struct ComponentKey {
+    std::string name;
+    std::string instance = "";
+    int32_t evse_id = -1;
+    int32_t connector_id = -1;
+    std::vector<std::string> required_properties;
+};
+
+struct VariableAttributeKey {
+    std::string name;
+    std::string instance;
+    std::string attribute_type;
+};
+
+void to_json(json &j, const ComponentKey& c);
+
+void from_json(const json& j, ComponentKey& c);
+
+class InitDeviceModelDb : public common::DatabaseHandlerCommon
 {
 private:    // Members
     const std::filesystem::path database_path;
+
 public:
     ///
     /// \brief Constructor.
-    /// \param database_path    Path to the database.
+    /// \param database_path        Path to the database.
+    /// \param migration_files_path Path to the migration files.
     ///
-    InitDeviceModelDb(const std::filesystem::path& database_path);
+    InitDeviceModelDb(const std::filesystem::path& database_path, const std::filesystem::path &migration_files_path);
+
+    virtual ~InitDeviceModelDb();
 
     ///
     /// \brief Initialize the database schema.
@@ -34,5 +59,29 @@ public:
     bool insert_config_and_default_values(const std::filesystem::path& schemas_path, const std::filesystem::path& config_path);
 private:    // Functions
     bool execute_init_sql(const bool delete_db_if_exists);
+    std::vector<std::filesystem::path> get_component_schemas_from_directory(const std::filesystem::path& directory);
+    bool insert_components(const std::vector<std::filesystem::path>& standardized_components,
+                           const std::vector<std::filesystem::path>& custom_components);
+
+    bool insert_component(const ComponentKey &component_key, const json& component_properties);
+    std::map<ComponentKey, json> read_component_schemas(const std::vector<std::filesystem::path>& components);
+
+    ///
+    /// \brief Insert variable characteristics
+    /// \param characteristics  The characteristics json.
+    /// \return The row id of the newly inserted characteristic.
+    /// \throws common::RequiredEntryNotFoundException if dataType is not found / not valid.
+    /// \throws common::QueryExecutionException if row could not be added to db.
+    ///
+    int64_t insert_variable_characteristics(const json& characteristics);
+
+    int64_t insert_variable(const std::string& variable_name, const std::string &instance, const int64_t &component_id,
+                            const int64_t variable_characteristics_id, const bool required);
+
+    void insert_attributes(const json &attributes, const int64_t &variable_id);
+
+    // DatabaseHandlerCommon interface
+protected:  // Functions
+    virtual void init_sql() override;
 };
 }   // namespace ocpp::v201
