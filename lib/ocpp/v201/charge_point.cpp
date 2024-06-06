@@ -1261,6 +1261,15 @@ void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& messa
     case MessageType::CustomerInformation:
         this->handle_customer_information_req(json_message);
         break;
+    case MessageType::SetVariableMonitoring:
+        this->handle_set_variable_monitoring_req(json_message);
+        break;
+    case MessageType::GetMonitoringReport:
+        this->handle_get_variable_monitoring_req(json_message);
+        break;
+    case MessageType::ClearVariableMonitoring:
+        this->handle_clear_variable_monitoring_req(json_message);
+        break;
     default:
         if (message.messageTypeId == MessageTypeId::CALL) {
             const auto call_error = CallError(message.uniqueId, "NotImplemented", "", json({}));
@@ -3192,6 +3201,109 @@ void ChargePoint::handle_customer_information_req(Call<CustomerInformationReques
 
         this->notify_customer_information_req(data, msg.requestId);
     }
+}
+
+void ChargePoint::handle_set_variable_monitoring_req(Call<SetVariableMonitoringRequest> call) {
+    SetVariableMonitoringResponse response;
+    const auto& msg = call.msg;
+
+    try {
+        response.setMonitoringResult = this->device_model->set_monitors(msg.setMonitoringData);
+    } catch (const ocpp::common::QueryExecutionException& e) {
+        EVLOG_error << "Set monitors failed:" << e.what();
+    }
+
+    ocpp::CallResult<SetVariableMonitoringResponse> call_result(response, call.uniqueId);
+    this->send<SetVariableMonitoringResponse>(call_result);
+}
+
+void ChargePoint::notify_monitoring_report_req(const int request_id,
+                                               const std::vector<MonitoringData>& montoring_data) {
+    static constexpr int32_t MAXIMUM_VARIABLE_SEND = 10;
+
+    if (montoring_data.size() <= MAXIMUM_VARIABLE_SEND) {
+        NotifyMonitoringReportRequest req;
+        req.requestId = request_id;
+        req.seqNo = 0;
+        req.generatedAt = ocpp::DateTime();
+        req.monitor.emplace(montoring_data);
+        req.tbc = false;
+
+        ocpp::Call<NotifyMonitoringReportRequest> call(req, this->message_queue->createMessageId());
+        this->send<NotifyMonitoringReportRequest>(call);
+    } else {
+        // Split for larger message sizes
+        int32_t sequence_num = 0;
+        auto generated_at = ocpp::DateTime();
+
+        for (int32_t i = 0; i < montoring_data.size(); i += MAXIMUM_VARIABLE_SEND) {
+            // If our next index is >= than the last index then we're finished
+            bool last_part = ((i + MAXIMUM_VARIABLE_SEND) >= montoring_data.size());
+
+            NotifyMonitoringReportRequest req;
+            req.requestId = request_id;
+            req.seqNo = sequence_num;
+            req.generatedAt = generated_at;
+            req.tbc = (!last_part);
+
+            // Construct sub-message part
+            std::vector<MonitoringData> sub_data;
+
+            for (int32_t j = i; j < MAXIMUM_VARIABLE_SEND && j < montoring_data.size(); ++j) {
+                sub_data.push_back(std::move(montoring_data[i + j]));
+            }
+
+            req.monitor = sub_data;
+
+            ocpp::Call<NotifyMonitoringReportRequest> call(req, this->message_queue->createMessageId());
+            this->send<NotifyMonitoringReportRequest>(call);
+
+            sequence_num++;
+        }
+    }
+}
+
+void ChargePoint::handle_get_variable_monitoring_req(Call<GetMonitoringReportRequest> call) {
+    GetMonitoringReportResponse response;
+    const auto& msg = call.msg;
+
+    std::vector<MonitoringData> data{};
+
+    try {
+        data = this->device_model->get_monitors(msg.monitoringCriteria.value_or(std::vector<MonitoringCriterionEnum>()),
+                                                msg.componentVariable.value_or(std::vector<ComponentVariable>()));
+
+        if (!data.empty()) {
+            response.status = GenericDeviceModelStatusEnum::Accepted;
+        } else {
+            response.status = GenericDeviceModelStatusEnum::EmptyResultSet;
+        }
+    } catch (const QueryExecutionException& e) {
+        EVLOG_error << "Get variable monitoring failed:" << e.what();
+        response.status = GenericDeviceModelStatusEnum::Rejected;
+    }
+
+    ocpp::CallResult<GetMonitoringReportResponse> call_result(response, call.uniqueId);
+    this->send<GetMonitoringReportResponse>(call_result);
+
+    if (response.status == GenericDeviceModelStatusEnum::Accepted) {
+        // Send the result with splits if required
+        notify_monitoring_report_req(msg.requestId, data);
+    }
+}
+
+void ChargePoint::handle_clear_variable_monitoring_req(Call<ClearVariableMonitoringRequest> call) {
+    ClearVariableMonitoringResponse response;
+    const auto& msg = call.msg;
+
+    try {
+        response.clearMonitoringResult = this->device_model->clear_monitors(msg.id);
+    } catch (const ocpp::common::QueryExecutionException& e) {
+        EVLOG_error << "Clear variable monitoring failed:" << e.what();
+    }
+
+    ocpp::CallResult<ClearVariableMonitoringResponse> call_result(response, call.uniqueId);
+    this->send<ClearVariableMonitoringResponse>(call_result);
 }
 
 void ChargePoint::handle_data_transfer_req(Call<DataTransferRequest> call) {
