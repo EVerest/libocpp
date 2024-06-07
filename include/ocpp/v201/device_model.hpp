@@ -45,50 +45,9 @@ template <typename T> T to_specific_type(const std::string& value) {
     }
 }
 
-/// \brief This class manages access to the device model representation and to the device model storage and provides
-/// functionality to support the use cases defined in the functional block Provisioning
-class DeviceModel {
-
-private:
-    DeviceModelMap device_model;
-    std::unique_ptr<DeviceModelStorage> storage;
-
-    /// \brief Private helper method that does some checks with the device model representation in memory to evaluate if
-    /// a value for the given parameters can be requested. If it can be requested it will be retrieved from the device
-    /// model storage and the given \p value will be set to the value that was retrieved
-    /// \param component_id
-    /// \param variable_id
-    /// \param attribute_enum
-    /// \param value string reference to value: will be set to requested value if value is present
-    /// \param allow_write_only true to allow a writeOnly value to be read.
-    /// \return GetVariableStatusEnum that indicates the result of the request
-    GetVariableStatusEnum request_value_internal(const Component& component_id, const Variable& variable_id,
-                                                 const AttributeEnum& attribute_enum, std::string& value,
-                                                 bool allow_write_only);
-
-    /// \brief Iterates over the given \p component_criteria and converts this to the variable names
-    /// (Active,Available,Enabled,Problem). If any of the variables can not be found as part of a component this
-    /// function returns false. If any of those variable's value is true, this function returns true (except for
-    /// criteria problem). If all variable's value are false, this function returns false
-    ///  \param component_id
-    ///  \param /// component_criteria
-    ///  \return
-    bool component_criteria_match(const Component& component_id,
-                                  const std::vector<ComponentCriterionEnum>& component_criteria);
-
-    /// @brief Iterates over the given \p component_variables and filters them according to the requirement conditions.
-    /// @param component_variables
-    /// @param component_ current component
-    /// @param variable_ current variable
-    /// @return true if the component is found according to any of the requirement conditions.
-    bool component_variables_match(const std::vector<ComponentVariable>& component_variables,
-                                   const ocpp::v201::Component& component_,
-                                   const struct ocpp::v201::Variable& variable_);
-
+class DeviceModelInterface {
 public:
-    /// \brief Constructor for the device model
-    /// \param device_model_storage pointer to a device model storage class
-    explicit DeviceModel(std::unique_ptr<DeviceModelStorage> device_model_storage);
+    virtual ~DeviceModelInterface() = default;
 
     /// \brief Direct access to value of a VariableAttribute for the given component, variable and attribute_enum. This
     /// should only be called for variables that have a role standardized in the OCPP2.0.1 specification.
@@ -168,9 +127,10 @@ public:
     /// \param allow_read_only If this is true, read-only variables can be changed,
     ///                        otherwise only non read-only variables can be changed. Defaults to false
     /// \return Result of the requested operation
-    SetVariableStatusEnum set_value(const Component& component_id, const Variable& variable_id,
+    virtual SetVariableStatusEnum set_value(const Component& component_id, const Variable& variable_id,
                                     const AttributeEnum& attribute_enum, const std::string& value,
-                                    const bool allow_read_only = false);
+                                    const bool allow_read_only = false) = 0;
+
     /// \brief Sets the variable_id attribute \p value specified by \p component_id , \p variable_id and \p
     /// attribute_enum for read only variables only. Only works on certain allowed components.
     /// \param component_id
@@ -178,14 +138,14 @@ public:
     /// \param attribute_enum
     /// \param value
     /// \return Result of the requested operation
-    SetVariableStatusEnum set_read_only_value(const Component& component_id, const Variable& variable_id,
-                                              const AttributeEnum& attribute_enum, const std::string& value);
+    virtual SetVariableStatusEnum set_read_only_value(const Component& component_id, const Variable& variable_id,
+                                              const AttributeEnum& attribute_enum, const std::string& value) = 0;
 
     /// \brief Gets the VariableMetaData for the given \p component_id and \p variable_id
     /// \param component_id
     /// \param variable_id
     /// \return VariableMetaData or std::nullopt if \p component_id or \p variable_id not present
-    std::optional<VariableMetaData> get_variable_meta_data(const Component& component_id, const Variable& variable_id);
+    virtual std::optional<VariableMetaData> get_variable_meta_data(const Component& component_id, const Variable& variable_id) = 0;
 
     /// \brief Gets the ReportData for the specifed filter \p report_base \p component_variables and \p
     /// component_criteria
@@ -193,7 +153,7 @@ public:
     /// \param component_variables
     /// \param component_criteria
     /// \return
-    std::vector<ReportData> get_base_report_data(const ReportBaseEnum& report_base);
+    virtual std::vector<ReportData> get_base_report_data(const ReportBaseEnum& report_base) = 0;
 
     /// \brief Gets the ReportData for the specifed filter \p component_variables and \p
     /// component_criteria
@@ -201,13 +161,81 @@ public:
     /// \param component_variables
     /// \param component_criteria
     /// \return
-    std::vector<ReportData>
+    virtual std::vector<ReportData>
     get_custom_report_data(const std::optional<std::vector<ComponentVariable>>& component_variables = std::nullopt,
-                           const std::optional<std::vector<ComponentCriterionEnum>>& component_criteria = std::nullopt);
+                           const std::optional<std::vector<ComponentCriterionEnum>>& component_criteria = std::nullopt) = 0;
 
     /// \brief Check data integrity of the device model provided by the device model data storage:
     /// For "required" variables, assert values exist. Checks might be extended in the future.
-    void check_integrity(const std::map<int32_t, int32_t>& evse_connector_structure);
+    virtual void check_integrity(const std::map<int32_t, int32_t>& evse_connector_structure) = 0;
+
+private:
+    /// \brief Private helper method that does some checks with the device model representation in memory to evaluate if
+    /// a value for the given parameters can be requested. If it can be requested it will be retrieved from the device
+    /// model storage and the given \p value will be set to the value that was retrieved
+    /// \param component_id
+    /// \param variable_id
+    /// \param attribute_enum
+    /// \param value string reference to value: will be set to requested value if value is present
+    /// \param allow_write_only true to allow a writeOnly value to be read.
+    /// \return GetVariableStatusEnum that indicates the result of the request
+    virtual GetVariableStatusEnum request_value_internal(const Component& component_id, const Variable& variable_id,
+                                                         const AttributeEnum& attribute_enum, std::string& value,
+                                                         bool allow_write_only) = 0;
+};
+
+/// \brief This class manages access to the device model representation and to the device model storage and provides
+/// functionality to support the use cases defined in the functional block Provisioning
+class DeviceModel : public DeviceModelInterface {
+
+private:
+    DeviceModelMap device_model;
+    std::unique_ptr<DeviceModelStorage> storage;
+
+    GetVariableStatusEnum request_value_internal(const Component& component_id, const Variable& variable_id,
+                                                 const AttributeEnum& attribute_enum, std::string& value,
+                                                 bool allow_write_only) override;
+
+    /// \brief Iterates over the given \p component_criteria and converts this to the variable names
+    /// (Active,Available,Enabled,Problem). If any of the variables can not be found as part of a component this
+    /// function returns false. If any of those variable's value is true, this function returns true (except for
+    /// criteria problem). If all variable's value are false, this function returns false
+    ///  \param component_id
+    ///  \param /// component_criteria
+    ///  \return
+    bool component_criteria_match(const Component& component_id,
+                                  const std::vector<ComponentCriterionEnum>& component_criteria);
+
+    /// @brief Iterates over the given \p component_variables and filters them according to the requirement conditions.
+    /// @param component_variables
+    /// @param component_ current component
+    /// @param variable_ current variable
+    /// @return true if the component is found according to any of the requirement conditions.
+    bool component_variables_match(const std::vector<ComponentVariable>& component_variables,
+                                   const ocpp::v201::Component& component_,
+                                   const struct ocpp::v201::Variable& variable_);
+
+public:
+    /// \brief Constructor for the device model
+    /// \param device_model_storage pointer to a device model storage class
+    explicit DeviceModel(std::unique_ptr<DeviceModelStorage> device_model_storage);
+
+    SetVariableStatusEnum set_value(const Component& component_id, const Variable& variable_id,
+                                    const AttributeEnum& attribute_enum, const std::string& value,
+                                    const bool allow_read_only = false) override;
+
+    SetVariableStatusEnum set_read_only_value(const Component& component_id, const Variable& variable_id,
+                                              const AttributeEnum& attribute_enum, const std::string& value) override;
+
+    std::optional<VariableMetaData> get_variable_meta_data(const Component& component_id, const Variable& variable_id) override;
+
+    std::vector<ReportData> get_base_report_data(const ReportBaseEnum& report_base) override;
+
+    std::vector<ReportData>
+    get_custom_report_data(const std::optional<std::vector<ComponentVariable>>& component_variables = std::nullopt,
+                           const std::optional<std::vector<ComponentCriterionEnum>>& component_criteria = std::nullopt) override;
+
+    void check_integrity(const std::map<int32_t, int32_t>& evse_connector_structure) override;
 };
 
 } // namespace v201

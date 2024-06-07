@@ -135,7 +135,7 @@ class Evse : public EvseInterface {
 
 private:
     int32_t evse_id;
-    DeviceModel& device_model;
+    DeviceModelInterface& device_model;
     std::map<int32_t, std::unique_ptr<Connector>> id_connector_map;
     std::function<void(const MeterValue& meter_value, const Transaction& transaction, const int32_t seq_no,
                        const std::optional<int32_t> reservation_id)>
@@ -167,7 +167,7 @@ public:
     /// \param status_notification_callback that is called when the status of a connector changes
     /// \param pause_charging_callback that is called when the charging should be paused due to max energy on
     /// invalid id being exceeded
-    Evse(const int32_t evse_id, const int32_t number_of_connectors, DeviceModel& device_model,
+    Evse(const int32_t evse_id, const int32_t number_of_connectors, DeviceModelInterface& device_model,
          std::shared_ptr<DatabaseHandler> database_handler,
          std::shared_ptr<ComponentStateManagerInterface> component_state_manager,
          const std::function<void(const MeterValue& meter_value, const Transaction& transaction, const int32_t seq_no,
