@@ -47,7 +47,7 @@ std::ostream& operator<<(std::ostream& os, const ProfileValidationResultEnum val
 /// to calculate the composite schedules
 class SmartChargingHandler {
 private:
-    std::map<int32_t, std::unique_ptr<EvseInterface>>& evses;
+    std::map<int32_t, std::shared_ptr<EvseInterface>>& evses;
 
     std::shared_ptr<ocpp::v201::DatabaseHandler> database_handler;
     // cppcheck-suppress unusedStructMember
@@ -55,7 +55,7 @@ private:
     std::vector<ChargingProfile> station_wide_charging_profiles;
 
 public:
-    explicit SmartChargingHandler(std::map<int32_t, std::unique_ptr<EvseInterface>>& evses);
+    explicit SmartChargingHandler(std::map<int32_t, std::shared_ptr<EvseInterface>>& evses);
 
     ///
     /// \brief validates the existence of the given \p evse_id according to the specification

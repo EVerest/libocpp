@@ -63,7 +63,7 @@ std::ostream& operator<<(std::ostream& os, const ProfileValidationResultEnum val
 
 const int32_t STATION_WIDE_ID = 0;
 
-SmartChargingHandler::SmartChargingHandler(std::map<int32_t, std::unique_ptr<EvseInterface>>& evses) : evses(evses) {
+SmartChargingHandler::SmartChargingHandler(std::map<int32_t, std::shared_ptr<EvseInterface>>& evses) : evses(evses) {
 }
 
 ProfileValidationResultEnum SmartChargingHandler::validate_evse_exists(int32_t evse_id) const {

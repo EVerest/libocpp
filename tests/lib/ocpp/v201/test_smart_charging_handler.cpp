@@ -10,7 +10,7 @@
 #include <memory>
 
 #include <component_state_manager_mock.hpp>
-#include <device_model_storage_mock.hpp>
+#include <device_model_mock.hpp>
 #include <evse_mock.hpp>
 #include <evse_security_mock.hpp>
 #include <ocpp/common/call_types.hpp>
@@ -147,26 +147,20 @@ protected:
         };
     }
 
-    DeviceModel create_device_model() {
-        std::unique_ptr<DeviceModelStorageMock> storage_mock =
-            std::make_unique<testing::NiceMock<DeviceModelStorageMock>>();
-        ON_CALL(*storage_mock, get_device_model).WillByDefault(testing::Return(DeviceModelMap()));
-        return DeviceModel(std::move(storage_mock));
-    }
+    void create_evse_with_id(int evse_id) {
+        evses[evse_id] = std::make_shared<testing::NiceMock<EvseMock>>();
+        evses_interface[evse_id] = evses[evse_id];
+        evse_transactions[evse_id] = nullptr;
 
-    void create_evse_with_id(int id) {
-        testing::MockFunction<void(const MeterValue& meter_value, const Transaction& transaction, const int32_t seq_no,
-                                   const std::optional<int32_t> reservation_id)>
-            transaction_meter_value_req_mock;
-        testing::MockFunction<void()> pause_charging_callback_mock;
-        auto e1 = std::make_unique<Evse>(
-            id, 1, device_model, database_handler, std::make_shared<ComponentStateManagerMock>(),
-            transaction_meter_value_req_mock.AsStdFunction(), pause_charging_callback_mock.AsStdFunction());
-        evses[id] = std::move(e1);
+        ON_CALL(*evses[evse_id], get_evse_info).WillByDefault(testing::Return(EVSE{evse_id}));
+        ON_CALL(*evses[evse_id], has_active_transaction()).WillByDefault([this, evse_id](){
+            return evse_transactions[evse_id] != nullptr;
+        });
+        ON_CALL(*evses[evse_id], get_transaction).WillByDefault(testing::ReturnRef(evse_transactions[evse_id]));
     }
 
     SmartChargingHandler create_smart_charging_handler() {
-        return SmartChargingHandler(evses);
+        return SmartChargingHandler(evses_interface);
     }
 
     std::string uuid() {
@@ -176,14 +170,8 @@ protected:
     }
 
     void open_evse_transaction(int evse_id, std::string transaction_id) {
-        auto connector_id = 1;
-        auto meter_start = MeterValue();
-        auto id_token = IdToken();
-        auto date_time = ocpp::DateTime("2024-01-17T17:00:00");
-        evses[evse_id]->open_transaction(
-            transaction_id, connector_id, date_time, meter_start, id_token, {}, {},
-            std::chrono::seconds(static_cast<int64_t>(1)), std::chrono::seconds(static_cast<int64_t>(1)),
-            std::chrono::seconds(static_cast<int64_t>(1)), std::chrono::seconds(static_cast<int64_t>(1)));
+        evse_transactions[evse_id] = std::make_unique<EnhancedTransaction>();
+        evse_transactions[evse_id]->transactionId = transaction_id;
     }
 
     void install_profile_on_evse(int evse_id, int profile_id) {
@@ -196,11 +184,11 @@ protected:
     }
 
     // Default values used within the tests
-    std::map<int32_t, std::unique_ptr<EvseInterface>> evses;
-    std::shared_ptr<DatabaseHandler> database_handler;
+    std::map<int32_t, std::shared_ptr<testing::NiceMock<EvseMock>>> evses;
+    std::map<int32_t, std::shared_ptr<EvseInterface>> evses_interface;
+    std::map<int32_t, std::unique_ptr<EnhancedTransaction>> evse_transactions;
+    DeviceModelMock device_model;
 
-    bool ignore_no_transaction = true;
-    DeviceModel device_model = create_device_model();
     SmartChargingHandler handler = create_smart_charging_handler();
     boost::uuids::random_generator uuid_generator = boost::uuids::random_generator();
 };
