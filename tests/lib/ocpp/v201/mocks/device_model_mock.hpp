@@ -32,7 +32,7 @@ public:
                  std::string& value, bool allow_write_only),
                 (override));
 
-    void ExpectRequestValue(const ComponentVariable& component_variable, std::string value,
+    void expect_request_value(const ComponentVariable& component_variable, std::string value,
                             const AttributeEnum& attribute_enum = AttributeEnum::Actual) {
         using testing::_;
         EXPECT_CALL(*this,
