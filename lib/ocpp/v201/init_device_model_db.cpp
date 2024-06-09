@@ -4,6 +4,7 @@
 #include <ocpp/v201/init_device_model_db.hpp>
 
 #include <cstdint>
+#include <fstream>
 #include <map>
 #include <string>
 
@@ -139,20 +140,20 @@ bool InitDeviceModelDb::insert_component(const ComponentKey& component_key, cons
 
     insert_component_statement->bind_text("@name", component_key.name);
     // TODO can a connector id or evse id be 0?
-    if (component_key.connector_id >= 0) {
-        insert_component_statement->bind_int("@connector_id", component_key.connector_id);
+    if (component_key.connector_id.has_value()) {
+        insert_component_statement->bind_int("@connector_id", component_key.connector_id.value());
     } else {
         insert_component_statement->bind_null("@connector_id");
     }
 
-    if (component_key.evse_id >= 0) {
-        insert_component_statement->bind_int("@evse_id", component_key.evse_id);
+    if (component_key.evse_id.has_value()) {
+        insert_component_statement->bind_int("@evse_id", component_key.evse_id.value());
     } else {
         insert_component_statement->bind_null("@evse_id");
     }
 
-    if (!component_key.instance.empty()) {
-        insert_component_statement->bind_text("@instance", component_key.instance);
+    if (component_key.instance.has_value() && !component_key.instance.value().empty()) {
+        insert_component_statement->bind_text("@instance", component_key.instance.value());
     } else {
         insert_component_statement->bind_null("@instance");
     }
@@ -195,8 +196,21 @@ bool InitDeviceModelDb::insert_component(const ComponentKey& component_key, cons
 }
 
 std::map<ComponentKey, json>
-InitDeviceModelDb::read_component_schemas(const std::vector<std::filesystem::path>& components) {
-    // TODO
+InitDeviceModelDb::read_component_schemas(const std::vector<std::filesystem::path>& components_schema_path) {
+    std::map<ComponentKey, json> components;
+    for (const std::filesystem::path& path : components_schema_path) {
+        std::ifstream schema_file(path);
+        json data = json::parse(schema_file);
+        ComponentKey p = data;
+        if (data.contains("properties")) {
+            components.insert({p, data.at("properties")});
+        } else {
+            EVLOG_warning << "Component " << data.at("name") << "does not contain any properties";
+            continue;
+        }
+    }
+
+    return components;
 }
 
 int64_t InitDeviceModelDb::insert_variable_characteristics(const json& characteristics) {
@@ -335,28 +349,37 @@ void InitDeviceModelDb::insert_attributes(const json& attributes, const int64_t&
     }
 }
 
-// void to_json(json& j, const ComponentKey& c) {
-//     j = json{{"name", c.name}};
+void InitDeviceModelDb::init_sql() {
+    // TODO
+}
 
-//     // TODO can evse id and connector_id be 0??
-//     if (c.evse_id >= 0) {
-//         j["evse_id"] = c.evse_id;
-//     }
+bool operator<(const ComponentKey& l, const ComponentKey& r) {
+    return std::tie(l.name, l.evse_id, l.connector_id, l.instance) <
+           std::tie(r.name, r.evse_id, r.connector_id, r.instance);
+}
 
-//     if (c.connector_id >= 0) {
-//         j["connector_id"] = c.connector_id;
-//     }
+void to_json(json& j, const ComponentKey& c) {
+    j = json{{"name", c.name}};
 
-//     if (!c.instance.empty()) {
-//         j["instance"] = c.instance;
-//     }
+    // TODO can evse id and connector_id be 0??
+    if (c.evse_id.has_value()) {
+        j.at("evse_id") = c.evse_id.value();
+    }
 
-//     if (!c.required_properties.empty()) {
-//         for (const std::string& property : c.required_properties) {
-//             j["required"].push_back(property);
-//         }
-//     }
-// }
+    if (c.connector_id.has_value()) {
+        j.at("connector_id") = c.connector_id.value();
+    }
+
+    if (c.instance.has_value() && !c.instance->empty()) {
+        j["instance"] = c.instance.value();
+    }
+
+    if (!c.required_properties.empty()) {
+        for (const std::string& property : c.required_properties) {
+            j["required"].push_back(property);
+        }
+    }
+}
 
 void from_json(const json& j, ComponentKey& c) {
     c.name = j.at("name");
@@ -379,6 +402,36 @@ void from_json(const json& j, ComponentKey& c) {
             c.required_properties.push_back(it->get<std::string>());
         }
     }
+}
+
+void to_json(json& j, const VariableAttribute& c) {
+}
+
+void from_json(const json& j, VariableAttribute& c) {
+    c.value = j.at("value");
+    const auto& type_id_it = VARIABLE_ATTRIBUTE_TYPE_ENCODING.find(j.at("type"));
+    if (type_id_it != VARIABLE_ATTRIBUTE_TYPE_ENCODING.end()) {
+        c.type_id = type_id_it->second;
+    }
+
+    if (j.contains("mutability")) {
+        const auto& mutability_it = MUTABILITY_ENCODINGS.find(j.at("mutability"));
+        if (mutability_it != MUTABILITY_ENCODINGS.end()) {
+            c.mutability = mutability_it->second;
+        }
+    }
+}
+
+void to_json(json& j, const VariableCharacteristics& c) {
+}
+
+void from_json(const json& j, VariableCharacteristics& c) {
+}
+
+void to_json(json& j, const Variable& c) {
+}
+
+void from_json(const json& j, Variable& c) {
 }
 
 } // namespace ocpp::v201

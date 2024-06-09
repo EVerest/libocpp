@@ -11,10 +11,34 @@ namespace ocpp::v201 {
 
 struct ComponentKey {
     std::string name;
-    std::string instance = "";
-    int32_t evse_id = -1;
-    int32_t connector_id = -1;
+    std::optional<std::string> instance = "";
+    std::optional<int32_t> evse_id = -1;
+    std::optional<int32_t> connector_id = -1;
     std::vector<std::string> required_properties;
+
+    friend bool operator<(const ComponentKey& l, const ComponentKey& r);
+};
+
+struct VariableAttribute {
+    uint8_t type_id;
+    std::optional<uint8_t> mutability;
+    std::string value;
+};
+
+struct VariableCharacteristics {
+    bool supports_monitoring;
+    uint8_t data_type_id;
+    std::optional<std::string> values_list;
+    std::optional<double> min_limit;
+    std::optional<double> max_limit;
+    std::optional<std::string> unit;
+};
+
+struct Variable {
+    std::string name;
+    VariableCharacteristics characteristics;
+    std::vector<VariableAttribute> attributes;
+    bool required;
 };
 
 struct VariableAttributeKey {
@@ -23,9 +47,22 @@ struct VariableAttributeKey {
     std::string attribute_type;
 };
 
+
 void to_json(json &j, const ComponentKey& c);
 
 void from_json(const json& j, ComponentKey& c);
+
+void to_json(json &j, const VariableAttribute& c);
+
+void from_json(const json& j, VariableAttribute& c);
+
+void to_json(json &j, const VariableCharacteristics& c);
+
+void from_json(const json& j, VariableCharacteristics& c);
+
+void to_json(json &j, const Variable& c);
+
+void from_json(const json& j, Variable& c);
 
 class InitDeviceModelDb : public common::DatabaseHandlerCommon
 {
@@ -64,7 +101,8 @@ private:    // Functions
                            const std::vector<std::filesystem::path>& custom_components);
 
     bool insert_component(const ComponentKey &component_key, const json& component_properties);
-    std::map<ComponentKey, json> read_component_schemas(const std::vector<std::filesystem::path>& components);
+    std::map<ComponentKey, json> read_component_schemas(const std::vector<std::filesystem::path>&
+                                                            components_schema_path);
 
     ///
     /// \brief Insert variable characteristics
