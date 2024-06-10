@@ -128,8 +128,8 @@ public:
     ///                        otherwise only non read-only variables can be changed. Defaults to false
     /// \return Result of the requested operation
     virtual SetVariableStatusEnum set_value(const Component& component_id, const Variable& variable_id,
-                                    const AttributeEnum& attribute_enum, const std::string& value,
-                                    const bool allow_read_only = false) = 0;
+                                            const AttributeEnum& attribute_enum, const std::string& value,
+                                            const bool allow_read_only = false) = 0;
 
     /// \brief Sets the variable_id attribute \p value specified by \p component_id , \p variable_id and \p
     /// attribute_enum for read only variables only. Only works on certain allowed components.
@@ -139,13 +139,15 @@ public:
     /// \param value
     /// \return Result of the requested operation
     virtual SetVariableStatusEnum set_read_only_value(const Component& component_id, const Variable& variable_id,
-                                              const AttributeEnum& attribute_enum, const std::string& value) = 0;
+                                                      const AttributeEnum& attribute_enum,
+                                                      const std::string& value) = 0;
 
     /// \brief Gets the VariableMetaData for the given \p component_id and \p variable_id
     /// \param component_id
     /// \param variable_id
     /// \return VariableMetaData or std::nullopt if \p component_id or \p variable_id not present
-    virtual std::optional<VariableMetaData> get_variable_meta_data(const Component& component_id, const Variable& variable_id) = 0;
+    virtual std::optional<VariableMetaData> get_variable_meta_data(const Component& component_id,
+                                                                   const Variable& variable_id) = 0;
 
     /// \brief Gets the ReportData for the specifed filter \p report_base \p component_variables and \p
     /// component_criteria
@@ -161,9 +163,9 @@ public:
     /// \param component_variables
     /// \param component_criteria
     /// \return
-    virtual std::vector<ReportData>
-    get_custom_report_data(const std::optional<std::vector<ComponentVariable>>& component_variables = std::nullopt,
-                           const std::optional<std::vector<ComponentCriterionEnum>>& component_criteria = std::nullopt) = 0;
+    virtual std::vector<ReportData> get_custom_report_data(
+        const std::optional<std::vector<ComponentVariable>>& component_variables = std::nullopt,
+        const std::optional<std::vector<ComponentCriterionEnum>>& component_criteria = std::nullopt) = 0;
 
     /// \brief Check data integrity of the device model provided by the device model data storage:
     /// For "required" variables, assert values exist. Checks might be extended in the future.
@@ -227,13 +229,14 @@ public:
     SetVariableStatusEnum set_read_only_value(const Component& component_id, const Variable& variable_id,
                                               const AttributeEnum& attribute_enum, const std::string& value) override;
 
-    std::optional<VariableMetaData> get_variable_meta_data(const Component& component_id, const Variable& variable_id) override;
+    std::optional<VariableMetaData> get_variable_meta_data(const Component& component_id,
+                                                           const Variable& variable_id) override;
 
     std::vector<ReportData> get_base_report_data(const ReportBaseEnum& report_base) override;
 
-    std::vector<ReportData>
-    get_custom_report_data(const std::optional<std::vector<ComponentVariable>>& component_variables = std::nullopt,
-                           const std::optional<std::vector<ComponentCriterionEnum>>& component_criteria = std::nullopt) override;
+    std::vector<ReportData> get_custom_report_data(
+        const std::optional<std::vector<ComponentVariable>>& component_variables = std::nullopt,
+        const std::optional<std::vector<ComponentCriterionEnum>>& component_criteria = std::nullopt) override;
 
     void check_integrity(const std::map<int32_t, int32_t>& evse_connector_structure) override;
 };

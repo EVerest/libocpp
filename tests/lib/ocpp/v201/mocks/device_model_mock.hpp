@@ -33,7 +33,7 @@ public:
                 (override));
 
     void expect_request_value(const ComponentVariable& component_variable, std::string value,
-                            const AttributeEnum& attribute_enum = AttributeEnum::Actual) {
+                              const AttributeEnum& attribute_enum = AttributeEnum::Actual) {
         using testing::_;
         EXPECT_CALL(*this,
                     request_value_internal(component_variable.component, component_variable.variable.value(), _, _, _))

@@ -153,7 +153,7 @@ protected:
         evse_transactions[evse_id] = nullptr;
 
         ON_CALL(*evses[evse_id], get_evse_info).WillByDefault(testing::Return(EVSE{evse_id}));
-        ON_CALL(*evses[evse_id], has_active_transaction()).WillByDefault([this, evse_id](){
+        ON_CALL(*evses[evse_id], has_active_transaction()).WillByDefault([this, evse_id]() {
             return evse_transactions[evse_id] != nullptr;
         });
         ON_CALL(*evses[evse_id], get_transaction).WillByDefault(testing::ReturnRef(evse_transactions[evse_id]));
