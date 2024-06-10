@@ -1261,6 +1261,12 @@ void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& messa
     case MessageType::CustomerInformation:
         this->handle_customer_information_req(json_message);
         break;
+    case MessageType::SetMonitoringBase:
+        this->handle_set_monitoring_base_req(json_message);
+        break;
+    case MessageType::SetMonitoringLevel:
+        this->handle_set_monitoring_level_req(json_message);
+        break;
     case MessageType::SetVariableMonitoring:
         this->handle_set_variable_monitoring_req(json_message);
         break;
@@ -3201,6 +3207,30 @@ void ChargePoint::handle_customer_information_req(Call<CustomerInformationReques
 
         this->notify_customer_information_req(data, msg.requestId);
     }
+}
+
+void ChargePoint::handle_set_monitoring_base_req(Call<SetMonitoringBaseRequest> call) {
+    SetMonitoringBaseResponse response;
+    const auto& msg = call.msg;
+
+    // TODO(ioan): Persist in device model our monitoring status
+    this->monitoring_status = msg.monitoringBase;
+    response.status = GenericDeviceModelStatusEnum::Accepted;
+
+    ocpp::CallResult<SetMonitoringBaseResponse> call_result(response, call.uniqueId);
+    this->send<SetMonitoringBaseResponse>(call_result);
+}
+
+void ChargePoint::handle_set_monitoring_level_req(Call<SetMonitoringLevelRequest> call) {
+    SetMonitoringLevelResponse response;
+    const auto& msg = call.msg;
+
+    // TODO(ioan): Persist in device model our monitoring severity
+    this->monitoring_severity = msg.severity;
+    response.status = GenericStatusEnum::Accepted;
+
+    ocpp::CallResult<SetMonitoringLevelResponse> call_result(response, call.uniqueId);
+    this->send<SetMonitoringLevelResponse>(call_result);
 }
 
 void ChargePoint::handle_set_variable_monitoring_req(Call<SetVariableMonitoringRequest> call) {

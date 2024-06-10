@@ -50,6 +50,8 @@
 #include <ocpp/v201/messages/Reset.hpp>
 #include <ocpp/v201/messages/SecurityEventNotification.hpp>
 #include <ocpp/v201/messages/SendLocalList.hpp>
+#include <ocpp/v201/messages/SetMonitoringBase.hpp>
+#include <ocpp/v201/messages/SetMonitoringLevel.hpp>
 #include <ocpp/v201/messages/SetNetworkProfile.hpp>
 #include <ocpp/v201/messages/SetVariableMonitoring.hpp>
 #include <ocpp/v201/messages/SetVariables.hpp>
@@ -425,6 +427,10 @@ private:
     // states
     RegistrationStatusEnum registration_status;
     FirmwareStatusEnum firmware_status;
+    // Current monitoring status, used to filter variable monitoring
+    MonitoringBaseEnum monitoring_status;
+    // Severity, variables with lower severity will not be reported
+    int32_t monitoring_severity;
     // The request ID in the last firmware update status received
     std::optional<int32_t> firmware_status_id;
     // The last firmware status which will be posted before the firmware is installed.
@@ -703,6 +709,8 @@ private:
     void handle_get_log_req(Call<GetLogRequest> call);
     void handle_customer_information_req(Call<CustomerInformationRequest> call);
 
+    void handle_set_monitoring_base_req(Call<SetMonitoringBaseRequest> call);
+    void handle_set_monitoring_level_req(Call<SetMonitoringLevelRequest> call);
     void handle_set_variable_monitoring_req(Call<SetVariableMonitoringRequest> call);
     void handle_get_variable_monitoring_req(Call<GetMonitoringReportRequest> call);
     void handle_clear_variable_monitoring_req(Call<ClearVariableMonitoringRequest> call);
