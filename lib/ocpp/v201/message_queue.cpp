@@ -22,13 +22,14 @@ MessageTransmissionPriority get_message_transmission_priority(bool is_boot_notif
 }
 
 bool is_transaction_message(const ocpp::v16::MessageType message_type) {
-    return message_type == v16::MessageType::StartTransaction || message_type == v16::MessageType::StopTransaction ||
-           message_type == v16::MessageType::MeterValues || message_type == v16::MessageType::SecurityEventNotification;
+    return (message_type == v16::MessageType::StartTransaction) ||
+           (message_type == v16::MessageType::StopTransaction) || (message_type == v16::MessageType::MeterValues) ||
+           (message_type == v16::MessageType::SecurityEventNotification);
 }
 
 bool is_transaction_message(const ocpp::v201::MessageType message_type) {
-    return message_type == v201::MessageType::TransactionEvent ||
-           message_type == v201::MessageType::SecurityEventNotification;
+    return (message_type == v201::MessageType::TransactionEvent) ||
+           (message_type == v201::MessageType::SecurityEventNotification);
 }
 
 bool is_boot_notification_message(const ocpp::v16::MessageType message_type) {
