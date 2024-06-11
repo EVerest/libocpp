@@ -45,6 +45,23 @@ template <typename T> T to_specific_type(const std::string& value) {
     }
 }
 
+template<DataEnum T>
+auto to_specific_type_auto(const std::string& value) {
+    if constexpr (T == DataEnum::string) {
+        return to_specific_type<std::string>(value);
+    } else if constexpr (T == DataEnum::integer) {
+        return to_specific_type<int>(value);
+    } else if constexpr (T == DataEnum::decimal) {
+        return to_specific_type<double>(value);        
+    } else if constexpr (T == DataEnum::dateTime) {
+        return to_specific_type<DateTime>(value);        
+    } else if constexpr (T == DataEnum::boolean) {
+        return to_specific_type<bool>(value);
+    } else {
+        EVLOG_AND_THROW(std::runtime_error("Requested unknown datatype"));
+    }
+}
+
 /// \brief This class manages access to the device model representation and to the device model storage and provides
 /// functionality to support the use cases defined in the functional block Provisioning
 class DeviceModel {
@@ -52,6 +69,7 @@ class DeviceModel {
 private:
     DeviceModelMap device_model;
     std::unique_ptr<DeviceModelStorage> storage;
+    std::vector<VariableMonitoring> triggered_monitors;
 
     /// \brief Private helper method that does some checks with the device model representation in memory to evaluate if
     /// a value for the given parameters can be requested. If it can be requested it will be retrieved from the device
@@ -167,10 +185,22 @@ public:
     /// \param value
     /// \param allow_read_only If this is true, read-only variables can be changed,
     ///                        otherwise only non read-only variables can be changed. Defaults to false
+    /// \param trigger_monitors If this is true, a variable change attempts to trigger the monitors set
+    ///                         for the variable, if any are present. The triggered monitors are placed
+    ///                         inside an internal list that can be retrieved using 'get_triggered_monitors'
     /// \return Result of the requested operation
     SetVariableStatusEnum set_value(const Component& component_id, const Variable& variable_id,
                                     const AttributeEnum& attribute_enum, const std::string& value,
-                                    const bool allow_read_only = false);
+                                    const bool allow_read_only = false, const bool trigger_monitors = false);
+
+    /// \brief Returns the internal list of monitors triggered by the 'set_value' function. It is
+    /// not cleared internally, the caller should take care of that.
+    /// \return The internal list of monitors triggered by a variable set.
+    std::vector<VariableMonitoring>& get_triggered_monitors()
+    {
+        return triggered_monitors;
+    }
+
     /// \brief Sets the variable_id attribute \p value specified by \p component_id , \p variable_id and \p
     /// attribute_enum for read only variables only. Only works on certain allowed components.
     /// \param component_id

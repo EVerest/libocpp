@@ -1763,7 +1763,7 @@ bool ChargePoint::validate_set_variable(const SetVariableData& set_variable_data
 
 std::map<SetVariableData, SetVariableResult>
 ChargePoint::set_variables_internal(const std::vector<SetVariableData>& set_variable_data_vector,
-                                    const bool allow_read_only) {
+                                    const bool allow_read_only, const bool triggers_monitors) {
     std::map<SetVariableData, SetVariableResult> response;
 
     // iterate over the set_variable_data_vector
@@ -1779,7 +1779,7 @@ ChargePoint::set_variables_internal(const std::vector<SetVariableData>& set_vari
             set_variable_result.attributeStatus =
                 this->device_model->set_value(set_variable_data.component, set_variable_data.variable,
                                               set_variable_data.attributeType.value_or(AttributeEnum::Actual),
-                                              set_variable_data.attributeValue.get(), allow_read_only);
+                                              set_variable_data.attributeValue.get(), allow_read_only, triggers_monitors);            
         } else {
             set_variable_result.attributeStatus = SetVariableStatusEnum::Rejected;
         }
@@ -2285,7 +2285,8 @@ void ChargePoint::handle_set_variables_req(Call<SetVariablesRequest> call) {
     SetVariablesResponse response;
 
     // set variables but do not allow setting ReadOnly variables
-    const auto set_variables_response = this->set_variables_internal(msg.setVariableData, false);
+    // since this is a CSMS request does not triggers monitors
+    const auto set_variables_response = this->set_variables_internal(msg.setVariableData, false, false);
     for (const auto& [single_set_variable_data, single_set_variable_result] : set_variables_response) {
         response.setVariableResult.push_back(single_set_variable_result);
     }
@@ -3249,7 +3250,7 @@ void ChargePoint::handle_set_variable_monitoring_req(Call<SetVariableMonitoringR
 
 void ChargePoint::notify_monitoring_report_req(const int request_id,
                                                const std::vector<MonitoringData>& montoring_data) {
-    static constexpr int32_t MAXIMUM_VARIABLE_SEND = 10;
+    static constexpr int32_t MAXIMUM_VARIABLE_SEND = 50;
 
     if (montoring_data.size() <= MAXIMUM_VARIABLE_SEND) {
         NotifyMonitoringReportRequest req;
@@ -3660,7 +3661,10 @@ ChargePoint::get_variables(const std::vector<GetVariableData>& get_variable_data
 std::map<SetVariableData, SetVariableResult>
 ChargePoint::set_variables(const std::vector<SetVariableData>& set_variable_data_vector) {
     // set variables and allow setting of ReadOnly variables
-    const auto response = this->set_variables_internal(set_variable_data_vector, true);
+    const auto response = this->set_variables_internal(set_variable_data_vector, true, true);
+
+    auto& triggered = this->device_model->get_triggered_monitors();
+
     this->handle_variables_changed(response);
     return response;
 }
