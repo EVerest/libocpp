@@ -121,7 +121,7 @@ std::ostream& operator<<(std::ostream& os, const TestMessageType& message_type) 
 };
 
 bool is_transaction_message(const TestMessageType message_type) {
-    return message_type == TestMessageType::TRANSACTIONAL || message_type == TestMessageType::TRANSACTIONAL_UPDATE;
+    return (message_type == TestMessageType::TRANSACTIONAL) || (message_type == TestMessageType::TRANSACTIONAL_UPDATE);
 }
 
 template <> bool ControlMessage<TestMessageType>::isTransactionUpdateMessage() const {
