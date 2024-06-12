@@ -75,6 +75,10 @@ bool InitDeviceModelDb::initialize_database(const std::filesystem::path& schemas
 
 bool InitDeviceModelDb::insert_config_and_default_values(const std::filesystem::path& schemas_path,
                                                          const std::filesystem::path& config_path) {
+    std::map<ComponentKey, std::vector<VariableAttributeKey>> default_values =
+        get_component_default_values(schemas_path);
+
+    return true;
 }
 
 bool InitDeviceModelDb::execute_init_sql(const bool delete_db_if_exists) {
@@ -110,15 +114,16 @@ bool InitDeviceModelDb::insert_components(const std::vector<std::filesystem::pat
                                           const std::vector<std::filesystem::path>& custom_components) {
     bool success = true;
 
-    std::map<ComponentKey, json> standardized_components_map = read_component_schemas(standardized_components);
-    std::map<ComponentKey, json> components = read_component_schemas(custom_components);
+    std::map<ComponentKey, std::vector<DeviceModelVariable>> standardized_components_map =
+        read_component_schemas(standardized_components);
+    std::map<ComponentKey, std::vector<DeviceModelVariable>> components = read_component_schemas(custom_components);
 
     // Merge the two maps so they can be used for the insert_component function with a single iterator. This will use
     // the custom components map as base and add not existing standardized components to the components map. So if the
     // component exists in both, the custom component will be used.
     components.merge(standardized_components_map);
 
-    for (std::pair<ComponentKey, json> component : components) {
+    for (std::pair<ComponentKey, std::vector<DeviceModelVariable>> component : components) {
         if (!insert_component(component.first, component.second)) {
             // TODO did one of the functions not throw here? E.g. should I add a throw catch or just re throw???
             EVLOG_error << "Could not insert component" << component.first.name;
@@ -129,7 +134,8 @@ bool InitDeviceModelDb::insert_components(const std::vector<std::filesystem::pat
     return success;
 }
 
-bool InitDeviceModelDb::insert_component(const ComponentKey& component_key, const json& component_properties) {
+bool InitDeviceModelDb::insert_component(const ComponentKey& component_key,
+                                         const std::vector<DeviceModelVariable> component_variables) {
     EVLOG_debug << "Inserting component " << component_key.name;
 
     static const std::string statement = "INSERT OR REPLACE INTO COMPONENT (NAME, INSTANCE, EVSE_ID, CONNECTOR_ID) "
@@ -165,45 +171,38 @@ bool InitDeviceModelDb::insert_component(const ComponentKey& component_key, cons
     const int64_t component_id = this->database->get_last_inserted_rowid();
 
     // Loop over the properties of this component.
-    for (const auto& [property_key, variable_meta_data] : component_properties.items()) {
-        const std::string variable_name = variable_meta_data.at("variable_name");
+    for (const DeviceModelVariable& variable : component_variables) {
+        const std::string variable_name = variable.name;
         EVLOG_debug << "-- Inserting variable " << variable_name;
         std::string instance;
-        if (variable_meta_data.contains("instance")) {
-            instance = variable_meta_data.at("instance");
+        if (variable.instance.has_value()) {
+            instance = variable.instance.value();
         }
-        const json& characteristics = variable_meta_data.at("characteristics");
-        const json& attributes = variable_meta_data.at("attributes");
 
         // Add variable characteristic
-        const int64_t variable_characteristics_id = insert_variable_characteristics(characteristics);
-
-        const auto it =
-            std::find(component_key.required_properties.begin(), component_key.required_properties.end(), property_key);
-        bool required = false;
-        if (it != component_key.required_properties.end()) {
-            required = true;
-        }
+        const int64_t variable_characteristics_id = insert_variable_characteristics(variable.characteristics);
 
         // Add variable
         const int64_t variable_id =
-            insert_variable(variable_name, instance, component_id, variable_characteristics_id, required);
+            insert_variable(variable_name, instance, component_id, variable_characteristics_id, variable.required);
 
-        insert_attributes(attributes, variable_id);
+        insert_attributes(variable.attributes, variable_id);
     }
 
     return true;
 }
 
-std::map<ComponentKey, json>
+std::map<ComponentKey, std::vector<DeviceModelVariable>>
 InitDeviceModelDb::read_component_schemas(const std::vector<std::filesystem::path>& components_schema_path) {
-    std::map<ComponentKey, json> components;
+    std::map<ComponentKey, std::vector<DeviceModelVariable>> components;
     for (const std::filesystem::path& path : components_schema_path) {
         std::ifstream schema_file(path);
         json data = json::parse(schema_file);
         ComponentKey p = data;
         if (data.contains("properties")) {
-            components.insert({p, data.at("properties")});
+            std::vector<DeviceModelVariable> variables =
+                get_all_component_properties(data.at("properties"), p.required);
+            components.insert({p, variables});
         } else {
             EVLOG_warning << "Component " << data.at("name") << "does not contain any properties";
             continue;
@@ -213,7 +212,27 @@ InitDeviceModelDb::read_component_schemas(const std::vector<std::filesystem::pat
     return components;
 }
 
-int64_t InitDeviceModelDb::insert_variable_characteristics(const json& characteristics) {
+std::vector<DeviceModelVariable>
+InitDeviceModelDb::get_all_component_properties(const json& component_properties,
+                                                std::vector<std::string> required_properties) {
+    std::vector<DeviceModelVariable> variables;
+
+    for (const auto& variable : component_properties.items()) {
+        DeviceModelVariable v = variable.value();
+        const std::string variable_key_name = variable.key();
+
+        // Check if this is a required variable and if it is, add that to the variable struct.
+        if (std::find(required_properties.begin(), required_properties.end(), variable_key_name) !=
+            required_properties.end()) {
+            v.required = true;
+        }
+        variables.push_back(v);
+    }
+
+    return variables;
+}
+
+int64_t InitDeviceModelDb::insert_variable_characteristics(const DeviceModelVariableCharacteristics& characteristics) {
     static const std::string statement =
         "INSERT OR REPLACE INTO VARIABLE_CHARACTERISTICS (DATATYPE_ID, MAX_LIMIT, MIN_LIMIT, SUPPORTS_MONITORING, "
         "UNIT, VALUES_LIST) VALUES (@datatype_id, @max_limit, @min_limit, @supports_monitoring, @unit, @values_list)";
@@ -221,39 +240,32 @@ int64_t InitDeviceModelDb::insert_variable_characteristics(const json& character
     std::unique_ptr<common::SQLiteStatementInterface> insert_characteristics_statement =
         this->database->new_statement(statement);
 
-    const std::string data_type = characteristics.at("dataType");
-    const auto it = DATATYPE_ENCODINGS.find(data_type);
-    uint8_t data_type_encoded = 0;
-    if (it != DATATYPE_ENCODINGS.end()) {
-        data_type_encoded = it->second;
-        insert_characteristics_statement->bind_int("@datatype_id", data_type_encoded);
-    } else {
-        throw common::RequiredEntryNotFoundException("Could not find datatype " + data_type);
-    }
+    const uint8_t data_type = characteristics.data_type_id;
+    insert_characteristics_statement->bind_int("@datatype_id", data_type);
 
-    const uint8_t supports_monitoring = (characteristics.at("supportsMonitoring").get<bool>() ? 1 : 0);
+    const uint8_t supports_monitoring = (characteristics.supports_monitoring ? 1 : 0);
     insert_characteristics_statement->bind_int("@supports_monitoring", supports_monitoring);
 
-    if (characteristics.contains("unit")) {
-        insert_characteristics_statement->bind_text("@unit", characteristics.at("unit"));
+    if (characteristics.unit.has_value()) {
+        insert_characteristics_statement->bind_text("@unit", characteristics.unit.value());
     } else {
         insert_characteristics_statement->bind_null("@unit");
     }
 
-    if (characteristics.contains("valuesList")) {
-        insert_characteristics_statement->bind_text("@values_list", characteristics.at("valuesList"));
+    if (characteristics.values_list.has_value()) {
+        insert_characteristics_statement->bind_text("@values_list", characteristics.values_list.value());
     } else {
         insert_characteristics_statement->bind_null("@values_list");
     }
 
-    if (characteristics.contains("maxLimit")) {
-        insert_characteristics_statement->bind_int("@max_limit", characteristics.at("maxLimit"));
+    if (characteristics.max_limit.has_value()) {
+        insert_characteristics_statement->bind_double("@max_limit", characteristics.max_limit.value());
     } else {
         insert_characteristics_statement->bind_null("@max_limit");
     }
 
-    if (characteristics.contains("minLimit")) {
-        insert_characteristics_statement->bind_int("@min_limit", characteristics.at("minLimit"));
+    if (characteristics.min_limit.has_value()) {
+        insert_characteristics_statement->bind_double("@min_limit", characteristics.min_limit.value());
     } else {
         insert_characteristics_statement->bind_null("@min_limit");
     }
@@ -295,35 +307,12 @@ int64_t InitDeviceModelDb::insert_variable(const std::string& variable_name, con
     return this->database->get_last_inserted_rowid();
 }
 
-void InitDeviceModelDb::insert_attributes(const json& attributes, const int64_t& variable_id) {
+void InitDeviceModelDb::insert_attributes(const std::vector<DeviceModelVariableAttribute>& attributes,
+                                          const int64_t& variable_id) {
     static const std::string statement =
         "INSERT OR REPLACE INTO VARIABLE_ATTRIBUTE (VARIABLE_ID, MUTABILITY_ID, PERSISTENT, CONSTANT, TYPE_ID) "
         "VALUES(@variable_id, @mutability_id, @persistent, @constant, @type_id)";
-    for (const auto& attribute : attributes.items()) {
-        std::string type;
-        uint8_t type_encoded;
-        if (attribute.value().contains("type")) {
-            type = attribute.value().at("type");
-            auto it = VARIABLE_ATTRIBUTE_TYPE_ENCODING.find(type);
-            if (it == VARIABLE_ATTRIBUTE_TYPE_ENCODING.end()) {
-                throw common::RequiredEntryNotFoundException("Could not find type " + type);
-            }
-
-            type_encoded = it->second;
-        }
-
-        std::string mutability;
-        uint8_t mutability_encoded;
-        if (attribute.value().contains("mutability")) {
-            mutability = attribute.value().at("mutability");
-            auto it = MUTABILITY_ENCODINGS.find(mutability);
-            if (it == MUTABILITY_ENCODINGS.end()) {
-                throw common::RequiredEntryNotFoundException("Could not find mutability " + mutability);
-            }
-
-            mutability_encoded = it->second;
-        }
-
+    for (const DeviceModelVariableAttribute& attribute : attributes) {
         std::unique_ptr<common::SQLiteStatementInterface> insert_attributes_statement =
             this->database->new_statement(statement);
 
@@ -331,22 +320,57 @@ void InitDeviceModelDb::insert_attributes(const json& attributes, const int64_t&
         insert_attributes_statement->bind_int("@persistent", 1);
         insert_attributes_statement->bind_int("@constant", 0);
 
-        if (!mutability.empty()) {
-            insert_attributes_statement->bind_int("@mutability_id", mutability_encoded);
+        if (attribute.mutability.has_value()) {
+            insert_attributes_statement->bind_int("@mutability_id", attribute.mutability.value());
         } else {
             insert_attributes_statement->bind_null("@mutability_id");
         }
 
-        if (!type.empty()) {
-            insert_attributes_statement->bind_int("@type_id", type_encoded);
-        } else {
-            insert_attributes_statement->bind_null("@type_id");
-        }
+        insert_attributes_statement->bind_int("@type_id", attribute.type_id);
 
         if (insert_attributes_statement->step() != SQLITE_DONE) {
             throw common::QueryExecutionException(this->database->get_error_message());
         }
     }
+}
+
+std::map<ComponentKey, std::vector<VariableAttributeKey>>
+InitDeviceModelDb::get_component_default_values(const std::filesystem::path& schemas_path) {
+    const std::vector<std::filesystem::path> standardized_component_schema_files =
+        get_component_schemas_from_directory(schemas_path / STANDARDIZED_COMPONENT_SCHEMAS_DIR);
+    const std::vector<std::filesystem::path> custom_component_schema_files =
+        get_component_schemas_from_directory(schemas_path / CUSTOM_COMPONENT_SCHEMAS_DIR);
+
+    std::map<ComponentKey, std::vector<DeviceModelVariable>> standardized_components_map =
+        read_component_schemas(standardized_component_schema_files);
+    std::map<ComponentKey, std::vector<DeviceModelVariable>> components =
+        read_component_schemas(custom_component_schema_files);
+
+    // Merge the two maps so they can be used for the insert_component function with a single iterator. This will use
+    // the custom components map as base and add not existing standardized components to the components map. So if the
+    // component exists in both, the custom component will be used.
+    components.merge(standardized_components_map);
+
+    std::map<ComponentKey, std::vector<VariableAttributeKey>> component_default_values;
+    for (auto const& [componentKey, variables] : components) {
+        std::vector<VariableAttributeKey> variable_attribute_keys;
+        for (const DeviceModelVariable& variable : variables) {
+            if (!variable.default_actual_value.empty()) {
+                VariableAttributeKey key;
+                key.name = variable.name;
+                if (variable.instance.has_value()) {
+                    key.instance = variable.instance.value();
+                }
+                key.attribute_type = "Actual";
+                key.value = variable.default_actual_value;
+                variable_attribute_keys.push_back(key);
+            }
+        }
+
+        component_default_values.insert({componentKey, variable_attribute_keys});
+    }
+
+    return component_default_values;
 }
 
 void InitDeviceModelDb::init_sql() {
@@ -356,29 +380,6 @@ void InitDeviceModelDb::init_sql() {
 bool operator<(const ComponentKey& l, const ComponentKey& r) {
     return std::tie(l.name, l.evse_id, l.connector_id, l.instance) <
            std::tie(r.name, r.evse_id, r.connector_id, r.instance);
-}
-
-void to_json(json& j, const ComponentKey& c) {
-    j = json{{"name", c.name}};
-
-    // TODO can evse id and connector_id be 0??
-    if (c.evse_id.has_value()) {
-        j.at("evse_id") = c.evse_id.value();
-    }
-
-    if (c.connector_id.has_value()) {
-        j.at("connector_id") = c.connector_id.value();
-    }
-
-    if (c.instance.has_value() && !c.instance->empty()) {
-        j["instance"] = c.instance.value();
-    }
-
-    if (!c.required_properties.empty()) {
-        for (const std::string& property : c.required_properties) {
-            j["required"].push_back(property);
-        }
-    }
 }
 
 void from_json(const json& j, ComponentKey& c) {
@@ -399,16 +400,12 @@ void from_json(const json& j, ComponentKey& c) {
     if (j.contains("required")) {
         json const& r = j.at("required");
         for (auto it = r.begin(); it != r.end(); ++it) {
-            c.required_properties.push_back(it->get<std::string>());
+            c.required.push_back(it->get<std::string>());
         }
     }
 }
 
-void to_json(json& j, const VariableAttribute& c) {
-}
-
-void from_json(const json& j, VariableAttribute& c) {
-    c.value = j.at("value");
+void from_json(const json& j, DeviceModelVariableAttribute& c) {
     const auto& type_id_it = VARIABLE_ATTRIBUTE_TYPE_ENCODING.find(j.at("type"));
     if (type_id_it != VARIABLE_ATTRIBUTE_TYPE_ENCODING.end()) {
         c.type_id = type_id_it->second;
@@ -422,16 +419,57 @@ void from_json(const json& j, VariableAttribute& c) {
     }
 }
 
-void to_json(json& j, const VariableCharacteristics& c) {
+void from_json(const json& j, DeviceModelVariableCharacteristics& c) {
+    c.supports_monitoring = j.at("supportsMonitoring");
+    const auto& data_type_it = DATATYPE_ENCODINGS.find(j.at("dataType"));
+
+    if (data_type_it != DATATYPE_ENCODINGS.end()) {
+        c.data_type_id = data_type_it->second;
+    }
+
+    if (j.contains("minLimit")) {
+        c.min_limit = j.at("minLimit");
+    }
+
+    if (j.contains("maxLimit")) {
+        c.max_limit = j.at("maxLimit");
+    }
+
+    if (j.contains("valuesList")) {
+        c.values_list = j.at("valuesList");
+    }
+
+    if (j.contains("unit")) {
+        c.unit = j.at("unit");
+    }
 }
 
-void from_json(const json& j, VariableCharacteristics& c) {
-}
+void from_json(const json& j, DeviceModelVariable& c) {
+    c.name = j.at("variable_name");
+    c.characteristics = j.at("characteristics");
+    c.attributes = j.at("attributes");
 
-void to_json(json& j, const Variable& c) {
-}
+    if (j.contains("instance")) {
+        c.instance = j.at("instance");
+    }
 
-void from_json(const json& j, Variable& c) {
+    // Required is normally not in the schema here but somewhere else, but well, if it is occasionally or just later on,
+    // it will be added here as well.
+    if (j.contains("required")) {
+        c.required = j.at("required");
+    }
+
+    if (j.contains("default")) {
+        // I want the default value as string here as it is stored in the db as a string as well.
+        const json& default_value = j.at("default");
+        if (default_value.is_string()) {
+            c.default_actual_value = default_value;
+        } else if (default_value.is_array() || default_value.is_object()) {
+            // TODO : error!!
+        } else {
+            c.default_actual_value = default_value.dump();
+        }
+    }
 }
 
 } // namespace ocpp::v201
