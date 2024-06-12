@@ -254,6 +254,11 @@ int64_t DeviceModelStorageSqlite::set_monitoring_data(const SetMonitoringData& d
     insert_stmt->bind_int(4, static_cast<int>(data.type));
     insert_stmt->bind_double(5, data.value);
 
+    // TODO(ioan): We require 2 more DB columns:
+    // 'CONFIG_TYPE_ID' - should be set with 'EventNotificationEnumType' based on how we configure this
+    // 'REFERENCE_VALUE' - should be set in the case of a 'delta' monitor in which we query the reference
+    // that is the current actual value so that we know against what to compare when we make a delta
+
     if (data.id.has_value()) {
         insert_stmt->bind_int(6, data.id.value());
     }

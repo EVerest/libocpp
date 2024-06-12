@@ -45,22 +45,29 @@ template <typename T> T to_specific_type(const std::string& value) {
     }
 }
 
-template<DataEnum T>
-auto to_specific_type_auto(const std::string& value) {
+template <DataEnum T> auto to_specific_type_auto(const std::string& value) {
     if constexpr (T == DataEnum::string) {
         return to_specific_type<std::string>(value);
     } else if constexpr (T == DataEnum::integer) {
         return to_specific_type<int>(value);
     } else if constexpr (T == DataEnum::decimal) {
-        return to_specific_type<double>(value);        
+        return to_specific_type<double>(value);
     } else if constexpr (T == DataEnum::dateTime) {
-        return to_specific_type<DateTime>(value);        
+        return to_specific_type<DateTime>(value);
     } else if constexpr (T == DataEnum::boolean) {
         return to_specific_type<bool>(value);
     } else {
         EVLOG_AND_THROW(std::runtime_error("Requested unknown datatype"));
     }
 }
+
+struct VariableMonitoringEvent {
+    VariableMonitoring monitor;
+    Component component;
+    Variable variable;
+    std::string old_actual_value;
+    std::string current_actual_value;
+};
 
 /// \brief This class manages access to the device model representation and to the device model storage and provides
 /// functionality to support the use cases defined in the functional block Provisioning
@@ -69,7 +76,7 @@ class DeviceModel {
 private:
     DeviceModelMap device_model;
     std::unique_ptr<DeviceModelStorage> storage;
-    std::vector<VariableMonitoring> triggered_monitors;
+    std::vector<VariableMonitoringEvent> triggered_monitors;
 
     /// \brief Private helper method that does some checks with the device model representation in memory to evaluate if
     /// a value for the given parameters can be requested. If it can be requested it will be retrieved from the device
@@ -196,8 +203,7 @@ public:
     /// \brief Returns the internal list of monitors triggered by the 'set_value' function. It is
     /// not cleared internally, the caller should take care of that.
     /// \return The internal list of monitors triggered by a variable set.
-    std::vector<VariableMonitoring>& get_triggered_monitors()
-    {
+    std::vector<VariableMonitoringEvent>& get_triggered_monitors() {
         return triggered_monitors;
     }
 

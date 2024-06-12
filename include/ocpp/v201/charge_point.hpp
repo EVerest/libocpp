@@ -530,7 +530,12 @@ private:
     /// \return Map containing the SetVariableData as a key and the  SetVariableResult as a value for each requested
     /// change
     std::map<SetVariableData, SetVariableResult>
-    set_variables_internal(const std::vector<SetVariableData>& set_variable_data_vector, const bool allow_read_only, const bool triggers_monitors);
+    set_variables_internal(const std::vector<SetVariableData>& set_variable_data_vector, const bool allow_read_only,
+                           const bool triggers_monitors);
+
+    /// \brief To be invoked after setting variables. Will process the internal queue
+    /// of triggered monitors and on a success will clear the queue
+    void process_triggered_monitors();
 
     MeterValue get_latest_meter_value_filtered(const MeterValue& meter_value, ReadingContextEnum context,
                                                const RequiredComponentVariable& component_variable);

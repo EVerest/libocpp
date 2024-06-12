@@ -1776,10 +1776,10 @@ ChargePoint::set_variables_internal(const std::vector<SetVariableData>& set_vari
         // validates variable against business logic of the spec
         if (this->validate_set_variable(set_variable_data)) {
             // attempt to set the value includes device model validation
-            set_variable_result.attributeStatus =
-                this->device_model->set_value(set_variable_data.component, set_variable_data.variable,
-                                              set_variable_data.attributeType.value_or(AttributeEnum::Actual),
-                                              set_variable_data.attributeValue.get(), allow_read_only, triggers_monitors);            
+            set_variable_result.attributeStatus = this->device_model->set_value(
+                set_variable_data.component, set_variable_data.variable,
+                set_variable_data.attributeType.value_or(AttributeEnum::Actual), set_variable_data.attributeValue.get(),
+                allow_read_only, triggers_monitors);
         } else {
             set_variable_result.attributeStatus = SetVariableStatusEnum::Rejected;
         }
@@ -3658,12 +3658,60 @@ ChargePoint::get_variables(const std::vector<GetVariableData>& get_variable_data
     return response;
 }
 
+void ChargePoint::process_triggered_monitors() {
+    // Don't process, while we're offline, store them for later
+    if (is_offline()) {
+        return;
+    }
+
+    static int unique_id = 0;
+
+    auto& triggered = this->device_model->get_triggered_monitors();
+
+    if (triggered.empty()) {
+        return;
+    }
+
+    std::vector<EventData> monitor_events;
+
+    for (auto trigger : triggered) {
+        EventData trigger_event;
+
+        trigger_event.eventId = unique_id++;
+        trigger_event.timestamp = ocpp::DateTime();
+
+        if (trigger.monitor.type == MonitorEnum::Delta) {
+            trigger_event.trigger = EventTriggerEnum::Delta;
+        } else {
+            trigger_event.trigger = EventTriggerEnum::Alerting;
+        }
+
+        trigger_event.actualValue = trigger.current_actual_value;
+        trigger_event.variableMonitoringId = trigger.monitor.id;
+        trigger_event.variable = trigger.variable;
+        trigger_event.component = trigger.component;
+
+        // TODO (ioan): Extract this from a value that we'll extract from the database
+        // The monitor should have some extra DB column 'CONFIG_TYPE_ID'
+        trigger_event.eventNotificationType = EventNotificationEnum::HardWiredMonitor;
+
+        monitor_events.push_back(std::move(trigger_event));
+    }
+
+    if (!monitor_events.empty()) {
+        this->notify_event_req(monitor_events);
+
+        // Clear the triggered events, since we've sent them over the wire
+        triggered.clear();
+    }
+}
+
 std::map<SetVariableData, SetVariableResult>
 ChargePoint::set_variables(const std::vector<SetVariableData>& set_variable_data_vector) {
     // set variables and allow setting of ReadOnly variables
     const auto response = this->set_variables_internal(set_variable_data_vector, true, true);
 
-    auto& triggered = this->device_model->get_triggered_monitors();
+    this->process_triggered_monitors();
 
     this->handle_variables_changed(response);
     return response;

@@ -214,27 +214,28 @@ GetVariableStatusEnum DeviceModel::request_value_internal(const Component& compo
     return GetVariableStatusEnum::Accepted;
 }
 
-template<DataEnum T>
-bool triggers_monitor(const VariableMonitoring &monitor, const std::string& value_current, const std::string& value_new) {
-    if constexpr(T == DataEnum::boolean) {
+template <DataEnum T>
+bool triggers_monitor(const VariableMonitoring& monitor, const std::string& value_current,
+                      const std::string& value_new) {
+    if constexpr (T == DataEnum::boolean) {
         return (value_current != value_new);
     } else {
         auto raw_val_current = to_specific_type_auto<T>(value_current);
 
-        if(monitor.type == MonitorEnum::Delta) {
+        if (monitor.type == MonitorEnum::Delta) {
             auto raw_val_new = to_specific_type_auto<T>(value_new);
             auto delta = std::abs(raw_val_current - raw_val_new);
 
             return (delta > monitor.value);
-        } else if(monitor.type == MonitorEnum::LowerThreshold) {
+        } else if (monitor.type == MonitorEnum::LowerThreshold) {
             return (raw_val_current < monitor.value);
-        } else if(monitor.type == MonitorEnum::UpperThreshold) {
+        } else if (monitor.type == MonitorEnum::UpperThreshold) {
             return (raw_val_current > monitor.value);
         } else {
             EVLOG_AND_THROW(std::runtime_error("Requested unsupported trigger monitor"));
         }
     }
-    
+
     return false;
 }
 
@@ -277,10 +278,10 @@ SetVariableStatusEnum DeviceModel::set_value(const Component& component, const V
 
     const auto success = this->storage->set_variable_attribute_value(component, variable, attribute_enum, value);
 
-    if(trigger_monitors) {
+    if (trigger_monitors) {
         // Detect a significant value change if we have a monitor for this variable
         const auto& monitors = variable_map[variable].monitors;
-        if((attribute_enum == AttributeEnum::Actual) && success && !monitors.empty()) {
+        if ((attribute_enum == AttributeEnum::Actual) && success && !monitors.empty()) {
             std::string value_current = attribute.value().value.value();
             std::string value_new = value;
 
@@ -294,18 +295,18 @@ SetVariableStatusEnum DeviceModel::set_value(const Component& component, const V
 
                 bool monitor_triggered = false;
 
-                if((characteristics.dataType == DataEnum::boolean) || (characteristics.dataType == DataEnum::string)) {
+                if ((characteristics.dataType == DataEnum::boolean) || (characteristics.dataType == DataEnum::string)) {
                     monitor_triggered = triggers_monitor<DataEnum::boolean>(monitor, value_current, value_new);
-                } else if(characteristics.dataType == DataEnum::decimal) {
+                } else if (characteristics.dataType == DataEnum::decimal) {
                     monitor_triggered = triggers_monitor<DataEnum::decimal>(monitor, value_current, value_new);
-                } else if(characteristics.dataType == DataEnum::integer) {
+                } else if (characteristics.dataType == DataEnum::integer) {
                     monitor_triggered = triggers_monitor<DataEnum::integer>(monitor, value_current, value_new);
                 } else {
                     EVLOG_AND_THROW(std::runtime_error("Requested variable type"));
                 }
 
-                if(monitor_triggered) {
-                    triggered_monitors.push_back(monitor);
+                if (monitor_triggered) {
+                    triggered_monitors.push_back({monitor, component, variable, value_current, value_new});
                 }
             }
         }
