@@ -61,6 +61,14 @@ template <DataEnum T> auto to_specific_type_auto(const std::string& value) {
     }
 }
 
+struct VariableMonitoringPeriodic {
+    VariableMonitoring monitor;
+    Component component;
+    Variable variable;
+    std::chrono::time_point<std::chrono::system_clock> last_trigger_system;
+    std::chrono::time_point<std::chrono::steady_clock> last_trigger_steady;
+};
+
 struct VariableMonitoringEvent {
     VariableMonitoring monitor;
     Component component;
@@ -77,6 +85,7 @@ private:
     DeviceModelMap device_model;
     std::unique_ptr<DeviceModelStorage> storage;
     std::vector<VariableMonitoringEvent> triggered_monitors;
+    std::vector<VariableMonitoringPeriodic> periodic_monitors;
 
     /// \brief Private helper method that does some checks with the device model representation in memory to evaluate if
     /// a value for the given parameters can be requested. If it can be requested it will be retrieved from the device
@@ -205,6 +214,10 @@ public:
     /// \return The internal list of monitors triggered by a variable set.
     std::vector<VariableMonitoringEvent>& get_triggered_monitors() {
         return triggered_monitors;
+    }
+
+    std::vector<VariableMonitoringPeriodic>& get_periodic_monitors() {
+        return periodic_monitors;
     }
 
     /// \brief Sets the variable_id attribute \p value specified by \p component_id , \p variable_id and \p

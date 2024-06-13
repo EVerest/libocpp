@@ -74,6 +74,7 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
     csr_attempt(1),
     client_certificate_expiration_check_timer([this]() { this->scheduled_check_client_certificate_expiration(); }),
     v2g_certificate_expiration_check_timer([this]() { this->scheduled_check_v2g_certificate_expiration(); }),
+    monitors_timer([this]() { this->process_periodic_monitors(); }),
     callbacks(callbacks) {
     // Make sure the received callback struct is completely filled early before we actually start running
     if (!this->callbacks.all_callbacks_valid()) {
@@ -163,6 +164,9 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
     // configure logging
     this->configure_message_logging_format(message_log_path);
 
+    // configure monitor logging
+    monitors_timer.interval(std::chrono::seconds(1));
+
     this->message_queue = std::make_unique<ocpp::MessageQueue<v201::MessageType>>(
         [this](json message) -> bool { return this->websocket->send(message.dump()); },
         MessageQueueConfig{
@@ -226,6 +230,7 @@ void ChargePoint::stop() {
     this->websocket_timer.stop();
     this->client_certificate_expiration_check_timer.stop();
     this->v2g_certificate_expiration_check_timer.stop();
+    this->monitors_timer.stop();
     this->disconnect_websocket(WebsocketCloseReason::Normal);
     this->message_queue->stop();
 }
@@ -3658,8 +3663,88 @@ ChargePoint::get_variables(const std::vector<GetVariableData>& get_variable_data
     return response;
 }
 
+void ChargePoint::process_periodic_monitors() {
+    if (is_offline()) {
+        return;
+    }
+
+    auto& monitors = this->device_model->get_periodic_monitors();
+
+    static int unique_id = 0;
+    std::vector<EventData> monitor_events;
+
+    for (auto& periodic_monitor : monitors) {
+        bool matches_time = false;
+
+        if (periodic_monitor.monitor.type == MonitorEnum::Periodic) {
+            auto current_time = std::chrono::steady_clock::now();
+            auto delta = current_time - periodic_monitor.last_trigger_steady;
+
+            if (delta > std::chrono::seconds(static_cast<int64_t>(periodic_monitor.monitor.value))) {
+                // Update last time
+                periodic_monitor.last_trigger_steady = current_time;
+                matches_time = true;
+            }
+        } else if (periodic_monitor.monitor.type == MonitorEnum::PeriodicClockAligned) {
+            // 3.55
+            // PeriodicClockAligned Triggers an event notice every monitorValue
+            // seconds interval, starting from the nearest clock-aligned interval
+            // after this monitor was set. For example, a monitorValue of 900 will
+            // trigger event notices at 0, 15, 30 and 45 minutes after the hour, every hour.
+
+            auto current_time = std::chrono::system_clock::now();
+            auto current_hours = std::chrono::floor<std::chrono::hours>(current_time);
+
+            // The current seconds that we are into the hour
+            auto current_seconds =
+                std::chrono::duration_cast<std::chrono::seconds>(current_time - current_hours).count();
+
+            // If we are very close to a multiple of the provided interval, there is a trigger
+            // For example if the current second is at 3502s and the interval is 500s, we are 2
+            // seconds from the interval at 3500, a trigger is hit
+            auto distance = (current_seconds % static_cast<decltype(current_seconds)>(periodic_monitor.monitor.value));
+            auto last_call =
+                std::chrono::duration_cast<std::chrono::seconds>(current_time - periodic_monitor.last_trigger_system)
+                    .count();
+
+            if (distance <= 1 && last_call > 1) {
+                periodic_monitor.last_trigger_system = current_time;
+                matches_time = true;
+            }
+        }
+
+        if (matches_time) {
+            RequiredComponentVariable comp_var;
+            comp_var.component = periodic_monitor.component;
+            comp_var.variable = periodic_monitor.variable;
+
+            std::string current_value = this->device_model->get_value<std::string>(comp_var);
+
+            EventData trigger_event;
+
+            trigger_event.eventId = unique_id++;
+            trigger_event.timestamp = ocpp::DateTime();
+            trigger_event.trigger = EventTriggerEnum::Periodic;
+            trigger_event.actualValue = current_value;
+            trigger_event.variableMonitoringId = periodic_monitor.monitor.id;
+            trigger_event.variable = periodic_monitor.variable;
+            trigger_event.component = periodic_monitor.component;
+
+            // TODO (ioan): Extract this from a value that we'll extract from the database
+            // The monitor should have some extra DB column 'CONFIG_TYPE_ID'
+            trigger_event.eventNotificationType = EventNotificationEnum::HardWiredMonitor;
+
+            monitor_events.push_back(std::move(trigger_event));
+        }
+    }
+
+    if (!monitor_events.empty()) {
+        this->notify_event_req(monitor_events);
+    }
+}
+
 void ChargePoint::process_triggered_monitors() {
-    // Don't process, while we're offline, store them for later
+    // Don't process while we're offline, store them for later
     if (is_offline()) {
         return;
     }
@@ -3668,12 +3753,7 @@ void ChargePoint::process_triggered_monitors() {
 
     auto& triggered = this->device_model->get_triggered_monitors();
 
-    if (triggered.empty()) {
-        return;
-    }
-
     std::vector<EventData> monitor_events;
-
     for (auto trigger : triggered) {
         EventData trigger_event;
 

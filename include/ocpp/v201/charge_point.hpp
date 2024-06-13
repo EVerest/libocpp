@@ -411,6 +411,7 @@ private:
     Everest::SteadyTimer boot_notification_timer;
     Everest::SteadyTimer client_certificate_expiration_check_timer;
     Everest::SteadyTimer v2g_certificate_expiration_check_timer;
+    Everest::SteadyTimer monitors_timer;
     ClockAlignedTimer aligned_meter_values_timer;
 
     // time keeping
@@ -536,6 +537,7 @@ private:
     /// \brief To be invoked after setting variables. Will process the internal queue
     /// of triggered monitors and on a success will clear the queue
     void process_triggered_monitors();
+    void process_periodic_monitors();
 
     MeterValue get_latest_meter_value_filtered(const MeterValue& meter_value, ReadingContextEnum context,
                                                const RequiredComponentVariable& component_variable);
