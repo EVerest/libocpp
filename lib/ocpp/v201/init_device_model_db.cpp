@@ -42,6 +42,46 @@ const static std::map<std::string, uint8_t> VARIABLE_ATTRIBUTE_TYPE_ENCODING = {
 };
 /* clang-format on */
 
+static bool is_same_component_key(const ComponentKey& component_key1, const ComponentKey& component_key2) {
+    if ((component_key1.name == component_key2.name) && (component_key1.evse_id == component_key2.evse_id) &&
+        (component_key1.connector_id == component_key2.connector_id) &&
+        (component_key1.instance == component_key2.instance)) {
+        // We did not compare the 'required' here as that does not define a ComponentKey
+        return true;
+    }
+
+    return false;
+}
+
+static bool is_same_variable_attribute_key(const VariableAttributeKey& attribute_key1,
+                                           const VariableAttributeKey& attribute_key2) {
+    if ((attribute_key1.attribute_type == attribute_key2.attribute_type) &&
+        (attribute_key1.instance == attribute_key2.instance) && attribute_key1.name == attribute_key2.name) {
+        // We did not compare the 'value' here as we want to check if the attribute is the same and not the value of the
+        // attribute.
+        return true;
+    }
+
+    return false;
+}
+
+static std::string get_string_value_from_json(const json& value) {
+    if (value.is_string()) {
+        return value;
+    } else if (value.is_boolean()) {
+        if (value.get<bool>()) {
+            // Convert to lower case if that is not the case currently.
+            return "true";
+        }
+        return "false";
+    } else if (value.is_array() || value.is_object()) {
+        return "";
+        // TODO : error!!
+    } else {
+        return value.dump();
+    }
+}
+
 InitDeviceModelDb::InitDeviceModelDb(const std::filesystem::path& database_path,
                                      const std::filesystem::path& migration_files_path) :
     common::DatabaseHandlerCommon(std::make_unique<common::DatabaseConnection>(database_path), migration_files_path,
@@ -60,12 +100,10 @@ bool InitDeviceModelDb::initialize_database(const std::filesystem::path& schemas
         return false;
     }
 
-    const std::vector<std::filesystem::path> standardized_component_schema_files =
-        get_component_schemas_from_directory(schemas_path / STANDARDIZED_COMPONENT_SCHEMAS_DIR);
-    const std::vector<std::filesystem::path> custom_component_schema_files =
-        get_component_schemas_from_directory(schemas_path / CUSTOM_COMPONENT_SCHEMAS_DIR);
+    std::map<ComponentKey, std::vector<DeviceModelVariable>> component_schemas =
+        get_all_component_schemas(schemas_path);
 
-    if (!insert_components(standardized_component_schema_files, custom_component_schema_files)) {
+    if (!insert_components(component_schemas)) {
         throw common::DatabaseException("Could not insert components in the database"); // TODO which exception?
     }
     // TODO
@@ -77,6 +115,57 @@ bool InitDeviceModelDb::insert_config_and_default_values(const std::filesystem::
                                                          const std::filesystem::path& config_path) {
     std::map<ComponentKey, std::vector<VariableAttributeKey>> default_values =
         get_component_default_values(schemas_path);
+    std::map<ComponentKey, std::vector<VariableAttributeKey>> config_values = get_config_values(config_path);
+
+    for (const auto& component_variables : config_values) {
+        for (const VariableAttributeKey& attribute_key : component_variables.second) {
+            insert_variable_attribute_value(component_variables.first, attribute_key);
+        }
+    }
+
+    for (const auto& component_variables : default_values) {
+        // Compare with config_values if the value is already added. If it is, don't add the default value,
+        // otherwise add the default value.
+        const auto& it = std::find_if(
+            config_values.begin(), config_values.end(),
+            [&component_variables](const std::pair<ComponentKey, std::vector<VariableAttributeKey>> config_value) {
+                if (is_same_component_key(config_value.first, component_variables.first)) {
+                    return true;
+                }
+
+                return false;
+            });
+        bool component_found = true;
+        std::vector<VariableAttributeKey> config_attribute_keys;
+        if (it == config_values.end()) {
+            // Not found, add all default values of this component.
+            component_found = false;
+        } else {
+            config_attribute_keys = it->second;
+        }
+
+        for (const VariableAttributeKey& attribute_key : component_variables.second) {
+            if (component_found) {
+                auto attribute_key_it =
+                    std::find_if(config_attribute_keys.begin(), config_attribute_keys.end(),
+                                 [attribute_key](const VariableAttributeKey& config_attribute_key) {
+                                     if (is_same_variable_attribute_key(attribute_key, config_attribute_key)) {
+                                         return true;
+                                     }
+                                     return false;
+                                 });
+
+                if (attribute_key_it != config_attribute_keys.end()) {
+                    // Attribute key is found in config, so we should not add a default value to the database.
+                    continue;
+                }
+            }
+
+            // Whole component is not found, or component is found but attribute is not found. Add default value to
+            // database.
+            insert_variable_attribute_value(component_variables.first, attribute_key);
+        }
+    }
 
     return true;
 }
@@ -110,18 +199,28 @@ InitDeviceModelDb::get_component_schemas_from_directory(const std::filesystem::p
     return component_schema_files;
 }
 
-bool InitDeviceModelDb::insert_components(const std::vector<std::filesystem::path>& standardized_components,
-                                          const std::vector<std::filesystem::path>& custom_components) {
-    bool success = true;
+std::map<ComponentKey, std::vector<DeviceModelVariable>>
+InitDeviceModelDb::get_all_component_schemas(const std::filesystem::path& directory) {
+    const std::vector<std::filesystem::path> standardized_component_schema_files =
+        get_component_schemas_from_directory(directory / STANDARDIZED_COMPONENT_SCHEMAS_DIR);
+    const std::vector<std::filesystem::path> custom_component_schema_files =
+        get_component_schemas_from_directory(directory / CUSTOM_COMPONENT_SCHEMAS_DIR);
 
     std::map<ComponentKey, std::vector<DeviceModelVariable>> standardized_components_map =
-        read_component_schemas(standardized_components);
-    std::map<ComponentKey, std::vector<DeviceModelVariable>> components = read_component_schemas(custom_components);
+        read_component_schemas(standardized_component_schema_files);
+    std::map<ComponentKey, std::vector<DeviceModelVariable>> components =
+        read_component_schemas(custom_component_schema_files);
 
     // Merge the two maps so they can be used for the insert_component function with a single iterator. This will use
     // the custom components map as base and add not existing standardized components to the components map. So if the
     // component exists in both, the custom component will be used.
     components.merge(standardized_components_map);
+
+    return components;
+}
+
+bool InitDeviceModelDb::insert_components(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& components) {
+    bool success = true;
 
     for (std::pair<ComponentKey, std::vector<DeviceModelVariable>> component : components) {
         if (!insert_component(component.first, component.second)) {
@@ -336,20 +435,7 @@ void InitDeviceModelDb::insert_attributes(const std::vector<DeviceModelVariableA
 
 std::map<ComponentKey, std::vector<VariableAttributeKey>>
 InitDeviceModelDb::get_component_default_values(const std::filesystem::path& schemas_path) {
-    const std::vector<std::filesystem::path> standardized_component_schema_files =
-        get_component_schemas_from_directory(schemas_path / STANDARDIZED_COMPONENT_SCHEMAS_DIR);
-    const std::vector<std::filesystem::path> custom_component_schema_files =
-        get_component_schemas_from_directory(schemas_path / CUSTOM_COMPONENT_SCHEMAS_DIR);
-
-    std::map<ComponentKey, std::vector<DeviceModelVariable>> standardized_components_map =
-        read_component_schemas(standardized_component_schema_files);
-    std::map<ComponentKey, std::vector<DeviceModelVariable>> components =
-        read_component_schemas(custom_component_schema_files);
-
-    // Merge the two maps so they can be used for the insert_component function with a single iterator. This will use
-    // the custom components map as base and add not existing standardized components to the components map. So if the
-    // component exists in both, the custom component will be used.
-    components.merge(standardized_components_map);
+    std::map<ComponentKey, std::vector<DeviceModelVariable>> components = get_all_component_schemas(schemas_path);
 
     std::map<ComponentKey, std::vector<VariableAttributeKey>> component_default_values;
     for (auto const& [componentKey, variables] : components) {
@@ -371,6 +457,99 @@ InitDeviceModelDb::get_component_default_values(const std::filesystem::path& sch
     }
 
     return component_default_values;
+}
+
+std::map<ComponentKey, std::vector<VariableAttributeKey>>
+InitDeviceModelDb::get_config_values(const std::filesystem::path& config_file_path) {
+    std::map<ComponentKey, std::vector<VariableAttributeKey>> config_values;
+    std::ifstream config_file(config_file_path);
+    json config_json = json::parse(config_file);
+    for (const auto& j : config_json.items()) {
+        ComponentKey p = j.value();
+        std::vector<VariableAttributeKey> attribute_keys;
+        for (const auto& variable : j.value().at("variables").items()) {
+            for (const auto& attributes : variable.value().at("attributes").items()) {
+                VariableAttributeKey key;
+                key.name = variable.value().at("variable_name");
+                key.attribute_type = attributes.key();
+                key.value = get_string_value_from_json(attributes.value());
+                if (attributes.value().contains("instance")) {
+                    key.instance = attributes.value().at("instance");
+                }
+                attribute_keys.push_back(key);
+            }
+        }
+
+        config_values.insert({p, attribute_keys});
+    }
+
+    return config_values;
+}
+
+void InitDeviceModelDb::insert_variable_attribute_value(const ComponentKey& component_key,
+                                                        const VariableAttributeKey& variable_attribute_key) {
+    static const std::string statement = "UPDATE VARIABLE_ATTRIBUTE "
+                                         "SET VALUE = @value "
+                                         "WHERE VARIABLE_ID = ("
+                                         "SELECT VARIABLE.ID "
+                                         "FROM VARIABLE "
+                                         "JOIN COMPONENT ON COMPONENT.ID = VARIABLE.COMPONENT_ID "
+                                         "WHERE COMPONENT.NAME = @component_name "
+                                         "AND COMPONENT.INSTANCE IS @component_instance "
+                                         "AND COMPONENT.EVSE_ID IS @evse_id "
+                                         "AND COMPONENT.CONNECTOR_ID IS @connector_id "
+                                         "AND VARIABLE.NAME = @variable_name "
+                                         "AND VARIABLE.INSTANCE IS @variable_instance) "
+                                         "AND TYPE_ID = @type_id";
+
+    uint8_t type_id;
+
+    const auto& it = VARIABLE_ATTRIBUTE_TYPE_ENCODING.find(variable_attribute_key.attribute_type);
+    if (it != VARIABLE_ATTRIBUTE_TYPE_ENCODING.end()) {
+        type_id = it->second;
+    } else {
+        EVLOG_error << "Could not find type " << variable_attribute_key.attribute_type << " of component "
+                    << component_key.name << " and variable " << variable_attribute_key.name;
+        // TODO throw?? Or what to do here??? Just not add the whole thing?
+        return;
+    }
+
+    std::unique_ptr<common::SQLiteStatementInterface> insert_variable_attribute_statement =
+        this->database->new_statement(statement);
+
+    insert_variable_attribute_statement->bind_text("@value", variable_attribute_key.value);
+    insert_variable_attribute_statement->bind_text("@component_name", component_key.name);
+    if (component_key.instance.has_value()) {
+        insert_variable_attribute_statement->bind_text("@component_instance", component_key.instance.value());
+    } else {
+        insert_variable_attribute_statement->bind_null("@component_instance");
+    }
+
+    if (component_key.evse_id.has_value()) {
+        insert_variable_attribute_statement->bind_int("@evse_id", component_key.evse_id.value());
+    } else {
+        insert_variable_attribute_statement->bind_null("@evse_id");
+    }
+
+    if (component_key.connector_id.has_value()) {
+        insert_variable_attribute_statement->bind_int("@connector_id", component_key.connector_id.value());
+    } else {
+        insert_variable_attribute_statement->bind_null("@connector_id");
+    }
+
+    insert_variable_attribute_statement->bind_text("@variable_name", variable_attribute_key.name);
+
+    if (variable_attribute_key.instance.has_value()) {
+        insert_variable_attribute_statement->bind_text("@variable_instance", variable_attribute_key.instance.value());
+    } else {
+        insert_variable_attribute_statement->bind_null("@variable_instance");
+    }
+
+    insert_variable_attribute_statement->bind_int("@type_id", type_id);
+
+    if (insert_variable_attribute_statement->step() != SQLITE_DONE) {
+        throw common::QueryExecutionException(this->database->get_error_message());
+    }
 }
 
 void InitDeviceModelDb::init_sql() {
@@ -462,8 +641,17 @@ void from_json(const json& j, DeviceModelVariable& c) {
     if (j.contains("default")) {
         // I want the default value as string here as it is stored in the db as a string as well.
         const json& default_value = j.at("default");
+        c.default_actual_value = get_string_value_from_json(default_value);
         if (default_value.is_string()) {
             c.default_actual_value = default_value;
+        } else if (default_value.is_boolean()) {
+            if (default_value.get<bool>()) {
+                // Convert to lower case if that is not the case currently.
+                c.default_actual_value = "true";
+            } else {
+                // Convert to lower case if that is not the case currently.
+                c.default_actual_value = "false";
+            }
         } else if (default_value.is_array() || default_value.is_object()) {
             // TODO : error!!
         } else {

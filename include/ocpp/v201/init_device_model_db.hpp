@@ -11,7 +11,7 @@ namespace ocpp::v201 {
 
 struct ComponentKey {
     std::string name;
-    std::optional<std::string> instance = "";
+    std::optional<std::string> instance;
     std::optional<int32_t> evse_id;
     std::optional<int32_t> connector_id;
     std::vector<std::string> required;
@@ -45,7 +45,7 @@ struct DeviceModelVariable {
 
 struct VariableAttributeKey {
     std::string name;
-    std::string instance;
+    std::optional<std::string> instance;
     std::string attribute_type;
     std::string value;
 };
@@ -92,8 +92,9 @@ public:
 private: // Functions
     bool execute_init_sql(const bool delete_db_if_exists);
     std::vector<std::filesystem::path> get_component_schemas_from_directory(const std::filesystem::path& directory);
-    bool insert_components(const std::vector<std::filesystem::path>& standardized_components,
-                           const std::vector<std::filesystem::path>& custom_components);
+    std::map<ComponentKey, std::vector<DeviceModelVariable>>
+    get_all_component_schemas(const std::filesystem::path& directory);
+    bool insert_components(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& components);
 
     bool insert_component(const ComponentKey& component_key,
                           const std::vector<DeviceModelVariable> component_variables);
@@ -119,6 +120,10 @@ private: // Functions
 
     std::map<ComponentKey, std::vector<VariableAttributeKey>>
     get_component_default_values(const std::filesystem::path& schemas_path);
+    std::map<ComponentKey, std::vector<VariableAttributeKey>>
+    get_config_values(const std::filesystem::path& config_file_path);
+    void insert_variable_attribute_value(const ComponentKey& component_key,
+                                         const VariableAttributeKey& variable_attribute_key);
 
     // DatabaseHandlerCommon interface
 protected: // Functions
