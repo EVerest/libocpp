@@ -10,6 +10,7 @@
 namespace ocpp::v201 {
 
 struct ComponentKey {
+    std::optional<uint64_t> db_id;
     std::string name;
     std::optional<std::string> instance;
     std::optional<int32_t> evse_id;
@@ -61,6 +62,7 @@ void from_json(const json& j, DeviceModelVariable& c);
 class InitDeviceModelDb : public common::DatabaseHandlerCommon {
 private: // Members
     const std::filesystem::path database_path;
+    bool database_exists;
 
 public:
     ///
@@ -94,7 +96,8 @@ private: // Functions
     std::vector<std::filesystem::path> get_component_schemas_from_directory(const std::filesystem::path& directory);
     std::map<ComponentKey, std::vector<DeviceModelVariable>>
     get_all_component_schemas(const std::filesystem::path& directory);
-    bool insert_components(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& components);
+    bool insert_components(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& components,
+                           const std::vector<ComponentKey>& existing_components);
 
     bool insert_component(const ComponentKey& component_key,
                           const std::vector<DeviceModelVariable> component_variables);
@@ -111,10 +114,11 @@ private: // Functions
     /// \throws common::RequiredEntryNotFoundException if dataType is not found / not valid.
     /// \throws common::QueryExecutionException if row could not be added to db.
     ///
-    int64_t insert_variable_characteristics(const DeviceModelVariableCharacteristics& characteristics);
+    void insert_variable_characteristics(const DeviceModelVariableCharacteristics& characteristics,
+                                         const int64_t& variable_id);
 
     int64_t insert_variable(const std::string& variable_name, const std::string& instance, const int64_t& component_id,
-                            const int64_t variable_characteristics_id, const bool required);
+                            const bool required);
 
     void insert_attributes(const std::vector<DeviceModelVariableAttribute>& attributes, const int64_t& variable_id);
 
@@ -124,6 +128,20 @@ private: // Functions
     get_config_values(const std::filesystem::path& config_file_path);
     void insert_variable_attribute_value(const ComponentKey& component_key,
                                          const VariableAttributeKey& variable_attribute_key);
+    std::vector<ComponentKey> get_all_connector_and_evse_components_fom_db();
+    bool component_exists_in_db(const std::vector<ComponentKey>& db_components, const ComponentKey& component);
+    bool component_exists_in_schemas(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& component_schema,
+                                     const ComponentKey& component);
+
+    /**
+     * @brief Remove components from db that do not exist in the component schemas.
+     * @param component_schemas The component schemas.
+     * @param db_components     The components in the database.
+     */
+    void remove_not_existing_components_from_db(
+        const std::map<ComponentKey, std::vector<DeviceModelVariable>>& component_schemas,
+        const std::vector<ComponentKey>& db_components);
+    bool remove_component_from_db(const ComponentKey& component);
 
     // DatabaseHandlerCommon interface
 protected: // Functions

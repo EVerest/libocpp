@@ -86,7 +86,8 @@ InitDeviceModelDb::InitDeviceModelDb(const std::filesystem::path& database_path,
                                      const std::filesystem::path& migration_files_path) :
     common::DatabaseHandlerCommon(std::make_unique<common::DatabaseConnection>(database_path), migration_files_path,
                                   DEVICE_MODEL_MIGRATION_FILE_VERSION),
-    database_path(database_path) {
+    database_path(database_path),
+    database_exists(std::filesystem::exists(database_path)) {
 }
 
 InitDeviceModelDb::~InitDeviceModelDb() {
@@ -100,10 +101,22 @@ bool InitDeviceModelDb::initialize_database(const std::filesystem::path& schemas
         return false;
     }
 
+    // Get existing EVSE and Connector components from the database.
+    std::vector<ComponentKey> existing_components;
+    if (this->database_exists) {
+        existing_components = get_all_connector_and_evse_components_fom_db();
+    }
+
+    // Get component schemas from the filesystem.
     std::map<ComponentKey, std::vector<DeviceModelVariable>> component_schemas =
         get_all_component_schemas(schemas_path);
 
-    if (!insert_components(component_schemas)) {
+    // Remove components from db if they do not exist in the component schemas
+    if (this->database_exists) {
+        remove_not_existing_components_from_db(component_schemas, existing_components);
+    }
+
+    if (!insert_components(component_schemas, existing_components)) {
         throw common::DatabaseException("Could not insert components in the database"); // TODO which exception?
     }
     // TODO
@@ -219,14 +232,22 @@ InitDeviceModelDb::get_all_component_schemas(const std::filesystem::path& direct
     return components;
 }
 
-bool InitDeviceModelDb::insert_components(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& components) {
+bool InitDeviceModelDb::insert_components(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& components,
+                                          const std::vector<ComponentKey>& existing_components) {
     bool success = true;
 
     for (std::pair<ComponentKey, std::vector<DeviceModelVariable>> component : components) {
-        if (!insert_component(component.first, component.second)) {
-            // TODO did one of the functions not throw here? E.g. should I add a throw catch or just re throw???
-            EVLOG_error << "Could not insert component" << component.first.name;
-            success = false;
+        // Check if component already exists in the database.
+        if (!this->database_exists || !component_exists_in_db(existing_components, component.first)) {
+            // Component does not exist, insert component.
+            if (!insert_component(component.first, component.second)) {
+                // TODO did one of the functions not throw here? E.g. should I add a throw catch or just re throw???
+                EVLOG_error << "Could not insert component" << component.first.name;
+                success = false;
+            }
+        } else {
+            // Component exists in the database, update component if necessary.
+            // TODO
         }
     }
 
@@ -278,12 +299,11 @@ bool InitDeviceModelDb::insert_component(const ComponentKey& component_key,
             instance = variable.instance.value();
         }
 
-        // Add variable characteristic
-        const int64_t variable_characteristics_id = insert_variable_characteristics(variable.characteristics);
-
         // Add variable
-        const int64_t variable_id =
-            insert_variable(variable_name, instance, component_id, variable_characteristics_id, variable.required);
+        const int64_t variable_id = insert_variable(variable_name, instance, component_id, variable.required);
+
+        // Add variable characteristic
+        insert_variable_characteristics(variable.characteristics, variable_id);
 
         insert_attributes(variable.attributes, variable_id);
     }
@@ -331,16 +351,20 @@ InitDeviceModelDb::get_all_component_properties(const json& component_properties
     return variables;
 }
 
-int64_t InitDeviceModelDb::insert_variable_characteristics(const DeviceModelVariableCharacteristics& characteristics) {
-    static const std::string statement =
-        "INSERT OR REPLACE INTO VARIABLE_CHARACTERISTICS (DATATYPE_ID, MAX_LIMIT, MIN_LIMIT, SUPPORTS_MONITORING, "
-        "UNIT, VALUES_LIST) VALUES (@datatype_id, @max_limit, @min_limit, @supports_monitoring, @unit, @values_list)";
+void InitDeviceModelDb::insert_variable_characteristics(const DeviceModelVariableCharacteristics& characteristics,
+                                                        const int64_t& variable_id) {
+    static const std::string statement = "INSERT OR REPLACE INTO VARIABLE_CHARACTERISTICS (DATATYPE_ID, VARIABLE_ID, "
+                                         "MAX_LIMIT, MIN_LIMIT, SUPPORTS_MONITORING, "
+                                         "UNIT, VALUES_LIST) VALUES (@datatype_id, @variable_id, @max_limit, "
+                                         "@min_limit, @supports_monitoring, @unit, @values_list)";
 
     std::unique_ptr<common::SQLiteStatementInterface> insert_characteristics_statement =
         this->database->new_statement(statement);
 
     const uint8_t data_type = characteristics.data_type_id;
     insert_characteristics_statement->bind_int("@datatype_id", data_type);
+
+    insert_characteristics_statement->bind_int("@variable_id", variable_id);
 
     const uint8_t supports_monitoring = (characteristics.supports_monitoring ? 1 : 0);
     insert_characteristics_statement->bind_int("@supports_monitoring", supports_monitoring);
@@ -372,23 +396,19 @@ int64_t InitDeviceModelDb::insert_variable_characteristics(const DeviceModelVari
     if (insert_characteristics_statement->step() != SQLITE_DONE) {
         throw common::QueryExecutionException(this->database->get_error_message());
     }
-
-    return this->database->get_last_inserted_rowid();
 }
 
 int64_t InitDeviceModelDb::insert_variable(const std::string& variable_name, const std::string& instance,
-                                           const int64_t& component_id, const int64_t variable_characteristics_id,
-                                           const bool required) {
+                                           const int64_t& component_id, const bool required) {
     static const std::string statement =
-        "INSERT OR REPLACE INTO VARIABLE (NAME, INSTANCE, COMPONENT_ID, VARIABLE_CHARACTERISTICS_ID, REQUIRED) VALUES "
-        "(@name, @instance, @component_id, @variable_characteristics_id, @required)";
+        "INSERT OR REPLACE INTO VARIABLE (NAME, INSTANCE, COMPONENT_ID, REQUIRED) VALUES "
+        "(@name, @instance, @component_id, @required)";
 
     std::unique_ptr<common::SQLiteStatementInterface> insert_variable_statement =
         this->database->new_statement(statement);
 
     insert_variable_statement->bind_text("@name", variable_name);
     insert_variable_statement->bind_int("@component_id", component_id);
-    insert_variable_statement->bind_int("@variable_characteristics_id", variable_characteristics_id);
 
     if (!instance.empty()) {
         insert_variable_statement->bind_text("@instance", instance);
@@ -550,6 +570,105 @@ void InitDeviceModelDb::insert_variable_attribute_value(const ComponentKey& comp
     if (insert_variable_attribute_statement->step() != SQLITE_DONE) {
         throw common::QueryExecutionException(this->database->get_error_message());
     }
+}
+
+std::vector<ComponentKey> InitDeviceModelDb::get_all_connector_and_evse_components_fom_db() {
+    /* clang-format off */
+    // const std::string statement =
+    //     "SELECT "
+    //         "c.ID as component_id, c.NAME as component_name, c.INSTANCE as component_instance, c.EVSE_ID as evse_id, "
+    //         "c.CONNECTOR_ID as connector_id, "
+    //         "v.ID as variable_id, v.NAME as variable_name, v.REQUIRED as required, "
+    //         "vc.ID as characteristics_id, vc.DATATYPE_ID as characteristics_datatype, vc.MAX_LIMIT as max_limit, "
+    //         "vc.MIN_LIMIT as min_limit, vc.SUPPORTS_MONITORING as supports_monitoring, vc.UNIT as unit, "
+    //         "vc.VALUES_LIST as values_list, "
+    //         "va.ID as attribute_id, va.MUTABILITY_ID as mutability, va.PERSISTENT as persistent, "
+    //         "va.CONSTANT as constant, va.TYPE_ID as attribute_type, va.VALUE as value "
+    //     "FROM "
+    //         "COMPONENT c "
+    //         "JOIN VARIABLE v ON v.COMPONENT_ID = c.ID "
+    //         "JOIN VARIABLE_CHARACTERISTICS vc ON v.VARIABLE_CHARACTERISTICS_ID = vc.ID "
+    //         "JOIN VARIABLE_ATTRIBUTE va ON va.VARIABLE_ID = v.ID WHERE c.NAME == 'EVSE' COLLATE NOCASE "
+    //             "OR c.NAME == 'Connector' COLLATE NOCASE ";
+    /* clang-format on */
+    std::vector<ComponentKey> components;
+
+    const std::string statement = "SELECT ID, NAME, INSTANCE, EVSE_ID, CONNECTOR_ID FROM COMPONENT "
+                                  "WHERE NAME == 'EVSE' COLLATE NOCASE OR NAME == 'Connector' COLLATE NOCASE ";
+
+    std::unique_ptr<common::SQLiteStatementInterface> select_statement = this->database->new_statement(statement);
+
+    int status;
+    while ((status = select_statement->step()) == SQLITE_ROW) {
+        ComponentKey component_key;
+        component_key.db_id = select_statement->column_int(0);
+        component_key.name = select_statement->column_text(1);
+        component_key.instance = select_statement->column_text_nullable(2);
+        if (select_statement->column_type(3) != SQLITE_NULL) {
+            component_key.evse_id = select_statement->column_int(3);
+        }
+
+        if (select_statement->column_type(4) != SQLITE_NULL) {
+            component_key.connector_id = select_statement->column_int(4);
+        }
+    }
+
+    if (status != SQLITE_DONE) {
+        throw common::QueryExecutionException(this->database->get_error_message());
+    }
+
+    return components;
+}
+
+bool InitDeviceModelDb::component_exists_in_db(const std::vector<ComponentKey>& db_components,
+                                               const ComponentKey& component) {
+    for (const ComponentKey& db_component : db_components) {
+        if (is_same_component_key(db_component, component)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool InitDeviceModelDb::component_exists_in_schemas(
+    const std::map<ComponentKey, std::vector<DeviceModelVariable>>& component_schema, const ComponentKey& component) {
+    for (const auto& component_in_schema : component_schema) {
+        if (is_same_component_key(component, component_in_schema.first)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void InitDeviceModelDb::remove_not_existing_components_from_db(
+    const std::map<ComponentKey, std::vector<DeviceModelVariable>>& component_schemas,
+    const std::vector<ComponentKey>& db_components) {
+    for (const ComponentKey& component : db_components) {
+        if (!component_exists_in_schemas(component_schemas, component)) {
+            remove_component_from_db(component);
+        }
+    }
+}
+
+bool InitDeviceModelDb::remove_component_from_db(const ComponentKey& component) {
+    const std::string& delete_component_statement = "DELETE FROM COMPONENT WHERE ID = @component_id";
+    std::unique_ptr<common::SQLiteStatementInterface> delete_statement =
+        this->database->new_statement(delete_component_statement);
+
+    if (!component.db_id.has_value()) {
+        EVLOG_error << "Can not delete component " << component.name << ": no id given";
+        return false;
+    }
+
+    delete_statement->bind_int("@component_id", component.db_id.value());
+
+    if (delete_statement->step() != SQLITE_DONE) {
+        throw common::QueryExecutionException(this->database->get_error_message());
+    }
+
+    return true;
 }
 
 void InitDeviceModelDb::init_sql() {
