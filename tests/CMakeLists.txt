@@ -1,5 +1,6 @@
 set(MIGRATION_FILES_LOCATION_V16 "${CMAKE_CURRENT_BINARY_DIR}/resources/v16/migration_files")
 set(MIGRATION_FILES_LOCATION_V201 "${CMAKE_CURRENT_BINARY_DIR}/resources/v201/migration_files")
+set(MIGRATION_FILES_DEVICE_MODEL_LOCATION_V201 "${CMAKE_CURRENT_BINARY_DIR}/resources/v201/device_model_migration_files")
 
 add_executable(database_tests database_tests.cpp)
 
@@ -40,6 +41,8 @@ add_custom_command(TARGET libocpp_unit_tests POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory ${MIGRATION_FILES_SOURCE_DIR_V16} ${MIGRATION_FILES_LOCATION_V16}
         COMMAND ${CMAKE_COMMAND} -E remove_directory ${MIGRATION_FILES_LOCATION_V201}
         COMMAND ${CMAKE_COMMAND} -E copy_directory ${MIGRATION_FILES_SOURCE_DIR_V201} ${MIGRATION_FILES_LOCATION_V201}
+        COMMAND ${CMAKE_COMMAND} -E remove_directory ${MIGRATION_FILES_DEVICE_MODEL_LOCATION_V201}
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${MIGRATION_FILES_SOURCE_DIR_V201} ${MIGRATION_FILES_DEVICE_MODEL_LOCATION_V201}
 )
 
 add_test(libocpp_unit_tests libocpp_unit_tests)

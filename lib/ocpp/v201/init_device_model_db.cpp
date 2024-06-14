@@ -56,7 +56,7 @@ static bool is_same_component_key(const ComponentKey& component_key1, const Comp
 static bool is_same_variable_attribute_key(const VariableAttributeKey& attribute_key1,
                                            const VariableAttributeKey& attribute_key2) {
     if ((attribute_key1.attribute_type == attribute_key2.attribute_type) &&
-        (attribute_key1.instance == attribute_key2.instance) && attribute_key1.name == attribute_key2.name) {
+        (attribute_key1.instance == attribute_key2.instance) && (attribute_key1.name == attribute_key2.name)) {
         // We did not compare the 'value' here as we want to check if the attribute is the same and not the value of the
         // attribute.
         return true;
@@ -473,8 +473,8 @@ InitDeviceModelDb::get_config_values(const std::filesystem::path& config_file_pa
                 key.name = variable.value().at("variable_name");
                 key.attribute_type = attributes.key();
                 key.value = get_string_value_from_json(attributes.value());
-                if (attributes.value().contains("instance")) {
-                    key.instance = attributes.value().at("instance");
+                if (variable.value().contains("instance")) {
+                    key.instance = variable.value().at("instance");
                 }
                 attribute_keys.push_back(key);
             }
