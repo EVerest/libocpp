@@ -479,6 +479,7 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
             set_monitors_res.push_back(result);
             continue;
         }
+        result.component = request.component;
 
         auto& variable_map = this->device_model[request.component];
         auto variable_it = variable_map.find(request.variable);
@@ -488,6 +489,7 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
             set_monitors_res.push_back(result);
             continue;
         }
+        result.variable = request.variable;
 
         // TODO (ioan): see how we should handle the 'Duplicate' data
         try {
@@ -504,6 +506,11 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
                 monitor.severity = request.severity;
 
                 variable_it->second.monitors.insert(std::pair{new_id, monitor});
+
+                result.type = request.type;
+                result.severity = request.severity;
+                result.id = new_id;
+
                 result.status = SetMonitoringStatusEnum::Accepted;
             } else {
                 result.status = SetMonitoringStatusEnum::Rejected;
@@ -526,13 +533,15 @@ std::vector<MonitoringData> DeviceModel::get_monitors(const std::vector<Monitori
     if (criteria.empty() && component_variables.empty()) {
         for (const auto& [component, variable_map] : this->device_model) {
             for (const auto& [variable, variable_metadata] : variable_map) {
-                std::vector<VariableMonitoring> monitors;
+                if (!variable_metadata.monitors.empty()) {
+                    std::vector<VariableMonitoring> monitors;
 
-                for (const auto& [id, monitor] : variable_metadata.monitors) {
-                    monitors.push_back(monitor);
+                    for (const auto& [id, monitor] : variable_metadata.monitors) {
+                        monitors.push_back(monitor);
+                    }
+
+                    get_monitors_res.push_back({component, variable, monitors, std::nullopt});
                 }
-
-                get_monitors_res.push_back({component, variable, monitors, std::nullopt});
             }
         }
 
@@ -559,7 +568,9 @@ std::vector<MonitoringData> DeviceModel::get_monitors(const std::vector<Monitori
                     }
                     filter_criteria_monitors(criteria, monitor_data.variableMonitoring);
 
-                    get_monitors_res.push_back(std::move(monitor_data));
+                    if (!monitor_data.variableMonitoring.empty()) {
+                        get_monitors_res.push_back(std::move(monitor_data));
+                    }
                 }
             } else {
                 auto variable_it = variable_map.find(component_variable.variable.value());
@@ -581,7 +592,9 @@ std::vector<MonitoringData> DeviceModel::get_monitors(const std::vector<Monitori
                 }
                 filter_criteria_monitors(criteria, monitor_data.variableMonitoring);
 
-                get_monitors_res.push_back(std::move(monitor_data));
+                if (!monitor_data.variableMonitoring.empty()) {
+                    get_monitors_res.push_back(std::move(monitor_data));
+                }
             }
         }
     }
