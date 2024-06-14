@@ -914,7 +914,7 @@ void ChargePoint::init_websocket() {
     }
 
     const auto network_connection_priorities = ocpp::get_vector_from_csv(
-    this->device_model->get_value<std::string>(ControllerComponentVariables::NetworkConfigurationPriority));
+        this->device_model->get_value<std::string>(ControllerComponentVariables::NetworkConfigurationPriority));
 
     if (network_connection_priorities.empty()) {
         EVLOG_AND_THROW(std::runtime_error("NetworkConfigurationPriority must not be empty"));
