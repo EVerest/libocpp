@@ -70,9 +70,6 @@ public:
         const std::optional<CiString<50>>& info, const std::optional<CiString<255>>& vendor_id,
         const std::optional<CiString<50>>& vendor_error_code)>;
     explicit ChargePointFSM(const StatusNotificationCallback& status_notification_callback, FSMState initial_state);
-    ChargePointFSM(ChargePointFSM&& other) noexcept;
-    ChargePointFSM(const ChargePointFSM&) = delete;
-    ChargePointFSM& operator=(const ChargePointFSM&) = delete;
 
     bool handle_event(FSMEvent event, const ocpp::DateTime timestamp, const std::optional<CiString<50>>& info);
     bool handle_error(const ErrorInfo& error_info);
@@ -89,7 +86,6 @@ private:
 
     FSMState state;
     std::unordered_map<std::string, ErrorInfo> active_errors;
-    std::mutex active_errors_mutex;
 
     bool is_faulted();
 };
