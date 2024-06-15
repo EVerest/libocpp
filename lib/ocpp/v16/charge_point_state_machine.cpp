@@ -157,12 +157,6 @@ ChargePointFSM::ChargePointFSM(const StatusNotificationCallback& status_notifica
     status_notification_callback(status_notification_callback_), state(initial_state) {
 }
 
-ChargePointFSM::ChargePointFSM(ChargePointFSM&& other) noexcept :
-    status_notification_callback(std::move(other.status_notification_callback)),
-    state(other.state),
-    active_errors(std::move(other.active_errors)) {
-}
-
 FSMState ChargePointFSM::get_state() {
     if (this->is_faulted()) {
         return FSMState::Faulted;
@@ -178,8 +172,6 @@ bool ChargePointFSM::is_faulted() {
 }
 
 std::optional<ErrorInfo> ChargePointFSM::get_latest_error() {
-    std::lock_guard<std::mutex> lk(active_errors_mutex);
-
     if (this->active_errors.empty()) {
         return std::nullopt;
     }
@@ -218,7 +210,6 @@ bool ChargePointFSM::handle_event(FSMEvent event, const ocpp::DateTime timestamp
 }
 
 bool ChargePointFSM::handle_error(const ErrorInfo& error_info) {
-    std::lock_guard<std::mutex> lk(active_errors_mutex);
     if (this->active_errors.count(error_info.uuid)) {
         // has already been handled and reported
         return false;
@@ -237,7 +228,6 @@ bool ChargePointFSM::handle_error(const ErrorInfo& error_info) {
 }
 
 bool ChargePointFSM::handle_error_cleared(const std::string uuid) {
-    std::lock_guard<std::mutex> lk(active_errors_mutex);
     this->active_errors.erase(uuid);
 
     // dont report StatusNotification if still "Faulted"
@@ -258,7 +248,6 @@ bool ChargePointFSM::handle_error_cleared(const std::string uuid) {
 }
 
 bool ChargePointFSM::handle_all_errors_cleared() {
-    std::lock_guard<std::mutex> lk(active_errors_mutex);
     this->active_errors.clear();
     status_notification_callback(this->state, ChargePointErrorCode::NoError, DateTime(), std::nullopt, std::nullopt,
                                  std::nullopt);
@@ -318,7 +307,6 @@ void ChargePointStates::reset(std::map<int, ChargePointStatus> connector_status_
 void ChargePointStates::submit_event(const int connector_id, FSMEvent event, const ocpp::DateTime& timestamp,
                                      const std::optional<CiString<50>>& info) {
     const std::lock_guard<std::mutex> lck(state_machines_mutex);
-
     if (connector_id == 0) {
         this->state_machine_connector_zero->handle_event(event, timestamp, info);
     } else if (connector_id > 0 && (size_t)connector_id <= this->state_machines.size()) {
@@ -354,6 +342,7 @@ void ChargePointStates::submit_all_errors_cleared(const int32_t connector_id) {
 }
 
 void ChargePointStates::trigger_status_notification(const int connector_id) {
+    const std::lock_guard<std::mutex> lck(state_machines_mutex);
     if (connector_id == 0) {
         this->state_machine_connector_zero->trigger_status_notification();
     } else {
@@ -362,6 +351,7 @@ void ChargePointStates::trigger_status_notification(const int connector_id) {
 }
 
 void ChargePointStates::trigger_status_notifications() {
+    const std::lock_guard<std::mutex> lck(state_machines_mutex);
     this->state_machine_connector_zero->trigger_status_notification();
     for (size_t connector_id = 0; connector_id < state_machines.size(); ++connector_id) {
         this->state_machines.at(connector_id).trigger_status_notification();
