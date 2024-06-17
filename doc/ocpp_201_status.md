@@ -1252,7 +1252,7 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | K01.FR.21 |        |                                                                                                 |
 | K01.FR.22 |        |                                                                                                 |
 | K01.FR.26 | ✅     |                                                                                                 |
-| K01.FR.27 |        |                                                                                                 |
+| K01.FR.27 | ✅     |                                                                                                 |
 | K01.FR.28 | ✅     |                                                                                                 |
 | K01.FR.29 |        |                                                                                                 |
 | K01.FR.30 |        |                                                                                                 |

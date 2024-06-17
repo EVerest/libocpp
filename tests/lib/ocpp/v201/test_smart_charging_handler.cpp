@@ -189,7 +189,12 @@ protected:
     }
 
     TestSmartChargingHandler create_smart_charging_handler() {
-        return TestSmartChargingHandler(*this->evse_manager, device_model);
+        std::unique_ptr<common::DatabaseConnection> database_connection =
+            std::make_unique<common::DatabaseConnection>(fs::path("/tmp/ocpp201") / "cp.db");
+        std::shared_ptr<DatabaseHandler> database_handler =
+            std::make_shared<DatabaseHandler>(std::move(database_connection), MIGRATION_FILES_LOCATION_V201);
+        database_handler->open_connection();
+        return TestSmartChargingHandler(*this->evse_manager, device_model, database_handler);
     }
 
     std::string uuid() {

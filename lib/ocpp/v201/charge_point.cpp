@@ -178,7 +178,8 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
         evse_connector_structure, *this->device_model, this->database_handler, component_state_manager,
         transaction_meter_value_callback, this->callbacks.pause_charging_callback);
 
-    this->smart_charging_handler = std::make_shared<SmartChargingHandler>(*this->evse_manager, this->device_model);
+    this->smart_charging_handler =
+        std::make_shared<SmartChargingHandler>(*this->evse_manager, this->device_model, this->database_handler);
 
     // configure logging
     this->configure_message_logging_format(message_log_path);
@@ -220,6 +221,8 @@ void ChargePoint::start(BootReasonEnum bootreason) {
     // get transaction messages from db (if there are any) so they can be sent again.
     this->message_queue->get_persisted_messages_from_db();
     this->boot_notification_req(bootreason);
+    // K01.27 - call load_charging_profiles when system boots
+    this->load_charging_profiles();
     this->start_websocket();
 
     if (this->bootreason == BootReasonEnum::RemoteReset) {
@@ -3843,6 +3846,36 @@ void ChargePoint::execute_change_availability_request(ChangeAvailabilityRequest 
         }
     } else {
         this->set_cs_operative_status(request.operationalStatus, persist);
+    }
+}
+
+// K01.27 - load profiles from database
+void ChargePoint::load_charging_profiles() {
+    try {
+        auto evses = this->database_handler->get_all_charging_profiles_by_evse();
+        EVLOG_info << "Found " << evses.size() << " evse in the database";
+        for (auto& profiles : evses) {
+            try {
+                auto evse_id = profiles.first;
+                for (auto profile : profiles.second) {
+                    if (this->smart_charging_handler->validate_profile(profile, evse_id) ==
+                        ProfileValidationResultEnum::Valid) {
+                        this->smart_charging_handler->add_profile(profile, evse_id);
+                    } else {
+                        // delete if not valid anymore
+                        this->database_handler->delete_charging_profile(profile.id);
+                    }
+                }
+            } catch (common::RequiredEntryNotFoundException& e) {
+                EVLOG_warning << "Could not get connector id from database: " << e.what();
+            } catch (const QueryExecutionException& e) {
+                EVLOG_warning << "Could not get connector id from database: " << e.what();
+            }
+        }
+    } catch (const QueryExecutionException& e) {
+        EVLOG_warning << "Could not load charging profiles from database: " << e.what();
+    } catch (const std::exception& e) {
+        EVLOG_warning << "Unknown error while loading charging profiles from database: " << e.what();
     }
 }
 

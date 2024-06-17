@@ -3,6 +3,7 @@
 
 #include "date/tz.h"
 #include "everest/logging.hpp"
+#include "ocpp/common/message_queue.hpp"
 #include "ocpp/common/types.hpp"
 #include "ocpp/v201/ctrlr_component_variables.hpp"
 #include "ocpp/v201/device_model.hpp"
@@ -138,8 +139,9 @@ CurrentPhaseType SmartChargingHandler::get_current_phase_type(const std::optiona
 }
 
 SmartChargingHandler::SmartChargingHandler(EvseManagerInterface& evse_manager,
-                                           std::shared_ptr<DeviceModel>& device_model) :
-    evse_manager(evse_manager), device_model(device_model) {
+                                           std::shared_ptr<DeviceModel>& device_model,
+                                           std::shared_ptr<ocpp::v201::DatabaseHandler> database_handler) :
+    evse_manager(evse_manager), device_model(device_model), database_handler(database_handler) {
 }
 
 ProfileValidationResultEnum SmartChargingHandler::validate_profile(ChargingProfile& profile, int32_t evse_id) {

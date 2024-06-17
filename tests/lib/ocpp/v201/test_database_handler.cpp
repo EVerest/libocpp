@@ -145,3 +145,183 @@ TEST_F(DatabaseHandlerTest, TransactionDelete) {
 TEST_F(DatabaseHandlerTest, TransactionDeleteNotFound) {
     EXPECT_NO_THROW(this->database_handler.transaction_delete("txIdNotFound"));
 }
+
+TEST_F(DatabaseHandlerTest, KO1_FR27_DatabaseWithNoData_InsertProfile) {
+    this->database_handler.insert_or_update_charging_profile(1, ChargingProfile{.id = 1, .stackLevel = 1});
+    std::string sql = "SELECT COUNT(*) FROM CHARGING_PROFILES";
+    auto select_stmt = this->database->new_statement(sql);
+
+    EXPECT_EQ(select_stmt->step(), SQLITE_ROW);
+    auto count = select_stmt->column_int(0);
+    EXPECT_EQ(count, 1);
+}
+
+TEST_F(DatabaseHandlerTest, KO1_FR27_DatabaseWithProfileData_UpdateProfile) {
+    this->database_handler.insert_or_update_charging_profile(1, ChargingProfile{.id = 2, .stackLevel = 1});
+    this->database_handler.insert_or_update_charging_profile(1, ChargingProfile{.id = 2, .stackLevel = 2});
+
+    std::string sql = "SELECT COUNT(*) FROM CHARGING_PROFILES";
+    auto select_stmt = this->database->new_statement(sql);
+
+    EXPECT_EQ(select_stmt->step(), SQLITE_ROW);
+
+    auto count = select_stmt->column_int(0);
+    EXPECT_EQ(count, 1);
+}
+
+TEST_F(DatabaseHandlerTest, KO1_FR27_DatabaseWithProfileData_InsertNewProfile) {
+    this->database_handler.insert_or_update_charging_profile(1, ChargingProfile{.id = 1, .stackLevel = 1});
+    this->database_handler.insert_or_update_charging_profile(1, ChargingProfile{.id = 2, .stackLevel = 1});
+
+    std::string sql = "SELECT COUNT(*) FROM CHARGING_PROFILES";
+    auto select_stmt = this->database->new_statement(sql);
+
+    EXPECT_EQ(select_stmt->step(), SQLITE_ROW);
+
+    auto count = select_stmt->column_int(0);
+    EXPECT_EQ(count, 2);
+}
+
+TEST_F(DatabaseHandlerTest, KO1_FR27_DatabaseWithProfileData_DeleteRemovesSpecifiedProfiles) {
+    this->database_handler.insert_or_update_charging_profile(1, ChargingProfile{.id = 1, .stackLevel = 1});
+    this->database_handler.insert_or_update_charging_profile(1, ChargingProfile{.id = 2, .stackLevel = 1});
+
+    auto sql = "SELECT COUNT(*) FROM CHARGING_PROFILES";
+
+    auto select_stmt = this->database->new_statement(sql);
+
+    do {
+        EXPECT_EQ(select_stmt->step(), SQLITE_ROW);
+        auto count = select_stmt->column_int(0);
+        EXPECT_EQ(count, 2);
+    } while (select_stmt->step() != SQLITE_DONE);
+
+    this->database_handler.delete_charging_profile(1);
+
+    do {
+        EXPECT_EQ(select_stmt->step(), SQLITE_ROW);
+        auto count = select_stmt->column_int(0);
+        EXPECT_EQ(count, 1);
+    } while (select_stmt->step() != SQLITE_DONE);
+}
+
+TEST_F(DatabaseHandlerTest, KO1_FR27_DatabaseWithProfileData_DeleteAllRemovesAllProfiles) {
+    this->database_handler.insert_or_update_charging_profile(1, ChargingProfile{.id = 1, .stackLevel = 1});
+    this->database_handler.insert_or_update_charging_profile(1, ChargingProfile{.id = 2, .stackLevel = 1});
+
+    auto sql = "SELECT COUNT(*) FROM CHARGING_PROFILES";
+
+    auto select_stmt = this->database->new_statement(sql);
+
+    do {
+        EXPECT_EQ(select_stmt->step(), SQLITE_ROW);
+        auto count = select_stmt->column_int(0);
+        EXPECT_EQ(count, 2);
+    } while (select_stmt->step() != SQLITE_DONE);
+
+    this->database_handler.clear_charging_profiles();
+
+    do {
+        EXPECT_EQ(select_stmt->step(), SQLITE_ROW);
+        auto count = select_stmt->column_int(0);
+        EXPECT_EQ(count, 0);
+    } while (select_stmt->step() != SQLITE_DONE);
+}
+
+TEST_F(DatabaseHandlerTest, KO1_FR27_DatabaseWithNoProfileData_DeleteAllDoesNotFail) {
+
+    auto sql = "SELECT COUNT(*) FROM CHARGING_PROFILES";
+
+    auto select_stmt = this->database->new_statement(sql);
+
+    do {
+        EXPECT_EQ(select_stmt->step(), SQLITE_ROW);
+        auto count = select_stmt->column_int(0);
+        EXPECT_EQ(count, 0);
+    } while (select_stmt->step() != SQLITE_DONE);
+
+    this->database_handler.clear_charging_profiles();
+
+    do {
+        EXPECT_EQ(select_stmt->step(), SQLITE_ROW);
+        auto count = select_stmt->column_int(0);
+        EXPECT_EQ(count, 0);
+    } while (select_stmt->step() != SQLITE_DONE);
+}
+
+TEST_F(DatabaseHandlerTest, KO1_FR27_DatabaseNoProfileData_DeleteAllDoesNotFail) {
+    auto sql = "SELECT COUNT(*) FROM CHARGING_PROFILES";
+
+    auto select_stmt = this->database->new_statement(sql);
+
+    do {
+        EXPECT_EQ(select_stmt->step(), SQLITE_ROW);
+        auto count = select_stmt->column_int(0);
+        EXPECT_EQ(count, 0);
+    } while (select_stmt->step() != SQLITE_DONE);
+
+    this->database_handler.clear_charging_profiles();
+
+    do {
+        EXPECT_EQ(select_stmt->step(), SQLITE_ROW);
+        auto count = select_stmt->column_int(0);
+        EXPECT_EQ(count, 0);
+    } while (select_stmt->step() != SQLITE_DONE);
+}
+
+TEST_F(DatabaseHandlerTest, KO1_FR27_DatabaseWithSingleProfileData_LoadsCharingProfile) {
+    this->database_handler.insert_or_update_charging_profile(1, ChargingProfile{.id = 1, .stackLevel = 1});
+
+    auto sut = this->database_handler.get_all_charging_profiles_by_evse();
+
+    EXPECT_EQ(sut.size(), 1);
+
+    // The evse id is found
+    EXPECT_NE(sut.find(1), sut.end());
+
+    auto profiles = sut[1];
+
+    EXPECT_EQ(profiles.size(), 1);
+}
+
+TEST_F(DatabaseHandlerTest, KO1_FR27_DatabaseWithMultipleProfileSameEvse_LoadsCharingProfile) {
+    this->database_handler.insert_or_update_charging_profile(1, ChargingProfile{.id = 1, .stackLevel = 1});
+    this->database_handler.insert_or_update_charging_profile(1, ChargingProfile{.id = 2, .stackLevel = 2});
+    this->database_handler.insert_or_update_charging_profile(1, ChargingProfile{.id = 3, .stackLevel = 3});
+
+    auto sut = this->database_handler.get_all_charging_profiles_by_evse();
+
+    EXPECT_EQ(sut.size(), 1);
+
+    // The evse id is found
+    EXPECT_NE(sut.find(1), sut.end());
+
+    auto profiles = sut[1];
+
+    EXPECT_EQ(profiles.size(), 3);
+}
+
+TEST_F(DatabaseHandlerTest, KO1_FR27_DatabaseWithMultipleProfileDiffEvse_LoadsCharingProfile) {
+    this->database_handler.insert_or_update_charging_profile(1, ChargingProfile{.id = 1, .stackLevel = 1});
+    this->database_handler.insert_or_update_charging_profile(1, ChargingProfile{.id = 2, .stackLevel = 2});
+    this->database_handler.insert_or_update_charging_profile(2, ChargingProfile{.id = 3, .stackLevel = 3});
+    this->database_handler.insert_or_update_charging_profile(2, ChargingProfile{.id = 4, .stackLevel = 4});
+    this->database_handler.insert_or_update_charging_profile(3, ChargingProfile{.id = 5, .stackLevel = 5});
+    this->database_handler.insert_or_update_charging_profile(3, ChargingProfile{.id = 6, .stackLevel = 6});
+
+    auto sut = this->database_handler.get_all_charging_profiles_by_evse();
+
+    EXPECT_EQ(sut.size(), 3);
+
+    EXPECT_NE(sut.find(1), sut.end());
+    EXPECT_NE(sut.find(2), sut.end());
+    EXPECT_NE(sut.find(3), sut.end());
+
+    auto profiles1 = sut[1];
+    auto profiles2 = sut[2];
+    auto profiles3 = sut[3];
+
+    EXPECT_EQ(profiles1.size(), 2);
+    EXPECT_EQ(profiles2.size(), 2);
+    EXPECT_EQ(profiles3.size(), 2);
+}
