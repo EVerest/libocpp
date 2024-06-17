@@ -17,23 +17,6 @@ const static std::string CUSTOM_COMPONENT_SCHEMAS_DIR = "custom";
 
 namespace ocpp::v201 {
 /* clang-format off */
-const static std::map<std::string, uint8_t> DATATYPE_ENCODINGS = {
-    { "string", 0 },
-    { "decimal", 1 },
-    { "integer", 2 },
-    { "dateTime", 3 },
-    { "boolean", 4 },
-    { "OptionList", 5 },
-    { "SequenceList", 6 },
-    { "MemberList", 7 }
-};
-
-const static std::map<std::string, uint8_t> MUTABILITY_ENCODINGS = {
-    { "ReadOnly", 0 },
-    { "WriteOnly", 1 },
-    { "ReadWrite", 2 },
-};
-
 const static std::map<std::string, uint8_t> VARIABLE_ATTRIBUTE_TYPE_ENCODING = {
     { "Actual", 0},
     { "Target", 1},
@@ -65,6 +48,74 @@ static bool is_same_variable_attribute_key(const VariableAttributeKey& attribute
     return false;
 }
 
+static bool is_same_attribute(const VariableAttribute attribute1, const VariableAttribute& attribute2) {
+    return attribute1.type == attribute2.type;
+}
+
+/**
+ * @brief Check if attribute characteristics are different.
+ *
+ * Will not check for value but only the other characteristics.
+ *
+ * @param attribute1    attribute 1.
+ * @param attribute2    attribute 2.
+ * @return True if characteristics of attribute are the same.
+ */
+static bool is_attribute_different(const VariableAttribute& attribute1, const VariableAttribute& attribute2) {
+    if ((attribute1.type == attribute2.type) && (attribute1.constant == attribute2.constant) &&
+        (attribute1.mutability == attribute2.mutability) && (attribute1.persistent == attribute2.persistent)) {
+        return false;
+    }
+    return true;
+}
+
+static bool variable_has_same_attributes(const std::vector<DbVariableAttribute>& attributes1,
+                                         const std::vector<DbVariableAttribute>& attributes2) {
+    if (attributes1.size() != attributes2.size()) {
+        return false;
+    }
+
+    for (const DbVariableAttribute& attribute : attributes1) {
+        const auto& it =
+            std::find_if(attributes2.begin(), attributes2.end(), [&attribute](const DbVariableAttribute& a) {
+                if (!is_attribute_different(a.variable_attribute, attribute.variable_attribute)) {
+                    return true;
+                }
+                return false;
+            });
+
+        if (it == attributes2.end()) {
+            // At least one attribute is different.
+            return false;
+        }
+    }
+
+    // Everything is the same.
+    return true;
+}
+
+static bool is_characteristics_different(const VariableCharacteristics& c1, const VariableCharacteristics& c2) {
+    if ((c1.supportsMonitoring == c2.supportsMonitoring) && (c1.dataType == c2.dataType) &&
+        (c1.maxLimit == c2.maxLimit) && (c1.minLimit == c2.minLimit) && (c1.unit == c2.unit) &&
+        (c1.valuesList == c2.valuesList)) {
+        return false;
+    }
+    return true;
+}
+
+static bool is_same_variable(const DeviceModelVariable& v1, const DeviceModelVariable& v2) {
+    return ((v1.name == v2.name) && (v1.instance == v2.instance));
+}
+
+static bool is_variable_different(const DeviceModelVariable& v1, const DeviceModelVariable& v2) {
+    if (is_same_variable(v1, v2) && (v1.default_actual_value == v2.default_actual_value) &&
+        (v1.required == v2.required) && is_characteristics_different(v1.characteristics, v2.characteristics) &&
+        variable_has_same_attributes(v1.attributes, v2.attributes)) {
+        return false;
+    }
+    return true;
+}
+
 static std::string get_string_value_from_json(const json& value) {
     if (value.is_string()) {
         return value;
@@ -83,11 +134,13 @@ static std::string get_string_value_from_json(const json& value) {
 }
 
 InitDeviceModelDb::InitDeviceModelDb(const std::filesystem::path& database_path,
-                                     const std::filesystem::path& migration_files_path) :
+                                     const std::filesystem::path& migration_files_path,
+                                     DeviceModelStorage& device_model_storage) :
     common::DatabaseHandlerCommon(std::make_unique<common::DatabaseConnection>(database_path), migration_files_path,
                                   DEVICE_MODEL_MIGRATION_FILE_VERSION),
     database_path(database_path),
-    database_exists(std::filesystem::exists(database_path)) {
+    database_exists(std::filesystem::exists(database_path)),
+    device_model_storage(device_model_storage) {
 }
 
 InitDeviceModelDb::~InitDeviceModelDb() {
@@ -103,8 +156,11 @@ bool InitDeviceModelDb::initialize_database(const std::filesystem::path& schemas
 
     // Get existing EVSE and Connector components from the database.
     std::vector<ComponentKey> existing_components;
+    DeviceModelMap device_model;
     if (this->database_exists) {
+
         existing_components = get_all_connector_and_evse_components_fom_db();
+        // device_model = device_model_storage.get_device_model();
     }
 
     // Get component schemas from the filesystem.
@@ -191,6 +247,8 @@ bool InitDeviceModelDb::execute_init_sql(const bool delete_db_if_exists) {
                 // TODO log or return false / throw?
                 return false;
             }
+
+            database_exists = false;
         }
     }
 
@@ -238,16 +296,18 @@ bool InitDeviceModelDb::insert_components(const std::map<ComponentKey, std::vect
 
     for (std::pair<ComponentKey, std::vector<DeviceModelVariable>> component : components) {
         // Check if component already exists in the database.
-        if (!this->database_exists || !component_exists_in_db(existing_components, component.first)) {
+        std::optional<ComponentKey> component_db;
+        if (this->database_exists &&
+            (component_db = component_exists_in_db(existing_components, component.first)).has_value()) {
+            // Component exists in the database, update component if necessary.
+            update_component(component_db.value(), component.first, component.second);
+        } else {
             // Component does not exist, insert component.
             if (!insert_component(component.first, component.second)) {
                 // TODO did one of the functions not throw here? E.g. should I add a throw catch or just re throw???
                 EVLOG_error << "Could not insert component" << component.first.name;
                 success = false;
             }
-        } else {
-            // Component exists in the database, update component if necessary.
-            // TODO
         }
     }
 
@@ -292,20 +352,10 @@ bool InitDeviceModelDb::insert_component(const ComponentKey& component_key,
 
     // Loop over the properties of this component.
     for (const DeviceModelVariable& variable : component_variables) {
-        const std::string variable_name = variable.name;
-        EVLOG_debug << "-- Inserting variable " << variable_name;
-        std::string instance;
-        if (variable.instance.has_value()) {
-            instance = variable.instance.value();
-        }
+        EVLOG_debug << "-- Inserting variable " << variable.name;
 
         // Add variable
-        const int64_t variable_id = insert_variable(variable_name, instance, component_id, variable.required);
-
-        // Add variable characteristic
-        insert_variable_characteristics(variable.characteristics, variable_id);
-
-        insert_attributes(variable.attributes, variable_id);
+        insert_variable(variable, component_id);
     }
 
     return true;
@@ -351,7 +401,7 @@ InitDeviceModelDb::get_all_component_properties(const json& component_properties
     return variables;
 }
 
-void InitDeviceModelDb::insert_variable_characteristics(const DeviceModelVariableCharacteristics& characteristics,
+void InitDeviceModelDb::insert_variable_characteristics(const VariableCharacteristics& characteristics,
                                                         const int64_t& variable_id) {
     static const std::string statement = "INSERT OR REPLACE INTO VARIABLE_CHARACTERISTICS (DATATYPE_ID, VARIABLE_ID, "
                                          "MAX_LIMIT, MIN_LIMIT, SUPPORTS_MONITORING, "
@@ -361,12 +411,11 @@ void InitDeviceModelDb::insert_variable_characteristics(const DeviceModelVariabl
     std::unique_ptr<common::SQLiteStatementInterface> insert_characteristics_statement =
         this->database->new_statement(statement);
 
-    const uint8_t data_type = characteristics.data_type_id;
-    insert_characteristics_statement->bind_int("@datatype_id", data_type);
+    insert_characteristics_statement->bind_int("@datatype_id", static_cast<int>(characteristics.dataType));
 
     insert_characteristics_statement->bind_int("@variable_id", variable_id);
 
-    const uint8_t supports_monitoring = (characteristics.supports_monitoring ? 1 : 0);
+    const uint8_t supports_monitoring = (characteristics.supportsMonitoring ? 1 : 0);
     insert_characteristics_statement->bind_int("@supports_monitoring", supports_monitoring);
 
     if (characteristics.unit.has_value()) {
@@ -375,20 +424,22 @@ void InitDeviceModelDb::insert_variable_characteristics(const DeviceModelVariabl
         insert_characteristics_statement->bind_null("@unit");
     }
 
-    if (characteristics.values_list.has_value()) {
-        insert_characteristics_statement->bind_text("@values_list", characteristics.values_list.value());
+    if (characteristics.valuesList.has_value()) {
+        insert_characteristics_statement->bind_text("@values_list", characteristics.valuesList.value());
     } else {
         insert_characteristics_statement->bind_null("@values_list");
     }
 
-    if (characteristics.max_limit.has_value()) {
-        insert_characteristics_statement->bind_double("@max_limit", characteristics.max_limit.value());
+    if (characteristics.maxLimit.has_value()) {
+        insert_characteristics_statement->bind_double("@max_limit",
+                                                      static_cast<double>(characteristics.maxLimit.value()));
     } else {
         insert_characteristics_statement->bind_null("@max_limit");
     }
 
-    if (characteristics.min_limit.has_value()) {
-        insert_characteristics_statement->bind_double("@min_limit", characteristics.min_limit.value());
+    if (characteristics.minLimit.has_value()) {
+        insert_characteristics_statement->bind_double("@min_limit",
+                                                      static_cast<double>(characteristics.minLimit.value()));
     } else {
         insert_characteristics_statement->bind_null("@min_limit");
     }
@@ -398,8 +449,54 @@ void InitDeviceModelDb::insert_variable_characteristics(const DeviceModelVariabl
     }
 }
 
-int64_t InitDeviceModelDb::insert_variable(const std::string& variable_name, const std::string& instance,
-                                           const int64_t& component_id, const bool required) {
+void InitDeviceModelDb::update_variable_characteristics(const VariableCharacteristics& characteristics,
+                                                        const int64_t& characteristics_id, const int64_t& variable_id) {
+    static const std::string update_characteristics_statement =
+        "UPDATE VARIABLE_CHARACTERISTICS SET DATATYPE_ID=@datatype_id, VARIABLE_ID=@variable_id, MAX_LIMIT=@max_limit, "
+        "MIN_LIMIT=@min_limit, SUPPORTS_MONITORING=@supports_monitoring, UNIT=@unit, VALUES_LIST=@values_list WHERE "
+        "ID=@characteristics_id";
+
+    std::unique_ptr<common::SQLiteStatementInterface> update_statement =
+        this->database->new_statement(update_characteristics_statement);
+
+    update_statement->bind_int("@datatype_id", static_cast<int>(characteristics.dataType));
+
+    update_statement->bind_int("@characteristics_id", characteristics_id);
+    update_statement->bind_int("@variable_id", variable_id);
+
+    const uint8_t supports_monitoring = (characteristics.supportsMonitoring ? 1 : 0);
+    update_statement->bind_int("@supports_monitoring", supports_monitoring);
+
+    if (characteristics.unit.has_value()) {
+        update_statement->bind_text("@unit", characteristics.unit.value());
+    } else {
+        update_statement->bind_null("@unit");
+    }
+
+    if (characteristics.valuesList.has_value()) {
+        update_statement->bind_text("@values_list", characteristics.valuesList.value());
+    } else {
+        update_statement->bind_null("@values_list");
+    }
+
+    if (characteristics.maxLimit.has_value()) {
+        update_statement->bind_double("@max_limit", static_cast<double>(characteristics.maxLimit.value()));
+    } else {
+        update_statement->bind_null("@max_limit");
+    }
+
+    if (characteristics.minLimit.has_value()) {
+        update_statement->bind_double("@min_limit", static_cast<double>(characteristics.minLimit.value()));
+    } else {
+        update_statement->bind_null("@min_limit");
+    }
+
+    if (update_statement->step() != SQLITE_DONE) {
+        throw common::QueryExecutionException(this->database->get_error_message());
+    }
+}
+
+void InitDeviceModelDb::insert_variable(const DeviceModelVariable& variable, const uint64_t& component_id) {
     static const std::string statement =
         "INSERT OR REPLACE INTO VARIABLE (NAME, INSTANCE, COMPONENT_ID, REQUIRED) VALUES "
         "(@name, @instance, @component_id, @required)";
@@ -407,31 +504,76 @@ int64_t InitDeviceModelDb::insert_variable(const std::string& variable_name, con
     std::unique_ptr<common::SQLiteStatementInterface> insert_variable_statement =
         this->database->new_statement(statement);
 
-    insert_variable_statement->bind_text("@name", variable_name);
+    insert_variable_statement->bind_text("@name", variable.name);
     insert_variable_statement->bind_int("@component_id", component_id);
 
-    if (!instance.empty()) {
-        insert_variable_statement->bind_text("@instance", instance);
+    if (variable.instance.has_value() && !variable.instance.value().empty()) {
+        insert_variable_statement->bind_text("@instance", variable.instance.value());
     } else {
         insert_variable_statement->bind_null("@instance");
     }
 
-    const uint8_t required_int = (required ? 1 : 0);
+    const uint8_t required_int = (variable.required ? 1 : 0);
     insert_variable_statement->bind_int("@required", required_int);
 
     if (insert_variable_statement->step() != SQLITE_DONE) {
         throw common::QueryExecutionException(this->database->get_error_message());
     }
 
-    return this->database->get_last_inserted_rowid();
+    const int64_t variable_id = this->database->get_last_inserted_rowid();
+
+    insert_variable_characteristics(variable.characteristics, variable_id);
+    insert_attributes(variable.attributes, variable_id);
 }
 
-void InitDeviceModelDb::insert_attributes(const std::vector<DeviceModelVariableAttribute>& attributes,
+void InitDeviceModelDb::update_variable(const DeviceModelVariable& variable, const DeviceModelVariable db_variable,
+                                        const uint64_t component_id) {
+    if (!db_variable.db_id.has_value()) {
+        EVLOG_error << "Can not update variable " << variable.name << ": database id unknown";
+        return;
+    }
+
+    static const std::string update_variable_statement =
+        "UPDATE VARIABLE SET NAME=@name, INSTANCE=@instance, COMPONENT_ID=@component_id, REQUIRED=@required WHERE "
+        "ID=@variable_id";
+
+    std::unique_ptr<common::SQLiteStatementInterface> update_statement =
+        this->database->new_statement(update_variable_statement);
+
+    update_statement->bind_int("@variable_id", db_variable.db_id.value());
+    update_statement->bind_text("@name", variable.name);
+    update_statement->bind_int("@component_id", component_id);
+
+    if (variable.instance.has_value() && !variable.instance.value().empty()) {
+        update_statement->bind_text("@instance", variable.instance.value());
+    } else {
+        update_statement->bind_null("@instance");
+    }
+
+    const uint8_t required_int = (variable.required ? 1 : 0);
+    update_statement->bind_int("@required", required_int);
+
+    if (update_statement->step() != SQLITE_DONE) {
+        throw common::QueryExecutionException(this->database->get_error_message());
+    }
+
+    if (db_variable.variable_characteristics_db_id.has_value() &&
+        is_characteristics_different(variable.characteristics, db_variable.characteristics)) {
+        update_variable_characteristics(variable.characteristics, variable.variable_characteristics_db_id.value(),
+                                        variable.db_id.value());
+    }
+
+    if (!variable_has_same_attributes(variable.attributes, db_variable.attributes)) {
+        // Update attributes (TODO!!!)
+    }
+}
+
+void InitDeviceModelDb::insert_attributes(const std::vector<DbVariableAttribute>& attributes,
                                           const int64_t& variable_id) {
     static const std::string statement =
         "INSERT OR REPLACE INTO VARIABLE_ATTRIBUTE (VARIABLE_ID, MUTABILITY_ID, PERSISTENT, CONSTANT, TYPE_ID) "
         "VALUES(@variable_id, @mutability_id, @persistent, @constant, @type_id)";
-    for (const DeviceModelVariableAttribute& attribute : attributes) {
+    for (const DbVariableAttribute& attribute : attributes) {
         std::unique_ptr<common::SQLiteStatementInterface> insert_attributes_statement =
             this->database->new_statement(statement);
 
@@ -439,13 +581,17 @@ void InitDeviceModelDb::insert_attributes(const std::vector<DeviceModelVariableA
         insert_attributes_statement->bind_int("@persistent", 1);
         insert_attributes_statement->bind_int("@constant", 0);
 
-        if (attribute.mutability.has_value()) {
-            insert_attributes_statement->bind_int("@mutability_id", attribute.mutability.value());
+        if (attribute.variable_attribute.mutability.has_value()) {
+            insert_attributes_statement->bind_int("@mutability_id",
+                                                  static_cast<int>(attribute.variable_attribute.mutability.value()));
         } else {
             insert_attributes_statement->bind_null("@mutability_id");
         }
 
-        insert_attributes_statement->bind_int("@type_id", attribute.type_id);
+        if (attribute.variable_attribute.type.has_value()) {
+            insert_attributes_statement->bind_int("@type_id",
+                                                  static_cast<int>(attribute.variable_attribute.type.value()));
+        }
 
         if (insert_attributes_statement->step() != SQLITE_DONE) {
             throw common::QueryExecutionException(this->database->get_error_message());
@@ -620,15 +766,15 @@ std::vector<ComponentKey> InitDeviceModelDb::get_all_connector_and_evse_componen
     return components;
 }
 
-bool InitDeviceModelDb::component_exists_in_db(const std::vector<ComponentKey>& db_components,
-                                               const ComponentKey& component) {
+std::optional<ComponentKey> InitDeviceModelDb::component_exists_in_db(const std::vector<ComponentKey>& db_components,
+                                                                      const ComponentKey& component) {
     for (const ComponentKey& db_component : db_components) {
         if (is_same_component_key(db_component, component)) {
-            return true;
+            return db_component;
         }
     }
 
-    return false;
+    return std::nullopt;
 }
 
 bool InitDeviceModelDb::component_exists_in_schemas(
@@ -671,6 +817,134 @@ bool InitDeviceModelDb::remove_component_from_db(const ComponentKey& component) 
     return true;
 }
 
+void InitDeviceModelDb::update_component(const ComponentKey& db_component, const ComponentKey& config_component,
+                                         const std::vector<DeviceModelVariable>& variables) {
+    if (!db_component.db_id.has_value()) {
+        EVLOG_error << "Can not update component " << db_component.name << ", because database id is unknown.";
+        // TODO get component id here or just return???
+        return;
+    }
+
+    std::vector<DeviceModelVariable> db_variables = get_variables_from_component_from_db(db_component);
+
+    for (const DeviceModelVariable& variable : variables) {
+        auto it = std::find_if(db_variables.begin(), db_variables.end(), [&variable](DeviceModelVariable& db_variable) {
+            return is_same_variable(db_variable, variable);
+        });
+        if (it == db_variables.end()) {
+            // Variable does not exist in the db, add to db
+            insert_variable(variable, db_component.db_id.value());
+        } else {
+            if (is_variable_different(*it, variable)) {
+                // TODO update variable
+                // update_variable(variable, *it, db_component.db_id.value());
+            }
+        }
+    }
+}
+
+std::vector<DeviceModelVariable>
+InitDeviceModelDb::get_variables_from_component_from_db(const ComponentKey& db_component) {
+    if (!db_component.db_id.has_value()) {
+        EVLOG_error << "Can not update component " << db_component.name << ", because database id is unknown.";
+        // TODO get component id here or just return???
+        return {};
+    }
+
+    std::vector<DeviceModelVariable> variables;
+
+    static const std::string select_variable_statement =
+        "SELECT v.ID, v.NAME, v.INSTANCE, v.REQUIRED, vc.ID, vc.MAX_LIMIT, vc.MIN_LIMIT, vc.SUPPORTS_MONITORING, "
+        "vc.UNIT, vc.VALUES_LIST FROM VARIABLE v LEFT JOIN VARIABLE_CHARACTERISTICS vc ON v.ID = vc.VARIABLE_ID WHERE "
+        "v.COMPONENT_ID=@component_id";
+    static const std::string get_attributes_statement =
+        "SELECT va.ID, va.MUTABILITY_ID, va.PERSISTENT, va.CONSTANT, va.TYPE_ID FROM "
+        "VARIABLE_ATTRIBUTE as va WHERE VARIABLE_ID=(SELECT ID FROM VARIABLE as v WHERE v.NAME=@variable_name AND "
+        "v.COMPONENT_ID=@component_id AND v.INSTANCE=@instance)";
+
+    std::unique_ptr<common::SQLiteStatementInterface> select_statement =
+        this->database->new_statement(select_variable_statement);
+    select_statement->bind_int("@component_id", db_component.db_id.value());
+
+    int status;
+    while ((status = select_statement->step()) == SQLITE_ROW) {
+        DeviceModelVariable variable;
+        variable.db_id = select_statement->column_int(0);
+        variable.name = select_statement->column_text(1);
+        if (select_statement->column_type(2) != SQLITE_NULL) {
+            variable.instance = select_statement->column_text(2);
+        }
+        variable.required = (select_statement->column_int(3) == 1 ? true : false);
+        variable.variable_characteristics_db_id = select_statement->column_int(4);
+        if (select_statement->column_type(5) != SQLITE_NULL) {
+            variable.characteristics.maxLimit = select_statement->column_double(5);
+        }
+        if (select_statement->column_type(6) != SQLITE_NULL) {
+            variable.characteristics.minLimit = select_statement->column_double(6);
+        }
+        variable.characteristics.supportsMonitoring = (select_statement->column_int(7) == 1 ? true : false);
+        if (select_statement->column_type(8) != SQLITE_NULL) {
+            variable.characteristics.unit = select_statement->column_text(8);
+        }
+        if (select_statement->column_type(9) != SQLITE_NULL) {
+            variable.characteristics.valuesList = select_statement->column_text(9);
+        }
+
+        variables.push_back(variable);
+    }
+
+    if (status != SQLITE_DONE) {
+        throw common::QueryExecutionException(this->database->get_error_message());
+    }
+
+    for (DeviceModelVariable& variable : variables) {
+        std::vector<DbVariableAttribute> attributes = get_variable_attributes_from_db(variable.db_id.value());
+        variable.attributes = attributes;
+    }
+
+    return variables;
+}
+
+std::vector<DbVariableAttribute> InitDeviceModelDb::get_variable_attributes_from_db(const uint64_t& variable_id) {
+    std::vector<DbVariableAttribute> attributes;
+
+    static const std::string get_attributes_statement = "SELECT ID, MUTABILITY_ID, PERSISTENT, CONSTANT, TYPE_ID FROM "
+                                                        "VARIABLE_ATTRIBUTE WHERE VARIABLE_ID=(@variable_id)";
+
+    std::unique_ptr<common::SQLiteStatementInterface> select_statement =
+        this->database->new_statement(get_attributes_statement);
+    select_statement->bind_int("@variable_id", variable_id);
+
+    int status;
+    while ((status = select_statement->step()) == SQLITE_ROW) {
+        DbVariableAttribute attribute;
+        attribute.db_id = select_statement->column_int(0);
+        if (select_statement->column_type(1) != SQLITE_NULL) {
+            attribute.variable_attribute.mutability = static_cast<MutabilityEnum>(select_statement->column_int(1));
+        }
+
+        if (select_statement->column_type(2) != SQLITE_NULL) {
+            attribute.variable_attribute.persistent = (select_statement->column_int(2) == 1 ? true : false);
+        }
+
+        if (select_statement->column_type(3) != SQLITE_NULL) {
+            attribute.variable_attribute.constant = (select_statement->column_int(3) == 1 ? true : false);
+        }
+
+        if (select_statement->column_type(4) != SQLITE_NULL) {
+            attribute.variable_attribute.type = static_cast<AttributeEnum>(select_statement->column_int(4));
+        }
+
+        attributes.push_back(attribute);
+    }
+
+    if (status != SQLITE_DONE) {
+        throw common::QueryExecutionException(this->database->get_error_message());
+    }
+
+    return attributes;
+}
+
 void InitDeviceModelDb::init_sql() {
     // TODO
 }
@@ -703,49 +977,15 @@ void from_json(const json& j, ComponentKey& c) {
     }
 }
 
-void from_json(const json& j, DeviceModelVariableAttribute& c) {
-    const auto& type_id_it = VARIABLE_ATTRIBUTE_TYPE_ENCODING.find(j.at("type"));
-    if (type_id_it != VARIABLE_ATTRIBUTE_TYPE_ENCODING.end()) {
-        c.type_id = type_id_it->second;
-    }
-
-    if (j.contains("mutability")) {
-        const auto& mutability_it = MUTABILITY_ENCODINGS.find(j.at("mutability"));
-        if (mutability_it != MUTABILITY_ENCODINGS.end()) {
-            c.mutability = mutability_it->second;
-        }
-    }
-}
-
-void from_json(const json& j, DeviceModelVariableCharacteristics& c) {
-    c.supports_monitoring = j.at("supportsMonitoring");
-    const auto& data_type_it = DATATYPE_ENCODINGS.find(j.at("dataType"));
-
-    if (data_type_it != DATATYPE_ENCODINGS.end()) {
-        c.data_type_id = data_type_it->second;
-    }
-
-    if (j.contains("minLimit")) {
-        c.min_limit = j.at("minLimit");
-    }
-
-    if (j.contains("maxLimit")) {
-        c.max_limit = j.at("maxLimit");
-    }
-
-    if (j.contains("valuesList")) {
-        c.values_list = j.at("valuesList");
-    }
-
-    if (j.contains("unit")) {
-        c.unit = j.at("unit");
-    }
-}
-
 void from_json(const json& j, DeviceModelVariable& c) {
     c.name = j.at("variable_name");
-    c.characteristics = j.at("characteristics");
-    c.attributes = j.at("attributes");
+    c.characteristics = j.at("characteristics"); // TODO fix warning
+    for (const auto& attribute : j.at("attributes").items()) {
+        DbVariableAttribute va;
+        va.variable_attribute = attribute.value();
+        c.attributes.push_back(va);
+    }
+    // c.attributes = j.at("attributes");
 
     if (j.contains("instance")) {
         c.instance = j.at("instance");

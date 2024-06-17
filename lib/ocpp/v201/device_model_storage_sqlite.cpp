@@ -83,7 +83,7 @@ DeviceModelMap DeviceModelStorageSqlite::get_device_model() {
         "vc.SUPPORTS_MONITORING, vc.UNIT, vc.MIN_LIMIT, vc.MAX_LIMIT, vc.VALUES_LIST "
         "FROM COMPONENT c "
         "JOIN VARIABLE v ON c.ID = v.COMPONENT_ID "
-        "JOIN VARIABLE_CHARACTERISTICS vc ON v.VARIABLE_CHARACTERISTICS_ID = vc.ID";
+        "JOIN VARIABLE_CHARACTERISTICS vc ON vc.VARIABLE_ID = v.ID";
 
     auto select_stmt = this->db->new_statement(select_query);
 

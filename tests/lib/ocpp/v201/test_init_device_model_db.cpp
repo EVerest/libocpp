@@ -3,6 +3,7 @@
 
 #include <gtest/gtest.h>
 
+#include <ocpp/v201/device_model_storage_sqlite.hpp>
 #include <ocpp/v201/init_device_model_db.hpp>
 
 namespace ocpp::v201 {
@@ -16,7 +17,8 @@ protected:
 };
 
 TEST_F(InitDeviceModelDbTest, init_db) {
-    InitDeviceModelDb db = InitDeviceModelDb(DATABASE_PATH, MIGRATION_FILES_PATH);
+    DeviceModelStorageSqlite device_model_storage(DATABASE_PATH);
+    InitDeviceModelDb db = InitDeviceModelDb(DATABASE_PATH, MIGRATION_FILES_PATH, device_model_storage);
     EXPECT_TRUE(db.initialize_database(SCHEMAS_PATH, true));
     EXPECT_TRUE(db.insert_config_and_default_values(SCHEMAS_PATH, CONFIG_PATH));
 }

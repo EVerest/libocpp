@@ -6,6 +6,7 @@
 #include <filesystem>
 
 #include <ocpp/common/database/database_handler_common.hpp>
+#include <ocpp/v201/device_model_storage.hpp>
 
 namespace ocpp::v201 {
 
@@ -20,25 +21,17 @@ struct ComponentKey {
     friend bool operator<(const ComponentKey& l, const ComponentKey& r);
 };
 
-struct DeviceModelVariableAttribute {
-    uint8_t type_id;
-    std::optional<uint8_t> mutability;
-    std::string value;
-};
-
-struct DeviceModelVariableCharacteristics {
-    bool supports_monitoring;
-    uint8_t data_type_id;
-    std::optional<std::string> values_list;
-    std::optional<double> min_limit;
-    std::optional<double> max_limit;
-    std::optional<std::string> unit;
+struct DbVariableAttribute {
+    std::optional<uint64_t> db_id;
+    VariableAttribute variable_attribute;
 };
 
 struct DeviceModelVariable {
+    std::optional<uint64_t> db_id;
+    std::optional<uint64_t> variable_characteristics_db_id;
     std::string name;
-    DeviceModelVariableCharacteristics characteristics;
-    std::vector<DeviceModelVariableAttribute> attributes;
+    VariableCharacteristics characteristics;
+    std::vector<DbVariableAttribute> attributes;
     bool required;
     std::optional<std::string> instance;
     std::string default_actual_value;
@@ -53,16 +46,13 @@ struct VariableAttributeKey {
 
 void from_json(const json& j, ComponentKey& c);
 
-void from_json(const json& j, DeviceModelVariableAttribute& c);
-
-void from_json(const json& j, DeviceModelVariableCharacteristics& c);
-
 void from_json(const json& j, DeviceModelVariable& c);
 
 class InitDeviceModelDb : public common::DatabaseHandlerCommon {
 private: // Members
     const std::filesystem::path database_path;
     bool database_exists;
+    DeviceModelStorage& device_model_storage;
 
 public:
     ///
@@ -70,7 +60,8 @@ public:
     /// \param database_path        Path to the database.
     /// \param migration_files_path Path to the migration files.
     ///
-    InitDeviceModelDb(const std::filesystem::path& database_path, const std::filesystem::path& migration_files_path);
+    InitDeviceModelDb(const std::filesystem::path& database_path, const std::filesystem::path& migration_files_path,
+                      DeviceModelStorage& device_model_storage);
 
     virtual ~InitDeviceModelDb();
 
@@ -114,13 +105,14 @@ private: // Functions
     /// \throws common::RequiredEntryNotFoundException if dataType is not found / not valid.
     /// \throws common::QueryExecutionException if row could not be added to db.
     ///
-    void insert_variable_characteristics(const DeviceModelVariableCharacteristics& characteristics,
-                                         const int64_t& variable_id);
+    void insert_variable_characteristics(const VariableCharacteristics& characteristics, const int64_t& variable_id);
+    void update_variable_characteristics(const VariableCharacteristics& characteristics, const int64_t& characteristics_id, const int64_t& variable_id);
 
-    int64_t insert_variable(const std::string& variable_name, const std::string& instance, const int64_t& component_id,
-                            const bool required);
+    void insert_variable(const DeviceModelVariable& variable, const uint64_t& component_id);
+    void update_variable(const DeviceModelVariable& variable, const DeviceModelVariable db_variable,
+                         const uint64_t component_id);
 
-    void insert_attributes(const std::vector<DeviceModelVariableAttribute>& attributes, const int64_t& variable_id);
+    void insert_attributes(const std::vector<DbVariableAttribute>& attributes, const int64_t& variable_id);
 
     std::map<ComponentKey, std::vector<VariableAttributeKey>>
     get_component_default_values(const std::filesystem::path& schemas_path);
@@ -129,7 +121,8 @@ private: // Functions
     void insert_variable_attribute_value(const ComponentKey& component_key,
                                          const VariableAttributeKey& variable_attribute_key);
     std::vector<ComponentKey> get_all_connector_and_evse_components_fom_db();
-    bool component_exists_in_db(const std::vector<ComponentKey>& db_components, const ComponentKey& component);
+    std::optional<ComponentKey> component_exists_in_db(const std::vector<ComponentKey>& db_components,
+                                                       const ComponentKey& component);
     bool component_exists_in_schemas(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& component_schema,
                                      const ComponentKey& component);
 
@@ -143,8 +136,13 @@ private: // Functions
         const std::vector<ComponentKey>& db_components);
     bool remove_component_from_db(const ComponentKey& component);
 
-    // DatabaseHandlerCommon interface
+    void update_component(const ComponentKey& db_component, const ComponentKey& config_component,
+                          const std::vector<DeviceModelVariable>& variables);
+    std::vector<DeviceModelVariable> get_variables_from_component_from_db(const ComponentKey& db_component);
+    std::vector<DbVariableAttribute> get_variable_attributes_from_db(const uint64_t& variable_id);
+
 protected: // Functions
+    // DatabaseHandlerCommon interface
     virtual void init_sql() override;
 };
 } // namespace ocpp::v201
