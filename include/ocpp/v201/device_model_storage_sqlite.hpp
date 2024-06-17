@@ -40,10 +40,12 @@ public:
     bool set_variable_attribute_value(const Component& component_id, const Variable& variable_id,
                                       const AttributeEnum& attribute_enum, const std::string& value) final;
 
-    int64_t set_monitoring_data(const SetMonitoringData& data) final;
+    std::optional<VariableMonitoringMeta> set_monitoring_data(const SetMonitoringData& data,
+                                                              const VariableMonitorType type) final;
 
-    std::optional<MonitoringData> get_monitoring_data(const std::vector<MonitoringCriterionEnum>& criteria,
-                                                      const Component& component_id, const Variable& variable_id) final;
+    std::vector<VariableMonitoringMeta> get_monitoring_data(const std::vector<MonitoringCriterionEnum>& criteria,
+                                                            const Component& component_id,
+                                                            const Variable& variable_id) final;
 
     bool clear_variable_monitor(int monitor_id) final;
 

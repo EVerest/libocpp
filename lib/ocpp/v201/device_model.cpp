@@ -30,34 +30,46 @@ bool allow_set_read_only_value(const Component& component, const Variable& varia
            variable == ConnectorComponentVariables::AvailabilityState;
 }
 
+bool filter_criteria_monitor(const std::vector<MonitoringCriterionEnum>& criteria,
+                             const VariableMonitoringMeta& monitor) {
+    // N02.FR.11 - if no criteria is provided we have a match
+    if (criteria.empty()) {
+        return true;
+    }
+
+    auto type = monitor.monitor.type;
+    bool any_filter_match = false;
+
+    for (auto& criterion : criteria) {
+        switch (criterion) {
+        case MonitoringCriterionEnum::DeltaMonitoring:
+            any_filter_match = (type == MonitorEnum::Delta);
+            break;
+        case MonitoringCriterionEnum::ThresholdMonitoring:
+            any_filter_match = (type == MonitorEnum::LowerThreshold || type == MonitorEnum::UpperThreshold);
+            break;
+        case MonitoringCriterionEnum::PeriodicMonitoring:
+            any_filter_match = (type == MonitorEnum::Periodic || type == MonitorEnum::PeriodicClockAligned);
+            break;
+        }
+
+        if (any_filter_match) {
+            break;
+        }
+    }
+
+    return any_filter_match;
+}
+
 void filter_criteria_monitors(const std::vector<MonitoringCriterionEnum>& criteria,
-                              std::vector<VariableMonitoring>& monitors) {
+                              std::vector<VariableMonitoringMeta>& monitors) {
     // N02.FR.11 - if no criteria is provided, all monitors are left
     if (criteria.empty()) {
         return;
     }
 
     for (auto it = std::begin(monitors); it != std::end(monitors);) {
-        bool any_filter_match = false;
-        auto type = it->type;
-
-        for (auto& criterion : criteria) {
-            switch (criterion) {
-            case MonitoringCriterionEnum::DeltaMonitoring:
-                any_filter_match = (type == MonitorEnum::Delta);
-                break;
-            case MonitoringCriterionEnum::ThresholdMonitoring:
-                any_filter_match = (type == MonitorEnum::LowerThreshold || type == MonitorEnum::UpperThreshold);
-                break;
-            case MonitoringCriterionEnum::PeriodicMonitoring:
-                any_filter_match = (type == MonitorEnum::Periodic || type == MonitorEnum::PeriodicClockAligned);
-                break;
-            }
-
-            if (any_filter_match) {
-                break;
-            }
-        }
+        bool any_filter_match = filter_criteria_monitor(criteria, *it);
 
         if (any_filter_match == false) {
             it = monitors.erase(it);
@@ -404,7 +416,8 @@ void DeviceModel::check_integrity(const std::map<int32_t, int32_t>& evse_connect
     }
 }
 
-std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<SetMonitoringData>& requests) {
+std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<SetMonitoringData>& requests,
+                                                           const VariableMonitorType type) {
     if (requests.empty()) {
         return {};
     }
@@ -431,19 +444,12 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
 
         // TODO (ioan): see how we should handle the 'Duplicate' data
         try {
-            int64_t new_id = this->storage->set_monitoring_data(request);
+            auto monitor_meta = this->storage->set_monitoring_data(request, type);
 
-            if (new_id >= 0) {
+            if (monitor_meta.has_value()) {
                 // If we had a successful insert, add it to the variable monitor map
-                VariableMonitoring monitor;
-
-                monitor.id = new_id;
-                monitor.transaction = request.transaction.value_or(false);
-                monitor.value = request.value;
-                monitor.type = request.type;
-                monitor.severity = request.severity;
-
-                variable_it->second.monitors.insert(std::pair{new_id, monitor});
+                variable_it->second.monitors.insert(
+                    std::pair{monitor_meta.value().monitor.id, std::move(monitor_meta.value())});
                 result.status = SetMonitoringStatusEnum::Accepted;
             } else {
                 result.status = SetMonitoringStatusEnum::Rejected;
@@ -468,8 +474,8 @@ std::vector<MonitoringData> DeviceModel::get_monitors(const std::vector<Monitori
             for (const auto& [variable, variable_metadata] : variable_map) {
                 std::vector<VariableMonitoring> monitors;
 
-                for (const auto& [id, monitor] : variable_metadata.monitors) {
-                    monitors.push_back(monitor);
+                for (const auto& [id, monitor_meta] : variable_metadata.monitors) {
+                    monitors.push_back(monitor_meta.monitor);
                 }
 
                 get_monitors_res.push_back({component, variable, monitors, std::nullopt});
@@ -494,10 +500,11 @@ std::vector<MonitoringData> DeviceModel::get_monitors(const std::vector<Monitori
                     monitor_data.component = component_variable.component;
                     monitor_data.variable = variable;
 
-                    for (const auto& [id, monitor] : variable_meta.monitors) {
-                        monitor_data.variableMonitoring.push_back(monitor);
+                    for (const auto& [id, monitor_meta] : variable_meta.monitors) {
+                        if (filter_criteria_monitor(criteria, monitor_meta)) {
+                            monitor_data.variableMonitoring.push_back(monitor_meta.monitor);
+                        }
                     }
-                    filter_criteria_monitors(criteria, monitor_data.variableMonitoring);
 
                     get_monitors_res.push_back(std::move(monitor_data));
                 }
@@ -516,10 +523,11 @@ std::vector<MonitoringData> DeviceModel::get_monitors(const std::vector<Monitori
 
                 auto& variable_meta = variable_it->second;
 
-                for (const auto& [id, monitor] : variable_meta.monitors) {
-                    monitor_data.variableMonitoring.push_back(monitor);
+                for (const auto& [id, monitor_meta] : variable_meta.monitors) {
+                    if (filter_criteria_monitor(criteria, monitor_meta)) {
+                        monitor_data.variableMonitoring.push_back(monitor_meta.monitor);
+                    }
                 }
-                filter_criteria_monitors(criteria, monitor_data.variableMonitoring);
 
                 get_monitors_res.push_back(std::move(monitor_data));
             }
