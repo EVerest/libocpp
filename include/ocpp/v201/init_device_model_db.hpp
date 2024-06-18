@@ -106,13 +106,20 @@ private: // Functions
     /// \throws common::QueryExecutionException if row could not be added to db.
     ///
     void insert_variable_characteristics(const VariableCharacteristics& characteristics, const int64_t& variable_id);
-    void update_variable_characteristics(const VariableCharacteristics& characteristics, const int64_t& characteristics_id, const int64_t& variable_id);
+    void update_variable_characteristics(const VariableCharacteristics& characteristics,
+                                         const int64_t& characteristics_id, const int64_t& variable_id);
 
     void insert_variable(const DeviceModelVariable& variable, const uint64_t& component_id);
     void update_variable(const DeviceModelVariable& variable, const DeviceModelVariable db_variable,
                          const uint64_t component_id);
+    void delete_variable(const DeviceModelVariable& variable);
 
-    void insert_attributes(const std::vector<DbVariableAttribute>& attributes, const int64_t& variable_id);
+    void insert_attribute(const VariableAttribute& attribute, const uint64_t& variable_id);
+    void insert_attributes(const std::vector<DbVariableAttribute>& attributes, const uint64_t& variable_id);
+    void update_attributes(const std::vector<DbVariableAttribute>& new_attributes,
+                           const std::vector<DbVariableAttribute>& db_attributes, const uint64_t& variable_id);
+    void update_attribute(const VariableAttribute& attribute, const DbVariableAttribute& db_attribute);
+    void delete_attribute(const DbVariableAttribute& attribute);
 
     std::map<ComponentKey, std::vector<VariableAttributeKey>>
     get_component_default_values(const std::filesystem::path& schemas_path);

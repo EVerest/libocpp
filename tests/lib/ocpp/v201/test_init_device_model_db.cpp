@@ -23,4 +23,20 @@ TEST_F(InitDeviceModelDbTest, init_db) {
     EXPECT_TRUE(db.insert_config_and_default_values(SCHEMAS_PATH, CONFIG_PATH));
 }
 
+/* To test:
+ * - Insert whole configuration
+ * - add EVSE / Connector component
+ * - remove EVSE / Connector component
+ * - add EVSE / Connector Variable
+ * - add non-EVSE / Connector Variable
+ * - remove EVSE / Connector Variable
+ * - change EVSE / Connector Variable
+ * - add EVSE / Connector Variable Attribute
+ * - remove EVSE / Connector Variable Attribute
+ * - change EVSE / Connector Variable Attribute
+ * - add EVSE / Connector Variable Characteristic
+ * - remove EVSE / Connector Variable Characteristic
+ * - change EVSE / Connector Variable Characteristic
+ */
+
 } // namespace ocpp::v201
