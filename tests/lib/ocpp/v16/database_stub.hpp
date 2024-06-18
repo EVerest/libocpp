@@ -26,6 +26,9 @@ struct DatabaseHandlerTest : public DatabaseHandler {
 };
 
 struct SQLiteStatementTest : public ocpp::common::SQLiteStatementInterface {
+    virtual int changes() {
+        return 0;
+    }
     virtual int step() {
         return SQLITE_DONE;
     }

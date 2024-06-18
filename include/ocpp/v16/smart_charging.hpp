@@ -51,13 +51,6 @@ private:
                         std::optional<int> connector_id_opt, const int connector_id, std::optional<int> stack_level_opt,
                         std::optional<ChargingProfilePurposeType> charging_profile_purpose_opt, bool check_id_only);
 
-    ///
-    /// \brief Iterates over the periods of the given \p profile and returns a struct that contains the period and the
-    /// absolute end time of the period that refers to the given absoulte \p time as a pair.
-    ///
-    PeriodDateTimePair find_period_at(const ocpp::DateTime& time, const ChargingProfile& profile,
-                                      const int connector_id);
-
     void clear_expired_profiles();
     int get_number_installed_profiles();
 
@@ -129,8 +122,6 @@ public:
 
 bool validate_schedule(const ChargingSchedule& schedule, const int charging_schedule_max_periods,
                        const std::vector<ChargingRateUnit>& charging_schedule_allowed_charging_rate_units);
-int get_requested_limit(const int limit, const int nr_phases, const ChargingRateUnit& requested_unit);
-int get_power_limit(const int limit, const int nr_phases, const ChargingRateUnit& unit_of_limit);
 
 } // namespace v16
 } // namespace ocpp

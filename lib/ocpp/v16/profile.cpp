@@ -30,7 +30,6 @@ constexpr float low_voltage = 230;            // in Volts
 using ocpp::v16::EnhancedChargingSchedulePeriod;
 
 inline std::int32_t elapsed_seconds(const ocpp::DateTime& to, const ocpp::DateTime& from) {
-
     return duration_cast<seconds>(to.to_time_point() - from.to_time_point()).count();
 }
 
@@ -38,23 +37,49 @@ inline ocpp::DateTime floor_seconds(const ocpp::DateTime& dt) {
     return ocpp::DateTime(std::chrono::floor<seconds>(dt.to_time_point()));
 }
 
-void update_itt(int duration, std::vector<EnhancedChargingSchedulePeriod>::const_iterator& itt,
+/// \brief update the iterator when the current period has elapsed
+/// \param[in] schedule_duration the time in seconds from the start of the composite schedule
+/// \param[inout] itt the iterator for the periods in the schedule
+/// \param[in] end the item beyond the last period in the schedule
+/// \param[out] period the details of the current period in the schedule
+/// \param[out] period_duration how long this period lasts
+///
+/// \note period_duration is defined by the startPeriod of the next period or forever when
+///       there is no next period.
+void update_itt(const int schedule_duration, std::vector<EnhancedChargingSchedulePeriod>::const_iterator& itt,
                 const std::vector<EnhancedChargingSchedulePeriod>::const_iterator& end,
                 EnhancedChargingSchedulePeriod& period, int& period_duration) {
     if (itt != end) {
-        auto next = std::next(itt);
+        // default is to remain in the current period
         period = *itt;
+
+        /*
+         * calculate the duration of this period:
+         * - the startPeriod of the next period in the vector, or
+         * - forever where there is no next period
+         */
+        auto next = std::next(itt);
         period_duration = (next != end) ? next->startPeriod : std::numeric_limits<int>::max();
 
-        if (duration >= period_duration) {
+        if (schedule_duration >= period_duration) {
+            /*
+             * when the current duration is beyond the duration of this period
+             * move to the next period in the vector and recalculate the period duration
+             * (the handling for being at the last element is below)
+             */
             itt++;
             if (itt != end) {
                 period = *itt;
+                next = std::next(itt);
                 period_duration = (next != end) ? next->startPeriod : std::numeric_limits<int>::max();
             }
         }
     }
 
+    /*
+     * all periods in the schedule have been used
+     * i.e. there are no future periods to consider in this schedule
+     */
     if (itt == end) {
         period.startPeriod = -1;
         period_duration = std::numeric_limits<int>::max();
@@ -97,12 +122,10 @@ inline std::ostream& operator<<(std::ostream& os, const period_entry_t& entry) {
     return os;
 }
 
-/**
- * \brief populate a schedule period
- * \param in_start the start time of the profile
- * \param in_duration the time in seconds from the start of the profile to the end of this period
- * \param in_period the details of this period
- */
+/// \brief populate a schedule period
+/// \param in_start the start time of the profile
+/// \param in_duration the time in seconds from the start of the profile to the end of this period
+/// \param in_period the details of this period
 void period_entry_t::init(const DateTime& in_start, int in_duration, const ChargingSchedulePeriod& in_period,
                           const ChargingProfile& in_profile) {
     // note duration can be negative and hence end time is before start time
@@ -117,12 +140,10 @@ void period_entry_t::init(const DateTime& in_start, int in_duration, const Charg
     min_charging_rate = in_profile.chargingSchedule.minChargingRate;
 }
 
-/**
- * \brief validate and update entry based on profile
- * \param profile the profile this entry is part of
- * \param now the current date and time
- * \return true when the entry is valid
- */
+/// \brief validate and update entry based on profile
+/// \param profile the profile this entry is part of
+/// \param now the current date and time
+/// \return true when the entry is valid
 bool period_entry_t::validate(const ChargingProfile& profile, const DateTime& now) {
     bool b_valid{true};
 
@@ -145,14 +166,12 @@ bool period_entry_t::validate(const ChargingProfile& profile, const DateTime& no
     return b_valid;
 }
 
-/**
- * \brief calculate the start times for the profile
- * \param in_now the current date and time
- * \param in_end the end of the composite schedule
- * \param in_session_start optional when the charging session started
- * \param in_profile the charging profile
- * \return a list of the start times of the profile
- */
+/// \brief calculate the start times for the profile
+/// \param in_now the current date and time
+/// \param in_end the end of the composite schedule
+/// \param in_session_start optional when the charging session started
+/// \param in_profile the charging profile
+/// \return a list of the start times of the profile
 std::vector<DateTime> calculate_start(const DateTime& in_now, const DateTime& in_end,
                                       const std::optional<DateTime>& in_session_start,
                                       const ChargingProfile& in_profile) {
@@ -252,15 +271,13 @@ std::vector<DateTime> calculate_start(const DateTime& in_now, const DateTime& in
     return start_times;
 }
 
-/**
- * \brief calculate the start times for the schedule period
- * \param in_now the current date and time
- * \param in_end the end of the composite schedule
- * \param in_session_start optional when the charging session started
- * \param in_profile the charging profile
- * \param in_period_index the schedule period index
- * \return the list of start times
- */
+/// \brief calculate the start times for the schedule period
+/// \param in_now the current date and time
+/// \param in_end the end of the composite schedule
+/// \param in_session_start optional when the charging session started
+/// \param in_profile the charging profile
+/// \param in_period_index the schedule period index
+/// \return the list of start times
 std::vector<period_entry_t> calculate_profile_entry(const DateTime& in_now, const DateTime& in_end,
                                                     const std::optional<DateTime>& in_session_start,
                                                     const ChargingProfile& in_profile, std::uint8_t in_period_index) {
@@ -349,15 +366,13 @@ std::vector<period_entry_t> calculate_profile_entry(const DateTime& in_now, cons
     return entries;
 }
 
-/**
- * \brief generate an ordered list of valid schedule periods for the profile
- * \param now the current date and time
- * \param end ignore entries beyond this date and time (i.e. that start after end)
- * \param session_start optional when the charging session started
- * \param profile the charging profile
- * \return a list of profile periods with calculated date & time start and end times
- * \note it is valid for there to be gaps (for recurring profiles)
- */
+/// \brief generate an ordered list of valid schedule periods for the profile
+/// \param now the current date and time
+/// \param end ignore entries beyond this date and time (i.e. that start after end)
+/// \param session_start optional when the charging session started
+/// \param profile the charging profile
+/// \return a list of profile periods with calculated date & time start and end times
+/// \note it is valid for there to be gaps (for recurring profiles)
 std::vector<period_entry_t> calculate_profile(const DateTime& now, const DateTime& end,
                                               const std::optional<DateTime>& session_start,
                                               const ChargingProfile& profile) {
@@ -383,14 +398,12 @@ std::vector<period_entry_t> calculate_profile(const DateTime& now, const DateTim
     return entries;
 }
 
-/**
- * \brief calculate the composite schedule for the list of periods
- * \param in_combined_schedules the list of periods to build into the schedule
- * \param in_now the start of the composite schedule
- * \param in_end the end (i.e. duration) of the composite schedule
- * \param in_charging_rate_unit the units to use (defaults to Amps)
- * \return the calculated composite schedule
- */
+/// \brief calculate the composite schedule for the list of periods
+/// \param in_combined_schedules the list of periods to build into the schedule
+/// \param in_now the start of the composite schedule
+/// \param in_end the end (i.e. duration) of the composite schedule
+/// \param in_charging_rate_unit the units to use (defaults to Amps)
+/// \return the calculated composite schedule
 EnhancedChargingSchedule calculate_composite_schedule(std::vector<period_entry_t>& in_combined_schedules,
                                                       const DateTime& in_now, const DateTime& in_end,
                                                       std::optional<ChargingRateUnit> in_charging_rate_unit) {
@@ -452,14 +465,12 @@ EnhancedChargingSchedule calculate_composite_schedule(std::vector<period_entry_t
     return composite;
 }
 
-/**
- * \brief calculate the composite combined schedule
- * \param charge_point_max the composite schedule for ChargePointMax profiles
- * \param tx_default the composite schedule for TxDefault profiles
- * \param tx the composite schedule for Tx profiles
- * \return the calculated combined composite schedule
- * \note all composite schedules must have the same units configured
- */
+/// \brief calculate the composite combined schedule
+/// \param charge_point_max the composite schedule for ChargePointMax profiles
+/// \param tx_default the composite schedule for TxDefault profiles
+/// \param tx the composite schedule for Tx profiles
+/// \return the calculated combined composite schedule
+/// \note all composite schedules must have the same units configured
 EnhancedChargingSchedule calculate_composite_schedule(const EnhancedChargingSchedule& charge_point_max,
                                                       const EnhancedChargingSchedule& tx_default,
                                                       const EnhancedChargingSchedule& tx) {
@@ -521,13 +532,7 @@ EnhancedChargingSchedule calculate_composite_schedule(const EnhancedChargingSche
                 }
             } else {
                 // apply ChargePointMaxProfile limits
-
-                // TODO(james-ctc): ChargePointMaxProfile applies to the whole charging station, this limit is
-                //                  shared across all connectors
-                //
-                // From OCPP 1.6:
-                // "The combined energy flow of all connectors SHALL NOT be
-                //  greater then the limit set by ChargePointMaxProfile"
+                // Note the actual ChargePointMaxProfile limit is controlled outside of libocpp
 
                 if (period_charge_point_max.limit != no_limit_specified) {
 

@@ -1,4 +1,4 @@
-# Notes on the Profile tests and approach
+# Notes on Smart Charging Profiles and approach
 There are some complexities calculating composite schedules and this note explains the approach.
 
 The new approach is in `profile.cpp` and `profile.hpp` and then integrated into `smart_charging.cpp` maintaining the same API.
@@ -15,8 +15,6 @@ The new approach is in `profile.cpp` and `profile.hpp` and then integrated into 
       const int connector_id,
       std::optional<ChargingRateUnit> charging_rate_unit);
 ```
-
-This approach could be generalised to support OCPP 2.0 (I've not looked and how charging profiles have changed since 1.6).
 
 ## get_valid_profiles()
 Retrieves all profiles that should be considered for calculating the composite schedule.
@@ -63,7 +61,7 @@ At Monday 08:00 requesting a composite schedule for the next 9 hours needs to in
 -----|-----|-----|-----|-----|-----|-----|-----|-----|-----
 unknown|unknown|P1|P1|unknown|unknown|P2|P2|unknown|unknown|unknown
 
-Where the limit is not known then a default limit of `0.0 Amps` is used when calculating the final composite schedule.
+Where the limit is not known then a default limit of `48.0 Amps` is used when calculating the final composite schedule.
 
 A different default can be specified by installing a lower stack level TxDefault profile e.g.
 
@@ -133,7 +131,7 @@ The following items need to be considered when looking at a schedule:
 - duration
 - startPeriod
 
-The following sections explore some interesting edge cases
+The following sections explore some interesting edge cases.
 
 
 ### validFrom & validTo and transaction start time

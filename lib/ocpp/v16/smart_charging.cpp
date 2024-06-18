@@ -126,7 +126,6 @@ EnhancedChargingSchedule SmartChargingHandler::calculate_enhanced_composite_sche
 
     for (const auto& profile : valid_profiles) {
         std::vector<period_entry_t> periods{};
-        // periods = ocpp::v16::calculate_profile(start_time, session_start, profile, end_time);
         periods = ocpp::v16::calculate_profile(start_time, end_time, session_start, profile);
 
         switch (profile.chargingProfilePurpose) {

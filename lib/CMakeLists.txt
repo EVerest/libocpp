@@ -14,10 +14,6 @@ target_compile_definitions(ocpp
         MIGRATION_FILE_VERSION_V201=${MIGRATION_FILE_VERSION_V201}
 )
 
-if(LIBOCPP_BUILD_TESTING)
-    target_compile_definitions(ocpp PRIVATE BUILD_TESTING_LIBOCPP)
-endif()
-
 target_sources(ocpp
     PRIVATE
         ocpp/common/call_types.cpp
