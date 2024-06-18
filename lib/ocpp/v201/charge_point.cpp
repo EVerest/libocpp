@@ -3213,9 +3213,31 @@ void ChargePoint::handle_set_monitoring_base_req(Call<SetMonitoringBaseRequest> 
     SetMonitoringBaseResponse response;
     const auto& msg = call.msg;
 
-    // TODO(ioan): Persist in device model our monitoring status
-    this->monitoring_status = msg.monitoringBase;
-    response.status = GenericDeviceModelStatusEnum::Accepted;
+    bool valid_monitor = false;
+    switch (msg.monitoringBase) {
+    case MonitoringBaseEnum::All:
+    case MonitoringBaseEnum::FactoryDefault:
+    case MonitoringBaseEnum::HardWiredOnly:
+        valid_monitor = true;
+        break;
+    }
+
+    if (valid_monitor) {
+        auto result = this->device_model->set_value(
+            ControllerComponentVariables::ActiveMonitoringBase.component,
+            ControllerComponentVariables::ActiveMonitoringBase.variable.value(), AttributeEnum::Actual,
+            conversions::monitoring_base_enum_to_string(msg.monitoringBase), true);
+
+        if (result != SetVariableStatusEnum::Accepted) {
+            EVLOG_warning << "Could not persist in device model new monitoring base: "
+                          << conversions::monitoring_base_enum_to_string(msg.monitoringBase);
+            response.status = GenericDeviceModelStatusEnum::Rejected;
+        } else {
+            response.status = GenericDeviceModelStatusEnum::Accepted;
+        }
+    } else {
+        response.status = GenericDeviceModelStatusEnum::Rejected;
+    }
 
     ocpp::CallResult<SetMonitoringBaseResponse> call_result(response, call.uniqueId);
     this->send<SetMonitoringBaseResponse>(call_result);
@@ -3225,9 +3247,21 @@ void ChargePoint::handle_set_monitoring_level_req(Call<SetMonitoringLevelRequest
     SetMonitoringLevelResponse response;
     const auto& msg = call.msg;
 
-    // TODO(ioan): Persist in device model our monitoring severity
-    this->monitoring_severity = msg.severity;
-    response.status = GenericStatusEnum::Accepted;
+    if (msg.severity < MontoringLevelSeverity::MIN || msg.severity > MontoringLevelSeverity::MAX) {
+        response.status = GenericStatusEnum::Rejected;
+    } else {
+        auto result =
+            this->device_model->set_value(ControllerComponentVariables::ActiveMonitoringLevel.component,
+                                          ControllerComponentVariables::ActiveMonitoringLevel.variable.value(),
+                                          AttributeEnum::Actual, std::to_string(msg.severity), true);
+
+        if (result != SetVariableStatusEnum::Accepted) {
+            EVLOG_warning << "Could not persist in device model new monitoring level: " << msg.severity;
+            response.status = GenericStatusEnum::Rejected;
+        } else {
+            response.status = GenericStatusEnum::Accepted;
+        }
+    }
 
     ocpp::CallResult<SetMonitoringLevelResponse> call_result(response, call.uniqueId);
     this->send<SetMonitoringLevelResponse>(call_result);

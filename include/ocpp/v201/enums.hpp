@@ -1579,6 +1579,22 @@ DisplayMessageStatusEnum string_to_display_message_status_enum(const std::string
 /// given output stream \p os \returns an output stream with the DisplayMessageStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const DisplayMessageStatusEnum& display_message_status_enum);
 
+namespace MontoringLevelSeverity {
+constexpr int32_t Danger = 0;
+constexpr int32_t HardwareFailure = 1;
+constexpr int32_t SystemFailure = 2;
+constexpr int32_t Critical = 3;
+constexpr int32_t Error = 4;
+constexpr int32_t Alert = 5;
+constexpr int32_t Warning = 6;
+constexpr int32_t Notice = 7;
+constexpr int32_t Informational = 8;
+constexpr int32_t Debug = 9;
+
+constexpr int32_t MIN = Danger;
+constexpr int32_t MAX = Debug;
+} // namespace MontoringLevelSeverity
+
 // from: SetMonitoringBaseRequest
 enum class MonitoringBaseEnum {
     All,
