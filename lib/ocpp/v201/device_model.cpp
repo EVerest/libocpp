@@ -566,5 +566,9 @@ std::vector<ClearMonitoringResult> DeviceModel::clear_monitors(const std::vector
     return clear_monitors_vec;
 }
 
+int32_t DeviceModel::clear_custom_monitors() {
+    return this->storage->clear_custom_variable_monitors();
+}
+
 } // namespace v201
 } // namespace ocpp

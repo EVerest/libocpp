@@ -1598,8 +1598,9 @@ constexpr int32_t MAX = Debug;
 // from: SetMonitoringBaseRequest
 enum class MonitoringBaseEnum {
     All,
-    FactoryDefault,
-    HardWiredOnly,
+    FactoryDefault, // < Activate the default monitoring settings as recommended by the
+                    // manufacturer. This is a subset of all pre-configured monitors.
+    HardWiredOnly,  //< Clears all custom monitors and disables all pre-configured monitors.
 };
 
 namespace conversions {

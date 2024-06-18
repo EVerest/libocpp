@@ -49,6 +49,8 @@ public:
 
     bool clear_variable_monitor(int monitor_id) final;
 
+    int32_t clear_custom_variable_monitors() final;
+
     void check_integrity() final;
 };
 

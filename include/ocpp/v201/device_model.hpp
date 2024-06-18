@@ -226,6 +226,10 @@ public:
     /// \return List of results of the requested operation
     std::vector<ClearMonitoringResult> clear_monitors(const std::vector<int>& request_ids);
 
+    /// \brief Clears all the custom monitors (set by the CSMS) present in the database
+    /// \return count of monitors deleted, can be 0 if no custom monitors were present in the db
+    int32_t clear_custom_monitors();
+
     /// \brief Check data integrity of the device model provided by the device model data storage:
     /// For "required" variables, assert values exist. Checks might be extended in the future.
     void check_integrity(const std::map<int32_t, int32_t>& evse_connector_structure);

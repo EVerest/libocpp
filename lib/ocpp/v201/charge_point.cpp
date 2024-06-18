@@ -3234,6 +3234,17 @@ void ChargePoint::handle_set_monitoring_base_req(Call<SetMonitoringBaseRequest> 
             response.status = GenericDeviceModelStatusEnum::Rejected;
         } else {
             response.status = GenericDeviceModelStatusEnum::Accepted;
+
+            // TODO(ioan): Spec 3.56: see if we need to clear custom monitors (the ones
+            // set by the CSMS) on 'FactoryDefault' too
+            if (msg.monitoringBase == MonitoringBaseEnum::HardWiredOnly) {
+                try {
+                    this->device_model->clear_custom_monitors();
+                } catch (const QueryExecutionException& e) {
+                    EVLOG_warning << "Could not clear custom monitors from DB: " << e.what();
+                    response.status = GenericDeviceModelStatusEnum::Rejected;
+                }
+            }
         }
     } else {
         response.status = GenericDeviceModelStatusEnum::Rejected;
