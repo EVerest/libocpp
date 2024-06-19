@@ -432,6 +432,7 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
             set_monitors_res.push_back(result);
             continue;
         }
+        result.component = request.component;
 
         auto& variable_map = this->device_model[request.component];
         auto variable_it = variable_map.find(request.variable);
@@ -441,6 +442,7 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
             set_monitors_res.push_back(result);
             continue;
         }
+        result.variable = request.variable;
 
         // TODO (ioan): see how we should handle the 'Duplicate' data
         try {
@@ -450,6 +452,11 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
                 // If we had a successful insert, add it to the variable monitor map
                 variable_it->second.monitors.insert(
                     std::pair{monitor_meta.value().monitor.id, std::move(monitor_meta.value())});
+
+                result.type = request.type;
+                result.severity = request.severity;
+                result.id = monitor_meta.value().monitor.id;
+
                 result.status = SetMonitoringStatusEnum::Accepted;
             } else {
                 result.status = SetMonitoringStatusEnum::Rejected;
@@ -536,7 +543,8 @@ std::vector<MonitoringData> DeviceModel::get_monitors(const std::vector<Monitori
 
     return get_monitors_res;
 }
-std::vector<ClearMonitoringResult> DeviceModel::clear_monitors(const std::vector<int>& request_ids) {
+std::vector<ClearMonitoringResult> DeviceModel::clear_monitors(const std::vector<int>& request_ids,
+                                                               bool allow_protected) {
     if (request_ids.size() <= 0) {
         return {};
     }
@@ -548,18 +556,17 @@ std::vector<ClearMonitoringResult> DeviceModel::clear_monitors(const std::vector
         clear_monitor_res.id = id;
 
         try {
-            if (this->storage->clear_variable_monitor(id, false)) {
+            auto clear_result = this->storage->clear_variable_monitor(id, allow_protected);
+            if (clear_result == ClearMonitoringStatusEnum::Accepted) {
                 // Clear from memory too
                 for (auto& [component, variable_map] : this->device_model) {
                     for (auto& [variable, variable_metadata] : variable_map) {
                         variable_metadata.monitors.erase(static_cast<int64_t>(id));
                     }
                 }
-
-                clear_monitor_res.status = ClearMonitoringStatusEnum::Accepted;
-            } else {
-                clear_monitor_res.status = ClearMonitoringStatusEnum::NotFound;
             }
+
+            clear_monitor_res.status = clear_result;
         } catch (const std::exception& e) {
             EVLOG_error << "Clear monitors failed:" << e.what();
             throw DeviceModelStorageError(e.what());
@@ -573,7 +580,23 @@ std::vector<ClearMonitoringResult> DeviceModel::clear_monitors(const std::vector
 
 int32_t DeviceModel::clear_custom_monitors() {
     try {
-        return this->storage->clear_custom_variable_monitors();
+        int32_t deleted = this->storage->clear_custom_variable_monitors();
+
+        // Clear from memory too
+        for (auto& [component, variable_map] : this->device_model) {
+            for (auto& [variable, variable_metadata] : variable_map) {
+                // Delete while iterating all custom monitors
+                for (auto it = variable_metadata.monitors.begin(); it != variable_metadata.monitors.end();) {
+                    if (it->second.type == VariableMonitorType::CustomMonitor) {
+                        it = variable_metadata.monitors.erase(it);
+                    } else {
+                        ++it;
+                    }
+                }
+            }
+        }
+
+        return deleted;
     } catch (const std::exception& e) {
         EVLOG_error << "Clear custom monitors failed:" << e.what();
         throw DeviceModelStorageError(e.what());

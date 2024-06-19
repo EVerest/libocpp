@@ -349,7 +349,22 @@ DeviceModelStorageSqlite::get_monitoring_data(const std::vector<MonitoringCriter
     return monitors;
 }
 
-bool DeviceModelStorageSqlite::clear_variable_monitor(int monitor_id, bool allow_protected) {
+ClearMonitoringStatusEnum DeviceModelStorageSqlite::clear_variable_monitor(int monitor_id, bool allow_protected) {
+    std::string select_query = "SELECT COUNT(*) FROM VARIABLE_MONITORING WHERE ID = ?";
+
+    auto select_stmt = this->db->new_statement(select_query);
+    select_stmt->bind_int(1, monitor_id);
+
+    if (select_stmt->step() != SQLITE_ROW) {
+        EVLOG_error << this->db->get_error_message();
+        return ClearMonitoringStatusEnum::Rejected;
+    } else {
+        // If we couldn't find a monitor in the DB
+        if (select_stmt->column_int(0) != 1) {
+            return ClearMonitoringStatusEnum::NotFound;
+        }
+    }
+
     std::string delete_query;
 
     if (allow_protected) {
@@ -369,13 +384,13 @@ bool DeviceModelStorageSqlite::clear_variable_monitor(int monitor_id, bool allow
 
     if (delete_stmt->step() != SQLITE_DONE) {
         EVLOG_error << this->db->get_error_message();
-        return false;
+        return ClearMonitoringStatusEnum::Rejected;
     }
 
     transaction->commit();
 
     // Ensure that we deleted 1 row
-    return (delete_stmt->changes() == 1);
+    return ((delete_stmt->changes() == 1) ? ClearMonitoringStatusEnum::Accepted : ClearMonitoringStatusEnum::Rejected);
 }
 
 int32_t DeviceModelStorageSqlite::clear_custom_variable_monitors() {
