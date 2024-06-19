@@ -3275,13 +3275,13 @@ void ChargePoint::handle_set_variable_monitoring_req(const EnhancedMessage<v201:
         this->device_model->get_value<int>(ControllerComponentVariables::BytesPerMessageSetVariableMonitoring);
 
     // N04.FR.09
-    if(msg.setMonitoringData.size() > max_items_per_message) {
+    if (msg.setMonitoringData.size() > max_items_per_message) {
         const auto call_error = CallError(call.uniqueId, "OccurenceConstraintViolation", "", json({}));
         this->send(call_error);
         return;
     }
 
-    if(message.message_size > max_bytes_message) {
+    if (message.message_size > max_bytes_message) {
         const auto call_error = CallError(call.uniqueId, "FormatViolation", "", json({}));
         this->send(call_error);
         return;
@@ -3352,7 +3352,7 @@ void ChargePoint::handle_get_monitoring_report_req(Call<GetMonitoringReportReque
         this->device_model->get_value<int>(ControllerComponentVariables::ItemsPerMessageGetReport);
 
     // N02.FR.07
-    if(component_variables.size() > max_variable_components_per_message) {
+    if (component_variables.size() > max_variable_components_per_message) {
         const auto call_error = CallError(call.uniqueId, "OccurenceConstraintViolation", "", json({}));
         this->send(call_error);
         return;
