@@ -134,13 +134,15 @@ static std::string get_string_value_from_json(const json& value) {
     }
 }
 
+// TODO change constructor, database_exists should not be there. Fix unittest with in memory database
 InitDeviceModelDb::InitDeviceModelDb(const std::filesystem::path& database_path,
                                      const std::filesystem::path& migration_files_path,
-                                     DeviceModelStorage& device_model_storage) :
+                                     DeviceModelStorage& device_model_storage, const bool database_exists) :
     common::DatabaseHandlerCommon(std::make_unique<common::DatabaseConnection>(database_path), migration_files_path,
                                   DEVICE_MODEL_MIGRATION_FILE_VERSION),
     database_path(database_path),
-    database_exists(std::filesystem::exists(database_path)),
+    // database_exists(std::filesystem::exists(database_path)),
+    database_exists(database_exists),
     device_model_storage(device_model_storage) {
 }
 

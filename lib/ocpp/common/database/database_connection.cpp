@@ -68,7 +68,8 @@ bool DatabaseConnection::open_connection() {
         fs::create_directories(this->database_file_path.parent_path());
     }
 
-    if (sqlite3_open(this->database_file_path.c_str(), &this->db) != SQLITE_OK) {
+    if (sqlite3_open_v2(this->database_file_path.c_str(), &this->db,
+                        SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_URI, nullptr) != SQLITE_OK) {
         EVLOG_error << "Error opening database at " << this->database_file_path << ": " << sqlite3_errmsg(db);
         return false;
     }

@@ -61,7 +61,7 @@ public:
     /// \param migration_files_path Path to the migration files.
     ///
     InitDeviceModelDb(const std::filesystem::path& database_path, const std::filesystem::path& migration_files_path,
-                      DeviceModelStorage& device_model_storage);
+                      DeviceModelStorage& device_model_storage, const bool database_exists);
 
     virtual ~InitDeviceModelDb();
 
