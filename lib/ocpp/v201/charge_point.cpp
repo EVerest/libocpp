@@ -1271,7 +1271,7 @@ void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& messa
         this->handle_set_variable_monitoring_req(json_message);
         break;
     case MessageType::GetMonitoringReport:
-        this->handle_get_variable_monitoring_req(json_message);
+        this->handle_get_monitoring_report_req(json_message);
         break;
     case MessageType::ClearVariableMonitoring:
         this->handle_clear_variable_monitoring_req(json_message);
@@ -3213,41 +3213,27 @@ void ChargePoint::handle_set_monitoring_base_req(Call<SetMonitoringBaseRequest> 
     SetMonitoringBaseResponse response;
     const auto& msg = call.msg;
 
-    bool valid_monitor = false;
-    switch (msg.monitoringBase) {
-    case MonitoringBaseEnum::All:
-    case MonitoringBaseEnum::FactoryDefault:
-    case MonitoringBaseEnum::HardWiredOnly:
-        valid_monitor = true;
-        break;
-    }
+    auto result = this->device_model->set_value(ControllerComponentVariables::ActiveMonitoringBase.component,
+                                                ControllerComponentVariables::ActiveMonitoringBase.variable.value(),
+                                                AttributeEnum::Actual,
+                                                conversions::monitoring_base_enum_to_string(msg.monitoringBase), true);
 
-    if (valid_monitor) {
-        auto result = this->device_model->set_value(
-            ControllerComponentVariables::ActiveMonitoringBase.component,
-            ControllerComponentVariables::ActiveMonitoringBase.variable.value(), AttributeEnum::Actual,
-            conversions::monitoring_base_enum_to_string(msg.monitoringBase), true);
+    if (result != SetVariableStatusEnum::Accepted) {
+        EVLOG_warning << "Could not persist in device model new monitoring base: "
+                      << conversions::monitoring_base_enum_to_string(msg.monitoringBase);
+        response.status = GenericDeviceModelStatusEnum::Rejected;
+    } else {
+        response.status = GenericDeviceModelStatusEnum::Accepted;
 
-        if (result != SetVariableStatusEnum::Accepted) {
-            EVLOG_warning << "Could not persist in device model new monitoring base: "
-                          << conversions::monitoring_base_enum_to_string(msg.monitoringBase);
-            response.status = GenericDeviceModelStatusEnum::Rejected;
-        } else {
-            response.status = GenericDeviceModelStatusEnum::Accepted;
-
-            // TODO(ioan): Spec 3.56: see if we need to clear custom monitors (the ones
-            // set by the CSMS) on 'FactoryDefault' too
-            if (msg.monitoringBase == MonitoringBaseEnum::HardWiredOnly) {
-                try {
-                    this->device_model->clear_custom_monitors();
-                } catch (const DeviceModelStorageError& e) {
-                    EVLOG_warning << "Could not clear custom monitors from DB: " << e.what();
-                    response.status = GenericDeviceModelStatusEnum::Rejected;
-                }
+        if (msg.monitoringBase == MonitoringBaseEnum::HardWiredOnly ||
+            msg.monitoringBase == MonitoringBaseEnum::FactoryDefault) {
+            try {
+                this->device_model->clear_custom_monitors();
+            } catch (const DeviceModelStorageError& e) {
+                EVLOG_warning << "Could not clear custom monitors from DB: " << e.what();
+                response.status = GenericDeviceModelStatusEnum::Rejected;
             }
         }
-    } else {
-        response.status = GenericDeviceModelStatusEnum::Rejected;
     }
 
     ocpp::CallResult<SetMonitoringBaseResponse> call_result(response, call.uniqueId);
@@ -3338,7 +3324,7 @@ void ChargePoint::notify_monitoring_report_req(const int request_id,
     }
 }
 
-void ChargePoint::handle_get_variable_monitoring_req(Call<GetMonitoringReportRequest> call) {
+void ChargePoint::handle_get_monitoring_report_req(Call<GetMonitoringReportRequest> call) {
     GetMonitoringReportResponse response;
     const auto& msg = call.msg;
 
