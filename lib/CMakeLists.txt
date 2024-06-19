@@ -39,6 +39,7 @@ if(LIBOCPP_ENABLE_V16)
             ocpp/v16/smart_charging.cpp
             ocpp/v16/charge_point_configuration.cpp
             ocpp/v16/charge_point_state_machine.cpp
+            ocpp/v16/message_queue.cpp
             ocpp/v16/profile.cpp
             ocpp/v16/transaction.cpp
             ocpp/v16/enums.cpp
