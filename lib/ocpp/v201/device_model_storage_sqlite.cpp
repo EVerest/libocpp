@@ -349,13 +349,24 @@ DeviceModelStorageSqlite::get_monitoring_data(const std::vector<MonitoringCriter
     return monitors;
 }
 
-bool DeviceModelStorageSqlite::clear_variable_monitor(int monitor_id) {
-    std::string delete_query = "DELETE FROM VARIABLE_MONITORING WHERE ID = ?";
+bool DeviceModelStorageSqlite::clear_variable_monitor(int monitor_id, bool allow_protected) {
+    std::string delete_query;
+
+    if (allow_protected) {
+        delete_query = "DELETE FROM VARIABLE_MONITORING WHERE ID = ?";
+    } else {
+        delete_query = "DELETE FROM VARIABLE_MONITORING WHERE ID = ? AND CONFIG_TYPE_ID = ?";
+    }
 
     auto transaction = this->db->begin_transaction();
     auto delete_stmt = this->db->new_statement(delete_query);
 
     delete_stmt->bind_int(1, monitor_id);
+
+    if (!allow_protected) {
+        delete_stmt->bind_int(2, static_cast<int>(VariableMonitorType::CustomMonitor));
+    }
+
     if (delete_stmt->step() != SQLITE_DONE) {
         EVLOG_error << this->db->get_error_message();
         return false;

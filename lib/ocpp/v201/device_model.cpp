@@ -547,7 +547,7 @@ std::vector<ClearMonitoringResult> DeviceModel::clear_monitors(const std::vector
         ClearMonitoringResult clear_monitor_res;
         clear_monitor_res.id = id;
 
-        if (this->storage->clear_variable_monitor(id)) {
+        if (this->storage->clear_variable_monitor(id, false)) {
             // Clear from memory too
             for (auto& [component, variable_map] : this->device_model) {
                 for (auto& [variable, variable_metadata] : variable_map) {
