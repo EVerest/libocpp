@@ -49,6 +49,13 @@ public:
     }
 };
 
+/// \brief Exception for errors during query execution
+class QueryExecutionException : public DatabaseException {
+public:
+    explicit QueryExecutionException(const std::string& message) : DatabaseException(message) {
+    }
+};
+
 struct DBTransactionMessage {
     json json_message;
     std::string message_type;

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
+#include <ocpp/common/database/database_handler_common.hpp>
 #include <ocpp/common/utils.hpp>
 #include <ocpp/v201/ctrlr_component_variables.hpp>
 #include <ocpp/v201/device_model.hpp>
@@ -9,6 +10,8 @@
 namespace ocpp {
 
 namespace v201 {
+
+using DatabaseException = ocpp::common::DatabaseException;
 
 /// \brief For AlignedDataInterval, SampledDataTxUpdatedInterval and SampledDataTxEndedInterval, zero is allowed
 static bool allow_zero(const Component& component, const Variable& variable) {
@@ -461,7 +464,7 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
             } else {
                 result.status = SetMonitoringStatusEnum::Rejected;
             }
-        } catch (const std::exception& e) {
+        } catch (const DatabaseException& e) {
             EVLOG_error << "Set monitors failed:" << e.what();
             throw DeviceModelStorageError(e.what());
         }
@@ -567,7 +570,7 @@ std::vector<ClearMonitoringResult> DeviceModel::clear_monitors(const std::vector
             }
 
             clear_monitor_res.status = clear_result;
-        } catch (const std::exception& e) {
+        } catch (const DatabaseException& e) {
             EVLOG_error << "Clear monitors failed:" << e.what();
             throw DeviceModelStorageError(e.what());
         }
@@ -597,7 +600,7 @@ int32_t DeviceModel::clear_custom_monitors() {
         }
 
         return deleted;
-    } catch (const std::exception& e) {
+    } catch (const DatabaseException& e) {
         EVLOG_error << "Clear custom monitors failed:" << e.what();
         throw DeviceModelStorageError(e.what());
     }
