@@ -1268,7 +1268,7 @@ void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& messa
         this->handle_set_monitoring_level_req(json_message);
         break;
     case MessageType::SetVariableMonitoring:
-        this->handle_set_variable_monitoring_req(json_message);
+        this->handle_set_variable_monitoring_req(message);
         break;
     case MessageType::GetMonitoringReport:
         this->handle_get_monitoring_report_req(json_message);
@@ -3264,9 +3264,28 @@ void ChargePoint::handle_set_monitoring_level_req(Call<SetMonitoringLevelRequest
     this->send<SetMonitoringLevelResponse>(call_result);
 }
 
-void ChargePoint::handle_set_variable_monitoring_req(Call<SetVariableMonitoringRequest> call) {
+void ChargePoint::handle_set_variable_monitoring_req(const EnhancedMessage<v201::MessageType>& message) {
+    Call<SetVariableMonitoringRequest> call = message.call_message;
     SetVariableMonitoringResponse response;
     const auto& msg = call.msg;
+
+    const auto max_items_per_message =
+        this->device_model->get_value<int>(ControllerComponentVariables::ItemsPerMessageSetVariableMonitoring);
+    const auto max_bytes_message =
+        this->device_model->get_value<int>(ControllerComponentVariables::BytesPerMessageSetVariableMonitoring);
+
+    // N04.FR.09
+    if(msg.setMonitoringData.size() > max_items_per_message) {
+        const auto call_error = CallError(call.uniqueId, "OccurenceConstraintViolation", "", json({}));
+        this->send(call_error);
+        return;
+    }
+
+    if(message.message_size > max_bytes_message) {
+        const auto call_error = CallError(call.uniqueId, "FormatViolation", "", json({}));
+        this->send(call_error);
+        return;
+    }
 
     try {
         response.setMonitoringResult = this->device_model->set_monitors(msg.setMonitoringData);
@@ -3328,11 +3347,22 @@ void ChargePoint::handle_get_monitoring_report_req(Call<GetMonitoringReportReque
     GetMonitoringReportResponse response;
     const auto& msg = call.msg;
 
+    const auto component_variables = msg.componentVariable.value_or(std::vector<ComponentVariable>());
+    const auto max_variable_components_per_message =
+        this->device_model->get_value<int>(ControllerComponentVariables::ItemsPerMessageGetReport);
+
+    // N02.FR.07
+    if(component_variables.size() > max_variable_components_per_message) {
+        const auto call_error = CallError(call.uniqueId, "OccurenceConstraintViolation", "", json({}));
+        this->send(call_error);
+        return;
+    }
+
     std::vector<MonitoringData> data{};
 
     try {
         data = this->device_model->get_monitors(msg.monitoringCriteria.value_or(std::vector<MonitoringCriterionEnum>()),
-                                                msg.componentVariable.value_or(std::vector<ComponentVariable>()));
+                                                component_variables);
 
         if (!data.empty()) {
             response.status = GenericDeviceModelStatusEnum::Accepted;

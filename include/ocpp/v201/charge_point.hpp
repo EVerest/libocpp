@@ -707,7 +707,7 @@ private:
 
     void handle_set_monitoring_base_req(Call<SetMonitoringBaseRequest> call);
     void handle_set_monitoring_level_req(Call<SetMonitoringLevelRequest> call);
-    void handle_set_variable_monitoring_req(Call<SetVariableMonitoringRequest> call);
+    void handle_set_variable_monitoring_req(const EnhancedMessage<v201::MessageType>& message);
     void handle_get_monitoring_report_req(Call<GetMonitoringReportRequest> call);
     void handle_clear_variable_monitoring_req(Call<ClearVariableMonitoringRequest> call);
 
