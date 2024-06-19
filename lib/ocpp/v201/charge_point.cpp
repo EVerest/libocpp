@@ -409,7 +409,7 @@ void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime&
         if (meter_values.value().empty()) {
             meter_values.reset();
         }
-    } catch (const QueryExecutionException& e) {
+    } catch (const DeviceModelStorageError& e) {
         EVLOG_warning << "Could not get metervalues of transaction: " << e.what();
     }
 
@@ -428,7 +428,7 @@ void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime&
 
     try {
         this->database_handler->transaction_metervalues_clear(transaction_id);
-    } catch (const QueryExecutionException& e) {
+    } catch (const DeviceModelStorageError& e) {
         EVLOG_error << "Could not clear transaction meter values: " << e.what();
     }
 
@@ -542,7 +542,7 @@ std::string ChargePoint::get_customer_information(const std::optional<Certificat
                 s << "Hashed id_token stored in cache: " + hashed_id_token + "\n";
                 s << "IdTokenInfo: " << entry.value();
             }
-        } catch (const QueryExecutionException& e) {
+        } catch (const DeviceModelStorageError& e) {
             EVLOG_warning << "Could not get authorization cache entry from database";
         } catch (const json::exception& e) {
             EVLOG_warning << "Could not parse data of IdTokenInfo: " << e.what();
@@ -566,7 +566,7 @@ void ChargePoint::clear_customer_information(const std::optional<CertificateHash
         const auto hashed_id_token = utils::generate_token_hash(id_token.value());
         try {
             this->database_handler->authorization_cache_delete_entry(hashed_id_token);
-        } catch (const QueryExecutionException& e) {
+        } catch (const DeviceModelStorageError& e) {
             EVLOG_error << "Could not delete from table: " << e.what();
         } catch (const std::exception& e) {
             EVLOG_error << "Exception while deleting from auth cache table: " << e.what();
@@ -772,7 +772,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
         std::optional<IdTokenInfo> id_token_info = std::nullopt;
         try {
             id_token_info = this->database_handler->get_local_authorization_list_entry(id_token);
-        } catch (const QueryExecutionException& e) {
+        } catch (const DeviceModelStorageError& e) {
             EVLOG_warning << "Could not request local authorization list entry: " << e.what();
         } catch (const std::exception& e) {
             EVLOG_error << "Unknown Error while requesting IdTokenInfo: " << e.what();
@@ -835,7 +835,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
                     EVLOG_info << "Found invalid entry in AuthCache: Sending new request";
                 }
             }
-        } catch (const QueryExecutionException& e) {
+        } catch (const DeviceModelStorageError& e) {
             EVLOG_error << "Database Error: " << e.what();
         } catch (const json::exception& e) {
             EVLOG_warning << "Could not parse data of IdTokenInfo: " << e.what();
@@ -861,7 +861,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
         if (auth_cache_enabled) {
             try {
                 this->database_handler->authorization_cache_insert_entry(hashed_id_token, response.idTokenInfo);
-            } catch (const QueryExecutionException& e) {
+            } catch (const DeviceModelStorageError& e) {
                 EVLOG_error << "Could not insert into authorization cache entry: " << e.what();
             }
             this->trigger_authorization_cache_cleanup();
@@ -1427,7 +1427,7 @@ void ChargePoint::update_authorization_cache_size() {
             auto size = this->database_handler->authorization_cache_get_binary_size();
             this->device_model->set_read_only_value(auth_cache_size.component, auth_cache_size.variable.value(),
                                                     AttributeEnum::Actual, std::to_string(size));
-        } catch (const QueryExecutionException& e) {
+        } catch (const DeviceModelStorageError& e) {
             EVLOG_warning << "Could not get authorization cache binary size from database: " << e.what();
         } catch (const std::exception& e) {
             EVLOG_warning << "Could not get authorization cache binary size from database" << e.what();
@@ -1456,7 +1456,7 @@ SendLocalListStatusEnum ChargePoint::apply_local_authorization_list(const SendLo
             try {
                 this->database_handler->clear_local_authorization_list();
                 status = SendLocalListStatusEnum::Accepted;
-            } catch (const QueryExecutionException& e) {
+            } catch (const DeviceModelStorageError& e) {
                 status = SendLocalListStatusEnum::Failed;
                 EVLOG_warning << "Clearing of local authorization list failed: " << e.what();
             }
@@ -1471,7 +1471,7 @@ SendLocalListStatusEnum ChargePoint::apply_local_authorization_list(const SendLo
                     this->database_handler->clear_local_authorization_list();
                     this->database_handler->insert_or_update_local_authorization_list(list);
                     status = SendLocalListStatusEnum::Accepted;
-                } catch (const QueryExecutionException& e) {
+                } catch (const DeviceModelStorageError& e) {
                     status = SendLocalListStatusEnum::Failed;
                     EVLOG_warning << "Full update of local authorization list failed (at least partially): "
                                   << e.what();
@@ -1492,7 +1492,7 @@ SendLocalListStatusEnum ChargePoint::apply_local_authorization_list(const SendLo
             try {
                 this->database_handler->insert_or_update_local_authorization_list(list);
                 status = SendLocalListStatusEnum::Accepted;
-            } catch (const QueryExecutionException& e) {
+            } catch (const DeviceModelStorageError& e) {
                 status = SendLocalListStatusEnum::Failed;
                 EVLOG_warning << "Differential update of authorization list failed (at least partially): " << e.what();
             }
@@ -2565,7 +2565,7 @@ void ChargePoint::handle_clear_cache_req(Call<ClearCacheRequest> call) {
             this->database_handler->authorization_cache_clear();
             this->update_authorization_cache_size();
             response.status = ClearCacheStatusEnum::Accepted;
-        } catch (QueryExecutionException& e) {
+        } catch (DeviceModelStorageError& e) {
             auto call_error = CallError(call.uniqueId, "InternalError",
                                         "Database error while clearing authorization cache", json({}, true));
             this->send(call_error);
@@ -2614,7 +2614,7 @@ void ChargePoint::handle_transaction_event_response(const EnhancedMessage<v201::
         try {
             this->database_handler->authorization_cache_insert_entry(utils::generate_token_hash(id_token),
                                                                      msg.idTokenInfo.value());
-        } catch (const QueryExecutionException& e) {
+        } catch (const DeviceModelStorageError& e) {
             EVLOG_warning << "Could not insert into authorization cache entry: " << e.what();
         }
         this->trigger_authorization_cache_cleanup();
@@ -3240,7 +3240,7 @@ void ChargePoint::handle_set_monitoring_base_req(Call<SetMonitoringBaseRequest> 
             if (msg.monitoringBase == MonitoringBaseEnum::HardWiredOnly) {
                 try {
                     this->device_model->clear_custom_monitors();
-                } catch (const QueryExecutionException& e) {
+                } catch (const DeviceModelStorageError& e) {
                     EVLOG_warning << "Could not clear custom monitors from DB: " << e.what();
                     response.status = GenericDeviceModelStatusEnum::Rejected;
                 }
@@ -3284,7 +3284,7 @@ void ChargePoint::handle_set_variable_monitoring_req(Call<SetVariableMonitoringR
 
     try {
         response.setMonitoringResult = this->device_model->set_monitors(msg.setMonitoringData);
-    } catch (const ocpp::common::QueryExecutionException& e) {
+    } catch (const DeviceModelStorageError& e) {
         EVLOG_error << "Set monitors failed:" << e.what();
     }
 
@@ -3353,7 +3353,7 @@ void ChargePoint::handle_get_variable_monitoring_req(Call<GetMonitoringReportReq
         } else {
             response.status = GenericDeviceModelStatusEnum::EmptyResultSet;
         }
-    } catch (const QueryExecutionException& e) {
+    } catch (const DeviceModelStorageError& e) {
         EVLOG_error << "Get variable monitoring failed:" << e.what();
         response.status = GenericDeviceModelStatusEnum::Rejected;
     }
@@ -3373,7 +3373,7 @@ void ChargePoint::handle_clear_variable_monitoring_req(Call<ClearVariableMonitor
 
     try {
         response.clearMonitoringResult = this->device_model->clear_monitors(msg.id);
-    } catch (const ocpp::common::QueryExecutionException& e) {
+    } catch (const DeviceModelStorageError& e) {
         EVLOG_error << "Clear variable monitoring failed:" << e.what();
     }
 
@@ -3444,13 +3444,13 @@ void ChargePoint::handle_send_local_authorization_list_req(Call<SendLocalListReq
                     auto entries = this->database_handler->get_local_authorization_list_number_of_entries();
                     this->device_model->set_read_only_value(local_entries.component, local_entries.variable.value(),
                                                             AttributeEnum::Actual, std::to_string(entries));
-                } catch (const QueryExecutionException& e) {
+                } catch (const DeviceModelStorageError& e) {
                     EVLOG_warning << "Could not get local list count from database";
                 } catch (const std::exception& e) {
                     EVLOG_warning << "Could not get local list count from database";
                 }
             }
-        } catch (const QueryExecutionException& e) {
+        } catch (const DeviceModelStorageError& e) {
             EVLOG_warning << "Could not update local authorization list in database: " << e.what();
             response.status = SendLocalListStatusEnum::Failed;
         }
@@ -3467,7 +3467,7 @@ void ChargePoint::handle_get_local_authorization_list_version_req(Call<GetLocalL
             .value_or(false)) {
         try {
             response.versionNumber = this->database_handler->get_local_authorization_list_version();
-        } catch (const QueryExecutionException& e) {
+        } catch (const DeviceModelStorageError& e) {
             const auto call_error = CallError(call.uniqueId, "InternalError",
                                               "Unable to retrieve LocalListVersion from the database", json({}));
             this->send(call_error);
@@ -3568,7 +3568,7 @@ void ChargePoint::cache_cleanup_handler() {
                     }
                 }
             }
-        } catch (const QueryExecutionException& e) {
+        } catch (const DeviceModelStorageError& e) {
             EVLOG_warning << "Could not delete expired authorization cache entries from database: " << e.what();
         } catch (const std::exception& e) {
             EVLOG_warning << "Could not delete expired authorization cache entries from database: " << e.what();

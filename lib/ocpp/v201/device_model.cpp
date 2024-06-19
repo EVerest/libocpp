@@ -454,9 +454,9 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
             } else {
                 result.status = SetMonitoringStatusEnum::Rejected;
             }
-        } catch (const ocpp::common::QueryExecutionException& e) {
+        } catch (const std::exception& e) {
             EVLOG_error << "Set monitors failed:" << e.what();
-            throw e;
+            throw DeviceModelStorageError(e.what());
         }
 
         set_monitors_res.push_back(result);
@@ -547,17 +547,22 @@ std::vector<ClearMonitoringResult> DeviceModel::clear_monitors(const std::vector
         ClearMonitoringResult clear_monitor_res;
         clear_monitor_res.id = id;
 
-        if (this->storage->clear_variable_monitor(id, false)) {
-            // Clear from memory too
-            for (auto& [component, variable_map] : this->device_model) {
-                for (auto& [variable, variable_metadata] : variable_map) {
-                    variable_metadata.monitors.erase(static_cast<int64_t>(id));
+        try {
+            if (this->storage->clear_variable_monitor(id, false)) {
+                // Clear from memory too
+                for (auto& [component, variable_map] : this->device_model) {
+                    for (auto& [variable, variable_metadata] : variable_map) {
+                        variable_metadata.monitors.erase(static_cast<int64_t>(id));
+                    }
                 }
-            }
 
-            clear_monitor_res.status = ClearMonitoringStatusEnum::Accepted;
-        } else {
-            clear_monitor_res.status = ClearMonitoringStatusEnum::NotFound;
+                clear_monitor_res.status = ClearMonitoringStatusEnum::Accepted;
+            } else {
+                clear_monitor_res.status = ClearMonitoringStatusEnum::NotFound;
+            }
+        } catch (const std::exception& e) {
+            EVLOG_error << "Clear monitors failed:" << e.what();
+            throw DeviceModelStorageError(e.what());
         }
 
         clear_monitors_vec.push_back(clear_monitor_res);
@@ -567,7 +572,14 @@ std::vector<ClearMonitoringResult> DeviceModel::clear_monitors(const std::vector
 }
 
 int32_t DeviceModel::clear_custom_monitors() {
-    return this->storage->clear_custom_variable_monitors();
+    try {
+        return this->storage->clear_custom_variable_monitors();
+    } catch (const std::exception& e) {
+        EVLOG_error << "Clear custom monitors failed:" << e.what();
+        throw DeviceModelStorageError(e.what());
+    }
+
+    return 0;
 }
 
 } // namespace v201
