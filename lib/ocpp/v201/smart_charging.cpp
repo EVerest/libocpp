@@ -96,9 +96,9 @@ CurrentPhaseType SmartChargingHandler::get_current_phase_type(const std::optiona
     return CurrentPhaseType::Unknown;
 }
 
-SmartChargingHandler::SmartChargingHandler(std::map<int32_t, std::unique_ptr<EvseInterface>>& evses,
+SmartChargingHandler::SmartChargingHandler(EvseManagerInterface& evse_manager,
                                            std::shared_ptr<DeviceModel>& device_model) :
-    evses(evses), device_model(device_model) {
+    evse_manager(evse_manager), device_model(device_model) {
 }
 
 ProfileValidationResultEnum SmartChargingHandler::validate_profile(ChargingProfile& profile, int32_t evse_id) {
@@ -144,8 +144,8 @@ ProfileValidationResultEnum SmartChargingHandler::validate_profile(ChargingProfi
 }
 
 ProfileValidationResultEnum SmartChargingHandler::validate_evse_exists(int32_t evse_id) const {
-    return evses.find(evse_id) == evses.end() ? ProfileValidationResultEnum::EvseDoesNotExist
-                                              : ProfileValidationResultEnum::Valid;
+    return evse_manager.does_evse_exist(evse_id) ? ProfileValidationResultEnum::Valid
+                                                 : ProfileValidationResultEnum::EvseDoesNotExist;
 }
 
 ProfileValidationResultEnum SmartChargingHandler::validate_charging_station_max_profile(const ChargingProfile& profile,
