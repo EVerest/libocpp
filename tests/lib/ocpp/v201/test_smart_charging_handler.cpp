@@ -744,7 +744,7 @@ TEST_F(ChargepointTestFixtureV201, K01FR49_IfNumberPhasesMissingForACChargingSta
     EXPECT_THAT(numberPhases, testing::Eq(3));
 }
 
-TEST_F(ChargepointTestFixtureV201, K01FR06_ExisitingProfileLastForever_RejectIncoming) {
+TEST_F(ChargepointTestFixtureV201, K01FR06_ExistingProfileLastsForever_RejectIncoming) {
     install_profile_on_evse(DEFAULT_EVSE_ID, DEFAULT_PROFILE_ID, ocpp::DateTime(date::utc_clock::time_point::min()),
                             ocpp::DateTime(date::utc_clock::time_point::max()));
 
