@@ -33,11 +33,11 @@ public:
     }
 
     bool DoesTableExist(std::string_view table) {
-        const std::string statement = "SELECT name FROM sqlite_master WHERE type='table' AND name='" + std::string(table) + "'";
+        const std::string statement = "SELECT name FROM sqlite_master WHERE type='table' AND name=@table_name";
 
         std::unique_ptr<common::SQLiteStatementInterface> table_exists_statement =
             this->database->new_statement(statement);
-        // table_exists_statement->bind_text("@table_name", std::string(table), SQLiteString::Transient);
+        table_exists_statement->bind_text("@table_name", std::string(table), SQLiteString::Transient);
         const int status = table_exists_statement->step();
         const int number_of_rows = table_exists_statement->get_number_of_rows();
         return status != SQLITE_ERROR && number_of_rows == 1;

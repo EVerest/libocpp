@@ -25,124 +25,26 @@ const static std::map<std::string, uint8_t> VARIABLE_ATTRIBUTE_TYPE_ENCODING = {
 };
 /* clang-format on */
 
-static bool is_same_component_key(const ComponentKey& component_key1, const ComponentKey& component_key2) {
-    if ((component_key1.name == component_key2.name) && (component_key1.evse_id == component_key2.evse_id) &&
-        (component_key1.connector_id == component_key2.connector_id) &&
-        (component_key1.instance == component_key2.instance)) {
-        // We did not compare the 'required' here as that does not define a ComponentKey
-        return true;
-    }
-
-    return false;
-}
-
+// Forward declarations.
+static bool is_same_component_key(const ComponentKey& component_key1, const ComponentKey& component_key2);
 static bool is_same_variable_attribute_key(const VariableAttributeKey& attribute_key1,
-                                           const VariableAttributeKey& attribute_key2) {
-    if ((attribute_key1.attribute_type == attribute_key2.attribute_type) &&
-        (attribute_key1.instance == attribute_key2.instance) && (attribute_key1.name == attribute_key2.name)) {
-        // We did not compare the 'value' here as we want to check if the attribute is the same and not the value of the
-        // attribute.
-        return true;
-    }
-
-    return false;
-}
-
-static bool is_same_attribute(const VariableAttribute attribute1, const VariableAttribute& attribute2) {
-    return attribute1.type == attribute2.type;
-}
-
-/**
- * @brief Check if attribute characteristics are different.
- *
- * Will not check for value but only the other characteristics.
- *
- * @param attribute1    attribute 1.
- * @param attribute2    attribute 2.
- * @return True if characteristics of attribute are the same.
- */
-static bool is_attribute_different(const VariableAttribute& attribute1, const VariableAttribute& attribute2) {
-    // Constant and persistent are currently not set in the json file.
-    if ((attribute1.type == attribute2.type) && /*(attribute1.constant == attribute2.constant) &&*/
-        (attribute1.mutability == attribute2.mutability) /* && (attribute1.persistent == attribute2.persistent)*/) {
-        return false;
-    }
-    return true;
-}
-
+                                           const VariableAttributeKey& attribute_key2);
+static bool is_same_attribute(const VariableAttribute attribute1, const VariableAttribute& attribute2);
+static bool is_attribute_different(const VariableAttribute& attribute1, const VariableAttribute& attribute2);
 static bool variable_has_same_attributes(const std::vector<DbVariableAttribute>& attributes1,
-                                         const std::vector<DbVariableAttribute>& attributes2) {
-    if (attributes1.size() != attributes2.size()) {
-        return false;
-    }
+                                         const std::vector<DbVariableAttribute>& attributes2);
+static bool is_characteristics_different(const VariableCharacteristics& c1, const VariableCharacteristics& c2);
+static bool is_same_variable(const DeviceModelVariable& v1, const DeviceModelVariable& v2);
+static bool is_variable_different(const DeviceModelVariable& v1, const DeviceModelVariable& v2);
+static std::string get_string_value_from_json(const json& value);
 
-    for (const DbVariableAttribute& attribute : attributes1) {
-        const auto& it =
-            std::find_if(attributes2.begin(), attributes2.end(), [&attribute](const DbVariableAttribute& a) {
-                if (!is_attribute_different(a.variable_attribute, attribute.variable_attribute)) {
-                    return true;
-                }
-                return false;
-            });
-
-        if (it == attributes2.end()) {
-            // At least one attribute is different.
-            return false;
-        }
-    }
-
-    // Everything is the same.
-    return true;
-}
-
-static bool is_characteristics_different(const VariableCharacteristics& c1, const VariableCharacteristics& c2) {
-    if ((c1.supportsMonitoring == c2.supportsMonitoring) && (c1.dataType == c2.dataType) &&
-        (c1.maxLimit == c2.maxLimit) && (c1.minLimit == c2.minLimit) && (c1.unit == c2.unit) &&
-        (c1.valuesList == c2.valuesList)) {
-        return false;
-    }
-    return true;
-}
-
-static bool is_same_variable(const DeviceModelVariable& v1, const DeviceModelVariable& v2) {
-    return ((v1.name == v2.name) && (v1.instance == v2.instance));
-}
-
-static bool is_variable_different(const DeviceModelVariable& v1, const DeviceModelVariable& v2) {
-    if (is_same_variable(v1, v2) && (v1.required == v2.required) &&
-        !is_characteristics_different(v1.characteristics, v2.characteristics) &&
-        variable_has_same_attributes(v1.attributes, v2.attributes)) {
-        return false;
-    }
-    return true;
-}
-
-static std::string get_string_value_from_json(const json& value) {
-    if (value.is_string()) {
-        return value;
-    } else if (value.is_boolean()) {
-        if (value.get<bool>()) {
-            // Convert to lower case if that is not the case currently.
-            return "true";
-        }
-        return "false";
-    } else if (value.is_array() || value.is_object()) {
-        return "";
-        // TODO : error!!
-    } else {
-        return value.dump();
-    }
-}
-
-// TODO change constructor, database_exists should not be there. Fix unittest with in memory database
 InitDeviceModelDb::InitDeviceModelDb(const std::filesystem::path& database_path,
                                      const std::filesystem::path& migration_files_path,
-                                     DeviceModelStorage& device_model_storage, const bool database_exists) :
+                                     DeviceModelStorage& device_model_storage) :
     common::DatabaseHandlerCommon(std::make_unique<common::DatabaseConnection>(database_path), migration_files_path,
                                   DEVICE_MODEL_MIGRATION_FILE_VERSION),
     database_path(database_path),
-    // database_exists(std::filesystem::exists(database_path)),
-    database_exists(database_exists),
+    database_exists(std::filesystem::exists(database_path)),
     device_model_storage(device_model_storage) {
 }
 
@@ -1177,6 +1079,174 @@ void from_json(const json& j, DeviceModelVariable& c) {
         } else {
             c.default_actual_value = default_value.dump();
         }
+    }
+}
+
+/* Below functions check if components, attributes, variables, characteristics are the same / equal in the schema and
+ * database. The 'is_same' functions check if two objects are the same, comparing their unique properties.
+ * The is_..._different functions check if the objects properties are different (and as a result should be changed in
+ * the database).
+ */
+
+///
+/// \brief Check if the component keys are the same given their unique properties (name, evse id, connector id and
+///        instance)
+/// \param component_key1   Component key 1
+/// \param component_key2   Component key 2
+/// \return True if those are the same components.
+///
+static bool is_same_component_key(const ComponentKey& component_key1, const ComponentKey& component_key2) {
+    if ((component_key1.name == component_key2.name) && (component_key1.evse_id == component_key2.evse_id) &&
+        (component_key1.connector_id == component_key2.connector_id) &&
+        (component_key1.instance == component_key2.instance)) {
+        // We did not compare the 'required' here as that does not define a ComponentKey
+        return true;
+    }
+
+    return false;
+}
+
+///
+/// \brief Check if the variable attribute is the same given their unique properties (type, variable instance and
+///        variable name)
+/// \param attribute_key1   Attribute key 1
+/// \param attribute_key2   Attribute key 2
+/// \return True if they are the same.
+///
+static bool is_same_variable_attribute_key(const VariableAttributeKey& attribute_key1,
+                                           const VariableAttributeKey& attribute_key2) {
+    if ((attribute_key1.attribute_type == attribute_key2.attribute_type) &&
+        (attribute_key1.instance == attribute_key2.instance) && (attribute_key1.name == attribute_key2.name)) {
+        // We did not compare the 'value' here as we want to check if the attribute is the same and not the value of the
+        // attribute.
+        return true;
+    }
+
+    return false;
+}
+
+///
+/// \brief Check if the two given attributes are the same  given their unique properties (type)
+/// \param attribute1   Attribute 1
+/// \param attribute2   Attribute 2
+/// \return True when they are the same.
+///
+static bool is_same_attribute(const VariableAttribute attribute1, const VariableAttribute& attribute2) {
+    return attribute1.type == attribute2.type;
+}
+
+///
+/// @brief Check if attribute characteristics are different.
+///
+/// Will not check for value but only the other characteristics.
+///
+/// @param attribute1    attribute 1.
+/// @param attribute2    attribute 2.
+/// @return True if characteristics of attribute are the same.
+///
+static bool is_attribute_different(const VariableAttribute& attribute1, const VariableAttribute& attribute2) {
+    // Constant and persistent are currently not set in the json file.
+    if ((attribute1.type == attribute2.type) && /*(attribute1.constant == attribute2.constant) &&*/
+        (attribute1.mutability == attribute2.mutability) /* && (attribute1.persistent == attribute2.persistent)*/) {
+        return false;
+    }
+    return true;
+}
+
+///
+/// \brief Check if a variable has the same attributes, or if there is for example an extra attribute added, removed or
+///        changed.
+/// \param attributes1 Attributes 1
+/// \param attributes2 Attributes 2
+/// \return True if they are the same.
+///
+static bool variable_has_same_attributes(const std::vector<DbVariableAttribute>& attributes1,
+                                         const std::vector<DbVariableAttribute>& attributes2) {
+    if (attributes1.size() != attributes2.size()) {
+        return false;
+    }
+
+    for (const DbVariableAttribute& attribute : attributes1) {
+        const auto& it =
+            std::find_if(attributes2.begin(), attributes2.end(), [&attribute](const DbVariableAttribute& a) {
+                if (!is_attribute_different(a.variable_attribute, attribute.variable_attribute)) {
+                    return true;
+                }
+                return false;
+            });
+
+        if (it == attributes2.end()) {
+            // At least one attribute is different.
+            return false;
+        }
+    }
+
+    // Everything is the same.
+    return true;
+}
+
+///
+/// \brief Check if the given characteristics are different from eachother.
+/// \param c1   Characteristics 1
+/// \param c2   Characteristics 2
+/// \return True if they are different
+///
+static bool is_characteristics_different(const VariableCharacteristics& c1, const VariableCharacteristics& c2) {
+    if ((c1.supportsMonitoring == c2.supportsMonitoring) && (c1.dataType == c2.dataType) &&
+        (c1.maxLimit == c2.maxLimit) && (c1.minLimit == c2.minLimit) && (c1.unit == c2.unit) &&
+        (c1.valuesList == c2.valuesList)) {
+        return false;
+    }
+    return true;
+}
+
+///
+/// \brief Check if the two variables are the same given their unique properties (name and instance).
+/// \param v1   Variable 1
+/// \param v2   Variable 2
+/// \return True if they are the same variable.
+///
+static bool is_same_variable(const DeviceModelVariable& v1, const DeviceModelVariable& v2) {
+    return ((v1.name == v2.name) && (v1.instance == v2.instance));
+}
+
+///
+/// \brief Check if the two given variables are different from eachother.
+/// \param v1   Variable 1
+/// \param v2   Variable 2
+/// \return True if they are different.
+///
+static bool is_variable_different(const DeviceModelVariable& v1, const DeviceModelVariable& v2) {
+    if (is_same_variable(v1, v2) && (v1.required == v2.required) &&
+        !is_characteristics_different(v1.characteristics, v2.characteristics) &&
+        variable_has_same_attributes(v1.attributes, v2.attributes)) {
+        return false;
+    }
+    return true;
+}
+
+///
+/// \brief Get string value from json.
+///
+/// The json value can have different types, but we want it as a string.
+///
+/// \param value    The json value.
+/// \return The string value.
+///
+static std::string get_string_value_from_json(const json& value) {
+    if (value.is_string()) {
+        return value;
+    } else if (value.is_boolean()) {
+        if (value.get<bool>()) {
+            // Convert to lower case if that is not the case currently.
+            return "true";
+        }
+        return "false";
+    } else if (value.is_array() || value.is_object()) {
+        return "";
+        // TODO : error!!
+    } else {
+        return value.dump();
     }
 }
 
