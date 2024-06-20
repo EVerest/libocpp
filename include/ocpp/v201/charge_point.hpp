@@ -389,6 +389,8 @@ public:
     /// change
     virtual std::map<SetVariableData, SetVariableResult>
     set_variables(const std::vector<SetVariableData>& set_variable_data_vector) = 0;
+
+    virtual std::optional<std::string> get_evse_transactionid(int32_t evse_id) = 0;
 };
 
 /// \brief Class implements OCPP2.0.1 Charging Station
@@ -888,24 +890,7 @@ public:
         return this->device_model->request_value<T>(component_id, variable_id, attribute_enum);
     }
 
-    /// \brief Gets variables specified within \p get_variable_data_vector from the device model and returns the result.
-    /// This function is used internally in order to handle GetVariables.req messages and it can be used to get
-    /// variables externally.
-    /// \param get_variable_data_vector contains data of the variables to get
-    /// \return Vector containing a result for each requested variable
-    std::vector<GetVariableResult> get_variables(const std::vector<GetVariableData>& get_variable_data_vector);
-
-    /// \brief Sets variables specified within \p set_variable_data_vector in the device model and returns the result.
-    /// \param set_variable_data_vector contains data of the variables to set
-    /// \return Map containing the SetVariableData as a key and the  SetVariableResult as a value for each requested
-    /// change
-    std::map<SetVariableData, SetVariableResult>
-    set_variables(const std::vector<SetVariableData>& set_variable_data_vector);
-
-    ///\brief Check if there are any interrupted transactions on the connector id and return the transaction id.
-    /// \param connector_id The connector id to check
-    /// \return std::string containing the transaction id.
-    std::string has_interrupted_transactions(int32_t connector_id);
+    std::optional<std::string> get_evse_transactionid(int32_t evse_id) override;
 };
 
 } // namespace v201

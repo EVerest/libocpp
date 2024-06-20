@@ -48,7 +48,7 @@ Evse::Evse(const int32_t evse_id, const int32_t number_of_connectors, DeviceMode
            std::shared_ptr<ComponentStateManagerInterface> component_state_manager,
            const std::function<void(const MeterValue& meter_value, const Transaction& transaction, const int32_t seq_no,
                                     const std::optional<int32_t> reservation_id)>& transaction_meter_value_req,
-           const std::function<void()> pause_charging_callback) :
+           const std::function<void()>& pause_charging_callback) :
     evse_id(evse_id),
     device_model(device_model),
     transaction_meter_value_req(transaction_meter_value_req),
@@ -62,7 +62,17 @@ Evse::Evse(const int32_t evse_id, const int32_t number_of_connectors, DeviceMode
     }
 
     // Get any interrupted transactions from the database and resume them if possible
-    this->resume_interrupted_transactions();
+    auto transaction = this->database_handler->transaction_get(evse_id);
+    if (transaction != nullptr) {
+        if (this->id_connector_map.count(transaction->connector_id) != 0) {
+            this->resume_transaction(std::move(transaction));
+        } else {
+            EVLOG_error << "Can't resume transaction on evse_id " << evse_id << " for non existent connector " << transaction->connector_id;
+            this->database_handler->transaction_delete(transaction->transactionId);
+
+            // Todo: Can we drop the transaction like this or do we still want to transmit an ended message?
+        }
+    }
 }
 
 EVSE Evse::get_evse_info() {
@@ -74,21 +84,13 @@ uint32_t Evse::get_number_of_connectors() {
     return static_cast<uint32_t>(this->id_connector_map.size());
 }
 
-void Evse::resume_transaction(TransactionInterruptedResponse interrupted_transaction) {
+void Evse::resume_transaction(std::unique_ptr<EnhancedTransaction> interrupted_transaction) {
 
-    this->transaction = std::make_unique<EnhancedTransaction>();
-    this->transaction->transactionId = interrupted_transaction.transaction_id;
-    this->transaction->connector_id = interrupted_transaction.connector_id;
-    this->transaction->chargingState = interrupted_transaction.charging_state;
-    this->transaction->seq_no = interrupted_transaction.seq_no + 1;
-    this->transaction->active_energy_import_start_value = this->get_active_import_register_meter_value();
-    this->transaction->databse_handler = this->database_handler;
+    this->transaction = std::move(interrupted_transaction);
+    this->transaction->database_handler = this->database_handler;
 
-    //TODO: use id_token_sent
-
-    // Restart the clock timers
-    restart_metering_timers(
-        interrupted_transaction.timestamp,
+    this->start_metering_timers(
+        interrupted_transaction->start_time,
         std::chrono::seconds(
             this->device_model.get_value<int>(ControllerComponentVariables::SampledDataTxUpdatedInterval)),
         std::chrono::seconds(
@@ -111,12 +113,11 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
     }
     this->transaction = std::make_unique<EnhancedTransaction>();
     this->transaction->transactionId = transaction_id;
-    this->transaction->reservation_id = reservation_id;
     this->transaction->connector_id = connector_id;
-    this->transaction->id_token = id_token;
-    this->transaction->group_id_token = group_id_token;
+    this->transaction->id_token_sent = id_token.has_value();
+    this->transaction->start_time = timestamp;
     this->transaction->active_energy_import_start_value = this->get_active_import_register_meter_value();
-    this->transaction->databse_handler = this->database_handler;
+    this->transaction->database_handler = this->database_handler;
 
     try {
         this->database_handler->transaction_metervalues_insert(this->transaction->transactionId.get(), meter_start);
@@ -128,13 +129,10 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
                       << this->transaction->transactionId.get() << " into database: " << e.what();
     }
 
-    // start the metering timers
-    restart_metering_timers(timestamp, sampled_data_tx_updated_interval, sampled_data_tx_ended_interval,
+    this->start_metering_timers(timestamp, sampled_data_tx_updated_interval, sampled_data_tx_ended_interval,
                             aligned_data_tx_updated_interval, aligned_data_tx_ended_interval);
 
-    this->database_handler->insert_transaction(0, transaction_id, evse_id, connector_id, timestamp,
-                                               conversions::charging_state_enum_to_string(charging_state),
-                                               static_cast<int> (id_token.has_value()));
+    this->database_handler->transaction_insert(*this->transaction.get(), this->evse_id);
 }
 
 void Evse::close_transaction(const DateTime& timestamp, const MeterValue& meter_stop, const ReasonEnum& reason) {
@@ -255,7 +253,7 @@ void Evse::check_max_energy_on_invalid_id() {
     }
 }
 
-void Evse::restart_metering_timers(const DateTime& timestamp,
+void Evse::start_metering_timers(const DateTime& timestamp,
                                    const std::chrono::seconds sampled_data_tx_updated_interval,
                                    const std::chrono::seconds sampled_data_tx_ended_interval,
                                    const std::chrono::seconds aligned_data_tx_updated_interval,
@@ -269,8 +267,7 @@ void Evse::restart_metering_timers(const DateTime& timestamp,
             [this] {
                 const int32_t seq_no = this->transaction->get_seq_no();
                 this->transaction_meter_value_req(this->get_meter_value(), this->transaction->get_transaction(), seq_no,
-                                                  this->transaction->reservation_id);
-                this->transaction->update_sequence_number(seq_no);
+                                                  std::nullopt);
             },
             sampled_data_tx_updated_interval, date::utc_clock::to_sys(timestamp.to_time_point()));
     }
@@ -316,9 +313,8 @@ void Evse::restart_metering_timers(const DateTime& timestamp,
                 }
                 const int32_t seq_no = this->transaction->get_seq_no();
                 this->transaction_meter_value_req(meter_value, this->transaction->get_transaction(), seq_no,
-                                                  this->transaction->reservation_id);
+                                                  std::nullopt);
                 this->aligned_data_updated.clear_values();
-                this->transaction->update_sequence_number(seq_no);
             },
             aligned_data_tx_updated_interval,
             std::chrono::floor<date::days>(date::utc_clock::to_sys(date::utc_clock::now())));
@@ -367,18 +363,6 @@ void Evse::restart_metering_timers(const DateTime& timestamp,
     }
 }
 
-void Evse::resume_interrupted_transactions() {
-
-    this->interrupted_transactions = this->database_handler->get_ongoing_transactions();
-
-    //  Find details of the interrupted transaction
-    for (auto const& active_transactions : this->interrupted_transactions) {
-        if (active_transactions.has_interrupted_transaction == true) {
-            this->resume_transaction(active_transactions);
-            EVLOG_info << "Trying to Resume interrupted transaction";
-        }
-    }
-}
 void Evse::set_evse_operative_status(OperationalStatusEnum new_status, bool persist) {
     this->component_state_manager->set_evse_individual_operational_status(this->evse_id, new_status, persist);
 }

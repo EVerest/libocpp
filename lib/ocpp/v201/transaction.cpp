@@ -2,6 +2,7 @@
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
 #include <ocpp/v201/transaction.hpp>
+#include <ocpp/v201/database_handler.hpp>
 
 namespace ocpp {
 
@@ -15,16 +16,18 @@ Transaction EnhancedTransaction::get_transaction() {
 
 int32_t EnhancedTransaction::get_seq_no() {
     this->seq_no += 1;
+    this->database_handler->transaction_update_seq_no(this->transactionId, this->seq_no);
     return this->seq_no - 1;
 }
 
 void EnhancedTransaction::update_charging_state(const ChargingStateEnum charging_state) {
     this->chargingState = charging_state;
-    databse_handler->update_charging_state(this->transactionId, charging_state);
+    this->database_handler->transaction_update_charging_state(this->transactionId, charging_state);
 }
 
-void EnhancedTransaction::update_sequence_number(const int32_t seq_no) {
-    this->databse_handler->update_transaction_seq_no(this->transactionId, seq_no);
+void EnhancedTransaction::set_id_token_sent() {
+    this->id_token_sent = true;
+    this->database_handler->transaction_update_id_token_sent(this->transactionId, this->id_token_sent);
 }
 
 } // namespace v201

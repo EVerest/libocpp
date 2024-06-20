@@ -12,6 +12,7 @@
 #include <ocpp/common/database/database_connection.hpp>
 #include <ocpp/common/database/database_handler_common.hpp>
 #include <ocpp/v201/ocpp_types.hpp>
+#include <ocpp/v201/transaction.hpp>
 
 #include <everest/logging.hpp>
 
@@ -33,13 +34,6 @@ private:
     void insert_availability(int32_t evse_id, int32_t connector_id, OperationalStatusEnum operational_status,
                              bool replace);
     OperationalStatusEnum get_availability(int32_t evse_id, int32_t connector_id);
-
-    // Interrupted transactions
-    std::vector<TransactionInterruptedResponse> interrupted_transactions;
-
-    /// \brief Process any interrupted transactions.
-    /// \details Retriev values from the database and store them in the local vector.
-    void process_interrupted_transactions();
 
 public:
     DatabaseHandler(std::unique_ptr<common::DatabaseConnectionInterface> database,
@@ -145,36 +139,35 @@ public:
 
     // transactions
 
-    /// @brief Inserts a transaction with the given parameters to the TRANSACTIONS table
-    /// @param seq_no
-    /// @param transaction_id
-    /// @param event_type
-    /// @param id_tag_start
-    /// @param evse_id
-    /// @param connector_id
-    /// @param time_start
-    /// @param charging_state
-    void insert_transaction(int32_t seq_no, const std::string& transaction_id, int32_t evse_id, int32_t connector_id,
-                            const ocpp::DateTime& time_start, std::string charging_state, int id_tag_sent);
+    /// \brief Inserts a transaction with the given parameters to the TRANSACTIONS table
+    /// \param transaction
+    /// \param evse_id
+    void transaction_insert(const EnhancedTransaction& transaction, int32_t evse_id);
 
-        /// @brief Clear all the transactions from the TRANSACTIONS table.
-        /// @param transaction_id transaction id of the transaction to clear from.
-        /// @return true if suceeded
-        bool clear_transaction(const std::string& transaction_id);
+    /// \brief Gets a transaction from the database if one can be found using \p evse_id
+    /// \param evse_id The evse id to get the transaction for
+    /// \return nullptr if not found, otherwise an enhanced transaction object.
+    std::unique_ptr<EnhancedTransaction> transaction_get(const int32_t evse_id);
 
-    /// @brief Get any interrupted transactions that hasn't ended.
-    /// @return TransactionInterruptedResponse
-    std::vector<TransactionInterruptedResponse> get_ongoing_transactions();
+    /// \brief Update the sequence number of the given transaction id in the database.
+    /// \param transaction_id
+    /// \param seq_no
+    void transaction_update_seq_no(const std::string& transaction_id, int32_t seq_no);
 
-    /// @brief Update the sequence number of the given transaction id in the database to retrieve later.
-    /// @param transaction_id
-    /// @param seq_no
-    void update_transaction_seq_no(const std::string& transaction_id, int32_t seq_no);
+    /// \brief Update the charging state of the given transaction id in the database.
+    /// \param transaction_id
+    /// \param charging_state
+    void transaction_update_charging_state(const std::string& transaction_id, const ChargingStateEnum charging_state);
 
-    /// @brief Update the chargign state of the given transaction id in the database to retrieve later.
-    /// @param transaction_id
-    /// @param charging_state
-    void update_charging_state(const std::string& transaction_id, const ChargingStateEnum charging_state);
+    /// \brief Update the id_token_sent of the given transaction id in the database.
+    /// \param transaction_id
+    /// \param id_token_sent
+    void transaction_update_id_token_sent(const std::string& transaction_id, bool id_token_sent);
+
+    /// \brief Clear all the transactions from the TRANSACTIONS table.
+    /// \param transaction_id transaction id of the transaction to clear from.
+    /// \return true if succeeded
+    void transaction_delete(const std::string& transaction_id);
 };
 
 } // namespace v201

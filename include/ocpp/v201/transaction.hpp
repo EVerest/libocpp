@@ -4,23 +4,23 @@
 #define OCPP_V201_TRANSACTION_HANDLER_HPP
 
 #include <ocpp/common/aligned_timer.hpp>
-#include <ocpp/v201/database_handler.hpp>
 #include <ocpp/v201/ocpp_types.hpp>
 
 namespace ocpp {
 
 namespace v201 {
 
+class DatabaseHandler;
+
 /// \brief Struct that enhances the OCPP Transaction by some meta data and functionality
 struct EnhancedTransaction : public Transaction {
-    std::optional<IdToken> id_token;
-    std::optional<IdToken> group_id_token;
-    std::optional<int32_t> reservation_id;
+    bool id_token_sent;
     int32_t connector_id;
     int32_t seq_no = 0;
     std::optional<float> active_energy_import_start_value;
+    DateTime start_time;
     bool check_max_active_import_energy;
-    std::shared_ptr<DatabaseHandler> databse_handler;
+    std::shared_ptr<DatabaseHandler> database_handler;
 
     ClockAlignedTimer sampled_tx_updated_meter_values_timer;
     ClockAlignedTimer sampled_tx_ended_meter_values_timer;
@@ -38,9 +38,7 @@ struct EnhancedTransaction : public Transaction {
     /// @param charging_state
     void update_charging_state(const ChargingStateEnum charging_state);
 
-    /// @brief Update the sequnce number of the message in the database
-    /// @param seq_no int32_t sequnce number to write.
-    void update_sequence_number(const int32_t seq_no);
+    void set_id_token_sent();
 };
 } // namespace v201
 

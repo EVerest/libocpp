@@ -62,10 +62,6 @@ public:
     virtual void close_transaction(const DateTime& timestamp, const MeterValue& meter_stop,
                                    const ReasonEnum& reason) = 0;
 
-    /// @brief Resume a given transaction.
-    /// @param interrupted_transaction TransactionInterruptedResponse type.
-    virtual void resume_transaction(TransactionInterruptedResponse interrupted_transaction) = 0;
-
     /// \brief Start checking if the max energy on invalid id has exceeded.
     ///        Will call pause_charging_callback when that happens.
     virtual void start_checking_max_energy_on_invalid_id() = 0;
@@ -151,8 +147,6 @@ private:
     Everest::SteadyTimer sampled_meter_values_timer;
     std::shared_ptr<DatabaseHandler> database_handler;
 
-    std::vector<TransactionInterruptedResponse> interrupted_transactions; // Interrupted transactions
-
     /// \brief gets the active import energy meter value from meter_value, normalized to Wh.
     std::optional<float> get_active_import_register_meter_value();
 
@@ -165,7 +159,7 @@ private:
     /// \param sampled_data_tx_ended_interval
     /// \param aligned_data_tx_updated_interval
     /// \param aligned_data_tx_ended_interval
-    void restart_metering_timers(const DateTime& timestamp, const std::chrono::seconds sampled_data_tx_updated_interval,
+    void start_metering_timers(const DateTime& timestamp, const std::chrono::seconds sampled_data_tx_updated_interval,
                                  const std::chrono::seconds sampled_data_tx_ended_interval,
                                  const std::chrono::seconds aligned_data_tx_updated_interval,
                                  const std::chrono::seconds aligned_data_tx_ended_interval);
@@ -174,7 +168,7 @@ private:
     AverageMeterValues aligned_data_tx_end;
 
     /// \brief Perform a check to see if there are any interrupted transactions and resume them.
-    void resume_interrupted_transactions();
+    void resume_transaction(std::unique_ptr<EnhancedTransaction> interrupted_transaction);
 
     /// \brief Component responsible for maintaining and persisting the operational status of CS, EVSEs, and connectors.
     std::shared_ptr<ComponentStateManagerInterface> component_state_manager;
@@ -192,7 +186,7 @@ public:
          std::shared_ptr<ComponentStateManagerInterface> component_state_manager,
          const std::function<void(const MeterValue& meter_value, const Transaction& transaction, const int32_t seq_no,
                                   const std::optional<int32_t> reservation_id)>& transaction_meter_value_req,
-         const std::function<void()> pause_charging_callback);
+         const std::function<void()>& pause_charging_callback);
 
     EVSE get_evse_info();
 
@@ -207,10 +201,6 @@ public:
                           const std::chrono::seconds aligned_data_tx_updated_interval,
                           const std::chrono::seconds aligned_data_tx_ended_interval);
     void close_transaction(const DateTime& timestamp, const MeterValue& meter_stop, const ReasonEnum& reason);
-
-    /// @brief Resume a given transaction.
-    /// @param interrupted_transaction TransactionInterruptedResponse type.
-    void resume_transaction(TransactionInterruptedResponse interrupted_transaction);
 
     /// \brief Start checking if the max energy on invalid id has exceeded.
     ///        Will call pause_charging_callback when that happens.
