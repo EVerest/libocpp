@@ -833,11 +833,13 @@ TEST_F(ChargepointTestFixtureV201, K01_ValidateProfile_IfEvseDoesNotExist_ThenPr
 
 TEST_F(ChargepointTestFixtureV201, K01_ValidateProfile_IfScheduleIsInvalid_ThenProfileIsInvalid) {
     create_evse_with_id(DEFAULT_EVSE_ID);
+
+    auto extraneous_start_schedule = ocpp::DateTime("2024-01-17T17:00:00");
     auto periods = create_charging_schedule_periods(0);
-    auto profile = create_charging_profile(
-        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
-        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), DEFAULT_TX_ID,
-        ChargingProfileKindEnum::Relative, 1);
+    auto profile =
+        create_charging_profile(DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+                                create_charge_schedule(ChargingRateUnitEnum::A, periods, extraneous_start_schedule),
+                                DEFAULT_TX_ID, ChargingProfileKindEnum::Relative, 1);
 
     auto sut = handler.validate_profile(profile, DEFAULT_EVSE_ID);
 
