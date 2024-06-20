@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
-#include <ocpp/common/database/database_handler_common.hpp>
+#include <ocpp/common/database/database_exceptions.hpp>
 #include <ocpp/common/utils.hpp>
 #include <ocpp/v201/ctrlr_component_variables.hpp>
 #include <ocpp/v201/device_model.hpp>
