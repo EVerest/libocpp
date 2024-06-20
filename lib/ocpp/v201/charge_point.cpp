@@ -421,7 +421,7 @@ void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime&
 
     try {
         this->database_handler->transaction_metervalues_clear(transaction_id);
-        this->database_handler->delete_transaction(transaction_id);
+        this->database_handler->transaction_delete(transaction_id);
     } catch (const QueryExecutionException& e) {
         EVLOG_error << "Could not clear transaction meter values: " << e.what();
     }

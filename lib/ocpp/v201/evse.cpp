@@ -106,6 +106,7 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
     this->transaction->id_token_sent = id_token.has_value();
     this->transaction->start_time = timestamp;
     this->transaction->active_energy_import_start_value = this->get_active_import_register_meter_value();
+    this->transaction->chargingState = charging_state;
     this->transaction->database_handler = this->database_handler;
 
     try {
