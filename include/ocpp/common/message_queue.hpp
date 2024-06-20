@@ -76,7 +76,7 @@ template <typename M> struct ControlMessage {
     }
 
     /// \brief True for transactional messages containing updates (measurements) for a transaction
-    bool isTransactionUpdateMessage() const;
+    bool is_transaction_update_message() const;
 };
 
 /// \brief This can be used to distinguish the different queue types
@@ -88,16 +88,27 @@ enum class QueueType {
 
 /// \brief Indicates the transmission priority of a message that is being pushed to the message queue
 enum class MessageTransmissionPriority {
-    SEND_IMMEDIATELY,                        // message can be queued and can be send immediately
-    SEND_AFTER_REGISTRATION_STATUS_ACCEPTED, // message can be queued and shall be send only if registration status is
-                                             // accepted
-    DISCARD                                  // message shall be discarded and not be sent
+    SendImmediately,                     // message can be queued and can be send immediately
+    SendAfterRegistrationStatusAccepted, // message can be queued and shall be send only if registration status is
+                                         // accepted
+    Discard                              // message shall be discarded and not be sent
 };
 
 /// \brief Helper function to handle messages that shall be send
-MessageTransmissionPriority get_message_transmission_priority(bool is_boot_notification_message, bool triggered,
-                                                              bool registration_already_accepted,
-                                                              bool is_transaction_related, bool queue_all_message);
+inline MessageTransmissionPriority get_message_transmission_priority(bool is_boot_notification_message, bool triggered,
+                                                                     bool registration_already_accepted,
+                                                                     bool is_transaction_related,
+                                                                     bool queue_all_message) {
+    if (registration_already_accepted || is_boot_notification_message || triggered) {
+        return MessageTransmissionPriority::SendImmediately;
+    }
+
+    if (is_transaction_related || queue_all_message) {
+        return MessageTransmissionPriority::SendAfterRegistrationStatusAccepted;
+    }
+
+    return MessageTransmissionPriority::Discard;
+};
 
 /// \brief Indicates if the given \p message_type is a transaction message type
 /// \param message_type
@@ -291,7 +302,7 @@ private:
             auto element = transaction_message_queue.front();
             transaction_message_queue.pop_front();
             // drop every second update message (except last one)
-            if (remove_next_update_message && element->isTransactionUpdateMessage() &&
+            if (remove_next_update_message && element->is_transaction_update_message() &&
                 transaction_message_queue.size() > 1) {
                 EVLOG_debug << "Drop transactional message " << element->initial_unique_id;
                 try {

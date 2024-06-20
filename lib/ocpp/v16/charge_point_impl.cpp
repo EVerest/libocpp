@@ -2715,13 +2715,13 @@ template <class T> bool ChargePointImpl::send(ocpp::Call<T> call, bool initiated
         (this->registration_status == RegistrationStatus::Accepted), is_transaction_message(message_type),
         this->configuration->getQueueAllMessages().value_or(false));
     switch (message_transmission_priority) {
-    case MessageTransmissionPriority::SEND_IMMEDIATELY:
+    case MessageTransmissionPriority::SendImmediately:
         this->message_queue->push(call);
         return true;
-    case MessageTransmissionPriority::SEND_AFTER_REGISTRATION_STATUS_ACCEPTED:
+    case MessageTransmissionPriority::SendAfterRegistrationStatusAccepted:
         this->message_queue->push(call, true);
         return true;
-    case MessageTransmissionPriority::DISCARD:
+    case MessageTransmissionPriority::Discard:
         return false;
     }
     throw std::runtime_error("Missing handling for MessageTransmissionPriority");
@@ -2737,10 +2737,10 @@ std::future<EnhancedMessage<v16::MessageType>> ChargePointImpl::send_async(ocpp:
         this->configuration->getQueueAllMessages().value_or(false));
 
     switch (message_transmission_priority) {
-    case MessageTransmissionPriority::SEND_IMMEDIATELY:
+    case MessageTransmissionPriority::SendImmediately:
         return this->message_queue->push_async(call);
-    case MessageTransmissionPriority::SEND_AFTER_REGISTRATION_STATUS_ACCEPTED:
-    case MessageTransmissionPriority::DISCARD:
+    case MessageTransmissionPriority::SendAfterRegistrationStatusAccepted:
+    case MessageTransmissionPriority::Discard:
         auto promise = std::promise<EnhancedMessage<MessageType>>();
         auto enhanced_message = EnhancedMessage<MessageType>();
         enhanced_message.offline = true;

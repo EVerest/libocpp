@@ -3219,13 +3219,13 @@ template <class T> bool ChargePoint::send(ocpp::Call<T> call, const bool initiat
         (this->registration_status == RegistrationStatusEnum::Accepted), is_transaction_message(message_type),
         this->device_model->get_optional_value<bool>(ControllerComponentVariables::QueueAllMessages).value_or(false));
     switch (message_transmission_priority) {
-    case MessageTransmissionPriority::SEND_IMMEDIATELY:
+    case MessageTransmissionPriority::SendImmediately:
         this->message_queue->push(call);
         return true;
-    case MessageTransmissionPriority::SEND_AFTER_REGISTRATION_STATUS_ACCEPTED:
+    case MessageTransmissionPriority::SendAfterRegistrationStatusAccepted:
         this->message_queue->push(call, true);
         return true;
-    case MessageTransmissionPriority::DISCARD:
+    case MessageTransmissionPriority::Discard:
         return false;
     }
     throw std::runtime_error("Missing handling for MessageTransmissionPriority");
@@ -3238,10 +3238,10 @@ template <class T> std::future<EnhancedMessage<v201::MessageType>> ChargePoint::
         (this->registration_status == RegistrationStatusEnum::Accepted), is_transaction_message(message_type),
         this->device_model->get_optional_value<bool>(ControllerComponentVariables::QueueAllMessages).value_or(false));
     switch (message_transmission_priority) {
-    case MessageTransmissionPriority::SEND_IMMEDIATELY:
+    case MessageTransmissionPriority::SendImmediately:
         return this->message_queue->push_async(call);
-    case MessageTransmissionPriority::SEND_AFTER_REGISTRATION_STATUS_ACCEPTED:
-    case MessageTransmissionPriority::DISCARD:
+    case MessageTransmissionPriority::SendAfterRegistrationStatusAccepted:
+    case MessageTransmissionPriority::Discard:
         auto promise = std::promise<EnhancedMessage<MessageType>>();
         auto enhanced_message = EnhancedMessage<MessageType>();
         enhanced_message.offline = true;
