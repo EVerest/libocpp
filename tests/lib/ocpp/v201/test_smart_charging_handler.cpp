@@ -328,6 +328,18 @@ TEST_F(ChargepointTestFixtureV201, K01FR20_IfPhaseToUseSetAndACPhaseSwitchingSup
                 testing::Eq(ProfileValidationResultEnum::ChargingSchedulePeriodPhaseToUseACPhaseSwitchingUnsupported));
 }
 
+TEST_F(ChargepointTestFixtureV201, K01FR20_IfPhaseToUseSetAndACPhaseSwitchingSupportedTrue_ThenProfileIsNotInvalid) {
+    auto periods = create_charging_schedule_periods_with_phases(0, 1, 1);
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), DEFAULT_TX_ID,
+        ChargingProfileKindEnum::Absolute, 1);
+
+    auto sut = handler.validate_profile_schedules(profile);
+
+    EXPECT_THAT(sut, testing::Not(ProfileValidationResultEnum::ChargingSchedulePeriodExtraneousPhaseValues));
+}
+
 TEST_F(ChargepointTestFixtureV201,
        K01FR26_IfChargingRateUnitIsNotInChargingScheduleChargingRateUnits_ThenProfileIsInvalid) {
     const auto& charging_rate_unit_cv = ControllerComponentVariables::ChargingScheduleChargingRateUnit;
