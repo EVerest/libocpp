@@ -601,10 +601,9 @@ TEST_F(ChargepointTestFixtureV201, K01FR52_TxDefaultProfileValidIfAppliedToWhole
 TEST_F(ChargepointTestFixtureV201, K01FR53_TxDefaultProfileValidIfAppliedToExistingEvseAgain) {
     install_profile_on_evse(DEFAULT_EVSE_ID, DEFAULT_PROFILE_ID);
 
-    auto profile =
-        create_charging_profile(DEFAULT_PROFILE_ID + 1, ChargingProfilePurposeEnum::TxDefaultProfile,
-                                create_charge_schedule(ChargingRateUnitEnum::A), {}, ChargingProfileKindEnum::Absolute,
-                                DEFAULT_STACK_LEVEL, ocpp::DateTime("2024-02-02T17:00:00"));
+    auto profile = create_charging_profile(DEFAULT_PROFILE_ID + 1, ChargingProfilePurposeEnum::TxDefaultProfile,
+                                           create_charge_schedule(ChargingRateUnitEnum::A), {},
+                                           ChargingProfileKindEnum::Absolute, DEFAULT_STACK_LEVEL);
     auto sut = handler.validate_tx_default_profile(profile, DEFAULT_EVSE_ID);
 
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::Valid));
