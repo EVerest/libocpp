@@ -67,7 +67,8 @@ Evse::Evse(const int32_t evse_id, const int32_t number_of_connectors, DeviceMode
         if (this->id_connector_map.count(transaction->connector_id) != 0) {
             this->resume_transaction(std::move(transaction));
         } else {
-            EVLOG_error << "Can't resume transaction on evse_id " << evse_id << " for non existent connector " << transaction->connector_id;
+            EVLOG_error << "Can't resume transaction on evse_id " << evse_id << " for non existent connector "
+                        << transaction->connector_id;
             this->database_handler->transaction_delete(transaction->transactionId);
 
             // Todo: Can we drop the transaction like this or do we still want to transmit an ended message?
@@ -89,25 +90,13 @@ void Evse::resume_transaction(std::unique_ptr<EnhancedTransaction> interrupted_t
     this->transaction = std::move(interrupted_transaction);
     this->transaction->database_handler = this->database_handler;
 
-    this->start_metering_timers(
-        interrupted_transaction->start_time,
-        std::chrono::seconds(
-            this->device_model.get_value<int>(ControllerComponentVariables::SampledDataTxUpdatedInterval)),
-        std::chrono::seconds(
-            this->device_model.get_value<int>(ControllerComponentVariables::SampledDataTxEndedInterval)),
-        std::chrono::seconds(this->device_model.get_value<int>(ControllerComponentVariables::AlignedDataInterval)),
-        std::chrono::seconds(
-            this->device_model.get_value<int>(ControllerComponentVariables::AlignedDataTxEndedInterval)));
+    this->start_metering_timers(interrupted_transaction->start_time);
 }
 
 void Evse::open_transaction(const std::string& transaction_id, const int32_t connector_id, const DateTime& timestamp,
                             const MeterValue& meter_start, const std::optional<IdToken>& id_token,
                             const std::optional<IdToken>& group_id_token, const std::optional<int32_t> reservation_id,
-                            const ChargingStateEnum charging_state,
-                            const std::chrono::seconds sampled_data_tx_updated_interval,
-                            const std::chrono::seconds sampled_data_tx_ended_interval,
-                            const std::chrono::seconds aligned_data_tx_updated_interval,
-                            const std::chrono::seconds aligned_data_tx_ended_interval) {
+                            const ChargingStateEnum charging_state) {
     if (!this->id_connector_map.count(connector_id)) {
         EVLOG_AND_THROW(std::runtime_error("Attempt to start transaction at invalid connector_id"));
     }
@@ -129,8 +118,7 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
                       << this->transaction->transactionId.get() << " into database: " << e.what();
     }
 
-    this->start_metering_timers(timestamp, sampled_data_tx_updated_interval, sampled_data_tx_ended_interval,
-                            aligned_data_tx_updated_interval, aligned_data_tx_ended_interval);
+    this->start_metering_timers(timestamp);
 
     this->database_handler->transaction_insert(*this->transaction.get(), this->evse_id);
 }
@@ -253,14 +241,19 @@ void Evse::check_max_energy_on_invalid_id() {
     }
 }
 
-void Evse::start_metering_timers(const DateTime& timestamp,
-                                   const std::chrono::seconds sampled_data_tx_updated_interval,
-                                   const std::chrono::seconds sampled_data_tx_ended_interval,
-                                   const std::chrono::seconds aligned_data_tx_updated_interval,
-                                   const std::chrono::seconds aligned_data_tx_ended_interval) {
+void Evse::start_metering_timers(const DateTime& timestamp) {
 
     this->aligned_data_updated.clear_values();
     this->aligned_data_tx_end.clear_values();
+
+    const auto sampled_data_tx_updated_interval = std::chrono::seconds(
+        this->device_model.get_value<int>(ControllerComponentVariables::SampledDataTxUpdatedInterval));
+    const auto sampled_data_tx_ended_interval = std::chrono::seconds(
+        this->device_model.get_value<int>(ControllerComponentVariables::SampledDataTxEndedInterval));
+    const auto aligned_data_tx_updated_interval =
+        std::chrono::seconds(this->device_model.get_value<int>(ControllerComponentVariables::AlignedDataInterval));
+    const auto aligned_data_tx_ended_interval = std::chrono::seconds(
+        this->device_model.get_value<int>(ControllerComponentVariables::AlignedDataTxEndedInterval));
 
     if (sampled_data_tx_updated_interval > 0s) {
         this->transaction->sampled_tx_updated_meter_values_timer.interval_starting_from(

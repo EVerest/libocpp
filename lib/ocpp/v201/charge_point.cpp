@@ -340,15 +340,8 @@ void ChargePoint::on_transaction_started(const int32_t evse_id, const int32_t co
                                          const std::optional<int32_t>& remote_start_id,
                                          const ChargingStateEnum charging_state) {
 
-    this->evses.at(evse_id)->open_transaction(
-        session_id, connector_id, timestamp, meter_start, id_token, group_id_token, reservation_id, charging_state,
-        std::chrono::seconds(
-            this->device_model->get_value<int>(ControllerComponentVariables::SampledDataTxUpdatedInterval)),
-        std::chrono::seconds(
-            this->device_model->get_value<int>(ControllerComponentVariables::SampledDataTxEndedInterval)),
-        std::chrono::seconds(this->device_model->get_value<int>(ControllerComponentVariables::AlignedDataInterval)),
-        std::chrono::seconds(
-            this->device_model->get_value<int>(ControllerComponentVariables::AlignedDataTxEndedInterval)));
+    this->evses.at(evse_id)->open_transaction(session_id, connector_id, timestamp, meter_start, id_token,
+                                              group_id_token, reservation_id, charging_state);
 
     const auto meter_value = utils::get_meter_value_with_measurands_applied(
         meter_start, utils::get_measurands_vec(this->device_model->get_value<std::string>(
