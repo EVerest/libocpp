@@ -24,6 +24,9 @@
 /// Since the DeviceModel class creates a map based on the device model database in the constructor, this class should
 /// first be finished with the initialization before creating the DeviceModel class.
 ///
+/// The config values are updated every startup as well, as long as the initial / default values are set in the
+/// database. If the value is set by the user or csms or some other process, the value will not be overwritten.
+///
 
 #pragma once
 
@@ -83,7 +86,7 @@ struct DeviceModelVariable {
     /// \brief Variable instance
     std::optional<std::string> instance;
     /// \brief Default value, if this is set in the schemas json
-    std::string default_actual_value;
+    std::optional<std::string> default_actual_value;
 };
 
 ///
@@ -110,18 +113,14 @@ private: // Members
     const std::filesystem::path database_path;
     /// \brief True if the database exists on the filesystem.
     bool database_exists;
-    /// \brief Reference to the device model storage instance.
-    DeviceModelStorage& device_model_storage;
 
 public:
     ///
     /// \brief Constructor.
     /// \param database_path        Path to the database.
     /// \param migration_files_path Path to the migration files.
-    /// \param deivce_model_storage Reference to DeviceModelStorage class.
     ///
-    InitDeviceModelDb(const std::filesystem::path& database_path, const std::filesystem::path& migration_files_path,
-                      DeviceModelStorage& device_model_storage);
+    InitDeviceModelDb(const std::filesystem::path& database_path, const std::filesystem::path& migration_files_path);
 
     ///
     /// \brief Destructor
@@ -308,8 +307,9 @@ private: // Functions
     /// \brief Insert variable attribute value
     /// \param component_key                Component the variable attribute belongs to.
     /// \param variable_attribute_key       Variable attribute including value to insert.
+    /// \return true on success
     ///
-    void insert_variable_attribute_value(const ComponentKey& component_key,
+    bool insert_variable_attribute_value(const ComponentKey& component_key,
                                          const VariableAttributeKey& variable_attribute_key);
 
     ///

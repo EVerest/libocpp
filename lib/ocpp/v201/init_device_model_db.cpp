@@ -39,13 +39,11 @@ static bool is_variable_different(const DeviceModelVariable& v1, const DeviceMod
 static std::string get_string_value_from_json(const json& value);
 
 InitDeviceModelDb::InitDeviceModelDb(const std::filesystem::path& database_path,
-                                     const std::filesystem::path& migration_files_path,
-                                     DeviceModelStorage& device_model_storage) :
+                                     const std::filesystem::path& migration_files_path) :
     common::DatabaseHandlerCommon(std::make_unique<common::DatabaseConnection>(database_path), migration_files_path,
                                   DEVICE_MODEL_MIGRATION_FILE_VERSION),
     database_path(database_path),
-    database_exists(std::filesystem::exists(database_path)),
-    device_model_storage(device_model_storage) {
+    database_exists(std::filesystem::exists(database_path)) {
 }
 
 InitDeviceModelDb::~InitDeviceModelDb() {
@@ -644,14 +642,14 @@ InitDeviceModelDb::get_component_default_values(const std::filesystem::path& sch
     for (auto const& [componentKey, variables] : components) {
         std::vector<VariableAttributeKey> variable_attribute_keys;
         for (const DeviceModelVariable& variable : variables) {
-            if (!variable.default_actual_value.empty()) {
+            if (variable.default_actual_value.has_value()) {
                 VariableAttributeKey key;
                 key.name = variable.name;
                 if (variable.instance.has_value()) {
                     key.instance = variable.instance.value();
                 }
                 key.attribute_type = "Actual";
-                key.value = variable.default_actual_value;
+                key.value = variable.default_actual_value.value();
                 variable_attribute_keys.push_back(key);
             }
         }
@@ -689,10 +687,14 @@ InitDeviceModelDb::get_config_values(const std::filesystem::path& config_file_pa
     return config_values;
 }
 
-void InitDeviceModelDb::insert_variable_attribute_value(const ComponentKey& component_key,
+bool InitDeviceModelDb::insert_variable_attribute_value(const ComponentKey& component_key,
                                                         const VariableAttributeKey& variable_attribute_key) {
+    // Insert variable statement.
+    // Use 'IS' when value can also be NULL
+    // Only update when VALUE_SOURCE is 'default', because otherwise it is already updated by the csms or the user and
+    // we don't overwrite that.
     static const std::string statement = "UPDATE VARIABLE_ATTRIBUTE "
-                                         "SET VALUE = @value "
+                                         "SET VALUE = @value, VALUE_SOURCE = 'default' "
                                          "WHERE VARIABLE_ID = ("
                                          "SELECT VARIABLE.ID "
                                          "FROM VARIABLE "
@@ -703,7 +705,8 @@ void InitDeviceModelDb::insert_variable_attribute_value(const ComponentKey& comp
                                          "AND COMPONENT.CONNECTOR_ID IS @connector_id "
                                          "AND VARIABLE.NAME = @variable_name "
                                          "AND VARIABLE.INSTANCE IS @variable_instance) "
-                                         "AND TYPE_ID = @type_id";
+                                         "AND TYPE_ID = @type_id "
+                                         "AND VALUE_SOURCE='default'";
 
     uint8_t type_id;
 
@@ -713,8 +716,7 @@ void InitDeviceModelDb::insert_variable_attribute_value(const ComponentKey& comp
     } else {
         EVLOG_error << "Could not find type " << variable_attribute_key.attribute_type << " of component "
                     << component_key.name << " and variable " << variable_attribute_key.name;
-        // TODO throw?? Or what to do here??? Just not add the whole thing?
-        return;
+        return false;
     }
 
     std::unique_ptr<common::SQLiteStatementInterface> insert_variable_attribute_statement =
@@ -756,29 +758,16 @@ void InitDeviceModelDb::insert_variable_attribute_value(const ComponentKey& comp
     insert_variable_attribute_statement->bind_int("@type_id", type_id);
 
     if (insert_variable_attribute_statement->step() != SQLITE_DONE) {
-        throw common::QueryExecutionException(this->database->get_error_message());
+        EVLOG_error << "Could not set value of variable " << variable_attribute_key.name
+                    << " (component: " << component_key.name << ") attribute " << variable_attribute_key.attribute_type
+                    << ": " << this->database->get_error_message();
+        return false;
     }
+
+    return true;
 }
 
 std::vector<ComponentKey> InitDeviceModelDb::get_all_connector_and_evse_components_fom_db() {
-    /* clang-format off */
-    // const std::string statement =
-    //     "SELECT "
-    //         "c.ID as component_id, c.NAME as component_name, c.INSTANCE as component_instance, c.EVSE_ID as evse_id, "
-    //         "c.CONNECTOR_ID as connector_id, "
-    //         "v.ID as variable_id, v.NAME as variable_name, v.REQUIRED as required, "
-    //         "vc.ID as characteristics_id, vc.DATATYPE_ID as characteristics_datatype, vc.MAX_LIMIT as max_limit, "
-    //         "vc.MIN_LIMIT as min_limit, vc.SUPPORTS_MONITORING as supports_monitoring, vc.UNIT as unit, "
-    //         "vc.VALUES_LIST as values_list, "
-    //         "va.ID as attribute_id, va.MUTABILITY_ID as mutability, va.PERSISTENT as persistent, "
-    //         "va.CONSTANT as constant, va.TYPE_ID as attribute_type, va.VALUE as value "
-    //     "FROM "
-    //         "COMPONENT c "
-    //         "JOIN VARIABLE v ON v.COMPONENT_ID = c.ID "
-    //         "JOIN VARIABLE_CHARACTERISTICS vc ON v.VARIABLE_CHARACTERISTICS_ID = vc.ID "
-    //         "JOIN VARIABLE_ATTRIBUTE va ON va.VARIABLE_ID = v.ID WHERE c.NAME == 'EVSE' COLLATE NOCASE "
-    //             "OR c.NAME == 'Connector' COLLATE NOCASE ";
-    /* clang-format on */
     std::vector<ComponentKey> components;
 
     const std::string statement = "SELECT ID, NAME, INSTANCE, EVSE_ID, CONNECTOR_ID FROM COMPONENT "
@@ -1042,13 +1031,12 @@ void from_json(const json& j, ComponentKey& c) {
 
 void from_json(const json& j, DeviceModelVariable& c) {
     c.name = j.at("variable_name");
-    c.characteristics = j.at("characteristics"); // TODO fix warning
+    c.characteristics = j.at("characteristics");
     for (const auto& attribute : j.at("attributes").items()) {
         DbVariableAttribute va;
         va.variable_attribute = attribute.value();
         c.attributes.push_back(va);
     }
-    // c.attributes = j.at("attributes");
 
     if (j.contains("instance")) {
         c.instance = j.at("instance");
@@ -1244,7 +1232,8 @@ static std::string get_string_value_from_json(const json& value) {
         return "false";
     } else if (value.is_array() || value.is_object()) {
         return "";
-        // TODO : error!!
+        EVLOG_warning << "String value " << value.dump()
+                      << " from config is an object or array, but config values should be from a primitive type.";
     } else {
         return value.dump();
     }

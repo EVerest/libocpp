@@ -17,7 +17,7 @@ namespace ocpp::v201 {
 
 class InitDeviceModelDbTest : public DatabaseTestingUtils {
 protected:
-    // const std::string DATABASE_PATH = "/tmp/pionix/test_db2.db";
+    const std::string DATABASE_PATH2 = "/tmp/pionix/test_db2.db";
     const std::string DATABASE_PATH = "file::memory:?cache=shared";
     const std::string MIGRATION_FILES_PATH = "/data/work/pionix/workspace/libocpp/config/v201/device_model_migrations";
     // const std::string SCHEMAS_PATH = "/data/work/pionix/workspace/libocpp/config/v201/component_schemas";
@@ -122,6 +122,41 @@ public:
                                 const std::optional<double>& max_limit, const std::optional<double>& min_limit,
                                 const bool supports_monitoring, const std::optional<std::string>& unit,
                                 const std::optional<std::string>& values_list);
+
+    ///
+    /// \brief Check if variable attribute has given value.
+    /// \param component_name           Component name
+    /// \param component_instance       Component instance
+    /// \param component_evse_id        EVSE id of the component
+    /// \param component_connector_id   Connector id of the component
+    /// \param variable_name            Variable name
+    /// \param variable_instance        Variable instance
+    /// \param type                     Attribute type
+    /// \param value                    Value to check.
+    /// \return True if the attribute has the given value.
+    ///
+    bool attribute_has_value(const std::string& component_name, const std::optional<std::string>& component_instance,
+                             const std::optional<int>& component_evse_id,
+                             const std::optional<int>& component_connector_id, const std::string& variable_name,
+                             const std::optional<std::string>& variable_instance, const AttributeEnum& type,
+                             const std::string& value);
+
+    ///
+    /// \brief set_attribute_source     Set the source of a given variable attribute.
+    /// \param component_name           Component name
+    /// \param component_instance       Component instance
+    /// \param component_evse_id        EVSE id of the component
+    /// \param component_connector_id   Connector id of the component
+    /// \param variable_name            Variable name
+    /// \param variable_instance        Variable instance
+    /// \param type                     Attribute type
+    /// \param source                   Source to set
+    ///
+    void set_attribute_source(const std::string& component_name, const std::optional<std::string>& component_instance,
+                              const std::optional<int>& component_evse_id,
+                              const std::optional<int>& component_connector_id, const std::string& variable_name,
+                              const std::optional<std::string>& variable_instance, const AttributeEnum& type,
+                              const std::string& source);
 };
 
 TEST_F(InitDeviceModelDbTest, init_db) {
@@ -155,14 +190,12 @@ TEST_F(InitDeviceModelDbTest, init_db) {
                                         "VARIABLE_MONITORING"},
                                        false));
 
-    DeviceModelStorageSqlite device_model_storage(DATABASE_PATH);
-    InitDeviceModelDb db = InitDeviceModelDb(DATABASE_PATH, MIGRATION_FILES_PATH, device_model_storage);
+    InitDeviceModelDb db = InitDeviceModelDb(DATABASE_PATH, MIGRATION_FILES_PATH);
 
     // Database should not exist yet. But since it does a filesystem check and we have an in memory database, we
     // explicitly set the variable here.
     db.database_exists = false;
     EXPECT_TRUE(db.initialize_database(SCHEMAS_PATH, true));
-    EXPECT_TRUE(db.insert_config_and_default_values(SCHEMAS_PATH, CONFIG_PATH));
 
     // Tables should have been created now.
     EXPECT_TRUE(check_all_tables_exist({"COMPONENT", "VARIABLE", "DATATYPE", "MONITOR", "MUTABILITY", "SEVERITY",
@@ -174,6 +207,10 @@ TEST_F(InitDeviceModelDbTest, init_db) {
                                  MutabilityEnum::ReadOnly, AttributeEnum::Actual));
     EXPECT_FALSE(variable_exists("Connector", std::nullopt, 1, 1, "Enabled", std::nullopt));
     EXPECT_TRUE(variable_exists("EVSE", std::nullopt, 1, std::nullopt, "ISO15118EvseId", std::nullopt));
+    EXPECT_TRUE(characteristics_exists("EVSE", std::nullopt, 1, std::nullopt, "ISO15118EvseId", std::nullopt,
+                                       DataEnum::string, std::nullopt, std::nullopt, true, std::nullopt, std::nullopt));
+    EXPECT_TRUE(attribute_exists("EVSE", std::nullopt, 1, std::nullopt, "ISO15118EvseId", std::nullopt,
+                                 MutabilityEnum::ReadWrite, AttributeEnum::Actual));
     EXPECT_TRUE(attribute_exists("Connector", std::nullopt, 1, 1, "ChargeProtocol", std::nullopt, std::nullopt,
                                  AttributeEnum::Actual));
     EXPECT_TRUE(attribute_exists("Connector", std::nullopt, 1, 1, "SupplyPhases", std::nullopt,
@@ -183,6 +220,21 @@ TEST_F(InitDeviceModelDbTest, init_db) {
     EXPECT_TRUE(component_exists("UnitTestCtrlr", std::nullopt, 2, 3));
     EXPECT_FALSE(component_exists("EVSE", std::nullopt, 3, std::nullopt));
     EXPECT_TRUE(component_exists("Connector", std::nullopt, 2, 1));
+    EXPECT_TRUE(variable_exists("Connector", std::nullopt, 2, 1, "AvailabilityState", std::nullopt));
+    EXPECT_TRUE(variable_exists("Connector", std::nullopt, 2, 1, "Available", std::nullopt));
+    EXPECT_TRUE(variable_exists("Connector", std::nullopt, 2, 1, "ChargeProtocol", std::nullopt));
+    EXPECT_TRUE(variable_exists("Connector", std::nullopt, 2, 1, "ConnectorType", std::nullopt));
+    EXPECT_TRUE(variable_exists("Connector", std::nullopt, 2, 1, "SupplyPhases", std::nullopt));
+    EXPECT_TRUE(attribute_exists("Connector", std::nullopt, 2, 1, "ChargeProtocol", std::nullopt, std::nullopt,
+                                 AttributeEnum::Actual));
+    EXPECT_TRUE(attribute_exists("Connector", std::nullopt, 2, 1, "ConnectorType", std::nullopt,
+                                 MutabilityEnum::ReadOnly, AttributeEnum::Actual));
+    EXPECT_TRUE(characteristics_exists("Connector", std::nullopt, 2, 1, "Available", std::nullopt, DataEnum::boolean,
+                                       std::nullopt, std::nullopt, true, std::nullopt, std::nullopt));
+    EXPECT_TRUE(characteristics_exists("Connector", std::nullopt, 2, 1, "AvailabilityState", std::nullopt,
+                                       DataEnum::OptionList, std::nullopt, std::nullopt, true, std::nullopt,
+                                       "Available,Occupied,Reserved,Unavailable,Faulted"));
+
     EXPECT_FALSE(component_exists("Connector", std::nullopt, 2, 2));
     EXPECT_TRUE(characteristics_exists("EVSE", std::nullopt, 1, std::nullopt, "Power", std::nullopt, DataEnum::decimal,
                                        22000.0, std::nullopt, true, "W", std::nullopt));
@@ -202,16 +254,13 @@ TEST_F(InitDeviceModelDbTest, init_db) {
     EXPECT_TRUE(variable_exists("UnitTestCtrlr", std::nullopt, 2, 3, "UnitTestPropertyBName", std::nullopt));
     EXPECT_TRUE(variable_exists("UnitTestCtrlr", std::nullopt, 2, 3, "UnitTestPropertyCName", std::nullopt));
 
-    // TODO check for config update
-
     // So now we have made some changes and added a new EVSE and changed the connector. The database should be changed
     // accordingly.
-    InitDeviceModelDb db2 = InitDeviceModelDb(DATABASE_PATH, MIGRATION_FILES_PATH, device_model_storage);
+    InitDeviceModelDb db2 = InitDeviceModelDb(DATABASE_PATH, MIGRATION_FILES_PATH);
     // This time, the database does exist (again: std::filesystem::exists, which is automatically used, will not work
     // here because we use an in memory database, so we set the member ourselves).
     db2.database_exists = true;
     EXPECT_TRUE(db2.initialize_database(SCHEMAS_PATH_CHANGED, false));
-    EXPECT_TRUE(db2.insert_config_and_default_values(SCHEMAS_PATH_CHANGED, CONFIG_PATH_CHANGED));
 
     // So now some records should have been changed !
     EXPECT_TRUE(attribute_exists("EVSE", std::nullopt, 1, std::nullopt, "AllowReset", std::nullopt,
@@ -219,8 +268,13 @@ TEST_F(InitDeviceModelDbTest, init_db) {
     // Added variable
     EXPECT_TRUE(variable_exists("Connector", std::nullopt, 1, 1, "Enabled", std::nullopt));
 
-    // Removed variable
+    // Removed variable (also removed characteristics and attribute)
     EXPECT_FALSE(variable_exists("EVSE", std::nullopt, 1, std::nullopt, "ISO15118EvseId", std::nullopt));
+    EXPECT_FALSE(characteristics_exists("EVSE", std::nullopt, 1, std::nullopt, "ISO15118EvseId", std::nullopt,
+                                        DataEnum::string, std::nullopt, std::nullopt, true, std::nullopt,
+                                        std::nullopt));
+    EXPECT_FALSE(attribute_exists("EVSE", std::nullopt, 1, std::nullopt, "ISO15118EvseId", std::nullopt,
+                                  MutabilityEnum::ReadWrite, AttributeEnum::Actual));
 
     // Changed mutability
     EXPECT_FALSE(attribute_exists("Connector", std::nullopt, 1, 1, "ChargeProtocol", std::nullopt, std::nullopt,
@@ -254,10 +308,22 @@ TEST_F(InitDeviceModelDbTest, init_db) {
     // Component added
     EXPECT_TRUE(component_exists("EVSE", std::nullopt, 3, std::nullopt));
     EXPECT_TRUE(component_exists("Connector", std::nullopt, 2, 2));
-    // Component removed
+    // Component removed, variables, characteristics and attributes should also have been removed.
     EXPECT_FALSE(component_exists("Connector", std::nullopt, 2, 1));
-
-    // TODO variables / characteristics / attributes of the component should be removed as well.
+    EXPECT_FALSE(variable_exists("Connector", std::nullopt, 2, 1, "AvailabilityState", std::nullopt));
+    EXPECT_FALSE(variable_exists("Connector", std::nullopt, 2, 1, "Available", std::nullopt));
+    EXPECT_FALSE(variable_exists("Connector", std::nullopt, 2, 1, "ChargeProtocol", std::nullopt));
+    EXPECT_FALSE(variable_exists("Connector", std::nullopt, 2, 1, "ConnectorType", std::nullopt));
+    EXPECT_FALSE(variable_exists("Connector", std::nullopt, 2, 1, "SupplyPhases", std::nullopt));
+    EXPECT_FALSE(attribute_exists("Connector", std::nullopt, 2, 1, "ChargeProtocol", std::nullopt, std::nullopt,
+                                  AttributeEnum::Actual));
+    EXPECT_FALSE(attribute_exists("Connector", std::nullopt, 2, 1, "ConnectorType", std::nullopt,
+                                  MutabilityEnum::ReadOnly, AttributeEnum::Actual));
+    EXPECT_FALSE(characteristics_exists("Connector", std::nullopt, 2, 1, "Available", std::nullopt, DataEnum::boolean,
+                                        std::nullopt, std::nullopt, true, std::nullopt, std::nullopt));
+    EXPECT_FALSE(characteristics_exists("Connector", std::nullopt, 2, 1, "AvailabilityState", std::nullopt,
+                                        DataEnum::OptionList, std::nullopt, std::nullopt, true, std::nullopt,
+                                        "Available,Occupied,Reserved,Unavailable,Faulted"));
 
     // Changed supports monitoring and datatype
     EXPECT_FALSE(characteristics_exists("EVSE", std::nullopt, 2, std::nullopt, "AvailabilityState", std::nullopt,
@@ -288,6 +354,83 @@ TEST_F(InitDeviceModelDbTest, init_db) {
     // No change, because this is not a Connector or EVSE
     EXPECT_TRUE(variable_exists("UnitTestCtrlr", std::nullopt, 2, 3, "UnitTestPropertyBName", std::nullopt));
     EXPECT_TRUE(variable_exists("UnitTestCtrlr", std::nullopt, 2, 3, "UnitTestPropertyCName", std::nullopt));
+}
+
+TEST_F(InitDeviceModelDbTest, insert_values) {
+    /* This test will test if the config and default values are correctly set. We test this twice: first an initial
+     * config, then a changed configuration, which also has some errors in it.
+     */
+
+    InitDeviceModelDb db = InitDeviceModelDb(DATABASE_PATH, MIGRATION_FILES_PATH);
+
+    // Database should not exist yet. But since it does a filesystem check and we have an in memory database, we
+    // explicitly set the variable here.
+    db.database_exists = false;
+    // First create the database.
+    EXPECT_TRUE(db.initialize_database(SCHEMAS_PATH, true));
+    // Then insert the config and default values.
+    EXPECT_TRUE(db.insert_config_and_default_values(SCHEMAS_PATH, CONFIG_PATH));
+
+    // Test some values.
+    EXPECT_TRUE(attribute_has_value("UnitTestCtrlr", std::nullopt, 2, 3, "UnitTestPropertyBName", std::nullopt,
+                                    AttributeEnum::Actual, "test_value"));
+    // Test some not default values.
+    EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "Available", std::nullopt,
+                                    AttributeEnum::Actual, "false"));
+    EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "Power", std::nullopt, AttributeEnum::MaxSet,
+                                    "44000"));
+    EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "Power", std::nullopt, AttributeEnum::Actual,
+                                    "2000"));
+    EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "SupplyPhases", std::nullopt,
+                                    AttributeEnum::Actual, "6"));
+    EXPECT_TRUE(
+        attribute_has_value("Connector", std::nullopt, 2, 1, "Available", std::nullopt, AttributeEnum::Actual, "true"));
+    EXPECT_TRUE(attribute_has_value("Connector", std::nullopt, 2, 1, "ConnectorType", std::nullopt,
+                                    AttributeEnum::Actual, "cChaoJi"));
+    EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "Available", std::nullopt,
+                                    AttributeEnum::Actual, "false"));
+    EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 2, std::nullopt, "Available", std::nullopt,
+                                    AttributeEnum::Actual, "true"));
+    EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 2, std::nullopt, "Power", std::nullopt, AttributeEnum::MaxSet,
+                                    "22000"));
+    EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 2, std::nullopt, "AvailabilityState", std::nullopt,
+                                    AttributeEnum::Actual, "Faulted"));
+
+    // Default value
+    EXPECT_TRUE(attribute_has_value("Connector", std::nullopt, 1, 1, "Available", std::nullopt, AttributeEnum::Actual,
+                                    "false"));
+    EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "AvailabilityState", std::nullopt,
+                                    AttributeEnum::Actual, "Unavailable"));
+    EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 2, std::nullopt, "SupplyPhases", std::nullopt,
+                                    AttributeEnum::Actual, "0"));
+    EXPECT_TRUE(
+        attribute_has_value("Connector", std::nullopt, 1, 1, "ConnectorType", std::nullopt, AttributeEnum::Actual, ""));
+
+    // Insert new config.
+    // First set the source of an attribute to something else than 'default'
+    set_attribute_source("Connector", std::nullopt, 2, 1, "ConnectorType", std::nullopt, AttributeEnum::Actual, "test");
+
+    EXPECT_TRUE(db.insert_config_and_default_values(SCHEMAS_PATH, CONFIG_PATH_CHANGED));
+
+    // Source was not 'default', connector type not changed.
+    EXPECT_TRUE(attribute_has_value("Connector", std::nullopt, 2, 1, "ConnectorType", std::nullopt,
+                                    AttributeEnum::Actual, "cChaoJi"));
+
+    // Check changed values.
+    EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 2, std::nullopt, "Available", std::nullopt,
+                                    AttributeEnum::Actual, "false"));
+    EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "SupplyPhases", std::nullopt,
+                                    AttributeEnum::Actual, "2"));
+    // Variable does not exist so it could not set the value.
+    EXPECT_FALSE(variable_exists("EVSE", std::nullopt, 1, std::nullopt, "AvalableEVSEThingie", std::nullopt));
+    // Variable was removed, so it will be set to the default value again.
+    EXPECT_TRUE(
+        attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "Power", std::nullopt, AttributeEnum::Actual, "0"));
+    // Default value only applies to 'Actual', not 'MaxSet'
+    EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "Power", std::nullopt, AttributeEnum::MaxSet,
+                                    "44000"));
+    // Component does not exist so it could not set anything.
+    EXPECT_FALSE(component_exists("UnitTestCtrlr", std::nullopt, 1, 5));
 }
 
 bool InitDeviceModelDbTest::check_all_tables_exist(const std::vector<std::string>& tables, const bool exist) {
@@ -546,6 +689,135 @@ bool InitDeviceModelDbTest::characteristics_exists(
     }
 
     return statement->get_number_of_rows() == 1;
+}
+
+bool InitDeviceModelDbTest::attribute_has_value(const std::string& component_name,
+                                                const std::optional<std::string>& component_instance,
+                                                const std::optional<int>& component_evse_id,
+                                                const std::optional<int>& component_connector_id,
+                                                const std::string& variable_name,
+                                                const std::optional<std::string>& variable_instance,
+                                                const AttributeEnum& type, const std::string& value) {
+    const std::string select_attribute_statement = "SELECT VALUE "
+                                                   "FROM VARIABLE_ATTRIBUTE va "
+                                                   "WHERE va.VARIABLE_ID=("
+                                                   "SELECT v.ID "
+                                                   "FROM VARIABLE v "
+                                                   "JOIN COMPONENT c ON c.ID=v.COMPONENT_ID "
+                                                   "WHERE c.NAME=@component_name "
+                                                   "AND c.INSTANCE IS @component_instance "
+                                                   "AND c.EVSE_ID IS @evse_id "
+                                                   "AND c.CONNECTOR_ID IS @connector_id "
+                                                   "AND v.NAME=@variable_name "
+                                                   "AND v.INSTANCE IS @variable_instance) "
+                                                   "AND va.TYPE_ID=@type_id";
+    std::unique_ptr<common::SQLiteStatementInterface> statement =
+        this->database->new_statement(select_attribute_statement);
+
+    statement->bind_text("@component_name", component_name, ocpp::common::SQLiteString::Transient);
+    if (component_instance.has_value()) {
+        statement->bind_text("@component_instance", component_instance.value(), ocpp::common::SQLiteString::Transient);
+    } else {
+        statement->bind_null("@component_instance");
+    }
+
+    if (component_evse_id.has_value()) {
+        statement->bind_int("@evse_id", component_evse_id.value());
+    } else {
+        statement->bind_null("@evse_id");
+    }
+
+    if (component_connector_id.has_value()) {
+        statement->bind_int("@connector_id", component_connector_id.value());
+    } else {
+        statement->bind_null("@connector_id");
+    }
+
+    statement->bind_text("@variable_name", variable_name, ocpp::common::SQLiteString::Transient);
+
+    if (variable_instance.has_value()) {
+        statement->bind_text("@variable_instance", variable_instance.value(), ocpp::common::SQLiteString::Transient);
+    } else {
+        statement->bind_null("@variable_instance");
+    }
+
+    statement->bind_int("@type_id", static_cast<int>(type));
+
+    int step = statement->step();
+    EVLOG_debug << "Step: " << step;
+
+    if (step == SQLITE_ERROR) {
+        return false;
+    }
+
+    if (statement->column_type(0) == SQLITE_NULL) {
+        return false;
+    }
+    return value == statement->column_text(0);
+}
+
+void InitDeviceModelDbTest::set_attribute_source(const std::string& component_name,
+                                                 const std::optional<std::string>& component_instance,
+                                                 const std::optional<int>& component_evse_id,
+                                                 const std::optional<int>& component_connector_id,
+                                                 const std::string& variable_name,
+                                                 const std::optional<std::string>& variable_instance,
+                                                 const AttributeEnum& type, const std::string& source) {
+    static const std::string statement = "UPDATE VARIABLE_ATTRIBUTE "
+                                         "SET VALUE_SOURCE=@source "
+                                         "WHERE VARIABLE_ID = ("
+                                         "SELECT VARIABLE.ID "
+                                         "FROM VARIABLE "
+                                         "JOIN COMPONENT ON COMPONENT.ID = VARIABLE.COMPONENT_ID "
+                                         "WHERE COMPONENT.NAME = @component_name "
+                                         "AND COMPONENT.INSTANCE IS @component_instance "
+                                         "AND COMPONENT.EVSE_ID IS @evse_id "
+                                         "AND COMPONENT.CONNECTOR_ID IS @connector_id "
+                                         "AND VARIABLE.NAME = @variable_name "
+                                         "AND VARIABLE.INSTANCE IS @variable_instance) "
+                                         "AND TYPE_ID = @type_id";
+
+    std::unique_ptr<common::SQLiteStatementInterface> insert_variable_attribute_statement =
+        this->database->new_statement(statement);
+
+    insert_variable_attribute_statement->bind_text("@source", source, SQLiteString::Transient);
+    insert_variable_attribute_statement->bind_text("@component_name", component_name,
+                                                   ocpp::common::SQLiteString::Transient);
+    if (component_instance.has_value()) {
+        insert_variable_attribute_statement->bind_text("@component_instance", component_instance.value(),
+                                                       ocpp::common::SQLiteString::Transient);
+    } else {
+        insert_variable_attribute_statement->bind_null("@component_instance");
+    }
+
+    if (component_evse_id.has_value()) {
+        insert_variable_attribute_statement->bind_int("@evse_id", component_evse_id.value());
+    } else {
+        insert_variable_attribute_statement->bind_null("@evse_id");
+    }
+
+    if (component_connector_id.has_value()) {
+        insert_variable_attribute_statement->bind_int("@connector_id", component_connector_id.value());
+    } else {
+        insert_variable_attribute_statement->bind_null("@connector_id");
+    }
+
+    insert_variable_attribute_statement->bind_text("@variable_name", variable_name,
+                                                   ocpp::common::SQLiteString::Transient);
+
+    if (variable_instance.has_value()) {
+        insert_variable_attribute_statement->bind_text("@variable_instance", variable_instance.value(),
+                                                       ocpp::common::SQLiteString::Transient);
+    } else {
+        insert_variable_attribute_statement->bind_null("@variable_instance");
+    }
+
+    insert_variable_attribute_statement->bind_int("@type_id", static_cast<int>(type));
+
+    if (insert_variable_attribute_statement->step() != SQLITE_DONE) {
+        EVLOG_error << "Could not set source of variable " << variable_name << " (component: " << component_name
+                    << ") attribute " << static_cast<int>(type) << ": " << this->database->get_error_message();
+    }
 }
 
 } // namespace ocpp::v201

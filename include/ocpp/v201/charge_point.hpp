@@ -381,7 +381,7 @@ public:
     /// \return Map containing the SetVariableData as a key and the  SetVariableResult as a value for each requested
     /// change
     virtual std::map<SetVariableData, SetVariableResult>
-    set_variables(const std::vector<SetVariableData>& set_variable_data_vector) = 0;
+    set_variables(const std::vector<SetVariableData>& set_variable_data_vector, const std::string& source) = 0;
 };
 
 /// \brief Class implements OCPP2.0.1 Charging Station
@@ -507,11 +507,13 @@ private:
 
     /// \brief Sets variables specified within \p set_variable_data_vector in the device model and returns the result.
     /// \param set_variable_data_vector contains data of the variables to set
+    /// \param source   value source (who sets the value, for example 'csms' or 'libocpp')
     /// \param allow_read_only if true, setting VariableAttribute values with mutability ReadOnly is allowed
     /// \return Map containing the SetVariableData as a key and the  SetVariableResult as a value for each requested
     /// change
     std::map<SetVariableData, SetVariableResult>
-    set_variables_internal(const std::vector<SetVariableData>& set_variable_data_vector, const bool allow_read_only);
+    set_variables_internal(const std::vector<SetVariableData>& set_variable_data_vector, const std::string &source,
+                           const bool allow_read_only);
 
     MeterValue get_latest_meter_value_filtered(const MeterValue& meter_value, ReadingContextEnum context,
                                                const RequiredComponentVariable& component_variable);
@@ -856,7 +858,7 @@ public:
     std::vector<GetVariableResult> get_variables(const std::vector<GetVariableData>& get_variable_data_vector) override;
 
     std::map<SetVariableData, SetVariableResult>
-    set_variables(const std::vector<SetVariableData>& set_variable_data_vector) override;
+    set_variables(const std::vector<SetVariableData>& set_variable_data_vector, const std::string &source) override;
 
     /// \brief Requests a value of a VariableAttribute specified by combination of \p component_id and \p variable_id
     /// from the device model

@@ -194,8 +194,9 @@ DeviceModelStorageSqlite::get_variable_attributes(const Component& component_id,
 
 bool DeviceModelStorageSqlite::set_variable_attribute_value(const Component& component_id, const Variable& variable_id,
                                                             const AttributeEnum& attribute_enum,
-                                                            const std::string& value) {
-    std::string insert_query = "UPDATE VARIABLE_ATTRIBUTE SET VALUE = ? WHERE VARIABLE_ID = ? AND TYPE_ID = ?";
+                                                            const std::string& value, const std::string& source) {
+    std::string insert_query =
+        "UPDATE VARIABLE_ATTRIBUTE SET VALUE = ?, VALUE_SOURCE = ? WHERE VARIABLE_ID = ? AND TYPE_ID = ?";
     auto insert_stmt = this->db->new_statement(insert_query);
 
     const auto _variable_id = this->get_variable_id(component_id, variable_id);
@@ -205,8 +206,9 @@ bool DeviceModelStorageSqlite::set_variable_attribute_value(const Component& com
     }
 
     insert_stmt->bind_text(1, value);
-    insert_stmt->bind_int(2, _variable_id);
-    insert_stmt->bind_int(3, static_cast<int>(attribute_enum));
+    insert_stmt->bind_text(2, source);
+    insert_stmt->bind_int(3, _variable_id);
+    insert_stmt->bind_int(4, static_cast<int>(attribute_enum));
     if (insert_stmt->step() != SQLITE_DONE) {
         EVLOG_error << this->db->get_error_message();
         return false;

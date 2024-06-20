@@ -16,6 +16,8 @@
 using namespace std::chrono_literals;
 
 const auto DEFAULT_MAX_CUSTOMER_INFORMATION_DATA_LENGTH = 51200;
+const std::string VARIABLE_ATTRIBUTE_VALUE_SOURCE = "libocpp";
+const std::string VARIABLE_ATTRIBUTE_VALUE_SOURCE_CSMS = "csms";
 
 using QueryExecutionException = ocpp::common::QueryExecutionException;
 
@@ -939,14 +941,14 @@ void ChargePoint::init_websocket() {
     if (active_network_profile_cv.variable.has_value()) {
         this->device_model->set_read_only_value(active_network_profile_cv.component,
                                                 active_network_profile_cv.variable.value(), AttributeEnum::Actual,
-                                                configuration_slot);
+                                                configuration_slot, VARIABLE_ATTRIBUTE_VALUE_SOURCE);
     }
 
     const auto& security_profile_cv = ControllerComponentVariables::SecurityProfile;
     if (security_profile_cv.variable.has_value()) {
-        this->device_model->set_read_only_value(security_profile_cv.component, security_profile_cv.variable.value(),
-                                                AttributeEnum::Actual,
-                                                std::to_string(network_connection_profile.value().securityProfile));
+        this->device_model->set_read_only_value(
+            security_profile_cv.component, security_profile_cv.variable.value(), AttributeEnum::Actual,
+            std::to_string(network_connection_profile.value().securityProfile), VARIABLE_ATTRIBUTE_VALUE_SOURCE);
     }
 
     this->websocket = std::make_unique<Websocket>(connection_options, this->evse_security, this->logging);
@@ -956,7 +958,8 @@ void ChargePoint::init_websocket() {
         const auto& security_profile_cv = ControllerComponentVariables::SecurityProfile;
         if (security_profile_cv.variable.has_value()) {
             this->device_model->set_read_only_value(security_profile_cv.component, security_profile_cv.variable.value(),
-                                                    AttributeEnum::Actual, std::to_string(security_profile));
+                                                    AttributeEnum::Actual, std::to_string(security_profile),
+                                                    VARIABLE_ATTRIBUTE_VALUE_SOURCE);
         }
 
         if (this->registration_status == RegistrationStatusEnum::Accepted and
@@ -1147,7 +1150,8 @@ void ChargePoint::remove_network_connection_profiles_below_actual_security_profi
 
     this->device_model->set_value(ControllerComponentVariables::NetworkConnectionProfiles.component,
                                   ControllerComponentVariables::NetworkConnectionProfiles.variable.value(),
-                                  AttributeEnum::Actual, network_connection_profiles.dump());
+                                  AttributeEnum::Actual, network_connection_profiles.dump(),
+                                  VARIABLE_ATTRIBUTE_VALUE_SOURCE);
 
     // Update the NetworkConfigurationPriority so only remaining profiles are in there
     const auto network_priority = ocpp::get_vector_from_csv(
@@ -1172,7 +1176,7 @@ void ChargePoint::remove_network_connection_profiles_below_actual_security_profi
 
     this->device_model->set_value(ControllerComponentVariables::NetworkConfigurationPriority.component,
                                   ControllerComponentVariables::NetworkConfigurationPriority.variable.value(),
-                                  AttributeEnum::Actual, new_network_priority);
+                                  AttributeEnum::Actual, new_network_priority, VARIABLE_ATTRIBUTE_VALUE_SOURCE);
 }
 
 void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& message) {
@@ -1419,7 +1423,8 @@ void ChargePoint::update_authorization_cache_size() {
         try {
             auto size = this->database_handler->authorization_cache_get_binary_size();
             this->device_model->set_read_only_value(auth_cache_size.component, auth_cache_size.variable.value(),
-                                                    AttributeEnum::Actual, std::to_string(size));
+                                                    AttributeEnum::Actual, std::to_string(size),
+                                                    VARIABLE_ATTRIBUTE_VALUE_SOURCE);
         } catch (const QueryExecutionException& e) {
             EVLOG_warning << "Could not get authorization cache binary size from database: " << e.what();
         } catch (const std::exception& e) {
@@ -1756,7 +1761,7 @@ bool ChargePoint::validate_set_variable(const SetVariableData& set_variable_data
 
 std::map<SetVariableData, SetVariableResult>
 ChargePoint::set_variables_internal(const std::vector<SetVariableData>& set_variable_data_vector,
-                                    const bool allow_read_only) {
+                                    const std::string& source, const bool allow_read_only) {
     std::map<SetVariableData, SetVariableResult> response;
 
     // iterate over the set_variable_data_vector
@@ -1772,7 +1777,7 @@ ChargePoint::set_variables_internal(const std::vector<SetVariableData>& set_vari
             set_variable_result.attributeStatus =
                 this->device_model->set_value(set_variable_data.component, set_variable_data.variable,
                                               set_variable_data.attributeType.value_or(AttributeEnum::Actual),
-                                              set_variable_data.attributeValue.get(), allow_read_only);
+                                              set_variable_data.attributeValue.get(), source, allow_read_only);
         } else {
             set_variable_result.attributeStatus = SetVariableStatusEnum::Rejected;
         }
@@ -2278,7 +2283,8 @@ void ChargePoint::handle_set_variables_req(Call<SetVariablesRequest> call) {
     SetVariablesResponse response;
 
     // set variables but do not allow setting ReadOnly variables
-    const auto set_variables_response = this->set_variables_internal(msg.setVariableData, false);
+    const auto set_variables_response =
+        this->set_variables_internal(msg.setVariableData, VARIABLE_ATTRIBUTE_VALUE_SOURCE_CSMS, false);
     for (const auto& [single_set_variable_data, single_set_variable_result] : set_variables_response) {
         response.setVariableResult.push_back(single_set_variable_result);
     }
@@ -2455,7 +2461,7 @@ void ChargePoint::handle_set_network_profile_req(Call<SetNetworkProfileRequest> 
 
     if (this->device_model->set_value(ControllerComponentVariables::NetworkConnectionProfiles.component,
                                       ControllerComponentVariables::NetworkConnectionProfiles.variable.value(),
-                                      AttributeEnum::Actual,
+                                      AttributeEnum::Actual, VARIABLE_ATTRIBUTE_VALUE_SOURCE,
                                       network_connection_profiles.dump()) != SetVariableStatusEnum::Accepted) {
         EVLOG_warning
             << "CSMS attempted to set a network profile that could not be written to the device model storage";
@@ -3266,7 +3272,8 @@ void ChargePoint::handle_send_local_authorization_list_req(Call<SendLocalListReq
                 try {
                     auto entries = this->database_handler->get_local_authorization_list_number_of_entries();
                     this->device_model->set_read_only_value(local_entries.component, local_entries.variable.value(),
-                                                            AttributeEnum::Actual, std::to_string(entries));
+                                                            AttributeEnum::Actual, std::to_string(entries),
+                                                            VARIABLE_ATTRIBUTE_VALUE_SOURCE_CSMS);
                 } catch (const QueryExecutionException& e) {
                     EVLOG_warning << "Could not get local list count from database";
                 } catch (const std::exception& e) {
@@ -3357,21 +3364,21 @@ void ChargePoint::update_dm_availability_state(const int32_t evse_id, const int3
     ComponentVariable connector_cv = ConnectorComponentVariables::get_component_variable(
         evse_id, connector_id, ConnectorComponentVariables::AvailabilityState);
     if (evse_cv.variable.has_value()) {
-        this->device_model->set_read_only_value(evse_cv.component, evse_cv.variable.value(),
-                                                ocpp::v201::AttributeEnum::Actual,
-                                                conversions::connector_status_enum_to_string(status));
+        this->device_model->set_read_only_value(
+            evse_cv.component, evse_cv.variable.value(), ocpp::v201::AttributeEnum::Actual,
+            conversions::connector_status_enum_to_string(status), VARIABLE_ATTRIBUTE_VALUE_SOURCE_CSMS);
     }
     if (connector_cv.variable.has_value()) {
-        this->device_model->set_read_only_value(connector_cv.component, connector_cv.variable.value(),
-                                                ocpp::v201::AttributeEnum::Actual,
-                                                conversions::connector_status_enum_to_string(status));
+        this->device_model->set_read_only_value(
+            connector_cv.component, connector_cv.variable.value(), ocpp::v201::AttributeEnum::Actual,
+            conversions::connector_status_enum_to_string(status), VARIABLE_ATTRIBUTE_VALUE_SOURCE_CSMS);
     }
 
     // if applicable to the entire charging station
     if (evse_id == 0 and charging_station.variable.has_value()) {
-        this->device_model->set_read_only_value(charging_station.component, charging_station.variable.value(),
-                                                ocpp::v201::AttributeEnum::Actual,
-                                                conversions::connector_status_enum_to_string(status));
+        this->device_model->set_read_only_value(
+            charging_station.component, charging_station.variable.value(), ocpp::v201::AttributeEnum::Actual,
+            conversions::connector_status_enum_to_string(status), VARIABLE_ATTRIBUTE_VALUE_SOURCE_CSMS);
     }
 }
 
@@ -3389,7 +3396,8 @@ void ChargePoint::update_dm_evse_power(const int32_t evse_id, const MeterValue& 
     }
 
     this->device_model->set_read_only_value(evse_power_cv.component, evse_power_cv.variable.value(),
-                                            AttributeEnum::Actual, std::to_string(power.value()));
+                                            AttributeEnum::Actual, std::to_string(power.value()),
+                                            VARIABLE_ATTRIBUTE_VALUE_SOURCE_CSMS);
 }
 
 void ChargePoint::set_cs_operative_status(OperationalStatusEnum new_status, bool persist) {
@@ -3474,9 +3482,9 @@ ChargePoint::get_variables(const std::vector<GetVariableData>& get_variable_data
 }
 
 std::map<SetVariableData, SetVariableResult>
-ChargePoint::set_variables(const std::vector<SetVariableData>& set_variable_data_vector) {
+ChargePoint::set_variables(const std::vector<SetVariableData>& set_variable_data_vector, const std::string& source) {
     // set variables and allow setting of ReadOnly variables
-    const auto response = this->set_variables_internal(set_variable_data_vector, true);
+    const auto response = this->set_variables_internal(set_variable_data_vector, source, true);
     this->handle_variables_changed(response);
     return response;
 }

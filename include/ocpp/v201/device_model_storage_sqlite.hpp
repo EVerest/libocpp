@@ -38,7 +38,8 @@ public:
                                                            const std::optional<AttributeEnum>& attribute_enum) final;
 
     bool set_variable_attribute_value(const Component& component_id, const Variable& variable_id,
-                                      const AttributeEnum& attribute_enum, const std::string& value) final;
+                                      const AttributeEnum& attribute_enum, const std::string& value,
+                                      const std::string &source) final;
 
     void check_integrity() final;
 };
