@@ -389,7 +389,7 @@ TEST_F(ChargepointTestFixtureV201, K01FR35_IfChargingSchedulePeriodsAreNotInChon
 TEST_F(ChargepointTestFixtureV201, K01_ValidateChargingStationMaxProfile_NotChargingStationMaxProfile_Invalid) {
     create_evse_with_id(STATION_WIDE_ID);
     auto periods = create_charging_schedule_periods({0, 1, 2});
-    auto profile = create_charging_profile(DEFAULT_PROFILE_ID + 1, ChargingProfilePurposeEnum::TxDefaultProfile,
+    auto profile = create_charging_profile(DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxDefaultProfile,
                                            create_charge_schedule(ChargingRateUnitEnum::A));
 
     auto sut = handler.validate_charging_station_max_profile(profile, STATION_WIDE_ID);
