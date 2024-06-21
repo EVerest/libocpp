@@ -5,6 +5,7 @@
 #include <utility>
 
 #include <everest/logging.hpp>
+#include <ocpp/common/database/database_exceptions.hpp>
 #include <ocpp/v201/ctrlr_component_variables.hpp>
 #include <ocpp/v201/evse.hpp>
 
@@ -178,7 +179,7 @@ void Evse::release_transaction() {
     try {
         this->database_handler->transaction_metervalues_clear(this->transaction->transactionId);
         this->database_handler->transaction_delete(this->transaction->transactionId);
-    } catch (const QueryExecutionException& e) {
+    } catch (const ocpp::common::DatabaseException& e) {
         EVLOG_error << "Could not clear transaction meter values: " << e.what();
     }
     this->transaction = nullptr;
