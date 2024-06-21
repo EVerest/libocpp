@@ -134,9 +134,7 @@ private:
     int32_t evse_id;
     DeviceModel& device_model;
     std::map<int32_t, std::unique_ptr<Connector>> id_connector_map;
-    std::function<void(const MeterValue& meter_value, const Transaction& transaction, const int32_t seq_no,
-                       const std::optional<int32_t> reservation_id)>
-        transaction_meter_value_req;
+    std::function<void(const MeterValue& meter_value)> transaction_meter_value_req;
     std::function<void()> pause_charging_callback;
     std::unique_ptr<EnhancedTransaction> transaction; // pointer to active transaction (can be nullptr)
     MeterValue meter_value;                           // represents current meter value
@@ -174,8 +172,7 @@ public:
     Evse(const int32_t evse_id, const int32_t number_of_connectors, DeviceModel& device_model,
          std::shared_ptr<DatabaseHandler> database_handler,
          std::shared_ptr<ComponentStateManagerInterface> component_state_manager,
-         const std::function<void(const MeterValue& meter_value, const Transaction& transaction, const int32_t seq_no,
-                                  const std::optional<int32_t> reservation_id)>& transaction_meter_value_req,
+         const std::function<void(const MeterValue& meter_value)>& transaction_meter_value_req,
          const std::function<void()>& pause_charging_callback);
 
     EVSE get_evse_info();

@@ -46,8 +46,7 @@ EvseInterface::~EvseInterface() {
 Evse::Evse(const int32_t evse_id, const int32_t number_of_connectors, DeviceModel& device_model,
            std::shared_ptr<DatabaseHandler> database_handler,
            std::shared_ptr<ComponentStateManagerInterface> component_state_manager,
-           const std::function<void(const MeterValue& meter_value, const Transaction& transaction, const int32_t seq_no,
-                                    const std::optional<int32_t> reservation_id)>& transaction_meter_value_req,
+           const std::function<void(const MeterValue& meter_value)>& transaction_meter_value_req,
            const std::function<void()>& pause_charging_callback) :
     evse_id(evse_id),
     device_model(device_model),
@@ -257,9 +256,7 @@ void Evse::start_metering_timers(const DateTime& timestamp) {
     if (sampled_data_tx_updated_interval > 0s) {
         this->transaction->sampled_tx_updated_meter_values_timer.interval_starting_from(
             [this] {
-                const int32_t seq_no = this->transaction->get_seq_no();
-                this->transaction_meter_value_req(this->get_meter_value(), this->transaction->get_transaction(), seq_no,
-                                                  std::nullopt);
+                this->transaction_meter_value_req(this->get_meter_value());
             },
             sampled_data_tx_updated_interval, date::utc_clock::to_sys(timestamp.to_time_point()));
     }
@@ -303,9 +300,7 @@ void Evse::start_metering_timers(const DateTime& timestamp) {
                         .value_or(false)) {
                     meter_value.timestamp = utils::align_timestamp(DateTime{}, aligned_data_tx_updated_interval);
                 }
-                const int32_t seq_no = this->transaction->get_seq_no();
-                this->transaction_meter_value_req(meter_value, this->transaction->get_transaction(), seq_no,
-                                                  std::nullopt);
+                this->transaction_meter_value_req(meter_value);
                 this->aligned_data_updated.clear_values();
             },
             aligned_data_tx_updated_interval,

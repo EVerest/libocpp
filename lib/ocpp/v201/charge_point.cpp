@@ -120,9 +120,7 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
             this->status_notification_req(evse_id_, connector_id, status);
         };
         // used by evse when TransactionEvent.req to transmit meter values
-        auto transaction_meter_value_callback = [this, evse_id_](const MeterValue& _meter_value,
-                                                                 const Transaction& transaction, const int32_t seq_no,
-                                                                 const std::optional<int32_t> reservation_id) {
+        auto transaction_meter_value_callback = [this, evse_id_](const MeterValue& _meter_value) {
             if (_meter_value.sampledValue.empty() or !_meter_value.sampledValue.at(0).context.has_value()) {
                 EVLOG_info << "Not sending MeterValue due to no values";
                 return;
@@ -144,10 +142,11 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
             if (!filtered_meter_value.sampledValue.empty()) {
                 const auto trigger = type == ReadingContextEnum::Sample_Clock ? TriggerReasonEnum::MeterValueClock
                                                                               : TriggerReasonEnum::MeterValuePeriodic;
-                this->transaction_event_req(TransactionEventEnum::Updated, DateTime(), transaction, trigger, seq_no,
-                                            std::nullopt, std::nullopt, std::nullopt,
-                                            std::vector<MeterValue>(1, filtered_meter_value), std::nullopt,
-                                            this->is_offline(), reservation_id);
+                const auto& enhanced_transaction = this->evses.at(evse_id_)->get_transaction();
+                this->transaction_event_req(
+                    TransactionEventEnum::Updated, DateTime(), enhanced_transaction->get_transaction(), trigger,
+                    enhanced_transaction->get_seq_no(), std::nullopt, std::nullopt, std::nullopt,
+                    std::vector<MeterValue>(1, filtered_meter_value), std::nullopt, this->is_offline(), std::nullopt);
             }
         };
 
