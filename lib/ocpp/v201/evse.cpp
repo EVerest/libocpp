@@ -262,10 +262,8 @@ void Evse::start_metering_timers(const DateTime& timestamp) {
 
     if (sampled_data_tx_updated_interval > 0s) {
         this->transaction->sampled_tx_updated_meter_values_timer.interval_starting_from(
-            [this] {
-                this->transaction_meter_value_req(this->get_meter_value());
-            },
-            sampled_data_tx_updated_interval, date::utc_clock::to_sys(timestamp.to_time_point()));
+            [this] { this->transaction_meter_value_req(this->get_meter_value()); }, sampled_data_tx_updated_interval,
+            date::utc_clock::to_sys(timestamp.to_time_point()));
     }
 
     if (sampled_data_tx_ended_interval > 0s) {

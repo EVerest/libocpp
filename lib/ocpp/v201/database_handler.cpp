@@ -634,7 +634,9 @@ void DatabaseHandler::transaction_insert(const EnhancedTransaction& transaction,
     insert_stmt->bind_int("@evse_id", evse_id);
     insert_stmt->bind_int("@connector_id", transaction.connector_id);
     insert_stmt->bind_datetime("@time_start", transaction.start_time);
-    insert_stmt->bind_text("@charging_state", conversions::charging_state_enum_to_string(transaction.chargingState.value()), SQLiteString::Transient);
+    insert_stmt->bind_text("@charging_state",
+                           conversions::charging_state_enum_to_string(transaction.chargingState.value()),
+                           SQLiteString::Transient);
     insert_stmt->bind_int("@id_token_sent", transaction.id_token_sent ? 1 : 0);
 
     if (insert_stmt->step() != SQLITE_DONE) {
@@ -647,7 +649,7 @@ std::unique_ptr<EnhancedTransaction> DatabaseHandler::transaction_get(const int3
     auto get_stmt = this->database->new_statement(sql);
     get_stmt->bind_int("@evse_id", evse_id);
 
-    if(get_stmt->step() != SQLITE_ROW) {
+    if (get_stmt->step() != SQLITE_ROW) {
         return nullptr;
     }
 
@@ -661,8 +663,7 @@ std::unique_ptr<EnhancedTransaction> DatabaseHandler::transaction_get(const int3
     transaction->chargingState = conversions::string_to_charging_state_enum(get_stmt->column_text(5));
     transaction->id_token_sent = get_stmt->column_int(6) != 0;
 
-
-    if(get_stmt->step() == SQLITE_ROW) {
+    if (get_stmt->step() == SQLITE_ROW) {
         // Something strange is happening with multiple transactions
         throw QueryExecutionException(this->database->get_error_message());
     }
@@ -682,7 +683,8 @@ void DatabaseHandler::transaction_update_seq_no(const std::string& transaction_i
     }
 }
 
-void DatabaseHandler::transaction_update_charging_state(const std::string& transaction_id, const ChargingStateEnum charging_state) {
+void DatabaseHandler::transaction_update_charging_state(const std::string& transaction_id,
+                                                        const ChargingStateEnum charging_state) {
     std::string sql = "UPDATE TRANSACTIONS SET CHARGING_STATE = @charging_state WHERE TRANSACTION_ID = @transaction_id";
     auto update_stmt = this->database->new_statement(sql);
 
@@ -714,7 +716,6 @@ void DatabaseHandler::transaction_delete(const std::string& transaction_id) {
         throw QueryExecutionException(this->database->get_error_message());
     }
 }
-
 
 } // namespace v201
 } // namespace ocpp
