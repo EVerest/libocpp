@@ -14,13 +14,14 @@ class DatabaseHandler;
 
 /// \brief Struct that enhances the OCPP Transaction by some meta data and functionality
 struct EnhancedTransaction : public Transaction {
+    EnhancedTransaction(DatabaseHandler& database_handler) : database_handler{database_handler} {}
+
     bool id_token_sent;
     int32_t connector_id;
     int32_t seq_no = 0;
     std::optional<float> active_energy_import_start_value;
     DateTime start_time;
     bool check_max_active_import_energy;
-    std::shared_ptr<DatabaseHandler> database_handler;
 
     ClockAlignedTimer sampled_tx_updated_meter_values_timer;
     ClockAlignedTimer sampled_tx_ended_meter_values_timer;
@@ -39,6 +40,9 @@ struct EnhancedTransaction : public Transaction {
     void update_charging_state(const ChargingStateEnum charging_state);
 
     void set_id_token_sent();
+
+private:
+    DatabaseHandler& database_handler;
 };
 } // namespace v201
 

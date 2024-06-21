@@ -61,19 +61,7 @@ Evse::Evse(const int32_t evse_id, const int32_t number_of_connectors, DeviceMode
             std::make_pair(connector_id, std::make_unique<Connector>(evse_id, connector_id, component_state_manager)));
     }
 
-    // Get any interrupted transactions from the database and resume them if possible
-    auto transaction = this->database_handler->transaction_get(evse_id);
-    if (transaction != nullptr) {
-        if (this->id_connector_map.count(transaction->connector_id) != 0) {
-            this->resume_transaction(std::move(transaction));
-        } else {
-            EVLOG_error << "Can't resume transaction on evse_id " << evse_id << " for non existent connector "
-                        << transaction->connector_id;
-            this->database_handler->transaction_delete(transaction->transactionId);
-
-            // Todo: Can we drop the transaction like this or do we still want to transmit an ended message?
-        }
-    }
+    this->try_resume_transaction();
 }
 
 EVSE Evse::get_evse_info() {
@@ -85,11 +73,23 @@ uint32_t Evse::get_number_of_connectors() {
     return static_cast<uint32_t>(this->id_connector_map.size());
 }
 
-void Evse::resume_transaction(std::unique_ptr<EnhancedTransaction> interrupted_transaction) {
-    this->transaction = std::move(interrupted_transaction);
-    this->transaction->database_handler = this->database_handler;
+void Evse::try_resume_transaction() {
+    // Get an open transactions from the database and resume it if there is one
+    auto transaction = this->database_handler->transaction_get(evse_id);
+    if (transaction == nullptr) {
+        return;
+    }
 
-    this->start_metering_timers(interrupted_transaction->start_time);
+    if (this->id_connector_map.count(transaction->connector_id) != 0) {
+        this->transaction = std::move(transaction);
+        this->start_metering_timers(this->transaction->start_time);
+    } else {
+        EVLOG_error << "Can't resume transaction on evse_id " << evse_id << " for non existent connector "
+                    << transaction->connector_id;
+        this->database_handler->transaction_delete(transaction->transactionId);
+
+        // Todo: Can we drop the transaction like this or do we still want to transmit an ended message?
+    }
 }
 
 void Evse::open_transaction(const std::string& transaction_id, const int32_t connector_id, const DateTime& timestamp,
@@ -99,14 +99,13 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
     if (!this->id_connector_map.count(connector_id)) {
         EVLOG_AND_THROW(std::runtime_error("Attempt to start transaction at invalid connector_id"));
     }
-    this->transaction = std::make_unique<EnhancedTransaction>();
+    this->transaction = std::make_unique<EnhancedTransaction>(*this->database_handler.get());
     this->transaction->transactionId = transaction_id;
     this->transaction->connector_id = connector_id;
     this->transaction->id_token_sent = id_token.has_value();
     this->transaction->start_time = timestamp;
     this->transaction->active_energy_import_start_value = this->get_active_import_register_meter_value();
     this->transaction->chargingState = charging_state;
-    this->transaction->database_handler = this->database_handler;
 
     try {
         this->database_handler->transaction_metervalues_insert(this->transaction->transactionId.get(), meter_start);

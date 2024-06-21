@@ -157,8 +157,8 @@ private:
     AverageMeterValues aligned_data_updated;
     AverageMeterValues aligned_data_tx_end;
 
-    /// \brief Perform a check to see if there are any interrupted transactions and resume them.
-    void resume_transaction(std::unique_ptr<EnhancedTransaction> interrupted_transaction);
+    /// \brief Perform a check to see if there is an open transaction and resume it if there is.
+    void try_resume_transaction();
 
     /// \brief Component responsible for maintaining and persisting the operational status of CS, EVSEs, and connectors.
     std::shared_ptr<ComponentStateManagerInterface> component_state_manager;
