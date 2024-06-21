@@ -1,41 +1,78 @@
 @startuml
 'https://plantuml.com/sequence-diagram
 !pragma teoz true
-participant csms order 10
-participant libocpp order 20
-participant core order 30
-actor user order 40 
+actor user order 10
+participant core order 20
+participant libocpp order 30
+database database order 40
+participant csms order 50
+
 autonumber "<b><font color=red>"
 skinparam sequenceArrowThickness 2
 
 == Start a transaction ==
-user->core: swipe ID tag
-user->core: plug in cable
-core->libocpp: Authorize
-libocpp->core:Authorized
+user->core: Swipe ID tag
+core->libocpp ++: Authorize
+libocpp-->core --: Authorized
+user->core: Plug in cable
 core->libocpp: on_transaction_started()
-libocpp->libocpp: insert transaction details into database
 libocpp->csms: TransactionEventRequest::Started
-libocpp->csms: (Optional) TransactionEventRequest::Updated
+libocpp->database: Insert transaction details
 
-== System Failure / Power Outage ==
-core->core: Booting process
-libocpp->libocpp: Initialize library/ restore transaction values from database
-alt TransactionInteruptedResponse.has_interrupted_transaction = true
-core->core: Restore authorization
-libocpp->libocpp: resume_interrupted_transactions()
-libocpp->csms: (optional) TransactionEventRequest::Updated
-... Do stuff ...
-core->libocpp: (optional) has_interrupted_transactions(connector_id)
-libocpp->core: transaction_id (empty string or valid)
-... Do stuff ...
+== Charging state changed (Example) ==
+user->core: Pauses charging of car
+core->libocpp: on_charging_state_changed()
+libocpp->csms: TransactionEventRequest::Updated
+libocpp->database: Update transaction charging state
+libocpp->database: Update transaction sequence number
+
+== Power Outage / Crash of libocpp ==
+core->libocpp ++ : Construct ChargePoint
+
+loop For each evse_id
+  alt Database does not contain transaction
+  libocpp->database ++: Get transaction for evse_id
+  database-->libocpp --: Return empty
+  else Database contains transaction
+  libocpp->database ++: Get transaction for evse_id
+  database-->libocpp --: Return transaction details
+  libocpp->libocpp: Re-initialize transaction for evse_id
+  end
+end
+
+libocpp-->core -- : Construction complete
+
+
+note over core,database: Continue normal operations
+
+user->core: Continues charging of car
+core->libocpp: on_charging_state_changed()
+
+alt No support for resuming transactions
+
+libocpp->libocpp: Print warning of no know transaction
+
+else With support for resuming transactions
+
+libocpp->csms: TransactionEventRequest::Updated
+libocpp->database: Update transaction charging state
+libocpp->database: Update transaction sequence number
+
+end
+
+
+user->core: Swipe ID tag
 core->libocpp: on_transaction_finished()
-libocpp->libocpp: clear_transaction in database (transaction_id)
+
+alt No support for resuming transactions
+
+libocpp->libocpp: Print warning of no know transaction
+
+else With support for resuming transactions
+
 libocpp->csms: TransactionEventRequest::Ended
+libocpp->database: Delete transaction
 
-else TransactionInteruptedResponse.has_interrupted_transaction = false
-note over core: continue normal operations
-
-
+end
 
 @enduml
