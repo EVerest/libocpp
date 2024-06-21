@@ -373,20 +373,19 @@ void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime&
                                           const std::optional<std::string>& signed_meter_value,
                                           const ChargingStateEnum charging_state) {
     auto& enhanced_transaction = this->evses.at(evse_id)->get_transaction();
-    enhanced_transaction->chargingState = charging_state;
     if (enhanced_transaction == nullptr) {
         EVLOG_warning << "Received notification of finished transaction while no transaction was active";
         return;
     }
 
+    enhanced_transaction->chargingState = charging_state;
+
     this->evses.at(evse_id)->close_transaction(timestamp, meter_stop, reason);
-    const auto transaction = enhanced_transaction->get_transaction();
-    const auto transaction_id = enhanced_transaction->transactionId.get();
 
     std::optional<std::vector<ocpp::v201::MeterValue>> meter_values = std::nullopt;
     try {
         meter_values = std::make_optional(utils::get_meter_values_with_measurands_applied(
-            this->database_handler->transaction_metervalues_get_all(transaction_id),
+            this->database_handler->transaction_metervalues_get_all(enhanced_transaction->transactionId.get()),
             utils::get_measurands_vec(
                 this->device_model->get_value<std::string>(ControllerComponentVariables::SampledDataTxEndedMeasurands)),
             utils::get_measurands_vec(
@@ -404,25 +403,17 @@ void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime&
         EVLOG_warning << "Could not get metervalues of transaction: " << e.what();
     }
 
-    const auto seq_no = enhanced_transaction->get_seq_no();
-    this->evses.at(evse_id)->release_transaction();
-
     const auto trigger_reason = utils::stop_reason_to_trigger_reason_enum(reason);
 
     // E07.FR.02 The field idToken is provided when the authorization of the transaction has been ended
     const std::optional<IdToken> transaction_id_token =
         trigger_reason == ocpp::v201::TriggerReasonEnum::StopAuthorized ? id_token : std::nullopt;
 
-    this->transaction_event_req(TransactionEventEnum::Ended, timestamp, transaction, trigger_reason, seq_no,
-                                std::nullopt, std::nullopt, transaction_id_token, meter_values, std::nullopt,
-                                this->is_offline(), std::nullopt);
+    this->transaction_event_req(TransactionEventEnum::Ended, timestamp, enhanced_transaction->get_transaction(),
+                                trigger_reason, enhanced_transaction->get_seq_no(), std::nullopt, std::nullopt,
+                                transaction_id_token, meter_values, std::nullopt, this->is_offline(), std::nullopt);
 
-    try {
-        this->database_handler->transaction_metervalues_clear(transaction_id);
-        this->database_handler->transaction_delete(transaction_id);
-    } catch (const QueryExecutionException& e) {
-        EVLOG_error << "Could not clear transaction meter values: " << e.what();
-    }
+    this->evses.at(evse_id)->release_transaction();
 
     bool send_reset = false;
     if (this->reset_scheduled) {

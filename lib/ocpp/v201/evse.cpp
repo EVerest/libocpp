@@ -175,6 +175,12 @@ bool Evse::has_active_transaction(int32_t connector_id) {
 }
 
 void Evse::release_transaction() {
+    try {
+        this->database_handler->transaction_metervalues_clear(this->transaction->transactionId);
+        this->database_handler->transaction_delete(this->transaction->transactionId);
+    } catch (const QueryExecutionException& e) {
+        EVLOG_error << "Could not clear transaction meter values: " << e.what();
+    }
     this->transaction = nullptr;
 }
 
