@@ -363,10 +363,9 @@ void ChargePoint::on_transaction_started(const int32_t evse_id, const int32_t co
         opt_meter_value.emplace(1, meter_value);
     }
 
-    int32_t seq_no = enhanced_transaction->get_seq_no();
-    this->transaction_event_req(TransactionEventEnum::Started, timestamp, transaction, trigger_reason, seq_no,
-                                std::nullopt, evse, id_token, opt_meter_value, std::nullopt,
-                                this->is_offline(), reservation_id);
+    this->transaction_event_req(TransactionEventEnum::Started, timestamp, transaction, trigger_reason,
+                                enhanced_transaction->get_seq_no(), std::nullopt, evse, id_token, opt_meter_value,
+                                std::nullopt, this->is_offline(), reservation_id);
 }
 
 void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime& timestamp,
@@ -501,11 +500,10 @@ void ChargePoint::on_authorized(const int32_t evse_id, const int32_t connector_i
 
     // set id_token of enhanced_transaction and send TransactionEvent(Updated) with id_token
     enhanced_transaction->set_id_token_sent();
-    int32_t seq_no = enhanced_transaction->get_seq_no();
     this->transaction_event_req(TransactionEventEnum::Updated, ocpp::DateTime(),
-                                enhanced_transaction->get_transaction(), TriggerReasonEnum::Authorized, seq_no,
-                                std::nullopt, std::nullopt, id_token, std::nullopt, std::nullopt, this->is_offline(),
-                                std::nullopt);
+                                enhanced_transaction->get_transaction(), TriggerReasonEnum::Authorized,
+                                enhanced_transaction->get_seq_no(), std::nullopt, std::nullopt, id_token, std::nullopt,
+                                std::nullopt, this->is_offline(), std::nullopt);
 }
 
 void ChargePoint::on_meter_value(const int32_t evse_id, const MeterValue& meter_value) {
@@ -616,10 +614,9 @@ bool ChargePoint::on_charging_state_changed(const uint32_t evse_id, const Chargi
                 EVLOG_debug << "Trying to send charging state changed without actual change, dropping message";
             } else {
                 enhanced_transaction->update_charging_state(charging_state);
-                int32_t seq_no = enhanced_transaction->get_seq_no();
                 this->transaction_event_req(TransactionEventEnum::Updated, DateTime(),
-                                            enhanced_transaction->get_transaction(),
-                                            trigger_reason, seq_no, std::nullopt,
+                                            enhanced_transaction->get_transaction(), trigger_reason,
+                                            enhanced_transaction->get_seq_no(), std::nullopt,
                                             this->evses.at(static_cast<int32_t>(evse_id))->get_evse_info(),
                                             std::nullopt, std::nullopt, std::nullopt, this->is_offline(), std::nullopt);
             }
@@ -632,6 +629,14 @@ bool ChargePoint::on_charging_state_changed(const uint32_t evse_id, const Chargi
     }
 
     return false;
+}
+
+std::optional<std::string> ChargePoint::get_evse_transaction_id(int32_t evse_id) {
+    auto& evse = this->evses.at(evse_id);
+    if (!evse->has_active_transaction()) {
+        return std::nullopt;
+    }
+    return evse->get_transaction()->transactionId.get();
 }
 
 AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std::optional<CiString<5500>>& certificate,
@@ -2241,9 +2246,6 @@ void ChargePoint::handle_boot_notification_response(CallResult<BootNotificationR
 
         this->remove_network_connection_profiles_below_actual_security_profile();
 
-        // get transaction messages from db (if there are any) so they can be sent again.
-        message_queue->get_transaction_messages_from_db();
-
         // set timers
         if (msg.interval > 0) {
             this->heartbeat_timer.interval([this]() { this->heartbeat_req(); }, std::chrono::seconds(msg.interval));
@@ -2832,11 +2834,10 @@ void ChargePoint::handle_trigger_message(Call<TriggerMessageRequest> call) {
                 opt_meter_value.emplace(1, meter_value);
             }
             const auto& enhanced_transaction = evse.get_transaction();
-            const auto seq_no = enhanced_transaction->get_seq_no();
             this->transaction_event_req(TransactionEventEnum::Updated, DateTime(),
-                                        enhanced_transaction->get_transaction(), TriggerReasonEnum::Trigger, seq_no,
-                                        std::nullopt, std::nullopt, std::nullopt, opt_meter_value, std::nullopt,
-                                        this->is_offline(), std::nullopt, true);
+                                        enhanced_transaction->get_transaction(), TriggerReasonEnum::Trigger,
+                                        enhanced_transaction->get_seq_no(), std::nullopt, std::nullopt, std::nullopt,
+                                        opt_meter_value, std::nullopt, this->is_offline(), std::nullopt, true);
         };
         send_evse_message(send_transaction);
     } break;
@@ -3766,15 +3767,6 @@ ChargePoint::set_variables(const std::vector<SetVariableData>& set_variable_data
     this->handle_variables_changed(response);
     return response;
 }
-
-std::optional<std::string> ChargePoint::get_evse_transactionid(int32_t evse_id) {
-    auto& evse = this->evses.at(evse_id);
-    if (!evse->has_active_transaction()) {
-        return std::nullopt;
-    }
-    return evse->get_transaction()->transactionId.get();
-}
-
 
 } // namespace v201
 } // namespace ocpp

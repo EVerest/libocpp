@@ -304,6 +304,11 @@ public:
     on_charging_state_changed(const uint32_t evse_id, const ChargingStateEnum charging_state,
                               const TriggerReasonEnum trigger_reason = TriggerReasonEnum::ChargingStateChanged) = 0;
 
+    /// \brief Gets the transaction id for a certain \p evse_id if there is an active transaction
+    /// \param evse_id The evse to tet the transaction for
+    /// \return The transaction id if a transaction is active, otherwise nullopt
+    virtual std::optional<std::string> get_evse_transaction_id(int32_t evse_id) = 0;
+
     /// \brief Validates provided \p id_token \p certificate and \p ocsp_request_data using CSMS, AuthCache or AuthList
     /// \param id_token
     /// \param certificate
@@ -389,8 +394,6 @@ public:
     /// change
     virtual std::map<SetVariableData, SetVariableResult>
     set_variables(const std::vector<SetVariableData>& set_variable_data_vector) = 0;
-
-    virtual std::optional<std::string> get_evse_transactionid(int32_t evse_id) = 0;
 };
 
 /// \brief Class implements OCPP2.0.1 Charging Station
@@ -847,6 +850,8 @@ public:
         const uint32_t evse_id, const ChargingStateEnum charging_state,
         const TriggerReasonEnum trigger_reason = TriggerReasonEnum::ChargingStateChanged) override;
 
+    std::optional<std::string> get_evse_transaction_id(int32_t evse_id) override;
+
     AuthorizeResponse validate_token(const IdToken id_token, const std::optional<CiString<5500>>& certificate,
                                      const std::optional<std::vector<OCSPRequestData>>& ocsp_request_data) override;
 
@@ -892,8 +897,6 @@ public:
                                                 const AttributeEnum& attribute_enum) {
         return this->device_model->request_value<T>(component_id, variable_id, attribute_enum);
     }
-
-    std::optional<std::string> get_evse_transactionid(int32_t evse_id) override;
 };
 
 } // namespace v201

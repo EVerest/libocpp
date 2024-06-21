@@ -86,7 +86,6 @@ uint32_t Evse::get_number_of_connectors() {
 }
 
 void Evse::resume_transaction(std::unique_ptr<EnhancedTransaction> interrupted_transaction) {
-
     this->transaction = std::move(interrupted_transaction);
     this->transaction->database_handler = this->database_handler;
 

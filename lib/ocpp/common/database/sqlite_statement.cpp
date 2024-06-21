@@ -120,18 +120,6 @@ int SQLiteStatement::column_int(const int idx) {
     return sqlite3_column_int(this->stmt, idx);
 }
 
-std::optional<int> SQLiteStatement::column_int_nullable(const int idx) {
-    auto p = sqlite3_column_int(this->stmt, idx);
-
-    if (column_type(idx) != SQLITE_NULL) {
-        return sqlite3_column_int(this->stmt, idx);
-    }
-    else
-    {
-        return std::optional<int>{};
-    }
-}
-
 ocpp::DateTime SQLiteStatement::column_datetime(const int idx) {
     int64_t time = sqlite3_column_int64(this->stmt, idx);
     return DateTime(date::utc_clock::time_point(std::chrono::milliseconds(time)));
