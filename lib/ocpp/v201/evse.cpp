@@ -5,6 +5,7 @@
 #include <utility>
 
 #include <everest/logging.hpp>
+#include <ocpp/common/database/database_exceptions.hpp>
 #include <ocpp/v201/ctrlr_component_variables.hpp>
 #include <ocpp/v201/evse.hpp>
 
@@ -60,6 +61,8 @@ Evse::Evse(const int32_t evse_id, const int32_t number_of_connectors, DeviceMode
         this->id_connector_map.insert(
             std::make_pair(connector_id, std::make_unique<Connector>(evse_id, connector_id, component_state_manager)));
     }
+
+    this->try_resume_transaction();
 }
 
 int32_t Evse::get_id() const {
@@ -70,23 +73,39 @@ uint32_t Evse::get_number_of_connectors() const {
     return static_cast<uint32_t>(this->id_connector_map.size());
 }
 
+void Evse::try_resume_transaction() {
+    // Get an open transactions from the database and resume it if there is one
+    auto transaction = this->database_handler->transaction_get(evse_id);
+    if (transaction == nullptr) {
+        return;
+    }
+
+    if (this->id_connector_map.count(transaction->connector_id) != 0) {
+        this->transaction = std::move(transaction);
+        this->start_metering_timers(this->transaction->start_time);
+    } else {
+        EVLOG_error << "Can't resume transaction on evse_id " << evse_id << " for non existent connector "
+                    << transaction->connector_id;
+        this->database_handler->transaction_delete(transaction->transactionId);
+
+        // Todo: Can we drop the transaction like this or do we still want to transmit an ended message?
+    }
+}
+
 void Evse::open_transaction(const std::string& transaction_id, const int32_t connector_id, const DateTime& timestamp,
                             const MeterValue& meter_start, const std::optional<IdToken>& id_token,
                             const std::optional<IdToken>& group_id_token, const std::optional<int32_t> reservation_id,
-                            const std::chrono::seconds sampled_data_tx_updated_interval,
-                            const std::chrono::seconds sampled_data_tx_ended_interval,
-                            const std::chrono::seconds aligned_data_tx_updated_interval,
-                            const std::chrono::seconds aligned_data_tx_ended_interval) {
+                            const ChargingStateEnum charging_state) {
     if (!this->id_connector_map.count(connector_id)) {
         EVLOG_AND_THROW(std::runtime_error("Attempt to start transaction at invalid connector_id"));
     }
-    this->transaction = std::make_unique<EnhancedTransaction>();
+    this->transaction = std::make_unique<EnhancedTransaction>(*this->database_handler.get());
     this->transaction->transactionId = transaction_id;
-    this->transaction->reservation_id = reservation_id;
     this->transaction->connector_id = connector_id;
-    this->transaction->id_token = id_token;
-    this->transaction->group_id_token = group_id_token;
+    this->transaction->id_token_sent = id_token.has_value();
+    this->transaction->start_time = timestamp;
     this->transaction->active_energy_import_start_value = this->get_active_import_register_meter_value();
+    this->transaction->chargingState = charging_state;
 
     try {
         this->database_handler->transaction_metervalues_insert(this->transaction->transactionId.get(), meter_start);
@@ -98,17 +117,157 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
                       << this->transaction->transactionId.get() << " into database: " << e.what();
     }
 
+    this->start_metering_timers(timestamp);
+
+    this->database_handler->transaction_insert(*this->transaction.get(), this->evse_id);
+}
+
+void Evse::close_transaction(const DateTime& timestamp, const MeterValue& meter_stop, const ReasonEnum& reason) {
+    if (this->transaction == nullptr) {
+        EVLOG_warning << "Received attempt to stop a transaction without an active transaction";
+        return;
+    }
+
+    this->transaction->stoppedReason.emplace(reason);
+
+    // First stop all the timers to make sure the meter_stop is the last one in the database
+    this->transaction->sampled_tx_updated_meter_values_timer.stop();
+    this->transaction->sampled_tx_ended_meter_values_timer.stop();
+    this->transaction->aligned_tx_updated_meter_values_timer.stop();
+    this->transaction->aligned_tx_ended_meter_values_timer.stop();
+
+    try {
+        this->database_handler->transaction_metervalues_insert(this->transaction->transactionId.get(), meter_stop);
+    } catch (const QueryExecutionException& e) {
+        EVLOG_warning << "Could not insert transaction meter values of transaction: "
+                      << this->transaction->transactionId.get() << " into database: " << e.what();
+    } catch (const std::invalid_argument& e) {
+        EVLOG_warning << "Could not insert transaction meter values of transaction: "
+                      << this->transaction->transactionId.get() << " into database: " << e.what();
+    }
+    // Clear for non transaction aligned metervalues
+    this->aligned_data_updated.clear_values();
+}
+
+void Evse::start_checking_max_energy_on_invalid_id() {
+    if (this->transaction != nullptr) {
+        this->transaction->check_max_active_import_energy = true;
+        this->check_max_energy_on_invalid_id();
+    } else {
+        EVLOG_error << "Trying to start \"MaxEnergyOnInvalidId\" checking without an active transaction";
+    }
+}
+
+bool Evse::has_active_transaction() const {
+    return this->transaction != nullptr;
+}
+
+bool Evse::has_active_transaction(int32_t connector_id) const {
+    if (!this->id_connector_map.count(connector_id)) {
+        EVLOG_warning << "has_active_transaction called for invalid connector_id";
+        return false;
+    }
+
+    if (this->transaction == nullptr) {
+        return false;
+    }
+
+    return this->transaction->connector_id == connector_id;
+}
+
+void Evse::release_transaction() {
+    try {
+        this->database_handler->transaction_metervalues_clear(this->transaction->transactionId);
+        this->database_handler->transaction_delete(this->transaction->transactionId);
+    } catch (const ocpp::common::DatabaseException& e) {
+        EVLOG_error << "Could not clear transaction meter values: " << e.what();
+    }
+    this->transaction = nullptr;
+}
+
+std::unique_ptr<EnhancedTransaction>& Evse::get_transaction() {
+    return this->transaction;
+}
+
+void Evse::submit_event(const int32_t connector_id, ConnectorEvent event) {
+    return this->id_connector_map.at(connector_id)->submit_event(event);
+}
+
+void Evse::on_meter_value(const MeterValue& meter_value) {
+    std::lock_guard<std::recursive_mutex> lk(this->meter_value_mutex);
+    this->meter_value = meter_value;
+    this->aligned_data_updated.set_values(meter_value);
+    this->aligned_data_tx_end.set_values(meter_value);
+    this->check_max_energy_on_invalid_id();
+}
+
+MeterValue Evse::get_meter_value() {
+    std::lock_guard<std::recursive_mutex> lk(this->meter_value_mutex);
+    return this->meter_value;
+}
+
+MeterValue Evse::get_idle_meter_value() {
+    return this->aligned_data_updated.retrieve_processed_values();
+}
+
+void Evse::clear_idle_meter_values() {
+    this->aligned_data_updated.clear_values();
+}
+
+std::optional<float> Evse::get_active_import_register_meter_value() {
+    std::lock_guard<std::recursive_mutex> lk(this->meter_value_mutex);
+    auto it = std::find_if(
+        this->meter_value.sampledValue.begin(), this->meter_value.sampledValue.end(), [](const SampledValue& value) {
+            return value.measurand == MeasurandEnum::Energy_Active_Import_Register and !value.phase.has_value();
+        });
+    if (it != this->meter_value.sampledValue.end()) {
+        return get_normalized_energy_value(*it);
+    }
+    return std::nullopt;
+}
+
+void Evse::check_max_energy_on_invalid_id() {
+    // Handle E05.02
+    auto max_energy_on_invalid_id =
+        this->device_model.get_optional_value<int32_t>(ControllerComponentVariables::MaxEnergyOnInvalidId);
+    auto& transaction = this->transaction;
+    if (transaction != nullptr and max_energy_on_invalid_id.has_value() and
+        transaction->check_max_active_import_energy) {
+        const auto opt_energy_value = this->get_active_import_register_meter_value();
+        auto active_energy_import_start_value = transaction->active_energy_import_start_value;
+        if (opt_energy_value.has_value() and active_energy_import_start_value.has_value()) {
+            auto charged_energy = opt_energy_value.value() - active_energy_import_start_value.value();
+
+            if (charged_energy > static_cast<float>(max_energy_on_invalid_id.value())) {
+                this->pause_charging_callback(this->evse_id);
+                transaction->check_max_active_import_energy = false; // No need to check anymore
+            }
+        }
+    }
+}
+
+void Evse::start_metering_timers(const DateTime& timestamp) {
+
     this->aligned_data_updated.clear_values();
     this->aligned_data_tx_end.clear_values();
 
+    const auto sampled_data_tx_updated_interval = std::chrono::seconds(
+        this->device_model.get_value<int>(ControllerComponentVariables::SampledDataTxUpdatedInterval));
+    const auto sampled_data_tx_ended_interval = std::chrono::seconds(
+        this->device_model.get_value<int>(ControllerComponentVariables::SampledDataTxEndedInterval));
+    const auto aligned_data_tx_updated_interval =
+        std::chrono::seconds(this->device_model.get_value<int>(ControllerComponentVariables::AlignedDataInterval));
+    const auto aligned_data_tx_ended_interval = std::chrono::seconds(
+        this->device_model.get_value<int>(ControllerComponentVariables::AlignedDataTxEndedInterval));
+
     if (sampled_data_tx_updated_interval > 0s) {
-        transaction->sampled_tx_updated_meter_values_timer.interval_starting_from(
+        this->transaction->sampled_tx_updated_meter_values_timer.interval_starting_from(
             [this] { this->transaction_meter_value_req(this->get_meter_value(), *this->transaction); },
             sampled_data_tx_updated_interval, date::utc_clock::to_sys(timestamp.to_time_point()));
     }
 
     if (sampled_data_tx_ended_interval > 0s) {
-        transaction->sampled_tx_ended_meter_values_timer.interval_starting_from(
+        this->transaction->sampled_tx_ended_meter_values_timer.interval_starting_from(
             [this] {
                 try {
                     this->database_handler->transaction_metervalues_insert(this->transaction->transactionId.get(),
@@ -125,7 +284,7 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
     }
 
     if (aligned_data_tx_updated_interval > 0s) {
-        transaction->aligned_tx_updated_meter_values_timer.interval_starting_from(
+        this->transaction->aligned_tx_updated_meter_values_timer.interval_starting_from(
             [this, aligned_data_tx_updated_interval] {
                 if (this->device_model.get_optional_value<bool>(ControllerComponentVariables::AlignedDataSendDuringIdle)
                         .value_or(false)) {
@@ -192,124 +351,6 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
         // There is still the expectation for us to add a metervalue at timepoint 12:00:00.000 which we do with this.
         if (date::utc_clock::to_sys(timestamp.to_time_point()) <= (next_interval - aligned_data_tx_ended_interval)) {
             store_aligned_metervalue();
-        }
-    }
-}
-
-void Evse::close_transaction(const DateTime& timestamp, const MeterValue& meter_stop, const ReasonEnum& reason) {
-    if (this->transaction == nullptr) {
-        EVLOG_warning << "Received attempt to stop a transaction without an active transaction";
-        return;
-    }
-
-    this->transaction->stoppedReason.emplace(reason);
-
-    // First stop all the timers to make sure the meter_stop is the last one in the database
-    this->transaction->sampled_tx_updated_meter_values_timer.stop();
-    this->transaction->sampled_tx_ended_meter_values_timer.stop();
-    this->transaction->aligned_tx_updated_meter_values_timer.stop();
-    this->transaction->aligned_tx_ended_meter_values_timer.stop();
-
-    try {
-        this->database_handler->transaction_metervalues_insert(this->transaction->transactionId.get(), meter_stop);
-    } catch (const QueryExecutionException& e) {
-        EVLOG_warning << "Could not insert transaction meter values of transaction: "
-                      << this->transaction->transactionId.get() << " into database: " << e.what();
-    } catch (const std::invalid_argument& e) {
-        EVLOG_warning << "Could not insert transaction meter values of transaction: "
-                      << this->transaction->transactionId.get() << " into database: " << e.what();
-    }
-    // Clear for non transaction aligned metervalues
-    this->aligned_data_updated.clear_values();
-}
-
-void Evse::start_checking_max_energy_on_invalid_id() {
-    if (this->transaction != nullptr) {
-        this->transaction->check_max_active_import_energy = true;
-        this->check_max_energy_on_invalid_id();
-    } else {
-        EVLOG_error << "Trying to start \"MaxEnergyOnInvalidId\" checking without an active transaction";
-    }
-}
-
-bool Evse::has_active_transaction() const {
-    return this->transaction != nullptr;
-}
-
-bool Evse::has_active_transaction(int32_t connector_id) const {
-    if (!this->id_connector_map.count(connector_id)) {
-        EVLOG_warning << "has_active_transaction called for invalid connector_id";
-        return false;
-    }
-
-    if (this->transaction == nullptr) {
-        return false;
-    }
-
-    return this->transaction->connector_id == connector_id;
-}
-
-void Evse::release_transaction() {
-    this->transaction = nullptr;
-}
-
-std::unique_ptr<EnhancedTransaction>& Evse::get_transaction() {
-    return this->transaction;
-}
-
-void Evse::submit_event(const int32_t connector_id, ConnectorEvent event) {
-    return this->id_connector_map.at(connector_id)->submit_event(event);
-}
-
-void Evse::on_meter_value(const MeterValue& meter_value) {
-    std::lock_guard<std::recursive_mutex> lk(this->meter_value_mutex);
-    this->meter_value = meter_value;
-    this->aligned_data_updated.set_values(meter_value);
-    this->aligned_data_tx_end.set_values(meter_value);
-    this->check_max_energy_on_invalid_id();
-}
-
-MeterValue Evse::get_meter_value() {
-    std::lock_guard<std::recursive_mutex> lk(this->meter_value_mutex);
-    return this->meter_value;
-}
-
-MeterValue Evse::get_idle_meter_value() {
-    return this->aligned_data_updated.retrieve_processed_values();
-}
-
-void Evse::clear_idle_meter_values() {
-    this->aligned_data_updated.clear_values();
-}
-
-std::optional<float> Evse::get_active_import_register_meter_value() {
-    std::lock_guard<std::recursive_mutex> lk(this->meter_value_mutex);
-    auto it = std::find_if(
-        this->meter_value.sampledValue.begin(), this->meter_value.sampledValue.end(), [](const SampledValue& value) {
-            return value.measurand == MeasurandEnum::Energy_Active_Import_Register and !value.phase.has_value();
-        });
-    if (it != this->meter_value.sampledValue.end()) {
-        return get_normalized_energy_value(*it);
-    }
-    return std::nullopt;
-}
-
-void Evse::check_max_energy_on_invalid_id() {
-    // Handle E05.02
-    auto max_energy_on_invalid_id =
-        this->device_model.get_optional_value<int32_t>(ControllerComponentVariables::MaxEnergyOnInvalidId);
-    auto& transaction = this->transaction;
-    if (transaction != nullptr and max_energy_on_invalid_id.has_value() and
-        transaction->check_max_active_import_energy) {
-        const auto opt_energy_value = this->get_active_import_register_meter_value();
-        auto active_energy_import_start_value = transaction->active_energy_import_start_value;
-        if (opt_energy_value.has_value() and active_energy_import_start_value.has_value()) {
-            auto charged_energy = opt_energy_value.value() - active_energy_import_start_value.value();
-
-            if (charged_energy > static_cast<float>(max_energy_on_invalid_id.value())) {
-                this->pause_charging_callback(this->evse_id);
-                transaction->check_max_active_import_energy = false; // No need to check anymore
-            }
         }
     }
 }
