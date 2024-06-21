@@ -1261,21 +1261,6 @@ void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& messa
     case MessageType::CustomerInformation:
         this->handle_customer_information_req(json_message);
         break;
-    case MessageType::SetMonitoringBase:
-        this->handle_set_monitoring_base_req(json_message);
-        break;
-    case MessageType::SetMonitoringLevel:
-        this->handle_set_monitoring_level_req(json_message);
-        break;
-    case MessageType::SetVariableMonitoring:
-        this->handle_set_variable_monitoring_req(message);
-        break;
-    case MessageType::GetMonitoringReport:
-        this->handle_get_monitoring_report_req(json_message);
-        break;
-    case MessageType::ClearVariableMonitoring:
-        this->handle_clear_variable_monitoring_req(json_message);
-        break;
     default:
         if (message.messageTypeId == MessageTypeId::CALL) {
             const auto call_error = CallError(message.uniqueId, "NotImplemented", "", json({}));
