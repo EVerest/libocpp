@@ -22,6 +22,12 @@ struct VariableMonitoringMeta {
     std::optional<std::string> reference_value;
 };
 
+struct VariableMonitoringPeriodic {
+    Component component;
+    Variable variable;
+    std::vector<VariableMonitoringMeta> monitors;
+};
+
 /// \brief Helper struct that combines VariableCharacteristics and VariableMonitoring
 struct VariableMetaData {
     VariableCharacteristics characteristics;

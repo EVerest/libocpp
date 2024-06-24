@@ -4,6 +4,21 @@
   "name": "MonitoringCtrlr",
   "type": "object",
   "properties": {
+    "MonitoringCtrlrEnabled": {
+      "variable_name": "Enabled",
+      "characteristics": {
+        "supportsMonitoring": true,
+        "dataType": "boolean"
+      },
+      "attributes": [
+        {
+          "type": "Actual",
+          "mutability": "ReadWrite"
+        }
+      ],
+      "description": "Whether monitoring is enabled.",
+      "type": "boolean"
+    },
     "MonitoringCtrlrAvailable": {
       "variable_name": "Available",
       "characteristics": {
@@ -50,22 +65,7 @@
       "instance": "SetVariableMonitoring",
       "description": "Maximum number of bytes in a SetVariableMonitoring message,",
       "type": "integer"
-    },
-    "MonitoringCtrlrEnabled": {
-      "variable_name": "Enabled",
-      "characteristics": {
-        "supportsMonitoring": true,
-        "dataType": "boolean"
-      },
-      "attributes": [
-        {
-          "type": "Actual",
-          "mutability": "ReadWrite"
-        }
-      ],
-      "description": "Whether monitoring is enabled.",
-      "type": "boolean"
-    },
+    },    
     "ItemsPerMessageClearVariableMonitoring": {
       "variable_name": "ItemsPerMessage",
       "characteristics": {
