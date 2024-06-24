@@ -243,7 +243,7 @@ SetVariableStatusEnum DeviceModel::set_value(const Component& component, const V
         return SetVariableStatusEnum::UnknownVariable;
     }
 
-    const auto characteristics = variable_map[variable].characteristics;
+    const auto& characteristics = variable_map[variable].characteristics;
     try {
         if (!validate_value(characteristics, value, allow_zero(component, variable))) {
             return SetVariableStatusEnum::Rejected;
@@ -268,6 +268,23 @@ SetVariableStatusEnum DeviceModel::set_value(const Component& component, const V
 
     const auto success =
         this->storage->set_variable_attribute_value(component, variable, attribute_enum, value, source);
+
+    // Only trigger for actual values
+    if ((attribute_enum == AttributeEnum::Actual) && success && variable_listener) {
+        const auto& monitors = variable_map[variable].monitors;
+
+        // If we had a variable value change, trigger the listener
+        if (!monitors.empty()) {
+            // TODO (ioan): Are we in danger of an empty value problem here?
+            const std::string& value_previous = attribute.value().value.value();
+            const std::string& value_current = value;
+
+            if (value_previous != value_current) {
+                variable_listener(monitors, component, variable, characteristics, value_previous, value_current);
+            }
+        }
+    }
+
     return success ? SetVariableStatusEnum::Accepted : SetVariableStatusEnum::Rejected;
 };
 
@@ -476,6 +493,30 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
 
     return set_monitors_res;
 }
+
+std::vector<VariableMonitoringPeriodic> DeviceModel::get_periodic_monitors() {
+    std::vector<VariableMonitoringPeriodic> periodics;
+
+    for (const auto& [component, variable_map] : this->device_model) {
+        for (const auto& [variable, variable_metadata] : variable_map) {
+            std::vector<VariableMonitoringMeta> monitors;
+
+            for (const auto& [id, monitor_meta] : variable_metadata.monitors) {
+                if (monitor_meta.monitor.type == MonitorEnum::Periodic ||
+                    monitor_meta.monitor.type == MonitorEnum::PeriodicClockAligned) {
+                    monitors.push_back(monitor_meta);
+                }
+            }
+
+            if (!monitors.empty()) {
+                periodics.push_back({component, variable, monitors});
+            }
+        }
+    }
+
+    return periodics;
+}
+
 std::vector<MonitoringData> DeviceModel::get_monitors(const std::vector<MonitoringCriterionEnum>& criteria,
                                                       const std::vector<ComponentVariable>& component_variables) {
     std::vector<MonitoringData> get_monitors_res{};
