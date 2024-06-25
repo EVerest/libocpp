@@ -325,6 +325,7 @@ SetChargingProfileResponse SmartChargingHandler::add_profile(int32_t evse_id, Ch
         std::find_if(profile_storage.begin(), profile_storage.end(),
                      [&profile](const ChargingProfile existing_profile) { return profile.id == existing_profile.id; });
 
+    // K01.FR05 - replace non-ChargingStationExternalConstraints profiles if id exists.
     if (profile_with_id != profile_storage.end() &&
         profile_with_id->chargingProfilePurpose != ChargingProfilePurposeEnum::ChargingStationExternalConstraints) {
         *profile_with_id = profile;
