@@ -5,7 +5,7 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | Status | Description                                                                    |
 |--------|--------------------------------------------------------------------------------|
 | ✅     | Satisfied                                                                      |
-| ⛔️     | Not applicable                                                                 |
+| ❎     | Not applicable                                                                 |
 | ⛽️     | A functional requirement for other systems in the Charging Station             |
 | 🌐     | A functional requirement for the CSMS                                          |
 | 💂     | Improper behavior by another actor is guarded against                          |
@@ -20,7 +20,7 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | FR.01 | ✅     |        |
 | FR.02 | ✅     |        |
 | FR.03 | ✅     |        |
-| FR.04 | ⛔️     |        |
+| FR.04 | ❎     |        |
 | FR.05 | ✅     |        |
 
 ## Security - Generic Security Profile requirements
@@ -38,13 +38,13 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 
 | ID         | Status | Remark |
 |------------|--------|--------|
-| A00.FR.201 | ⛔️     |        |
+| A00.FR.201 | ❎     |        |
 | A00.FR.202 | ✅     |        |
 | A00.FR.203 | ✅     |        |
 | A00.FR.204 | ✅     |        |
 | A00.FR.205 | ✅     |        |
 | A00.FR.206 | ✅     |        |
-| A00.FR.207 | ⛔️     |        |
+| A00.FR.207 | ❎     |        |
 
 ## Security - TLS with Basic Authentication Profile
 
@@ -54,8 +54,8 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | A00.FR.302 | ✅     |                 |
 | A00.FR.303 | ✅     |                 |
 | A00.FR.304 | ✅     |                 |
-| A00.FR.306 | ⛔️     |                 |
-| A00.FR.307 | ⛔️     |                 |
+| A00.FR.306 | ❎     |                 |
+| A00.FR.307 | ❎     |                 |
 | A00.FR.308 | ✅     |                 |
 | A00.FR.309 | ✅     |                 |
 | A00.FR.310 |        |                 |
@@ -63,16 +63,16 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | A00.FR.312 | ✅     |                 |
 | A00.FR.313 | ✅     |                 |
 | A00.FR.314 | ✅     |                 |
-| A00.FR.315 | ⛔️     |                 |
+| A00.FR.315 | ❎     |                 |
 | A00.FR.316 |        |                 |
 | A00.FR.317 | ✅     |                 |
-| A00.FR.318 | ⛔️     |                 |
+| A00.FR.318 | ❎     |                 |
 | A00.FR.319 | ✅     | is configurable |
 | A00.FR.320 | ✅     |                 |
 | A00.FR.321 | ✅     |                 |
-| A00.FR.322 | ⛔️     |                 |
+| A00.FR.322 | ❎     |                 |
 | A00.FR.323 |        |                 |
-| A00.FR.324 | ⛔️     |                 |
+| A00.FR.324 | ❎     |                 |
 
 ## Security - TLS with Client Side Certificates Profile
 
@@ -80,14 +80,14 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 |------------|--------|--------|
 | A00.FR.401 | ✅     |        |
 | A00.FR.402 | ✅     |        |
-| A00.FR.403 | ⛔️     |        |
-| A00.FR.404 | ⛔️     |        |
-| A00.FR.405 | ⛔️     |        |
-| A00.FR.406 | ⛔️     |        |
-| A00.FR.407 | ⛔️     |        |
-| A00.FR.408 | ⛔️     |        |
-| A00.FR.409 | ⛔️     |        |
-| A00.FR.410 | ⛔️     |        |
+| A00.FR.403 | ❎     |        |
+| A00.FR.404 | ❎     |        |
+| A00.FR.405 | ❎     |        |
+| A00.FR.406 | ❎     |        |
+| A00.FR.407 | ❎     |        |
+| A00.FR.408 | ❎     |        |
+| A00.FR.409 | ❎     |        |
+| A00.FR.410 | ❎     |        |
 | A00.FR.411 | ✅     |        |
 | A00.FR.412 | ✅     |        |
 | A00.FR.413 |        |        |
@@ -95,18 +95,18 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | A00.FR.415 | ✅     |        |
 | A00.FR.416 | ✅     |        |
 | A00.FR.417 | ✅     |        |
-| A00.FR.418 | ⛔️     |        |
+| A00.FR.418 | ❎     |        |
 | A00.FR.419 |        |        |
 | A00.FR.420 | ✅     |        |
-| A00.FR.421 | ⛔️     |        |
+| A00.FR.421 | ❎     |        |
 | A00.FR.422 | ✅     |        |
 | A00.FR.423 | ✅     |        |
 | A00.FR.424 | ✅     |        |
-| A00.FR.425 | ⛔️     |        |
+| A00.FR.425 | ❎     |        |
 | A00.FR.426 |        |        |
-| A00.FR.427 | ⛔️     |        |
-| A00.FR.428 | ⛔️     |        |
-| A00.FR.429 | ⛔️     |        |
+| A00.FR.427 | ❎     |        |
+| A00.FR.428 | ❎     |        |
+| A00.FR.429 | ❎     |        |
 
 ## Security - Certificate Properties
 
@@ -116,48 +116,48 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | A00.FR.502 | ✅     |        |
 | A00.FR.503 | ✅     |        |
 | A00.FR.504 | ✅     |        |
-| A00.FR.505 | ⛔️     |        |
+| A00.FR.505 | ❎     |        |
 | A00.FR.506 | ✅     |        |
 | A00.FR.507 | ✅     |        |
-| A00.FR.508 | ⛔️     |        |
-| A00.FR.509 | ⛔️     |        |
-| A00.FR.510 | ⛔️     |        |
-| A00.FR.511 | ⛔️     |        |
-| A00.FR.512 | ⛔️     |        |
-| A00.FR.513 | ⛔️     |        |
-| A00.FR.514 | ⛔️     |        |
+| A00.FR.508 | ❎     |        |
+| A00.FR.509 | ❎     |        |
+| A00.FR.510 | ❎     |        |
+| A00.FR.511 | ❎     |        |
+| A00.FR.512 | ❎     |        |
+| A00.FR.513 | ❎     |        |
+| A00.FR.514 | ❎     |        |
 
 ## Security - Certificate Hierachy
 
 | ID         | Status | Remark |
 |------------|--------|--------|
-| A00.FR.601 | ⛔️     |        |
-| A00.FR.602 | ⛔️     |        |
-| A00.FR.603 | ⛔️     |        |
+| A00.FR.601 | ❎     |        |
+| A00.FR.602 | ❎     |        |
+| A00.FR.603 | ❎     |        |
 | A00.FR.604 | ✅     |        |
 
 ## Security - Certificate Revocation
 
 | ID         | Status | Remark |
 |------------|--------|--------|
-| A00.FR.701 | ⛔️     |        |
-| A00.FR.702 | ⛔️     |        |
-| A00.FR.703 | ⛔️     |        |
-| A00.FR.704 | ⛔️     |        |
-| A00.FR.705 | ⛔️     |        |
-| A00.FR.707 | ⛔️     |        |
+| A00.FR.701 | ❎     |        |
+| A00.FR.702 | ❎     |        |
+| A00.FR.703 | ❎     |        |
+| A00.FR.704 | ❎     |        |
+| A00.FR.705 | ❎     |        |
+| A00.FR.707 | ❎     |        |
 
 ## Security - Installation
 
 | ID         | Status | Remark |
 |------------|--------|--------|
-| A00.FR.801 | ⛔️     |        |
-| A00.FR.802 | ⛔️     |        |
-| A00.FR.803 | ⛔️     |        |
-| A00.FR.804 | ⛔️     |        |
-| A00.FR.805 | ⛔️     |        |
-| A00.FR.806 | ⛔️     |        |
-| A00.FR.807 | ⛔️     |        |
+| A00.FR.801 | ❎     |        |
+| A00.FR.802 | ❎     |        |
+| A00.FR.803 | ❎     |        |
+| A00.FR.804 | ❎     |        |
+| A00.FR.805 | ❎     |        |
+| A00.FR.806 | ❎     |        |
+| A00.FR.807 | ❎     |        |
 
 ## Security - Update Charging Station Password for HTTP Basic Authentication
 
@@ -165,13 +165,13 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 |-----------|--------|--------|
 | A01.FR.01 | ✅     |        |
 | A01.FR.02 | ✅     |        |
-| A01.FR.03 | ⛔️     |        |
-| A01.FR.04 | ⛔️     |        |
-| A01.FR.05 | ⛔️     |        |
-| A01.FR.06 | ⛔️     |        |
-| A01.FR.07 | ⛔️     |        |
-| A01.FR.08 | ⛔️     |        |
-| A01.FR.09 | ⛔️     |        |
+| A01.FR.03 | ❎     |        |
+| A01.FR.04 | ❎     |        |
+| A01.FR.05 | ❎     |        |
+| A01.FR.06 | ❎     |        |
+| A01.FR.07 | ❎     |        |
+| A01.FR.08 | ❎     |        |
+| A01.FR.09 | ❎     |        |
 | A01.FR.10 | ✅     |        |
 | A01.FR.11 |        |        |
 | A01.FR.12 | ✅     |        |
@@ -180,20 +180,20 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 
 | ID        | Status | Remark                                                           |
 |-----------|--------|------------------------------------------------------------------|
-| A02.FR.01 | ⛔️     |                                                                  |
+| A02.FR.01 | ❎     |                                                                  |
 | A02.FR.02 | ✅     |                                                                  |
 | A02.FR.03 | ✅     |                                                                  |
-| A02.FR.04 | ⛔️     |                                                                  |
+| A02.FR.04 | ❎     |                                                                  |
 | A02.FR.05 | ✅     |                                                                  |
 | A02.FR.06 | ✅     |                                                                  |
 | A02.FR.07 | ✅     |                                                                  |
 | A02.FR.08 |        | This is done on next use of cert if cert is valid in the future. |
 | A02.FR.09 | ✅     |                                                                  |
-| A02.FR.10 | ⛔️     |                                                                  |
-| A02.FR.11 | ⛔️     |                                                                  |
-| A02.FR.12 | ⛔️     |                                                                  |
+| A02.FR.10 | ❎     |                                                                  |
+| A02.FR.11 | ❎     |                                                                  |
+| A02.FR.12 | ❎     |                                                                  |
 | A02.FR.13 | ✅     |                                                                  |
-| A02.FR.14 | ⛔️     |                                                                  |
+| A02.FR.14 | ❎     |                                                                  |
 | A02.FR.15 | ✅     |                                                                  |
 | A02.FR.16 |        |                                                                  |
 | A02.FR.17 | ✅     |                                                                  |
@@ -206,20 +206,20 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 
 | ID        | Status | Remark |
 |-----------|--------|--------|
-| A03.FR.01 | ⛔️     |        |
+| A03.FR.01 | ❎     |        |
 | A03.FR.02 | ✅     |        |
 | A03.FR.03 | ✅     |        |
-| A03.FR.04 | ⛔️     |        |
+| A03.FR.04 | ❎     |        |
 | A03.FR.05 | ✅     |        |
 | A03.FR.06 | ✅     |        |
 | A03.FR.07 | ✅     |        |
 | A03.FR.08 |        |        |
 | A03.FR.09 | ✅     |        |
-| A03.FR.10 | ⛔️     |        |
-| A03.FR.11 | ⛔️     |        |
-| A03.FR.12 | ⛔️     |        |
+| A03.FR.10 | ❎     |        |
+| A03.FR.11 | ❎     |        |
+| A03.FR.12 | ❎     |        |
 | A03.FR.13 | ✅     |        |
-| A03.FR.14 | ⛔️     |        |
+| A03.FR.14 | ❎     |        |
 | A03.FR.15 | ✅     |        |
 | A03.FR.16 |        |        |
 | A03.FR.17 | ✅     |        |
@@ -232,7 +232,7 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 |-----------|--------|--------|
 | A04.FR.01 | ✅     |        |
 | A04.FR.02 | ✅     |        |
-| A04.FR.03 | ⛔️     |        |
+| A04.FR.03 | ❎     |        |
 | A04.FR.04 | ✅     |        |
 
 ## Security - Upgrade Charging Station Security Profile
@@ -244,24 +244,24 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | A05.FR.04 | ✅     |        |
 | A05.FR.05 | ✅     |        |
 | A05.FR.06 |        |        |
-| A05.FR.07 | ⛔️     |        |
+| A05.FR.07 | ❎     |        |
 
 ## Provisioning - Cold Boot Charging Station
 
 | ID        | Status | Remark |
 |-----------|--------|--------|
 | B01.FR.01 | ✅     |        |
-| B01.FR.02 | ⛔️     |        |
+| B01.FR.02 | ❎     |        |
 | B01.FR.03 | ✅     |        |
 | B01.FR.04 | ✅     |        |
 | B01.FR.05 | ✅     |        |
-| B01.FR.06 | ⛔️     |        |
+| B01.FR.06 | ❎     |        |
 | B01.FR.07 | ✅     |        |
 | B01.FR.08 | ✅     |        |
 | B01.FR.09 | ✅     |        |
-| B01.FR.10 | ⛔️     |        |
-| B01.FR.11 | ⛔️     |        |
-| B01.FR.12 | ⛔️     |        |
+| B01.FR.10 | ❎     |        |
+| B01.FR.11 | ❎     |        |
+| B01.FR.12 | ❎     |        |
 | B01.FR.13 |        |        |
 
 ## Provisioning - Cold Boot Charging Station – Pending
@@ -276,7 +276,7 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | B02.FR.06 | ✅     |                                                  |
 | B02.FR.07 | ✅     |                                                  |
 | B02.FR.08 | ✅     |                                                  |
-| B02.FR.09 | ⛔️     |                                                  |
+| B02.FR.09 | ❎     |                                                  |
 
 ## Provisioning - Cold Boot Charging Station – Rejected
 
@@ -284,11 +284,11 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 |-----------|--------|--------|
 | B03.FR.01 | ✅     |        |
 | B03.FR.02 | ✅     |        |
-| B03.FR.03 | ⛔️     |        |
+| B03.FR.03 | ❎     |        |
 | B03.FR.04 | ✅     |        |
 | B03.FR.05 | ✅     |        |
 | B03.FR.06 | ✅     |        |
-| B03.FR.07 | ⛔️     |        |
+| B03.FR.07 | ❎     |        |
 | B03.FR.08 | ✅     |        |
 
 ## Provisioning - Offline Behavior Idle Charging Station
@@ -312,7 +312,7 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | B05.FR.08 | ✅     |        |
 | B05.FR.09 | ✅     |        |
 | B05.FR.10 | ✅     |        |
-| B05.FR.11 | ⛔️     |        |
+| B05.FR.11 | ❎     |        |
 | B05.FR.12 | ✅     |        |
 | B05.FR.13 | ✅     |        |
 
@@ -353,8 +353,8 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | B07.FR.10 | ✅     |                           |
 | B07.FR.11 | ✅     |                           |
 | B07.FR.12 | ✅     |                           |
-| B07.FR.13 | ⛔️     | tbd if this is applicable |
-| B07.FR.14 | ⛔️     |                           |
+| B07.FR.13 | ❎     | tbd if this is applicable |
+| B07.FR.14 | ❎     |                           |
 
 ## Provisioning - Get Custom Report
 
@@ -365,7 +365,7 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | B08.FR.03 | ✅     |        |
 | B08.FR.04 | ✅     |        |
 | B08.FR.05 | ✅     |        |
-| B08.FR.06 | ⛔️     |        |
+| B08.FR.06 | ❎     |        |
 | B08.FR.07 | ✅     |        |
 | B08.FR.08 | ✅     |        |
 | B08.FR.09 | ✅     |        |
@@ -462,8 +462,8 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 
 | ID        | Status | Remark |
 |-----------|--------|--------|
-| C02.FR.01 | ⛔️     |        |
-| C02.FR.02 | ⛔️     |        |
+| C02.FR.01 | ❎     |        |
+| C02.FR.02 | ❎     |        |
 | C02.FR.03 |        |        |
 
 ## Authorization - Authorization using credit/debit card
@@ -477,12 +477,12 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 
 | ID        | Status | Remark |
 |-----------|--------|--------|
-| C04.FR.01 | ⛔️     |        |
-| C04.FR.02 | ⛔️     |        |
-| C04.FR.03 | ⛔️     |        |
-| C04.FR.04 | ⛔️     |        |
-| C04.FR.05 | ⛔️     |        |
-| C04.FR.06 | ⛔️     |        |
+| C04.FR.01 | ❎     |        |
+| C04.FR.02 | ❎     |        |
+| C04.FR.03 | ❎     |        |
+| C04.FR.04 | ❎     |        |
+| C04.FR.05 | ❎     |        |
+| C04.FR.06 | ❎     |        |
 
 ## Authorization - Authorization for CSMS initiated transactions
 
@@ -501,7 +501,7 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | C06.FR.01 | ✅     |        |
 | C06.FR.02 | ✅     |        |
 | C06.FR.03 | ✅     |        |
-| C06.FR.04 | ⛔️     |        |
+| C06.FR.04 | ❎     |        |
 
 ## Authorization - Authorization using Contract Certificates
 
@@ -509,8 +509,8 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 |-----------|--------|--------|
 | C07.FR.01 | ✅     |        |
 | C07.FR.02 | ✅     |        |
-| C07.FR.04 | ⛔️     |        |
-| C07.FR.05 | ⛔️     |        |
+| C07.FR.04 | ❎     |        |
+| C07.FR.05 | ❎     |        |
 | C07.FR.06 | ✅     |        |
 | C07.FR.07 | ✅     |        |
 | C07.FR.08 | ✅     |        |
@@ -530,15 +530,15 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 
 | ID        | Status | Remark |
 |-----------|--------|--------|
-| C09.FR.02 | ⛔️     |        |
+| C09.FR.02 | ❎     |        |
 | C09.FR.03 | ✅     |        |
 | C09.FR.04 | ✅     |        |
 | C09.FR.05 | ✅     |        |
 | C09.FR.07 | ✅     |        |
-| C09.FR.09 | ⛔️     |        |
-| C09.FR.10 | ⛔️     |        |
+| C09.FR.09 | ❎     |        |
+| C09.FR.10 | ❎     |        |
 | C09.FR.11 | ✅     |        |
-| C09.FR.12 | ⛔️     |        |
+| C09.FR.12 | ❎     |        |
 
 ## Authorization - Store Authorization Data in the Authorization Cache
 
@@ -651,26 +651,26 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 
 | ID        | Status | Remark |
 |-----------|--------|--------|
-| E01.FR.01 | ⛔️     |        |
-| E01.FR.02 | ⛔️     |        |
-| E01.FR.03 | ⛔️     |        |
-| E01.FR.04 | ⛔️     |        |
+| E01.FR.01 | ❎     |        |
+| E01.FR.02 | ❎     |        |
+| E01.FR.03 | ❎     |        |
+| E01.FR.04 | ❎     |        |
 | E01.FR.05 | ✅     |        |
-| E01.FR.06 | ⛔️     |        |
+| E01.FR.06 | ❎     |        |
 | E01.FR.07 | ✅     |        |
 | E01.FR.08 | ✅     |        |
 | E01.FR.09 | ✅     |        |
 | E01.FR.10 | ✅     |        |
-| E01.FR.11 | ⛔️     |        |
-| E01.FR.12 | ⛔️     |        |
+| E01.FR.11 | ❎     |        |
+| E01.FR.12 | ❎     |        |
 | E01.FR.13 |        |        |
 | E01.FR.14 | ✅     |        |
 | E01.FR.15 | ✅     |        |
 | E01.FR.16 | ✅     |        |
-| E01.FR.17 | ⛔️     |        |
+| E01.FR.17 | ❎     |        |
 | E01.FR.18 | ✅     |        |
 | E01.FR.19 | ✅     |        |
-| E01.FR.20 | ⛔️     | tbd    |
+| E01.FR.20 | ❎     | tbd    |
 
 ## Transactions - Start Transaction - Cable Plugin First
 
@@ -681,12 +681,12 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | E02.FR.03 |        |        |
 | E02.FR.04 | ✅     |        |
 | E02.FR.05 | ✅     |        |
-| E02.FR.06 | ⛔️     |        |
+| E02.FR.06 | ❎     |        |
 | E02.FR.07 | ✅     |        |
 | E02.FR.08 | ✅     |        |
 | E02.FR.09 | ✅     |        |
 | E02.FR.10 | ✅     |        |
-| E02.FR.11 | ⛔️     | tbd    |
+| E02.FR.11 | ❎     | tbd    |
 | E02.FR.13 | ✅     |        |
 | E02.FR.14 | ✅     |        |
 | E02.FR.15 | ✅     |        |
@@ -704,11 +704,11 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | E03.FR.01 | ✅     |        |
 | E03.FR.02 | ✅     |        |
 | E03.FR.03 |        |        |
-| E03.FR.05 | ⛔️     |        |
+| E03.FR.05 | ❎     |        |
 | E03.FR.06 | ✅     |        |
 | E03.FR.07 | ✅     |        |
 | E03.FR.08 | ✅     |        |
-| E03.FR.09 | ⛔️     | tbd    |
+| E03.FR.09 | ❎     | tbd    |
 | E03.FR.10 | ✅     |        |
 | E03.FR.11 | ✅     |        |
 | E03.FR.12 | ✅     |        |
@@ -745,25 +745,25 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | E05.FR.08 | ✅     |        |
 | E05.FR.09 |        |        |
 | E05.FR.10 | ✅     |        |
-| E05.FR.11 | ⛔️     |        |
+| E05.FR.11 | ❎     |        |
 
 ## Transactions - Stop Transaction options
 
 | ID        | Status | Remark |
 |-----------|--------|--------|
-| E06.FR.01 | ⛔️     |        |
+| E06.FR.01 | ❎     |        |
 | E06.FR.02 | ✅     |        |
 | E06.FR.03 | ✅     |        |
 | E06.FR.04 | ✅     |        |
-| E06.FR.05 | ⛔️     |        |
-| E06.FR.06 | ⛔️     |        |
-| E06.FR.07 | ⛔️     |        |
+| E06.FR.05 | ❎     |        |
+| E06.FR.06 | ❎     |        |
+| E06.FR.07 | ❎     |        |
 | E06.FR.08 | ✅     |        |
 | E06.FR.09 | ✅     |        |
-| E06.FR.10 | ⛔️     |        |
+| E06.FR.10 | ❎     |        |
 | E06.FR.11 | ✅     |        |
-| E06.FR.12 | ⛔️     | tbd    |
-| E06.FR.13 | ⛔️     | tbd    |
+| E06.FR.12 | ❎     | tbd    |
+| E06.FR.13 | ❎     | tbd    |
 | E06.FR.14 | ✅     |        |
 | E06.FR.15 | ✅     |        |
 | E06.FR.16 |        |        |
@@ -777,7 +777,7 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | E07.FR.04 | ✅     |        |
 | E07.FR.05 | ✅     |        |
 | E07.FR.06 | ✅     |        |
-| E07.FR.07 | ⛔️     |        |
+| E07.FR.07 | ❎     |        |
 | E07.FR.08 | ✅     |        |
 | E07.FR.09 | ✅     |        |
 | E07.FR.10 | ✅     |        |
@@ -790,7 +790,7 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 |-----------|--------|--------|
 | E08.FR.01 | ✅     |        |
 | E08.FR.02 | ✅     |        |
-| E08.FR.03 | ⛔️     |        |
+| E08.FR.03 | ❎     |        |
 | E08.FR.04 | ✅     |        |
 | E08.FR.05 | ✅     |        |
 | E08.FR.06 | ✅     |        |
@@ -826,7 +826,7 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | E10.FR.02 | ✅     |        |
 | E10.FR.03 | ✅     |        |
 | E10.FR.04 | ✅     |        |
-| E10.FR.05 | ⛔️     | tbd    |
+| E10.FR.05 | ❎     | tbd    |
 | E10.FR.06 |        | tbd    |
 | E10.FR.07 | ✅     | tbd    |
 
@@ -885,8 +885,8 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | ID        | Status | Remark |
 |-----------|--------|--------|
 | E15.FR.01 | ✅     |        |
-| E15.FR.02 | ⛔️     | tbd    |
-| E15.FR.03 | ⛔️     | tbd    |
+| E15.FR.02 | ❎     | tbd    |
+| E15.FR.03 | ❎     | tbd    |
 | E15.FR.04 | ✅     |        |
 
 ## RemoteControl - Remote Start Transaction - Cable Plugin First
@@ -970,7 +970,7 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 
 | ID        | Status | Remark |
 |-----------|--------|--------|
-| F04.FR.01 | ⛔️     |        |
+| F04.FR.01 | ❎     |        |
 | F04.FR.02 | ✅     |        |
 | F04.FR.03 | ✅     |        |
 | F04.FR.04 | ✅     |        |
@@ -992,8 +992,8 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 
 | ID        | Status | Remark |
 |-----------|--------|--------|
-| F06.FR.01 | ⛔️     |        |
-| F06.FR.02 | ⛔️     |        |
+| F06.FR.01 | ❎     |        |
+| F06.FR.02 | ❎     |        |
 | F06.FR.03 | ✅     |        |
 | F06.FR.04 | ✅     |        |
 | F06.FR.05 | ✅     |        |
@@ -1029,8 +1029,8 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 |-----------|--------|-------------------------------------------|
 | G02.FR.01 | ✅     |                                           |
 | G02.FR.02 | ✅     |                                           |
-| G02.FR.03 | ⛔️     |                                           |
-| G02.FR.04 | ⛔️     |                                           |
+| G02.FR.03 | ❎     |                                           |
+| G02.FR.04 | ❎     |                                           |
 | G02.FR.05 |        | Not mandatory, so we can leave like this. |
 | G02.FR.06 | ✅     |                                           |
 | G02.FR.07 |        |                                           |
@@ -1183,17 +1183,17 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | J01.FR.06 | ✅     |                                              |
 | J01.FR.07 | ✅     |                                              |
 | J01.FR.08 | ✅     |                                              |
-| J01.FR.09 | ⛔️     | Location is provided by `libocpp` user.      |
+| J01.FR.09 | ❎     | Location is provided by `libocpp` user.      |
 | J01.FR.10 | ✅     |                                              |
 | J01.FR.11 | ✅     |                                              |
 | J01.FR.13 |        | Added phase rotation configuration variable. |
 | J01.FR.14 | ✅     |                                              |
-| J01.FR.15 | ⛔️     | tbd                                          |
+| J01.FR.15 | ❎     | tbd                                          |
 | J01.FR.17 | ✅     |                                              |
 | J01.FR.18 | ✅     |                                              |
 | J01.FR.19 | ✅     |                                              |
 | J01.FR.20 | ✅     |                                              |
-| J01.FR.21 | ⛔️     | not valid                                    |
+| J01.FR.21 | ❎     | not valid                                    |
 
 ## MeterValues - Sending transaction related Meter Values
 
@@ -1209,15 +1209,15 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | J02.FR.09 |        | Added phase rotation configuration variable. |
 | J02.FR.10 | ✅     |                                              |
 | J02.FR.11 | ✅     |                                              |
-| J02.FR.12 | ⛔️     | tbd                                          |
-| J02.FR.13 | ⛔️     | tbd                                          |
-| J02.FR.14 | ⛔️     | tbd                                          |
-| J02.FR.16 | ⛔️     |                                              |
-| J02.FR.17 | ⛔️     | tbd                                          |
+| J02.FR.12 | ❎     | tbd                                          |
+| J02.FR.13 | ❎     | tbd                                          |
+| J02.FR.14 | ❎     | tbd                                          |
+| J02.FR.16 | ❎     |                                              |
+| J02.FR.17 | ❎     | tbd                                          |
 | J02.FR.18 | ✅     |                                              |
 | J02.FR.19 | ✅     |                                              |
 | J02.FR.20 | ✅     |                                              |
-| J02.FR.21 | ⛔️     | Signed meter values are not yet applicable.  |
+| J02.FR.21 | ❎     | Signed meter values are not yet applicable.  |
 
 ## MeterValues - Charging Loop with metering information exchange
 
@@ -1284,9 +1284,9 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 
 | ID        | Status | Remark                                           |
 |-----------|--------|--------------------------------------------------|
-| K02.FR.01 | ⛔️     |                                                  |
-| K02.FR.02 | ⛔️     | This should be handled by the user of `libocpp`. |
-| K02.FR.03 | ⛔️     |                                                  |
+| K02.FR.01 | ❎     |                                                  |
+| K02.FR.02 | ❎     | This should be handled by the user of `libocpp`. |
+| K02.FR.03 | ❎     |                                                  |
 | K02.FR.04 |        |                                                  |
 | K02.FR.05 |        |                                                  |
 | K02.FR.06 |        | The same as K01.FR.21                            |
@@ -1297,7 +1297,7 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 
 | ID        | Status | Remark                |
 |-----------|--------|-----------------------|
-| K03.FR.01 | ⛔️     |                       |
+| K03.FR.01 | ❎     |                       |
 | K03.FR.02 |        |                       |
 | K03.FR.03 |        |                       |
 | K03.FR.04 |        |                       |
@@ -1320,7 +1320,7 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 
 | ID        | Status | Remark |
 |-----------|--------|--------|
-| K05.FR.01 | ⛔️     |        |
+| K05.FR.01 | ❎     |        |
 | K05.FR.02 |        |        |
 | K05.FR.03 |        |        |
 | K05.FR.04 |        |        |
@@ -1343,7 +1343,7 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 
 | ID        | Status | Remark |
 |-----------|--------|--------|
-| K08.FR.01 | ⛔️     |        |
+| K08.FR.01 | ❎     |        |
 | K08.FR.02 |        |        |
 | K08.FR.03 |        |        |
 | K08.FR.04 |        |        |
@@ -1367,7 +1367,7 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | ID        | Status | Remark |
 |-----------|--------|--------|
 | K10.FR.01 |        |        |
-| K10.FR.02 | ⛔️     |        |
+| K10.FR.02 | ❎     |        |
 | K10.FR.03 |        |        |
 | K10.FR.04 |        |        |
 | K10.FR.05 |        |        |
@@ -1490,7 +1490,7 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | L01.FR.05 | ⛽️     |                                             |
 | L01.FR.06 | ⛽️     |                                             |
 | L01.FR.07 | ⛽️     |                                             |
-| L01.FR.08 | ⛔️     | Recommendation, not a requirement           |
+| L01.FR.08 | ❎     | Recommendation, not a requirement           |
 | L01.FR.09 | 🤓     | Requirement on the firmware file itself.    |
 | L01.FR.10 | ⛽️     |                                             |
 | L01.FR.11 | 🌐     |                                             |
@@ -1511,7 +1511,7 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | L01.FR.29 | ⛽️     |                                             |
 | L01.FR.30 | ⛽️     |                                             |
 | L01.FR.31 | ✅     |                                             |
-| L01.FR.32 | ⛔️     | Optional requirement                        |
+| L01.FR.32 | ❎     | Optional requirement                        |
 
 ## FirmwareManagement - Non-Secure Firmware Update
 
@@ -1619,14 +1619,14 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 
 | ID        | Status | Remark |
 |-----------|--------|--------|
-| M06.FR.01 | ⛔️     |        |
-| M06.FR.02 | ⛔️     |        |
-| M06.FR.03 | ⛔️     |        |
-| M06.FR.04 | ⛔️     |        |
+| M06.FR.01 | ❎     |        |
+| M06.FR.02 | ❎     |        |
+| M06.FR.03 | ❎     |        |
+| M06.FR.04 | ❎     |        |
 | M06.FR.06 | ✅     |        |
 | M06.FR.07 |        |        |
-| M06.FR.08 | ⛔️     |        |
-| M06.FR.09 | ⛔️     |        |
+| M06.FR.08 | ❎     |        |
+| M06.FR.09 | ❎     |        |
 | M06.FR.10 | ✅     |        |
 
 ## Diagnostics - Retrieve Log Information
@@ -1766,28 +1766,28 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 
 | ID        | Status | Remark |
 |-----------|--------|--------|
-| N09.FR.01 | ⛔️     |        |
+| N09.FR.01 | ❎     |        |
 | N09.FR.02 | ✅     |        |
 | N09.FR.03 | ✅     |        |
-| N09.FR.04 | ⛔️     |        |
+| N09.FR.04 | ❎     |        |
 | N09.FR.05 | ✅     |        |
 | N09.FR.06 | ✅     |        |
 | N09.FR.07 | ✅     |        |
-| N09.FR.08 | ⛔️     |        |
+| N09.FR.08 | ❎     |        |
 
 ## Diagnostics - Clear Customer Information
 
 | ID        | Status | Remark |
 |-----------|--------|--------|
 | N10.FR.01 | ✅     |        |
-| N10.FR.02 | ⛔️     |        |
+| N10.FR.02 | ❎     |        |
 | N10.FR.03 | ✅     |        |
 | N10.FR.04 | ✅     |        |
 | N10.FR.05 | ✅     |        |
 | N10.FR.06 | ✅     |        |
 | N10.FR.07 | ✅     |        |
-| N10.FR.08 | ⛔️     |        |
-| N10.FR.09 | ⛔️     |        |
+| N10.FR.08 | ❎     |        |
+| N10.FR.09 | ❎     |        |
 
 ## DisplayMessage - Set DisplayMessage
 
@@ -1873,12 +1873,12 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | ID        | Status | Remark                                                    |
 |-----------|--------|-----------------------------------------------------------|
 | P01.FR.01 | ✅     | There is no way yet to register a data transfer callback. |
-| P01.FR.02 | ⛔️     |                                                           |
-| P01.FR.03 | ⛔️     |                                                           |
-| P01.FR.04 | ⛔️     |                                                           |
+| P01.FR.02 | ❎     |                                                           |
+| P01.FR.03 | ❎     |                                                           |
+| P01.FR.04 | ❎     |                                                           |
 | P01.FR.05 | ✅     |                                                           |
 | P01.FR.06 | ✅     |                                                           |
-| P01.FR.07 | ⛔️     |                                                           |
+| P01.FR.07 | ❎     |                                                           |
 
 ## DataTransfer - Data Transfer to the CSMS
 
@@ -1886,9 +1886,9 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 |-----------|--------|--------|
 | P02.FR.01 | ⛽️     |        |
 | P02.FR.02 | ⛽️     |        |
-| P02.FR.03 | ⛔️     |        |
+| P02.FR.03 | ❎     |        |
 | P02.FR.04 | ⛽️     |        |
-| P02.FR.05 | ⛔️     |        |
-| P02.FR.06 | ⛔️     |        |
-| P02.FR.07 | ⛔️     |        |
-| P02.FR.08 | ⛔️     |        |
+| P02.FR.05 | ❎     |        |
+| P02.FR.06 | ❎     |        |
+| P02.FR.07 | ❎     |        |
+| P02.FR.08 | ❎     |        |
