@@ -561,9 +561,9 @@ public:
                             this->database_handler->remove_message_queue_message(persisted_message.unique_id,
                                                                                  queue_type);
                         } catch (const QueryExecutionException& e) {
-                            EVLOG_warning << "Could not delete message queue: " << e.what();
+                            EVLOG_warning << "Could not delete message from message queue: " << e.what();
                         } catch (const std::exception& e) {
-                            EVLOG_warning << "Could not delete message queue: " << e.what();
+                            EVLOG_warning << "Could not delete message from message queue: " << e.what();
                         }
                     } else {
                         std::shared_ptr<ControlMessage<M>> message =
@@ -806,7 +806,7 @@ public:
         const auto queue_type = is_transaction_message(*this->in_flight) ? QueueType::Transaction : QueueType::Normal;
         if (is_transaction_message(*this->in_flight) or this->config.queue_all_messages) {
             if (this->in_flight->message_attempts < this->config.transaction_message_attempts) {
-                EVLOG_warning << "Message shall be peristed and will therefore be sent again";
+                EVLOG_warning << "Message shall be persisted and will therefore be sent again";
                 // Generate a new message ID for the retry
                 this->in_flight->message[MESSAGE_ID] = this->createMessageId();
                 if (this->config.transaction_message_retry_interval > 0) {
