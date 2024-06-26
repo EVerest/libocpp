@@ -812,7 +812,7 @@ TEST_F(ChargepointTestFixtureV201, K01_ValidateProfile_IfEvseDoesNotExist_ThenPr
     auto profile = create_charging_profile(DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
                                            create_charge_schedule(ChargingRateUnitEnum::A), DEFAULT_TX_ID);
 
-    auto sut = handler.validate_profile(profile, DEFAULT_EVSE_ID + 1);
+    auto sut = handler.validate_profile(profile, NR_OF_EVSES + 1);
 
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::EvseDoesNotExist));
 }
