@@ -28,7 +28,7 @@ private:
 /// \brief Class used to access the Evse instances
 class EvseManagerInterface {
 public:
-    using EvseIterator = ForwardIteratorWrapper<EvseInterface>;
+    using EvseIterator = ForwardIterator<EvseInterface>;
 
     /// \brief Default destructor
     virtual ~EvseManagerInterface() = default;

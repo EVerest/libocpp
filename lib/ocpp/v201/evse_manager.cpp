@@ -6,7 +6,7 @@
 namespace ocpp {
 namespace v201 {
 
-using EvseIteratorImpl = UniquePtrVectorIterator<EvseInterface>;
+using EvseIteratorImpl = VectorOfUniquePtrIterator<EvseInterface>;
 
 EvseManager::EvseManager(const std::map<int32_t, int32_t>& evse_connector_structure, DeviceModel& device_model,
                          std::shared_ptr<DatabaseHandler> database_handler,
