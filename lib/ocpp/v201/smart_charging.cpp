@@ -113,7 +113,7 @@ ProfileValidationResultEnum SmartChargingHandler::validate_profile(ChargingProfi
     }
 
     if (evse_id != STATION_WIDE_ID) {
-        auto& evse = *evses[evse_id];
+        auto& evse = evse_manager.get_evse(evse_id);
         result = this->validate_profile_schedules(profile, &evse);
     } else {
         result = this->validate_profile_schedules(profile);
@@ -204,7 +204,7 @@ ProfileValidationResultEnum SmartChargingHandler::validate_tx_profile(const Char
         return result;
     }
 
-    auto& evse = *evses[evse_id];
+    auto& evse = evse_manager.get_evse(evse_id);
     if (!evse.has_active_transaction()) {
         return ProfileValidationResultEnum::TxProfileEvseHasNoActiveTransaction;
     }
