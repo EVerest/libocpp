@@ -12,7 +12,7 @@ namespace ocpp::v201 {
 
 class EvseManagerFake : public EvseManagerInterface {
 private:
-    using EvseIteratorImpl = UniquePtrVectorIterator<EvseInterface>;
+    using EvseIteratorImpl = VectorOfUniquePtrIterator<EvseInterface>;
 
     std::vector<std::unique_ptr<EvseInterface>> evses;
     std::vector<std::unique_ptr<EnhancedTransaction>> transactions;
@@ -54,7 +54,7 @@ public:
         return id <= this->evses.size();
     }
 
-    void open_transaction(int evse_id, std::string transaction_id) {
+    void open_transaction(int evse_id, const std::string& transaction_id) {
         auto& transaction = this->transactions.at(evse_id - 1);
         transaction = std::make_unique<EnhancedTransaction>();
         transaction->transactionId = transaction_id;
