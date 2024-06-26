@@ -120,9 +120,7 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
             this->status_notification_req(evse_id_, connector_id, status);
         };
         // used by evse when TransactionEvent.req to transmit meter values
-        auto transaction_meter_value_callback = [this, evse_id_](const MeterValue& _meter_value,
-                                                                 const Transaction& transaction, const int32_t seq_no,
-                                                                 const std::optional<int32_t> reservation_id) {
+        auto transaction_meter_value_callback = [this, evse_id_](const MeterValue& _meter_value) {
             if (_meter_value.sampledValue.empty() or !_meter_value.sampledValue.at(0).context.has_value()) {
                 EVLOG_info << "Not sending MeterValue due to no values";
                 return;
@@ -144,10 +142,11 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
             if (!filtered_meter_value.sampledValue.empty()) {
                 const auto trigger = type == ReadingContextEnum::Sample_Clock ? TriggerReasonEnum::MeterValueClock
                                                                               : TriggerReasonEnum::MeterValuePeriodic;
-                this->transaction_event_req(TransactionEventEnum::Updated, DateTime(), transaction, trigger, seq_no,
-                                            std::nullopt, std::nullopt, std::nullopt,
-                                            std::vector<MeterValue>(1, filtered_meter_value), std::nullopt,
-                                            this->is_offline(), reservation_id);
+                const auto& enhanced_transaction = this->evses.at(evse_id_)->get_transaction();
+                this->transaction_event_req(
+                    TransactionEventEnum::Updated, DateTime(), enhanced_transaction->get_transaction(), trigger,
+                    enhanced_transaction->get_seq_no(), std::nullopt, std::nullopt, std::nullopt,
+                    std::vector<MeterValue>(1, filtered_meter_value), std::nullopt, this->is_offline(), std::nullopt);
             }
         };
 
@@ -340,21 +339,14 @@ void ChargePoint::on_transaction_started(const int32_t evse_id, const int32_t co
                                          const std::optional<int32_t>& remote_start_id,
                                          const ChargingStateEnum charging_state) {
 
-    this->evses.at(evse_id)->open_transaction(
-        session_id, connector_id, timestamp, meter_start, id_token, group_id_token, reservation_id,
-        std::chrono::seconds(
-            this->device_model->get_value<int>(ControllerComponentVariables::SampledDataTxUpdatedInterval)),
-        std::chrono::seconds(
-            this->device_model->get_value<int>(ControllerComponentVariables::SampledDataTxEndedInterval)),
-        std::chrono::seconds(this->device_model->get_value<int>(ControllerComponentVariables::AlignedDataInterval)),
-        std::chrono::seconds(
-            this->device_model->get_value<int>(ControllerComponentVariables::AlignedDataTxEndedInterval)));
-    const auto& enhanced_transaction = this->evses.at(evse_id)->get_transaction();
-    enhanced_transaction->chargingState = charging_state;
+    this->evses.at(evse_id)->open_transaction(session_id, connector_id, timestamp, meter_start, id_token,
+                                              group_id_token, reservation_id, charging_state);
+
     const auto meter_value = utils::get_meter_value_with_measurands_applied(
         meter_start, utils::get_measurands_vec(this->device_model->get_value<std::string>(
                          ControllerComponentVariables::SampledDataTxStartedMeasurands)));
 
+    const auto& enhanced_transaction = this->evses.at(evse_id)->get_transaction();
     Transaction transaction{enhanced_transaction->transactionId};
     transaction.chargingState = charging_state;
     if (remote_start_id.has_value()) {
@@ -371,8 +363,8 @@ void ChargePoint::on_transaction_started(const int32_t evse_id, const int32_t co
     }
 
     this->transaction_event_req(TransactionEventEnum::Started, timestamp, transaction, trigger_reason,
-                                enhanced_transaction->get_seq_no(), std::nullopt, evse, enhanced_transaction->id_token,
-                                opt_meter_value, std::nullopt, this->is_offline(), reservation_id);
+                                enhanced_transaction->get_seq_no(), std::nullopt, evse, id_token, opt_meter_value,
+                                std::nullopt, this->is_offline(), reservation_id);
 }
 
 void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime& timestamp,
@@ -381,20 +373,19 @@ void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime&
                                           const std::optional<std::string>& signed_meter_value,
                                           const ChargingStateEnum charging_state) {
     auto& enhanced_transaction = this->evses.at(evse_id)->get_transaction();
-    enhanced_transaction->chargingState = charging_state;
     if (enhanced_transaction == nullptr) {
         EVLOG_warning << "Received notification of finished transaction while no transaction was active";
         return;
     }
 
+    enhanced_transaction->chargingState = charging_state;
+
     this->evses.at(evse_id)->close_transaction(timestamp, meter_stop, reason);
-    const auto transaction = enhanced_transaction->get_transaction();
-    const auto transaction_id = enhanced_transaction->transactionId.get();
 
     std::optional<std::vector<ocpp::v201::MeterValue>> meter_values = std::nullopt;
     try {
         meter_values = std::make_optional(utils::get_meter_values_with_measurands_applied(
-            this->database_handler->transaction_metervalues_get_all(transaction_id),
+            this->database_handler->transaction_metervalues_get_all(enhanced_transaction->transactionId.get()),
             utils::get_measurands_vec(
                 this->device_model->get_value<std::string>(ControllerComponentVariables::SampledDataTxEndedMeasurands)),
             utils::get_measurands_vec(
@@ -412,24 +403,17 @@ void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime&
         EVLOG_warning << "Could not get metervalues of transaction: " << e.what();
     }
 
-    const auto seq_no = enhanced_transaction->get_seq_no();
-    this->evses.at(evse_id)->release_transaction();
-
     const auto trigger_reason = utils::stop_reason_to_trigger_reason_enum(reason);
 
     // E07.FR.02 The field idToken is provided when the authorization of the transaction has been ended
     const std::optional<IdToken> transaction_id_token =
         trigger_reason == ocpp::v201::TriggerReasonEnum::StopAuthorized ? id_token : std::nullopt;
 
-    this->transaction_event_req(TransactionEventEnum::Ended, timestamp, transaction, trigger_reason, seq_no,
-                                std::nullopt, std::nullopt, transaction_id_token, meter_values, std::nullopt,
-                                this->is_offline(), std::nullopt);
+    this->transaction_event_req(TransactionEventEnum::Ended, timestamp, enhanced_transaction->get_transaction(),
+                                trigger_reason, enhanced_transaction->get_seq_no(), std::nullopt, std::nullopt,
+                                transaction_id_token, meter_values, std::nullopt, this->is_offline(), std::nullopt);
 
-    try {
-        this->database_handler->transaction_metervalues_clear(transaction_id);
-    } catch (const DatabaseException& e) {
-        EVLOG_error << "Could not clear transaction meter values: " << e.what();
-    }
+    this->evses.at(evse_id)->release_transaction();
 
     bool send_reset = false;
     if (this->reset_scheduled) {
@@ -496,19 +480,20 @@ void ChargePoint::on_authorized(const int32_t evse_id, const int32_t connector_i
         return;
     }
 
-    std::unique_ptr<EnhancedTransaction>& transaction =
+    std::unique_ptr<EnhancedTransaction>& enhanced_transaction =
         this->evses.at(static_cast<int32_t>(evse_id))->get_transaction();
 
-    if (transaction->id_token.has_value()) {
-        // if transactions id_token is already set, it is assumed it has already been reported
+    if (enhanced_transaction->id_token_sent) {
+        // if transactions id_token_sent is set, it is assumed it has already been reported
         return;
     }
 
-    // set id_token of transaction and send TransactionEvent(Updated) with id_token
-    transaction->id_token = id_token;
-    this->transaction_event_req(TransactionEventEnum::Updated, ocpp::DateTime(), transaction->get_transaction(),
-                                TriggerReasonEnum::Authorized, transaction->get_seq_no(), std::nullopt, std::nullopt,
-                                id_token, std::nullopt, std::nullopt, this->is_offline(), std::nullopt);
+    // set id_token of enhanced_transaction and send TransactionEvent(Updated) with id_token
+    enhanced_transaction->set_id_token_sent();
+    this->transaction_event_req(TransactionEventEnum::Updated, ocpp::DateTime(),
+                                enhanced_transaction->get_transaction(), TriggerReasonEnum::Authorized,
+                                enhanced_transaction->get_seq_no(), std::nullopt, std::nullopt, id_token, std::nullopt,
+                                std::nullopt, this->is_offline(), std::nullopt);
 }
 
 void ChargePoint::on_meter_value(const int32_t evse_id, const MeterValue& meter_value) {
@@ -612,15 +597,17 @@ void ChargePoint::on_reserved(const int32_t evse_id, const int32_t connector_id)
 bool ChargePoint::on_charging_state_changed(const uint32_t evse_id, const ChargingStateEnum charging_state,
                                             const TriggerReasonEnum trigger_reason) {
     if (this->evses.find(static_cast<int32_t>(evse_id)) != this->evses.end()) {
-        std::unique_ptr<EnhancedTransaction>& transaction =
+        std::unique_ptr<EnhancedTransaction>& enhanced_transaction =
             this->evses.at(static_cast<int32_t>(evse_id))->get_transaction();
-        if (transaction != nullptr) {
-            if (transaction->chargingState == charging_state) {
+        if (enhanced_transaction != nullptr) {
+            if (enhanced_transaction->chargingState == charging_state) {
                 EVLOG_debug << "Trying to send charging state changed without actual change, dropping message";
             } else {
-                transaction->chargingState = charging_state;
-                this->transaction_event_req(TransactionEventEnum::Updated, DateTime(), transaction->get_transaction(),
-                                            trigger_reason, transaction->get_seq_no(), std::nullopt, std::nullopt,
+                enhanced_transaction->update_charging_state(charging_state);
+                this->transaction_event_req(TransactionEventEnum::Updated, DateTime(),
+                                            enhanced_transaction->get_transaction(), trigger_reason,
+                                            enhanced_transaction->get_seq_no(), std::nullopt,
+                                            this->evses.at(static_cast<int32_t>(evse_id))->get_evse_info(),
                                             std::nullopt, std::nullopt, std::nullopt, this->is_offline(), std::nullopt);
             }
             return true;
@@ -632,6 +619,14 @@ bool ChargePoint::on_charging_state_changed(const uint32_t evse_id, const Chargi
     }
 
     return false;
+}
+
+std::optional<std::string> ChargePoint::get_evse_transaction_id(int32_t evse_id) {
+    auto& evse = this->evses.at(evse_id);
+    if (!evse->has_active_transaction()) {
+        return std::nullopt;
+    }
+    return evse->get_transaction()->transactionId.get();
 }
 
 AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std::optional<CiString<5500>>& certificate,
@@ -2622,14 +2617,14 @@ void ChargePoint::handle_transaction_event_response(const EnhancedMessage<v201::
         evse_ids.push_back(original_msg.evse.value().id);
     } else {
         // add every evse_id with active transaction and given token
-        for (const auto& [evse_id, evse] : this->evses) {
-            const auto& transaction = evse->get_transaction();
-            if (transaction != nullptr and transaction->id_token.has_value()) {
-                if (transaction->id_token.value().idToken.get() == id_token.idToken.get()) {
-                    evse_ids.push_back(evse_id);
-                }
-            }
-        }
+        // for (const auto& [evse_id, evse] : this->evses) {
+        //     const auto& transaction = evse->get_transaction();
+        //     if (transaction != nullptr and transaction->id_token.has_value()) {
+        //         if (transaction->id_token.value().idToken.get() == id_token.idToken.get()) {
+        //             evse_ids.push_back(evse_id);
+        //         }
+        //     }
+        // }
     }
 
     // post handling of transactions in case status is not Accepted
@@ -2829,7 +2824,6 @@ void ChargePoint::handle_trigger_message(Call<TriggerMessageRequest> call) {
                 opt_meter_value.emplace(1, meter_value);
             }
             const auto& enhanced_transaction = evse.get_transaction();
-
             this->transaction_event_req(TransactionEventEnum::Updated, DateTime(),
                                         enhanced_transaction->get_transaction(), TriggerReasonEnum::Trigger,
                                         enhanced_transaction->get_seq_no(), std::nullopt, std::nullopt, std::nullopt,

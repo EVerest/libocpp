@@ -50,10 +50,7 @@ public:
                                   const DateTime& timestamp, const MeterValue& meter_start,
                                   const std::optional<IdToken>& id_token, const std::optional<IdToken>& group_id_token,
                                   const std::optional<int32_t> reservation_id,
-                                  const std::chrono::seconds sampled_data_tx_updated_interval,
-                                  const std::chrono::seconds sampled_data_tx_ended_interval,
-                                  const std::chrono::seconds aligned_data_tx_updated_interval,
-                                  const std::chrono::seconds aligned_data_tx_ended_interval) = 0;
+                                  const ChargingStateEnum charging_state) = 0;
 
     /// \brief Closes the transaction on this evse by adding the given \p timestamp \p meter_stop and \p reason .
     /// \param timestamp
@@ -137,9 +134,7 @@ private:
     int32_t evse_id;
     DeviceModel& device_model;
     std::map<int32_t, std::unique_ptr<Connector>> id_connector_map;
-    std::function<void(const MeterValue& meter_value, const Transaction& transaction, const int32_t seq_no,
-                       const std::optional<int32_t> reservation_id)>
-        transaction_meter_value_req;
+    std::function<void(const MeterValue& meter_value)> transaction_meter_value_req;
     std::function<void()> pause_charging_callback;
     std::unique_ptr<EnhancedTransaction> transaction; // pointer to active transaction (can be nullptr)
     MeterValue meter_value;                           // represents current meter value
@@ -153,8 +148,15 @@ private:
     /// \brief function to check if the max energy has been exceeded, calls pause_charging_callback if so.
     void check_max_energy_on_invalid_id();
 
+    /// \brief Start all metering timers referenced to \p timestamp
+    /// \param timestamp
+    void start_metering_timers(const DateTime& timestamp);
+
     AverageMeterValues aligned_data_updated;
     AverageMeterValues aligned_data_tx_end;
+
+    /// \brief Perform a check to see if there is an open transaction and resume it if there is.
+    void try_resume_transaction();
 
     /// \brief Component responsible for maintaining and persisting the operational status of CS, EVSEs, and connectors.
     std::shared_ptr<ComponentStateManagerInterface> component_state_manager;
@@ -170,9 +172,8 @@ public:
     Evse(const int32_t evse_id, const int32_t number_of_connectors, DeviceModel& device_model,
          std::shared_ptr<DatabaseHandler> database_handler,
          std::shared_ptr<ComponentStateManagerInterface> component_state_manager,
-         const std::function<void(const MeterValue& meter_value, const Transaction& transaction, const int32_t seq_no,
-                                  const std::optional<int32_t> reservation_id)>& transaction_meter_value_req,
-         const std::function<void()> pause_charging_callback);
+         const std::function<void(const MeterValue& meter_value)>& transaction_meter_value_req,
+         const std::function<void()>& pause_charging_callback);
 
     EVSE get_evse_info();
 
@@ -181,12 +182,11 @@ public:
     void open_transaction(const std::string& transaction_id, const int32_t connector_id, const DateTime& timestamp,
                           const MeterValue& meter_start, const std::optional<IdToken>& id_token,
                           const std::optional<IdToken>& group_id_token, const std::optional<int32_t> reservation_id,
-                          const std::chrono::seconds sampled_data_tx_updated_interval,
-                          const std::chrono::seconds sampled_data_tx_ended_interval,
-                          const std::chrono::seconds aligned_data_tx_updated_interval,
-                          const std::chrono::seconds aligned_data_tx_ended_interval);
+                          const ChargingStateEnum charging_state);
     void close_transaction(const DateTime& timestamp, const MeterValue& meter_stop, const ReasonEnum& reason);
 
+    /// \brief Start checking if the max energy on invalid id has exceeded.
+    ///        Will call pause_charging_callback when that happens.
     void start_checking_max_energy_on_invalid_id();
 
     bool has_active_transaction();
