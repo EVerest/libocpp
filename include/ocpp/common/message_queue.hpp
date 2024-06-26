@@ -378,6 +378,14 @@ public:
 
         this->send_callback = send_callback;
         this->in_flight = nullptr;
+    }
+
+    MessageQueue(const std::function<bool(json message)>& send_callback, const MessageQueueConfig& config,
+                 std::shared_ptr<common::DatabaseHandlerCommon> databaseHandler) :
+        MessageQueue(send_callback, config, {}, databaseHandler) {
+    }
+
+    void start() {
         this->worker_thread = std::thread([this]() {
             // TODO(kai): implement message timeout
             while (this->running) {
@@ -532,11 +540,6 @@ public:
             }
             EVLOG_info << "Message queue stopped processing messages";
         });
-    }
-
-    MessageQueue(const std::function<bool(json message)>& send_callback, const MessageQueueConfig& config,
-                 std::shared_ptr<common::DatabaseHandlerCommon> databaseHandler) :
-        MessageQueue(send_callback, config, {}, databaseHandler) {
     }
 
     /// \brief Resets next message to send. Can be used in situation when we dont want to reply to a CALL message
