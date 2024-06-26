@@ -1143,7 +1143,7 @@ This document contains the status of which OCPP 2.0.1 numbered requirements have
 | K01.FR.02 | :no_entry_sign: |  |
 | K01.FR.03 | :no_entry_sign: |  |
 | K01.FR.04 | :white_check_mark: |  |
-| K01.FR.05 |  |  |
+| K01.FR.05 | :white_check_mark: |  |
 | K01.FR.06 | :white_check_mark: |  |
 | K01.FR.07 |  |  |
 | K01.FR.08 | :no_entry_sign: |  |
@@ -1152,8 +1152,8 @@ This document contains the status of which OCPP 2.0.1 numbered requirements have
 | K01.FR.11 |  |  |
 | K01.FR.12 |  |  |
 | K01.FR.13 |  |  |
-| K01.FR.14 |  |  |
-| K01.FR.15 |  |  |
+| K01.FR.14 | :white_check_mark: |  |
+| K01.FR.15 | :white_check_mark: |  |
 | K01.FR.16 |  |  |
 | K01.FR.17 |  |  |
 | K01.FR.19 |  |  |
