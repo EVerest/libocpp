@@ -3379,20 +3379,34 @@ void ChargePoint::handle_get_monitoring_report_req(Call<GetMonitoringReportReque
         return;
     }
 
+    auto criteria = msg.monitoringCriteria.value_or(std::vector<MonitoringCriterionEnum>());
+    bool criteria_valid = true;
+
+    for (const auto& criterion : criteria) {
+        if (criterion != MonitoringCriterionEnum::DeltaMonitoring &&
+            criterion != MonitoringCriterionEnum::PeriodicMonitoring &&
+            criterion != MonitoringCriterionEnum::ThresholdMonitoring) {
+            // Test case TC_N_04_CS
+            criteria_valid = false;
+            response.status = GenericDeviceModelStatusEnum::NotSupported;
+        }
+    }
+
     std::vector<MonitoringData> data{};
 
-    try {
-        data = this->device_model->get_monitors(msg.monitoringCriteria.value_or(std::vector<MonitoringCriterionEnum>()),
-                                                component_variables);
+    if (criteria_valid) {
+        try {
+            data = this->device_model->get_monitors(criteria, component_variables);
 
-        if (!data.empty()) {
-            response.status = GenericDeviceModelStatusEnum::Accepted;
-        } else {
-            response.status = GenericDeviceModelStatusEnum::EmptyResultSet;
+            if (!data.empty()) {
+                response.status = GenericDeviceModelStatusEnum::Accepted;
+            } else {
+                response.status = GenericDeviceModelStatusEnum::EmptyResultSet;
+            }
+        } catch (const DeviceModelStorageError& e) {
+            EVLOG_error << "Get variable monitoring failed:" << e.what();
+            response.status = GenericDeviceModelStatusEnum::Rejected;
         }
-    } catch (const DeviceModelStorageError& e) {
-        EVLOG_error << "Get variable monitoring failed:" << e.what();
-        response.status = GenericDeviceModelStatusEnum::Rejected;
     }
 
     ocpp::CallResult<GetMonitoringReportResponse> call_result(response, call.uniqueId);
