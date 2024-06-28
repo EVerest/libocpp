@@ -190,12 +190,12 @@ TEST_F(InitDeviceModelDbTest, init_db) {
                                         "VARIABLE_MONITORING"},
                                        false));
 
-    InitDeviceModelDb db = InitDeviceModelDb(DATABASE_PATH, MIGRATION_FILES_PATH);
+    InitDeviceModelDb db(DATABASE_PATH, MIGRATION_FILES_PATH);
 
     // Database should not exist yet. But since it does a filesystem check and we have an in memory database, we
     // explicitly set the variable here.
     db.database_exists = false;
-    EXPECT_TRUE(db.initialize_database(SCHEMAS_PATH, true));
+    EXPECT_TRUE(db.initialize_database(std::filesystem::path(SCHEMAS_PATH), true));
 
     // Tables should have been created now.
     EXPECT_TRUE(check_all_tables_exist({"COMPONENT", "VARIABLE", "DATATYPE", "MONITOR", "MUTABILITY", "SEVERITY",

@@ -175,11 +175,11 @@ protected:
         // Defaults
         const auto& charging_rate_unit_cv = ControllerComponentVariables::ChargingScheduleChargingRateUnit;
         device_model->set_value(charging_rate_unit_cv.component, charging_rate_unit_cv.variable.value(),
-                                AttributeEnum::Actual, "A,W", true);
+                                AttributeEnum::Actual, "A,W", "test", true);
 
         const auto& ac_phase_switching_cv = ControllerComponentVariables::ACPhaseSwitchingSupported;
         device_model->set_value(ac_phase_switching_cv.component, ac_phase_switching_cv.variable.value(),
-                                AttributeEnum::Actual, ac_phase_switching_supported.value_or(""), true);
+                                AttributeEnum::Actual, ac_phase_switching_supported.value_or(""), "test", true);
 
         return device_model;
     }
@@ -344,7 +344,7 @@ TEST_F(ChargepointTestFixtureV201,
        K01FR26_IfChargingRateUnitIsNotInChargingScheduleChargingRateUnits_ThenProfileIsInvalid) {
     const auto& charging_rate_unit_cv = ControllerComponentVariables::ChargingScheduleChargingRateUnit;
     device_model->set_value(charging_rate_unit_cv.component, charging_rate_unit_cv.variable.value(),
-                            AttributeEnum::Actual, "W", true);
+                            AttributeEnum::Actual, "W", "test", true);
 
     auto periods = create_charging_schedule_periods(0, 1, 1);
     auto profile = create_charging_profile(
@@ -664,7 +664,7 @@ TEST_F(ChargepointTestFixtureV201, K01FR44_IfPhaseToUseProvidedForDCEVSE_ThenPro
 TEST_F(ChargepointTestFixtureV201, K01FR44_IfNumberPhasesProvidedForDCChargingStation_ThenProfileIsInvalid) {
     device_model->set_value(ControllerComponentVariables::ChargingStationSupplyPhases.component,
                             ControllerComponentVariables::ChargingStationSupplyPhases.variable.value(),
-                            AttributeEnum::Actual, std::to_string(0), true);
+                            AttributeEnum::Actual, std::to_string(0), "test", true);
 
     auto periods = create_charging_schedule_periods(0, 1);
     auto profile = create_charging_profile(
@@ -679,7 +679,7 @@ TEST_F(ChargepointTestFixtureV201, K01FR44_IfNumberPhasesProvidedForDCChargingSt
 TEST_F(ChargepointTestFixtureV201, K01FR44_IfPhaseToUseProvidedForDCChargingStation_ThenProfileIsInvalid) {
     device_model->set_value(ControllerComponentVariables::ChargingStationSupplyPhases.component,
                             ControllerComponentVariables::ChargingStationSupplyPhases.variable.value(),
-                            AttributeEnum::Actual, std::to_string(0), true);
+                            AttributeEnum::Actual, std::to_string(0), "test", true);
 
     auto periods = create_charging_schedule_periods(0, 1, 1);
     auto profile = create_charging_profile(
@@ -709,7 +709,7 @@ TEST_F(ChargepointTestFixtureV201,
        K01FR45_IfNumberPhasesGreaterThanMaxNumberPhasesForACChargingStation_ThenProfileIsInvalid) {
     device_model->set_value(ControllerComponentVariables::ChargingStationSupplyPhases.component,
                             ControllerComponentVariables::ChargingStationSupplyPhases.variable.value(),
-                            AttributeEnum::Actual, std::to_string(1), true);
+                            AttributeEnum::Actual, std::to_string(1), "test", true);
 
     auto periods = create_charging_schedule_periods(0, 4);
     auto profile = create_charging_profile(
@@ -741,7 +741,7 @@ TEST_F(ChargepointTestFixtureV201, K01FR49_IfNumberPhasesMissingForACEVSE_ThenSe
 TEST_F(ChargepointTestFixtureV201, K01FR49_IfNumberPhasesMissingForACChargingStation_ThenSetNumberPhasesToThree) {
     device_model->set_value(ControllerComponentVariables::ChargingStationSupplyPhases.component,
                             ControllerComponentVariables::ChargingStationSupplyPhases.variable.value(),
-                            AttributeEnum::Actual, std::to_string(3), true);
+                            AttributeEnum::Actual, std::to_string(3), "test", true);
 
     auto periods = create_charging_schedule_periods(0);
     auto profile = create_charging_profile(

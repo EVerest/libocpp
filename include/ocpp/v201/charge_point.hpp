@@ -529,7 +529,7 @@ private:
     /// \return Map containing the SetVariableData as a key and the  SetVariableResult as a value for each requested
     /// change
     std::map<SetVariableData, SetVariableResult>
-    set_variables_internal(const std::vector<SetVariableData>& set_variable_data_vector, const std::string &source,
+    set_variables_internal(const std::vector<SetVariableData>& set_variable_data_vector, const std::string& source,
                            const bool allow_read_only);
 
     MeterValue get_latest_meter_value_filtered(const MeterValue& meter_value, ReadingContextEnum context,
@@ -877,7 +877,7 @@ public:
     std::vector<GetVariableResult> get_variables(const std::vector<GetVariableData>& get_variable_data_vector) override;
 
     std::map<SetVariableData, SetVariableResult>
-    set_variables(const std::vector<SetVariableData>& set_variable_data_vector, const std::string &source) override;
+    set_variables(const std::vector<SetVariableData>& set_variable_data_vector, const std::string& source) override;
 
     /// \brief Requests a value of a VariableAttribute specified by combination of \p component_id and \p variable_id
     /// from the device model

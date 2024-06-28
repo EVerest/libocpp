@@ -5,6 +5,7 @@
 #include <ocpp/v201/charge_point.hpp>
 #include <ocpp/v201/ctrlr_component_variables.hpp>
 #include <ocpp/v201/device_model_storage_sqlite.hpp>
+#include <ocpp/v201/init_device_model_db.hpp>
 #include <ocpp/v201/messages/FirmwareStatusNotification.hpp>
 #include <ocpp/v201/messages/LogStatusNotification.hpp>
 #include <ocpp/v201/notify_report_requests_splitter.hpp>
@@ -3211,10 +3212,10 @@ void ChargePoint::handle_set_monitoring_base_req(Call<SetMonitoringBaseRequest> 
     SetMonitoringBaseResponse response;
     const auto& msg = call.msg;
 
-    auto result = this->device_model->set_value(ControllerComponentVariables::ActiveMonitoringBase.component,
-                                                ControllerComponentVariables::ActiveMonitoringBase.variable.value(),
-                                                AttributeEnum::Actual,
-                                                conversions::monitoring_base_enum_to_string(msg.monitoringBase), true);
+    auto result = this->device_model->set_value(
+        ControllerComponentVariables::ActiveMonitoringBase.component,
+        ControllerComponentVariables::ActiveMonitoringBase.variable.value(), AttributeEnum::Actual,
+        conversions::monitoring_base_enum_to_string(msg.monitoringBase), VARIABLE_ATTRIBUTE_VALUE_SOURCE_CSMS, true);
 
     if (result != SetVariableStatusEnum::Accepted) {
         EVLOG_warning << "Could not persist in device model new monitoring base: "
@@ -3245,10 +3246,10 @@ void ChargePoint::handle_set_monitoring_level_req(Call<SetMonitoringLevelRequest
     if (msg.severity < MontoringLevelSeverity::MIN || msg.severity > MontoringLevelSeverity::MAX) {
         response.status = GenericStatusEnum::Rejected;
     } else {
-        auto result =
-            this->device_model->set_value(ControllerComponentVariables::ActiveMonitoringLevel.component,
-                                          ControllerComponentVariables::ActiveMonitoringLevel.variable.value(),
-                                          AttributeEnum::Actual, std::to_string(msg.severity), true);
+        auto result = this->device_model->set_value(
+            ControllerComponentVariables::ActiveMonitoringLevel.component,
+            ControllerComponentVariables::ActiveMonitoringLevel.variable.value(), AttributeEnum::Actual,
+            std::to_string(msg.severity), VARIABLE_ATTRIBUTE_VALUE_SOURCE_CSMS, true);
 
         if (result != SetVariableStatusEnum::Accepted) {
             EVLOG_warning << "Could not persist in device model new monitoring level: " << msg.severity;

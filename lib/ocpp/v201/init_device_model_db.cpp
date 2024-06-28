@@ -218,7 +218,7 @@ bool InitDeviceModelDb::insert_components(const std::map<ComponentKey, std::vect
 }
 
 bool InitDeviceModelDb::insert_component(const ComponentKey& component_key,
-                                         const std::vector<DeviceModelVariable> component_variables) {
+                                         const std::vector<DeviceModelVariable>& component_variables) {
     EVLOG_debug << "Inserting component " << component_key.name;
 
     static const std::string statement = "INSERT OR REPLACE INTO COMPONENT (NAME, INSTANCE, EVSE_ID, CONNECTOR_ID) "
@@ -434,7 +434,7 @@ void InitDeviceModelDb::insert_variable(const DeviceModelVariable& variable, con
     insert_attributes(variable.attributes, variable_id);
 }
 
-void InitDeviceModelDb::update_variable(const DeviceModelVariable& variable, const DeviceModelVariable db_variable,
+void InitDeviceModelDb::update_variable(const DeviceModelVariable& variable, const DeviceModelVariable& db_variable,
                                         const uint64_t component_id) {
     if (!db_variable.db_id.has_value()) {
         EVLOG_error << "Can not update variable " << variable.name << ": database id unknown";
@@ -1231,9 +1231,9 @@ static std::string get_string_value_from_json(const json& value) {
         }
         return "false";
     } else if (value.is_array() || value.is_object()) {
-        return "";
         EVLOG_warning << "String value " << value.dump()
                       << " from config is an object or array, but config values should be from a primitive type.";
+        return "";
     } else {
         return value.dump();
     }

@@ -187,7 +187,7 @@ private: // Functions
     /// \return True on success.
     ///
     bool insert_component(const ComponentKey& component_key,
-                          const std::vector<DeviceModelVariable> component_variables);
+                          const std::vector<DeviceModelVariable>& component_variables);
 
     ///
     /// \brief Read component schemas from given files.
@@ -238,7 +238,7 @@ private: // Functions
     /// \param db_variable      The variable currently in the database (that needs updating).
     /// \param component_id     The component id the variable belongs to.
     ///
-    void update_variable(const DeviceModelVariable& variable, const DeviceModelVariable db_variable,
+    void update_variable(const DeviceModelVariable& variable, const DeviceModelVariable& db_variable,
                          const uint64_t component_id);
 
     ///
