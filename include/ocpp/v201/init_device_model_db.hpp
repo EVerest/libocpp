@@ -27,6 +27,9 @@
 /// The config values are updated every startup as well, as long as the initial / default values are set in the
 /// database. If the value is set by the user or csms or some other process, the value will not be overwritten.
 ///
+/// Almost every function throws exceptions, because this class should be used only when initializing the chargepoint
+/// and the database must be correct before starting the application.
+///
 
 #pragma once
 
@@ -107,6 +110,25 @@ void from_json(const json& j, ComponentKey& c);
 /// The to_json is not implemented for this struct as we don't need to write the schema to a json file.
 void from_json(const json& j, DeviceModelVariable& c);
 
+///
+/// \brief Error class to be able to throw a custom error within the class.
+///
+class InitDeviceModelDbError : public std::exception {
+public:
+    [[nodiscard]] const char* what() const noexcept override {
+        return this->reason.c_str();
+    }
+    explicit InitDeviceModelDbError(std::string msg) {
+        this->reason = std::move(msg);
+    }
+    explicit InitDeviceModelDbError(const char* msg) {
+        this->reason = std::string(msg);
+    }
+
+private:
+    std::string reason;
+};
+
 class InitDeviceModelDb : public common::DatabaseHandlerCommon {
 private: // Members
     /// \brief Database path of the device model database.
@@ -131,15 +153,24 @@ public:
     /// \brief Initialize the database schema.
     /// \param schemas_path         Path to the database schemas.
     /// \param delete_db_if_exists  Set to true to delete the database if it already exists.
-    /// \return True on successful initialization.
     ///
-    bool initialize_database(const std::filesystem::path& schemas_path, const bool delete_db_if_exists);
+    /// \throws InitDeviceModelDbError  - When database could not be initialized or
+    ///                                 - Foreign keys could not be turned on or
+    ///                                 - Something could not be added to, retrieved or removed from the database
+    /// \throws std::runtime_error      If something went wrong during migration
+    /// \throws DatabaseMigrationException  If something went wrong during migration
+    /// \throws DatabaseConnectionException If the database could not be opened
+    ///
+    ///
+    void initialize_database(const std::filesystem::path& schemas_path, const bool delete_db_if_exists);
 
     ///
     /// \brief Insert database configuration and default values.
     /// \param schemas_path Path to the database schemas.
     /// \param config_path  Path to the database config.
     /// \return True on success.
+    ///
+    /// \throws InitDeviceModelDbError  When config and default values could not be set
     ///
     bool insert_config_and_default_values(const std::filesystem::path& schemas_path,
                                           const std::filesystem::path& config_path);
@@ -152,9 +183,10 @@ private: // Functions
     ///
     /// \param delete_db_if_exists  True if the database should be removed if it already exists (to start with a clean
     ///                             database).
-    /// \return True if successfully initialized.
     ///
-    bool execute_init_sql(const bool delete_db_if_exists);
+    /// \throws InitDeviceModelDbError when the database could not be removed.
+    ///
+    void execute_init_sql(const bool delete_db_if_exists);
 
     ///
     /// \brief Get all paths to the component schemas (*.json) in the given directory.
@@ -175,18 +207,18 @@ private: // Functions
     /// \brief Insert components, including variables, characteristics and attributes, to the database.
     /// \param components               The map with all components, variables, characteristics and attributes.
     /// \param existing_components      Vector with components that already exist in the database (Connector and EVSE).
-    /// \return True on success.
     ///
-    bool insert_components(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& components,
+    /// \throw InitDeviceModelDbError   When component could not be inserted
+    ///
+    void insert_components(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& components,
                            const std::vector<ComponentKey>& existing_components);
 
     ///
     /// \brief Insert a single component with its variables, characteristics and attributes.
     /// \param component_key        The component.
     /// \param component_variables  The variables with its characteristics and attributes.
-    /// \return True on success.
     ///
-    bool insert_component(const ComponentKey& component_key,
+    void insert_component(const ComponentKey& component_key,
                           const std::vector<DeviceModelVariable>& component_variables);
 
     ///
@@ -210,9 +242,8 @@ private: // Functions
     /// \brief Insert variable characteristics
     /// \param characteristics  The characteristics.
     /// \param variable_id      The variable id in the database.
-    /// \return The row id of the newly inserted characteristic.
-    /// \throws common::RequiredEntryNotFoundException if dataType is not found / not valid.
-    /// \throws common::QueryExecutionException if row could not be added to db.
+    ///
+    /// \throws InitDeviceModelDbError if row could not be added to db.
     ///
     void insert_variable_characteristics(const VariableCharacteristics& characteristics, const int64_t& variable_id);
 
@@ -222,6 +253,8 @@ private: // Functions
     /// \param characteristics_id   The characteristics id in the database.
     /// \param variable_id          The variable id in the database.
     ///
+    /// \throw InitDeviceModelDbError if variable characteristics could not be updated.
+    ///
     void update_variable_characteristics(const VariableCharacteristics& characteristics,
                                          const int64_t& characteristics_id, const int64_t& variable_id);
 
@@ -229,6 +262,8 @@ private: // Functions
     /// \brief Insert a variable in the database.
     /// \param variable         The variable to insert
     /// \param component_id     The component id the variable belongs to.
+    ///
+    /// \throws InitDeviceModelDbError if variable could not be inserted
     ///
     void insert_variable(const DeviceModelVariable& variable, const uint64_t& component_id);
 
@@ -238,12 +273,16 @@ private: // Functions
     /// \param db_variable      The variable currently in the database (that needs updating).
     /// \param component_id     The component id the variable belongs to.
     ///
+    /// \throws InitDeviceModelDbError If variable could not be updated
+    ///
     void update_variable(const DeviceModelVariable& variable, const DeviceModelVariable& db_variable,
                          const uint64_t component_id);
 
     ///
     /// \brief Delete a variable from the database.
     /// \param variable The variable to delete.
+    ///
+    /// \throws InitDeviceModelDbError If variable could not be deleted
     ///
     void delete_variable(const DeviceModelVariable& variable);
 
@@ -252,12 +291,16 @@ private: // Functions
     /// \param attribute    The attribute to insert.
     /// \param variable_id  The variable id the attribute belongs to.
     ///
+    /// \throws InitDeviceModelDbError If attribute could not be inserted
+    ///
     void insert_attribute(const VariableAttribute& attribute, const uint64_t& variable_id);
 
     ///
     /// \brief Insert variable attributes into the database.
     /// \param attributes   The attributes to insert.
     /// \param variable_id  The variable id the attributes belong to.
+    ///
+    /// \throws InitDeviceModelDbError If one of the attributes could not be inserted or updated
     ///
     void insert_attributes(const std::vector<DbVariableAttribute>& attributes, const uint64_t& variable_id);
 
@@ -271,6 +314,8 @@ private: // Functions
     /// \param db_attributes    The attributes currently in the database that needs updating.
     /// \param variable_id      The variable id the attributes belong to.
     ///
+    /// \throws InitDeviceModelDbError If one of the attributes could not be updated
+    ///
     void update_attributes(const std::vector<DbVariableAttribute>& new_attributes,
                            const std::vector<DbVariableAttribute>& db_attributes, const uint64_t& variable_id);
 
@@ -279,11 +324,15 @@ private: // Functions
     /// \param attribute        The attribute with the new values
     /// \param db_attribute     The attribute currently in the database, that needs updating.
     ///
+    /// \throws InitDeviceModelDbError If the attribute could not be updated
+    ///
     void update_attribute(const VariableAttribute& attribute, const DbVariableAttribute& db_attribute);
 
     ///
     /// \brief Delete an attribute from the database.
     /// \param attribute    The attribute to remove.
+    ///
+    /// \throws InitDeviceModelDbError If attribute could not be removed from the database
     ///
     void delete_attribute(const DbVariableAttribute& attribute);
 
@@ -309,12 +358,16 @@ private: // Functions
     /// \param variable_attribute_key       Variable attribute including value to insert.
     /// \return true on success
     ///
+    /// \throws InitDeviceModelDbError  When inserting failed.
+    ///
     bool insert_variable_attribute_value(const ComponentKey& component_key,
                                          const VariableAttributeKey& variable_attribute_key);
 
     ///
     /// \brief Get all components from the db that are either EVSE or Connector.
     /// \return EVSE and Connector components.
+    ///
+    /// \throws InitDeviceModelDbError When getting components from db failed.
     ///
     std::vector<ComponentKey> get_all_connector_and_evse_components_fom_db();
 
@@ -341,6 +394,8 @@ private: // Functions
     /// \param component_schemas The component schemas.
     /// \param db_components     The components in the database.
     ///
+    /// \throws InitDeviceModelDbError When one of the components could not be removed from the db.
+    ///
     void remove_not_existing_components_from_db(
         const std::map<ComponentKey, std::vector<DeviceModelVariable>>& component_schemas,
         const std::vector<ComponentKey>& db_components);
@@ -349,6 +404,8 @@ private: // Functions
     /// \brief Remove a component from the database.
     /// \param component    The component to remove.
     /// \return True on success.
+    ///
+    /// \throws InitDeviceModelDbError When component could not be removed from the db.
     ///
     bool remove_component_from_db(const ComponentKey& component);
 
@@ -369,12 +426,16 @@ private: // Functions
     /// \param db_component The component to get the variables from.
     /// \return The variables that belong to the given component.
     ///
+    /// \throw InitDeviceModelDbError When variables could not be retrieved from the database.
+    ///
     std::vector<DeviceModelVariable> get_variables_from_component_from_db(const ComponentKey& db_component);
 
     ///
     /// \brief Get variable attributes belonging to a specific variable from the database.
     /// \param variable_id  The id of the variable to get the attributes from.
     /// \return The attributes belonging to the given variable.
+    ///
+    /// \throw InitDeviceModelDbError   When variable attributes could not be retrieved from the database.
     ///
     std::vector<DbVariableAttribute> get_variable_attributes_from_db(const uint64_t& variable_id);
 
@@ -383,6 +444,8 @@ protected: // Functions
     ///
     /// \brief Init database: set foreign keys on (so when a component is removed or updated, all variables,
     ///        characteristics and attributes belonging to that component are also removed or updated, for example).
+    ///
+    /// \throw InitDeviceModelDbError When foreign key pragma could not be set to 'ON'.
     ///
     virtual void init_sql() override;
 };

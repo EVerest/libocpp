@@ -195,7 +195,7 @@ TEST_F(InitDeviceModelDbTest, init_db) {
     // Database should not exist yet. But since it does a filesystem check and we have an in memory database, we
     // explicitly set the variable here.
     db.database_exists = false;
-    EXPECT_TRUE(db.initialize_database(std::filesystem::path(SCHEMAS_PATH), true));
+    EXPECT_NO_THROW(db.initialize_database(std::filesystem::path(SCHEMAS_PATH), true));
 
     // Tables should have been created now.
     EXPECT_TRUE(check_all_tables_exist({"COMPONENT", "VARIABLE", "DATATYPE", "MONITOR", "MUTABILITY", "SEVERITY",
@@ -260,7 +260,7 @@ TEST_F(InitDeviceModelDbTest, init_db) {
     // This time, the database does exist (again: std::filesystem::exists, which is automatically used, will not work
     // here because we use an in memory database, so we set the member ourselves).
     db2.database_exists = true;
-    EXPECT_TRUE(db2.initialize_database(SCHEMAS_PATH_CHANGED, false));
+    EXPECT_NO_THROW(db2.initialize_database(SCHEMAS_PATH_CHANGED, false));
 
     // So now some records should have been changed !
     EXPECT_TRUE(attribute_exists("EVSE", std::nullopt, 1, std::nullopt, "AllowReset", std::nullopt,
@@ -367,7 +367,7 @@ TEST_F(InitDeviceModelDbTest, insert_values) {
     // explicitly set the variable here.
     db.database_exists = false;
     // First create the database.
-    EXPECT_TRUE(db.initialize_database(SCHEMAS_PATH, true));
+    EXPECT_NO_THROW(db.initialize_database(SCHEMAS_PATH, true));
     // Then insert the config and default values.
     EXPECT_TRUE(db.insert_config_and_default_values(SCHEMAS_PATH, CONFIG_PATH));
 
@@ -744,7 +744,6 @@ bool InitDeviceModelDbTest::attribute_has_value(const std::string& component_nam
     statement->bind_int("@type_id", static_cast<int>(type));
 
     int step = statement->step();
-    EVLOG_debug << "Step: " << step;
 
     if (step == SQLITE_ERROR) {
         return false;
@@ -819,5 +818,7 @@ void InitDeviceModelDbTest::set_attribute_source(const std::string& component_na
                     << ") attribute " << static_cast<int>(type) << ": " << this->database->get_error_message();
     }
 }
+
+// TODO tests with non existing paths
 
 } // namespace ocpp::v201
