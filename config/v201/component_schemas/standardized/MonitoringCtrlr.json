@@ -17,6 +17,7 @@
         }
       ],
       "description": "Whether monitoring is enabled.",
+      "default": true,
       "type": "boolean"
     },
     "MonitoringCtrlrAvailable": {
@@ -116,7 +117,7 @@
     "ActiveMonitoringBase": {
       "variable_name": "ActiveMonitoringBase",
       "characteristics": {
-        "valuesList": "All,FactoryDefault,HardwiredOnly",
+        "valuesList": "All,FactoryDefault,HardWiredOnly",
         "supportsMonitoring": true,
         "dataType": "OptionList"
       },
