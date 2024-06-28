@@ -4,6 +4,7 @@
 #pragma once
 
 #include <future>
+#include <memory>
 #include <set>
 
 #include <ocpp/common/charging_station_base.hpp>
@@ -26,6 +27,7 @@
 #include <ocpp/v201/messages/CertificateSigned.hpp>
 #include <ocpp/v201/messages/ChangeAvailability.hpp>
 #include <ocpp/v201/messages/ClearCache.hpp>
+#include <ocpp/v201/messages/ClearVariableMonitoring.hpp>
 #include <ocpp/v201/messages/CustomerInformation.hpp>
 #include <ocpp/v201/messages/DataTransfer.hpp>
 #include <ocpp/v201/messages/DeleteCertificate.hpp>
@@ -33,6 +35,7 @@
 #include <ocpp/v201/messages/GetInstalledCertificateIds.hpp>
 #include <ocpp/v201/messages/GetLocalListVersion.hpp>
 #include <ocpp/v201/messages/GetLog.hpp>
+#include <ocpp/v201/messages/GetMonitoringReport.hpp>
 #include <ocpp/v201/messages/GetReport.hpp>
 #include <ocpp/v201/messages/GetTransactionStatus.hpp>
 #include <ocpp/v201/messages/GetVariables.hpp>
@@ -41,13 +44,17 @@
 #include <ocpp/v201/messages/MeterValues.hpp>
 #include <ocpp/v201/messages/NotifyCustomerInformation.hpp>
 #include <ocpp/v201/messages/NotifyEvent.hpp>
+#include <ocpp/v201/messages/NotifyMonitoringReport.hpp>
 #include <ocpp/v201/messages/NotifyReport.hpp>
 #include <ocpp/v201/messages/RequestStartTransaction.hpp>
 #include <ocpp/v201/messages/RequestStopTransaction.hpp>
 #include <ocpp/v201/messages/Reset.hpp>
 #include <ocpp/v201/messages/SecurityEventNotification.hpp>
 #include <ocpp/v201/messages/SendLocalList.hpp>
+#include <ocpp/v201/messages/SetMonitoringBase.hpp>
+#include <ocpp/v201/messages/SetMonitoringLevel.hpp>
 #include <ocpp/v201/messages/SetNetworkProfile.hpp>
+#include <ocpp/v201/messages/SetVariableMonitoring.hpp>
 #include <ocpp/v201/messages/SetVariables.hpp>
 #include <ocpp/v201/messages/SignCertificate.hpp>
 #include <ocpp/v201/messages/StatusNotification.hpp>
@@ -393,7 +400,7 @@ private:
 
     // utility
     std::unique_ptr<MessageQueue<v201::MessageType>> message_queue;
-    std::unique_ptr<DeviceModel> device_model;
+    std::shared_ptr<DeviceModel> device_model;
     std::shared_ptr<DatabaseHandler> database_handler;
 
     std::map<int32_t, AvailabilityChange> scheduled_change_availability_requests;
@@ -411,6 +418,12 @@ private:
     std::chrono::time_point<std::chrono::steady_clock> heartbeat_request_time;
 
     Everest::SteadyTimer certificate_signed_timer;
+
+    // threads and synchronization
+    bool auth_cache_cleanup_required;
+    std::condition_variable auth_cache_cleanup_cv;
+    std::mutex auth_cache_cleanup_mutex;
+    std::thread auth_cache_cleanup_thread;
 
     // states
     RegistrationStatusEnum registration_status;
@@ -475,6 +488,9 @@ private:
                                       const ConnectorStatusEnum status);
     void update_dm_evse_power(const int32_t evse_id, const MeterValue& meter_value);
 
+    void trigger_authorization_cache_cleanup();
+    void cache_cleanup_handler();
+
     /// \brief Gets the configured NetworkConnectionProfile based on the given \p configuration_slot . The
     /// central system uri ofthe connection options will not contain ws:// or wss:// because this method removes it if
     /// present \param network_configuration_priority \return
@@ -482,11 +498,12 @@ private:
     /// \brief Moves websocket network_configuration_priority to next profile
     void next_network_configuration_priority();
 
-    /// @brief Removes all network connection profiles below the actual security profile and stores the new list in the
+    /// \brief Removes all network connection profiles below the actual security profile and stores the new list in the
     /// device model
     void remove_network_connection_profiles_below_actual_security_profile();
 
     void handle_message(const EnhancedMessage<v201::MessageType>& message);
+
     void message_callback(const std::string& message);
     void update_aligned_data_interval();
 
@@ -526,10 +543,6 @@ private:
 
     /// \brief Restores all connectors to their persisted state
     void restore_all_connector_states();
-
-    /// \brief Sets the cache lifetime value in \param id_token_info with configured AuthCacheLifeTime
-    /// if it was not already set
-    void update_id_token_cache_lifetime(IdTokenInfo& id_token_info);
 
     ///\brief Calculate and update the authorization cache size in the device model
     ///
@@ -615,10 +628,11 @@ private:
     // Functional Block A: Security
     void security_event_notification_req(const CiString<50>& event_type, const std::optional<CiString<255>>& tech_info,
                                          const bool triggered_internally, const bool critical);
-    void sign_certificate_req(const ocpp::CertificateSigningUseEnum& certificate_signing_use);
+    void sign_certificate_req(const ocpp::CertificateSigningUseEnum& certificate_signing_use,
+                              const bool initiated_by_trigger_message = false);
 
     // Functional Block B: Provisioning
-    void boot_notification_req(const BootReasonEnum& reason);
+    void boot_notification_req(const BootReasonEnum& reason, const bool initiated_by_trigger_message = false);
     void notify_report_req(const int request_id, const std::vector<ReportData>& report_data);
 
     // Functional Block C: Authorization
@@ -626,8 +640,9 @@ private:
                                     const std::optional<std::vector<OCSPRequestData>>& ocsp_request_data);
 
     // Functional Block G: Availability
-    void status_notification_req(const int32_t evse_id, const int32_t connector_id, const ConnectorStatusEnum status);
-    void heartbeat_req();
+    void status_notification_req(const int32_t evse_id, const int32_t connector_id, const ConnectorStatusEnum status,
+                                 const bool initiated_by_trigger_message = false);
+    void heartbeat_req(const bool initiated_by_trigger_message = false);
 
     // Functional Block E: Transactions
     void transaction_event_req(const TransactionEventEnum& event_type, const DateTime& timestamp,
@@ -638,14 +653,17 @@ private:
                                const std::optional<ocpp::v201::IdToken>& id_token,
                                const std::optional<std::vector<ocpp::v201::MeterValue>>& meter_value,
                                const std::optional<int32_t>& number_of_phases_used, const bool offline,
-                               const std::optional<int32_t>& reservation_id);
+                               const std::optional<int32_t>& reservation_id,
+                               const bool initiated_by_trigger_message = false);
 
     // Functional Block J: MeterValues
-    void meter_values_req(const int32_t evse_id, const std::vector<MeterValue>& meter_values);
+    void meter_values_req(const int32_t evse_id, const std::vector<MeterValue>& meter_values,
+                          const bool initiated_by_trigger_message = false);
 
     // Functional Block N: Diagnostics
     void notify_event_req(const std::vector<EventData>& events);
     void notify_customer_information_req(const std::string& data, const int32_t request_id);
+    void notify_monitoring_report_req(const int request_id, const std::vector<MonitoringData>& montoring_data);
 
     /* OCPP message handlers */
 
@@ -695,21 +713,22 @@ private:
     void handle_get_log_req(Call<GetLogRequest> call);
     void handle_customer_information_req(Call<CustomerInformationRequest> call);
 
+    void handle_set_monitoring_base_req(Call<SetMonitoringBaseRequest> call);
+    void handle_set_monitoring_level_req(Call<SetMonitoringLevelRequest> call);
+    void handle_set_variable_monitoring_req(const EnhancedMessage<v201::MessageType>& message);
+    void handle_get_monitoring_report_req(Call<GetMonitoringReportRequest> call);
+    void handle_clear_variable_monitoring_req(Call<ClearVariableMonitoringRequest> call);
+
     // Functional Block P: DataTransfer
     void handle_data_transfer_req(Call<DataTransferRequest> call);
 
     // general message handling
-    template <class T> bool send(ocpp::Call<T> call) {
-        this->message_queue->push(call);
-        return true;
-    }
-    template <class T> std::future<EnhancedMessage<v201::MessageType>> send_async(ocpp::Call<T> call) {
-        return this->message_queue->push_async(call);
-    }
-    template <class T> bool send(ocpp::CallResult<T> call_result) {
-        this->message_queue->push(call_result);
-        return true;
-    }
+    template <class T> bool send(ocpp::Call<T> call, const bool initiated_by_trigger_message = false);
+
+    template <class T> std::future<EnhancedMessage<v201::MessageType>> send_async(ocpp::Call<T> call);
+
+    template <class T> bool send(ocpp::CallResult<T> call_result);
+
     // Generates async sending callbacks
     template <class RequestType, class ResponseType>
     std::function<ResponseType(RequestType)> send_callback(MessageType expected_response_message_type) {

@@ -8,46 +8,10 @@
 #include <vector>
 
 #include <ocpp/common/database/database_connection.hpp>
+#include <ocpp/common/database/database_exceptions.hpp>
 #include <ocpp/common/types.hpp>
 
 namespace ocpp::common {
-
-/// \brief Base class for database-related exceptions
-class DatabaseException : public std::exception {
-public:
-    explicit DatabaseException(const std::string& message) : msg(message) {
-    }
-    virtual ~DatabaseException() noexcept {
-    }
-
-    virtual const char* what() const noexcept {
-        return msg.c_str();
-    }
-
-protected:
-    std::string msg;
-};
-
-/// \brief Exception for database connection errors
-class DatabaseConnectionException : public DatabaseException {
-public:
-    explicit DatabaseConnectionException(const std::string& message) : DatabaseException(message) {
-    }
-};
-
-/// \brief Exception that is used if expected table entries are not found
-class RequiredEntryNotFoundException : public DatabaseException {
-public:
-    explicit RequiredEntryNotFoundException(const std::string& message) : DatabaseException(message) {
-    }
-};
-
-/// \brief Exception for errors during database migration
-class DatabaseMigrationException : public DatabaseException {
-public:
-    explicit DatabaseMigrationException(const std::string& message) : DatabaseException(message) {
-    }
-};
 
 struct DBTransactionMessage {
     json json_message;
@@ -84,21 +48,28 @@ public:
     /// \brief Closes the database connection.
     void close_connection();
 
-    /// \brief Get transaction messages from transaction messages queue table.
+    /// \brief Get messages from messages queue table specified by \p queue_type
+    /// \param queue_type , defaults to QueueType::Transaction
     /// \return The transaction messages.
-    virtual std::vector<DBTransactionMessage> get_transaction_messages();
+    virtual std::vector<DBTransactionMessage>
+    get_message_queue_messages(const QueueType queue_type = QueueType::Transaction);
 
-    /// \brief Insert a new transaction message that needs to be sent to the CSMS.
-    /// \param transaction_message  The message to be stored.
-    virtual void insert_transaction_message(const DBTransactionMessage& transaction_message);
+    /// \brief Insert a new message into messages queue table specified by \p queue_type
+    /// \param message  The message to be stored.
+    /// \param queue_type , defaults to QueueType::Transaction
+    virtual void insert_message_queue_message(const DBTransactionMessage& message,
+                                              const QueueType queue_type = QueueType::Transaction);
 
-    /// \brief Remove a transaction message from the database.
-    /// \param unique_id    The unique id of the transaction message.
+    /// \brief Remove a message from the messages queue table specified by \p queue_type
+    /// \param unique_id    The unique id of the transaction message
+    /// \param queue_type , defaults to QueueType::Transaction
     /// \return True on success.
-    virtual void remove_transaction_message(const std::string& unique_id);
+    virtual void remove_message_queue_message(const std::string& unique_id,
+                                              const QueueType queue_type = QueueType::Transaction);
 
-    /// \brief Deletes all entries from TRANSACTION_QUEUE table
-    virtual void clear_transaction_queue();
+    /// \brief Deletes all entries from message queue table specified by \p queue_type
+    /// \param queue_type , defaults to QueueType::Transaction
+    virtual void clear_message_queue(const QueueType queue_type = QueueType::Transaction);
 };
 
 } // namespace ocpp::common

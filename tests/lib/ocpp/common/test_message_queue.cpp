@@ -108,7 +108,7 @@ template <> TestMessageType MessageQueue<TestMessageType>::string_to_messagetype
     return to_test_message_type(s);
 }
 
-template <> ControlMessage<TestMessageType>::ControlMessage(const json& message) {
+template <> ControlMessage<TestMessageType>::ControlMessage(const json& message, bool stall_until_accepted) {
     this->message = message.get<json::array_t>();
     EVLOG_info << this->message;
     this->messageType = to_test_message_type(this->message[2]);
@@ -120,17 +120,16 @@ std::ostream& operator<<(std::ostream& os, const TestMessageType& message_type) 
     return os;
 };
 
-template <> bool ControlMessage<TestMessageType>::isTransactionMessage() const {
-    return this->messageType == TestMessageType::TRANSACTIONAL ||
-           this->messageType == TestMessageType::TRANSACTIONAL_UPDATE;
+bool is_transaction_message(const TestMessageType message_type) {
+    return (message_type == TestMessageType::TRANSACTIONAL) || (message_type == TestMessageType::TRANSACTIONAL_UPDATE);
 }
 
-template <> bool ControlMessage<TestMessageType>::isTransactionUpdateMessage() const {
+template <> bool ControlMessage<TestMessageType>::is_transaction_update_message() const {
     return this->messageType == TestMessageType::TRANSACTIONAL_UPDATE;
 }
 
-template <> bool ControlMessage<TestMessageType>::isBootNotificationMessage() const {
-    return this->messageType == TestMessageType::BootNotification;
+bool is_boot_notification_message(const TestMessageType message_type) {
+    return message_type == TestMessageType::BootNotification;
 }
 
 /************************************************************************************************
@@ -145,38 +144,38 @@ protected:
 
 TEST_F(ControlMessageV16Test, test_is_transactional) {
 
-    EXPECT_TRUE(
-        (ControlMessage<v16::MessageType>{Call<v16::StartTransactionRequest>{v16::StartTransactionRequest{}, "0"}})
-            .isTransactionMessage());
-    EXPECT_TRUE(
-        (ControlMessage<v16::MessageType>{Call<v16::StopTransactionRequest>{v16::StopTransactionRequest{}, "0"}})
-            .isTransactionMessage());
-    EXPECT_TRUE((ControlMessage<v16::MessageType>{
-                     Call<v16::SecurityEventNotificationRequest>{v16::SecurityEventNotificationRequest{}, "0"}})
-                    .isTransactionMessage());
-    EXPECT_TRUE((ControlMessage<v16::MessageType>{Call<v16::MeterValuesRequest>{v16::MeterValuesRequest{}, "0"}})
-                    .isTransactionMessage());
+    EXPECT_TRUE(is_transaction_message(
+        ControlMessage<v16::MessageType>{Call<v16::StartTransactionRequest>{v16::StartTransactionRequest{}, "0"}}
+            .messageType));
+    EXPECT_TRUE(is_transaction_message(
+        ControlMessage<v16::MessageType>{Call<v16::StopTransactionRequest>{v16::StopTransactionRequest{}, "0"}}
+            .messageType));
+    EXPECT_TRUE(is_transaction_message(ControlMessage<v16::MessageType>{
+        Call<v16::SecurityEventNotificationRequest>{v16::SecurityEventNotificationRequest{}, "0"}}
+                                           .messageType));
+    EXPECT_TRUE(is_transaction_message(
+        ControlMessage<v16::MessageType>{Call<v16::MeterValuesRequest>{v16::MeterValuesRequest{}, "0"}}.messageType));
 
-    EXPECT_TRUE(!(ControlMessage<v16::MessageType>{Call<v16::AuthorizeRequest>{v16::AuthorizeRequest{}, "0"}})
-                     .isTransactionMessage());
+    EXPECT_TRUE(!is_transaction_message(
+        ControlMessage<v16::MessageType>{Call<v16::AuthorizeRequest>{v16::AuthorizeRequest{}, "0"}}.messageType));
 }
 
 TEST_F(ControlMessageV16Test, test_is_transactional_update) {
 
     EXPECT_TRUE(
         !(ControlMessage<v16::MessageType>{Call<v16::StartTransactionRequest>{v16::StartTransactionRequest{}, "0"}})
-             .isTransactionUpdateMessage());
+             .is_transaction_update_message());
     EXPECT_TRUE(
         !(ControlMessage<v16::MessageType>{Call<v16::StopTransactionRequest>{v16::StopTransactionRequest{}, "0"}})
-             .isTransactionUpdateMessage());
+             .is_transaction_update_message());
     EXPECT_TRUE(!(ControlMessage<v16::MessageType>{
                       Call<v16::SecurityEventNotificationRequest>{v16::SecurityEventNotificationRequest{}, "0"}})
-                     .isTransactionUpdateMessage());
+                     .is_transaction_update_message());
     EXPECT_TRUE((ControlMessage<v16::MessageType>{Call<v16::MeterValuesRequest>{v16::MeterValuesRequest{}, "0"}})
-                    .isTransactionUpdateMessage());
+                    .is_transaction_update_message());
 
     EXPECT_TRUE(!(ControlMessage<v16::MessageType>{Call<v16::AuthorizeRequest>{v16::AuthorizeRequest{}, "0"}})
-                     .isTransactionUpdateMessage());
+                     .is_transaction_update_message());
 }
 
 class ControlMessageV201Test : public ::testing::Test {
@@ -186,12 +185,12 @@ protected:
 
 TEST_F(ControlMessageV201Test, test_is_transactional) {
 
-    EXPECT_TRUE(
-        (ControlMessage<v201::MessageType>{Call<v201::TransactionEventRequest>{v201::TransactionEventRequest{}, "0"}})
-            .isTransactionMessage());
+    EXPECT_TRUE(is_transaction_message(
+        ControlMessage<v201::MessageType>{Call<v201::TransactionEventRequest>{v201::TransactionEventRequest{}, "0"}}
+            .messageType));
 
-    EXPECT_TRUE(!(ControlMessage<v201::MessageType>{Call<v201::AuthorizeRequest>{v201::AuthorizeRequest{}, "0"}})
-                     .isTransactionMessage());
+    EXPECT_TRUE(!is_transaction_message(
+        ControlMessage<v201::MessageType>{Call<v201::AuthorizeRequest>{v201::AuthorizeRequest{}, "0"}}.messageType));
 }
 
 TEST_F(ControlMessageV201Test, test_is_transactional_update) {
@@ -200,20 +199,20 @@ TEST_F(ControlMessageV201Test, test_is_transactional_update) {
     transaction_event_request.eventType = v201::TransactionEventEnum::Updated;
 
     EXPECT_TRUE((ControlMessage<v201::MessageType>{Call<v201::TransactionEventRequest>{transaction_event_request, "0"}})
-                    .isTransactionUpdateMessage());
+                    .is_transaction_update_message());
 
     transaction_event_request.eventType = v201::TransactionEventEnum::Started;
     EXPECT_TRUE(
         !(ControlMessage<v201::MessageType>{Call<v201::TransactionEventRequest>{transaction_event_request, "0"}})
-             .isTransactionUpdateMessage());
+             .is_transaction_update_message());
 
     transaction_event_request.eventType = v201::TransactionEventEnum::Ended;
     EXPECT_TRUE(
         !(ControlMessage<v201::MessageType>{Call<v201::TransactionEventRequest>{transaction_event_request, "0"}})
-             .isTransactionUpdateMessage());
+             .is_transaction_update_message());
 
     EXPECT_TRUE(!(ControlMessage<v201::MessageType>{Call<v201::AuthorizeRequest>{v201::AuthorizeRequest{}, "0"}})
-                     .isTransactionUpdateMessage());
+                     .is_transaction_update_message());
 }
 
 /************************************************************************************************
@@ -229,9 +228,9 @@ public:
     DatabaseHandlerBaseMock() : common::DatabaseHandlerCommon(nullptr, "", 1) {
     }
 
-    MOCK_METHOD(std::vector<common::DBTransactionMessage>, get_transaction_messages, (), (override));
-    MOCK_METHOD(void, insert_transaction_message, (const common::DBTransactionMessage&), (override));
-    MOCK_METHOD(void, remove_transaction_message, (const std::string&), (override));
+    MOCK_METHOD(std::vector<common::DBTransactionMessage>, get_message_queue_messages, (const QueueType), (override));
+    MOCK_METHOD(void, insert_message_queue_message, (const common::DBTransactionMessage&, const QueueType), (override));
+    MOCK_METHOD(void, remove_message_queue_message, (const std::string&, const QueueType), (override));
 };
 
 class MessageQueueTest : public ::testing::Test {
@@ -296,6 +295,7 @@ protected:
             message_queue->stop();
         }
         message_queue = std::make_unique<MessageQueue<TestMessageType>>(send_callback_mock.AsStdFunction(), config, db);
+        message_queue->set_registration_status_accepted();
         message_queue->resume(std::chrono::seconds(0));
     }
 
@@ -316,7 +316,7 @@ TEST_F(MessageQueueTest, test_transactional_message_is_sent) {
 
     EXPECT_CALL(send_callback_mock, Call(json{2, "0", "transactional", json{{"data", "test_data"}}}))
         .WillOnce(MarkAndReturn(true));
-    EXPECT_CALL(*db, insert_transaction_message(testing::_));
+    EXPECT_CALL(*db, insert_message_queue_message(testing::_, testing::_));
 
     Call<TestRequest> call;
     call.msg.type = TestMessageType::TRANSACTIONAL;
@@ -354,8 +354,8 @@ TEST_F(MessageQueueTest, test_queuing_up_of_transactional_messages) {
         .Times(message_count)
         .InSequence(s)
         .WillRepeatedly(MarkAndReturn(true, true));
-    EXPECT_CALL(*db, insert_transaction_message(testing::_)).Times(message_count);
-    EXPECT_CALL(*db, remove_transaction_message(testing::_)).Times(message_count);
+    EXPECT_CALL(*db, insert_message_queue_message(testing::_, QueueType::Transaction)).Times(message_count);
+    EXPECT_CALL(*db, remove_message_queue_message(testing::_, QueueType::Transaction)).Times(message_count);
 
     // Act:
     // push first call and wait for callback; then push all other calls and resume queue
@@ -438,9 +438,10 @@ TEST_F(MessageQueueTest, test_clean_up_non_transactional_queue) {
     const int expected_skipped_transactional_messages = 6;
     init_message_queue();
 
-    EXPECT_CALL(*db, insert_transaction_message(testing::_)).Times(sent_transactional_messages);
-    EXPECT_CALL(*db, remove_transaction_message(testing::_))
-        .Times(sent_transactional_messages)
+    EXPECT_CALL(*db, insert_message_queue_message(testing::_, testing::_))
+        .Times(sent_transactional_messages + sent_non_transactional_messages);
+    EXPECT_CALL(*db, remove_message_queue_message(testing::_, testing::_))
+        .Times(sent_transactional_messages + sent_non_transactional_messages)
         .WillRepeatedly(testing::Return());
 
     // go offline
@@ -509,8 +510,8 @@ TEST_F(MessageQueueTest, test_clean_up_transactional_queue) {
     config.queue_all_messages = true;
     init_message_queue();
 
-    EXPECT_CALL(*db, insert_transaction_message(testing::_)).Times(20);
-    EXPECT_CALL(*db, remove_transaction_message(testing::_)).Times(20).WillRepeatedly(testing::Return());
+    EXPECT_CALL(*db, insert_message_queue_message(testing::_, testing::_)).Times(30);
+    EXPECT_CALL(*db, remove_message_queue_message(testing::_, testing::_)).Times(30).WillRepeatedly(testing::Return());
 
     // go offline
     message_queue->pause();

@@ -11,23 +11,6 @@
 
 namespace ocpp::common {
 
-/// \brief Exception for errors during query execution
-class QueryExecutionException : public std::exception {
-public:
-    explicit QueryExecutionException(const std::string& message) : msg(message) {
-    }
-
-    virtual ~QueryExecutionException() noexcept {
-    }
-
-    virtual const char* what() const noexcept {
-        return msg.c_str();
-    }
-
-protected:
-    std::string msg;
-};
-
 /// @brief Type used to indicate if SQLite should make a internal copy of a string
 enum class SQLiteString {
     Static,   /// Indicates string will be valid for the whole statement
@@ -42,6 +25,7 @@ public:
 
     virtual int step() = 0;
     virtual int reset() = 0;
+    virtual int changes() = 0;
 
     virtual int bind_text(const int idx, const std::string& val, SQLiteString lifetime = SQLiteString::Static) = 0;
     virtual int bind_text(const std::string& param, const std::string& val,
@@ -76,6 +60,7 @@ public:
 
     int step() override;
     int reset() override;
+    int changes() override;
 
     int bind_text(const int idx, const std::string& val, SQLiteString lifetime = SQLiteString::Static) override;
     int bind_text(const std::string& param, const std::string& val,

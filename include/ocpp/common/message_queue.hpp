@@ -56,13 +56,6 @@ template <typename M> struct EnhancedMessage {
     bool offline = false; ///< A flag indicating if the connection to the central system is offline
 };
 
-/// \brief This can be used to distinguish the different queue types
-enum class QueueType {
-    Normal,
-    Transaction,
-    None,
-};
-
 /// \brief This contains an internal control message
 template <typename M> struct ControlMessage {
     json::array_t message;    ///< The OCPP message as a json array
@@ -71,9 +64,10 @@ template <typename M> struct ControlMessage {
     std::promise<EnhancedMessage<M>> promise; ///< A promise used by the async send interface
     DateTime timestamp;                       ///< A timestamp that shows when this message can be sent
     MessageId initial_unique_id;
+    bool stall_until_accepted; // if true, message shall be sent only if registration status is accepted
 
     /// \brief Creates a new ControlMessage object from the provided \p message
-    explicit ControlMessage(const json& message);
+    explicit ControlMessage(const json& message, const bool stall_until_accepted = false);
 
     /// \brief Provides the unique message ID stored in the message
     /// \returns the unique ID of the contained message
@@ -81,15 +75,70 @@ template <typename M> struct ControlMessage {
         return this->message[MESSAGE_ID];
     }
 
-    /// \brief Determine whether message is considered as transaction-related.
-    bool isTransactionMessage() const;
-
     /// \brief True for transactional messages containing updates (measurements) for a transaction
-    bool isTransactionUpdateMessage() const;
-
-    /// \brief Determine whether message is a BootNotification.
-    bool isBootNotificationMessage() const;
+    bool is_transaction_update_message() const;
 };
+
+/// \brief Indicates the transmission priority of a message that is being pushed to the message queue
+enum class MessageTransmissionPriority {
+    SendImmediately,                     // message can be queued and can be send immediately
+    SendAfterRegistrationStatusAccepted, // message can be queued and shall be send only if registration status is
+                                         // accepted
+    Discard                              // message shall be discarded and not be sent
+};
+
+/// \brief Helper function to handle messages that shall be send
+inline MessageTransmissionPriority get_message_transmission_priority(bool is_boot_notification_message, bool triggered,
+                                                                     bool registration_already_accepted,
+                                                                     bool is_transaction_related,
+                                                                     bool queue_all_message) {
+    if (registration_already_accepted || is_boot_notification_message || triggered) {
+        return MessageTransmissionPriority::SendImmediately;
+    }
+
+    if (is_transaction_related || queue_all_message) {
+        return MessageTransmissionPriority::SendAfterRegistrationStatusAccepted;
+    }
+
+    return MessageTransmissionPriority::Discard;
+};
+
+/// \brief Indicates if the given \p message_type is a transaction message type
+/// \param message_type
+/// \return true if MessageType is StartTransaction, StopTransaction, MeterValue or SecurityEventNotification
+bool is_transaction_message(const ocpp::v16::MessageType message_type);
+
+/// \brief Indicates if the given \p message_type is a transaction message type
+/// \param message_type
+/// \return true if MessageType is TransactionEvent or SecurityEventNotification
+bool is_transaction_message(const ocpp::v201::MessageType message_type);
+
+/// \brief Indicates if the given \p control_message is a transaction related message
+template <typename M> auto is_transaction_message(const ControlMessage<M>& control_message) {
+    return is_transaction_message(control_message.messageType);
+}
+/// \brief Indicates if the given \p message_type is a BootNotification
+/// \param message_type
+/// \return true if MessageType is BootNotification
+bool is_boot_notification_message(const ocpp::v16::MessageType message_type);
+
+/// \brief Indicates if the given \p message_type is a BootNotification
+/// \param message_type
+/// \return true if MessageType is BootNotification
+bool is_boot_notification_message(const ocpp::v201::MessageType message_type);
+
+template <typename M>
+bool allowed_to_send_message(const ControlMessage<M>& message, const DateTime& time,
+                             const bool is_registration_status_accepted) {
+    if (message.stall_until_accepted and !is_registration_status_accepted) {
+        return false;
+    }
+
+    if (message.timestamp > time) {
+        return false;
+    }
+    return true;
+}
 
 /// \brief contains a message queue that makes sure that OCPPs synchronicity requirements are met
 template <typename M> class MessageQueue {
@@ -112,6 +161,7 @@ private:
     bool resuming;
     bool running;
     bool new_message;
+    bool is_registration_status_accepted;
     boost::uuids::random_generator uuid_generator;
     std::recursive_mutex next_message_mutex;
     std::optional<MessageId> next_message_to_send;
@@ -172,6 +222,16 @@ private:
             } else {
                 this->normal_message_queue.push_back(message);
             }
+            if (this->config.queue_all_messages) {
+                ocpp::common::DBTransactionMessage db_message{
+                    message->message, messagetype_to_string(message->messageType), message->message_attempts,
+                    message->timestamp, message->uniqueId()};
+                try {
+                    this->database_handler->insert_message_queue_message(db_message, QueueType::Normal);
+                } catch (const QueryExecutionException& e) {
+                    EVLOG_warning << "Could not insert message into transaction queue: " << e.what();
+                }
+            }
             this->new_message = true;
             this->check_queue_sizes();
         }
@@ -187,7 +247,7 @@ private:
                                                           message->message_attempts, message->timestamp,
                                                           message->uniqueId()};
             try {
-                this->database_handler->insert_transaction_message(db_message);
+                this->database_handler->insert_message_queue_message(db_message);
             } catch (const QueryExecutionException& e) {
                 EVLOG_warning << "Could not insert message into transaction queue: " << e.what();
             }
@@ -227,6 +287,16 @@ private:
         EVLOG_warning << "Dropping " << number_of_dropped_messages << " messages from normal message queue.";
 
         for (int i = 0; i < number_of_dropped_messages; i++) {
+            if (this->config.queue_all_messages) {
+                try {
+                    database_handler->remove_message_queue_message(
+                        this->normal_message_queue.front()->initial_unique_id, QueueType::Normal);
+                } catch (const QueryExecutionException& e) {
+                    EVLOG_warning << "Could not delete message from transaction queue: " << e.what();
+                } catch (const std::exception& e) {
+                    EVLOG_warning << "Could not delete message from transaction queue: " << e.what();
+                }
+            }
             this->normal_message_queue.pop_front();
         }
     }
@@ -245,11 +315,11 @@ private:
             auto element = transaction_message_queue.front();
             transaction_message_queue.pop_front();
             // drop every second update message (except last one)
-            if (remove_next_update_message && element->isTransactionUpdateMessage() &&
+            if (remove_next_update_message && element->is_transaction_update_message() &&
                 transaction_message_queue.size() > 1) {
                 EVLOG_debug << "Drop transactional message " << element->initial_unique_id;
                 try {
-                    database_handler->remove_transaction_message(element->initial_unique_id);
+                    database_handler->remove_message_queue_message(element->initial_unique_id);
                 } catch (const QueryExecutionException& e) {
                     EVLOG_warning << "Could not delete message from transaction queue: " << e.what();
                 } catch (const std::exception& e) {
@@ -303,6 +373,7 @@ public:
         resuming(false),
         running(true),
         new_message(false),
+        is_registration_status_accepted(false),
         uuid_generator(boost::uuids::random_generator()) {
 
         this->send_callback = send_callback;
@@ -340,46 +411,54 @@ public:
                 }
 
                 // prioritize the message with the oldest timestamp
-                auto now = DateTime();
                 std::shared_ptr<ControlMessage<M>> message = nullptr;
                 QueueType queue_type = QueueType::None;
+                const auto now = DateTime();
 
-                if (!this->normal_message_queue.empty()) {
-                    auto& normal_message = this->normal_message_queue.front();
-                    EVLOG_debug << "normal msg timestamp: " << normal_message->timestamp;
-                    if (normal_message->timestamp <= now) {
-                        EVLOG_debug << "normal message timestamp <= now";
-                        message = normal_message;
-                        queue_type = QueueType::Normal;
-                    } else {
-                        EVLOG_error << "A normal message should not have a timestamp in the future: "
-                                    << normal_message->timestamp << " now: " << now;
-                    }
+                // Find the first allowed normal message
+                auto selected_normal_message_it =
+                    std::find_if(normal_message_queue.begin(), normal_message_queue.end(),
+                                 [&](const std::shared_ptr<ControlMessage<M>>& msg) {
+                                     return allowed_to_send_message(*msg, now, this->is_registration_status_accepted);
+                                 });
+
+                if (selected_normal_message_it != normal_message_queue.end()) {
+                    message = *selected_normal_message_it;
+                    queue_type = QueueType::Normal;
                 }
 
-                if (!this->transaction_message_queue.empty()) {
-                    auto& transaction_message = this->transaction_message_queue.front();
-                    EVLOG_debug << "transaction msg timestamp: " << transaction_message->timestamp;
-                    if (message == nullptr) {
-                        if (transaction_message->timestamp <= now) {
-                            EVLOG_debug << "transaction message timestamp <= now";
-                            message = transaction_message;
-                            queue_type = QueueType::Transaction;
-                        }
-                    } else {
-                        if (transaction_message->timestamp <= message->timestamp and
-                            message->messageType != M::BootNotification) {
-                            EVLOG_debug << "transaction message timestamp <= normal message timestamp";
-                            message = transaction_message;
-                            queue_type = QueueType::Transaction;
-                        } else {
-                            EVLOG_debug << "Prioritizing newer normal message over older transaction message";
-                        }
+                auto is_transaction_message_available = [&](const std::shared_ptr<ControlMessage<M>>& msg) {
+                    if (!allowed_to_send_message(*msg, now, this->is_registration_status_accepted)) {
+                        return false;
                     }
+                    // no message selected from normal message queue, so select transaction message
+                    if (message == nullptr) {
+                        return true;
+                    }
+                    // message from normal message queue is BootNotification, this is prioritized
+                    if (message->messageType == M::BootNotification) {
+                        return false;
+                    }
+                    // transaction messages is older than normal message, so select transaction message
+                    if (msg->timestamp <= message->timestamp) {
+                        return true;
+                    }
+                    return false;
+                };
+
+                // Find the first allowed transaction message
+                auto selected_transaction_message_it =
+                    std::find_if(transaction_message_queue.begin(), transaction_message_queue.end(),
+                                 is_transaction_message_available);
+
+                if (selected_transaction_message_it != transaction_message_queue.end()) {
+                    message = *selected_transaction_message_it;
+                    queue_type = QueueType::Transaction;
                 }
 
                 if (message == nullptr) {
                     EVLOG_debug << "No message in queue ready to be sent yet";
+                    this->new_message = false;
                     continue;
                 }
 
@@ -410,7 +489,7 @@ public:
                 if (!this->send_callback(this->in_flight->message)) {
                     this->paused = true;
                     EVLOG_error << "Could not send message, this is most likely because the charge point is offline.";
-                    if (this->in_flight && this->in_flight->isTransactionMessage()) {
+                    if (this->in_flight && is_transaction_message(*this->in_flight)) {
                         EVLOG_info << "The message in flight is transaction related and will be sent again once the "
                                       "connection can be established again.";
                         if (this->in_flight->message.at(CALL_ACTION) == "TransactionEvent") {
@@ -435,10 +514,10 @@ public:
                                                           this->current_message_timeout(message->message_attempts));
                     switch (queue_type) {
                     case QueueType::Normal:
-                        this->normal_message_queue.pop_front();
+                        this->normal_message_queue.erase(selected_normal_message_it);
                         break;
                     case QueueType::Transaction:
-                        this->transaction_message_queue.pop_front();
+                        this->transaction_message_queue.erase(selected_transaction_message_it);
                         break;
 
                     default:
@@ -466,53 +545,67 @@ public:
         this->next_message_to_send.reset();
     }
 
-    void get_transaction_messages_from_db(bool ignore_security_event_notifications = false) {
-        std::vector<ocpp::common::DBTransactionMessage> transaction_messages =
-            database_handler->get_transaction_messages();
+    /// \brief Gets all persisted messages of normal message queue and persisted message queue from the database
+    void get_persisted_messages_from_db(bool ignore_security_event_notifications = false) {
+        std::vector<QueueType> queue_types = {QueueType::Normal, QueueType::Transaction};
+        // do for Normal and Transaction queue
+        for (const auto queue_type : queue_types) {
+            const auto persisted_messages = database_handler->get_message_queue_messages(queue_type);
+            if (!persisted_messages.empty()) {
+                for (auto& persisted_message : persisted_messages) {
 
-        if (!transaction_messages.empty()) {
-            for (auto& transaction_message : transaction_messages) {
+                    if (ignore_security_event_notifications &&
+                        persisted_message.message_type == "SecurityEventNotification") {
+                        try {
+                            // remove from database in case SecurityEventNotification.req should not be sent
+                            this->database_handler->remove_message_queue_message(persisted_message.unique_id,
+                                                                                 queue_type);
+                        } catch (const QueryExecutionException& e) {
+                            EVLOG_warning << "Could not delete message from message queue: " << e.what();
+                        } catch (const std::exception& e) {
+                            EVLOG_warning << "Could not delete message from message queue: " << e.what();
+                        }
+                    } else {
+                        std::shared_ptr<ControlMessage<M>> message =
+                            std::make_shared<ControlMessage<M>>(persisted_message.json_message);
+                        message->messageType = string_to_messagetype(persisted_message.message_type);
+                        message->timestamp = persisted_message.timestamp;
+                        message->message_attempts = persisted_message.message_attempts;
 
-                if (ignore_security_event_notifications &&
-                    transaction_message.message_type == "SecurityEventNotification") {
-                    try {
-                        // remove from database in case SecurityEventNotification.req should not be sent
-                        this->database_handler->remove_transaction_message(transaction_message.unique_id);
-                    } catch (const QueryExecutionException& e) {
-                        EVLOG_warning << "Could not delete message from transaction queue: " << e.what();
-                    } catch (const std::exception& e) {
-                        EVLOG_warning << "Could not delete message from transaction queue: " << e.what();
+                        if (queue_type == QueueType::Normal) {
+                            normal_message_queue.push_back(message);
+                        } else if (queue_type == QueueType::Transaction) {
+                            transaction_message_queue.push_back(message);
+                        }
                     }
-                } else {
-                    std::shared_ptr<ControlMessage<M>> message =
-                        std::make_shared<ControlMessage<M>>(transaction_message.json_message);
-                    message->messageType = string_to_messagetype(transaction_message.message_type);
-                    message->timestamp = transaction_message.timestamp;
-                    message->message_attempts = transaction_message.message_attempts;
-                    transaction_message_queue.push_back(message);
                 }
+                this->new_message = true;
             }
+        }
 
-            this->new_message = true;
+        if (!this->config.queue_all_messages) {
+            // make sure to clear normal message queue table in case queue_all_messages is false, since without clearing
+            // it here messages would not be removed in handle_call_result or handle_call_timeout_or_error
+            this->database_handler->clear_message_queue(QueueType::Normal);
         }
     }
 
     /// \brief pushes a new \p call message onto the message queue
-    template <class T> void push(Call<T> call) {
+    template <class T> void push(Call<T> call, const bool stall_until_accepted = false) {
         if (!running) {
             return;
         }
         json call_json = call;
-        push(call_json);
+        push(call_json, stall_until_accepted);
     }
 
-    void push(const json& message) {
+    void push(const json& message, const bool stall_until_accepted = false) {
         if (!running) {
             return;
         }
 
-        auto control_message = std::make_shared<ControlMessage<M>>(message);
-        if (control_message->isTransactionMessage()) {
+        auto control_message = std::make_shared<ControlMessage<M>>(message, stall_until_accepted);
+        if (is_transaction_message(*control_message)) {
             // according to the spec the "transaction related messages" StartTransaction, StopTransaction and
             // MeterValues have to be delivered in chronological order
 
@@ -577,7 +670,7 @@ public:
             auto enhanced_message = EnhancedMessage<M>();
             enhanced_message.offline = true;
             message->promise.set_value(enhanced_message);
-        } else if (message->isTransactionMessage()) {
+        } else if (is_transaction_message(message->messageType)) {
             // according to the spec the "transaction related messages" StartTransaction, StopTransaction and
             // MeterValues have to be delivered in chronological order
             this->add_to_transaction_message_queue(message);
@@ -671,15 +764,18 @@ public:
                 this->in_flight->message.at(CALL_ACTION).template get<std::string>() + std::string("Response"));
             this->in_flight->promise.set_value(enhanced_message);
 
-            if (this->in_flight->isTransactionMessage()) {
+            const auto queue_type =
+                is_transaction_message(*this->in_flight) ? QueueType::Transaction : QueueType::Normal;
+            if (is_transaction_message(*this->in_flight) or this->config.queue_all_messages) {
                 try {
                     // We only remove the message as soon as a response is received. Otherwise we might miss a message
                     // if the charging station just boots after sending, but before receiving the result.
-                    this->database_handler->remove_transaction_message(this->in_flight->initial_unique_id);
+                    this->database_handler->remove_message_queue_message(this->in_flight->initial_unique_id,
+                                                                         queue_type);
                 } catch (const QueryExecutionException& e) {
-                    EVLOG_warning << "Could not delete message from transaction queue: " << e.what();
+                    EVLOG_warning << "Could not delete message from message queue: " << e.what();
                 } catch (const std::exception& e) {
-                    EVLOG_warning << "Could not delete message from transaction queue: " << e.what();
+                    EVLOG_warning << "Could not delete message from message queue: " << e.what();
                 }
             }
             this->reset_in_flight();
@@ -707,9 +803,10 @@ public:
                           << ")";
         }
 
-        if (this->in_flight->isTransactionMessage()) {
+        const auto queue_type = is_transaction_message(*this->in_flight) ? QueueType::Transaction : QueueType::Normal;
+        if (is_transaction_message(*this->in_flight) or this->config.queue_all_messages) {
             if (this->in_flight->message_attempts < this->config.transaction_message_attempts) {
-                EVLOG_warning << "Message is transaction related and will therefore be sent again";
+                EVLOG_warning << "Message shall be persisted and will therefore be sent again";
                 // Generate a new message ID for the retry
                 this->in_flight->message[MESSAGE_ID] = this->createMessageId();
                 if (this->config.transaction_message_retry_interval > 0) {
@@ -730,7 +827,11 @@ public:
                               << this->config.transaction_message_attempts << " will be sent at "
                               << this->in_flight->timestamp;
 
-                this->transaction_message_queue.push_front(this->in_flight);
+                if (queue_type == QueueType::Transaction) {
+                    this->transaction_message_queue.push_front(this->in_flight);
+                } else if (queue_type == QueueType::Normal) {
+                    this->normal_message_queue.push_front(this->in_flight);
+                }
                 this->notify_queue_timer.at(
                     [this]() {
                         this->new_message = true;
@@ -749,14 +850,15 @@ public:
                 }
                 try {
                     // also drop the message from the database
-                    this->database_handler->remove_transaction_message(this->in_flight->initial_unique_id);
+                    this->database_handler->remove_message_queue_message(this->in_flight->initial_unique_id,
+                                                                         queue_type);
                 } catch (const QueryExecutionException& e) {
                     EVLOG_warning << "Could not delete message from transaction queue: " << e.what();
                 } catch (const std::exception& e) {
                     EVLOG_warning << "Could not delete message from transaction queue: " << e.what();
                 }
             }
-        } else if (this->in_flight->isBootNotificationMessage()) {
+        } else if (is_boot_notification_message(this->in_flight->messageType)) {
             EVLOG_warning << "Message is BootNotification.req and will therefore be sent again";
             // Generate a new message ID for the retry
             this->in_flight->message[MESSAGE_ID] = this->createMessageId();
@@ -765,7 +867,7 @@ public:
             this->in_flight->timestamp =
                 DateTime(this->in_flight->timestamp.to_time_point() +
                          std::chrono::seconds(this->config.boot_notification_retry_interval_seconds));
-            this->transaction_message_queue.push_front(this->in_flight);
+            this->normal_message_queue.push_front(this->in_flight);
             this->notify_queue_timer.at(
                 [this]() {
                     this->new_message = true;
@@ -826,6 +928,14 @@ public:
         } else {
             this->resume_now(this->pause_resume_ctr);
         }
+    }
+
+    void set_registration_status_accepted() {
+        {
+            std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
+            this->is_registration_status_accepted = true;
+        }
+        this->cv.notify_all();
     }
 
     bool is_transaction_message_queue_empty() {

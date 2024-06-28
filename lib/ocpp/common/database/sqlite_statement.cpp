@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
+#include <ocpp/common/database/database_exceptions.hpp>
 #include <ocpp/common/database/sqlite_statement.hpp>
 
 #include <everest/logging.hpp>
@@ -28,6 +29,11 @@ int SQLiteStatement::step() {
 
 int SQLiteStatement::reset() {
     return sqlite3_reset(this->stmt);
+}
+
+int SQLiteStatement::changes() {
+    // Rows affected by the last INSERT, UPDATE, DELETE
+    return sqlite3_changes(this->db);
 }
 
 int SQLiteStatement::bind_text(const int idx, const std::string& val, SQLiteString lifetime) {

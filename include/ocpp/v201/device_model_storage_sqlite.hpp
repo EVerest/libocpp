@@ -41,6 +41,17 @@ public:
                                       const AttributeEnum& attribute_enum, const std::string& value,
                                       const std::string &source) final;
 
+    std::optional<VariableMonitoringMeta> set_monitoring_data(const SetMonitoringData& data,
+                                                              const VariableMonitorType type) final;
+
+    std::vector<VariableMonitoringMeta> get_monitoring_data(const std::vector<MonitoringCriterionEnum>& criteria,
+                                                            const Component& component_id,
+                                                            const Variable& variable_id) final;
+
+    ClearMonitoringStatusEnum clear_variable_monitor(int monitor_id, bool allow_protected) final;
+
+    int32_t clear_custom_variable_monitors() final;
+
     void check_integrity() final;
 };
 
