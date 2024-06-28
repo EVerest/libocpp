@@ -17,20 +17,12 @@ namespace ocpp::v201 {
 
 class InitDeviceModelDbTest : public DatabaseTestingUtils {
 protected:
-    const std::string DATABASE_PATH2 = "/tmp/pionix/test_db2.db";
     const std::string DATABASE_PATH = "file::memory:?cache=shared";
-    const std::string MIGRATION_FILES_PATH = "/data/work/pionix/workspace/libocpp/config/v201/device_model_migrations";
-    // const std::string SCHEMAS_PATH = "/data/work/pionix/workspace/libocpp/config/v201/component_schemas";
-    const std::string SCHEMAS_PATH =
-        "/data/work/pionix/workspace/libocpp/tests/config/v201/resources/component_schemas";
-    const std::string SCHEMAS_PATH_CHANGED =
-        "/data/work/pionix/workspace/libocpp/tests/config/v201/resources_changed/component_schemas";
-    // const std::string CONFIG_PATH = "/data/work/pionix/workspace/libocpp/config/v201/config.json";
-    const std::string CONFIG_PATH = "/data/work/pionix/workspace/libocpp/tests/config/v201/resources/config.json";
-    const std::string CONFIG_PATH_CHANGED =
-        "/data/work/pionix/workspace/libocpp/tests/config/v201/resources_changed/config.json";
-
-    // std::unique_ptr<DatabaseConnectionInterface> database;
+    const std::string MIGRATION_FILES_PATH = "./resources/v201/device_model_migration_files";
+    const std::string SCHEMAS_PATH = "./resources/v201/component_schemas";
+    const std::string SCHEMAS_PATH_CHANGED = "./resources/v201/changed/component_schemas";
+    const std::string CONFIG_PATH = "./resources/v201/config.json";
+    const std::string CONFIG_PATH_CHANGED = "./resources/v201/changed/config.json";
 
 public:
     InitDeviceModelDbTest() {

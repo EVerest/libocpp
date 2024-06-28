@@ -1,9 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
+#include "ocpp/v201/init_device_model_db.hpp"
+#include <ocpp/v201/device_model_storage_sqlite.hpp>
+
 #include <everest/logging.hpp>
 #include <ocpp/common/database/sqlite_statement.hpp>
-#include <ocpp/v201/device_model_storage_sqlite.hpp>
+#include <ocpp/v201/charge_point.hpp>
+#include <ocpp/v201/init_device_model_db.hpp>
 
 namespace ocpp {
 
@@ -14,7 +18,20 @@ namespace v201 {
 extern void filter_criteria_monitors(const std::vector<MonitoringCriterionEnum>& criteria,
                                      std::vector<VariableMonitoringMeta>& monitors);
 
-DeviceModelStorageSqlite::DeviceModelStorageSqlite(const fs::path& db_path) {
+DeviceModelStorageSqlite::DeviceModelStorageSqlite(const fs::path& db_path, const fs::path& migration_files_path,
+                                                   const fs::path& schemas_path, const fs::path& config_path,
+                                                   const bool init_db) {
+    if (init_db) {
+        if (db_path.empty() || migration_files_path.empty() || schemas_path.empty() || config_path.empty()) {
+            EVLOG_error << "Can not initialize device model storage: one of the paths is empty.";
+            EVLOG_AND_THROW(
+                DeviceModelStorageError("Can not initialize device model storage: one of the paths is empty."));
+        }
+        InitDeviceModelDb init_device_model_db(db_path, migration_files_path);
+        init_device_model_db.initialize_database(schemas_path, false);
+        init_device_model_db.insert_config_and_default_values(schemas_path, config_path);
+    }
+
     db = std::make_unique<ocpp::common::DatabaseConnection>(db_path);
 
     if (!db->open_connection()) {
@@ -23,6 +40,10 @@ DeviceModelStorageSqlite::DeviceModelStorageSqlite(const fs::path& db_path) {
     } else {
         EVLOG_info << "Established connection to device model database successfully: " << db_path;
     }
+}
+
+DeviceModelStorageSqlite::DeviceModelStorageSqlite(const fs::path& db_path) :
+    DeviceModelStorageSqlite(db_path, "", "", "", false) {
 }
 
 int DeviceModelStorageSqlite::get_component_id(const Component& component_id) {

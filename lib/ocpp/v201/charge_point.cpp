@@ -5,7 +5,6 @@
 #include <ocpp/v201/charge_point.hpp>
 #include <ocpp/v201/ctrlr_component_variables.hpp>
 #include <ocpp/v201/device_model_storage_sqlite.hpp>
-#include <ocpp/v201/init_device_model_db.hpp>
 #include <ocpp/v201/messages/FirmwareStatusNotification.hpp>
 #include <ocpp/v201/messages/LogStatusNotification.hpp>
 #include <ocpp/v201/notify_report_requests_splitter.hpp>
@@ -45,6 +44,20 @@ bool Callbacks::all_callbacks_valid() const {
            (!this->time_sync_callback.has_value() or this->time_sync_callback.value() != nullptr) and
            (!this->boot_notification_callback.has_value() or this->boot_notification_callback.value() != nullptr) and
            (!this->ocpp_messages_callback.has_value() or this->ocpp_messages_callback.value() != nullptr);
+}
+
+ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
+                         const std::string& device_model_storage_address, const bool initialize_device_model,
+                         const std::string& device_model_migration_path, const std::string& device_model_schemas_path,
+                         const std::string& config_path, const std::string& ocpp_main_path,
+                         const std::string& core_database_path, const std::string& sql_init_path,
+                         const std::string& message_log_path, const std::shared_ptr<EvseSecurity> evse_security,
+                         const Callbacks& callbacks) :
+    ChargePoint(evse_connector_structure,
+                std::make_unique<DeviceModelStorageSqlite>(device_model_storage_address, device_model_migration_path,
+                                                           device_model_schemas_path, config_path,
+                                                           initialize_device_model),
+                ocpp_main_path, core_database_path, sql_init_path, message_log_path, evse_security, callbacks) {
 }
 
 ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
