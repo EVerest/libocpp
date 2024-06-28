@@ -521,22 +521,7 @@ std::vector<MonitoringData> DeviceModel::get_monitors(const std::vector<Monitori
                                                       const std::vector<ComponentVariable>& component_variables) {
     std::vector<MonitoringData> get_monitors_res{};
 
-    // N02.FR.11 - if criteria and component_variables are empty, return all existing monitors
-    if (criteria.empty() && component_variables.empty()) {
-        for (const auto& [component, variable_map] : this->device_model) {
-            for (const auto& [variable, variable_metadata] : variable_map) {
-                std::vector<VariableMonitoring> monitors;
-
-                for (const auto& [id, monitor_meta] : variable_metadata.monitors) {
-                    monitors.push_back(monitor_meta.monitor);
-                }
-
-                get_monitors_res.push_back({component, variable, monitors, std::nullopt});
-            }
-        }
-
-        return get_monitors_res;
-    } else {
+    if (!component_variables.empty()) {
         for (auto& component_variable : component_variables) {
             // Case not handled by spec, skipping
             if (this->device_model.find(component_variable.component) == this->device_model.end()) {
@@ -559,7 +544,9 @@ std::vector<MonitoringData> DeviceModel::get_monitors(const std::vector<Monitori
                         }
                     }
 
-                    get_monitors_res.push_back(std::move(monitor_data));
+                    if (!monitor_data.variableMonitoring.empty()) {
+                        get_monitors_res.push_back(std::move(monitor_data));
+                    }
                 }
             } else {
                 auto variable_it = variable_map.find(component_variable.variable.value());
@@ -582,7 +569,28 @@ std::vector<MonitoringData> DeviceModel::get_monitors(const std::vector<Monitori
                     }
                 }
 
-                get_monitors_res.push_back(std::move(monitor_data));
+                if (!monitor_data.variableMonitoring.empty()) {
+                    get_monitors_res.push_back(std::move(monitor_data));
+                }
+            }
+        }
+    } else {
+        // N02.FR.11 - if criteria and component_variables are empty, return all existing monitors
+        for (const auto& [component, variable_map] : this->device_model) {
+            for (const auto& [variable, variable_metadata] : variable_map) {
+                std::vector<VariableMonitoring> monitors;
+
+                for (const auto& [id, monitor_meta] : variable_metadata.monitors) {
+                    // Also handles the case when the criteria is empty,
+                    // since in that case N02.FR.11 applies (all monitors pass)
+                    if (filter_criteria_monitor(criteria, monitor_meta)) {
+                        monitors.push_back(monitor_meta.monitor);
+                    }
+                }
+
+                if (!monitors.empty()) {
+                    get_monitors_res.push_back({component, variable, monitors, std::nullopt});
+                }
             }
         }
     }
