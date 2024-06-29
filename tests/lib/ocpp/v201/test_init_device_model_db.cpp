@@ -19,10 +19,16 @@ class InitDeviceModelDbTest : public DatabaseTestingUtils {
 protected:
     const std::string DATABASE_PATH = "file::memory:?cache=shared";
     const std::string MIGRATION_FILES_PATH = "./resources/v201/device_model_migration_files";
-    const std::string SCHEMAS_PATH = "./resources/v201/component_schemas";
-    const std::string SCHEMAS_PATH_CHANGED = "./resources/v201/changed/component_schemas";
-    const std::string CONFIG_PATH = "./resources/v201/config.json";
-    const std::string CONFIG_PATH_CHANGED = "./resources/v201/changed/config.json";
+    const std::string SCHEMAS_PATH = "./resources/config/v201/component_schemas";
+    const std::string SCHEMAS_PATH_CHANGED = "./resources/config/v201/changed/component_schemas";
+    const std::string CONFIG_PATH = "./resources/config/v201/config.json";
+    const std::string CONFIG_PATH_CHANGED = "./resources/config/v201/changed/config.json";
+    const std::string CONFIG_PATH_WRONG_ATTRIBUTE = "./resources/config/v201/config_wrong_attribute.json";
+    const std::string CONFIG_PATH_NOT_EXISTING_ATTRIBUTE = "./resources/config/v201/config_not_existing_attribute.json";
+    const std::string CONFIG_PATH_WRONG_COMPONENT = "./resources/config/v201/config_wrong_component.json";
+    const std::string CONFIG_PATH_WRONG_COMPONENT_CONNECTORID =
+        "./resources/config/v201/config_wrong_component_connectorid.json";
+    const std::string CONFIG_PATH_WRONG_VARIABLE = "./resources/config/v201/config_wrong_variable.json";
 
 public:
     InitDeviceModelDbTest() {
@@ -350,10 +356,10 @@ TEST_F(InitDeviceModelDbTest, init_db) {
 
 TEST_F(InitDeviceModelDbTest, insert_values) {
     /* This test will test if the config and default values are correctly set. We test this twice: first an initial
-     * config, then a changed configuration, which also has some errors in it.
+     * config, then a changed configuration.
      */
 
-    InitDeviceModelDb db = InitDeviceModelDb(DATABASE_PATH, MIGRATION_FILES_PATH);
+    InitDeviceModelDb db(DATABASE_PATH, MIGRATION_FILES_PATH);
 
     // Database should not exist yet. But since it does a filesystem check and we have an in memory database, we
     // explicitly set the variable here.
@@ -413,17 +419,87 @@ TEST_F(InitDeviceModelDbTest, insert_values) {
                                     AttributeEnum::Actual, "false"));
     EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "SupplyPhases", std::nullopt,
                                     AttributeEnum::Actual, "2"));
-    // Variable does not exist so it could not set the value.
-    EXPECT_FALSE(variable_exists("EVSE", std::nullopt, 1, std::nullopt, "AvalableEVSEThingie", std::nullopt));
+    // // Variable does not exist so it could not set the value.
+    // EXPECT_FALSE(variable_exists("EVSE", std::nullopt, 1, std::nullopt, "AvalableEVSEThingie", std::nullopt));
     // Variable was removed, so it will be set to the default value again.
     EXPECT_TRUE(
         attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "Power", std::nullopt, AttributeEnum::Actual, "0"));
     // Default value only applies to 'Actual', not 'MaxSet'
     EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "Power", std::nullopt, AttributeEnum::MaxSet,
                                     "44000"));
-    // Component does not exist so it could not set anything.
-    EXPECT_FALSE(component_exists("UnitTestCtrlr", std::nullopt, 1, 5));
+    // // Component does not exist so it could not set anything.
+    // EXPECT_FALSE(component_exists("UnitTestCtrlr", std::nullopt, 1, 5));
 }
+
+TEST_F(InitDeviceModelDbTest, wrong_migration_file_path) {
+    InitDeviceModelDb db(DATABASE_PATH, "/tmp/thisdoesnotexisthopefully");
+    // The migration script is not correct (there is none in the given folder), this should throw an exception.
+    EXPECT_THROW(db.initialize_database(SCHEMAS_PATH, true), DatabaseMigrationException);
+}
+
+TEST_F(InitDeviceModelDbTest, wrong_schemas_path) {
+    // Wrong schemas path while initializing database
+    InitDeviceModelDb db(DATABASE_PATH, MIGRATION_FILES_PATH);
+    EXPECT_THROW(db.initialize_database("/tmp/thisdoesnotexisthopefully", true), std::filesystem::filesystem_error);
+}
+
+TEST_F(InitDeviceModelDbTest, wrong_schemas_path2) {
+    // Wrong schemas path to insert config and default values.
+    InitDeviceModelDb db(DATABASE_PATH, MIGRATION_FILES_PATH);
+    db.initialize_database(SCHEMAS_PATH, true);
+    EXPECT_THROW(db.insert_config_and_default_values("/tmp/wrongschemaspath", CONFIG_PATH),
+                 std::filesystem::filesystem_error);
+}
+
+TEST_F(InitDeviceModelDbTest, wrong_config_path) {
+    // Wrong config file path
+    InitDeviceModelDb db(DATABASE_PATH, MIGRATION_FILES_PATH);
+    EXPECT_NO_THROW(db.initialize_database(SCHEMAS_PATH, true));
+    EXPECT_THROW(db.insert_config_and_default_values(SCHEMAS_PATH, "/tmp/wrongconfigpath"),
+                 nlohmann::detail::parse_error);
+}
+
+TEST_F(InitDeviceModelDbTest, no_initialization) {
+    // Try to insert config and default values whie the schemas are not inserted yet.
+    InitDeviceModelDb db(DATABASE_PATH, MIGRATION_FILES_PATH);
+    EXPECT_THROW(db.insert_config_and_default_values(SCHEMAS_PATH, CONFIG_PATH), InitDeviceModelDbError);
+}
+
+TEST_F(InitDeviceModelDbTest, config_wrong_attribute) {
+    InitDeviceModelDb db(DATABASE_PATH, MIGRATION_FILES_PATH);
+    EXPECT_NO_THROW(db.initialize_database(SCHEMAS_PATH, true));
+    EXPECT_THROW(db.insert_config_and_default_values(SCHEMAS_PATH, CONFIG_PATH_WRONG_ATTRIBUTE),
+                 InitDeviceModelDbError);
+}
+
+TEST_F(InitDeviceModelDbTest, config_not_existing_attribute) {
+    InitDeviceModelDb db(DATABASE_PATH, MIGRATION_FILES_PATH);
+    EXPECT_NO_THROW(db.initialize_database(SCHEMAS_PATH, true));
+    EXPECT_THROW(db.insert_config_and_default_values(SCHEMAS_PATH, CONFIG_PATH_NOT_EXISTING_ATTRIBUTE),
+                 InitDeviceModelDbError);
+}
+
+TEST_F(InitDeviceModelDbTest, config_wrong_component) {
+    InitDeviceModelDb db(DATABASE_PATH, MIGRATION_FILES_PATH);
+    db.initialize_database(SCHEMAS_PATH, true);
+    EXPECT_THROW(db.insert_config_and_default_values(SCHEMAS_PATH, CONFIG_PATH_WRONG_COMPONENT),
+                 InitDeviceModelDbError);
+}
+
+TEST_F(InitDeviceModelDbTest, config_wrong_variable) {
+    InitDeviceModelDb db(DATABASE_PATH, MIGRATION_FILES_PATH);
+    db.initialize_database(SCHEMAS_PATH, true);
+    EXPECT_THROW(db.insert_config_and_default_values(SCHEMAS_PATH, CONFIG_PATH_WRONG_VARIABLE), InitDeviceModelDbError);
+}
+
+TEST_F(InitDeviceModelDbTest, config_wrong_component_connectorid) {
+    InitDeviceModelDb db(DATABASE_PATH, MIGRATION_FILES_PATH);
+    db.initialize_database(SCHEMAS_PATH, true);
+    EXPECT_THROW(db.insert_config_and_default_values(SCHEMAS_PATH, CONFIG_PATH_WRONG_COMPONENT_CONNECTORID),
+                 InitDeviceModelDbError);
+}
+
+// Helper functions
 
 bool InitDeviceModelDbTest::check_all_tables_exist(const std::vector<std::string>& tables, const bool exist) {
     for (const std::string& table : tables) {

@@ -67,6 +67,7 @@ struct ComponentKey {
 ///
 struct DbVariableAttribute {
     std::optional<uint64_t> db_id;        ///< \brief The id in the database, if the record is read from the db.
+    std::optional<std::string> value_source;             ///< \brief Source of the attribute value (who set the value).
     VariableAttribute variable_attribute; ///< \brief The variable attribute
 };
 
@@ -98,7 +99,7 @@ struct DeviceModelVariable {
 struct VariableAttributeKey {
     std::string name;                    ///< \brief Variable name
     std::optional<std::string> instance; ///< \brief Variable instance
-    std::string attribute_type;          ///< \brief Attribute type
+    AttributeEnum attribute_type;          ///< \brief Attribute type
     std::string value;                   ///< \brief Attribute value
 };
 
@@ -160,6 +161,7 @@ public:
     /// \throws std::runtime_error      If something went wrong during migration
     /// \throws DatabaseMigrationException  If something went wrong during migration
     /// \throws DatabaseConnectionException If the database could not be opened
+    /// \throws std::filesystem::filesystem_error   If the schemas path does not exist
     ///
     ///
     void initialize_database(const std::filesystem::path& schemas_path, const bool delete_db_if_exists);
@@ -168,7 +170,7 @@ public:
     /// \brief Insert database configuration and default values.
     /// \param schemas_path Path to the database schemas.
     /// \param config_path  Path to the database config.
-    /// \return True on success.
+    /// \return True on success. False if at least one of the items could not be set.
     ///
     /// \throws InitDeviceModelDbError  When config and default values could not be set
     ///
@@ -352,6 +354,10 @@ private: // Functions
     std::map<ComponentKey, std::vector<VariableAttributeKey>>
     get_config_values(const std::filesystem::path& config_file_path);
 
+    bool check_config_integrity(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& schema_components,
+                                const std::map<ComponentKey, std::vector<VariableAttributeKey>>& config,
+                                std::string& errors);
+
     ///
     /// \brief Insert variable attribute value
     /// \param component_key                Component the variable attribute belongs to.
@@ -370,6 +376,8 @@ private: // Functions
     /// \throws InitDeviceModelDbError When getting components from db failed.
     ///
     std::vector<ComponentKey> get_all_connector_and_evse_components_fom_db();
+
+    std::map<ComponentKey, std::vector<DeviceModelVariable>> get_all_components_from_db();
 
     ///
     /// \brief Check if a specific component exists in the databsae.

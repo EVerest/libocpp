@@ -2,10 +2,12 @@
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
 #include "date/tz.h"
+#include "lib/ocpp/common/database_testing_utils.hpp"
 #include "ocpp/common/types.hpp"
 #include "ocpp/v201/ctrlr_component_variables.hpp"
 #include "ocpp/v201/device_model.hpp"
 #include "ocpp/v201/device_model_storage_sqlite.hpp"
+#include "ocpp/v201/init_device_model_db.hpp"
 #include "ocpp/v201/ocpp_types.hpp"
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -35,6 +37,9 @@ static const int DEFAULT_EVSE_ID = 1;
 static const int DEFAULT_PROFILE_ID = 1;
 static const int DEFAULT_STACK_LEVEL = 1;
 static const std::string DEFAULT_TX_ID = "10c75ff7-74f5-44f5-9d01-f649f3ac7b78";
+const static std::string MIGRATION_FILES_PATH = "./resources/v201/device_model_migration_files";
+const static std::string SCHEMAS_PATH = "./resources/example_config/v201/component_schemas";
+const static std::string CONFIG_PATH = "./resources/example_config/v201/config.json";
 
 class TestSmartChargingHandler : public SmartChargingHandler {
 public:
@@ -50,13 +55,12 @@ public:
     }
 };
 
-class ChargepointTestFixtureV201 : public testing::Test {
+class ChargepointTestFixtureV201 : public DatabaseTestingUtils {
 protected:
     void SetUp() override {
     }
 
     void TearDown() override {
-        sqlite3_close(this->db_handle);
     }
 
     ChargingSchedule create_charge_schedule(ChargingRateUnitEnum charging_rate_unit) {
@@ -154,19 +158,13 @@ protected:
     }
 
     void create_device_model_db(const std::string& path) {
-        sqlite3* source_handle;
-        sqlite3_open(DEVICE_MODEL_DB_LOCATION_V201, &source_handle);
-        sqlite3_open(path.c_str(), &db_handle);
-
-        auto* backup = sqlite3_backup_init(db_handle, "main", source_handle, "main");
-        sqlite3_backup_step(backup, -1);
-        sqlite3_backup_finish(backup);
-
-        sqlite3_close(source_handle);
+        InitDeviceModelDb db(path, MIGRATION_FILES_PATH);
+        db.initialize_database(SCHEMAS_PATH, true);
+        db.insert_config_and_default_values(SCHEMAS_PATH, CONFIG_PATH);
     }
 
     std::shared_ptr<DeviceModel>
-    create_device_model(const std::string& path = "file:device_model?mode=memory&cache=shared",
+    create_device_model(const std::string& path = "file::memory:?cache=shared",
                         const std::optional<std::string> ac_phase_switching_supported = "true") {
         create_device_model_db(path);
         auto device_model_storage = std::make_unique<DeviceModelStorageSqlite>(path);
@@ -295,8 +293,7 @@ TEST_F(ChargepointTestFixtureV201, K01FR19_NumberPhasesOtherThan1AndPhaseToUseSe
 }
 
 TEST_F(ChargepointTestFixtureV201, K01FR20_IfPhaseToUseSetAndACPhaseSwitchingSupportedUndefined_ThenProfileIsInvalid) {
-    auto device_model_without_ac_phase_switching =
-        create_device_model("file:device_model2?mode=memory&cache=shared", {});
+    auto device_model_without_ac_phase_switching = create_device_model("file::memory:?cache=shared", {});
     device_model = std::move(device_model_without_ac_phase_switching);
 
     auto periods = create_charging_schedule_periods_with_phases(0, 1, 1);
@@ -312,8 +309,7 @@ TEST_F(ChargepointTestFixtureV201, K01FR20_IfPhaseToUseSetAndACPhaseSwitchingSup
 }
 
 TEST_F(ChargepointTestFixtureV201, K01FR20_IfPhaseToUseSetAndACPhaseSwitchingSupportedFalse_ThenProfileIsInvalid) {
-    auto device_model_with_false_ac_phase_switching =
-        create_device_model("file:device_model2?mode=memory&cache=shared", "false");
+    auto device_model_with_false_ac_phase_switching = create_device_model("file::memory:?cache=shared", "false");
     device_model = std::move(device_model_with_false_ac_phase_switching);
 
     auto periods = create_charging_schedule_periods_with_phases(0, 1, 1);
