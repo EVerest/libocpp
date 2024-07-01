@@ -64,9 +64,9 @@ template <DataEnum T> auto to_specific_type_auto(const std::string& value) {
     }
 }
 
-template<DataEnum T> bool is_type_numeric() {
+template <DataEnum T> bool is_type_numeric() {
     static_assert(T == DataEnum::string || T == DataEnum::integer || T == DataEnum::decimal ||
-                      T == DataEnum::dateTime || T == DataEnum::boolean || T == DataEnum::OptionList || 
+                      T == DataEnum::dateTime || T == DataEnum::boolean || T == DataEnum::OptionList ||
                       T == DataEnum::SequenceList || T == DataEnum::MemberList,
                   "Requested unknown datatype");
 
@@ -74,7 +74,7 @@ template<DataEnum T> bool is_type_numeric() {
         return true;
     } else {
         return false;
-    }    
+    }
 }
 
 typedef std::function<void(const std::unordered_map<int64_t, VariableMonitoringMeta>& monitors,
