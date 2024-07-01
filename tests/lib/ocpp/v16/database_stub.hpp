@@ -66,6 +66,9 @@ struct SQLiteStatementTest : public ocpp::common::SQLiteStatementInterface {
     virtual int bind_null(const std::string& param) {
         return 0;
     }
+    virtual int get_number_of_rows() override {
+        return 0;
+    }
     virtual int column_type(const int idx) {
         return SQLITE_INTEGER;
     }
