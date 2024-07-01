@@ -481,17 +481,18 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
         if (characteristics.supportsMonitoring) {
             // If the monitor is of type 'delta' (or periodic) and it is of a non-numeric
             // type the value is ignored since all values will be reported
-            if(result.type == MonitorEnum::Delta && (characteristics.dataType != DataEnum::decimal && characteristics.dataType != DataEnum::integer)) {
+            if (result.type == MonitorEnum::Delta &&
+                (characteristics.dataType != DataEnum::decimal && characteristics.dataType != DataEnum::integer)) {
                 valid_value = true;
-            } else if(result.type == MonitorEnum::Periodic || result.type == MonitorEnum::PeriodicClockAligned) {
+            } else if (result.type == MonitorEnum::Periodic || result.type == MonitorEnum::PeriodicClockAligned) {
                 valid_value = true;
             } else {
                 try {
                     valid_value = validate_value(characteristics, std::to_string(request.value),
-                                                allow_zero(request.component, request.variable));
+                                                 allow_zero(request.component, request.variable));
                 } catch (const std::exception& e) {
                     EVLOG_warning << "Could not validate monitor value: " << request.value
-                                << " for component: " << request.component << " and variable: " << request.variable;
+                                  << " for component: " << request.component << " and variable: " << request.variable;
                     valid_value = false;
                 }
             }
@@ -505,7 +506,22 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
             continue;
         }
 
-        // TODO (ioan): see how we should handle the 'Duplicate' data
+        // 3.77 Duplicate - A monitor already exists for the given type/severity combination.
+        bool duplicate_value = false;
+
+        for (const auto& [id, monitor_meta] : variable_it->second.monitors) {
+            if (monitor_meta.monitor.type == request.type && monitor_meta.monitor.severity == request.severity) {
+                duplicate_value = true;
+                break;
+            }
+        }
+
+        if (duplicate_value) {
+            result.status = SetMonitoringStatusEnum::Duplicate;
+            set_monitors_res.push_back(result);
+            continue;
+        }
+
         try {
             auto monitor_meta = this->storage->set_monitoring_data(request, type);
 
