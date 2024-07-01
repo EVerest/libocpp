@@ -8,14 +8,16 @@
 
 namespace ocpp {
 
-// This file contains the implementation of a couple of custom iterators, enabling the iteration and abstraction of more complex containers.
-// For example we want to be able to iterate a std::vector<std::unique_ptr<T>> and get references to T from the iterator
+// This file contains the implementation of a couple of custom iterators, enabling the iteration and abstraction of more
+// complex containers. For example we want to be able to iterate a std::vector<std::unique_ptr<T>> and get references to
+// T from the iterator
 //
 // ForwardIterator<T> implements a custom iterator for type T that does not depend on any underlying container.
 //   You can add this for your type by returning ForwardIterator<T> from begin() and end()
 // ForwardIterator can only be constructed by passing a ForwardIteratorBase derived struct in a unique_ptr.
 //   ForwardIteratorBase is an abstract class that allows us to implement container specific functionality.
-// VectorOfUniquePtrIterator is an implementation of the ForwardIteratorBase specifically catered to the example of std::vector<std:unique_ptr<T>>
+// VectorOfUniquePtrIterator is an implementation of the ForwardIteratorBase specifically catered to the example of
+// std::vector<std:unique_ptr<T>>
 //   So to implement the begin() and end() functions for your type, you could do the following:
 //   std::vector<std::unique_ptr<T>> container;
 //   ForwardIterator<T> begin() {
@@ -34,7 +36,8 @@ template <typename T> struct ForwardIteratorBase {
     virtual bool not_equal(const ForwardIteratorBase& other) = 0;
 };
 
-/// \brief Helper struct that allows the of an iterator in an interface, can be implemented using any forward iterator
+/// \brief Helper struct that allows the use of an iterator in an interface, can be implemented using any forward
+/// iterator
 template <typename T> struct ForwardIterator {
     using iterator_category = std::forward_iterator_tag;
     using difference_type = std::ptrdiff_t;
