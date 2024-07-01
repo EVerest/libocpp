@@ -53,9 +53,18 @@ std::string profile_validation_result_to_string(ProfileValidationResultEnum e);
 
 std::ostream& operator<<(std::ostream& os, const ProfileValidationResultEnum validation_result);
 
+class SmartChargingHandlerInterface {
+public:
+    virtual ~SmartChargingHandlerInterface() = default;
+
+    virtual ProfileValidationResultEnum validate_profile(ChargingProfile& profile, int32_t evse_id) = 0;
+
+    virtual SetChargingProfileResponse add_profile(ChargingProfile& profile, int32_t evse_id) = 0;
+};
+
 /// \brief This class handles and maintains incoming ChargingProfiles and contains the logic
 /// to calculate the composite schedules
-class SmartChargingHandler {
+class SmartChargingHandler : public SmartChargingHandlerInterface {
 private:
     EvseManagerInterface& evse_manager;
     std::shared_ptr<DeviceModel>& device_model;
@@ -72,12 +81,12 @@ public:
     /// If a profile does not have validFrom or validTo set, we conform the values
     /// to a representation that fits the spec.
     ///
-    ProfileValidationResultEnum validate_profile(ChargingProfile& profile, int32_t evse_id);
+    ProfileValidationResultEnum validate_profile(ChargingProfile& profile, int32_t evse_id) override;
 
     ///
     /// \brief Adds a given \p profile and associated \p evse_id to our stored list of profiles
     ///
-    SetChargingProfileResponse add_profile(ChargingProfile& profile, int32_t evse_id);
+    SetChargingProfileResponse add_profile(ChargingProfile& profile, int32_t evse_id) override;
 
     ///
     /// \brief Retrieves existing profiles on system.

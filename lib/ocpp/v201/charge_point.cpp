@@ -91,7 +91,7 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
                          const std::string& core_database_path, const std::string& sql_init_path,
                          const std::string& message_log_path, const std::shared_ptr<EvseSecurity> evse_security,
                          const Callbacks& callbacks,
-                         std::shared_ptr<SmartChargingHandler> smart_charging_handler) :
+                         std::shared_ptr<SmartChargingHandlerInterface> smart_charging_handler) :
     ChargePoint(evse_connector_structure, std::move(device_model_storage),
                 ocpp_main_path, core_database_path, sql_init_path, message_log_path, evse_security, callbacks) {
     this->smart_charging_handler = smart_charging_handler;

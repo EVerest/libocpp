@@ -775,14 +775,14 @@ private:
 
 protected:
     void handle_message(const EnhancedMessage<v201::MessageType>& message);
-    std::shared_ptr<SmartChargingHandler> smart_charging_handler;
+    std::shared_ptr<SmartChargingHandlerInterface> smart_charging_handler;
 
     ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
                 std::unique_ptr<DeviceModelStorage> device_model_storage, const std::string& ocpp_main_path,
                 const std::string& core_database_path, const std::string& sql_init_path,
                 const std::string& message_log_path, const std::shared_ptr<EvseSecurity> evse_security,
                 const Callbacks& callbacks,
-                std::shared_ptr<SmartChargingHandler> smart_charging_handler);
+                std::shared_ptr<SmartChargingHandlerInterface> smart_charging_handler);
 
 public:
     /// \brief Construct a new ChargePoint object
