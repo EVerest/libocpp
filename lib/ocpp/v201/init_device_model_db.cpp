@@ -13,8 +13,6 @@
 const static std::string STANDARDIZED_COMPONENT_SCHEMAS_DIR = "standardized";
 const static std::string CUSTOM_COMPONENT_SCHEMAS_DIR = "custom";
 
-#define DEVICE_MODEL_MIGRATION_FILE_VERSION 1 // TODO get from cmake
-
 namespace ocpp::v201 {
 
 // Forward declarations.
@@ -35,7 +33,7 @@ static std::string get_variable_name_for_logging(const VariableAttributeKey& var
 InitDeviceModelDb::InitDeviceModelDb(const std::filesystem::path& database_path,
                                      const std::filesystem::path& migration_files_path) :
     common::DatabaseHandlerCommon(std::make_unique<common::DatabaseConnection>(database_path), migration_files_path,
-                                  DEVICE_MODEL_MIGRATION_FILE_VERSION),
+                                  MIGRATION_DEVICE_MODEL_FILE_VERSION_V201),
     database_path(database_path),
     database_exists(std::filesystem::exists(database_path)) {
 }
@@ -220,7 +218,6 @@ void InitDeviceModelDb::insert_component(const ComponentKey& component_key,
     }
 
     insert_component_statement->bind_text("@name", component_key.name, ocpp::common::SQLiteString::Transient);
-    // TODO can a connector id or evse id be 0?
     if (component_key.connector_id.has_value()) {
         insert_component_statement->bind_int("@connector_id", component_key.connector_id.value());
     } else {
@@ -1298,7 +1295,10 @@ void from_json(const json& j, DeviceModelVariable& c) {
                 c.default_actual_value = "false";
             }
         } else if (default_value.is_array() || default_value.is_object()) {
-            // TODO : error!!
+            EVLOG_warning << "Trying to get default value of variable " << c.name
+                          << " from json, but value is array or object: " << default_value.dump();
+            // Maybe this is correct and is just a string (json value string), so just return the string.
+            c.default_actual_value = default_value.dump();
         } else {
             c.default_actual_value = default_value.dump();
         }
