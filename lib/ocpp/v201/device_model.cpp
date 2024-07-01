@@ -119,6 +119,7 @@ bool DeviceModel::component_variables_match(const std::vector<ComponentVariable>
                            (component.instance == v.component.instance) and (variable == v.variable)); // B08.FR.23
                }) != component_variables.end();
 }
+
 bool validate_value(const VariableCharacteristics& characteristics, const std::string& value, bool allow_zero) {
     switch (characteristics.dataType) {
     case DataEnum::string:
@@ -478,13 +479,21 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
         bool valid_value = true;
 
         if (characteristics.supportsMonitoring) {
-            try {
-                valid_value = validate_value(characteristics, std::to_string(request.value),
-                                             allow_zero(request.component, request.variable));
-            } catch (const std::exception& e) {
-                EVLOG_warning << "Could not validate monitor value: " << request.value
-                              << " for component: " << request.component << " and variable: " << request.variable;
-                valid_value = false;
+            // If the monitor is of type 'delta' (or periodic) and it is of a non-numeric
+            // type the value is ignored since all values will be reported
+            if(result.type == MonitorEnum::Delta && (characteristics.dataType != DataEnum::decimal && characteristics.dataType != DataEnum::integer)) {
+                valid_value = true;
+            } else if(result.type == MonitorEnum::Periodic || result.type == MonitorEnum::PeriodicClockAligned) {
+                valid_value = true;
+            } else {
+                try {
+                    valid_value = validate_value(characteristics, std::to_string(request.value),
+                                                allow_zero(request.component, request.variable));
+                } catch (const std::exception& e) {
+                    EVLOG_warning << "Could not validate monitor value: " << request.value
+                                << " for component: " << request.component << " and variable: " << request.variable;
+                    valid_value = false;
+                }
             }
         } else {
             valid_value = false;
