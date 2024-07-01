@@ -460,12 +460,13 @@ TEST_F(InitDeviceModelDbTest, wrong_config_path) {
 }
 
 TEST_F(InitDeviceModelDbTest, no_initialization) {
-    // Try to insert config and default values whie the schemas are not inserted yet.
+    // Try to insert config and default values while the schemas are not inserted yet.
     InitDeviceModelDb db(DATABASE_PATH, MIGRATION_FILES_PATH);
     EXPECT_THROW(db.insert_config_and_default_values(SCHEMAS_PATH, CONFIG_PATH), InitDeviceModelDbError);
 }
 
 TEST_F(InitDeviceModelDbTest, config_wrong_attribute) {
+    // Try to insert attribute that is not existing (not one of 'Actual', 'MinSet', 'MaxSet' or 'Target')
     InitDeviceModelDb db(DATABASE_PATH, MIGRATION_FILES_PATH);
     EXPECT_NO_THROW(db.initialize_database(SCHEMAS_PATH, true));
     EXPECT_THROW(db.insert_config_and_default_values(SCHEMAS_PATH, CONFIG_PATH_WRONG_ATTRIBUTE),
@@ -473,6 +474,7 @@ TEST_F(InitDeviceModelDbTest, config_wrong_attribute) {
 }
 
 TEST_F(InitDeviceModelDbTest, config_not_existing_attribute) {
+    // Try to insert attribute that is not set in the component schema.
     InitDeviceModelDb db(DATABASE_PATH, MIGRATION_FILES_PATH);
     EXPECT_NO_THROW(db.initialize_database(SCHEMAS_PATH, true));
     EXPECT_THROW(db.insert_config_and_default_values(SCHEMAS_PATH, CONFIG_PATH_NOT_EXISTING_ATTRIBUTE),
@@ -480,6 +482,7 @@ TEST_F(InitDeviceModelDbTest, config_not_existing_attribute) {
 }
 
 TEST_F(InitDeviceModelDbTest, config_wrong_component) {
+    // Try to set value of attribute of component that does not exist in the component schema.
     InitDeviceModelDb db(DATABASE_PATH, MIGRATION_FILES_PATH);
     db.initialize_database(SCHEMAS_PATH, true);
     EXPECT_THROW(db.insert_config_and_default_values(SCHEMAS_PATH, CONFIG_PATH_WRONG_COMPONENT),
@@ -487,12 +490,14 @@ TEST_F(InitDeviceModelDbTest, config_wrong_component) {
 }
 
 TEST_F(InitDeviceModelDbTest, config_wrong_variable) {
+    // Try to set value of attribute of variable that does not exist in the component schema.
     InitDeviceModelDb db(DATABASE_PATH, MIGRATION_FILES_PATH);
     db.initialize_database(SCHEMAS_PATH, true);
     EXPECT_THROW(db.insert_config_and_default_values(SCHEMAS_PATH, CONFIG_PATH_WRONG_VARIABLE), InitDeviceModelDbError);
 }
 
 TEST_F(InitDeviceModelDbTest, config_wrong_component_connectorid) {
+    // Try to set attribute value of component with a not existing connector id in the component schema.
     InitDeviceModelDb db(DATABASE_PATH, MIGRATION_FILES_PATH);
     db.initialize_database(SCHEMAS_PATH, true);
     EXPECT_THROW(db.insert_config_and_default_values(SCHEMAS_PATH, CONFIG_PATH_WRONG_COMPONENT_CONNECTORID),
