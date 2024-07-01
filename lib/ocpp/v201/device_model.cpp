@@ -449,22 +449,27 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
     for (auto& request : requests) {
         SetMonitoringResult result;
 
-        if (this->device_model.find(request.component) == this->device_model.end()) {
+        // Set the com/var based on the request since it's required in a response
+        // even if it is 'UnknownComoponent/Variable'
+        result.component = request.component;
+        result.variable = request.variable;
+        result.severity = request.severity;
+        result.type = request.type;  
+        
+        if (this->device_model.find(request.component) == this->device_model.end()) {            
             result.status = SetMonitoringStatusEnum::UnknownComponent;
             set_monitors_res.push_back(result);
             continue;
-        }
-        result.component = request.component;
+        }        
 
-        auto& variable_map = this->device_model[request.component];
+        auto& variable_map = this->device_model[request.component];        
+        
         auto variable_it = variable_map.find(request.variable);
-
-        if (variable_it == variable_map.end()) {
+        if (variable_it == variable_map.end()) {            
             result.status = SetMonitoringStatusEnum::UnknownVariable;
             set_monitors_res.push_back(result);
             continue;
         }
-        result.variable = request.variable;
 
         // TODO (ioan): see how we should handle the 'Duplicate' data
         try {
@@ -475,8 +480,6 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
                 variable_it->second.monitors.insert(
                     std::pair{monitor_meta.value().monitor.id, std::move(monitor_meta.value())});
 
-                result.type = request.type;
-                result.severity = request.severity;
                 result.id = monitor_meta.value().monitor.id;
 
                 result.status = SetMonitoringStatusEnum::Accepted;
