@@ -3609,14 +3609,14 @@ void ChargePoint::cache_cleanup_handler() {
         {
             // Wait for next wakeup or timeout
             std::unique_lock lk(this->auth_cache_cleanup_mutex);
-            if (this->auth_cache_cleanup_cv.wait_for(lk, std::chrono::minutes(15),
-                                                     [&]() { return this->auth_cache_cleanup_required; })) {
+            if (this->auth_cache_cleanup_cv.wait_for(lk, std::chrono::minutes(15), [&]() {
+                    return this->stop_auth_cache_cleanup_handler || this->auth_cache_cleanup_required;
+                })) {
                 EVLOG_debug << "Triggered authorization cache cleanup";
             } else {
                 EVLOG_debug << "Time based authorization cache cleanup";
             }
             this->auth_cache_cleanup_required = false;
-            lk.unlock();
         }
 
         if (this->stop_auth_cache_cleanup_handler) {
