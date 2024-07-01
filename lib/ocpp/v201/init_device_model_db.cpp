@@ -847,10 +847,11 @@ bool InitDeviceModelDb::insert_variable_attribute_value(const ComponentKey& comp
                                      conversions::attribute_enum_to_string(variable_attribute_key.attribute_type) +
                                      ": " + std::string(this->database->get_error_message()));
     } else if (insert_variable_attribute_statement->changes() < 1) {
-        EVLOG_warning << "Could not set value of variable " + get_variable_name_for_logging(variable_attribute_key) +
-                             " (Component: " + get_component_name_for_logging(component_key) + ") attribute " +
-                             conversions::attribute_enum_to_string(variable_attribute_key.attribute_type) +
-                             ": value has already changed by other source"; // TODO get source from database???
+        EVLOG_warning
+            << "Could not set value of variable " + get_variable_name_for_logging(variable_attribute_key) +
+                   " (Component: " + get_component_name_for_logging(component_key) + ") attribute " +
+                   conversions::attribute_enum_to_string(variable_attribute_key.attribute_type) +
+                   ": value has already changed by other source"; // TODO get source from database for logging???
     }
 
     return true;
@@ -1067,7 +1068,6 @@ void InitDeviceModelDb::update_component(const ComponentKey& db_component, const
                                          const std::vector<DeviceModelVariable>& variables) {
     if (!db_component.db_id.has_value()) {
         EVLOG_error << "Can not update component " << db_component.name << ", because database id is unknown.";
-        // TODO get component id here or just return???
         return;
     }
 
@@ -1108,7 +1108,6 @@ std::vector<DeviceModelVariable>
 InitDeviceModelDb::get_variables_from_component_from_db(const ComponentKey& db_component) {
     if (!db_component.db_id.has_value()) {
         EVLOG_error << "Can not update component " << db_component.name << ", because database id is unknown.";
-        // TODO get component id here or just return???
         return {};
     }
 
