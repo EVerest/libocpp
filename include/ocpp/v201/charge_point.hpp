@@ -520,8 +520,6 @@ private:
     /// device model
     void remove_network_connection_profiles_below_actual_security_profile();
 
-    void handle_message(const EnhancedMessage<v201::MessageType>& message);
-
     void message_callback(const std::string& message);
     void update_aligned_data_interval();
 
@@ -773,6 +771,9 @@ private:
     /// \brief Immediately execute the given \param request to change the operational state of a component
     /// If \param persist is set to true, the change will be persisted across a reboot
     void execute_change_availability_request(ChangeAvailabilityRequest request, bool persist);
+
+protected:
+    void handle_message(const EnhancedMessage<v201::MessageType>& message);
 
 public:
     /// \brief Construct a new ChargePoint object
