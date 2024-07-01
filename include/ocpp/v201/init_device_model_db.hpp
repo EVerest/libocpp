@@ -354,7 +354,14 @@ private: // Functions
     std::map<ComponentKey, std::vector<VariableAttributeKey>>
     get_config_values(const std::filesystem::path& config_file_path);
 
-    bool check_config_integrity(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& schema_components,
+    ///
+    /// \brief Check if the config is correct compared with the database.
+    /// \param database_components  The components from the database.
+    /// \param config               The configuration.
+    /// \param[out] errors          Errors will be written to this file, to be able to output them to the logging.
+    /// \return True when everything is fine / correct in the config file compared to the device model database.
+    ///
+    bool check_config_integrity(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& database_components,
                                 const std::map<ComponentKey, std::vector<VariableAttributeKey>>& config,
                                 std::string& errors);
 
@@ -377,6 +384,10 @@ private: // Functions
     ///
     std::vector<ComponentKey> get_all_connector_and_evse_components_fom_db();
 
+    ///
+    /// \brief Get all components with its variables (and characteristics / attributes) from the database.
+    /// \return A map of Components with it Variables.
+    ///
     std::map<ComponentKey, std::vector<DeviceModelVariable>> get_all_components_from_db();
 
     ///

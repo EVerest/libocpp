@@ -854,10 +854,6 @@ bool InitDeviceModelDb::insert_variable_attribute_value(const ComponentKey& comp
                              " (Component: " + get_component_name_for_logging(component_key) + ") attribute " +
                              conversions::attribute_enum_to_string(variable_attribute_key.attribute_type) +
                              ": value has already changed by other source"; // TODO get source from database???
-        // throw InitDeviceModelDbError("Could not set value of variable " + variable_attribute_key.name +
-        //                              " (component: " + component_key.name + ") attribute " +
-        //                              conversions::attribute_enum_to_string(variable_attribute_key.attribute_type) +
-        //                              ": component or variable not found or source is not 'default'");
     }
 
     return true;
@@ -1478,6 +1474,14 @@ static std::string get_string_value_from_json(const json& value) {
     }
 }
 
+///
+/// \brief Get a string that describes the component, used for logging.
+///
+/// This includes the name of the component, the instance, evse id and connector id.
+///
+/// \param component    The component to get the string from.
+/// \return The logging string.
+///
 static std::string get_component_name_for_logging(const ComponentKey& component) {
     const std::string component_name =
         component.name + (component.instance.has_value() ? ", instance " + component.instance.value() : "") +
@@ -1486,6 +1490,15 @@ static std::string get_component_name_for_logging(const ComponentKey& component)
 
     return component_name;
 }
+
+///
+/// \brief Get a string that describes the variable, used for logging.
+///
+/// This includes the name and the instance of the variable
+///
+/// \param variable    The variable to get the string from.
+/// \return The logging string.
+///
 
 static std::string get_variable_name_for_logging(const VariableAttributeKey& variable) {
     const std::string variable_name =
