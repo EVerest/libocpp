@@ -8,7 +8,6 @@
 #include <ocpp/v201/messages/FirmwareStatusNotification.hpp>
 #include <ocpp/v201/messages/LogStatusNotification.hpp>
 #include <ocpp/v201/notify_report_requests_splitter.hpp>
-#include <ocpp/v201/smart_charging.hpp>
 
 #include <optional>
 #include <stdexcept>
@@ -84,17 +83,6 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
                          const Callbacks& callbacks) :
     ChargePoint(evse_connector_structure, std::make_unique<DeviceModelStorageSqlite>(device_model_storage_address),
                 ocpp_main_path, core_database_path, sql_init_path, message_log_path, evse_security, callbacks) {
-}
-
-ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
-                         std::unique_ptr<DeviceModelStorage> device_model_storage, const std::string& ocpp_main_path,
-                         const std::string& core_database_path, const std::string& sql_init_path,
-                         const std::string& message_log_path, const std::shared_ptr<EvseSecurity> evse_security,
-                         const Callbacks& callbacks,
-                         std::shared_ptr<SmartChargingHandlerInterface> smart_charging_handler) :
-    ChargePoint(evse_connector_structure, std::move(device_model_storage),
-                ocpp_main_path, core_database_path, sql_init_path, message_log_path, evse_security, callbacks) {
-    this->smart_charging_handler = smart_charging_handler;
 }
 
 ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
@@ -1320,6 +1308,9 @@ void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& messa
         break;
     case MessageType::CustomerInformation:
         this->handle_customer_information_req(json_message);
+        break;
+    case MessageType::SetChargingProfile:
+        this->handle_set_charging_profile_req(json_message);
         break;
     case MessageType::SetMonitoringBase:
         this->handle_set_monitoring_base_req(json_message);
@@ -3159,6 +3150,29 @@ void ChargePoint::handle_heartbeat_response(CallResult<HeartbeatResponse> call) 
         ocpp::DateTime currentTimeCompensated(call.msg.currentTime.to_time_point() + timeOfFlight);
         this->callbacks.time_sync_callback.value()(currentTimeCompensated);
     }
+}
+
+void ChargePoint::handle_set_charging_profile_req(Call<SetChargingProfileRequest> call) {
+    EVLOG_debug << "Received SetChargingProfileRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
+    auto msg = call.msg;
+    SetChargingProfileResponse response;
+    response.status = ChargingProfileStatusEnum::Rejected;
+
+    auto res = this->smart_charging_handler->validate_profile(msg.chargingProfile, msg.evseId);
+    if (res == ProfileValidationResultEnum::Valid) {
+        EVLOG_debug << "Accepting SetChargingProfileRequest";
+        response = this->smart_charging_handler->add_profile(msg.chargingProfile, msg.evseId);
+        this->callbacks.set_charging_profiles_callback();
+    } else {
+        response.statusInfo = StatusInfo();
+        response.statusInfo->reasonCode = conversions::profile_validation_result_to_reason_code(res);
+        response.statusInfo->additionalInfo = conversions::profile_validation_result_to_string(res);
+        EVLOG_debug << "Rejecting SetChargingProfileRequest:\n reasonCode: " << response.statusInfo->reasonCode.get()
+                    << "\nadditionalInfo: " << response.statusInfo->additionalInfo->get();
+    }
+
+    ocpp::CallResult<SetChargingProfileResponse> call_result(response, call.uniqueId);
+    this->send<SetChargingProfileResponse>(call_result);
 }
 
 void ChargePoint::handle_firmware_update_req(Call<UpdateFirmwareRequest> call) {

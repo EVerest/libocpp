@@ -73,6 +73,45 @@ std::string profile_validation_result_to_string(ProfileValidationResultEnum e) {
 
     throw std::out_of_range("No known string conversion for provided enum of type ProfileValidationResultEnum");
 }
+
+std::string profile_validation_result_to_reason_code(ProfileValidationResultEnum e) {
+    switch (e) {
+    case ProfileValidationResultEnum::Valid:
+        return "NoError";
+    case ProfileValidationResultEnum::DuplicateProfileValidityPeriod:
+    case ProfileValidationResultEnum::DuplicateTxDefaultProfileFound:
+    case ProfileValidationResultEnum::ExistingChargingStationExternalConstraints:
+        return "DuplicateProfile";
+    case ProfileValidationResultEnum::TxProfileTransactionNotOnEvse:
+    case ProfileValidationResultEnum::TxProfileEvseHasNoActiveTransaction:
+        return "TxNotFound";
+    case ProfileValidationResultEnum::TxProfileConflictingStackLevel:
+        return "InvalidStackLevel";
+    case ProfileValidationResultEnum::ChargingScheduleChargingRateUnitUnsupported:
+        return "UnsupportedRateUnit";
+    case ProfileValidationResultEnum::ChargingProfileNoChargingSchedulePeriods:
+    case ProfileValidationResultEnum::ChargingProfileFirstStartScheduleIsNotZero:
+    case ProfileValidationResultEnum::ChargingProfileMissingRequiredStartSchedule:
+    case ProfileValidationResultEnum::ChargingProfileExtraneousStartSchedule:
+    case ProfileValidationResultEnum::ChargingSchedulePeriodsOutOfOrder:
+    case ProfileValidationResultEnum::ChargingSchedulePeriodInvalidPhaseToUse:
+    case ProfileValidationResultEnum::ChargingSchedulePeriodUnsupportedNumberPhases:
+    case ProfileValidationResultEnum::ChargingSchedulePeriodExtraneousPhaseValues:
+    case ProfileValidationResultEnum::ChargingSchedulePeriodPhaseToUseACPhaseSwitchingUnsupported:
+        return "InvalidSchedule";
+    case ProfileValidationResultEnum::TxProfileMissingTransactionId:
+        return "MissingParam";
+    case ProfileValidationResultEnum::EvseDoesNotExist:
+    case ProfileValidationResultEnum::TxProfileEvseIdNotGreaterThanZero:
+    case ProfileValidationResultEnum::ChargingStationMaxProfileCannotBeRelative:
+    case ProfileValidationResultEnum::ChargingStationMaxProfileEvseIdGreaterThanZero:
+        return "InvalidValue";
+    case ProfileValidationResultEnum::InvalidProfileType:
+        return "InternalError";
+    }
+
+    throw std::out_of_range("No applicable reason code for provided enum of type ProfileValidationResultEnum");
+}
 } // namespace conversions
 
 std::ostream& operator<<(std::ostream& os, const ProfileValidationResultEnum validation_result) {

@@ -49,6 +49,10 @@ namespace conversions {
 /// \brief Converts the given ProfileValidationResultEnum \p e to human readable string
 /// \returns a string representation of the ProfileValidationResultEnum
 std::string profile_validation_result_to_string(ProfileValidationResultEnum e);
+
+/// \brief Converts the given ProfileValidationResultEnum \p e to a OCPP reasonCode.
+/// \returns a reasonCode
+std::string profile_validation_result_to_reason_code(ProfileValidationResultEnum e);
 } // namespace conversions
 
 std::ostream& operator<<(std::ostream& os, const ProfileValidationResultEnum validation_result);
