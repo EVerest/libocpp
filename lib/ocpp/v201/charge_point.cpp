@@ -8,6 +8,7 @@
 #include <ocpp/v201/messages/FirmwareStatusNotification.hpp>
 #include <ocpp/v201/messages/LogStatusNotification.hpp>
 #include <ocpp/v201/notify_report_requests_splitter.hpp>
+#include <ocpp/v201/smart_charging.hpp>
 
 #include <optional>
 #include <stdexcept>
@@ -83,6 +84,17 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
                          const Callbacks& callbacks) :
     ChargePoint(evse_connector_structure, std::make_unique<DeviceModelStorageSqlite>(device_model_storage_address),
                 ocpp_main_path, core_database_path, sql_init_path, message_log_path, evse_security, callbacks) {
+}
+
+ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
+                         std::unique_ptr<DeviceModelStorage> device_model_storage, const std::string& ocpp_main_path,
+                         const std::string& core_database_path, const std::string& sql_init_path,
+                         const std::string& message_log_path, const std::shared_ptr<EvseSecurity> evse_security,
+                         const Callbacks& callbacks,
+                         std::shared_ptr<SmartChargingHandler> smart_charging_handler) :
+    ChargePoint(evse_connector_structure, std::move(device_model_storage),
+                ocpp_main_path, core_database_path, sql_init_path, message_log_path, evse_security, callbacks) {
+    this->smart_charging_handler = smart_charging_handler;
 }
 
 ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
@@ -177,6 +189,8 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
     this->evse_manager = std::make_unique<EvseManager>(
         evse_connector_structure, *this->device_model, this->database_handler, component_state_manager,
         transaction_meter_value_callback, this->callbacks.pause_charging_callback);
+
+    this->smart_charging_handler = std::make_shared<SmartChargingHandler>(*this->evse_manager, this->device_model);
 
     // configure logging
     this->configure_message_logging_format(message_log_path);
