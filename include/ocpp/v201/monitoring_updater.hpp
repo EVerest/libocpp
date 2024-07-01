@@ -74,7 +74,7 @@ private:
     std::shared_ptr<DeviceModel> device_model;
     Everest::SteadyTimer monitors_timer;
 
-    // TODO (ioan): does this have to be persisted in case of a reboot?
+    // To->CSMS message unique ID
     int32_t unique_id;
 
     notify_events notify_csms_events;

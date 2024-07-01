@@ -190,8 +190,15 @@ void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, Va
 
             TriggeredMonitorData& triggered_data = it->second;
 
-            // Make it not cleared, that is in a 'dangerous' state
-            triggered_data.cleared = false;
+            // If we are in a 'not dangerous' a.k.a 'cleared' state
+            if(triggered_data.cleared) {
+                // Make it not cleared, that is in a 'dangerous' state
+                triggered_data.cleared = false;
+                // Also reset the CSMS sent, since the new cleared state was not sent
+                triggered_data.csms_sent = false;
+
+                EVLOG_info << "Variable: " << variable.name.get() << " triggered monitor: " << monitor_id;
+            }
 
             // Update relevant values
             triggered_data.value_previous = value_previous;
@@ -201,7 +208,6 @@ void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, Va
             // in our triggered list it means that we have returned to normal
             if (it != std::end(triggered_monitors)) {
                 if (!it->second.cleared) {
-
                     // Mark as cleared (a.k.a normal)
                     it->second.cleared = true;
 
@@ -224,6 +230,12 @@ void MonitoringUpdater::process_periodic_monitors() {
     if (!monitoring_enabled) {
         EVLOG_info << "Monitoring not enabled, not processing periodic monitors";
         return;
+    }
+
+
+    if(!triggered_monitors.empty()) {
+        EVLOG_info << "Processing periodically triggered monitors";
+        process_triggered_monitors();
     }
 
     // We don't persist the messages here, base on the  'OfflineQueuingSeverity'
@@ -385,6 +397,8 @@ void MonitoringUpdater::process_triggered_monitors() {
         }
 
         if (should_clear) {
+            EVLOG_info << "Erased triggered monitor: [" << it->second.component << ":"  << it->second.variable 
+                       << "] since we're offline and the severity is < 'OfflineQueuingSeverity'";
             it = triggered_monitors.erase(it);
         } else {
             ++it;
@@ -394,13 +408,17 @@ void MonitoringUpdater::process_triggered_monitors() {
     if (!is_offline) {
         std::vector<EventData> monitor_events;
         for (auto& [id, trigger] : triggered_monitors) {
-            EventData notify_event = std::move(create_notify_event(
-                unique_id++, trigger.value_current, trigger.component, trigger.variable, trigger.monitor_meta));
+            // Only send a trigger if we did not already sent it, as we
+            // will mark it as not sent again, after the value changes
+            if(trigger.csms_sent == false) {
+                EventData notify_event = std::move(create_notify_event(
+                    unique_id++, trigger.value_current, trigger.component, trigger.variable, trigger.monitor_meta));
 
-            // Mark the triggers as CSMS sent
-            trigger.csms_sent = true;
+                // Mark the triggers as CSMS sent
+                trigger.csms_sent = true;
 
-            monitor_events.push_back(std::move(notify_event));
+                monitor_events.push_back(std::move(notify_event));
+            }
         }
 
         if (!monitor_events.empty()) {
@@ -424,6 +442,8 @@ void MonitoringUpdater::process_triggered_monitors() {
         }
 
         if (should_clear) {
+            EVLOG_info << "Erased triggered monitor: [" << it->second.component << ":"  << it->second.variable 
+                       << "] since it was either cleared or it was sent to the CSMS and cleared";
             it = triggered_monitors.erase(it);
         } else {
             ++it;
