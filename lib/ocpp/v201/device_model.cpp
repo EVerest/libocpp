@@ -102,6 +102,7 @@ bool DeviceModel::component_criteria_match(const Component& component,
     }
     return false;
 }
+
 bool DeviceModel::component_variables_match(const std::vector<ComponentVariable>& component_variables,
                                             const ocpp::v201::Component& component,
                                             const ocpp::v201::Variable& variable) {
@@ -454,19 +455,43 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
         result.component = request.component;
         result.variable = request.variable;
         result.severity = request.severity;
-        result.type = request.type;  
-        
-        if (this->device_model.find(request.component) == this->device_model.end()) {            
+        result.type = request.type;
+
+        if (this->device_model.find(request.component) == this->device_model.end()) {
             result.status = SetMonitoringStatusEnum::UnknownComponent;
             set_monitors_res.push_back(result);
             continue;
-        }        
+        }
 
-        auto& variable_map = this->device_model[request.component];        
-        
+        auto& variable_map = this->device_model[request.component];
+
         auto variable_it = variable_map.find(request.variable);
-        if (variable_it == variable_map.end()) {            
+        if (variable_it == variable_map.end()) {
             result.status = SetMonitoringStatusEnum::UnknownVariable;
+            set_monitors_res.push_back(result);
+            continue;
+        }
+
+        // Validate the data we want to set based on the characteristics and
+        // see if it is out of range or out of the variable list
+        const auto& characteristics = variable_it->second.characteristics;
+        bool valid_value = true;
+
+        if (characteristics.supportsMonitoring) {
+            try {
+                valid_value = validate_value(characteristics, std::to_string(request.value),
+                                             allow_zero(request.component, request.variable));
+            } catch (const std::exception& e) {
+                EVLOG_warning << "Could not validate monitor value: " << request.value
+                              << " for component: " << request.component << " and variable: " << request.variable;
+                valid_value = false;
+            }
+        } else {
+            valid_value = false;
+        }
+
+        if (!valid_value) {
+            result.status = SetMonitoringStatusEnum::Rejected;
             set_monitors_res.push_back(result);
             continue;
         }
