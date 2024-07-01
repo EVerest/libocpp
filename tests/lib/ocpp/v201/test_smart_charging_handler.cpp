@@ -40,6 +40,7 @@ static const std::string DEFAULT_TX_ID = "10c75ff7-74f5-44f5-9d01-f649f3ac7b78";
 const static std::string MIGRATION_FILES_PATH = "./resources/v201/device_model_migration_files";
 const static std::string SCHEMAS_PATH = "./resources/example_config/v201/component_schemas";
 const static std::string CONFIG_PATH = "./resources/example_config/v201/config.json";
+const static std::string DEVICE_MODEL_DB_IN_MEMORY_PATH = "file::memory:?cache=shared";
 
 class TestSmartChargingHandler : public SmartChargingHandler {
 public:
@@ -164,10 +165,9 @@ protected:
     }
 
     std::shared_ptr<DeviceModel>
-    create_device_model(const std::string& path = "file::memory:?cache=shared",
-                        const std::optional<std::string> ac_phase_switching_supported = "true") {
-        create_device_model_db(path);
-        auto device_model_storage = std::make_unique<DeviceModelStorageSqlite>(path);
+    create_device_model(const std::optional<std::string> ac_phase_switching_supported = "true") {
+        create_device_model_db(DEVICE_MODEL_DB_IN_MEMORY_PATH);
+        auto device_model_storage = std::make_unique<DeviceModelStorageSqlite>(DEVICE_MODEL_DB_IN_MEMORY_PATH);
         auto device_model = std::make_shared<DeviceModel>(std::move(device_model_storage));
 
         // Defaults
@@ -293,7 +293,15 @@ TEST_F(ChargepointTestFixtureV201, K01FR19_NumberPhasesOtherThan1AndPhaseToUseSe
 }
 
 TEST_F(ChargepointTestFixtureV201, K01FR20_IfPhaseToUseSetAndACPhaseSwitchingSupportedUndefined_ThenProfileIsInvalid) {
-    auto device_model_without_ac_phase_switching = create_device_model("file::memory:?cache=shared", {});
+    // As a device model with ac switching supported default set to 'true', we want to create a new database with the
+    // ac switching support not set. But this is an in memory database, which is kept open until all handles to it are
+    // closed. So we close all connections to the database.
+    database->close_connection();
+    device_model = nullptr;
+    // Re open the connection, to an empty in memory database.
+    database->open_connection();
+    // And recreate the device model.
+    auto device_model_without_ac_phase_switching = create_device_model({});
     device_model = std::move(device_model_without_ac_phase_switching);
 
     auto periods = create_charging_schedule_periods_with_phases(0, 1, 1);
@@ -309,7 +317,15 @@ TEST_F(ChargepointTestFixtureV201, K01FR20_IfPhaseToUseSetAndACPhaseSwitchingSup
 }
 
 TEST_F(ChargepointTestFixtureV201, K01FR20_IfPhaseToUseSetAndACPhaseSwitchingSupportedFalse_ThenProfileIsInvalid) {
-    auto device_model_with_false_ac_phase_switching = create_device_model("file::memory:?cache=shared", "false");
+    // As a device model with ac switching supported default set to 'true', we want to create a new database with the
+    // ac switching support not set. But this is an in memory database, which is kept open until all handles to it are
+    // closed. So we close all connections to the database.
+    database->close_connection();
+    device_model = nullptr;
+    // Re open the connection, to an empty in memory database.
+    database->open_connection();
+    // And recreate the device model setting ac phase switching to 'false'.
+    auto device_model_with_false_ac_phase_switching = create_device_model("false");
     device_model = std::move(device_model_with_false_ac_phase_switching);
 
     auto periods = create_charging_schedule_periods_with_phases(0, 1, 1);

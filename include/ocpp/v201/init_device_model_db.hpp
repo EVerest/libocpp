@@ -66,9 +66,9 @@ struct ComponentKey {
 /// \brief Struct that holds a VariableAttribute struct and an database id.
 ///
 struct DbVariableAttribute {
-    std::optional<uint64_t> db_id;        ///< \brief The id in the database, if the record is read from the db.
-    std::optional<std::string> value_source;             ///< \brief Source of the attribute value (who set the value).
-    VariableAttribute variable_attribute; ///< \brief The variable attribute
+    std::optional<uint64_t> db_id;           ///< \brief The id in the database, if the record is read from the db.
+    std::optional<std::string> value_source; ///< \brief Source of the attribute value (who set the value).
+    VariableAttribute variable_attribute;    ///< \brief The variable attribute
 };
 
 ///
@@ -99,7 +99,7 @@ struct DeviceModelVariable {
 struct VariableAttributeKey {
     std::string name;                    ///< \brief Variable name
     std::optional<std::string> instance; ///< \brief Variable instance
-    AttributeEnum attribute_type;          ///< \brief Attribute type
+    AttributeEnum attribute_type;        ///< \brief Attribute type
     std::string value;                   ///< \brief Attribute value
 };
 
