@@ -79,8 +79,8 @@ template <DataEnum T> bool is_type_numeric() {
 
 typedef std::function<void(const std::unordered_map<int64_t, VariableMonitoringMeta>& monitors,
                            const Component& component, const Variable& variable,
-                           const VariableCharacteristics& characteristics, const std::string& value_previous,
-                           const std::string& value_current)>
+                           const VariableCharacteristics& characteristics, const VariableAttribute& attribute,
+                           const std::string& value_previous, const std::string& value_current)>
     on_variable_changed;
 
 /// \brief This class manages access to the device model representation and to the device model storage and provides
@@ -261,6 +261,8 @@ public:
     /// \return List of results of the requested operation
     std::vector<SetMonitoringResult> set_monitors(const std::vector<SetMonitoringData>& requests,
                                                   const VariableMonitorType type = VariableMonitorType::CustomMonitor);
+
+    bool update_monitor_reference(int32_t monitor_id, const std::string& reference_value);
 
     std::vector<VariableMonitoringPeriodic> get_periodic_monitors();
 

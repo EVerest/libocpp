@@ -282,7 +282,8 @@ SetVariableStatusEnum DeviceModel::set_value(const Component& component, const V
             const std::string& value_current = value;
 
             if (value_previous != value_current) {
-                variable_listener(monitors, component, variable, characteristics, value_previous, value_current);
+                variable_listener(monitors, component, variable, characteristics, attribute.value(), value_previous,
+                                  value_current);
             }
         }
     }
@@ -440,6 +441,57 @@ void DeviceModel::check_integrity(const std::map<int32_t, int32_t>& evse_connect
     }
 }
 
+bool DeviceModel::update_monitor_reference(int32_t monitor_id, const std::string& reference_value) {
+    bool found_monitor = false;
+    VariableMonitoringMeta* monitor_meta = nullptr;
+
+    // See if this is a trivial delta monitor and that it exists
+    for (auto& [component, variable_map] : this->device_model) {
+        for (auto& [variable, variable_meta_data] : variable_map) {
+            auto it = variable_meta_data.monitors.find(monitor_id);
+            if (it != std::end(variable_meta_data.monitors)) {
+                auto& characteristics = variable_meta_data.characteristics;
+
+                if ((characteristics.dataType == DataEnum::boolean) || (characteristics.dataType == DataEnum::string) ||
+                    (characteristics.dataType == DataEnum::dateTime) ||
+                    (characteristics.dataType == DataEnum::OptionList) ||
+                    (characteristics.dataType == DataEnum::MemberList) ||
+                    (characteristics.dataType == DataEnum::SequenceList) &&
+                        (it->second.monitor.type == MonitorEnum::Delta)) {
+                    monitor_meta = &it->second;
+                    found_monitor = true;
+                } else {
+                    found_monitor = false;
+                }
+
+                goto loop_end;
+            }
+        }
+    }
+loop_end:
+
+    if (found_monitor) {
+        try {
+            if (this->storage->update_monitoring_reference(monitor_id, reference_value)) {
+                // Update value in-memory too
+                monitor_meta->reference_value = reference_value;
+                return true;
+            } else {
+                EVLOG_warning << "Could not update in DB trivial delta monitor with ID: " << monitor_id
+                              << ". Reference value not updated!";
+            }
+        } catch (const DatabaseException& e) {
+            EVLOG_error << "Exception while updating trivial delta monitor reference with ID: " << monitor_id;
+            throw DeviceModelStorageError(e.what());
+        }
+    } else {
+        EVLOG_warning << "Could not find trivial delta monitor with ID: " << monitor_id
+                      << ". Reference value not updated!";
+    }
+
+    return false;
+}
+
 std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<SetMonitoringData>& requests,
                                                            const VariableMonitorType type) {
     if (requests.empty()) {
@@ -474,7 +526,7 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
             continue;
         }
 
-        if(request.id.has_value()) {
+        if (request.id.has_value()) {
             // TODO: Handle existing ID where the monitor is not found
             // result == rejected
         }
@@ -485,19 +537,19 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
         bool valid_value = true;
 
         if (characteristics.supportsMonitoring) {
-            EVLOG_info << "Validating monitor request of type: [" << request
-                       << "] and characteristics: [" << characteristics << "]"
+            EVLOG_info << "Validating monitor request of type: [" << request << "] and characteristics: ["
+                       << characteristics << "]"
                        << " and value: " << request.value;
 
             // If the monitor is of type 'delta' (or periodic) and it is of a non-numeric
             // type the value is ignored since all values will be reported
-            if (request.type == MonitorEnum::Delta &&                
+            if (request.type == MonitorEnum::Delta &&
                 (characteristics.dataType != DataEnum::decimal && characteristics.dataType != DataEnum::integer)) {
                 valid_value = true;
-            }  else if(request.type == MonitorEnum::Delta &&
-                (characteristics.dataType == DataEnum::decimal || characteristics.dataType == DataEnum::integer)) {
+            } else if (request.type == MonitorEnum::Delta && (characteristics.dataType == DataEnum::decimal ||
+                                                              characteristics.dataType == DataEnum::integer)) {
                 // Seem that TC_N_43_CS, sees a negative delta as an error, I certainly do not
-                if(request.value < 0.0f) {
+                if (request.value < 0.0f) {
                     valid_value = false;
                 }
             } else if (request.type == MonitorEnum::Periodic || request.type == MonitorEnum::PeriodicClockAligned) {

@@ -24,6 +24,9 @@ struct TriggeredMonitorData {
     std::string value_previous;
     std::string value_current;
 
+    // \brief Write-only values will not have the value reported
+    bool is_writeonly;
+
     /// \brief If the trigger was sent to the CSMS. We'll keep a copy since we'll also detect
     /// when the monitor returns back to normal
     bool csms_sent;
@@ -65,8 +68,8 @@ public:
 private:
     void on_variable_changed(const std::unordered_map<int64_t, VariableMonitoringMeta>& monitors,
                              const Component& component, const Variable& variable,
-                             const VariableCharacteristics& characteristics, const std::string& value_old,
-                             const std::string& value_current);
+                             const VariableCharacteristics& characteristics, const VariableAttribute& attribute,
+                             const std::string& value_old, const std::string& value_current);
 
     void process_periodic_monitors();
 
