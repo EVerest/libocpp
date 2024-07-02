@@ -22,6 +22,12 @@ struct VariableMonitoringMeta {
     std::optional<std::string> reference_value;
 };
 
+struct VariableMonitoringPeriodic {
+    Component component;
+    Variable variable;
+    std::vector<VariableMonitoringMeta> monitors;
+};
+
 /// \brief Helper struct that combines VariableCharacteristics and VariableMonitoring
 struct VariableMetaData {
     VariableCharacteristics characteristics;
@@ -93,6 +99,8 @@ public:
     /// \return true if the value could be inserted, or valse otherwise
     virtual std::optional<VariableMonitoringMeta> set_monitoring_data(const SetMonitoringData& data,
                                                                       const VariableMonitorType type) = 0;
+
+    virtual bool update_monitoring_reference(int32_t monitor_id, const std::string& reference_value) = 0;
 
     /// \brief Returns all the monitors currently in the database based
     /// on the provided filtering criteria
