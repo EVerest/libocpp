@@ -123,7 +123,8 @@ MonitoringUpdater::~MonitoringUpdater() {
 void MonitoringUpdater::start_monitoring() {
     // Bind function to this instance
     auto fn = std::bind(&MonitoringUpdater::on_variable_changed, this, std::placeholders::_1, std::placeholders::_2,
-                        std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6);
+                        std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6,
+                        std::placeholders::_7);
     device_model->register_variable_listener(std::move(fn));
 
     monitors_timer.interval(std::chrono::seconds(1));
@@ -136,9 +137,15 @@ void MonitoringUpdater::stop_monitoring() {
 void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, VariableMonitoringMeta>& monitors,
                                             const Component& component, const Variable& variable,
                                             const VariableCharacteristics& characteristics,
-                                            const std::string& value_previous, const std::string& value_current) {
+                                            const VariableAttribute& attribute, const std::string& value_previous,
+                                            const std::string& value_current) {
     EVLOG_info << "Variable: " << variable.name.get() << " changed value from: " << value_previous
                << " to: " << value_current;
+
+    // Ignore non-actual values
+    if (attribute.type.has_value() && attribute.type.value() != AttributeEnum::Actual) {
+        return;
+    }
 
     // Iterate monitors and search for a triggered monitor
     for (const auto& [monitor_id, monitor_meta] : monitors) {
@@ -150,6 +157,7 @@ void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, Va
         }
 
         bool monitor_triggered = false;
+        bool monitor_trivial = false;
 
         // N07.FR.19 - Based on this it seems that OptionList, SequenceList, MemberList will
         // cause a trigger if the value is changed regardless of the content (or monitor delta)
@@ -158,6 +166,7 @@ void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, Va
             (characteristics.dataType == DataEnum::MemberList) ||
             (characteristics.dataType == DataEnum::SequenceList)) {
             monitor_triggered = triggers_monitor<DataEnum::boolean>(monitor_meta, value_previous, value_current);
+            monitor_trivial = true;
         } else if (characteristics.dataType == DataEnum::decimal) {
             monitor_triggered = triggers_monitor<DataEnum::decimal>(monitor_meta, value_previous, value_current);
         } else if (characteristics.dataType == DataEnum::integer) {
@@ -169,6 +178,20 @@ void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, Va
         auto it = triggered_monitors.find(monitor_id);
 
         if (monitor_triggered) {
+            if (monitor_meta.monitor.type == MonitorEnum::Delta && monitor_trivial) {
+                // 3.55. MonitorEnumType
+                // As per the spec, in case of a delta monitor that always triggered (bool/dateTime etc...)
+                // we must update the reference value to the new value, so that we don't always trigger
+                // this multiple times when it changes
+                try {
+                    if (!this->device_model->update_monitor_reference(monitor_id, value_current)) {
+                        EVLOG_warning << "Could not update delta monitor: " << monitor_id << " reference!";
+                    }
+                } catch (const DeviceModelStorageError& e) {
+                    EVLOG_error << "Could not update delta monitor reference with exception: " << e.what();
+                }
+            }
+
             if (it == std::end(triggered_monitors)) {
                 TriggeredMonitorData triggered;
 
@@ -177,6 +200,8 @@ void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, Va
                 triggered.monitor_meta = monitor_meta;
                 triggered.csms_sent = false;
                 triggered.cleared = false;
+                triggered.is_writeonly =
+                    (attribute.mutability.value_or(MutabilityEnum::ReadWrite) == MutabilityEnum::WriteOnly);
 
                 auto res = triggered_monitors.insert(std::pair{monitor_meta.monitor.id, std::move(triggered)});
                 if (!res.second) {
@@ -191,7 +216,7 @@ void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, Va
             TriggeredMonitorData& triggered_data = it->second;
 
             // If we are in a 'not dangerous' a.k.a 'cleared' state
-            if(triggered_data.cleared) {
+            if (triggered_data.cleared) {
                 // Make it not cleared, that is in a 'dangerous' state
                 triggered_data.cleared = false;
                 // Also reset the CSMS sent, since the new cleared state was not sent
@@ -200,7 +225,7 @@ void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, Va
                 EVLOG_info << "Variable: " << variable.name.get() << " triggered monitor: " << monitor_id;
             }
 
-            // Update relevant values
+            // Update relevant values only
             triggered_data.value_previous = value_previous;
             triggered_data.value_current = value_current;
         } else {
@@ -232,8 +257,7 @@ void MonitoringUpdater::process_periodic_monitors() {
         return;
     }
 
-
-    if(!triggered_monitors.empty()) {
+    if (!triggered_monitors.empty()) {
         EVLOG_info << "Processing periodically triggered monitors";
         process_triggered_monitors();
     }
@@ -397,7 +421,7 @@ void MonitoringUpdater::process_triggered_monitors() {
         }
 
         if (should_clear) {
-            EVLOG_info << "Erased triggered monitor: [" << it->second.component << ":"  << it->second.variable 
+            EVLOG_info << "Erased triggered monitor: [" << it->second.component << ":" << it->second.variable
                        << "] since we're offline and the severity is < 'OfflineQueuingSeverity'";
             it = triggered_monitors.erase(it);
         } else {
@@ -410,9 +434,16 @@ void MonitoringUpdater::process_triggered_monitors() {
         for (auto& [id, trigger] : triggered_monitors) {
             // Only send a trigger if we did not already sent it, as we
             // will mark it as not sent again, after the value changes
-            if(trigger.csms_sent == false) {
-                EventData notify_event = std::move(create_notify_event(
-                    unique_id++, trigger.value_current, trigger.component, trigger.variable, trigger.monitor_meta));
+            if (trigger.csms_sent == false) {
+                std::string reported_value{};
+
+                // If the variable is marked as read-only then the value will NOT be reported
+                if (trigger.is_writeonly == false) {
+                    reported_value = trigger.value_current;
+                }
+
+                EventData notify_event = std::move(create_notify_event(unique_id++, reported_value, trigger.component,
+                                                                       trigger.variable, trigger.monitor_meta));
 
                 // Mark the triggers as CSMS sent
                 trigger.csms_sent = true;
@@ -442,7 +473,7 @@ void MonitoringUpdater::process_triggered_monitors() {
         }
 
         if (should_clear) {
-            EVLOG_info << "Erased triggered monitor: [" << it->second.component << ":"  << it->second.variable 
+            EVLOG_info << "Erased triggered monitor: [" << it->second.component << ":" << it->second.variable
                        << "] since it was either cleared or it was sent to the CSMS and cleared";
             it = triggered_monitors.erase(it);
         } else {
