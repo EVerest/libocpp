@@ -285,6 +285,8 @@ std::optional<VariableMonitoringMeta> DeviceModelStorageSqlite::set_monitoring_d
 
     auto insert_stmt = this->db->new_statement(insert_query);
 
+    EVLOG_info << "Inserting new monitor with query: " << insert_query;
+
     insert_stmt->bind_int(1, _variable_id);
     insert_stmt->bind_int(2, data.severity);
     insert_stmt->bind_int(3, data.transaction.value_or(false));
@@ -302,6 +304,11 @@ std::optional<VariableMonitoringMeta> DeviceModelStorageSqlite::set_monitoring_d
     if (data.id.has_value()) {
         insert_stmt->bind_int(8, data.id.value());
     }
+
+    EVLOG_info << "Insert data: " << _variable_id << " severity: " 
+               << data.severity << " value: " << data.value 
+               << " actual value: " << actual_value.value_or("NULL")
+               << " id: " << data.id.value_or(-1000);
 
     if (insert_stmt->step() != SQLITE_DONE) {
         EVLOG_error << this->db->get_error_message();

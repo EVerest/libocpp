@@ -457,6 +457,7 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
         result.variable = request.variable;
         result.severity = request.severity;
         result.type = request.type;
+        result.id = request.id;
 
         if (this->device_model.find(request.component) == this->device_model.end()) {
             result.status = SetMonitoringStatusEnum::UnknownComponent;
@@ -473,18 +474,33 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
             continue;
         }
 
+        if(request.id.has_value()) {
+            // TODO: Handle existing ID where the monitor is not found
+            // result == rejected
+        }
+
         // Validate the data we want to set based on the characteristics and
         // see if it is out of range or out of the variable list
         const auto& characteristics = variable_it->second.characteristics;
         bool valid_value = true;
 
         if (characteristics.supportsMonitoring) {
+            EVLOG_info << "Validating monitor request of type: [" << request
+                       << "] and characteristics: [" << characteristics << "]"
+                       << " and value: " << request.value;
+
             // If the monitor is of type 'delta' (or periodic) and it is of a non-numeric
             // type the value is ignored since all values will be reported
-            if (result.type == MonitorEnum::Delta &&
+            if (request.type == MonitorEnum::Delta &&                
                 (characteristics.dataType != DataEnum::decimal && characteristics.dataType != DataEnum::integer)) {
                 valid_value = true;
-            } else if (result.type == MonitorEnum::Periodic || result.type == MonitorEnum::PeriodicClockAligned) {
+            }  else if(request.type == MonitorEnum::Delta &&
+                (characteristics.dataType == DataEnum::decimal || characteristics.dataType == DataEnum::integer)) {
+                // Seem that TC_N_43_CS, sees a negative delta as an error, I certainly do not
+                if(request.value < 0.0f) {
+                    valid_value = false;
+                }
+            } else if (request.type == MonitorEnum::Periodic || request.type == MonitorEnum::PeriodicClockAligned) {
                 valid_value = true;
             } else {
                 try {
