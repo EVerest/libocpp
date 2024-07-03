@@ -701,10 +701,8 @@ InitDeviceModelDb::get_config_values(const std::filesystem::path& config_file_pa
                                 << " and variable " << key.name;
                     throw InitDeviceModelDbError("Could not find type " + attributes.key() + " of component " + p.name +
                                                  " and variable " + key.name);
-                    // TODO throw or only error??
                 }
 
-                key.attribute_type = conversions::string_to_attribute_enum(attributes.key()); // TODO try catch??
                 key.value = get_string_value_from_json(attributes.value());
                 if (variable.value().contains("instance")) {
                     key.instance = variable.value().at("instance");
@@ -847,11 +845,10 @@ bool InitDeviceModelDb::insert_variable_attribute_value(const ComponentKey& comp
                                      conversions::attribute_enum_to_string(variable_attribute_key.attribute_type) +
                                      ": " + std::string(this->database->get_error_message()));
     } else if (insert_variable_attribute_statement->changes() < 1) {
-        EVLOG_warning
-            << "Could not set value of variable " + get_variable_name_for_logging(variable_attribute_key) +
-                   " (Component: " + get_component_name_for_logging(component_key) + ") attribute " +
-                   conversions::attribute_enum_to_string(variable_attribute_key.attribute_type) +
-                   ": value has already changed by other source"; // TODO get source from database for logging???
+        EVLOG_warning << "Could not set value of variable " + get_variable_name_for_logging(variable_attribute_key) +
+                             " (Component: " + get_component_name_for_logging(component_key) + ") attribute " +
+                             conversions::attribute_enum_to_string(variable_attribute_key.attribute_type) +
+                             ": value has already changed by other source";
     }
 
     return true;
