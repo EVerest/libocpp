@@ -99,7 +99,7 @@ bool InitDeviceModelDb::insert_config_and_default_values(const std::filesystem::
 
     for (const auto& component_variables : config_values) {
         for (const VariableAttributeKey& attribute_key : component_variables.second) {
-            if (!insert_variable_attribute_value(component_variables.first, attribute_key)) {
+            if (!insert_variable_attribute_value(component_variables.first, attribute_key, true)) {
                 success = false;
             }
         }
@@ -144,8 +144,8 @@ bool InitDeviceModelDb::insert_config_and_default_values(const std::filesystem::
             }
 
             // Whole component is not found, or component is found but attribute is not found. Add default value to
-            // database.
-            if (!insert_variable_attribute_value(component_variables.first, attribute_key)) {
+            // database. Do not warn if default value could not be set.
+            if (!insert_variable_attribute_value(component_variables.first, attribute_key, false)) {
                 success = false;
             }
         }
@@ -732,7 +732,8 @@ InitDeviceModelDb::get_config_values(const std::filesystem::path& config_file_pa
 }
 
 bool InitDeviceModelDb::insert_variable_attribute_value(const ComponentKey& component_key,
-                                                        const VariableAttributeKey& variable_attribute_key) {
+                                                        const VariableAttributeKey& variable_attribute_key,
+                                                        const bool warn_source_not_default) {
     // Insert variable statement.
     // Use 'IS' when value can also be NULL
     // Only update when VALUE_SOURCE is 'default', because otherwise it is already updated by the csms or the user and
@@ -799,7 +800,7 @@ bool InitDeviceModelDb::insert_variable_attribute_value(const ComponentKey& comp
                                      " (component: " + component_key.name + ") attribute " +
                                      conversions::attribute_enum_to_string(variable_attribute_key.attribute_type) +
                                      ": " + std::string(this->database->get_error_message()));
-    } else if (insert_variable_attribute_statement->changes() < 1) {
+    } else if ((insert_variable_attribute_statement->changes() < 1) && warn_source_not_default) {
         EVLOG_warning << "Could not set value of variable " + get_variable_name_for_logging(variable_attribute_key) +
                              " (Component: " + get_component_name_for_logging(component_key) + ") attribute " +
                              conversions::attribute_enum_to_string(variable_attribute_key.attribute_type) +

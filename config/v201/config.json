@@ -52,12 +52,6 @@
                     "Actual": true
                 }
             },
-            "EVSEPower": {
-                "variable_name": "Power",
-                "attributes": {
-                    "MaxSet": 22000
-                }
-            },
             "EVSESupplyPhases": {
                 "variable_name": "SupplyPhases",
                 "attributes": {
@@ -99,12 +93,6 @@
                 "variable_name": "Available",
                 "attributes": {
                     "Actual": true
-                }
-            },
-            "EVSEPower": {
-                "variable_name": "Power",
-                "attributes": {
-                    "MaxSet": 22000
                 }
             },
             "EVSESupplyPhases": {
@@ -570,24 +558,12 @@
                 "attributes": {
                     "Actual": true
                 }
-            },
-            "AuthCacheStorage": {
-                "variable_name": "Storage",
-                "attributes": {
-                    "Actual": 0
-                }
             }
         }
     },
     {
         "name": "ChargingStation",
         "variables": {
-            "ChargingStationAvailabilityState": {
-                "variable_name": "AvailabilityState",
-                "attributes": {
-                    "Actual": ""
-                }
-            },
             "ChargingStationAvailable": {
                 "variable_name": "Available",
                 "attributes": {

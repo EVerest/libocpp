@@ -358,12 +358,15 @@ private: // Functions
     /// \brief Insert variable attribute value
     /// \param component_key                Component the variable attribute belongs to.
     /// \param variable_attribute_key       Variable attribute including value to insert.
+    /// \param warn_source_not_default      Put a warning in the log if the variable could not be added because the
+    ///                                     value source is not 'default'.
     /// \return true on success
     ///
     /// \throws InitDeviceModelDbError  When inserting failed.
     ///
     bool insert_variable_attribute_value(const ComponentKey& component_key,
-                                         const VariableAttributeKey& variable_attribute_key);
+                                         const VariableAttributeKey& variable_attribute_key,
+                                         const bool warn_source_not_default);
 
     ///
     /// \brief Get all components from the db that are either EVSE or Connector.
