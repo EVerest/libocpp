@@ -138,4 +138,21 @@ int64_t DatabaseConnection::get_last_inserted_rowid() {
     return sqlite3_last_insert_rowid(this->db);
 }
 
+uint32_t DatabaseConnection::get_user_version() {
+    auto statement = this->new_statement("PRAGMA user_version");
+
+    if (statement->step() != SQLITE_ROW) {
+        throw std::runtime_error("Could not get user_version from database");
+    }
+    return statement->column_int(0);
+}
+
+void DatabaseConnection::set_user_version(uint32_t version) {
+    using namespace std::string_literals;
+
+    if (!this->execute_statement("PRAGMA user_version = "s + std::to_string(version))) {
+        throw std::runtime_error("Could not set user_version in database");
+    }
+}
+
 } // namespace ocpp::common

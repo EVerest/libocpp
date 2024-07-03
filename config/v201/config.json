@@ -431,8 +431,8 @@
                     "Actual": true
                 }
             },
-            "PncEnabled": {
-                "variable_name": "PncEnabled",
+            "PnCEnabled": {
+                "variable_name": "PnCEnabled",
                 "attributes": {
                     "Actual": true
                 }
@@ -667,15 +667,13 @@
                 "variable_name": "ReportingValueSize",
                 "attributes": {
                     "Actual": 2500
-                },
-                "instance": "SetVariables"
+                }
             },
             "ValueSize": {
                 "variable_name": "ValueSize",
                 "attributes": {
                     "Actual": 2500
-                },
-                "instance": "SetVariables"
+                }
             },
             "DeviceDataCtrlrEnabled": {
                 "variable_name": "Enabled",
@@ -708,6 +706,7 @@
             },
             "TariffCostCtrlrEnabledCost": {
                 "variable_name": "Enabled",
+                "instance": "Cost",
                 "attributes": {
                     "Actual": false
                 }

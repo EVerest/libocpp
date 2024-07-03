@@ -120,6 +120,11 @@ struct DatabaseConnectionTest : public common::DatabaseConnectionInterface {
     virtual int64_t get_last_inserted_rowid() {
         return 1;
     }
+    virtual void set_user_version(uint32_t version) override {
+    }
+    virtual uint32_t get_user_version() override {
+        return 0;
+    }
 };
 
 class DbTestBase : public testing::Test {

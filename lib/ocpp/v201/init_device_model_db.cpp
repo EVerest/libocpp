@@ -56,6 +56,15 @@ void InitDeviceModelDb::initialize_database(const std::filesystem::path& schemas
     std::vector<ComponentKey> existing_components;
     DeviceModelMap device_model;
     if (this->database_exists) {
+        try {
+            if (this->database->get_user_version() == 0) {
+                EVLOG_error << "Database does not support migrations yet, please update the database.";
+                throw InitDeviceModelDbError("Database does not support migrations yet, please update the database.");
+            }
+        } catch (const std::runtime_error& e) {
+            EVLOG_error << "Database does not support migrations yet, please update the database.";
+            throw InitDeviceModelDbError("Database does not support migrations yet, please update the database.");
+        }
 
         existing_components = get_all_connector_and_evse_components_fom_db();
     }
@@ -1522,7 +1531,7 @@ static std::string get_component_name_for_logging(const ComponentKey& component)
 
 static std::string get_variable_name_for_logging(const VariableAttributeKey& variable) {
     const std::string variable_name =
-        variable.name + (variable.instance.has_value() ? ", instance " + variable.value : "");
+        variable.name + (variable.instance.has_value() ? ", instance " + variable.instance.value() : "");
     return variable_name;
 }
 
