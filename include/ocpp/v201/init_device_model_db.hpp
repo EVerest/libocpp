@@ -355,17 +355,6 @@ private: // Functions
     get_config_values(const std::filesystem::path& config_file_path);
 
     ///
-    /// \brief Check if the config is correct compared with the database.
-    /// \param database_components  The components from the database.
-    /// \param config               The configuration.
-    /// \param[out] errors          Errors will be written to this file, to be able to output them to the logging.
-    /// \return True when everything is fine / correct in the config file compared to the device model database.
-    ///
-    bool check_config_integrity(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& database_components,
-                                const std::map<ComponentKey, std::vector<VariableAttributeKey>>& config,
-                                std::string& errors);
-
-    ///
     /// \brief Insert variable attribute value
     /// \param component_key                Component the variable attribute belongs to.
     /// \param variable_attribute_key       Variable attribute including value to insert.

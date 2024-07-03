@@ -27,6 +27,12 @@ static bool is_characteristics_different(const VariableCharacteristics& c1, cons
 static bool is_same_variable(const DeviceModelVariable& v1, const DeviceModelVariable& v2);
 static bool is_variable_different(const DeviceModelVariable& v1, const DeviceModelVariable& v2);
 static std::string get_string_value_from_json(const json& value);
+static bool check_config_integrity(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& database_components,
+                                   const std::map<ComponentKey, std::vector<VariableAttributeKey>>& config,
+                                   std::string& errors);
+static void check_config_variable_integrity(const std::vector<DeviceModelVariable>& database_variables,
+                                            const VariableAttributeKey& config_attribute_key,
+                                            const ComponentKey& config_component, std::string& errors);
 static std::string get_component_name_for_logging(const ComponentKey& component);
 static std::string get_variable_name_for_logging(const VariableAttributeKey& variable);
 
@@ -715,65 +721,6 @@ InitDeviceModelDb::get_config_values(const std::filesystem::path& config_file_pa
     }
 
     return config_values;
-}
-
-bool InitDeviceModelDb::check_config_integrity(
-    const std::map<ComponentKey, std::vector<DeviceModelVariable>>& database_components,
-    const std::map<ComponentKey, std::vector<VariableAttributeKey>>& config, std::string& errors) {
-    // Loop over all components from the configuration files and compare it with components from the database.
-    for (const auto& [config_component, config_variable_attributes] : config) {
-        bool component_found = false;
-        // Loop over database components to check if the component in the config exists and if so, check the variable
-        // and attribute that needs to be changed.
-        for (const auto& [database_component, database_variables] : database_components) {
-            if (is_same_component_key(config_component, database_component)) {
-                component_found = true;
-                // The component is found. Now compoare all variables of this component with the variables of the
-                // component in the database. So loop over the config variables.
-                for (const VariableAttributeKey& config_attribute_key : config_variable_attributes) {
-                    // And find the same variable in the database components variable list.
-                    const auto& it_db_variables = std::find_if(database_variables.begin(), database_variables.end(),
-                                                               [&config_attribute_key](const DeviceModelVariable& v) {
-                                                                   if (v.name == config_attribute_key.name &&
-                                                                       v.instance == config_attribute_key.instance) {
-                                                                       return true;
-                                                                   }
-                                                                   return false;
-                                                               });
-                    if (it_db_variables != database_variables.end()) {
-                        // Variable is found!
-                        // Now the variable is found, check the attribute whose value needs to change. Loop over all
-                        // database attributes to check if it is the same attribute is the one from the config.
-                        const auto& it_db_attributes = std::find_if(
-                            it_db_variables->attributes.begin(), it_db_variables->attributes.end(),
-                            [&config_attribute_key](const DbVariableAttribute& attribute) {
-                                return (attribute.variable_attribute.type == config_attribute_key.attribute_type);
-                            });
-                        if (it_db_attributes != it_db_variables->attributes.end()) {
-                            // Attribute is found! No need to search any further.
-                            break;
-                        } else {
-                            // Attribute not found.
-                            errors += "Attribute: " +
-                                      conversions::attribute_enum_to_string(config_attribute_key.attribute_type) +
-                                      " (of Component: " + get_component_name_for_logging(config_component) +
-                                      " and Variable: " + get_variable_name_for_logging(config_attribute_key) + ")\n";
-                        }
-                    } else {
-                        // Variable not found.
-                        errors += "Variable: " + get_variable_name_for_logging(config_attribute_key) +
-                                  " (of Component: " + get_component_name_for_logging(config_component) + ")\n";
-                    }
-                }
-            }
-        }
-
-        if (!component_found) {
-            errors += "Component: " + get_component_name_for_logging(config_component) + "\n";
-        }
-    }
-
-    return errors.empty();
 }
 
 bool InitDeviceModelDb::insert_variable_attribute_value(const ComponentKey& component_key,
@@ -1467,6 +1414,83 @@ static std::string get_string_value_from_json(const json& value) {
         return "";
     } else {
         return value.dump();
+    }
+}
+
+///
+/// \brief Check if the config is correct compared with the database.
+/// \param database_components  The components from the database.
+/// \param config               The configuration.
+/// \param[out] errors          Errors will be written to this file, to be able to output them to the logging.
+/// \return True when everything is fine / correct in the config file compared to the device model database.
+///
+static bool check_config_integrity(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& database_components,
+                                   const std::map<ComponentKey, std::vector<VariableAttributeKey>>& config,
+                                   std::string& errors) {
+    // Loop over all components from the configuration files and compare it with components from the database.
+    for (const auto& [config_component, config_variable_attributes] : config) {
+        bool component_found = false;
+        // Loop over database components to check if the component in the config exists and if so, check the
+        // variable and attribute that needs to be changed.
+        for (const auto& [database_component, database_variables] : database_components) {
+            if (is_same_component_key(config_component, database_component)) {
+                component_found = true;
+                // The component is found. Now compoare all variables of this component with the variables of the
+                // component in the database. So loop over the config variables.
+                for (const VariableAttributeKey& config_attribute_key : config_variable_attributes) {
+                    // And find the same variable in the database components variable list.
+                    check_config_variable_integrity(database_variables, config_attribute_key, config_component, errors);
+                }
+            }
+        }
+
+        if (!component_found) {
+            errors += "Component: " + get_component_name_for_logging(config_component) + "\n";
+        }
+    }
+
+    return errors.empty();
+}
+
+///
+/// \brief Check if config variable (of a component) is correct compared with the database.
+/// \param database_variables       Variable from the database
+/// \param config_attribute_key     Configuration variable / attribute combination
+/// \param config_component         Config component (only used for logging)
+/// \param[out] errors              Output variable to write the errors to, if there are any.
+///
+static void check_config_variable_integrity(const std::vector<DeviceModelVariable>& database_variables,
+                                            const VariableAttributeKey& config_attribute_key,
+                                            const ComponentKey& config_component, std::string& errors) {
+    const auto& it_db_variables = std::find_if(
+        database_variables.begin(), database_variables.end(), [&config_attribute_key](const DeviceModelVariable& v) {
+            if (v.name == config_attribute_key.name && v.instance == config_attribute_key.instance) {
+                return true;
+            }
+            return false;
+        });
+    if (it_db_variables != database_variables.end()) {
+        // Variable is found!
+        // Now the variable is found, check the attribute whose value needs to change. Loop over all
+        // database attributes to check if it is the same attribute is the one from the config.
+        const auto& it_db_attributes =
+            std::find_if(it_db_variables->attributes.begin(), it_db_variables->attributes.end(),
+                         [&config_attribute_key](const DbVariableAttribute& attribute) {
+                             return (attribute.variable_attribute.type == config_attribute_key.attribute_type);
+                         });
+        if (it_db_attributes != it_db_variables->attributes.end()) {
+            // Attribute is found! No need to search any further.
+            return;
+        } else {
+            // Attribute not found.
+            errors += "Attribute: " + conversions::attribute_enum_to_string(config_attribute_key.attribute_type) +
+                      " (of Component: " + get_component_name_for_logging(config_component) +
+                      " and Variable: " + get_variable_name_for_logging(config_attribute_key) + ")\n";
+        }
+    } else {
+        // Variable not found.
+        errors += "Variable: " + get_variable_name_for_logging(config_attribute_key) +
+                  " (of Component: " + get_component_name_for_logging(config_component) + ")\n";
     }
 }
 
