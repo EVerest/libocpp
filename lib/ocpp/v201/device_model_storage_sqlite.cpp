@@ -23,7 +23,6 @@ DeviceModelStorageSqlite::DeviceModelStorageSqlite(const fs::path& db_path, cons
                                                    const bool init_db) {
     if (init_db) {
         if (db_path.empty() || migration_files_path.empty() || schemas_path.empty() || config_path.empty()) {
-            EVLOG_error << "Can not initialize device model storage: one of the paths is empty.";
             EVLOG_AND_THROW(
                 DeviceModelStorageError("Can not initialize device model storage: one of the paths is empty."));
         }
@@ -35,8 +34,8 @@ DeviceModelStorageSqlite::DeviceModelStorageSqlite(const fs::path& db_path, cons
     db = std::make_unique<ocpp::common::DatabaseConnection>(db_path);
 
     if (!db->open_connection()) {
-        EVLOG_error << "Could not open database at provided path: " << db_path;
-        EVLOG_AND_THROW(std::runtime_error("Could not open device model database at provided path."));
+        EVLOG_AND_THROW(
+            std::runtime_error("Could not open device model database at provided path: " + db_path.string()));
     } else {
         EVLOG_info << "Established connection to device model database successfully: " << db_path;
     }

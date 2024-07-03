@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
+// Copyright Pionix GmbH and Contributors to EVerest
 
 #include <ocpp/v201/init_device_model_db.hpp>
 
@@ -58,12 +58,12 @@ void InitDeviceModelDb::initialize_database(const std::filesystem::path& schemas
     if (this->database_exists) {
         try {
             if (this->database->get_user_version() == 0) {
-                EVLOG_error << "Database does not support migrations yet, please update the database.";
-                throw InitDeviceModelDbError("Database does not support migrations yet, please update the database.");
+                EVLOG_AND_THROW(
+                    InitDeviceModelDbError("Database does not support migrations yet, please update the database."));
             }
         } catch (const std::runtime_error& e) {
-            EVLOG_error << "Database does not support migrations yet, please update the database.";
-            throw InitDeviceModelDbError("Database does not support migrations yet, please update the database.");
+            EVLOG_AND_THROW(
+                InitDeviceModelDbError("Database does not support migrations yet, please update the database."));
         }
 
         existing_components = get_all_connector_and_evse_components_fom_db();
@@ -93,8 +93,8 @@ bool InitDeviceModelDb::insert_config_and_default_values(const std::filesystem::
     std::string errors;
 
     if (!check_config_integrity(components, config_values, errors)) {
-        EVLOG_error << "Config not consistent with device model component schema's: \n" << errors;
-        throw InitDeviceModelDbError("Config not consistent with device model component schema's");
+        EVLOG_AND_THROW(
+            InitDeviceModelDbError("Config not consistent with device model component schema's: \n" + errors));
     }
 
     for (const auto& component_variables : config_values) {
@@ -158,8 +158,7 @@ void InitDeviceModelDb::execute_init_sql(const bool delete_db_if_exists) {
     if (delete_db_if_exists) {
         if (std::filesystem::exists(database_path)) {
             if (!std::filesystem::remove(database_path)) {
-                EVLOG_error << "Could not remove database " << database_path.u8string();
-                throw InitDeviceModelDbError("Could not remove database " + database_path.u8string());
+                EVLOG_AND_THROW(InitDeviceModelDbError("Could not remove database " + database_path.u8string()));
             }
 
             database_exists = false;
