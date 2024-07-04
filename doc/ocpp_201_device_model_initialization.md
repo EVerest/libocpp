@@ -1,4 +1,4 @@
-# Device model initialization and inserting of config values
+# OCPP 2.0.1: Device model initialization and inserting of config values
 
 If there is no custom database used for the device model, and 'initialize_device_model' is set to true in the 
 constructor of ChargePoint, the device model will be created or updated when ChargePoint is created. This document will
@@ -23,15 +23,16 @@ attributes from the component schemas.
 
 It will then set all the values read from the config file. 
 
-If anything does not match, no values will be set. So if for example there is a variable set in the config that is 
-not in the component schema, the config values will not be set. 
+The config and the component schemas depend on each other. If the definition in the component schema does not match the
+definition in the config, no values will be set in the device model database. So if for example there is a variable set 
+in the config that is not in the component schema, the config values will not be set. 
 
 
 ## Update config values
 
-Each time the software starts, the config file is read and the values will be set to the database accordingly. Only 
-the initial values will be set to the values in the config file. So if for example the csms changed a value, it will 
-not be updated to the value from the config file.
+Each time the ChargePoint class is instantiated, the config file is read and the values will be set to the database 
+accordingly. Only the initial values will be set to the values in the config file. So if for example the CSMS changed a 
+value, it will not be updated to the value from the config file.
 
 
 ## Update component schemas
@@ -44,8 +45,10 @@ To update an `EVSE` or `Connector` component, just place the correct `EVSE` / `C
   removed.
 - Check if there are `EVSE`'s er `Connectors` in the component schema's that are not in the database. Those will be 
   added.
-- Check if anything has changed inside the `EVSE`'s or `Connectors` (`Variable`, `Characteristics` or `Attributes` 
-  removed, changed or added. Those will be removed, changed or added to the database as well. 
+- Check if anything has changed inside the `EVSE`'s or `Connectors` (`Variable`, `Characteristics` or `Attributes`). 
+  Those will be removed, changed or added. Those will be removed, changed or added to the database as well. 
   
 Note: When the id of an `EVSE` Component is changed, this is seen as the removal of an `EVSE` and addition of a new 
-`EVSE`. The same applies to the `evse_id` or `connector_id` of a `Connector` component.
+`EVSE`. The same applies to the `evse_id` or `connector_id` of a `Connector` component. 
+
+Note: OCPP requires EVSE and Connector numbering starting from 1 counting upwards.

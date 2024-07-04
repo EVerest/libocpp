@@ -19,7 +19,7 @@ namespace ocpp::v201 {
 static bool is_same_component_key(const ComponentKey& component_key1, const ComponentKey& component_key2);
 static bool is_same_variable_attribute_key(const VariableAttributeKey& attribute_key1,
                                            const VariableAttributeKey& attribute_key2);
-static bool is_same_attribute(const VariableAttribute attribute1, const VariableAttribute& attribute2);
+static bool is_same_attribute_type(const VariableAttribute attribute1, const VariableAttribute& attribute2);
 static bool is_attribute_different(const VariableAttribute& attribute1, const VariableAttribute& attribute2);
 static bool variable_has_same_attributes(const std::vector<DbVariableAttribute>& attributes1,
                                          const std::vector<DbVariableAttribute>& attributes2);
@@ -66,7 +66,7 @@ void InitDeviceModelDb::initialize_database(const std::filesystem::path& schemas
                 InitDeviceModelDbError("Database does not support migrations yet, please update the database."));
         }
 
-        existing_components = get_all_connector_and_evse_components_fom_db();
+        existing_components = get_all_connector_and_evse_components_from_db();
     }
 
     // Get component schemas from the filesystem.
@@ -576,7 +576,7 @@ void InitDeviceModelDb::update_attributes(const std::vector<DbVariableAttribute>
     for (const DbVariableAttribute& db_attribute : db_attributes) {
         const auto& it = std::find_if(
             new_attributes.begin(), new_attributes.end(), [&db_attribute](const DbVariableAttribute& new_attribute) {
-                return is_same_attribute(db_attribute.variable_attribute, new_attribute.variable_attribute);
+                return is_same_attribute_type(db_attribute.variable_attribute, new_attribute.variable_attribute);
             });
         if (it == new_attributes.end()) {
             // Attribute not found in config, remove from db.
@@ -588,7 +588,7 @@ void InitDeviceModelDb::update_attributes(const std::vector<DbVariableAttribute>
     for (const DbVariableAttribute& new_attribute : new_attributes) {
         const auto& it = std::find_if(
             db_attributes.begin(), db_attributes.end(), [&new_attribute](const DbVariableAttribute& db_attribute) {
-                return is_same_attribute(new_attribute.variable_attribute, db_attribute.variable_attribute);
+                return is_same_attribute_type(new_attribute.variable_attribute, db_attribute.variable_attribute);
             });
 
         if (it == db_attributes.end()) {
@@ -819,7 +819,7 @@ bool InitDeviceModelDb::insert_variable_attribute_value(const ComponentKey& comp
     return true;
 }
 
-std::vector<ComponentKey> InitDeviceModelDb::get_all_connector_and_evse_components_fom_db() {
+std::vector<ComponentKey> InitDeviceModelDb::get_all_connector_and_evse_components_from_db() {
     std::vector<ComponentKey> components;
 
     const std::string statement = "SELECT ID, NAME, INSTANCE, EVSE_ID, CONNECTOR_ID FROM COMPONENT "
@@ -1315,7 +1315,7 @@ static bool is_same_variable_attribute_key(const VariableAttributeKey& attribute
 /// \param attribute2   Attribute 2
 /// \return True when they are the same.
 ///
-static bool is_same_attribute(const VariableAttribute attribute1, const VariableAttribute& attribute2) {
+static bool is_same_attribute_type(const VariableAttribute attribute1, const VariableAttribute& attribute2) {
     return attribute1.type == attribute2.type;
 }
 

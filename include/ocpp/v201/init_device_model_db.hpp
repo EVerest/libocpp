@@ -374,7 +374,7 @@ private: // Functions
     ///
     /// \throws InitDeviceModelDbError When getting components from db failed.
     ///
-    std::vector<ComponentKey> get_all_connector_and_evse_components_fom_db();
+    std::vector<ComponentKey> get_all_connector_and_evse_components_from_db();
 
     ///
     /// \brief Get all components with its variables (and characteristics / attributes) from the database.
