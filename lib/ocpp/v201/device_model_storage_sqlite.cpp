@@ -252,7 +252,6 @@ bool DeviceModelStorageSqlite::update_monitoring_reference(int32_t monitor_id, c
 
     std::string update_query = "UPDATE VARIABLE_MONITORING SET REFERENCE_VALUE = ? WHERE ID = ?";
     auto update_stmt = this->db->new_statement(update_query);
-    EVLOG_info << "Updating monitor reference with query: " << update_query;
 
     update_stmt->bind_text(1, reference_value, SQLiteString::Transient);
     update_stmt->bind_int(2, monitor_id);
@@ -265,7 +264,6 @@ bool DeviceModelStorageSqlite::update_monitoring_reference(int32_t monitor_id, c
     transaction->commit();
 
     int changes = update_stmt->changes();
-    EVLOG_info << "Updated rows: " << changes;
 
     return (changes == 1);
 }
@@ -307,7 +305,6 @@ std::optional<VariableMonitoringMeta> DeviceModelStorageSqlite::set_monitoring_d
     }
 
     auto insert_stmt = this->db->new_statement(insert_query);
-    EVLOG_info << "Inserting new monitor with query: " << insert_query;
 
     insert_stmt->bind_int(1, _variable_id);
     insert_stmt->bind_int(2, data.severity);
@@ -326,9 +323,6 @@ std::optional<VariableMonitoringMeta> DeviceModelStorageSqlite::set_monitoring_d
     if (data.id.has_value()) {
         insert_stmt->bind_int(8, data.id.value());
     }
-
-    EVLOG_info << "Insert data: " << _variable_id << " severity: " << data.severity << " value: " << data.value
-               << " actual value: " << actual_value.value_or("NULL") << " id: " << data.id.value_or(-1000);
 
     if (insert_stmt->step() != SQLITE_DONE) {
         EVLOG_error << this->db->get_error_message();
