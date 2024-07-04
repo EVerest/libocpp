@@ -526,11 +526,6 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
             continue;
         }
 
-        if (request.id.has_value()) {
-            // TODO: Handle existing ID where the monitor is not found
-            // result == rejected
-        }
-
         // Validate the data we want to set based on the characteristics and
         // see if it is out of range or out of the variable list
         const auto& characteristics = variable_it->second.characteristics;
@@ -577,10 +572,13 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
         // 3.77 Duplicate - A monitor already exists for the given type/severity combination.
         bool duplicate_value = false;
 
-        for (const auto& [id, monitor_meta] : variable_it->second.monitors) {
-            if (monitor_meta.monitor.type == request.type && monitor_meta.monitor.severity == request.severity) {
-                duplicate_value = true;
-                break;
+        // Only test for duplicates if we do not receive an explicit monitor ID
+        if(!request.id.has_value()) {
+            for (const auto& [id, monitor_meta] : variable_it->second.monitors) {
+                if (monitor_meta.monitor.type == request.type && monitor_meta.monitor.severity == request.severity) {
+                    duplicate_value = true;
+                    break;
+                }
             }
         }
 
@@ -594,12 +592,10 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
             auto monitor_meta = this->storage->set_monitoring_data(request, type);
 
             if (monitor_meta.has_value()) {
-                // If we had a successful insert, add it to the variable monitor map
-                variable_it->second.monitors.insert(
-                    std::pair{monitor_meta.value().monitor.id, std::move(monitor_meta.value())});
+                // If we had a successful insert, add/replace it to the variable monitor map
+                variable_it->second.monitors[monitor_meta.value().monitor.id] = std::move(monitor_meta.value());
 
                 result.id = monitor_meta.value().monitor.id;
-
                 result.status = SetMonitoringStatusEnum::Accepted;
             } else {
                 result.status = SetMonitoringStatusEnum::Rejected;

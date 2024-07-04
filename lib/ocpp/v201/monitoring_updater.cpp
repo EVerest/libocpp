@@ -139,13 +139,15 @@ void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, Va
                                             const VariableCharacteristics& characteristics,
                                             const VariableAttribute& attribute, const std::string& value_previous,
                                             const std::string& value_current) {
-    EVLOG_info << "Variable: " << variable.name.get() << " changed value from: " << value_previous
-               << " to: " << value_current;
+    EVLOG_info << "Variable: " << variable.name.get() << " changed value from: [" << value_previous
+               << "] to: [" << value_current << "]";
 
     // Ignore non-actual values
     if (attribute.type.has_value() && attribute.type.value() != AttributeEnum::Actual) {
         return;
     }
+
+    EVLOG_info << "Processing variable: [" << variable.name.get() << "] with monitors: " << monitors.size();
 
     // Iterate monitors and search for a triggered monitor
     for (const auto& [monitor_id, monitor_meta] : monitors) {
@@ -174,6 +176,8 @@ void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, Va
         } else {
             EVLOG_AND_THROW(std::runtime_error("Requested unsupported 'DataEnum' type"));
         }
+
+        EVLOG_info << "Monitor: [" << monitor_meta.monitor << "] triggered: " << monitor_triggered;
 
         auto it = triggered_monitors.find(monitor_id);
 
