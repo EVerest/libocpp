@@ -1738,22 +1738,22 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 
 | ID        | Status | Remark |
 |-----------|--------|--------|
-| N07.FR.02 |        |        |
-| N07.FR.03 |        |        |
-| N07.FR.04 |        |        |
+| N07.FR.02 | ✅     |        |
+| N07.FR.03 | ✅     |        |
+| N07.FR.04 | ✅     |        |
 | N07.FR.05 |        |        |
-| N07.FR.06 |        |        |
-| N07.FR.07 |        |        |
-| N07.FR.10 |        |        |
+| N07.FR.06 | ✅     |        |
+| N07.FR.07 | ✅     |        |
+| N07.FR.10 | ✅     |        |
 | N07.FR.11 |        |        |
 | N07.FR.12 |        |        |
-| N07.FR.13 |        |        |
+| N07.FR.13 | ✅     |        |
 | N07.FR.14 |        |        |
-| N07.FR.15 |        |        |
-| N07.FR.16 |        |        |
-| N07.FR.17 |        |        |
-| N07.FR.18 |        |        |
-| N07.FR.19 |        |        |
+| N07.FR.15 | ✅     |        |
+| N07.FR.16 | ✅     |        |
+| N07.FR.17 | ✅     |        |
+| N07.FR.18 | ✅     |        |
+| N07.FR.19 | ✅     |        |
 
 ## Diagnostics - Periodic Event
 
