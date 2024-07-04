@@ -1718,9 +1718,9 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 
 | ID        | Status | Remark |
 |-----------|--------|--------|
-| N05.FR.01 |        |        |
-| N05.FR.02 |        |        |
-| N05.FR.03 |        |        |
+| N05.FR.01 | ✅     |        |
+| N05.FR.02 | ✅     |        |
+| N05.FR.03 | ✅     |        |
 
 ## Diagnostics - Clear / Remove Monitoring
 
