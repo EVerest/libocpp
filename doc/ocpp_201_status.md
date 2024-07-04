@@ -1658,23 +1658,27 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 
 | ID        | Status | Remark |
 |-----------|--------|--------|
-| N02.FR.01 |        |        |
+| N02.FR.01 | ✅     |        |
 | N02.FR.02 |        |        |
-| N02.FR.03 |        |        |
-| N02.FR.04 |        |        |
-| N02.FR.05 |        |        |
-| N02.FR.06 |        |        |
-| N02.FR.07 |        |        |
-| N02.FR.08 |        |        |
-| N02.FR.09 |        |        |
-| N02.FR.10 |        |        |
-| N02.FR.11 |        |        |
-| N02.FR.12 |        |        |
-| N02.FR.13 |        |        |
-| N02.FR.14 |        |        |
-| N02.FR.15 |        |        |
-| N02.FR.16 |        |        |
-| N02.FR.17 |        |        |
+| N02.FR.03 | ✅     |        |
+| N02.FR.04 | ✅     |        |
+| N02.FR.05 | ✅     |        |
+| N02.FR.06 | ✅     |        |
+| N02.FR.07 | ✅     |        |
+| N02.FR.08 | ✅     |        |
+| N02.FR.09 | ✅     |        |
+| N02.FR.10 | ✅     |        |
+| N02.FR.11 | ✅     |        |
+| N02.FR.12 | ✅     |        |
+| N02.FR.13 | ✅     |        |
+| N02.FR.14 | ✅     |        |
+| N02.FR.15 | ✅     |        |
+| N02.FR.16 | ✅     |        |
+| N02.FR.17 | ✅     |        |
+| N02.FR.18 |        |        |
+| N02.FR.19 |        |        |
+| N02.FR.20 |        |        |
+| N02.FR.21 |        |        |
 
 ## Diagnostics - Set Monitoring Base
 
