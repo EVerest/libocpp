@@ -533,7 +533,7 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
         bool valid_value = true;
 
         if (characteristics.supportsMonitoring) {
-            EVLOG_info << "Validating monitor request of type: [" << request << "] and characteristics: ["
+            EVLOG_debug << "Validating monitor request of type: [" << request << "] and characteristics: ["
                        << characteristics << "]"
                        << " and value: " << request.value;
 
