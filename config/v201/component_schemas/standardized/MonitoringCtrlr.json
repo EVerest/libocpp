@@ -35,6 +35,38 @@
       "description": "Whether monitoring is available,",
       "type": "boolean"
     },
+    "ActiveMonitoringBase": {
+      "variable_name": "ActiveMonitoringBase",
+      "characteristics": {
+        "valuesList": "All,FactoryDefault,HardWiredOnly",
+        "supportsMonitoring": true,
+        "dataType": "OptionList"
+      },
+      "attributes": [
+        {
+          "type": "Actual",
+          "mutability": "ReadOnly"
+        }
+      ],
+      "description": "Shows the currently used MonitoringBase. Valid values according MonitoringBaseEnumType: All, FactoryDefault, HardwiredOnly.",
+      "type": "string"
+    },
+    "ActiveMonitoringLevel": {
+      "variable_name": "ActiveMonitoringLevel",
+      "characteristics": {
+        "supportsMonitoring": true,
+        "dataType": "integer"
+      },
+      "attributes": [
+        {
+          "type": "Actual",
+          "mutability": "ReadOnly"
+        }
+      ],
+      "description": "Shows the currently used MonitoringLevel. Valid values are severity levels of SetMonitoringLevelRequest: 0-9.",
+      "type": "integer"
+    }
+    },
     "BytesPerMessageClearVariableMonitoring": {
       "variable_name": "BytesPerMessage",
       "characteristics": {
@@ -115,38 +147,6 @@
       "type": "integer",
       "default": 1
     },    
-    "ActiveMonitoringBase": {
-      "variable_name": "ActiveMonitoringBase",
-      "characteristics": {
-        "valuesList": "All,FactoryDefault,HardWiredOnly",
-        "supportsMonitoring": true,
-        "dataType": "OptionList"
-      },
-      "attributes": [
-        {
-          "type": "Actual",
-          "mutability": "ReadOnly"
-        }
-      ],
-      "description": "Shows the currently used MonitoringBase. Valid values according MonitoringBaseEnumType: All, FactoryDefault, HardwiredOnly.",
-      "type": "string"
-    },
-    "ActiveMonitoringLevel": {
-      "variable_name": "ActiveMonitoringLevel",
-      "characteristics": {
-        "supportsMonitoring": true,
-        "dataType": "integer"
-      },
-      "attributes": [
-        {
-          "type": "Actual",
-          "mutability": "ReadOnly"
-        }
-      ],
-      "description": "Shows the currently used MonitoringLevel. Valid values are severity levels of SetMonitoringLevelRequest: 0-9.",
-      "type": "integer"
-    }
-  },
   "required": [
     "BytesPerMessageSetVariableMonitoring",
     "ItemsPerMessageSetVariableMonitoring"

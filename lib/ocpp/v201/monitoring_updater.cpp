@@ -39,6 +39,27 @@ bool triggers_monitor(const VariableMonitoringMeta& monitor_meta, const std::str
     return false;
 }
 
+bool is_monitor_active(MonitoringBaseEnum active_monitoring_base, const VariableMonitoringMeta& monitor_meta) {
+    // Skip monitors that are not active
+    if (active_monitoring_base != MonitoringBaseEnum::All) {
+        // If we have the factory default option, skip all
+        // CustomMonitors (installed by the CSMS)
+        if (active_monitoring_base == MonitoringBaseEnum::FactoryDefault &&
+            monitor_meta.type == VariableMonitorType::CustomMonitor) {
+            return false;
+        }
+
+        // If we have the hardwired option, skip all non-hardwired
+        // monitors (that is CustomMonitor and PreconfiguredMonitor)
+        if (active_monitoring_base == MonitoringBaseEnum::HardWiredOnly &&
+            monitor_meta.type != VariableMonitorType::HardWiredMonitor) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 std::chrono::time_point<std::chrono::system_clock> get_next_clock_aligned_point(float monitor_interval) {
     auto monitor_seconds =
         std::chrono::duration_cast<std::chrono::seconds>(std::chrono::duration<float>(monitor_interval));
@@ -272,6 +293,12 @@ void MonitoringUpdater::process_periodic_monitors() {
         this->device_model->get_optional_value<int>(ControllerComponentVariables::ActiveMonitoringLevel)
             .value_or(MontoringLevelSeverity::MAX);
 
+    std::string active_monitoring_base_string =
+        this->device_model->get_optional_value<std::string>(ControllerComponentVariables::ActiveMonitoringBase)
+            .value_or(conversions::monitoring_base_enum_to_string(MonitoringBaseEnum::All));
+    MonitoringBaseEnum active_monitoring_base =
+        conversions::string_to_monitoring_base_enum(active_monitoring_base_string);
+
     EVLOG_debug << "Processing periodic monitors";
 
     std::vector<EventData> monitor_events;
@@ -279,6 +306,11 @@ void MonitoringUpdater::process_periodic_monitors() {
 
     for (auto& component_variable_monitors : monitors) {
         for (auto& periodic_monitor_meta : component_variable_monitors.monitors) {
+
+            // Skip non-active monitors
+            if (!is_monitor_active(active_monitoring_base, periodic_monitor_meta)) {
+                continue;
+            }
 
             // Skip monitors that have a severity > than our active monitoring level
             if (periodic_monitor_meta.monitor.severity > active_monitoring_level) {
@@ -404,19 +436,31 @@ void MonitoringUpdater::process_triggered_monitors() {
         this->device_model->get_optional_value<int>(ControllerComponentVariables::ActiveMonitoringLevel)
             .value_or(MontoringLevelSeverity::MAX);
 
+    std::string active_monitoring_base_string =
+        this->device_model->get_optional_value<std::string>(ControllerComponentVariables::ActiveMonitoringBase)
+            .value_or(conversions::monitoring_base_enum_to_string(MonitoringBaseEnum::All));
+    MonitoringBaseEnum active_monitoring_base =
+        conversions::string_to_monitoring_base_enum(active_monitoring_base_string);
+
     for (auto it = triggered_monitors.begin(); it != triggered_monitors.end();) {
         bool should_clear = false;
 
-        if (is_offline) {
-            // If we are offline, just discard triggers that have a severity > than 'offline_severity'
-            if (it->second.monitor_meta.monitor.severity > offline_severity) {
-                should_clear = true;
+        // If the monitor is active process it
+        if (is_monitor_active(active_monitoring_base, it->second.monitor_meta)) {
+            if (is_offline) {
+                // If we are offline, just discard triggers that have a severity > than 'offline_severity'
+                if (it->second.monitor_meta.monitor.severity > offline_severity) {
+                    should_clear = true;
+                }
+            } else {
+                // If we are online, discard the triggers that have a severity > than 'active_monitoring_level'
+                if (it->second.monitor_meta.monitor.severity > active_monitoring_level) {
+                    should_clear = true;
+                }
             }
         } else {
-            // If we are online, discard the triggers that have a severity > than 'active_monitoring_level'
-            if (it->second.monitor_meta.monitor.severity > active_monitoring_level) {
-                should_clear = true;
-            }
+            // If the monitor is not active, simply discard
+            should_clear = true;
         }
 
         if (should_clear) {
