@@ -277,8 +277,9 @@ SetVariableStatusEnum DeviceModel::set_value(const Component& component, const V
 
         // If we had a variable value change, trigger the listener
         if (!monitors.empty()) {
-            // TODO (ioan): Are we in danger of an empty value problem here?
-            const std::string& value_previous = attribute.value().value.value();
+            static const std::string EMPTY_VALUE{};
+
+            const std::string& value_previous = attribute.value().value.value_or(EMPTY_VALUE);
             const std::string& value_current = value;
 
             if (value_previous != value_current) {
