@@ -544,7 +544,7 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
                 valid_value = true;
             } else if (request.type == MonitorEnum::Delta && (characteristics.dataType == DataEnum::decimal ||
                                                               characteristics.dataType == DataEnum::integer)) {
-                // Seem that TC_N_43_CS, sees a negative delta as an error, I certainly do not
+                // N04.FR.14 - negative delta is an error
                 if (request.value < 0.0f) {
                     valid_value = false;
                 }
@@ -580,6 +580,17 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
                     duplicate_value = true;
                     break;
                 }
+            }
+        } else {
+            // N04.FR.13 - If we receive an ID but we can't find a monitor
+            // with this ID send a rejected result
+            bool id_missing =
+                (variable_it->second.monitors.find(request.id.value()) == std::end(variable_it->second.monitors));
+
+            if (id_missing) {
+                result.status = SetMonitoringStatusEnum::Rejected;
+                set_monitors_res.push_back(result);
+                continue;
             }
         }
 
