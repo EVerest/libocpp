@@ -1726,13 +1726,13 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 
 | ID        | Status | Remark |
 |-----------|--------|--------|
-| N06.FR.01 |        |        |
-| N06.FR.02 |        |        |
-| N06.FR.03 |        |        |
-| N06.FR.04 |        |        |
-| N06.FR.05 |        |        |
-| N06.FR.06 |        |        |
-| N06.FR.07 |        |        |
+| N06.FR.01 | ✅     |        |
+| N06.FR.02 | ✅     |        |
+| N06.FR.03 | ✅     |        |
+| N06.FR.04 | ✅     |        |
+| N06.FR.05 | ✅     |        |
+| N06.FR.06 | ✅     |        |
+| N06.FR.07 | ✅     |        |
 
 ## Diagnostics - Alert Event
 
