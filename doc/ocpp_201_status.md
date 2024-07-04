@@ -1759,12 +1759,12 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 
 | ID        | Status | Remark |
 |-----------|--------|--------|
-| N08.FR.02 |        |        |
+| N08.FR.02 | ✅     |        |
 | N08.FR.03 |        |        |
-| N08.FR.04 |        |        |
-| N08.FR.05 |        |        |
-| N08.FR.06 |        |        |
-| N08.FR.07 |        |        |
+| N08.FR.04 | ✅     |        |
+| N08.FR.05 | ✅     |        |
+| N08.FR.06 | ✅     |        |
+| N08.FR.07 | ✅     |        |
 
 ## Diagnostics - Get Customer Information
 
