@@ -534,8 +534,8 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
 
         if (characteristics.supportsMonitoring) {
             EVLOG_debug << "Validating monitor request of type: [" << request << "] and characteristics: ["
-                       << characteristics << "]"
-                       << " and value: " << request.value;
+                        << characteristics << "]"
+                        << " and value: " << request.value;
 
             // If the monitor is of type 'delta' (or periodic) and it is of a non-numeric
             // type the value is ignored since all values will be reported
