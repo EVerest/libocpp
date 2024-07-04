@@ -64,8 +64,8 @@ std::chrono::time_point<std::chrono::system_clock> get_next_clock_aligned_point(
 
     auto dbg_time_now = std::chrono::system_clock::to_time_t(sys_time_now);
     auto dbg_time_aligned = std::chrono::system_clock::to_time_t(aligned_timepoint);
-    EVLOG_info << "Aligned time: " << std::ctime(&dbg_time_now) << " with interval: " << monitor_seconds.count()
-               << " to next timepoint: " << std::ctime(&dbg_time_aligned);
+    EVLOG_debug << "Aligned time: " << std::ctime(&dbg_time_now) << " with interval: " << monitor_seconds.count()
+                << " to next timepoint: " << std::ctime(&dbg_time_aligned);
 
     return aligned_timepoint;
 }
@@ -139,15 +139,13 @@ void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, Va
                                             const VariableCharacteristics& characteristics,
                                             const VariableAttribute& attribute, const std::string& value_previous,
                                             const std::string& value_current) {
-    EVLOG_info << "Variable: " << variable.name.get() << " changed value from: [" << value_previous
-               << "] to: [" << value_current << "]";
+    EVLOG_debug << "Variable: " << variable.name.get() << " changed value from: [" << value_previous << "] to: ["
+                << value_current << "]";
 
     // Ignore non-actual values
     if (attribute.type.has_value() && attribute.type.value() != AttributeEnum::Actual) {
         return;
     }
-
-    EVLOG_info << "Processing variable: [" << variable.name.get() << "] with monitors: " << monitors.size();
 
     // Iterate monitors and search for a triggered monitor
     for (const auto& [monitor_id, monitor_meta] : monitors) {
@@ -177,7 +175,7 @@ void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, Va
             EVLOG_AND_THROW(std::runtime_error("Requested unsupported 'DataEnum' type"));
         }
 
-        EVLOG_info << "Monitor: [" << monitor_meta.monitor << "] triggered: " << monitor_triggered;
+        EVLOG_debug << "Monitor: [" << monitor_meta.monitor << "] triggered: " << monitor_triggered;
 
         auto it = triggered_monitors.find(monitor_id);
 
@@ -214,7 +212,7 @@ void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, Va
                 }
                 it = res.first;
 
-                EVLOG_info << "Variable: " << variable.name.get() << " triggered monitor: " << monitor_id;
+                EVLOG_debug << "Variable: " << variable.name.get() << " triggered monitor: " << monitor_id;
             }
 
             TriggeredMonitorData& triggered_data = it->second;
@@ -226,7 +224,7 @@ void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, Va
                 // Also reset the CSMS sent, since the new cleared state was not sent
                 triggered_data.csms_sent = false;
 
-                EVLOG_info << "Variable: " << variable.name.get() << " triggered monitor: " << monitor_id;
+                EVLOG_debug << "Variable: " << variable.name.get() << " triggered monitor: " << monitor_id;
             }
 
             // Update relevant values only
@@ -244,7 +242,7 @@ void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, Va
                     // so that we can allow the CSMS to know that we had a return to normal
                     it->second.csms_sent = false;
 
-                    EVLOG_info << "Variable: " << variable.name.get() << " cleared monitor: " << monitor_id;
+                    EVLOG_debug << "Variable: " << variable.name.get() << " cleared monitor: " << monitor_id;
                 }
             }
         }
@@ -257,12 +255,10 @@ void MonitoringUpdater::process_periodic_monitors() {
             .value_or(false);
 
     if (!monitoring_enabled) {
-        EVLOG_info << "Monitoring not enabled, not processing periodic monitors";
         return;
     }
 
     if (!triggered_monitors.empty()) {
-        EVLOG_info << "Processing periodically triggered monitors";
         process_triggered_monitors();
     }
 
@@ -276,7 +272,7 @@ void MonitoringUpdater::process_periodic_monitors() {
         this->device_model->get_optional_value<int>(ControllerComponentVariables::ActiveMonitoringLevel)
             .value_or(MontoringLevelSeverity::MAX);
 
-    EVLOG_info << "Processing periodic monitors";
+    EVLOG_debug << "Processing periodic monitors";
 
     std::vector<EventData> monitor_events;
     auto monitors = this->device_model->get_periodic_monitors();
@@ -310,7 +306,7 @@ void MonitoringUpdater::process_periodic_monitors() {
                     // Snap to the closest monitor multiple
                     periodic_monitor_data.next_trigger_clock_aligned =
                         get_next_clock_aligned_point(periodic_monitor_data.monitor_meta.monitor.value);
-                    EVLOG_info << "First aligned timepoint for monitor ID: " << periodic_monitor_meta.monitor.id;
+                    EVLOG_debug << "First aligned timepoint for monitor ID: " << periodic_monitor_meta.monitor.id;
                 }
 
                 auto res = this->periodic_monitors.insert(
@@ -356,7 +352,7 @@ void MonitoringUpdater::process_periodic_monitors() {
                         EVLOG_warning << "Missed scheduled monitor time by: " << distance;
                     }
                     matches_time = true;
-                    EVLOG_info << "Reporting periodic monitor: " << periodic_monitor_meta.monitor.id;
+                    EVLOG_debug << "Reporting periodic monitor with id: " << periodic_monitor_meta.monitor.id;
 
                     periodic_monitor.next_trigger_clock_aligned =
                         get_next_clock_aligned_point(periodic_monitor.monitor_meta.monitor.value);
@@ -392,11 +388,10 @@ void MonitoringUpdater::process_triggered_monitors() {
             .value_or(false);
 
     if (!monitoring_enabled) {
-        EVLOG_info << "Monitoring not enabled, not processing triggers";
         return;
     }
 
-    EVLOG_info << "Processing alert monitors";
+    EVLOG_debug << "Processing alert monitors";
 
     // Persist OfflineMonitoringEventQueuingSeverity even when offline if we have a problem
     bool is_offline = is_chargepoint_offline();
@@ -425,8 +420,8 @@ void MonitoringUpdater::process_triggered_monitors() {
         }
 
         if (should_clear) {
-            EVLOG_info << "Erased triggered monitor: [" << it->second.component << ":" << it->second.variable
-                       << "] since we're offline and the severity is < 'OfflineQueuingSeverity'";
+            EVLOG_debug << "Erased triggered monitor: [" << it->second.component << ":" << it->second.variable
+                        << "] since we're offline and the severity is < 'OfflineQueuingSeverity'";
             it = triggered_monitors.erase(it);
         } else {
             ++it;
@@ -477,8 +472,8 @@ void MonitoringUpdater::process_triggered_monitors() {
         }
 
         if (should_clear) {
-            EVLOG_info << "Erased triggered monitor: [" << it->second.component << ":" << it->second.variable
-                       << "] since it was either cleared or it was sent to the CSMS and cleared";
+            EVLOG_debug << "Erased triggered monitor: [" << it->second.component << ":" << it->second.variable
+                        << "] since it was either cleared or it was sent to the CSMS and cleared";
             it = triggered_monitors.erase(it);
         } else {
             ++it;

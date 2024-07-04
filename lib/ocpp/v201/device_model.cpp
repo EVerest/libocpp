@@ -573,7 +573,7 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
         bool duplicate_value = false;
 
         // Only test for duplicates if we do not receive an explicit monitor ID
-        if(!request.id.has_value()) {
+        if (!request.id.has_value()) {
             for (const auto& [id, monitor_meta] : variable_it->second.monitors) {
                 if (monitor_meta.monitor.type == request.type && monitor_meta.monitor.severity == request.severity) {
                     duplicate_value = true;

@@ -77,13 +77,12 @@ private:
     std::shared_ptr<DeviceModel> device_model;
     Everest::SteadyTimer monitors_timer;
 
-    // To->CSMS message unique ID
+    // Charger to CSMS message unique ID for EventData
     int32_t unique_id;
 
     notify_events notify_csms_events;
     is_offline is_chargepoint_offline;
 
-    // TODO (ioan): not entirely clear, but according to N07.FR.13 these seem to be persistent across reboots?
     std::unordered_map<int32_t, TriggeredMonitorData> triggered_monitors;
     std::unordered_map<int32_t, PeriodicMonitorData> periodic_monitors;
 };
