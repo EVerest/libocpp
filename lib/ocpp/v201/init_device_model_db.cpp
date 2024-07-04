@@ -27,12 +27,12 @@ static bool is_characteristics_different(const VariableCharacteristics& c1, cons
 static bool is_same_variable(const DeviceModelVariable& v1, const DeviceModelVariable& v2);
 static bool is_variable_different(const DeviceModelVariable& v1, const DeviceModelVariable& v2);
 static std::string get_string_value_from_json(const json& value);
-static bool check_config_integrity(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& database_components,
-                                   const std::map<ComponentKey, std::vector<VariableAttributeKey>>& config,
-                                   std::string& errors);
-static void check_config_variable_integrity(const std::vector<DeviceModelVariable>& database_variables,
-                                            const VariableAttributeKey& config_attribute_key,
-                                            const ComponentKey& config_component, std::string& errors);
+static std::vector<std::string>
+check_config_integrity(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& database_components,
+                       const std::map<ComponentKey, std::vector<VariableAttributeKey>>& config);
+static std::string check_config_variable_integrity(const std::vector<DeviceModelVariable>& database_variables,
+                                                   const VariableAttributeKey& config_attribute_key,
+                                                   const ComponentKey& config_component);
 static std::string get_component_name_for_logging(const ComponentKey& component);
 static std::string get_variable_name_for_logging(const VariableAttributeKey& variable);
 
@@ -90,11 +90,13 @@ bool InitDeviceModelDb::insert_config_and_default_values(const std::filesystem::
         get_component_default_values(schemas_path);
     std::map<ComponentKey, std::vector<VariableAttributeKey>> config_values = get_config_values(config_path);
 
-    std::string errors;
+    const std::vector<std::string> errors = check_config_integrity(components, config_values);
 
-    if (!check_config_integrity(components, config_values, errors)) {
+    if (!errors.empty()) {
+        const std::string output = std::accumulate(++errors.begin(), errors.end(), *errors.begin(),
+                                                   [](auto& a, auto& b) { return a + "\n" + b; });
         EVLOG_AND_THROW(
-            InitDeviceModelDbError("Config not consistent with device model component schema's: \n" + errors));
+            InitDeviceModelDbError("Config not consistent with device model component schema's: \n" + output));
     }
 
     for (const auto& component_variables : config_values) {
@@ -1430,12 +1432,12 @@ static std::string get_string_value_from_json(const json& value) {
 /// \brief Check if the config is correct compared with the database.
 /// \param database_components  The components from the database.
 /// \param config               The configuration.
-/// \param[out] errors          Errors will be written to this file, to be able to output them to the logging.
-/// \return True when everything is fine / correct in the config file compared to the device model database.
+/// \return A list of components / variables / attributes that have errors, or an empty vector if there are none.
 ///
-static bool check_config_integrity(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& database_components,
-                                   const std::map<ComponentKey, std::vector<VariableAttributeKey>>& config,
-                                   std::string& errors) {
+static std::vector<std::string>
+check_config_integrity(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& database_components,
+                       const std::map<ComponentKey, std::vector<VariableAttributeKey>>& config) {
+    std::vector<std::string> errors;
     // Loop over all components from the configuration files and compare it with components from the database.
     for (const auto& [config_component, config_variable_attributes] : config) {
         bool component_found = false;
@@ -1448,29 +1450,33 @@ static bool check_config_integrity(const std::map<ComponentKey, std::vector<Devi
                 // component in the database. So loop over the config variables.
                 for (const VariableAttributeKey& config_attribute_key : config_variable_attributes) {
                     // And find the same variable in the database components variable list.
-                    check_config_variable_integrity(database_variables, config_attribute_key, config_component, errors);
+                    const std::string error =
+                        check_config_variable_integrity(database_variables, config_attribute_key, config_component);
+                    if (!error.empty()) {
+                        errors.push_back(error);
+                    }
                 }
             }
         }
 
         if (!component_found) {
-            errors += "Component: " + get_component_name_for_logging(config_component) + "\n";
+            errors.push_back("Component: " + get_component_name_for_logging(config_component));
         }
     }
 
-    return errors.empty();
+    return errors;
 }
 
 ///
-/// \brief Check if config variable (of a component) is correct compared with the database.
+/// \brief Check if config variable attribute (of a component) is correct compared with the database.
 /// \param database_variables       Variable from the database
 /// \param config_attribute_key     Configuration variable / attribute combination
 /// \param config_component         Config component (only used for logging)
-/// \param[out] errors              Output variable to write the errors to, if there are any.
+/// \return The component / variable / attribute string if there is an error, otherwise an empty string.
 ///
-static void check_config_variable_integrity(const std::vector<DeviceModelVariable>& database_variables,
-                                            const VariableAttributeKey& config_attribute_key,
-                                            const ComponentKey& config_component, std::string& errors) {
+static std::string check_config_variable_integrity(const std::vector<DeviceModelVariable>& database_variables,
+                                                   const VariableAttributeKey& config_attribute_key,
+                                                   const ComponentKey& config_component) {
     const auto& it_db_variables = std::find_if(
         database_variables.begin(), database_variables.end(), [&config_attribute_key](const DeviceModelVariable& v) {
             if (v.name == config_attribute_key.name && v.instance == config_attribute_key.instance) {
@@ -1489,17 +1495,17 @@ static void check_config_variable_integrity(const std::vector<DeviceModelVariabl
                          });
         if (it_db_attributes != it_db_variables->attributes.end()) {
             // Attribute is found! No need to search any further.
-            return;
+            return "";
         } else {
             // Attribute not found.
-            errors += "Attribute: " + conversions::attribute_enum_to_string(config_attribute_key.attribute_type) +
-                      " (of Component: " + get_component_name_for_logging(config_component) +
-                      " and Variable: " + get_variable_name_for_logging(config_attribute_key) + ")\n";
+            return "Attribute: " + conversions::attribute_enum_to_string(config_attribute_key.attribute_type) +
+                   " (of Component: " + get_component_name_for_logging(config_component) +
+                   " and Variable: " + get_variable_name_for_logging(config_attribute_key) + ")";
         }
     } else {
         // Variable not found.
-        errors += "Variable: " + get_variable_name_for_logging(config_attribute_key) +
-                  " (of Component: " + get_component_name_for_logging(config_component) + ")\n";
+        return "Variable: " + get_variable_name_for_logging(config_attribute_key) +
+               " (of Component: " + get_component_name_for_logging(config_component) + ")";
     }
 }
 
