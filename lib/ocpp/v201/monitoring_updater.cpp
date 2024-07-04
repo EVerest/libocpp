@@ -487,6 +487,10 @@ void MonitoringUpdater::process_triggered_monitors() {
 
                 EventData notify_event = std::move(create_notify_event(unique_id++, reported_value, trigger.component,
                                                                        trigger.variable, trigger.monitor_meta));
+                // Mark if the event is cleared (returned to normal)
+                if (trigger.cleared) {
+                    notify_event.cleared = trigger.cleared;
+                }
 
                 // Mark the triggers as CSMS sent
                 trigger.csms_sent = true;
