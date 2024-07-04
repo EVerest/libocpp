@@ -78,7 +78,11 @@ void InitDeviceModelDb::initialize_database(const std::filesystem::path& schemas
         remove_not_existing_components_from_db(component_schemas, existing_components);
     }
 
+    // Starting a transaction makes this a lot faster (inserting all components takes a few seconds without it and a
+    // few milliseconds if it is done inside a transaction).
+    std::unique_ptr<common::DatabaseTransactionInterface> transaction = database->begin_transaction();
     insert_components(component_schemas, existing_components);
+    transaction->commit();
 }
 
 bool InitDeviceModelDb::insert_config_and_default_values(const std::filesystem::path& schemas_path,
@@ -99,6 +103,7 @@ bool InitDeviceModelDb::insert_config_and_default_values(const std::filesystem::
             InitDeviceModelDbError("Config not consistent with device model component schema's: \n" + output));
     }
 
+    std::unique_ptr<common::DatabaseTransactionInterface> transaction = database->begin_transaction();
     for (const auto& component_variables : config_values) {
         for (const VariableAttributeKey& attribute_key : component_variables.second) {
             if (!insert_variable_attribute_value(component_variables.first, attribute_key, true)) {
@@ -152,6 +157,8 @@ bool InitDeviceModelDb::insert_config_and_default_values(const std::filesystem::
             }
         }
     }
+
+    transaction->commit();
 
     return success;
 }

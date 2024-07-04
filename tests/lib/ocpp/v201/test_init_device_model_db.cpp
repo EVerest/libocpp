@@ -504,6 +504,16 @@ TEST_F(InitDeviceModelDbTest, config_wrong_component_connectorid) {
                  InitDeviceModelDbError);
 }
 
+TEST_F(InitDeviceModelDbTest, default_device_model_config) {
+    // Test if the default device model config is correct and will create a valid database with valid values.
+    const static std::string MIGRATION_FILES_PATH_DEFAULT = "./resources/v201/device_model_migration_files";
+    const static std::string SCHEMAS_PATH_DEFAULT = "./resources/example_config/v201/component_schemas";
+    const static std::string CONFIG_PATH_DEFAULT = "./resources/example_config/v201/config.json";
+    InitDeviceModelDb db(DATABASE_PATH, MIGRATION_FILES_PATH_DEFAULT);
+    EXPECT_NO_THROW(db.initialize_database(SCHEMAS_PATH_DEFAULT, true));
+    EXPECT_NO_THROW(db.insert_config_and_default_values(SCHEMAS_PATH_DEFAULT, CONFIG_PATH_DEFAULT));
+}
+
 // Helper functions
 
 bool InitDeviceModelDbTest::check_all_tables_exist(const std::vector<std::string>& tables, const bool exist) {
