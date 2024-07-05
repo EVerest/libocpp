@@ -61,7 +61,7 @@ void InitDeviceModelDb::initialize_database(const std::filesystem::path& schemas
                 EVLOG_AND_THROW(
                     InitDeviceModelDbError("Database does not support migrations yet, please update the database."));
             }
-        } catch (const std::runtime_error& e) {
+        } catch (const std::runtime_error& /* e*/) {
             EVLOG_AND_THROW(
                 InitDeviceModelDbError("Database does not support migrations yet, please update the database."));
         }
@@ -218,7 +218,7 @@ void InitDeviceModelDb::insert_components(const std::map<ComponentKey, std::vect
         if (this->database_exists && (component.first.name == "EVSE" || component.first.name == "Connector") &&
             (component_db = component_exists_in_db(existing_components, component.first)).has_value()) {
             // Component exists in the database, update component if necessary.
-            update_component(component_db.value(), component.first, component.second);
+            update_component_variables(component_db.value(), component.second);
         } else if (!this->database_exists || (component.first.name == "EVSE" || component.first.name == "Connector")) {
             // Database is new or component is evse or connector and component does not exist. Insert component.
             insert_component(component.first, component.second);
@@ -272,7 +272,7 @@ void InitDeviceModelDb::insert_component(const ComponentKey& component_key,
         EVLOG_debug << "-- Inserting variable " << variable.name;
 
         // Add variable
-        insert_variable(variable, component_id);
+        insert_variable(variable, static_cast<uint64_t>(component_id));
     }
 }
 
@@ -332,7 +332,7 @@ void InitDeviceModelDb::insert_variable_characteristics(const VariableCharacteri
 
     insert_characteristics_statement->bind_int("@datatype_id", static_cast<int>(characteristics.dataType));
 
-    insert_characteristics_statement->bind_int("@variable_id", variable_id);
+    insert_characteristics_statement->bind_int("@variable_id", static_cast<int>(variable_id));
 
     const uint8_t supports_monitoring = (characteristics.supportsMonitoring ? 1 : 0);
     insert_characteristics_statement->bind_int("@supports_monitoring", supports_monitoring);
@@ -386,8 +386,8 @@ void InitDeviceModelDb::update_variable_characteristics(const VariableCharacteri
 
     update_statement->bind_int("@datatype_id", static_cast<int>(characteristics.dataType));
 
-    update_statement->bind_int("@characteristics_id", characteristics_id);
-    update_statement->bind_int("@variable_id", variable_id);
+    update_statement->bind_int("@characteristics_id", static_cast<int>(characteristics_id));
+    update_statement->bind_int("@variable_id", static_cast<int>(variable_id));
 
     const uint8_t supports_monitoring = (characteristics.supportsMonitoring ? 1 : 0);
     update_statement->bind_int("@supports_monitoring", supports_monitoring);
@@ -436,7 +436,7 @@ void InitDeviceModelDb::insert_variable(const DeviceModelVariable& variable, con
     }
 
     insert_variable_statement->bind_text("@name", variable.name, ocpp::common::SQLiteString::Transient);
-    insert_variable_statement->bind_int("@component_id", component_id);
+    insert_variable_statement->bind_int("@component_id", static_cast<int>(component_id));
 
     if (variable.instance.has_value() && !variable.instance.value().empty()) {
         insert_variable_statement->bind_text("@instance", variable.instance.value(),
@@ -456,7 +456,7 @@ void InitDeviceModelDb::insert_variable(const DeviceModelVariable& variable, con
     const int64_t variable_id = this->database->get_last_inserted_rowid();
 
     insert_variable_characteristics(variable.characteristics, variable_id);
-    insert_attributes(variable.attributes, variable_id);
+    insert_attributes(variable.attributes, static_cast<uint64_t>(variable_id));
 }
 
 void InitDeviceModelDb::update_variable(const DeviceModelVariable& variable, const DeviceModelVariable& db_variable,
@@ -477,9 +477,9 @@ void InitDeviceModelDb::update_variable(const DeviceModelVariable& variable, con
         throw InitDeviceModelDbError("Could not create statement " + update_variable_statement);
     }
 
-    update_statement->bind_int("@variable_id", db_variable.db_id.value());
+    update_statement->bind_int("@variable_id", static_cast<int>(db_variable.db_id.value()));
     update_statement->bind_text("@name", variable.name, ocpp::common::SQLiteString::Transient);
-    update_statement->bind_int("@component_id", component_id);
+    update_statement->bind_int("@component_id", static_cast<int>(component_id));
 
     if (variable.instance.has_value() && !variable.instance.value().empty()) {
         update_statement->bind_text("@instance", variable.instance.value(), ocpp::common::SQLiteString::Transient);
@@ -497,8 +497,9 @@ void InitDeviceModelDb::update_variable(const DeviceModelVariable& variable, con
 
     if (db_variable.variable_characteristics_db_id.has_value() &&
         is_characteristics_different(variable.characteristics, db_variable.characteristics)) {
-        update_variable_characteristics(variable.characteristics, db_variable.variable_characteristics_db_id.value(),
-                                        db_variable.db_id.value());
+        update_variable_characteristics(variable.characteristics,
+                                        static_cast<int64_t>(db_variable.variable_characteristics_db_id.value()),
+                                        static_cast<int64_t>(db_variable.db_id.value()));
     }
 
     if (!variable_has_same_attributes(variable.attributes, db_variable.attributes)) {
@@ -521,7 +522,7 @@ void InitDeviceModelDb::delete_variable(const DeviceModelVariable& variable) {
         throw InitDeviceModelDbError("Could not create statement " + delete_variable_statement);
     }
 
-    delete_statement->bind_int("@variable_id", variable.db_id.value());
+    delete_statement->bind_int("@variable_id", static_cast<int>(variable.db_id.value()));
 
     if (delete_statement->step() != SQLITE_DONE) {
         EVLOG_error << "Can not remove variable " << variable.name
@@ -543,7 +544,7 @@ void InitDeviceModelDb::insert_attribute(const VariableAttribute& attribute, con
         throw InitDeviceModelDbError("Could not create statement " + statement);
     }
 
-    insert_attributes_statement->bind_int("@variable_id", variable_id);
+    insert_attributes_statement->bind_int("@variable_id", static_cast<int>(variable_id));
     insert_attributes_statement->bind_int("@persistent", 1);
     insert_attributes_statement->bind_int("@constant", 0);
 
@@ -619,7 +620,7 @@ void InitDeviceModelDb::update_attribute(const VariableAttribute& attribute, con
         throw InitDeviceModelDbError("Could not create statement " + update_attribute_statement);
     }
 
-    update_statement->bind_int("@id", db_attribute.db_id.value());
+    update_statement->bind_int("@id", static_cast<int>(db_attribute.db_id.value()));
 
     if (attribute.mutability.has_value()) {
         update_statement->bind_int("@mutability_id", static_cast<int>(attribute.mutability.value()));
@@ -672,7 +673,7 @@ void InitDeviceModelDb::delete_attribute(const DbVariableAttribute& attribute) {
         throw InitDeviceModelDbError("Could not create statement " + delete_attribute_statement);
     }
 
-    delete_statement->bind_int("@attribute_id", attribute.db_id.value());
+    delete_statement->bind_int("@attribute_id", static_cast<int>(attribute.db_id.value()));
 
     if (delete_statement->step() != SQLITE_DONE) {
         throw InitDeviceModelDbError("Can not remove attribute: " + std::string(this->database->get_error_message()));
@@ -719,7 +720,7 @@ InitDeviceModelDb::get_config_values(const std::filesystem::path& config_file_pa
                 key.name = variable.value().at("variable_name");
                 try {
                     key.attribute_type = conversions::string_to_attribute_enum(attributes.key());
-                } catch (const std::out_of_range& e) {
+                } catch (const std::out_of_range& /* e*/) {
                     EVLOG_error << "Could not find type " << attributes.key() << " of component " << p.name
                                 << " and variable " << key.name;
                     throw InitDeviceModelDbError("Could not find type " + attributes.key() + " of component " + p.name +
@@ -1017,7 +1018,7 @@ bool InitDeviceModelDb::remove_component_from_db(const ComponentKey& component) 
         return false;
     }
 
-    delete_statement->bind_int("@component_id", component.db_id.value());
+    delete_statement->bind_int("@component_id", static_cast<int>(component.db_id.value()));
 
     if (delete_statement->step() != SQLITE_DONE) {
         throw InitDeviceModelDbError(this->database->get_error_message());
@@ -1026,8 +1027,8 @@ bool InitDeviceModelDb::remove_component_from_db(const ComponentKey& component) 
     return true;
 }
 
-void InitDeviceModelDb::update_component(const ComponentKey& db_component, const ComponentKey& config_component,
-                                         const std::vector<DeviceModelVariable>& variables) {
+void InitDeviceModelDb::update_component_variables(const ComponentKey& db_component,
+                                                   const std::vector<DeviceModelVariable>& variables) {
     if (!db_component.db_id.has_value()) {
         EVLOG_error << "Can not update component " << db_component.name << ", because database id is unknown.";
         return;
@@ -1087,7 +1088,7 @@ InitDeviceModelDb::get_variables_from_component_from_db(const ComponentKey& db_c
         throw InitDeviceModelDbError("Could not create statement " + select_variable_statement);
     }
 
-    select_statement->bind_int("@component_id", db_component.db_id.value());
+    select_statement->bind_int("@component_id", static_cast<int>(db_component.db_id.value()));
 
     int status;
     while ((status = select_statement->step()) == SQLITE_ROW) {
@@ -1143,7 +1144,7 @@ std::vector<DbVariableAttribute> InitDeviceModelDb::get_variable_attributes_from
         throw InitDeviceModelDbError("Could not create statement " + get_attributes_statement);
     }
 
-    select_statement->bind_int("@variable_id", variable_id);
+    select_statement->bind_int("@variable_id", static_cast<int>(variable_id));
 
     int status;
     while ((status = select_statement->step()) == SQLITE_ROW) {

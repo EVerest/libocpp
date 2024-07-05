@@ -26,7 +26,7 @@ private:
 public:
     /// \brief Opens SQLite connection at given \p db_path
     ///
-    /// With this constructor, you can initialize the database as well.
+    /// If init_db is true, all other paths must be given as well.
     ///
     /// \param db_path              Path to database
     /// \param migration_files_path Path to the migration files to initialize the database (only needs to be set if
@@ -35,17 +35,10 @@ public:
     /// \param config_path          Path to the configuration file (only needs to be set if `init_db` is true)
     /// \param init_db              True to initialize the database
     ///
-    explicit DeviceModelStorageSqlite(const fs::path& db_path, const std::filesystem::path& migration_files_path,
-                                      const std::filesystem::path& schemas_path,
-                                      const std::filesystem::path& config_path, const bool init_db);
+    explicit DeviceModelStorageSqlite(const fs::path& db_path, const std::filesystem::path& migration_files_path = "",
+                                      const std::filesystem::path& schemas_path = "",
+                                      const std::filesystem::path& config_path = "", const bool init_db = false);
 
-    /// \brief Opens SQLite connection at given \p db_path
-    ///
-    /// Will not initialize the database.
-    ///
-    /// \param db_path              Path to database
-    ///
-    explicit DeviceModelStorageSqlite(const fs::path& db_path);
     ~DeviceModelStorageSqlite() = default;
 
     std::map<Component, std::map<Variable, VariableMetaData>> get_device_model() final;

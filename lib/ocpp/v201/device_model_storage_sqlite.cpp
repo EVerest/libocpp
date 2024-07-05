@@ -41,10 +41,6 @@ DeviceModelStorageSqlite::DeviceModelStorageSqlite(const fs::path& db_path, cons
     }
 }
 
-DeviceModelStorageSqlite::DeviceModelStorageSqlite(const fs::path& db_path) :
-    DeviceModelStorageSqlite(db_path, "", "", "", false) {
-}
-
 int DeviceModelStorageSqlite::get_component_id(const Component& component_id) {
     std::string select_query =
         "SELECT ID FROM COMPONENT WHERE NAME = ? AND INSTANCE IS ? AND EVSE_ID IS ? AND CONNECTOR_ID IS ?";

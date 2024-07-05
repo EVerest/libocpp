@@ -421,16 +421,13 @@ private: // Functions
     bool remove_component_from_db(const ComponentKey& component);
 
     ///
-    /// \brief Update a component in the database.
-    ///
-    /// Variables belonging to the component will be updated too.
+    /// \brief Update variables of a component in the database.
     ///
     /// \param db_component         The component that currently exists in the database and needs updating.
-    /// \param config_component     The new component.
     /// \param variables            The variables of the component.
     ///
-    void update_component(const ComponentKey& db_component, const ComponentKey& config_component,
-                          const std::vector<DeviceModelVariable>& variables);
+    void update_component_variables(const ComponentKey& db_component,
+                                    const std::vector<DeviceModelVariable>& variables);
 
     ///
     /// \brief Get variables belonging to a specific component from the database.
