@@ -761,7 +761,7 @@ bool InitDeviceModelDb::insert_variable_attribute_value(const ComponentKey& comp
                                          "AND VARIABLE.NAME = @variable_name "
                                          "AND VARIABLE.INSTANCE IS @variable_instance) "
                                          "AND TYPE_ID = @type_id "
-                                         "AND VALUE_SOURCE = 'default'";
+                                         "AND (VALUE_SOURCE = 'default' OR VALUE_SOURCE = '' OR VALUE_SOURCE IS NULL)";
 
     std::unique_ptr<common::SQLiteStatementInterface> insert_variable_attribute_statement;
     try {
