@@ -150,7 +150,11 @@ void MonitoringUpdater::start_monitoring() {
                         std::placeholders::_7);
     device_model->register_variable_listener(std::move(fn));
 
-    monitors_timer.interval(std::chrono::seconds(1));
+    int process_interval_seconds =
+        this->device_model->get_optional_value<int>(ControllerComponentVariables::VariableMonitoringProcessTime)
+            .value_or(1);
+
+    monitors_timer.interval(std::chrono::seconds(process_interval_seconds));
 }
 
 void MonitoringUpdater::stop_monitoring() {

@@ -65,6 +65,7 @@ extern const ComponentVariable& IFace;
 extern const ComponentVariable& OcspRequestInterval;
 extern const ComponentVariable& WebsocketPingPayload;
 extern const ComponentVariable& WebsocketPongTimeout;
+extern const ComponentVariable& VariableMonitoringProcessTime;
 extern const ComponentVariable& MaxCustomerInformationDataLength;
 extern const ComponentVariable& V2GCertificateExpireCheckInitialDelaySeconds;
 extern const ComponentVariable& V2GCertificateExpireCheckIntervalSeconds;
