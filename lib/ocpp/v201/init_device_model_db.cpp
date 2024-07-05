@@ -56,16 +56,6 @@ void InitDeviceModelDb::initialize_database(const std::filesystem::path& schemas
     std::vector<ComponentKey> existing_components;
     DeviceModelMap device_model;
     if (this->database_exists) {
-        try {
-            if (this->database->get_user_version() == 0) {
-                EVLOG_AND_THROW(
-                    InitDeviceModelDbError("Database does not support migrations yet, please update the database."));
-            }
-        } catch (const std::runtime_error& /* e*/) {
-            EVLOG_AND_THROW(
-                InitDeviceModelDbError("Database does not support migrations yet, please update the database."));
-        }
-
         existing_components = get_all_connector_and_evse_components_from_db();
     }
 
@@ -171,6 +161,20 @@ void InitDeviceModelDb::execute_init_sql(const bool delete_db_if_exists) {
             }
 
             database_exists = false;
+        }
+    }
+
+    if (database_exists) {
+        // Check if this is an old database version.
+        try {
+            this->database->open_connection();
+            if (this->database->get_user_version() == 0) {
+                EVLOG_AND_THROW(
+                    InitDeviceModelDbError("Database does not support migrations yet, please update the database."));
+            }
+        } catch (const std::runtime_error& /* e*/) {
+            EVLOG_AND_THROW(
+                InitDeviceModelDbError("Database does not support migrations yet, please update the database."));
         }
     }
 
