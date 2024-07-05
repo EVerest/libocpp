@@ -448,6 +448,8 @@ bool DeviceModel::update_monitor_reference(int32_t monitor_id, const std::string
 
     // See if this is a trivial delta monitor and that it exists
     for (auto& [component, variable_map] : this->device_model) {
+        bool found_monitor_id = false;
+
         for (auto& [variable, variable_meta_data] : variable_map) {
             auto it = variable_meta_data.monitors.find(monitor_id);
             if (it != std::end(variable_meta_data.monitors)) {
@@ -465,11 +467,15 @@ bool DeviceModel::update_monitor_reference(int32_t monitor_id, const std::string
                     found_monitor = false;
                 }
 
-                goto loop_end;
+                found_monitor_id = true;
+                break; // Break inner loop
             }
         }
+
+        if (found_monitor_id) {
+            break; // Break outer loop
+        }
     }
-loop_end:
 
     if (found_monitor) {
         try {

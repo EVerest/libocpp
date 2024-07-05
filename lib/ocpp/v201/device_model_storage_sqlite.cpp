@@ -247,7 +247,8 @@ bool DeviceModelStorageSqlite::set_variable_attribute_value(const Component& com
     return true;
 }
 
-bool DeviceModelStorageSqlite::update_monitoring_reference(int32_t monitor_id, const std::string& reference_value) {
+bool DeviceModelStorageSqlite::update_monitoring_reference(const int32_t monitor_id,
+                                                           const std::string& reference_value) {
     auto transaction = this->db->begin_transaction();
 
     std::string update_query = "UPDATE VARIABLE_MONITORING SET REFERENCE_VALUE = ? WHERE ID = ?";

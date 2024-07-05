@@ -242,7 +242,7 @@ void ChargePoint::stop() {
     this->websocket_timer.stop();
     this->client_certificate_expiration_check_timer.stop();
     this->v2g_certificate_expiration_check_timer.stop();
-    // this->monitoring_updater.stop_monitoring();
+    this->monitoring_updater.stop_monitoring();
     this->disconnect_websocket(WebsocketCloseReason::Normal);
     this->message_queue->stop();
 }
@@ -1731,6 +1731,9 @@ void ChargePoint::handle_variable_changed(const SetVariableData& set_variable_da
 }
 
 void ChargePoint::handle_variables_changed(const std::map<SetVariableData, SetVariableResult>& set_variable_results) {
+    // process all triggered monitors
+    this->monitoring_updater.process_triggered_monitors();
+
     // iterate over set_variable_results
     for (const auto& [set_variable_data, set_variable_result] : set_variable_results) {
         if (set_variable_result.attributeStatus == SetVariableStatusEnum::Accepted) {
@@ -3380,33 +3383,19 @@ void ChargePoint::handle_get_monitoring_report_req(Call<GetMonitoringReportReque
     }
 
     auto criteria = msg.monitoringCriteria.value_or(std::vector<MonitoringCriterionEnum>());
-    bool criteria_valid = true;
-
-    for (const auto& criterion : criteria) {
-        if (criterion != MonitoringCriterionEnum::DeltaMonitoring &&
-            criterion != MonitoringCriterionEnum::PeriodicMonitoring &&
-            criterion != MonitoringCriterionEnum::ThresholdMonitoring) {
-            // Test case TC_N_04_CS
-            criteria_valid = false;
-            response.status = GenericDeviceModelStatusEnum::NotSupported;
-        }
-    }
-
     std::vector<MonitoringData> data{};
 
-    if (criteria_valid) {
-        try {
-            data = this->device_model->get_monitors(criteria, component_variables);
+    try {
+        data = this->device_model->get_monitors(criteria, component_variables);
 
-            if (!data.empty()) {
-                response.status = GenericDeviceModelStatusEnum::Accepted;
-            } else {
-                response.status = GenericDeviceModelStatusEnum::EmptyResultSet;
-            }
-        } catch (const DeviceModelStorageError& e) {
-            EVLOG_error << "Get variable monitoring failed:" << e.what();
-            response.status = GenericDeviceModelStatusEnum::Rejected;
+        if (!data.empty()) {
+            response.status = GenericDeviceModelStatusEnum::Accepted;
+        } else {
+            response.status = GenericDeviceModelStatusEnum::EmptyResultSet;
         }
+    } catch (const DeviceModelStorageError& e) {
+        EVLOG_error << "Get variable monitoring failed:" << e.what();
+        response.status = GenericDeviceModelStatusEnum::Rejected;
     }
 
     ocpp::CallResult<GetMonitoringReportResponse> call_result(response, call.uniqueId);

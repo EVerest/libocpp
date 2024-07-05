@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
+// Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
 
 #include <ocpp/v201/monitoring_updater.hpp>
 
@@ -32,7 +32,9 @@ bool triggers_monitor(const VariableMonitoringMeta& monitor_meta, const std::str
         } else if (monitor_meta.monitor.type == MonitorEnum::UpperThreshold) {
             return (raw_val_current > monitor_meta.monitor.value);
         } else {
-            EVLOG_AND_THROW(std::runtime_error("Requested unsupported trigger monitor"));
+            EVLOG_error << "Requested unsupported trigger monitor of type: "
+                        << conversions::monitor_enum_to_string(monitor_meta.monitor.type);
+            return false;
         }
     }
 
@@ -68,7 +70,7 @@ std::chrono::time_point<std::chrono::system_clock> get_next_clock_aligned_point(
     auto hours_now = std::chrono::floor<std::chrono::hours>(sys_time_now);
     auto seconds_now = std::chrono::duration_cast<std::chrono::seconds>(sys_time_now - hours_now);
 
-    // Round next seconds, for ex at a interval of 900 while we are at second 2700 will yield
+    // Round next seconds, for ex at an interval of 900 while we are at second 2700 will yield
     // the result is 3600, and that is a roll-over, we will call the next monitor at the precise hour
     auto next_seconds =
         (std::ceil((double)seconds_now.count() / (double)monitor_seconds.count()) * monitor_seconds).count();
@@ -112,7 +114,7 @@ EventData create_notify_event(int32_t unique_id, const std::string& reported_val
                monitor_meta.monitor.type == MonitorEnum::LowerThreshold) {
         notify_event.trigger = EventTriggerEnum::Alerting;
     } else {
-        EVLOG_AND_THROW(std::runtime_error("Invalid monitor type"));
+        EVLOG_error << "Invalid monitor type of: " << conversions::monitor_enum_to_string(monitor_meta.monitor.type);
     }
 
     if (monitor_meta.type == VariableMonitorType::HardWiredMonitor) {
@@ -122,7 +124,7 @@ EventData create_notify_event(int32_t unique_id, const std::string& reported_val
     } else if (monitor_meta.type == VariableMonitorType::CustomMonitor) {
         notify_event.eventNotificationType = EventNotificationEnum::CustomMonitor;
     } else {
-        EVLOG_AND_THROW(std::runtime_error("Invalid monitor meta type"));
+        EVLOG_error << "Invalid monitor meta type of: " << static_cast<int>(monitor_meta.type);
     }
 
     return notify_event;
@@ -193,7 +195,9 @@ void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, Va
         } else if (characteristics.dataType == DataEnum::integer) {
             monitor_triggered = triggers_monitor<DataEnum::integer>(monitor_meta, value_previous, value_current);
         } else {
-            EVLOG_AND_THROW(std::runtime_error("Requested unsupported 'DataEnum' type"));
+            EVLOG_error << "Requested unsupported 'DataEnum' type: "
+                        << conversions::data_enum_to_string(characteristics.dataType);
+            continue;
         }
 
         EVLOG_debug << "Monitor: [" << monitor_meta.monitor << "] triggered: " << monitor_triggered;
@@ -377,9 +381,8 @@ void MonitoringUpdater::process_periodic_monitors() {
                                         current_time - periodic_monitor.next_trigger_clock_aligned)
                                         .count();
 
-                    // TODO (ioan): if we missed an interval, for example 15 minute mark see how large
-                    // is the distance in which we will not send the notification any more. If we miss
-                    // it with > 1 minute maybe we should not trigger it any more?
+                    // TODO (ioan): Handle with: N08.FR.03, events should be queued and
+                    // send when the charger is back online
                     if (distance > static_cast<decltype(distance)>(60)) {
                         EVLOG_warning << "Missed scheduled monitor time by: " << distance;
                     }
@@ -390,7 +393,9 @@ void MonitoringUpdater::process_periodic_monitors() {
                         get_next_clock_aligned_point(periodic_monitor.monitor_meta.monitor.value);
                 }
             } else {
-                EVLOG_AND_THROW(std::runtime_error("Invalid monitor type from: 'get_periodic_monitors'"));
+                EVLOG_error << "Invalid monitor type from: 'get_periodic_monitors': "
+                            << conversions::monitor_enum_to_string(periodic_monitor.monitor_meta.monitor.type);
+                continue;
             }
 
             if (matches_time) {
