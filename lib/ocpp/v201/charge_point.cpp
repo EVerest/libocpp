@@ -353,14 +353,15 @@ void ChargePoint::on_transaction_started(const int32_t evse_id, const int32_t co
                                          const std::optional<int32_t>& remote_start_id,
                                          const ChargingStateEnum charging_state) {
 
-    this->evses.at(evse_id)->open_transaction(session_id, connector_id, timestamp, meter_start, id_token,
-                                              group_id_token, reservation_id, charging_state);
+    auto& evse_handle = this->evse_manager->get_evse(evse_id);
+    evse_handle.open_transaction(session_id, connector_id, timestamp, meter_start, id_token, group_id_token,
+                                 reservation_id, charging_state);
 
     const auto meter_value = utils::get_meter_value_with_measurands_applied(
         meter_start, utils::get_measurands_vec(this->device_model->get_value<std::string>(
                          ControllerComponentVariables::SampledDataTxStartedMeasurands)));
 
-    const auto& enhanced_transaction = this->evses.at(evse_id)->get_transaction();
+    const auto& enhanced_transaction = evse_handle.get_transaction();
     Transaction transaction{enhanced_transaction->transactionId};
     transaction.chargingState = charging_state;
     if (remote_start_id.has_value()) {
@@ -429,8 +430,8 @@ void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime&
         trigger_reason == ocpp::v201::TriggerReasonEnum::StopAuthorized ? id_token : std::nullopt;
 
     this->transaction_event_req(TransactionEventEnum::Ended, timestamp, enhanced_transaction->get_transaction(),
-                                trigger_reason, seq_no, std::nullopt, std::nullopt,
-                                transaction_id_token, meter_values, std::nullopt, this->is_offline(), std::nullopt);
+                                trigger_reason, seq_no, std::nullopt, std::nullopt, transaction_id_token, meter_values,
+                                std::nullopt, this->is_offline(), std::nullopt);
 
     bool send_reset = false;
     if (this->reset_scheduled) {
@@ -505,11 +506,10 @@ void ChargePoint::on_authorized(const int32_t evse_id, const int32_t connector_i
     }
 
     // set id_token of enhanced_transaction and send TransactionEvent(Updated) with id_token
-    enhanced_transaction->set_id_token_sent();
-    this->transaction_event_req(TransactionEventEnum::Updated, ocpp::DateTime(),
-                                enhanced_transaction->get_transaction(), TriggerReasonEnum::Authorized,
-                                enhanced_transaction->get_seq_no(), std::nullopt, std::nullopt, id_token, std::nullopt,
-                                std::nullopt, this->is_offline(), std::nullopt);
+    transaction->set_id_token_sent();
+    this->transaction_event_req(TransactionEventEnum::Updated, ocpp::DateTime(), transaction->get_transaction(),
+                                TriggerReasonEnum::Authorized, transaction->get_seq_no(), std::nullopt, std::nullopt,
+                                id_token, std::nullopt, std::nullopt, this->is_offline(), std::nullopt);
 }
 
 void ChargePoint::on_meter_value(const int32_t evse_id, const MeterValue& meter_value) {
@@ -633,11 +633,11 @@ bool ChargePoint::on_charging_state_changed(const uint32_t evse_id, const Chargi
 }
 
 std::optional<std::string> ChargePoint::get_evse_transaction_id(int32_t evse_id) {
-    auto& evse = this->evses.at(evse_id);
-    if (!evse->has_active_transaction()) {
+    auto& evse = this->evse_manager->get_evse(evse_id);
+    if (!evse.has_active_transaction()) {
         return std::nullopt;
     }
-    return evse->get_transaction()->transactionId.get();
+    return evse.get_transaction()->transactionId.get();
 }
 
 AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std::optional<CiString<5500>>& certificate,
