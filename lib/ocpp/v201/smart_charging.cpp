@@ -161,7 +161,7 @@ ProfileValidationResultEnum SmartChargingHandler::validate_charging_station_max_
         return ProfileValidationResultEnum::InvalidProfileType;
     }
 
-    if (is_overlapping_validity_period(evse_id, profile)) {
+    if (is_overlapping_validity_period(profile, evse_id)) {
         return ProfileValidationResultEnum::DuplicateProfileValidityPeriod;
     }
 
@@ -180,7 +180,7 @@ ProfileValidationResultEnum SmartChargingHandler::validate_tx_default_profile(Ch
                                                                               int32_t evse_id) const {
     auto profiles = evse_id == 0 ? get_evse_specific_tx_default_profiles() : get_station_wide_tx_default_profiles();
 
-    if (is_overlapping_validity_period(evse_id, profile)) {
+    if (is_overlapping_validity_period(profile, evse_id)) {
         return ProfileValidationResultEnum::DuplicateProfileValidityPeriod;
     }
 
@@ -322,7 +322,7 @@ SmartChargingHandler::validate_profile_schedules(ChargingProfile& profile,
     return ProfileValidationResultEnum::Valid;
 }
 
-SetChargingProfileResponse SmartChargingHandler::add_profile(int32_t evse_id, ChargingProfile& profile) {
+SetChargingProfileResponse SmartChargingHandler::add_profile(ChargingProfile& profile, int32_t evse_id) {
     SetChargingProfileResponse response;
     response.status = ChargingProfileStatusEnum::Accepted;
     auto found_profile = false;
@@ -391,8 +391,8 @@ std::vector<ChargingProfile> SmartChargingHandler::get_station_wide_tx_default_p
     return station_wide_tx_default_profiles;
 }
 
-bool SmartChargingHandler::is_overlapping_validity_period(int candidate_evse_id,
-                                                          const ChargingProfile& candidate_profile) const {
+bool SmartChargingHandler::is_overlapping_validity_period(const ChargingProfile& candidate_profile,
+                                                          int candidate_evse_id) const {
 
     if (candidate_profile.chargingProfilePurpose == ChargingProfilePurposeEnum::TxProfile) {
         // This only applies to non TxProfile types.

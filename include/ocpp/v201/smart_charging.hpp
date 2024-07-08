@@ -77,7 +77,7 @@ public:
     ///
     /// \brief Adds a given \p profile and associated \p evse_id to our stored list of profiles
     ///
-    SetChargingProfileResponse add_profile(int32_t evse_id, ChargingProfile& profile);
+    SetChargingProfileResponse add_profile(ChargingProfile& profile, int32_t evse_id);
 
     ///
     /// \brief Retrieves existing profiles on system.
@@ -117,7 +117,7 @@ protected:
     /// \brief Checks a given \p profile and associated \p evse_id validFrom and validTo range
     /// This method assumes that the existing profile will have dates set for validFrom and validTo
     ///
-    bool is_overlapping_validity_period(int evse_id, const ChargingProfile& profile) const;
+    bool is_overlapping_validity_period(const ChargingProfile& profile, int32_t evse_id) const;
 
     ///
     /// \brief Checks a given \p profile does not have an id that conflicts with an existing profile
