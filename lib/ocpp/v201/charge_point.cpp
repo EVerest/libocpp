@@ -2636,34 +2636,24 @@ void ChargePoint::handle_transaction_event_response(const EnhancedMessage<v201::
         return;
     }
 
-    std::vector<int32_t> evse_ids; // this is a vector because the id token could be active for multiple transactions
-    if (original_msg.evse.has_value()) {
-        evse_ids.push_back(original_msg.evse.value().id);
-    } else {
-        // add every evse_id with active transaction and given token
-        // for (const auto& [evse_id, evse] : this->evses) {
-        //     const auto& transaction = evse->get_transaction();
-        //     if (transaction != nullptr and transaction->id_token.has_value()) {
-        //         if (transaction->id_token.value().idToken.get() == id_token.idToken.get()) {
-        //             evse_ids.push_back(evse_id);
-        //         }
-        //     }
-        // }
-    }
-
-    // post handling of transactions in case status is not Accepted
-    for (const auto evse_id : evse_ids) {
-        if (this->device_model->get_value<bool>(ControllerComponentVariables::StopTxOnInvalidId)) {
-            this->callbacks.stop_transaction_callback(evse_id, ReasonEnum::DeAuthorized);
-        } else {
-            if (this->device_model->get_optional_value<int32_t>(ControllerComponentVariables::MaxEnergyOnInvalidId)
-                    .has_value()) {
-                // Energy delivery to the EV SHALL be allowed until the amount of energy specified in
-                // MaxEnergyOnInvalidId has been reached.
-                this->evse_manager->get_evse(evse_id).start_checking_max_energy_on_invalid_id();
+    for (auto& evse : *this->evse_manager) {
+        if (auto& transaction = evse.get_transaction();
+            transaction != nullptr and transaction->transactionId == original_msg.transactionInfo.transactionId) {
+            // Deal with invalid token for transaction
+            auto evse_id = evse.get_id();
+            if (this->device_model->get_value<bool>(ControllerComponentVariables::StopTxOnInvalidId)) {
+                this->callbacks.stop_transaction_callback(evse_id, ReasonEnum::DeAuthorized);
             } else {
-                this->callbacks.pause_charging_callback(evse_id);
+                if (this->device_model->get_optional_value<int32_t>(ControllerComponentVariables::MaxEnergyOnInvalidId)
+                        .has_value()) {
+                    // Energy delivery to the EV SHALL be allowed until the amount of energy specified in
+                    // MaxEnergyOnInvalidId has been reached.
+                    evse.start_checking_max_energy_on_invalid_id();
+                } else {
+                    this->callbacks.pause_charging_callback(evse_id);
+                }
             }
+            break;
         }
     }
 }

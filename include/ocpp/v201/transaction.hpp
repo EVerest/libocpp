@@ -17,7 +17,7 @@ struct EnhancedTransaction : public Transaction {
     explicit EnhancedTransaction(DatabaseHandler& database_handler) : database_handler{database_handler} {
     }
 
-    bool id_token_sent;
+    bool id_token_sent = false;
     int32_t connector_id;
     int32_t seq_no = 0;
     std::optional<float> active_energy_import_start_value;
