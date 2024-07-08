@@ -312,6 +312,62 @@ struct Measurement {
     friend std::ostream& operator<<(std::ostream& os, const Measurement& k);
 };
 
+struct DisplayMessageContent {
+    std::string message;
+    std::optional<std::string> language;
+};
+
+struct DisplayMessage {
+    std::optional<int32_t> id;
+    std::optional<std::string> priority; // TODO enum? AlwaysFront, InFront, NormalCycle
+    std::optional<std::string> state;   // TODO enum? Charging, Faulted, Idle, Unavailable
+    std::optional<std::string> timestamp_from;
+    std::optional<std::string> timestamp_to;
+    std::optional<std::string> transaction_id;
+    std::vector<DisplayMessageContent> messages;
+    std::optional<std::string> message_format;  // TODO enum? ASCII, HTML, URI, UTF8
+    // std::optional<Component> display;   // TODO
+    // TODO
+
+    friend void from_json(const json& j, DisplayMessage &m);
+    friend void to_json(json& j, const DisplayMessage &m);
+};
+
+struct RunningCostChargingPrice {
+    std::optional<double> kWh_price;
+    std::optional<double> hour_price;
+    std::optional<double> flat_fee;
+};
+
+struct RunningCostIdlePrice {
+    std::optional<uint32_t> idle_grace_minutes;
+    std::optional<double> idle_hour_price;
+};
+
+struct RunningCost {
+    std::string transaction_id;
+    std::optional<std::string> timestamp;
+    double cost;
+    const std::string state;    // TODO enum? "Charging" or "Idle"
+    std::optional<RunningCostChargingPrice> charging_price;
+    std::optional<RunningCostIdlePrice> idle_price;
+    std::optional<std::string> next_period_at_time;
+    std::optional<RunningCostChargingPrice> next_period_charging_price;
+    std::optional<RunningCostIdlePrice> next_eriod_idle_price;
+    std::optional<std::vector<DisplayMessageContent>> cost_messages;
+    std::optional<std::string> qr_code_text;
+
+    // TODO add it here??? Or should libocpp handle this?
+    std::optional<std::string> trigger_meter_value_at_time;
+    std::optional<double> trigger_meter_value_at_energy_kwh;
+    std::optional<double> trigger_meter_value_at_power_kw;
+    std::optional<std::string> trigger_meter_value_at_cp_status;     // TODO enum? ChargePointStatus: Available, Preparing, Charging, SuspendedEVSE, SuspendedEV, Finishing // Only for 1.6
+
+    // TODO
+
+    friend void from_json(const json& j, RunningCost& c);
+};
+
 enum class CaCertificateType {
     V2G,
     MO,

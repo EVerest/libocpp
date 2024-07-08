@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 #include "ocpp/common/types.hpp"
+
 #include <stdexcept>
 #include <thread>
 
@@ -9,6 +10,8 @@
 #include <ocpp/v16/charge_point_configuration.hpp>
 #include <ocpp/v16/charge_point_impl.hpp>
 #include <ocpp/v16/utils.hpp>
+#include <ocpp/v201/messages/CostUpdated.hpp>
+#include <ocpp/v201/messages/SetDisplayMessage.hpp>
 #include <ocpp/v201/utils.hpp>
 
 #include <optional>
@@ -20,6 +23,7 @@ namespace ocpp {
 namespace v16 {
 
 const auto ISO15118_PNC_VENDOR_ID = "org.openchargealliance.iso15118pnc";
+const auto CALIFORNIA_PRICING_VENDOR_ID = "org.openchargealliance.costmsg";
 const auto CLIENT_CERTIFICATE_TIMER_INTERVAL = std::chrono::hours(12);
 const auto V2G_CERTIFICATE_TIMER_INTERVAL = std::chrono::hours(12);
 const auto OCSP_REQUEST_TIMER_INTERVAL = std::chrono::hours(12);
@@ -1649,6 +1653,31 @@ void ChargePointImpl::handleDataTransferRequest(ocpp::Call<DataTransferRequest> 
                     << "Received DataTransfer.req for ISO15118 PnC while PnC is enabled but no handler found for : "
                     << messageId;
                 response.status = DataTransferStatus::UnknownMessageId;
+            }
+        } else if (vendorId == CALIFORNIA_PRICING_VENDOR_ID) {
+            // Special callback for the california pricing. The default data transfer callback is not used, but we use
+            // the DisplayMessage or TariffAndCost callback here.
+
+            // TODO check if this is enabled in the settings
+
+            // TODO check if there is a callback function defined for this
+
+            if (messageId == "SetUserPrice") {
+                // TODO do not use v201
+                DisplayMessage message;
+                message.transaction_id = "0"; // TODO data.idToken
+                DisplayMessageContent message_content;
+                message_content.message = "";  // TODO data.priceText
+                message_content.language = ""; // TODO set default language here
+                message.messages.push_back(message_content);
+                // TODO loop over 'priceTextExtra' and set all languages here.
+
+            } else if (messageId == "FinalCost" || messageId == "RunningCost") {
+                // TODO do not use v201
+                RunningCost cost;
+                cost.transaction_id = ""; // TODO data.transactionId
+                cost.cost = 2.2f;         // TODO data.cost
+                // TODO all the other fields (from json??)
             }
         } else if (this->data_transfer_callbacks.count(vendorId) == 0) {
             response.status = DataTransferStatus::UnknownVendorId;
