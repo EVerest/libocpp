@@ -825,9 +825,9 @@ bool InitDeviceModelDb::insert_variable_attribute_value(const ComponentKey& comp
                                      ": " + std::string(this->database->get_error_message()));
     } else if ((insert_variable_attribute_statement->changes() < 1) && warn_source_not_default) {
         EVLOG_debug << "Could not set value of variable " + get_variable_name_for_logging(variable_attribute_key) +
-                             " (Component: " + get_component_name_for_logging(component_key) + ") attribute " +
-                             conversions::attribute_enum_to_string(variable_attribute_key.attribute_type) +
-                             ": value has already changed by other source";
+                           " (Component: " + get_component_name_for_logging(component_key) + ") attribute " +
+                           conversions::attribute_enum_to_string(variable_attribute_key.attribute_type) +
+                           ": value has already changed by other source";
     }
 
     return true;
