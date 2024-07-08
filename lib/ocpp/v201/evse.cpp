@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
+#include <limits>
 #include <optional>
 #include <utility>
 
@@ -306,8 +307,8 @@ void Evse::check_max_energy_on_invalid_id() {
         if (opt_energy_value.has_value() and active_energy_import_start_value.has_value()) {
             auto charged_energy = opt_energy_value.value() - active_energy_import_start_value.value();
 
-            // TODO float compare with epsilon
-            if (charged_energy >= static_cast<float>(max_energy_on_invalid_id.value())) {
+            if ((charged_energy + std::numeric_limits<float>::epsilon()) >=
+                static_cast<float>(max_energy_on_invalid_id.value())) {
                 this->pause_charging_callback(this->evse_id);
                 transaction->check_max_active_import_energy = false; // No need to check anymore
             }
