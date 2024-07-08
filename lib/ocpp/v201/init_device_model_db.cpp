@@ -298,7 +298,7 @@ InitDeviceModelDb::read_component_schemas(const std::vector<std::filesystem::pat
             }
         } catch (const json::parse_error& e) {
             EVLOG_error << "Error while parsing schema file: " << path;
-            throw e;
+            throw;
         }
     }
 
@@ -750,7 +750,7 @@ InitDeviceModelDb::get_config_values(const std::filesystem::path& config_file_pa
         return config_values;
     } catch (const json::parse_error& e) {
         EVLOG_error << "Error while parsing OCPP config file: " << config_file_path;
-        throw e;
+        throw;
     }
 }
 
