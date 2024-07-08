@@ -449,8 +449,8 @@
           "default": "5",
           "type": "integer"
       },
-      "VariableMonitoringProcessTime": {
-          "variable_name": "VariableMonitoringProcessTime",
+      "MonitorsProcessingInterval": {
+          "variable_name": "MonitorsProcessingInterval",
           "characteristics": {
               "supportsMonitoring": false,
               "dataType": "integer"
