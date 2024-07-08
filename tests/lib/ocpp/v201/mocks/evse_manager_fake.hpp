@@ -56,7 +56,8 @@ public:
 
     void open_transaction(int evse_id, const std::string& transaction_id) {
         auto& transaction = this->transactions.at(evse_id - 1);
-        transaction = std::make_unique<EnhancedTransaction>();
+        // Really dirty way of fixing unit test. Make proper interface for transactions to solve this
+        transaction = std::make_unique<EnhancedTransaction>(*static_cast<DatabaseHandler*>(nullptr));
         transaction->transactionId = transaction_id;
 
         auto& mock = this->get_mock(evse_id);
