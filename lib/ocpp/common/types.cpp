@@ -568,6 +568,116 @@ std::ostream& operator<<(std::ostream& os, const Measurement& k) {
     return os;
 }
 
+void from_json(const json& j, DisplayMessage& m) {
+    // TODO
+}
+
+void to_json(json& j, const DisplayMessage& m) {
+    // TODO
+}
+
+void from_json(const json& j, RunningCostChargingPrice& c) {
+    if (j.contains("kWhPrice")) {
+        c.kWh_price = j.at("kWhPrice");
+    }
+
+    if (j.contains("hourPrice")) {
+        c.hour_price = j.at("hourPrice");
+    }
+
+    if (j.contains("flatFee")) {
+        c.flat_fee = j.at("flatFee");
+    }
+}
+
+void to_json(json& j, const RunningCostChargingPrice& c) {
+}
+
+void from_json(const json& j, RunningCostIdlePrice& c) {
+    if (j.contains("graceMinutes")) {
+        c.idle_grace_minutes = j.at("graceMinutes");
+    }
+
+    if (j.contains("hourPrice")) {
+        c.idle_hour_price = j.at("hourPrice");
+    }
+}
+
+void to_json(json& j, const RunningCostIdlePrice& c) {
+}
+
+void from_json(const json& j, RunningCost& c) {
+    if (j.contains("transactionId")) {
+        c.transaction_id = j.at("transactionId");
+    }
+
+    if (j.contains("timestamp")) {
+        c.timestamp = j.at("timestamp");
+    }
+
+    if (j.contains("meterValue")) {
+        c.meter_value = j.at("meterValue");
+    }
+
+    if (j.contains("cost")) {
+        c.cost = j.at("cost");
+    }
+
+    if (j.contains("state")) {
+        c.state = j.at("state");
+    }
+
+    if (j.contains("chargingPrice")) {
+        c.charging_price = j.at("chargingPrice");
+    }
+
+    if (j.contains("idlePrice")) {
+        c.idle_price = j.at("idlePrice");
+    }
+
+    if (j.contains("nextPeriod")) {
+        const json& nextPeriod = j.at("nextPeriod");
+        if (nextPeriod.is_object()) {
+            if (nextPeriod.contains("atTime")) {
+                c.next_period_at_time = nextPeriod.at("atTime");
+            }
+
+            if (nextPeriod.contains("chargingPrice")) {
+                c.next_period_charging_price = nextPeriod.at("chargingPrice");
+            }
+
+            if (nextPeriod.contains("idlePrice")) {
+                c.next_period_idle_price = nextPeriod.at("idlePrice");
+            }
+        }
+    }
+
+    if (j.contains("triggerMeterValue")) {
+        const json& triggerMeterValue = j.at("triggerMeterValue");
+        if (triggerMeterValue.is_object()) {
+            if (triggerMeterValue.contains("atTime")) {
+                c.trigger_meter_value_at_time = triggerMeterValue.at("atTime");
+            }
+
+            if (triggerMeterValue.contains("atEnergykWh")) {
+                c.trigger_meter_value_at_energy_kwh = triggerMeterValue.at("atEnergykWh");
+            }
+
+            if (triggerMeterValue.contains("atPowerkW")) {
+                c.trigger_meter_value_at_power_kw = triggerMeterValue.at("atPowerkW");
+            }
+
+            if (triggerMeterValue.contains("atCPStatus")) {
+                v16::conversions::string_to_charge_point_status(triggerMeterValue.at("atCPStatus"));
+            }
+        }
+    }
+}
+
+void to_json(json& j, const RunningCost& c) {
+    // TODO
+}
+
 namespace conversions {
 std::string ca_certificate_type_to_string(CaCertificateType e) {
     switch (e) {

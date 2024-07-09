@@ -20,6 +20,7 @@
 #include <ocpp/common/support_older_cpp_versions.hpp>
 #include <ocpp/v16/enums.hpp>
 #include <ocpp/v201/enums.hpp>
+#include <ocpp/v201/ocpp_types.hpp>
 
 using json = nlohmann::json;
 
@@ -312,6 +313,7 @@ struct Measurement {
     friend std::ostream& operator<<(std::ostream& os, const Measurement& k);
 };
 
+
 struct DisplayMessageContent {
     std::string message;
     std::optional<std::string> language;
@@ -319,14 +321,14 @@ struct DisplayMessageContent {
 
 struct DisplayMessage {
     std::optional<int32_t> id;
-    std::optional<std::string> priority; // TODO enum? AlwaysFront, InFront, NormalCycle
-    std::optional<std::string> state;   // TODO enum? Charging, Faulted, Idle, Unavailable
+    std::optional<v201::MessagePriorityEnum> priority;
+    std::optional<v201::MessageStateEnum> state;
     std::optional<std::string> timestamp_from;
     std::optional<std::string> timestamp_to;
     std::optional<std::string> transaction_id;
     std::vector<DisplayMessageContent> messages;
-    std::optional<std::string> message_format;  // TODO enum? ASCII, HTML, URI, UTF8
-    // std::optional<Component> display;   // TODO
+    std::optional<v201::MessageFormatEnum> message_format;
+    std::optional<v201::Component> display;
     // TODO
 
     friend void from_json(const json& j, DisplayMessage &m);
@@ -337,23 +339,32 @@ struct RunningCostChargingPrice {
     std::optional<double> kWh_price;
     std::optional<double> hour_price;
     std::optional<double> flat_fee;
+
+    friend void from_json(const json& j, RunningCostChargingPrice& c);
+    friend void to_json(json &j, const RunningCostChargingPrice &c);
 };
 
 struct RunningCostIdlePrice {
     std::optional<uint32_t> idle_grace_minutes;
     std::optional<double> idle_hour_price;
+
+    friend void from_json(const json& j, RunningCostIdlePrice& c);
+    friend void to_json(json &j, const RunningCostIdlePrice &c);
 };
 
 struct RunningCost {
     std::string transaction_id;
     std::optional<std::string> timestamp;
-    double cost;
-    const std::string state;    // TODO enum? "Charging" or "Idle"
+    std::optional<uint32_t> meter_value;
+    // Transaction cost. This field is not really optional (what is the point of sending RunningCost without cost?),
+    // but it is defined on different places in OCPP 2.0.1 and 1.6. So we can not easily do a conversion from json here.
+    std::optional<double> cost;
+    std::string state;    // TODO enum? "Charging" or "Idle"
     std::optional<RunningCostChargingPrice> charging_price;
     std::optional<RunningCostIdlePrice> idle_price;
     std::optional<std::string> next_period_at_time;
     std::optional<RunningCostChargingPrice> next_period_charging_price;
-    std::optional<RunningCostIdlePrice> next_eriod_idle_price;
+    std::optional<RunningCostIdlePrice> next_period_idle_price;
     std::optional<std::vector<DisplayMessageContent>> cost_messages;
     std::optional<std::string> qr_code_text;
 
@@ -361,11 +372,12 @@ struct RunningCost {
     std::optional<std::string> trigger_meter_value_at_time;
     std::optional<double> trigger_meter_value_at_energy_kwh;
     std::optional<double> trigger_meter_value_at_power_kw;
-    std::optional<std::string> trigger_meter_value_at_cp_status;     // TODO enum? ChargePointStatus: Available, Preparing, Charging, SuspendedEVSE, SuspendedEV, Finishing // Only for 1.6
+    std::optional<v16::ChargePointStatus> trigger_meter_value_at_cp_status;     // ChargePointStatus: Available, Preparing, Charging, SuspendedEVSE, SuspendedEV, Finishing // Only for 1.6
 
     // TODO
 
     friend void from_json(const json& j, RunningCost& c);
+    friend void to_json(json &j, const RunningCost &c);
 };
 
 enum class CaCertificateType {
