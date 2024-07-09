@@ -518,8 +518,41 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
         result.type = request.type;
         result.id = request.id;
 
+        // N04.FR.16 - If we find a monitor with this ID, and there's a comp/var mismatch, send a rejected result
+        // N04.FR.13 - If we receive an ID but we can't find a monitor with this ID send a rejected result
+        bool request_has_id = request.id.has_value();
+        bool id_found = false;
+
+        if (request_has_id) {
+            // Search through all the ID's
+            for (const auto& [component, variable_map] : this->device_model) {
+                for (const auto& [variable, variable_meta] : variable_map) {
+                    if (variable_meta.monitors.find(request.id.value()) != std::end(variable_meta.monitors)) {
+                        id_found = true;
+                        break;
+                    }
+                }
+
+                if (id_found) {
+                    break;
+                }
+            }
+
+            if (!id_found) {
+                result.status = SetMonitoringStatusEnum::Rejected;
+                set_monitors_res.push_back(result);
+                continue;
+            }
+        }
+
         if (this->device_model.find(request.component) == this->device_model.end()) {
-            result.status = SetMonitoringStatusEnum::UnknownComponent;
+            // N04.FR.16
+            if (request_has_id && id_found) {
+                result.status = SetMonitoringStatusEnum::Rejected;
+            } else {
+                result.status = SetMonitoringStatusEnum::UnknownComponent;
+            }
+
             set_monitors_res.push_back(result);
             continue;
         }
@@ -528,7 +561,13 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
 
         auto variable_it = variable_map.find(request.variable);
         if (variable_it == variable_map.end()) {
-            result.status = SetMonitoringStatusEnum::UnknownVariable;
+            // N04.FR.16
+            if (request_has_id && id_found) {
+                result.status = SetMonitoringStatusEnum::Rejected;
+            } else {
+                result.status = SetMonitoringStatusEnum::UnknownVariable;
+            }
+
             set_monitors_res.push_back(result);
             continue;
         }
@@ -543,17 +582,14 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
                         << characteristics << "]"
                         << " and value: " << request.value;
 
-            // If the monitor is of type 'delta' (or periodic) and it is of a non-numeric
-            // type the value is ignored since all values will be reported
-            if (request.type == MonitorEnum::Delta &&
-                (characteristics.dataType != DataEnum::decimal && characteristics.dataType != DataEnum::integer)) {
+            // If the monitor is of type 'delta' (or periodic) and it is of a non-numeric type
+            // the value is ignored since all values will be reported (excepting negative values)
+            if (request.type == MonitorEnum::Delta && std::signbit(request.value)) {
+                // N04.FR.14
+                valid_value = false;
+            } else if (request.type == MonitorEnum::Delta && (characteristics.dataType != DataEnum::decimal &&
+                                                              characteristics.dataType != DataEnum::integer)) {
                 valid_value = true;
-            } else if (request.type == MonitorEnum::Delta && (characteristics.dataType == DataEnum::decimal ||
-                                                              characteristics.dataType == DataEnum::integer)) {
-                // N04.FR.14 - negative delta is an error
-                if (request.value < 0.0f) {
-                    valid_value = false;
-                }
             } else if (request.type == MonitorEnum::Periodic || request.type == MonitorEnum::PeriodicClockAligned) {
                 valid_value = true;
             } else {
@@ -580,23 +616,12 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
         bool duplicate_value = false;
 
         // Only test for duplicates if we do not receive an explicit monitor ID
-        if (!request.id.has_value()) {
+        if (!request_has_id) {
             for (const auto& [id, monitor_meta] : variable_it->second.monitors) {
                 if (monitor_meta.monitor.type == request.type && monitor_meta.monitor.severity == request.severity) {
                     duplicate_value = true;
                     break;
                 }
-            }
-        } else {
-            // N04.FR.13 - If we receive an ID but we can't find a monitor
-            // with this ID send a rejected result
-            bool id_missing =
-                (variable_it->second.monitors.find(request.id.value()) == std::end(variable_it->second.monitors));
-
-            if (id_missing) {
-                result.status = SetMonitoringStatusEnum::Rejected;
-                set_monitors_res.push_back(result);
-                continue;
             }
         }
 

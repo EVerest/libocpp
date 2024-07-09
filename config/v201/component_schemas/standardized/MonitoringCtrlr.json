@@ -33,7 +33,8 @@
         }
       ],
       "description": "Whether monitoring is available,",
-      "type": "boolean"
+      "type": "boolean",
+      "default": true
     },
     "ActiveMonitoringBase": {
       "variable_name": "ActiveMonitoringBase",
@@ -64,7 +65,8 @@
         }
       ],
       "description": "Shows the currently used MonitoringLevel. Valid values are severity levels of SetMonitoringLevelRequest: 0-9.",
-      "type": "integer"    
+      "type": "integer",
+      "default": 9 
     },
     "BytesPerMessageClearVariableMonitoring": {
       "variable_name": "BytesPerMessage",
@@ -144,7 +146,7 @@
       ],
       "description": "When set and the Charging Station is offline, the Charging Station shall queue any notifyEventRequest messages triggered by a monitor with a severity number equal to or lower than the severity configured here.",
       "type": "integer",
-      "default": 1
+      "default": 9
     }
   },
   "required": [
