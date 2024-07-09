@@ -17,7 +17,7 @@
         }
       ],
       "description": "Whether monitoring is enabled.",
-      "default": true,
+      "default": false,
       "type": "boolean"
     },
     "MonitoringCtrlrAvailable": {
