@@ -568,6 +568,24 @@ std::ostream& operator<<(std::ostream& os, const Measurement& k) {
     return os;
 }
 
+void from_json(const json& j, DisplayMessageContent& m) {
+    if (j.contains("content")) {
+        m.message = j.at("content");
+    }
+
+    if (j.contains("format")) {
+        m.message_format = v201::conversions::string_to_message_format_enum(j.at("format"));
+    }
+
+    if (j.contains("language")) {
+        m.language = j.at("language");
+    }
+}
+
+void to_json(json& j, const DisplayMessageContent& m) {
+    // TODO
+}
+
 void from_json(const json& j, DisplayMessage& m) {
     // TODO
 }
@@ -607,6 +625,9 @@ void to_json(json& j, const RunningCostIdlePrice& c) {
 }
 
 void from_json(const json& j, RunningCost& c) {
+    // TODO for 2.0.1, the cost and transactionid are set in CostUpdatedRequest, the remaining is set in the
+    // 'customData'. Don't forget to add `cost` and `transactionId` to the class as well for 2.0.1!!
+
     if (j.contains("transactionId")) {
         c.transaction_id = j.at("transactionId");
     }
@@ -652,26 +673,49 @@ void from_json(const json& j, RunningCost& c) {
         }
     }
 
-    if (j.contains("triggerMeterValue")) {
-        const json& triggerMeterValue = j.at("triggerMeterValue");
-        if (triggerMeterValue.is_object()) {
-            if (triggerMeterValue.contains("atTime")) {
-                c.trigger_meter_value_at_time = triggerMeterValue.at("atTime");
-            }
+    if (j.contains("priceText")) {
+        DisplayMessageContent display_message;
+        display_message.message = j.at("priceText");
+        c.cost_messages->push_back(display_message);
+    }
 
-            if (triggerMeterValue.contains("atEnergykWh")) {
-                c.trigger_meter_value_at_energy_kwh = triggerMeterValue.at("atEnergykWh");
-            }
+    if (j.contains("priceTextExtra")) {
+        const json& price_text = j.at("priceTextExtra");
+        if (!price_text.is_array()) {
+            EVLOG_warning << "priceTextExtra should be an array, but is not. Content: " << price_text;
+        }
 
-            if (triggerMeterValue.contains("atPowerkW")) {
-                c.trigger_meter_value_at_power_kw = triggerMeterValue.at("atPowerkW");
-            }
-
-            if (triggerMeterValue.contains("atCPStatus")) {
-                v16::conversions::string_to_charge_point_status(triggerMeterValue.at("atCPStatus"));
-            }
+        for (const json& p : price_text) {
+            DisplayMessageContent display_message = p;
+            c.cost_messages->push_back(display_message);
         }
     }
+
+    if (j.contains("qrCodeText")) {
+        c.qr_code_text = j.at("qrCodeText");
+    }
+
+    // TODO this is done by OCPP
+    // if (j.contains("triggerMeterValue")) {
+    //     const json& triggerMeterValue = j.at("triggerMeterValue");
+    //     if (triggerMeterValue.is_object()) {
+    //         if (triggerMeterValue.contains("atTime")) {
+    //             c.trigger_meter_value_at_time = triggerMeterValue.at("atTime");
+    //         }
+
+    //         if (triggerMeterValue.contains("atEnergykWh")) {
+    //             c.trigger_meter_value_at_energy_kwh = triggerMeterValue.at("atEnergykWh");
+    //         }
+
+    //         if (triggerMeterValue.contains("atPowerkW")) {
+    //             c.trigger_meter_value_at_power_kw = triggerMeterValue.at("atPowerkW");
+    //         }
+
+    //         if (triggerMeterValue.contains("atCPStatus")) {
+    //             v16::conversions::string_to_charge_point_status(triggerMeterValue.at("atCPStatus"));
+    //         }
+    //     }
+    // }
 }
 
 void to_json(json& j, const RunningCost& c) {

@@ -20,7 +20,6 @@
 #include <ocpp/common/support_older_cpp_versions.hpp>
 #include <ocpp/v16/enums.hpp>
 #include <ocpp/v201/enums.hpp>
-#include <ocpp/v201/ocpp_types.hpp>
 
 using json = nlohmann::json;
 
@@ -317,22 +316,22 @@ struct Measurement {
 struct DisplayMessageContent {
     std::string message;
     std::optional<std::string> language;
+    std::optional<v201::MessageFormatEnum> message_format;
+
+    friend void from_json(const json& j, DisplayMessageContent &m);
+    friend void to_json(json& j, const DisplayMessageContent &m);
 };
 
 struct DisplayMessage {
     std::optional<int32_t> id;
     std::optional<v201::MessagePriorityEnum> priority;
     std::optional<v201::MessageStateEnum> state;
-    std::optional<std::string> timestamp_from;
-    std::optional<std::string> timestamp_to;
+    std::optional<DateTime> timestamp_from;
+    std::optional<DateTime> timestamp_to;
     std::optional<std::string> transaction_id;
     std::vector<DisplayMessageContent> messages;
-    std::optional<v201::MessageFormatEnum> message_format;
-    std::optional<v201::Component> display;
+    std::optional<std::string> qr_code;
     // TODO
-
-    friend void from_json(const json& j, DisplayMessage &m);
-    friend void to_json(json& j, const DisplayMessage &m);
 };
 
 struct RunningCostChargingPrice {
@@ -354,7 +353,7 @@ struct RunningCostIdlePrice {
 
 struct RunningCost {
     std::string transaction_id;
-    std::optional<std::string> timestamp;
+    std::optional<DateTime> timestamp;
     std::optional<uint32_t> meter_value;
     // Transaction cost. This field is not really optional (what is the point of sending RunningCost without cost?),
     // but it is defined on different places in OCPP 2.0.1 and 1.6. So we can not easily do a conversion from json here.
@@ -362,19 +361,11 @@ struct RunningCost {
     std::string state;    // TODO enum? "Charging" or "Idle"
     std::optional<RunningCostChargingPrice> charging_price;
     std::optional<RunningCostIdlePrice> idle_price;
-    std::optional<std::string> next_period_at_time;
+    std::optional<DateTime> next_period_at_time;
     std::optional<RunningCostChargingPrice> next_period_charging_price;
     std::optional<RunningCostIdlePrice> next_period_idle_price;
     std::optional<std::vector<DisplayMessageContent>> cost_messages;
     std::optional<std::string> qr_code_text;
-
-    // TODO add it here??? Or should libocpp handle this?
-    std::optional<std::string> trigger_meter_value_at_time;
-    std::optional<double> trigger_meter_value_at_energy_kwh;
-    std::optional<double> trigger_meter_value_at_power_kw;
-    std::optional<v16::ChargePointStatus> trigger_meter_value_at_cp_status;     // ChargePointStatus: Available, Preparing, Charging, SuspendedEVSE, SuspendedEV, Finishing // Only for 1.6
-
-    // TODO
 
     friend void from_json(const json& j, RunningCost& c);
     friend void to_json(json &j, const RunningCost &c);
