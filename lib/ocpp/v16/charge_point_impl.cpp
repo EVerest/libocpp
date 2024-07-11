@@ -1664,12 +1664,14 @@ void ChargePointImpl::handleDataTransferRequest(ocpp::Call<DataTransferRequest> 
 
             if (messageId == "SetUserPrice") {
                 // TODO do not use v201
+                std::vector<DisplayMessage> messages;
                 DisplayMessage message;
                 message.transaction_id = "0"; // TODO data.idToken
-                DisplayMessageContent message_content;
-                message_content.message = "";  // TODO data.priceText
-                message_content.language = ""; // TODO set default language here
-                message.messages.push_back(message_content);
+                // DisplayMessageContent message_content;
+                // message.message.message = message_content.message; // TODO data.priceText
+                // message.message.language = mes;                     // TODO set default language here
+                // message.messages.push_back(message_content);
+                messages.push_back(message);
                 // TODO loop over 'priceTextExtra' and set all languages here.
 
             } else if (messageId == "FinalCost" || messageId == "RunningCost") {

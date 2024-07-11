@@ -312,7 +312,6 @@ struct Measurement {
     friend std::ostream& operator<<(std::ostream& os, const Measurement& k);
 };
 
-
 struct DisplayMessageContent {
     std::string message;
     std::optional<std::string> language;
@@ -329,7 +328,7 @@ struct DisplayMessage {
     std::optional<DateTime> timestamp_from;
     std::optional<DateTime> timestamp_to;
     std::optional<std::string> transaction_id;
-    std::vector<DisplayMessageContent> messages;
+    DisplayMessageContent message;
     std::optional<std::string> qr_code;
     // TODO
 };
@@ -351,6 +350,12 @@ struct RunningCostIdlePrice {
     friend void to_json(json &j, const RunningCostIdlePrice &c);
 };
 
+enum class RunningCostState {
+    Charging,
+    Idle,
+    Finished
+};
+
 struct RunningCost {
     std::string transaction_id;
     std::optional<DateTime> timestamp;
@@ -358,7 +363,8 @@ struct RunningCost {
     // Transaction cost. This field is not really optional (what is the point of sending RunningCost without cost?),
     // but it is defined on different places in OCPP 2.0.1 and 1.6. So we can not easily do a conversion from json here.
     std::optional<double> cost;
-    std::string state;    // TODO enum? "Charging" or "Idle"
+    // Running cost state: "Charging" or "Idle". When this is the final price, state will be "Finished".
+    RunningCostState state;
     std::optional<RunningCostChargingPrice> charging_price;
     std::optional<RunningCostIdlePrice> idle_price;
     std::optional<DateTime> next_period_at_time;
