@@ -420,9 +420,6 @@ void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime&
         EVLOG_warning << "Could not get metervalues of transaction: " << e.what();
     }
 
-    const auto seq_no = enhanced_transaction->get_seq_no();
-    evse_handle.release_transaction();
-
     const auto trigger_reason = utils::stop_reason_to_trigger_reason_enum(reason);
 
     // E07.FR.02 The field idToken is provided when the authorization of the transaction has been ended
@@ -430,8 +427,10 @@ void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime&
         trigger_reason == ocpp::v201::TriggerReasonEnum::StopAuthorized ? id_token : std::nullopt;
 
     this->transaction_event_req(TransactionEventEnum::Ended, timestamp, enhanced_transaction->get_transaction(),
-                                trigger_reason, seq_no, std::nullopt, std::nullopt, transaction_id_token, meter_values,
-                                std::nullopt, this->is_offline(), std::nullopt);
+                                trigger_reason, enhanced_transaction->get_seq_no(), std::nullopt, std::nullopt,
+                                transaction_id_token, meter_values, std::nullopt, this->is_offline(), std::nullopt);
+
+    evse_handle.release_transaction();
 
     bool send_reset = false;
     if (this->reset_scheduled) {
