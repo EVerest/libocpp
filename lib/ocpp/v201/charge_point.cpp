@@ -18,6 +18,7 @@ using namespace std::chrono_literals;
 const auto DEFAULT_MAX_CUSTOMER_INFORMATION_DATA_LENGTH = 51200;
 const std::string VARIABLE_ATTRIBUTE_VALUE_SOURCE_INTERNAL = "internal";
 const std::string VARIABLE_ATTRIBUTE_VALUE_SOURCE_CSMS = "csms";
+const auto DEFAULT_WAIT_FOR_FUTURE_TIMEOUT = std::chrono::seconds(60);
 
 using DatabaseException = ocpp::common::DatabaseException;
 
@@ -2004,13 +2005,20 @@ AuthorizeResponse ChargePoint::authorize_req(const IdToken id_token, const std::
     req.certificate = certificate;
     req.iso15118CertificateHashData = ocsp_request_data;
 
+    AuthorizeResponse response;
+    response.idTokenInfo.status = AuthorizationStatusEnum::Unknown;
+
     ocpp::Call<AuthorizeRequest> call(req, this->message_queue->createMessageId());
     auto future = this->send_async<AuthorizeRequest>(call);
+
+    if (future.wait_for(DEFAULT_WAIT_FOR_FUTURE_TIMEOUT) == std::future_status::timeout) {
+        EVLOG_warning << "Waiting for DataTransfer.conf(Authorize) future timed out!";
+        return response;
+    }
+
     const auto enhanced_message = future.get();
 
     if (enhanced_message.messageType != MessageType::AuthorizeResponse) {
-        AuthorizeResponse response;
-        response.idTokenInfo.status = AuthorizationStatusEnum::Unknown;
         return response;
     }
 
@@ -3479,6 +3487,12 @@ DataTransferResponse ChargePoint::data_transfer_req(const DataTransferRequest& r
     DataTransferResponse response;
     ocpp::Call<DataTransferRequest> call(request, this->message_queue->createMessageId());
     auto data_transfer_future = this->send_async<DataTransferRequest>(call);
+
+    if (data_transfer_future.wait_for(DEFAULT_WAIT_FOR_FUTURE_TIMEOUT) == std::future_status::timeout) {
+        EVLOG_warning << "Waiting for DataTransfer.conf future timed out";
+        response.status = ocpp::v201::DataTransferStatusEnum::Rejected;
+        return response;
+    }
 
     auto enhanced_message = data_transfer_future.get();
     if (enhanced_message.messageType == MessageType::DataTransferResponse) {
