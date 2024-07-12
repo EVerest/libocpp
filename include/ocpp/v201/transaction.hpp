@@ -29,14 +29,14 @@ struct EnhancedTransaction : public Transaction {
     ClockAlignedTimer aligned_tx_updated_meter_values_timer;
     ClockAlignedTimer aligned_tx_ended_meter_values_timer;
 
-    /// @brief Get the current sequnce number of the transaction message.
+    /// @brief Get the current sequence number of the transaction message.
     /// @details This method also increments the sequence number.
     /// @return int32_t seq number
     int32_t get_seq_no();
     Transaction get_transaction();
 
     /// @brief Update the charging state of the transaction.
-    /// @details ALso update the chargign state in the database
+    /// @details Also update the charging state in the database
     /// @param charging_state
     void update_charging_state(const ChargingStateEnum charging_state);
 
