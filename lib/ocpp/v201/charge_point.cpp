@@ -319,13 +319,14 @@ void ChargePoint::on_session_started(const int32_t evse_id, const int32_t connec
 
 Get15118EVCertificateResponse
 ChargePoint::on_get_15118_ev_certificate_request(const Get15118EVCertificateRequest& request) {
+
+    Get15118EVCertificateResponse response;
+
     if (!this->device_model
              ->get_optional_value<bool>(ControllerComponentVariables::ContractCertificateInstallationEnabled)
              .value_or(false)) {
         EVLOG_warning << "Can not fulfill Get15118EVCertificateRequest because ContractCertificateInstallationEnabled "
                          "is configured as false!";
-
-        Get15118EVCertificateResponse response;
         response.status = Iso15118EVCertificateStatusEnum::Failed;
         return response;
     }
@@ -333,10 +334,16 @@ ChargePoint::on_get_15118_ev_certificate_request(const Get15118EVCertificateRequ
     EVLOG_debug << "Received Get15118EVCertificateRequest " << request;
     auto future_res = this->send_async<Get15118EVCertificateRequest>(
         ocpp::Call<Get15118EVCertificateRequest>(request, this->message_queue->createMessageId()));
+
+    if (future_res.wait_for(DEFAULT_WAIT_FOR_FUTURE_TIMEOUT) == std::future_status::timeout) {
+        EVLOG_warning << "Waiting for Get15118EVCertificateRequest.conf future timed out!";
+        response.status = Iso15118EVCertificateStatusEnum::Failed;
+        return response;
+    }
+
     const auto response_message = future_res.get();
     EVLOG_debug << "Received Get15118EVCertificateResponse " << response_message.message;
     if (response_message.messageType != MessageType::Get15118EVCertificateResponse) {
-        Get15118EVCertificateResponse response;
         response.status = Iso15118EVCertificateStatusEnum::Failed;
         return response;
     }
@@ -2007,6 +2014,10 @@ AuthorizeResponse ChargePoint::authorize_req(const IdToken id_token, const std::
 
     AuthorizeResponse response;
     response.idTokenInfo.status = AuthorizationStatusEnum::Unknown;
+
+    if (!this->websocket->is_connected()) {
+        return response;
+    }
 
     ocpp::Call<AuthorizeRequest> call(req, this->message_queue->createMessageId());
     auto future = this->send_async<AuthorizeRequest>(call);
