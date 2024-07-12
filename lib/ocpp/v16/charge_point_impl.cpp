@@ -156,6 +156,23 @@ ChargePointImpl::ChargePointImpl(const std::string& config, const fs::path& shar
             this->ocsp_request_timer->interval(OCSP_REQUEST_TIMER_INTERVAL);
         });
     }
+
+    // California pricing requirements
+    // TODO check if this module is enabled before enabling the callback
+    this->register_data_transfer_callback(CALIFORNIA_PRICING_VENDOR_ID, "SetUserPrice",
+                                          [this](const std::optional<std::string>& message) -> DataTransferResponse {
+                                              return handle_set_user_price(message);
+                                          });
+
+    this->register_data_transfer_callback(CALIFORNIA_PRICING_VENDOR_ID, "FinalCost",
+                                          [this](const std::optional<std::string>& message) -> DataTransferResponse {
+                                              return handle_set_session_cost("FinalCost", message);
+                                          });
+
+    this->register_data_transfer_callback(CALIFORNIA_PRICING_VENDOR_ID, "RunningCost",
+                                          [this](const std::optional<std::string>& message) -> DataTransferResponse {
+                                              return handle_set_session_cost("RunningCost", message);
+                                          });
 }
 
 std::unique_ptr<ocpp::MessageQueue<v16::MessageType>> ChargePointImpl::create_message_queue() {
@@ -1654,33 +1671,6 @@ void ChargePointImpl::handleDataTransferRequest(ocpp::Call<DataTransferRequest> 
                     << messageId;
                 response.status = DataTransferStatus::UnknownMessageId;
             }
-        } else if (vendorId == CALIFORNIA_PRICING_VENDOR_ID) {
-            // Special callback for the california pricing. The default data transfer callback is not used, but we use
-            // the DisplayMessage or TariffAndCost callback here.
-
-            // TODO check if this is enabled in the settings
-
-            // TODO check if there is a callback function defined for this
-
-            if (messageId == "SetUserPrice") {
-                // TODO do not use v201
-                std::vector<DisplayMessage> messages;
-                DisplayMessage message;
-                message.transaction_id = "0"; // TODO data.idToken
-                // DisplayMessageContent message_content;
-                // message.message.message = message_content.message; // TODO data.priceText
-                // message.message.language = mes;                     // TODO set default language here
-                // message.messages.push_back(message_content);
-                messages.push_back(message);
-                // TODO loop over 'priceTextExtra' and set all languages here.
-
-            } else if (messageId == "FinalCost" || messageId == "RunningCost") {
-                // TODO do not use v201
-                RunningCost cost;
-                cost.transaction_id = ""; // TODO data.transactionId
-                cost.cost = 2.2f;         // TODO data.cost
-                // TODO all the other fields (from json??)
-            }
         } else if (this->data_transfer_callbacks.count(vendorId) == 0) {
             response.status = DataTransferStatus::UnknownVendorId;
         } else if (this->data_transfer_callbacks.count(vendorId) and
@@ -2764,6 +2754,99 @@ void ChargePointImpl::handleGetLocalListVersionRequest(ocpp::Call<GetLocalListVe
 
     ocpp::CallResult<GetLocalListVersionResponse> call_result(response, call.uniqueId);
     this->send<GetLocalListVersionResponse>(call_result);
+}
+
+DataTransferResponse ChargePointImpl::handle_set_user_price(const std::optional<std::string>& msg) {
+    std::optional<std::string> id_token = std::nullopt;
+    if (!msg.has_value()) {
+        EVLOG_error << "Data transfer for set user price does not contain any data.";
+        DataTransferResponse response;
+        response.status = DataTransferStatus::Rejected;
+        return response;
+    }
+
+    if (set_display_message_callback == nullptr) {
+        EVLOG_error << "Received data transfer for set user price, but now callback is registered.";
+        DataTransferResponse response;
+        response.status = DataTransferStatus::Rejected;
+        return response;
+    }
+
+    // TODO add try/catch
+    const json data = json::parse(msg.value());
+    if (data.contains("idToken")) {
+        id_token = data.at("idToken"); // TODO is a conversion needed here?
+    }
+
+    std::vector<DisplayMessage> messages;
+    DisplayMessage message;
+    message.transaction_id = id_token;
+
+    if (data.contains("priceText")) {
+        message.message.message = data.at("priceText");
+        // TODO set default language if exists???
+    }
+
+    messages.push_back(message);
+
+    if (data.contains("priceTextExtra") && data.at("priceTextExtra").is_array()) {
+        // Loop over all messages from 'priceTextExtra' array and add them all.
+        for (const json& j : data.at("priceTextExtra")) {
+            // TODO check if multilanguage configuration is enabled???
+            DisplayMessage display_message;
+            display_message.transaction_id = id_token;
+            if (j.contains("format")) {
+                display_message.message.message_format =
+                    v201::conversions::string_to_message_format_enum(j.at("format"));
+            }
+
+            if (j.contains("language")) {
+                display_message.message.language = j.at("language");
+            }
+
+            if (j.contains("content")) {
+                display_message.message.message = j.at("content");
+            }
+
+            messages.push_back(display_message);
+        }
+    }
+
+    DataTransferResponse response = this->set_display_message_callback(messages);
+    return response;
+}
+
+DataTransferResponse ChargePointImpl::handle_set_session_cost(const std::string& type,
+                                                              const std::optional<std::string>& message) {
+    if (!message.has_value()) {
+        EVLOG_error << "Data transfer for RunningCost / FinalCost does not contain any data.";
+        DataTransferResponse response;
+        response.status = DataTransferStatus::Rejected;
+        return response;
+    }
+
+    if (session_cost_callback == nullptr) {
+        EVLOG_error << "Received data transfer for " << type << ", but now callback is registered.";
+        DataTransferResponse response;
+        response.status = DataTransferStatus::Rejected;
+        return response;
+    }
+    // TODO add try/catch
+    const json data = json::parse(message.value());
+    DataTransferResponse response;
+
+    RunningCost cost = data;
+    if (data.contains("transactionId")) {
+        cost.transaction_id = data.at("transactionId");
+    }
+
+    if (type == "FinalCost") {
+        cost.state = RunningCostState::Finished;
+    } else if (type == "RunningCost") {
+        cost.state = RunningCostState::Charging;
+    }
+
+    return session_cost_callback(cost);
 }
 
 template <class T> bool ChargePointImpl::send(ocpp::Call<T> call, bool initiated_by_trigger_message) {
@@ -4026,6 +4109,17 @@ void ChargePointImpl::register_security_event_callback(
 void ChargePointImpl::register_is_token_reserved_for_connector_callback(
     const std::function<bool(const int32_t connector, const std::string& id_token)>& callback) {
     this->is_token_reserved_for_connector_callback = callback;
+}
+
+void ChargePointImpl::register_session_cost_callback(
+    const std::function<DataTransferResponse(const RunningCost&)>& session_cost_callback) {
+    this->session_cost_callback = session_cost_callback;
+}
+
+void ChargePointImpl::register_set_display_message_callback(
+    const std::function<DataTransferResponse(const std::vector<DisplayMessage>& display_message)>
+        set_display_message_callback) {
+    this->set_display_message_callback = set_display_message_callback;
 }
 
 void ChargePointImpl::on_reservation_start(int32_t connector) {

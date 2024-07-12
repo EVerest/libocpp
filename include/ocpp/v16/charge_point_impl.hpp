@@ -189,6 +189,11 @@ private:
                        const ocpp::v201::CertificateActionEnum& certificate_action)>
         get_15118_ev_certificate_response_callback;
 
+    // tariff and cost callback
+    std::function<DataTransferResponse(const RunningCost& running_cost)> session_cost_callback;
+    std::function<DataTransferResponse(const std::vector<DisplayMessage>& display_message)>
+        set_display_message_callback;
+
     /// \brief This function is called after a successful connection to the Websocket
     void connected_callback();
     void init_websocket();
@@ -329,6 +334,10 @@ private:
     // Local Authorization List profile
     void handleSendLocalListRequest(Call<SendLocalListRequest> call);
     void handleGetLocalListVersionRequest(Call<GetLocalListVersionRequest> call);
+
+    // California Pricing
+    DataTransferResponse handle_set_user_price(const std::optional<std::string>& msg);
+    DataTransferResponse handle_set_session_cost(const std::string& type, const std::optional<std::string>& message);
 
     // //brief Preprocess a ChangeAvailabilityRequest: Determine response;
     // - if connector is 0, availability change is also propagated for all connectors
@@ -812,6 +821,11 @@ public:
     /// \param callback
     void register_is_token_reserved_for_connector_callback(
         const std::function<bool(const int32_t connector, const std::string& id_token)>& callback);
+
+    void register_session_cost_callback(
+        const std::function<DataTransferResponse(const RunningCost& session_cost)>& session_cost_callback);
+    void register_set_display_message_callback(
+        const std::function<DataTransferResponse(const std::vector<DisplayMessage>&)> set_display_message_callback);
 
     /// \brief Gets the configured configuration key requested in the given \p request
     /// \param request specifies the keys that should be returned. If empty or not set, all keys will be reported

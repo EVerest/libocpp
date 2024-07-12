@@ -413,6 +413,17 @@ public:
     void setWaitForStopTransactionsOnResetTimeout(const int32_t wait_for_stop_transactions_on_reset_timeout);
     KeyValue getWaitForStopTransactionsOnResetTimeoutKeyValue();
 
+    // California Pricing Requirements
+    bool getCustomDisplayCostAndPriceEnabled();
+    std::optional<std::string> getDefaultPrice();
+    std::optional<std::string> getDisplayTimeOffset();
+    std::optional<std::string> getNextTimeOffsetTransitionDateTime();
+    std::optional<std::string> getNextTimeOffsetNextTransition();
+    bool getCustomIdleFeeAfterStop();
+    std::optional<std::string> getMultiLanguageSupportedLanguages();
+
+
+
     // custom
     std::optional<KeyValue> getCustomKeyValue(CiString<50> key);
     ConfigurationStatus setCustomKey(CiString<50> key, CiString<500> value, bool force);

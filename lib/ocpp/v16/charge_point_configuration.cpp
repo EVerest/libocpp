@@ -2200,6 +2200,36 @@ KeyValue ChargePointConfiguration::getWaitForStopTransactionsOnResetTimeoutKeyVa
     return kv;
 }
 
+// California Pricing Requirements
+bool ChargePointConfiguration::getCustomDisplayCostAndPriceEnabled() {
+    return this->config["CostAndPrice"]["CustomDisplayCostAndPrice"];
+}
+
+std::optional<std::string> ChargePointConfiguration::getDefaultPrice() {
+    return this->config["CostAndPrice"]["DefaultPrice"];
+}
+
+std::optional<std::string> ChargePointConfiguration::getDisplayTimeOffset() {
+    return this->config["CostAndPrice"]["TimeOffset"];
+}
+
+std::optional<std::string> ChargePointConfiguration::getNextTimeOffsetTransitionDateTime() {
+    return this->config["CostAndPrice"]["NextTimeOffsetTransitionDateTime"];
+}
+
+std::optional<std::string> ChargePointConfiguration::getNextTimeOffsetNextTransition() {
+    return this->config["CostAndPrice"]["NextTimeOffsetNextTransition"];
+}
+
+bool ChargePointConfiguration::getCustomIdleFeeAfterStop() {
+    return this->config["CostAndPrice"]["CustomIdleFeeAfterStop"];
+}
+
+std::optional<std::string> ChargePointConfiguration::getMultiLanguageSupportedLanguages() {
+    return this->config["CostAndPrice"]["MultiLanguageSupportedLanguages"];
+}
+
+// Custom
 std::optional<KeyValue> ChargePointConfiguration::getCustomKeyValue(CiString<50> key) {
     std::lock_guard<std::recursive_mutex> lock(this->configuration_mutex);
     if (!this->config["Custom"].contains(key.get())) {

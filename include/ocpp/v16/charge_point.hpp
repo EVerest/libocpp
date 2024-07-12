@@ -523,6 +523,11 @@ public:
     void register_is_token_reserved_for_connector_callback(
         const std::function<bool(const int32_t connector, const std::string& id_token)>& callback);
 
+    void register_session_cost_callback(
+        const std::function<DataTransferResponse(const RunningCost& session_cost)>& session_cost_callback);
+    void register_set_display_message_callback(
+        const std::function<DataTransferResponse(const std::vector<DisplayMessage>&)> set_display_message_callback);
+
     /// \brief Delay draining the message queue after reconnecting, so the CSMS can perform post-reconnect checks first
     /// \param delay The delay period (seconds)
     void set_message_queue_resume_delay(std::chrono::seconds delay);
