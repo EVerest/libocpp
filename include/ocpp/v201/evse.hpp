@@ -158,6 +158,9 @@ private:
     /// \brief Perform a check to see if there is an open transaction and resume it if there is.
     void try_resume_transaction();
 
+    /// \brief Delete the transaction related to this EVSE from the database, if there is one.
+    void delete_database_transaction();
+
     /// \brief Component responsible for maintaining and persisting the operational status of CS, EVSEs, and connectors.
     std::shared_ptr<ComponentStateManagerInterface> component_state_manager;
 

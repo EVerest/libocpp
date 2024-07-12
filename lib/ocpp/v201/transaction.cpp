@@ -16,18 +16,24 @@ Transaction EnhancedTransaction::get_transaction() {
 
 int32_t EnhancedTransaction::get_seq_no() {
     this->seq_no += 1;
-    this->database_handler.transaction_update_seq_no(this->transactionId, this->seq_no);
+    if (this->database_enabled) {
+        this->database_handler.transaction_update_seq_no(this->transactionId, this->seq_no);
+    }
     return this->seq_no - 1;
 }
 
 void EnhancedTransaction::update_charging_state(const ChargingStateEnum charging_state) {
     this->chargingState = charging_state;
-    this->database_handler.transaction_update_charging_state(this->transactionId, charging_state);
+    if (this->database_enabled) {
+        this->database_handler.transaction_update_charging_state(this->transactionId, charging_state);
+    }
 }
 
 void EnhancedTransaction::set_id_token_sent() {
     this->id_token_sent = true;
-    this->database_handler.transaction_update_id_token_sent(this->transactionId, this->id_token_sent);
+    if (this->database_enabled) {
+        this->database_handler.transaction_update_id_token_sent(this->transactionId, this->id_token_sent);
+    }
 }
 
 } // namespace v201

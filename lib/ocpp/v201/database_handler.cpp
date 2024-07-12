@@ -653,7 +653,8 @@ std::unique_ptr<EnhancedTransaction> DatabaseHandler::transaction_get(const int3
         return nullptr;
     }
 
-    auto transaction = std::make_unique<EnhancedTransaction>(*this);
+    // Hardcode database_enabled to true because we would not be here otherwise
+    auto transaction = std::make_unique<EnhancedTransaction>(*this, true);
 
     // Fill transaction
     transaction->transactionId = get_stmt->column_text(0);

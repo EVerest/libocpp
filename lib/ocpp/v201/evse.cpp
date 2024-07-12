@@ -62,7 +62,12 @@ Evse::Evse(const int32_t evse_id, const int32_t number_of_connectors, DeviceMode
             std::make_pair(connector_id, std::make_unique<Connector>(evse_id, connector_id, component_state_manager)));
     }
 
-    this->try_resume_transaction();
+    if (this->device_model.get_optional_value<bool>(ControllerComponentVariables::ResumeTransactionsOnBoot)
+            .value_or(false)) {
+        this->try_resume_transaction();
+    } else {
+        this->delete_database_transaction();
+    }
 }
 
 int32_t Evse::get_id() const {
@@ -92,6 +97,13 @@ void Evse::try_resume_transaction() {
     }
 }
 
+void Evse::delete_database_transaction() {
+    auto transaction = this->database_handler->transaction_get(evse_id);
+    if (transaction != nullptr) {
+        this->database_handler->transaction_delete(transaction->transactionId);
+    }
+}
+
 void Evse::open_transaction(const std::string& transaction_id, const int32_t connector_id, const DateTime& timestamp,
                             const MeterValue& meter_start, const std::optional<IdToken>& id_token,
                             const std::optional<IdToken>& group_id_token, const std::optional<int32_t> reservation_id,
@@ -99,7 +111,12 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
     if (!this->id_connector_map.count(connector_id)) {
         EVLOG_AND_THROW(std::runtime_error("Attempt to start transaction at invalid connector_id"));
     }
-    this->transaction = std::make_unique<EnhancedTransaction>(*this->database_handler.get());
+
+    bool tx_database_enabled =
+        this->device_model.get_optional_value<bool>(ControllerComponentVariables::ResumeTransactionsOnBoot)
+            .value_or(false);
+
+    this->transaction = std::make_unique<EnhancedTransaction>(*this->database_handler.get(), tx_database_enabled);
     this->transaction->transactionId = transaction_id;
     this->transaction->connector_id = connector_id;
     this->transaction->id_token_sent = id_token.has_value();
@@ -119,7 +136,9 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
 
     this->start_metering_timers(timestamp);
 
-    this->database_handler->transaction_insert(*this->transaction.get(), this->evse_id);
+    if (tx_database_enabled) {
+        this->database_handler->transaction_insert(*this->transaction.get(), this->evse_id);
+    }
 }
 
 void Evse::close_transaction(const DateTime& timestamp, const MeterValue& meter_stop, const ReasonEnum& reason) {
@@ -294,7 +313,7 @@ void Evse::start_metering_timers(const DateTime& timestamp) {
 
                 // If empty fallback on last updated metervalue
                 if (meter_value.sampledValue.empty()) {
-                    meter_value = get_meter_value();
+                    meter_value = this->get_meter_value();
                 }
 
                 for (auto& item : meter_value.sampledValue) {
@@ -318,7 +337,7 @@ void Evse::start_metering_timers(const DateTime& timestamp) {
 
             // If empty fallback on last updated metervalue
             if (meter_value.sampledValue.empty()) {
-                meter_value = get_meter_value();
+                meter_value = this->get_meter_value();
             }
 
             for (auto& item : meter_value.sampledValue) {

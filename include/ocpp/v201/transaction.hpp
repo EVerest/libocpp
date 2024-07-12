@@ -14,7 +14,8 @@ class DatabaseHandler;
 
 /// \brief Struct that enhances the OCPP Transaction by some meta data and functionality
 struct EnhancedTransaction : public Transaction {
-    explicit EnhancedTransaction(DatabaseHandler& database_handler) : database_handler{database_handler} {
+    explicit EnhancedTransaction(DatabaseHandler& database_handler, bool database_enabled) :
+        database_handler{database_handler}, database_enabled{database_enabled} {
     }
 
     bool id_token_sent = false;
@@ -44,6 +45,7 @@ struct EnhancedTransaction : public Transaction {
 
 private:
     DatabaseHandler& database_handler;
+    bool database_enabled;
 };
 } // namespace v201
 
