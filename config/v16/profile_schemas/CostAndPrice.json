@@ -1,0 +1,46 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "Json schema for cost and price config",
+    "type": "object",
+    "required": [
+        "CustomDisplayCostAndPrice"
+    ],
+    "properties": {
+        "CustomDisplayCostAndPrice": {
+            "type": "boolean",
+            "readOnly": true
+        },
+        "DefaultPrice": {
+            "type": "string",
+            "readOnly": true,
+            "minLength": 1
+        },
+        "TimeOffset": {
+            "type": "string",
+            "readOnly": true,
+            "minLength": 1,
+            "maxLength": 10
+        },
+        "NextTimeOffsetTransitionDateTime": {
+            "type": "string",
+            "readOnly": true,
+            "minLength": 1,
+            "maxLength": 40
+        },
+        "NextTimeOffsetNextTransition": {
+            "type": "string",
+            "readOnly": true,
+            "minLength": 1,
+            "maxLength": 40
+        },
+        "CustomIdleFeeAfterStop": {
+            "type": "boolean",
+            "readOnly": true
+        },
+        "MultiLanguageSupportedLanguages": {
+            "type": "string",
+            "readOnly": true,
+            "minLength": 1
+        }
+    }
+}

@@ -57,6 +57,14 @@
         "ISO15118PnCEnabled": true,
         "ContractValidationOffline": true
     },
+    "CostAndPrice": {
+        "CustomDisplayCostAndPrice": true,
+        "DefaultPrice": "3.12",
+        "TimeOffset": "0",
+        "NextTimeOffsetTransitionDateTime": "0",
+        "CustomIdleFeeAfterStop": false,
+        "MultiLanguageSupportedLanguages": "en, nl, de"
+    },
     "Custom": {
         "ExampleConfigurationKey": "example"
     }

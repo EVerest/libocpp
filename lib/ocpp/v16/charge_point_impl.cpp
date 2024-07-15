@@ -2780,7 +2780,15 @@ DataTransferResponse ChargePointImpl::handle_set_user_price(const std::optional<
 
     std::vector<DisplayMessage> messages;
     DisplayMessage message;
-    message.transaction_id = id_token;
+    const std::shared_ptr<Transaction>& t = this->transaction_handler->get_transaction(id_token.value());
+    std::string session_id = id_token.value();
+    if (t != nullptr) {
+        session_id = t->get_session_id();
+    } else {
+        // TODO error
+    }
+
+    message.transaction_id = session_id;
 
     if (data.contains("priceText")) {
         message.message.message = data.at("priceText");
@@ -2794,7 +2802,7 @@ DataTransferResponse ChargePointImpl::handle_set_user_price(const std::optional<
         for (const json& j : data.at("priceTextExtra")) {
             // TODO check if multilanguage configuration is enabled???
             DisplayMessage display_message;
-            display_message.transaction_id = id_token;
+            display_message.transaction_id = session_id;
             if (j.contains("format")) {
                 display_message.message.message_format =
                     v201::conversions::string_to_message_format_enum(j.at("format"));
@@ -2836,8 +2844,19 @@ DataTransferResponse ChargePointImpl::handle_set_session_cost(const std::string&
     DataTransferResponse response;
 
     RunningCost cost = data;
+
     if (data.contains("transactionId")) {
-        cost.transaction_id = data.at("transactionId");
+        const std::string& transaction_id = data.at("transactionId");
+
+        const std::shared_ptr<Transaction>& t = this->transaction_handler->get_transaction(transaction_id);
+        std::string session_id = transaction_id;
+        if (t != nullptr) {
+            session_id = t->get_session_id();
+        } else {
+            // TODO error
+        }
+
+        cost.transaction_id = session_id;
     }
 
     if (type == "FinalCost") {
