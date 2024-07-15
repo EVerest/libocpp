@@ -623,17 +623,17 @@ OperationalStatusEnum DatabaseHandler::get_connector_availability(int32_t evse_i
 
 // transactions
 void DatabaseHandler::transaction_insert(const EnhancedTransaction& transaction, int32_t evse_id) {
-    std::string sql = "INSERT INTO TRANSACTIONS (SEQ_NO, TRANSACTION_ID,EVSE_ID, CONNECTOR_ID,"
-                      "TIME_START,CHARGING_STATE,ID_TAG_SENT) VALUES"
-                      "(@seq_no, @transaction_id, @evse_id, @connector_id, @time_start, "
-                      "@charging_state, @id_token_sent)";
+    std::string sql =
+        "INSERT INTO TRANSACTIONS "
+        "(TRANSACTION_ID, EVSE_ID, CONNECTOR_ID, TIME_START, SEQ_NO, CHARGING_STATE, ID_TAG_SENT) VALUES"
+        "(@transaction_id, @evse_id, @connector_id, @time_start, @seq_no, @charging_state, @id_token_sent)";
     auto insert_stmt = this->database->new_statement(sql);
 
-    insert_stmt->bind_int("@seq_no", transaction.seq_no);
     insert_stmt->bind_text("@transaction_id", transaction.transactionId.get(), SQLiteString::Transient);
     insert_stmt->bind_int("@evse_id", evse_id);
     insert_stmt->bind_int("@connector_id", transaction.connector_id);
     insert_stmt->bind_datetime("@time_start", transaction.start_time);
+    insert_stmt->bind_int("@seq_no", transaction.seq_no);
     insert_stmt->bind_text("@charging_state",
                            conversions::charging_state_enum_to_string(transaction.chargingState.value()),
                            SQLiteString::Transient);
@@ -645,7 +645,8 @@ void DatabaseHandler::transaction_insert(const EnhancedTransaction& transaction,
 }
 
 std::unique_ptr<EnhancedTransaction> DatabaseHandler::transaction_get(const int32_t evse_id) {
-    std::string sql = "SELECT * FROM TRANSACTIONS WHERE EVSE_ID = @evse_id";
+    std::string sql = "SELECT TRANSACTION_ID, CONNECTOR_ID, TIME_START, SEQ_NO, CHARGING_STATE, ID_TAG_SENT FROM "
+                      "TRANSACTIONS WHERE EVSE_ID = @evse_id";
     auto get_stmt = this->database->new_statement(sql);
     get_stmt->bind_int("@evse_id", evse_id);
 
@@ -658,15 +659,15 @@ std::unique_ptr<EnhancedTransaction> DatabaseHandler::transaction_get(const int3
 
     // Fill transaction
     transaction->transactionId = get_stmt->column_text(0);
-    transaction->seq_no = get_stmt->column_int(1);
-    transaction->connector_id = get_stmt->column_int(3);
-    transaction->start_time = get_stmt->column_datetime(4);
-    transaction->chargingState = conversions::string_to_charging_state_enum(get_stmt->column_text(5));
-    transaction->id_token_sent = get_stmt->column_int(6) != 0;
+    transaction->connector_id = get_stmt->column_int(1);
+    transaction->start_time = get_stmt->column_datetime(2);
+    transaction->seq_no = get_stmt->column_int(3);
+    transaction->chargingState = conversions::string_to_charging_state_enum(get_stmt->column_text(4));
+    transaction->id_token_sent = get_stmt->column_int(5) != 0;
 
     if (get_stmt->step() == SQLITE_ROW) {
-        // Something strange is happening with multiple transactions
-        throw QueryExecutionException(this->database->get_error_message());
+        // We should never have more than 1 transaction per evse_id in the database as per the UNIQUE constraint
+        EVLOG_error << "There are more than 1 transactions for evse_id " << evse_id << " in the database";
     }
 
     return transaction;

@@ -91,16 +91,25 @@ void Evse::try_resume_transaction() {
     } else {
         EVLOG_error << "Can't resume transaction on evse_id " << evse_id << " for non existent connector "
                     << transaction->connector_id;
-        this->database_handler->transaction_delete(transaction->transactionId);
+
+        try {
+            this->database_handler->transaction_delete(transaction->transactionId);
+        } catch (const QueryExecutionException& e) {
+            EVLOG_error << "Can't delete transaction: " << e.what();
+        }
 
         // Todo: Can we drop the transaction like this or do we still want to transmit an ended message?
     }
 }
 
 void Evse::delete_database_transaction() {
-    auto transaction = this->database_handler->transaction_get(evse_id);
-    if (transaction != nullptr) {
-        this->database_handler->transaction_delete(transaction->transactionId);
+    try {
+        auto transaction = this->database_handler->transaction_get(evse_id);
+        if (transaction != nullptr) {
+            this->database_handler->transaction_delete(transaction->transactionId);
+        }
+    } catch (const QueryExecutionException& e) {
+        EVLOG_error << "Can't delete transaction: " << e.what();
     }
 }
 
@@ -137,7 +146,13 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
     this->start_metering_timers(timestamp);
 
     if (tx_database_enabled) {
-        this->database_handler->transaction_insert(*this->transaction.get(), this->evse_id);
+        try {
+            this->database_handler->transaction_insert(*this->transaction.get(), this->evse_id);
+        } catch (const QueryExecutionException& e) {
+            // Delete previous transactions that should not exist anyway and try again. Otherwise throw to higher level
+            this->delete_database_transaction();
+            this->database_handler->transaction_insert(*this->transaction.get(), this->evse_id);
+        }
     }
 }
 
