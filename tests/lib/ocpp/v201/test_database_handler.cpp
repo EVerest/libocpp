@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
 
+#include "database_testing_utils.hpp"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include "database_testing_utils.hpp"
 #include <ocpp/v201/database_handler.hpp>
 
 using namespace ocpp;
@@ -11,7 +11,8 @@ using namespace ocpp::v201;
 
 class DatabaseHandlerTest : public DatabaseTestingUtils {
 public:
-    DatabaseHandler database_handler{ std::make_unique<DatabaseConnection>("file::memory:?cache=shared"), std::filesystem::path(MIGRATION_FILES_LOCATION_V201) };
+    DatabaseHandler database_handler{std::make_unique<DatabaseConnection>("file::memory:?cache=shared"),
+                                     std::filesystem::path(MIGRATION_FILES_LOCATION_V201)};
 
     DatabaseHandlerTest() {
         this->database_handler.open_connection();
@@ -30,8 +31,7 @@ public:
     }
 };
 
-TEST_F(DatabaseHandlerTest, TransactionInsertAndGet)
-{
+TEST_F(DatabaseHandlerTest, TransactionInsertAndGet) {
     constexpr int32_t evse_id = 1;
 
     auto transaction = default_transaction();
@@ -49,15 +49,13 @@ TEST_F(DatabaseHandlerTest, TransactionInsertAndGet)
     EXPECT_EQ(transaction->id_token_sent, transaction_get->id_token_sent);
 }
 
-TEST_F(DatabaseHandlerTest, TransactionGetNotFound)
-{
+TEST_F(DatabaseHandlerTest, TransactionGetNotFound) {
     constexpr int32_t evse_id = 1;
     auto transaction_get = this->database_handler.transaction_get(evse_id);
     EXPECT_EQ(transaction_get, nullptr);
 }
 
-TEST_F(DatabaseHandlerTest, TransactionInsertDuplicateTransactionId)
-{
+TEST_F(DatabaseHandlerTest, TransactionInsertDuplicateTransactionId) {
     constexpr int32_t evse_id = 1;
 
     auto transaction = default_transaction();
@@ -67,8 +65,7 @@ TEST_F(DatabaseHandlerTest, TransactionInsertDuplicateTransactionId)
     EXPECT_THROW(this->database_handler.transaction_insert(*transaction, evse_id + 1), DatabaseException);
 }
 
-TEST_F(DatabaseHandlerTest, TransactionInsertDuplicateEvseId)
-{
+TEST_F(DatabaseHandlerTest, TransactionInsertDuplicateEvseId) {
     constexpr int32_t evse_id = 1;
 
     auto transaction = default_transaction();
@@ -80,8 +77,7 @@ TEST_F(DatabaseHandlerTest, TransactionInsertDuplicateEvseId)
     EXPECT_THROW(this->database_handler.transaction_insert(*transaction, evse_id), DatabaseException);
 }
 
-TEST_F(DatabaseHandlerTest, TransactionUpdateSeqNo)
-{
+TEST_F(DatabaseHandlerTest, TransactionUpdateSeqNo) {
     constexpr int32_t evse_id = 1;
     constexpr int32_t new_seq_no = 20;
 
@@ -98,8 +94,7 @@ TEST_F(DatabaseHandlerTest, TransactionUpdateSeqNo)
     EXPECT_EQ(transaction_get->seq_no, new_seq_no);
 }
 
-TEST_F(DatabaseHandlerTest, TransactionUpdateChargingState)
-{
+TEST_F(DatabaseHandlerTest, TransactionUpdateChargingState) {
     constexpr int32_t evse_id = 1;
     constexpr auto new_state = ChargingStateEnum::Charging;
 
@@ -116,8 +111,7 @@ TEST_F(DatabaseHandlerTest, TransactionUpdateChargingState)
     EXPECT_EQ(transaction_get->chargingState, new_state);
 }
 
-TEST_F(DatabaseHandlerTest, TransactionUpdateIdTokenSent)
-{
+TEST_F(DatabaseHandlerTest, TransactionUpdateIdTokenSent) {
     constexpr int32_t evse_id = 1;
     constexpr bool new_state = true;
 
@@ -134,8 +128,7 @@ TEST_F(DatabaseHandlerTest, TransactionUpdateIdTokenSent)
     EXPECT_EQ(transaction_get->id_token_sent, new_state);
 }
 
-TEST_F(DatabaseHandlerTest, TransactionDelete)
-{
+TEST_F(DatabaseHandlerTest, TransactionDelete) {
     constexpr int32_t evse_id = 1;
 
     auto transaction = default_transaction();
@@ -149,7 +142,6 @@ TEST_F(DatabaseHandlerTest, TransactionDelete)
     EXPECT_EQ(this->database_handler.transaction_get(evse_id), nullptr);
 }
 
-TEST_F(DatabaseHandlerTest, TransactionDeleteNotFound)
-{
+TEST_F(DatabaseHandlerTest, TransactionDeleteNotFound) {
     EXPECT_NO_THROW(this->database_handler.transaction_delete("txIdNotFound"));
 }
