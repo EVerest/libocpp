@@ -2840,24 +2840,29 @@ DataTransferResponse ChargePointImpl::handle_set_session_cost(const std::string&
         return response;
     }
     // TODO add try/catch
-    const json data = json::parse(message.value());
+
+    RunningCost cost;
+    json data;
     DataTransferResponse response;
-
-    RunningCost cost = data;
-
-    if (data.contains("transactionId")) {
-        const std::string& transaction_id = data.at("transactionId");
-
-        const std::shared_ptr<Transaction>& t = this->transaction_handler->get_transaction(transaction_id);
-        std::string session_id = transaction_id;
-        if (t != nullptr) {
-            session_id = t->get_session_id();
-        } else {
-            // TODO error
-        }
-
-        cost.transaction_id = session_id;
+    try {
+        data = json::parse(message.value());
+        cost = data;
+    } catch (const std::exception& e) {
+        EVLOG_warning << "Parsing failed! " << e.what();
+        response.status = DataTransferStatus::Rejected;
+        response.data = "json parsing failed";
+        return response;
     }
+
+    const std::shared_ptr<Transaction>& t = this->transaction_handler->get_transaction(cost.transaction_id);
+    std::string session_id = cost.transaction_id;
+    if (t != nullptr) {
+        session_id = t->get_session_id();
+    } else {
+        // TODO error
+    }
+
+    cost.transaction_id = session_id;
 
     if (type == "FinalCost") {
         cost.state = RunningCostState::Finished;

@@ -356,6 +356,10 @@ enum class RunningCostState {
     Finished
 };
 
+namespace conversions {
+RunningCostState string_to_running_cost_state(const std::string& state);
+}
+
 struct RunningCost {
     std::string transaction_id;
     std::optional<DateTime> timestamp;

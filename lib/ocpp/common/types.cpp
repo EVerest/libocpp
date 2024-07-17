@@ -624,12 +624,33 @@ void from_json(const json& j, RunningCostIdlePrice& c) {
 void to_json(json& j, const RunningCostIdlePrice& c) {
 }
 
+namespace conversions {
+RunningCostState string_to_running_cost_state(const std::string& state) {
+    if (state == "Charging") {
+        return RunningCostState::Charging;
+    } else if (state == "Idle") {
+        return RunningCostState::Idle;
+    } else if (state == "Finished") {
+        return RunningCostState::Finished;
+    }
+
+    throw std::out_of_range("No known string conversion for provided enum of type RunningCostState");
+}
+} // namespace conversions
+
 void from_json(const json& j, RunningCost& c) {
     // TODO for 2.0.1, the cost and transactionid are set in CostUpdatedRequest, the remaining is set in the
     // 'customData'. Don't forget to add `cost` and `transactionId` to the class as well for 2.0.1!!
 
     if (j.contains("transactionId")) {
-        c.transaction_id = j.at("transactionId");
+        if (j.at("transactionId").is_number()) {
+            uint32_t transaction_id = j.at("transactionId");
+            c.transaction_id = std::to_string(transaction_id);
+        } else if (j.at("transactionId").is_string()) {
+            c.transaction_id = j.at("transactionId");
+        } else {
+            j.dump(j.at("transactionId"));
+        }
     }
 
     if (j.contains("timestamp")) {
@@ -645,7 +666,7 @@ void from_json(const json& j, RunningCost& c) {
     }
 
     if (j.contains("state")) {
-        c.state = j.at("state");
+        c.state = conversions::string_to_running_cost_state(j.at("state"));
     }
 
     if (j.contains("chargingPrice")) {
