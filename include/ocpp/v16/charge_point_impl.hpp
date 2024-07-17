@@ -452,8 +452,9 @@ public:
     /// \param data
     /// \return the DataTransferResponse from the CSMS. In case no response is received from the CSMS because the
     /// message timed out or the charging station is offline, std::nullopt is returned
-    std::optional<DataTransferResponse> data_transfer(const CiString<255>& vendorId, const std::optional<CiString<50>>& messageId,
-                                       const std::optional<std::string>& data);
+    std::optional<DataTransferResponse> data_transfer(const CiString<255>& vendorId,
+                                                      const std::optional<CiString<50>>& messageId,
+                                                      const std::optional<std::string>& data);
 
     /// \brief Calculates ChargingProfiles configured by the CSMS of all connectors from now until now + given \p
     /// duration_s

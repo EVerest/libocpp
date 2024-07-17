@@ -358,8 +358,8 @@ public:
 
     /// \brief Data transfer mechanism initiated by charger
     /// \param request
-    /// \return DataTransferResponse containing the result from CSMS. In case no response is received from the CSMS because the
-    /// message timed out or the charging station is offline, std::nullopt is returned
+    /// \return DataTransferResponse containing the result from CSMS. In case no response is received from the CSMS
+    /// because the message timed out or the charging station is offline, std::nullopt is returned
     virtual std::optional<DataTransferResponse> data_transfer_req(const DataTransferRequest& request) = 0;
 
     /// \brief Switches the operative status of the CS

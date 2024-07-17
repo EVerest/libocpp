@@ -65,8 +65,8 @@ void ChargePoint::data_transfer_pnc_get_15118_ev_certificate(
 }
 
 std::optional<DataTransferResponse> ChargePoint::data_transfer(const CiString<255>& vendorId,
-                                                const std::optional<CiString<50>>& messageId,
-                                                const std::optional<std::string>& data) {
+                                                               const std::optional<CiString<50>>& messageId,
+                                                               const std::optional<std::string>& data) {
     return this->charge_point->data_transfer(vendorId, messageId, data);
 }
 

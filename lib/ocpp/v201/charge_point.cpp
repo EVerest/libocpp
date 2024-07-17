@@ -3490,8 +3490,8 @@ template <class T> bool ChargePoint::send(ocpp::CallResult<T> call_result) {
 }
 
 std::optional<DataTransferResponse> ChargePoint::data_transfer_req(const CiString<255>& vendorId,
-                                                    const std::optional<CiString<50>>& messageId,
-                                                    const std::optional<json>& data) {
+                                                                   const std::optional<CiString<50>>& messageId,
+                                                                   const std::optional<json>& data) {
     DataTransferRequest req;
     req.vendorId = vendorId;
     req.messageId = messageId;
