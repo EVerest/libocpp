@@ -397,6 +397,7 @@ void ChargePoint::on_transaction_started(const int32_t evse_id, const int32_t co
 
 void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime& timestamp,
                                           const MeterValue& meter_stop, const ReasonEnum reason,
+                                          const std::optional<TriggerReasonEnum> trigger_reason,
                                           const std::optional<IdToken>& id_token,
                                           const std::optional<std::string>& signed_meter_value,
                                           const ChargingStateEnum charging_state) {
@@ -433,14 +434,15 @@ void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime&
         EVLOG_warning << "Could not get metervalues of transaction: " << e.what();
     }
 
-    const auto trigger_reason = utils::stop_reason_to_trigger_reason_enum(reason);
+    const auto _trigger_reason =
+        trigger_reason.has_value() ? trigger_reason.value() : utils::stop_reason_to_trigger_reason_enum(reason);
 
     // E07.FR.02 The field idToken is provided when the authorization of the transaction has been ended
     const std::optional<IdToken> transaction_id_token =
         trigger_reason == ocpp::v201::TriggerReasonEnum::StopAuthorized ? id_token : std::nullopt;
 
     this->transaction_event_req(TransactionEventEnum::Ended, timestamp, enhanced_transaction->get_transaction(),
-                                trigger_reason, enhanced_transaction->get_seq_no(), std::nullopt, std::nullopt,
+                                _trigger_reason, enhanced_transaction->get_seq_no(), std::nullopt, std::nullopt,
                                 transaction_id_token, meter_values, std::nullopt, this->is_offline(), std::nullopt);
 
     evse_handle.release_transaction();
