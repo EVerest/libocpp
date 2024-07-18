@@ -2792,15 +2792,16 @@ DataTransferResponse ChargePointImpl::handle_set_user_price(const std::optional<
 
     if (data.contains("priceText")) {
         message.message.message = data.at("priceText");
-        // TODO set default language if exists???
+        if (this->configuration->getLanguage().has_value()) {
+            message.message.language = this->configuration->getLanguage().value();
+        }
     }
 
     messages.push_back(message);
 
-    if (data.contains("priceTextExtra") && data.at("priceTextExtra").is_array()) {
-        // Loop over all messages from 'priceTextExtra' array and add them all.
+    if (this->configuration->getCustomMultiLanguageMessagesEnabled() && data.contains("priceTextExtra") &&
+        data.at("priceTextExtra").is_array()) {
         for (const json& j : data.at("priceTextExtra")) {
-            // TODO check if multilanguage configuration is enabled???
             DisplayMessage display_message;
             display_message.transaction_id = session_id;
             if (j.contains("format")) {

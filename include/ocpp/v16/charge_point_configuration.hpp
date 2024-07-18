@@ -420,9 +420,9 @@ public:
     std::optional<std::string> getNextTimeOffsetTransitionDateTime();
     std::optional<std::string> getNextTimeOffsetNextTransition();
     bool getCustomIdleFeeAfterStop();
+    bool getCustomMultiLanguageMessagesEnabled();
     std::optional<std::string> getMultiLanguageSupportedLanguages();
-
-
+    std::optional<std::string> getLanguage();
 
     // custom
     std::optional<KeyValue> getCustomKeyValue(CiString<50> key);

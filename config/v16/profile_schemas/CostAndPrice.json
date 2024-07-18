@@ -41,6 +41,15 @@
             "type": "string",
             "readOnly": true,
             "minLength": 1
+        },
+        "CustomMultiLanguageMessages": {
+            "type": "boolean",
+            "readOnly": true
+        },
+        "Language": {
+            "type": "string",
+            "readOnly": false,
+            "minLength": 1
         }
     }
 }

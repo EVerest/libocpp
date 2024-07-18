@@ -697,6 +697,7 @@ void from_json(const json& j, RunningCost& c) {
     if (j.contains("priceText")) {
         DisplayMessageContent display_message;
         display_message.message = j.at("priceText");
+        c.cost_messages = std::vector<DisplayMessageContent>();
         c.cost_messages->push_back(display_message);
     }
 
@@ -704,11 +705,14 @@ void from_json(const json& j, RunningCost& c) {
         const json& price_text = j.at("priceTextExtra");
         if (!price_text.is_array()) {
             EVLOG_warning << "priceTextExtra should be an array, but is not. Content: " << price_text;
-        }
-
-        for (const json& p : price_text) {
-            DisplayMessageContent display_message = p;
-            c.cost_messages->push_back(display_message);
+        } else {
+            if (!c.cost_messages.has_value()) {
+                c.cost_messages = std::vector<DisplayMessageContent>();
+            }
+            for (const json& p : price_text) {
+                DisplayMessageContent display_message = p;
+                c.cost_messages->push_back(display_message);
+            }
         }
     }
 

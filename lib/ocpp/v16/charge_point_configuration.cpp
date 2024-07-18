@@ -2205,9 +2205,12 @@ bool ChargePointConfiguration::getCustomDisplayCostAndPriceEnabled() {
     return this->config["CostAndPrice"]["CustomDisplayCostAndPrice"];
 }
 
+// TODO this is a json object, is that ok?
 std::optional<std::string> ChargePointConfiguration::getDefaultPrice() {
     return this->config["CostAndPrice"]["DefaultPrice"];
 }
+
+// TODO add "DefaultPriceText,<language code> ???
 
 std::optional<std::string> ChargePointConfiguration::getDisplayTimeOffset() {
     return this->config["CostAndPrice"]["TimeOffset"];
@@ -2225,8 +2228,16 @@ bool ChargePointConfiguration::getCustomIdleFeeAfterStop() {
     return this->config["CostAndPrice"]["CustomIdleFeeAfterStop"];
 }
 
+bool ChargePointConfiguration::getCustomMultiLanguageMessagesEnabled() {
+    return this->config["CostAndPrice"]["CustomMultiLanguageMessages"];
+}
+
 std::optional<std::string> ChargePointConfiguration::getMultiLanguageSupportedLanguages() {
     return this->config["CostAndPrice"]["MultiLanguageSupportedLanguages"];
+}
+
+std::optional<std::string> ChargePointConfiguration::getLanguage() {
+    return this->config["CostAndPrice"]["Language"];
 }
 
 // Custom

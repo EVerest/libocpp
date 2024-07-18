@@ -58,7 +58,9 @@
         "TimeOffset": "",
         "NextTimeOffsetTransitionDateTime": "",
         "CustomIdleFeeAfterStop": false,
-        "MultiLanguageSupportedLanguages": "en, nl, de"
+        "MultiLanguageSupportedLanguages": "en, nl, de",
+        "CustomMultiLanguageMessages": true,
+        "Language": "en"
     },
     "Custom": {
         "ExampleConfigurationKey": "example"
