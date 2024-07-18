@@ -10,6 +10,10 @@
             "type": "boolean",
             "readOnly": true
         },
+        "NumberOfDecimals": {
+            "type": "integer",
+            "readOnly": true
+        },
         "DefaultPrice": {
             "type": "string",
             "readOnly": true,

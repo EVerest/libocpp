@@ -54,6 +54,7 @@
     },
     "CostAndPrice": {
         "CustomDisplayCostAndPrice": true,
+        "NumberOfDecimals": 4,
         "DefaultPrice": "",
         "TimeOffset": "",
         "NextTimeOffsetTransitionDateTime": "",

@@ -2871,7 +2871,9 @@ DataTransferResponse ChargePointImpl::handle_set_session_cost(const std::string&
         cost.state = RunningCostState::Charging;
     }
 
-    return session_cost_callback(cost);
+    static const uint32_t number_of_decimals = this->configuration->getPriceNumberOfDecimals();
+
+    return session_cost_callback(cost, number_of_decimals);
 }
 
 template <class T> bool ChargePointImpl::send(ocpp::Call<T> call, bool initiated_by_trigger_message) {
@@ -4137,7 +4139,8 @@ void ChargePointImpl::register_is_token_reserved_for_connector_callback(
 }
 
 void ChargePointImpl::register_session_cost_callback(
-    const std::function<DataTransferResponse(const RunningCost&)>& session_cost_callback) {
+    const std::function<DataTransferResponse(const RunningCost& running_cost, const uint32_t number_of_decimals)>&
+        session_cost_callback) {
     this->session_cost_callback = session_cost_callback;
 }
 

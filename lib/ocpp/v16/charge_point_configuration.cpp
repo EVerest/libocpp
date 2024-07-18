@@ -2205,6 +2205,10 @@ bool ChargePointConfiguration::getCustomDisplayCostAndPriceEnabled() {
     return this->config["CostAndPrice"]["CustomDisplayCostAndPrice"];
 }
 
+uint32_t ChargePointConfiguration::getPriceNumberOfDecimals() {
+    return this->config["CostAndPrice"]["NumberOfDecimals"];
+}
+
 // TODO this is a json object, is that ok?
 std::optional<std::string> ChargePointConfiguration::getDefaultPrice() {
     return this->config["CostAndPrice"]["DefaultPrice"];

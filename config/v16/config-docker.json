@@ -59,6 +59,7 @@
     },
     "CostAndPrice": {
         "CustomDisplayCostAndPrice": true,
+        "NumberOfDecimals": 4,
         "DefaultPrice": "3.12",
         "TimeOffset": "0",
         "NextTimeOffsetTransitionDateTime": "0",

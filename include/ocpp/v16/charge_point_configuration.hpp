@@ -415,6 +415,7 @@ public:
 
     // California Pricing Requirements
     bool getCustomDisplayCostAndPriceEnabled();
+    uint32_t getPriceNumberOfDecimals();
     std::optional<std::string> getDefaultPrice();
     std::optional<std::string> getDisplayTimeOffset();
     std::optional<std::string> getNextTimeOffsetTransitionDateTime();

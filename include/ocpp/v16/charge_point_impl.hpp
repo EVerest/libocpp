@@ -190,7 +190,8 @@ private:
         get_15118_ev_certificate_response_callback;
 
     // tariff and cost callback
-    std::function<DataTransferResponse(const RunningCost& running_cost)> session_cost_callback;
+    std::function<DataTransferResponse(const RunningCost& running_cost, const uint32_t number_of_decimals)>
+        session_cost_callback;
     std::function<DataTransferResponse(const std::vector<DisplayMessage>& display_message)>
         set_display_message_callback;
 
@@ -823,7 +824,8 @@ public:
         const std::function<bool(const int32_t connector, const std::string& id_token)>& callback);
 
     void register_session_cost_callback(
-        const std::function<DataTransferResponse(const RunningCost& session_cost)>& session_cost_callback);
+        const std::function<DataTransferResponse(const RunningCost& running_cost, const uint32_t number_of_decimals)>&
+            session_cost_callback);
     void register_set_display_message_callback(
         const std::function<DataTransferResponse(const std::vector<DisplayMessage>&)> set_display_message_callback);
 
