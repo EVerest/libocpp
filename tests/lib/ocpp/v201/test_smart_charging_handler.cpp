@@ -949,7 +949,7 @@ TEST_F(ChargepointTestFixtureV201,
 }
 
 TEST_F(ChargepointTestFixtureV201,
-       K01FR05_IfProfileWithSameIdExistsAndIsNotChargingStationExternalContraints_ThenProfileIsReplaced) {
+       K01FR05_IfProfileWithSameIdExistsOnEVSEAndIsNotChargingStationExternalContraints_ThenProfileIsReplaced) {
 
     auto profile1 = create_charging_profile(DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxDefaultProfile,
                                             create_charge_schedule(ChargingRateUnitEnum::A), uuid(),
