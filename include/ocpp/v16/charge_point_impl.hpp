@@ -232,6 +232,7 @@ private:
     /// update can proceed
     void change_all_connectors_to_unavailable_for_firmware_update();
 
+    void try_resume_transactions(const std::set<std::string> resuming_session_ids);
     void stop_all_transactions();
     void stop_all_transactions(Reason reason);
     bool validate_against_cache_entries(CiString<20> id_tag);
@@ -382,8 +383,14 @@ public:
     /// \param connector_status_map initial state of connectors including connector 0 with reduced set of states
     /// (Available, Unavailable, Faulted)
     /// \param bootreason reason for calling the start function
-    /// \return
-    bool start(const std::map<int, ChargePointStatus>& connector_status_map, BootReasonEnum bootreason);
+    /// \param resuming_session_ids can optionally contain active session ids from previous executions. If empty and
+    /// libocpp has transactions in its internal database that have not been stopped yet, calling this function will
+    /// initiate a StopTransaction.req for those transactions. If this vector contains session_ids this function will
+    /// not stop transactions with this session_id even in case it has an internal database entry for this session and
+    /// it hasnt been stopped yet. Its ignored if this vector contains session_ids that are unknown to libocpp.
+    ///  \return
+    bool start(const std::map<int, ChargePointStatus>& connector_status_map, BootReasonEnum bootreason,
+               const std::set<std::string> resuming_session_ids);
 
     /// \brief Restarts the ChargePoint if it has been stopped before. The ChargePoint is reinitialized, connects to the
     /// websocket and starts to communicate OCPP messages again
