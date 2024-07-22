@@ -583,15 +583,15 @@ void from_json(const json& j, DisplayMessageContent& m) {
 }
 
 void to_json(json& j, const DisplayMessageContent& m) {
-    // TODO
-}
+    j["message"] = m.message;
 
-void from_json(const json& j, DisplayMessage& m) {
-    // TODO
-}
+    if (m.message_format.has_value()) {
+        j["format"] = v201::conversions::message_format_enum_to_string(m.message_format.value());
+    }
 
-void to_json(json& j, const DisplayMessage& m) {
-    // TODO
+    if (m.language.has_value()) {
+        j["language"] = m.language.value();
+    }
 }
 
 void from_json(const json& j, RunningCostChargingPrice& c) {
@@ -609,6 +609,17 @@ void from_json(const json& j, RunningCostChargingPrice& c) {
 }
 
 void to_json(json& j, const RunningCostChargingPrice& c) {
+    if (c.kWh_price.has_value()) {
+        j["kWhPrice"] = c.kWh_price.value();
+    }
+
+    if (c.hour_price.has_value()) {
+        j["hourPrice"] = c.hour_price.value();
+    }
+
+    if (c.flat_fee.has_value()) {
+        j["flatFee"] = c.flat_fee.value();
+    }
 }
 
 void from_json(const json& j, RunningCostIdlePrice& c) {
@@ -622,6 +633,13 @@ void from_json(const json& j, RunningCostIdlePrice& c) {
 }
 
 void to_json(json& j, const RunningCostIdlePrice& c) {
+    if (c.idle_hour_price.has_value()) {
+        j["hourPrice"] = c.idle_hour_price.value();
+    }
+
+    if (c.idle_grace_minutes.has_value()) {
+        j["graceMinutes"] = c.idle_grace_minutes.value();
+    }
 }
 
 namespace conversions {
@@ -741,10 +759,6 @@ void from_json(const json& j, RunningCost& c) {
     //         }
     //     }
     // }
-}
-
-void to_json(json& j, const RunningCost& c) {
-    // TODO
 }
 
 namespace conversions {

@@ -113,6 +113,7 @@ private:
     std::unique_ptr<Everest::SteadyTimer> ocsp_request_timer;
     std::unique_ptr<Everest::SteadyTimer> client_certificate_timer;
     std::unique_ptr<Everest::SteadyTimer> v2g_certificate_timer;
+    std::unique_ptr<Everest::SystemTimer> pricing_trigger_at_time_timer;
     std::chrono::time_point<date::utc_clock> clock_aligned_meter_values_time_point;
     std::mutex meter_values_mutex;
     std::mutex measurement_mutex;
@@ -220,6 +221,9 @@ private:
     MeterValue get_signed_meter_value(const std::string& signed_value, const ReadingContext& context,
                                       const ocpp::DateTime& datetime);
     void send_meter_value(int32_t connector, MeterValue meter_value, bool initiated_by_trigger_message = false);
+    void send_meter_value_on_pricing_trigger(const int32_t connector_number, std::shared_ptr<Connector> connector,
+                                             const Measurement& measurement);
+    void reset_pricing_triggers(const int32_t connector_number);
     void status_notification(const int32_t connector, const ChargePointErrorCode errorCode,
                              const ChargePointStatus status, const ocpp::DateTime& timestamp,
                              const std::optional<CiString<50>>& info = std::nullopt,

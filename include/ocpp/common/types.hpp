@@ -330,7 +330,6 @@ struct DisplayMessage {
     std::optional<std::string> transaction_id;
     DisplayMessageContent message;
     std::optional<std::string> qr_code;
-    // TODO
 };
 
 struct RunningCostChargingPrice {
@@ -378,7 +377,6 @@ struct RunningCost {
     std::optional<std::string> qr_code_text;
 
     friend void from_json(const json& j, RunningCost& c);
-    friend void to_json(json &j, const RunningCost &c);
 };
 
 enum class CaCertificateType {
