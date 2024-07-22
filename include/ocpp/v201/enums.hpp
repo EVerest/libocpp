@@ -13,6 +13,12 @@ enum class VariableMonitorType {
     CustomMonitor,
 };
 
+namespace conversions {
+/// \brief Converts the given std::string \p s to VariableMonitorType
+/// \returns a VariableMonitorType from a string representation
+VariableMonitorType string_to_variable_monitor_type(const std::string& s);
+} // namespace conversions
+
 namespace MonitoringLevelSeverity {
 constexpr int32_t Danger = 0;
 constexpr int32_t HardwareFailure = 1;

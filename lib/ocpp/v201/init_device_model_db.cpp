@@ -25,6 +25,8 @@ static bool is_same_attribute_type(const VariableAttribute attribute1, const Var
 static bool is_attribute_different(const VariableAttribute& attribute1, const VariableAttribute& attribute2);
 static bool variable_has_same_attributes(const std::vector<DbVariableAttribute>& attributes1,
                                          const std::vector<DbVariableAttribute>& attributes2);
+static bool variable_has_same_monitors(const std::vector<VariableMonitoringMeta>& monitors1,
+                                       const std::vector<VariableMonitoringMeta>& monitors2);
 static bool is_characteristics_different(const VariableCharacteristics& c1, const VariableCharacteristics& c2);
 static bool is_same_variable(const DeviceModelVariable& v1, const DeviceModelVariable& v2);
 static bool is_variable_different(const DeviceModelVariable& v1, const DeviceModelVariable& v2);
@@ -388,6 +390,7 @@ void InitDeviceModelDb::insert_variable(const DeviceModelVariable& variable, con
 
     insert_variable_characteristics(variable.characteristics, variable_id);
     insert_attributes(variable.attributes, static_cast<uint64_t>(variable_id), variable.default_actual_value);
+    insert_variable_monitors(variable.monitors, variable_id);
 }
 
 void InitDeviceModelDb::update_variable(const DeviceModelVariable& variable, const DeviceModelVariable& db_variable,
@@ -436,6 +439,10 @@ void InitDeviceModelDb::update_variable(const DeviceModelVariable& variable, con
     if (!variable_has_same_attributes(variable.attributes, db_variable.attributes)) {
         update_attributes(variable.attributes, db_variable.attributes, db_variable.db_id.value(),
                           variable.default_actual_value);
+    }
+
+    if (!variable_has_same_monitors(variable.monitors, db_variable.monitors)) {
+        update_variable_monitors(variable.monitors, db_variable.monitors, db_variable.db_id.value());
     }
 }
 
@@ -667,6 +674,44 @@ bool InitDeviceModelDb::insert_variable_attribute_value(const int64_t& variable_
     }
 
     return true;
+}
+
+void InitDeviceModelDb::insert_variable_monitor(const VariableMonitoringMeta& monitor, const int64_t& variable_id) {
+}
+
+void InitDeviceModelDb::insert_variable_monitors(const std::vector<VariableMonitoringMeta>& monitors,
+                                                 const int64_t& variable_id) {
+    for (const VariableMonitoringMeta& monitor : monitors) {
+        insert_variable_monitor(monitor, variable_id);
+    }
+}
+
+void InitDeviceModelDb::update_variable_monitor(const VariableMonitoringMeta& new_monitor,
+                                                const VariableMonitoringMeta& db_monitor, const int64_t& variable_id) {
+}
+
+void InitDeviceModelDb::update_variable_monitors(const std::vector<VariableMonitoringMeta>& new_monitors,
+                                                 const std::vector<VariableMonitoringMeta>& db_monitors,
+                                                 const int64_t& variable_id) {
+}
+
+void InitDeviceModelDb::insert_variable_monitor(const VariableMonitoringMeta& monitor, const int64_t& variable_id) {
+}
+
+void InitDeviceModelDb::insert_variable_monitors(const std::vector<VariableMonitoringMeta>& monitors,
+                                                 const int64_t& variable_id) {
+    for (const VariableMonitoringMeta& monitor : monitors) {
+        insert_variable_monitor(monitor, variable_id);
+    }
+}
+
+void InitDeviceModelDb::update_variable_monitor(const VariableMonitoringMeta& new_monitor,
+                                                const VariableMonitoringMeta& db_monitor, const int64_t& variable_id) {
+}
+
+void InitDeviceModelDb::update_variable_monitors(const std::vector<VariableMonitoringMeta>& new_monitors,
+                                                 const std::vector<VariableMonitoringMeta>& db_monitors,
+                                                 const int64_t& variable_id) {
 }
 
 std::map<ComponentKey, std::vector<DeviceModelVariable>> InitDeviceModelDb::get_all_components_from_db() {
@@ -973,6 +1018,19 @@ void from_json(const json& j, ComponentKey& c) {
     }
 }
 
+void from_json(const json& j, VariableMonitoringMeta& c) {
+    c.type = conversions::string_to_variable_monitor_type(j.at("config_type"));
+    c.monitor.severity = j.at("severity");
+    c.monitor.type = conversions::string_to_monitor_enum(j.at("type"));
+    c.monitor.value = j.at("value");
+
+    if (j.contains("transaction")) {
+        c.monitor.transaction = j.at("transaction");
+    } else {
+        c.monitor.transaction = false;
+    }
+}
+
 void from_json(const json& j, DeviceModelVariable& c) {
     c.name = j.at("variable_name");
     c.characteristics = j.at("characteristics");
@@ -996,6 +1054,20 @@ void from_json(const json& j, DeviceModelVariable& c) {
         // I want the default value as string here as it is stored in the db as a string as well.
         const json& default_value = j.at("default");
         c.default_actual_value = get_string_value_from_json(default_value);
+    }
+
+    if (j.contains("monitors")) {
+        if (!c.characteristics.supportsMonitoring) {
+            const std::string error =
+                "Variable: [" + c.name + "] does not support monitoring, remove monitors from config.";
+            EVLOG_error << error;
+            throw InitDeviceModelDbError(error);
+        }
+
+        for (const auto& config_monitor : j.at("monitors").items()) {
+            VariableMonitoringMeta monitor = config_monitor.value();
+            c.monitors.push_back(monitor);
+        }
     }
 }
 
@@ -1236,6 +1308,44 @@ static bool variable_has_same_attributes(const std::vector<DbVariableAttribute>&
     return true;
 }
 
+static bool is_monitor_different(const VariableMonitoringMeta& meta1, const VariableMonitoringMeta& meta2) {
+    if (meta1.type != meta2.type) {
+        return true;
+    }
+
+    bool value_differs = std::abs(meta1.monitor.value - meta2.monitor.value) > std::numeric_limits<float>::epsilon();
+
+    if (meta1.monitor.severity != meta2.monitor.severity || meta1.monitor.transaction != meta2.monitor.transaction ||
+        meta1.monitor.type != meta2.monitor.type || value_differs) {
+        return true;
+    }
+
+    return false;
+}
+
+static bool variable_has_same_monitors(const std::vector<VariableMonitoringMeta>& monitors1,
+                                       const std::vector<VariableMonitoringMeta>& monitors2) {
+    if (monitors1.size() != monitors2.size()) {
+        return false;
+    }
+
+    for (const auto& monitor1 : monitors1) {
+        const auto& it = std::find_if(std::begin(monitors2), std::end(monitors2),
+                                      [&monitor1](const VariableMonitoringMeta& monitor2) {
+                                          if (!is_monitor_different(monitor1, monitor2)) {
+                                              return true;
+                                          }
+                                          return false;
+                                      });
+
+        if (it == std::end(monitors2)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 ///
 /// \brief Check if the given characteristics are different from eachother.
 /// \param c1   Characteristics 1
@@ -1270,6 +1380,7 @@ static bool is_same_variable(const DeviceModelVariable& v1, const DeviceModelVar
 static bool is_variable_different(const DeviceModelVariable& v1, const DeviceModelVariable& v2) {
     if (is_same_variable(v1, v2) && (v1.required == v2.required) &&
         !is_characteristics_different(v1.characteristics, v2.characteristics) &&
+        variable_has_same_monitors(v1.monitors, v2.monitors) &&
         variable_has_same_attributes(v1.attributes, v2.attributes)) {
         return false;
     }
