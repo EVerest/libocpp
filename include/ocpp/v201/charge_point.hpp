@@ -28,11 +28,13 @@
 #include <ocpp/v201/messages/CertificateSigned.hpp>
 #include <ocpp/v201/messages/ChangeAvailability.hpp>
 #include <ocpp/v201/messages/ClearCache.hpp>
+#include <ocpp/v201/messages/ClearDisplayMessage.hpp>
 #include <ocpp/v201/messages/ClearVariableMonitoring.hpp>
 #include <ocpp/v201/messages/CustomerInformation.hpp>
 #include <ocpp/v201/messages/DataTransfer.hpp>
 #include <ocpp/v201/messages/DeleteCertificate.hpp>
 #include <ocpp/v201/messages/GetBaseReport.hpp>
+#include <ocpp/v201/messages/GetDisplayMessages.hpp>
 #include <ocpp/v201/messages/GetInstalledCertificateIds.hpp>
 #include <ocpp/v201/messages/GetLocalListVersion.hpp>
 #include <ocpp/v201/messages/GetLog.hpp>
@@ -52,6 +54,7 @@
 #include <ocpp/v201/messages/Reset.hpp>
 #include <ocpp/v201/messages/SecurityEventNotification.hpp>
 #include <ocpp/v201/messages/SendLocalList.hpp>
+#include <ocpp/v201/messages/SetDisplayMessage.hpp>
 #include <ocpp/v201/messages/SetMonitoringBase.hpp>
 #include <ocpp/v201/messages/SetMonitoringLevel.hpp>
 #include <ocpp/v201/messages/SetNetworkProfile.hpp>
@@ -186,6 +189,13 @@ struct Callbacks {
 
     /// \brief Callback function is called when the websocket connection status changes
     std::optional<std::function<void(const bool is_connected)>> connection_state_changed_callback;
+
+    // TODO mz if one of the three is defined, they must all be defined
+     std::optional<std::function<std::vector<DisplayMessage>(const GetDisplayMessagesRequest& request /* TODO */)>> get_display_message_callback;
+     std::optional<std::function<SetDisplayMessageResponse(const std::vector<DisplayMessage>& display_messages)>> set_display_message_callback;
+     std::optional<std::function<ClearDisplayMessageResponse(const ClearDisplayMessageRequest& request/* TODO */)>> clear_display_message_callback;
+
+     std::optional<std::function<void(const RunningCost& running_cost)>> set_running_cost;
 };
 
 /// \brief Combines ChangeAvailabilityRequest with persist flag for scheduled Availability changes

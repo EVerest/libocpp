@@ -568,6 +568,111 @@ std::ostream& operator<<(std::ostream& os, const Measurement& k) {
     return os;
 }
 
+void from_json(const json& j, RunningCost& c) {
+    // TODO for 2.0.1, the cost and transactionid are set in CostUpdatedRequest, the remaining is set in the
+    // 'customData'. Don't forget to add `cost` and `transactionId` to the class as well for 2.0.1!!
+
+    if (j.contains("transactionId")) {
+        if (j.at("transactionId").is_number()) {
+            uint32_t transaction_id = j.at("transactionId");
+            c.transaction_id = std::to_string(transaction_id);
+        } else if (j.at("transactionId").is_string()) {
+            c.transaction_id = j.at("transactionId");
+        } else {
+            j.dump(j.at("transactionId"));
+        }
+    }
+
+    if (j.contains("timestamp")) {
+        c.timestamp = j.at("timestamp");
+    }
+
+    if (j.contains("meterValue")) {
+        c.meter_value = j.at("meterValue");
+    }
+
+    if (j.contains("cost")) {
+        c.cost = j.at("cost");
+    }
+
+    if (j.contains("state")) {
+        c.state = conversions::string_to_running_cost_state(j.at("state"));
+    }
+
+    if (j.contains("chargingPrice")) {
+        c.charging_price = j.at("chargingPrice");
+    }
+
+    if (j.contains("idlePrice")) {
+        c.idle_price = j.at("idlePrice");
+    }
+
+    if (j.contains("nextPeriod")) {
+        const json& nextPeriod = j.at("nextPeriod");
+        if (nextPeriod.is_object()) {
+            if (nextPeriod.contains("atTime")) {
+                c.next_period_at_time = nextPeriod.at("atTime");
+            }
+
+            if (nextPeriod.contains("chargingPrice")) {
+                c.next_period_charging_price = nextPeriod.at("chargingPrice");
+            }
+
+            if (nextPeriod.contains("idlePrice")) {
+                c.next_period_idle_price = nextPeriod.at("idlePrice");
+            }
+        }
+    }
+
+    if (j.contains("priceText")) {
+        DisplayMessageContent display_message;
+        display_message.message = j.at("priceText");
+        c.cost_messages = std::vector<DisplayMessageContent>();
+        c.cost_messages->push_back(display_message);
+    }
+
+    if (j.contains("priceTextExtra")) {
+        const json& price_text = j.at("priceTextExtra");
+        if (!price_text.is_array()) {
+            EVLOG_warning << "priceTextExtra should be an array, but is not. Content: " << price_text;
+        } else {
+            if (!c.cost_messages.has_value()) {
+                c.cost_messages = std::vector<DisplayMessageContent>();
+            }
+            for (const json& p : price_text) {
+                DisplayMessageContent display_message = p;
+                c.cost_messages->push_back(display_message);
+            }
+        }
+    }
+
+    if (j.contains("qrCodeText")) {
+        c.qr_code_text = j.at("qrCodeText");
+    }
+
+    // TODO mz this is done by OCPP (implement in 2.0.1!!!)
+    // if (j.contains("triggerMeterValue")) {
+    //     const json& triggerMeterValue = j.at("triggerMeterValue");
+    //     if (triggerMeterValue.is_object()) {
+    //         if (triggerMeterValue.contains("atTime")) {
+    //             c.trigger_meter_value_at_time = triggerMeterValue.at("atTime");
+    //         }
+
+    //         if (triggerMeterValue.contains("atEnergykWh")) {
+    //             c.trigger_meter_value_at_energy_kwh = triggerMeterValue.at("atEnergykWh");
+    //         }
+
+    //         if (triggerMeterValue.contains("atPowerkW")) {
+    //             c.trigger_meter_value_at_power_kw = triggerMeterValue.at("atPowerkW");
+    //         }
+
+    //         if (triggerMeterValue.contains("atCPStatus")) {
+    //             v16::conversions::string_to_charge_point_status(triggerMeterValue.at("atCPStatus"));
+    //         }
+    //     }
+    // }
+}
+
 namespace conversions {
 std::string ca_certificate_type_to_string(CaCertificateType e) {
     switch (e) {
