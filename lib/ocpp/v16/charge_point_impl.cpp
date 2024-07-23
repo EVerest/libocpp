@@ -360,7 +360,7 @@ void ChargePointImpl::update_clock_aligned_meter_values_interval() {
     }
 }
 
-void ChargePointImpl::try_resume_transactions(const std::set<std::string> resuming_session_ids) {
+void ChargePointImpl::try_resume_transactions(const std::set<std::string>& resuming_session_ids) {
     std::vector<ocpp::v16::TransactionEntry> transactions;
     try {
         transactions = this->database_handler->get_transactions(true);
@@ -864,7 +864,7 @@ void ChargePointImpl::send_meter_value(int32_t connector, MeterValue meter_value
 }
 
 bool ChargePointImpl::start(const std::map<int, ChargePointStatus>& connector_status_map, BootReasonEnum bootreason,
-                            const std::set<std::string> resuming_session_ids) {
+                            const std::set<std::string>& resuming_session_ids) {
     this->message_queue->start();
     this->bootreason = bootreason;
     this->init_state_machine(connector_status_map);

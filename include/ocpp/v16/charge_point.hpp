@@ -84,7 +84,7 @@ public:
     ///  \return
     bool start(const std::map<int, ChargePointStatus>& connector_status_map = {},
                BootReasonEnum bootreason = BootReasonEnum::PowerUp,
-               const std::set<std::string> resuming_session_ids = {});
+               const std::set<std::string>& resuming_session_ids = {});
 
     /// \brief Restarts the ChargePoint if it has been stopped before. The ChargePoint is reinitialized, connects to the
     /// websocket and starts to communicate OCPP messages again

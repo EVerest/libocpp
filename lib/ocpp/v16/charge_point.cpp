@@ -22,7 +22,7 @@ ChargePoint::ChargePoint(const std::string& config, const fs::path& share_path, 
 ChargePoint::~ChargePoint() = default;
 
 bool ChargePoint::start(const std::map<int, ChargePointStatus>& connector_status_map, BootReasonEnum bootreason,
-                        const std::set<std::string> resuming_session_ids) {
+                        const std::set<std::string>& resuming_session_ids) {
     return this->charge_point->start(connector_status_map, bootreason, resuming_session_ids);
 }
 

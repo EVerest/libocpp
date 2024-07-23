@@ -237,7 +237,7 @@ private:
     /// resuming_session_ids contain the internal session_id, this function attempts to resume the transaction by
     /// initializing it and adding it to the \ref transaction_handler. If the session_id is not part of \p
     /// resuming_session_ids a StopTransaction.req is initiated to properly close the transaction.
-    void try_resume_transactions(const std::set<std::string> resuming_session_ids);
+    void try_resume_transactions(const std::set<std::string>& resuming_session_ids);
     void stop_all_transactions();
     void stop_all_transactions(Reason reason);
     bool validate_against_cache_entries(CiString<20> id_tag);
@@ -392,7 +392,7 @@ public:
     /// it hasnt been stopped yet. Its ignored if this vector contains session_ids that are unknown to libocpp.
     ///  \return
     bool start(const std::map<int, ChargePointStatus>& connector_status_map, BootReasonEnum bootreason,
-               const std::set<std::string> resuming_session_ids);
+               const std::set<std::string>& resuming_session_ids);
 
     /// \brief Restarts the ChargePoint if it has been stopped before. The ChargePoint is reinitialized, connects to the
     /// websocket and starts to communicate OCPP messages again
