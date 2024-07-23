@@ -232,6 +232,11 @@ private:
     /// update can proceed
     void change_all_connectors_to_unavailable_for_firmware_update();
 
+    /// \brief Tries to resume the transactions given by \p resuming_session_ids . This function retrieves open
+    /// transactions from the internal database (e.g. because of power loss). In case the \p
+    /// resuming_session_ids contain the internal session_id, this function attempts to resume the transaction by
+    /// initializing it and adding it to the \ref transaction_handler. If the session_id is not part of \p
+    /// resuming_session_ids a StopTransaction.req is initiated to properly close the transaction.
     void try_resume_transactions(const std::set<std::string> resuming_session_ids);
     void stop_all_transactions();
     void stop_all_transactions(Reason reason);
@@ -240,9 +245,6 @@ private:
     // new transaction handling:
     void start_transaction(std::shared_ptr<Transaction> transaction);
 
-    /// \brief Sends StopTransaction.req for all transactions for which meter_stop or time_end is not set in the
-    /// database's Transaction table
-    void stop_pending_transactions();
     void stop_transaction(int32_t connector, Reason reason, std::optional<CiString<20>> id_tag_end);
 
     /// \brief Converts the given \p measurands_csv to a vector of Measurands

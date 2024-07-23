@@ -417,10 +417,6 @@ void ChargePointImpl::try_resume_transactions(const std::set<std::string> resumi
     }
 }
 
-void ChargePointImpl::stop_pending_transactions() {
-    // Initiate a StopTransaction.req
-}
-
 void ChargePointImpl::load_charging_profiles() {
     try {
         auto profiles = this->database_handler->get_charging_profiles();
