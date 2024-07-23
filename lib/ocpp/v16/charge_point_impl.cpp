@@ -959,10 +959,9 @@ void ChargePointImpl::reset_pricing_triggers(const int32_t connector_number) {
     c->trigger_metervalue_on_status = std::nullopt;
     c->previous_status = std::nullopt;
 
-    // TODO mz remove timer???
-    if (pricing_trigger_at_time_timer != nullptr) {
-        pricing_trigger_at_time_timer->stop();
-        pricing_trigger_at_time_timer = nullptr;
+    if (c->trigger_metervalue_at_time_timer != nullptr) {
+        c->trigger_metervalue_at_time_timer->stop();
+        c->trigger_metervalue_at_time_timer = nullptr;
     }
 }
 
@@ -1092,8 +1091,12 @@ bool ChargePointImpl::stop() {
         if (this->v2g_certificate_timer != nullptr) {
             this->v2g_certificate_timer->stop();
         }
-        if (this->pricing_trigger_at_time_timer != nullptr) {
-            this->pricing_trigger_at_time_timer->stop();
+
+        for (const auto& [id, connector] : this->connectors) {
+
+            if (connector->trigger_metervalue_at_time_timer != nullptr) {
+                connector->trigger_metervalue_at_time_timer->stop();
+            }
         }
 
         this->websocket_timer.stop();
@@ -2996,15 +2999,21 @@ DataTransferResponse ChargePointImpl::handle_set_session_cost(const std::string&
         connector->trigger_metervalue_on_power_kw = trigger_meter_value_at_power_kw;
         connector->trigger_metervalue_on_status = trigger_meter_value_at_chargepoint_status;
 
-        // TODO mz timer is per session, not per chargepoint.
         if (trigger_meter_value_at_time.has_value()) {
-            pricing_trigger_at_time_timer = std::make_unique<Everest::SystemTimer>(&this->io_service, [this]() {
-                // TODO mz send metervalues.
-            });
+            connector->trigger_metervalue_at_time_timer =
+                std::make_unique<Everest::SystemTimer>(&this->io_service, [this, &connector]() {
+                    const std::optional<MeterValue>& meter_value = get_latest_meter_value(
+                        connector->id, {{Measurand::Energy_Active_Import_Register, std::nullopt}},
+                        ReadingContext::Other);
+                    if (!meter_value.has_value()) {
+                        EVLOG_error << "Send latest meter value because of chargepoint time trigger failed";
+                    } else {
+                        send_meter_value(connector->id, meter_value.value());
+                    }
+                });
 
-            // std::chrono::system_clock::time_point tp = std::chrono::parse(trigger_meter_value_at_time.value());
-            // this->pricing_trigger_at_time_timer->at(trigger_meter_value_at_time.value());
-            // TODO mz start timer and trigger sending meter value when time has expired.
+            const DateTime trigger_date_time(trigger_meter_value_at_time.value());
+            connector->trigger_metervalue_at_time_timer->at(trigger_date_time.to_time_point());
         }
     }
 
