@@ -2569,6 +2569,7 @@ void ChargePoint::handle_reset_req(Call<ResetRequest> call) {
             return false;
         }
 
+        // We dont need to check AllowReset if evseId is not set and can directly return true
         if (!msg.evseId.has_value()) {
             return true;
         }
