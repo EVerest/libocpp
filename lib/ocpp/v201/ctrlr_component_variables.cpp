@@ -240,6 +240,13 @@ const ComponentVariable& WebsocketPongTimeout = {
         "WebsocketPongTimeout",
     }),
 };
+const ComponentVariable& MonitorsProcessingInterval = {
+    ControllerComponents::InternalCtrlr,
+    std::nullopt,
+    std::optional<Variable>({
+        "MonitorsProcessingInterval",
+    }),
+};
 const ComponentVariable& MaxCustomerInformationDataLength = {
     ControllerComponents::InternalCtrlr,
     std::nullopt,
@@ -287,6 +294,13 @@ const ComponentVariable& MaxMessageSize = {
     std::nullopt,
     std::optional<Variable>({
         "MaxMessageSize",
+    }),
+};
+const ComponentVariable& ResumeTransactionsOnBoot = {
+    ControllerComponents::InternalCtrlr,
+    std::nullopt,
+    std::optional<Variable>({
+        "ResumeTransactionsOnBoot",
     }),
 };
 const ComponentVariable& AlignedDataCtrlrEnabled = {

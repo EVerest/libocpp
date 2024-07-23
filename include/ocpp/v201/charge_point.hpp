@@ -16,6 +16,7 @@
 #include <ocpp/v201/device_model_storage.hpp>
 #include <ocpp/v201/enums.hpp>
 #include <ocpp/v201/evse_manager.hpp>
+#include <ocpp/v201/monitoring_updater.hpp>
 #include <ocpp/v201/ocpp_types.hpp>
 #include <ocpp/v201/ocsp_updater.hpp>
 #include <ocpp/v201/types.hpp>
@@ -182,6 +183,9 @@ struct Callbacks {
     std::optional<std::function<void(const TransactionEventRequest& transaction_event,
                                      const TransactionEventResponse& transaction_event_response)>>
         transaction_event_response_callback;
+
+    /// \brief Callback function is called when the websocket connection status changes
+    std::optional<std::function<void(const bool is_connected)>> connection_state_changed_callback;
 };
 
 /// \brief Combines ChangeAvailabilityRequest with persist flag for scheduled Availability changes
@@ -260,7 +264,8 @@ public:
     /// \param signed_meter_value
     /// \param charging_state
     virtual void on_transaction_finished(const int32_t evse_id, const DateTime& timestamp, const MeterValue& meter_stop,
-                                         const ReasonEnum reason, const std::optional<IdToken>& id_token,
+                                         const ReasonEnum reason, const TriggerReasonEnum trigger_reason,
+                                         const std::optional<IdToken>& id_token,
                                          const std::optional<std::string>& signed_meter_value,
                                          const ChargingStateEnum charging_state) = 0;
 
@@ -304,6 +309,11 @@ public:
     on_charging_state_changed(const uint32_t evse_id, const ChargingStateEnum charging_state,
                               const TriggerReasonEnum trigger_reason = TriggerReasonEnum::ChargingStateChanged) = 0;
 
+    /// \brief Gets the transaction id for a certain \p evse_id if there is an active transaction
+    /// \param evse_id The evse to tet the transaction for
+    /// \return The transaction id if a transaction is active, otherwise nullopt
+    virtual std::optional<std::string> get_evse_transaction_id(int32_t evse_id) = 0;
+
     /// \brief Validates provided \p id_token \p certificate and \p ocsp_request_data using CSMS, AuthCache or AuthList
     /// \param id_token
     /// \param certificate
@@ -343,14 +353,15 @@ public:
     /// \param messageId
     /// \param data
     /// \return DataTransferResponse containing the result from CSMS
-    virtual DataTransferResponse data_transfer_req(const CiString<255>& vendorId,
-                                                   const std::optional<CiString<50>>& messageId,
-                                                   const std::optional<json>& data) = 0;
+    virtual std::optional<DataTransferResponse> data_transfer_req(const CiString<255>& vendorId,
+                                                                  const std::optional<CiString<50>>& messageId,
+                                                                  const std::optional<json>& data) = 0;
 
     /// \brief Data transfer mechanism initiated by charger
     /// \param request
-    /// \return DataTransferResponse containing the result from CSMS
-    virtual DataTransferResponse data_transfer_req(const DataTransferRequest& request) = 0;
+    /// \return DataTransferResponse containing the result from CSMS. In case no response is received from the CSMS
+    /// because the message timed out or the charging station is offline, std::nullopt is returned
+    virtual std::optional<DataTransferResponse> data_transfer_req(const DataTransferRequest& request) = 0;
 
     /// \brief Switches the operative status of the CS
     /// \param new_status: The new operative status to switch to
@@ -423,6 +434,7 @@ private:
     std::condition_variable auth_cache_cleanup_cv;
     std::mutex auth_cache_cleanup_mutex;
     std::thread auth_cache_cleanup_thread;
+    std::atomic_bool stop_auth_cache_cleanup_handler;
 
     // states
     RegistrationStatusEnum registration_status;
@@ -472,6 +484,10 @@ private:
 
     /// \brief Handler for automatic or explicit OCSP cache updates
     OcspUpdater ocsp_updater;
+
+    /// \brief Updater for triggered monitors
+    MonitoringUpdater monitoring_updater;
+
     /// \brief optional delay to resumption of message queue after reconnecting to the CSMS
     std::chrono::seconds message_queue_resume_delay = std::chrono::seconds(0);
 
@@ -815,6 +831,7 @@ public:
                 const std::string& core_database_path, const std::string& sql_init_path,
                 const std::string& message_log_path, const std::shared_ptr<EvseSecurity> evse_security,
                 const Callbacks& callbacks);
+    ~ChargePoint();
 
     void start(BootReasonEnum bootreason = BootReasonEnum::PowerUp) override;
 
@@ -843,7 +860,8 @@ public:
                                 const ChargingStateEnum charging_state) override;
 
     void on_transaction_finished(const int32_t evse_id, const DateTime& timestamp, const MeterValue& meter_stop,
-                                 const ReasonEnum reason, const std::optional<IdToken>& id_token,
+                                 const ReasonEnum reason, const TriggerReasonEnum trigger_reason,
+                                 const std::optional<IdToken>& id_token,
                                  const std::optional<std::string>& signed_meter_value,
                                  const ChargingStateEnum charging_state) override;
 
@@ -865,6 +883,8 @@ public:
         const uint32_t evse_id, const ChargingStateEnum charging_state,
         const TriggerReasonEnum trigger_reason = TriggerReasonEnum::ChargingStateChanged) override;
 
+    std::optional<std::string> get_evse_transaction_id(int32_t evse_id) override;
+
     AuthorizeResponse validate_token(const IdToken id_token, const std::optional<CiString<5500>>& certificate,
                                      const std::optional<std::vector<OCSPRequestData>>& ocsp_request_data) override;
 
@@ -876,10 +896,11 @@ public:
 
     void on_variable_changed(const SetVariableData& set_variable_data) override;
 
-    DataTransferResponse data_transfer_req(const CiString<255>& vendorId, const std::optional<CiString<50>>& messageId,
-                                           const std::optional<json>& data) override;
+    std::optional<DataTransferResponse> data_transfer_req(const CiString<255>& vendorId,
+                                                          const std::optional<CiString<50>>& messageId,
+                                                          const std::optional<json>& data) override;
 
-    DataTransferResponse data_transfer_req(const DataTransferRequest& request) override;
+    std::optional<DataTransferResponse> data_transfer_req(const DataTransferRequest& request) override;
 
     void set_cs_operative_status(OperationalStatusEnum new_status, bool persist) override;
 

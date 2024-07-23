@@ -401,6 +401,14 @@ public:
 
         this->send_callback = send_callback;
         this->in_flight = nullptr;
+    }
+
+    MessageQueue(const std::function<bool(json message)>& send_callback, const MessageQueueConfig& config,
+                 std::shared_ptr<common::DatabaseHandlerCommon> databaseHandler) :
+        MessageQueue(send_callback, config, {}, databaseHandler) {
+    }
+
+    void start() {
         this->worker_thread = std::thread([this]() {
             // TODO(kai): implement message timeout
             while (this->running) {
@@ -559,11 +567,6 @@ public:
         });
     }
 
-    MessageQueue(const std::function<bool(json message)>& send_callback, const MessageQueueConfig& config,
-                 std::shared_ptr<common::DatabaseHandlerCommon> databaseHandler) :
-        MessageQueue(send_callback, config, {}, databaseHandler) {
-    }
-
     /// \brief Resets next message to send. Can be used in situation when we dont want to reply to a CALL message
     void reset_next_message_to_send() {
         std::lock_guard<std::recursive_mutex> lk(this->next_message_mutex);
@@ -702,7 +705,8 @@ public:
         } else {
             // all other messages are allowed to "jump the queue" to improve user experience
             // TODO: decide if we only want to allow this for a subset of messages
-            if (this->paused && !this->resuming && message->messageType != M::BootNotification) {
+            if (this->paused && !this->config.queue_all_messages && !this->resuming &&
+                message->messageType != M::BootNotification) {
                 // do not add a normal message to the queue if the queue is paused/offline
                 auto enhanced_message = EnhancedMessage<M>();
                 enhanced_message.offline = true;
