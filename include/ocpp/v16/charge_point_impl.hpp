@@ -113,6 +113,7 @@ private:
     std::unique_ptr<Everest::SteadyTimer> ocsp_request_timer;
     std::unique_ptr<Everest::SteadyTimer> client_certificate_timer;
     std::unique_ptr<Everest::SteadyTimer> v2g_certificate_timer;
+    std::unique_ptr<Everest::SystemTimer> change_time_offset_timer;
     std::chrono::time_point<date::utc_clock> clock_aligned_meter_values_time_point;
     std::mutex meter_values_mutex;
     std::mutex measurement_mutex;
@@ -342,6 +343,7 @@ private:
     // California Pricing
     DataTransferResponse handle_set_user_price(const std::optional<std::string>& msg);
     DataTransferResponse handle_set_session_cost(const std::string& type, const std::optional<std::string>& message);
+    void set_time_offset_timer(const std::string& date_time);
 
     // //brief Preprocess a ChangeAvailabilityRequest: Determine response;
     // - if connector is 0, availability change is also propagated for all connectors

@@ -178,6 +178,12 @@ ChargePointImpl::ChargePointImpl(const std::string& config, const fs::path& shar
             [this](const std::optional<std::string>& message) -> DataTransferResponse {
                 return handle_set_session_cost("RunningCost", message);
             });
+
+        std::optional<std::string> time_offset_transition_date_time =
+            this->configuration->getNextTimeOffsetTransitionDateTime();
+        if (time_offset_transition_date_time.has_value()) {
+            set_time_offset_timer(time_offset_transition_date_time.value());
+        }
     }
 }
 
@@ -1092,6 +1098,9 @@ bool ChargePointImpl::stop() {
         if (this->v2g_certificate_timer != nullptr) {
             this->v2g_certificate_timer->stop();
         }
+        if (this->change_time_offset_timer != nullptr) {
+            this->change_time_offset_timer->stop();
+        }
 
         for (const auto& [id, connector] : this->connectors) {
 
@@ -1673,6 +1682,10 @@ void ChargePointImpl::handleChangeConfigurationRequest(ocpp::Call<ChangeConfigur
                         this->ocsp_request_timer->stop();
                         this->ocsp_request_timer->interval(
                             std::chrono::seconds(this->configuration->getOcspRequestInterval()));
+                    }
+                } else if (call.msg.key == "NextTimeOffsetTransitionDateTime") {
+                    if (this->configuration->getNextTimeOffsetTransitionDateTime().has_value()) {
+                        set_time_offset_timer(this->configuration->getNextTimeOffsetTransitionDateTime().value());
                     }
                 }
             }
@@ -3049,6 +3062,22 @@ DataTransferResponse ChargePointImpl::handle_set_session_cost(const std::string&
         this->configuration->getPriceNumberOfDecimals().value_or(DEFAULT_PRICE_NUMBER_OF_DECIMALS);
 
     return session_cost_callback(cost, number_of_decimals);
+}
+
+void ChargePointImpl::set_time_offset_timer(const std::string& date_time) {
+    DateTime d(date_time);
+    if (this->change_time_offset_timer != nullptr) {
+        this->change_time_offset_timer->stop();
+    } else {
+        this->change_time_offset_timer = std::make_unique<Everest::SystemTimer>(&this->io_service, [this]() {
+            const std::optional<std::string> next_offset = this->configuration->getNextTimeOffsetNextTransition();
+            if (next_offset.has_value()) {
+                this->configuration->setDisplayTimeOffset(next_offset.value());
+            }
+        });
+    }
+
+    this->change_time_offset_timer->at(d.to_time_point());
 }
 
 template <class T> bool ChargePointImpl::send(ocpp::Call<T> call, bool initiated_by_trigger_message) {

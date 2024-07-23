@@ -2353,9 +2353,6 @@ std::optional<KeyValue> ChargePointConfiguration::getDisplayTimeOffsetKeyValue()
 }
 
 std::optional<std::string> ChargePointConfiguration::getNextTimeOffsetTransitionDateTime() {
-    // TODO mz if set (or changed), change display time offset at the given date / time to
-    // `getNextTimeOffsetNextTransition`
-
     if (this->config.contains("ConstAndPrice") &&
         this->config["CostAndPrice"].contains("NextTimeOffsetTransitionDateTime")) {
         return this->config["CostAndPrice"]["NextTimeOffsetTransitionDateTime"];
