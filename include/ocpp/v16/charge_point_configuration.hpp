@@ -37,6 +37,8 @@ private:
 
     bool isConnectorPhaseRotationValid(std::string str);
 
+    bool checkTimeOffset(const std::string& offset);
+
 public:
     ChargePointConfiguration(const std::string& config, const fs::path& ocpp_main_path,
                              const fs::path& user_config_path);
@@ -415,15 +417,40 @@ public:
 
     // California Pricing Requirements
     bool getCustomDisplayCostAndPriceEnabled();
-    uint32_t getPriceNumberOfDecimals();
+    KeyValue getCustomDisplayCostAndPriceEnabledKeyValue();
+
+    std::optional<uint32_t> getPriceNumberOfDecimals();
+    std::optional<KeyValue> getPriceNumberOfDecimalsKeyValue();
+
     std::optional<std::string> getDefaultPrice();
+    ConfigurationStatus setDefaultPrice(const CiString<50>& key, const CiString<500>& value);
+    std::optional<KeyValue> getDefaultPriceKeyValue();
+
     std::optional<std::string> getDisplayTimeOffset();
+    ConfigurationStatus setDisplayTimeOffset(const std::string& offset);
+    std::optional<KeyValue> getDisplayTimeOffsetKeyValue();
+
     std::optional<std::string> getNextTimeOffsetTransitionDateTime();
+    ConfigurationStatus setNextTimeOffsetTransitionDateTime(const std::string& date_time);
+    std::optional<KeyValue> getNextTimeOffsetTransitionDateTimeKeyValue();
+
     std::optional<std::string> getNextTimeOffsetNextTransition();
-    bool getCustomIdleFeeAfterStop();
-    bool getCustomMultiLanguageMessagesEnabled();
+    ConfigurationStatus setNextTimeOffsetNextTransition(const std::string& offset);
+    std::optional<KeyValue> getNextTimeOffsetNextTransitionKeyValue();
+
+    std::optional<bool> getCustomIdleFeeAfterStop();
+    void setCustomIdleFeeAfterStop(const bool& value);
+    std::optional<KeyValue> getCustomIdleFeeAfterStopKeyValue();
+
+    std::optional<bool> getCustomMultiLanguageMessagesEnabled();
+    std::optional<KeyValue> getCustomMultiLanguageMessagesEnabledKeyValue();
+
     std::optional<std::string> getMultiLanguageSupportedLanguages();
+    std::optional<KeyValue> getMultiLanguageSupportedLanguagesKeyValue();
+
     std::optional<std::string> getLanguage();
+    void setLanguage(const std::string& language);
+    std::optional<KeyValue> getLanguageKeyValue();
 
     // custom
     std::optional<KeyValue> getCustomKeyValue(CiString<50> key);

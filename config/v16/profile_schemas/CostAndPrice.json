@@ -15,31 +15,70 @@
             "readOnly": true
         },
         "DefaultPrice": {
-            "type": "string",
-            "readOnly": true,
-            "minLength": 1
+            "type": "object",
+            "readOnly": false,
+            "minLength": 1,
+            "properties": {
+                "priceTexts": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "priceText": {
+                                "type": "string",
+                                "minLength": 1
+                            },
+                            "priceTextOffline": {
+                                "type": "string",
+                                "minLength": 1
+                            },
+                            "language": {
+                                "type": "string",
+                                "minLength": 2
+                            }
+                        },
+                        "required": [
+                            "priceText"
+                        ]
+                    }
+                },
+                "chargingPrice": {
+                    "type": "object",
+                    "properties": {
+                        "kWhPrice": {
+                            "type": "number"
+                        },
+                        "hourPrice": {
+                            "type": "number"
+                        },
+                        "flatFee": {
+                            "type": "number"
+                        }
+                    }
+                }
+            }
         },
         "TimeOffset": {
             "type": "string",
-            "readOnly": true,
+            "readOnly": false,
             "minLength": 1,
             "maxLength": 10
         },
         "NextTimeOffsetTransitionDateTime": {
             "type": "string",
-            "readOnly": true,
+            "readOnly": false,
             "minLength": 1,
             "maxLength": 40
         },
         "NextTimeOffsetNextTransition": {
             "type": "string",
-            "readOnly": true,
+            "readOnly": false,
             "minLength": 1,
             "maxLength": 40
         },
         "CustomIdleFeeAfterStop": {
             "type": "boolean",
-            "readOnly": true
+            "readOnly": false
         },
         "MultiLanguageSupportedLanguages": {
             "type": "string",

@@ -86,4 +86,16 @@ bool is_rfc3339_datetime(const std::string& value) {
     return std::regex_match(value, datetime_pattern);
 }
 
+std::vector<std::string> split_string(const std::string& string_to_split, const char c) {
+    std::stringstream input(string_to_split);
+    std::string temp;
+    std::vector<std::string> result;
+
+    while (std::getline(input, temp, c)) {
+        result.push_back(temp);
+    }
+
+    return result;
+}
+
 } // namespace ocpp

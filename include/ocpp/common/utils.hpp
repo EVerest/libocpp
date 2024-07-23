@@ -20,6 +20,14 @@ bool is_decimal_number(const std::string& value);
 
 bool is_rfc3339_datetime(const std::string& value);
 
+///
+/// \brief Split string on a given character.
+/// \param string_to_split  The string to split.
+/// \param c                The character to split the string on.
+/// \return A vector with the string 'segments'.
+///
+std::vector<std::string> split_string(const std::string& string_to_split, const char c);
+
 } // namespace ocpp
 
 #endif

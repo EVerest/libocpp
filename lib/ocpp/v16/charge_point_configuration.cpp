@@ -1733,6 +1733,28 @@ bool ChargePointConfiguration::isConnectorPhaseRotationValid(std::string str) {
     return true;
 }
 
+bool ChargePointConfiguration::checkTimeOffset(const std::string& offset) {
+    const std::vector<std::string> times = split_string(offset, ':');
+    if (times.size() != 2) {
+        EVLOG_error << "Could not set display time offset: format not correct (should be something like "
+                       "\"-05:00\", but is "
+                    << offset << ")";
+        return false;
+    } else {
+        try {
+            // Just check if strings are numbers.
+            std::stoi(times.at(0));
+            std::stoi(times.at(1));
+        } catch (const std::exception& e) {
+            EVLOG_error << "Could not set display time offset: format not correct (should be something "
+                           "like \"-19:15\", but is "
+                        << offset << "): " << e.what();
+            return false;
+        }
+    }
+    return true;
+}
+
 bool isBool(const std::string& str) {
     return str == "true" || str == "false";
 }
@@ -2202,46 +2224,286 @@ KeyValue ChargePointConfiguration::getWaitForStopTransactionsOnResetTimeoutKeyVa
 
 // California Pricing Requirements
 bool ChargePointConfiguration::getCustomDisplayCostAndPriceEnabled() {
-    return this->config["CostAndPrice"]["CustomDisplayCostAndPrice"];
+    if (this->config.contains("CostAndPrice") && this->config["CostAndPrice"].contains("CustomDisplayCostAndPrice")) {
+        return this->config["CostAndPrice"]["CustomDisplayCostAndPrice"];
+    }
+
+    return false;
 }
 
-uint32_t ChargePointConfiguration::getPriceNumberOfDecimals() {
-    return this->config["CostAndPrice"]["NumberOfDecimals"];
+KeyValue ChargePointConfiguration::getCustomDisplayCostAndPriceEnabledKeyValue() {
+    const bool enabled = getCustomDisplayCostAndPriceEnabled();
+    KeyValue kv;
+    kv.key = "CustomDisplayCostAndPrice";
+    kv.value = std::to_string(enabled);
+    kv.readonly = true;
+    return kv;
 }
 
-// TODO this is a json object, is that ok?
+std::optional<uint32_t> ChargePointConfiguration::getPriceNumberOfDecimals() {
+    if (this->config.contains("ConstAndPrice") && this->config["CostAndPrice"].contains("NumberOfDecimals")) {
+        return this->config["CostAndPrice"]["NumberOfDecimals"];
+    }
+
+    return std::nullopt;
+}
+
+std::optional<KeyValue> ChargePointConfiguration::getPriceNumberOfDecimalsKeyValue() {
+    std::optional<KeyValue> kv_opt = std::nullopt;
+    const std::optional<uint32_t> number_of_decimals = getPriceNumberOfDecimals();
+    if (number_of_decimals.has_value()) {
+        kv_opt->key = "NumberOfDecimals";
+        kv_opt->value = std::to_string(number_of_decimals.value());
+        kv_opt->readonly = true;
+    }
+
+    return kv_opt;
+}
+
 std::optional<std::string> ChargePointConfiguration::getDefaultPrice() {
-    return this->config["CostAndPrice"]["DefaultPrice"];
+    if (this->config.contains("ConstAndPrice") && this->config["CostAndPrice"].contains("DefaultPrice")) {
+        return this->config["CostAndPrice"]["DefaultPrice"];
+    }
+
+    return std::nullopt;
 }
 
-// TODO add "DefaultPriceText,<language code> ???
+ConfigurationStatus ChargePointConfiguration::setDefaultPrice(const CiString<50>& key, const CiString<500>& value) {
+    std::optional<std::string> default_price_opt = this->getDefaultPrice();
+    json default_price;
+    if (default_price_opt.has_value()) {
+        try {
+            default_price = json(default_price_opt.value());
+        } catch (const std::exception& e) {
+            EVLOG_error << "Can not convert default price configuration to json object: " << e.what();
+            return ConfigurationStatus::Rejected;
+        }
+    } else {
+        default_price = json::object();
+    }
+
+    // priceText is mandatory
+    json j(value);
+    if (!j.contains("priceText")) {
+        EVLOG_error << "Configuration DefaultPrice is set, but does not contain 'priceText'";
+        return ConfigurationStatus::Rejected;
+    }
+
+    if (j.contains("chargingPrice")) {
+        default_price["chargingPrice"] = j.at("chargingPrice");
+        j.erase("chargingPrice");
+    }
+
+    const std::vector<std::string> default_prices = split_string(key.get(), ',');
+    if (default_prices.size() > 1) {
+        // Second value is language.
+        j["language"] = default_prices.at(1);
+        // TODO mz check if language is allowed???
+    }
+
+    if (!default_price.contains("priceTexts")) {
+        default_price["priceTexts"] = json::array();
+    }
+
+    default_price["priceTexts"].push_back(j);
+
+    this->config["CostAndPrice"]["DefaultPrice"] = default_price.dump(2);
+
+    return ConfigurationStatus::Accepted;
+}
+
+std::optional<KeyValue> ChargePointConfiguration::getDefaultPriceKeyValue() {
+    std::optional<KeyValue> result = std::nullopt;
+    std::optional<std::string> default_price = getDefaultPrice();
+    if (default_price.has_value()) {
+        result->key = "DefaultPrice";
+        result->value = default_price.value();
+        result->readonly = false;
+    }
+
+    return result;
+}
 
 std::optional<std::string> ChargePointConfiguration::getDisplayTimeOffset() {
-    return this->config["CostAndPrice"]["TimeOffset"];
+    if (this->config.contains("ConstAndPrice") && this->config["CostAndPrice"].contains("TimeOffset")) {
+        return this->config["CostAndPrice"]["TimeOffset"];
+    }
+
+    return std::nullopt;
+}
+
+ConfigurationStatus ChargePointConfiguration::setDisplayTimeOffset(const std::string& offset) {
+    if (!checkTimeOffset(offset)) {
+        return ConfigurationStatus::Rejected;
+    }
+    this->config["CostAndPrice"]["TimeOffset"] = offset;
+    return ConfigurationStatus::Accepted;
+}
+
+std::optional<KeyValue> ChargePointConfiguration::getDisplayTimeOffsetKeyValue() {
+    std::optional<KeyValue> result = std::nullopt;
+    std::optional<std::string> time_offset = getDisplayTimeOffset();
+    if (time_offset.has_value()) {
+        result->key = "TimeOffset";
+        result->value = time_offset.value();
+        result->readonly = false;
+    }
+
+    return result;
 }
 
 std::optional<std::string> ChargePointConfiguration::getNextTimeOffsetTransitionDateTime() {
-    return this->config["CostAndPrice"]["NextTimeOffsetTransitionDateTime"];
+    // TODO mz if set (or changed), change display time offset at the given date / time to
+    // `getNextTimeOffsetNextTransition`
+
+    if (this->config.contains("ConstAndPrice") &&
+        this->config["CostAndPrice"].contains("NextTimeOffsetTransitionDateTime")) {
+        return this->config["CostAndPrice"]["NextTimeOffsetTransitionDateTime"];
+    }
+
+    return std::nullopt;
+}
+
+ConfigurationStatus ChargePointConfiguration::setNextTimeOffsetTransitionDateTime(const std::string& date_time) {
+    DateTime d(date_time);
+    if (d.to_time_point() > date::utc_clock::now()) {
+        this->config["CostAndPrice"]["NextTimeOffsetTransitionDateTime"] = date_time;
+        return ConfigurationStatus::Accepted;
+    }
+
+    EVLOG_error << "Set next time offset transition date time: date time format not correct: " << date_time;
+    return ConfigurationStatus::Rejected;
+}
+
+std::optional<KeyValue> ChargePointConfiguration::getNextTimeOffsetTransitionDateTimeKeyValue() {
+    std::optional<KeyValue> result = std::nullopt;
+    std::optional<std::string> offset = getNextTimeOffsetTransitionDateTime();
+    if (offset.has_value()) {
+        result->key = "NextTimeOffsetTransitionDateTime";
+        result->value = offset.value();
+        result->readonly = false;
+    }
+
+    return result;
 }
 
 std::optional<std::string> ChargePointConfiguration::getNextTimeOffsetNextTransition() {
-    return this->config["CostAndPrice"]["NextTimeOffsetNextTransition"];
+    if (this->config.contains("ConstAndPrice") &&
+        this->config["CostAndPrice"].contains("NextTimeOffsetNextTransition")) {
+        return this->config["CostAndPrice"]["NextTimeOffsetNextTransition"];
+    }
+
+    return std::nullopt;
 }
 
-bool ChargePointConfiguration::getCustomIdleFeeAfterStop() {
-    return this->config["CostAndPrice"]["CustomIdleFeeAfterStop"];
+ConfigurationStatus ChargePointConfiguration::setNextTimeOffsetNextTransition(const std::string& offset) {
+    if (!checkTimeOffset(offset)) {
+        return ConfigurationStatus::Rejected;
+    }
+    this->config["CostAndPrice"]["NextTimeOffsetNextTransition"] = offset;
+    return ConfigurationStatus::Accepted;
 }
 
-bool ChargePointConfiguration::getCustomMultiLanguageMessagesEnabled() {
-    return this->config["CostAndPrice"]["CustomMultiLanguageMessages"];
+std::optional<KeyValue> ChargePointConfiguration::getNextTimeOffsetNextTransitionKeyValue() {
+    std::optional<KeyValue> result = std::nullopt;
+    std::optional<std::string> offset = getNextTimeOffsetNextTransition();
+    if (offset.has_value()) {
+        result->key = "NextTimeOffsetNextTransition";
+        result->value = offset.value();
+        result->readonly = false;
+    }
+
+    return result;
+}
+
+std::optional<bool> ChargePointConfiguration::getCustomIdleFeeAfterStop() {
+    if (this->config.contains("ConstAndPrice") && this->config["CostAndPrice"].contains("CustomIdleFeeAfterStop")) {
+        return this->config["CostAndPrice"]["CustomIdleFeeAfterStop"];
+    }
+
+    return std::nullopt;
+}
+
+void ChargePointConfiguration::setCustomIdleFeeAfterStop(const bool& value) {
+    this->config["CostAndPrice"]["CustomIdleFeeAfterStop"] = value;
+}
+
+std::optional<KeyValue> ChargePointConfiguration::getCustomIdleFeeAfterStopKeyValue() {
+    std::optional<KeyValue> result = std::nullopt;
+    std::optional<bool> idle_fee = getCustomIdleFeeAfterStop();
+    if (idle_fee.has_value()) {
+        result->key = "CustomIdleFeeAfterStop";
+        result->value = std::to_string(idle_fee.value());
+        result->readonly = false;
+    }
+
+    return result;
+}
+
+std::optional<bool> ChargePointConfiguration::getCustomMultiLanguageMessagesEnabled() {
+    if (this->config.contains("ConstAndPrice") &&
+        this->config["CostAndPrice"].contains("CustomMultiLanguageMessages")) {
+        return this->config["CostAndPrice"]["CustomMultiLanguageMessages"];
+    }
+
+    return std::nullopt;
+}
+
+std::optional<KeyValue> ChargePointConfiguration::getCustomMultiLanguageMessagesEnabledKeyValue() {
+    std::optional<KeyValue> result = std::nullopt;
+    std::optional<bool> multi_language = getCustomMultiLanguageMessagesEnabled();
+    if (multi_language.has_value()) {
+        result->key = "CustomMultiLanguageMessages";
+        result->value = std::to_string(multi_language.value());
+        result->readonly = true;
+    }
+
+    return result;
 }
 
 std::optional<std::string> ChargePointConfiguration::getMultiLanguageSupportedLanguages() {
-    return this->config["CostAndPrice"]["MultiLanguageSupportedLanguages"];
+    if (this->config.contains("ConstAndPrice") &&
+        this->config["CostAndPrice"].contains("MultiLanguageSupportedLanguages")) {
+        return this->config["CostAndPrice"]["MultiLanguageSupportedLanguages"];
+    }
+
+    return std::nullopt;
+}
+
+std::optional<KeyValue> ChargePointConfiguration::getMultiLanguageSupportedLanguagesKeyValue() {
+    std::optional<KeyValue> result = std::nullopt;
+    std::optional<std::string> languages = getMultiLanguageSupportedLanguages();
+    if (languages.has_value()) {
+        result->key = "MultiLanguageSupportedLanguages";
+        result->value = languages.value();
+        result->readonly = true;
+    }
+
+    return result;
 }
 
 std::optional<std::string> ChargePointConfiguration::getLanguage() {
-    return this->config["CostAndPrice"]["Language"];
+    if (this->config.contains("ConstAndPrice") && this->config["CostAndPrice"].contains("Language")) {
+        return this->config["CostAndPrice"]["Language"];
+    }
+
+    return std::nullopt;
+}
+
+void ChargePointConfiguration::setLanguage(const std::string& language) {
+    this->config["CostAndPrice"]["Language"] = language;
+}
+
+std::optional<KeyValue> ChargePointConfiguration::getLanguageKeyValue() {
+    std::optional<KeyValue> result = std::nullopt;
+    std::optional<std::string> language = getLanguage();
+    if (language.has_value()) {
+        result->key = "Language";
+        result->value = language.value();
+        result->readonly = true;
+    }
+
+    return result;
 }
 
 // Custom
@@ -2580,6 +2842,41 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
         }
         if (key == "SendLocalListMaxLength") {
             return this->getSendLocalListMaxLengthKeyValue();
+        }
+    }
+
+    // California Pricing
+    if (key == "CustomDisplayCostAndPriceEnabled") {
+        return this->getCustomDisplayCostAndPriceEnabledKeyValue();
+    }
+
+    if (getCustomDisplayCostAndPriceEnabled()) {
+        if (key == "NumberOfDecimals") {
+            return this->getPriceNumberOfDecimalsKeyValue();
+        }
+        if (key == "DefaultPrice") {
+            return this->getDefaultPriceKeyValue();
+        }
+        if (key == "TimeOffset") {
+            return this->getDisplayTimeOffsetKeyValue();
+        }
+        if (key == "NextTimeOffsetTransitionDateTime") {
+            return this->getNextTimeOffsetTransitionDateTimeKeyValue();
+        }
+        if (key == "NextTimeOffsetNextTransition") {
+            return this->getNextTimeOffsetNextTransitionKeyValue();
+        }
+        if (key == "CustomIdleFeeAfterStop") {
+            return this->getCustomIdleFeeAfterStopKeyValue();
+        }
+        if (key == "MultiLanguageSupportedLanguages") {
+            return this->getMultiLanguageSupportedLanguagesKeyValue();
+        }
+        if (key == "CustomMultiLanguageMessages") {
+            return this->getCustomMultiLanguageMessagesEnabledKeyValue();
+        }
+        if (key == "Language") {
+            return this->getLanguageKeyValue();
         }
     }
 
@@ -3012,6 +3309,39 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         } else {
             return ConfigurationStatus::NotSupported;
         }
+    }
+
+    if (key.get().find("DefaultPrice") == 0) {
+        this->setDefaultPrice(key, value);
+    }
+
+    if (key == "TimeOffset") {
+        const ConfigurationStatus result = this->setDisplayTimeOffset(value);
+        if (result != ConfigurationStatus::Accepted) {
+            return result;
+        }
+    }
+
+    if (key == "NextTimeOffsetTransitionDateTime") {
+        const ConfigurationStatus result = this->setNextTimeOffsetTransitionDateTime(value);
+        if (result != ConfigurationStatus::Accepted) {
+            return result;
+        }
+    }
+
+    if (key == "NextTimeOffsetNextTransition") {
+        const ConfigurationStatus result = this->setNextTimeOffsetNextTransition(value);
+        if (result != ConfigurationStatus::Accepted) {
+            return result;
+        }
+    }
+
+    if (key == "CustomIdleFeeAfterStop") {
+        this->setCustomIdleFeeAfterStop(ocpp::conversions::string_to_bool(value));
+    }
+
+    if (key == "Language") {
+        this->setLanguage(value);
     }
 
     if (this->config.contains("Custom") and this->config["Custom"].contains(key.get())) {

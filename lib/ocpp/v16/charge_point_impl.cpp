@@ -31,6 +31,7 @@ const auto INITIAL_CERTIFICATE_REQUESTS_DELAY = std::chrono::seconds(60);
 const auto WEBSOCKET_INIT_DELAY = std::chrono::seconds(2);
 const auto DEFAULT_MESSAGE_QUEUE_SIZE_THRESHOLD = 2E5;
 const auto DEFAULT_BOOT_NOTIFICATION_INTERVAL_S = 60; // fallback interval if BootNotification returns interval of 0.
+const auto DEFAULT_PRICE_NUMBER_OF_DECIMALS = 3;
 
 ChargePointImpl::ChargePointImpl(const std::string& config, const fs::path& share_path,
                                  const fs::path& user_config_path, const fs::path& database_path,
@@ -3000,6 +3001,28 @@ DataTransferResponse ChargePointImpl::handle_set_session_cost(const std::string&
         connector->trigger_metervalue_on_status = trigger_meter_value_at_chargepoint_status;
 
         if (trigger_meter_value_at_time.has_value()) {
+            const DateTime trigger_date_time(trigger_meter_value_at_time.value());
+            std::chrono::time_point<date::utc_clock> trigger_timepoint = trigger_date_time.to_time_point();
+
+            std::optional<std::string> time_offset = this->configuration->getDisplayTimeOffset();
+            if (time_offset.has_value()) {
+                const std::vector<std::string> times = split_string(time_offset.value(), ':');
+                if (times.size() != 2) {
+                    EVLOG_error << "Could not set display time offset: format not correct (should be something like "
+                                   "\"-05:00\", but is "
+                                << time_offset.value() << ")";
+                } else {
+                    try {
+                        trigger_timepoint += std::chrono::hours(std::stoi(times.at(0)));
+                        trigger_timepoint += std::chrono::minutes(std::stoi(times.at(1)));
+                    } catch (const std::exception& e) {
+                        EVLOG_error << "Could not set display time offset: format not correct (should be something "
+                                       "like \"-19:15\", but is "
+                                    << time_offset.value() << "): " << e.what();
+                    }
+                }
+            }
+
             connector->trigger_metervalue_at_time_timer =
                 std::make_unique<Everest::SystemTimer>(&this->io_service, [this, &connector]() {
                     const std::optional<MeterValue>& meter_value = get_latest_meter_value(
@@ -3012,8 +3035,7 @@ DataTransferResponse ChargePointImpl::handle_set_session_cost(const std::string&
                     }
                 });
 
-            const DateTime trigger_date_time(trigger_meter_value_at_time.value());
-            connector->trigger_metervalue_at_time_timer->at(trigger_date_time.to_time_point());
+            connector->trigger_metervalue_at_time_timer->at(trigger_timepoint);
         }
     }
 
@@ -3023,7 +3045,8 @@ DataTransferResponse ChargePointImpl::handle_set_session_cost(const std::string&
         cost.state = RunningCostState::Charging;
     }
 
-    static const uint32_t number_of_decimals = this->configuration->getPriceNumberOfDecimals();
+    static const uint32_t number_of_decimals =
+        this->configuration->getPriceNumberOfDecimals().value_or(DEFAULT_PRICE_NUMBER_OF_DECIMALS);
 
     return session_cost_callback(cost, number_of_decimals);
 }
