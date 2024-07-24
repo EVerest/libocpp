@@ -60,11 +60,42 @@
     "CostAndPrice": {
         "CustomDisplayCostAndPrice": true,
         "NumberOfDecimals": 4,
-        "DefaultPrice": "3.12",
-        "TimeOffset": "0",
+        "DefaultPrice":
+        {
+            "priceText": "This is the price",
+            "priceTextOffline": "Show this price text when offline!",
+            "chargingPrice":
+            {
+                "kWhPrice": 3.14,
+                "hourPrice": 0.42
+            }
+        },
+        "DefaultPriceText":
+        {
+            "priceTexts":
+            [
+                {
+                    "priceText": "This is the price",
+                    "priceTextOffline": "Show this price text when offline!",
+                    "language": "en"
+                },
+                {
+                    "priceText": "Dit is de prijs",
+                    "priceTextOffline": "Laat dit zien wanneer de charging station offline is!",
+                    "language": "nl"
+                },
+                {
+                    "priceText": "Dette er prisen",
+                    "priceTextOffline": "Vis denne pristeksten når du er frakoblet",
+                    "language": "nb_NO"
+                }
+            ]
+        },
+        "TimeOffset": "02:00",
         "NextTimeOffsetTransitionDateTime": "0",
+        "NextTimeOffsetNextTransition": "01:00",
         "CustomIdleFeeAfterStop": false,
-        "MultiLanguageSupportedLanguages": "en, nl, de",
+        "MultiLanguageSupportedLanguages": "en, nl, de, nb_NO",
         "CustomMultiLanguageMessages": true,
         "Language": "en"
     },

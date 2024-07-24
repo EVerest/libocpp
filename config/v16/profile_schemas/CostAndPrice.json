@@ -19,6 +19,38 @@
             "readOnly": false,
             "minLength": 1,
             "properties": {
+                "chargingPrice": {
+                    "type": "object",
+                    "properties": {
+                        "kWhPrice": {
+                            "type": "number"
+                        },
+                        "hourPrice": {
+                            "type": "number"
+                        },
+                        "flatFee": {
+                            "type": "number"
+                        }
+                    }
+                },
+                "priceText": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "priceTextOffline": {
+                    "type": "string",
+                    "minLength": 1
+                }
+            },
+            "required": [
+                "priceText"
+            ]
+        },
+        "DefaultPriceText": {
+            "type": "object",
+            "readOnly": false,
+            "minLength": 1,
+            "properties": {
                 "priceTexts": {
                     "type": "array",
                     "items": {
@@ -38,22 +70,9 @@
                             }
                         },
                         "required": [
-                            "priceText"
+                            "priceText",
+                            "language"
                         ]
-                    }
-                },
-                "chargingPrice": {
-                    "type": "object",
-                    "properties": {
-                        "kWhPrice": {
-                            "type": "number"
-                        },
-                        "hourPrice": {
-                            "type": "number"
-                        },
-                        "flatFee": {
-                            "type": "number"
-                        }
                     }
                 }
             }

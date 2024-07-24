@@ -422,8 +422,13 @@ public:
     std::optional<uint32_t> getPriceNumberOfDecimals();
     std::optional<KeyValue> getPriceNumberOfDecimalsKeyValue();
 
+    std::optional<std::string> getDefaultPriceText(const std::string& language);
+    ConfigurationStatus setDefaultPriceText(const CiString<50>& key, const CiString<500>& value);
+    std::optional<KeyValue> getDefaultPriceTextKeyValue(const std::string &language);
+    std::optional<std::vector<KeyValue>> getAllDefaultPriceTextKeyValues();
+
     std::optional<std::string> getDefaultPrice();
-    ConfigurationStatus setDefaultPrice(const CiString<50>& key, const CiString<500>& value);
+    ConfigurationStatus setDefaultPrice(const std::string& value);
     std::optional<KeyValue> getDefaultPriceKeyValue();
 
     std::optional<std::string> getDisplayTimeOffset();

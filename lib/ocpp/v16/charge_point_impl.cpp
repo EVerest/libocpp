@@ -3067,17 +3067,23 @@ DataTransferResponse ChargePointImpl::handle_set_session_cost(const std::string&
 }
 
 void ChargePointImpl::set_time_offset_timer(const std::string& date_time) {
-    DateTime d(date_time);
     if (this->change_time_offset_timer != nullptr) {
         this->change_time_offset_timer->stop();
-    } else {
-        this->change_time_offset_timer = std::make_unique<Everest::SystemTimer>(&this->io_service, [this]() {
-            const std::optional<std::string> next_offset = this->configuration->getNextTimeOffsetNextTransition();
-            if (next_offset.has_value()) {
-                this->configuration->setDisplayTimeOffset(next_offset.value());
-            }
-        });
+        this->change_time_offset_timer = nullptr;
     }
+
+    DateTime d(date_time);
+    if (d.to_time_point() < date::utc_clock::now()) {
+        // Not setting offset timer, because the date is in the past.
+        return;
+    }
+
+    this->change_time_offset_timer = std::make_unique<Everest::SystemTimer>(&this->io_service, [this]() {
+        const std::optional<std::string> next_offset = this->configuration->getNextTimeOffsetNextTransition();
+        if (next_offset.has_value()) {
+            this->configuration->setDisplayTimeOffset(next_offset.value());
+        }
+    });
 
     this->change_time_offset_timer->at(d.to_time_point());
 }
