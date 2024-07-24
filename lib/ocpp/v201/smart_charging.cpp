@@ -351,9 +351,9 @@ SetChargingProfileResponse SmartChargingHandler::add_profile(int32_t evse_id, Ch
 
 std::vector<ChargingProfile> SmartChargingHandler::get_station_wide_profiles() const {
     std::vector<ChargingProfile> station_wide_profiles;
-    try {
+    if (charging_profiles.count(STATION_WIDE_ID) > 0) {
         station_wide_profiles = charging_profiles.at(STATION_WIDE_ID);
-    } catch (const std::out_of_range& exception) {
+    } else {
         station_wide_profiles = {};
     }
 
