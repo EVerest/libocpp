@@ -660,4 +660,24 @@ TEST_P(ChargePointFixture_InvalidProfiles, K01FR07_SetChargingProfileRequest_Doe
     charge_point->handle_message(set_charging_profile_req);
 }
 
+TEST_F(ChargePointFixture, K01FR22_SetChargingProfileRequest_RejectsChargingStationExternalConstraints) {
+    auto periods = create_charging_schedule_periods({0, 1, 2});
+
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::ChargingStationExternalConstraints,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), DEFAULT_TX_ID);
+
+    SetChargingProfileRequest req;
+    req.evseId = DEFAULT_EVSE_ID;
+    req.chargingProfile = profile;
+
+    auto set_charging_profile_req =
+        request_to_enhanced_message<SetChargingProfileRequest, MessageType::SetChargingProfile>(req);
+
+    EXPECT_CALL(*smart_charging_handler, validate_profile).Times(0);
+    EXPECT_CALL(*smart_charging_handler, add_profile).Times(0);
+
+    charge_point->handle_message(set_charging_profile_req);
+}
+
 } // namespace ocpp::v201

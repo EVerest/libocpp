@@ -3161,6 +3161,20 @@ void ChargePoint::handle_set_charging_profile_req(Call<SetChargingProfileRequest
     SetChargingProfileResponse response;
     response.status = ChargingProfileStatusEnum::Rejected;
 
+    // K01.FR.22: Reject ChargingStationExternalConstraints profiles in SetChargingProfileRequest
+    if (msg.chargingProfile.chargingProfilePurpose == ChargingProfilePurposeEnum::ChargingStationExternalConstraints) {
+        response.statusInfo = StatusInfo();
+        response.statusInfo->reasonCode = "InvalidValue";
+        response.statusInfo->additionalInfo = "ChargingStationExternalConstraintsInSetChargingProfileRequest";
+        EVLOG_debug << "Rejecting SetChargingProfileRequest:\n reasonCode: " << response.statusInfo->reasonCode.get()
+                    << "\nadditionalInfo: " << response.statusInfo->additionalInfo->get();
+
+        ocpp::CallResult<SetChargingProfileResponse> call_result(response, call.uniqueId);
+        this->send<SetChargingProfileResponse>(call_result);
+
+        return;
+    }
+
     auto res = this->smart_charging_handler->validate_profile(msg.chargingProfile, msg.evseId);
     if (res == ProfileValidationResultEnum::Valid) {
         EVLOG_debug << "Accepting SetChargingProfileRequest";
@@ -3854,10 +3868,9 @@ void ChargePoint::load_charging_profiles() {
     try {
         auto evses = this->database_handler->get_all_charging_profiles_by_evse();
         EVLOG_info << "Found " << evses.size() << " evse in the database";
-        for (auto& profiles : evses) {
+        for (const auto& [evse_id, profiles] : evses) {
             try {
-                auto evse_id = profiles.first;
-                for (auto profile : profiles.second) {
+                for (auto profile : profiles) {
                     if (this->smart_charging_handler->validate_profile(profile, evse_id) ==
                         ProfileValidationResultEnum::Valid) {
                         this->smart_charging_handler->add_profile(profile, evse_id);
