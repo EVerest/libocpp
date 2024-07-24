@@ -12,13 +12,9 @@
 #include "ocpp/v201/ocpp_types.hpp"
 #include "ocpp/v201/transaction.hpp"
 #include <algorithm>
-#include <exception>
 #include <iterator>
-#include <memory>
 #include <ocpp/v201/smart_charging.hpp>
 #include <optional>
-#include <stdexcept>
-#include <vector>
 
 using namespace std::chrono;
 
