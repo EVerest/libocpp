@@ -152,7 +152,7 @@ void MonitoringUpdater::start_monitoring() {
 
     int process_interval_seconds =
         this->device_model->get_optional_value<int>(ControllerComponentVariables::MonitorsProcessingInterval)
-            .value_or(1);
+            .value_or(60);
 
     monitors_timer.interval(std::chrono::seconds(process_interval_seconds));
 }
