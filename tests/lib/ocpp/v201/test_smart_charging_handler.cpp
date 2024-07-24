@@ -937,8 +937,9 @@ TEST_F(ChargepointTestFixtureV201, K01_ValidateProfile_IfChargeStationMaxProfile
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::Valid));
 }
 
-TEST_F(ChargepointTestFixtureV201,
-       K01_ValidateProfile_IfExistingChargingProfileWithSameIdIsChargingStationExternalConstraints_ThenProfileIsValid) {
+TEST_F(
+    ChargepointTestFixtureV201,
+    K01_ValidateProfile_IfExistingChargingProfileWithSameIdIsChargingStationExternalConstraints_ThenProfileIsInvalid) {
     auto periods = create_charging_schedule_periods({0, 1, 2});
     auto external_constraints =
         create_charging_profile(DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::ChargingStationExternalConstraints,
