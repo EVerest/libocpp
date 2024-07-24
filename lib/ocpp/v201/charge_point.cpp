@@ -2760,7 +2760,11 @@ void ChargePoint::handle_unlock_connector(Call<UnlockConnectorRequest> call) {
     EVSE evse = {msg.evseId, std::nullopt, msg.connectorId};
 
     if (this->is_valid_evse(evse)) {
-        unlock_response = callbacks.unlock_connector_callback(msg.evseId, msg.connectorId);
+        if (!this->evse_manager->get_evse(msg.evseId).has_active_transaction()) {
+            unlock_response = callbacks.unlock_connector_callback(msg.evseId, msg.connectorId);
+        } else {
+            unlock_response.status = UnlockStatusEnum::OngoingAuthorizedTransaction;
+        }
     } else {
         unlock_response.status = UnlockStatusEnum::UnknownConnector;
     }
