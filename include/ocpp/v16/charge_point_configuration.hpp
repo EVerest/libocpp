@@ -424,7 +424,7 @@ public:
 
     std::optional<std::string> getDefaultPriceText(const std::string& language);
     ConfigurationStatus setDefaultPriceText(const CiString<50>& key, const CiString<500>& value);
-    std::optional<KeyValue> getDefaultPriceTextKeyValue(const std::string &language);
+    KeyValue getDefaultPriceTextKeyValue(const std::string &language);
     std::optional<std::vector<KeyValue>> getAllDefaultPriceTextKeyValues();
 
     std::optional<std::string> getDefaultPrice();

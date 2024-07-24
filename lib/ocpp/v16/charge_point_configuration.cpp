@@ -2319,7 +2319,7 @@ ConfigurationStatus ChargePointConfiguration::setDefaultPriceText(const CiString
     }
 
     // priceText is mandatory
-    json j(value);
+    json j = json::parse(value.get());
     if (!j.contains("priceText")) {
         EVLOG_error << "Configuration DefaultPriceText is set, but does not contain 'priceText'";
         return ConfigurationStatus::Rejected;
@@ -2333,19 +2333,25 @@ ConfigurationStatus ChargePointConfiguration::setDefaultPriceText(const CiString
 
     default_price["priceTexts"].push_back(j);
 
-    this->config["CostAndPrice"]["DefaultPriceText"] = default_price.dump(2);
+    this->config["CostAndPrice"]["DefaultPriceText"] = default_price;
+    this->setInUserConfig("CostAndPrice", "DefaultPriceText", default_price);
 
     return ConfigurationStatus::Accepted;
 }
 
-std::optional<KeyValue> ChargePointConfiguration::getDefaultPriceTextKeyValue(const std::string& language) {
-    std::optional<KeyValue> result = std::nullopt;
+KeyValue ChargePointConfiguration::getDefaultPriceTextKeyValue(const std::string& language) {
+    KeyValue result;
+    result.key = "DefaultPriceText," + language;
+    result.readonly = false;
     std::optional<std::string> default_price = getDefaultPriceText(language);
     if (default_price.has_value()) {
-        result = KeyValue();
-        result->key = "DefaultPriceText," + language;
-        result->value = default_price.value();
-        result->readonly = false;
+        result.value = default_price.value();
+    } else {
+        // It's a bit odd to return an empty string here, but it must be possible to set a default price text for a
+        // new language. But since the 'set' function for configurations first performs a 'get' and does not continue
+        // if it receives a nullopt, we can better just return an empty string so the 'set' function can continue.
+        // Resolving it differently required more complexer code, this was the easiest way to do it.
+        result.value = "";
     }
 
     return result;
@@ -2359,8 +2365,8 @@ std::optional<std::vector<KeyValue>> ChargePointConfiguration::getAllDefaultPric
             return std::nullopt;
         }
 
-        json result = json::object();
         for (auto& price_text : default_price.at("priceTexts").items()) {
+            json result = json::object();
             const std::string language = price_text.value().at("language");
             result["priceText"] = price_text.value().at("priceText");
             if (price_text.value().contains("priceTextOffline")) {
@@ -2368,7 +2374,7 @@ std::optional<std::vector<KeyValue>> ChargePointConfiguration::getAllDefaultPric
             }
 
             KeyValue kv;
-            kv.value = result;
+            kv.value = result.dump(2);
             kv.readonly = false;
             kv.key = "DefaultPriceText," + language;
             key_values.push_back(kv);
@@ -2408,7 +2414,8 @@ ConfigurationStatus ChargePointConfiguration::setDefaultPrice(const std::string&
         return ConfigurationStatus::Rejected;
     }
 
-    this->config["CostAndPrice"]["DefaultPrice"] = default_price.dump(2);
+    this->config["CostAndPrice"]["DefaultPrice"] = default_price;
+    this->setInUserConfig("CostAndPrice", "DefaultPrice", default_price);
 
     return ConfigurationStatus::Accepted;
 }
@@ -2439,6 +2446,7 @@ ConfigurationStatus ChargePointConfiguration::setDisplayTimeOffset(const std::st
         return ConfigurationStatus::Rejected;
     }
     this->config["CostAndPrice"]["TimeOffset"] = offset;
+    this->setInUserConfig("CostAndPrice", "TimeOffset", offset);
     return ConfigurationStatus::Accepted;
 }
 
@@ -2468,6 +2476,7 @@ ConfigurationStatus ChargePointConfiguration::setNextTimeOffsetTransitionDateTim
     DateTime d(date_time);
     if (d.to_time_point() > date::utc_clock::now()) {
         this->config["CostAndPrice"]["NextTimeOffsetTransitionDateTime"] = date_time;
+        this->setInUserConfig("CostAndPrice", "NextTimeOffsetTransitionDateTime", date_time);
         return ConfigurationStatus::Accepted;
     }
 
@@ -2502,6 +2511,7 @@ ConfigurationStatus ChargePointConfiguration::setNextTimeOffsetNextTransition(co
         return ConfigurationStatus::Rejected;
     }
     this->config["CostAndPrice"]["NextTimeOffsetNextTransition"] = offset;
+    this->setInUserConfig("CostAndPrice", "NextTimeOffsetNextTransition", offset);
     return ConfigurationStatus::Accepted;
 }
 
@@ -2528,6 +2538,7 @@ std::optional<bool> ChargePointConfiguration::getCustomIdleFeeAfterStop() {
 
 void ChargePointConfiguration::setCustomIdleFeeAfterStop(const bool& value) {
     this->config["CostAndPrice"]["CustomIdleFeeAfterStop"] = value;
+    this->setInUserConfig("CostAndPrice", "CustomIdleFeeAfterStop", value);
 }
 
 std::optional<KeyValue> ChargePointConfiguration::getCustomIdleFeeAfterStopKeyValue() {
@@ -2596,6 +2607,7 @@ std::optional<std::string> ChargePointConfiguration::getLanguage() {
 
 void ChargePointConfiguration::setLanguage(const std::string& language) {
     this->config["CostAndPrice"]["Language"] = language;
+    this->setInUserConfig("CostAndPrice", "Language", language);
 }
 
 std::optional<KeyValue> ChargePointConfiguration::getLanguageKeyValue() {
