@@ -277,12 +277,15 @@ static int callback_minimal(struct lws* wsi, enum lws_callback_reasons reason, v
 }
 
 static int private_key_callback(char* buf, int size, int rwflag, void* userdata) {
-    const auto* password = static_cast<const char*>(userdata);
+    const auto* password = static_cast<const std::string*>(userdata);
+    const std::size_t max_pass_len = (size - 1); // we exclude the endline
+    const std::size_t max_copy_chars =
+        std::min(max_pass_len, password->length()); // truncate if pass is too large and buffer too small
 
-    std::strncpy(buf, password, (unsigned int)size);
-    buf[size - 1] = '\0';
+    std::memset(buf, 0, size);
+    std::memcpy(buf, password->c_str(), max_copy_chars);
 
-    return static_cast<int>(strlen(buf));
+    return max_copy_chars;
 }
 
 constexpr auto local_protocol_name = "lws-everest-client";
@@ -316,7 +319,7 @@ void WebsocketTlsTPM::tls_init(SSL_CTX* ctx, const std::string& path_chain, cons
         }
 
         if (password.has_value()) {
-            SSL_CTX_set_default_passwd_cb_userdata(ctx, const_cast<char*>(password.value().c_str()));
+            SSL_CTX_set_default_passwd_cb_userdata(ctx, &password.value());
             SSL_CTX_set_default_passwd_cb(ctx, private_key_callback);
         }
 
