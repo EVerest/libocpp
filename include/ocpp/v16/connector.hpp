@@ -19,7 +19,7 @@ struct Connector {
     std::shared_ptr<Transaction> transaction = nullptr;
     std::map<int, ChargingProfile> stack_level_tx_default_profiles_map;
     std::map<int, ChargingProfile> stack_level_tx_profiles_map;
-    std::optional<ChargePointStatus> trigger_metervalue_on_status;
+    std::optional<std::vector<ChargePointStatus>> trigger_metervalue_on_status;
     std::optional<double> trigger_metervalue_on_power_kw;
     std::optional<double> trigger_metervalue_on_energy_kwh;
     std::unique_ptr<Everest::SystemTimer> trigger_metervalue_at_time_timer;

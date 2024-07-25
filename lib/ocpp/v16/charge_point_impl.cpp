@@ -2886,7 +2886,11 @@ DataTransferResponse ChargePointImpl::handle_set_user_price(const std::optional<
 
     json data;
     try {
-        data = json::parse(msg.value());
+        data = json(msg.value());
+        if (data.is_string()) {
+            data = json::parse(msg.value());
+        }
+
         if (data.contains("idToken")) {
             id_token = data.at("idToken");
         }
@@ -2963,7 +2967,7 @@ DataTransferResponse ChargePointImpl::handle_set_session_cost(const std::string&
     std::optional<std::string> trigger_meter_value_at_time;
     std::optional<double> trigger_meter_value_at_energy_kwh;
     std::optional<double> trigger_meter_value_at_power_kw;
-    std::optional<ChargePointStatus> trigger_meter_value_at_chargepoint_status;
+    std::optional<std::vector<ChargePointStatus>> trigger_meter_value_at_chargepoint_status;
 
     try {
         data = json::parse(message.value());
@@ -2986,8 +2990,21 @@ DataTransferResponse ChargePointImpl::handle_set_session_cost(const std::string&
                 }
 
                 if (triggerMeterValue.contains("atCPStatus")) {
-                    trigger_meter_value_at_chargepoint_status =
-                        v16::conversions::string_to_charge_point_status(triggerMeterValue.at("atCPStatus"));
+                    std::vector<ChargePointStatus> trigger_cp_status;
+                    json array;
+                    for (const auto& cp_status : triggerMeterValue.at("atCPStatus").items()) {
+                        try {
+                            trigger_cp_status.push_back(
+                                v16::conversions::string_to_charge_point_status(cp_status.value().get<std::string>()));
+                        } catch (const std::out_of_range& e) {
+                            EVLOG_error << "Could not trigger on CP status: status ("
+                                        << cp_status.value().get<std::string>()
+                                        << ") is not a valid chargepoint status: " << e.what();
+                        }
+                    }
+                    if (trigger_cp_status.size() > 0) {
+                        trigger_meter_value_at_chargepoint_status = trigger_cp_status;
+                    }
                 }
             }
         }
@@ -3159,20 +3176,23 @@ void ChargePointImpl::status_notification(const int32_t connector, const ChargeP
 
     // Check if the changed status should trigger to send a metervalue.
     const std::shared_ptr<Connector>& c = this->connectors.at(connector);
-    if (c->trigger_metervalue_on_status.has_value() &&
-        (status == c->trigger_metervalue_on_status.value() &&
-         (!c->previous_status.has_value() ||
-          (c->previous_status.has_value() && c->previous_status.value() != status)))) {
-        const std::optional<MeterValue>& meter_value = get_latest_meter_value(
-            connector, {{Measurand::Energy_Active_Import_Register, std::nullopt}}, ReadingContext::Other);
-        if (!meter_value.has_value()) {
-            EVLOG_error << "Send latest meter value because of chargepoint status trigger failed";
-        } else {
-            send_meter_value(connector, meter_value.value());
+    if (c->trigger_metervalue_on_status.has_value()) {
+        for (const ChargePointStatus& cp_status : c->trigger_metervalue_on_status.value()) {
+            if (status == cp_status && (!c->previous_status.has_value() ||
+                                        (c->previous_status.has_value() && c->previous_status.value() != status))) {
+                const std::optional<MeterValue>& meter_value = get_latest_meter_value(
+                    connector, {{Measurand::Energy_Active_Import_Register, std::nullopt}}, ReadingContext::Other);
+                if (!meter_value.has_value()) {
+                    EVLOG_error << "Send latest meter value because of chargepoint status trigger failed";
+                } else {
+                    send_meter_value(connector, meter_value.value());
+                    break;
+                }
+            }
         }
-    }
 
-    c->previous_status = status;
+        c->previous_status = status;
+    }
 }
 
 // public API for Core profile
