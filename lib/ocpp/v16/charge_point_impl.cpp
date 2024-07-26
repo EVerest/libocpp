@@ -2899,9 +2899,10 @@ DataTransferResponse ChargePointImpl::handle_set_user_price(const std::optional<
         return response;
     }
 
+    // Find transaction with given id tag
     std::vector<DisplayMessage> messages;
     DisplayMessage message;
-    const std::shared_ptr<Transaction>& t = this->transaction_handler->get_transaction(id_token.value());
+    const std::shared_ptr<Transaction> t = this->transaction_handler->get_transaction_from_id_tag(id_token.value());
     std::string session_id = id_token.value();
     if (t != nullptr) {
         session_id = t->get_session_id();
@@ -3014,15 +3015,21 @@ DataTransferResponse ChargePointImpl::handle_set_session_cost(const std::string&
         return response;
     }
 
-    const std::shared_ptr<Transaction>& t = this->transaction_handler->get_transaction(cost.transaction_id);
-    std::shared_ptr<Connector> connector;
+    int32_t connector_id = this->transaction_handler->get_connector_from_transaction_id(std::stoi(cost.transaction_id));
+    std::shared_ptr<Connector> connector = this->connectors.at(connector_id);
     std::string session_id = cost.transaction_id;
-    if (t != nullptr) {
-        session_id = t->get_session_id();
-        connector = this->connectors.at(t->get_connector());
+    if (connector_id == -1) {
+        EVLOG_warning << "Set session cost: Could not set session id because transaction with transaction id "
+                      << cost.transaction_id << " is not found. Using transaction id as session id.";
     } else {
-        EVLOG_warning << "Set ssession cost: Could not set session id because transaction is not found. Using "
-                         "transaction id as session id.";
+        std::shared_ptr<Transaction> transaction = this->transaction_handler->get_transaction(connector_id);
+        if (transaction != nullptr) {
+            session_id = transaction->get_session_id();
+        } else {
+            EVLOG_warning << "Set session cost: Could not set session id because transaction with transaction id "
+                          << cost.transaction_id << " for connector " << connector_id
+                          << " is not found. Using transaction id as session id.";
+        }
     }
 
     cost.transaction_id = session_id;

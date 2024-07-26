@@ -2402,7 +2402,7 @@ ConfigurationStatus ChargePointConfiguration::setDefaultPrice(const std::string&
 
     json default_price = json::object();
     try {
-        default_price = json(value);
+        default_price = json::parse(value);
     } catch (const std::exception& e) {
         EVLOG_error << "Default price json not correct, can not store default price : " << e.what();
         return ConfigurationStatus::Rejected;
