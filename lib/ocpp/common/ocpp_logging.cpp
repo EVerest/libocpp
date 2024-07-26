@@ -96,16 +96,19 @@ void MessageLogging::initialize() {
             }
         }
         if (this->log_security) {
-            EVLOG_info << "Logging SecurityEvents to file";
-            this->security_log_file.open(message_log_path + "/" + output_file_name + ".security.log");
+            auto security_file_path = message_log_path + "/";
+            security_file_path += output_file_name;
+            security_file_path += ".security.log";
+            EVLOG_info << "Logging SecurityEvents to file: " << security_file_path;
+            this->security_log_file = std::filesystem::path(security_file_path);
+            this->security_log_os.open(security_log_file, std::ofstream::app);
+            this->rotate_log_if_needed(this->security_log_file, this->security_log_os);
         }
         sys("Session logging started.");
     }
 }
 
 void MessageLogging::open_html_tags(std::ofstream& os) {
-    EVLOG_info << "New file, adding scaffolding";
-
     os << "<html><head><title>EVerest OCPP log session</title>\n";
     os << "<style>"
           ".log {"
@@ -135,7 +138,6 @@ void MessageLogging::open_html_tags(std::ofstream& os) {
 }
 
 void MessageLogging::close_html_tags(std::ofstream& os) {
-    EVLOG_info << "CLOSE_HTML_TAGS";
     os << "</table></body></html>\n";
     os.flush();
 }
@@ -168,7 +170,7 @@ void MessageLogging::rotate_log(const std::string& file_basename) {
 
     if (this->maximum_file_count > 0 and files.size() >= this->maximum_file_count) {
         // drop the oldest file
-        EVLOG_info << "Dropping oldest log file: " << files.front();
+        EVLOG_info << "Removing oldest log file: " << files.front();
         std::filesystem::remove(files.front());
         files.erase(files.begin());
     }
@@ -179,7 +181,6 @@ void MessageLogging::rotate_log(const std::string& file_basename) {
             std::filesystem::path new_file_name;
             if (this->date_suffix) {
                 new_file_name = std::filesystem::path(file.string() + "." + this->get_datetime_string());
-
             } else {
                 // traditional .0 .1 ... suffix
                 // does not have a .0 or .1, so needs a new one
@@ -205,15 +206,10 @@ void MessageLogging::rotate_log(const std::string& file_basename) {
                 }
 
             } catch (...) {
-                EVLOG_warning << "Could not rename logfile";
+                EVLOG_warning << "Could not rename logfile: " << file.string();
             }
         }
     }
-}
-
-void MessageLogging::rotate_log() {
-    auto html_file_basename = output_file_name + ".html";
-    this->rotate_log(html_file_basename);
 }
 
 void MessageLogging::rotate_log_if_needed(const std::filesystem::path& path, std::ofstream& os) {
@@ -241,7 +237,6 @@ void MessageLogging::rotate_log_if_needed(const std::filesystem::path& path, std
         os.close();
         os.clear();
         rotate_log(path.filename().string());
-        EVLOG_info << "opening new file: " << path.filename().string();
         os.open(path.string(), std::ofstream::app);
         if (after_open_of_os != nullptr) {
             after_open_of_os(os);
@@ -261,7 +256,7 @@ MessageLogging::~MessageLogging() {
         }
 
         if (this->log_security) {
-            this->security_log_file.close();
+            this->security_log_os.close();
         }
     }
 }
@@ -305,8 +300,10 @@ void MessageLogging::sys(const std::string& msg) {
 }
 
 void MessageLogging::security(const std::string& msg) {
-    this->security_log_file << msg << "\n";
-    this->security_log_file.flush();
+    std::lock_guard<std::mutex> lock(this->output_file_mutex);
+    this->rotate_log_if_needed(this->security_log_file, this->security_log_os);
+    this->security_log_os << msg << "\n";
+    this->security_log_os.flush();
 }
 
 void MessageLogging::log_output(unsigned int typ, const std::string& message_type, const std::string& json_str) {
@@ -392,7 +389,6 @@ FormattedMessageWithType MessageLogging::format_message(const std::string& messa
     return {extracted_message_type, formatted_message};
 }
 
-// TODO: add log rotation here as well
 void MessageLogging::start_session_logging(const std::string& session_id, const std::string& log_path) {
     std::scoped_lock lock(this->session_id_logging_mutex);
     this->session_id_logging[session_id] = std::make_shared<ocpp::MessageLogging>(
