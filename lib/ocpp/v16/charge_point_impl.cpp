@@ -63,9 +63,25 @@ ChargePointImpl::ChargePointImpl(const std::string& config, const fs::path& shar
     bool log_security = std::find(log_formats.begin(), log_formats.end(), "security") != log_formats.end();
     bool session_logging = std::find(log_formats.begin(), log_formats.end(), "session_logging") != log_formats.end();
 
-    this->logging = std::make_shared<ocpp::MessageLogging>(
-        this->configuration->getLogMessages(), this->message_log_path, DateTime().to_rfc3339(), log_to_console,
-        detailed_log_to_console, log_to_file, log_to_html, log_security, session_logging, nullptr);
+    log_to_file = true; // FIXME
+
+    // FIXME
+    bool rotate_logs = true;
+    bool date_suffix = true;
+    auto maximum_file_size_bytes = 1000;
+    auto maximum_file_count = 5;
+
+    auto log_cfg = ocpp::LogRotationConfig(date_suffix, maximum_file_size_bytes, maximum_file_count);
+
+    if (rotate_logs) {
+        this->logging = std::make_shared<ocpp::MessageLogging>(
+            this->configuration->getLogMessages(), this->message_log_path, "libocpp_16", log_to_console,
+            detailed_log_to_console, log_to_file, log_to_html, log_security, session_logging, nullptr, log_cfg);
+    } else {
+        this->logging = std::make_shared<ocpp::MessageLogging>(
+            this->configuration->getLogMessages(), this->message_log_path, DateTime().to_rfc3339(), log_to_console,
+            detailed_log_to_console, log_to_file, log_to_html, log_security, session_logging, nullptr);
+    }
 
     this->boot_notification_timer =
         std::make_unique<Everest::SteadyTimer>(&this->io_service, [this]() { this->boot_notification(); });
