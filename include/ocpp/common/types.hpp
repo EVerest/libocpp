@@ -317,8 +317,8 @@ struct DisplayMessageContent {
     std::optional<std::string> language;
     std::optional<v201::MessageFormatEnum> message_format;
 
-    friend void from_json(const json& j, DisplayMessageContent &m);
-    friend void to_json(json& j, const DisplayMessageContent &m);
+    friend void from_json(const json& j, DisplayMessageContent& m);
+    friend void to_json(json& j, const DisplayMessageContent& m);
 };
 
 struct DisplayMessage {
@@ -338,7 +338,7 @@ struct RunningCostChargingPrice {
     std::optional<double> flat_fee;
 
     friend void from_json(const json& j, RunningCostChargingPrice& c);
-    friend void to_json(json &j, const RunningCostChargingPrice &c);
+    friend void to_json(json& j, const RunningCostChargingPrice& c);
 };
 
 struct RunningCostIdlePrice {
@@ -346,7 +346,7 @@ struct RunningCostIdlePrice {
     std::optional<double> idle_hour_price;
 
     friend void from_json(const json& j, RunningCostIdlePrice& c);
-    friend void to_json(json &j, const RunningCostIdlePrice &c);
+    friend void to_json(json& j, const RunningCostIdlePrice& c);
 };
 
 enum class RunningCostState {

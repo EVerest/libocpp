@@ -26,8 +26,8 @@ struct Connector {
     std::optional<ChargePointStatus> previous_status;
     std::optional<double> last_triggered_metervalue_power_kw;
 
-
-    explicit Connector(const int id) : id(id){}
+    explicit Connector(const int id) : id(id) {
+    }
     ~Connector() = default;
     Connector& operator=(const Connector&) = delete;
     Connector(const Connector&) = delete;
