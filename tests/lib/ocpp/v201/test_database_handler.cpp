@@ -148,12 +148,13 @@ TEST_F(DatabaseHandlerTest, TransactionDeleteNotFound) {
 
 TEST_F(DatabaseHandlerTest, KO1_FR27_DatabaseWithNoData_InsertProfile) {
     this->database_handler.insert_or_update_charging_profile(1, ChargingProfile{.id = 1, .stackLevel = 1});
-    std::string sql = "SELECT COUNT(*) FROM CHARGING_PROFILES";
-    auto select_stmt = this->database->new_statement(sql);
 
-    EXPECT_EQ(select_stmt->step(), SQLITE_ROW);
-    auto count = select_stmt->column_int(0);
-    EXPECT_EQ(count, 1);
+    auto sut = this->database_handler.get_all_charging_profiles_by_evse();
+
+    EXPECT_EQ(sut.size(), 1);
+    EXPECT_EQ(sut[1].size(), 1);        // Access the profiles at EVSE_ID 1
+    EXPECT_EQ(sut[1][0].id, 1);         // Access the profiles at EVSE_ID 1 and get the first profile
+    EXPECT_EQ(sut[1][0].stackLevel, 1); // Access the profiles at EVSE_ID 1 and get the first profile
 }
 
 TEST_F(DatabaseHandlerTest, KO1_FR27_DatabaseWithProfileData_UpdateProfile) {
@@ -190,19 +191,20 @@ TEST_F(DatabaseHandlerTest, KO1_FR27_DatabaseWithProfileData_DeleteRemovesSpecif
 
     auto select_stmt = this->database->new_statement(sql);
 
-    do {
-        EXPECT_EQ(select_stmt->step(), SQLITE_ROW);
-        auto count = select_stmt->column_int(0);
-        EXPECT_EQ(count, 2);
-    } while (select_stmt->step() != SQLITE_DONE);
+    EXPECT_NE(select_stmt->step(), SQLITE_DONE);
+    auto count = select_stmt->column_int(0);
+    EXPECT_EQ(count, 2);
+
+    select_stmt->step();
 
     this->database_handler.delete_charging_profile(1);
 
-    do {
-        EXPECT_EQ(select_stmt->step(), SQLITE_ROW);
-        auto count = select_stmt->column_int(0);
-        EXPECT_EQ(count, 1);
-    } while (select_stmt->step() != SQLITE_DONE);
+    select_stmt->reset();
+
+    EXPECT_NE(select_stmt->step(), SQLITE_DONE);
+    count = select_stmt->column_int(0);
+    EXPECT_EQ(count, 1);
+    select_stmt->step();
 }
 
 TEST_F(DatabaseHandlerTest, KO1_FR27_DatabaseWithProfileData_DeleteAllRemovesAllProfiles) {
@@ -213,19 +215,18 @@ TEST_F(DatabaseHandlerTest, KO1_FR27_DatabaseWithProfileData_DeleteAllRemovesAll
 
     auto select_stmt = this->database->new_statement(sql);
 
-    do {
-        EXPECT_EQ(select_stmt->step(), SQLITE_ROW);
-        auto count = select_stmt->column_int(0);
-        EXPECT_EQ(count, 2);
-    } while (select_stmt->step() != SQLITE_DONE);
+    EXPECT_NE(select_stmt->step(), SQLITE_DONE);
+    auto count = select_stmt->column_int(0);
+    EXPECT_EQ(count, 2);
+    select_stmt->step();
 
     this->database_handler.clear_charging_profiles();
+    select_stmt->reset();
 
-    do {
-        EXPECT_EQ(select_stmt->step(), SQLITE_ROW);
-        auto count = select_stmt->column_int(0);
-        EXPECT_EQ(count, 0);
-    } while (select_stmt->step() != SQLITE_DONE);
+    EXPECT_NE(select_stmt->step(), SQLITE_DONE);
+    count = select_stmt->column_int(0);
+    EXPECT_EQ(count, 0);
+    select_stmt->step();
 }
 
 TEST_F(DatabaseHandlerTest, KO1_FR27_DatabaseWithNoProfileData_DeleteAllDoesNotFail) {
@@ -234,39 +235,18 @@ TEST_F(DatabaseHandlerTest, KO1_FR27_DatabaseWithNoProfileData_DeleteAllDoesNotF
 
     auto select_stmt = this->database->new_statement(sql);
 
-    do {
-        EXPECT_EQ(select_stmt->step(), SQLITE_ROW);
-        auto count = select_stmt->column_int(0);
-        EXPECT_EQ(count, 0);
-    } while (select_stmt->step() != SQLITE_DONE);
+    EXPECT_NE(select_stmt->step(), SQLITE_DONE);
+    auto count = select_stmt->column_int(0);
+    EXPECT_EQ(count, 0);
+    select_stmt->step();
 
     this->database_handler.clear_charging_profiles();
+    select_stmt->reset();
 
-    do {
-        EXPECT_EQ(select_stmt->step(), SQLITE_ROW);
-        auto count = select_stmt->column_int(0);
-        EXPECT_EQ(count, 0);
-    } while (select_stmt->step() != SQLITE_DONE);
-}
-
-TEST_F(DatabaseHandlerTest, KO1_FR27_DatabaseNoProfileData_DeleteAllDoesNotFail) {
-    auto sql = "SELECT COUNT(*) FROM CHARGING_PROFILES";
-
-    auto select_stmt = this->database->new_statement(sql);
-
-    do {
-        EXPECT_EQ(select_stmt->step(), SQLITE_ROW);
-        auto count = select_stmt->column_int(0);
-        EXPECT_EQ(count, 0);
-    } while (select_stmt->step() != SQLITE_DONE);
-
-    this->database_handler.clear_charging_profiles();
-
-    do {
-        EXPECT_EQ(select_stmt->step(), SQLITE_ROW);
-        auto count = select_stmt->column_int(0);
-        EXPECT_EQ(count, 0);
-    } while (select_stmt->step() != SQLITE_DONE);
+    EXPECT_NE(select_stmt->step(), SQLITE_DONE);
+    count = select_stmt->column_int(0);
+    EXPECT_EQ(count, 0);
+    select_stmt->step();
 }
 
 TEST_F(DatabaseHandlerTest, KO1_FR27_DatabaseWithSingleProfileData_LoadsCharingProfile) {
@@ -322,6 +302,20 @@ TEST_F(DatabaseHandlerTest, KO1_FR27_DatabaseWithMultipleProfileDiffEvse_LoadsCh
     auto profiles3 = sut[3];
 
     EXPECT_EQ(profiles1.size(), 2);
+    EXPECT_EQ(profiles1[0].id, 1);
+    EXPECT_EQ(profiles1[0].stackLevel, 1);
+    EXPECT_EQ(profiles1[1].id, 2);
+    EXPECT_EQ(profiles1[1].stackLevel, 2);
+
     EXPECT_EQ(profiles2.size(), 2);
+    EXPECT_EQ(profiles2[0].id, 3);
+    EXPECT_EQ(profiles2[0].stackLevel, 3);
+    EXPECT_EQ(profiles2[1].id, 4);
+    EXPECT_EQ(profiles2[1].stackLevel, 4);
+
     EXPECT_EQ(profiles3.size(), 2);
+    EXPECT_EQ(profiles3[0].id, 5);
+    EXPECT_EQ(profiles3[0].stackLevel, 5);
+    EXPECT_EQ(profiles3[1].id, 6);
+    EXPECT_EQ(profiles3[1].stackLevel, 6);
 }
