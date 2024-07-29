@@ -30,6 +30,7 @@ static bool variable_has_same_monitors(const std::vector<VariableMonitoringMeta>
 static bool is_characteristics_different(const VariableCharacteristics& c1, const VariableCharacteristics& c2);
 static bool is_same_variable(const DeviceModelVariable& v1, const DeviceModelVariable& v2);
 static bool is_variable_different(const DeviceModelVariable& v1, const DeviceModelVariable& v2);
+static bool is_monitor_different(const VariableMonitoringMeta& meta1, const VariableMonitoringMeta& meta2);
 static bool has_attribute_actual_value(const VariableAttribute& attribute,
                                        const std::optional<std::string>& default_actual_value);
 static std::string get_string_value_from_json(const json& value);
@@ -640,8 +641,190 @@ void InitDeviceModelDb::delete_attribute(const DbVariableAttribute& attribute) {
     }
 }
 
-bool InitDeviceModelDb::insert_variable_attribute_value(const int64_t& variable_attribute_id,
-                                                        const std::string& variable_attribute_value,
+void InitDeviceModelDb::insert_variable_monitor(const VariableMonitoringMeta& monitor, const int64_t& variable_id) {
+    std::string insert_statement =
+        "INSERT OR REPLACE INTO VARIABLE_MONITORING (VARIABLE_ID, SEVERITY, 'TRANSACTION', TYPE_ID, "
+        "CONFIG_TYPE_ID, VALUE, REFERENCE_VALUE) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+    auto insert_stmt = this->database->new_statement(insert_statement);
+
+    insert_stmt->bind_int(1, variable_id);
+    insert_stmt->bind_int(2, monitor.monitor.severity);
+    insert_stmt->bind_int(3, monitor.monitor.transaction);
+    insert_stmt->bind_int(4, static_cast<int>(monitor.monitor.type));
+    insert_stmt->bind_int(5, static_cast<int>(monitor.type));
+    insert_stmt->bind_double(6, monitor.monitor.value);
+
+    if (monitor.reference_value.has_value()) {
+        insert_stmt->bind_text(7, monitor.reference_value.value(), ocpp::common::SQLiteString::Transient);
+    } else {
+        insert_stmt->bind_null(7);
+    }
+
+    if (insert_stmt->step() != SQLITE_DONE) {
+        throw InitDeviceModelDbError("Can not insert monitor for variable id:" + variable_id);
+    }
+}
+
+void InitDeviceModelDb::insert_variable_monitors(const std::vector<VariableMonitoringMeta>& monitors,
+                                                 const int64_t& variable_id) {
+    for (const VariableMonitoringMeta& monitor : monitors) {
+        insert_variable_monitor(monitor, variable_id);
+    }
+}
+
+void InitDeviceModelDb::update_variable_monitor(const VariableMonitoringMeta& new_monitor,
+                                                const VariableMonitoringMeta& db_monitor, const int64_t& variable_id) {
+    /* clang-format off */                                                
+    static const std::string update_monitor = "UPDATE VARIABLE_MONITORING "
+                                              "SET SEVERITY=?, 'TRANSACTION'=?, TYPE_ID=?, CONFIG_TYPE_ID=?, VALUE=?, REFERENCE_VALUE=? "
+                                              "WHERE ID=?";
+    /* clang-format on */
+
+    auto update_stmt = this->database->new_statement(update_monitor);
+
+    update_stmt->bind_int(1, new_monitor.monitor.severity);
+    update_stmt->bind_int(2, new_monitor.monitor.transaction);
+    update_stmt->bind_int(3, static_cast<int>(new_monitor.monitor.type));
+    update_stmt->bind_int(4, static_cast<int>(new_monitor.type));
+    update_stmt->bind_double(5, new_monitor.monitor.value);
+
+    if (new_monitor.reference_value.has_value()) {
+        update_stmt->bind_text(6, new_monitor.reference_value.value(), ocpp::common::SQLiteString::Transient);
+    } else {
+        update_stmt->bind_null(6);
+    }
+
+    // Bind existing-database ID, from the existing DB monitor
+    update_stmt->bind_int(7, db_monitor.monitor.id);
+
+    if (update_stmt->step() != SQLITE_DONE) {
+        throw InitDeviceModelDbError("Can not update monitor for variable id:" + variable_id);
+    }
+}
+
+void InitDeviceModelDb::update_variable_monitors(const std::vector<VariableMonitoringMeta>& new_monitors,
+                                                 const std::vector<VariableMonitoringMeta>& db_monitors,
+                                                 const int64_t& variable_id) {
+    // Remove monitors that are present in the database but not in the config
+    for (const VariableMonitoringMeta& db_monitor : db_monitors) {
+        const auto& it = std::find_if(std::begin(new_monitors), std::end(new_monitors),
+                                      [&db_monitor](const VariableMonitoringMeta& new_monitor) {
+                                          return (false == is_monitor_different(new_monitor, db_monitor));
+                                      });
+
+        if (it == std::end(new_monitors)) {
+            // Monitor not found in config, remove from db.
+            delete_variable_monitor(db_monitor, variable_id);
+        }
+    }
+
+    // Check if the variable monitors in the config match the ones from the database. If not, add or update.
+    for (const VariableMonitoringMeta& new_monitor : new_monitors) {
+        const auto& it = std::find_if(
+            std::begin(db_monitors), std::end(db_monitors), [&new_monitor](const VariableMonitoringMeta& db_monitor) {
+                // Two monitors are equivalent when they have the same type and severity (3.77 - Duplicate)
+                bool same_monitor = (new_monitor.monitor.type == db_monitor.monitor.type) &&
+                                    (new_monitor.monitor.severity == db_monitor.monitor.severity);
+
+                return (same_monitor);
+            });
+
+        if (it == std::end(db_monitors)) {
+            // Variable monitor does not exist in the db, add to db.
+            insert_variable_monitor(new_monitor, variable_id);
+        } else {
+            // On how monitors are identified see section 3.77
+            if (is_monitor_different(new_monitor, *it)) {
+                update_variable_monitor(new_monitor, *it, variable_id);
+            }
+        }
+    }
+}
+
+void InitDeviceModelDb::delete_variable_monitor(const VariableMonitoringMeta& monitor, const int64_t& variable_id) {
+    std::string delete_query = "DELETE FROM VARIABLE_MONITORING WHERE ID = ?";
+
+    try {
+        auto delete_stmt = this->database->new_statement(delete_query);
+        delete_stmt->bind_int(1, monitor.monitor.id);
+
+        if (delete_stmt->step() != SQLITE_DONE) {
+            throw InitDeviceModelDbError("Can not delete monitor: " + std::string(this->database->get_error_message()));
+        }
+    } catch (const common::QueryExecutionException& e) {
+        throw InitDeviceModelDbError("Delete monitor error: " + std::string(e.what()));
+    }
+}
+
+std::map<ComponentKey, std::vector<VariableAttributeKey>>
+InitDeviceModelDb::get_component_default_values(const std::filesystem::path& schemas_path) {
+    std::map<ComponentKey, std::vector<DeviceModelVariable>> components = get_all_component_schemas(schemas_path);
+
+    std::map<ComponentKey, std::vector<VariableAttributeKey>> component_default_values;
+    for (auto const& [componentKey, variables] : components) {
+        std::vector<VariableAttributeKey> variable_attribute_keys;
+        for (const DeviceModelVariable& variable : variables) {
+            if (variable.default_actual_value.has_value()) {
+                VariableAttributeKey key;
+                key.name = variable.name;
+                if (variable.instance.has_value()) {
+                    key.instance = variable.instance.value();
+                }
+                key.attribute_type = AttributeEnum::Actual;
+                key.value = variable.default_actual_value.value();
+                variable_attribute_keys.push_back(key);
+            }
+        }
+
+        component_default_values.insert({componentKey, variable_attribute_keys});
+    }
+
+    return component_default_values;
+}
+
+std::map<ComponentKey, std::vector<VariableAttributeKey>>
+InitDeviceModelDb::get_config_values(const std::filesystem::path& config_file_path) {
+    std::map<ComponentKey, std::vector<VariableAttributeKey>> config_values;
+    std::ifstream config_file(config_file_path);
+    try {
+        json config_json = json::parse(config_file);
+        for (const auto& j : config_json.items()) {
+            ComponentKey p = j.value();
+            std::vector<VariableAttributeKey> attribute_keys;
+            for (const auto& variable : j.value().at("variables").items()) {
+                for (const auto& attributes : variable.value().at("attributes").items()) {
+                    VariableAttributeKey key;
+                    key.name = variable.value().at("variable_name");
+                    try {
+                        key.attribute_type = conversions::string_to_attribute_enum(attributes.key());
+                    } catch (const StringToEnumException& /* e*/) {
+                        EVLOG_error << "Could not find type " << attributes.key() << " of component " << p.name
+                                    << " and variable " << key.name;
+                        throw InitDeviceModelDbError("Could not find type " + attributes.key() + " of component " +
+                                                     p.name + " and variable " + key.name);
+                    }
+
+                    key.value = get_string_value_from_json(attributes.value());
+                    if (variable.value().contains("instance")) {
+                        key.instance = variable.value().at("instance");
+                    }
+                    attribute_keys.push_back(key);
+                }
+            }
+
+            config_values.insert({p, attribute_keys});
+        }
+        return config_values;
+    } catch (const json::parse_error& e) {
+        EVLOG_error << "Error while parsing OCPP config file: " << config_file_path;
+        throw;
+    }
+}
+
+bool InitDeviceModelDb::insert_variable_attribute_value(const ComponentKey& component_key,
+                                                        const VariableAttributeKey& variable_attribute_key,
                                                         const bool warn_source_not_default) {
     // Insert variable statement.
     // Use 'IS' when value can also be NULL
@@ -813,6 +996,52 @@ std::map<ComponentKey, std::vector<DeviceModelVariable>> InitDeviceModelDb::get_
         attribute.value_source = select_statement->column_text_nullable(22);
 
         variable->attributes.push_back(attribute);
+
+        // Query all monitors
+        if (variable->db_id.has_value()) {
+            std::string monitor_select_statement = "SELECT vm.ID, vm.TYPE_ID, vm.SEVERITY, vm.'TRANSACTION', vm.VALUE, "
+                                                   "vm.CONFIG_TYPE_ID, vm.REFERENCE_VALUE "
+                                                   "FROM VARIABLE_MONITORING vm "
+                                                   "WHERE vm.VARIABLE_ID = @variable_id";
+
+            try {
+                auto select_stmt = this->database->new_statement(monitor_select_statement);
+                select_stmt->bind_int(1, variable->db_id.value());
+
+                while (select_stmt->step() == SQLITE_ROW) {
+                    VariableMonitoringMeta monitor_meta;
+                    VariableMonitoring monitor;
+
+                    // Retrieve monitor data
+                    monitor.id = select_stmt->column_int(0);
+
+                    // If monitor is not already contained in the list
+                    bool contained = std::find_if(std::begin(variable->monitors), std::end(variable->monitors),
+                                                  [&monitor](const auto& contained_monitor) {
+                                                      return (contained_monitor.monitor.id == monitor.id);
+                                                  }) != std::end(variable->monitors);
+
+                    // Add to the list only if we don't have it inside already
+                    if (!contained) {
+                        monitor.type = static_cast<MonitorEnum>(select_stmt->column_int(1));
+                        monitor.severity = select_stmt->column_int(2);
+                        monitor.transaction = static_cast<bool>(select_stmt->column_int(3));
+                        monitor.value = static_cast<float>(select_stmt->column_double(4));
+
+                        VariableMonitorType type = static_cast<VariableMonitorType>(select_stmt->column_int(5));
+                        auto reference_value = select_stmt->column_text_nullable(6);
+
+                        monitor_meta.monitor = monitor;
+                        monitor_meta.reference_value = reference_value;
+                        monitor_meta.type = type;
+
+                        variable->monitors.push_back(monitor_meta);
+                    }
+                }
+            } catch (const common::QueryExecutionException&) {
+                throw InitDeviceModelDbError("Could not create monitor query statement " + monitor_select_statement);
+            }
+        }
 
         if (!variable_exists) {
             components[component_key].push_back(*variable);
@@ -1020,6 +1249,11 @@ void from_json(const json& j, ComponentKey& c) {
 
 void from_json(const json& j, VariableMonitoringMeta& c) {
     c.type = conversions::string_to_variable_monitor_type(j.at("config_type"));
+
+    if (j.contains("reference_value")) {
+        c.reference_value = j.at("reference_value");
+    }
+
     c.monitor.severity = j.at("severity");
     c.monitor.type = conversions::string_to_monitor_enum(j.at("type"));
     c.monitor.value = j.at("value");
@@ -1309,14 +1543,18 @@ static bool variable_has_same_attributes(const std::vector<DbVariableAttribute>&
 }
 
 static bool is_monitor_different(const VariableMonitoringMeta& meta1, const VariableMonitoringMeta& meta2) {
-    if (meta1.type != meta2.type) {
+    if (meta1.type != meta2.type || meta1.reference_value != meta2.reference_value) {
         return true;
     }
 
     bool value_differs = std::abs(meta1.monitor.value - meta2.monitor.value) > std::numeric_limits<float>::epsilon();
 
+    if (value_differs) {
+        return true;
+    }
+
     if (meta1.monitor.severity != meta2.monitor.severity || meta1.monitor.transaction != meta2.monitor.transaction ||
-        meta1.monitor.type != meta2.monitor.type || value_differs) {
+        meta1.monitor.type != meta2.monitor.type) {
         return true;
     }
 
