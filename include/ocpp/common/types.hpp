@@ -357,15 +357,14 @@ enum class RunningCostState {
 
 namespace conversions {
 RunningCostState string_to_running_cost_state(const std::string& state);
+std::string running_cost_state_to_string(const RunningCostState& state);
 }
 
 struct RunningCost {
     std::string transaction_id;
     std::optional<DateTime> timestamp;
     std::optional<uint32_t> meter_value;
-    // Transaction cost. This field is not really optional (what is the point of sending RunningCost without cost?),
-    // but it is defined on different places in OCPP 2.0.1 and 1.6. So we can not easily do a conversion from json here.
-    std::optional<double> cost;
+    double cost;
     // Running cost state: "Charging" or "Idle". When this is the final price, state will be "Finished".
     RunningCostState state;
     std::optional<RunningCostChargingPrice> charging_price;
@@ -377,6 +376,15 @@ struct RunningCost {
     std::optional<std::string> qr_code_text;
 
     friend void from_json(const json& j, RunningCost& c);
+};
+
+struct TriggerMeterValue {
+    std::optional<DateTime> at_time;
+    std::optional<int> at_energy_kwh;
+    std::optional<int> at_power_kw;
+    std::vector<v16::ChargePointStatus> at_chargepoint_status;
+
+    friend void from_json(const json& j, TriggerMeterValue& t);
 };
 
 enum class CaCertificateType {

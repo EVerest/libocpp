@@ -342,7 +342,7 @@ private:
 
     // California Pricing
     DataTransferResponse handle_set_user_price(const std::optional<std::string>& msg);
-    DataTransferResponse handle_set_session_cost(const std::string& type, const std::optional<std::string>& message);
+    DataTransferResponse handle_set_session_cost(const RunningCostState& type, const std::optional<std::string>& message);
     void set_time_offset_timer(const std::string& date_time);
 
     // //brief Preprocess a ChangeAvailabilityRequest: Determine response;

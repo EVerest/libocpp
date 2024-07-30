@@ -59,7 +59,7 @@
     },
     "CostAndPrice": {
         "CustomDisplayCostAndPrice": true,
-        "NumberOfDecimals": 4,
+        "NumberOfDecimalsForCostValues": 4,
         "DefaultPrice":
         {
             "priceText": "This is the price",
@@ -93,7 +93,7 @@
         },
         "TimeOffset": "02:00",
         "NextTimeOffsetTransitionDateTime": "0",
-        "NextTimeOffsetNextTransition": "01:00",
+        "TimeOffsetNextTransition": "01:00",
         "CustomIdleFeeAfterStop": false,
         "MultiLanguageSupportedLanguages": "en, nl, de, nb_NO",
         "CustomMultiLanguageMessages": true,

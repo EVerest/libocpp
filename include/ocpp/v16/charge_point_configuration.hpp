@@ -419,8 +419,8 @@ public:
     bool getCustomDisplayCostAndPriceEnabled();
     KeyValue getCustomDisplayCostAndPriceEnabledKeyValue();
 
-    std::optional<uint32_t> getPriceNumberOfDecimals();
-    std::optional<KeyValue> getPriceNumberOfDecimalsKeyValue();
+    std::optional<uint32_t> getPriceNumberOfDecimalsForCostValues();
+    std::optional<KeyValue> getPriceNumberOfDecimalsForCostValuesKeyValue();
 
     std::optional<std::string> getDefaultPriceText(const std::string& language);
     ConfigurationStatus setDefaultPriceText(const CiString<50>& key, const CiString<500>& value);
@@ -439,9 +439,9 @@ public:
     ConfigurationStatus setNextTimeOffsetTransitionDateTime(const std::string& date_time);
     std::optional<KeyValue> getNextTimeOffsetTransitionDateTimeKeyValue();
 
-    std::optional<std::string> getNextTimeOffsetNextTransition();
-    ConfigurationStatus setNextTimeOffsetNextTransition(const std::string& offset);
-    std::optional<KeyValue> getNextTimeOffsetNextTransitionKeyValue();
+    std::optional<std::string> getTimeOffsetNextTransition();
+    ConfigurationStatus setTimeOffsetNextTransition(const std::string& offset);
+    std::optional<KeyValue> getTimeOffsetNextTransitionKeyValue();
 
     std::optional<bool> getCustomIdleFeeAfterStop();
     void setCustomIdleFeeAfterStop(const bool& value);

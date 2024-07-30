@@ -1748,9 +1748,23 @@ bool ChargePointConfiguration::checkTimeOffset(const std::string& offset) {
         return false;
     } else {
         try {
-            // Just check if strings are numbers.
-            (void)std::stoi(times.at(0));
-            (void)std::stoi(times.at(1));
+            // Check if strings are numbers.
+            const int32_t hours = std::stoi(times.at(0));
+            const int32_t minutes = std::stoi(times.at(1));
+
+            // And check if numbers are valid.
+            if (hours < -24 || hours > 24) {
+                EVLOG_error << "Could not set display time offset: hours should be between -24 and +24, but is "
+                            << times.at(0);
+                return false;
+            }
+
+            if (minutes < 0 || minutes > 59) {
+                EVLOG_error << "Could not set display time offset: minutes should be between 0 and 59, but is "
+                            << times.at(1);
+                return false;
+            }
+
         } catch (const std::exception& e) {
             EVLOG_error << "Could not set display time offset: format not correct (should be something "
                            "like \"-19:15\", but is "
@@ -2247,20 +2261,21 @@ KeyValue ChargePointConfiguration::getCustomDisplayCostAndPriceEnabledKeyValue()
     return kv;
 }
 
-std::optional<uint32_t> ChargePointConfiguration::getPriceNumberOfDecimals() {
-    if (this->config.contains("CostAndPrice") && this->config.at("CostAndPrice").contains("NumberOfDecimals")) {
-        return this->config["CostAndPrice"]["NumberOfDecimals"];
+std::optional<uint32_t> ChargePointConfiguration::getPriceNumberOfDecimalsForCostValues() {
+    if (this->config.contains("CostAndPrice") &&
+        this->config.at("CostAndPrice").contains("NumberOfDecimalsForCostValues")) {
+        return this->config["CostAndPrice"]["NumberOfDecimalsForCostValues"];
     }
 
     return std::nullopt;
 }
 
-std::optional<KeyValue> ChargePointConfiguration::getPriceNumberOfDecimalsKeyValue() {
+std::optional<KeyValue> ChargePointConfiguration::getPriceNumberOfDecimalsForCostValuesKeyValue() {
     std::optional<KeyValue> kv_opt = std::nullopt;
-    const std::optional<uint32_t> number_of_decimals = getPriceNumberOfDecimals();
+    const std::optional<uint32_t> number_of_decimals = getPriceNumberOfDecimalsForCostValues();
     if (number_of_decimals.has_value()) {
         kv_opt = KeyValue();
-        kv_opt->key = "NumberOfDecimals";
+        kv_opt->key = "NumberOfDecimalsForCostValues";
         kv_opt->value = std::to_string(number_of_decimals.value());
         kv_opt->readonly = true;
     }
@@ -2497,30 +2512,29 @@ std::optional<KeyValue> ChargePointConfiguration::getNextTimeOffsetTransitionDat
     return result;
 }
 
-std::optional<std::string> ChargePointConfiguration::getNextTimeOffsetNextTransition() {
-    if (this->config.contains("CostAndPrice") &&
-        this->config["CostAndPrice"].contains("NextTimeOffsetNextTransition")) {
-        return this->config["CostAndPrice"]["NextTimeOffsetNextTransition"];
+std::optional<std::string> ChargePointConfiguration::getTimeOffsetNextTransition() {
+    if (this->config.contains("CostAndPrice") && this->config["CostAndPrice"].contains("TimeOffsetNextTransition")) {
+        return this->config["CostAndPrice"]["TimeOffsetNextTransition"];
     }
 
     return std::nullopt;
 }
 
-ConfigurationStatus ChargePointConfiguration::setNextTimeOffsetNextTransition(const std::string& offset) {
+ConfigurationStatus ChargePointConfiguration::setTimeOffsetNextTransition(const std::string& offset) {
     if (!checkTimeOffset(offset)) {
         return ConfigurationStatus::Rejected;
     }
-    this->config["CostAndPrice"]["NextTimeOffsetNextTransition"] = offset;
-    this->setInUserConfig("CostAndPrice", "NextTimeOffsetNextTransition", offset);
+    this->config["CostAndPrice"]["TimeOffsetNextTransition"] = offset;
+    this->setInUserConfig("CostAndPrice", "TimeOffsetNextTransition", offset);
     return ConfigurationStatus::Accepted;
 }
 
-std::optional<KeyValue> ChargePointConfiguration::getNextTimeOffsetNextTransitionKeyValue() {
+std::optional<KeyValue> ChargePointConfiguration::getTimeOffsetNextTransitionKeyValue() {
     std::optional<KeyValue> result = std::nullopt;
-    std::optional<std::string> offset = getNextTimeOffsetNextTransition();
+    std::optional<std::string> offset = getTimeOffsetNextTransition();
     if (offset.has_value()) {
         result = KeyValue();
-        result->key = "NextTimeOffsetNextTransition";
+        result->key = "TimeOffsetNextTransition";
         result->value = offset.value();
         result->readonly = false;
     }
@@ -2968,8 +2982,8 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
     }
 
     if (getCustomDisplayCostAndPriceEnabled()) {
-        if (key == "NumberOfDecimals") {
-            return this->getPriceNumberOfDecimalsKeyValue();
+        if (key == "NumberOfDecimalsForCostValues") {
+            return this->getPriceNumberOfDecimalsForCostValuesKeyValue();
         }
         if (key == "DefaultPrice") {
             return this->getDefaultPriceKeyValue();
@@ -2987,8 +3001,8 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
         if (key == "NextTimeOffsetTransitionDateTime") {
             return this->getNextTimeOffsetTransitionDateTimeKeyValue();
         }
-        if (key == "NextTimeOffsetNextTransition") {
-            return this->getNextTimeOffsetNextTransitionKeyValue();
+        if (key == "TimeOffsetNextTransition") {
+            return this->getTimeOffsetNextTransitionKeyValue();
         }
         if (key == "CustomIdleFeeAfterStop") {
             return this->getCustomIdleFeeAfterStopKeyValue();
@@ -3475,8 +3489,8 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         }
     }
 
-    if (key == "NextTimeOffsetNextTransition") {
-        const ConfigurationStatus result = this->setNextTimeOffsetNextTransition(value);
+    if (key == "TimeOffsetNextTransition") {
+        const ConfigurationStatus result = this->setTimeOffsetNextTransition(value);
         if (result != ConfigurationStatus::Accepted) {
             return result;
         }
