@@ -366,22 +366,34 @@ SmartChargingHandler::validate_profile_schedules(ChargingProfile& profile,
 SetChargingProfileResponse SmartChargingHandler::add_profile(ChargingProfile& profile, int32_t evse_id) {
     SetChargingProfileResponse response;
     response.status = ChargingProfileStatusEnum::Accepted;
-    auto found_profile = false;
-    for (auto& [existing_evse_id, evse_profiles] : charging_profiles) {
-        for (auto it = evse_profiles.begin(); it != evse_profiles.end(); it++) {
-            if (profile.id == it->id) {
-                evse_profiles.erase(it);
-                found_profile = true;
+
+    // K01.FR05 - replace non-ChargingStationExternalConstraints profiles if id exists.
+    try {
+        // K01.FR27 - add profiles to database when valid
+        this->database_handler->insert_or_update_charging_profile(evse_id, profile);
+
+        auto found_profile = false;
+        for (auto& [existing_evse_id, evse_profiles] : charging_profiles) {
+            for (auto it = evse_profiles.begin(); it != evse_profiles.end(); it++) {
+                if (profile.id == it->id) {
+                    evse_profiles.erase(it);
+                    found_profile = true;
+                    break;
+                }
+            }
+
+            if (found_profile) {
                 break;
             }
         }
+        charging_profiles[evse_id].push_back(profile);
 
-        if (found_profile) {
-            break;
-        }
+    } catch (const QueryExecutionException& e) {
+        EVLOG_error << "Could not store ChargingProfile in the database: " << e.what();
+        response.status = ChargingProfileStatusEnum::Rejected;
+        response.statusInfo = StatusInfo();
+        response.statusInfo->reasonCode = "InternalError";
     }
-
-    charging_profiles[evse_id].push_back(profile);
 
     return response;
 }

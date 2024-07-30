@@ -3869,8 +3869,8 @@ void ChargePoint::load_charging_profiles() {
         auto evses = this->database_handler->get_all_charging_profiles_by_evse();
         EVLOG_info << "Found " << evses.size() << " evse in the database";
         for (const auto& [evse_id, profiles] : evses) {
-            try {
-                for (auto profile : profiles) {
+            for (auto profile : profiles) {
+                try {
                     if (this->smart_charging_handler->validate_profile(profile, evse_id) ==
                         ProfileValidationResultEnum::Valid) {
                         this->smart_charging_handler->add_profile(profile, evse_id);
@@ -3878,15 +3878,11 @@ void ChargePoint::load_charging_profiles() {
                         // delete if not valid anymore
                         this->database_handler->delete_charging_profile(profile.id);
                     }
+                } catch (const QueryExecutionException& e) {
+                    EVLOG_warning << "Failed database operation for ChargingProfiles: " << e.what();
                 }
-            } catch (common::RequiredEntryNotFoundException& e) {
-                EVLOG_warning << "Could not get connector id from database: " << e.what();
-            } catch (const QueryExecutionException& e) {
-                EVLOG_warning << "Could not get connector id from database: " << e.what();
             }
         }
-    } catch (const QueryExecutionException& e) {
-        EVLOG_warning << "Could not load charging profiles from database: " << e.what();
     } catch (const std::exception& e) {
         EVLOG_warning << "Unknown error while loading charging profiles from database: " << e.what();
     }

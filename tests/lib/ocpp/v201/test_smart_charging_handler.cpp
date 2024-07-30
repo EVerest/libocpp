@@ -28,16 +28,11 @@
 #include <ocpp/v201/smart_charging.hpp>
 #include <optional>
 
+#include "ocpp/v201/profile_utils.hpp"
 #include <sstream>
 #include <vector>
 
 namespace ocpp::v201 {
-
-bool operator==(const ChargingProfile& lhs, const ChargingProfile& rhs) {
-    return lhs.chargingProfileKind == rhs.chargingProfileKind &&
-           lhs.chargingProfilePurpose == rhs.chargingProfilePurpose && lhs.id == rhs.id &&
-           lhs.stackLevel == rhs.stackLevel;
-}
 
 static const int NR_OF_EVSES = 1;
 static const int STATION_WIDE_ID = 0;

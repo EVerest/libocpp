@@ -722,14 +722,18 @@ void DatabaseHandler::transaction_delete(const std::string& transaction_id) {
 
 void DatabaseHandler::insert_or_update_charging_profile(const int evse_id, const v201::ChargingProfile& profile) {
     // add or replace
-    std::string sql = "INSERT OR REPLACE INTO CHARGING_PROFILES (ID, EVSE_ID, PROFILE) VALUES "
-                      "(@id, @evse_id, @profile)";
+    std::string sql =
+        "INSERT OR REPLACE INTO CHARGING_PROFILES (ID, EVSE_ID, STACK_LEVEL, CHARGING_PROFILE_PURPOSE, PROFILE) VALUES "
+        "(@id, @evse_id, @stack_level, @charging_profile_purpose, @profile)";
     auto stmt = this->database->new_statement(sql);
 
     json json_profile(profile);
 
     stmt->bind_int("@id", profile.id);
     stmt->bind_int("@evse_id", evse_id);
+    stmt->bind_int("@stack_level", profile.stackLevel);
+    stmt->bind_text("@charging_profile_purpose",
+                    conversions::charging_profile_purpose_enum_to_string(profile.chargingProfilePurpose));
     stmt->bind_text("@profile", json_profile.dump(), SQLiteString::Transient);
 
     if (stmt->step() != SQLITE_DONE) {

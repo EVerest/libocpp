@@ -74,6 +74,7 @@ if(LIBOCPP_ENABLE_V201)
             ocpp/v201/types.cpp
             ocpp/v201/utils.cpp
             ocpp/v201/component_state_manager.cpp
+            ocpp/v201/profile_utils.cpp
     )
     add_subdirectory(ocpp/v201/messages)
 endif()
