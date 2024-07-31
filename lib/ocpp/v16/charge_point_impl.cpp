@@ -2951,18 +2951,7 @@ DataTransferResponse ChargePointImpl::handle_set_user_price(const std::optional<
         for (const json& j : data.at("priceTextExtra")) {
             DisplayMessage display_message;
             display_message.transaction_id = session_id;
-            if (j.contains("format")) {
-                display_message.message.message_format =
-                    v201::conversions::string_to_message_format_enum(j.at("format"));
-            }
-
-            if (j.contains("language")) {
-                display_message.message.language = j.at("language");
-            }
-
-            if (j.contains("content")) {
-                display_message.message.message = j.at("content");
-            }
+            display_message.message = j;
 
             messages.push_back(display_message);
         }
@@ -3035,46 +3024,55 @@ DataTransferResponse ChargePointImpl::handle_set_session_cost(const RunningCostS
         connector->trigger_metervalue_on_power_kw = trigger_meter_value.at_power_kw;
         connector->trigger_metervalue_on_status = trigger_meter_value.at_chargepoint_status;
 
+        // Set timer to trigger sending a metervalue at a specific time.
         if (trigger_meter_value.at_time.has_value()) {
-            std::chrono::time_point<date::utc_clock> trigger_timepoint =
-                trigger_meter_value.at_time.value().to_time_point();
-
-            std::optional<std::string> time_offset = this->configuration->getDisplayTimeOffset();
-            if (time_offset.has_value()) {
-                const std::vector<std::string> times = split_string(time_offset.value(), ':');
-                if (times.size() != 2) {
-                    EVLOG_error << "Could not set display time offset: format not correct (should be something like "
-                                   "\"-05:00\", but is "
-                                << time_offset.value() << ")";
-                } else {
-                    try {
-                        trigger_timepoint += std::chrono::hours(std::stoi(times.at(0)));
-                        trigger_timepoint += std::chrono::minutes(std::stoi(times.at(1)));
-                    } catch (const std::exception& e) {
-                        EVLOG_error << "Could not set display time offset: format not correct (should be something "
-                                       "like \"-19:15\", but is "
-                                    << time_offset.value() << "): " << e.what();
-                    }
-                }
-            }
-
-            connector->trigger_metervalue_at_time_timer =
-                std::make_unique<Everest::SystemTimer>(&this->io_service, [this, &connector]() {
-                    const std::optional<MeterValue>& meter_value = get_latest_meter_value(
-                        connector->id, {{Measurand::Energy_Active_Import_Register, std::nullopt}},
-                        ReadingContext::Other);
-                    if (!meter_value.has_value()) {
-                        EVLOG_error << "Send latest meter value because of chargepoint time trigger failed";
-                    } else {
-                        send_meter_value(connector->id, meter_value.value());
-                    }
-                });
-
-            connector->trigger_metervalue_at_time_timer->at(trigger_timepoint);
+            set_connector_trigger_metervalue_timer(trigger_meter_value.at_time.value(), connector);
         }
     }
 
     return session_cost_callback(cost, number_of_decimals);
+}
+
+void ChargePointImpl::set_connector_trigger_metervalue_timer(const DateTime& date_time,
+                                                             std::shared_ptr<Connector> connector) {
+    if (connector == nullptr) {
+        EVLOG_error << "Could not set display time offset: could not find connector";
+        return;
+    }
+
+    std::chrono::time_point<date::utc_clock> trigger_timepoint = date_time.to_time_point();
+
+    std::optional<std::string> time_offset = this->configuration->getDisplayTimeOffset();
+    if (time_offset.has_value()) {
+        const std::vector<std::string> times = split_string(time_offset.value(), ':');
+        if (times.size() != 2) {
+            EVLOG_error << "Could not set display time offset: format not correct (should be something like "
+                           "\"-05:00\", but is "
+                        << time_offset.value() << ")";
+        } else {
+            try {
+                trigger_timepoint += std::chrono::hours(std::stoi(times.at(0)));
+                trigger_timepoint += std::chrono::minutes(std::stoi(times.at(1)));
+            } catch (const std::exception& e) {
+                EVLOG_error << "Could not set display time offset: format not correct (should be something "
+                               "like \"-19:15\", but is "
+                            << time_offset.value() << "): " << e.what();
+            }
+        }
+    }
+
+    connector->trigger_metervalue_at_time_timer =
+        std::make_unique<Everest::SystemTimer>(&this->io_service, [this, &connector]() {
+            const std::optional<MeterValue>& meter_value = get_latest_meter_value(
+                connector->id, {{Measurand::Energy_Active_Import_Register, std::nullopt}}, ReadingContext::Other);
+            if (!meter_value.has_value()) {
+                EVLOG_error << "Send latest meter value because of chargepoint time trigger failed";
+            } else {
+                send_meter_value(connector->id, meter_value.value());
+            }
+        });
+
+    connector->trigger_metervalue_at_time_timer->at(trigger_timepoint);
 }
 
 void ChargePointImpl::set_time_offset_timer(const std::string& date_time) {
