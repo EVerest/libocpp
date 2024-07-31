@@ -3175,15 +3175,11 @@ void ChargePoint::handle_set_charging_profile_req(Call<SetChargingProfileRequest
         return;
     }
 
-    auto res = this->smart_charging_handler->validate_profile(msg.chargingProfile, msg.evseId);
-    if (res == ProfileValidationResultEnum::Valid) {
+    response = this->smart_charging_handler->validate_and_add_profile(msg.chargingProfile, msg.evseId);
+    if (response.status == ChargingProfileStatusEnum::Accepted) {
         EVLOG_debug << "Accepting SetChargingProfileRequest";
-        response = this->smart_charging_handler->add_profile(msg.chargingProfile, msg.evseId);
         this->callbacks.set_charging_profiles_callback();
     } else {
-        response.statusInfo = StatusInfo();
-        response.statusInfo->reasonCode = conversions::profile_validation_result_to_reason_code(res);
-        response.statusInfo->additionalInfo = conversions::profile_validation_result_to_string(res);
         EVLOG_debug << "Rejecting SetChargingProfileRequest:\n reasonCode: " << response.statusInfo->reasonCode.get()
                     << "\nadditionalInfo: " << response.statusInfo->additionalInfo->get();
     }

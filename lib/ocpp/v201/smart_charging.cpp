@@ -144,6 +144,22 @@ SmartChargingHandler::SmartChargingHandler(EvseManagerInterface& evse_manager,
     evse_manager(evse_manager), device_model(device_model), database_handler(database_handler) {
 }
 
+SetChargingProfileResponse SmartChargingHandler::validate_and_add_profile(ChargingProfile& profile, int32_t evse_id) {
+    SetChargingProfileResponse response;
+    response.status = ChargingProfileStatusEnum::Rejected;
+
+    auto result = this->validate_profile(profile, evse_id);
+    if (result == ProfileValidationResultEnum::Valid) {
+        response = this->add_profile(profile, evse_id);
+    } else {
+        response.statusInfo = StatusInfo();
+        response.statusInfo->reasonCode = conversions::profile_validation_result_to_reason_code(result);
+        response.statusInfo->additionalInfo = conversions::profile_validation_result_to_string(result);
+    }
+
+    return response;
+}
+
 ProfileValidationResultEnum SmartChargingHandler::validate_profile(ChargingProfile& profile, int32_t evse_id) {
     conform_validity_periods(profile);
 

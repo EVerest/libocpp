@@ -61,6 +61,8 @@ class SmartChargingHandlerInterface {
 public:
     virtual ~SmartChargingHandlerInterface() = default;
 
+    virtual SetChargingProfileResponse validate_and_add_profile(ChargingProfile& profile, int32_t evse_id) = 0;
+
     virtual ProfileValidationResultEnum validate_profile(ChargingProfile& profile, int32_t evse_id) = 0;
 
     virtual SetChargingProfileResponse add_profile(ChargingProfile& profile, int32_t evse_id) = 0;
@@ -80,6 +82,12 @@ private:
 public:
     SmartChargingHandler(EvseManagerInterface& evse_manager, std::shared_ptr<DeviceModel>& device_model,
                          std::shared_ptr<ocpp::v201::DatabaseHandler> database_handler);
+
+    ///
+    /// \brief validates the given \p profile according to the specification,
+    /// adding it to our stored list of profiles if valid.
+    ///
+    SetChargingProfileResponse validate_and_add_profile(ChargingProfile& profile, int32_t evse_id) override;
 
     ///
     /// \brief validates the given \p profile according to the specification.

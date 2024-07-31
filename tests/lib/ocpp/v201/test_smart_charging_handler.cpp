@@ -1127,4 +1127,41 @@ TEST_F(ChargepointTestFixtureV201,
     EXPECT_THAT(profiles, testing::Contains(profile5));
 }
 
+TEST_F(ChargepointTestFixtureV201, K01_ValidateAndAdd_RejectsInvalidProfiles) {
+    auto periods = create_charging_schedule_periods(0);
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")));
+
+    auto sut = handler.validate_and_add_profile(profile, DEFAULT_EVSE_ID);
+    auto status_info = sut.statusInfo;
+    EXPECT_THAT(sut.status, testing::Eq(ChargingProfileStatusEnum::Rejected));
+    EXPECT_THAT(status_info->reasonCode.get(), testing::Eq(conversions::profile_validation_result_to_reason_code(
+                                                   ProfileValidationResultEnum::TxProfileMissingTransactionId)));
+
+    EXPECT_THAT(status_info->additionalInfo.has_value(), testing::IsTrue());
+    EXPECT_THAT(status_info->additionalInfo->get(), testing::Eq(conversions::profile_validation_result_to_string(
+                                                        ProfileValidationResultEnum::TxProfileMissingTransactionId)));
+
+    auto profiles = handler.get_profiles();
+    EXPECT_THAT(profiles, testing::Not(testing::Contains(profile)));
+}
+
+TEST_F(ChargepointTestFixtureV201, K01_ValidateAndAdd_AddsValidProfiles) {
+    auto periods = create_charging_schedule_periods({0, 1, 2});
+
+    this->evse_manager->open_transaction(DEFAULT_EVSE_ID, DEFAULT_TX_ID);
+
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), DEFAULT_TX_ID);
+
+    auto sut = handler.validate_and_add_profile(profile, DEFAULT_EVSE_ID);
+    EXPECT_THAT(sut.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
+    EXPECT_THAT(sut.statusInfo.has_value(), testing::IsFalse());
+
+    auto profiles = handler.get_profiles();
+    EXPECT_THAT(profiles, testing::Contains(profile));
+}
+
 } // namespace ocpp::v201

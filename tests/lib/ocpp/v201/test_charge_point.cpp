@@ -7,6 +7,7 @@
 #include "ocpp/v201/device_model_storage_sqlite.hpp"
 #include "ocpp/v201/init_device_model_db.hpp"
 #include "ocpp/v201/messages/SetChargingProfile.hpp"
+#include "ocpp/v201/profile_utils.hpp"
 #include "ocpp/v201/smart_charging.hpp"
 #include "ocpp/v201/types.hpp"
 #include "smart_charging_handler_mock.hpp"
@@ -531,7 +532,7 @@ TEST_F(ChargePointFixture, K01FR02_CallbacksValidityChecksIfOptionalTransactionE
     EXPECT_TRUE(callbacks.all_callbacks_valid());
 }
 
-TEST_F(ChargePointFixture, K01_SetChargingProfileRequest_ValidatesProfile) {
+TEST_F(ChargePointFixture, K01_SetChargingProfileRequest_ValidatesAndAddsProfile) {
     auto periods = create_charging_schedule_periods({0, 1, 2});
 
     auto profile = create_charging_profile(
@@ -545,76 +546,7 @@ TEST_F(ChargePointFixture, K01_SetChargingProfileRequest_ValidatesProfile) {
     auto set_charging_profile_req =
         request_to_enhanced_message<SetChargingProfileRequest, MessageType::SetChargingProfile>(req);
 
-    EXPECT_CALL(*smart_charging_handler, validate_profile(testing::_, testing::_));
-
-    charge_point->handle_message(set_charging_profile_req);
-}
-
-TEST_F(ChargePointFixture, K01_SetChargingProfileRequest_AddsValidProfile) {
-    auto periods = create_charging_schedule_periods({0, 1, 2});
-
-    auto profile = create_charging_profile(
-        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
-        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), DEFAULT_TX_ID);
-
-    SetChargingProfileRequest req;
-    req.evseId = DEFAULT_EVSE_ID;
-    req.chargingProfile = profile;
-
-    auto set_charging_profile_req =
-        request_to_enhanced_message<SetChargingProfileRequest, MessageType::SetChargingProfile>(req);
-
-    EXPECT_CALL(*smart_charging_handler, validate_profile(testing::_, testing::_));
-    ON_CALL(*smart_charging_handler, validate_profile)
-        .WillByDefault(testing::Return(ProfileValidationResultEnum::Valid));
-    EXPECT_CALL(*smart_charging_handler, add_profile(testing::_, testing::_));
-
-    charge_point->handle_message(set_charging_profile_req);
-}
-
-class ChargePointFixture_InvalidProfiles : public ChargePointFixture,
-                                           public ::testing::WithParamInterface<ProfileValidationResultEnum> {};
-
-INSTANTIATE_TEST_SUITE_P(
-    ChargePointOnlyAddValidProfilesTests, ChargePointFixture_InvalidProfiles,
-    testing::Values(ProfileValidationResultEnum::EvseDoesNotExist, ProfileValidationResultEnum::InvalidProfileType,
-                    ProfileValidationResultEnum::TxProfileMissingTransactionId,
-                    ProfileValidationResultEnum::TxProfileEvseIdNotGreaterThanZero,
-                    ProfileValidationResultEnum::TxProfileTransactionNotOnEvse,
-                    ProfileValidationResultEnum::TxProfileEvseHasNoActiveTransaction,
-                    ProfileValidationResultEnum::TxProfileConflictingStackLevel,
-                    ProfileValidationResultEnum::ChargingProfileNoChargingSchedulePeriods,
-                    ProfileValidationResultEnum::ChargingProfileFirstStartScheduleIsNotZero,
-                    ProfileValidationResultEnum::ChargingProfileMissingRequiredStartSchedule,
-                    ProfileValidationResultEnum::ChargingProfileExtraneousStartSchedule,
-                    ProfileValidationResultEnum::ChargingScheduleChargingRateUnitUnsupported,
-                    ProfileValidationResultEnum::ChargingSchedulePeriodsOutOfOrder,
-                    ProfileValidationResultEnum::ChargingSchedulePeriodInvalidPhaseToUse,
-                    ProfileValidationResultEnum::ChargingSchedulePeriodUnsupportedNumberPhases,
-                    ProfileValidationResultEnum::ChargingSchedulePeriodExtraneousPhaseValues,
-                    ProfileValidationResultEnum::ChargingSchedulePeriodPhaseToUseACPhaseSwitchingUnsupported,
-                    ProfileValidationResultEnum::ChargingStationMaxProfileCannotBeRelative,
-                    ProfileValidationResultEnum::ChargingStationMaxProfileEvseIdGreaterThanZero,
-                    ProfileValidationResultEnum::DuplicateTxDefaultProfileFound,
-                    ProfileValidationResultEnum::DuplicateProfileValidityPeriod));
-
-TEST_P(ChargePointFixture_InvalidProfiles, K01_SetChargingProfileRequest_DoesnNotAddInvalidProfiles) {
-    auto periods = create_charging_schedule_periods({0, 1, 2});
-
-    auto profile = create_charging_profile(
-        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
-        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), DEFAULT_TX_ID);
-
-    SetChargingProfileRequest req;
-    req.evseId = DEFAULT_EVSE_ID;
-    req.chargingProfile = profile;
-
-    auto set_charging_profile_req =
-        request_to_enhanced_message<SetChargingProfileRequest, MessageType::SetChargingProfile>(req);
-
-    EXPECT_CALL(*smart_charging_handler, validate_profile(testing::_, testing::_));
-    ON_CALL(*smart_charging_handler, validate_profile).WillByDefault(testing::Return(GetParam()));
-    EXPECT_CALL(*smart_charging_handler, add_profile(testing::_, testing::_)).Times(0);
+    EXPECT_CALL(*smart_charging_handler, validate_and_add_profile(profile, DEFAULT_EVSE_ID));
 
     charge_point->handle_message(set_charging_profile_req);
 }
@@ -633,14 +565,16 @@ TEST_F(ChargePointFixture, K01FR07_SetChargingProfileRequest_TriggersCallbackWhe
     auto set_charging_profile_req =
         request_to_enhanced_message<SetChargingProfileRequest, MessageType::SetChargingProfile>(req);
 
-    ON_CALL(*smart_charging_handler, validate_profile)
-        .WillByDefault(testing::Return(ProfileValidationResultEnum::Valid));
+    SetChargingProfileResponse accept_response;
+    accept_response.status = ChargingProfileStatusEnum::Accepted;
+
+    ON_CALL(*smart_charging_handler, validate_and_add_profile).WillByDefault(testing::Return(accept_response));
     EXPECT_CALL(set_charging_profiles_callback_mock, Call);
 
     charge_point->handle_message(set_charging_profile_req);
 }
 
-TEST_P(ChargePointFixture_InvalidProfiles, K01FR07_SetChargingProfileRequest_DoesNotTriggerCallbackWhenInvalid) {
+TEST_F(ChargePointFixture, K01FR07_SetChargingProfileRequest_DoesNotTriggerCallbackWhenInvalid) {
     auto periods = create_charging_schedule_periods({0, 1, 2});
 
     auto profile = create_charging_profile(
@@ -654,7 +588,15 @@ TEST_P(ChargePointFixture_InvalidProfiles, K01FR07_SetChargingProfileRequest_Doe
     auto set_charging_profile_req =
         request_to_enhanced_message<SetChargingProfileRequest, MessageType::SetChargingProfile>(req);
 
-    ON_CALL(*smart_charging_handler, validate_profile).WillByDefault(testing::Return(GetParam()));
+    SetChargingProfileResponse reject_response;
+    reject_response.status = ChargingProfileStatusEnum::Rejected;
+    reject_response.statusInfo = StatusInfo();
+    reject_response.statusInfo->reasonCode = conversions::profile_validation_result_to_reason_code(
+        ProfileValidationResultEnum::TxProfileEvseHasNoActiveTransaction);
+    reject_response.statusInfo->additionalInfo = conversions::profile_validation_result_to_string(
+        ProfileValidationResultEnum::TxProfileEvseHasNoActiveTransaction);
+
+    ON_CALL(*smart_charging_handler, validate_and_add_profile).WillByDefault(testing::Return(reject_response));
     EXPECT_CALL(set_charging_profiles_callback_mock, Call).Times(0);
 
     charge_point->handle_message(set_charging_profile_req);
@@ -674,8 +616,8 @@ TEST_F(ChargePointFixture, K01FR22_SetChargingProfileRequest_RejectsChargingStat
     auto set_charging_profile_req =
         request_to_enhanced_message<SetChargingProfileRequest, MessageType::SetChargingProfile>(req);
 
-    EXPECT_CALL(*smart_charging_handler, validate_profile).Times(0);
-    EXPECT_CALL(*smart_charging_handler, add_profile).Times(0);
+    EXPECT_CALL(*smart_charging_handler, validate_and_add_profile).Times(0);
+    EXPECT_CALL(set_charging_profiles_callback_mock, Call).Times(0);
 
     charge_point->handle_message(set_charging_profile_req);
 }
