@@ -922,6 +922,8 @@ void ChargePointImpl::send_meter_value_on_pricing_trigger(const int32_t connecto
                 get_latest_meter_value(connector_number, {measurand}, ReadingContext::Other);
 
             if (meter_value.has_value()) {
+                EVLOG_debug << "Sending meter value because of kWh pricing trigger";
+
                 send_meter_value(connector_number, meter_value.value());
                 // Metervalue sent, should not be sent again.
                 connector->trigger_metervalue_on_energy_kwh = std::nullopt;
@@ -3041,6 +3043,12 @@ void ChargePointImpl::set_connector_trigger_metervalue_timer(const DateTime& dat
     }
 
     std::chrono::time_point<date::utc_clock> trigger_timepoint = date_time.to_time_point();
+    const std::chrono::time_point<date::utc_clock> now = date::utc_clock::now();
+
+    if (trigger_timepoint < now) {
+        EVLOG_error << "Could not set trigger metervalue because trigger time is in the past.";
+        return;
+    }
 
     std::optional<std::string> time_offset = this->configuration->getDisplayTimeOffset();
     if (time_offset.has_value()) {
@@ -3061,17 +3069,19 @@ void ChargePointImpl::set_connector_trigger_metervalue_timer(const DateTime& dat
         }
     }
 
+    DateTime d(now);
+    int32_t connector_id = connector->id;
+
     connector->trigger_metervalue_at_time_timer =
-        std::make_unique<Everest::SystemTimer>(&this->io_service, [this, &connector]() {
+        std::make_unique<Everest::SystemTimer>(&this->io_service, [this, connector_id]() {
             const std::optional<MeterValue>& meter_value = get_latest_meter_value(
-                connector->id, {{Measurand::Energy_Active_Import_Register, std::nullopt}}, ReadingContext::Other);
+                connector_id, {{Measurand::Energy_Active_Import_Register, std::nullopt}}, ReadingContext::Other);
             if (!meter_value.has_value()) {
                 EVLOG_error << "Send latest meter value because of chargepoint time trigger failed";
             } else {
-                send_meter_value(connector->id, meter_value.value());
+                send_meter_value(connector_id, meter_value.value());
             }
         });
-
     connector->trigger_metervalue_at_time_timer->at(trigger_timepoint);
 }
 
@@ -3869,10 +3879,13 @@ void ChargePointImpl::register_data_transfer_callback(
 
 void ChargePointImpl::on_meter_values(int32_t connector, const Measurement& measurement) {
     // FIXME: fix measurement to also work with dc
-    EVLOG_debug << "updating measurement for connector: " << connector;
-    std::lock_guard<std::mutex> lock(measurement_mutex);
-    std::shared_ptr<Connector> c = this->connectors.at(connector);
-    c->measurement.emplace(measurement);
+    std::shared_ptr<Connector> c;
+    {
+        EVLOG_debug << "updating measurement for connector: " << connector;
+        std::lock_guard<std::mutex> lock(measurement_mutex);
+        c = this->connectors.at(connector);
+        c->measurement.emplace(measurement);
+    }
 
     send_meter_value_on_pricing_trigger(connector, c, measurement);
 }
