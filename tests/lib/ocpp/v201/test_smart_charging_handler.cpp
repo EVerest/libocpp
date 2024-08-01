@@ -686,7 +686,11 @@ TEST_F(ChargepointTestFixtureV201, K01FR44_IfPhaseToUseProvidedForDCChargingStat
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::ChargingSchedulePeriodExtraneousPhaseValues));
 }
 
-TEST_F(ChargepointTestFixtureV201, K01FR45_IfNumberPhasesGreaterThanMaxNumberPhasesForACEVSE_ThenProfileIsInvalid) {
+TEST_F(ChargepointTestFixtureV201,
+       K01FR45_IfNumberPhasesGreaterThanChargingStationSupplyPhasesForACEVSE_ThenProfileIsInvalid) {
+    device_model->set_value(ControllerComponentVariables::ChargingStationSupplyPhases.component,
+                            ControllerComponentVariables::ChargingStationSupplyPhases.variable.value(),
+                            AttributeEnum::Actual, std::to_string(0), "test", true);
     auto mock_evse = testing::NiceMock<EvseMock>();
     ON_CALL(mock_evse, get_current_phase_type).WillByDefault(testing::Return(CurrentPhaseType::AC));
 
@@ -701,7 +705,7 @@ TEST_F(ChargepointTestFixtureV201, K01FR45_IfNumberPhasesGreaterThanMaxNumberPha
 }
 
 TEST_F(ChargepointTestFixtureV201,
-       K01FR45_IfNumberPhasesGreaterThanMaxNumberPhasesForACChargingStation_ThenProfileIsInvalid) {
+       K01FR45_IfNumberPhasesGreaterThanChargingStationSupplyPhasesForACChargingStation_ThenProfileIsInvalid) {
     device_model->set_value(ControllerComponentVariables::ChargingStationSupplyPhases.component,
                             ControllerComponentVariables::ChargingStationSupplyPhases.variable.value(),
                             AttributeEnum::Actual, std::to_string(1), "test", true);

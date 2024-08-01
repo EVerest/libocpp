@@ -302,6 +302,9 @@ ProfileValidationResultEnum SmartChargingHandler::validate_tx_profile(const Char
 ProfileValidationResultEnum
 SmartChargingHandler::validate_profile_schedules(ChargingProfile& profile,
                                                  std::optional<EvseInterface*> evse_opt) const {
+    auto charging_station_supply_phases =
+        this->device_model->get_value<int32_t>(ControllerComponentVariables::ChargingStationSupplyPhases);
+
     for (auto& schedule : profile.chargingSchedule) {
         // K01.FR.26; We currently need to do string conversions for this manually because our DeviceModel class does
         // not let us get a vector of ChargingScheduleChargingRateUnits.
@@ -355,7 +358,7 @@ SmartChargingHandler::validate_profile_schedules(ChargingProfile& profile,
             if (phase_type == CurrentPhaseType::AC) {
                 // K01.FR.45; Once again rejecting invalid values
                 if (charging_schedule_period.numberPhases.has_value() &&
-                    charging_schedule_period.numberPhases > DEFAULT_AND_MAX_NUMBER_PHASES) {
+                    charging_schedule_period.numberPhases > charging_station_supply_phases) {
                     return ProfileValidationResultEnum::ChargingSchedulePeriodUnsupportedNumberPhases;
                 }
 
