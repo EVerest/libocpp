@@ -287,6 +287,7 @@
                   "mutability": "ReadOnly"
               }
           ],
+          "description": "Enable log rotation",
           "default": false,
           "type": "boolean"
       },
@@ -302,6 +303,7 @@
                   "mutability": "ReadOnly"
               }
           ],
+          "description": "Use a datetime suffix in log rotation files instead of the traditional .0, .1",
           "default": false,
           "type": "boolean"
       },
@@ -317,6 +319,7 @@
                   "mutability": "ReadOnly"
               }
           ],
+          "description": "Maximum file size in bytes for the log file after which it will be rotated. Setting this to 0 disables log rotation.",
           "default": 0,
           "type": "integer"
       },
@@ -332,6 +335,7 @@
                   "mutability": "ReadOnly"
               }
           ],
+          "description": "Maximum amount of files before rotated logs will be deleted. Setting this to 0 disables log rotation.",
           "default": 0,
           "type": "integer"
       },

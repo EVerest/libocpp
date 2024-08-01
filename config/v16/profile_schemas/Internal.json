@@ -171,14 +171,14 @@
             "default": false
         },
         "LogRotationMaximumFileSize": {
-            "$comment": "Maximum file size in bytes for the log file after which it will be rotated",
+            "$comment": "Maximum file size in bytes for the log file after which it will be rotated. Setting this to 0 disables log rotation.",
             "type": "integer",
             "readOnly": true,
             "default": 0,
             "minimum": 0
         },
         "LogRotationMaximumFileCount": {
-            "$comment": "Maximum amount of files before rotated logs will be deleted",
+            "$comment": "Maximum amount of files before rotated logs will be deleted. Setting this to 0 disables log rotation.",
             "type": "integer",
             "readOnly": true,
             "default": 0,
