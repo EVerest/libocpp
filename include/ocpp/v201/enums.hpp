@@ -5,6 +5,7 @@
 
 #include <iosfwd>
 #include <string>
+#include <cstdint>
 
 namespace ocpp {
 namespace v201 {
