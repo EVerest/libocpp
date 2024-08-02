@@ -16,36 +16,46 @@ namespace ocpp::v201 {
 
 class DeviceModel;
 
-struct TriggeredMonitorData {
+enum UpdateMonitorMetaType {
+    TRIGGER,
+    PERIODIC
+};
+
+/// \brief Meta data required for our internal keeping needs
+struct UpdaterMonitorMeta {
+    UpdateMonitorMetaType type;
+
     VariableMonitoringMeta monitor_meta;
     Component component;
     Variable variable;
+
+    /// \brief database ID for quick instant retrieval if required
+    std::int32_t monitor_id;
 
     std::string value_previous;
     std::string value_current;
 
-    // \brief Write-only values will not have the value reported
-    bool is_writeonly;
-
-    /// \brief If the trigger was sent to the CSMS. We'll keep a copy since we'll also detect
-    /// when the monitor returns back to normal
-    bool csms_sent;
-
-    /// \brief The trigger has been cleared, that is it returned to normal after a problem
-    /// was detected. Can be removed from the map when it was cleared
-    bool cleared;
-};
-
-struct PeriodicMonitorData {
-    VariableMonitoringMeta monitor_meta;
-    Component component;
-    Variable variable;
-
-    /// \brief Last time we've triggered a periodic delta monitor
+    /// \brief Last time this monitor was triggered
     std::chrono::time_point<std::chrono::steady_clock> last_trigger_steady;
 
-    /// \brief Next time when we require to trigger a clock aligned value
+    /// \brief Next time when we require to trigger a clock aligned value. Has meaning
+    /// only for periodic monitors
     std::chrono::time_point<std::chrono::system_clock> next_trigger_clock_aligned;
+
+    /// \brief Generated monitor events, that can be related to this meta
+    std::vector<EventData> generated_monitor_events;
+
+    /// \brief Write-only values will not have the value reported
+    std::uint32_t is_writeonly : 1;
+
+    /// \brief If it was sent to the CSMS, has no meaning when this
+    /// is a periodic monitor
+    std::uint32_t is_csms_sent : 1;
+
+    /// \brief The trigger has been cleared, that is it returned to normal after a problem
+    /// was detected. Can be removed from the map when it was cleared. Has no meaning if
+    /// this is a periodic monitor
+    std::uint32_t is_cleared : 1;
 };
 
 typedef std::function<void(const std::vector<EventData>&)> notify_events;
@@ -94,20 +104,34 @@ private:
     /// operation (DB query of each triggered monitor's actual value) the processing time
     /// can be configured using the 'VariableMonitoringProcessTime' internal variable. If
     // there are also any pending alert triggered monitors, those will be processed too
-    void process_periodic_monitors();
+    void process_monitors_internal(bool allow_periodics, bool allow_trigger);
+
+    /// \brief Processes the monitor meta, generating in it's internal list all the
+    /// required events. It will generate the EventData for a notify regardless
+    /// of the offline state
+    /// \return true if the monitor should be removed from the map, false otherwise
+    bool process_monitor_meta_internal(UpdaterMonitorMeta& updater_meta_data);
+
+    /// \brief Query the database (from in-memory data for fast retrieval)
+    /// and updates our internal monitors with the new database data
+    void update_periodic_monitors_internal();
+
+    void get_monitoring_info(bool& out_is_offline, int& out_offline_severity, int& out_active_monitoring_level,
+                             MonitoringBaseEnum& out_active_monitoring_base);
+
+    bool is_monitoring_enabled();
 
 private:
     std::shared_ptr<DeviceModel> device_model;
     Everest::SteadyTimer monitors_timer;
 
     // Charger to CSMS message unique ID for EventData
-    int32_t unique_id;
+    std::int32_t unique_id;
 
     notify_events notify_csms_events;
     is_offline is_chargepoint_offline;
 
-    std::unordered_map<int32_t, TriggeredMonitorData> triggered_monitors;
-    std::unordered_map<int32_t, PeriodicMonitorData> periodic_monitors;
+    std::unordered_map<std::int32_t, UpdaterMonitorMeta> updater_monitors_meta;
 };
 
 } // namespace ocpp::v201

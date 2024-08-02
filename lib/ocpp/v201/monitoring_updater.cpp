@@ -87,8 +87,8 @@ std::chrono::time_point<std::chrono::system_clock> get_next_clock_aligned_point(
 
     auto dbg_time_now = std::chrono::system_clock::to_time_t(sys_time_now);
     auto dbg_time_aligned = std::chrono::system_clock::to_time_t(aligned_timepoint);
-    EVLOG_debug << "Aligned time: " << std::ctime(&dbg_time_now) << " with interval: " << monitor_seconds.count()
-                << " to next timepoint: " << std::ctime(&dbg_time_aligned);
+    EVLOG_info << "Aligned time: " << std::ctime(&dbg_time_now) << " with interval: " << monitor_seconds.count()
+               << " to next timepoint: " << std::ctime(&dbg_time_aligned);
 
     return aligned_timepoint;
 }
@@ -135,7 +135,7 @@ MonitoringUpdater::MonitoringUpdater(std::shared_ptr<DeviceModel> device_model, 
     device_model(std::move(device_model)),
     notify_csms_events(std::move(notify_csms_events)),
     is_chargepoint_offline(std::move(is_chargepoint_offline)),
-    monitors_timer([this]() { this->process_periodic_monitors(); }),
+    monitors_timer([this]() { this->process_monitors_internal(true, true); }),
     unique_id(0) {
 }
 
@@ -152,12 +152,14 @@ void MonitoringUpdater::start_monitoring() {
 
     // No point in starting the monitor if this variable does not exist. It will never start to exist later on.
     if (this->device_model->get_optional_value<bool>(ControllerComponentVariables::MonitoringCtrlrEnabled)
-            .has_value()) {
+            .value_or(false)) {
         int process_interval_seconds =
             this->device_model->get_optional_value<int>(ControllerComponentVariables::MonitorsProcessingInterval)
                 .value_or(1);
 
         monitors_timer.interval(std::chrono::seconds(process_interval_seconds));
+    } else {
+        EVLOG_warning << "Attempted to start monitoring without 'MonitoringCtrlrEnabled'";
     }
 }
 
@@ -165,13 +167,17 @@ void MonitoringUpdater::stop_monitoring() {
     monitors_timer.stop();
 }
 
+void MonitoringUpdater::process_triggered_monitors() {
+    this->process_monitors_internal(false, true);
+}
+
 void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, VariableMonitoringMeta>& monitors,
                                             const Component& component, const Variable& variable,
                                             const VariableCharacteristics& characteristics,
                                             const VariableAttribute& attribute, const std::string& value_previous,
                                             const std::string& value_current) {
-    EVLOG_debug << "Variable: " << variable.name.get() << " changed value from: [" << value_previous << "] to: ["
-                << value_current << "]";
+    EVLOG_info << "Variable: " << variable.name.get() << " changed value from: [" << value_previous << "] to: ["
+               << value_current << "]";
 
     // Ignore non-actual values
     if (attribute.type.has_value() && attribute.type.value() != AttributeEnum::Actual) {
@@ -208,9 +214,9 @@ void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, Va
             continue;
         }
 
-        EVLOG_debug << "Monitor: [" << monitor_meta.monitor << "] triggered: " << monitor_triggered;
+        EVLOG_info << "Monitor: [" << monitor_meta.monitor << "] triggered: " << monitor_triggered;
 
-        auto it = triggered_monitors.find(monitor_id);
+        auto it = updater_monitors_meta.find(monitor_id);
 
         if (monitor_triggered) {
             if (monitor_meta.monitor.type == MonitorEnum::Delta && monitor_trivial) {
@@ -227,37 +233,40 @@ void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, Va
                 }
             }
 
-            if (it == std::end(triggered_monitors)) {
-                TriggeredMonitorData triggered;
+            if (it == std::end(updater_monitors_meta)) {
+                UpdaterMonitorMeta triggered_meta;
 
-                triggered.component = component;
-                triggered.variable = variable;
-                triggered.monitor_meta = monitor_meta;
-                triggered.csms_sent = false;
-                triggered.cleared = false;
-                triggered.is_writeonly =
+                triggered_meta.type = UpdateMonitorMetaType::TRIGGER;
+                triggered_meta.monitor_id = monitor_meta.monitor.id;
+                triggered_meta.component = component;
+                triggered_meta.variable = variable;
+                triggered_meta.monitor_meta = monitor_meta;
+                triggered_meta.is_csms_sent = 0;
+                triggered_meta.is_cleared = 0;
+                triggered_meta.is_writeonly =
                     (attribute.mutability.value_or(MutabilityEnum::ReadWrite) == MutabilityEnum::WriteOnly);
+                triggered_meta.last_trigger_steady = std::chrono::steady_clock::now();
 
-                auto res = triggered_monitors.insert(std::pair{monitor_meta.monitor.id, std::move(triggered)});
+                auto res = updater_monitors_meta.insert(std::pair{monitor_meta.monitor.id, std::move(triggered_meta)});
                 if (!res.second) {
                     EVLOG_warning << "Could not insert monitor to triggered monitor map!";
                     continue;
                 }
                 it = res.first;
 
-                EVLOG_debug << "Variable: " << variable.name.get() << " triggered monitor: " << monitor_id;
+                EVLOG_info << "Variable: " << variable.name.get() << " triggered monitor: " << monitor_id;
             }
 
-            TriggeredMonitorData& triggered_data = it->second;
+            UpdaterMonitorMeta& triggered_data = it->second;
 
             // If we are in a 'not dangerous' a.k.a 'cleared' state
-            if (triggered_data.cleared) {
+            if (triggered_data.is_cleared) {
                 // Make it not cleared, that is in a 'dangerous' state
-                triggered_data.cleared = false;
+                triggered_data.is_cleared = 0;
                 // Also reset the CSMS sent, since the new cleared state was not sent
-                triggered_data.csms_sent = false;
+                triggered_data.is_csms_sent = 0;
 
-                EVLOG_debug << "Variable: " << variable.name.get() << " triggered monitor: " << monitor_id;
+                EVLOG_info << "Variable: " << variable.name.get() << " triggered monitor: " << monitor_id;
             }
 
             // Update relevant values only
@@ -266,14 +275,14 @@ void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, Va
         } else {
             // If the monitor is not triggered and we already have the data
             // in our triggered list it means that we have returned to normal
-            if (it != std::end(triggered_monitors)) {
-                if (!it->second.cleared) {
+            if (it != std::end(updater_monitors_meta)) {
+                if (!it->second.is_cleared) {
                     // Mark as cleared (a.k.a normal)
-                    it->second.cleared = true;
+                    it->second.is_cleared = 1;
 
                     // If it was previously sent to the CSMS, mark it as not sent
                     // so that we can allow the CSMS to know that we had a return to normal
-                    it->second.csms_sent = false;
+                    it->second.is_csms_sent = 0;
 
                     EVLOG_debug << "Variable: " << variable.name.get() << " cleared monitor: " << monitor_id;
                 }
@@ -282,264 +291,308 @@ void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, Va
     }
 }
 
-void MonitoringUpdater::process_periodic_monitors() {
-    bool monitoring_enabled =
-        this->device_model->get_optional_value<bool>(ControllerComponentVariables::MonitoringCtrlrEnabled)
-            .value_or(false);
+void MonitoringUpdater::update_periodic_monitors_internal() {
+    // Update the list of periodic monitors
+    auto periodic_monitors = this->device_model->get_periodic_monitors();
 
-    if (!monitoring_enabled) {
-        return;
-    }
-
-    if (!triggered_monitors.empty()) {
-        process_triggered_monitors();
-    }
-
-    // We don't persist the messages here, base on the  'OfflineQueuingSeverity'
-    // since the periodic monitors do not imply an alert
-    if (is_chargepoint_offline()) {
-        return;
-    }
-
-    int active_monitoring_level =
-        this->device_model->get_optional_value<int>(ControllerComponentVariables::ActiveMonitoringLevel)
-            .value_or(MonitoringLevelSeverity::MAX);
-
-    std::string active_monitoring_base_string =
-        this->device_model->get_optional_value<std::string>(ControllerComponentVariables::ActiveMonitoringBase)
-            .value_or(conversions::monitoring_base_enum_to_string(MonitoringBaseEnum::All));
-    MonitoringBaseEnum active_monitoring_base =
-        conversions::string_to_monitoring_base_enum(active_monitoring_base_string);
-
-    EVLOG_debug << "Processing periodic monitors";
-
-    std::vector<EventData> monitor_events;
-    auto monitors = this->device_model->get_periodic_monitors();
-
-    for (auto& component_variable_monitors : monitors) {
+    for (auto& component_variable_monitors : periodic_monitors) {
         for (auto& periodic_monitor_meta : component_variable_monitors.monitors) {
-
-            // Skip non-active monitors
-            if (!is_monitor_active(active_monitoring_base, periodic_monitor_meta)) {
-                continue;
-            }
-
-            // Skip monitors that have a severity > than our active monitoring level
-            if (periodic_monitor_meta.monitor.severity > active_monitoring_level) {
-                continue;
-            }
-
-            // Monitor secodns interval
-            auto monitor_seconds = std::chrono::duration_cast<std::chrono::seconds>(
-                std::chrono::duration<float>(periodic_monitor_meta.monitor.value));
-
             // See if we already have the local monitor
-            auto it = this->periodic_monitors.find(periodic_monitor_meta.monitor.id);
+            auto it = this->updater_monitors_meta.find(periodic_monitor_meta.monitor.id);
 
-            if (it == std::end(this->periodic_monitors)) {
-                PeriodicMonitorData periodic_monitor_data;
-
-                periodic_monitor_data.component = component_variable_monitors.component;
-                periodic_monitor_data.variable = component_variable_monitors.variable;
-                periodic_monitor_data.monitor_meta = periodic_monitor_meta;
-
-                if (periodic_monitor_meta.monitor.type == MonitorEnum::Periodic) {
-                    // Set the trigger to the current time
-                    periodic_monitor_data.last_trigger_steady = std::chrono::steady_clock::now();
-                } else if (periodic_monitor_meta.monitor.type == MonitorEnum::PeriodicClockAligned) {
-                    // Snap to the closest monitor multiple
-                    periodic_monitor_data.next_trigger_clock_aligned =
-                        get_next_clock_aligned_point(periodic_monitor_data.monitor_meta.monitor.value);
-                    EVLOG_debug << "First aligned timepoint for monitor ID: " << periodic_monitor_meta.monitor.id;
-                }
-
-                auto res = this->periodic_monitors.insert(
-                    std::pair{periodic_monitor_meta.monitor.id, std::move(periodic_monitor_data)});
-
-                if (!res.second) {
-                    EVLOG_warning << "Could not insert monitor to periodic monitor map!";
-                    continue;
-                }
-
-                it = res.first;
-            }
-
-            PeriodicMonitorData& periodic_monitor = it->second;
-            bool matches_time = false;
-
-            if (periodic_monitor.monitor_meta.monitor.type == MonitorEnum::Periodic) {
-                auto current_time = std::chrono::steady_clock::now();
-                auto delta = current_time - periodic_monitor.last_trigger_steady;
-
-                if (delta > monitor_seconds) {
-                    // Update last time
-                    periodic_monitor.last_trigger_steady = current_time;
-                    matches_time = true;
-                }
-            } else if (periodic_monitor.monitor_meta.monitor.type == MonitorEnum::PeriodicClockAligned) {
-                // 3.55
-                // PeriodicClockAligned Triggers an event notice every monitorValue
-                // seconds interval, starting from the nearest clock-aligned interval
-                // after this monitor was set. For example, a monitorValue of 900 will
-                // trigger event notices at 0, 15, 30 and 45 minutes after the hour, every hour.
-                auto current_time = std::chrono::system_clock::now();
-
-                if (current_time > periodic_monitor.next_trigger_clock_aligned) {
-                    auto distance = std::chrono::duration_cast<std::chrono::seconds>(
-                                        current_time - periodic_monitor.next_trigger_clock_aligned)
-                                        .count();
-
-                    // TODO (ioan): Handle with: N08.FR.03, events should be queued and
-                    // send when the charger is back online
-                    if (distance > static_cast<decltype(distance)>(60)) {
-                        EVLOG_warning << "Missed scheduled monitor time by: " << distance;
-                    }
-                    matches_time = true;
-                    EVLOG_debug << "Reporting periodic monitor with id: " << periodic_monitor_meta.monitor.id;
-
-                    periodic_monitor.next_trigger_clock_aligned =
-                        get_next_clock_aligned_point(periodic_monitor.monitor_meta.monitor.value);
-                }
-            } else {
-                EVLOG_error << "Invalid monitor type from: 'get_periodic_monitors': "
-                            << conversions::monitor_enum_to_string(periodic_monitor.monitor_meta.monitor.type);
+            if (it != std::end(this->updater_monitors_meta)) {
+                // If we already contain it inside, skip
                 continue;
             }
 
-            if (matches_time) {
-                RequiredComponentVariable comp_var;
-                comp_var.component = component_variable_monitors.component;
-                comp_var.variable = component_variable_monitors.variable;
+            // If it is not found, add a new entry to our managed monitor list
+            UpdaterMonitorMeta periodic_meta;
 
-                std::string current_value = this->device_model->get_value<std::string>(comp_var);
+            periodic_meta.type = UpdateMonitorMetaType::PERIODIC;
+            periodic_meta.monitor_id = periodic_monitor_meta.monitor.id;
+            periodic_meta.component = component_variable_monitors.component;
+            periodic_meta.variable = component_variable_monitors.variable;
+            periodic_meta.monitor_meta = periodic_monitor_meta;
+            periodic_meta.is_writeonly = 0;
 
-                EventData notify_event = std::move(
-                    create_notify_event(this->unique_id++, current_value, component_variable_monitors.component,
-                                        component_variable_monitors.variable, periodic_monitor.monitor_meta));
-
-                monitor_events.push_back(std::move(notify_event));
-            }
-        }
-    }
-
-    if (!monitor_events.empty()) {
-        notify_csms_events(monitor_events);
-    }
-}
-
-void MonitoringUpdater::process_triggered_monitors() {
-    bool monitoring_enabled =
-        this->device_model->get_optional_value<bool>(ControllerComponentVariables::MonitoringCtrlrEnabled)
-            .value_or(false);
-
-    if (!monitoring_enabled) {
-        return;
-    }
-
-    EVLOG_debug << "Processing alert monitors";
-
-    // Persist OfflineMonitoringEventQueuingSeverity even when offline if we have a problem
-    bool is_offline = is_chargepoint_offline();
-    // By default (if the comp is missing we are reporting up to 'Warning')
-    int offline_severity =
-        this->device_model->get_optional_value<int>(ControllerComponentVariables::OfflineQueuingSeverity)
-            .value_or(MonitoringLevelSeverity::Warning);
-
-    int active_monitoring_level =
-        this->device_model->get_optional_value<int>(ControllerComponentVariables::ActiveMonitoringLevel)
-            .value_or(MonitoringLevelSeverity::MAX);
-
-    std::string active_monitoring_base_string =
-        this->device_model->get_optional_value<std::string>(ControllerComponentVariables::ActiveMonitoringBase)
-            .value_or(conversions::monitoring_base_enum_to_string(MonitoringBaseEnum::All));
-    MonitoringBaseEnum active_monitoring_base =
-        conversions::string_to_monitoring_base_enum(active_monitoring_base_string);
-
-    for (auto it = triggered_monitors.begin(); it != triggered_monitors.end();) {
-        bool should_clear = false;
-
-        // If the monitor is active process it
-        if (is_monitor_active(active_monitoring_base, it->second.monitor_meta)) {
-            if (is_offline) {
-                // If we are offline, just discard triggers that have a severity > than 'offline_severity'
-                if (it->second.monitor_meta.monitor.severity > offline_severity) {
-                    should_clear = true;
-                }
+            if (periodic_monitor_meta.monitor.type == MonitorEnum::Periodic) {
+                // Set the trigger to the current time
+                periodic_meta.last_trigger_steady = std::chrono::steady_clock::now();
+            } else if (periodic_monitor_meta.monitor.type == MonitorEnum::PeriodicClockAligned) {
+                // Snap to the closest monitor multiple
+                periodic_meta.next_trigger_clock_aligned =
+                    get_next_clock_aligned_point(periodic_meta.monitor_meta.monitor.value);
+                EVLOG_info << "First aligned timepoint for monitor ID: " << periodic_monitor_meta.monitor.id;
             } else {
-                // If we are online, discard the triggers that have a severity > than 'active_monitoring_level'
-                if (it->second.monitor_meta.monitor.severity > active_monitoring_level) {
-                    should_clear = true;
-                }
+                EVLOG_AND_THROW(std::runtime_error("Invalid type in periodic monitor list, should never happen!"));
             }
-        } else {
-            // If the monitor is not active, simply discard
-            should_clear = true;
-        }
 
-        if (should_clear) {
-            EVLOG_debug << "Erased triggered monitor: [" << it->second.component << ":" << it->second.variable
-                        << "] since we're offline and the severity is < 'OfflineQueuingSeverity'";
-            it = triggered_monitors.erase(it);
+            auto res = this->updater_monitors_meta.insert(
+                std::pair{periodic_monitor_meta.monitor.id, std::move(periodic_meta)});
+
+            if (!res.second) {
+                EVLOG_warning << "Could not insert periodic monitor to internal monitor map!";
+                continue;
+            }
+        }
+    }
+
+    // Remove the monitors in our list that don't exist any more in the database
+    for (auto it = std::begin(updater_monitors_meta); it != std::end(updater_monitors_meta);) {
+        std::int32_t updater_meta_id = it->first;
+
+        bool found_in_new_periodics =
+            std::find_if(std::begin(periodic_monitors), std::end(periodic_monitors),
+                         [&updater_meta_id](const auto& periodic_monitor) {
+                             const auto& monitors = periodic_monitor.monitors;
+
+                             return std::find_if(std::begin(monitors), std::end(monitors),
+                                                 [&updater_meta_id](const auto& monitor_meta) {
+                                                     return (updater_meta_id == monitor_meta.monitor.id);
+                                                 }) != std::end(monitors);
+                         }) != std::end(periodic_monitors);
+
+        // If not found, erse from our list as not being relevant
+        if (!found_in_new_periodics) {
+            it = updater_monitors_meta.erase(it);
         } else {
             ++it;
         }
     }
+}
 
-    if (!is_offline) {
-        std::vector<EventData> monitor_events;
-        for (auto& [id, trigger] : triggered_monitors) {
-            // Only send a trigger if we did not already sent it, as we
-            // will mark it as not sent again, after the value changes
-            if (trigger.csms_sent == false) {
-                std::string reported_value{};
+bool MonitoringUpdater::process_monitor_meta_internal(UpdaterMonitorMeta& updater_meta_data) {
+    const auto& monitor_meta = updater_meta_data.monitor_meta;
+    const auto& monitor = monitor_meta.monitor;
 
-                // If the variable is marked as read-only then the value will NOT be reported
-                if (trigger.is_writeonly == false) {
-                    reported_value = trigger.value_current;
-                }
+    // Process if it is a periodic
+    if (updater_meta_data.type == UpdateMonitorMetaType::PERIODIC) {
+        // Monitor seconds interval
+        auto monitor_seconds =
+            std::chrono::duration_cast<std::chrono::seconds>(std::chrono::duration<float>(monitor.value));
 
-                EventData notify_event = std::move(create_notify_event(unique_id++, reported_value, trigger.component,
-                                                                       trigger.variable, trigger.monitor_meta));
-                // Mark if the event is cleared (returned to normal)
-                if (trigger.cleared) {
-                    notify_event.cleared = trigger.cleared;
-                }
+        // If we match the trigger time
+        bool matches_time = false;
 
-                // Mark the triggers as CSMS sent
-                trigger.csms_sent = true;
+        if (monitor.type == MonitorEnum::Periodic) {
+            auto current_time = std::chrono::steady_clock::now();
+            auto delta = current_time - updater_meta_data.last_trigger_steady;
 
-                monitor_events.push_back(std::move(notify_event));
+            if (delta > monitor_seconds) {
+                // Update last time
+                updater_meta_data.last_trigger_steady = current_time;
+                matches_time = true;
             }
+        } else if (monitor.type == MonitorEnum::PeriodicClockAligned) {
+            // 3.55
+            // PeriodicClockAligned Triggers an event notice every monitorValue
+            // seconds interval, starting from the nearest clock-aligned interval
+            // after this monitor was set. For example, a monitorValue of 900 will
+            // trigger event notices at 0, 15, 30 and 45 minutes after the hour, every hour.
+            auto current_time = std::chrono::system_clock::now();
+
+            if (current_time > updater_meta_data.next_trigger_clock_aligned) {
+                auto distance = std::chrono::duration_cast<std::chrono::seconds>(
+                                    current_time - updater_meta_data.next_trigger_clock_aligned)
+                                    .count();
+
+                // TODO (ioan): Handle with: N08.FR.03, events should be queued and
+                // send when the charger is back online
+                if (distance > static_cast<decltype(distance)>(60)) {
+                    EVLOG_warning << "Missed scheduled monitor time by: " << distance;
+                }
+                matches_time = true;
+                EVLOG_debug << "Reporting periodic monitor with id: " << monitor.id;
+
+                updater_meta_data.next_trigger_clock_aligned = get_next_clock_aligned_point(monitor.value);
+            }
+        } else {
+            // Should never happen
+            EVLOG_AND_THROW(std::runtime_error(std::string("Invalid monitor type from: 'get_periodic_monitors': ") +
+                                               conversions::monitor_enum_to_string(monitor.type)));
         }
 
-        if (!monitor_events.empty()) {
-            notify_csms_events(monitor_events);
+        if (matches_time) {
+            RequiredComponentVariable comp_var;
+            comp_var.component = updater_meta_data.component;
+            comp_var.variable = updater_meta_data.variable;
+
+            // This operation can cause a small stall, but only if this is triggered
+            std::string current_value = this->device_model->get_value<std::string>(comp_var);
+
+            EventData notify_event =
+                std::move(create_notify_event(this->unique_id++, current_value, updater_meta_data.component,
+                                              updater_meta_data.variable, monitor_meta));
+
+            // Generate one event that will either be sent now, or later based on the offline state
+            updater_meta_data.generated_monitor_events.push_back(std::move(notify_event));
         }
+
+        return false;
     }
 
-    for (auto it = triggered_monitors.begin(); it != triggered_monitors.end();) {
+    // Process if it is a periodic trigger
+    if (updater_meta_data.type == UpdateMonitorMetaType::TRIGGER) {
+        // Only send a trigger if we did not already sent it, as we
+        // will mark it as not sent again, after the value changes
+        if (updater_meta_data.is_csms_sent == 0) {
+            std::string reported_value{};
+
+            // If the variable is marked as read-only then the value will NOT be reported
+            if (updater_meta_data.is_writeonly == 0) {
+                reported_value = updater_meta_data.value_current;
+            }
+
+            EventData notify_event =
+                std::move(create_notify_event(unique_id++, reported_value, updater_meta_data.component,
+                                              updater_meta_data.variable, updater_meta_data.monitor_meta));
+
+            // Mark if the event is cleared (returned to normal)
+            if (updater_meta_data.is_cleared) {
+                notify_event.cleared = (updater_meta_data.is_cleared == true);
+            }
+
+            // Mark the triggers as CSMS sent
+            updater_meta_data.is_csms_sent = 1;
+
+            updater_meta_data.generated_monitor_events.push_back(std::move(notify_event));
+        }
+
         bool should_clear = false;
 
-        if (it->second.csms_sent == false && it->second.cleared == true) {
+        if (updater_meta_data.is_csms_sent == false && updater_meta_data.is_cleared == true) {
             // Based on spec comments, if a variable returns to normal and we're offline and
             // it was not sent to the CSMS it can safely be discarded:
             // "Only those monitoring events that were triggered & cleared during the offline period will remain
             // invisible to CSMS."
             should_clear = true;
-        } else if (it->second.csms_sent && it->second.cleared == true) {
+        } else if (updater_meta_data.is_csms_sent && updater_meta_data.is_cleared == true) {
             // Also discard monitors that were sent to the CSMS and are cleared,
             // that is, in their proper state
             should_clear = true;
         }
 
+        return should_clear;
+    }
+
+    // Default is not to remove
+    return false;
+}
+
+void MonitoringUpdater::process_monitors_internal(bool allow_periodics, bool allow_trigger) {
+    if (!is_monitoring_enabled()) {
+        EVLOG_info << "Monitoring not enabled, not processing internal monitors!";
+        return;
+    }
+
+    bool is_offline;
+    int offline_severity;
+    int active_monitoring_level;
+    MonitoringBaseEnum active_monitoring_base;
+
+    get_monitoring_info(is_offline, offline_severity, active_monitoring_level, active_monitoring_base);
+
+    EVLOG_info << "Processing internal monitors";
+
+    if (allow_periodics) {
+        // Rebuild the periodic monitor information
+        update_periodic_monitors_internal();
+    }
+
+    // Iterate all internal monitors and process them
+    for (auto it = std::begin(updater_monitors_meta); it != std::end(updater_monitors_meta);) {
+        auto& updater_monitor_meta = it->second;
+        const auto& meta_monitor_id = it->first;
+        const auto& monitor_meta = updater_monitor_meta.monitor_meta;
+
+        if ((allow_periodics == false) && (updater_monitor_meta.type == UpdateMonitorMetaType::PERIODIC) ||
+            (allow_trigger == false) && (updater_monitor_meta.type == UpdateMonitorMetaType::TRIGGER)) {
+            continue;
+        }
+
+        bool should_process = true;
+
+        // Skip non-active monitors
+        if (!is_monitor_active(active_monitoring_base, monitor_meta)) {
+            EVLOG_info << "Skipped non-active monitor: " << monitor_meta.monitor;
+            should_process = false;
+        }
+
+        if (is_offline) {
+            // If we are offline, just discard triggers that have a severity > than 'offline_severity'
+            if (it->second.monitor_meta.monitor.severity > offline_severity) {
+                EVLOG_info << "Offline severity, skipped monitor: " << monitor_meta.monitor;
+                should_process = false;
+            }
+        } else {
+            // If we are online, discard the triggers that have a severity > than 'active_monitoring_level'
+            if (it->second.monitor_meta.monitor.severity > active_monitoring_level) {
+                EVLOG_info << "Active severity, skipped monitor: " << monitor_meta.monitor;
+                should_process = false;
+            }
+        }
+
+        if (!should_process) {
+            if (updater_monitor_meta.type == UpdateMonitorMetaType::TRIGGER) {
+                // The triggers that are not active, should simply pe discarded
+                it = updater_monitors_meta.erase(it);
+            } else if (updater_monitor_meta.type == UpdateMonitorMetaType::PERIODIC) {
+                // Just clear the events, since we don't require them cached
+                updater_monitor_meta.generated_monitor_events.clear();
+            }
+
+            continue;
+        }
+
+        // As a result of this function, the meta should have in it all the generated
+        bool should_clear = process_monitor_meta_internal(updater_monitor_meta);
+
+        // If we are not offline, send the queued events generated by this meta
+        if (!is_offline) {
+            if (!updater_monitor_meta.generated_monitor_events.empty()) {
+                // Send the events
+                notify_csms_events(updater_monitor_meta.generated_monitor_events);
+                updater_monitor_meta.generated_monitor_events.clear();
+            }
+        } else {
+            // If we are offline but we passed the 'shoul_process' test, it means that
+            // we should keep the generated events and send them at a further occasion
+            EVLOG_info << "We are offline, cached generated events for later!";
+        }
+
         if (should_clear) {
-            EVLOG_debug << "Erased triggered monitor: [" << it->second.component << ":" << it->second.variable
-                        << "] since it was either cleared or it was sent to the CSMS and cleared";
-            it = triggered_monitors.erase(it);
+            it = updater_monitors_meta.erase(it);
         } else {
             ++it;
         }
     }
+}
+
+bool MonitoringUpdater::is_monitoring_enabled() {
+    return this->device_model->get_optional_value<bool>(ControllerComponentVariables::MonitoringCtrlrEnabled)
+        .value_or(false);
+}
+
+void MonitoringUpdater::get_monitoring_info(bool& out_is_offline, int& out_offline_severity,
+                                            int& out_active_monitoring_level,
+                                            MonitoringBaseEnum& out_active_monitoring_base) {
+    // Persist OfflineMonitoringEventQueuingSeverity even when offline if we have a problem
+    out_is_offline = is_chargepoint_offline();
+
+    // By default (if the comp is missing we are reporting up to 'Warning')
+    out_offline_severity =
+        this->device_model->get_optional_value<int>(ControllerComponentVariables::OfflineQueuingSeverity)
+            .value_or(MontoringLevelSeverity::Warning);
+
+    out_active_monitoring_level =
+        this->device_model->get_optional_value<int>(ControllerComponentVariables::ActiveMonitoringLevel)
+            .value_or(MontoringLevelSeverity::MAX);
+
+    std::string active_monitoring_base_string =
+        this->device_model->get_optional_value<std::string>(ControllerComponentVariables::ActiveMonitoringBase)
+            .value_or(conversions::monitoring_base_enum_to_string(MonitoringBaseEnum::All));
+
+    out_active_monitoring_base = conversions::string_to_monitoring_base_enum(active_monitoring_base_string);
 }
 
 } // namespace ocpp::v201
