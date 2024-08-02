@@ -3,9 +3,9 @@
 #ifndef OCPP_V201_ENUMS_HPP
 #define OCPP_V201_ENUMS_HPP
 
+#include <cstdint>
 #include <iosfwd>
 #include <string>
-#include <cstdint>
 
 namespace ocpp {
 namespace v201 {
