@@ -23,7 +23,7 @@ struct StartTransactionRequest : public ocpp::Message {
 
     /// \brief Provides the type of this StartTransaction message as a human readable string
     /// \returns the message type as a human readable string
-    std::string get_type() const;
+    std::string get_type() const override;
 };
 
 /// \brief Conversion from a given StartTransactionRequest \p k to a given json object \p j
@@ -43,7 +43,7 @@ struct StartTransactionResponse : public ocpp::Message {
 
     /// \brief Provides the type of this StartTransactionResponse message as a human readable string
     /// \returns the message type as a human readable string
-    std::string get_type() const;
+    std::string get_type() const override;
 };
 
 /// \brief Conversion from a given StartTransactionResponse \p k to a given json object \p j

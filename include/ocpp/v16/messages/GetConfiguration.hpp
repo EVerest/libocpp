@@ -18,7 +18,7 @@ struct GetConfigurationRequest : public ocpp::Message {
 
     /// \brief Provides the type of this GetConfiguration message as a human readable string
     /// \returns the message type as a human readable string
-    std::string get_type() const;
+    std::string get_type() const override;
 };
 
 /// \brief Conversion from a given GetConfigurationRequest \p k to a given json object \p j
@@ -38,7 +38,7 @@ struct GetConfigurationResponse : public ocpp::Message {
 
     /// \brief Provides the type of this GetConfigurationResponse message as a human readable string
     /// \returns the message type as a human readable string
-    std::string get_type() const;
+    std::string get_type() const override;
 };
 
 /// \brief Conversion from a given GetConfigurationResponse \p k to a given json object \p j

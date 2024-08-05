@@ -18,7 +18,7 @@ struct HeartbeatRequest : public ocpp::Message {
 
     /// \brief Provides the type of this Heartbeat message as a human readable string
     /// \returns the message type as a human readable string
-    std::string get_type() const;
+    std::string get_type() const override;
 };
 
 /// \brief Conversion from a given HeartbeatRequest \p k to a given json object \p j
@@ -38,7 +38,7 @@ struct HeartbeatResponse : public ocpp::Message {
 
     /// \brief Provides the type of this HeartbeatResponse message as a human readable string
     /// \returns the message type as a human readable string
-    std::string get_type() const;
+    std::string get_type() const override;
 };
 
 /// \brief Conversion from a given HeartbeatResponse \p k to a given json object \p j

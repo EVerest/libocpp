@@ -21,7 +21,7 @@ struct ReservationStatusUpdateRequest : public ocpp::Message {
 
     /// \brief Provides the type of this ReservationStatusUpdate message as a human readable string
     /// \returns the message type as a human readable string
-    std::string get_type() const;
+    std::string get_type() const override;
 };
 
 /// \brief Conversion from a given ReservationStatusUpdateRequest \p k to a given json object \p j
@@ -40,7 +40,7 @@ struct ReservationStatusUpdateResponse : public ocpp::Message {
 
     /// \brief Provides the type of this ReservationStatusUpdateResponse message as a human readable string
     /// \returns the message type as a human readable string
-    std::string get_type() const;
+    std::string get_type() const override;
 };
 
 /// \brief Conversion from a given ReservationStatusUpdateResponse \p k to a given json object \p j

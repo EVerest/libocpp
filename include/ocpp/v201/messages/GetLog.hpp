@@ -24,7 +24,7 @@ struct GetLogRequest : public ocpp::Message {
 
     /// \brief Provides the type of this GetLog message as a human readable string
     /// \returns the message type as a human readable string
-    std::string get_type() const;
+    std::string get_type() const override;
 };
 
 /// \brief Conversion from a given GetLogRequest \p k to a given json object \p j
@@ -46,7 +46,7 @@ struct GetLogResponse : public ocpp::Message {
 
     /// \brief Provides the type of this GetLogResponse message as a human readable string
     /// \returns the message type as a human readable string
-    std::string get_type() const;
+    std::string get_type() const override;
 };
 
 /// \brief Conversion from a given GetLogResponse \p k to a given json object \p j
