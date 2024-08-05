@@ -270,9 +270,9 @@ TEST_F(DatabaseHandlerTest, KO1_FR27_DatabaseWithNoProfileData_DeleteAllDoesNotF
 }
 
 TEST_F(DatabaseHandlerTest, KO1_FR27_DatabaseWithSingleProfileData_LoadsChargingProfile) {
-    this->database_handler.insert_or_update_charging_profile(
-        1, ChargingProfile{
-               .id = 1, .stackLevel = 1, .chargingProfilePurpose = ChargingProfilePurposeEnum::TxDefaultProfile});
+    auto profile = ChargingProfile{
+        .id = 1, .stackLevel = 1, .chargingProfilePurpose = ChargingProfilePurposeEnum::TxDefaultProfile};
+    this->database_handler.insert_or_update_charging_profile(1, profile);
 
     auto sut = this->database_handler.get_all_charging_profiles_by_evse();
 
@@ -284,6 +284,7 @@ TEST_F(DatabaseHandlerTest, KO1_FR27_DatabaseWithSingleProfileData_LoadsCharging
     auto profiles = sut[1];
 
     EXPECT_EQ(profiles.size(), 1);
+    EXPECT_EQ(profile, profiles[0]);
 }
 
 TEST_F(DatabaseHandlerTest, KO1_FR27_DatabaseWithMultipleProfileSameEvse_LoadsChargingProfile) {
