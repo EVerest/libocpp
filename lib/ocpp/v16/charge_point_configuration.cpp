@@ -2423,12 +2423,6 @@ ConfigurationStatus ChargePointConfiguration::setDefaultPrice(const std::string&
         return ConfigurationStatus::Rejected;
     }
 
-    // priceText is mandatory   // TODO mz isn't this already checked somewhere???
-    if (!default_price.contains("priceText")) {
-        EVLOG_error << "Configuration DefaultPrice is set, but does not contain 'priceText'";
-        return ConfigurationStatus::Rejected;
-    }
-
     this->config["CostAndPrice"]["DefaultPrice"] = default_price;
     this->setInUserConfig("CostAndPrice", "DefaultPrice", default_price);
 
