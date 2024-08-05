@@ -341,17 +341,16 @@ TEST_F(InitDeviceModelDbTest, init_db) {
     EXPECT_TRUE(attribute_exists("EVSE", std::nullopt, 1, std::nullopt, "Power", std::nullopt,
                                  MutabilityEnum::ReadWrite, AttributeEnum::Target));
 
-    // Characteristics changed from not EVSE or Connector (should not change in db)
-    EXPECT_TRUE(characteristics_exists("UnitTestCtrlr", std::nullopt, 2, 3, "UnitTestPropertyAName", std::nullopt,
-                                       DataEnum::boolean, std::nullopt, std::nullopt, true, std::nullopt,
-                                       std::nullopt));
+    // Characteristics changed from not EVSE or Connector
     EXPECT_FALSE(characteristics_exists("UnitTestCtrlr", std::nullopt, 2, 3, "UnitTestPropertyAName", std::nullopt,
-                                        DataEnum::string, std::nullopt, std::nullopt, true, std::nullopt,
+                                        DataEnum::boolean, std::nullopt, std::nullopt, true, std::nullopt,
                                         std::nullopt));
+    EXPECT_TRUE(characteristics_exists("UnitTestCtrlr", std::nullopt, 2, 3, "UnitTestPropertyAName", std::nullopt,
+                                       DataEnum::string, std::nullopt, std::nullopt, true, std::nullopt, std::nullopt));
 
-    // No change, because this is not a Connector or EVSE
+    // Removed UnitTestPropertyCName
     EXPECT_TRUE(variable_exists("UnitTestCtrlr", std::nullopt, 2, 3, "UnitTestPropertyBName", std::nullopt));
-    EXPECT_TRUE(variable_exists("UnitTestCtrlr", std::nullopt, 2, 3, "UnitTestPropertyCName", std::nullopt));
+    EXPECT_FALSE(variable_exists("UnitTestCtrlr", std::nullopt, 2, 3, "UnitTestPropertyCName", std::nullopt));
 }
 
 TEST_F(InitDeviceModelDbTest, insert_values) {
@@ -901,7 +900,5 @@ void InitDeviceModelDbTest::set_attribute_source(const std::string& component_na
                     << ") attribute " << static_cast<int>(type) << ": " << this->database->get_error_message();
     }
 }
-
-// TODO tests with non existing paths
 
 } // namespace ocpp::v201

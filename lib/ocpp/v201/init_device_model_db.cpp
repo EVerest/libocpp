@@ -53,10 +53,10 @@ void InitDeviceModelDb::initialize_database(const std::filesystem::path& schemas
     execute_init_sql(delete_db_if_exists);
 
     // Get existing EVSE and Connector components from the database.
-    std::vector<ComponentKey> existing_components;
+    std::map<ComponentKey, std::vector<DeviceModelVariable>> existing_components;
     DeviceModelMap device_model;
     if (this->database_exists) {
-        existing_components = get_all_connector_and_evse_components_from_db();
+        existing_components = get_all_components_from_db();
     }
 
     // Get component schemas from the filesystem.
@@ -214,16 +214,17 @@ InitDeviceModelDb::get_all_component_schemas(const std::filesystem::path& direct
     return components;
 }
 
-void InitDeviceModelDb::insert_components(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& components,
-                                          const std::vector<ComponentKey>& existing_components) {
-    for (std::pair<ComponentKey, std::vector<DeviceModelVariable>> component : components) {
+void InitDeviceModelDb::insert_components(
+    const std::map<ComponentKey, std::vector<DeviceModelVariable>>& components,
+    const std::map<ComponentKey, std::vector<DeviceModelVariable>>& existing_components) {
+    for (auto& component : components) {
         // Check if component already exists in the database.
-        std::optional<ComponentKey> component_db;
-        if (this->database_exists && (component.first.name == "EVSE" || component.first.name == "Connector") &&
+        std::optional<std::pair<ComponentKey, std::vector<DeviceModelVariable>>> component_db;
+        if (this->database_exists &&
             (component_db = component_exists_in_db(existing_components, component.first)).has_value()) {
             // Component exists in the database, update component if necessary.
             update_component_variables(component_db.value(), component.second);
-        } else if (!this->database_exists || (component.first.name == "EVSE" || component.first.name == "Connector")) {
+        } else {
             // Database is new or component is evse or connector and component does not exist. Insert component.
             insert_component(component.first, component.second);
         }
@@ -833,44 +834,6 @@ bool InitDeviceModelDb::insert_variable_attribute_value(const ComponentKey& comp
     return true;
 }
 
-std::vector<ComponentKey> InitDeviceModelDb::get_all_connector_and_evse_components_from_db() {
-    std::vector<ComponentKey> components;
-
-    const std::string statement = "SELECT ID, NAME, INSTANCE, EVSE_ID, CONNECTOR_ID FROM COMPONENT "
-                                  "WHERE NAME == 'EVSE' COLLATE NOCASE OR NAME == 'Connector' COLLATE NOCASE ";
-
-    std::unique_ptr<common::SQLiteStatementInterface> select_statement;
-    try {
-        select_statement = this->database->new_statement(statement);
-    } catch (const common::QueryExecutionException&) {
-        throw InitDeviceModelDbError("Could not create statement " + statement);
-    }
-
-    int status;
-    while ((status = select_statement->step()) == SQLITE_ROW) {
-        ComponentKey component_key;
-        component_key.db_id = select_statement->column_int(0);
-        component_key.name = select_statement->column_text(1);
-        component_key.instance = select_statement->column_text_nullable(2);
-        if (select_statement->column_type(3) != SQLITE_NULL) {
-            component_key.evse_id = select_statement->column_int(3);
-        }
-
-        if (select_statement->column_type(4) != SQLITE_NULL) {
-            component_key.connector_id = select_statement->column_int(4);
-        }
-
-        components.push_back(component_key);
-    }
-
-    if (status != SQLITE_DONE) {
-        throw InitDeviceModelDbError("Could not get all connector and evse components from the database: " +
-                                     std::string(this->database->get_error_message()));
-    }
-
-    return components;
-}
-
 std::map<ComponentKey, std::vector<DeviceModelVariable>> InitDeviceModelDb::get_all_components_from_db() {
     /* clang-format off */
     const std::string statement =
@@ -984,10 +947,11 @@ std::map<ComponentKey, std::vector<DeviceModelVariable>> InitDeviceModelDb::get_
     return components;
 }
 
-std::optional<ComponentKey> InitDeviceModelDb::component_exists_in_db(const std::vector<ComponentKey>& db_components,
-                                                                      const ComponentKey& component) {
-    for (const ComponentKey& db_component : db_components) {
-        if (is_same_component_key(db_component, component)) {
+std::optional<std::pair<ComponentKey, std::vector<DeviceModelVariable>>>
+InitDeviceModelDb::component_exists_in_db(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& db_components,
+                                          const ComponentKey& component) {
+    for (const auto& db_component : db_components) {
+        if (is_same_component_key(db_component.first, component)) {
             return db_component;
         }
     }
@@ -1008,10 +972,10 @@ bool InitDeviceModelDb::component_exists_in_schemas(
 
 void InitDeviceModelDb::remove_not_existing_components_from_db(
     const std::map<ComponentKey, std::vector<DeviceModelVariable>>& component_schemas,
-    const std::vector<ComponentKey>& db_components) {
-    for (const ComponentKey& component : db_components) {
-        if (!component_exists_in_schemas(component_schemas, component)) {
-            remove_component_from_db(component);
+    const std::map<ComponentKey, std::vector<DeviceModelVariable>>& db_components) {
+    for (const auto& component : db_components) {
+        if (!component_exists_in_schemas(component_schemas, component.first)) {
+            remove_component_from_db(component.first);
         }
     }
 }
@@ -1040,14 +1004,16 @@ bool InitDeviceModelDb::remove_component_from_db(const ComponentKey& component) 
     return true;
 }
 
-void InitDeviceModelDb::update_component_variables(const ComponentKey& db_component,
-                                                   const std::vector<DeviceModelVariable>& variables) {
+void InitDeviceModelDb::update_component_variables(
+    const std::pair<ComponentKey, std::vector<DeviceModelVariable>>& db_component_variables,
+    const std::vector<DeviceModelVariable>& variables) {
+    const std::vector<DeviceModelVariable>& db_variables = db_component_variables.second;
+    const ComponentKey& db_component = db_component_variables.first;
+
     if (!db_component.db_id.has_value()) {
         EVLOG_error << "Can not update component " << db_component.name << ", because database id is unknown.";
         return;
     }
-
-    const std::vector<DeviceModelVariable> db_variables = get_variables_from_component_from_db(db_component);
 
     // Check for variables that do exist in the database but do not exist in the config. They should be removed.
     for (const DeviceModelVariable& db_variable : db_variables) {
@@ -1078,70 +1044,6 @@ void InitDeviceModelDb::update_component_variables(const ComponentKey& db_compon
             }
         }
     }
-}
-
-std::vector<DeviceModelVariable>
-InitDeviceModelDb::get_variables_from_component_from_db(const ComponentKey& db_component) {
-    if (!db_component.db_id.has_value()) {
-        EVLOG_error << "Can not update component " << db_component.name << ", because database id is unknown.";
-        return {};
-    }
-
-    std::vector<DeviceModelVariable> variables;
-
-    static const std::string select_variable_statement =
-        "SELECT v.ID, v.NAME, v.INSTANCE, v.REQUIRED, vc.ID, vc.DATATYPE_ID, vc.MAX_LIMIT, vc.MIN_LIMIT, "
-        "vc.SUPPORTS_MONITORING, vc.UNIT, vc.VALUES_LIST FROM VARIABLE v LEFT JOIN VARIABLE_CHARACTERISTICS vc "
-        "ON v.ID=vc.VARIABLE_ID WHERE v.COMPONENT_ID=@component_id";
-
-    std::unique_ptr<common::SQLiteStatementInterface> select_statement;
-    try {
-        select_statement = this->database->new_statement(select_variable_statement);
-    } catch (const common::QueryExecutionException&) {
-        throw InitDeviceModelDbError("Could not create statement " + select_variable_statement);
-    }
-
-    select_statement->bind_int("@component_id", static_cast<int>(db_component.db_id.value()));
-
-    int status;
-    while ((status = select_statement->step()) == SQLITE_ROW) {
-        DeviceModelVariable variable;
-        variable.db_id = select_statement->column_int(0);
-        variable.name = select_statement->column_text(1);
-        if (select_statement->column_type(2) != SQLITE_NULL) {
-            variable.instance = select_statement->column_text(2);
-        }
-        variable.required = (select_statement->column_int(3) == 1 ? true : false);
-        variable.variable_characteristics_db_id = select_statement->column_int(4);
-        variable.characteristics.dataType = static_cast<DataEnum>(select_statement->column_int(5));
-        if (select_statement->column_type(6) != SQLITE_NULL) {
-            variable.characteristics.maxLimit = select_statement->column_double(6);
-        }
-        if (select_statement->column_type(7) != SQLITE_NULL) {
-            variable.characteristics.minLimit = select_statement->column_double(7);
-        }
-        variable.characteristics.supportsMonitoring = (select_statement->column_int(8) == 1 ? true : false);
-        if (select_statement->column_type(9) != SQLITE_NULL) {
-            variable.characteristics.unit = select_statement->column_text(9);
-        }
-        if (select_statement->column_type(10) != SQLITE_NULL) {
-            variable.characteristics.valuesList = select_statement->column_text(10);
-        }
-
-        variables.push_back(variable);
-    }
-
-    if (status != SQLITE_DONE) {
-        throw InitDeviceModelDbError("Could not get variables from component " + db_component.name +
-                                     "from db: " + std::string(this->database->get_error_message()));
-    }
-
-    for (DeviceModelVariable& variable : variables) {
-        std::vector<DbVariableAttribute> attributes = get_variable_attributes_from_db(variable.db_id.value());
-        variable.attributes = attributes;
-    }
-
-    return variables;
 }
 
 std::vector<DbVariableAttribute> InitDeviceModelDb::get_variable_attributes_from_db(const uint64_t& variable_id) {

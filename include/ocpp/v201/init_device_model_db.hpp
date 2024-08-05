@@ -213,7 +213,7 @@ private: // Functions
     /// \throw InitDeviceModelDbError   When component could not be inserted
     ///
     void insert_components(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& components,
-                           const std::vector<ComponentKey>& existing_components);
+                           const std::map<ComponentKey, std::vector<DeviceModelVariable>>& existing_components);
 
     ///
     /// \brief Insert a single component with its variables, characteristics and attributes.
@@ -369,14 +369,6 @@ private: // Functions
                                          const bool warn_source_not_default);
 
     ///
-    /// \brief Get all components from the db that are either EVSE or Connector.
-    /// \return EVSE and Connector components.
-    ///
-    /// \throws InitDeviceModelDbError When getting components from db failed.
-    ///
-    std::vector<ComponentKey> get_all_connector_and_evse_components_from_db();
-
-    ///
     /// \brief Get all components with its variables (and characteristics / attributes) from the database.
     /// \return A map of Components with it Variables.
     ///
@@ -388,8 +380,9 @@ private: // Functions
     /// \param component        The component to check against.
     /// \return The component from the database if it exists.
     ///
-    std::optional<ComponentKey> component_exists_in_db(const std::vector<ComponentKey>& db_components,
-                                                       const ComponentKey& component);
+    std::optional<std::pair<ComponentKey, std::vector<DeviceModelVariable>>>
+    component_exists_in_db(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& db_components,
+                           const ComponentKey& component);
 
     ///
     /// \brief Check if a component exist in the component schema.
@@ -409,7 +402,7 @@ private: // Functions
     ///
     void remove_not_existing_components_from_db(
         const std::map<ComponentKey, std::vector<DeviceModelVariable>>& component_schemas,
-        const std::vector<ComponentKey>& db_components);
+        const std::map<ComponentKey, std::vector<DeviceModelVariable>>& db_components);
 
     ///
     /// \brief Remove a component from the database.
@@ -421,22 +414,14 @@ private: // Functions
     bool remove_component_from_db(const ComponentKey& component);
 
     ///
-    /// \brief Update variables of a component in the database.
+    /// \brief Update component_variables of a component in the database.
     ///
-    /// \param db_component         The component that currently exists in the database and needs updating.
-    /// \param variables            The variables of the component.
+    /// \param db_component_variables         The component that currently exists in the database and needs updating.
+    /// \param component_variables            The component_variables of the component.
     ///
-    void update_component_variables(const ComponentKey& db_component,
-                                    const std::vector<DeviceModelVariable>& variables);
-
-    ///
-    /// \brief Get variables belonging to a specific component from the database.
-    /// \param db_component The component to get the variables from.
-    /// \return The variables that belong to the given component.
-    ///
-    /// \throw InitDeviceModelDbError When variables could not be retrieved from the database.
-    ///
-    std::vector<DeviceModelVariable> get_variables_from_component_from_db(const ComponentKey& db_component);
+    void
+    update_component_variables(const std::pair<ComponentKey, std::vector<DeviceModelVariable>>& db_component_variables,
+                               const std::vector<DeviceModelVariable>& variables);
 
     ///
     /// \brief Get variable attributes belonging to a specific variable from the database.
