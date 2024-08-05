@@ -3166,13 +3166,13 @@ void ChargePoint::handle_firmware_update_req(Call<UpdateFirmwareRequest> call) {
             ocpp::CertificateValidationResult::Valid) {
         response.status = UpdateFirmwareStatusEnum::InvalidCertificate;
         cert_valid_or_not_set = false;
-    } 
-    
+    }
+
     if (cert_valid_or_not_set) {
         // execute firwmare update callback
         response = callbacks.update_firmware_request_callback(msg);
     }
-    
+
     ocpp::CallResult<UpdateFirmwareResponse> call_result(response, call.uniqueId);
     this->send<UpdateFirmwareResponse>(call_result);
 
