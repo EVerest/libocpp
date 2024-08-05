@@ -153,7 +153,7 @@ TEST_F(DatabaseHandlerTest, KO1_FR27_DatabaseWithNoData_InsertProfile) {
         1, ChargingProfile{
                .id = 1, .stackLevel = 1, .chargingProfilePurpose = ChargingProfilePurposeEnum::TxDefaultProfile});
 
-    auto sut = this->database_handler.get_all_charging_profiles_by_evse();
+    auto sut = this->database_handler.get_all_charging_profiles_group_by_evse();
 
     EXPECT_EQ(sut.size(), 1);
     EXPECT_EQ(sut[1].size(), 1);        // Access the profiles at EVSE_ID 1
@@ -274,7 +274,7 @@ TEST_F(DatabaseHandlerTest, KO1_FR27_DatabaseWithSingleProfileData_LoadsCharging
         .id = 1, .stackLevel = 1, .chargingProfilePurpose = ChargingProfilePurposeEnum::TxDefaultProfile};
     this->database_handler.insert_or_update_charging_profile(1, profile);
 
-    auto sut = this->database_handler.get_all_charging_profiles_by_evse();
+    auto sut = this->database_handler.get_all_charging_profiles_group_by_evse();
 
     EXPECT_EQ(sut.size(), 1);
 
@@ -301,7 +301,7 @@ TEST_F(DatabaseHandlerTest, KO1_FR27_DatabaseWithMultipleProfileSameEvse_LoadsCh
         .id = 3, .stackLevel = 3, .chargingProfilePurpose = ChargingProfilePurposeEnum::TxDefaultProfile};
     this->database_handler.insert_or_update_charging_profile(1, p3);
 
-    auto sut = this->database_handler.get_all_charging_profiles_by_evse();
+    auto sut = this->database_handler.get_all_charging_profiles_group_by_evse();
 
     EXPECT_EQ(sut.size(), 1);
 
@@ -340,7 +340,7 @@ TEST_F(DatabaseHandlerTest, KO1_FR27_DatabaseWithMultipleProfileDiffEvse_LoadsCh
         ChargingProfile{.id = 6, .stackLevel = 6, .chargingProfilePurpose = ChargingProfilePurposeEnum::TxProfile};
     this->database_handler.insert_or_update_charging_profile(3, p6);
 
-    auto sut = this->database_handler.get_all_charging_profiles_by_evse();
+    auto sut = this->database_handler.get_all_charging_profiles_group_by_evse();
 
     EXPECT_EQ(sut.size(), 3);
 

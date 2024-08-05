@@ -3862,7 +3862,7 @@ void ChargePoint::execute_change_availability_request(ChangeAvailabilityRequest 
 // K01.27 - load profiles from database
 void ChargePoint::load_charging_profiles() {
     try {
-        auto evses = this->database_handler->get_all_charging_profiles_by_evse();
+        auto evses = this->database_handler->get_all_charging_profiles_group_by_evse();
         EVLOG_info << "Found " << evses.size() << " evse in the database";
         for (const auto& [evse_id, profiles] : evses) {
             for (auto profile : profiles) {

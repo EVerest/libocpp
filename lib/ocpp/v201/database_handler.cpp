@@ -755,7 +755,7 @@ void DatabaseHandler::clear_charging_profiles() {
     this->database->clear_table("CHARGING_PROFILES");
 }
 
-std::map<int32_t, std::vector<v201::ChargingProfile>> DatabaseHandler::get_all_charging_profiles_by_evse() {
+std::map<int32_t, std::vector<v201::ChargingProfile>> DatabaseHandler::get_all_charging_profiles_group_by_evse() {
     std::map<int32_t, std::vector<v201::ChargingProfile>> map;
 
     std::string sql = "SELECT EVSE_ID, PROFILE FROM CHARGING_PROFILES";
