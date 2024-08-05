@@ -358,7 +358,7 @@ enum class RunningCostState {
 namespace conversions {
 RunningCostState string_to_running_cost_state(const std::string& state);
 std::string running_cost_state_to_string(const RunningCostState& state);
-}
+} // namespace conversions
 
 struct RunningCost {
     std::string transaction_id;
