@@ -1,0 +1,24 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+!pragma teoz true
+participant core order 10
+participant libocpp order 20
+database user_config.json order 30
+
+autonumber "<b><font color=red>"
+skinparam sequenceArrowThickness 2
+
+== Set Custom Configuration Key by Core ==
+core->libocpp: Set custom configuration key
+libocpp->libocpp: Internal validation
+alt request is valid and configuration key is custom
+    libocpp->user_config.json: update configuration key
+    libocpp->csms: respond with Accepted
+else
+    libocpp->csms: respond with Rejected
+end
+alt if request was accepted and custom callback registered for this configuration key
+    libocpp->core: configuration_key_changed_callback
+end
+
+@enduml

@@ -1,0 +1,30 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+!pragma teoz true
+participant csms order 10
+participant libocpp order 20
+participant device_model order 30
+participant core order 40
+
+autonumber "<b><font color=red>"
+skinparam sequenceArrowThickness 2
+
+== SetVariables.req by CSMS ==
+csms->libocpp: SetVariables.req
+loop For each SetVariable request
+    libocpp->libocpp: Logical internal validation
+    libocpp->libocpp: Device Model validation
+    alt request is valid
+        libocpp->device_model: set_value
+        device_model->libocpp: set_value response
+    end
+end
+libocpp->csms: SetVariables.conf
+loop For each SetVariable request
+    alt if request was accepted
+        libocpp->libocpp: Handle variable changed internally
+        libocpp->core: variable_changed_callback
+    end
+end
+
+@enduml
