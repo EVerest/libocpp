@@ -75,7 +75,7 @@ class UnexpectedMessageTypeFromCSMS : public std::runtime_error {
 
 struct Callbacks {
     ///\brief Function to check if the callback struct is completely filled. All std::functions should hold a function,
-    ///       all std::optional<std::functions> should either be emtpy or hold a function.
+    ///       all std::optional<std::functions> should either be empty or hold a function.
     ///
     ///\retval false if any of the normal callbacks are nullptr or any of the optional ones are filled with a nullptr
     ///        true otherwise
@@ -151,6 +151,9 @@ struct Callbacks {
     ///
     std::function<void(const CiString<50>& event_type, const std::optional<CiString<255>>& tech_info)>
         security_event_callback;
+
+    /// \brief Callback for indicating when a charging profile is received and was accepted.
+    std::function<void()> set_charging_profiles_callback;
 
     /// \brief  Callback for when a bootnotification response is received
     std::optional<std::function<void(const ocpp::v201::BootNotificationResponse& boot_notification_response)>>
@@ -294,6 +297,11 @@ public:
     /// \param evse_id          Faulted EVSE id
     /// \param connector_id     Faulted connector id
     virtual void on_faulted(const int32_t evse_id, const int32_t connector_id) = 0;
+
+    /// \brief Event handler that should be called when the fault on the connector on the given evse_id is cleared.
+    /// \param evse_id          EVSE id where fault was cleared
+    /// \param connector_id     Connector id where fault was cleared
+    virtual void on_fault_cleared(const int32_t evse_id, const int32_t connector_id) = 0;
 
     /// \brief Event handler that should be called when the connector on the given evse_id and connector_id is reserved.
     /// \param evse_id          Reserved EVSE id
@@ -876,6 +884,8 @@ public:
     void on_enabled(const int32_t evse_id, const int32_t connector_id) override;
 
     void on_faulted(const int32_t evse_id, const int32_t connector_id) override;
+
+    void on_fault_cleared(const int32_t evse_id, const int32_t connector_id) override;
 
     void on_reserved(const int32_t evse_id, const int32_t connector_id) override;
 

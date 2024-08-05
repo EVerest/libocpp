@@ -36,7 +36,8 @@ bool Callbacks::all_callbacks_valid() const {
            this->connector_effective_operative_status_changed_callback != nullptr and
            this->get_log_request_callback != nullptr and this->unlock_connector_callback != nullptr and
            this->remote_start_transaction_callback != nullptr and this->is_reservation_for_token_callback != nullptr and
-           this->update_firmware_request_callback != nullptr and
+           this->update_firmware_request_callback != nullptr and this->security_event_callback != nullptr and
+           this->set_charging_profiles_callback != nullptr and
            (!this->variable_changed_callback.has_value() or this->variable_changed_callback.value() != nullptr) and
            (!this->validate_network_profile_callback.has_value() or
             this->validate_network_profile_callback.value() != nullptr) and
@@ -44,7 +45,21 @@ bool Callbacks::all_callbacks_valid() const {
             this->configure_network_connection_profile_callback.value() != nullptr) and
            (!this->time_sync_callback.has_value() or this->time_sync_callback.value() != nullptr) and
            (!this->boot_notification_callback.has_value() or this->boot_notification_callback.value() != nullptr) and
-           (!this->ocpp_messages_callback.has_value() or this->ocpp_messages_callback.value() != nullptr);
+           (!this->ocpp_messages_callback.has_value() or this->ocpp_messages_callback.value() != nullptr) and
+           (!this->cs_effective_operative_status_changed_callback.has_value() or
+            this->cs_effective_operative_status_changed_callback.value() != nullptr) and
+           (!this->evse_effective_operative_status_changed_callback.has_value() or
+            this->evse_effective_operative_status_changed_callback.value() != nullptr) and
+           (!this->get_customer_information_callback.has_value() or
+            this->get_customer_information_callback.value() != nullptr) and
+           (!this->clear_customer_information_callback.has_value() or
+            this->clear_customer_information_callback.value() != nullptr) and
+           (!this->all_connectors_unavailable_callback.has_value() or
+            this->all_connectors_unavailable_callback.value() != nullptr) and
+           (!this->data_transfer_callback.has_value() or this->data_transfer_callback.value() != nullptr) and
+           (!this->transaction_event_callback.has_value() or this->transaction_event_callback.value() != nullptr) and
+           (!this->transaction_event_response_callback.has_value() or
+            this->transaction_event_response_callback.value() != nullptr);
 }
 
 ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
@@ -616,6 +631,10 @@ void ChargePoint::on_enabled(const int32_t evse_id, const int32_t connector_id) 
 
 void ChargePoint::on_faulted(const int32_t evse_id, const int32_t connector_id) {
     this->evse_manager->get_evse(evse_id).submit_event(connector_id, ConnectorEvent::Error);
+}
+
+void ChargePoint::on_fault_cleared(const int32_t evse_id, const int32_t connector_id) {
+    this->evse_manager->get_evse(evse_id).submit_event(connector_id, ConnectorEvent::ErrorCleared);
 }
 
 void ChargePoint::on_reserved(const int32_t evse_id, const int32_t connector_id) {
@@ -2389,10 +2408,6 @@ void ChargePoint::handle_get_base_report_req(Call<GetBaseReportRequest> call) {
     GetBaseReportResponse response;
     response.status = GenericDeviceModelStatusEnum::Accepted;
 
-    if (msg.reportBase == ReportBaseEnum::SummaryInventory) {
-        response.status = GenericDeviceModelStatusEnum::NotSupported;
-    }
-
     ocpp::CallResult<GetBaseReportResponse> call_result(response, call.uniqueId);
     this->send<GetBaseReportResponse>(call_result);
 
@@ -2740,7 +2755,20 @@ void ChargePoint::handle_get_transaction_status(const Call<GetTransactionStatusR
 
 void ChargePoint::handle_unlock_connector(Call<UnlockConnectorRequest> call) {
     const UnlockConnectorRequest& msg = call.msg;
-    const UnlockConnectorResponse unlock_response = callbacks.unlock_connector_callback(msg.evseId, msg.connectorId);
+    UnlockConnectorResponse unlock_response;
+
+    EVSE evse = {msg.evseId, std::nullopt, msg.connectorId};
+
+    if (this->is_valid_evse(evse)) {
+        if (!this->evse_manager->get_evse(msg.evseId).has_active_transaction()) {
+            unlock_response = callbacks.unlock_connector_callback(msg.evseId, msg.connectorId);
+        } else {
+            unlock_response.status = UnlockStatusEnum::OngoingAuthorizedTransaction;
+        }
+    } else {
+        unlock_response.status = UnlockStatusEnum::UnknownConnector;
+    }
+
     ocpp::CallResult<UnlockConnectorResponse> call_result(unlock_response, call.uniqueId);
     this->send<UnlockConnectorResponse>(call_result);
 }
@@ -3089,7 +3117,7 @@ void ChargePoint::handle_change_availability_req(Call<ChangeAvailabilityRequest>
             for (auto const& evse : *this->evse_manager) {
                 if (!evse.has_active_transaction()) {
                     // FIXME: This will linger after the update too! We probably need another mechanism...
-                    this->set_evse_operative_status(evse_id, OperationalStatusEnum::Inoperative, false);
+                    this->set_evse_operative_status(evse.get_id(), OperationalStatusEnum::Inoperative, false);
                 }
             }
         } else {

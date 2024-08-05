@@ -21,7 +21,6 @@
 #include <ocpp/common/types.hpp>
 #include <ocpp/common/websocket/websocket.hpp>
 #include <ocpp/v16/charge_point_configuration.hpp>
-#include <ocpp/v16/charge_point_state_machine.hpp>
 #include <ocpp/v16/connector.hpp>
 #include <ocpp/v16/database_handler.hpp>
 #include <ocpp/v16/messages/Authorize.hpp>
@@ -242,6 +241,12 @@ private:
     /// update can proceed
     void change_all_connectors_to_unavailable_for_firmware_update();
 
+    /// \brief Tries to resume the transactions given by \p resuming_session_ids . This function retrieves open
+    /// transactions from the internal database (e.g. because of power loss). In case the \p
+    /// resuming_session_ids contain the internal session_id, this function attempts to resume the transaction by
+    /// initializing it and adding it to the \ref transaction_handler. If the session_id is not part of \p
+    /// resuming_session_ids a StopTransaction.req is initiated to properly close the transaction.
+    void try_resume_transactions(const std::set<std::string>& resuming_session_ids);
     void stop_all_transactions();
     void stop_all_transactions(Reason reason);
     bool validate_against_cache_entries(CiString<20> id_tag);
@@ -249,9 +254,6 @@ private:
     // new transaction handling:
     void start_transaction(std::shared_ptr<Transaction> transaction);
 
-    /// \brief Sends StopTransaction.req for all transactions for which meter_stop or time_end is not set in the
-    /// database's Transaction table
-    void stop_pending_transactions();
     void stop_transaction(int32_t connector, Reason reason, std::optional<CiString<20>> id_tag_end);
 
     /// \brief Converts the given \p measurands_csv to a vector of Measurands
@@ -409,8 +411,14 @@ public:
     /// \param connector_status_map initial state of connectors including connector 0 with reduced set of states
     /// (Available, Unavailable, Faulted)
     /// \param bootreason reason for calling the start function
-    /// \return
-    bool start(const std::map<int, ChargePointStatus>& connector_status_map, BootReasonEnum bootreason);
+    /// \param resuming_session_ids can optionally contain active session ids from previous executions. If empty and
+    /// libocpp has transactions in its internal database that have not been stopped yet, calling this function will
+    /// initiate a StopTransaction.req for those transactions. If this vector contains session_ids this function will
+    /// not stop transactions with this session_id even in case it has an internal database entry for this session and
+    /// it hasnt been stopped yet. Its ignored if this vector contains session_ids that are unknown to libocpp.
+    ///  \return
+    bool start(const std::map<int, ChargePointStatus>& connector_status_map, BootReasonEnum bootreason,
+               const std::set<std::string>& resuming_session_ids);
 
     /// \brief Restarts the ChargePoint if it has been stopped before. The ChargePoint is reinitialized, connects to the
     /// websocket and starts to communicate OCPP messages again
@@ -574,24 +582,27 @@ public:
     /// \param connector
     void on_resume_charging(int32_t connector);
 
-    /// \brief This function should be called if an error with the given \p error_code is present. This function will
-    /// trigger a StatusNotification.req containing the given \p error_code . It will not change the present state of
-    /// the state machine.
+    /// \brief This function should be called if an error with the given \p error_info is present. This function will
+    /// trigger a StatusNotification.req containing the given \p error_info . It will change the present state of
+    /// the state machine to faulted, in case the corresponding flag is set in the given \p error_info. This function
+    /// can be called multiple times for different errors. Errors reported using this function stay active as long as
+    /// they are cleared by \ref on_error_cleared().
     /// \param connector
-    /// \param error_code
-    /// \param info Additional free format information related to the error
-    /// \param vendor_id This identifies the vendor-specific implementation
-    /// \param vendor_error_code This contains the vendor-specific error code
-    void on_error(int32_t connector, const ChargePointErrorCode& error_code, const std::optional<CiString<50>>& info,
-                  const std::optional<CiString<255>>& vendor_id, const std::optional<CiString<50>>& vendor_error_code);
+    /// \param error_info Additional information related to the error
+    void on_error(int32_t connector, const ErrorInfo& error_info);
 
-    /// \brief This function should be called if a fault is detected that prevents further charging operations. The \p
-    /// error_code indicates the reason for the fault.
-    /// \param info Additional free format information related to the error
-    /// \param vendor_id This identifies the vendor-specific implementation
-    /// \param vendor_error_code This contains the vendor-specific error code
-    void on_fault(int32_t connector, const ChargePointErrorCode& error_code, const std::optional<CiString<50>>& info,
-                  const std::optional<CiString<255>>& vendor_id, const std::optional<CiString<50>>& vendor_error_code);
+    /// \brief This function should be called if an error with the given \p uuid has been cleared. If this leads to the
+    /// fact that no other error is active anymore, this function will initiate a StatusNotification.req that reports
+    /// the current state and no error
+    ///  \param connector
+    /// \param uuid of a previously reported error. If uuid is not
+    /// known, the event will be ignored
+    void on_error_cleared(int32_t connector, const std::string uuid);
+
+    /// \brief Clears all previously reported errors at the same time for the given \p connector . This will
+    /// clear a previously reported "Faulted" state if present
+    ///  \param connector
+    void on_all_errors_cleared(int32_t connector);
 
     /// \brief Chargepoint notifies about new log status \p log_status . This function should be called during a
     /// Diagnostics / Log upload to indicate the current \p log_status .
