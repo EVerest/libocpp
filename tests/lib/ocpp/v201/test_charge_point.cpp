@@ -1,3 +1,4 @@
+#include "comparators.hpp"
 #include "everest/logging.hpp"
 #include "evse_security_mock.hpp"
 #include "lib/ocpp/common/database_testing_utils.hpp"
@@ -7,7 +8,6 @@
 #include "ocpp/v201/device_model_storage_sqlite.hpp"
 #include "ocpp/v201/init_device_model_db.hpp"
 #include "ocpp/v201/messages/SetChargingProfile.hpp"
-#include "ocpp/v201/profile_utils.hpp"
 #include "ocpp/v201/smart_charging.hpp"
 #include "ocpp/v201/types.hpp"
 #include "smart_charging_handler_mock.hpp"

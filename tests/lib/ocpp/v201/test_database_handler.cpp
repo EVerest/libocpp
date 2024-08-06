@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
 
+#include "comparators.hpp"
 #include "database_testing_utils.hpp"
 #include "ocpp/v201/enums.hpp"
-#include "ocpp/v201/profile_utils.hpp"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <ocpp/v201/database_handler.hpp>
