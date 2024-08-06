@@ -13,22 +13,17 @@
 
 #include <lib/ocpp/common/database_testing_utils.hpp>
 
+// TODO mz add removed tests with config: add component config for this and check if they also fail
+// TODO mz remove config.json for tests: not needed anymore
+
 namespace ocpp::v201 {
 
 class InitDeviceModelDbTest : public DatabaseTestingUtils {
 protected:
     const std::string DATABASE_PATH = "file::memory:?cache=shared";
     const std::string MIGRATION_FILES_PATH = "./resources/v201/device_model_migration_files";
-    const std::string SCHEMAS_PATH = "./resources/config/v201/component_schemas";
-    const std::string SCHEMAS_PATH_CHANGED = "./resources/config/v201/changed/component_schemas";
-    const std::string CONFIG_PATH = "./resources/config/v201/config.json";
-    const std::string CONFIG_PATH_CHANGED = "./resources/config/v201/changed/config.json";
-    const std::string CONFIG_PATH_WRONG_ATTRIBUTE = "./resources/config/v201/config_wrong_attribute.json";
-    const std::string CONFIG_PATH_NOT_EXISTING_ATTRIBUTE = "./resources/config/v201/config_not_existing_attribute.json";
-    const std::string CONFIG_PATH_WRONG_COMPONENT = "./resources/config/v201/config_wrong_component.json";
-    const std::string CONFIG_PATH_WRONG_COMPONENT_CONNECTORID =
-        "./resources/config/v201/config_wrong_component_connectorid.json";
-    const std::string CONFIG_PATH_WRONG_VARIABLE = "./resources/config/v201/config_wrong_variable.json";
+    const std::string SCHEMAS_PATH = "./resources/config/v201/component_config";
+    const std::string SCHEMAS_PATH_CHANGED = "./resources/config/v201/changed/component_config";
 
 public:
     InitDeviceModelDbTest() {
@@ -193,7 +188,7 @@ TEST_F(InitDeviceModelDbTest, init_db) {
     // Database should not exist yet. But since it does a filesystem check and we have an in memory database, we
     // explicitly set the variable here.
     db.database_exists = false;
-    EXPECT_NO_THROW(db.initialize_database(std::filesystem::path(SCHEMAS_PATH), true));
+    ASSERT_NO_THROW(db.initialize_database(std::filesystem::path(SCHEMAS_PATH), true));
 
     // Tables should have been created now.
     EXPECT_TRUE(check_all_tables_exist({"COMPONENT", "VARIABLE", "DATATYPE", "MONITOR", "MUTABILITY", "SEVERITY",
@@ -252,13 +247,52 @@ TEST_F(InitDeviceModelDbTest, init_db) {
     EXPECT_TRUE(variable_exists("UnitTestCtrlr", std::nullopt, 2, 3, "UnitTestPropertyBName", std::nullopt));
     EXPECT_TRUE(variable_exists("UnitTestCtrlr", std::nullopt, 2, 3, "UnitTestPropertyCName", std::nullopt));
 
+    // Test some values.
+    EXPECT_TRUE(attribute_has_value("UnitTestCtrlr", std::nullopt, 2, 3, "UnitTestPropertyBName", std::nullopt,
+                                    AttributeEnum::Actual, "test_value"));
+    // Test some not default values.
+    EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "Available", std::nullopt,
+                                    AttributeEnum::Actual, "false"));
+    EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "Power", std::nullopt, AttributeEnum::MaxSet,
+                                    "44000"));
+    EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "Power", std::nullopt, AttributeEnum::Actual,
+                                    "2000"));
+    EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "SupplyPhases", std::nullopt,
+                                    AttributeEnum::Actual, "6"));
+    EXPECT_TRUE(
+        attribute_has_value("Connector", std::nullopt, 2, 1, "Available", std::nullopt, AttributeEnum::Actual, "true"));
+    EXPECT_TRUE(attribute_has_value("Connector", std::nullopt, 2, 1, "ConnectorType", std::nullopt,
+                                    AttributeEnum::Actual, "cChaoJi"));
+    EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "Available", std::nullopt,
+                                    AttributeEnum::Actual, "false"));
+    EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 2, std::nullopt, "Available", std::nullopt,
+                                    AttributeEnum::Actual, "true"));
+    EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 2, std::nullopt, "Power", std::nullopt, AttributeEnum::MaxSet,
+                                    "22000"));
+    EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 2, std::nullopt, "AvailabilityState", std::nullopt,
+                                    AttributeEnum::Actual, "Faulted"));
+    EXPECT_TRUE(attribute_has_value("Connector", std::nullopt, 1, 1, "ConnectorType", std::nullopt,
+                                    AttributeEnum::Actual, "cGBT"));
+
+    // Default value
+    EXPECT_TRUE(attribute_has_value("Connector", std::nullopt, 1, 1, "Available", std::nullopt, AttributeEnum::Actual,
+                                    "false"));
+    EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "AvailabilityState", std::nullopt,
+                                    AttributeEnum::Actual, "Unavailable"));
+    EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 2, std::nullopt, "SupplyPhases", std::nullopt,
+                                    AttributeEnum::Actual, "0"));
+
     // So now we have made some changes and added a new EVSE and changed the connector. The database should be changed
     // accordingly.
+
+    // First set the source of an attribute to something else than 'default'
+    set_attribute_source("Connector", std::nullopt, 1, 1, "ConnectorType", std::nullopt, AttributeEnum::Actual, "test");
+
     InitDeviceModelDb db2 = InitDeviceModelDb(DATABASE_PATH, MIGRATION_FILES_PATH);
     // This time, the database does exist (again: std::filesystem::exists, which is automatically used, will not work
     // here because we use an in memory database, so we set the member ourselves).
     db2.database_exists = true;
-    EXPECT_NO_THROW(db2.initialize_database(SCHEMAS_PATH_CHANGED, false));
+    ASSERT_NO_THROW(db2.initialize_database(SCHEMAS_PATH_CHANGED, false));
 
     // So now some records should have been changed !
     EXPECT_TRUE(attribute_exists("EVSE", std::nullopt, 1, std::nullopt, "AllowReset", std::nullopt,
@@ -351,67 +385,10 @@ TEST_F(InitDeviceModelDbTest, init_db) {
     // Removed UnitTestPropertyCName
     EXPECT_TRUE(variable_exists("UnitTestCtrlr", std::nullopt, 2, 3, "UnitTestPropertyBName", std::nullopt));
     EXPECT_FALSE(variable_exists("UnitTestCtrlr", std::nullopt, 2, 3, "UnitTestPropertyCName", std::nullopt));
-}
-
-TEST_F(InitDeviceModelDbTest, insert_values) {
-    /* This test will test if the config and default values are correctly set. We test this twice: first an initial
-     * config, then a changed configuration.
-     */
-
-    InitDeviceModelDb db(DATABASE_PATH, MIGRATION_FILES_PATH);
-
-    // Database should not exist yet. But since it does a filesystem check and we have an in memory database, we
-    // explicitly set the variable here.
-    db.database_exists = false;
-    // First create the database.
-    EXPECT_NO_THROW(db.initialize_database(SCHEMAS_PATH, true));
-    // Then insert the config and default values.
-    EXPECT_TRUE(db.insert_config_and_default_values(SCHEMAS_PATH, CONFIG_PATH));
-
-    // Test some values.
-    EXPECT_TRUE(attribute_has_value("UnitTestCtrlr", std::nullopt, 2, 3, "UnitTestPropertyBName", std::nullopt,
-                                    AttributeEnum::Actual, "test_value"));
-    // Test some not default values.
-    EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "Available", std::nullopt,
-                                    AttributeEnum::Actual, "false"));
-    EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "Power", std::nullopt, AttributeEnum::MaxSet,
-                                    "44000"));
-    EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "Power", std::nullopt, AttributeEnum::Actual,
-                                    "2000"));
-    EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "SupplyPhases", std::nullopt,
-                                    AttributeEnum::Actual, "6"));
-    EXPECT_TRUE(
-        attribute_has_value("Connector", std::nullopt, 2, 1, "Available", std::nullopt, AttributeEnum::Actual, "true"));
-    EXPECT_TRUE(attribute_has_value("Connector", std::nullopt, 2, 1, "ConnectorType", std::nullopt,
-                                    AttributeEnum::Actual, "cChaoJi"));
-    EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "Available", std::nullopt,
-                                    AttributeEnum::Actual, "false"));
-    EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 2, std::nullopt, "Available", std::nullopt,
-                                    AttributeEnum::Actual, "true"));
-    EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 2, std::nullopt, "Power", std::nullopt, AttributeEnum::MaxSet,
-                                    "22000"));
-    EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 2, std::nullopt, "AvailabilityState", std::nullopt,
-                                    AttributeEnum::Actual, "Faulted"));
-
-    // Default value
-    EXPECT_TRUE(attribute_has_value("Connector", std::nullopt, 1, 1, "Available", std::nullopt, AttributeEnum::Actual,
-                                    "false"));
-    EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "AvailabilityState", std::nullopt,
-                                    AttributeEnum::Actual, "Unavailable"));
-    EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 2, std::nullopt, "SupplyPhases", std::nullopt,
-                                    AttributeEnum::Actual, "0"));
-    EXPECT_TRUE(
-        attribute_has_value("Connector", std::nullopt, 1, 1, "ConnectorType", std::nullopt, AttributeEnum::Actual, ""));
-
-    // Insert new config.
-    // First set the source of an attribute to something else than 'default'
-    set_attribute_source("Connector", std::nullopt, 2, 1, "ConnectorType", std::nullopt, AttributeEnum::Actual, "test");
-
-    EXPECT_TRUE(db.insert_config_and_default_values(SCHEMAS_PATH, CONFIG_PATH_CHANGED));
 
     // Source was not 'default', connector type not changed.
-    EXPECT_TRUE(attribute_has_value("Connector", std::nullopt, 2, 1, "ConnectorType", std::nullopt,
-                                    AttributeEnum::Actual, "cChaoJi"));
+    EXPECT_TRUE(attribute_has_value("Connector", std::nullopt, 1, 1, "ConnectorType", std::nullopt,
+                                    AttributeEnum::Actual, "cGBT"));
 
     // Check changed values.
     EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 2, std::nullopt, "Available", std::nullopt,
@@ -430,6 +407,92 @@ TEST_F(InitDeviceModelDbTest, insert_values) {
     // EXPECT_FALSE(component_exists("UnitTestCtrlr", std::nullopt, 1, 5));
 }
 
+// TEST_F(InitDeviceModelDbTest, insert_values) {
+//     /* This test will test if the config and default values are correctly set. We test this twice: first an initial
+//      * config, then a changed configuration.
+//      */
+
+//     InitDeviceModelDb db(DATABASE_PATH, MIGRATION_FILES_PATH);
+
+//     // Database should not exist yet. But since it does a filesystem check and we have an in memory database, we
+//     // explicitly set the variable here.
+//     db.database_exists = false;
+//     // First create the database.
+//     EXPECT_NO_THROW(db.initialize_database(SCHEMAS_PATH, true));
+//     // Then insert the config and default values.
+//     EXPECT_TRUE(db.insert_config_and_default_values(SCHEMAS_PATH, CONFIG_PATH));
+
+//     // Test some values.
+//     EXPECT_TRUE(attribute_has_value("UnitTestCtrlr", std::nullopt, 2, 3, "UnitTestPropertyBName", std::nullopt,
+//                                     AttributeEnum::Actual, "test_value"));
+//     // Test some not default values.
+//     EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "Available", std::nullopt,
+//                                     AttributeEnum::Actual, "false"));
+//     EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "Power", std::nullopt,
+//     AttributeEnum::MaxSet,
+//                                     "44000"));
+//     EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "Power", std::nullopt,
+//     AttributeEnum::Actual,
+//                                     "2000"));
+//     EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "SupplyPhases", std::nullopt,
+//                                     AttributeEnum::Actual, "6"));
+//     EXPECT_TRUE(
+//         attribute_has_value("Connector", std::nullopt, 2, 1, "Available", std::nullopt, AttributeEnum::Actual,
+//         "true"));
+//     EXPECT_TRUE(attribute_has_value("Connector", std::nullopt, 2, 1, "ConnectorType", std::nullopt,
+//                                     AttributeEnum::Actual, "cChaoJi"));
+//     EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "Available", std::nullopt,
+//                                     AttributeEnum::Actual, "false"));
+//     EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 2, std::nullopt, "Available", std::nullopt,
+//                                     AttributeEnum::Actual, "true"));
+//     EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 2, std::nullopt, "Power", std::nullopt,
+//     AttributeEnum::MaxSet,
+//                                     "22000"));
+//     EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 2, std::nullopt, "AvailabilityState", std::nullopt,
+//                                     AttributeEnum::Actual, "Faulted"));
+
+//     // Default value
+//     EXPECT_TRUE(attribute_has_value("Connector", std::nullopt, 1, 1, "Available", std::nullopt,
+//     AttributeEnum::Actual,
+//                                     "false"));
+//     EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "AvailabilityState", std::nullopt,
+//                                     AttributeEnum::Actual, "Unavailable"));
+//     EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 2, std::nullopt, "SupplyPhases", std::nullopt,
+//                                     AttributeEnum::Actual, "0"));
+//     EXPECT_TRUE(
+//         attribute_has_value("Connector", std::nullopt, 1, 1, "ConnectorType", std::nullopt, AttributeEnum::Actual,
+//         ""));
+
+//     // Insert new config.
+//     // First set the source of an attribute to something else than 'default'
+//     set_attribute_source("Connector", std::nullopt, 2, 1, "ConnectorType", std::nullopt, AttributeEnum::Actual,
+//     "test");
+
+//     EXPECT_TRUE(db.insert_config_and_default_values(SCHEMAS_PATH, CONFIG_PATH_CHANGED));
+
+//     // Source was not 'default', connector type not changed.
+//     EXPECT_TRUE(attribute_has_value("Connector", std::nullopt, 2, 1, "ConnectorType", std::nullopt,
+//                                     AttributeEnum::Actual, "cChaoJi"));
+
+//     // Check changed values.
+//     EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 2, std::nullopt, "Available", std::nullopt,
+//                                     AttributeEnum::Actual, "false"));
+//     EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "SupplyPhases", std::nullopt,
+//                                     AttributeEnum::Actual, "2"));
+//     // // Variable does not exist so it could not set the value.
+//     // EXPECT_FALSE(variable_exists("EVSE", std::nullopt, 1, std::nullopt, "AvalableEVSEThingie", std::nullopt));
+//     // Variable was removed, so it will be set to the default value again.
+//     EXPECT_TRUE(
+//         attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "Power", std::nullopt, AttributeEnum::Actual,
+//         "0"));
+//     // Default value only applies to 'Actual', not 'MaxSet'
+//     EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "Power", std::nullopt,
+//     AttributeEnum::MaxSet,
+//                                     "44000"));
+//     // // Component does not exist so it could not set anything.
+//     // EXPECT_FALSE(component_exists("UnitTestCtrlr", std::nullopt, 1, 5));
+// }
+
 TEST_F(InitDeviceModelDbTest, wrong_migration_file_path) {
     InitDeviceModelDb db(DATABASE_PATH, "/tmp/thisdoesnotexisthopefully");
     // The migration script is not correct (there is none in the given folder), this should throw an exception.
@@ -442,75 +505,12 @@ TEST_F(InitDeviceModelDbTest, wrong_schemas_path) {
     EXPECT_THROW(db.initialize_database("/tmp/thisdoesnotexisthopefully", true), std::filesystem::filesystem_error);
 }
 
-TEST_F(InitDeviceModelDbTest, wrong_schemas_path2) {
-    // Wrong schemas path to insert config and default values.
-    InitDeviceModelDb db(DATABASE_PATH, MIGRATION_FILES_PATH);
-    db.initialize_database(SCHEMAS_PATH, true);
-    EXPECT_THROW(db.insert_config_and_default_values("/tmp/wrongschemaspath", CONFIG_PATH),
-                 std::filesystem::filesystem_error);
-}
-
-TEST_F(InitDeviceModelDbTest, wrong_config_path) {
-    // Wrong config file path
-    InitDeviceModelDb db(DATABASE_PATH, MIGRATION_FILES_PATH);
-    EXPECT_NO_THROW(db.initialize_database(SCHEMAS_PATH, true));
-    EXPECT_THROW(db.insert_config_and_default_values(SCHEMAS_PATH, "/tmp/wrongconfigpath"),
-                 nlohmann::detail::parse_error);
-}
-
-TEST_F(InitDeviceModelDbTest, no_initialization) {
-    // Try to insert config and default values while the schemas are not inserted yet.
-    InitDeviceModelDb db(DATABASE_PATH, MIGRATION_FILES_PATH);
-    EXPECT_THROW(db.insert_config_and_default_values(SCHEMAS_PATH, CONFIG_PATH), InitDeviceModelDbError);
-}
-
-TEST_F(InitDeviceModelDbTest, config_wrong_attribute) {
-    // Try to insert attribute that is not existing (not one of 'Actual', 'MinSet', 'MaxSet' or 'Target')
-    InitDeviceModelDb db(DATABASE_PATH, MIGRATION_FILES_PATH);
-    EXPECT_NO_THROW(db.initialize_database(SCHEMAS_PATH, true));
-    EXPECT_THROW(db.insert_config_and_default_values(SCHEMAS_PATH, CONFIG_PATH_WRONG_ATTRIBUTE),
-                 InitDeviceModelDbError);
-}
-
-TEST_F(InitDeviceModelDbTest, config_not_existing_attribute) {
-    // Try to insert attribute that is not set in the component schema.
-    InitDeviceModelDb db(DATABASE_PATH, MIGRATION_FILES_PATH);
-    EXPECT_NO_THROW(db.initialize_database(SCHEMAS_PATH, true));
-    EXPECT_THROW(db.insert_config_and_default_values(SCHEMAS_PATH, CONFIG_PATH_NOT_EXISTING_ATTRIBUTE),
-                 InitDeviceModelDbError);
-}
-
-TEST_F(InitDeviceModelDbTest, config_wrong_component) {
-    // Try to set value of attribute of component that does not exist in the component schema.
-    InitDeviceModelDb db(DATABASE_PATH, MIGRATION_FILES_PATH);
-    db.initialize_database(SCHEMAS_PATH, true);
-    EXPECT_THROW(db.insert_config_and_default_values(SCHEMAS_PATH, CONFIG_PATH_WRONG_COMPONENT),
-                 InitDeviceModelDbError);
-}
-
-TEST_F(InitDeviceModelDbTest, config_wrong_variable) {
-    // Try to set value of attribute of variable that does not exist in the component schema.
-    InitDeviceModelDb db(DATABASE_PATH, MIGRATION_FILES_PATH);
-    db.initialize_database(SCHEMAS_PATH, true);
-    EXPECT_THROW(db.insert_config_and_default_values(SCHEMAS_PATH, CONFIG_PATH_WRONG_VARIABLE), InitDeviceModelDbError);
-}
-
-TEST_F(InitDeviceModelDbTest, config_wrong_component_connectorid) {
-    // Try to set attribute value of component with a not existing connector id in the component schema.
-    InitDeviceModelDb db(DATABASE_PATH, MIGRATION_FILES_PATH);
-    db.initialize_database(SCHEMAS_PATH, true);
-    EXPECT_THROW(db.insert_config_and_default_values(SCHEMAS_PATH, CONFIG_PATH_WRONG_COMPONENT_CONNECTORID),
-                 InitDeviceModelDbError);
-}
-
 TEST_F(InitDeviceModelDbTest, default_device_model_config) {
     // Test if the default device model config is correct and will create a valid database with valid values.
     const static std::string MIGRATION_FILES_PATH_DEFAULT = "./resources/v201/device_model_migration_files";
-    const static std::string SCHEMAS_PATH_DEFAULT = "./resources/example_config/v201/component_schemas";
-    const static std::string CONFIG_PATH_DEFAULT = "./resources/example_config/v201/config.json";
+    const static std::string SCHEMAS_PATH_DEFAULT = "./resources/example_config/v201/component_config";
     InitDeviceModelDb db(DATABASE_PATH, MIGRATION_FILES_PATH_DEFAULT);
     EXPECT_NO_THROW(db.initialize_database(SCHEMAS_PATH_DEFAULT, true));
-    EXPECT_NO_THROW(db.insert_config_and_default_values(SCHEMAS_PATH_DEFAULT, CONFIG_PATH_DEFAULT));
 }
 
 // Helper functions
