@@ -421,6 +421,12 @@ private: // Functions
     ///
     std::vector<DbVariableAttribute> get_variable_attributes_from_db(const uint64_t& variable_id);
 
+    ///
+    /// \brief Get monitors related to a variable from the DB
+    /// \param variable_id  The id of the variable to get the attributes from.
+    /// \return The monitors belonging to the given variables or an empty list
+    std::vector<VariableMonitoringMeta> get_variable_monitors_from_db(const uint64_t& variable_id);
+
 protected: // Functions
     // DatabaseHandlerCommon interface
     ///

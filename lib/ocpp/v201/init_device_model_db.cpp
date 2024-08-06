@@ -443,6 +443,7 @@ void InitDeviceModelDb::update_variable(const DeviceModelVariable& variable, con
     }
 
     if (!variable_has_same_monitors(variable.monitors, db_variable.monitors)) {
+        EVLOG_warning << "Updating monitors with new monitors!";
         update_variable_monitors(variable.monitors, db_variable.monitors, db_variable.db_id.value());
     }
 }
@@ -732,6 +733,10 @@ void InitDeviceModelDb::update_variable_monitors(const std::vector<VariableMonit
             });
 
         if (it == std::end(db_monitors)) {
+            EVLOG_warning << "Inserting new monitor on update: " << new_monitor.monitor;
+            EVLOG_warning << "Existing db monitors: ";
+            std::for_each(std::begin(db_monitors), std::end(db_monitors),
+                          [](VariableMonitoringMeta db_mon) { EVLOG_warning << db_mon.monitor; });
             // Variable monitor does not exist in the db, add to db.
             insert_variable_monitor(new_monitor, variable_id);
         } else {
@@ -1201,6 +1206,47 @@ std::vector<DbVariableAttribute> InitDeviceModelDb::get_variable_attributes_from
     return attributes;
 }
 
+std::vector<VariableMonitoringMeta> InitDeviceModelDb::get_variable_monitors_from_db(const uint64_t& variable_id) {
+    std::vector<VariableMonitoringMeta> monitors{};
+
+    std::string select_query =
+        "SELECT vm.TYPE_ID, vm.ID, vm.SEVERITY, vm.'TRANSACTION', vm.VALUE, vm.CONFIG_TYPE_ID, vm.REFERENCE_VALUE "
+        "FROM VARIABLE_MONITORING vm "
+        "WHERE vm.VARIABLE_ID = @variable_id";
+
+    auto select_stmt = this->database->new_statement(select_query);
+    select_stmt->bind_int(1, variable_id);
+
+    int status;
+    while ((status = select_stmt->step()) == SQLITE_ROW) {
+        VariableMonitoringMeta monitor_meta;
+        VariableMonitoring monitor;
+
+        // Retrieve monitor data
+        monitor.type = static_cast<MonitorEnum>(select_stmt->column_int(0));
+        monitor.id = select_stmt->column_int(1);
+        monitor.severity = select_stmt->column_int(2);
+        monitor.transaction = static_cast<bool>(select_stmt->column_int(3));
+        monitor.value = static_cast<float>(select_stmt->column_double(4));
+
+        VariableMonitorType type = static_cast<VariableMonitorType>(select_stmt->column_int(5));
+        auto reference_value = select_stmt->column_text_nullable(6);
+
+        monitor_meta.monitor = monitor;
+        monitor_meta.reference_value = reference_value;
+        monitor_meta.type = type;
+
+        monitors.push_back(monitor_meta);
+    }
+
+    if (status != SQLITE_DONE) {
+        throw InitDeviceModelDbError("Error while getting variable monitors from db: " +
+                                     std::string(this->database->get_error_message()));
+    }
+
+    return monitors;
+}
+
 void InitDeviceModelDb::init_sql() {
     static const std::string foreign_keys_on_statement = "PRAGMA foreign_keys = ON;";
 
@@ -1564,6 +1610,7 @@ static bool is_monitor_different(const VariableMonitoringMeta& meta1, const Vari
 static bool variable_has_same_monitors(const std::vector<VariableMonitoringMeta>& monitors1,
                                        const std::vector<VariableMonitoringMeta>& monitors2) {
     if (monitors1.size() != monitors2.size()) {
+        EVLOG_warning << "Not same monitors!";
         return false;
     }
 
@@ -1577,10 +1624,12 @@ static bool variable_has_same_monitors(const std::vector<VariableMonitoringMeta>
                                       });
 
         if (it == std::end(monitors2)) {
+            EVLOG_warning << "Not same monitors!";
             return false;
         }
     }
 
+    EVLOG_warning << "Same monitors!";
     return true;
 }
 
