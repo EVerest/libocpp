@@ -177,12 +177,11 @@ void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, Va
                                             const VariableCharacteristics& characteristics,
                                             const VariableAttribute& attribute, const std::string& value_previous,
                                             const std::string& value_current) {
-    EVLOG_info << "Variable: " << variable.name.get() << " changed value from: [" << value_previous << "] to: ["
-               << value_current << "]";
+    EVLOG_debug << "Variable: " << variable.name.get() << " changed value from: [" << value_previous << "] to: ["
+                << value_current << "]";
 
     // Ignore non-actual values
     if (attribute.type.has_value() && attribute.type.value() != AttributeEnum::Actual) {
-        EVLOG_info << "Ignored previous variable, non-actual value";
         return;
     }
 
@@ -215,10 +214,6 @@ void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, Va
                         << conversions::data_enum_to_string(characteristics.dataType);
             continue;
         }
-
-        EVLOG_info << "Monitor: [" << monitor_meta.monitor
-                   << "{ref:" << monitor_meta.reference_value.value_or(std::string("NO_REF"))
-                   << "}] triggered: " << monitor_triggered;
 
         auto it = updater_monitors_meta.find(monitor_id);
 
@@ -263,8 +258,8 @@ void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, Va
                 }
                 it = res.first;
 
-                EVLOG_info << "Variable: " << variable.name.get() << " with monitor: " << monitor_id
-                           << " inserted to updater list";
+                EVLOG_debug << "Variable: " << variable.name.get() << " with monitor: " << monitor_id
+                            << " triggered, inserted to updater list";
             }
 
             UpdaterMonitorMeta& triggered_data = it->second;
@@ -273,9 +268,9 @@ void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, Va
             if (triggered_data.meta_trigger.is_cleared) {
                 triggered_data.set_trigger_clear_state(false);
 
-                EVLOG_info << "Variable: " << variable.name.get()
-                           << " triggered already cleared monitor: " << monitor_meta.monitor
-                           << ". Setting it back to a 'triggered' state";
+                EVLOG_debug << "Variable: " << variable.name.get()
+                            << " triggered already cleared monitor: " << monitor_meta.monitor
+                            << ". Setting it back to a 'triggered' state";
             }
 
             // Update relevant values only
@@ -291,8 +286,8 @@ void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, Va
                 if (in_triggered_state) {
                     // Mark it as cleared, a.k.a normal
                     triggered_data.set_trigger_clear_state(true);
-                    EVLOG_info << "Variable: " << variable.name.get()
-                               << " marked monitor as cleared: " << monitor_meta.monitor;
+                    EVLOG_debug << "Variable: " << variable.name.get()
+                                << " marked monitor as cleared: " << monitor_meta.monitor;
                 }
             }
         }
@@ -330,7 +325,7 @@ void MonitoringUpdater::update_periodic_monitors_internal() {
                 // Snap to the closest monitor multiple
                 periodic_meta.meta_periodic.next_trigger_clock_aligned =
                     get_next_clock_aligned_point(periodic_meta.monitor_meta.monitor.value);
-                EVLOG_info << "First aligned timepoint for monitor ID: " << periodic_monitor_meta.monitor.id;
+                EVLOG_debug << "First aligned timepoint for monitor ID: " << periodic_monitor_meta.monitor.id;
             } else {
                 EVLOG_AND_THROW(std::runtime_error("Invalid type in periodic monitor list, should never happen!"));
             }
@@ -377,8 +372,6 @@ void MonitoringUpdater::update_periodic_monitors_internal() {
 }
 
 void MonitoringUpdater::process_monitor_meta_internal(UpdaterMonitorMeta& updater_meta_data) {
-    EVLOG_info << "Internal meta process: " << updater_meta_data.monitor_meta.monitor;
-
     const auto& monitor_meta = updater_meta_data.monitor_meta;
     const auto& monitor = monitor_meta.monitor;
 
@@ -503,7 +496,6 @@ bool MonitoringUpdater::should_remove_monitor_meta_internal(const UpdaterMonitor
 
 void MonitoringUpdater::process_monitors_internal(bool allow_periodics, bool allow_trigger) {
     if (!is_monitoring_enabled()) {
-        EVLOG_info << "Monitoring not enabled, not processing internal monitors!";
         return;
     }
 
@@ -514,22 +506,19 @@ void MonitoringUpdater::process_monitors_internal(bool allow_periodics, bool all
 
     get_monitoring_info(is_offline, offline_severity, active_monitoring_level, active_monitoring_base);
 
-    EVLOG_info << "Processing internal monitors";
+    EVLOG_debug << "Processing internal monitors with periodics: " << allow_periodics
+                << " and triggers: " << allow_trigger;
 
     if (allow_periodics) {
         // Rebuild the periodic monitor information
         update_periodic_monitors_internal();
     }
 
-    EVLOG_info << "Updater size: " << updater_monitors_meta.size();
-
     // Iterate all internal monitors and process them
     for (auto it = std::begin(updater_monitors_meta); it != std::end(updater_monitors_meta);) {
         auto& updater_monitor_meta = it->second;
         const auto& meta_monitor_id = it->first;
         const auto& monitor_meta = updater_monitor_meta.monitor_meta;
-
-        EVLOG_info << "Processing internal updater monitor: " << monitor_meta.monitor;
 
         if ((allow_periodics == false) && (updater_monitor_meta.type == UpdateMonitorMetaType::PERIODIC) ||
             (allow_trigger == false) && (updater_monitor_meta.type == UpdateMonitorMetaType::TRIGGER)) {
@@ -540,20 +529,17 @@ void MonitoringUpdater::process_monitors_internal(bool allow_periodics, bool all
 
         // Skip non-active monitors
         if (!is_monitor_active(active_monitoring_base, monitor_meta)) {
-            EVLOG_info << "Skipped non-active monitor: " << monitor_meta.monitor;
             should_process = false;
         }
 
         if (is_offline) {
             // If we are offline, just discard triggers that have a severity > than 'offline_severity'
             if (it->second.monitor_meta.monitor.severity > offline_severity) {
-                EVLOG_info << "Offline severity, skipped monitor: " << monitor_meta.monitor;
                 should_process = false;
             }
         } else {
             // If we are online, discard the triggers that have a severity > than 'active_monitoring_level'
             if (it->second.monitor_meta.monitor.severity > active_monitoring_level) {
-                EVLOG_info << "Active severity, skipped monitor: " << monitor_meta.monitor;
                 should_process = false;
             }
         }
@@ -576,6 +562,8 @@ void MonitoringUpdater::process_monitors_internal(bool allow_periodics, bool all
         // If we are not offline, send the queued events generated by this meta
         if (!is_offline) {
             if (!updater_monitor_meta.generated_monitor_events.empty()) {
+                EVLOG_debug << "Sent data for monitor: " << updater_monitor_meta.monitor_meta.monitor;
+
                 // Send the events
                 notify_csms_events(updater_monitor_meta.generated_monitor_events);
                 updater_monitor_meta.generated_monitor_events.clear();
@@ -594,13 +582,12 @@ void MonitoringUpdater::process_monitors_internal(bool allow_periodics, bool all
                 }
             }
         } else {
-            // If we are offline but we passed the 'shoul_process' test, it means that
+            // If we are offline but we passed the 'should_process' test, it means that
             // we should keep the generated events and send them at a further occasion
-            EVLOG_info << "We are offline, cached generated events for later!";
+            EVLOG_debug << "We are offline, cached generated events for later!";
         }
 
         if (should_remove_monitor_meta_internal(updater_monitor_meta)) {
-            EVLOG_info << "Clear monitor: " << updater_monitor_meta.monitor_meta.monitor;
             it = updater_monitors_meta.erase(it);
         } else {
             ++it;

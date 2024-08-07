@@ -443,7 +443,6 @@ void InitDeviceModelDb::update_variable(const DeviceModelVariable& variable, con
     }
 
     if (!variable_has_same_monitors(variable.monitors, db_variable.monitors)) {
-        EVLOG_warning << "Updating monitors with new monitors!";
         update_variable_monitors(variable.monitors, db_variable.monitors, db_variable.db_id.value());
     }
 }
@@ -733,10 +732,6 @@ void InitDeviceModelDb::update_variable_monitors(const std::vector<VariableMonit
             });
 
         if (it == std::end(db_monitors)) {
-            EVLOG_warning << "Inserting new monitor on update: " << new_monitor.monitor;
-            EVLOG_warning << "Existing db monitors: ";
-            std::for_each(std::begin(db_monitors), std::end(db_monitors),
-                          [](VariableMonitoringMeta db_mon) { EVLOG_warning << db_mon.monitor; });
             // Variable monitor does not exist in the db, add to db.
             insert_variable_monitor(new_monitor, variable_id);
         } else {
@@ -1588,7 +1583,6 @@ static bool is_monitor_different(const VariableMonitoringMeta& meta1, const Vari
 static bool variable_has_same_monitors(const std::vector<VariableMonitoringMeta>& monitors1,
                                        const std::vector<VariableMonitoringMeta>& monitors2) {
     if (monitors1.size() != monitors2.size()) {
-        EVLOG_warning << "Not same monitors!";
         return false;
     }
 
@@ -1602,12 +1596,10 @@ static bool variable_has_same_monitors(const std::vector<VariableMonitoringMeta>
                                       });
 
         if (it == std::end(monitors2)) {
-            EVLOG_warning << "Not same monitors!";
             return false;
         }
     }
 
-    EVLOG_warning << "Same monitors!";
     return true;
 }
 
