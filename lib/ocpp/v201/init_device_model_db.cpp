@@ -1004,47 +1004,18 @@ std::map<ComponentKey, std::vector<DeviceModelVariable>> InitDeviceModelDb::get_
 
         // Query all monitors
         if (variable->db_id.has_value()) {
-            std::string monitor_select_statement = "SELECT vm.ID, vm.TYPE_ID, vm.SEVERITY, vm.'TRANSACTION', vm.VALUE, "
-                                                   "vm.CONFIG_TYPE_ID, vm.REFERENCE_VALUE "
-                                                   "FROM VARIABLE_MONITORING vm "
-                                                   "WHERE vm.VARIABLE_ID = @variable_id";
+            auto monitors = get_variable_monitors_from_db(variable->db_id.value());
 
-            try {
-                auto select_stmt = this->database->new_statement(monitor_select_statement);
-                select_stmt->bind_int(1, variable->db_id.value());
+            for (auto& monitor_meta : monitors) {
+                // If monitor is not already contained in the list
+                bool contained = std::find_if(std::begin(variable->monitors), std::end(variable->monitors),
+                                              [&monitor_meta](const auto& contained_monitor) {
+                                                  return (contained_monitor.monitor.id == monitor_meta.monitor.id);
+                                              }) != std::end(variable->monitors);
 
-                while (select_stmt->step() == SQLITE_ROW) {
-                    VariableMonitoringMeta monitor_meta;
-                    VariableMonitoring monitor;
-
-                    // Retrieve monitor data
-                    monitor.id = select_stmt->column_int(0);
-
-                    // If monitor is not already contained in the list
-                    bool contained = std::find_if(std::begin(variable->monitors), std::end(variable->monitors),
-                                                  [&monitor](const auto& contained_monitor) {
-                                                      return (contained_monitor.monitor.id == monitor.id);
-                                                  }) != std::end(variable->monitors);
-
-                    // Add to the list only if we don't have it inside already
-                    if (!contained) {
-                        monitor.type = static_cast<MonitorEnum>(select_stmt->column_int(1));
-                        monitor.severity = select_stmt->column_int(2);
-                        monitor.transaction = static_cast<bool>(select_stmt->column_int(3));
-                        monitor.value = static_cast<float>(select_stmt->column_double(4));
-
-                        VariableMonitorType type = static_cast<VariableMonitorType>(select_stmt->column_int(5));
-                        auto reference_value = select_stmt->column_text_nullable(6);
-
-                        monitor_meta.monitor = monitor;
-                        monitor_meta.reference_value = reference_value;
-                        monitor_meta.type = type;
-
-                        variable->monitors.push_back(monitor_meta);
-                    }
+                if (!contained) {
+                    variable->monitors.push_back(std::move(monitor_meta));
                 }
-            } catch (const common::QueryExecutionException&) {
-                throw InitDeviceModelDbError("Could not create monitor query statement " + monitor_select_statement);
             }
         }
 
@@ -1222,6 +1193,14 @@ std::vector<VariableMonitoringMeta> InitDeviceModelDb::get_variable_monitors_fro
         VariableMonitoringMeta monitor_meta;
         VariableMonitoring monitor;
 
+        VariableMonitorType type = static_cast<VariableMonitorType>(select_stmt->column_int(5));
+
+        // Ignore database custom monitors, since those don't have
+        // to be in sync with our configuration file
+        if (type == VariableMonitorType::CustomMonitor) {
+            continue;
+        }
+
         // Retrieve monitor data
         monitor.type = static_cast<MonitorEnum>(select_stmt->column_int(0));
         monitor.id = select_stmt->column_int(1);
@@ -1229,7 +1208,6 @@ std::vector<VariableMonitoringMeta> InitDeviceModelDb::get_variable_monitors_fro
         monitor.transaction = static_cast<bool>(select_stmt->column_int(3));
         monitor.value = static_cast<float>(select_stmt->column_double(4));
 
-        VariableMonitorType type = static_cast<VariableMonitorType>(select_stmt->column_int(5));
         auto reference_value = select_stmt->column_text_nullable(6);
 
         monitor_meta.monitor = monitor;
