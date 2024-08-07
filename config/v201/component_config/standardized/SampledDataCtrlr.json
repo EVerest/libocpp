@@ -29,7 +29,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": true
         }
       ],
       "description": "If this variable reports a value of true, Sampled Data is enabled.",
@@ -61,7 +62,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": 60
         }
       ],
       "description": "Interval between sampling of metering (or other) data, intended to be transmitted in the TransactionEventRequest (eventType = Ended) message.",
@@ -78,7 +80,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": "Energy.Active.Import.Register,Current.Import"
         }
       ],
       "description": "Sampled measurands to be included in the meterValues element of TransactionEventRequest (eventType = Ended), every SampledDataTxEndedInterval seconds from the start of the transaction.",
@@ -95,7 +98,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": "Energy.Active.Import.Register,Current.Import"
         }
       ],
       "description": "Sampled measurand(s) to be taken at the start of any transaction to be included in the meterValues field of the first TransactionEventRequest message send at the start of a transaction (eventType = Started)",
@@ -112,7 +116,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": 120
         }
       ],
       "description": "Interval between sampling of metering (or other) data, intended to be transmitted via TransactionEventRequest (eventType = Updated) messages",
@@ -129,7 +134,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": "Energy.Active.Import.Register,Current.Import,Voltage,Power.Active.Import,Power.Reactive.Import,Frequency,SoC"
         }
       ],
       "description": "Sampled measurands to be included in the meterValues element of TransactionEventRequest (eventType = Ended)",

@@ -15,8 +15,6 @@ const static std::string CUSTOM_COMPONENT_CONFIG_DIR = "custom";
 
 // TODO mz change EverestEnvironmentOCPPConfiguration in everest_environment_setup.py in everest-utils
 // TODO mz search for component_schemas and config_file etc to remove or change paths
-// TODO mz should there be any changes in the types or interfaces?
-// TODO mz copy config to schema's in default schema and remove config file
 
 namespace ocpp::v201 {
 

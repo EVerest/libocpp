@@ -13,9 +13,6 @@
 
 #include <lib/ocpp/common/database_testing_utils.hpp>
 
-// TODO mz add removed tests with config: add component config for this and check if they also fail
-// TODO mz remove config.json for tests: not needed anymore
-
 namespace ocpp::v201 {
 
 class InitDeviceModelDbTest : public DatabaseTestingUtils {
@@ -395,8 +392,7 @@ TEST_F(InitDeviceModelDbTest, init_db) {
                                     AttributeEnum::Actual, "false"));
     EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "SupplyPhases", std::nullopt,
                                     AttributeEnum::Actual, "2"));
-    // // Variable does not exist so it could not set the value.
-    // EXPECT_FALSE(variable_exists("EVSE", std::nullopt, 1, std::nullopt, "AvalableEVSEThingie", std::nullopt));
+
     // Variable was removed, so it will be set to the default value again.
     EXPECT_TRUE(
         attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "Power", std::nullopt, AttributeEnum::Actual, "0"));
@@ -404,7 +400,7 @@ TEST_F(InitDeviceModelDbTest, init_db) {
     EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 1, std::nullopt, "Power", std::nullopt, AttributeEnum::MaxSet,
                                     "44000"));
     // // Component does not exist so it could not set anything.
-    // EXPECT_FALSE(component_exists("UnitTestCtrlr", std::nullopt, 1, 5));
+    EXPECT_FALSE(component_exists("UnitTestCtrlr", std::nullopt, 1, 5));
 }
 
 // TEST_F(InitDeviceModelDbTest, insert_values) {

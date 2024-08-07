@@ -28,7 +28,8 @@
           "attributes": [
               {
                   "type": "Actual",
-                  "mutability": "ReadOnly"
+                  "mutability": "ReadOnly",
+                  "value": "cp001"
               }
           ],
           "minLength": 1,
@@ -43,7 +44,8 @@
           "attributes": [
               {
                   "type": "Actual",
-                  "mutability": "ReadWrite"
+                  "mutability": "ReadWrite",
+                  "value": "[{\"configurationSlot\": 1, \"connectionData\": {\"messageTimeout\": 30, \"ocppCsmsUrl\": \"ws://localhost:9000\", \"ocppInterface\": \"Wired0\", \"ocppTransport\": \"JSON\", \"ocppVersion\": \"OCPP20\", \"securityProfile\": 1}}]"
               }
           ],
           "description": "List of NetworkConnectionProfiles that define the functional and technical parameters of a communication link. Must be a (JSON) string with the format of SetNetworkProfileRequest",
@@ -59,7 +61,8 @@
           "attributes": [
               {
                   "type": "Actual",
-                  "mutability": "ReadOnly"
+                  "mutability": "ReadOnly",
+                  "value": "012345678"
               }
           ],
           "minLength": 1,
@@ -75,7 +78,8 @@
           "attributes": [
               {
                   "type": "Actual",
-                  "mutability": "ReadOnly"
+                  "mutability": "ReadOnly",
+                  "value": "EVerestModel"
               }
           ],
           "minLength": 1,
@@ -107,7 +111,8 @@
           "attributes": [
               {
                   "type": "Actual",
-                  "mutability": "ReadOnly"
+                  "mutability": "ReadOnly",
+                  "value": "EVerestVendor"
               }
           ],
           "minLength": 1,
@@ -123,7 +128,8 @@
           "attributes": [
               {
                   "type": "Actual",
-                  "mutability": "ReadOnly"
+                  "mutability": "ReadOnly",
+                  "value": "1.0"
               }
           ],
           "minLength": 1,
@@ -204,7 +210,8 @@
           "attributes": [
               {
                   "type": "Actual",
-                  "mutability": "ReadOnly"
+                  "mutability": "ReadOnly",
+                  "value": "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384"
               }
           ],
           "default": "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384",
@@ -221,7 +228,8 @@
           "attributes": [
               {
                   "type": "Actual",
-                  "mutability": "ReadOnly"
+                  "mutability": "ReadOnly",
+                  "value": "TLS_AES_256_GCM_SHA384:TLS_AES_128_GCM_SHA256"
               }
           ],
           "default": "TLS_AES_256_GCM_SHA384:TLS_AES_128_GCM_SHA256",
@@ -268,7 +276,8 @@
           "attributes": [
               {
                   "type": "Actual",
-                  "mutability": "ReadOnly"
+                  "mutability": "ReadOnly",
+                  "value": "log,html,security"
               }
           ],
           "description": "Supported log formats are console, log, html, console_detailed, callback and security. \"security\" logs security events into a seperate logfile",
@@ -317,7 +326,8 @@
           "attributes": [
               {
                   "type": "Actual",
-                  "mutability": "ReadOnly"
+                  "mutability": "ReadOnly",
+                  "value": 1
               }
           ],
           "minimum": 1,
@@ -556,7 +566,8 @@
         "attributes": [
             {
                 "type": "Actual",
-                "mutability": "ReadOnly"
+                "mutability": "ReadOnly",
+                "value": false
             }
         ],
         "default": false,
@@ -607,7 +618,8 @@
           "attributes": [
               {
                   "type": "Actual",
-                  "mutability": "ReadWrite"
+                  "mutability": "ReadWrite",
+                  "value": "Enabled,Active,Available,Problem"
               }
           ],
           "description": "List of criteria supported for a get custom report. Enabled,Active,Problem,Available",
@@ -623,7 +635,8 @@
           "attributes": [
               {
                   "type": "Actual",
-                  "mutability": "ReadOnly"
+                  "mutability": "ReadOnly",
+                  "value": false
               }
           ],
           "description": "If enabled the metervalues configured with the AlignedDataCtrlr will be rounded to the exact time intervals",

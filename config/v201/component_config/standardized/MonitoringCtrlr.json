@@ -13,7 +13,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": false
         }
       ],
       "description": "Whether monitoring is enabled.",
@@ -93,7 +94,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadOnly"
+          "mutability": "ReadOnly",
+          "value": 4000
         }
       ],
       "instance": "SetVariableMonitoring",
@@ -125,7 +127,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadOnly"
+          "mutability": "ReadOnly",
+          "value": 250
         }
       ],
       "instance": "SetVariableMonitoring",

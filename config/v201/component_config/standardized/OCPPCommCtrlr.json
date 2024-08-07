@@ -13,7 +13,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": true
         }
       ],
       "type": "boolean"
@@ -44,7 +45,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadOnly"
+          "mutability": "ReadOnly",
+          "value": "FTP"
         }
       ],
       "description": "List of supported file transfer protocols",
@@ -77,7 +79,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadOnly"
+          "mutability": "ReadOnly",
+          "value": 60
         }
       ],
       "instance": "Default",
@@ -95,7 +98,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": 10
         }
       ],
       "instance": "TransactionEvent",
@@ -112,7 +116,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": 5
         }
       ],
       "instance": "TransactionEvent",
@@ -130,7 +135,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": 1
         }
       ],
       "description": "A comma separated ordered list of the priority of the possible Network Connection Profiles.",
@@ -146,7 +152,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": 3
         }
       ],
       "description": "Specifies the number of connection attempts the Charging Station executes before switching to a different profile.",
@@ -163,7 +170,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": 60
         }
       ],
       "description": "When the offline period of a Charging Station exceeds the OfflineThreshold it is recommended to send a StatusNotificationRequest for all its Connectors.",
@@ -210,7 +218,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": 3
         }
       ],
       "description": "Number of times to retry a reset of the Charging Station when a reset was unsuccessful",
@@ -226,7 +235,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": 2
         }
       ],
       "description": "When the Charging Station is reconnecting, after a connection loss, it will use this variable as the maximum value for the random part of the back-off time",
@@ -242,7 +252,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": 2
         }
       ],
       "description": "When the Charging Station is reconnecting, after a connection loss, it will use this variable for the amount of times it will double the previous back-off time.",
@@ -258,7 +269,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": 1
         }
       ],
       "description": "When the Charging Station is reconnecting, after a connection loss, it will use this variable as the minimum back-off time, the first time it tries to reconnect.",
@@ -274,7 +286,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": true
         }
       ],
       "description": "When set to true, the Charging Station SHALL unlock the cable on the Charging Station side when the cable is unplugged at the EV. For an EVSE with only fixed cables, the mutability SHALL be ReadOnly and the actual value SHALL be false. For a charging station with fixed cables and sockets, the variable is only applicable to the sockets.",
@@ -291,7 +304,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": 10
         }
       ],
       "description": "0 disables client side websocket Ping/Pong. In this case there is either no ping/pong or the server initiates the ping and client responds with Pong. Positive values are interpreted as number of seconds between pings. Negative values are not allowed.",

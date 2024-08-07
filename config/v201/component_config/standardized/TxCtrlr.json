@@ -13,7 +13,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": false
         }
       ],
       "default": true,
@@ -44,7 +45,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": 120
         }
       ],
       "description": "Interval from between \"starting\" of a transaction until incipient transaction is automatically canceled, due to failure of EV driver to (correctly) insert the charging cable connector(s) into the appropriate socket(s).",
@@ -76,7 +78,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadOnly"
+          "mutability": "ReadOnly",
+          "value": true
         }
       ],
       "description": "When set to true, the Charging Station SHALL deauthorize the transaction when the cable is unplugged from the EV.",
@@ -92,7 +95,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": true
         }
       ],
       "description": "Whether the Charging Station will deauthorize an ongoing transaction when it receives a non- Accepted authorization status in TransactionEventResponse for this transaction.",
@@ -124,7 +128,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": "PowerPathClosed"
         }
       ],
       "description": "Defines when the Charging Station starts a new transaction",
@@ -141,7 +146,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": "EVConnected,Authorized"
         }
       ],
       "description": "Defines when the Charging Station ends a transaction",

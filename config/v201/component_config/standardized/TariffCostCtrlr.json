@@ -46,7 +46,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": "EUR"
         }
       ],
       "description": "Currency used by this Charging Station in a ISO 4217 [ISO4217] formatted currency code.",
@@ -77,7 +78,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": false
         }
       ],
       "instance": "Cost",
@@ -94,7 +96,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": ""
         }
       ],
       "description": "Message (and/or tariff information) to be shown to an EV Driver when there is no driver specific tariff information available.",
@@ -110,7 +113,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": ""
         }
       ],
       "description": "Message to be shown to an EV Driver when the Charging Station cannot retrieve the cost for a transaction at the end of the transaction.",

@@ -13,7 +13,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": true
         }
       ],
       "type": "boolean"
@@ -27,7 +28,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadOnly"
+          "mutability": "ReadOnly",
+          "value": 2048
         }
       ],
       "instance": "GetReport",
@@ -43,7 +45,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadOnly"
+          "mutability": "ReadOnly",
+          "value": 2048
         }
       ],
       "instance": "GetVariables",
@@ -59,7 +62,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadOnly"
+          "mutability": "ReadOnly",
+          "value": 2048
         }
       ],
       "instance": "SetVariables",
@@ -90,7 +94,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadOnly"
+          "mutability": "ReadOnly",
+          "value": 100
         }
       ],
       "instance": "GetReport",
@@ -106,7 +111,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadOnly"
+          "mutability": "ReadOnly",
+          "value": 100
         }
       ],
       "instance": "GetVariables",
@@ -122,7 +128,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadOnly"
+          "mutability": "ReadOnly",
+          "value": 100
         }
       ],
       "instance": "SetVariables",
@@ -138,7 +145,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadOnly"
+          "mutability": "ReadOnly",
+          "value": 2500
         }
       ],
       "description": "The limit to the following fields: GetVariableResult.attributeValue, VariableAttribute.value and EventData.actualValue. The max size of these values will always remain equal.",
@@ -152,7 +160,9 @@
       },
       "attributes": [
         {
-          "type": "Actual"
+          "mutability": "ReadOnly",
+          "type": "Actual",
+          "value": 2500
         }
       ],
       "description": "Can be used to limit the following fields: SetVariableData.attributeValue, GetVariableResult.attributeValue, VariableAttribute.value, VariableCharacteristics.valueList and EventData.actualValue.",

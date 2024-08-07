@@ -13,7 +13,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": false
         }
       ],
       "default": true,
@@ -46,7 +47,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "WriteOnly"
+          "mutability": "WriteOnly",
+          "value": "DEADBEEFDEADBEEF"
         }
       ],
       "description": "The basic authentication password is used for HTTP Basic Authentication.",
@@ -64,7 +66,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadOnly"
+          "mutability": "ReadOnly",
+          "value": 100
         }
       ],
       "description": "Amount of Certificates currently installed on the Charging Station",
@@ -79,7 +82,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": 2
         }
       ],
       "description": "Number of times to resend a SignCertificateRequest when CSMS does nor return a signed certificate.",
@@ -96,7 +100,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": 0
         }
       ],
       "description": "Seconds to wait before generating another CSR in case CSMS does not return a signed certificate.",
@@ -112,7 +117,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadOnly"
+          "mutability": "ReadOnly",
+          "value": "cp001"
         }
       ],
       "description": "The Charging Station identity.",
@@ -143,7 +149,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": "Pionix"
         }
       ],
       "description": "The organization name of the CSO or an organization trusted by the CSO. This organization name is used to specify the subject field in the client certificate.",
@@ -161,7 +168,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadOnly"
+          "mutability": "ReadOnly",
+          "value": 1
         }
       ],
       "description": "The security profile used by the Charging Station.",

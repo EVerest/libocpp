@@ -13,7 +13,8 @@
             "attributes": [
                 {
                     "type": "Actual",
-                    "mutability": "ReadWrite"
+                    "mutability": "ReadWrite",
+                    "value": false
                 }
             ],
             "description": "Lighted",
@@ -28,7 +29,8 @@
             "attributes": [
                 {
                     "type": "Actual",
-                    "mutability": "ReadWrite"
+                    "mutability": "ReadWrite",
+                    "value": "FFFF00"
                 }
             ],
             "description": "Displayed color",

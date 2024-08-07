@@ -23,7 +23,6 @@ set(MIGRATION_FILES_DEVICE_MODEL_SOURCE_DIR_V201 ${MIGRATION_FILES_DEVICE_MODEL_
 option(LIBOCPP_INSTALL_DEVICE_MODEL_DATABASE "Install device model database for OCPP201" ON)
 
 list(APPEND CONFIGS
-     config.json
      ../logging.ini
 )
 

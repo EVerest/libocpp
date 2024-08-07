@@ -28,7 +28,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadOnly"
+          "mutability": "ReadOnly",
+          "value": 42
         }
       ],
       "description": "Amount of different messages that are currently configured in this Charging Station, via SetDisplayMessageRequest",
@@ -43,7 +44,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": true
         }
       ],
       "description": "Whether display messages are enabled.",
@@ -73,7 +75,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadOnly"
+          "mutability": "ReadOnly",
+          "value": "UTF8,ASCII,URI"
         }
       ],
       "description": "List of message formats supported by this Charging Station.",
@@ -89,7 +92,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadOnly"
+          "mutability": "ReadOnly",
+          "value": "NormalCycle"
         }
       ],
       "description": "List of the priorities supported by this Charging Station.",

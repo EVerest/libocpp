@@ -13,7 +13,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": true
         }
       ],
       "default": true,
@@ -45,7 +46,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": 900
         }
       ],
       "description": "Size (in seconds) of the clock-aligned data interval, intended to be transmitted in the MeterValuesRequest message.",
@@ -62,7 +64,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": "Energy.Active.Import.Register,Voltage,Frequency"
         }
       ],
       "description": "Clock-aligned measurand(s) to be included in MeterValuesRequest, every AlignedDataInterval seconds.",
@@ -78,7 +81,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": false
         }
       ],
       "description": "If set to true, the Charging Station SHALL NOT send clock aligned meter values when a transaction is ongoing.",
@@ -110,7 +114,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": 60
         }
       ],
       "description": "Size (in seconds) of the clock-aligned data interval, intended to be transmitted in the TransactionEventRequest (eventType = Ended) message.",
@@ -127,7 +132,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": "Energy.Active.Import.Register,Voltage"
         }
       ],
       "description": "Clock-aligned measurands to be included in the meterValues element of TransactionEventRequest (eventType = Ended), every SampledDataTxEndedInterval seconds from the start of the transaction.",

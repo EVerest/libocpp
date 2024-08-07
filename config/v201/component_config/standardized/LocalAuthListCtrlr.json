@@ -29,7 +29,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadOnly"
+          "mutability": "ReadOnly",
+          "value": 4096
         }
       ],
       "description": "Maximum number of bytes in a SendLocalList message.",
@@ -44,7 +45,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": true
         }
       ],
       "description": "If this variable exists and reports a value of true, Local Authorization List is enabled.",
@@ -60,7 +62,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadOnly"
+          "mutability": "ReadOnly",
+          "value": 0
         }
       ],
       "description": "Amount of IdTokens currently in the Local Authorization List",
@@ -75,7 +78,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadOnly"
+          "mutability": "ReadOnly",
+          "value": 250
         }
       ],
       "description": "Maximum number of records in SendLocalList",

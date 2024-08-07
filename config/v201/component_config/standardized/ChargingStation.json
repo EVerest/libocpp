@@ -46,7 +46,8 @@
             "attributes": [
                 {
                     "type": "Actual",
-                    "mutability": "ReadWrite"
+                    "mutability": "ReadWrite",
+                    "value": "RST"
                 }
             ],
             "description": "This variable describes the phase rotation of a Component relative to its parent Component, using a three letter string consisting of the letters: R, S, T and x.",
@@ -61,7 +62,8 @@
             "attributes": [
                 {
                     "type": "Actual",
-                    "mutability": "ReadOnly"
+                    "mutability": "ReadOnly",
+                    "value": true
                 }
             ],
             "description": "Component exists",
@@ -90,7 +92,8 @@
             "attributes": [
                 {
                     "type": "Actual",
-                    "mutability": "ReadOnly"
+                    "mutability": "ReadOnly",
+                    "value": 3
                 }
             ],
             "description": "Number of alternating current phases connected/available.",
@@ -119,7 +122,8 @@
             "attributes": [
                 {
                     "type": "Actual",
-                    "mutability": "ReadWrite"
+                    "mutability": "ReadWrite",
+                    "value": false
                 }
             ],
             "description": "Some problem/fault exists",
