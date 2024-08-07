@@ -21,6 +21,36 @@ enum UpdateMonitorMetaType {
     PERIODIC
 };
 
+struct TriggerMetadata {
+    /// \brief If we had at least one trigger event sent to the CSMS, which in turn results
+    /// that we will only clear the trigger after the clear state was sent to the CSMS
+    std::uint32_t is_csms_sent_triggered : 1;
+
+    /// \brief If the event was generated for the current state, resets on each
+    /// state change
+    std::uint32_t is_event_generated : 1;
+
+    /// \brief If the current state was was sent to the CSMS, resets on each state
+    /// change
+    std::uint32_t is_csms_sent : 1;
+
+    /// \brief The trigger has been cleared, that is it returned to normal after a problem
+    /// was detected. Can be removed from the map when it was cleared, but only after it
+    /// was sent to the CSMS if and only if the previous trigger event WAS sent to the
+    /// CSMS. If this happened only in our internal state, it can be directly removed from
+    /// the map
+    std::uint32_t is_cleared : 1;
+};
+
+struct PeriodicMetadata {
+    /// \brief Last time this monitor was triggered
+    std::chrono::time_point<std::chrono::steady_clock> last_trigger_steady;
+
+    /// \brief Next time when we require to trigger a clock aligned value. Has meaning
+    /// only for periodic monitors
+    std::chrono::time_point<std::chrono::system_clock> next_trigger_clock_aligned;
+};
+
 /// \brief Meta data required for our internal keeping needs
 struct UpdaterMonitorMeta {
     UpdateMonitorMetaType type;
@@ -35,27 +65,31 @@ struct UpdaterMonitorMeta {
     std::string value_previous;
     std::string value_current;
 
-    /// \brief Last time this monitor was triggered
-    std::chrono::time_point<std::chrono::steady_clock> last_trigger_steady;
-
-    /// \brief Next time when we require to trigger a clock aligned value. Has meaning
-    /// only for periodic monitors
-    std::chrono::time_point<std::chrono::system_clock> next_trigger_clock_aligned;
-
-    /// \brief Generated monitor events, that can be related to this meta
-    std::vector<EventData> generated_monitor_events;
-
     /// \brief Write-only values will not have the value reported
     std::uint32_t is_writeonly : 1;
 
-    /// \brief If it was sent to the CSMS, has no meaning when this
-    /// is a periodic monitor
-    std::uint32_t is_csms_sent : 1;
+    TriggerMetadata meta_trigger;
+    PeriodicMetadata meta_periodic;
 
-    /// \brief The trigger has been cleared, that is it returned to normal after a problem
-    /// was detected. Can be removed from the map when it was cleared. Has no meaning if
-    /// this is a periodic monitor
-    std::uint32_t is_cleared : 1;
+    /// \brief Generated monitor events, that are related to this meta
+    std::vector<EventData> generated_monitor_events;
+
+public:
+    /// \brief Can trigger/clear an event
+    void set_trigger_clear_state(bool is_cleared) {
+        if (type != UpdateMonitorMetaType::TRIGGER) {
+            throw std::runtime_error("Clear state should never be used on a non-trigger meta!");
+        }
+
+        if (meta_trigger.is_cleared != is_cleared) {
+            meta_trigger.is_cleared = is_cleared;
+
+            // On a state change reset the CSMS sent status and
+            // event generation status
+            meta_trigger.is_csms_sent = 0;
+            meta_trigger.is_event_generated = 0;
+        }
+    }
 };
 
 typedef std::function<void(const std::vector<EventData>&)> notify_events;
@@ -109,8 +143,12 @@ private:
     /// \brief Processes the monitor meta, generating in it's internal list all the
     /// required events. It will generate the EventData for a notify regardless
     /// of the offline state
-    /// \return true if the monitor should be removed from the map, false otherwise
-    bool process_monitor_meta_internal(UpdaterMonitorMeta& updater_meta_data);
+    void process_monitor_meta_internal(UpdaterMonitorMeta& updater_meta_data);
+
+    /// \brief Function that determines based on the current meta internal
+    /// state if it is proper to remove from the internal list the provided
+    /// monitor meta data. That implies various checks for various states
+    bool should_remove_monitor_meta_internal(const UpdaterMonitorMeta& updater_meta_data);
 
     /// \brief Query the database (from in-memory data for fast retrieval)
     /// and updates our internal monitors with the new database data
