@@ -19,6 +19,7 @@ const static std::string CUSTOM_COMPONENT_CONFIG_DIR = "custom";
 namespace ocpp::v201 {
 
 // Forward declarations.
+static void check_integrity(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& component_configs);
 static bool is_same_component_key(const ComponentKey& component_key1, const ComponentKey& component_key2);
 static bool is_same_attribute_type(const VariableAttribute attribute1, const VariableAttribute& attribute2);
 static bool is_attribute_different(const VariableAttribute& attribute1, const VariableAttribute& attribute2);
@@ -29,6 +30,7 @@ static bool is_same_variable(const DeviceModelVariable& v1, const DeviceModelVar
 static bool is_variable_different(const DeviceModelVariable& v1, const DeviceModelVariable& v2);
 static std::string get_string_value_from_json(const json& value);
 static std::string get_component_name_for_logging(const ComponentKey& component);
+static std::string get_variable_name_for_logging(const DeviceModelVariable& variable);
 
 InitDeviceModelDb::InitDeviceModelDb(const std::filesystem::path& database_path,
                                      const std::filesystem::path& migration_files_path) :
@@ -54,6 +56,9 @@ void InitDeviceModelDb::initialize_database(const std::filesystem::path& config_
 
     // Get component schemas from the filesystem.
     std::map<ComponentKey, std::vector<DeviceModelVariable>> component_configs = get_all_component_configs(config_path);
+
+    // Check if the config is consistent (fe has a value when required).
+    check_integrity(component_configs);
 
     // Remove components from db if they do not exist in the component schemas
     if (this->database_exists) {
@@ -996,6 +1001,51 @@ void from_json(const json& j, DeviceModelVariable& c) {
     }
 }
 
+///
+/// \brief Check integrity of config.
+///
+/// This will do some checks if the config is correct, for example if all required attributes have a value.
+///
+/// \param component_configs    Read config from the file system.
+///
+static void check_integrity(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& component_configs) {
+    for (const auto& [component_key, variables] : component_configs) {
+        for (const DeviceModelVariable& variable : variables) {
+            if (!variable.required) {
+                // Variable is not required, move to next variable.
+                continue;
+            }
+
+            if (variable.default_actual_value.has_value()) {
+                // There is a default value set, so for this required variable, we have a value (maybe there is a
+                // value set as well but since we also have a default value, we don't have to check that)
+                continue;
+            }
+
+            const auto& actual_attribute = std::find_if(
+                variable.attributes.begin(), variable.attributes.end(), [](const DbVariableAttribute& attribute) {
+                    if (attribute.variable_attribute.type.has_value() &&
+                        attribute.variable_attribute.type.value() == AttributeEnum::Actual) {
+                        return true;
+                    }
+                    return false;
+                });
+
+            if (actual_attribute == variable.attributes.end()) {
+                EVLOG_AND_THROW(InitDeviceModelDbError("Could not find required Actual attribute for variable " +
+                                                       get_variable_name_for_logging(variable) + " of component " +
+                                                       get_component_name_for_logging(component_key)));
+            }
+
+            if (!actual_attribute->variable_attribute.value.has_value()) {
+                EVLOG_AND_THROW(InitDeviceModelDbError("No value set for Actual attribute for required variable " +
+                                                       get_variable_name_for_logging(variable) + " of component " +
+                                                       get_component_name_for_logging(component_key)));
+            }
+        }
+    }
+}
+
 /* Below functions check if components, attributes, variables, characteristics are the same / equal in the schema
  * and database. The 'is_same' functions check if two objects are the same, comparing their unique properties. The
  * is_..._different functions check if the objects properties are different (and as a result should be changed in
@@ -1164,6 +1214,20 @@ static std::string get_component_name_for_logging(const ComponentKey& component)
         (component.connector_id.has_value() ? ", connector " + std::to_string(component.connector_id.value()) : "");
 
     return component_name;
+}
+
+///
+/// \brief Get a string that describes the variable, used for logging.
+///
+/// This includes the name and the instance of the variable
+///
+/// \param variable    The variable to get the string from.
+/// \return The logging string.
+///
+static std::string get_variable_name_for_logging(const DeviceModelVariable& variable) {
+    const std::string variable_name =
+        variable.name + (variable.instance.has_value() ? ", instance" + variable.instance.value() : "");
+    return variable_name;
 }
 
 } // namespace ocpp::v201
