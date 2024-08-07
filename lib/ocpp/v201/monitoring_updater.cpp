@@ -87,8 +87,8 @@ std::chrono::time_point<std::chrono::system_clock> get_next_clock_aligned_point(
 
     auto dbg_time_now = std::chrono::system_clock::to_time_t(sys_time_now);
     auto dbg_time_aligned = std::chrono::system_clock::to_time_t(aligned_timepoint);
-    EVLOG_info << "Aligned time: " << std::ctime(&dbg_time_now) << " with interval: " << monitor_seconds.count()
-               << " to next timepoint: " << std::ctime(&dbg_time_aligned);
+    EVLOG_debug << "Aligned time: " << std::ctime(&dbg_time_now) << " with interval: " << monitor_seconds.count()
+                << " to next timepoint: " << std::ctime(&dbg_time_aligned);
 
     return aligned_timepoint;
 }
@@ -543,6 +543,8 @@ void MonitoringUpdater::process_monitors_internal(bool allow_periodics, bool all
                 should_process = false;
             }
         }
+
+        EVLOG_debug << "Monitor: " << updater_monitor_meta.monitor_meta.monitor << " processed: " << should_process;
 
         if (!should_process) {
             if (updater_monitor_meta.type == UpdateMonitorMetaType::TRIGGER) {
