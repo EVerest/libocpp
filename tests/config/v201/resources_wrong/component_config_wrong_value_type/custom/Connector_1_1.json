@@ -84,7 +84,7 @@
       ],
       "description": "A value of ConnectorEnumType (See part 2) plus additionally: cGBT, cChaoJi, OppCharge. Specific type of connector, including sub-variant information. Note: Distinct and orthogonal to Charging Protocol, Power Type, Phases.",
       "type": "string",
-      "default": "cCCS2"
+      "default": "sType2"
     },
     "ConnectorSupplyPhases": {
       "variable_name": "SupplyPhases",

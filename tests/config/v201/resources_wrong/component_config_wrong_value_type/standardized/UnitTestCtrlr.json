@@ -15,17 +15,17 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadWrite"
+          "mutability": "ReadWrite",
+          "value": 42
         }
       ],
-      "default": true,
       "type": "boolean"
     },
     "UnitTestPropertyB": {
       "variable_name": "UnitTestPropertyBName",
       "characteristics": {
         "supportsMonitoring": false,
-        "dataType": "string"
+        "dataType": "decimal"
       },
       "attributes": [
         {
@@ -34,7 +34,8 @@
           "value": "test_value"
         }
       ],
-      "type": "string"
+      "type": "number",
+      "default": "test"
     },
     "UnitTestPropertyC": {
       "variable_name": "UnitTestPropertyCName",
@@ -48,7 +49,8 @@
           "mutability": "ReadOnly"
         }
       ],
-      "type": "integer"
+      "type": "integer",
+      "default": "true"
     }
   },
   "required": [

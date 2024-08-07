@@ -86,4 +86,8 @@ bool is_rfc3339_datetime(const std::string& value) {
     return std::regex_match(value, datetime_pattern);
 }
 
+bool is_boolean(const std::string& value) {
+    return iequals(value, "true") || iequals(value, "false");
+}
+
 } // namespace ocpp

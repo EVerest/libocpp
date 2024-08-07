@@ -39,8 +39,6 @@
     }
   },
   "required": [
-    "ConnectorAvailable",
-    "ConnectorSupplyPhases",
-    "ConnectorType"
+    "ConnectorAvailable"
   ]
 }

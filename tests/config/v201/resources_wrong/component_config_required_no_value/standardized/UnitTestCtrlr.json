@@ -18,7 +18,6 @@
           "mutability": "ReadWrite"
         }
       ],
-      "default": true,
       "type": "boolean"
     },
     "UnitTestPropertyB": {
@@ -44,14 +43,33 @@
       },
       "attributes": [
         {
+          "type": "Target",
+          "mutability": "ReadOnly"
+        }
+      ],
+      "type": "integer",
+      "default": 42
+    },
+    "UnitTestPropertyD": {
+      "variable_name": "UnitTestPropertyDName",
+      "characteristics": {
+        "supportsMonitoring": false,
+        "dataType": "integer"
+      },
+      "attributes": [
+        {
           "type": "Actual",
           "mutability": "ReadOnly"
         }
       ],
-      "type": "integer"
+      "type": "integer",
+      "default": 42
     }
   },
   "required": [
-    "UnitTestPropertyA"
+    "UnitTestPropertyA",
+    "UnitTestPropertyB",
+    "UnitTestPropertyC",
+    "UnitTestPropertyD"
   ]
 }

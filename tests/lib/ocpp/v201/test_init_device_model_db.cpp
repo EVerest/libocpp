@@ -21,6 +21,9 @@ protected:
     const std::string MIGRATION_FILES_PATH = "./resources/v201/device_model_migration_files";
     const std::string SCHEMAS_PATH = "./resources/config/v201/component_config";
     const std::string SCHEMAS_PATH_CHANGED = "./resources/config/v201/changed/component_config";
+    const std::string SCHEMAS_PATH_REQUIRED_NO_VALUE =
+        "./resources/config/v201/wrong/component_config_required_no_value";
+    const std::string SCHEMAS_PATH_WRONG_VALUE_TYPE = "./resources/config/v201/wrong/component_config_wrong_value_type";
 
 public:
     InitDeviceModelDbTest() {
@@ -421,6 +424,48 @@ TEST_F(InitDeviceModelDbTest, default_device_model_config) {
     const static std::string SCHEMAS_PATH_DEFAULT = "./resources/example_config/v201/component_config";
     InitDeviceModelDb db(DATABASE_PATH, MIGRATION_FILES_PATH_DEFAULT);
     EXPECT_NO_THROW(db.initialize_database(SCHEMAS_PATH_DEFAULT, true));
+}
+
+TEST_F(InitDeviceModelDbTest, missing_required_values) {
+    // Test if initializing fails when there is a missing required value.
+    InitDeviceModelDb db(DATABASE_PATH, MIGRATION_FILES_PATH);
+    try {
+        db.initialize_database(SCHEMAS_PATH_REQUIRED_NO_VALUE, true);
+        FAIL() << "Expected InitDeviceModelDbError, but no exception was thrown";
+    } catch (const InitDeviceModelDbError& exception) {
+        EXPECT_EQ(std::string(exception.what()), "Check integrity failed:\n"
+                                                 "- Component UnitTestCtrlr, evse 2, connector 3\n"
+                                                 "  - Variable UnitTestPropertyAName, errors:\n"
+                                                 "    - No value set for Actual attribute for required variable.\n"
+                                                 "  - Variable UnitTestPropertyCName, errors:\n"
+                                                 "    - Could not find required Actual attribute.\n");
+    } catch (const std::exception& exception) {
+        FAIL() << "Expected InitDeviceModelDbError, but exception of type " << typeid(exception).name()
+               << " was thrown";
+    }
+}
+
+TEST_F(InitDeviceModelDbTest, wrong_type) {
+    // Test if initializing fails when there is a missing required value.
+    InitDeviceModelDb db(DATABASE_PATH, MIGRATION_FILES_PATH);
+    try {
+        db.initialize_database(SCHEMAS_PATH_WRONG_VALUE_TYPE, true);
+        FAIL() << "Expected InitDeviceModelDbError, but no exception was thrown";
+    } catch (const InitDeviceModelDbError& exception) {
+        EXPECT_EQ(std::string(exception.what()),
+                  "Check integrity failed:\n"
+                  "- Component UnitTestCtrlr, evse 2, connector 3\n"
+                  "  - Variable UnitTestPropertyAName, errors:\n"
+                  "    - Attribute 'Actual' value (42) has wrong type, type should have been: boolean.\n"
+                  "  - Variable UnitTestPropertyBName, errors:\n"
+                  "    - Default value (test) has wrong type, type should have been decimal.\n"
+                  "    - Attribute 'Actual' value (test_value) has wrong type, type should have been: decimal.\n"
+                  "  - Variable UnitTestPropertyCName, errors:\n"
+                  "    - Default value (true) has wrong type, type should have been integer.\n");
+    } catch (const std::exception& exception) {
+        FAIL() << "Expected InitDeviceModelDbError, but exception of type " << typeid(exception).name()
+               << " was thrown";
+    }
 }
 
 // Helper functions

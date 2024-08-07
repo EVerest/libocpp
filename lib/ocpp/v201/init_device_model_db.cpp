@@ -20,6 +20,9 @@ namespace ocpp::v201 {
 
 // Forward declarations.
 static void check_integrity(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& component_configs);
+static std::optional<std::string> check_integrity_required_value(const DeviceModelVariable& variable);
+static std::vector<std::string> check_integrity_value_type(const DeviceModelVariable& variable);
+static bool value_is_of_type(const std::string& value, const DataEnum& type);
 static bool is_same_component_key(const ComponentKey& component_key1, const ComponentKey& component_key2);
 static bool is_same_attribute_type(const VariableAttribute attribute1, const VariableAttribute& attribute2);
 static bool is_attribute_different(const VariableAttribute& attribute1, const VariableAttribute& attribute2);
@@ -1001,49 +1004,153 @@ void from_json(const json& j, DeviceModelVariable& c) {
     }
 }
 
+/* Below functions check the integrity of the component config, for example if the type is correct or if a value is set
+ * when a variable is required.
+ */
+
 ///
 /// \brief Check integrity of config.
 ///
 /// This will do some checks if the config is correct, for example if all required attributes have a value.
+/// It will print all found integrity errors in the logging.
 ///
 /// \param component_configs    Read config from the file system.
+/// \throws InitDeviceModelDbError when at least one of the components / variables / attributes has an error.
 ///
 static void check_integrity(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& component_configs) {
+    std::string final_error_message = "Check integrity failed:\n";
+    bool has_error = false;
     for (const auto& [component_key, variables] : component_configs) {
+        bool has_component_error = false;
+        std::string component_errors = "- Component " + get_component_name_for_logging(component_key) + '\n';
         for (const DeviceModelVariable& variable : variables) {
-            if (!variable.required) {
-                // Variable is not required, move to next variable.
-                continue;
+            std::vector<std::string> error_messages;
+            if (variable.required) {
+                std::optional<std::string> error_message = check_integrity_required_value(variable);
+                if (error_message.has_value()) {
+                    error_messages.push_back(error_message.value());
+                }
             }
 
-            if (variable.default_actual_value.has_value()) {
-                // There is a default value set, so for this required variable, we have a value (maybe there is a
-                // value set as well but since we also have a default value, we don't have to check that)
-                continue;
+            std::vector<std::string> value_type_errors = check_integrity_value_type(variable);
+            for (const std::string& error : value_type_errors) {
+                error_messages.push_back(error);
             }
 
-            const auto& actual_attribute = std::find_if(
-                variable.attributes.begin(), variable.attributes.end(), [](const DbVariableAttribute& attribute) {
-                    if (attribute.variable_attribute.type.has_value() &&
-                        attribute.variable_attribute.type.value() == AttributeEnum::Actual) {
-                        return true;
-                    }
-                    return false;
-                });
-
-            if (actual_attribute == variable.attributes.end()) {
-                EVLOG_AND_THROW(InitDeviceModelDbError("Could not find required Actual attribute for variable " +
-                                                       get_variable_name_for_logging(variable) + " of component " +
-                                                       get_component_name_for_logging(component_key)));
+            if (!error_messages.empty()) {
+                has_error = true;
+                has_component_error = true;
+                std::string error = "  - Variable " + get_variable_name_for_logging(variable) + ", errors:\n";
+                for (const std::string& error_message : error_messages) {
+                    error += "    - " + error_message + '\n';
+                }
+                component_errors.append(error);
             }
+        }
 
-            if (!actual_attribute->variable_attribute.value.has_value()) {
-                EVLOG_AND_THROW(InitDeviceModelDbError("No value set for Actual attribute for required variable " +
-                                                       get_variable_name_for_logging(variable) + " of component " +
-                                                       get_component_name_for_logging(component_key)));
+        if (has_component_error) {
+            final_error_message.append(component_errors);
+        }
+    }
+
+    if (has_error) {
+        EVLOG_AND_THROW(InitDeviceModelDbError(final_error_message));
+    }
+}
+
+///
+/// \brief Check if a required device model variable has a value set or a default value.
+/// \param variable The variable to check.
+/// \return std::nullopt if the required variable has a value or default value. Error message if it is not.
+///
+static std::optional<std::string> check_integrity_required_value(const DeviceModelVariable& variable) {
+    const auto& actual_attribute =
+        std::find_if(variable.attributes.begin(), variable.attributes.end(), [](const DbVariableAttribute& attribute) {
+            if (attribute.variable_attribute.type.has_value() &&
+                attribute.variable_attribute.type.value() == AttributeEnum::Actual) {
+                return true;
+            }
+            return false;
+        });
+
+    if (actual_attribute == variable.attributes.end()) {
+        return "Could not find required Actual attribute.";
+    }
+
+    if (variable.default_actual_value.has_value()) {
+        // There is a default value set, so for this required variable, we have a value (maybe there is a
+        // value set as well but since we also have a default value, we don't have to check that)
+        return std::nullopt;
+    }
+
+    if (!actual_attribute->variable_attribute.value.has_value()) {
+        return "No value set for Actual attribute for required variable.";
+    }
+
+    return std::nullopt;
+}
+
+///
+/// \brief Check if the variable attributes have the given type.
+/// \param variable Variable to check the attributes from.
+/// \return The errors if there are any, otherwise an empty vector.
+///
+static std::vector<std::string> check_integrity_value_type(const DeviceModelVariable& variable) {
+    const DataEnum& type = variable.characteristics.dataType;
+    std::vector<std::string> errors;
+    if (variable.default_actual_value.has_value()) {
+        if (!value_is_of_type(variable.default_actual_value.value(), type)) {
+            errors.push_back("Default value (" + variable.default_actual_value.value() +
+                             ") has wrong type, type should have been " + conversions::data_enum_to_string(type) + ".");
+        }
+    }
+
+    for (const DbVariableAttribute& attribute : variable.attributes) {
+        if (attribute.variable_attribute.value.has_value()) {
+            if (!value_is_of_type(attribute.variable_attribute.value.value(), type)) {
+                errors.push_back(
+                    "Attribute " +
+                    (attribute.variable_attribute.type.has_value()
+                         ? "'" + conversions::attribute_enum_to_string(attribute.variable_attribute.type.value()) + "'"
+                         : "") +
+                    " value (" + attribute.variable_attribute.value.value().get() +
+                    ") has wrong type, type should have been: " + conversions::data_enum_to_string(type) + ".");
             }
         }
     }
+
+    return errors;
+}
+
+///
+/// \brief Check if a value string is of the given enum type.
+/// \param value    The value to check.
+/// \param type     The type.
+/// \return True if value is of the given type.
+///
+static bool value_is_of_type(const std::string& value, const DataEnum& type) {
+    if (value.empty()) {
+        // We can not check if the type of the values that are empty are valid.
+        return true;
+    }
+
+    switch (type) {
+    case DataEnum::string:
+        return true;
+    case DataEnum::decimal:
+        return is_integer(value) || is_decimal_number(value);
+    case DataEnum::integer:
+        return is_integer(value);
+    case DataEnum::dateTime:
+        return is_rfc3339_datetime(value);
+    case DataEnum::boolean:
+        return is_boolean(value);
+    case DataEnum::OptionList:
+    case DataEnum::SequenceList:
+    case DataEnum::MemberList:
+        return true;
+    }
+    return false;
 }
 
 /* Below functions check if components, attributes, variables, characteristics are the same / equal in the schema
