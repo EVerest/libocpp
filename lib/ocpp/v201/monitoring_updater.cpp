@@ -157,6 +157,7 @@ void MonitoringUpdater::start_monitoring() {
             this->device_model->get_optional_value<int>(ControllerComponentVariables::MonitorsProcessingInterval)
                 .value_or(1);
 
+        EVLOG_info << "Started monitoring timer with interval: " << process_interval_seconds;
         monitors_timer.interval(std::chrono::seconds(process_interval_seconds));
     } else {
         EVLOG_warning << "Attempted to start monitoring without 'MonitoringCtrlrEnabled'";
@@ -181,6 +182,7 @@ void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, Va
 
     // Ignore non-actual values
     if (attribute.type.has_value() && attribute.type.value() != AttributeEnum::Actual) {
+        EVLOG_info << "Ignored previous variable, non-actual value";
         return;
     }
 
@@ -214,7 +216,9 @@ void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, Va
             continue;
         }
 
-        EVLOG_info << "Monitor: [" << monitor_meta.monitor << "] triggered: " << monitor_triggered;
+        EVLOG_info << "Monitor: [" << monitor_meta.monitor
+                   << "{ref:" << monitor_meta.reference_value.value_or(std::string("NO_REF"))
+                   << "}] triggered: " << monitor_triggered;
 
         auto it = updater_monitors_meta.find(monitor_id);
 
@@ -241,11 +245,16 @@ void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, Va
                 triggered_meta.component = component;
                 triggered_meta.variable = variable;
                 triggered_meta.monitor_meta = monitor_meta;
-                triggered_meta.is_csms_sent = 0;
-                triggered_meta.is_cleared = 0;
                 triggered_meta.is_writeonly =
                     (attribute.mutability.value_or(MutabilityEnum::ReadWrite) == MutabilityEnum::WriteOnly);
-                triggered_meta.last_trigger_steady = std::chrono::steady_clock::now();
+
+                TriggerMetadata metadata;
+                metadata.is_csms_sent = 0;
+                metadata.is_cleared = 0;
+                metadata.is_csms_sent_triggered = 0;
+                metadata.is_event_generated = 0;
+
+                triggered_meta.meta_trigger = metadata;
 
                 auto res = updater_monitors_meta.insert(std::pair{monitor_meta.monitor.id, std::move(triggered_meta)});
                 if (!res.second) {
@@ -254,19 +263,19 @@ void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, Va
                 }
                 it = res.first;
 
-                EVLOG_info << "Variable: " << variable.name.get() << " triggered monitor: " << monitor_id;
+                EVLOG_info << "Variable: " << variable.name.get() << " with monitor: " << monitor_id
+                           << " inserted to updater list";
             }
 
             UpdaterMonitorMeta& triggered_data = it->second;
 
             // If we are in a 'not dangerous' a.k.a 'cleared' state
-            if (triggered_data.is_cleared) {
-                // Make it not cleared, that is in a 'dangerous' state
-                triggered_data.is_cleared = 0;
-                // Also reset the CSMS sent, since the new cleared state was not sent
-                triggered_data.is_csms_sent = 0;
+            if (triggered_data.meta_trigger.is_cleared) {
+                triggered_data.set_trigger_clear_state(false);
 
-                EVLOG_info << "Variable: " << variable.name.get() << " triggered monitor: " << monitor_id;
+                EVLOG_info << "Variable: " << variable.name.get()
+                           << " triggered already cleared monitor: " << monitor_meta.monitor
+                           << ". Setting it back to a 'triggered' state";
             }
 
             // Update relevant values only
@@ -276,15 +285,14 @@ void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, Va
             // If the monitor is not triggered and we already have the data
             // in our triggered list it means that we have returned to normal
             if (it != std::end(updater_monitors_meta)) {
-                if (!it->second.is_cleared) {
-                    // Mark as cleared (a.k.a normal)
-                    it->second.is_cleared = 1;
+                UpdaterMonitorMeta& triggered_data = it->second;
+                bool in_triggered_state = (triggered_data.meta_trigger.is_cleared == 0);
 
-                    // If it was previously sent to the CSMS, mark it as not sent
-                    // so that we can allow the CSMS to know that we had a return to normal
-                    it->second.is_csms_sent = 0;
-
-                    EVLOG_debug << "Variable: " << variable.name.get() << " cleared monitor: " << monitor_id;
+                if (in_triggered_state) {
+                    // Mark it as cleared, a.k.a normal
+                    triggered_data.set_trigger_clear_state(true);
+                    EVLOG_info << "Variable: " << variable.name.get()
+                               << " marked monitor as cleared: " << monitor_meta.monitor;
                 }
             }
         }
@@ -317,10 +325,10 @@ void MonitoringUpdater::update_periodic_monitors_internal() {
 
             if (periodic_monitor_meta.monitor.type == MonitorEnum::Periodic) {
                 // Set the trigger to the current time
-                periodic_meta.last_trigger_steady = std::chrono::steady_clock::now();
+                periodic_meta.meta_periodic.last_trigger_steady = std::chrono::steady_clock::now();
             } else if (periodic_monitor_meta.monitor.type == MonitorEnum::PeriodicClockAligned) {
                 // Snap to the closest monitor multiple
-                periodic_meta.next_trigger_clock_aligned =
+                periodic_meta.meta_periodic.next_trigger_clock_aligned =
                     get_next_clock_aligned_point(periodic_meta.monitor_meta.monitor.value);
                 EVLOG_info << "First aligned timepoint for monitor ID: " << periodic_monitor_meta.monitor.id;
             } else {
@@ -340,6 +348,13 @@ void MonitoringUpdater::update_periodic_monitors_internal() {
     // Remove the monitors in our list that don't exist any more in the database
     for (auto it = std::begin(updater_monitors_meta); it != std::end(updater_monitors_meta);) {
         std::int32_t updater_meta_id = it->first;
+        auto updater_meta_data = it->second;
+
+        // Ignore triggers
+        if (updater_meta_data.type == UpdateMonitorMetaType::TRIGGER) {
+            ++it;
+            continue;
+        }
 
         bool found_in_new_periodics =
             std::find_if(std::begin(periodic_monitors), std::end(periodic_monitors),
@@ -361,7 +376,9 @@ void MonitoringUpdater::update_periodic_monitors_internal() {
     }
 }
 
-bool MonitoringUpdater::process_monitor_meta_internal(UpdaterMonitorMeta& updater_meta_data) {
+void MonitoringUpdater::process_monitor_meta_internal(UpdaterMonitorMeta& updater_meta_data) {
+    EVLOG_info << "Internal meta process: " << updater_meta_data.monitor_meta.monitor;
+
     const auto& monitor_meta = updater_meta_data.monitor_meta;
     const auto& monitor = monitor_meta.monitor;
 
@@ -376,11 +393,11 @@ bool MonitoringUpdater::process_monitor_meta_internal(UpdaterMonitorMeta& update
 
         if (monitor.type == MonitorEnum::Periodic) {
             auto current_time = std::chrono::steady_clock::now();
-            auto delta = current_time - updater_meta_data.last_trigger_steady;
+            auto delta = current_time - updater_meta_data.meta_periodic.last_trigger_steady;
 
             if (delta > monitor_seconds) {
                 // Update last time
-                updater_meta_data.last_trigger_steady = current_time;
+                updater_meta_data.meta_periodic.last_trigger_steady = current_time;
                 matches_time = true;
             }
         } else if (monitor.type == MonitorEnum::PeriodicClockAligned) {
@@ -391,12 +408,12 @@ bool MonitoringUpdater::process_monitor_meta_internal(UpdaterMonitorMeta& update
             // trigger event notices at 0, 15, 30 and 45 minutes after the hour, every hour.
             auto current_time = std::chrono::system_clock::now();
 
-            if (current_time > updater_meta_data.next_trigger_clock_aligned) {
+            if (current_time > updater_meta_data.meta_periodic.next_trigger_clock_aligned) {
                 auto distance = std::chrono::duration_cast<std::chrono::seconds>(
-                                    current_time - updater_meta_data.next_trigger_clock_aligned)
+                                    current_time - updater_meta_data.meta_periodic.next_trigger_clock_aligned)
                                     .count();
 
-                // TODO (ioan): Handle with: N08.FR.03, events should be queued and
+                // Handles with: N08.FR.03, events should be queued and
                 // send when the charger is back online
                 if (distance > static_cast<decltype(distance)>(60)) {
                     EVLOG_warning << "Missed scheduled monitor time by: " << distance;
@@ -404,7 +421,8 @@ bool MonitoringUpdater::process_monitor_meta_internal(UpdaterMonitorMeta& update
                 matches_time = true;
                 EVLOG_debug << "Reporting periodic monitor with id: " << monitor.id;
 
-                updater_meta_data.next_trigger_clock_aligned = get_next_clock_aligned_point(monitor.value);
+                updater_meta_data.meta_periodic.next_trigger_clock_aligned =
+                    get_next_clock_aligned_point(monitor.value);
             }
         } else {
             // Should never happen
@@ -427,15 +445,15 @@ bool MonitoringUpdater::process_monitor_meta_internal(UpdaterMonitorMeta& update
             // Generate one event that will either be sent now, or later based on the offline state
             updater_meta_data.generated_monitor_events.push_back(std::move(notify_event));
         }
-
-        return false;
     }
 
     // Process if it is a periodic trigger
     if (updater_meta_data.type == UpdateMonitorMetaType::TRIGGER) {
-        // Only send a trigger if we did not already sent it, as we
-        // will mark it as not sent again, after the value changes
-        if (updater_meta_data.is_csms_sent == 0) {
+        // If we did not generate an event for this trigger, create the notify event
+        if (updater_meta_data.meta_trigger.is_event_generated == 0) {
+            // Until next state change, mark this event as generated
+            updater_meta_data.meta_trigger.is_event_generated = 1;
+
             std::string reported_value{};
 
             // If the variable is marked as read-only then the value will NOT be reported
@@ -447,35 +465,39 @@ bool MonitoringUpdater::process_monitor_meta_internal(UpdaterMonitorMeta& update
                 std::move(create_notify_event(unique_id++, reported_value, updater_meta_data.component,
                                               updater_meta_data.variable, updater_meta_data.monitor_meta));
 
-            // Mark if the event is cleared (returned to normal)
-            if (updater_meta_data.is_cleared) {
-                notify_event.cleared = (updater_meta_data.is_cleared == true);
-            }
+            // Mark if the event is cleared (returned to normal) if that is the case
+            notify_event.cleared = (updater_meta_data.meta_trigger.is_cleared == true);
 
-            // Mark the triggers as CSMS sent
-            updater_meta_data.is_csms_sent = 1;
-
+            // Add it to the list of generated events
             updater_meta_data.generated_monitor_events.push_back(std::move(notify_event));
         }
+    }
+}
 
+bool MonitoringUpdater::should_remove_monitor_meta_internal(const UpdaterMonitorMeta& updater_meta_data) {
+    if (updater_meta_data.type == UpdateMonitorMetaType::PERIODIC) {
+        return false;
+    } else if (updater_meta_data.type == UpdateMonitorMetaType::TRIGGER) {
         bool should_clear = false;
 
-        if (updater_meta_data.is_csms_sent == false && updater_meta_data.is_cleared == true) {
-            // Based on spec comments, if a variable returns to normal and we're offline and
-            // it was not sent to the CSMS it can safely be discarded:
-            // "Only those monitoring events that were triggered & cleared during the offline period will remain
-            // invisible to CSMS."
+        if ((updater_meta_data.meta_trigger.is_csms_sent_triggered == false) &&
+            (updater_meta_data.meta_trigger.is_cleared == true)) {
+            // If we never sent to the CSMS a 'trigger' and we are cleared then it means the CSMS
+            // does not know of our trigger event, and in case of a return to normal we can simply
+            // remove this from the list
             should_clear = true;
-        } else if (updater_meta_data.is_csms_sent && updater_meta_data.is_cleared == true) {
-            // Also discard monitors that were sent to the CSMS and are cleared,
-            // that is, in their proper state
+        } else if ((updater_meta_data.meta_trigger.is_csms_sent_triggered == true) &&
+                   (updater_meta_data.meta_trigger.is_cleared == true) &&
+                   (updater_meta_data.meta_trigger.is_csms_sent == true)) {
+            // If we sent a 'trigger' to the CSMS but now we are cleared and the current
+            // state was also sent to the CSMS it means this trigger can be safely removed
+            // as the CSMS knows everything
             should_clear = true;
         }
 
         return should_clear;
     }
 
-    // Default is not to remove
     return false;
 }
 
@@ -499,11 +521,15 @@ void MonitoringUpdater::process_monitors_internal(bool allow_periodics, bool all
         update_periodic_monitors_internal();
     }
 
+    EVLOG_info << "Updater size: " << updater_monitors_meta.size();
+
     // Iterate all internal monitors and process them
     for (auto it = std::begin(updater_monitors_meta); it != std::end(updater_monitors_meta);) {
         auto& updater_monitor_meta = it->second;
         const auto& meta_monitor_id = it->first;
         const auto& monitor_meta = updater_monitor_meta.monitor_meta;
+
+        EVLOG_info << "Processing internal updater monitor: " << monitor_meta.monitor;
 
         if ((allow_periodics == false) && (updater_monitor_meta.type == UpdateMonitorMetaType::PERIODIC) ||
             (allow_trigger == false) && (updater_monitor_meta.type == UpdateMonitorMetaType::TRIGGER)) {
@@ -545,7 +571,7 @@ void MonitoringUpdater::process_monitors_internal(bool allow_periodics, bool all
         }
 
         // As a result of this function, the meta should have in it all the generated
-        bool should_clear = process_monitor_meta_internal(updater_monitor_meta);
+        process_monitor_meta_internal(updater_monitor_meta);
 
         // If we are not offline, send the queued events generated by this meta
         if (!is_offline) {
@@ -553,6 +579,19 @@ void MonitoringUpdater::process_monitors_internal(bool allow_periodics, bool all
                 // Send the events
                 notify_csms_events(updater_monitor_meta.generated_monitor_events);
                 updater_monitor_meta.generated_monitor_events.clear();
+
+                if (updater_monitor_meta.type == UpdateMonitorMetaType::TRIGGER) {
+                    // If we have a trigger mark the events as being sent
+                    // for the curent state
+                    updater_monitor_meta.meta_trigger.is_csms_sent = true;
+
+                    // If this was a state trigger, them also mark that
+                    // we sent this 'dangerous' state to the CSMS at least once
+                    // since in that case the clear logic changes
+                    if (updater_monitor_meta.meta_trigger.is_cleared == false) {
+                        updater_monitor_meta.meta_trigger.is_csms_sent_triggered = true;
+                    }
+                }
             }
         } else {
             // If we are offline but we passed the 'shoul_process' test, it means that
@@ -560,7 +599,8 @@ void MonitoringUpdater::process_monitors_internal(bool allow_periodics, bool all
             EVLOG_info << "We are offline, cached generated events for later!";
         }
 
-        if (should_clear) {
+        if (should_remove_monitor_meta_internal(updater_monitor_meta)) {
+            EVLOG_info << "Clear monitor: " << updater_monitor_meta.monitor_meta.monitor;
             it = updater_monitors_meta.erase(it);
         } else {
             ++it;
