@@ -98,4 +98,13 @@ std::vector<std::string> split_string(const std::string& string_to_split, const 
     return result;
 }
 
+std::string trim_string(const std::string& string_to_trim) {
+    size_t first = string_to_trim.find_first_not_of(' ');
+    if (std::string::npos == first) {
+        return string_to_trim;
+    }
+    size_t last = string_to_trim.find_last_not_of(' ');
+    return string_to_trim.substr(first, (last - first + 1));
+}
+
 } // namespace ocpp

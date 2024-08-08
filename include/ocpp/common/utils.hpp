@@ -28,6 +28,14 @@ bool is_rfc3339_datetime(const std::string& value);
 ///
 std::vector<std::string> split_string(const std::string& string_to_split, const char c);
 
+///
+/// \brief Trim string, removing leading and trailing white spaces.
+/// \param string_to_trim   The string to trim.
+/// \return The trimmed string.
+///
+std::string trim_string(const std::string& string_to_trim);
+
+
 } // namespace ocpp
 
 #endif

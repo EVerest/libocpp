@@ -670,9 +670,6 @@ std::string running_cost_state_to_string(const RunningCostState& state) {
 } // namespace conversions
 
 void from_json(const json& j, RunningCost& c) {
-    // TODO for 2.0.1, the cost and transactionid are set in CostUpdatedRequest, the remaining is set in the
-    // 'customData'. Don't forget to add `cost` and `transactionId` to the class as well for 2.0.1!!
-
     if (j.contains("transactionId")) {
         if (j.at("transactionId").is_number()) {
             uint32_t transaction_id = j.at("transactionId");

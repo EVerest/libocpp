@@ -53,17 +53,7 @@
         "ContractValidationOffline": true
     },
     "CostAndPrice": {
-        "CustomDisplayCostAndPrice": true,
-        "NumberOfDecimalsForCostValues": 4,
-        "DefaultPrice": "",
-        "DefaultPriceText": "",
-        "TimeOffset": "",
-        "NextTimeOffsetTransitionDateTime": "",
-        "TimeOffsetNextTransition": "",
-        "CustomIdleFeeAfterStop": false,
-        "MultiLanguageSupportedLanguages": "en, nl, de",
-        "CustomMultiLanguageMessages": true,
-        "Language": "en"
+        "CustomDisplayCostAndPrice": false
     },
     "Custom": {
         "ExampleConfigurationKey": "example"

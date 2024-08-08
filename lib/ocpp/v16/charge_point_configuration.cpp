@@ -2319,7 +2319,26 @@ ConfigurationStatus ChargePointConfiguration::setDefaultPriceText(const CiString
     if (default_prices.size() > 1) {
         // Second value is language.
         language = default_prices.at(1);
-        // TODO mz check if language is allowed???
+        // Check if language is allowed. It should be in the list of config item multi language supported languages
+        const auto supported_languages = getMultiLanguageSupportedLanguages();
+        if (!supported_languages.has_value()) {
+            EVLOG_error << "Can not set a default price text for language '" << language
+                        << "', because the config item for multi language support is not set in the config.";
+            return ConfigurationStatus::Rejected;
+        }
+
+        const std::vector<std::string> languages = split_string(supported_languages.value(), ',');
+        const auto& found_it =
+            std::find_if(languages.begin(), languages.end(), [&language](const std::string& supported_language) {
+                return trim_string(supported_language) == trim_string(language);
+            });
+        if (found_it == languages.end()) {
+            EVLOG_error
+                << "Can not set default price text for language '" << language
+                << "', because the language is currently not supported in this charging station. Supported languages: "
+                << supported_languages.value();
+            return ConfigurationStatus::Rejected;
+        }
     } else {
         EVLOG_error << "Configuration DefaultPriceText is set, but does not contain a language (Configuration should "
                        "be something like 'DefaultPriceText,en', but is "
@@ -3030,10 +3049,9 @@ std::vector<KeyValue> ChargePointConfiguration::get_all_key_value() {
                 // DefaultPriceText is a special here, as it has multiple possible languages which are all separate
                 // key value pairs.
                 if (config_key.get().find("DefaultPriceText") == 0) {
-                    const std::optional<std::vector<KeyValue>> price_text_key_values =
-                        getAllDefaultPriceTextKeyValues();
+                    const auto price_text_key_values = getAllDefaultPriceTextKeyValues();
                     if (price_text_key_values.has_value()) {
-                        for (const KeyValue& kv : price_text_key_values.value()) {
+                        for (const auto& kv : price_text_key_values.value()) {
                             all.push_back(kv);
                         }
                     }

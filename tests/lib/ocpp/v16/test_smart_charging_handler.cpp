@@ -51,7 +51,7 @@ protected:
     }
 
     void addConnector(int id) {
-        std::shared_ptr<Connector> connector = std::make_shared<Connector>(id);
+        auto connector = std::make_shared<Connector>(id);
 
         auto timer = std::unique_ptr<Everest::SteadyTimer>();
 

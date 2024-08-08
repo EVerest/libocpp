@@ -66,5 +66,12 @@ TEST(Utils, test_split_string) {
     EXPECT_EQ(result.at(1), " It is performed using google test");
 }
 
+TEST(Utils, test_trim_string) {
+    EXPECT_EQ(trim_string(""), "");
+    EXPECT_EQ(trim_string(" trim this"), "trim this");
+    EXPECT_EQ(trim_string("   trim this as well       "), "trim this as well");
+    EXPECT_EQ(trim_string("only space at end  "), "only space at end");
+}
+
 } // namespace common
 } // namespace ocpp

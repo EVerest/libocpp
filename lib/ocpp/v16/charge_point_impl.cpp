@@ -128,7 +128,7 @@ ChargePointImpl::ChargePointImpl(const std::string& config, const fs::path& shar
                 return;
             }
 
-            for (const ChargePointStatus& cp_status : c->trigger_metervalue_on_status.value()) {
+            for (const auto& cp_status : c->trigger_metervalue_on_status.value()) {
                 if (status == cp_status && (!c->previous_status.has_value() || c->previous_status.value() != status)) {
                     const std::optional<MeterValue>& meter_value = get_latest_meter_value(
                         connector, {{Measurand::Energy_Active_Import_Register, std::nullopt}}, ReadingContext::Other);
@@ -926,8 +926,7 @@ void ChargePointImpl::send_meter_value_on_pricing_trigger(const int32_t connecto
 
             MeasurandWithPhase measurand;
             measurand.measurand = Measurand::Energy_Active_Import_Register;
-            const std::optional<MeterValue>& meter_value =
-                get_latest_meter_value(connector_number, {measurand}, ReadingContext::Other);
+            const auto& meter_value = get_latest_meter_value(connector_number, {measurand}, ReadingContext::Other);
 
             if (meter_value.has_value()) {
                 EVLOG_debug << "Sending meter value because of kWh pricing trigger";
@@ -963,11 +962,10 @@ void ChargePointImpl::send_meter_value_on_pricing_trigger(const int32_t connecto
              current_power_kw <= (trigger_metervalue_kw - hysteresis_kw))) {
 
             // Power threshold is crossed, send metervalues.
-            const std::optional<MeterValue>& meter_value =
-                get_latest_meter_value(connector_number,
-                                       {{Measurand::Energy_Active_Import_Register, std::nullopt},
-                                        {Measurand::Power_Active_Import, std::nullopt}},
-                                       ReadingContext::Other);
+            const auto& meter_value = get_latest_meter_value(connector_number,
+                                                             {{Measurand::Energy_Active_Import_Register, std::nullopt},
+                                                              {Measurand::Power_Active_Import, std::nullopt}},
+                                                             ReadingContext::Other);
             if (!meter_value.has_value()) {
                 EVLOG_error << "Send latest meter value because of power (Wh) trigger failed";
             } else {
@@ -978,7 +976,7 @@ void ChargePointImpl::send_meter_value_on_pricing_trigger(const int32_t connecto
         }
     } else {
         // Send metervalue anyway since we have no previous metervalue stored and don't know if we should send any
-        const std::optional<MeterValue>& meter_value = get_latest_meter_value(
+        const auto& meter_value = get_latest_meter_value(
             connector_number,
             {{Measurand::Energy_Active_Import_Register, std::nullopt}, {Measurand::Power_Active_Import, std::nullopt}},
             ReadingContext::Other);
@@ -2942,7 +2940,7 @@ DataTransferResponse ChargePointImpl::handle_set_user_price(const std::optional<
     // Find transaction with given id tag
     std::vector<DisplayMessage> messages;
     DisplayMessage message;
-    const std::shared_ptr<Transaction> t = this->transaction_handler->get_transaction_from_id_tag(id_token.value());
+    const auto t = this->transaction_handler->get_transaction_from_id_tag(id_token.value());
 
     if (t == nullptr) {
         EVLOG_error << "Set user price failed: could not get session id from transaction.";
