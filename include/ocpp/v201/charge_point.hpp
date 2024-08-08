@@ -67,7 +67,6 @@
 #include <ocpp/v201/messages/UpdateFirmware.hpp>
 
 #include "component_state_manager.hpp"
-#include "ocpp/v201/smart_charging.hpp"
 
 namespace ocpp {
 namespace v201 {
