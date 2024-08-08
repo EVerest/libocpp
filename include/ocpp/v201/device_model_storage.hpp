@@ -11,6 +11,7 @@
 #include <optional>
 
 #include <ocpp/v201/ocpp_types.hpp>
+#include <ocpp/v201/enums.hpp>
 
 namespace ocpp {
 namespace v201 {
