@@ -3760,7 +3760,7 @@ std::vector<Measurand> ChargePointImpl::get_measurands_vec(const std::string& me
     for (const auto& measurand_string : measurands_strings) {
         try {
             measurands.push_back(conversions::string_to_measurand(measurand_string));
-        } catch (std::out_of_range& e) {
+        } catch (const StringToEnumException& e) {
             EVLOG_warning << "Could not convert string: " << measurand_string << " to MeasurandEnum";
         }
     }
