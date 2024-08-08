@@ -178,6 +178,10 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
         evse_connector_structure, *this->device_model, this->database_handler, component_state_manager,
         transaction_meter_value_callback, this->callbacks.pause_charging_callback);
 
+    this->connectivity_manager = std::make_unique<ConnectivityManager>();
+
+    this->connectivity_manager->doThing();
+
     // configure logging
     this->configure_message_logging_format(message_log_path);
 

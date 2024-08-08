@@ -10,6 +10,7 @@
 #include <ocpp/common/charging_station_base.hpp>
 
 #include <ocpp/v201/average_meter_values.hpp>
+#include <ocpp/v201/connectivity_manager.hpp>
 #include <ocpp/v201/ctrlr_component_variables.hpp>
 #include <ocpp/v201/database_handler.hpp>
 #include <ocpp/v201/device_model.hpp>
@@ -410,6 +411,7 @@ class ChargePoint : public ChargePointInterface, private ocpp::ChargingStationBa
 
 private:
     std::unique_ptr<EvseManager> evse_manager;
+    std::unique_ptr<ConnectivityManager> connectivity_manager;
 
     // utility
     std::unique_ptr<MessageQueue<v201::MessageType>> message_queue;
