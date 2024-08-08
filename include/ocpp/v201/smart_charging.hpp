@@ -5,7 +5,7 @@
 #define OCPP_V201_SMART_CHARGING_HPP
 
 #include "ocpp/v201/device_model.hpp"
-#include "ocpp/v201/enums.hpp"
+#include "ocpp/v201/ocpp_enums.hpp"
 #include "ocpp/v201/messages/SetChargingProfile.hpp"
 #include <limits>
 

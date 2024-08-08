@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
+// This code is generated using the generator in 'src/code_generator/common`, please do not edit manually
+
+#include <ocpp/v201/ocpp_types.hpp>
+
+#include <optional>
 #include <string>
 
 #include <nlohmann/json.hpp>
-#include <optional>
 
 #include <ocpp/common/types.hpp>
-#include <ocpp/v201/enums.hpp>
-
-#include <ocpp/v201/ocpp_types.hpp>
+#include <ocpp/v201/ocpp_enums.hpp>
 
 namespace ocpp {
 namespace v201 {

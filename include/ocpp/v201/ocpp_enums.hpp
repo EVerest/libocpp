@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
-#ifndef OCPP_V201_ENUMS_HPP
-#define OCPP_V201_ENUMS_HPP
+// This code is generated using the generator in 'src/code_generator/common`, please do not edit manually
 
-#include <cstdint>
+#ifndef OCPP_V201_OCPP_ENUMS_HPP
+#define OCPP_V201_OCPP_ENUMS_HPP
+
 #include <iosfwd>
 #include <string>
 
@@ -1184,19 +1185,12 @@ EventTriggerEnum string_to_event_trigger_enum(const std::string& s);
 /// stream \p os \returns an output stream with the EventTriggerEnum written to
 std::ostream& operator<<(std::ostream& os, const EventTriggerEnum& event_trigger_enum);
 
-enum class VariableMonitorType {
+// from: NotifyEventRequest
+enum class EventNotificationEnum {
+    HardWiredNotification,
     HardWiredMonitor,
     PreconfiguredMonitor,
     CustomMonitor,
-};
-
-// from: NotifyEventRequest
-enum class EventNotificationEnum {
-    HardWiredNotification, // The software implemented by the manufacturer triggered a hardwired notification.
-    HardWiredMonitor,      // Triggered by a monitor, which is hardwired by the manufacturer.
-    PreconfiguredMonitor,  // Triggered by a monitor, which is preconfigured by the manufacturer.
-    CustomMonitor, // Triggered by a monitor, which is set with the setvariablemonitoringrequest message by the Charging
-                   // Station Operator.
 };
 
 namespace conversions {
@@ -1581,28 +1575,11 @@ DisplayMessageStatusEnum string_to_display_message_status_enum(const std::string
 /// given output stream \p os \returns an output stream with the DisplayMessageStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const DisplayMessageStatusEnum& display_message_status_enum);
 
-namespace MontoringLevelSeverity {
-constexpr int32_t Danger = 0;
-constexpr int32_t HardwareFailure = 1;
-constexpr int32_t SystemFailure = 2;
-constexpr int32_t Critical = 3;
-constexpr int32_t Error = 4;
-constexpr int32_t Alert = 5;
-constexpr int32_t Warning = 6;
-constexpr int32_t Notice = 7;
-constexpr int32_t Informational = 8;
-constexpr int32_t Debug = 9;
-
-constexpr int32_t MIN = Danger;
-constexpr int32_t MAX = Debug;
-} // namespace MontoringLevelSeverity
-
 // from: SetMonitoringBaseRequest
 enum class MonitoringBaseEnum {
     All,
-    FactoryDefault, // < Activate the default monitoring settings as recommended by the
-                    // manufacturer. This is a subset of all pre-configured monitors.
-    HardWiredOnly,  //< Clears all custom monitors and disables all pre-configured monitors.
+    FactoryDefault,
+    HardWiredOnly,
 };
 
 namespace conversions {
@@ -2062,4 +2039,4 @@ std::ostream& operator<<(std::ostream& os, const UpdateFirmwareStatusEnum& updat
 } // namespace v201
 } // namespace ocpp
 
-#endif // OCPP_V201_ENUMS_HPP
+#endif // OCPP_V201_OCPP_ENUMS_HPP

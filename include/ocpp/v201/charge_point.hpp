@@ -14,7 +14,7 @@
 #include <ocpp/v201/database_handler.hpp>
 #include <ocpp/v201/device_model.hpp>
 #include <ocpp/v201/device_model_storage.hpp>
-#include <ocpp/v201/enums.hpp>
+#include <ocpp/v201/ocpp_enums.hpp>
 #include <ocpp/v201/evse_manager.hpp>
 #include <ocpp/v201/monitoring_updater.hpp>
 #include <ocpp/v201/ocpp_types.hpp>
