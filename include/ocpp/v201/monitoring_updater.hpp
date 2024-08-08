@@ -134,6 +134,20 @@ private:
                              const VariableCharacteristics& characteristics, const VariableAttribute& attribute,
                              const std::string& value_old, const std::string& value_current);
 
+    /// \brief Callback that is registered to the 'device_model' that determines if any of
+    /// the already existing monitors were updated. It is required for some spec requirements
+    /// that must refresh monitor data in the case of a monitor update
+    void on_monitor_updated(const VariableMonitoringMeta& updated_monitor, const Component& component,
+                            const Variable& variable, const VariableCharacteristics& characteristics,
+                            const VariableAttribute& attribute, const std::string& current_value);
+
+    /// \brief Evaluates if an monitor was triggered, and if it is triggered
+    /// it adds it to our internal list
+    void evaluate_monitor(const VariableMonitoringMeta& monitor_meta, const Component& component,
+                          const Variable& variable, const VariableCharacteristics& characteristics,
+                          const VariableAttribute& attribute, const std::string& value_previous,
+                          const std::string& value_current);
+
     /// \brief Processes the periodic monitors. Since this can be somewhat of a costly
     /// operation (DB query of each triggered monitor's actual value) the processing time
     /// can be configured using the 'VariableMonitoringProcessTime' internal variable. If

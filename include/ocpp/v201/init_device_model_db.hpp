@@ -331,15 +331,29 @@ private: // Functions
     ///
     void delete_attribute(const DbVariableAttribute& attribute);
 
+    ///
+    /// \brief  Inserts a single monitor in the database
+    /// \param monitor Monitor data
+    /// \param variable_id  Variable ID for which we insert this monitor
     void insert_variable_monitor(const VariableMonitoringMeta& monitor, const int64_t& variable_id);
+
+    ///
+    /// \brief same as \ref insert_variable_monitor but will simply iterate the monitors and call the function
     void insert_variable_monitors(const std::vector<VariableMonitoringMeta>& monitors, const int64_t& variable_id);
 
+    ///
+    /// \brief Updates the monitor in the database, using the information from the new monitor
     void update_variable_monitor(const VariableMonitoringMeta& new_monitor, const VariableMonitoringMeta& db_monitor,
                                  const int64_t& variable_id);
 
+    ///
+    /// \brief Updates the monitors in the database, removing the monitors that do not exist
+    /// in the configuration file, and inserting the new ones that were newly added
     void update_variable_monitors(const std::vector<VariableMonitoringMeta>& new_monitors,
                                   const std::vector<VariableMonitoringMeta>& db_monitors, const int64_t& variable_id);
 
+    ///
+    /// \brief Deletes a single monitor related to the provided variable_id from the database
     void delete_variable_monitor(const VariableMonitoringMeta& monitor, const int64_t& variable_id);
 
     ///
