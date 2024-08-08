@@ -444,10 +444,7 @@ void MonitoringUpdater::process_monitor_meta_internal(UpdaterMonitorMeta& update
             // Generate one event that will either be sent now, or later based on the offline state
             updater_meta_data.generated_monitor_events.push_back(std::move(notify_event));
         }
-    }
-
-    // Process if it is a periodic trigger
-    if (updater_meta_data.type == UpdateMonitorMetaType::TRIGGER) {
+    } else if (updater_meta_data.type == UpdateMonitorMetaType::TRIGGER) {
         // If we did not generate an event for this trigger, create the notify event
         if (updater_meta_data.meta_trigger.is_event_generated == 0) {
             // Until next state change, mark this event as generated
