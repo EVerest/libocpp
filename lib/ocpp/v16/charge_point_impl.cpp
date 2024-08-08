@@ -1036,8 +1036,16 @@ void ChargePointImpl::connected_callback() {
 
 void ChargePointImpl::message_callback(const std::string& message) {
     EVLOG_debug << "Received Message: " << message;
-    // EVLOG_debug << "json message: " << json_message;
-    auto enhanced_message = this->message_queue->receive(message);
+
+    EnhancedMessage<v201::MessageType> enhanced_message;
+    try {
+        enhanced_message = this->message_queue->receive(message);
+    } catch (const json::exception& e) {
+        EVLOG_error << "JSON exception during reception of message: " << e.what();
+        this->send(CallError(MessageId("-1"), "GenericError", e.what(), json({})));
+        return;
+    }
+
     auto json_message = enhanced_message.message;
     this->logging->central_system(conversions::messagetype_to_string(enhanced_message.messageType), message);
     try {
@@ -1115,20 +1123,15 @@ void ChargePointImpl::message_callback(const std::string& message) {
     } catch (json::exception& e) {
         EVLOG_error << "JSON exception during handling of message: " << e.what();
         if (json_message.is_array() && json_message.size() > MESSAGE_ID) {
-            auto call_error = CallError(MessageId(json_message.at(MESSAGE_ID).get<std::string>()), "FormationViolation",
-                                        e.what(), json({}, true));
+            auto call_error = CallError(enhanced_message.uniqueId, "FormationViolation", e.what(), json({}, true));
             this->send(call_error);
             this->securityEventNotification(ocpp::security_events::INVALIDMESSAGES, message, true);
         }
-    } catch (std::out_of_range e) {
-        // std::out_of_range is used when converting strings to enums
-        EVLOG_error << "Out of range exception during handling of message: " << e.what();
-        if (json_message.is_array() && json_message.size() > MESSAGE_ID) {
-            auto call_error = CallError(MessageId(json_message.at(MESSAGE_ID).get<std::string>()), "FormationViolation",
-                                        e.what(), json({}, true));
-            this->send(call_error);
-            this->securityEventNotification(ocpp::security_events::INVALIDMESSAGES, message, true);
-        }
+    } catch (const EnumConversionException &e) {
+        EVLOG_error << "EnumConversionException during handling of message: " << e.what();
+        auto call_error = CallError(enhanced_message.uniqueId, "FormationViolation", e.what(), json({}, true));
+        this->send(call_error);
+        this->securityEventNotification(ocpp::security_events::INVALIDMESSAGES, message, true);
     }
 }
 
