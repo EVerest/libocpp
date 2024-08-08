@@ -709,4 +709,49 @@ TEST_F(ChargePointFixture, K01FR22_SetChargingProfileRequest_RejectsChargingStat
     charge_point->handle_message(set_charging_profile_req);
 }
 
+/// This test ensures that when Smart Charging isn't available it doesn't process the submitted profile.
+///
+/// This test is disabled because it only passes if the ControllerComponentVariables::SmartChargingCtrlrAvailable
+/// entry is removed from the config/v201/config.json file.
+TEST_F(ChargePointFixture, DISABLED_K01FR29_SmartChargingCtrlrAvailableIsFalse_RespondsCallError) {
+    auto evse_connector_structure = create_evse_connector_structure();
+    auto database_handler = create_database_handler();
+    auto evse_security = std::make_shared<EvseSecurityMock>();
+    configure_callbacks_with_mocks();
+
+    const auto DEFAULT_MESSAGE_QUEUE_SIZE_THRESHOLD = 2E5;
+    std::shared_ptr<MessageQueue<v201::MessageType>> message_queue =
+        std::make_shared<ocpp::MessageQueue<v201::MessageType>>(
+            [this](json message) -> bool { return false; },
+            MessageQueueConfig{
+                this->device_model->get_value<int>(ControllerComponentVariables::MessageAttempts),
+                this->device_model->get_value<int>(ControllerComponentVariables::MessageAttemptInterval),
+                this->device_model->get_optional_value<int>(ControllerComponentVariables::MessageQueueSizeThreshold)
+                    .value_or(DEFAULT_MESSAGE_QUEUE_SIZE_THRESHOLD),
+                this->device_model->get_optional_value<bool>(ControllerComponentVariables::QueueAllMessages)
+                    .value_or(false),
+                this->device_model->get_value<int>(ControllerComponentVariables::MessageTimeout)},
+            database_handler);
+
+    ocpp::v201::ChargePoint chargePoint(evse_connector_structure, device_model, database_handler, message_queue, "/tmp",
+                                        evse_security, callbacks);
+
+    auto periods = create_charging_schedule_periods({0, 1, 2});
+
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), DEFAULT_TX_ID);
+
+    SetChargingProfileRequest req;
+    req.evseId = DEFAULT_EVSE_ID;
+    req.chargingProfile = profile;
+
+    auto set_charging_profile_req =
+        request_to_enhanced_message<SetChargingProfileRequest, MessageType::SetChargingProfile>(req);
+
+    EXPECT_CALL(*smart_charging_handler, validate_profile(testing::_, testing::_)).Times(0);
+
+    charge_point->handle_message(set_charging_profile_req);
+}
+
 } // namespace ocpp::v201
