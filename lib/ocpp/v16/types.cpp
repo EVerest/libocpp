@@ -176,7 +176,7 @@ std::string messagetype_to_string(MessageType m) {
         return "InternalError";
     }
 
-    throw std::out_of_range("No known string conversion for provided enum of type MessageType");
+    throw EnumToStringException{e, "MessageType"};
 }
 
 MessageType string_to_messagetype(const std::string& s) {
@@ -415,7 +415,7 @@ MessageType string_to_messagetype(const std::string& s) {
         return MessageType::UpdateFirmwareResponse;
     }
 
-    throw std::out_of_range("Provided string " + s + " could not be converted to enum of type MessageType");
+    throw StringToEnumException{s, "MessageType"};
 }
 
 } // namespace conversions
@@ -452,7 +452,7 @@ std::string supported_feature_profiles_to_string(SupportedFeatureProfiles e) {
         return "Custom";
     }
 
-    throw std::out_of_range("No known string conversion for provided enum of type SupportedFeatureProfiles");
+    throw EnumToStringException{e, "SupportedFeatureProfiles"};
 }
 
 /// \brief Converts the given std::string \p s to SupportedFeatureProfiles
@@ -489,8 +489,7 @@ SupportedFeatureProfiles string_to_supported_feature_profiles(const std::string&
         return SupportedFeatureProfiles::Custom;
     }
 
-    throw std::out_of_range("Provided string " + s +
-                            " could not be converted to enum of type SupportedFeatureProfiles");
+    throw StringToEnumException{s, "SupportedFeatureProfiles"};
 }
 } // namespace conversions
 
@@ -517,7 +516,7 @@ std::string charge_point_connection_state_to_string(ChargePointConnectionState e
         return "Rejected";
     }
 
-    throw std::out_of_range("No known string conversion for provided enum of type ChargePointConnectionState");
+    throw EnumToStringException{e, "ChargePointConnectionState"};
 }
 
 ChargePointConnectionState string_to_charge_point_connection_state(const std::string& s) {
@@ -537,8 +536,7 @@ ChargePointConnectionState string_to_charge_point_connection_state(const std::st
         return ChargePointConnectionState::Rejected;
     }
 
-    throw std::out_of_range("Provided string " + s +
-                            " could not be converted to enum of type ChargePointConnectionState");
+    throw StringToEnumException{s, "ChargePointConnectionState"};
 }
 } // namespace conversions
 

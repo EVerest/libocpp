@@ -111,19 +111,9 @@ public:
 };
 
 /// \brief Base exception for when a conversion from string to enum or vice versa fails
-class EnumConversionException : public std::exception {
+class EnumConversionException : public std::out_of_range {
 public:
-    explicit EnumConversionException(std::string&& msg) : msg{std::move(msg)} {
-    }
-
-    // ~EnumConversionException() noexcept override = default;
-
-    const char* what() const noexcept override {
-        return msg.c_str();
-    }
-
-private:
-    std::string msg;
+    using std::out_of_range::out_of_range;
 };
 
 /// \brief Exception used when conversion from enum to string fails

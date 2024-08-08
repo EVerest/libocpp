@@ -752,8 +752,7 @@ public:
             // TODO(kai): we need to do some error handling in the CallError case
             std::unique_lock<std::recursive_mutex> lk(this->message_mutex);
             if (this->in_flight == nullptr) {
-                EVLOG_error
-                    << "Received a CALLRESULT OR CALLERROR without a message in flight, this should not happen";
+                EVLOG_error << "Received a CALLRESULT OR CALLERROR without a message in flight, this should not happen";
                 return enhanced_message;
             }
             if (this->in_flight->uniqueId() != enhanced_message.uniqueId) {
