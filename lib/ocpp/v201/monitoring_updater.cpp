@@ -223,7 +223,13 @@ void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, Va
                 // As per the spec, in case of a delta monitor that always triggered (bool/dateTime etc...)
                 // we must update the reference value to the new value, so that we don't always trigger
                 // this multiple times when it changes
+
+                // N07.FR.18 - "plus or minus monitorValue since the time that this monitor was set or
+                // since the last time this event notice was sent, whichever was last"
+                // A 'cleared' state has no value for a delta monitor
                 try {
+                    EVLOG_debug << "Updated monitor: " << monitor_meta.monitor << " reference to: " << value_current;
+
                     if (!this->device_model->update_monitor_reference(monitor_id, value_current)) {
                         EVLOG_warning << "Could not update delta monitor: " << monitor_id << " reference!";
                     }
@@ -258,7 +264,7 @@ void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, Va
                 }
                 it = res.first;
 
-                EVLOG_debug << "Variable: " << variable.name.get() << " with monitor: " << monitor_id
+                EVLOG_debug << "Variable: " << variable.name.get() << " with monitor: " << monitor_meta.monitor
                             << " triggered, inserted to updater list";
             }
 
@@ -458,8 +464,11 @@ void MonitoringUpdater::process_monitor_meta_internal(UpdaterMonitorMeta& update
                 std::move(create_notify_event(unique_id++, reported_value, updater_meta_data.component,
                                               updater_meta_data.variable, updater_meta_data.monitor_meta));
 
-            // Mark if the event is cleared (returned to normal) if that is the case
-            notify_event.cleared = (updater_meta_data.meta_trigger.is_cleared == true);
+            // N07.FR.18 - the cleared attribute does not apply to deltas
+            if (monitor.type != MonitorEnum::Delta) {
+                // Mark if the event is cleared (returned to normal) if that is the case
+                notify_event.cleared = (updater_meta_data.meta_trigger.is_cleared == true);
+            }
 
             // Add it to the list of generated events
             updater_meta_data.generated_monitor_events.push_back(std::move(notify_event));
