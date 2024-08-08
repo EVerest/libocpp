@@ -1037,7 +1037,7 @@ void ChargePointImpl::connected_callback() {
 void ChargePointImpl::message_callback(const std::string& message) {
     EVLOG_debug << "Received Message: " << message;
 
-    EnhancedMessage<v201::MessageType> enhanced_message;
+    EnhancedMessage<v16::MessageType> enhanced_message;
     try {
         enhanced_message = this->message_queue->receive(message);
     } catch (const json::exception& e) {
@@ -1127,7 +1127,7 @@ void ChargePointImpl::message_callback(const std::string& message) {
             this->send(call_error);
             this->securityEventNotification(ocpp::security_events::INVALIDMESSAGES, message, true);
         }
-    } catch (const EnumConversionException &e) {
+    } catch (const EnumConversionException& e) {
         EVLOG_error << "EnumConversionException during handling of message: " << e.what();
         auto call_error = CallError(enhanced_message.uniqueId, "FormationViolation", e.what(), json({}, true));
         this->send(call_error);

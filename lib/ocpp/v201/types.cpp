@@ -2,9 +2,8 @@
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
 #include <everest/logging.hpp>
-#include <ocpp/v201/types.hpp>
 #include <ocpp/common/types.hpp>
-
+#include <ocpp/v201/types.hpp>
 
 namespace ocpp {
 namespace v201 {

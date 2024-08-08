@@ -176,7 +176,7 @@ std::string messagetype_to_string(MessageType m) {
         return "InternalError";
     }
 
-    throw EnumToStringException{e, "MessageType"};
+    throw EnumToStringException{m, "MessageType"};
 }
 
 MessageType string_to_messagetype(const std::string& s) {
