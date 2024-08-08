@@ -1879,7 +1879,6 @@ void from_json(const json& j, VariableAttribute& k) {
                 k.value = "false";
             }
         } else if (value.is_array() || value.is_object()) {
-            // TODO mz throw here or is this ok?
             // Maybe this is correct and is just a string (json value string), so just return the string.
             k.value = value.dump();
         } else {

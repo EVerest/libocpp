@@ -286,7 +286,7 @@ TEST_F(InitDeviceModelDbTest, init_db) {
     // accordingly.
 
     // First set the source of an attribute to something else than 'default'
-    set_attribute_source("Connector", std::nullopt, 1, 1, "ConnectorType", std::nullopt, AttributeEnum::Actual, "test");
+    set_attribute_source("Connector", std::nullopt, 1, 1, "Available", std::nullopt, AttributeEnum::Actual, "test");
 
     InitDeviceModelDb db2 = InitDeviceModelDb(DATABASE_PATH, MIGRATION_FILES_PATH);
     // This time, the database does exist (again: std::filesystem::exists, which is automatically used, will not work
@@ -386,9 +386,9 @@ TEST_F(InitDeviceModelDbTest, init_db) {
     EXPECT_TRUE(variable_exists("UnitTestCtrlr", std::nullopt, 2, 3, "UnitTestPropertyBName", std::nullopt));
     EXPECT_FALSE(variable_exists("UnitTestCtrlr", std::nullopt, 2, 3, "UnitTestPropertyCName", std::nullopt));
 
-    // Source was not 'default', connector type not changed.
-    EXPECT_TRUE(attribute_has_value("Connector", std::nullopt, 1, 1, "ConnectorType", std::nullopt,
-                                    AttributeEnum::Actual, "cGBT"));
+    // Source was not 'default', available not changed.
+    EXPECT_TRUE(attribute_has_value("Connector", std::nullopt, 1, 1, "Available", std::nullopt, AttributeEnum::Actual,
+                                    "false"));
 
     // Check changed values.
     EXPECT_TRUE(attribute_has_value("EVSE", std::nullopt, 2, std::nullopt, "Available", std::nullopt,

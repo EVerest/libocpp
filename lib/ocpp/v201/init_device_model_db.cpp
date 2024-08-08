@@ -13,9 +13,6 @@
 const static std::string STANDARDIZED_COMPONENT_CONFIG_DIR = "standardized";
 const static std::string CUSTOM_COMPONENT_CONFIG_DIR = "custom";
 
-// TODO mz change EverestEnvironmentOCPPConfiguration in everest_environment_setup.py in everest-utils
-// TODO mz search for component_schemas and config_file etc to remove or change paths
-
 namespace ocpp::v201 {
 
 // Forward declarations.
@@ -195,7 +192,7 @@ void InitDeviceModelDb::insert_component(const ComponentKey& component_key,
     const int64_t component_id = this->database->get_last_inserted_rowid();
 
     // Loop over the properties of this component.
-    for (const DeviceModelVariable& variable : component_variables) {
+    for (const auto& variable : component_variables) {
         EVLOG_debug << "-- Inserting variable " << variable.name;
 
         // Add variable
@@ -206,7 +203,7 @@ void InitDeviceModelDb::insert_component(const ComponentKey& component_key,
 std::map<ComponentKey, std::vector<DeviceModelVariable>>
 InitDeviceModelDb::read_component_config(const std::vector<std::filesystem::path>& components_schema_path) {
     std::map<ComponentKey, std::vector<DeviceModelVariable>> components;
-    for (const std::filesystem::path& path : components_schema_path) {
+    for (const auto& path : components_schema_path) {
         std::ifstream schema_file(path);
         try {
             json data = json::parse(schema_file);
@@ -510,7 +507,7 @@ void InitDeviceModelDb::insert_attribute(const VariableAttribute& attribute, con
 void InitDeviceModelDb::insert_attributes(const std::vector<DbVariableAttribute>& attributes,
                                           const uint64_t& variable_id,
                                           const std::optional<std::string>& default_actual_value) {
-    for (const DbVariableAttribute& attribute : attributes) {
+    for (const auto& attribute : attributes) {
         insert_attribute(attribute.variable_attribute, variable_id, default_actual_value);
     }
 }
@@ -520,7 +517,7 @@ void InitDeviceModelDb::update_attributes(const std::vector<DbVariableAttribute>
                                           const uint64_t& variable_id,
                                           const std::optional<std::string>& default_actual_value) {
     // First check if there are attributes in the database that are not in the config. They should be removed.
-    for (const DbVariableAttribute& db_attribute : db_attributes) {
+    for (const auto& db_attribute : db_attributes) {
         const auto& it = std::find_if(
             new_attributes.begin(), new_attributes.end(), [&db_attribute](const DbVariableAttribute& new_attribute) {
                 return is_same_attribute_type(db_attribute.variable_attribute, new_attribute.variable_attribute);
@@ -532,7 +529,7 @@ void InitDeviceModelDb::update_attributes(const std::vector<DbVariableAttribute>
     }
 
     // Check if the variable attributes in the config match the ones from the database. If not, add or update.
-    for (const DbVariableAttribute& new_attribute : new_attributes) {
+    for (const auto& new_attribute : new_attributes) {
         const auto& it = std::find_if(
             db_attributes.begin(), db_attributes.end(), [&new_attribute](const DbVariableAttribute& db_attribute) {
                 return is_same_attribute_type(new_attribute.variable_attribute, db_attribute.variable_attribute);
@@ -856,7 +853,7 @@ void InitDeviceModelDb::update_component_variables(
     }
 
     // Check for variables that do exist in the database but do not exist in the config. They should be removed.
-    for (const DeviceModelVariable& db_variable : db_variables) {
+    for (const auto& db_variable : db_variables) {
         auto it = std::find_if(variables.begin(), variables.end(), [&db_variable](const DeviceModelVariable& variable) {
             return is_same_variable(variable, db_variable);
         });
@@ -869,7 +866,7 @@ void InitDeviceModelDb::update_component_variables(
 
     // Check for variables that do exist in the config. If they are not in the database, they should be added.
     // Otherwise, they should be updated.
-    for (const DeviceModelVariable& variable : variables) {
+    for (const auto& variable : variables) {
         auto it =
             std::find_if(db_variables.begin(), db_variables.end(), [&variable](const DeviceModelVariable& db_variable) {
                 return is_same_variable(db_variable, variable);
@@ -1064,6 +1061,9 @@ static void check_integrity(const std::map<ComponentKey, std::vector<DeviceModel
 /// \return std::nullopt if the required variable has a value or default value. Error message if it is not.
 ///
 static std::optional<std::string> check_integrity_required_value(const DeviceModelVariable& variable) {
+    // For now, we assume that if a variable is required, it should have an 'Actual' value. But the spec is not clear
+    // about this. There are some implicit signs in favor of having always at least an 'Actual' value, but it is not
+    // explicitly stated. Robert asked OCA about this.
     const auto& actual_attribute =
         std::find_if(variable.attributes.begin(), variable.attributes.end(), [](const DbVariableAttribute& attribute) {
             if (attribute.variable_attribute.type.has_value() &&
@@ -1220,7 +1220,7 @@ static bool variable_has_same_attributes(const std::vector<DbVariableAttribute>&
         return false;
     }
 
-    for (const DbVariableAttribute& attribute : attributes1) {
+    for (const auto& attribute : attributes1) {
         const auto& it =
             std::find_if(attributes2.begin(), attributes2.end(), [&attribute](const DbVariableAttribute& a) {
                 if (!is_attribute_different(a.variable_attribute, attribute.variable_attribute)) {
@@ -1299,7 +1299,6 @@ static std::string get_string_value_from_json(const json& value) {
     } else if (value.is_array() || value.is_object()) {
         EVLOG_warning << "String value " << value.dump()
                       << " from config is an object or array, but config values should be from a primitive type.";
-        // TODO mz throw here or is this ok?
         return value.dump();
     } else {
         return value.dump();

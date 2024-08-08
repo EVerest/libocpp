@@ -30,7 +30,8 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadOnly"
+          "mutability": "ReadOnly",
+          "value": true
         }
       ],
       "description": "Component exists",
@@ -69,13 +70,13 @@
       "variable_name": "ConnectorType",
       "characteristics": {
         "supportsMonitoring": true,
-        "dataType": "string"
+        "dataType": "integer"
       },
       "attributes": [
         {
           "type": "Actual",
           "mutability": "ReadOnly",
-          "value": "OppCharge"
+          "value": "2"
         },
         {
           "type": "Target",
@@ -83,8 +84,7 @@
         }
       ],
       "description": "A value of ConnectorEnumType (See part 2) plus additionally: cGBT, cChaoJi, OppCharge. Specific type of connector, including sub-variant information. Note: Distinct and orthogonal to Charging Protocol, Power Type, Phases.",
-      "type": "string",
-      "default": "cCCS2"
+      "type": "string"
     },
     "ConnectorSupplyPhases": {
       "variable_name": "SupplyPhases",
@@ -96,10 +96,6 @@
         {
           "type": "Target",
           "mutability": "ReadOnly"
-        },
-        {
-          "type": "Actual",
-          "mutability": "ReadOnly"
         }
       ],
       "description": "Number of alternating current phases connected/available.",
@@ -109,7 +105,6 @@
   },
   "required": [
     "ConnectorAvailable",
-    "ConnectorSupplyPhases",
     "ConnectorType"
   ]
 }
