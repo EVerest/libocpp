@@ -799,10 +799,9 @@ public:
     ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
                 const std::string& device_model_storage_address, const bool initialize_device_model,
                 const std::string& device_model_migration_path, const std::string& device_model_config_path,
-                const std::string& ocpp_main_path,
-                const std::string& core_database_path, const std::string& sql_init_path,
-                const std::string& message_log_path, const std::shared_ptr<EvseSecurity> evse_security,
-                const Callbacks& callbacks);
+                const std::string& ocpp_main_path, const std::string& core_database_path,
+                const std::string& sql_init_path, const std::string& message_log_path,
+                const std::shared_ptr<EvseSecurity> evse_security, const Callbacks& callbacks);
 
     /// \brief Construct a new ChargePoint object
     /// \param evse_connector_structure Map that defines the structure of EVSE and connectors of the chargepoint. The
