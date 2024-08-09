@@ -144,11 +144,12 @@ SmartChargingHandler::SmartChargingHandler(EvseManagerInterface& evse_manager,
     evse_manager(evse_manager), device_model(device_model), database_handler(database_handler) {
 }
 
-SetChargingProfileResponse SmartChargingHandler::validate_and_add_profile(ChargingProfile& profile, int32_t evse_id) {
+SetChargingProfileResponse SmartChargingHandler::validate_and_add_profile(ChargingProfile& profile, int32_t evse_id,
+                                                                          AddChargingProfileSource source_of_request) {
     SetChargingProfileResponse response;
     response.status = ChargingProfileStatusEnum::Rejected;
 
-    auto result = this->validate_profile(profile, evse_id);
+    auto result = this->validate_profile(profile, evse_id, source_of_request);
     if (result == ProfileValidationResultEnum::Valid) {
         response = this->add_profile(profile, evse_id);
     } else {
@@ -160,7 +161,8 @@ SetChargingProfileResponse SmartChargingHandler::validate_and_add_profile(Chargi
     return response;
 }
 
-ProfileValidationResultEnum SmartChargingHandler::validate_profile(ChargingProfile& profile, int32_t evse_id) {
+ProfileValidationResultEnum SmartChargingHandler::validate_profile(ChargingProfile& profile, int32_t evse_id,
+                                                                   AddChargingProfileSource source_of_request) {
     conform_validity_periods(profile);
 
     auto result = ProfileValidationResultEnum::Valid;
@@ -194,7 +196,7 @@ ProfileValidationResultEnum SmartChargingHandler::validate_profile(ChargingProfi
         result = this->validate_tx_default_profile(profile, evse_id);
         break;
     case ChargingProfilePurposeEnum::TxProfile:
-        result = this->validate_tx_profile(profile, evse_id);
+        result = this->validate_tx_profile(profile, evse_id, source_of_request);
         break;
     case ChargingProfilePurposeEnum::ChargingStationExternalConstraints:
         // TODO: How do we check this? We shouldn't set it in
@@ -252,12 +254,9 @@ ProfileValidationResultEnum SmartChargingHandler::validate_tx_default_profile(Ch
     return ProfileValidationResultEnum::Valid;
 }
 
-ProfileValidationResultEnum SmartChargingHandler::validate_tx_profile(const ChargingProfile& profile,
-                                                                      int32_t evse_id) const {
-    if (!profile.transactionId.has_value()) {
-        return ProfileValidationResultEnum::TxProfileMissingTransactionId;
-    }
-
+ProfileValidationResultEnum
+SmartChargingHandler::validate_tx_profile(const ChargingProfile& profile, int32_t evse_id,
+                                          AddChargingProfileSource source_of_request) const {
     if (evse_id <= 0) {
         return ProfileValidationResultEnum::TxProfileEvseIdNotGreaterThanZero;
     }
@@ -266,6 +265,16 @@ ProfileValidationResultEnum SmartChargingHandler::validate_tx_profile(const Char
     auto result = this->validate_evse_exists(evse_id);
     if (result != ProfileValidationResultEnum::Valid) {
         return result;
+    }
+
+    // we can return valid here since the following checks verify the transactionId which is not given if the source is
+    // RequestStartTransactionRequest
+    if (source_of_request == AddChargingProfileSource::RequestStartTransactionRequest) {
+        return ProfileValidationResultEnum::Valid;
+    }
+
+    if (!profile.transactionId.has_value()) {
+        return ProfileValidationResultEnum::TxProfileMissingTransactionId;
     }
 
     auto& evse = evse_manager.get_evse(evse_id);
