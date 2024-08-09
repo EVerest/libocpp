@@ -59,6 +59,11 @@ struct ReportedChargingProfile {
         profile(profile), evse_id(evse_id), source(source) {
     }
 };
+enum class AddChargingProfileSource {
+    SetChargingProfile,
+    RequestStartTransactionRequest,
+    Unknown
+};
 
 namespace conversions {
 /// \brief Converts the given ProfileValidationResultEnum \p e to human readable string
@@ -76,9 +81,13 @@ class SmartChargingHandlerInterface {
 public:
     virtual ~SmartChargingHandlerInterface() = default;
 
-    virtual SetChargingProfileResponse validate_and_add_profile(ChargingProfile& profile, int32_t evse_id) = 0;
+    virtual SetChargingProfileResponse
+    validate_and_add_profile(ChargingProfile& profile, int32_t evse_id,
+                             AddChargingProfileSource source_of_request = AddChargingProfileSource::Unknown) = 0;
 
-    virtual ProfileValidationResultEnum validate_profile(ChargingProfile& profile, int32_t evse_id) = 0;
+    virtual ProfileValidationResultEnum
+    validate_profile(ChargingProfile& profile, int32_t evse_id,
+                     AddChargingProfileSource source_of_request = AddChargingProfileSource::Unknown) = 0;
 
     virtual SetChargingProfileResponse add_profile(ChargingProfile& profile, int32_t evse_id) = 0;
 
@@ -113,14 +122,18 @@ public:
     /// \brief validates the given \p profile according to the specification,
     /// adding it to our stored list of profiles if valid.
     ///
-    SetChargingProfileResponse validate_and_add_profile(ChargingProfile& profile, int32_t evse_id) override;
+    SetChargingProfileResponse
+    validate_and_add_profile(ChargingProfile& profile, int32_t evse_id,
+                             AddChargingProfileSource source_of_request = AddChargingProfileSource::Unknown) override;
 
     ///
     /// \brief validates the given \p profile according to the specification.
     /// If a profile does not have validFrom or validTo set, we conform the values
     /// to a representation that fits the spec.
     ///
-    ProfileValidationResultEnum validate_profile(ChargingProfile& profile, int32_t evse_id) override;
+    ProfileValidationResultEnum
+    validate_profile(ChargingProfile& profile, int32_t evse_id,
+                     AddChargingProfileSource source_of_request = AddChargingProfileSource::Unknown) override;
 
     ///
     /// \brief Adds a given \p profile and associated \p evse_id to our stored list of profiles
@@ -176,7 +189,9 @@ protected:
     ///
     /// \brief validates the given \p profile according to the specification
     ///
-    ProfileValidationResultEnum validate_tx_profile(const ChargingProfile& profile, int32_t evse_id) const;
+    ProfileValidationResultEnum
+    validate_tx_profile(const ChargingProfile& profile, int32_t evse_id,
+                        AddChargingProfileSource source_of_request = AddChargingProfileSource::Unknown) const;
 
     /// \brief validates that the given \p profile has valid charging schedules.
     /// If a profiles charging schedule period does not have a valid numberPhases,
