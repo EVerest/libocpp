@@ -35,7 +35,6 @@ std::vector<std::string> split_string(const std::string& string_to_split, const 
 ///
 std::string trim_string(const std::string& string_to_trim);
 
-
 } // namespace ocpp
 
 #endif
