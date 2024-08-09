@@ -10,9 +10,9 @@
 #include <ocpp/v201/database_handler.hpp>
 #include <ocpp/v201/device_model.hpp>
 #include <ocpp/v201/evse_manager.hpp>
-#include <ocpp/v201/messages/SetChargingProfile.hpp>
 #include <ocpp/v201/messages/ClearChargingProfile.hpp>
 #include <ocpp/v201/messages/GetChargingProfiles.hpp>
+#include <ocpp/v201/messages/SetChargingProfile.hpp>
 #include <ocpp/v201/ocpp_enums.hpp>
 #include <ocpp/v201/ocpp_types.hpp>
 #include <ocpp/v201/transaction.hpp>

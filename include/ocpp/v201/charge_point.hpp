@@ -688,7 +688,7 @@ private:
 
     // Functional Block K: Smart Charging
     void report_charging_profile_req(const int32_t request_id, const int32_t evse_id,
-                                     const ChargingLimitSourceEnum source, const std::vector<ChargingProfile> profiles,
+                                     const ChargingLimitSourceEnum source, const std::vector<ChargingProfile>& profiles,
                                      const bool tbc);
     void report_charging_profile_req(const ReportChargingProfilesRequest& req);
 

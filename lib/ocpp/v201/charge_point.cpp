@@ -2225,7 +2225,7 @@ void ChargePoint::meter_values_req(const int32_t evse_id, const std::vector<Mete
 
 void ChargePoint::report_charging_profile_req(const int32_t request_id, const int32_t evse_id,
                                               const ChargingLimitSourceEnum source,
-                                              const std::vector<ChargingProfile> profiles, const bool tbc) {
+                                              const std::vector<ChargingProfile>& profiles, const bool tbc) {
     ReportChargingProfilesRequest req;
     req.requestId = request_id;
     req.evseId = evse_id;
