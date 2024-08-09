@@ -1675,10 +1675,10 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | N02.FR.15 | ✅     |                                          |
 | N02.FR.16 | ✅     |                                          |
 | N02.FR.17 | ✅     |                                          |
-| N02.FR.18 |        |                                          |
-| N02.FR.19 |        |                                          |
-| N02.FR.20 |        |                                          |
-| N02.FR.21 |        |                                          |
+| N02.FR.18 | ✅     |                                          |
+| N02.FR.19 | ✅     |                                          |
+| N02.FR.20 | ✅     |                                          |
+| N02.FR.21 | ✅     |                                          |
 
 ## Diagnostics - Set Monitoring Base
 
@@ -1692,27 +1692,27 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 
 ## Diagnostics - Set Variable Monitoring
 
-| ID        | Status | Remark |
-|-----------|--------|--------|
-| N04.FR.01 | ✅     |        |
-| N04.FR.02 | ✅     |        |
-| N04.FR.03 | ✅     |        |
-| N04.FR.04 | ✅     |        |
-| N04.FR.05 |        |        |
-| N04.FR.06 | ✅     |        |
-| N04.FR.07 | ✅     |        |
-| N04.FR.08 | ✅     |        |
-| N04.FR.09 | ✅     |        |
-| N04.FR.10 | ✅     |        |
-| N04.FR.11 | ✅     |        |
-| N04.FR.12 | ✅     |        |
-| N04.FR.13 | ✅     |        |
-| N04.FR.14 | ✅     |        |
-| N04.FR.15 |        |        |
-| N04.FR.16 | ✅     |        |
-| N04.FR.17 |        |        |
-| N04.FR.18 | ✅     |        |
-| N04.FR.19 | ✅     |        |
+| ID        | Status | Remark                                   |
+|-----------|--------|------------------------------------------|
+| N04.FR.01 | ✅     |                                          |
+| N04.FR.02 | ✅     |                                          |
+| N04.FR.03 | ✅     |                                          |
+| N04.FR.04 | ✅     |                                          |
+| N04.FR.05 | ❎     | Everything is supported on our charger   |
+| N04.FR.06 | ✅     |                                          |
+| N04.FR.07 | ✅     |                                          |
+| N04.FR.08 | ✅     |                                          |
+| N04.FR.09 | ✅     |                                          |
+| N04.FR.10 | ✅     |                                          |
+| N04.FR.11 | ✅     |                                          |
+| N04.FR.12 | ✅     |                                          |
+| N04.FR.13 | ✅     |                                          |
+| N04.FR.14 | ✅     |                                          |
+| N04.FR.15 |        |                                          |
+| N04.FR.16 | ✅     |                                          |
+| N04.FR.17 | ❎     | Recommendation only                      |
+| N04.FR.18 | ✅     |                                          |
+| N04.FR.19 | ✅     |                                          |
 
 ## Diagnostics - Set Monitoring Level
 
@@ -1745,8 +1745,8 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | N07.FR.06 | ✅     |        |
 | N07.FR.07 | ✅     |        |
 | N07.FR.10 | ✅     |        |
-| N07.FR.11 |        |        |
-| N07.FR.12 |        |        |
+| N07.FR.11 | ✅     |        |
+| N07.FR.12 | ✅     |        |
 | N07.FR.13 | ✅     |        |
 | N07.FR.14 |        |        |
 | N07.FR.15 | ✅     |        |
@@ -1760,7 +1760,7 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | ID        | Status | Remark |
 |-----------|--------|--------|
 | N08.FR.02 | ✅     |        |
-| N08.FR.03 |        |        |
+| N08.FR.03 | ✅     |        |
 | N08.FR.04 | ✅     |        |
 | N08.FR.05 | ✅     |        |
 | N08.FR.06 | ✅     |        |
