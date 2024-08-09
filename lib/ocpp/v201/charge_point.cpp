@@ -1766,9 +1766,6 @@ void ChargePoint::handle_variable_changed(const SetVariableData& set_variable_da
 }
 
 void ChargePoint::handle_variables_changed(const std::map<SetVariableData, SetVariableResult>& set_variable_results) {
-    // process all triggered monitors
-    this->monitoring_updater.process_triggered_monitors();
-
     // iterate over set_variable_results
     for (const auto& [set_variable_data, set_variable_result] : set_variable_results) {
         if (set_variable_result.attributeStatus == SetVariableStatusEnum::Accepted) {
@@ -1782,6 +1779,9 @@ void ChargePoint::handle_variables_changed(const std::map<SetVariableData, SetVa
             }
         }
     }
+
+    // process all triggered monitors, after a possible disconnect
+    this->monitoring_updater.process_triggered_monitors();
 }
 
 bool ChargePoint::validate_set_variable(const SetVariableData& set_variable_data) {
