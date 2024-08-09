@@ -11,6 +11,8 @@
 #include <ocpp/v201/device_model.hpp>
 #include <ocpp/v201/evse_manager.hpp>
 #include <ocpp/v201/messages/SetChargingProfile.hpp>
+#include <ocpp/v201/messages/ClearChargingProfile.hpp>
+#include <ocpp/v201/messages/GetChargingProfiles.hpp>
 #include <ocpp/v201/ocpp_enums.hpp>
 #include <ocpp/v201/ocpp_types.hpp>
 #include <ocpp/v201/transaction.hpp>
@@ -45,6 +47,42 @@ enum class ProfileValidationResultEnum {
     DuplicateProfileValidityPeriod
 };
 
+/// \brief This enhances the ChargingProfile type by additional paramaters that are required in the
+/// ReportChargingProfilesRequest (EvseId, ChargingLimitSourceEnum)
+struct ReportedChargingProfile : public ChargingProfile {
+    int32_t evse_id;
+    ChargingLimitSourceEnum source;
+
+    ReportedChargingProfile(const ChargingProfile& profile, const int32_t evse_id,
+                            const ChargingLimitSourceEnum source) :
+        evse_id(evse_id), source(source) {
+        id = profile.id;
+        stackLevel = profile.stackLevel;
+        chargingProfilePurpose = profile.chargingProfilePurpose;
+        chargingProfileKind = profile.chargingProfileKind;
+        chargingSchedule = profile.chargingSchedule;
+        customData = profile.customData;
+        recurrencyKind = profile.recurrencyKind;
+        validFrom = profile.validFrom;
+        validTo = profile.validTo;
+        transactionId = profile.transactionId;
+    };
+
+    /// \brief Gets the original ChargingProfile from this extended type
+    ChargingProfile get_charging_profile() const {
+        return {id,
+                stackLevel,
+                chargingProfilePurpose,
+                chargingProfileKind,
+                chargingSchedule,
+                customData,
+                recurrencyKind,
+                validFrom,
+                validTo,
+                transactionId};
+    };
+};
+
 namespace conversions {
 /// \brief Converts the given ProfileValidationResultEnum \p e to human readable string
 /// \returns a string representation of the ProfileValidationResultEnum
@@ -66,6 +104,10 @@ public:
     virtual ProfileValidationResultEnum validate_profile(ChargingProfile& profile, int32_t evse_id) = 0;
 
     virtual SetChargingProfileResponse add_profile(ChargingProfile& profile, int32_t evse_id) = 0;
+
+    virtual ClearChargingProfileResponse clear_profiles(const ClearChargingProfileRequest& request) = 0;
+
+    virtual std::vector<ReportedChargingProfile> get_profiles(const GetChargingProfilesRequest& request) const = 0;
 };
 
 /// \brief This class handles and maintains incoming ChargingProfiles and contains the logic
@@ -105,6 +147,16 @@ public:
     /// \brief Retrieves existing profiles on system.
     ///
     std::vector<ChargingProfile> get_profiles() const;
+
+    ///
+    /// \brief Clears profiles from the system using the given \p request
+    ///
+    ClearChargingProfileResponse clear_profiles(const ClearChargingProfileRequest& request) override;
+
+    ///
+    /// \brief Gets the charging profiles for the given \p request
+    ///
+    std::vector<ReportedChargingProfile> get_profiles(const GetChargingProfilesRequest& request) const override;
 
 protected:
     ///

@@ -773,7 +773,7 @@
             "ChargingScheduleChargingRateUnit": {
                 "variable_name": "RateUnit",
                 "attributes": {
-                    "Actual": ""
+                    "Actual": "A,W"
                 }
             },
             "SmartChargingCtrlrAvailableEnabled": {
