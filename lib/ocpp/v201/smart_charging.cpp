@@ -120,6 +120,81 @@ std::ostream& operator<<(std::ostream& os, const ProfileValidationResultEnum val
     return os;
 }
 
+/// \brief Checks if the given filter \p criteria and \p evse_id matches the given \p profile
+bool profile_matches_clear_criteria(const ChargingProfile& profile, const std::optional<int32_t> profile_id,
+                                    const std::optional<ClearChargingProfile>& criteria, const int32_t evse_id) {
+    if (profile.chargingProfilePurpose == ChargingProfilePurposeEnum::ChargingStationExternalConstraints) {
+        // K10.FR.04; profiles with ChargingStationExternalConstraints shall not be removed
+        return false;
+    }
+
+    // // K10.FR.03, K10.FR.09
+    if (profile_id.has_value() and profile_id.value() == profile.id) {
+        return true;
+    }
+
+    if (profile_id.has_value()) {
+        // profile_id has value but doesnt match
+        return false;
+    }
+
+    if (!criteria.has_value()) {
+        // criteria has no value, so clear all
+        return true;
+    }
+
+    const auto _criteria = criteria.value();
+
+    if (_criteria.stackLevel.has_value() and _criteria.stackLevel.value() != profile.stackLevel) {
+        return false;
+    }
+    if (_criteria.evseId.has_value() and _criteria.evseId.value() != evse_id) {
+        return false;
+    }
+    if (_criteria.chargingProfilePurpose.has_value() and
+        _criteria.chargingProfilePurpose.value() != profile.chargingProfilePurpose) {
+        return false;
+    }
+    return true;
+}
+
+/// \brief Checks if the given filter \p criteria and \p evse_id matches the given \p profile
+bool profile_matches_get_criteria(const ChargingProfile& profile, const ChargingProfileCriterion& criteria,
+                                  const std::optional<int32_t> requested_evse_id, const int32_t profile_evse_id) {
+
+    if (criteria.chargingProfileId.has_value() and
+        std::find(criteria.chargingProfileId.value().begin(), criteria.chargingProfileId.value().end(), profile.id) !=
+            criteria.chargingProfileId.value().end()) {
+        return true;
+    }
+
+    if (criteria.chargingProfileId.has_value()) {
+        // no profile matches the id, no need to do check match of the criteria
+        return false;
+    }
+
+    if (criteria.chargingLimitSource.has_value() and
+        std::find(criteria.chargingLimitSource.value().begin(), criteria.chargingLimitSource.value().end(),
+                  ChargingLimitSourceEnum::CSO) == criteria.chargingLimitSource.value().end()) {
+        return false;
+    }
+
+    if (criteria.chargingProfilePurpose.has_value() and
+        criteria.chargingProfilePurpose.value() != profile.chargingProfilePurpose) {
+        return false;
+    }
+
+    if (criteria.stackLevel.has_value() and criteria.stackLevel.value() != profile.stackLevel) {
+        return false;
+    }
+
+    if (requested_evse_id.has_value() and requested_evse_id.value() != profile_evse_id) {
+        return false;
+    }
+
+    return true;
+}
+
 const int32_t STATION_WIDE_ID = 0;
 
 CurrentPhaseType SmartChargingHandler::get_current_phase_type(const std::optional<EvseInterface*> evse_opt) const {
@@ -434,6 +509,55 @@ std::vector<ChargingProfile> SmartChargingHandler::get_profiles() const {
         all_profiles.insert(all_profiles.end(), evse_profile_pair.second.begin(), evse_profile_pair.second.end());
     }
     return all_profiles;
+}
+
+ClearChargingProfileResponse SmartChargingHandler::clear_profiles(const ClearChargingProfileRequest& request) {
+    ClearChargingProfileResponse response;
+
+    const auto profile_id = request.chargingProfileId;
+    const auto criteria = request.chargingProfileCriteria;
+
+    auto any_found_profile = false;
+    // iterate over all profiles
+    for (auto& [existing_evse_id, evse_profiles] : charging_profiles) {
+        for (auto it = evse_profiles.begin(); it != evse_profiles.end();) {
+            // K10.FR.04: logical AND between the filters, if not set, the filter does not apply
+            if (profile_matches_clear_criteria(*it, profile_id, criteria, existing_evse_id)) {
+                any_found_profile = true;
+                evse_profiles.erase(it);
+                this->database_handler->delete_charging_profile(it->id);
+            } else {
+                // At least one of the filters did not match
+                ++it;
+            }
+        }
+    }
+
+    if (any_found_profile) {
+        response.status = ClearChargingProfileStatusEnum::Accepted;
+    } else {
+        // K10.FR.01
+        response.status = ClearChargingProfileStatusEnum::Unknown;
+    }
+
+    return response;
+}
+
+std::vector<ReportedChargingProfile>
+SmartChargingHandler::get_profiles(const GetChargingProfilesRequest& request) const {
+    std::vector<ReportedChargingProfile> profiles;
+
+    for (auto& [existing_evse_id, evse_profiles] : charging_profiles) {
+        for (auto it = evse_profiles.begin(); it != evse_profiles.end(); it++) {
+            if (profile_matches_get_criteria(*it, request.chargingProfile, request.evseId, existing_evse_id)) {
+                profiles.push_back(
+                    ReportedChargingProfile(*it, existing_evse_id,
+                                            ChargingLimitSourceEnum::CSO)); // TODO: Add correct source when available
+            }
+        }
+    }
+
+    return profiles;
 }
 
 std::vector<ChargingProfile> SmartChargingHandler::get_evse_specific_tx_default_profiles() const {
