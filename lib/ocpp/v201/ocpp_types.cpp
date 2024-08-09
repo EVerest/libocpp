@@ -563,7 +563,7 @@ void to_json(json& j, const ChargingProfileCriterion& k) {
             j["chargingLimitSource"] = json::array();
         }
         for (auto val : k.chargingLimitSource.value()) {
-            j["chargingLimitSource"].push_back(val);
+            j["chargingLimitSource"].push_back(conversions::charging_limit_source_enum_to_string(val));
         }
     }
 }
@@ -595,7 +595,7 @@ void from_json(const json& j, ChargingProfileCriterion& k) {
         json arr = j.at("chargingLimitSource");
         std::vector<ChargingLimitSourceEnum> vec;
         for (auto val : arr) {
-            vec.push_back(val);
+            vec.push_back(conversions::string_to_charging_limit_source_enum(val));
         }
         k.chargingLimitSource.emplace(vec);
     }
