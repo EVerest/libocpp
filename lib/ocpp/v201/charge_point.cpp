@@ -1343,6 +1343,12 @@ void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& messa
     case MessageType::SetChargingProfile:
         this->handle_set_charging_profile_req(json_message);
         break;
+    case MessageType::ClearChargingProfile:
+        this->handle_clear_charging_profile_req(json_message);
+        break;
+    case MessageType::GetChargingProfiles:
+        this->handle_get_charging_profiles_req(json_message);
+        break;
     case MessageType::SetMonitoringBase:
         this->handle_set_monitoring_base_req(json_message);
         break;
@@ -2215,6 +2221,25 @@ void ChargePoint::meter_values_req(const int32_t evse_id, const std::vector<Mete
 
     ocpp::Call<MeterValuesRequest> call(req, this->message_queue->createMessageId());
     this->send<MeterValuesRequest>(call, initiated_by_trigger_message);
+}
+
+void ChargePoint::report_charging_profile_req(const int32_t request_id, const int32_t evse_id,
+                                              const ChargingLimitSourceEnum source,
+                                              const std::vector<ChargingProfile> profiles, const bool tbc) {
+    ReportChargingProfilesRequest req;
+    req.requestId = request_id;
+    req.evseId = evse_id;
+    req.chargingLimitSource = source;
+    req.chargingProfile = profiles;
+    req.tbc = tbc;
+
+    ocpp::Call<ReportChargingProfilesRequest> call(req, this->message_queue->createMessageId());
+    this->send<ReportChargingProfilesRequest>(call);
+}
+
+void ChargePoint::report_charging_profile_req(const ReportChargingProfilesRequest& req) {
+    ocpp::Call<ReportChargingProfilesRequest> call(req, this->message_queue->createMessageId());
+    this->send<ReportChargingProfilesRequest>(call);
 }
 
 void ChargePoint::notify_event_req(const std::vector<EventData>& events) {
@@ -3233,6 +3258,97 @@ void ChargePoint::handle_set_charging_profile_req(Call<SetChargingProfileRequest
 
     ocpp::CallResult<SetChargingProfileResponse> call_result(response, call.uniqueId);
     this->send<SetChargingProfileResponse>(call_result);
+}
+
+void ChargePoint::handle_clear_charging_profile_req(Call<ClearChargingProfileRequest> call) {
+    EVLOG_debug << "Received ClearChargingProfileRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
+    const auto msg = call.msg;
+    ClearChargingProfileResponse response;
+    response.status = ClearChargingProfileStatusEnum::Unknown;
+
+    // K10.FR.06
+    if (msg.chargingProfileCriteria.has_value() and
+        msg.chargingProfileCriteria.value().chargingProfilePurpose.has_value() and
+        msg.chargingProfileCriteria.value().chargingProfilePurpose.value() ==
+            ChargingProfilePurposeEnum::ChargingStationExternalConstraints) {
+        response.statusInfo = StatusInfo();
+        response.statusInfo->reasonCode = "InvalidValue";
+        response.statusInfo->additionalInfo = "ChargingStationExternalConstraintsInClearChargingProfileRequest";
+        EVLOG_debug << "Rejecting SetChargingProfileRequest:\n reasonCode: " << response.statusInfo->reasonCode.get()
+                    << "\nadditionalInfo: " << response.statusInfo->additionalInfo->get();
+    } else {
+        response = this->smart_charging_handler->clear_profiles(msg);
+    }
+
+    ocpp::CallResult<ClearChargingProfileResponse> call_result(response, call.uniqueId);
+    this->send<ClearChargingProfileResponse>(call_result);
+}
+
+void ChargePoint::handle_get_charging_profiles_req(Call<GetChargingProfilesRequest> call) {
+    EVLOG_debug << "Received GetChargingProfilesRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
+    const auto msg = call.msg;
+    GetChargingProfilesResponse response;
+
+    const auto profiles_to_report = this->smart_charging_handler->get_profiles(msg);
+
+    if (not profiles_to_report.empty()) {
+        response.status = GetChargingProfileStatusEnum::Accepted;
+        ocpp::CallResult<GetChargingProfilesResponse> call_result(response, call.uniqueId);
+        this->send<GetChargingProfilesResponse>(call_result);
+    } else {
+        response.status = GetChargingProfileStatusEnum::NoProfiles;
+        ocpp::CallResult<GetChargingProfilesResponse> call_result(response, call.uniqueId);
+        this->send<GetChargingProfilesResponse>(call_result);
+        return;
+    }
+
+    // There are profiles to report.
+    // Prepare ReportChargingProfileRequest(s). The message defines the properties evseId and chargingLimitSource as
+    // required, so we can not report all profiles in a single ReportChargingProfilesRequest. We need to prepare a
+    // single ReportChargingProfilesRequest for each combination of evseId and chargingLimitSource
+    std::set<int32_t> evse_ids;                // will contain all evse_ids of the profiles
+    std::set<ChargingLimitSourceEnum> sources; // will contain all sources of the profiles
+
+    // fill evse_ids and sources sets
+    std::transform(profiles_to_report.begin(), profiles_to_report.end(), std::inserter(evse_ids, evse_ids.end()),
+                   [](const ReportedChargingProfile& profile) { return profile.evse_id; });
+    std::transform(profiles_to_report.begin(), profiles_to_report.end(), std::inserter(sources, sources.end()),
+                   [](const ReportedChargingProfile& profile) { return profile.source; });
+
+    std::vector<ReportChargingProfilesRequest> requests_to_send;
+
+    for (const auto evse_id : evse_ids) {
+        for (const auto source : sources) {
+            std::vector<ChargingProfile> original_profiles;
+            std::for_each(profiles_to_report.begin(), profiles_to_report.end(),
+                          [evse_id, source, &original_profiles](ReportedChargingProfile profile) {
+                              if (profile.evse_id == evse_id and profile.source == source) {
+                                  original_profiles.push_back(profile.get_charging_profile());
+                              };
+                          });
+            if (not original_profiles.empty()) {
+                // prepare a ReportChargingProfilesRequest
+                ReportChargingProfilesRequest req;
+                req.requestId = msg.requestId; // K09.FR.01
+                req.evseId = evse_id;
+                req.chargingLimitSource = source;
+                req.chargingProfile = original_profiles;
+                requests_to_send.push_back(req);
+            }
+        }
+    }
+
+    // requests_to_send are ready, send them and define tbc property
+    for (size_t index = 0; index < requests_to_send.size(); index++) {
+        auto& request_to_send = requests_to_send.at(index);
+        request_to_send.tbc = true; // K09.FR.02
+        if (index == requests_to_send.size() - 1) {
+            // last element
+            request_to_send.tbc = false; // K09.FR.02
+        }
+        // this sends the ReportChargingProfilesRequest
+        this->report_charging_profile_req(request_to_send);
+    }
 }
 
 void ChargePoint::handle_firmware_update_req(Call<UpdateFirmwareRequest> call) {
