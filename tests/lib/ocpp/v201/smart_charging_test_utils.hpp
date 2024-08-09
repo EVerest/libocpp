@@ -52,6 +52,10 @@ public:
             }
         }
 
+        // Sort profiles by id in ascending order
+        std::sort(profiles.begin(), profiles.end(),
+                  [](const ChargingProfile& a, const ChargingProfile& b) { return a.id < b.id; });
+
         EVLOG_debug << "get_charging_profiles_from_directory END";
         return profiles;
     }
