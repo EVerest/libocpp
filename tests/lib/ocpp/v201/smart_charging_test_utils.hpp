@@ -16,7 +16,7 @@ namespace ocpp::v201 {
 
 static const std::string BASE_JSON_PATH = std::string(TEST_PROFILES_LOCATION_V201) + "/json";
 
-static ocpp::DateTime dt(std::string dt_string) {
+static ocpp::DateTime dt(const std::string dt_string) {
     ocpp::DateTime dt;
 
     if (dt_string.length() == 4) {
@@ -99,7 +99,7 @@ public:
         return "[" + s + "]";
     }
 
-    static std::string md5hash(std::string s) {
+    static std::string md5hash(const std::string s) {
         unsigned char hash[MD5_DIGEST_LENGTH];
 
         EVP_MD_CTX* mdctx = EVP_MD_CTX_new();
