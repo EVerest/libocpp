@@ -1659,7 +1659,7 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | ID        | Status | Remark                                   |
 |-----------|--------|------------------------------------------|
 | N02.FR.01 | ✅     |                                          |
-| N02.FR.02 | ❎     | Everything is supported by our charger   |
+| N02.FR.02 | ❎     | Libocpp supports all MonitoringType(s)   |
 | N02.FR.03 | ✅     |                                          |
 | N02.FR.04 | ✅     |                                          |
 | N02.FR.05 | ✅     |                                          |
@@ -1685,7 +1685,7 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | ID        | Status | Remark                                   |
 |-----------|--------|------------------------------------------|
 | N03.FR.01 | ✅     |                                          |
-| N03.FR.02 | ❎     | Everything is supported on our charger   |
+| N03.FR.02 | ❎     | Libocpp supports all MonitoringType(s)   |
 | N03.FR.03 | ✅     |                                          |
 | N03.FR.04 | ✅     |                                          |
 | N03.FR.05 | ✅     |                                          |
