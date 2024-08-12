@@ -69,7 +69,7 @@ In order to set up pre-existing monitors that are not set up by the CSMS, for th
 }
 ```
 
-In the example for the 'EVSEPower' variable that supports monitoring there were attached three hardwired and preconfigured monitors. The monitors will report (based on out setup, see the `Basic Configuration` section) to the CSMS when the power will exceed '21950' W, when the power will fall below '100' W and when there will be a delta difference of more than `100` W from the `reference_value` in the case of the delta monitor. When the delta is exceeded the `reference_value` will be updated internally, and a new delta will be calculated based on that.
+In the example for the 'EVSEPower' variable that supports monitoring there were attached three hardwired and preconfigured monitors. The monitors will report (based on the setup, see the `Basic Configuration` section) to the CSMS when the power will exceed '21950' W, when the power will fall below '100' W and when there will be a delta difference of more than `100` W from the `reference_value` in the case of the delta monitor. When the delta is exceeded the `reference_value` will be updated internally, and a new delta will be calculated based on that.
 
 For more information related to the monitor functionality, please refer to the OCPP201 specification.
 

@@ -657,7 +657,7 @@ void InitDeviceModelDb::insert_variable_monitor(const VariableMonitoringMeta& mo
     insert_stmt->bind_int(5, static_cast<int>(monitor.type));
     insert_stmt->bind_double(6, monitor.monitor.value);
 
-    if(monitor.monitor.type == MonitorEnum::Delta && !monitor.reference_value.has_value()) {
+    if (monitor.monitor.type == MonitorEnum::Delta && !monitor.reference_value.has_value()) {
         throw InitDeviceModelDbError("Delta monitors must have a reference value set:" + variable_id);
     }
 
