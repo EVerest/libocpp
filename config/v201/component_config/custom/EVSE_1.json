@@ -85,31 +85,7 @@
           "type": "MaxSet",
           "mutability": "ReadOnly"
         }
-      ],
-      "monitors": [
-        {
-          "value": 21950,
-          "severity": 1,
-          "transaction": false,
-          "type": "UpperThreshold",
-          "config_type": "HardWiredMonitor"
-        },
-        {
-          "value": 100,
-          "severity": 1,
-          "transaction": false,
-          "type": "LowerThreshold",
-          "config_type": "HardWiredMonitor"
-        },
-        {
-          "value": 100,
-          "severity": 1,
-          "transaction": false,
-          "type": "Delta",
-          "reference_value": "100",
-          "config_type": "HardWiredMonitor"
-        }
-      ],
+      ],      
       "description": " kW,The variableCharacteristic maxLimit, that holds the maximum power that this EVSE can provide, is required. The Actual value of the instantaneous (real) power is desired, but not required.",
       "type": "number",
       "default": "0"
