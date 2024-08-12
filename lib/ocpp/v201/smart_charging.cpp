@@ -547,6 +547,32 @@ SmartChargingHandler::get_reported_profiles(const GetChargingProfilesRequest& re
     return profiles;
 }
 
+std::vector<ChargingProfile> SmartChargingHandler::get_valid_profiles_for_evse(int32_t evse_id) {
+    std::vector<ChargingProfile> valid_profiles;
+
+    if (charging_profiles.count(evse_id) > 0) {
+        auto& evse_profiles = this->charging_profiles.at(evse_id);
+        for (auto profile : evse_profiles) {
+            if (this->validate_profile(profile, evse_id) == ProfileValidationResultEnum::Valid) {
+                valid_profiles.push_back(profile);
+            }
+        }
+    }
+
+    return valid_profiles;
+}
+
+std::vector<ChargingProfile> SmartChargingHandler::get_valid_profiles(int32_t evse_id) {
+    std::vector<ChargingProfile> valid_profiles = get_valid_profiles_for_evse(evse_id);
+
+    if (evse_id != STATION_WIDE_ID) {
+        auto station_wide_profiles = get_valid_profiles_for_evse(STATION_WIDE_ID);
+        valid_profiles.insert(valid_profiles.end(), station_wide_profiles.begin(), station_wide_profiles.end());
+    }
+
+    return valid_profiles;
+}
+
 std::vector<ChargingProfile> SmartChargingHandler::get_evse_specific_tx_default_profiles() const {
     std::vector<ChargingProfile> evse_specific_tx_default_profiles;
 
