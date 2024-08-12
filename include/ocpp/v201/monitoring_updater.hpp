@@ -7,6 +7,7 @@
 
 #include <everest/timer.hpp>
 
+#include <ocpp/v201/enums.hpp>
 #include <ocpp/v201/ocpp_enums.hpp>
 #include <ocpp/v201/ocpp_types.hpp>
 

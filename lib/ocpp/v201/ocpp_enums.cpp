@@ -2185,20 +2185,6 @@ EventTriggerEnum string_to_event_trigger_enum(const std::string& s) {
 
     throw StringToEnumException{s, "EventTriggerEnum"};
 }
-
-VariableMonitorType string_to_variable_monitor_type(const std::string& s) {
-    if (s == "HardWiredMonitor") {
-        return VariableMonitorType::HardWiredMonitor;
-    }
-    if (s == "PreconfiguredMonitor") {
-        return VariableMonitorType::PreconfiguredMonitor;
-    }
-    if (s == "CustomMonitor") {
-        return VariableMonitorType::CustomMonitor;
-    }
-
-    throw std::out_of_range("Provided string " + s + " could not be converted to enum of type VariableMonitorType");
-}
 } // namespace conversions
 
 std::ostream& operator<<(std::ostream& os, const EventTriggerEnum& event_trigger_enum) {

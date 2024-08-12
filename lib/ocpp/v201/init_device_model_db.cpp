@@ -9,6 +9,7 @@
 #include <string>
 
 #include <everest/logging.hpp>
+#include <ocpp/v201/enums.hpp>
 
 const static std::string STANDARDIZED_COMPONENT_CONFIG_DIR = "standardized";
 const static std::string CUSTOM_COMPONENT_CONFIG_DIR = "custom";

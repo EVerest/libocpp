@@ -665,11 +665,11 @@ void MonitoringUpdater::get_monitoring_info(bool& out_is_offline, int& out_offli
     // By default (if the comp is missing we are reporting up to 'Warning')
     out_offline_severity =
         this->device_model->get_optional_value<int>(ControllerComponentVariables::OfflineQueuingSeverity)
-            .value_or(MontoringLevelSeverity::Warning);
+            .value_or(MonitoringLevelSeverity::Warning);
 
     out_active_monitoring_level =
         this->device_model->get_optional_value<int>(ControllerComponentVariables::ActiveMonitoringLevel)
-            .value_or(MontoringLevelSeverity::MAX);
+            .value_or(MonitoringLevelSeverity::MAX);
 
     std::string active_monitoring_base_string =
         this->device_model->get_optional_value<std::string>(ControllerComponentVariables::ActiveMonitoringBase)
