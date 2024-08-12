@@ -73,4 +73,4 @@ In the example for the 'EVSEPower' variable that supports monitoring there were 
 
 For more information related to the monitor functionality, please refer to the OCPP201 specification.
 
-Note: for a delta monitor, an initial `reference_value` must be provided.
+Note: for a delta monitor, an initial `reference_value` must be provided or the library will fail to initialize.
