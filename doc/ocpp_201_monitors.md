@@ -5,7 +5,7 @@ Monitors are a mechanism for reporting based on certain criteria the internal st
 
 ## Basic Configuration
 
-The monitors are evaluated from time to time in the case of periodic monitors and after a variable has been modified in the case of monitors that are triggered. Periodic monitors will be handles from time to time, the default being 1 second.
+The monitors are evaluated from time to time in the case of periodic monitors and after a variable has been modified in the case of monitors that are triggered. Periodic monitors will be handled from time to time, the default being 1 second.
 
 ### Variables:
 - Enabling monitors: set the `MonitoringCtrlrEnabled` variable to true
@@ -14,7 +14,7 @@ The monitors are evaluated from time to time in the case of periodic monitors an
 - To filter the verbosity level: set the `ActiveMonitoringLevel` variable to a value of 0-9 with 9 being the most verbose
 - To filter the verbosity level when the charging station is offline: set the `OfflineQueuingSeverity` value to 0-9, with 9 keeping all monitor generated event while being offline
 
-Note: there is a small overhead for the monitoring process interval, the periodic monitors that are triggered will require a database value query. However, based on the count and config of monitors is is unlikely that many of them will trigger at the same time, therefore, the database queries will be limited.
+Note: There is a small overhead for the monitoring process interval. The periodic monitors that are triggered will require a database value query. However, based on the count and config of monitors it is unlikely that many of them will trigger at the same time, therefore, the database queries will be limited.
 
 ## Hardwired/Preconfigured Monitors
 
