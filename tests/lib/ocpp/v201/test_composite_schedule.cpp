@@ -622,4 +622,62 @@ TEST_F(ChargepointTestFixtureV201, K08_CalculateCompositeSchedule_MaxOverridenBy
     ASSERT_EQ(actual, expected);
 }
 
+TEST_F(ChargepointTestFixtureV201, K08_CalculateCompositeSchedule_ExternalOverridesHigherLimits) {
+    std::vector<ChargingProfile> profiles =
+        SmartChargingTestUtils::get_charging_profiles_from_directory(BASE_JSON_PATH + "/external/");
+
+    const DateTime start_time = ocpp::DateTime("2024-01-17T00:00:00");
+    const DateTime end_time = ocpp::DateTime("2024-01-17T02:00:00");
+
+    CompositeSchedule expected = {
+        .chargingSchedulePeriod = {{
+                                       .startPeriod = 0,
+                                       .limit = 10.0,
+                                       .numberPhases = 1,
+                                   },
+                                   {
+                                       .startPeriod = 3600,
+                                       .limit = 20.0,
+                                       .numberPhases = 1,
+                                   }},
+        .evseId = DEFAULT_EVSE_ID,
+        .duration = 7200,
+        .scheduleStart = start_time,
+        .chargingRateUnit = ChargingRateUnitEnum::W,
+    };
+
+    CompositeSchedule actual =
+        handler.calculate_composite_schedule(profiles, start_time, end_time, DEFAULT_EVSE_ID, ChargingRateUnitEnum::W);
+    ASSERT_EQ(actual, expected);
+}
+
+TEST_F(ChargepointTestFixtureV201, K08_CalculateCompositeSchedule_ExternalOverridenByLowerLimits) {
+    std::vector<ChargingProfile> profiles =
+        SmartChargingTestUtils::get_charging_profiles_from_directory(BASE_JSON_PATH + "/external/");
+
+    const DateTime start_time = ocpp::DateTime("2024-01-17T22:00:00");
+    const DateTime end_time = ocpp::DateTime("2024-01-18T00:00:00");
+
+    CompositeSchedule expected = {
+        .chargingSchedulePeriod = {{
+                                       .startPeriod = 0,
+                                       .limit = 230.0,
+                                       .numberPhases = 1,
+                                   },
+                                   {
+                                       .startPeriod = 3600,
+                                       .limit = 10.0,
+                                       .numberPhases = 1,
+                                   }},
+        .evseId = DEFAULT_EVSE_ID,
+        .duration = 7200,
+        .scheduleStart = start_time,
+        .chargingRateUnit = ChargingRateUnitEnum::W,
+    };
+
+    CompositeSchedule actual =
+        handler.calculate_composite_schedule(profiles, start_time, end_time, DEFAULT_EVSE_ID, ChargingRateUnitEnum::W);
+    ASSERT_EQ(actual, expected);
+}
+
 } // namespace ocpp::v201

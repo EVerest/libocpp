@@ -996,7 +996,8 @@ TEST(OCPPTypesTest, CalculateChargingScheduleCombined_Default) {
 
     };
 
-    const CompositeSchedule actual = calculate_composite_schedule(DEFAULT_SCHEDULE, DEFAULT_SCHEDULE, DEFAULT_SCHEDULE);
+    const CompositeSchedule actual =
+        calculate_composite_schedule(DEFAULT_SCHEDULE, DEFAULT_SCHEDULE, DEFAULT_SCHEDULE, DEFAULT_SCHEDULE);
 
     ASSERT_EQ(expected, actual);
 }
@@ -1019,7 +1020,7 @@ TEST(OCPPTypesTest, CalculateChargingScheduleCombined_CombinedTxDefault) {
         .chargingRateUnit = ChargingRateUnitEnum::A,
     };
 
-    const CompositeSchedule actual = calculate_composite_schedule(profile, tx_default_schedule, profile);
+    const CompositeSchedule actual = calculate_composite_schedule(profile, profile, tx_default_schedule, profile);
 
     ASSERT_EQ(expected, actual);
 }
@@ -1051,7 +1052,7 @@ TEST(OCPPTypesTest, CalculateChargingScheduleCombined_CombinedTxDefaultTx) {
     };
 
     const CompositeSchedule actual =
-        calculate_composite_schedule(charging_station_max, tx_default_schedule, tx_schedule);
+        calculate_composite_schedule(DEFAULT_SCHEDULE, charging_station_max, tx_default_schedule, tx_schedule);
 
     ASSERT_EQ(expected, actual);
 }
@@ -1095,7 +1096,7 @@ TEST(OCPPTypesTest, CalculateChargingScheduleCombined_CombinedOverlapA) {
     };
 
     const CompositeSchedule actual =
-        calculate_composite_schedule(charging_station_max, tx_default_schedule, tx_schedule);
+        calculate_composite_schedule(DEFAULT_SCHEDULE, charging_station_max, tx_default_schedule, tx_schedule);
 
     ASSERT_EQ(expected, actual);
 }
@@ -1143,7 +1144,7 @@ TEST(OCPPTypesTest, CalculateChargingScheduleCombined_CombinedOverlapB) {
     };
 
     const CompositeSchedule actual =
-        calculate_composite_schedule(charging_station_max, tx_default_schedule, tx_schedule);
+        calculate_composite_schedule(DEFAULT_SCHEDULE, charging_station_max, tx_default_schedule, tx_schedule);
 
     ASSERT_EQ(expected, actual);
 }

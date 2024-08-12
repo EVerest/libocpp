@@ -695,6 +695,7 @@ CompositeSchedule SmartChargingHandler::calculate_composite_schedule(std::vector
     //     }
     // }
 
+    std::vector<period_entry_t> charging_station_external_constraints_periods{};
     std::vector<period_entry_t> charge_point_max_periods{};
     std::vector<period_entry_t> tx_default_periods{};
     std::vector<period_entry_t> tx_periods{};
@@ -704,6 +705,10 @@ CompositeSchedule SmartChargingHandler::calculate_composite_schedule(std::vector
         periods = ocpp::v201::calculate_profile(start_time, end_time, session_start, profile);
 
         switch (profile.chargingProfilePurpose) {
+        case ChargingProfilePurposeEnum::ChargingStationExternalConstraints:
+            charging_station_external_constraints_periods.insert(charging_station_external_constraints_periods.end(),
+                                                                 periods.begin(), periods.end());
+            break;
         case ChargingProfilePurposeEnum::ChargingStationMaxProfile:
             charge_point_max_periods.insert(charge_point_max_periods.end(), periods.begin(), periods.end());
             break;
@@ -718,14 +723,16 @@ CompositeSchedule SmartChargingHandler::calculate_composite_schedule(std::vector
         }
     }
 
+    auto charging_station_external_constraints = ocpp::v201::calculate_composite_schedule(
+        charging_station_external_constraints_periods, start_time, end_time, charging_rate_unit);
     auto composite_charge_point_max =
         ocpp::v201::calculate_composite_schedule(charge_point_max_periods, start_time, end_time, charging_rate_unit);
     auto composite_tx_default =
         ocpp::v201::calculate_composite_schedule(tx_default_periods, start_time, end_time, charging_rate_unit);
     auto composite_tx = ocpp::v201::calculate_composite_schedule(tx_periods, start_time, end_time, charging_rate_unit);
 
-    CompositeSchedule composite_schedule =
-        ocpp::v201::calculate_composite_schedule(composite_charge_point_max, composite_tx_default, composite_tx);
+    CompositeSchedule composite_schedule = ocpp::v201::calculate_composite_schedule(
+        charging_station_external_constraints, composite_charge_point_max, composite_tx_default, composite_tx);
 
     // Set the EVSE ID for the resulting CompositeSchedule
     composite_schedule.evseId = evse_id;

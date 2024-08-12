@@ -88,7 +88,8 @@ CompositeSchedule calculate_composite_schedule(std::vector<period_entry_t>& comb
 /// \param tx the composite schedule for Tx profiles
 /// \return the calculated combined composite schedule
 /// \note all composite schedules must have the same units configured
-CompositeSchedule calculate_composite_schedule(const CompositeSchedule& charging_station_max,
+CompositeSchedule calculate_composite_schedule(const CompositeSchedule& charging_station_external_constraints,
+                                               const CompositeSchedule& charging_station_max,
                                                const CompositeSchedule& tx_default, const CompositeSchedule& tx);
 
 } // namespace v201

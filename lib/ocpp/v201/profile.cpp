@@ -529,7 +529,49 @@ void update_itt(const int schedule_duration, std::vector<ChargingSchedulePeriod>
     }
 }
 
-CompositeSchedule calculate_composite_schedule(const CompositeSchedule& charging_station_max,
+/// \brief update the period based on the power limit
+/// \param[in] current the current startPeriod based on duration
+/// \param[inout] prevailing_period the details of the current period in the schedule.
+/// \param[in] candidate_period the period that is being compared to period.
+/// \param[in] current_charging_rate_unit_enum details of the current composite schedule charging_rate_unit for
+/// conversion.
+///
+ChargingSchedulePeriod
+minimize_charging_schedule_period_by_limit(const int current, const ChargingSchedulePeriod& prevailing_period,
+                                           const ChargingSchedulePeriod& candidate_period,
+                                           const ChargingRateUnitEnum current_charging_rate_unit_enum) {
+
+    auto adjusted_period = prevailing_period;
+
+    if (candidate_period.startPeriod != NO_START_PERIOD) {
+        if (prevailing_period.limit == NO_LIMIT_SPECIFIED && candidate_period.limit != NO_LIMIT_SPECIFIED) {
+            adjusted_period = candidate_period;
+
+        } else if (candidate_period.limit != NO_LIMIT_SPECIFIED) {
+            const auto charge_point_max_phases = candidate_period.numberPhases.value_or(DEFAULT_AND_MAX_NUMBER_PHASES);
+
+            const auto period_max_phases = prevailing_period.numberPhases.value_or(DEFAULT_AND_MAX_NUMBER_PHASES);
+            adjusted_period.numberPhases = std::min(charge_point_max_phases, period_max_phases);
+
+            if (current_charging_rate_unit_enum == ChargingRateUnitEnum::A) {
+                if (candidate_period.limit < prevailing_period.limit) {
+                    adjusted_period.limit = candidate_period.limit;
+                }
+            } else {
+                const auto charge_point_limit_per_phase = candidate_period.limit / charge_point_max_phases;
+                const auto period_limit_per_phase = prevailing_period.limit / period_max_phases;
+
+                adjusted_period.limit = std::floor(std::min(charge_point_limit_per_phase, period_limit_per_phase) *
+                                                   adjusted_period.numberPhases.value());
+            }
+        }
+    }
+
+    return adjusted_period;
+}
+
+CompositeSchedule calculate_composite_schedule(const CompositeSchedule& charging_station_external_constraints,
+                                               const CompositeSchedule& charging_station_max,
                                                const CompositeSchedule& tx_default, const CompositeSchedule& tx) {
 
     CompositeSchedule combined{
@@ -549,90 +591,70 @@ CompositeSchedule calculate_composite_schedule(const CompositeSchedule& charging
     const float default_limit =
         (tx_default.chargingRateUnit == ChargingRateUnitEnum::A) ? DEFAULT_LIMIT_AMPS : DEFAULT_LIMIT_WATTS;
 
-    int current = 0;
+    int current_period = 0;
 
-    const int end = std::max(std::max(charging_station_max.duration, tx_default.duration), tx.duration);
+    const int end = std::max(charging_station_external_constraints.duration,
+                             std::max(std::max(charging_station_max.duration, tx_default.duration), tx.duration));
 
+    auto charging_station_external_constraints_itt =
+        charging_station_external_constraints.chargingSchedulePeriod.begin();
     auto charging_station_max_itt = charging_station_max.chargingSchedulePeriod.begin();
     auto tx_default_itt = tx_default.chargingSchedulePeriod.begin();
     auto tx_itt = tx.chargingSchedulePeriod.begin();
 
+    int duration_charging_station_external_constraints{std::numeric_limits<int>::max()};
     int duration_charging_station_max{std::numeric_limits<int>::max()};
     int duration_tx_default{std::numeric_limits<int>::max()};
     int duration_tx{std::numeric_limits<int>::max()};
 
+    ChargingSchedulePeriod period_charging_station_external_constraints{NO_START_PERIOD, NO_LIMIT_SPECIFIED,
+                                                                        std::nullopt, std::nullopt};
     ChargingSchedulePeriod period_charging_station_max{NO_START_PERIOD, NO_LIMIT_SPECIFIED, std::nullopt, std::nullopt};
     ChargingSchedulePeriod period_tx_default{NO_START_PERIOD, NO_LIMIT_SPECIFIED, std::nullopt, std::nullopt};
     ChargingSchedulePeriod period_tx{NO_START_PERIOD, NO_LIMIT_SPECIFIED, std::nullopt, std::nullopt};
 
+    update_itt(0, charging_station_external_constraints_itt,
+               charging_station_external_constraints.chargingSchedulePeriod.end(),
+               period_charging_station_external_constraints, duration_charging_station_external_constraints);
+
     update_itt(0, charging_station_max_itt, charging_station_max.chargingSchedulePeriod.end(),
                period_charging_station_max, duration_charging_station_max);
+
     update_itt(0, tx_default_itt, tx_default.chargingSchedulePeriod.end(), period_tx_default, duration_tx_default);
+
     update_itt(0, tx_itt, tx.chargingSchedulePeriod.end(), period_tx, duration_tx);
 
     ChargingSchedulePeriod last{
         .startPeriod = 1, .limit = NO_LIMIT_SPECIFIED, .numberPhases = DEFAULT_AND_MAX_NUMBER_PHASES};
 
-    while (current < end) {
-        int duration = std::min(std::min(duration_charging_station_max, duration_tx_default), duration_tx);
+    while (current_period < end) {
 
+        // get the duration that covers the smallest amount of time.
+        int duration = std::min(duration_charging_station_external_constraints,
+                                std::min(std::min(duration_charging_station_max, duration_tx_default), duration_tx));
+
+        // create an unset period to override as needed.
         ChargingSchedulePeriod period{
             .startPeriod = NO_START_PERIOD, .limit = NO_LIMIT_SPECIFIED, .numberPhases = DEFAULT_AND_MAX_NUMBER_PHASES};
 
-        // use TxProfile when there is one
         if (period_tx.startPeriod != NO_START_PERIOD) {
             period = period_tx;
         }
 
         if (period_tx_default.startPeriod != NO_START_PERIOD) {
-            period.startPeriod = current;
-            // use TxDefaultProfile when a TxProfile doesn't exist
             if ((period.limit == NO_LIMIT_SPECIFIED) && (period_tx_default.limit != NO_LIMIT_SPECIFIED)) {
                 period = period_tx_default;
             }
         }
 
-        if (period_charging_station_max.startPeriod != -1) {
-            period.startPeriod = current;
+        period = minimize_charging_schedule_period_by_limit(current_period, period, period_charging_station_max,
+                                                            combined.chargingRateUnit);
+        period = minimize_charging_schedule_period_by_limit(
+            current_period, period, period_charging_station_external_constraints, combined.chargingRateUnit);
 
-            if (period.limit == NO_LIMIT_SPECIFIED) {
-                // use ChargePointMaxProfile when TxProfile and TxDefaultProfile don't exist
-                if (period_charging_station_max.limit != NO_LIMIT_SPECIFIED) {
-                    period = period_charging_station_max;
-                }
-            } else {
-                // apply ChargePointMaxProfile limits
-                // Note the actual ChargePointMaxProfile limit is controlled outside of libocpp
-
-                if (period_charging_station_max.limit != NO_LIMIT_SPECIFIED) {
-
-                    const auto charge_point_max_phases =
-                        period_charging_station_max.numberPhases.value_or(DEFAULT_AND_MAX_NUMBER_PHASES);
-                    const auto period_max_phases = period.numberPhases.value_or(DEFAULT_AND_MAX_NUMBER_PHASES);
-                    period.numberPhases = std::min(charge_point_max_phases, period_max_phases);
-
-                    if (combined.chargingRateUnit == ChargingRateUnitEnum::A) {
-                        // limit is per phase
-                        if (period_charging_station_max.limit < period.limit) {
-                            // apply lower limit
-                            period.limit = period_charging_station_max.limit;
-                        }
-                    } else {
-                        // limit is total allowed power, changes in number of phases matter
-
-                        // adjust limits taking into account a potential change in number of phases
-                        const auto charge_point_limit_per_phase =
-                            period_charging_station_max.limit / charge_point_max_phases;
-                        const auto period_limit_per_phase = period.limit / period_max_phases;
-
-                        // avoid fractional results - 1 decimal place is allowed but tricky to ensure with a float
-                        period.limit = std::floor(std::min(charge_point_limit_per_phase, period_limit_per_phase) *
-                                                  period.numberPhases.value());
-                    }
-                }
-            }
-        }
-
+        update_itt(duration, charging_station_external_constraints_itt,
+                   charging_station_external_constraints.chargingSchedulePeriod.end(),
+                   period_charging_station_external_constraints, duration_charging_station_external_constraints);
         update_itt(duration, charging_station_max_itt, charging_station_max.chargingSchedulePeriod.end(),
                    period_charging_station_max, duration_charging_station_max);
         update_itt(duration, tx_default_itt, tx_default.chargingSchedulePeriod.end(), period_tx_default,
@@ -647,7 +669,7 @@ CompositeSchedule calculate_composite_schedule(const CompositeSchedule& charging
          * the defaults should allow charging at the maximum allowed rate
          */
 
-        if (period.startPeriod != -1) {
+        if (period.startPeriod != NO_START_PERIOD) {
             if (!period.numberPhases.has_value()) {
                 period.numberPhases = DEFAULT_AND_MAX_NUMBER_PHASES;
             }
@@ -655,18 +677,18 @@ CompositeSchedule calculate_composite_schedule(const CompositeSchedule& charging
             if (period.limit == NO_LIMIT_SPECIFIED) {
                 period.limit = default_limit;
             }
-            period.startPeriod = current;
+            period.startPeriod = current_period;
 
             // check this new period is a change from the previous one
             if ((period.limit != last.limit) || (period.numberPhases.value() != last.numberPhases.value())) {
                 combined.chargingSchedulePeriod.push_back(period);
             }
-            current = duration;
+            current_period = duration;
             last = period;
         } else {
             combined.chargingSchedulePeriod.push_back(
-                {current, default_limit, std::nullopt, DEFAULT_AND_MAX_NUMBER_PHASES});
-            current = end;
+                {current_period, default_limit, std::nullopt, DEFAULT_AND_MAX_NUMBER_PHASES});
+            current_period = end;
         }
     }
 
