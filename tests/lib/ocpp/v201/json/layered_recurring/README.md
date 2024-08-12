@@ -1,6 +1,6 @@
 # Layered Recurring
 
-This scenario matches Layered except now the higher Profile is recurring. 
+This scenario matches Layered except now the higher Profile is recurring.
 
 Used by:
 

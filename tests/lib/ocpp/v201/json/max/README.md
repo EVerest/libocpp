@@ -1,6 +1,7 @@
 # Max
 
-This scenario layers TxProfiles on top of a ChargingStationMaxProfile that has limits for all 24 hours.
+This scenario layers TxProfiles on top of a ChargingStationMaxProfile that has
+limits for all 24 hours.
 
 Used by:
 

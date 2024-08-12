@@ -1,4 +1,4 @@
-# Layered Recurring
+# Layered Relative
 
 This scenario matches Layered except now the higher Profile is Relative.
 
