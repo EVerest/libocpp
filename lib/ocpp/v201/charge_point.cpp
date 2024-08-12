@@ -3343,7 +3343,7 @@ void ChargePoint::handle_set_charging_profile_req(Call<SetChargingProfileRequest
 
     // K01.FR.29: Reject if SmartCharging is not available for this Charging Station
     bool is_charging_station_enable =
-        this->device_model->get_optional_value<bool>(ControllerComponentVariables::SmartChargingCtrlrAvailable)
+        this->device_model->get_optional_value<bool>(ControllerComponentVariables::SmartChargingCtrlrAvailableEnabled)
             .value_or(false);
 
     if (!is_charging_station_enable) {
