@@ -31,6 +31,7 @@
 #include <ocpp/v201/messages/ClearCache.hpp>
 #include <ocpp/v201/messages/ClearDisplayMessage.hpp>
 #include <ocpp/v201/messages/ClearVariableMonitoring.hpp>
+#include <ocpp/v201/messages/CostUpdated.hpp>
 #include <ocpp/v201/messages/CustomerInformation.hpp>
 #include <ocpp/v201/messages/DataTransfer.hpp>
 #include <ocpp/v201/messages/DeleteCertificate.hpp>
@@ -196,11 +197,16 @@ struct Callbacks {
     std::optional<std::function<void(const bool is_connected)>> connection_state_changed_callback;
 
     // TODO mz if one of the three is defined, they must all be defined
-     std::optional<std::function<std::vector<DisplayMessage>(const GetDisplayMessagesRequest& request /* TODO */)>> get_display_message_callback;
-     std::optional<std::function<SetDisplayMessageResponse(const std::vector<DisplayMessage>& display_messages)>> set_display_message_callback;
-     std::optional<std::function<ClearDisplayMessageResponse(const ClearDisplayMessageRequest& request/* TODO */)>> clear_display_message_callback;
+    /// \brief Callback functions called for get / set / clear display messages
+    std::optional<std::function<std::vector<DisplayMessage>(const GetDisplayMessagesRequest& request /* TODO */)>>
+        get_display_message_callback;
+    std::optional<std::function<SetDisplayMessageResponse(const std::vector<DisplayMessage>& display_messages)>>
+        set_display_message_callback;
+    std::optional<std::function<ClearDisplayMessageResponse(const ClearDisplayMessageRequest& request /* TODO */)>>
+        clear_display_message_callback;
 
-     std::optional<std::function<void(const RunningCost& running_cost)>> set_running_cost;
+    /// \brief Callback function is called when running cost is set.
+    std::optional<std::function<void(const RunningCost& running_cost)>> set_running_cost_callback;
 };
 
 /// \brief Combines ChangeAvailabilityRequest with persist flag for scheduled Availability changes
@@ -734,6 +740,9 @@ private:
     void handle_change_availability_req(Call<ChangeAvailabilityRequest> call);
     void handle_heartbeat_response(CallResult<HeartbeatResponse> call);
 
+    // Functional Block I: TariffAndCost
+    void handle_costupdated_req(Call<CostUpdatedRequest> call);
+
     // Functional Block K: Smart Charging
     void handle_set_charging_profile_req(Call<SetChargingProfileRequest> call);
 
@@ -754,6 +763,11 @@ private:
     void handle_set_variable_monitoring_req(const EnhancedMessage<v201::MessageType>& message);
     void handle_get_monitoring_report_req(Call<GetMonitoringReportRequest> call);
     void handle_clear_variable_monitoring_req(Call<ClearVariableMonitoringRequest> call);
+
+    // Functional Block O: DisplayMessage
+    void handle_get_display_message(Call<GetDisplayMessagesRequest> call);
+    void handle_set_display_message(Call<SetDisplayMessageRequest> call);
+    void handle_clear_display_message(Call<ClearDisplayMessageRequest> call);
 
     // Functional Block P: DataTransfer
     void handle_data_transfer_req(Call<DataTransferRequest> call);

@@ -59,7 +59,19 @@ bool Callbacks::all_callbacks_valid() const {
            (!this->data_transfer_callback.has_value() or this->data_transfer_callback.value() != nullptr) and
            (!this->transaction_event_callback.has_value() or this->transaction_event_callback.value() != nullptr) and
            (!this->transaction_event_response_callback.has_value() or
-            this->transaction_event_response_callback.value() != nullptr);
+            this->transaction_event_response_callback.value() != nullptr) and
+           (!this->clear_display_message_callback.has_value() or
+            this->clear_display_message_callback.value() != nullptr) and
+           (!this->get_display_message_callback.has_value() or
+            this->get_display_message_callback.value() != nullptr) and
+           (!this->set_display_message_callback.has_value() or this->set_display_message_callback.value()) and
+           (!this->set_running_cost_callback.has_value() or this->set_running_cost_callback.value() == nullptr) and
+           // If one of the display message callbacks is implemented, all should be implemented (we do not support half
+           // implementations)
+           ((this->set_display_message_callback.has_value() and this->get_display_message_callback.has_value() and
+             this->clear_display_message_callback.has_value()) or
+            (!this->set_display_message_callback.has_value() and !this->get_display_message_callback.has_value() and
+             !this->clear_display_message_callback.has_value()));
 }
 
 ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
@@ -1352,6 +1364,15 @@ void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& messa
         break;
     case MessageType::ClearVariableMonitoring:
         this->handle_clear_variable_monitoring_req(json_message);
+        break;
+    case MessageType::GetDisplayMessages:
+        this->handle_get_display_message(json_message);
+        break;
+    case MessageType::SetDisplayMessage:
+        this->handle_set_display_message(json_message);
+        break;
+    case MessageType::ClearDisplayMessage:
+        this->handle_clear_display_message(json_message);
         break;
     default:
         if (message.messageTypeId == MessageTypeId::CALL) {
@@ -3174,6 +3195,10 @@ void ChargePoint::handle_heartbeat_response(CallResult<HeartbeatResponse> call) 
     }
 }
 
+void ChargePoint::handle_costupdated_req(Call<CostUpdatedRequest> call) {
+    // TODO mz implement
+}
+
 void ChargePoint::handle_set_charging_profile_req(Call<SetChargingProfileRequest> call) {
     EVLOG_debug << "Received SetChargingProfileRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
     auto msg = call.msg;
@@ -3532,6 +3557,37 @@ void ChargePoint::handle_clear_variable_monitoring_req(Call<ClearVariableMonitor
 
     ocpp::CallResult<ClearVariableMonitoringResponse> call_result(response, call.uniqueId);
     this->send<ClearVariableMonitoringResponse>(call_result);
+}
+
+void ChargePoint::handle_get_display_message(Call<GetDisplayMessagesRequest> call) {
+    GetDisplayMessagesResponse response;
+    if (!this->callbacks.get_display_message_callback.has_value()) {
+        response.status = GetDisplayMessagesStatusEnum::Unknown;
+        ocpp::CallResult<GetDisplayMessagesResponse> call_result(response, call.uniqueId);
+        this->send<GetDisplayMessagesResponse>(call_result);
+    }
+    // TODO mz implement
+}
+
+void ChargePoint::handle_set_display_message(Call<SetDisplayMessageRequest> call) {
+    SetDisplayMessageResponse response;
+    if (!this->callbacks.set_display_message_callback.has_value()) {
+        response.status = DisplayMessageStatusEnum::Rejected;
+        ocpp::CallResult<SetDisplayMessageResponse> call_result(response, call.uniqueId);
+        this->send<SetDisplayMessageResponse>(call_result);
+    }
+    // TODO mz implement
+}
+
+void ChargePoint::handle_clear_display_message(Call<ClearDisplayMessageRequest> call) {
+    ClearDisplayMessageResponse response;
+    if (!this->callbacks.clear_display_message_callback.has_value()) {
+        EVLOG_error << "Received a clear display message request, but callback is not implemented.";
+        response.status = ClearMessageStatusEnum::Unknown;
+        ocpp::CallResult<ClearDisplayMessageResponse> call_result(response, call.uniqueId);
+        this->send<ClearDisplayMessageResponse>(call_result);
+    }
+    // TODO mz implement
 }
 
 void ChargePoint::handle_data_transfer_req(Call<DataTransferRequest> call) {
