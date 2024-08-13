@@ -438,7 +438,6 @@ void ChargePointImpl::try_resume_transactions(const std::set<std::string>& resum
         }
 
         const auto stop_energy_wh = std::make_shared<StampedEnergyWh>(timestamp, meter_stop);
-        transaction->add_stop_energy_wh(stop_energy_wh);
         transaction->set_transaction_id(transaction_entry.transaction_id);
         // we need this in order to handle a StartTransaction.conf
         transaction->set_start_transaction_message_id(transaction_entry.start_transaction_message_id);
@@ -463,6 +462,7 @@ void ChargePointImpl::try_resume_transactions(const std::set<std::string>& resum
                 EVLOG_info << "Queuing StopTransaction.req for transaction with id: "
                            << transaction_entry.transaction_id
                            << " because it hasn't been acknowledged by CSMS and shall not be resumed.";
+                transaction->add_stop_energy_wh(stop_energy_wh);
                 this->stop_transaction(transaction_entry.connector, Reason::PowerLoss, std::nullopt);
             } else {
                 EVLOG_info << "Resuming transaction with transaction id: " << transaction_entry.transaction_id;
@@ -845,7 +845,6 @@ std::optional<MeterValue> ChargePointImpl::get_latest_meter_value(int32_t connec
                 // RPM
                 const auto rpm = measurement.rpm;
                 if (rpm) {
-                    sample.unit.emplace(UnitOfMeasure::RevolutionsPerMinute);
                     if (rpm.value().location.has_value()) {
                         sample.location.emplace(conversions::string_to_location(rpm.value().location.value()));
                     } else {
