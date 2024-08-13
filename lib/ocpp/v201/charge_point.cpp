@@ -239,6 +239,12 @@ void ChargePoint::start(BootReasonEnum bootreason) {
             this->device_model->get_value<std::string>(ControllerComponentVariables::FirmwareVersion));
         this->security_event_notification_req(CiString<50>(ocpp::security_events::STARTUP_OF_THE_DEVICE),
                                               std::optional<CiString<255>>(startup_message), true, true);
+    } else if (this->bootreason == BootReasonEnum::FirmwareUpdate) {
+        std::string startup_message = "Charging station reboot after firmware update. Firmware version: ";
+        startup_message.append(
+            this->device_model->get_value<std::string>(ControllerComponentVariables::FirmwareVersion));
+        this->security_event_notification_req(CiString<50>(ocpp::security_events::FIRMWARE_UPDATED),
+                                              std::optional<CiString<255>>(startup_message), true, true);
     } else {
         std::string startup_message = "Charging station reset or reboot. Firmware version: ";
         startup_message.append(
