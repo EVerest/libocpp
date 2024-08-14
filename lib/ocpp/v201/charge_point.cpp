@@ -3309,10 +3309,10 @@ void ChargePoint::handle_get_charging_profiles_req(Call<GetChargingProfilesReque
     std::set<ChargingLimitSourceEnum> sources; // will contain all sources of the profiles
 
     // fill evse_ids and sources sets
-    std::transform(profiles_to_report.begin(), profiles_to_report.end(), std::inserter(evse_ids, evse_ids.end()),
-                   [](const ReportedChargingProfile& profile) { return profile.evse_id; });
-    std::transform(profiles_to_report.begin(), profiles_to_report.end(), std::inserter(sources, sources.end()),
-                   [](const ReportedChargingProfile& profile) { return profile.source; });
+    for(const auto& profile: profiles to report) {
+        evse_ids.insert(profile.evse_id);
+        sources.insert(profile.source);
+    }
 
     std::vector<ReportChargingProfilesRequest> requests_to_send;
 
