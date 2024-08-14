@@ -3319,7 +3319,7 @@ void ChargePoint::handle_get_charging_profiles_req(Call<GetChargingProfilesReque
     for (const auto evse_id : evse_ids) {
         for (const auto source : sources) {
             std::vector<ChargingProfile> original_profiles;
-            for (const auto &reported_profile : profiles_to_report) {
+            for (const auto& reported_profile : profiles_to_report) {
                 if (reported_profile.evse_id == evse_id and reported_profile.source == source) {
                     original_profiles.push_back(reported_profile.profile);
                 }
