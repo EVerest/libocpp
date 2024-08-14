@@ -58,6 +58,7 @@ protected:
     std::atomic_int connection_attempts;
     std::atomic_bool shutting_down;
     std::atomic_bool reconnecting;
+    std::function<void(const std::string& event_type, const std::string& tech_info)> security_event_callback;
 
     /// \brief Indicates if the required callbacks are registered
     /// \returns true if the websocket is properly initialized
@@ -123,6 +124,11 @@ public:
 
     /// \brief register a \p callback that is called when the websocket could not connect with a specific reason
     void register_connection_failed_callback(const std::function<void(ConnectionFailedReason)>& callback);
+
+    /// \brief register a \p callback that the websocket will call on a security event. Nothing will be done if
+    /// the event callback is not
+    void register_security_event_callback(
+        const std::function<void(const std::string& event_type, const std::string& tech_info)>& callback);
 
     /// \brief send a \p message over the websocket
     /// \returns true if the message was sent successfully

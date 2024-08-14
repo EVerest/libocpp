@@ -56,6 +56,11 @@ void WebsocketBase::register_connection_failed_callback(const std::function<void
     this->connection_failed_callback = callback;
 }
 
+void WebsocketBase::register_security_event_callback(
+    const std::function<void(const std::string& event_type, const std::string& tech_info)>& callback) {
+    this->security_event_callback = callback;
+}
+
 bool WebsocketBase::initialized() {
     if (this->connected_callback == nullptr) {
         EVLOG_error << "Not properly initialized: please register connected callback.";

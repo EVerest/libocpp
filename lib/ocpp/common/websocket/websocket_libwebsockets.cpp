@@ -594,11 +594,6 @@ void WebsocketTlsTPM::client_loop() {
         if (this->connection_options.verify_csms_common_name == false) {
             ssl_connection |= LCCSCF_SKIP_SERVER_CERT_HOSTNAME_CHECK;
         }
-
-        // TODO: Completely remove after test
-        // ssl_connection |= LCCSCF_ALLOW_SELFSIGNED;
-        // ssl_connection |= LCCSCF_ALLOW_INSECURE;
-        // ssl_connection |= LCCSCF_ALLOW_EXPIRED;
     }
 
     auto& uri = this->connection_options.csms_uri;
