@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
+// Copyright Pionix GmbH and Contributors to EVerest
 
 #include <ocpp/common/types.hpp>
 #include <ocpp/v201/charge_point.hpp>
@@ -176,6 +176,9 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
         evse_connector_structure, *this->device_model, this->database_handler, component_state_manager,
         transaction_meter_value_callback, this->callbacks.pause_charging_callback);
 
+    this->smart_charging_handler =
+        std::make_shared<SmartChargingHandler>(*this->evse_manager, this->device_model, this->database_handler);
+
     // configure logging
     this->configure_message_logging_format(message_log_path);
 
@@ -216,6 +219,8 @@ void ChargePoint::start(BootReasonEnum bootreason) {
     // get transaction messages from db (if there are any) so they can be sent again.
     this->message_queue->get_persisted_messages_from_db();
     this->boot_notification_req(bootreason);
+    // K01.27 - call load_charging_profiles when system boots
+    this->load_charging_profiles();
     this->start_websocket();
 
     if (this->bootreason == BootReasonEnum::RemoteReset) {
@@ -609,14 +614,33 @@ void ChargePoint::configure_message_logging_format(const std::string& message_lo
     bool session_logging = log_formats.find("session_logging") != log_formats.npos;
     bool message_callback = log_formats.find("callback") != log_formats.npos;
     std::function<void(const std::string& message, MessageDirection direction)> logging_callback = nullptr;
+    bool log_rotation =
+        this->device_model->get_optional_value<bool>(ControllerComponentVariables::LogRotation).value_or(false);
+    bool log_rotation_date_suffix =
+        this->device_model->get_optional_value<bool>(ControllerComponentVariables::LogRotationDateSuffix)
+            .value_or(false);
+    uint64_t log_rotation_maximum_file_size =
+        this->device_model->get_optional_value<uint64_t>(ControllerComponentVariables::LogRotationMaximumFileSize)
+            .value_or(0);
+    uint64_t log_rotation_maximum_file_count =
+        this->device_model->get_optional_value<uint64_t>(ControllerComponentVariables::LogRotationMaximumFileCount)
+            .value_or(0);
 
     if (message_callback) {
         logging_callback = this->callbacks.ocpp_messages_callback.value_or(nullptr);
     }
 
-    this->logging = std::make_shared<ocpp::MessageLogging>(
-        !log_formats.empty(), message_log_path, DateTime().to_rfc3339(), log_to_console, detailed_log_to_console,
-        log_to_file, log_to_html, log_security, session_logging, logging_callback);
+    if (log_rotation) {
+        this->logging = std::make_shared<ocpp::MessageLogging>(
+            !log_formats.empty(), message_log_path, "libocpp_201", log_to_console, detailed_log_to_console, log_to_file,
+            log_to_html, log_security, session_logging, logging_callback,
+            ocpp::LogRotationConfig(log_rotation_date_suffix, log_rotation_maximum_file_size,
+                                    log_rotation_maximum_file_count));
+    } else {
+        this->logging = std::make_shared<ocpp::MessageLogging>(
+            !log_formats.empty(), message_log_path, DateTime().to_rfc3339(), log_to_console, detailed_log_to_console,
+            log_to_file, log_to_html, log_security, session_logging, logging_callback);
+    }
 }
 
 void ChargePoint::on_unavailable(const int32_t evse_id, const int32_t connector_id) {
@@ -1308,6 +1332,9 @@ void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& messa
         break;
     case MessageType::CustomerInformation:
         this->handle_customer_information_req(json_message);
+        break;
+    case MessageType::SetChargingProfile:
+        this->handle_set_charging_profile_req(json_message);
         break;
     case MessageType::SetMonitoringBase:
         this->handle_set_monitoring_base_req(json_message);
@@ -3145,6 +3172,39 @@ void ChargePoint::handle_heartbeat_response(CallResult<HeartbeatResponse> call) 
     }
 }
 
+void ChargePoint::handle_set_charging_profile_req(Call<SetChargingProfileRequest> call) {
+    EVLOG_debug << "Received SetChargingProfileRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
+    auto msg = call.msg;
+    SetChargingProfileResponse response;
+    response.status = ChargingProfileStatusEnum::Rejected;
+
+    // K01.FR.22: Reject ChargingStationExternalConstraints profiles in SetChargingProfileRequest
+    if (msg.chargingProfile.chargingProfilePurpose == ChargingProfilePurposeEnum::ChargingStationExternalConstraints) {
+        response.statusInfo = StatusInfo();
+        response.statusInfo->reasonCode = "InvalidValue";
+        response.statusInfo->additionalInfo = "ChargingStationExternalConstraintsInSetChargingProfileRequest";
+        EVLOG_debug << "Rejecting SetChargingProfileRequest:\n reasonCode: " << response.statusInfo->reasonCode.get()
+                    << "\nadditionalInfo: " << response.statusInfo->additionalInfo->get();
+
+        ocpp::CallResult<SetChargingProfileResponse> call_result(response, call.uniqueId);
+        this->send<SetChargingProfileResponse>(call_result);
+
+        return;
+    }
+
+    response = this->smart_charging_handler->validate_and_add_profile(msg.chargingProfile, msg.evseId);
+    if (response.status == ChargingProfileStatusEnum::Accepted) {
+        EVLOG_debug << "Accepting SetChargingProfileRequest";
+        this->callbacks.set_charging_profiles_callback();
+    } else {
+        EVLOG_debug << "Rejecting SetChargingProfileRequest:\n reasonCode: " << response.statusInfo->reasonCode.get()
+                    << "\nadditionalInfo: " << response.statusInfo->additionalInfo->get();
+    }
+
+    ocpp::CallResult<SetChargingProfileResponse> call_result(response, call.uniqueId);
+    this->send<SetChargingProfileResponse>(call_result);
+}
+
 void ChargePoint::handle_firmware_update_req(Call<UpdateFirmwareRequest> call) {
     EVLOG_debug << "Received UpdateFirmwareRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
     if (call.msg.firmware.signingCertificate.has_value() or call.msg.firmware.signature.has_value()) {
@@ -3319,7 +3379,7 @@ void ChargePoint::handle_set_monitoring_level_req(Call<SetMonitoringLevelRequest
     SetMonitoringLevelResponse response;
     const auto& msg = call.msg;
 
-    if (msg.severity < MontoringLevelSeverity::MIN || msg.severity > MontoringLevelSeverity::MAX) {
+    if (msg.severity < MonitoringLevelSeverity::MIN || msg.severity > MonitoringLevelSeverity::MAX) {
         response.status = GenericStatusEnum::Rejected;
     } else {
         auto result = this->device_model->set_value(
@@ -3813,6 +3873,31 @@ void ChargePoint::execute_change_availability_request(ChangeAvailabilityRequest 
         }
     } else {
         this->set_cs_operative_status(request.operationalStatus, persist);
+    }
+}
+
+// K01.27 - load profiles from database
+void ChargePoint::load_charging_profiles() {
+    try {
+        auto evses = this->database_handler->get_all_charging_profiles_group_by_evse();
+        EVLOG_info << "Found " << evses.size() << " evse in the database";
+        for (const auto& [evse_id, profiles] : evses) {
+            for (auto profile : profiles) {
+                try {
+                    if (this->smart_charging_handler->validate_profile(profile, evse_id) ==
+                        ProfileValidationResultEnum::Valid) {
+                        this->smart_charging_handler->add_profile(profile, evse_id);
+                    } else {
+                        // delete if not valid anymore
+                        this->database_handler->delete_charging_profile(profile.id);
+                    }
+                } catch (const QueryExecutionException& e) {
+                    EVLOG_warning << "Failed database operation for ChargingProfiles: " << e.what();
+                }
+            }
+        }
+    } catch (const std::exception& e) {
+        EVLOG_warning << "Unknown error while loading charging profiles from database: " << e.what();
     }
 }
 
