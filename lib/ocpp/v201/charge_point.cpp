@@ -3309,7 +3309,7 @@ void ChargePoint::handle_get_charging_profiles_req(Call<GetChargingProfilesReque
     std::set<ChargingLimitSourceEnum> sources; // will contain all sources of the profiles
 
     // fill evse_ids and sources sets
-    for(const auto& profile: profiles to report) {
+    for (const auto& profile : profiles to report) {
         evse_ids.insert(profile.evse_id);
         sources.insert(profile.source);
     }
@@ -3341,7 +3341,7 @@ void ChargePoint::handle_get_charging_profiles_req(Call<GetChargingProfilesReque
     requests_to_send.back().tbc = false;
 
     // requests_to_send are ready, send them and define tbc property
-    for (const auto &request_to_send : requests_to_send) {
+    for (const auto& request_to_send : requests_to_send) {
         this->report_charging_profile_req(request_to_send);
     }
 }
