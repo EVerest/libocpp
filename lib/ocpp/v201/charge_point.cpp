@@ -3332,20 +3332,16 @@ void ChargePoint::handle_get_charging_profiles_req(Call<GetChargingProfilesReque
                 req.evseId = evse_id;
                 req.chargingLimitSource = source;
                 req.chargingProfile = original_profiles;
+                req.tbc = true;
                 requests_to_send.push_back(req);
             }
         }
     }
 
+    requests_to_send.back().tbc = false;
+
     // requests_to_send are ready, send them and define tbc property
-    for (size_t index = 0; index < requests_to_send.size(); index++) {
-        auto& request_to_send = requests_to_send.at(index);
-        request_to_send.tbc = true; // K09.FR.02
-        if (index == requests_to_send.size() - 1) {
-            // last element
-            request_to_send.tbc = false; // K09.FR.02
-        }
-        // this sends the ReportChargingProfilesRequest
+    for (const auto &request_to_send : requests_to_send) {
         this->report_charging_profile_req(request_to_send);
     }
 }
