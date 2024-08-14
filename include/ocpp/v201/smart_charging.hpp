@@ -106,7 +106,7 @@ public:
     virtual CompositeSchedule calculate_composite_schedule(std::vector<ChargingProfile>& valid_profiles,
                                                            const ocpp::DateTime& start_time,
                                                            const ocpp::DateTime& end_time, const int32_t evse_id,
-                                                           ChargingRateUnitEnum charging_rate_unit) = 0;
+                                                           std::optional<ChargingRateUnitEnum> charging_rate_unit) = 0;
 };
 
 /// \brief This class handles and maintains incoming ChargingProfiles and contains the logic
@@ -168,7 +168,7 @@ public:
     CompositeSchedule calculate_composite_schedule(std::vector<ChargingProfile>& valid_profiles,
                                                    const ocpp::DateTime& start_time, const ocpp::DateTime& end_time,
                                                    const int32_t evse_id,
-                                                   ChargingRateUnitEnum charging_rate_unit) override;
+                                                   std::optional<ChargingRateUnitEnum> charging_rate_unit) override;
 
 protected:
     ///

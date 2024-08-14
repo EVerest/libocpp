@@ -667,11 +667,9 @@ int get_requested_limit(const int limit, const int nr_phases, const ChargingRate
     }
 }
 
-CompositeSchedule SmartChargingHandler::calculate_composite_schedule(std::vector<ChargingProfile>& valid_profiles,
-                                                                     const ocpp::DateTime& start_time,
-                                                                     const ocpp::DateTime& end_time,
-                                                                     const int32_t evse_id,
-                                                                     ChargingRateUnitEnum charging_rate_unit) {
+CompositeSchedule SmartChargingHandler::calculate_composite_schedule(
+    std::vector<ChargingProfile>& valid_profiles, const ocpp::DateTime& start_time, const ocpp::DateTime& end_time,
+    const int32_t evse_id, std::optional<ChargingRateUnitEnum> charging_rate_unit) {
 
     std::optional<ocpp::DateTime> session_start{};
 

@@ -20,6 +20,7 @@ public:
     MOCK_METHOD(std::vector<ChargingProfile>, get_valid_profiles, (int32_t evse_id));
     MOCK_METHOD(CompositeSchedule, calculate_composite_schedule,
                 (std::vector<ChargingProfile> & valid_profiles, const ocpp::DateTime& start_time,
-                 const ocpp::DateTime& end_time, const int32_t evse_id, ChargingRateUnitEnum charging_rate_unit));
+                 const ocpp::DateTime& end_time, const int32_t evse_id,
+                 std::optional<ChargingRateUnitEnum> charging_rate_unit));
 };
 } // namespace ocpp::v201
