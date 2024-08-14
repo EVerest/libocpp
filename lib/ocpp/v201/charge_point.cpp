@@ -7,6 +7,7 @@
 #include <ocpp/v201/device_model_storage_sqlite.hpp>
 #include <ocpp/v201/messages/FirmwareStatusNotification.hpp>
 #include <ocpp/v201/messages/LogStatusNotification.hpp>
+#include <ocpp/v201/messages/NotifyDisplayMessages.hpp>
 #include <ocpp/v201/notify_report_requests_splitter.hpp>
 
 #include <optional>
@@ -2717,6 +2718,35 @@ void ChargePoint::handle_transaction_event_response(const EnhancedMessage<v201::
         this->callbacks.transaction_event_response_callback.value()(original_msg, call_result.msg);
     }
 
+    // TODO mz check if tariff and cost is enabled
+    if (call_result.msg.totalCost.has_value() && this->callbacks.set_running_cost_callback.has_value()) {
+        RunningCost running_cost;
+        running_cost.cost = static_cast<double>(call_result.msg.totalCost.value());
+        if (original_msg.eventType == TransactionEventEnum::Ended) {
+            running_cost.state = RunningCostState::Finished;
+        } else {
+            running_cost.state = RunningCostState::Charging;
+        }
+
+        running_cost.transaction_id = original_msg.transactionInfo.transactionId;
+        // TODO mz add metervalue
+        // running_cost.meter_value = original_msg.meterValue;
+        running_cost.timestamp = original_msg.timestamp;
+
+        // TODO mz make conversion function of this??
+        if (call_result.msg.updatedPersonalMessage.has_value()) {
+            MessageContent personal_message = call_result.msg.updatedPersonalMessage.value();
+            running_cost.cost_messages = std::vector<DisplayMessageContent>();
+            DisplayMessageContent message;
+            message.message = personal_message.content;
+            message.language = personal_message.language;
+            message.message_format = personal_message.format;
+            running_cost.cost_messages->push_back(message);
+        }
+
+        this->callbacks.set_running_cost_callback.value()(running_cost);
+    }
+
     if (original_msg.eventType == TransactionEventEnum::Ended) {
         // nothing to do for TransactionEventEnum::Ended
         return;
@@ -3195,8 +3225,23 @@ void ChargePoint::handle_heartbeat_response(CallResult<HeartbeatResponse> call) 
     }
 }
 
-void ChargePoint::handle_costupdated_req(Call<CostUpdatedRequest> call) {
-    // TODO mz implement
+void ChargePoint::handle_costupdated_req(const Call<CostUpdatedRequest> call) {
+    CostUpdatedResponse response;
+    ocpp::CallResult<CostUpdatedResponse> call_result(response, call.uniqueId);
+
+    // TODO check if this is enabled in settings (device model)???
+    if (!this->callbacks.set_running_cost_callback.has_value()) {
+        this->send<CostUpdatedResponse>(call_result);
+        return;
+    }
+
+    RunningCost running_cost;
+    running_cost.cost = static_cast<double>(call.msg.totalCost);
+    running_cost.transaction_id = call.msg.transactionId;
+    running_cost.state = RunningCostState::Charging;
+    this->callbacks.set_running_cost_callback.value()(running_cost);
+
+    this->send<CostUpdatedResponse>(call_result);
 }
 
 void ChargePoint::handle_set_charging_profile_req(Call<SetChargingProfileRequest> call) {
@@ -3559,27 +3604,145 @@ void ChargePoint::handle_clear_variable_monitoring_req(Call<ClearVariableMonitor
     this->send<ClearVariableMonitoringResponse>(call_result);
 }
 
-void ChargePoint::handle_get_display_message(Call<GetDisplayMessagesRequest> call) {
+// TODO mz move somewhere else??
+std::optional<MessageInfo> display_message_to_message_info_type(const DisplayMessage& display_message) {
+    // Each display message should have an id and p[riority, this is required for OCPP.
+    if (!display_message.id.has_value()) {
+        EVLOG_error << "Can not convert DisplayMessage to MessageInfo: No id is provided, which is required by OCPP.";
+        return std::nullopt;
+    }
+
+    if (!display_message.priority.has_value()) {
+        EVLOG_error
+            << "Can not convert DisplayMessage to MessageInfo: No priority is provided, which is required by OCPP.";
+        return std::nullopt;
+    }
+
+    MessageInfo info;
+    info.message.content = display_message.message.message;
+    info.message.format =
+        (display_message.message.message_format.has_value() ? display_message.message.message_format.value()
+                                                            : MessageFormatEnum::UTF8);
+    info.message.language = display_message.message.language;
+    info.endDateTime = display_message.timestamp_to;
+    info.startDateTime = display_message.timestamp_from;
+    info.id = display_message.id.value();
+    info.priority = display_message.priority.value();
+    info.state = display_message.state;
+    info.transactionId = display_message.transaction_id;
+
+    // Note: component is (not yet?) supported for display messages in libocpp.
+
+    return info;
+}
+
+// TODO mz move somewhere else?
+DisplayMessage message_info_to_display_message(const MessageInfo& message_info) {
+    DisplayMessage display_message;
+
+    display_message.id = message_info.id;
+    display_message.priority = message_info.priority;
+    display_message.state = message_info.state;
+    display_message.timestamp_from = message_info.startDateTime;
+    display_message.timestamp_to = message_info.endDateTime;
+    display_message.transaction_id = message_info.transactionId;
+    display_message.message.message = message_info.message.content;
+    display_message.message.message_format = message_info.message.format;
+    display_message.message.language = message_info.message.language;
+
+    return display_message;
+}
+
+void ChargePoint::handle_get_display_message(const Call<GetDisplayMessagesRequest> call) {
     GetDisplayMessagesResponse response;
     if (!this->callbacks.get_display_message_callback.has_value()) {
         response.status = GetDisplayMessagesStatusEnum::Unknown;
         ocpp::CallResult<GetDisplayMessagesResponse> call_result(response, call.uniqueId);
         this->send<GetDisplayMessagesResponse>(call_result);
+        return;
     }
-    // TODO mz implement
+
+    // Call 'get display message callback' to get all display messages from the charging station.
+    const std::vector<DisplayMessage> display_messages = this->callbacks.get_display_message_callback.value()(call.msg);
+
+    NotifyDisplayMessagesRequest messages_request;
+    messages_request.requestId = call.msg.requestId;
+    messages_request.messageInfo = std::vector<MessageInfo>();
+    // Convert all display messages from the charging station to the correct format. They will not be included if they
+    // do not have the required values. That's why we wait with sending the response until we converted all display
+    // messages, because we then know if there are any.
+    for (const auto& display_message : display_messages) {
+        const std::optional<MessageInfo> message_info = display_message_to_message_info_type(display_message);
+        if (message_info.has_value()) {
+            messages_request.messageInfo->push_back(message_info.value());
+        }
+    }
+
+    // Send 'accepted' back to the CSMS if there is at least one message and send all the messages in another request.
+    if (messages_request.messageInfo.value().empty()) {
+        response.status = GetDisplayMessagesStatusEnum::Unknown;
+        ocpp::CallResult<GetDisplayMessagesResponse> call_result(response, call.uniqueId);
+        this->send<GetDisplayMessagesResponse>(call_result);
+        return;
+    }
+
+    // Send display messages. The response is empty, so we don't have to get that back.
+    // Sending multiple messages is not supported for now, because there is no need to split them up (yet).
+    ocpp::Call<NotifyDisplayMessagesRequest> request(messages_request, this->message_queue->createMessageId());
+    this->send<NotifyDisplayMessagesRequest>(request);
 }
 
-void ChargePoint::handle_set_display_message(Call<SetDisplayMessageRequest> call) {
+void ChargePoint::handle_set_display_message(const Call<SetDisplayMessageRequest> call) {
     SetDisplayMessageResponse response;
     if (!this->callbacks.set_display_message_callback.has_value()) {
         response.status = DisplayMessageStatusEnum::Rejected;
         ocpp::CallResult<SetDisplayMessageResponse> call_result(response, call.uniqueId);
         this->send<SetDisplayMessageResponse>(call_result);
+        return;
     }
-    // TODO mz implement
+
+    // Check if display messages are available, priority and message format are supported and if the given transaction
+    // is running, if a transaction id was included in the message.
+    // Can not check if state is supported here, as libocpp does not have that information (TODO mz toevoegen aan device
+    // model?).
+    const std::optional<bool> display_message_available =
+        this->device_model->get_optional_value<bool>(ControllerComponentVariables::DisplayMessageCtrlrAvailable);
+    const std::string supported_priorities =
+        this->device_model->get_value<std::string>(ControllerComponentVariables::DisplayMessageSupportedPriorities);
+    const std::string supported_message_formats =
+        this->device_model->get_value<std::string>(ControllerComponentVariables::DisplayMessageSupportedFormats);
+    const std::vector<std::string> priorities = split_string(supported_priorities, ',', true);
+    const std::vector<std::string> formats = split_string(supported_message_formats, ',', true);
+    const auto& supported_priority_it = std::find(
+        priorities.begin(), priorities.end(), conversions::message_priority_enum_to_string(call.msg.message.priority));
+    const auto& supported_format_it = std::find(
+        formats.begin(), formats.end(), conversions::message_format_enum_to_string(call.msg.message.message.format));
+    // Check if transaction is valid: this is the case if there is no transaction id, or if the transaction id belongs
+    // to a running transaction.
+    const bool transaction_valid = (!call.msg.message.transactionId.has_value() ||
+                                    get_transaction_evseid(call.msg.message.transactionId.value()) != std::nullopt);
+
+    if ( // Check if display messages are available
+        !display_message_available.has_value() || !display_message_available.value() ||
+        // Check if priority is supported
+        supported_priority_it == priorities.end() ||
+        // Check if format is supported
+        supported_format_it == formats.end() ||
+        // Check if transaction is running
+        !transaction_valid) {
+        response.status = DisplayMessageStatusEnum::Rejected;
+        ocpp::CallResult<SetDisplayMessageResponse> call_result(response, call.uniqueId);
+        this->send<SetDisplayMessageResponse>(call_result);
+        return;
+    }
+
+    const DisplayMessage message = message_info_to_display_message(call.msg.message);
+    response = this->callbacks.set_display_message_callback.value()({message});
+    ocpp::CallResult<SetDisplayMessageResponse> call_result(response, call.uniqueId);
+    this->send<SetDisplayMessageResponse>(call_result);
 }
 
-void ChargePoint::handle_clear_display_message(Call<ClearDisplayMessageRequest> call) {
+void ChargePoint::handle_clear_display_message(const Call<ClearDisplayMessageRequest> call) {
     ClearDisplayMessageResponse response;
     if (!this->callbacks.clear_display_message_callback.has_value()) {
         EVLOG_error << "Received a clear display message request, but callback is not implemented.";
@@ -3587,7 +3750,10 @@ void ChargePoint::handle_clear_display_message(Call<ClearDisplayMessageRequest> 
         ocpp::CallResult<ClearDisplayMessageResponse> call_result(response, call.uniqueId);
         this->send<ClearDisplayMessageResponse>(call_result);
     }
-    // TODO mz implement
+
+    response = this->callbacks.clear_display_message_callback.value()(call.msg);
+    ocpp::CallResult<ClearDisplayMessageResponse> call_result(response, call.uniqueId);
+    this->send<ClearDisplayMessageResponse>(call_result);
 }
 
 void ChargePoint::handle_data_transfer_req(Call<DataTransferRequest> call) {

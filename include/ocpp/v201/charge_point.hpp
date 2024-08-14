@@ -741,7 +741,7 @@ private:
     void handle_heartbeat_response(CallResult<HeartbeatResponse> call);
 
     // Functional Block I: TariffAndCost
-    void handle_costupdated_req(Call<CostUpdatedRequest> call);
+    void handle_costupdated_req(const Call<CostUpdatedRequest> call);
 
     // Functional Block K: Smart Charging
     void handle_set_charging_profile_req(Call<SetChargingProfileRequest> call);
