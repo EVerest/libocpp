@@ -64,7 +64,6 @@ public:
     void create_device_model_db(const std::string& path) {
         InitDeviceModelDb db(path, MIGRATION_FILES_PATH);
         db.initialize_database(SCHEMAS_PATH, true);
-        db.insert_config_and_default_values(SCHEMAS_PATH, CONFIG_PATH);
     }
 
     std::shared_ptr<DeviceModel>
