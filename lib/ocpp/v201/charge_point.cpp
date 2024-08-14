@@ -3291,14 +3291,13 @@ void ChargePoint::handle_get_charging_profiles_req(Call<GetChargingProfilesReque
 
     const auto profiles_to_report = this->smart_charging_handler->get_reported_profiles(msg);
 
-    if (not profiles_to_report.empty()) {
-        response.status = GetChargingProfileStatusEnum::Accepted;
-        ocpp::CallResult<GetChargingProfilesResponse> call_result(response, call.uniqueId);
-        this->send<GetChargingProfilesResponse>(call_result);
-    } else {
-        response.status = GetChargingProfileStatusEnum::NoProfiles;
-        ocpp::CallResult<GetChargingProfilesResponse> call_result(response, call.uniqueId);
-        this->send<GetChargingProfilesResponse>(call_result);
+    response.status =
+        profiles_to_report.empty() ? GetChargingProfileStatusEnum::NoProfiles : GetChargingProfileStatusEnum::Accepted;
+
+    ocpp::CallResult<GetChargingProfilesResponse> call_result(response, call.uniqueId);
+    this->send<GetChargingProfilesResponse>(call_result);
+
+    if (response.status == GetChargingProfileStatusEnum::NoProfiles) {
         return;
     }
 
