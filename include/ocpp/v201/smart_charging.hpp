@@ -49,38 +49,15 @@ enum class ProfileValidationResultEnum {
 
 /// \brief This enhances the ChargingProfile type by additional paramaters that are required in the
 /// ReportChargingProfilesRequest (EvseId, ChargingLimitSourceEnum)
-struct ReportedChargingProfile : public ChargingProfile {
+struct ReportedChargingProfile {
+    ChargingProfile profile;
     int32_t evse_id;
     ChargingLimitSourceEnum source;
 
     ReportedChargingProfile(const ChargingProfile& profile, const int32_t evse_id,
                             const ChargingLimitSourceEnum source) :
-        evse_id(evse_id), source(source) {
-        id = profile.id;
-        stackLevel = profile.stackLevel;
-        chargingProfilePurpose = profile.chargingProfilePurpose;
-        chargingProfileKind = profile.chargingProfileKind;
-        chargingSchedule = profile.chargingSchedule;
-        customData = profile.customData;
-        recurrencyKind = profile.recurrencyKind;
-        validFrom = profile.validFrom;
-        validTo = profile.validTo;
-        transactionId = profile.transactionId;
-    };
-
-    /// \brief Gets the original ChargingProfile from this extended type
-    ChargingProfile get_charging_profile() const {
-        return {id,
-                stackLevel,
-                chargingProfilePurpose,
-                chargingProfileKind,
-                chargingSchedule,
-                customData,
-                recurrencyKind,
-                validFrom,
-                validTo,
-                transactionId};
-    };
+        profile(profile), evse_id(evse_id), source(source) {
+    }
 };
 
 namespace conversions {
@@ -107,7 +84,8 @@ public:
 
     virtual ClearChargingProfileResponse clear_profiles(const ClearChargingProfileRequest& request) = 0;
 
-    virtual std::vector<ReportedChargingProfile> get_profiles(const GetChargingProfilesRequest& request) const = 0;
+    virtual std::vector<ReportedChargingProfile>
+    get_reported_profiles(const GetChargingProfilesRequest& request) const = 0;
 };
 
 /// \brief This class handles and maintains incoming ChargingProfiles and contains the logic
@@ -156,7 +134,8 @@ public:
     ///
     /// \brief Gets the charging profiles for the given \p request
     ///
-    std::vector<ReportedChargingProfile> get_profiles(const GetChargingProfilesRequest& request) const override;
+    std::vector<ReportedChargingProfile>
+    get_reported_profiles(const GetChargingProfilesRequest& request) const override;
 
 protected:
     ///

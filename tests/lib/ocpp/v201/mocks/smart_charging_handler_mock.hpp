@@ -15,7 +15,7 @@ public:
     MOCK_METHOD(ProfileValidationResultEnum, validate_profile, (ChargingProfile & profile, int32_t evse_id));
     MOCK_METHOD(SetChargingProfileResponse, add_profile, (ChargingProfile & profile, int32_t evse_id));
     MOCK_METHOD(ClearChargingProfileResponse, clear_profiles, (const ClearChargingProfileRequest& request), (override));
-    MOCK_METHOD(std::vector<ReportedChargingProfile>, get_profiles, (const GetChargingProfilesRequest& request),
-                (const, override));
+    MOCK_METHOD(std::vector<ReportedChargingProfile>, get_reported_profiles,
+                (const GetChargingProfilesRequest& request), (const, override));
 };
 } // namespace ocpp::v201

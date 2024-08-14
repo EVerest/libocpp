@@ -3289,7 +3289,7 @@ void ChargePoint::handle_get_charging_profiles_req(Call<GetChargingProfilesReque
     const auto msg = call.msg;
     GetChargingProfilesResponse response;
 
-    const auto profiles_to_report = this->smart_charging_handler->get_profiles(msg);
+    const auto profiles_to_report = this->smart_charging_handler->get_reported_profiles(msg);
 
     if (not profiles_to_report.empty()) {
         response.status = GetChargingProfileStatusEnum::Accepted;
@@ -3321,9 +3321,9 @@ void ChargePoint::handle_get_charging_profiles_req(Call<GetChargingProfilesReque
         for (const auto source : sources) {
             std::vector<ChargingProfile> original_profiles;
             std::for_each(profiles_to_report.begin(), profiles_to_report.end(),
-                          [evse_id, source, &original_profiles](ReportedChargingProfile profile) {
-                              if (profile.evse_id == evse_id and profile.source == source) {
-                                  original_profiles.push_back(profile.get_charging_profile());
+                          [evse_id, source, &original_profiles](ReportedChargingProfile reported_profile) {
+                              if (reported_profile.evse_id == evse_id and reported_profile.source == source) {
+                                  original_profiles.push_back(reported_profile.profile);
                               };
                           });
             if (not original_profiles.empty()) {

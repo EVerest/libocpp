@@ -120,6 +120,17 @@ std::ostream& operator<<(std::ostream& os, const ProfileValidationResultEnum val
     return os;
 }
 
+bool charging_limit_source_exists_and_is_not_CSO(const ChargingProfileCriterion& criteria) {
+    return criteria.chargingLimitSource.has_value() and
+           std::find(criteria.chargingLimitSource.value().begin(), criteria.chargingLimitSource.value().end(),
+                     ChargingLimitSourceEnum::CSO) == criteria.chargingLimitSource.value().end();
+}
+
+template <typename T>
+bool value_exists_and_is_different(const std::optional<T>& requested_value, const T& actual_value) {
+    return requested_value.has_value() and requested_value.value() != actual_value;
+}
+
 /// \brief Checks if the given filter \p criteria and \p evse_id matches the given \p profile
 bool profile_matches_clear_criteria(const ChargingProfile& profile, const std::optional<int32_t> profile_id,
                                     const std::optional<ClearChargingProfile>& criteria, const int32_t evse_id) {
@@ -145,16 +156,12 @@ bool profile_matches_clear_criteria(const ChargingProfile& profile, const std::o
 
     const auto _criteria = criteria.value();
 
-    if (_criteria.stackLevel.has_value() and _criteria.stackLevel.value() != profile.stackLevel) {
+    if (value_exists_and_is_different(_criteria.chargingProfilePurpose, profile.chargingProfilePurpose) or
+        value_exists_and_is_different(_criteria.stackLevel, profile.stackLevel) or
+        value_exists_and_is_different(_criteria.evseId, evse_id)) {
         return false;
     }
-    if (_criteria.evseId.has_value() and _criteria.evseId.value() != evse_id) {
-        return false;
-    }
-    if (_criteria.chargingProfilePurpose.has_value() and
-        _criteria.chargingProfilePurpose.value() != profile.chargingProfilePurpose) {
-        return false;
-    }
+
     return true;
 }
 
@@ -162,10 +169,9 @@ bool profile_matches_clear_criteria(const ChargingProfile& profile, const std::o
 bool profile_matches_get_criteria(const ChargingProfile& profile, const ChargingProfileCriterion& criteria,
                                   const std::optional<int32_t> requested_evse_id, const int32_t profile_evse_id) {
 
-    if (criteria.chargingProfileId.has_value() and
-        std::find(criteria.chargingProfileId.value().begin(), criteria.chargingProfileId.value().end(), profile.id) !=
-            criteria.chargingProfileId.value().end()) {
-        return true;
+    if (criteria.chargingProfileId.has_value()) {
+        const auto profile_ids = criteria.chargingProfileId.value();
+        return std::find(profile_ids.begin(), profile_ids.end(), profile.id) != profile_ids.end();
     }
 
     if (criteria.chargingProfileId.has_value()) {
@@ -173,22 +179,10 @@ bool profile_matches_get_criteria(const ChargingProfile& profile, const Charging
         return false;
     }
 
-    if (criteria.chargingLimitSource.has_value() and
-        std::find(criteria.chargingLimitSource.value().begin(), criteria.chargingLimitSource.value().end(),
-                  ChargingLimitSourceEnum::CSO) == criteria.chargingLimitSource.value().end()) {
-        return false;
-    }
-
-    if (criteria.chargingProfilePurpose.has_value() and
-        criteria.chargingProfilePurpose.value() != profile.chargingProfilePurpose) {
-        return false;
-    }
-
-    if (criteria.stackLevel.has_value() and criteria.stackLevel.value() != profile.stackLevel) {
-        return false;
-    }
-
-    if (requested_evse_id.has_value() and requested_evse_id.value() != profile_evse_id) {
+    if (charging_limit_source_exists_and_is_not_CSO(criteria) or
+        value_exists_and_is_different(criteria.chargingProfilePurpose, profile.chargingProfilePurpose) or
+        value_exists_and_is_different(criteria.stackLevel, profile.stackLevel) or
+        value_exists_and_is_different(requested_evse_id, profile_evse_id)) {
         return false;
     }
 
@@ -381,8 +375,8 @@ SmartChargingHandler::validate_profile_schedules(ChargingProfile& profile,
         this->device_model->get_value<int32_t>(ControllerComponentVariables::ChargingStationSupplyPhases);
 
     for (auto& schedule : profile.chargingSchedule) {
-        // K01.FR.26; We currently need to do string conversions for this manually because our DeviceModel class does
-        // not let us get a vector of ChargingScheduleChargingRateUnits.
+        // K01.FR.26; We currently need to do string conversions for this manually because our DeviceModel class
+        // does not let us get a vector of ChargingScheduleChargingRateUnits.
         auto supported_charging_rate_units =
             this->device_model->get_value<std::string>(ControllerComponentVariables::ChargingScheduleChargingRateUnit);
         if (supported_charging_rate_units.find(conversions::charging_rate_unit_enum_to_string(
@@ -517,14 +511,14 @@ ClearChargingProfileResponse SmartChargingHandler::clear_profiles(const ClearCha
     const auto profile_id = request.chargingProfileId;
     const auto criteria = request.chargingProfileCriteria;
 
-    auto any_found_profile = false;
-    // iterate over all profiles
+    response.status = ClearChargingProfileStatusEnum::Unknown;
+
     for (auto& [existing_evse_id, evse_profiles] : charging_profiles) {
         for (auto it = evse_profiles.begin(); it != evse_profiles.end();) {
             // K10.FR.04: logical AND between the filters, if not set, the filter does not apply
             if (profile_matches_clear_criteria(*it, profile_id, criteria, existing_evse_id)) {
-                any_found_profile = true;
-                evse_profiles.erase(it);
+                response.status = ClearChargingProfileStatusEnum::Accepted;
+                it = evse_profiles.erase(it);
                 this->database_handler->delete_charging_profile(it->id);
             } else {
                 // At least one of the filters did not match
@@ -532,26 +526,18 @@ ClearChargingProfileResponse SmartChargingHandler::clear_profiles(const ClearCha
             }
         }
     }
-
-    if (any_found_profile) {
-        response.status = ClearChargingProfileStatusEnum::Accepted;
-    } else {
-        // K10.FR.01
-        response.status = ClearChargingProfileStatusEnum::Unknown;
-    }
-
     return response;
 }
 
 std::vector<ReportedChargingProfile>
-SmartChargingHandler::get_profiles(const GetChargingProfilesRequest& request) const {
+SmartChargingHandler::get_reported_profiles(const GetChargingProfilesRequest& request) const {
     std::vector<ReportedChargingProfile> profiles;
 
     for (auto& [existing_evse_id, evse_profiles] : charging_profiles) {
-        for (auto it = evse_profiles.begin(); it != evse_profiles.end(); it++) {
-            if (profile_matches_get_criteria(*it, request.chargingProfile, request.evseId, existing_evse_id)) {
+        for (auto& profile : evse_profiles) {
+            if (profile_matches_get_criteria(profile, request.chargingProfile, request.evseId, existing_evse_id)) {
                 profiles.push_back(
-                    ReportedChargingProfile(*it, existing_evse_id,
+                    ReportedChargingProfile(profile, existing_evse_id,
                                             ChargingLimitSourceEnum::CSO)); // TODO: Add correct source when available
             }
         }
