@@ -17,16 +17,18 @@ bool triggers_monitor(const VariableMonitoringMeta& monitor_meta, const std::str
     if constexpr (T == DataEnum::boolean) {
         return (value_old != value_new);
     } else {
-        auto raw_val_current = to_specific_type_auto<T>(value_old);
+        auto raw_val_current = to_specific_type_auto<T>(value_new);
 
         if (monitor_meta.monitor.type == MonitorEnum::Delta) {
-            // TODO (ioan): the reference value should never be null but see for ref access except
-            auto raw_val_reference = to_specific_type_auto<T>(monitor_meta.reference_value.value());
-            auto raw_val_new = to_specific_type_auto<T>(value_new);
+            if (monitor_meta.reference_value.has_value()) {
+                auto raw_val_reference = to_specific_type_auto<T>(monitor_meta.reference_value.value());
+                auto delta = std::abs(raw_val_reference - raw_val_current);
 
-            auto delta = std::abs(raw_val_reference - raw_val_new);
-
-            return (delta > monitor_meta.monitor.value);
+                return (delta > monitor_meta.monitor.value);
+            } else {
+                EVLOG_error << "Invalid reference value for monitor: " << monitor_meta.monitor;
+                return false;
+            }
         } else if (monitor_meta.monitor.type == MonitorEnum::LowerThreshold) {
             return (raw_val_current < monitor_meta.monitor.value);
         } else if (monitor_meta.monitor.type == MonitorEnum::UpperThreshold) {
@@ -232,6 +234,9 @@ void MonitoringUpdater::evaluate_monitor(const VariableMonitoringMeta& monitor_m
                     << conversions::data_enum_to_string(characteristics.dataType);
         return;
     }
+
+    EVLOG_debug << "Monitor: " << monitor_meta.monitor << " was triggered on var change: [" << monitor_triggered
+                << "] with previous value: [" << value_previous << "] and current: [" << value_current << "]";
 
     auto monitor_id = monitor_meta.monitor.id;
     auto it = updater_monitors_meta.find(monitor_id);
