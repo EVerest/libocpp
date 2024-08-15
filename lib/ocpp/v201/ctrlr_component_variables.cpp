@@ -658,6 +658,9 @@ const RequiredComponentVariable& DisplayMessageSupportedPriorities = {
         "SupportedPriorities",
     }),
 };
+const ComponentVariable& DisplayMessageSupportedStates = {ControllerComponents::DisplayMessageCtrlr, std::nullopt,
+                                                          std::optional<Variable>({"SupportedStates"})};
+
 const ComponentVariable& CentralContractValidationAllowed = {
     ControllerComponents::ISO15118Ctrlr,
     std::nullopt,
