@@ -3222,19 +3222,40 @@ void ChargePoint::handle_costupdated_req(const Call<CostUpdatedRequest> call) {
     CostUpdatedResponse response;
     ocpp::CallResult<CostUpdatedResponse> call_result(response, call.uniqueId);
 
-    // TODO check if this is enabled in settings (device model)???
+    // TODO mz check if this is enabled in settings (device model)???
     if (!this->callbacks.set_running_cost_callback.has_value()) {
         this->send<CostUpdatedResponse>(call_result);
         return;
     }
 
     RunningCost running_cost;
+    TriggerMeterValue triggers;
+
+    if (device_model
+            ->get_optional_value<bool>(ControllerComponentVariables::CustomImplementationCaliforniaPricingEnabled)
+            .value_or(false) &&
+        call.msg.customData.has_value()) {
+        json running_cost_json = json::parse(call.msg.customData.value());
+
+        // California pricing is enabled, which means we have to read the custom data.
+        running_cost = running_cost_json;
+
+        if (running_cost_json.contains("triggerMeterValue")) {
+            triggers = running_cost_json.at("triggerMeterValue");
+        }
+    } else {
+        running_cost.state = RunningCostState::Charging;
+    }
+
+    // In 2.0.1, the cost and transaction id are already part of the CostUpdatedRequest, so they need to be added to
+    // the 'RunningCost' struct.
     running_cost.cost = static_cast<double>(call.msg.totalCost);
     running_cost.transaction_id = call.msg.transactionId;
-    running_cost.state = RunningCostState::Charging;
-    this->callbacks.set_running_cost_callback.value()(running_cost);
 
+    this->callbacks.set_running_cost_callback.value()(running_cost);
     this->send<CostUpdatedResponse>(call_result);
+
+    // TODO mz implement the triggers!!!
 }
 
 void ChargePoint::handle_set_charging_profile_req(Call<SetChargingProfileRequest> call) {

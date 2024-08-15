@@ -119,6 +119,8 @@ extern const ComponentVariable& TimeOffsetNextTransition;
 extern const RequiredComponentVariable& TimeSource;
 extern const ComponentVariable& TimeZone;
 extern const ComponentVariable& CustomImplementationEnabled;
+extern const ComponentVariable& CustomImplementationCaliforniaPricingEnabled;
+extern const ComponentVariable& CustomImplementationMultiLanguageEnabled;
 extern const RequiredComponentVariable& BytesPerMessageGetReport;
 extern const RequiredComponentVariable& BytesPerMessageGetVariables;
 extern const RequiredComponentVariable& BytesPerMessageSetVariables;

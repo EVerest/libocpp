@@ -586,6 +586,16 @@ const ComponentVariable& CustomImplementationEnabled = {
         "CustomImplementationEnabled",
     }),
 };
+const ComponentVariable& CustomImplementationCaliforniaPricingEnabled = {
+    ControllerComponents::CustomizationCtrlr,
+    std::nullopt,
+    std::optional<Variable>({"CustomImplementationCaliforniaPricingEnabled", std::nullopt, std::nullopt}),
+};
+const ComponentVariable& CustomImplementationMultiLanguageEnabled = {
+    ControllerComponents::CustomizationCtrlr,
+    std::nullopt,
+    std::optional<Variable>({"CustomImplementationMultiLanguageEnabled", std::nullopt, std::nullopt}),
+};
 const RequiredComponentVariable& BytesPerMessageGetReport = {
     ControllerComponents::DeviceDataCtrlr,
     std::nullopt,
