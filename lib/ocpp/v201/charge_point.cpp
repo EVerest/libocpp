@@ -3277,11 +3277,11 @@ void ChargePoint::handle_set_charging_profile_req(Call<SetChargingProfileRequest
     response.status = ChargingProfileStatusEnum::Rejected;
 
     // K01.FR.29: Reject if SmartCharging is not available for this Charging Station
-    bool is_charging_station_enable =
-        this->device_model->get_optional_value<bool>(ControllerComponentVariables::SmartChargingCtrlrAvailableEnabled)
+    bool is_smart_charging_available =
+        this->device_model->get_optional_value<bool>(ControllerComponentVariables::SmartChargingCtrlrAvailable)
             .value_or(false);
 
-    if (!is_charging_station_enable) {
+    if (!is_smart_charging_available) {
         EVLOG_warning << "SmartChargingCtrlrAvailable is not set for Charging Station. Returning NotSupported error";
 
         const auto call_error =
