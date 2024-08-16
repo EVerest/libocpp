@@ -1,8 +1,8 @@
 {
     "Internal": {
-        "ChargePointId": "42",
-        "CentralSystemURI": "42",
-        "ChargeBoxSerialNumber": "42",
+        "ChargePointId": "cp001",
+        "CentralSystemURI": "127.0.0.1:8180/steve/websocket/CentralSystemService/",
+        "ChargeBoxSerialNumber": "cp001",
         "ChargePointModel": "Yeti",
         "ChargePointVendor": "Pionix",
         "FirmwareVersion": "0.1",
