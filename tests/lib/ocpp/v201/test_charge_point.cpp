@@ -269,23 +269,6 @@ public:
     ocpp::v201::Callbacks callbacks;
 };
 
-/*
- * K01.FR.02 states
- *
- *     "The CSMS MAY send a new charging profile for the EVSE that SHALL be used
- *      as a limit schedule for the EV."
- *
- * When using libocpp, a charging station is notified of a new charging profile
- * by means of the set_charging_profiles_callback. In order to ensure that a new
- * profile can be immediately "used as a limit schedule for the EV", a
- * valid set_charging_profiles_callback must be provided.
- *
- * As part of testing that K01.FR.02 is met, we provide the following tests that
- * confirm an OCPP 2.0.1 ChargePoint with smart charging enabled will only
- * consider its collection of callbacks valid if set_charging_profiles_callback
- * is provided.
- */
-
 TEST_F(ChargePointFixture, CreateChargePoint) {
     auto evse_connector_structure = create_evse_connector_structure();
     auto database_handler = create_database_handler();
@@ -347,6 +330,23 @@ TEST_F(ChargePointFixture, CreateChargePoint_CallbacksNotValid_ThrowsInvalidArgu
                                          "/tmp", evse_security, callbacks),
                  std::invalid_argument);
 }
+
+/*
+ * K01.FR.02 states
+ *
+ *     "The CSMS MAY send a new charging profile for the EVSE that SHALL be used
+ *      as a limit schedule for the EV."
+ *
+ * When using libocpp, a charging station is notified of a new charging profile
+ * by means of the set_charging_profiles_callback. In order to ensure that a new
+ * profile can be immediately "used as a limit schedule for the EV", a
+ * valid set_charging_profiles_callback must be provided.
+ *
+ * As part of testing that K01.FR.02 is met, we provide the following tests that
+ * confirm an OCPP 2.0.1 ChargePoint with smart charging enabled will only
+ * consider its collection of callbacks valid if set_charging_profiles_callback
+ * is provided.
+ */
 
 TEST_F(ChargePointFixture, K01FR02_CallbacksValidityChecksIfSetChargingProfilesCallbackExists) {
     configure_callbacks_with_mocks();
