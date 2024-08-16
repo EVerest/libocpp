@@ -806,11 +806,6 @@ public:
     /// key represents the id of the EVSE and the value represents the number of connectors for this EVSE. The ids of
     /// the EVSEs have to increment starting with 1.
     /// \param device_model_storage_address address to device model storage (e.g. location of SQLite database)
-    /// \brief Construct a new ChargePoint object
-    /// \param evse_connector_structure Map that defines the structure of EVSE and connectors of the chargepoint. The
-    /// key represents the id of the EVSE and the value represents the number of connectors for this EVSE. The ids of
-    /// the EVSEs have to increment starting with 1.
-    /// \param device_model_storage_address address to device model storage (e.g. location of SQLite database)
     /// \param initialize_device_model  Set to true to initialize the device model database
     /// \param device_model_migration_path  Path to the device model database migration files
     /// \param device_model_config_path    Path to the device model config
