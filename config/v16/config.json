@@ -1,8 +1,8 @@
 {
     "Internal": {
-        "ChargePointId": "",
-        "CentralSystemURI": "",
-        "ChargeBoxSerialNumber": "",
+        "ChargePointId": "42",
+        "CentralSystemURI": "42",
+        "ChargeBoxSerialNumber": "42",
         "ChargePointModel": "Yeti",
         "ChargePointVendor": "Pionix",
         "FirmwareVersion": "0.1",
@@ -54,8 +54,5 @@
     },
     "CostAndPrice": {
         "CustomDisplayCostAndPrice": false
-    },
-    "Custom": {
-        "ExampleConfigurationKey": "example"
     }
 }
