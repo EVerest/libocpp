@@ -241,6 +241,14 @@ void MonitoringUpdater::evaluate_monitor(const VariableMonitoringMeta& monitor_m
     auto monitor_id = monitor_meta.monitor.id;
     auto it = updater_monitors_meta.find(monitor_id);
 
+    // Always update the current values is the trigger is found
+    if (it != std::end(updater_monitors_meta)) {
+        auto& triggered_meta = it->second;
+
+        triggered_meta.value_previous = value_previous;
+        triggered_meta.value_current = value_current;
+    }
+
     if (monitor_triggered) {
         if (monitor_meta.monitor.type == MonitorEnum::Delta && monitor_trivial) {
             // 3.55. MonitorEnumType
@@ -272,6 +280,10 @@ void MonitoringUpdater::evaluate_monitor(const VariableMonitoringMeta& monitor_m
             triggered_meta.monitor_meta = monitor_meta;
             triggered_meta.is_writeonly =
                 (attribute.mutability.value_or(MutabilityEnum::ReadWrite) == MutabilityEnum::WriteOnly);
+
+            // Update new current values
+            triggered_meta.value_previous = value_previous;
+            triggered_meta.value_current = value_current;
 
             TriggerMetadata metadata;
             metadata.is_csms_sent = 0;
@@ -310,10 +322,6 @@ void MonitoringUpdater::evaluate_monitor(const VariableMonitoringMeta& monitor_m
             EVLOG_debug << "Variable: " << variable.name.get() << " triggered delta monitor: " << monitor_meta.monitor
                         << ". Requesting CSMS send";
         }
-
-        // Update relevant values only
-        triggered_data.value_previous = value_previous;
-        triggered_data.value_current = value_current;
     } else {
         // If the monitor is not triggered and we already have the data
         // in our triggered list it means that we have returned to normal
