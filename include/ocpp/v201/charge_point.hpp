@@ -507,6 +507,7 @@ private:
     bool send(CallError call_error);
 
     // internal helper functions
+    void initialize(const std::map<int32_t, int32_t>& evse_connector_structure, const std::string& message_log_path);
     void init_websocket();
     WebsocketConnectionOptions get_ws_connection_options(const int32_t configuration_slot);
     void init_certificate_expiration_check_timers();
