@@ -544,6 +544,9 @@ private:
     ///
     void handle_cost_and_tariff(const TransactionEventResponse& response,
                                 const TransactionEventRequest& original_message);
+    bool is_multilanguage_enabled() const;
+    bool is_tariff_enabled() const;
+    bool is_cost_enabled() const;
 
     /* OCPP message requests */
 

@@ -620,17 +620,9 @@ void ChargePoint::configure_message_logging_format(const std::string& message_lo
 
 void ChargePoint::handle_cost_and_tariff(const TransactionEventResponse& response,
                                          const TransactionEventRequest& original_message) {
-    const bool tariff_enabled =
-        device_model->get_optional_value<bool>(ControllerComponentVariables::TariffCostCtrlrAvailableTariff)
-            .value_or(false) &&
-        device_model->get_optional_value<bool>(ControllerComponentVariables::TariffCostCtrlrEnabledTariff)
-            .value_or(false);
+    const bool tariff_enabled = this->is_tariff_enabled();
 
-    const bool cost_enabled =
-        device_model->get_optional_value<bool>(ControllerComponentVariables::TariffCostCtrlrAvailableCost)
-            .value_or(false) &&
-        device_model->get_optional_value<bool>(ControllerComponentVariables::TariffCostCtrlrEnabledCost)
-            .value_or(false);
+    const bool cost_enabled = this->is_cost_enabled();
 
     std::vector<DisplayMessageContent> cost_messages;
 
@@ -670,12 +662,74 @@ void ChargePoint::handle_cost_and_tariff(const TransactionEventResponse& respons
 
         running_cost.timestamp = original_message.timestamp;
 
+        if (response.customData.has_value()) {
+            // With the current spec, it is not possible to send a qr code as well as a multi language personal message,
+            // because there can only be one vendor id in custom data. If you not check the vendor id, it is just
+            // possible for a csms to include them both.
+            const json& custom_data = response.customData.value();
+            if (/*custom_data.contains("vendorId") &&
+                (custom_data.at("vendorId").get<std::string>() == "org.openchargealliance.org.qrcode") &&*/
+                custom_data.contains("qrCodeText") &&
+                device_model->get_optional_value<bool>(ControllerComponentVariables::DisplayMessageQRCodeDisplayCapable)
+                    .value_or(false)) {
+                running_cost.qr_code_text = custom_data.at("qrCodeText");
+            }
+
+            // Add multilanguage messages
+            if (custom_data.contains("updatedPersonalMessageExtra") && is_multilanguage_enabled()) {
+                // Get supported languages, which is stored in the values list of "Language" of "DisplayMessageCtrlr"
+                std::optional<VariableMetaData> metadata = device_model->get_variable_meta_data(
+                    ControllerComponentVariables::DisplayMessageLanguage.component,
+                    ControllerComponentVariables::DisplayMessageLanguage.variable.value());
+
+                std::vector<std::string> supported_languages;
+
+                if (metadata.has_value() && metadata.value().characteristics.valuesList.has_value()) {
+                    supported_languages =
+                        ocpp::split_string(metadata.value().characteristics.valuesList.value(), ',', true);
+                } else {
+                    EVLOG_error
+                        << "DisplayMessageCtrlr variable Language should have a valuesList with supported languages";
+                }
+
+                for (const auto& m : custom_data.at("updatedPersonalMessageExtra").items()) {
+                    DisplayMessageContent c = message_content_to_display_message_content(m.value());
+                    if (c.language.has_value() && !supported_languages.empty() &&
+                        (std::find(supported_languages.begin(), supported_languages.end(), c.language.value()) !=
+                         supported_languages.end())) {
+                        // TODO mz some scenarios where the languages are not found in settings + add logging
+                        cost_messages.push_back(c);
+                    }
+                }
+            }
+        }
+
         if (tariff_enabled && !cost_messages.empty()) {
             running_cost.cost_messages = cost_messages;
         }
 
         this->callbacks.set_running_cost_callback.value()(running_cost);
     }
+}
+
+bool ChargePoint::is_multilanguage_enabled() const {
+    return this->device_model
+        ->get_optional_value<bool>(ControllerComponentVariables::CustomImplementationMultiLanguageEnabled)
+        .value_or(false);
+}
+
+bool ChargePoint::is_tariff_enabled() const {
+    return this->device_model->get_optional_value<bool>(ControllerComponentVariables::TariffCostCtrlrAvailableTariff)
+               .value_or(false) &&
+           this->device_model->get_optional_value<bool>(ControllerComponentVariables::TariffCostCtrlrEnabledTariff)
+               .value_or(false);
+}
+
+bool ChargePoint::is_cost_enabled() const {
+    return this->device_model->get_optional_value<bool>(ControllerComponentVariables::TariffCostCtrlrAvailableCost)
+               .value_or(false) &&
+           this->device_model->get_optional_value<bool>(ControllerComponentVariables::TariffCostCtrlrEnabledCost)
+               .value_or(false);
 }
 
 void ChargePoint::on_unavailable(const int32_t evse_id, const int32_t connector_id) {
@@ -3235,7 +3289,7 @@ void ChargePoint::handle_costupdated_req(const Call<CostUpdatedRequest> call) {
             ->get_optional_value<bool>(ControllerComponentVariables::CustomImplementationCaliforniaPricingEnabled)
             .value_or(false) &&
         call.msg.customData.has_value()) {
-        json running_cost_json = json::parse(call.msg.customData.value());
+        const json running_cost_json = call.msg.customData.value();
 
         // California pricing is enabled, which means we have to read the custom data.
         running_cost = running_cost_json;

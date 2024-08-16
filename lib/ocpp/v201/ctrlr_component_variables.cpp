@@ -668,8 +668,16 @@ const RequiredComponentVariable& DisplayMessageSupportedPriorities = {
         "SupportedPriorities",
     }),
 };
-const ComponentVariable& DisplayMessageSupportedStates = {ControllerComponents::DisplayMessageCtrlr, std::nullopt,
-                                                          std::optional<Variable>({"SupportedStates"})};
+const ComponentVariable& DisplayMessageSupportedStates = {
+    ControllerComponents::DisplayMessageCtrlr, std::nullopt,
+    std::optional<Variable>({"SupportedStates", std::nullopt, std::nullopt})};
+
+const ComponentVariable& DisplayMessageQRCodeDisplayCapable = {
+    ControllerComponents::DisplayMessageCtrlr, std::nullopt,
+    std::optional<Variable>({"QRCodeDisplayCapable", std::nullopt, std::nullopt})};
+
+const ComponentVariable& DisplayMessageLanguage = {ControllerComponents::DisplayMessageCtrlr, std::nullopt,
+                                                   std::optional<Variable>({"Language", std::nullopt, std::nullopt})};
 
 const ComponentVariable& CentralContractValidationAllowed = {
     ControllerComponents::ISO15118Ctrlr,

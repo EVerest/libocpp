@@ -134,6 +134,8 @@ extern const RequiredComponentVariable& NumberOfDisplayMessages;
 extern const RequiredComponentVariable& DisplayMessageSupportedFormats;
 extern const RequiredComponentVariable& DisplayMessageSupportedPriorities;
 extern const ComponentVariable& DisplayMessageSupportedStates;
+extern const ComponentVariable& DisplayMessageQRCodeDisplayCapable;
+extern const ComponentVariable& DisplayMessageLanguage;
 extern const ComponentVariable& CentralContractValidationAllowed;
 extern const RequiredComponentVariable& ContractValidationOffline;
 extern const ComponentVariable& RequestMeteringReceipt;
