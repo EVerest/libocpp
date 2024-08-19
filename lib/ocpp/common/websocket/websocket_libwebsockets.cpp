@@ -294,7 +294,14 @@ static const struct lws_protocols protocols[] = {{local_protocol_name, callback_
 
 bool WebsocketTlsTPM::tls_init(SSL_CTX* ctx, const std::string& path_chain, const std::string& path_key,
                                bool custom_key, std::optional<std::string>& password) {
+    
+    // int rc;
+    
     auto rc = SSL_CTX_set_cipher_list(ctx, this->connection_options.supported_ciphers_12.c_str());
+
+    // use a tls 1.0 version
+    // auto rc = SSL_CTX_set_cipher_list(ctx, "TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA");
+
     if (rc != 1) {
         EVLOG_debug << "SSL_CTX_set_cipher_list return value: " << rc;
         EVLOG_error << "Could not set TLSv1.2 cipher list";
@@ -302,10 +309,19 @@ bool WebsocketTlsTPM::tls_init(SSL_CTX* ctx, const std::string& path_chain, cons
         return false;
     }
 
+    rc = SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION);
+
+    if(rc != 1) {
+        EVLOG_error << "Could not set min tls version to 1.2";
+        return false;
+    }
+
+    /*
     rc = SSL_CTX_set_ciphersuites(ctx, this->connection_options.supported_ciphers_13.c_str());
     if (rc != 1) {
         EVLOG_debug << "SSL_CTX_set_cipher_list return value: " << rc;
     }
+    */
 
     SSL_CTX_set_ecdh_auto(ctx, 1);
 
@@ -454,9 +470,9 @@ void WebsocketTlsTPM::client_loop() {
     // Bind thread for checks
     local_data->bind_thread(std::this_thread::get_id());
 
-    // lws_set_log_level(LLL_ERR | LLL_WARN | LLL_NOTICE | LLL_INFO | LLL_DEBUG | LLL_PARSER | LLL_HEADER | LLL_EXT |
-    //                          LLL_CLIENT | LLL_LATENCY | LLL_THREAD | LLL_USER, nullptr);
-    lws_set_log_level(LLL_ERR, nullptr);
+    lws_set_log_level(LLL_ERR | LLL_WARN | LLL_NOTICE | LLL_INFO | LLL_DEBUG | LLL_PARSER | LLL_HEADER | LLL_EXT |
+                              LLL_CLIENT | LLL_LATENCY | LLL_THREAD | LLL_USER, nullptr);
+    // lws_set_log_level(LLL_ERR, nullptr);
 
     lws_context_creation_info info;
     memset(&info, 0, sizeof(lws_context_creation_info));
@@ -464,6 +480,8 @@ void WebsocketTlsTPM::client_loop() {
     info.options = LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
     info.port = CONTEXT_PORT_NO_LISTEN; /* we do not run any server */
     info.protocols = protocols;
+
+    info.ssl_info_event_mask = SSL_CB_ALERT;
 
     if (this->connection_options.iface.has_value()) {
         EVLOG_info << "Using network iface: " << this->connection_options.iface.value().c_str();
@@ -1139,6 +1157,20 @@ int WebsocketTlsTPM::process_callback(void* wsi_ptr, int callback_reason, void* 
     }
 
     switch (reason) {
+    case LWS_CALLBACK_SSL_INFO:
+        if(struct lws_ssl_info *info = (struct lws_ssl_info *)in) {
+            EVLOG_error << "SSL event ret: " << info->ret << " where: " << info->where;
+
+            if(info->where & SSL_CB_HANDSHAKE_START) {
+                EVLOG_error << "SSL handshake start: " << info->ret;
+            }
+
+            if(info->where & SSL_CB_HANDSHAKE_DONE) {
+                EVLOG_error << "SSL handshake done: " << info->ret;
+            }
+        }
+
+        break;
     case LWS_CALLBACK_OPENSSL_PERFORM_SERVER_CERT_VERIFICATION:
 
         // TODO (ioan): remove this option after we figure out why libwebsockets does not take the param set
