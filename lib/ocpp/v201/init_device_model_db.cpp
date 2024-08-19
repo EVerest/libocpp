@@ -642,6 +642,42 @@ void InitDeviceModelDb::delete_attribute(const DbVariableAttribute& attribute) {
     }
 }
 
+bool InitDeviceModelDb::insert_variable_attribute_value(const int64_t& variable_attribute_id,
+                                                        const std::string& variable_attribute_value,
+                                                        const bool warn_source_not_default) {
+    // Insert variable statement.
+    // Use 'IS' when value can also be NULL
+    // Only update when VALUE_SOURCE is 'default', because otherwise it is already updated by the csms or the user and
+    // we don't overwrite that.
+    static const std::string statement = "UPDATE VARIABLE_ATTRIBUTE "
+                                         "SET VALUE = @value, VALUE_SOURCE = 'default' "
+                                         "WHERE ID = @variable_attribute_id "
+                                         "AND (VALUE_SOURCE = 'default' OR VALUE_SOURCE = '' OR VALUE_SOURCE IS NULL)";
+
+    std::unique_ptr<common::SQLiteStatementInterface> insert_variable_attribute_statement;
+    try {
+        insert_variable_attribute_statement = this->database->new_statement(statement);
+    } catch (const common::QueryExecutionException&) {
+        throw InitDeviceModelDbError("Could not create statement " + statement);
+    }
+
+    insert_variable_attribute_statement->bind_int("@variable_attribute_id",
+                                                  static_cast<int32_t>(variable_attribute_id));
+    insert_variable_attribute_statement->bind_text("@value", variable_attribute_value,
+                                                   ocpp::common::SQLiteString::Transient);
+
+    if (insert_variable_attribute_statement->step() != SQLITE_DONE) {
+        throw InitDeviceModelDbError("Could not set value '" + variable_attribute_value +
+                                     "' of variable attribute id " + std::to_string(variable_attribute_id) + ": " +
+                                     std::string(this->database->get_error_message()));
+    } else if ((insert_variable_attribute_statement->changes() < 1) && warn_source_not_default) {
+        EVLOG_debug << "Could not set value '" + variable_attribute_value + "' of variable attribute id " +
+                           std::to_string(variable_attribute_id) + ": value has already changed by other source";
+    }
+
+    return true;
+}
+
 void InitDeviceModelDb::insert_variable_monitor(const VariableMonitoringMeta& monitor, const int64_t& variable_id) {
     std::string insert_statement =
         "INSERT OR REPLACE INTO VARIABLE_MONITORING (VARIABLE_ID, SEVERITY, 'TRANSACTION', TYPE_ID, "
@@ -761,146 +797,6 @@ void InitDeviceModelDb::delete_variable_monitor(const VariableMonitoringMeta& mo
         throw InitDeviceModelDbError("Delete monitor error: " + std::string(e.what()));
     }
 }
-
-std::map<ComponentKey, std::vector<VariableAttributeKey>>
-InitDeviceModelDb::get_component_default_values(const std::filesystem::path& schemas_path) {
-    std::map<ComponentKey, std::vector<DeviceModelVariable>> components = get_all_component_schemas(schemas_path);
-
-    std::map<ComponentKey, std::vector<VariableAttributeKey>> component_default_values;
-    for (auto const& [componentKey, variables] : components) {
-        std::vector<VariableAttributeKey> variable_attribute_keys;
-        for (const DeviceModelVariable& variable : variables) {
-            if (variable.default_actual_value.has_value()) {
-                VariableAttributeKey key;
-                key.name = variable.name;
-                if (variable.instance.has_value()) {
-                    key.instance = variable.instance.value();
-                }
-                key.attribute_type = AttributeEnum::Actual;
-                key.value = variable.default_actual_value.value();
-                variable_attribute_keys.push_back(key);
-            }
-        }
-
-        component_default_values.insert({componentKey, variable_attribute_keys});
-    }
-
-    return component_default_values;
-}
-
-std::map<ComponentKey, std::vector<VariableAttributeKey>>
-InitDeviceModelDb::get_config_values(const std::filesystem::path& config_file_path) {
-    std::map<ComponentKey, std::vector<VariableAttributeKey>> config_values;
-    std::ifstream config_file(config_file_path);
-    try {
-        json config_json = json::parse(config_file);
-        for (const auto& j : config_json.items()) {
-            ComponentKey p = j.value();
-            std::vector<VariableAttributeKey> attribute_keys;
-            for (const auto& variable : j.value().at("variables").items()) {
-                for (const auto& attributes : variable.value().at("attributes").items()) {
-                    VariableAttributeKey key;
-                    key.name = variable.value().at("variable_name");
-                    try {
-                        key.attribute_type = conversions::string_to_attribute_enum(attributes.key());
-                    } catch (const StringToEnumException& /* e*/) {
-                        EVLOG_error << "Could not find type " << attributes.key() << " of component " << p.name
-                                    << " and variable " << key.name;
-                        throw InitDeviceModelDbError("Could not find type " + attributes.key() + " of component " +
-                                                     p.name + " and variable " + key.name);
-                    }
-
-                    key.value = get_string_value_from_json(attributes.value());
-                    if (variable.value().contains("instance")) {
-                        key.instance = variable.value().at("instance");
-                    }
-                    attribute_keys.push_back(key);
-                }
-            }
-
-            config_values.insert({p, attribute_keys});
-        }
-        return config_values;
-    } catch (const json::parse_error& e) {
-        EVLOG_error << "Error while parsing OCPP config file: " << config_file_path;
-        throw;
-    }
-}
-
-bool InitDeviceModelDb::insert_variable_attribute_value(const ComponentKey& component_key,
-                                                        const VariableAttributeKey& variable_attribute_key,
-                                                        const bool warn_source_not_default) {
-    // Insert variable statement.
-    // Use 'IS' when value can also be NULL
-    // Only update when VALUE_SOURCE is 'default', because otherwise it is already updated by the csms or the user and
-    // we don't overwrite that.
-    static const std::string statement = "UPDATE VARIABLE_ATTRIBUTE "
-                                         "SET VALUE = @value, VALUE_SOURCE = 'default' "
-                                         "WHERE ID = @variable_attribute_id "
-                                         "AND (VALUE_SOURCE = 'default' OR VALUE_SOURCE = '' OR VALUE_SOURCE IS NULL)";
-
-    std::unique_ptr<common::SQLiteStatementInterface> insert_variable_attribute_statement;
-    try {
-        insert_variable_attribute_statement = this->database->new_statement(statement);
-    } catch (const common::QueryExecutionException&) {
-        throw InitDeviceModelDbError("Could not create statement " + statement);
-    }
-
-    insert_variable_attribute_statement->bind_int("@variable_attribute_id",
-                                                  static_cast<int32_t>(variable_attribute_id));
-    insert_variable_attribute_statement->bind_text("@value", variable_attribute_value,
-                                                   ocpp::common::SQLiteString::Transient);
-
-    if (insert_variable_attribute_statement->step() != SQLITE_DONE) {
-        throw InitDeviceModelDbError("Could not set value '" + variable_attribute_value +
-                                     "' of variable attribute id " + std::to_string(variable_attribute_id) + ": " +
-                                     std::string(this->database->get_error_message()));
-    } else if ((insert_variable_attribute_statement->changes() < 1) && warn_source_not_default) {
-        EVLOG_debug << "Could not set value '" + variable_attribute_value + "' of variable attribute id " +
-                           std::to_string(variable_attribute_id) + ": value has already changed by other source";
-    }
-
-    return true;
-}
-
-void InitDeviceModelDb::insert_variable_monitor(const VariableMonitoringMeta& monitor, const int64_t& variable_id) {
-}
-
-void InitDeviceModelDb::insert_variable_monitors(const std::vector<VariableMonitoringMeta>& monitors,
-                                                 const int64_t& variable_id) {
-    for (const VariableMonitoringMeta& monitor : monitors) {
-        insert_variable_monitor(monitor, variable_id);
-    }
-}
-
-void InitDeviceModelDb::update_variable_monitor(const VariableMonitoringMeta& new_monitor,
-                                                const VariableMonitoringMeta& db_monitor, const int64_t& variable_id) {
-}
-
-void InitDeviceModelDb::update_variable_monitors(const std::vector<VariableMonitoringMeta>& new_monitors,
-                                                 const std::vector<VariableMonitoringMeta>& db_monitors,
-                                                 const int64_t& variable_id) {
-}
-
-void InitDeviceModelDb::insert_variable_monitor(const VariableMonitoringMeta& monitor, const int64_t& variable_id) {
-}
-
-void InitDeviceModelDb::insert_variable_monitors(const std::vector<VariableMonitoringMeta>& monitors,
-                                                 const int64_t& variable_id) {
-    for (const VariableMonitoringMeta& monitor : monitors) {
-        insert_variable_monitor(monitor, variable_id);
-    }
-}
-
-void InitDeviceModelDb::update_variable_monitor(const VariableMonitoringMeta& new_monitor,
-                                                const VariableMonitoringMeta& db_monitor, const int64_t& variable_id) {
-}
-
-void InitDeviceModelDb::update_variable_monitors(const std::vector<VariableMonitoringMeta>& new_monitors,
-                                                 const std::vector<VariableMonitoringMeta>& db_monitors,
-                                                 const int64_t& variable_id) {
-}
-
 std::map<ComponentKey, std::vector<DeviceModelVariable>> InitDeviceModelDb::get_all_components_from_db() {
     /* clang-format off */
     const std::string statement =

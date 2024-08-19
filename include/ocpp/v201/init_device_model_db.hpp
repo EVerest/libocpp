@@ -332,6 +332,21 @@ private: // Functions
     void delete_attribute(const DbVariableAttribute& attribute);
 
     ///
+    /// \brief Insert varaible attribute value
+    /// \param variable_attribute_id    Variable attribute id
+    /// \param variable_attribute_value Attribute value
+    /// \param warn_source_not_default  Put a warning in the log if the value could not be added because the value
+    /// source
+    ///                                 is not 'default'
+    /// \return true on success
+    ///
+    /// \throws InitDeviceModelDbError  When inserting failed
+    ///
+    bool insert_variable_attribute_value(const int64_t& variable_attribute_id,
+                                         const std::string& variable_attribute_value,
+                                         const bool warn_source_not_default);
+
+    ///
     /// \brief  Inserts a single monitor in the database
     /// \param monitor Monitor data
     /// \param variable_id  Variable ID for which we insert this monitor
@@ -355,21 +370,6 @@ private: // Functions
     ///
     /// \brief Deletes a single monitor related to the provided variable_id from the database
     void delete_variable_monitor(const VariableMonitoringMeta& monitor, const int64_t& variable_id);
-
-    ///
-    /// \brief Insert varaible attribute value
-    /// \param variable_attribute_id    Variable attribute id
-    /// \param variable_attribute_value Attribute value
-    /// \param warn_source_not_default  Put a warning in the log if the value could not be added because the value
-    /// source
-    ///                                 is not 'default'
-    /// \return true on success
-    ///
-    /// \throws InitDeviceModelDbError  When inserting failed
-    ///
-    bool insert_variable_attribute_value(const int64_t& variable_attribute_id,
-                                         const std::string& variable_attribute_value,
-                                         const bool warn_source_not_default);
 
     ///
     /// \brief Get all components with its variables (and characteristics / attributes) from the database.
