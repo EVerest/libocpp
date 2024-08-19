@@ -42,7 +42,7 @@ software, it will:
 - Check if there are Components in the database that are not in the component config's. Those will be removed.
 - Check if there are Components in the component config's that are not in the database. Those will be added.
 - Check if anything has changed inside the Component (`Variable`, `Characteristics` or `Attributes`). 
-  Those will be removed, changed or added. Those will be removed, changed or added to the database as well. 
+  Those will be removed, changed or added to the database as well. 
   
 Note: When the `evse_id` or `connector_id` of a component is changed, this is seen as the removal of a Component and 
 addition of a new one. 

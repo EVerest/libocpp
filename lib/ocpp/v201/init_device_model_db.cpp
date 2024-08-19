@@ -28,6 +28,8 @@ static bool variable_has_same_attributes(const std::vector<DbVariableAttribute>&
 static bool is_characteristics_different(const VariableCharacteristics& c1, const VariableCharacteristics& c2);
 static bool is_same_variable(const DeviceModelVariable& v1, const DeviceModelVariable& v2);
 static bool is_variable_different(const DeviceModelVariable& v1, const DeviceModelVariable& v2);
+static bool has_attribute_actual_value(const VariableAttribute& attribute,
+                                       const std::optional<std::string>& default_actual_value);
 static std::string get_string_value_from_json(const json& value);
 static std::string get_component_name_for_logging(const ComponentKey& component);
 static std::string get_variable_name_for_logging(const DeviceModelVariable& variable);
@@ -495,9 +497,7 @@ void InitDeviceModelDb::insert_attribute(const VariableAttribute& attribute, con
 
     const int64_t attribute_id = this->database->get_last_inserted_rowid();
 
-    if (attribute.value.has_value() ||
-        (attribute.type.has_value() && (attribute.type.value() == AttributeEnum::Actual) &&
-         default_actual_value.has_value())) {
+    if (has_attribute_actual_value(attribute, default_actual_value)) {
         insert_variable_attribute_value(
             attribute_id, (attribute.value.has_value() ? attribute.value.value().get() : default_actual_value.value()),
             true);
@@ -601,9 +601,7 @@ void InitDeviceModelDb::update_attribute(const VariableAttribute& attribute, con
         throw InitDeviceModelDbError("Could not update attribute: " + std::string(this->database->get_error_message()));
     }
 
-    if (attribute.value.has_value() ||
-        (attribute.type.has_value() && (attribute.type.value() == AttributeEnum::Actual) &&
-         default_actual_value.has_value())) {
+    if (has_attribute_actual_value(attribute, default_actual_value)) {
         if (!insert_variable_attribute_value(
                 static_cast<int64_t>(db_attribute.db_id.value()),
                 (attribute.value.has_value() ? attribute.value.value().get() : default_actual_value.value()), false)) {
@@ -1208,8 +1206,7 @@ static bool is_attribute_different(const VariableAttribute& attribute1, const Va
 
 ///
 /// \brief Check if a variable has the same attributes, or if there is for example an extra attribute added, removed
-/// or
-///        changed.
+///        or changed.
 /// \param attributes1 Attributes 1
 /// \param attributes2 Attributes 2
 /// \return True if they are the same.
@@ -1277,6 +1274,19 @@ static bool is_variable_different(const DeviceModelVariable& v1, const DeviceMod
         return false;
     }
     return true;
+}
+
+///
+/// \brief Check if the attribute has an actual value or a default value.
+/// \param attribute            The attribute to check.
+/// \param default_actual_value The default value.
+/// \return True when the attribute has an actual or default value.
+///
+static bool has_attribute_actual_value(const VariableAttribute& attribute,
+                                       const std::optional<std::string>& default_actual_value) {
+    return (attribute.value.has_value() ||
+            (attribute.type.has_value() && (attribute.type.value() == AttributeEnum::Actual) &&
+             default_actual_value.has_value()));
 }
 
 ///

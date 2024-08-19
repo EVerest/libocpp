@@ -1867,7 +1867,6 @@ void from_json(const json& j, VariableAttribute& k) {
         k.type.emplace(conversions::string_to_attribute_enum(j.at("type")));
     }
 
-    // TODO mz change this in the generator (if everyone agrees)!!
     if (j.contains("value")) {
         const json& value = j.at("value");
         if (value.is_string()) {
