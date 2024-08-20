@@ -142,6 +142,12 @@ private:
     Everest::SteadyTimer sampled_meter_values_timer;
     std::shared_ptr<DatabaseHandler> database_handler;
 
+    std::optional<std::pair<double, std::function<void(const int32_t evse_id, const std::vector<MeterValue>& meter_values,
+                                                       const bool initiated_by_trigger_message)>>> trigger_metervalue_on_power_kw;
+    std::optional<std::pair<double, std::function<void(const int32_t evse_id, const std::vector<MeterValue>& meter_values,
+                                                       const bool initiated_by_trigger_message)>>> trigger_metervalue_on_energy_kwh;
+    std::unique_ptr<Everest::SystemTimer> trigger_metervalue_at_time_timer;
+
     /// \brief gets the active import energy meter value from meter_value, normalized to Wh.
     std::optional<float> get_active_import_register_meter_value();
 

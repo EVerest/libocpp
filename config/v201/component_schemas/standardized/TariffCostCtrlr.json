@@ -195,6 +195,21 @@
       ],
       "description": "Message to be shown to an EV Driver when the Charging Station cannot retrieve the cost for a transaction at the end of the transaction. Note: Add a TotalCostFallbackMessage with correct instance for every supported language!!",
       "type": "string"
+    },
+    "NumberOfDecimalsForCostValues": {
+      "variable_name": "NumberOfDecimalsForCostValues",
+      "characteristics": {
+        "supportsMonitoring": true,
+        "dataType": "integer"
+      },
+      "attributes": [
+        {
+          "type": "Actual",
+          "mutability": "ReadWrite"
+        }
+      ],
+      "description": "Number of decimals for the cost values. Value will be ",
+      "type": "integer"
     }
   },
   "required": [

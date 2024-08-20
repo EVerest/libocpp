@@ -218,6 +218,9 @@ void Evse::release_transaction() {
         EVLOG_error << "Could not clear transaction meter values: " << e.what();
     }
     this->transaction = nullptr;
+
+    // TODO mz clear metervalue triggers
+    // TODO mz should metervalue triggers be stored to the database as well???
 }
 
 std::unique_ptr<EnhancedTransaction>& Evse::get_transaction() {
@@ -234,6 +237,21 @@ void Evse::on_meter_value(const MeterValue& meter_value) {
     this->aligned_data_updated.set_values(meter_value);
     this->aligned_data_tx_end.set_values(meter_value);
     this->check_max_energy_on_invalid_id();
+
+    // TODO mz put in separate function
+    if (this->trigger_metervalue_on_power_kw.has_value()) {
+        auto& [power_kw, send_meter_value_function] = this->trigger_metervalue_on_power_kw.value();
+        if (send_meter_value_function == nullptr) {
+            // TODO mz logging
+            this->trigger_metervalue_on_power_kw.reset();
+            return;
+        }
+
+        // TODO mz / or * 1000?
+        if (get_active_import_register_meter_value().has_value() &&
+            get_active_import_register_meter_value().value() == power_kw) {
+        }
+    }
 }
 
 MeterValue Evse::get_meter_value() {

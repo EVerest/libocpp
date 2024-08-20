@@ -321,13 +321,20 @@ struct DisplayMessageContent {
     friend void to_json(json& j, const DisplayMessageContent& m);
 };
 
+enum class IdentifierType {
+    SessionId,
+    IdToken,
+    TransactionId
+};
+
 struct DisplayMessage {
     std::optional<int32_t> id;
     std::optional<v201::MessagePriorityEnum> priority;
     std::optional<v201::MessageStateEnum> state;
     std::optional<DateTime> timestamp_from;
     std::optional<DateTime> timestamp_to;
-    std::optional<std::string> transaction_id;
+    std::optional<std::string> identifier_id;
+    std::optional<IdentifierType> identifier_type;
     DisplayMessageContent message;
     std::optional<std::string> qr_code;
 };

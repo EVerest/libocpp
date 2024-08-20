@@ -20,6 +20,7 @@ const auto DEFAULT_MAX_CUSTOMER_INFORMATION_DATA_LENGTH = 51200;
 const std::string VARIABLE_ATTRIBUTE_VALUE_SOURCE_INTERNAL = "internal";
 const std::string VARIABLE_ATTRIBUTE_VALUE_SOURCE_CSMS = "csms";
 const auto DEFAULT_WAIT_FOR_FUTURE_TIMEOUT = std::chrono::seconds(60);
+const auto DEFAULT_PRICE_NUMBER_OF_DECIMALS = 3;
 
 using DatabaseException = ocpp::common::DatabaseException;
 
@@ -638,7 +639,8 @@ void ChargePoint::handle_cost_and_tariff(const TransactionEventResponse& respons
             this->callbacks.set_display_message_callback != nullptr) {
             DisplayMessage display_message;
             display_message.message = message;
-            display_message.transaction_id = original_message.transactionInfo.transactionId;
+            display_message.identifier_id = original_message.transactionInfo.transactionId;
+            display_message.identifier_type = IdentifierType::TransactionId;
             this->callbacks.set_display_message_callback.value()({display_message});
         }
     }
@@ -656,16 +658,30 @@ void ChargePoint::handle_cost_and_tariff(const TransactionEventResponse& respons
         running_cost.transaction_id = original_message.transactionInfo.transactionId;
 
         if (original_message.meterValue.has_value()) {
-            // running_cost.meter_value = original_message.meterValue;
-            // TODO mz add metervalue
+            const auto& meter_value = original_message.meterValue.value();
+            std::optional<float> max_meter_value;
+            for (const MeterValue& mv : meter_value) {
+                auto it = std::find_if(mv.sampledValue.begin(), mv.sampledValue.end(), [](const SampledValue& value) {
+                    return value.measurand == MeasurandEnum::Energy_Active_Import_Register and !value.phase.has_value();
+                });
+                if (it != mv.sampledValue.end()) {
+                    // Found a sampled metervalue we are searching for!
+                    if (!max_meter_value.has_value() || max_meter_value.value() < it->value) {
+                        max_meter_value = it->value;
+                    }
+                }
+            }
+            if (max_meter_value.has_value()) {
+                running_cost.meter_value = static_cast<int32_t>(max_meter_value.value());
+            }
         }
 
         running_cost.timestamp = original_message.timestamp;
 
         if (response.customData.has_value()) {
-            // With the current spec, it is not possible to send a qr code as well as a multi language personal message,
-            // because there can only be one vendor id in custom data. If you not check the vendor id, it is just
-            // possible for a csms to include them both.
+            // With the current spec, it is not possible to send a qr code as well as a multi language personal
+            // message, because there can only be one vendor id in custom data. If you not check the vendor id, it
+            // is just possible for a csms to include them both.
             const json& custom_data = response.customData.value();
             if (/*custom_data.contains("vendorId") &&
                 (custom_data.at("vendorId").get<std::string>() == "org.openchargealliance.org.qrcode") &&*/
@@ -677,7 +693,8 @@ void ChargePoint::handle_cost_and_tariff(const TransactionEventResponse& respons
 
             // Add multilanguage messages
             if (custom_data.contains("updatedPersonalMessageExtra") && is_multilanguage_enabled()) {
-                // Get supported languages, which is stored in the values list of "Language" of "DisplayMessageCtrlr"
+                // Get supported languages, which is stored in the values list of "Language" of
+                // "DisplayMessageCtrlr"
                 std::optional<VariableMetaData> metadata = device_model->get_variable_meta_data(
                     ControllerComponentVariables::DisplayMessageLanguage.component,
                     ControllerComponentVariables::DisplayMessageLanguage.variable.value());
@@ -688,8 +705,8 @@ void ChargePoint::handle_cost_and_tariff(const TransactionEventResponse& respons
                     supported_languages =
                         ocpp::split_string(metadata.value().characteristics.valuesList.value(), ',', true);
                 } else {
-                    EVLOG_error
-                        << "DisplayMessageCtrlr variable Language should have a valuesList with supported languages";
+                    EVLOG_error << "DisplayMessageCtrlr variable Language should have a valuesList with supported "
+                                   "languages";
                 }
 
                 for (const auto& m : custom_data.at("updatedPersonalMessageExtra").items()) {
@@ -708,7 +725,14 @@ void ChargePoint::handle_cost_and_tariff(const TransactionEventResponse& respons
             running_cost.cost_messages = cost_messages;
         }
 
-        this->callbacks.set_running_cost_callback.value()(running_cost);
+        const int number_of_decimals =
+            this->device_model->get_optional_value<int>(ControllerComponentVariables::NumberOfDecimalsForCostValues)
+                .value_or(DEFAULT_PRICE_NUMBER_OF_DECIMALS);
+        uint32_t decimals =
+            (number_of_decimals < 0 ? DEFAULT_PRICE_NUMBER_OF_DECIMALS : static_cast<uint32_t>(number_of_decimals));
+        const std::optional<std::string> currency =
+            this->device_model->get_value<std::string>(ControllerComponentVariables::TariffCostCtrlrCurrency);
+        this->callbacks.set_running_cost_callback.value()(running_cost, decimals, currency);
     }
 }
 
@@ -3276,8 +3300,7 @@ void ChargePoint::handle_costupdated_req(const Call<CostUpdatedRequest> call) {
     CostUpdatedResponse response;
     ocpp::CallResult<CostUpdatedResponse> call_result(response, call.uniqueId);
 
-    // TODO mz check if this is enabled in settings (device model)???
-    if (!this->callbacks.set_running_cost_callback.has_value()) {
+    if (!is_cost_enabled() || !this->callbacks.set_running_cost_callback.has_value()) {
         this->send<CostUpdatedResponse>(call_result);
         return;
     }
@@ -3306,8 +3329,23 @@ void ChargePoint::handle_costupdated_req(const Call<CostUpdatedRequest> call) {
     running_cost.cost = static_cast<double>(call.msg.totalCost);
     running_cost.transaction_id = call.msg.transactionId;
 
-    this->callbacks.set_running_cost_callback.value()(running_cost);
+    const int number_of_decimals =
+        this->device_model->get_optional_value<int>(ControllerComponentVariables::NumberOfDecimalsForCostValues)
+            .value_or(DEFAULT_PRICE_NUMBER_OF_DECIMALS);
+    uint32_t decimals =
+        (number_of_decimals < 0 ? DEFAULT_PRICE_NUMBER_OF_DECIMALS : static_cast<uint32_t>(number_of_decimals));
+    const std::optional<std::string> currency =
+        this->device_model->get_value<std::string>(ControllerComponentVariables::TariffCostCtrlrCurrency);
+    this->callbacks.set_running_cost_callback.value()(running_cost, decimals, currency);
+
     this->send<CostUpdatedResponse>(call_result);
+
+    const std::optional<int32_t> evse_id = get_transaction_evseid(running_cost.transaction_id);
+    if (!evse_id.has_value()) {
+        EVLOG_warning << "Can not set running cost triggers as there is no evse id found with the transaction id from "
+                         "the incoming CostUpdatedRequest";
+        return;
+    }
 
     // TODO mz implement the triggers!!!
 }
@@ -3687,9 +3725,9 @@ void ChargePoint::handle_get_display_message(const Call<GetDisplayMessagesReques
     NotifyDisplayMessagesRequest messages_request;
     messages_request.requestId = call.msg.requestId;
     messages_request.messageInfo = std::vector<MessageInfo>();
-    // Convert all display messages from the charging station to the correct format. They will not be included if they
-    // do not have the required values. That's why we wait with sending the response until we converted all display
-    // messages, because we then know if there are any.
+    // Convert all display messages from the charging station to the correct format. They will not be included if
+    // they do not have the required values. That's why we wait with sending the response until we converted all
+    // display messages, because we then know if there are any.
     for (const auto& display_message : display_messages) {
         const std::optional<MessageInfo> message_info = display_message_to_message_info_type(display_message);
         if (message_info.has_value()) {
@@ -3697,7 +3735,8 @@ void ChargePoint::handle_get_display_message(const Call<GetDisplayMessagesReques
         }
     }
 
-    // Send 'accepted' back to the CSMS if there is at least one message and send all the messages in another request.
+    // Send 'accepted' back to the CSMS if there is at least one message and send all the messages in another
+    // request.
     if (messages_request.messageInfo.value().empty()) {
         response.status = GetDisplayMessagesStatusEnum::Unknown;
         ocpp::CallResult<GetDisplayMessagesResponse> call_result(response, call.uniqueId);
@@ -3720,8 +3759,8 @@ void ChargePoint::handle_set_display_message(const Call<SetDisplayMessageRequest
         return;
     }
 
-    // Check if display messages are available, priority and message format are supported and if the given transaction
-    // is running, if a transaction id was included in the message.
+    // Check if display messages are available, priority and message format are supported and if the given
+    // transaction is running, if a transaction id was included in the message.
     bool error = false;
     const std::optional<bool> display_message_available =
         this->device_model->get_optional_value<bool>(ControllerComponentVariables::DisplayMessageCtrlrAvailable);
@@ -3737,8 +3776,8 @@ void ChargePoint::handle_set_display_message(const Call<SetDisplayMessageRequest
     const auto& supported_format_it = std::find(
         formats.begin(), formats.end(), conversions::message_format_enum_to_string(call.msg.message.message.format));
 
-    // Check if transaction is valid: this is the case if there is no transaction id, or if the transaction id belongs
-    // to a running transaction.
+    // Check if transaction is valid: this is the case if there is no transaction id, or if the transaction id
+    // belongs to a running transaction.
     const bool transaction_valid = (!call.msg.message.transactionId.has_value() ||
                                     get_transaction_evseid(call.msg.message.transactionId.value()) != std::nullopt);
 
@@ -4246,7 +4285,7 @@ static std::optional<MessageInfo> display_message_to_message_info_type(const Dis
     info.id = display_message.id.value();
     info.priority = display_message.priority.value();
     info.state = display_message.state;
-    info.transactionId = display_message.transaction_id;
+    info.transactionId = display_message.identifier_id;
 
     // Note: component is (not yet?) supported for display messages in libocpp.
 
@@ -4266,7 +4305,8 @@ static DisplayMessage message_info_to_display_message(const MessageInfo& message
     display_message.state = message_info.state;
     display_message.timestamp_from = message_info.startDateTime;
     display_message.timestamp_to = message_info.endDateTime;
-    display_message.transaction_id = message_info.transactionId;
+    display_message.identifier_id = message_info.transactionId;
+    display_message.identifier_type = IdentifierType::TransactionId;
     display_message.message = message_content_to_display_message_content(message_info.message);
 
     return display_message;

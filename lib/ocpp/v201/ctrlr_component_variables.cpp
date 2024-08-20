@@ -1204,6 +1204,11 @@ const RequiredComponentVariable& TotalCostFallbackMessage = {
         "TotalCostFallbackMessage",
     }),
 };
+
+const ComponentVariable& NumberOfDecimalsForCostValues = {
+    ControllerComponents::TariffCostCtrlr, std::nullopt,
+    std::optional<Variable>({"NumberOfDecimalsForCostValues", std::nullopt, std::nullopt})};
+
 const RequiredComponentVariable& EVConnectionTimeOut = {
     ControllerComponents::TxCtrlr,
     std::nullopt,

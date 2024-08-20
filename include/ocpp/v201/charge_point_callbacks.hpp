@@ -1,7 +1,7 @@
 #pragma once
 
-#include <memory>
 #include <cstdint>
+#include <memory>
 
 #include <ocpp/v201/device_model.hpp>
 
@@ -16,9 +16,7 @@
 #include <ocpp/v201/messages/UnlockConnector.hpp>
 #include <ocpp/v201/messages/UpdateFirmware.hpp>
 
-
-namespace ocpp::v201
-{
+namespace ocpp::v201 {
 struct Callbacks {
     /// \brief Function to check if the callback struct is completely filled. All std::functions should hold a function,
     ///       all std::optional<std::functions> should either be empty or hold a function.
@@ -147,6 +145,8 @@ struct Callbacks {
         clear_display_message_callback;
 
     /// \brief Callback function is called when running cost is set.
-    std::optional<std::function<void(const RunningCost& running_cost)>> set_running_cost_callback;
+    std::optional<std::function<void(const RunningCost& running_cost, const uint32_t number_of_decimals,
+                                     std::optional<std::string> currency_code)>>
+        set_running_cost_callback;
 };
-}
+} // namespace ocpp::v201

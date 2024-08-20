@@ -215,6 +215,7 @@ extern const ComponentVariable& TariffCostCtrlrEnabledTariff;
 extern const ComponentVariable& TariffCostCtrlrEnabledCost;
 extern const RequiredComponentVariable& TariffFallbackMessage;
 extern const RequiredComponentVariable& TotalCostFallbackMessage;
+extern const ComponentVariable& NumberOfDecimalsForCostValues;
 extern const RequiredComponentVariable& EVConnectionTimeOut;
 extern const ComponentVariable& MaxEnergyOnInvalidId;
 extern const RequiredComponentVariable& StopTxOnEVSideDisconnect;
