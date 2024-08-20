@@ -6,6 +6,7 @@
 #include <thread>
 
 #include <everest/logging.hpp>
+#include <ocpp/common/websocket/websocket.hpp>
 #include <ocpp/v16/charge_point.hpp>
 #include <ocpp/v16/charge_point_configuration.hpp>
 #include <ocpp/v16/charge_point_impl.hpp>
@@ -13,7 +14,6 @@
 #include <ocpp/v201/messages/CostUpdated.hpp>
 #include <ocpp/v201/messages/SetDisplayMessage.hpp>
 #include <ocpp/v201/utils.hpp>
-#include <ocpp/common/websocket/websocket.hpp>
 
 #include <optional>
 

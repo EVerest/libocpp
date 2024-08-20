@@ -42,14 +42,14 @@ private:
     std::optional<ConfigureNetworkConnectionProfileCallback> configure_network_connection_profile_callback;
 
     Everest::SteadyTimer websocket_timer;
-    bool disable_automatic_websocket_reconnects{false};
-    int network_configuration_priority{0};
+    bool disable_automatic_websocket_reconnects;
+    int network_configuration_priority;
     WebsocketConnectionOptions current_connection_options{};
 
 public:
     ConnectivityManager(DeviceModel& device_model, std::shared_ptr<EvseSecurity> evse_security,
                         std::shared_ptr<MessageLogging> logging,
-                        const std::function<void(const std::string& message)> &message_callback);
+                        const std::function<void(const std::string& message)>& message_callback);
 
     /// \brief Set the websocket \p authorization_key
     ///

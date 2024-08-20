@@ -23,7 +23,9 @@ ConnectivityManager::ConnectivityManager(DeviceModel& device_model, std::shared_
     evse_security{evse_security},
     logging{logging},
     websocket{nullptr},
-    message_callback{message_callback} {
+    message_callback{message_callback},
+    disable_automatic_websocket_reconnects{false},
+    network_configuration_priority{0} {
 }
 
 void ConnectivityManager::set_websocket_authorization_key(const std::string& authorization_key) {
