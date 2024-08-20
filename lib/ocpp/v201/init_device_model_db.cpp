@@ -32,6 +32,8 @@ static bool is_characteristics_different(const VariableCharacteristics& c1, cons
 static bool is_same_variable(const DeviceModelVariable& v1, const DeviceModelVariable& v2);
 static bool is_variable_different(const DeviceModelVariable& v1, const DeviceModelVariable& v2);
 static bool is_monitor_different(const VariableMonitoringMeta& meta1, const VariableMonitoringMeta& meta2);
+// Spec based monitor duplicate detection
+static bool is_monitor_duplicate(const VariableMonitoringMeta& meta1, const VariableMonitoringMeta& meta2);
 static bool has_attribute_actual_value(const VariableAttribute& attribute,
                                        const std::optional<std::string>& default_actual_value);
 static std::string get_string_value_from_json(const json& value);
@@ -752,11 +754,11 @@ void InitDeviceModelDb::update_variable_monitors(const std::vector<VariableMonit
     for (const VariableMonitoringMeta& db_monitor : db_monitors) {
         const auto& it = std::find_if(std::begin(new_monitors), std::end(new_monitors),
                                       [&db_monitor](const VariableMonitoringMeta& new_monitor) {
-                                          return (false == is_monitor_different(new_monitor, db_monitor));
+                                          return is_monitor_duplicate(db_monitor, new_monitor);
                                       });
 
+        // Monitor duplicate not found in config, remove from db.
         if (it == std::end(new_monitors)) {
-            // Monitor not found in config, remove from db.
             delete_variable_monitor(db_monitor, variable_id);
         }
     }
@@ -764,12 +766,10 @@ void InitDeviceModelDb::update_variable_monitors(const std::vector<VariableMonit
     // Check if the variable monitors in the config match the ones from the database. If not, add or update.
     for (const VariableMonitoringMeta& new_monitor : new_monitors) {
         const auto& it = std::find_if(
+            // Search for the config monitors in the database
             std::begin(db_monitors), std::end(db_monitors), [&new_monitor](const VariableMonitoringMeta& db_monitor) {
                 // Two monitors are equivalent when they have the same type and severity (3.77 - Duplicate)
-                bool same_monitor = (new_monitor.monitor.type == db_monitor.monitor.type) &&
-                                    (new_monitor.monitor.severity == db_monitor.monitor.severity);
-
-                return (same_monitor);
+                return is_monitor_duplicate(new_monitor, db_monitor);
             });
 
         if (it == std::end(db_monitors)) {
@@ -1459,6 +1459,16 @@ static bool variable_has_same_attributes(const std::vector<DbVariableAttribute>&
 
     // Everything is the same.
     return true;
+}
+
+static bool is_monitor_duplicate(const VariableMonitoringMeta& meta1, const VariableMonitoringMeta& meta2) {
+    // 3.77. SetMonitoringStatusEnumType
+    // Duplicate - A monitor already exists for the given type/severity combination.
+    if (meta1.monitor.type == meta2.monitor.type && meta1.monitor.severity == meta2.monitor.severity) {
+        return true;
+    }
+
+    return false;
 }
 
 static bool is_monitor_different(const VariableMonitoringMeta& meta1, const VariableMonitoringMeta& meta2) {
