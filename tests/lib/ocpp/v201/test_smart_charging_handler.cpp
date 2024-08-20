@@ -47,6 +47,7 @@ const static std::string DEVICE_MODEL_DB_IN_MEMORY_PATH = "file::memory:?cache=s
 
 class TestSmartChargingHandler : public SmartChargingHandler {
 public:
+    using SmartChargingHandler::get_profiles_on_evse;
     using SmartChargingHandler::validate_charging_station_max_profile;
     using SmartChargingHandler::validate_evse_exists;
     using SmartChargingHandler::validate_profile_schedules;
@@ -1182,6 +1183,30 @@ TEST_F(ChargepointTestFixtureV201,
 
     EXPECT_THAT(profiles, testing::Contains(profile4));
     EXPECT_THAT(profiles, testing::Contains(profile5));
+}
+
+TEST_F(ChargepointTestFixtureV201, K04FR01_AddProfile_OnlyAddsToOneEVSE) {
+    auto profile1 = create_charging_profile(DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxDefaultProfile,
+                                            create_charge_schedule(ChargingRateUnitEnum::A), uuid(),
+                                            ChargingProfileKindEnum::Absolute, DEFAULT_STACK_LEVEL);
+    auto profile2 = create_charging_profile(DEFAULT_PROFILE_ID + 1, ChargingProfilePurposeEnum::TxProfile,
+                                            create_charge_schedule(ChargingRateUnitEnum::A), uuid(),
+                                            ChargingProfileKindEnum::Absolute, DEFAULT_STACK_LEVEL);
+
+    auto response = handler.add_profile(profile1, DEFAULT_EVSE_ID);
+    auto response2 = handler.add_profile(profile2, DEFAULT_EVSE_ID + 1);
+
+    EXPECT_THAT(response.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
+    EXPECT_THAT(response2.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
+
+    auto sut1 = handler.get_profiles_on_evse(DEFAULT_EVSE_ID);
+    auto sut2 = handler.get_profiles_on_evse(DEFAULT_EVSE_ID + 1);
+
+    EXPECT_THAT(sut1, testing::Contains(profile1));
+    EXPECT_THAT(sut1, testing::Not(testing::Contains(profile2)));
+
+    EXPECT_THAT(sut2, testing::Contains(profile2));
+    EXPECT_THAT(sut2, testing::Not(testing::Contains(profile1)));
 }
 
 TEST_F(ChargepointTestFixtureV201, K01_ValidateAndAdd_RejectsInvalidProfiles) {
