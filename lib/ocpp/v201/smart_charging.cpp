@@ -489,14 +489,7 @@ SetChargingProfileResponse SmartChargingHandler::add_profile(ChargingProfile& pr
 }
 
 std::vector<ChargingProfile> SmartChargingHandler::get_station_wide_profiles() const {
-    std::vector<ChargingProfile> station_wide_profiles;
-    if (charging_profiles.count(STATION_WIDE_ID) > 0) {
-        station_wide_profiles = charging_profiles.at(STATION_WIDE_ID);
-    } else {
-        station_wide_profiles = {};
-    }
-
-    return station_wide_profiles;
+    return this->get_profiles_on_evse(STATION_WIDE_ID);
 }
 
 std::vector<ChargingProfile> SmartChargingHandler::get_profiles() const {
