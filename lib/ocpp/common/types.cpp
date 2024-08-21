@@ -568,10 +568,108 @@ std::ostream& operator<<(std::ostream& os, const Measurement& k) {
     return os;
 }
 
-void from_json(const json& j, RunningCost& c) {
-    // TODO for 2.0.1, the cost and transactionid are set in CostUpdatedRequest, the remaining is set in the
-    // 'customData'. Don't forget to add `cost` and `transactionId` to the class as well for 2.0.1!!
+void from_json(const json& j, DisplayMessageContent& m) {
+    if (j.contains("content")) {
+        m.message = j.at("content");
+    }
 
+    if (j.contains("format")) {
+        m.message_format = v201::conversions::string_to_message_format_enum(j.at("format"));
+    }
+
+    if (j.contains("language")) {
+        m.language = j.at("language");
+    }
+}
+
+void to_json(json& j, const DisplayMessageContent& m) {
+    j["message"] = m.message;
+
+    if (m.message_format.has_value()) {
+        j["format"] = v201::conversions::message_format_enum_to_string(m.message_format.value());
+    }
+
+    if (m.language.has_value()) {
+        j["language"] = m.language.value();
+    }
+}
+
+void from_json(const json& j, RunningCostChargingPrice& c) {
+    if (j.contains("kWhPrice")) {
+        c.kWh_price = j.at("kWhPrice");
+    }
+
+    if (j.contains("hourPrice")) {
+        c.hour_price = j.at("hourPrice");
+    }
+
+    if (j.contains("flatFee")) {
+        c.flat_fee = j.at("flatFee");
+    }
+}
+
+void to_json(json& j, const RunningCostChargingPrice& c) {
+    if (c.kWh_price.has_value()) {
+        j["kWhPrice"] = c.kWh_price.value();
+    }
+
+    if (c.hour_price.has_value()) {
+        j["hourPrice"] = c.hour_price.value();
+    }
+
+    if (c.flat_fee.has_value()) {
+        j["flatFee"] = c.flat_fee.value();
+    }
+}
+
+void from_json(const json& j, RunningCostIdlePrice& c) {
+    if (j.contains("graceMinutes")) {
+        c.idle_grace_minutes = j.at("graceMinutes");
+    }
+
+    if (j.contains("hourPrice")) {
+        c.idle_hour_price = j.at("hourPrice");
+    }
+}
+
+void to_json(json& j, const RunningCostIdlePrice& c) {
+    if (c.idle_hour_price.has_value()) {
+        j["hourPrice"] = c.idle_hour_price.value();
+    }
+
+    if (c.idle_grace_minutes.has_value()) {
+        j["graceMinutes"] = c.idle_grace_minutes.value();
+    }
+}
+
+namespace conversions {
+RunningCostState string_to_running_cost_state(const std::string& state) {
+    if (state == "Charging") {
+        return RunningCostState::Charging;
+    } else if (state == "Idle") {
+        return RunningCostState::Idle;
+    } else if (state == "Finished") {
+        return RunningCostState::Finished;
+    }
+
+    throw std::out_of_range("No known string conversion for provided enum of type RunningCostState");
+}
+
+std::string running_cost_state_to_string(const RunningCostState& state) {
+    switch (state) {
+    case RunningCostState::Charging:
+        return "Charging";
+    case RunningCostState::Idle:
+        return "Idle";
+    case RunningCostState::Finished:
+        return "Finished";
+    }
+
+    throw std::out_of_range("No known enum value of type RunningCostState");
+}
+} // namespace conversions
+
+void from_json(const json& j, RunningCost& c) {
     if (j.contains("transactionId")) {
         if (j.at("transactionId").is_number()) {
             uint32_t transaction_id = j.at("transactionId");
@@ -649,28 +747,39 @@ void from_json(const json& j, RunningCost& c) {
     if (j.contains("qrCodeText")) {
         c.qr_code_text = j.at("qrCodeText");
     }
+}
 
-    // TODO mz this is done by OCPP (implement in 2.0.1!!!)
-    // if (j.contains("triggerMeterValue")) {
-    //     const json& triggerMeterValue = j.at("triggerMeterValue");
-    //     if (triggerMeterValue.is_object()) {
-    //         if (triggerMeterValue.contains("atTime")) {
-    //             c.trigger_meter_value_at_time = triggerMeterValue.at("atTime");
-    //         }
+void from_json(const json& j, TriggerMeterValue& t) {
+    if (j.is_object()) {
+        if (j.contains("atTime")) {
+            t.at_time = j.at("atTime");
+        }
 
-    //         if (triggerMeterValue.contains("atEnergykWh")) {
-    //             c.trigger_meter_value_at_energy_kwh = triggerMeterValue.at("atEnergykWh");
-    //         }
+        if (j.contains("atEnergykWh")) {
+            t.at_energy_kwh = j.at("atEnergykWh");
+        }
 
-    //         if (triggerMeterValue.contains("atPowerkW")) {
-    //             c.trigger_meter_value_at_power_kw = triggerMeterValue.at("atPowerkW");
-    //         }
+        if (j.contains("atPowerkW")) {
+            t.at_power_kw = j.at("atPowerkW");
+        }
 
-    //         if (triggerMeterValue.contains("atCPStatus")) {
-    //             v16::conversions::string_to_charge_point_status(triggerMeterValue.at("atCPStatus"));
-    //         }
-    //     }
-    // }
+        if (j.contains("atCPStatus")) {
+            std::vector<v16::ChargePointStatus> trigger_cp_status;
+            json array;
+            for (const auto& cp_status : j.at("atCPStatus").items()) {
+                try {
+                    trigger_cp_status.push_back(
+                        v16::conversions::string_to_charge_point_status(cp_status.value().get<std::string>()));
+                } catch (const std::out_of_range& e) {
+                    EVLOG_error << "Could not trigger on CP status: status (" << cp_status.value().get<std::string>()
+                                << ") is not a valid chargepoint status: " << e.what();
+                }
+            }
+            if (trigger_cp_status.size() > 0) {
+                t.at_chargepoint_status = trigger_cp_status;
+            }
+        }
+    }
 }
 
 namespace conversions {

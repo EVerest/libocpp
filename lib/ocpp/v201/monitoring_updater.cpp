@@ -150,11 +150,15 @@ void MonitoringUpdater::start_monitoring() {
                         std::placeholders::_7);
     device_model->register_variable_listener(std::move(fn));
 
-    int process_interval_seconds =
-        this->device_model->get_optional_value<int>(ControllerComponentVariables::MonitorsProcessingInterval)
-            .value_or(1);
+    // No point in starting the monitor if this variable does not exist. It will never start to exist later on.
+    if (this->device_model->get_optional_value<bool>(ControllerComponentVariables::MonitoringCtrlrEnabled)
+            .has_value()) {
+        int process_interval_seconds =
+            this->device_model->get_optional_value<int>(ControllerComponentVariables::MonitorsProcessingInterval)
+                .value_or(1);
 
-    monitors_timer.interval(std::chrono::seconds(process_interval_seconds));
+        monitors_timer.interval(std::chrono::seconds(process_interval_seconds));
+    }
 }
 
 void MonitoringUpdater::stop_monitoring() {
@@ -299,7 +303,7 @@ void MonitoringUpdater::process_periodic_monitors() {
 
     int active_monitoring_level =
         this->device_model->get_optional_value<int>(ControllerComponentVariables::ActiveMonitoringLevel)
-            .value_or(MontoringLevelSeverity::MAX);
+            .value_or(MonitoringLevelSeverity::MAX);
 
     std::string active_monitoring_base_string =
         this->device_model->get_optional_value<std::string>(ControllerComponentVariables::ActiveMonitoringBase)
@@ -439,11 +443,11 @@ void MonitoringUpdater::process_triggered_monitors() {
     // By default (if the comp is missing we are reporting up to 'Warning')
     int offline_severity =
         this->device_model->get_optional_value<int>(ControllerComponentVariables::OfflineQueuingSeverity)
-            .value_or(MontoringLevelSeverity::Warning);
+            .value_or(MonitoringLevelSeverity::Warning);
 
     int active_monitoring_level =
         this->device_model->get_optional_value<int>(ControllerComponentVariables::ActiveMonitoringLevel)
-            .value_or(MontoringLevelSeverity::MAX);
+            .value_or(MonitoringLevelSeverity::MAX);
 
     std::string active_monitoring_base_string =
         this->device_model->get_optional_value<std::string>(ControllerComponentVariables::ActiveMonitoringBase)

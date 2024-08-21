@@ -21,7 +21,6 @@
 #include <ocpp/common/types.hpp>
 #include <ocpp/common/websocket/websocket.hpp>
 #include <ocpp/v16/charge_point_configuration.hpp>
-#include <ocpp/v16/charge_point_state_machine.hpp>
 #include <ocpp/v16/connector.hpp>
 #include <ocpp/v16/database_handler.hpp>
 #include <ocpp/v16/messages/Authorize.hpp>
@@ -113,6 +112,7 @@ private:
     std::unique_ptr<Everest::SteadyTimer> ocsp_request_timer;
     std::unique_ptr<Everest::SteadyTimer> client_certificate_timer;
     std::unique_ptr<Everest::SteadyTimer> v2g_certificate_timer;
+    std::unique_ptr<Everest::SystemTimer> change_time_offset_timer;
     std::chrono::time_point<date::utc_clock> clock_aligned_meter_values_time_point;
     std::mutex meter_values_mutex;
     std::mutex measurement_mutex;
@@ -189,6 +189,12 @@ private:
                        const ocpp::v201::CertificateActionEnum& certificate_action)>
         get_15118_ev_certificate_response_callback;
 
+    // tariff and cost callback
+    std::function<DataTransferResponse(const RunningCost& running_cost, const uint32_t number_of_decimals)>
+        session_cost_callback;
+    std::function<DataTransferResponse(const std::vector<DisplayMessage>& display_message)>
+        set_display_message_callback;
+
     /// \brief This function is called after a successful connection to the Websocket
     void connected_callback();
     void init_websocket();
@@ -214,6 +220,9 @@ private:
     MeterValue get_signed_meter_value(const std::string& signed_value, const ReadingContext& context,
                                       const ocpp::DateTime& datetime);
     void send_meter_value(int32_t connector, MeterValue meter_value, bool initiated_by_trigger_message = false);
+    void send_meter_value_on_pricing_trigger(const int32_t connector_number, std::shared_ptr<Connector> connector,
+                                             const Measurement& measurement);
+    void reset_pricing_triggers(const int32_t connector_number);
     void status_notification(const int32_t connector, const ChargePointErrorCode errorCode,
                              const ChargePointStatus status, const ocpp::DateTime& timestamp,
                              const std::optional<CiString<50>>& info = std::nullopt,
@@ -232,6 +241,12 @@ private:
     /// update can proceed
     void change_all_connectors_to_unavailable_for_firmware_update();
 
+    /// \brief Tries to resume the transactions given by \p resuming_session_ids . This function retrieves open
+    /// transactions from the internal database (e.g. because of power loss). In case the \p
+    /// resuming_session_ids contain the internal session_id, this function attempts to resume the transaction by
+    /// initializing it and adding it to the \ref transaction_handler. If the session_id is not part of \p
+    /// resuming_session_ids a StopTransaction.req is initiated to properly close the transaction.
+    void try_resume_transactions(const std::set<std::string>& resuming_session_ids);
     void stop_all_transactions();
     void stop_all_transactions(Reason reason);
     bool validate_against_cache_entries(CiString<20> id_tag);
@@ -239,9 +254,6 @@ private:
     // new transaction handling:
     void start_transaction(std::shared_ptr<Transaction> transaction);
 
-    /// \brief Sends StopTransaction.req for all transactions for which meter_stop or time_end is not set in the
-    /// database's Transaction table
-    void stop_pending_transactions();
     void stop_transaction(int32_t connector, Reason reason, std::optional<CiString<20>> id_tag_end);
 
     /// \brief Converts the given \p measurands_csv to a vector of Measurands
@@ -330,6 +342,23 @@ private:
     void handleSendLocalListRequest(Call<SendLocalListRequest> call);
     void handleGetLocalListVersionRequest(Call<GetLocalListVersionRequest> call);
 
+    // California Pricing
+    DataTransferResponse handle_set_user_price(const std::optional<std::string>& msg);
+    DataTransferResponse handle_set_session_cost(const RunningCostState& type,
+                                                 const std::optional<std::string>& message);
+    ///
+    /// \brief Set timer to trigger sending a metervalue at a specific time.
+    /// \param date_time    The date/time to send the metervalue.
+    /// \param connector    The connector to set the timer for.
+    ///
+    void set_connector_trigger_metervalue_timer(const DateTime& date_time, std::shared_ptr<Connector> connector);
+
+    ///
+    /// \brief Set offset timer to change the 'timezone' (time offset) at the given time.
+    /// \param date_time    The date / time to change the time offset.
+    ///
+    void set_time_offset_timer(const std::string& date_time);
+
     // //brief Preprocess a ChangeAvailabilityRequest: Determine response;
     // - if connector is 0, availability change is also propagated for all connectors
     // - for each connector (except "0"), if transaction is ongoing the change is scheduled,
@@ -382,8 +411,14 @@ public:
     /// \param connector_status_map initial state of connectors including connector 0 with reduced set of states
     /// (Available, Unavailable, Faulted)
     /// \param bootreason reason for calling the start function
-    /// \return
-    bool start(const std::map<int, ChargePointStatus>& connector_status_map, BootReasonEnum bootreason);
+    /// \param resuming_session_ids can optionally contain active session ids from previous executions. If empty and
+    /// libocpp has transactions in its internal database that have not been stopped yet, calling this function will
+    /// initiate a StopTransaction.req for those transactions. If this vector contains session_ids this function will
+    /// not stop transactions with this session_id even in case it has an internal database entry for this session and
+    /// it hasnt been stopped yet. Its ignored if this vector contains session_ids that are unknown to libocpp.
+    ///  \return
+    bool start(const std::map<int, ChargePointStatus>& connector_status_map, BootReasonEnum bootreason,
+               const std::set<std::string>& resuming_session_ids);
 
     /// \brief Restarts the ChargePoint if it has been stopped before. The ChargePoint is reinitialized, connects to the
     /// websocket and starts to communicate OCPP messages again
@@ -547,24 +582,27 @@ public:
     /// \param connector
     void on_resume_charging(int32_t connector);
 
-    /// \brief This function should be called if an error with the given \p error_code is present. This function will
-    /// trigger a StatusNotification.req containing the given \p error_code . It will not change the present state of
-    /// the state machine.
+    /// \brief This function should be called if an error with the given \p error_info is present. This function will
+    /// trigger a StatusNotification.req containing the given \p error_info . It will change the present state of
+    /// the state machine to faulted, in case the corresponding flag is set in the given \p error_info. This function
+    /// can be called multiple times for different errors. Errors reported using this function stay active as long as
+    /// they are cleared by \ref on_error_cleared().
     /// \param connector
-    /// \param error_code
-    /// \param info Additional free format information related to the error
-    /// \param vendor_id This identifies the vendor-specific implementation
-    /// \param vendor_error_code This contains the vendor-specific error code
-    void on_error(int32_t connector, const ChargePointErrorCode& error_code, const std::optional<CiString<50>>& info,
-                  const std::optional<CiString<255>>& vendor_id, const std::optional<CiString<50>>& vendor_error_code);
+    /// \param error_info Additional information related to the error
+    void on_error(int32_t connector, const ErrorInfo& error_info);
 
-    /// \brief This function should be called if a fault is detected that prevents further charging operations. The \p
-    /// error_code indicates the reason for the fault.
-    /// \param info Additional free format information related to the error
-    /// \param vendor_id This identifies the vendor-specific implementation
-    /// \param vendor_error_code This contains the vendor-specific error code
-    void on_fault(int32_t connector, const ChargePointErrorCode& error_code, const std::optional<CiString<50>>& info,
-                  const std::optional<CiString<255>>& vendor_id, const std::optional<CiString<50>>& vendor_error_code);
+    /// \brief This function should be called if an error with the given \p uuid has been cleared. If this leads to the
+    /// fact that no other error is active anymore, this function will initiate a StatusNotification.req that reports
+    /// the current state and no error
+    ///  \param connector
+    /// \param uuid of a previously reported error. If uuid is not
+    /// known, the event will be ignored
+    void on_error_cleared(int32_t connector, const std::string uuid);
+
+    /// \brief Clears all previously reported errors at the same time for the given \p connector . This will
+    /// clear a previously reported "Faulted" state if present
+    ///  \param connector
+    void on_all_errors_cleared(int32_t connector);
 
     /// \brief Chargepoint notifies about new log status \p log_status . This function should be called during a
     /// Diagnostics / Log upload to indicate the current \p log_status .
@@ -814,6 +852,12 @@ public:
     /// \param callback
     void register_is_token_reserved_for_connector_callback(
         const std::function<bool(const int32_t connector, const std::string& id_token)>& callback);
+
+    void register_session_cost_callback(
+        const std::function<DataTransferResponse(const RunningCost& running_cost, const uint32_t number_of_decimals)>&
+            session_cost_callback);
+    void register_set_display_message_callback(
+        const std::function<DataTransferResponse(const std::vector<DisplayMessage>&)> set_display_message_callback);
 
     /// \brief Gets the configured configuration key requested in the given \p request
     /// \param request specifies the keys that should be returned. If empty or not set, all keys will be reported

@@ -198,12 +198,30 @@ bool validate_value(const VariableCharacteristics& characteristics, const std::s
     }
 }
 
+bool include_in_summary_inventory(const ComponentVariable& cv, const VariableAttribute& attribute) {
+    if (cv == ControllerComponentVariables::ChargingStationAvailabilityState) {
+        return true;
+    }
+    if (cv.component.name == "EVSE" and cv.variable == EvseComponentVariables::AvailabilityState) {
+        return true;
+    }
+    if (cv.component.name == "Connector" and cv.variable == ConnectorComponentVariables::AvailabilityState) {
+        return true;
+    }
+    if ((cv.variable == StandardizedVariables::Fallback or cv.variable == StandardizedVariables::Overload or
+         cv.variable == StandardizedVariables::Problem or cv.variable == StandardizedVariables::Tripped) and
+        attribute.value.value_or("") == "true") {
+        return true;
+    }
+    return false;
+}
+
 GetVariableStatusEnum DeviceModel::request_value_internal(const Component& component_id, const Variable& variable_id,
                                                           const AttributeEnum& attribute_enum, std::string& value,
                                                           bool allow_write_only) {
     const auto component_it = this->device_model.find(component_id);
     if (component_it == this->device_model.end()) {
-        EVLOG_warning << "unknown component in " << component_id.name << "." << variable_id.name;
+        EVLOG_debug << "unknown component in " << component_id.name << "." << variable_id.name;
         return GetVariableStatusEnum::UnknownComponent;
     }
 
@@ -211,7 +229,7 @@ GetVariableStatusEnum DeviceModel::request_value_internal(const Component& compo
     const auto& variable_it = component.find(variable_id);
 
     if (variable_it == component.end()) {
-        EVLOG_warning << "unknown variable in " << component_id.name << "." << variable_id.name;
+        EVLOG_debug << "unknown variable in " << component_id.name << "." << variable_id.name;
         return GetVariableStatusEnum::UnknownVariable;
     }
 
@@ -327,14 +345,13 @@ std::vector<ReportData> DeviceModel::get_base_report_data(const ReportBaseEnum& 
             report_data.component = component;
             report_data.variable = variable;
 
+            ComponentVariable cv = {component, std::nullopt, variable};
+
             // request the variable attribute from the device model storage
             const auto variable_attributes = this->storage->get_variable_attributes(component, variable);
 
             // iterate over possibly (Actual, Target, MinSet, MaxSet)
             for (const auto& variable_attribute : variable_attributes) {
-                // FIXME(piet): Right now this reports only FullInventory (ReadOnly,
-                // ReadWrite or WriteOnly) and ConfigurationInventory (ReadWrite or WriteOnly) correctly
-                // TODO(piet): SummaryInventory
                 if (report_base == ReportBaseEnum::FullInventory or
                     (report_base == ReportBaseEnum::ConfigurationInventory and
                      (variable_attribute.mutability == MutabilityEnum::ReadWrite or
@@ -345,6 +362,10 @@ std::vector<ReportData> DeviceModel::get_base_report_data(const ReportBaseEnum& 
                         report_data.variableAttribute.back().value.reset();
                     }
                     report_data.variableCharacteristics = variable_map.at(variable).characteristics;
+                } else if (report_base == ReportBaseEnum::SummaryInventory) {
+                    if (include_in_summary_inventory(cv, variable_attribute)) {
+                        report_data.variableAttribute.push_back(variable_attribute);
+                    }
                 }
             }
             if (!report_data.variableAttribute.empty()) {

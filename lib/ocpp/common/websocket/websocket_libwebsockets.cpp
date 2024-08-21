@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
-#include <evse_security/crypto/openssl/openssl_tpm.hpp>
+#include <evse_security/crypto/openssl/openssl_provider.hpp>
 #include <ocpp/common/websocket/websocket_libwebsockets.hpp>
 
 #include <everest/logging.hpp>
@@ -40,7 +40,7 @@ public:
 
 namespace ocpp {
 
-using evse_security::is_tpm_key_file;
+using evse_security::is_custom_private_key_file;
 using evse_security::OpenSSLProvider;
 
 enum class EConnectionState {
@@ -276,16 +276,30 @@ static int callback_minimal(struct lws* wsi, enum lws_callback_reasons reason, v
     return 0;
 }
 
+static int private_key_callback(char* buf, int size, int rwflag, void* userdata) {
+    const auto* password = static_cast<const std::string*>(userdata);
+    const std::size_t max_pass_len = (size - 1); // we exclude the endline
+    const std::size_t max_copy_chars =
+        std::min(max_pass_len, password->length()); // truncate if pass is too large and buffer too small
+
+    std::memset(buf, 0, size);
+    std::memcpy(buf, password->c_str(), max_copy_chars);
+
+    return max_copy_chars;
+}
+
 constexpr auto local_protocol_name = "lws-everest-client";
 static const struct lws_protocols protocols[] = {{local_protocol_name, callback_minimal, 0, 0, 0, NULL, 0},
                                                  LWS_PROTOCOL_LIST_TERM};
 
-void WebsocketTlsTPM::tls_init(SSL_CTX* ctx, const std::string& path_chain, const std::string& path_key, bool tpm_key,
-                               std::optional<std::string>& password) {
+bool WebsocketTlsTPM::tls_init(SSL_CTX* ctx, const std::string& path_chain, const std::string& path_key,
+                               bool custom_key, std::optional<std::string>& password) {
     auto rc = SSL_CTX_set_cipher_list(ctx, this->connection_options.supported_ciphers_12.c_str());
     if (rc != 1) {
         EVLOG_debug << "SSL_CTX_set_cipher_list return value: " << rc;
-        EVLOG_AND_THROW(std::runtime_error("Could not set TLSv1.2 cipher list"));
+        EVLOG_error << "Could not set TLSv1.2 cipher list";
+
+        return false;
     }
 
     rc = SSL_CTX_set_ciphersuites(ctx, this->connection_options.supported_ciphers_13.c_str());
@@ -298,24 +312,35 @@ void WebsocketTlsTPM::tls_init(SSL_CTX* ctx, const std::string& path_chain, cons
     if (this->connection_options.security_profile == 3) {
         if ((path_chain.empty()) || (path_key.empty())) {
             EVLOG_error << "Cert chain: [" << path_chain << "] key: " << path_key << "]";
-            EVLOG_AND_THROW(std::runtime_error("No certificate and key for SSL"));
+            EVLOG_error << "No certificate or key found for SSL";
+
+            return false;
         }
 
         if (1 != SSL_CTX_use_certificate_chain_file(ctx, path_chain.c_str())) {
             ERR_print_errors_fp(stderr);
-            EVLOG_AND_THROW(std::runtime_error("Could not use client certificate file within SSL context"));
+            EVLOG_error << "Could not use client certificate file within SSL context";
+
+            return false;
         }
 
-        SSL_CTX_set_default_passwd_cb_userdata(ctx, reinterpret_cast<void*>(password.value_or("").data()));
+        if (password.has_value()) {
+            SSL_CTX_set_default_passwd_cb_userdata(ctx, &password.value());
+            SSL_CTX_set_default_passwd_cb(ctx, private_key_callback);
+        }
 
         if (1 != SSL_CTX_use_PrivateKey_file(ctx, path_key.c_str(), SSL_FILETYPE_PEM)) {
             ERR_print_errors_fp(stderr);
-            EVLOG_AND_THROW(std::runtime_error("Could not set private key file within SSL context"));
+            EVLOG_error << "Could not set private key file within SSL context";
+
+            return false;
         }
 
         if (false == SSL_CTX_check_private_key(ctx)) {
             ERR_print_errors_fp(stderr);
-            EVLOG_AND_THROW(std::runtime_error("Could not check private key within SSL context"));
+            EVLOG_error << "Could not check private key within SSL context";
+
+            return false;
         }
     }
 
@@ -328,7 +353,7 @@ void WebsocketTlsTPM::tls_init(SSL_CTX* ctx, const std::string& path_chain, cons
 
         if (rc != 1) {
             EVLOG_error << "Could not load CA verify locations, error: " << ERR_error_string(ERR_get_error(), NULL);
-            EVLOG_AND_THROW(std::runtime_error("Could not load CA verify locations"));
+            return false;
         }
     }
 
@@ -336,7 +361,7 @@ void WebsocketTlsTPM::tls_init(SSL_CTX* ctx, const std::string& path_chain, cons
         rc = SSL_CTX_set_default_verify_paths(ctx);
         if (rc != 1) {
             EVLOG_error << "Could not load default CA verify path, error: " << ERR_error_string(ERR_get_error(), NULL);
-            EVLOG_AND_THROW(std::runtime_error("Could not load CA verify locations"));
+            return false;
         }
     }
 
@@ -374,6 +399,8 @@ void WebsocketTlsTPM::tls_init(SSL_CTX* ctx, const std::string& path_chain, cons
 
     // Extra info
     SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL); // to verify server certificate
+
+    return true;
 }
 
 void WebsocketTlsTPM::recv_loop() {
@@ -450,11 +477,13 @@ void WebsocketTlsTPM::client_loop() {
 
     info.fd_limit_per_thread = 1 + 1 + 1;
 
+    // Lifetime of this is important since we use the data from this in private_key_callback()
+    std::optional<std::string> private_key_password;
+
     if (this->connection_options.security_profile == 2 || this->connection_options.security_profile == 3) {
         // Setup context - need to know the key type first
         std::string path_key;
         std::string path_chain;
-        std::optional<std::string> password;
 
         if (this->connection_options.security_profile == 3) {
             const auto certificate_response =
@@ -462,8 +491,14 @@ void WebsocketTlsTPM::client_loop() {
 
             if (certificate_response.status != ocpp::GetCertificateInfoStatus::Accepted or
                 !certificate_response.info.has_value()) {
-                EVLOG_AND_THROW(std::runtime_error(
-                    "Connecting with security profile 3 but no client side certificate is present or valid"));
+                EVLOG_error << "Connecting with security profile 3 but no client side certificate is present or valid";
+
+                local_data->update_state(EConnectionState::ERROR);
+                on_conn_fail();
+
+                // Notify conn waiter
+                conn_cv.notify_one();
+                return;
             }
 
             const auto& certificate_info = certificate_response.info.value();
@@ -473,25 +508,31 @@ void WebsocketTlsTPM::client_loop() {
             } else if (certificate_info.certificate_single_path.has_value()) {
                 path_chain = certificate_info.certificate_single_path.value();
             } else {
-                EVLOG_AND_THROW(std::runtime_error(
-                    "Connecting with security profile 3 but no client side certificate is present or valid"));
+                EVLOG_error << "Connecting with security profile 3 but no client side certificate is present or valid";
+
+                local_data->update_state(EConnectionState::ERROR);
+                on_conn_fail();
+
+                // Notify conn waiter
+                conn_cv.notify_one();
+                return;
             }
 
             path_key = certificate_info.key_path;
-            password = certificate_info.password;
+            private_key_password = certificate_info.password;
         }
 
         SSL_CTX* ssl_ctx = nullptr;
-        bool tpm_key = false;
+        bool custom_key = false;
 
         if (!path_key.empty()) {
-            tpm_key = is_tpm_key_file(path_key);
+            custom_key = is_custom_private_key_file(path_key);
         }
 
         OpenSSLProvider provider;
 
-        if (tpm_key) {
-            provider.set_tls_mode(OpenSSLProvider::mode_t::tpm2_provider);
+        if (custom_key) {
+            provider.set_tls_mode(OpenSSLProvider::mode_t::custom_provider);
         } else {
             provider.set_tls_mode(OpenSSLProvider::mode_t::default_provider);
         }
@@ -501,11 +542,27 @@ void WebsocketTlsTPM::client_loop() {
 
         if (ssl_ctx == nullptr) {
             ERR_print_errors_fp(stderr);
-            EVLOG_AND_THROW(std::runtime_error("Unable to create ssl ctx."));
+            EVLOG_error << "Unable to create ssl ctx";
+
+            local_data->update_state(EConnectionState::ERROR);
+            on_conn_fail();
+
+            // Notify conn waiter
+            conn_cv.notify_one();
+            return;
         }
 
         // Init TLS data
-        tls_init(ssl_ctx, path_chain, path_key, tpm_key, password);
+        if (tls_init(ssl_ctx, path_chain, path_key, custom_key, private_key_password) == false) {
+            EVLOG_error << "Unable to init tls";
+
+            local_data->update_state(EConnectionState::ERROR);
+            on_conn_fail();
+
+            // Notify conn waiter
+            conn_cv.notify_one();
+            return;
+        }
 
         // Setup our context
         info.provided_client_ssl_ctx = ssl_ctx;
@@ -518,6 +575,7 @@ void WebsocketTlsTPM::client_loop() {
     if (nullptr == lws_ctx) {
         EVLOG_error << "lws init failed!";
         local_data->update_state(EConnectionState::FINALIZED);
+        return;
     }
 
     // Conn acquire the lws context

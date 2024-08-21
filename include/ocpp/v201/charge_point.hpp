@@ -14,11 +14,12 @@
 #include <ocpp/v201/database_handler.hpp>
 #include <ocpp/v201/device_model.hpp>
 #include <ocpp/v201/device_model_storage.hpp>
-#include <ocpp/v201/enums.hpp>
 #include <ocpp/v201/evse_manager.hpp>
 #include <ocpp/v201/monitoring_updater.hpp>
+#include <ocpp/v201/ocpp_enums.hpp>
 #include <ocpp/v201/ocpp_types.hpp>
 #include <ocpp/v201/ocsp_updater.hpp>
+#include <ocpp/v201/smart_charging.hpp>
 #include <ocpp/v201/types.hpp>
 #include <ocpp/v201/utils.hpp>
 
@@ -54,6 +55,7 @@
 #include <ocpp/v201/messages/Reset.hpp>
 #include <ocpp/v201/messages/SecurityEventNotification.hpp>
 #include <ocpp/v201/messages/SendLocalList.hpp>
+#include <ocpp/v201/messages/SetChargingProfile.hpp>
 #include <ocpp/v201/messages/SetDisplayMessage.hpp>
 #include <ocpp/v201/messages/SetMonitoringBase.hpp>
 #include <ocpp/v201/messages/SetMonitoringLevel.hpp>
@@ -78,7 +80,7 @@ class UnexpectedMessageTypeFromCSMS : public std::runtime_error {
 
 struct Callbacks {
     ///\brief Function to check if the callback struct is completely filled. All std::functions should hold a function,
-    ///       all std::optional<std::functions> should either be emtpy or hold a function.
+    ///       all std::optional<std::functions> should either be empty or hold a function.
     ///
     ///\retval false if any of the normal callbacks are nullptr or any of the optional ones are filled with a nullptr
     ///        true otherwise
@@ -154,6 +156,9 @@ struct Callbacks {
     ///
     std::function<void(const CiString<50>& event_type, const std::optional<CiString<255>>& tech_info)>
         security_event_callback;
+
+    /// \brief Callback for indicating when a charging profile is received and was accepted.
+    std::function<void()> set_charging_profiles_callback;
 
     /// \brief  Callback for when a bootnotification response is received
     std::optional<std::function<void(const ocpp::v201::BootNotificationResponse& boot_notification_response)>>
@@ -304,6 +309,11 @@ public:
     /// \param evse_id          Faulted EVSE id
     /// \param connector_id     Faulted connector id
     virtual void on_faulted(const int32_t evse_id, const int32_t connector_id) = 0;
+
+    /// \brief Event handler that should be called when the fault on the connector on the given evse_id is cleared.
+    /// \param evse_id          EVSE id where fault was cleared
+    /// \param connector_id     Connector id where fault was cleared
+    virtual void on_fault_cleared(const int32_t evse_id, const int32_t connector_id) = 0;
 
     /// \brief Event handler that should be called when the connector on the given evse_id and connector_id is reserved.
     /// \param evse_id          Reserved EVSE id
@@ -527,8 +537,6 @@ private:
     /// device model
     void remove_network_connection_profiles_below_actual_security_profile();
 
-    void handle_message(const EnhancedMessage<v201::MessageType>& message);
-
     void message_callback(const std::string& message);
     void update_aligned_data_interval();
 
@@ -726,6 +734,9 @@ private:
     void handle_change_availability_req(Call<ChangeAvailabilityRequest> call);
     void handle_heartbeat_response(CallResult<HeartbeatResponse> call);
 
+    // Functional Block K: Smart Charging
+    void handle_set_charging_profile_req(Call<SetChargingProfileRequest> call);
+
     // Functional Block L: Firmware management
     void handle_firmware_update_req(Call<UpdateFirmwareRequest> call);
 
@@ -780,6 +791,12 @@ private:
     /// \brief Immediately execute the given \param request to change the operational state of a component
     /// If \param persist is set to true, the change will be persisted across a reboot
     void execute_change_availability_request(ChangeAvailabilityRequest request, bool persist);
+
+protected:
+    std::shared_ptr<SmartChargingHandlerInterface> smart_charging_handler;
+
+    void handle_message(const EnhancedMessage<v201::MessageType>& message);
+    void load_charging_profiles();
 
 public:
     /// \brief Construct a new ChargePoint object
@@ -886,6 +903,8 @@ public:
     void on_enabled(const int32_t evse_id, const int32_t connector_id) override;
 
     void on_faulted(const int32_t evse_id, const int32_t connector_id) override;
+
+    void on_fault_cleared(const int32_t evse_id, const int32_t connector_id) override;
 
     void on_reserved(const int32_t evse_id, const int32_t connector_id) override;
 
