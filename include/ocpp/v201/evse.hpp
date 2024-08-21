@@ -124,6 +124,12 @@ public:
 
     /// \brief Returns the phase type for the EVSE based on its SupplyPhases. It can be AC, DC, or Unknown.
     virtual CurrentPhaseType get_current_phase_type() = 0;
+
+    virtual void set_meter_value_pricing_triggers(
+        std::optional<double> trigger_metervalue_on_power_kw, std::optional<double> trigger_metervalue_on_energy_kwh,
+        std::optional<DateTime> trigger_metervalue_at_time,
+        std::function<void(const std::vector<MeterValue>& meter_values)> send_metervalue_function,
+        boost::asio::io_service& io_service) = 0;
 };
 
 /// \brief Represents an EVSE. An EVSE can contain multiple Connector objects, but can only supply energy to one of
@@ -142,12 +148,12 @@ private:
     Everest::SteadyTimer sampled_meter_values_timer;
     std::shared_ptr<DatabaseHandler> database_handler;
 
-    std::optional<std::pair<double, std::function<void(const int32_t evse_id, const std::vector<MeterValue>& meter_values,
-                                                       const bool initiated_by_trigger_message)>>> trigger_metervalue_on_power_kw;
-    std::optional<std::pair<double, std::function<void(const int32_t evse_id, const std::vector<MeterValue>& meter_values,
-                                                       const bool initiated_by_trigger_message)>>> trigger_metervalue_on_energy_kwh;
+    std::optional<double> trigger_metervalue_on_power_kw;
+    std::optional<double> trigger_metervalue_on_energy_kwh;
     std::unique_ptr<Everest::SystemTimer> trigger_metervalue_at_time_timer;
     std::optional<double> last_triggered_metervalue_power_kw;
+    std::function<void(const std::vector<MeterValue>& meter_values)> send_metervalue_function;
+    boost::asio::io_service io_service;
 
     /// \brief gets the active import energy meter value from meter_value, normalized to Wh.
     std::optional<float> get_active_import_register_meter_value();
@@ -158,6 +164,9 @@ private:
     /// \brief Start all metering timers referenced to \p timestamp
     /// \param timestamp
     void start_metering_timers(const DateTime& timestamp);
+
+    void send_meter_value_on_pricing_trigger(const MeterValue& meter_value);
+    void reset_pricing_triggers(void);
 
     AverageMeterValues aligned_data_updated;
     AverageMeterValues aligned_data_tx_end;
@@ -187,6 +196,8 @@ public:
          const std::function<void(const MeterValue& meter_value, EnhancedTransaction& transaction)>&
              transaction_meter_value_req,
          const std::function<void(int32_t evse_id)>& pause_charging_callback);
+
+    virtual ~Evse();
 
     int32_t get_id() const;
 
@@ -223,6 +234,12 @@ public:
     void restore_connector_operative_status(int32_t connector_id);
 
     CurrentPhaseType get_current_phase_type();
+
+    void set_meter_value_pricing_triggers(
+        std::optional<double> trigger_metervalue_on_power_kw, std::optional<double> trigger_metervalue_on_energy_kwh,
+        std::optional<DateTime> trigger_metervalue_at_time,
+        std::function<void(const std::vector<MeterValue>& meter_values)> send_metervalue_function,
+        boost::asio::io_service& io_service);
 };
 
 } // namespace v201

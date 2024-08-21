@@ -135,7 +135,6 @@ struct Callbacks {
     /// \brief Callback function is called when the websocket connection status changes
     std::optional<std::function<void(const bool is_connected)>> connection_state_changed_callback;
 
-    // TODO mz if one of the three is defined, they must all be defined
     /// \brief Callback functions called for get / set / clear display messages
     std::optional<std::function<std::vector<DisplayMessage>(const GetDisplayMessagesRequest& request /* TODO */)>>
         get_display_message_callback;

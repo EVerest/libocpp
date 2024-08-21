@@ -716,11 +716,26 @@ void ChargePoint::handle_cost_and_tariff(const TransactionEventResponse& respons
 
                 for (const auto& m : custom_data.at("updatedPersonalMessageExtra").items()) {
                     DisplayMessageContent c = message_content_to_display_message_content(m.value());
-                    if (c.language.has_value() && !supported_languages.empty() &&
-                        (std::find(supported_languages.begin(), supported_languages.end(), c.language.value()) !=
-                         supported_languages.end())) {
-                        // TODO mz some scenarios where the languages are not found in settings + add logging
+                    if (!c.language.has_value()) {
+                        EVLOG_warning
+                            << "updated personal message extra sent but language unknown: Can not show message.";
+                        continue;
+                    }
+
+                    if (supported_languages.empty()) {
+                        EVLOG_warning << "Can not show personal message as the supported languages are unknown "
+                                         "(please set the `valuesList` of `DisplayMessageCtrlr` variable `Language` to "
+                                         "set the supported languages)";
+                        // Break loop because the next iteration, the supported languages will also not be there.
+                        break;
+                    }
+
+                    if (std::find(supported_languages.begin(), supported_languages.end(), c.language.value()) !=
+                        supported_languages.end()) {
                         cost_messages.push_back(c);
+                    } else {
+                        EVLOG_warning << "Can not send a personal message text in language " << c.language.value()
+                                      << " as it is not supported by the charging station.";
                     }
                 }
             }
@@ -3368,14 +3383,26 @@ void ChargePoint::handle_costupdated_req(const Call<CostUpdatedRequest> call) {
 
     this->send<CostUpdatedResponse>(call_result);
 
-    const std::optional<int32_t> evse_id = get_transaction_evseid(running_cost.transaction_id);
-    if (!evse_id.has_value()) {
+    // In OCPP 2.0.1, the chargepoint status trigger is not used.
+    if (!triggers.at_energy_kwh.has_value() && !triggers.at_power_kw.has_value() && !triggers.at_time.has_value()) {
+        return;
+    }
+
+    const std::optional<int32_t> evse_id_opt = get_transaction_evseid(running_cost.transaction_id);
+    if (!evse_id_opt.has_value()) {
         EVLOG_warning << "Can not set running cost triggers as there is no evse id found with the transaction id from "
                          "the incoming CostUpdatedRequest";
         return;
     }
 
-    // TODO mz implement the triggers!!!
+    const int32_t evse_id = evse_id_opt.value();
+    auto& evse = this->evse_manager->get_evse(evse_id);
+    evse.set_meter_value_pricing_triggers(
+        triggers.at_power_kw, triggers.at_energy_kwh, triggers.at_time,
+        [this, evse_id](const std::vector<MeterValue>& meter_values) {
+            this->meter_values_req(evse_id, meter_values, false);
+        },
+        this->io_service);
 }
 
 void ChargePoint::handle_set_charging_profile_req(Call<SetChargingProfileRequest> call) {
