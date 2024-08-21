@@ -34,7 +34,7 @@
       "description": "Whether smart charging is supported.",
       "type": "boolean"
     },
-    "SmartChargingCtrlrAvailableEnabled": {
+    "SmartChargingCtrlrEnabled": {
       "variable_name": "Enabled",
       "characteristics": {
         "supportsMonitoring": true,
