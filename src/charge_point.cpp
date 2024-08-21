@@ -93,7 +93,7 @@ int main(int argc, char* argv[]) {
         fs.close();
     }
 
-    const fs::path sql_init_path = share_path / "init.sql";
+    const fs::path sql_init_path = share_path / "core_migrations";
 
     // create the cso_path
     const fs::path cso_path = "/tmp/client/cso";
@@ -247,9 +247,9 @@ int main(int argc, char* argv[]) {
                   << "Setting charging profiles" << std::endl;
     });
 
-    charge_point->register_transaction_updated_callback([](const int32_t connector, const int32_t transaction_id,
-                                                           const std::string& session_id,
-                                                           const IdTagInfo& id_tag_info) {
+    charge_point->register_transaction_updated_callback([](const int32_t connector, const std::string& session_id,
+                                                           const int32_t transaction_id,
+                                                           const ocpp::v16::IdTagInfo& id_tag_info) {
         std::cout << "Callback: Transaction updated at connector# " << connector
                   << " and transaction id: " << transaction_id << std::endl;
     });
