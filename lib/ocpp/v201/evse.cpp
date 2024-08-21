@@ -239,18 +239,57 @@ void Evse::on_meter_value(const MeterValue& meter_value) {
     this->check_max_energy_on_invalid_id();
 
     // TODO mz put in separate function
-    if (this->trigger_metervalue_on_power_kw.has_value()) {
-        auto& [power_kw, send_meter_value_function] = this->trigger_metervalue_on_power_kw.value();
+    bool meter_value_sent = false;
+    if (this->trigger_metervalue_on_energy_kwh.has_value()) {
+        auto& [energy_wh, send_meter_value_function] = this->trigger_metervalue_on_energy_kwh.value();
         if (send_meter_value_function == nullptr) {
             // TODO mz logging
-            this->trigger_metervalue_on_power_kw.reset();
-            return;
+            this->trigger_metervalue_on_energy_kwh.reset();
+        } else {
+            const std::optional<float> active_import_register_meter_value_wh = get_active_import_register_meter_value();
+            if (active_import_register_meter_value_wh.has_value() &&
+                static_cast<double>(active_import_register_meter_value_wh.value()) >= energy_wh) {
+                send_meter_value_function(this->get_id(), {meter_value}, false);
+                this->trigger_metervalue_on_energy_kwh.reset();
+                return;
+            }
         }
+    }
 
-        // TODO mz / or * 1000?
-        if (get_active_import_register_meter_value().has_value() &&
-            get_active_import_register_meter_value().value() == power_kw) {
+    const std::optional<float> active_power_meter_value = utils::get_total_power_active_import(meter_value);
+
+    if (!this->trigger_metervalue_on_power_kw.has_value() || !active_power_meter_value.has_value()) {
+        return;
+    }
+
+    auto& [power_w, send_meter_value_function] = this->trigger_metervalue_on_power_kw.value();
+    if (send_meter_value_function == nullptr) {
+        // TODO mz logging
+        return;
+    }
+
+    if (this->last_triggered_metervalue_power_kw.has_value()) {
+        // Hysteresis of 5% to avoid repetitive triggers when the power fluctuates around the trigger level.
+        const double hysterisis_w = power_w * 0.05;
+        const double triggered_power_w = this->last_triggered_metervalue_power_kw.value();
+        const double trigger_metervalue_w = power_w;
+        const double current_metervalue_w = active_power_meter_value.value();
+
+        if ( // Check if trigger value is crossed in upward direction.
+            (triggered_power_w < trigger_metervalue_w &&
+             current_metervalue_w >= (trigger_metervalue_w + hysterisis_w)) ||
+            // Check if trigger value is crossed in downward direction.
+            (triggered_power_w > trigger_metervalue_w &&
+             current_metervalue_w <= (trigger_metervalue_w - hysterisis_w))) {
+
+            // Power threshold is crossed, send metervalues.
+            send_meter_value_function(this->get_id(), {meter_value}, false);
+            this->last_triggered_metervalue_power_kw = active_power_meter_value.value();
         }
+    } else {
+        // Send metervalue anyway since we have no previous metervalue stored and don't know if we should send any
+        send_meter_value_function(this->get_id(), {meter_value}, false);
+        this->last_triggered_metervalue_power_kw = active_power_meter_value.value();
     }
 }
 
@@ -398,10 +437,10 @@ void Evse::start_metering_timers(const DateTime& timestamp) {
             store_aligned_metervalue, aligned_data_tx_ended_interval,
             std::chrono::floor<date::days>(date::utc_clock::to_sys(date::utc_clock::now())));
 
-        // Store an extra aligned metervalue to fix the edge case where a transaction is started just before an interval
-        // but this code is processed just after the interval.
-        // For example, aligned interval = 1 min, transaction started at 11:59:59.500 and we get here on 12:00:00.100.
-        // There is still the expectation for us to add a metervalue at timepoint 12:00:00.000 which we do with this.
+        // Store an extra aligned metervalue to fix the edge case where a transaction is started just before an
+        // interval but this code is processed just after the interval. For example, aligned interval = 1 min,
+        // transaction started at 11:59:59.500 and we get here on 12:00:00.100. There is still the expectation for
+        // us to add a metervalue at timepoint 12:00:00.000 which we do with this.
         if (date::utc_clock::to_sys(timestamp.to_time_point()) <= (next_interval - aligned_data_tx_ended_interval)) {
             store_aligned_metervalue();
         }
