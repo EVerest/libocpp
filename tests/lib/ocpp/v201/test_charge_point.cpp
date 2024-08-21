@@ -97,6 +97,11 @@ public:
         return device_model;
     }
 
+    std::shared_ptr<DatabaseHandler> create_database_handler() {
+        auto database_connection = std::make_unique<common::DatabaseConnection>(fs::path("/tmp/ocpp201") / "cp.db");
+        return std::make_shared<DatabaseHandler>(std::move(database_connection), MIGRATION_FILES_LOCATION_V201);
+    }
+
     std::unique_ptr<TestChargePoint> create_charge_point() {
         std::map<int32_t, int32_t> evse_connector_structure = {{1, 1}, {2, 1}};
         std::unique_ptr<DeviceModelStorage> device_model_storage =
@@ -186,11 +191,6 @@ public:
     std::shared_ptr<SmartChargingHandlerMock> smart_charging_handler = std::make_shared<SmartChargingHandlerMock>();
     std::unique_ptr<TestChargePoint> charge_point = create_charge_point();
     boost::uuids::random_generator uuid_generator = boost::uuids::random_generator();
-
-    std::shared_ptr<DatabaseHandler> create_database_handler() {
-        auto database_connection = std::make_unique<common::DatabaseConnection>(fs::path("/tmp/ocpp201") / "cp.db");
-        return std::make_shared<DatabaseHandler>(std::move(database_connection), MIGRATION_FILES_LOCATION_V201);
-    }
 
     std::shared_ptr<MessageQueue<v201::MessageType>>
     create_message_queue(std::shared_ptr<DatabaseHandler>& database_handler) {
@@ -938,6 +938,27 @@ TEST_F(ChargePointFixture,
     EXPECT_CALL(*smart_charging_handler, validate_and_add_profile).Times(0);
 
     charge_point->handle_message(start_transaction_req);
+}
+
+TEST_F(ChargePointFixture, K02FR05_TransactionEnds_WillDeleteTxProfilesWithTransactionID) {
+    auto database_handler = create_database_handler();
+    database_handler->open_connection();
+    const auto cv = ControllerComponentVariables::ResumeTransactionsOnBoot;
+    this->device_model->set_value(cv.component, cv.variable.value(), AttributeEnum::Actual, "true", "TEST", true);
+    int32_t connector_id = 1;
+    std::string session_id = "some-session-id";
+    ocpp::DateTime timestamp("2024-01-17T17:00:00");
+
+    charge_point->on_transaction_started(DEFAULT_EVSE_ID, connector_id, session_id, timestamp,
+                                         ocpp::v201::TriggerReasonEnum::Authorized, MeterValue(), {}, {}, {}, {},
+                                         ChargingStateEnum::EVConnected);
+    auto transaction = database_handler->transaction_get(DEFAULT_EVSE_ID);
+    ASSERT_THAT(transaction, testing::NotNull());
+
+    EXPECT_CALL(*smart_charging_handler,
+                delete_transaction_tx_profiles(transaction->get_transaction().transactionId.get()));
+    charge_point->on_transaction_finished(DEFAULT_EVSE_ID, timestamp, MeterValue(), ReasonEnum::StoppedByEV,
+                                          TriggerReasonEnum::StopAuthorized, {}, {}, ChargingStateEnum::EVConnected);
 }
 
 } // namespace ocpp::v201

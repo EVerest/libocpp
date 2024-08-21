@@ -84,6 +84,8 @@ public:
         ChargingProfile& profile, int32_t evse_id,
         AddChargingProfileSource source_of_request = AddChargingProfileSource::SetChargingProfile) = 0;
 
+    virtual void delete_transaction_tx_profiles(const std::string& transaction_id) = 0;
+
     virtual ProfileValidationResultEnum
     validate_profile(ChargingProfile& profile, int32_t evse_id,
                      AddChargingProfileSource source_of_request = AddChargingProfileSource::SetChargingProfile) = 0;
@@ -116,6 +118,8 @@ private:
 public:
     SmartChargingHandler(EvseManagerInterface& evse_manager, std::shared_ptr<DeviceModel>& device_model,
                          std::shared_ptr<ocpp::v201::DatabaseHandler> database_handler);
+
+    void delete_transaction_tx_profiles(const std::string& transaction_id) override;
 
     ///
     /// \brief validates the given \p profile according to the specification,

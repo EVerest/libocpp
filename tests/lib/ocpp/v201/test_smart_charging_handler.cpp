@@ -1546,4 +1546,42 @@ TEST_F(ChargepointTestFixtureV201, K08_GetValidProfiles_IfInvalidProfileExists_T
     EXPECT_THAT(profiles, testing::Not(testing::Contains(invalid_station_wide_profile)));
 }
 
+TEST_F(ChargepointTestFixtureV201, K02FR05_SmartChargingTransactionEnds_DeletesTxProfilesByTransactionId) {
+    auto transaction_id = uuid();
+    this->evse_manager->open_transaction(DEFAULT_EVSE_ID, transaction_id);
+    auto profile = create_charging_profile(DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+                                           create_charge_schedule(ChargingRateUnitEnum::A,
+                                                                  create_charging_schedule_periods({0, 1, 2}),
+                                                                  ocpp::DateTime("2024-01-17T17:00:00")),
+                                           transaction_id);
+
+    auto response = handler.validate_and_add_profile(profile, DEFAULT_EVSE_ID);
+    ASSERT_THAT(response.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
+
+    handler.delete_transaction_tx_profiles(transaction_id);
+
+    EXPECT_THAT(handler.get_profiles(), testing::IsEmpty());
+}
+
+TEST_F(ChargepointTestFixtureV201,
+       K02FR05_SmartChargingTransactionEnds_DoesNotDeleteTxProfilesWithDifferentTransactionId) {
+    auto transaction_id = uuid();
+    this->evse_manager->open_transaction(DEFAULT_EVSE_ID, transaction_id);
+    auto other_transaction_id = uuid();
+    this->evse_manager->open_transaction(DEFAULT_EVSE_ID, other_transaction_id);
+
+    auto profile = create_charging_profile(DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+                                           create_charge_schedule(ChargingRateUnitEnum::A,
+                                                                  create_charging_schedule_periods({0, 1, 2}),
+                                                                  ocpp::DateTime("2024-01-17T17:00:00")),
+                                           other_transaction_id);
+
+    auto response = handler.validate_and_add_profile(profile, DEFAULT_EVSE_ID);
+    ASSERT_THAT(response.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
+
+    handler.delete_transaction_tx_profiles(transaction_id);
+
+    EXPECT_THAT(handler.get_profiles().size(), testing::Eq(1));
+}
+
 } // namespace ocpp::v201

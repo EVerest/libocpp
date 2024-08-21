@@ -442,6 +442,8 @@ void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime&
                                 trigger_reason, enhanced_transaction->get_seq_no(), std::nullopt, std::nullopt,
                                 transaction_id_token, meter_values, std::nullopt, this->is_offline(), std::nullopt);
 
+    // K02.FR.05 The transaction is over, so delete the TxProfiles associated with the transaction.
+    smart_charging_handler->delete_transaction_tx_profiles(enhanced_transaction->get_transaction().transactionId);
     evse_handle.release_transaction();
 
     bool send_reset = false;

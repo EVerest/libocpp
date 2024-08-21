@@ -1286,7 +1286,7 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | K02.FR.02 | ❎     | This should be handled by the user of `libocpp`. |
 | K02.FR.03 | ❎     |                                                  |
 | K02.FR.04 |        |                                                  |
-| K02.FR.05 |        |                                                  |
+| K02.FR.05 | ✅     |                                                  |
 | K02.FR.06 |        | The same as K01.FR.21                            |
 | K02.FR.07 |        | The same as K01.FR.22                            |
 | K02.FR.08 |        |                                                  |
