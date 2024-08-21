@@ -153,6 +153,65 @@ public:
     std::atomic_bool message_sent;
 };
 
+extern std::vector<std::string> split_string(const std::string& string, const char c);
+
+static bool verify_csms_tls_version(const SSL* ssl) {
+    auto ssl_version = SSL_version(ssl);
+
+    // Only support 1.2 and 1.3
+    if (ssl_version == TLS1_2_VERSION || ssl_version == TLS1_3_VERSION) {
+        return true;
+    }
+
+    EVLOG_error << "TLS version: " << SSL_get_version(ssl) << " not supported!";
+    return false;
+}
+
+static bool verify_csms_tls_cipher_suite(const SSL* ssl, const std::string ciphers_tls12,
+                                         const std::string ciphers_tls13) {
+    static const std::string NONE_CIPHER = "(NONE)";
+
+    const SSL_CIPHER* current = SSL_get_current_cipher(ssl);
+    const SSL_CIPHER* pending = SSL_get_pending_cipher(ssl);
+
+    std::optional<std::string> relevant_cipher;
+
+    if (current != nullptr) {
+        std::string cipher_name(SSL_CIPHER_get_name(current));
+
+        if (cipher_name != NONE_CIPHER) {
+            relevant_cipher = std::move(cipher_name);
+        }
+    }
+
+    if (!relevant_cipher.has_value() && (pending != nullptr)) {
+        std::string cipher_name(SSL_CIPHER_get_name(pending));
+
+        if (cipher_name != NONE_CIPHER) {
+            relevant_cipher = std::move(cipher_name);
+        }
+    }
+
+    if (relevant_cipher.has_value()) {
+        auto ssl_version = SSL_version(ssl);
+
+        std::vector<std::string> full_ciphers;
+
+        if (ssl_version == TLS1_2_VERSION) {
+            full_ciphers = std::move(split_string(ciphers_tls12, ':'));
+        } else if (ssl_version == TLS1_3_VERSION) {
+            full_ciphers = std::move(split_string(ciphers_tls13, ':'));
+        }
+
+        if (std::find(std::begin(full_ciphers), std::end(full_ciphers), relevant_cipher) != std::end(full_ciphers)) {
+            return true;
+        }
+    }
+
+    EVLOG_error << "TLS cipher: " << relevant_cipher.value_or(NONE_CIPHER) << " not supported!";
+    return false;
+}
+
 static bool verify_csms_cn(const std::string& hostname, bool preverified, const X509_STORE_CTX* ctx,
                            bool allow_wildcards) {
 
@@ -294,14 +353,7 @@ static const struct lws_protocols protocols[] = {{local_protocol_name, callback_
 
 bool WebsocketTlsTPM::tls_init(SSL_CTX* ctx, const std::string& path_chain, const std::string& path_key,
                                bool custom_key, std::optional<std::string>& password) {
-    
-    // int rc;
-    
     auto rc = SSL_CTX_set_cipher_list(ctx, this->connection_options.supported_ciphers_12.c_str());
-
-    // use a tls 1.0 version
-    // auto rc = SSL_CTX_set_cipher_list(ctx, "TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA");
-
     if (rc != 1) {
         EVLOG_debug << "SSL_CTX_set_cipher_list return value: " << rc;
         EVLOG_error << "Could not set TLSv1.2 cipher list";
@@ -309,19 +361,10 @@ bool WebsocketTlsTPM::tls_init(SSL_CTX* ctx, const std::string& path_chain, cons
         return false;
     }
 
-    rc = SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION);
-
-    if(rc != 1) {
-        EVLOG_error << "Could not set min tls version to 1.2";
-        return false;
-    }
-
-    /*
     rc = SSL_CTX_set_ciphersuites(ctx, this->connection_options.supported_ciphers_13.c_str());
     if (rc != 1) {
         EVLOG_debug << "SSL_CTX_set_cipher_list return value: " << rc;
     }
-    */
 
     SSL_CTX_set_ecdh_auto(ctx, 1);
 
@@ -471,7 +514,8 @@ void WebsocketTlsTPM::client_loop() {
     local_data->bind_thread(std::this_thread::get_id());
 
     lws_set_log_level(LLL_ERR | LLL_WARN | LLL_NOTICE | LLL_INFO | LLL_DEBUG | LLL_PARSER | LLL_HEADER | LLL_EXT |
-                              LLL_CLIENT | LLL_LATENCY | LLL_THREAD | LLL_USER, nullptr);
+                          LLL_CLIENT | LLL_LATENCY | LLL_THREAD | LLL_USER,
+                      nullptr);
     // lws_set_log_level(LLL_ERR, nullptr);
 
     lws_context_creation_info info;
@@ -480,8 +524,6 @@ void WebsocketTlsTPM::client_loop() {
     info.options = LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
     info.port = CONTEXT_PORT_NO_LISTEN; /* we do not run any server */
     info.protocols = protocols;
-
-    info.ssl_info_event_mask = SSL_CB_ALERT;
 
     if (this->connection_options.iface.has_value()) {
         EVLOG_info << "Using network iface: " << this->connection_options.iface.value().c_str();
@@ -1157,27 +1199,35 @@ int WebsocketTlsTPM::process_callback(void* wsi_ptr, int callback_reason, void* 
     }
 
     switch (reason) {
-    case LWS_CALLBACK_SSL_INFO:
-        if(struct lws_ssl_info *info = (struct lws_ssl_info *)in) {
-            EVLOG_error << "SSL event ret: " << info->ret << " where: " << info->where;
+    case LWS_CALLBACK_OPENSSL_PERFORM_SERVER_CERT_VERIFICATION: {
+        SSL* conn_ssl = lws_get_ssl(wsi);
 
-            if(info->where & SSL_CB_HANDSHAKE_START) {
-                EVLOG_error << "SSL handshake start: " << info->ret;
-            }
-
-            if(info->where & SSL_CB_HANDSHAKE_DONE) {
-                EVLOG_error << "SSL handshake done: " << info->ret;
-            }
+        if (conn_ssl == nullptr) {
+            EVLOG_error << "Invalid connection SSL, can't check TLS/cyphers!";
+            return 1;
         }
 
-        break;
-    case LWS_CALLBACK_OPENSSL_PERFORM_SERVER_CERT_VERIFICATION:
+        if (!verify_csms_tls_version(conn_ssl)) {
+            this->push_deferred_callback(
+                [this]() { this->connection_failed_callback(ConnectionFailedReason::InvalidTLSVersion); });
+            // Return 1 to fail the connection
+            return 1;
+        }
+
+        if (!verify_csms_tls_cipher_suite(conn_ssl, this->connection_options.supported_ciphers_12,
+                                          this->connection_options.supported_ciphers_13)) {
+            this->push_deferred_callback(
+                [this]() { this->connection_failed_callback(ConnectionFailedReason::InvalidTLSCipherSuite); });
+            // Return 1 to fail the connection
+            return 1;
+        }
+    }
 
         // TODO (ioan): remove this option after we figure out why libwebsockets does not take the param set
         // at 'tls_init' into account
         if (this->connection_options.verify_csms_common_name) {
             // 'user' is X509_STORE and 'len' is preverify_ok (1) in case the pre-verification was successful
-            EVLOG_debug << "Verifying server certs!";
+            EVLOG_error << "Verifying server certs!";
 
             if (!verify_csms_cn(this->connection_options.csms_uri.get_hostname(), (len == 1),
                                 reinterpret_cast<X509_STORE_CTX*>(user),

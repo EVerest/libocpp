@@ -783,6 +783,8 @@ enum class MessageDirection {
 
 enum class ConnectionFailedReason {
     InvalidCSMSCertificate = 0,
+    InvalidTLSVersion = 1,
+    InvalidTLSCipherSuite = 2,
 };
 
 ///

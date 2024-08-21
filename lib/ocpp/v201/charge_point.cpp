@@ -93,6 +93,8 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
     network_configuration_priority(0),
     disable_automatic_websocket_reconnects(false),
     skip_invalid_csms_certificate_notifications(false),
+    skip_invalid_csms_tls_notifications(false),
+    skip_invalid_csms_ciphers_notifications(false),
     reset_scheduled(false),
     reset_scheduled_evseids{},
     firmware_status(FirmwareStatusEnum::Idle),
@@ -1056,6 +1058,8 @@ void ChargePoint::init_websocket() {
 
         // We have a connection again so next time it fails we should send the notification again
         this->skip_invalid_csms_certificate_notifications = false;
+        this->skip_invalid_csms_tls_notifications = false;
+        this->skip_invalid_csms_ciphers_notifications = false;
 
         if (this->callbacks.connection_state_changed_callback.has_value()) {
             this->callbacks.connection_state_changed_callback.value()(true);
@@ -1105,6 +1109,24 @@ void ChargePoint::init_websocket() {
                 this->skip_invalid_csms_certificate_notifications = true;
             } else {
                 EVLOG_debug << "Skipping InvalidCsmsCertificate SecurityEvent since it has been sent already";
+            }
+            break;
+        case ConnectionFailedReason::InvalidTLSVersion:
+            if (!this->skip_invalid_csms_tls_notifications) {
+                this->security_event_notification_req(CiString<50>(ocpp::security_events::INVALIDTLSVERSION),
+                                                      std::nullopt, true, true);
+                this->skip_invalid_csms_tls_notifications = true;
+            } else {
+                EVLOG_debug << "Skipping InvalidTLSVersion SecurityEvent since it has been sent already";
+            }
+            break;
+        case ConnectionFailedReason::InvalidTLSCipherSuite:
+            if (!this->skip_invalid_csms_ciphers_notifications) {
+                this->security_event_notification_req(CiString<50>(ocpp::security_events::INVALIDTLSCIPHERSUITE),
+                                                      std::nullopt, true, true);
+                this->skip_invalid_csms_ciphers_notifications = true;
+            } else {
+                EVLOG_debug << "Skipping InvalidTLSCipherSuite SecurityEvent since it has been sent already";
             }
             break;
         }

@@ -459,6 +459,8 @@ private:
     int network_configuration_priority;
     bool disable_automatic_websocket_reconnects;
     bool skip_invalid_csms_certificate_notifications;
+    bool skip_invalid_csms_tls_notifications;
+    bool skip_invalid_csms_ciphers_notifications;
 
     /// \brief Component responsible for maintaining and persisting the operational status of CS, EVSEs, and connectors.
     std::shared_ptr<ComponentStateManagerInterface> component_state_manager;
