@@ -178,7 +178,9 @@ public:
     /// charging profiles
 
     /// \brief Inserts or updates the given \p profile to CHARGING_PROFILES table
-    void insert_or_update_charging_profile(const int evse_id, const v201::ChargingProfile& profile);
+    void insert_or_update_charging_profile(
+        const int evse_id, const v201::ChargingProfile& profile,
+        const ChargingLimitSourceEnum charging_limit_source = ChargingLimitSourceEnum::CSO);
 
     /// \brief Deletes the profile with the given \p profile_id
     void delete_charging_profile(const int profile_id);
@@ -188,6 +190,8 @@ public:
 
     /// \brief Retrieves all ChargingProfiles
     virtual std::map<int32_t, std::vector<v201::ChargingProfile>> get_all_charging_profiles_group_by_evse();
+
+    ChargingLimitSourceEnum get_charging_limit_source_for_profile(const int profile_id);
 };
 
 } // namespace v201

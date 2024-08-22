@@ -721,11 +721,12 @@ void DatabaseHandler::transaction_delete(const std::string& transaction_id) {
     }
 }
 
-void DatabaseHandler::insert_or_update_charging_profile(const int evse_id, const v201::ChargingProfile& profile) {
+void DatabaseHandler::insert_or_update_charging_profile(const int evse_id, const v201::ChargingProfile& profile,
+                                                        const ChargingLimitSourceEnum charging_limit_source) {
     // add or replace
-    std::string sql =
-        "INSERT OR REPLACE INTO CHARGING_PROFILES (ID, EVSE_ID, STACK_LEVEL, CHARGING_PROFILE_PURPOSE, PROFILE) VALUES "
-        "(@id, @evse_id, @stack_level, @charging_profile_purpose, @profile)";
+    std::string sql = "INSERT OR REPLACE INTO CHARGING_PROFILES (ID, EVSE_ID, STACK_LEVEL, CHARGING_PROFILE_PURPOSE, "
+                      "PROFILE, CHARGING_LIMIT_SOURCE) VALUES "
+                      "(@id, @evse_id, @stack_level, @charging_profile_purpose, @profile, @charging_limit_source)";
     auto stmt = this->database->new_statement(sql);
 
     json json_profile(profile);
@@ -736,6 +737,7 @@ void DatabaseHandler::insert_or_update_charging_profile(const int evse_id, const
     stmt->bind_text("@charging_profile_purpose",
                     conversions::charging_profile_purpose_enum_to_string(profile.chargingProfilePurpose));
     stmt->bind_text("@profile", json_profile.dump(), SQLiteString::Transient);
+    stmt->bind_text("@charging_limit_source", conversions::charging_limit_source_enum_to_string(charging_limit_source));
 
     if (stmt->step() != SQLITE_DONE) {
         throw QueryExecutionException(this->database->get_error_message());
@@ -774,6 +776,26 @@ std::map<int32_t, std::vector<v201::ChargingProfile>> DatabaseHandler::get_all_c
     }
 
     return map;
+}
+
+ChargingLimitSourceEnum DatabaseHandler::get_charging_limit_source_for_profile(const int profile_id) {
+    std::string sql = "SELECT CHARGING_LIMIT_SOURCE FROM CHARGING_PROFILES WHERE ID = @profile_id;";
+
+    auto stmnt = this->database->new_statement(sql);
+
+    stmnt->bind_int("@profile_id", profile_id);
+
+    if (stmnt->step() != SQLITE_ROW) {
+        EVLOG_warning << "No record found for " << profile_id;
+    }
+
+    auto res = conversions::string_to_charging_limit_source_enum(stmnt->column_text(0));
+
+    if (stmnt->step() != SQLITE_DONE) {
+        throw QueryExecutionException(this->database->get_error_message());
+    }
+
+    return res;
 }
 
 } // namespace v201

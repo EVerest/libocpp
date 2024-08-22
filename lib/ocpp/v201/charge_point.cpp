@@ -3144,7 +3144,8 @@ void ChargePoint::handle_remote_start_transaction_request(Call<RequestStartTrans
                 if (charging_profile.chargingProfilePurpose == ChargingProfilePurposeEnum::TxProfile) {
 
                     const auto add_profile_response = this->smart_charging_handler->validate_and_add_profile(
-                        msg.chargingProfile.value(), evse_id, AddChargingProfileSource::RequestStartTransactionRequest);
+                        msg.chargingProfile.value(), evse_id, ChargingLimitSourceEnum::CSO,
+                        AddChargingProfileSource::RequestStartTransactionRequest);
                     if (add_profile_response.status == ChargingProfileStatusEnum::Accepted) {
                         EVLOG_debug << "Accepting SetChargingProfileRequest";
                     } else {

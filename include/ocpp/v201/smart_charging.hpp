@@ -86,6 +86,7 @@ public:
 
     virtual SetChargingProfileResponse validate_and_add_profile(
         ChargingProfile& profile, int32_t evse_id,
+        ChargingLimitSourceEnum charging_limit_source = ChargingLimitSourceEnum::CSO,
         AddChargingProfileSource source_of_request = AddChargingProfileSource::SetChargingProfile) = 0;
 
     virtual void delete_transaction_tx_profiles(const std::string& transaction_id) = 0;
@@ -94,7 +95,9 @@ public:
     validate_profile(ChargingProfile& profile, int32_t evse_id,
                      AddChargingProfileSource source_of_request = AddChargingProfileSource::SetChargingProfile) = 0;
 
-    virtual SetChargingProfileResponse add_profile(ChargingProfile& profile, int32_t evse_id) = 0;
+    virtual SetChargingProfileResponse
+    add_profile(ChargingProfile& profile, int32_t evse_id,
+                ChargingLimitSourceEnum charging_limit_source = ChargingLimitSourceEnum::CSO) = 0;
 
     virtual ClearChargingProfileResponse clear_profiles(const ClearChargingProfileRequest& request) = 0;
 
@@ -134,6 +137,7 @@ public:
     ///
     SetChargingProfileResponse validate_and_add_profile(
         ChargingProfile& profile, int32_t evse_id,
+        ChargingLimitSourceEnum charging_limit_source = ChargingLimitSourceEnum::CSO,
         AddChargingProfileSource source_of_request = AddChargingProfileSource::SetChargingProfile) override;
 
     ///
@@ -148,7 +152,9 @@ public:
     ///
     /// \brief Adds a given \p profile and associated \p evse_id to our stored list of profiles
     ///
-    SetChargingProfileResponse add_profile(ChargingProfile& profile, int32_t evse_id) override;
+    SetChargingProfileResponse
+    add_profile(ChargingProfile& profile, int32_t evse_id,
+                ChargingLimitSourceEnum charging_limit_source = ChargingLimitSourceEnum::CSO) override;
 
     ///
     /// \brief Retrieves existing profiles on system.

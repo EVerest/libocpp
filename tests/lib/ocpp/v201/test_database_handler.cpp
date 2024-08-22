@@ -364,3 +364,25 @@ TEST_F(DatabaseHandlerTest, KO1_FR27_DatabaseWithMultipleProfileDiffEvse_LoadsCh
     EXPECT_EQ(profiles3[0], p5);
     EXPECT_EQ(profiles3[1], p6);
 }
+
+TEST_F(DatabaseHandlerTest, GetChargingLimitSourceForProfile_RetrievesDefaultSourceForProfile) {
+    const auto profile_id = 1;
+    auto p1 = ChargingProfile{
+        .id = profile_id, .stackLevel = 1, .chargingProfilePurpose = ChargingProfilePurposeEnum::TxDefaultProfile};
+    this->database_handler.insert_or_update_charging_profile(1, p1);
+
+    auto sut = this->database_handler.get_charging_limit_source_for_profile(profile_id);
+    EXPECT_EQ(sut, ChargingLimitSourceEnum::CSO);
+}
+
+TEST_F(DatabaseHandlerTest, GetChargingLimitSourceForProfile_RetrievsSetSourceForProfile) {
+    const ChargingLimitSourceEnum custom_charging_limit_source = ChargingLimitSourceEnum::EMS;
+
+    const auto profile_id = 1;
+    auto p1 = ChargingProfile{
+        .id = profile_id, .stackLevel = 1, .chargingProfilePurpose = ChargingProfilePurposeEnum::TxDefaultProfile};
+    this->database_handler.insert_or_update_charging_profile(1, p1, custom_charging_limit_source);
+
+    auto sut = this->database_handler.get_charging_limit_source_for_profile(profile_id);
+    EXPECT_EQ(sut, ChargingLimitSourceEnum::EMS);
+}

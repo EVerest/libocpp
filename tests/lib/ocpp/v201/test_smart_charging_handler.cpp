@@ -225,7 +225,7 @@ protected:
     TestSmartChargingHandler create_smart_charging_handler() {
         std::unique_ptr<common::DatabaseConnection> database_connection =
             std::make_unique<common::DatabaseConnection>(fs::path("/tmp/ocpp201") / "cp.db");
-        std::shared_ptr<DatabaseHandler> database_handler =
+        database_handler =
             std::make_shared<DatabaseHandler>(std::move(database_connection), MIGRATION_FILES_LOCATION_V201);
         database_handler->open_connection();
         return TestSmartChargingHandler(*this->evse_manager, device_model, database_handler);
@@ -263,6 +263,7 @@ protected:
     std::unique_ptr<EvseManagerFake> evse_manager = std::make_unique<EvseManagerFake>(NR_OF_EVSES);
 
     sqlite3* db_handle;
+    std::shared_ptr<DatabaseHandler> database_handler;
 
     bool ignore_no_transaction = true;
     std::shared_ptr<DeviceModel> device_model = create_device_model();
@@ -1232,6 +1233,39 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K04FR01_AddProfile_OnlyAddsToOneEVSE
     EXPECT_THAT(sut2, testing::Not(testing::Contains(profile1)));
 }
 
+TEST_F(SmartChargingHandlerTestFixtureV201, AddProfile_StoresChargingLimitSource) {
+    auto charging_limit_source = ChargingLimitSourceEnum::SO;
+
+    auto periods = create_charging_schedule_periods({0, 1, 2});
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), DEFAULT_TX_ID);
+
+    auto response = handler.add_profile(profile, DEFAULT_EVSE_ID, charging_limit_source);
+    EXPECT_THAT(response.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
+
+    auto sut = database_handler->get_charging_limit_source_for_profile(DEFAULT_PROFILE_ID);
+    EXPECT_THAT(sut, ChargingLimitSourceEnum::SO);
+}
+
+TEST_F(SmartChargingHandlerTestFixtureV201, ValidateAndAddProfile_StoresChargingLimitSource) {
+    auto charging_limit_source = ChargingLimitSourceEnum::SO;
+
+    auto periods = create_charging_schedule_periods({0, 1, 2});
+
+    this->evse_manager->open_transaction(DEFAULT_EVSE_ID, DEFAULT_TX_ID);
+
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), DEFAULT_TX_ID);
+
+    auto response = handler.validate_and_add_profile(profile, DEFAULT_EVSE_ID, charging_limit_source);
+    EXPECT_THAT(response.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
+
+    auto sut = database_handler->get_charging_limit_source_for_profile(DEFAULT_PROFILE_ID);
+    EXPECT_THAT(sut, ChargingLimitSourceEnum::SO);
+}
+
 TEST_F(SmartChargingHandlerTestFixtureV201, K01_ValidateAndAdd_RejectsInvalidProfilesWithReasonCode) {
     auto periods = create_charging_schedule_periods(0);
     auto profile = create_charging_profile(
@@ -1430,6 +1464,28 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K09_GetChargingProfiles_EvseIdAndPur
         DEFAULT_EVSE_ID));
     EXPECT_THAT(reported_profiles, testing::SizeIs(1));
     EXPECT_THAT(profile2, testing::Eq(reported_profiles.at(0).profile));
+}
+
+TEST_F(SmartChargingHandlerTestFixtureV201, K09_GetChargingProfiles_ReportsProfileWithSource) {
+    auto charging_limit_source = ChargingLimitSourceEnum::SO;
+
+    auto periods = create_charging_schedule_periods({0, 1, 2});
+
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxDefaultProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")));
+
+    auto response = handler.validate_and_add_profile(profile, DEFAULT_EVSE_ID, charging_limit_source);
+    EXPECT_THAT(response.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
+
+    std::vector<int32_t> requested_profile_ids{1};
+    auto reported_profiles = handler.get_reported_profiles(create_get_charging_profile_request(
+        DEFAULT_REQUEST_ID, create_charging_profile_criteria(std::nullopt, requested_profile_ids)));
+    EXPECT_THAT(reported_profiles, testing::SizeIs(1));
+
+    auto reported_profile = reported_profiles.at(0);
+    EXPECT_THAT(profile, testing::Eq(reported_profile.profile));
+    EXPECT_THAT(reported_profile.source, ChargingLimitSourceEnum::SO);
 }
 
 TEST_F(SmartChargingHandlerTestFixtureV201, K10_ClearChargingProfile_ClearsId) {
