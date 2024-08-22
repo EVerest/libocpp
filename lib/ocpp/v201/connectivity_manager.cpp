@@ -104,6 +104,14 @@ void ConnectivityManager::stop() {
     disconnect_websocket(WebsocketCloseReason::Normal);
 }
 
+void ConnectivityManager::connect() {
+    if (this->websocket != nullptr and !this->websocket->is_connected()) {
+        this->disable_automatic_websocket_reconnects = false;
+        this->init_websocket();
+        this->websocket->connect();
+    }
+}
+
 void ConnectivityManager::disconnect_websocket(WebsocketCloseReason code) {
     if (this->websocket != nullptr) {
         this->disable_automatic_websocket_reconnects = true;
@@ -201,14 +209,6 @@ void ConnectivityManager::init_websocket() {
     }
 
     this->websocket->register_message_callback([this](const std::string& message) { this->message_callback(message); });
-}
-
-void ConnectivityManager::connect() {
-    if (this->websocket != nullptr and !this->websocket->is_connected()) {
-        this->disable_automatic_websocket_reconnects = false;
-        this->init_websocket();
-        this->websocket->connect();
-    }
 }
 
 WebsocketConnectionOptions ConnectivityManager::get_ws_connection_options(const int32_t configuration_slot) {

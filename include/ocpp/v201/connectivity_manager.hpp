@@ -97,6 +97,10 @@ public:
     ///
     void stop();
 
+    /// \brief Connect to the websocket
+    ///
+    void connect();
+
     /// \brief Disconnect the websocket with a specific \p reason
     ///
     void disconnect_websocket(WebsocketCloseReason code = WebsocketCloseReason::Normal);
@@ -110,10 +114,6 @@ private:
     /// \brief Init the websocket
     ///
     void init_websocket();
-
-    /// \brief Connect to the websocket
-    ///
-    void connect();
 
     /// \brief Get the current websocket connection options
     /// \returns the current websocket connection options

@@ -271,6 +271,14 @@ void ChargePoint::stop() {
     this->message_queue->stop();
 }
 
+void ChargePoint::connect_websocket() {
+    this->connectivity_manager->connect();
+}
+
+void ChargePoint::disconnect_websocket() {
+    this->connectivity_manager->disconnect_websocket();
+}
+
 void ChargePoint::on_firmware_update_status_notification(int32_t request_id,
                                                          const FirmwareStatusEnum& firmware_update_status) {
     if (this->firmware_status == firmware_update_status) {

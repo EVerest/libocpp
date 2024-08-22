@@ -212,6 +212,12 @@ public:
     /// \brief Stops the ChargePoint. Disconnects the websocket connection and stops MessageQueue and all timers
     virtual void stop() = 0;
 
+    /// \brief Initializes the websocket and connects to CSMS if it is not yet connected
+    virtual void connect_websocket() = 0;
+
+    /// \brief Disconnects the the websocket connection to the CSMS if it is connected
+    virtual void disconnect_websocket() = 0;
+
     /// \brief Chargepoint notifies about new firmware update status firmware_update_status. This function should be
     ///        called during a Firmware Update to indicate the current firmware_update_status.
     /// \param request_id   The request_id. When it is -1, it will not be included in the request.
@@ -832,6 +838,9 @@ public:
     void start(BootReasonEnum bootreason = BootReasonEnum::PowerUp) override;
 
     void stop() override;
+
+    virtual void connect_websocket() override;
+    virtual void disconnect_websocket() override;
 
     void on_firmware_update_status_notification(int32_t request_id,
                                                 const FirmwareStatusEnum& firmware_update_status) override;
