@@ -135,7 +135,7 @@
       "variable_name": "Language",
       "characteristics": {
         "valuesList": "en_US,de,nl",
-        "supportesMonitoring": true,
+        "supportsMonitoring": true,
         "dataType": "OptionList"
       },
       "attributes": [
