@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
+
 #include "everest/logging.hpp"
 #include "ocpp/v201/ocpp_types.hpp"
 #include "ocpp/v201/profile.hpp"
@@ -90,30 +93,15 @@ public:
 
     static std::string to_string(std::vector<ChargingProfile>& profiles) {
         std::string s;
+        json cp_json;
         for (auto& profile : profiles) {
             if (!s.empty())
                 s += ", ";
-            s += utils::to_string(profile);
+            to_json(cp_json, profile);
+            s += cp_json.dump(4);
         }
 
         return "[" + s + "]";
-    }
-
-    static std::string md5hash(const std::string& s) {
-        unsigned char hash[MD5_DIGEST_LENGTH];
-
-        EVP_MD_CTX* mdctx = EVP_MD_CTX_new();
-        EVP_DigestInit_ex(mdctx, EVP_md5(), NULL);
-        EVP_DigestUpdate(mdctx, s.c_str(), s.size());
-        EVP_DigestFinal_ex(mdctx, hash, NULL);
-        EVP_MD_CTX_free(mdctx);
-
-        std::ostringstream sout;
-        for (int i = 0; i < MD5_DIGEST_LENGTH; i++) {
-            sout << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
-        }
-
-        return sout.str();
     }
 
     static bool validate_profile_result(const std::vector<period_entry_t>& result) {

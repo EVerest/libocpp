@@ -157,7 +157,7 @@ protected:
 
     /// \brief Returns a vector of ChargingProfiles to be used as a baseline for testing core functionality
     /// of generating an EnhancedChargingSchedule.
-    std::vector<ChargingProfile> getBaselineProfileVector() {
+    std::vector<ChargingProfile> get_baseline_profile_vector() {
         auto profile_01 = get_charging_profile_from_file("TxDefaultProfile_01.json");
         // auto profile_02 = getChargingProfileFromFile("TxDefaultProfile_02.json");
         auto profile_100 = get_charging_profile_from_file("TxDefaultProfile_100.json");
@@ -174,7 +174,7 @@ protected:
 TEST_F(CompositeScheduleTestFixture, CalculateEnhancedCompositeSchedule_ValidatedBaseline) {
     // GTEST_SKIP();
     auto handler = create_smart_charging_handler(1);
-    std::vector<ChargingProfile> profiles = getBaselineProfileVector();
+    std::vector<ChargingProfile> profiles = get_baseline_profile_vector();
     log_me(profiles);
 
     const DateTime my_date_start_range = ocpp::DateTime("2024-01-17T18:01:00");
@@ -207,44 +207,6 @@ TEST_F(CompositeScheduleTestFixture, CalculateEnhancedCompositeSchedule_Validate
     ASSERT_EQ(period_03.numberPhases, 3);
     ASSERT_EQ(period_03.stackLevel, 0);
     ASSERT_EQ(period_03.startPeriod, 25140);
-}
-
-TEST_F(CompositeScheduleTestFixture, CalculateEnhancedCompositeSchedule_Baseline__PossibleDefect) {
-    auto handler = create_smart_charging_handler(1);
-
-    std::vector<ChargingProfile> profiles = getBaselineProfileVector();
-    log_me(profiles);
-
-    const DateTime my_date_start_range = ocpp::DateTime("2024-01-17T17:59:59");
-    const DateTime my_date_end_range = ocpp::DateTime("2024-01-18T00:00:00");
-
-    EVLOG_info << "    Start> " << my_date_start_range.to_rfc3339();
-    EVLOG_info << "      End> " << my_date_end_range.to_rfc3339();
-
-    auto composite_schedule = handler->calculate_enhanced_composite_schedule(
-        profiles, my_date_start_range, my_date_end_range, 1, profiles.at(0).chargingSchedule.chargingRateUnit);
-
-    log_me(composite_schedule, my_date_start_range);
-}
-
-TEST_F(CompositeScheduleTestFixture, CalculateEnhancedCompositeSchedule_TxProfile) {
-    auto handler = create_smart_charging_handler(1);
-
-    ChargingProfile profile_01 = get_charging_profile_from_file("TxDefaultProfile_01.json");
-    ChargingProfile txprofile_02 = get_charging_profile_from_file("TxProfile_02.json");
-    ChargingProfile profile_100 = get_charging_profile_from_file("TxDefaultProfile_100.json");
-
-    std::vector<ChargingProfile> profiles = {profile_01, txprofile_02, profile_100};
-    log_me(profiles);
-
-    const DateTime my_date_start_range = ocpp::DateTime("2024-01-17T18:01:00");
-    const DateTime my_date_end_range = ocpp::DateTime("2024-01-18T00:00:00");
-
-    EVLOG_info << "    Start> " << my_date_start_range.to_rfc3339();
-    EVLOG_info << "      End> " << my_date_end_range.to_rfc3339();
-
-    auto composite_schedule = handler->calculate_enhanced_composite_schedule(
-        profiles, my_date_start_range, my_date_end_range, 1, profiles.at(0).chargingSchedule.chargingRateUnit);
 }
 
 ///

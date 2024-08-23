@@ -15,6 +15,7 @@
 #include "ocpp/v201/utils.hpp"
 #include <algorithm>
 #include <iterator>
+#include <ocpp/common/constants.hpp>
 #include <ocpp/v201/smart_charging.hpp>
 #include <optional>
 
@@ -648,25 +649,6 @@ SmartChargingHandler::verify_no_conflicting_external_constraints_id(const Chargi
     return result;
 }
 
-void log_period_date_time_pair(PeriodDateTimePair period_date_time_pair) {
-    std::string log_str = "PeriodDateTimePair> ";
-
-    if (period_date_time_pair.period.has_value()) {
-        log_str += " period: " + utils::to_string(period_date_time_pair.period.value());
-    }
-    log_str += " end_time: " + period_date_time_pair.end_time.to_rfc3339();
-    EVLOG_info << log_str;
-}
-
-// TODO: The structs type is float but it's being passed in as an int. Significant?
-int get_requested_limit(const int limit, const int nr_phases, const ChargingRateUnitEnum& requested_unit) {
-    if (requested_unit == ChargingRateUnitEnum::A) {
-        return limit / (LOW_VOLTAGE * nr_phases);
-    } else {
-        return limit;
-    }
-}
-
 CompositeSchedule SmartChargingHandler::calculate_composite_schedule(
     std::vector<ChargingProfile>& valid_profiles, const ocpp::DateTime& start_time, const ocpp::DateTime& end_time,
     const int32_t evse_id, std::optional<ChargingRateUnitEnum> charging_rate_unit) {
@@ -691,6 +673,12 @@ CompositeSchedule SmartChargingHandler::calculate_composite_schedule(
     //         // EVLOG_info << "   2nd> has transation" << itt->second->get_transaction()->get_transaction();
     //         session_start.emplace(start_time);
     //     }
+    // }
+
+    // if (this->evse_manager.does_evse_exist(evse_id) and
+    //     this->evse_manager.get_evse(evse_id).get_transaction() != nullptr) {
+    //     const auto& transaction = this->evse_manager.get_evse(evse_id).get_transaction();
+    //     session_start = transaction->start_time;
     // }
 
     std::vector<period_entry_t> charging_station_external_constraints_periods{};

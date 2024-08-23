@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
+
 #include "date/tz.h"
 #include "everest/logging.hpp"
 #include "lib/ocpp/common/database_testing_utils.hpp"
@@ -215,7 +218,7 @@ TEST_F(ChargepointTestFixtureV201, K08_CalculateCompositeSchedule_FoundationTest
     CompositeSchedule composite_schedule =
         handler.calculate_composite_schedule(profiles, start_time, end_time, DEFAULT_EVSE_ID, ChargingRateUnitEnum::W);
 
-    EVLOG_info << "CompositeSchedule> " << utils::to_string(composite_schedule);
+    EVLOG_info << "CompositeSchedule> " << composite_schedule;
     ASSERT_EQ(start_time, composite_schedule.scheduleStart);
     ASSERT_EQ(composite_schedule.chargingSchedulePeriod.size(), 24);
 }

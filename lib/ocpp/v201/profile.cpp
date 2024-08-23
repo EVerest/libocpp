@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
+
 #include "ocpp/v201/profile.hpp"
 #include "everest/logging.hpp"
 #include <ocpp/common/constants.hpp>
@@ -13,8 +16,8 @@ bool operator==(const ChargingSchedulePeriod& a, const ChargingSchedulePeriod& b
     auto diff = std::abs(a.startPeriod - b.startPeriod);
     bool bRes = diff < 10; // allow for a small difference
     bRes = bRes && (a.limit == b.limit);
-    bRes = bRes && optional_equal(a.numberPhases, b.numberPhases);
-    bRes = bRes && optional_equal(a.phaseToUse, b.phaseToUse);
+    bRes = bRes && (a.numberPhases == b.numberPhases);
+    bRes = bRes && (a.phaseToUse == b.phaseToUse);
     return bRes;
 }
 
@@ -30,7 +33,7 @@ bool operator==(const CompositeSchedule& a, const CompositeSchedule& b) {
     }
 
     for (std::uint32_t i = 0; bRes && i < a.chargingSchedulePeriod.size(); i++) {
-        bRes = bRes && a.chargingSchedulePeriod[i] == b.chargingSchedulePeriod[i];
+        bRes = a.chargingSchedulePeriod[i] == b.chargingSchedulePeriod[i];
     }
 
     bRes = bRes && (a.evseId == b.evseId);
@@ -53,13 +56,13 @@ bool operator==(const ChargingSchedule& a, const ChargingSchedule& b) {
     }
 
     for (std::uint32_t i = 0; bRes && i < a.chargingSchedulePeriod.size(); i++) {
-        bRes = bRes && a.chargingSchedulePeriod[i] == b.chargingSchedulePeriod[i];
+        bRes = a.chargingSchedulePeriod[i] == b.chargingSchedulePeriod[i];
     }
 
     bRes = bRes && (a.chargingRateUnit == b.chargingRateUnit);
-    bRes = bRes && optional_equal(a.startSchedule, b.startSchedule);
-    bRes = bRes && optional_equal(a.duration, b.duration);
-    bRes = bRes && optional_equal(a.minChargingRate, b.minChargingRate);
+    bRes = bRes && (a.startSchedule == b.startSchedule);
+    bRes = bRes && (a.duration == b.duration);
+    bRes = bRes && (a.minChargingRate == b.minChargingRate);
 
     return bRes;
 }
@@ -543,27 +546,28 @@ minimize_charging_schedule_period_by_limit(const int current, const ChargingSche
 
     auto adjusted_period = prevailing_period;
 
-    if (candidate_period.startPeriod != NO_START_PERIOD) {
-        if (prevailing_period.limit == NO_LIMIT_SPECIFIED && candidate_period.limit != NO_LIMIT_SPECIFIED) {
-            adjusted_period = candidate_period;
+    if (candidate_period.startPeriod == NO_START_PERIOD) {
+        return adjusted_period;
+    }
 
-        } else if (candidate_period.limit != NO_LIMIT_SPECIFIED) {
-            const auto charge_point_max_phases = candidate_period.numberPhases.value_or(DEFAULT_AND_MAX_NUMBER_PHASES);
+    if (prevailing_period.limit == NO_LIMIT_SPECIFIED && candidate_period.limit != NO_LIMIT_SPECIFIED) {
+        adjusted_period = candidate_period;
+    } else if (candidate_period.limit != NO_LIMIT_SPECIFIED) {
+        const auto charge_point_max_phases = candidate_period.numberPhases.value_or(DEFAULT_AND_MAX_NUMBER_PHASES);
 
-            const auto period_max_phases = prevailing_period.numberPhases.value_or(DEFAULT_AND_MAX_NUMBER_PHASES);
-            adjusted_period.numberPhases = std::min(charge_point_max_phases, period_max_phases);
+        const auto period_max_phases = prevailing_period.numberPhases.value_or(DEFAULT_AND_MAX_NUMBER_PHASES);
+        adjusted_period.numberPhases = std::min(charge_point_max_phases, period_max_phases);
 
-            if (current_charging_rate_unit_enum == ChargingRateUnitEnum::A) {
-                if (candidate_period.limit < prevailing_period.limit) {
-                    adjusted_period.limit = candidate_period.limit;
-                }
-            } else {
-                const auto charge_point_limit_per_phase = candidate_period.limit / charge_point_max_phases;
-                const auto period_limit_per_phase = prevailing_period.limit / period_max_phases;
-
-                adjusted_period.limit = std::floor(std::min(charge_point_limit_per_phase, period_limit_per_phase) *
-                                                   adjusted_period.numberPhases.value());
+        if (current_charging_rate_unit_enum == ChargingRateUnitEnum::A) {
+            if (candidate_period.limit < prevailing_period.limit) {
+                adjusted_period.limit = candidate_period.limit;
             }
+        } else {
+            const auto charge_point_limit_per_phase = candidate_period.limit / charge_point_max_phases;
+            const auto period_limit_per_phase = prevailing_period.limit / period_max_phases;
+
+            adjusted_period.limit = std::floor(std::min(charge_point_limit_per_phase, period_limit_per_phase) *
+                                               adjusted_period.numberPhases.value());
         }
     }
 
@@ -582,11 +586,6 @@ CompositeSchedule calculate_composite_schedule(const CompositeSchedule& charging
         .chargingRateUnit = tx_default.chargingRateUnit,
 
     };
-
-    // TODO: What to do with minChargingRate since it isn't returned
-    // if (tx.minChargingRate) {
-    //     combined.minChargingRate = tx.minChargingRate.value();
-    // }
 
     const float default_limit =
         (tx_default.chargingRateUnit == ChargingRateUnitEnum::A) ? DEFAULT_LIMIT_AMPS : DEFAULT_LIMIT_WATTS;
