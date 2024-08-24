@@ -67,6 +67,9 @@ public:
     /// \retval True if succeeded
     void authorization_cache_delete_nr_of_oldest_entries(size_t nr_to_remove);
 
+    void authorization_cache_delete_expired_entry(const std::string& id_token_hash,
+    std::optional<std::chrono::seconds> auth_cache_lifetime);
+
     /// \brief Removes all entries from the cache that have passed their expiry date or auth cache lifetime
     ///
     /// \param auth_cache_lifetime The maximum time tokens can stay in the cache without being used

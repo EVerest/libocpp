@@ -873,6 +873,10 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
 
     if (auth_cache_enabled) {
         try {
+            const auto lifetime =
+                this->device_model->get_optional_value<int>(ControllerComponentVariables::AuthCacheLifeTime);
+            this->database_handler->authorization_cache_delete_expired_entry(
+                hashed_id_token, lifetime.has_value() ? std::optional<std::chrono::seconds>(*lifetime) : std::nullopt);
             const auto cache_entry = this->database_handler->authorization_cache_get_entry(hashed_id_token);
             if (cache_entry.has_value()) {
                 if ((cache_entry.value().cacheExpiryDateTime.has_value() and
