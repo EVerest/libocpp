@@ -1564,7 +1564,7 @@ TEST_F(ChargepointTestFixtureV201, K02FR05_SmartChargingTransactionEnds_DeletesT
 }
 
 TEST_F(ChargepointTestFixtureV201,
-       K02FR05_SmartChargingTransactionEnds_DoesNotDeleteTxProfilesWithDifferentTransactionId) {
+       K02FR05_DeleteTransactionTxProfiles_DoesNotDeleteTxProfilesWithDifferentTransactionId) {
     auto transaction_id = uuid();
     this->evse_manager->open_transaction(DEFAULT_EVSE_ID, transaction_id);
     auto other_transaction_id = uuid();
