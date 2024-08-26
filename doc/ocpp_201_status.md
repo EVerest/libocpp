@@ -1266,7 +1266,7 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | K01.FR.40 | ✅     | `Absolute`/`Recurring` profiles without `startSchedule` fields are rejected.                    |
 | K01.FR.41 | ✅     | `Relative` profiles with `startSchedule` fields are rejected.                                   |
 | K01.FR.42 | ⛽️     |                                                                                                 |
-| K01.FR.43 |        |  Open question to OCA                                                                           |
+| K01.FR.43 |        |  Open question to OCA - https://oca.causewaynow.com/wg/OCA-TWG/mail/thread/4254                 |
 | K01.FR.44 | ✅     | We reject invalid profiles instead of modifying and accepting them.                             |
 | K01.FR.45 | ✅     | We reject invalid profiles instead of modifying and accepting them.                             |
 | K01.FR.46 | ⛽️     | K08                                                                                             |
