@@ -11,8 +11,6 @@ using std::chrono::seconds;
 
 namespace {
 
-using ocpp::v201::ChargingSchedulePeriod;
-
 /// \brief update the iterator when the current period has elapsed
 /// \param[in] schedule_duration the time in seconds from the start of the composite schedule
 /// \param[inout] itt the iterator for the periods in the schedule
@@ -24,7 +22,7 @@ using ocpp::v201::ChargingSchedulePeriod;
 ///       there is no next period.
 void update_itt(const int schedule_duration, std::vector<ocpp::v201::ChargingSchedulePeriod>::const_iterator& itt,
                 const std::vector<ocpp::v201::ChargingSchedulePeriod>::const_iterator& end,
-                const ocpp::v201::ChargingSchedulePeriod& period, int& period_duration) {
+                ocpp::v201::ChargingSchedulePeriod& period, int& period_duration) {
     if (itt != end) {
         // default is to remain in the current period
         period = *itt;
@@ -70,10 +68,10 @@ std::pair<float, std::int32_t> convert_limit(const ocpp::v201::period_entry_t* c
 
     // if the units are the same - don't change the values
     if (selected_unit != entry->charging_rate_unit) {
-        if (selected_unit == ChargingRateUnitEnum::A) {
-            limit = entry->limit / (LOW_VOLTAGE * number_phases);
+        if (selected_unit == ocpp::v201::ChargingRateUnitEnum::A) {
+            limit = entry->limit / (ocpp::LOW_VOLTAGE * number_phases);
         } else {
-            limit = entry->limit * (LOW_VOLTAGE * number_phases);
+            limit = entry->limit * (ocpp::LOW_VOLTAGE * number_phases);
         }
     }
 
