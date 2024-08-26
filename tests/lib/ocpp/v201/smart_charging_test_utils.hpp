@@ -104,6 +104,9 @@ public:
         return "[" + s + "]";
     }
 
+    /// \brief Validates that there is no overlap in the submitted period_entry_t collection
+    /// \param period_entry_t collection
+    /// \note If there are any overlapping period_entry_t entries the function returns false
     static bool validate_profile_result(const std::vector<period_entry_t>& result) {
         bool bRes{true};
         DateTime last{"1900-01-01T00:00:00Z"};
