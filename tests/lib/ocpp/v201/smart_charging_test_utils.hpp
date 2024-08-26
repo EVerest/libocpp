@@ -19,6 +19,15 @@ namespace ocpp::v201 {
 
 static const std::string BASE_JSON_PATH = std::string(TEST_PROFILES_LOCATION_V201) + "/json";
 
+bool operator==(const ChargingSchedulePeriod& a, const ChargingSchedulePeriod& b);
+bool operator!=(const ChargingSchedulePeriod& a, const ChargingSchedulePeriod& b);
+
+bool operator==(const CompositeSchedule& a, const CompositeSchedule& b);
+bool operator!=(const CompositeSchedule& a, const CompositeSchedule& b);
+
+bool operator==(const ChargingSchedule& a, const ChargingSchedule& b);
+bool operator!=(const ChargingSchedule& a, const ChargingSchedule& b);
+
 static ocpp::DateTime dt(const std::string& dt_string) {
     ocpp::DateTime dt;
 
