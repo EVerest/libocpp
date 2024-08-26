@@ -9,6 +9,78 @@
 using std::chrono::duration_cast;
 using std::chrono::seconds;
 
+namespace {
+
+using ocpp::v201::ChargingSchedulePeriod;
+
+/// \brief update the iterator when the current period has elapsed
+/// \param[in] schedule_duration the time in seconds from the start of the composite schedule
+/// \param[inout] itt the iterator for the periods in the schedule
+/// \param[in] end the item beyond the last period in the schedule
+/// \param[out] period the details of the current period in the schedule
+/// \param[out] period_duration how long this period lasts
+///
+/// \note period_duration is defined by the startPeriod of the next period or forever when
+///       there is no next period.
+void update_itt(const int schedule_duration, std::vector<ocpp::v201::ChargingSchedulePeriod>::const_iterator& itt,
+                const std::vector<ocpp::v201::ChargingSchedulePeriod>::const_iterator& end,
+                const ocpp::v201::ChargingSchedulePeriod& period, int& period_duration) {
+    if (itt != end) {
+        // default is to remain in the current period
+        period = *itt;
+
+        /*
+         * calculate the duration of this period:
+         * - the startPeriod of the next period in the vector, or
+         * - forever where there is no next period
+         */
+        auto next = std::next(itt);
+        period_duration = (next != end) ? next->startPeriod : std::numeric_limits<int>::max();
+
+        if (schedule_duration >= period_duration) {
+            /*
+             * when the current duration is beyond the duration of this period
+             * move to the next period in the vector and recalculate the period duration
+             * (the handling for being at the last element is below)
+             */
+            itt++;
+            if (itt != end) {
+                period = *itt;
+                next = std::next(itt);
+                period_duration = (next != end) ? next->startPeriod : std::numeric_limits<int>::max();
+            }
+        }
+    }
+
+    /*
+     * all periods in the schedule have been used
+     * i.e. there are no future periods to consider in this schedule
+     */
+    if (itt == end) {
+        period.startPeriod = -1;
+        period_duration = std::numeric_limits<int>::max();
+    }
+}
+
+std::pair<float, std::int32_t> convert_limit(const ocpp::v201::period_entry_t* const entry,
+                                             const ocpp::v201::ChargingRateUnitEnum selected_unit) {
+    assert(entry != nullptr);
+    float limit = entry->limit;
+    std::int32_t number_phases = entry->number_phases.value_or(ocpp::DEFAULT_AND_MAX_NUMBER_PHASES);
+
+    // if the units are the same - don't change the values
+    if (selected_unit != entry->charging_rate_unit) {
+        if (selected_unit == ChargingRateUnitEnum::A) {
+            limit = entry->limit / (LOW_VOLTAGE * number_phases);
+        } else {
+            limit = entry->limit * (LOW_VOLTAGE * number_phases);
+        }
+    }
+
+    return {limit, number_phases};
+}
+} // namespace
+
 namespace ocpp {
 namespace v201 {
 
@@ -385,24 +457,6 @@ std::vector<period_entry_t> calculate_profile(const DateTime& now, const DateTim
     return entries;
 }
 
-std::pair<float, std::int32_t> convert_limit(const period_entry_t* const entry,
-                                             const ChargingRateUnitEnum selected_unit) {
-    assert(entry != nullptr);
-    float limit = entry->limit;
-    std::int32_t number_phases = entry->number_phases.value_or(DEFAULT_AND_MAX_NUMBER_PHASES);
-
-    // if the units are the same - don't change the values
-    if (selected_unit != entry->charging_rate_unit) {
-        if (selected_unit == ChargingRateUnitEnum::A) {
-            limit = entry->limit / (LOW_VOLTAGE * number_phases);
-        } else {
-            limit = entry->limit * (LOW_VOLTAGE * number_phases);
-        }
-    }
-
-    return {limit, number_phases};
-}
-
 CompositeSchedule calculate_composite_schedule(std::vector<period_entry_t>& in_combined_schedules,
                                                const DateTime& in_now, const DateTime& in_end,
                                                std::optional<ChargingRateUnitEnum> charging_rate_unit) {
@@ -481,55 +535,6 @@ CompositeSchedule calculate_composite_schedule(std::vector<period_entry_t>& in_c
     }
 
     return composite;
-}
-
-/// \brief update the iterator when the current period has elapsed
-/// \param[in] schedule_duration the time in seconds from the start of the composite schedule
-/// \param[inout] itt the iterator for the periods in the schedule
-/// \param[in] end the item beyond the last period in the schedule
-/// \param[out] period the details of the current period in the schedule
-/// \param[out] period_duration how long this period lasts
-///
-/// \note period_duration is defined by the startPeriod of the next period or forever when
-///       there is no next period.
-void update_itt(const int schedule_duration, std::vector<ChargingSchedulePeriod>::const_iterator& itt,
-                const std::vector<ChargingSchedulePeriod>::const_iterator& end, ChargingSchedulePeriod& period,
-                int& period_duration) {
-    if (itt != end) {
-        // default is to remain in the current period
-        period = *itt;
-
-        /*
-         * calculate the duration of this period:
-         * - the startPeriod of the next period in the vector, or
-         * - forever where there is no next period
-         */
-        auto next = std::next(itt);
-        period_duration = (next != end) ? next->startPeriod : std::numeric_limits<int>::max();
-
-        if (schedule_duration >= period_duration) {
-            /*
-             * when the current duration is beyond the duration of this period
-             * move to the next period in the vector and recalculate the period duration
-             * (the handling for being at the last element is below)
-             */
-            itt++;
-            if (itt != end) {
-                period = *itt;
-                next = std::next(itt);
-                period_duration = (next != end) ? next->startPeriod : std::numeric_limits<int>::max();
-            }
-        }
-    }
-
-    /*
-     * all periods in the schedule have been used
-     * i.e. there are no future periods to consider in this schedule
-     */
-    if (itt == end) {
-        period.startPeriod = -1;
-        period_duration = std::numeric_limits<int>::max();
-    }
 }
 
 /// \brief update the period based on the power limit
