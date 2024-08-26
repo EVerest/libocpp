@@ -1,0 +1,28 @@
+{
+    "chargingProfileKind": "Absolute",
+    "chargingProfilePurpose": "TxDefaultProfile",
+    "chargingSchedule": [
+        {
+            "chargingRateUnit": "A",
+            "chargingSchedulePeriod": [
+                {
+                    "limit": 7.000000,
+                    "numberPhases": 3,
+                    "startPeriod": 0
+                },
+                {
+                    "limit": 9.000000,
+                    "numberPhases": 3,
+                    "startPeriod": 100
+                }
+            ],
+            "duration": 154,
+            "id": 1,
+            "startSchedule": "2024-08-21T09:14:17Z"
+        }
+    ],
+    "id": 2,
+    "stackLevel": 1,
+    "validFrom": "2024-08-21T09:14:16Z",
+    "validTo": "2024-08-21T09:21:06Z"
+}
