@@ -72,12 +72,6 @@ std::string profile_validation_result_to_reason_code(ProfileValidationResultEnum
 
 std::ostream& operator<<(std::ostream& os, const ProfileValidationResultEnum validation_result);
 
-/// \brief Helper struct to calculate Composite Schedule
-struct PeriodDateTimePair {
-    std::optional<ChargingSchedulePeriod> period;
-    ocpp::DateTime end_time;
-};
-
 class SmartChargingHandlerInterface {
 public:
     virtual ~SmartChargingHandlerInterface() = default;
