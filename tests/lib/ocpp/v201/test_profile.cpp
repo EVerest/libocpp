@@ -1116,7 +1116,7 @@ TEST(OCPPTypesTest, CalculateChargingScheduleCombined_CombinedTxDefaultTx) {
     ASSERT_EQ(expected, actual);
 }
 
-TEST(OCPPTypesTest, CalculateChargingScheduleCombined_CombinedOverlapA) {
+TEST(OCPPTypesTest, CalculateChargingScheduleCombined_CombinedOverlapTxAndTxDefault) {
     CompositeSchedule tx_default_schedule = {
         .chargingSchedulePeriod = {{0, 10.0, std::nullopt}, {300, 24.0, nullopt}},
         .evseId = EVSEID_NOT_SET,
@@ -1160,7 +1160,7 @@ TEST(OCPPTypesTest, CalculateChargingScheduleCombined_CombinedOverlapA) {
     ASSERT_EQ(expected, actual);
 }
 
-TEST(OCPPTypesTest, CalculateChargingScheduleCombined_CombinedOverlapB) {
+TEST(OCPPTypesTest, CalculateChargingScheduleCombined_CombinedOverlapTxTxDefaultAndChargingStationMax) {
     CompositeSchedule tx_default_schedule = {
         .chargingSchedulePeriod = {{0, 10.0, std::nullopt}, {300, 24.0, std::nullopt}},
         .evseId = EVSEID_NOT_SET,
