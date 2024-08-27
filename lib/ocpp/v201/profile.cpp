@@ -336,6 +336,9 @@ std::vector<DateTime> calculate_start(const DateTime& in_now, const DateTime& in
         }
         start_times.push_back(start);
         break;
+    default:
+        EVLOG_error << "Invalid ChargingProfileKindEnum: " << static_cast<int>(in_profile.chargingProfileKind);
+        break;
     }
     return start_times;
 }

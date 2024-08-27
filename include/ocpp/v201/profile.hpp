@@ -15,6 +15,14 @@ bool operator!=(const CompositeSchedule& a, const CompositeSchedule& b);
 bool operator==(const ChargingSchedule& a, const ChargingSchedule& b);
 bool operator!=(const ChargingSchedule& a, const ChargingSchedule& b);
 
+/// \brief Returns elements from a specific ChargingProfile and ChargingSchedulePeriod
+///        for use in the calculation of the CompositeSchedule within a specific slice
+///        of time. These are aggregated by Profile.
+/// \param in_start The starting time
+/// \param in_duration The duration for the specific slice of time
+/// \param in_period the details of this period
+/// \param in_profile the charging profile
+/// \return an entry with smart charging information for a specific period in time
 struct period_entry_t {
     void init(const ocpp::DateTime& in_start, int in_duration, const ChargingSchedulePeriod& in_period,
               const ChargingProfile& in_profile);
@@ -59,6 +67,7 @@ std::vector<DateTime> calculate_start(const DateTime& now, const DateTime& end,
 /// \param session_start optional when the charging session started
 /// \param profile the charging profile
 /// \param period_index the schedule period index
+/// \note  used by calculate_profile
 /// \return the list of start times
 std::vector<period_entry_t> calculate_profile_entry(const DateTime& now, const DateTime& end,
                                                     const std::optional<DateTime>& session_start,
@@ -85,7 +94,8 @@ CompositeSchedule calculate_composite_schedule(std::vector<period_entry_t>& comb
                                                const DateTime& end,
                                                std::optional<ChargingRateUnitEnum> charging_rate_unit);
 
-/// \brief calculate the composite combined schedule
+/// \brief calculate the combined composite schedule from all of the different types of
+///        CompositeSchedules
 /// \param charge_point_max the composite schedule for ChargePointMax profiles
 /// \param tx_default the composite schedule for TxDefault profiles
 /// \param tx the composite schedule for Tx profiles
