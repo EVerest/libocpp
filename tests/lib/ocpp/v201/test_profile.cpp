@@ -960,7 +960,7 @@ TEST(OCPPTypesTest, CalculateChargingSchedule_NoGapB) {
     ASSERT_EQ(expected, actual);
 }
 
-TEST(OCPPTypesTest, CalculateChargingSchedule_OverlapA) {
+TEST(OCPPTypesTest, CalculateChargingSchedule_Overlap) {
     DateTime now = dt("12:00");
     DateTime end = dt("12:10");
     std::vector<period_entry_t> combined_schedules{
@@ -980,7 +980,8 @@ TEST(OCPPTypesTest, CalculateChargingSchedule_OverlapA) {
     ASSERT_EQ(expected, actual);
 }
 
-TEST(OCPPTypesTest, CalculateChargingSchedule_OverlapB) {
+/// Inverts the start and end times for the combined_schedules.
+TEST(OCPPTypesTest, CalculateChargingSchedule_OverlapInverted) {
     DateTime now = dt("12:00");
     DateTime end = dt("12:10");
     std::vector<period_entry_t> combined_schedules{
