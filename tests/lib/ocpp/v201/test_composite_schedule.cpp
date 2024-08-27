@@ -211,16 +211,139 @@ protected:
 TEST_F(ChargepointTestFixtureV201, K08_CalculateCompositeSchedule_FoundationTest_Grid) {
     std::vector<ChargingProfile> profiles =
         SmartChargingTestUtils::get_charging_profiles_from_directory(BASE_JSON_PATH + "/grid/");
-
     const DateTime start_time = ocpp::DateTime("2024-01-17T00:00:00");
     const DateTime end_time = ocpp::DateTime("2024-01-18T00:00:00");
+    CompositeSchedule expected = {
+        .chargingSchedulePeriod = {{
+                                       .startPeriod = 0,
+                                       .limit = 1.0,
+                                       .numberPhases = 1,
+                                   },
+                                   {
+                                       .startPeriod = 3600,
+                                       .limit = 2.0,
+                                       .numberPhases = 1,
+                                   },
+                                   {
+                                       .startPeriod = 7200,
+                                       .limit = 3.0,
+                                       .numberPhases = 1,
+                                   },
+                                   {
+                                       .startPeriod = 10800,
+                                       .limit = 4.0,
+                                       .numberPhases = 1,
+                                   },
+                                   {
+                                       .startPeriod = 14400,
+                                       .limit = 5.0,
+                                       .numberPhases = 1,
+                                   },
+                                   {
+                                       .startPeriod = 18000,
+                                       .limit = 6.0,
+                                       .numberPhases = 1,
+                                   },
+                                   {
+                                       .startPeriod = 21600,
+                                       .limit = 7.0,
+                                       .numberPhases = 1,
+                                   },
+                                   {
+                                       .startPeriod = 25200,
+                                       .limit = 8.0,
+                                       .numberPhases = 1,
+                                   },
+                                   {
+                                       .startPeriod = 28800,
+                                       .limit = 9.0,
+                                       .numberPhases = 1,
+                                   },
+                                   {
+                                       .startPeriod = 32400,
+                                       .limit = 10.0,
+                                       .numberPhases = 1,
+                                   },
+                                   {
+                                       .startPeriod = 36000,
+                                       .limit = 11.0,
+                                       .numberPhases = 1,
+                                   },
+                                   {
+                                       .startPeriod = 39600,
+                                       .limit = 12.0,
+                                       .numberPhases = 1,
+                                   },
+                                   {
+                                       .startPeriod = 43200,
+                                       .limit = 13.0,
+                                       .numberPhases = 1,
+                                   },
+                                   {
+                                       .startPeriod = 46800,
+                                       .limit = 14.0,
+                                       .numberPhases = 1,
+                                   },
+                                   {
+                                       .startPeriod = 50400,
+                                       .limit = 15.0,
+                                       .numberPhases = 1,
+                                   },
+                                   {
+                                       .startPeriod = 54000,
+                                       .limit = 16.0,
+                                       .numberPhases = 1,
+                                   },
+                                   {
+                                       .startPeriod = 57600,
+                                       .limit = 17.0,
+                                       .numberPhases = 1,
+                                   },
+                                   {
+                                       .startPeriod = 61200,
+                                       .limit = 18.0,
+                                       .numberPhases = 1,
+                                   },
+                                   {
+                                       .startPeriod = 64800,
+                                       .limit = 19.0,
+                                       .numberPhases = 1,
+                                   },
+                                   {
+                                       .startPeriod = 68400,
+                                       .limit = 20.0,
+                                       .numberPhases = 1,
+                                   },
+                                   {
+                                       .startPeriod = 72000,
+                                       .limit = 21.0,
+                                       .numberPhases = 1,
+                                   },
+                                   {
+                                       .startPeriod = 75600,
+                                       .limit = 22.0,
+                                       .numberPhases = 1,
+                                   },
+                                   {
+                                       .startPeriod = 79200,
+                                       .limit = 23.0,
+                                       .numberPhases = 1,
+                                   },
+                                   {
+                                       .startPeriod = 82800,
+                                       .limit = 24.0,
+                                       .numberPhases = 1,
+                                   }},
+        .evseId = DEFAULT_EVSE_ID,
+        .duration = 86400,
+        .scheduleStart = start_time,
+        .chargingRateUnit = ChargingRateUnitEnum::W,
+    };
 
-    CompositeSchedule composite_schedule =
+    CompositeSchedule actual =
         handler.calculate_composite_schedule(profiles, start_time, end_time, DEFAULT_EVSE_ID, ChargingRateUnitEnum::W);
 
-    EVLOG_info << "CompositeSchedule> " << composite_schedule;
-    ASSERT_EQ(start_time, composite_schedule.scheduleStart);
-    ASSERT_EQ(composite_schedule.chargingSchedulePeriod.size(), 24);
+    ASSERT_EQ(actual, expected);
 }
 
 TEST_F(ChargepointTestFixtureV201, K08_CalculateCompositeSchedule_LayeredTest_SameStartTime) {
