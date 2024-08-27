@@ -367,6 +367,22 @@ TEST_F(DatabaseHandlerTest, KO1_FR27_DatabaseWithMultipleProfileDiffEvse_LoadsCh
     EXPECT_EQ(profiles3[1], p6);
 }
 
+TEST_F(DatabaseHandlerTest, GetAllChargingProfiles_GetsAllProfiles) {
+    auto profile1 = ChargingProfile{
+        .id = 1, .stackLevel = 1, .chargingProfilePurpose = ChargingProfilePurposeEnum::TxDefaultProfile};
+    auto profile2 =
+        ChargingProfile{.id = 2, .stackLevel = 1, .chargingProfilePurpose = ChargingProfilePurposeEnum::TxProfile};
+
+    this->database_handler.insert_or_update_charging_profile(DEFAULT_EVSE_ID, profile1);
+    this->database_handler.insert_or_update_charging_profile(DEFAULT_EVSE_ID + 1, profile2);
+
+    auto profiles = this->database_handler.get_all_charging_profiles();
+
+    EXPECT_EQ(profiles.size(), 2);
+    EXPECT_THAT(profiles, testing::Contains(profile1));
+    EXPECT_THAT(profiles, testing::Contains(profile2));
+}
+
 TEST_F(DatabaseHandlerTest, GetChargingProfilesForEvse_GetsProfilesForEVSE) {
     auto profile1 = ChargingProfile{
         .id = 1, .stackLevel = 1, .chargingProfilePurpose = ChargingProfilePurposeEnum::TxDefaultProfile};
