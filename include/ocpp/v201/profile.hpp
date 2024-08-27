@@ -6,15 +6,6 @@
 namespace ocpp {
 namespace v201 {
 
-bool operator==(const ChargingSchedulePeriod& a, const ChargingSchedulePeriod& b);
-bool operator!=(const ChargingSchedulePeriod& a, const ChargingSchedulePeriod& b);
-
-bool operator==(const CompositeSchedule& a, const CompositeSchedule& b);
-bool operator!=(const CompositeSchedule& a, const CompositeSchedule& b);
-
-bool operator==(const ChargingSchedule& a, const ChargingSchedule& b);
-bool operator!=(const ChargingSchedule& a, const ChargingSchedule& b);
-
 /// \brief Returns elements from a specific ChargingProfile and ChargingSchedulePeriod
 ///        for use in the calculation of the CompositeSchedule within a specific slice
 ///        of time. These are aggregated by Profile.

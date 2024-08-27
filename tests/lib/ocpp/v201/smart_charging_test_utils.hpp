@@ -19,14 +19,64 @@ namespace ocpp::v201 {
 
 static const std::string BASE_JSON_PATH = std::string(TEST_PROFILES_LOCATION_V201) + "/json";
 
-bool operator==(const ChargingSchedulePeriod& a, const ChargingSchedulePeriod& b);
-bool operator!=(const ChargingSchedulePeriod& a, const ChargingSchedulePeriod& b);
+inline bool operator==(const ChargingSchedulePeriod& a, const ChargingSchedulePeriod& b) {
+    auto diff = std::abs(a.startPeriod - b.startPeriod);
+    bool bRes = diff < 10; // allow for a small difference
+    bRes = bRes && (a.limit == b.limit);
+    bRes = bRes && (a.numberPhases == b.numberPhases);
+    bRes = bRes && (a.phaseToUse == b.phaseToUse);
+    return bRes;
+}
 
-bool operator==(const CompositeSchedule& a, const CompositeSchedule& b);
-bool operator!=(const CompositeSchedule& a, const CompositeSchedule& b);
+inline bool operator!=(const ChargingSchedulePeriod& a, const ChargingSchedulePeriod& b) {
+    return (!(a == b));
+}
 
-bool operator==(const ChargingSchedule& a, const ChargingSchedule& b);
-bool operator!=(const ChargingSchedule& a, const ChargingSchedule& b);
+inline bool operator==(const CompositeSchedule& a, const CompositeSchedule& b) {
+    bool bRes = true;
+
+    if (a.chargingSchedulePeriod.size() != b.chargingSchedulePeriod.size()) {
+        return false;
+    }
+
+    for (std::uint32_t i = 0; bRes && i < a.chargingSchedulePeriod.size(); i++) {
+        bRes = a.chargingSchedulePeriod[i] == b.chargingSchedulePeriod[i];
+    }
+
+    bRes = bRes && (a.evseId == b.evseId);
+    bRes = bRes && (a.duration == b.duration);
+    bRes = bRes && (a.scheduleStart == b.scheduleStart);
+    bRes = bRes && (a.chargingRateUnit == b.chargingRateUnit);
+
+    return bRes;
+}
+
+inline bool operator!=(const CompositeSchedule& a, const CompositeSchedule& b) {
+    return (!(a == b));
+}
+
+inline bool operator==(const ChargingSchedule& a, const ChargingSchedule& b) {
+    bool bRes = true;
+
+    if (a.chargingSchedulePeriod.size() != b.chargingSchedulePeriod.size()) {
+        return false;
+    }
+
+    for (std::uint32_t i = 0; bRes && i < a.chargingSchedulePeriod.size(); i++) {
+        bRes = a.chargingSchedulePeriod[i] == b.chargingSchedulePeriod[i];
+    }
+
+    bRes = bRes && (a.chargingRateUnit == b.chargingRateUnit);
+    bRes = bRes && (a.startSchedule == b.startSchedule);
+    bRes = bRes && (a.duration == b.duration);
+    bRes = bRes && (a.minChargingRate == b.minChargingRate);
+
+    return bRes;
+}
+
+inline bool operator!=(const ChargingSchedule& a, const ChargingSchedule& b) {
+    return !(a == b);
+}
 
 static ocpp::DateTime dt(const std::string& dt_string) {
     ocpp::DateTime dt;
