@@ -758,6 +758,23 @@ void DatabaseHandler::clear_charging_profiles() {
     this->database->clear_table("CHARGING_PROFILES");
 }
 
+std::vector<v201::ChargingProfile> DatabaseHandler::get_charging_profiles_for_evse(const int evse_id) {
+    std::vector<v201::ChargingProfile> profiles;
+
+    std::string sql = "SELECT PROFILE FROM CHARGING_PROFILES WHERE EVSE_ID = @evse_id";
+
+    auto stmt = this->database->new_statement(sql);
+
+    stmt->bind_int("@evse_id", evse_id);
+
+    while (stmt->step() != SQLITE_DONE) {
+        auto profile = json::parse(stmt->column_text(0));
+        profiles.push_back(profile);
+    }
+
+    return profiles;
+}
+
 std::map<int32_t, std::vector<v201::ChargingProfile>> DatabaseHandler::get_all_charging_profiles_group_by_evse() {
     std::map<int32_t, std::vector<v201::ChargingProfile>> map;
 
