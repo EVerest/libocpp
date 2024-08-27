@@ -1341,7 +1341,7 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 
 | ID        | Status | Remark |
 |-----------|--------|--------|
-| K08.FR.01 | ❎     |        |
+| K08.FR.01 | ✅     |        |
 | K08.FR.02 | ✅     |        |
 | K08.FR.03 | ✅     |        |
 | K08.FR.04 | ✅     |        |
