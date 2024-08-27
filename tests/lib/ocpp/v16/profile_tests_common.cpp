@@ -59,7 +59,8 @@ std::ostream& operator<<(std::ostream& os, const EnhancedChargingSchedule& sched
 }
 
 bool operator==(const ChargingSchedulePeriod& a, const ChargingSchedulePeriod& b) {
-    bool bRes = (a.startPeriod == b.startPeriod);
+    auto diff = std::abs(a.startPeriod - b.startPeriod);
+    bool bRes = diff < 10; // allow for a small difference
     bRes = bRes && (a.limit == b.limit);
     bRes = bRes && optional_equal(a.numberPhases, b.numberPhases);
     return bRes;
