@@ -155,7 +155,6 @@ class CalculateProfileEntryType_Param_Test
 INSTANTIATE_TEST_SUITE_P(CalculateProfileEntryType_Param_Test_Instantiate, CalculateProfileEntryType_Param_Test,
                          testing::Values(
                              // Absolute Profiles
-                             // not started, started, finished, session started
                              std::make_tuple(dt("12:10"), dt("20:50"), nullopt, absolute_profile, dt("12:02"),
                                              dt("12:32"), 0, nullopt, nullopt),
                              std::make_tuple(dt("12:10"), dt("20:50"), nullopt, absolute_profile, dt("12:32"),
@@ -164,30 +163,49 @@ INSTANTIATE_TEST_SUITE_P(CalculateProfileEntryType_Param_Test_Instantiate, Calcu
                                              dt("13:02"), 2, nullopt, nullopt),
                              std::make_tuple(dt("12:10"), dt("20:50"), nullopt, absolute_profile_no_duration,
                                              dt("12:47"), dt("14:00"), 2, nullopt, nullopt),
+
+                             // Relative Profiles
+                             // Matches 1.6 ProfileTestsA/calculateProfileEntryRelative0
                              std::make_tuple(dt("12:20"), dt("20:50"), nullopt, relative_profile, dt("12:20"),
                                              dt("12:50"), 0, nullopt, nullopt),
                              std::make_tuple(dt("12:20"), dt("20:50"), dt("12:15"), relative_profile, dt("12:15"),
                                              dt("12:45"), 0, nullopt, nullopt),
+
+                             // Matches 1.6 ProfileTestsA/calculateProfileEntryRelative1
                              std::make_tuple(dt("12:20"), dt("20:50"), nullopt, relative_profile, dt("12:50"),
                                              dt("13:05"), 1, nullopt, nullopt),
                              std::make_tuple(dt("12:20"), dt("20:50"), dt("12:15"), relative_profile, dt("12:45"),
                                              dt("13:00"), 1, nullopt, nullopt),
+
+                             // Matches 1.6 ProfileTestsA/calculateProfileEntryRelative2
                              std::make_tuple(dt("12:20"), dt("20:50"), nullopt, relative_profile, dt("13:05"),
                                              dt("13:20"), 2, nullopt, nullopt),
                              std::make_tuple(dt("12:20"), dt("20:50"), dt("12:15"), relative_profile, dt("13:00"),
                                              dt("13:15"), 2, nullopt, nullopt),
+
+                             // Matches 1.6 ProfileTestsA/calculateProfileEntryRelativeNoDuration
                              std::make_tuple(dt("12:20"), dt("20:50"), nullopt, relative_profile_no_duration,
                                              dt("13:05"), dt("14:00"), 2, nullopt, nullopt),
                              std::make_tuple(dt("12:20"), dt("20:50"), dt("12:15"), relative_profile_no_duration,
                                              dt("13:00"), dt("14:00"), 2, nullopt, nullopt),
+
+                             // Matches 1.6 ProfileTestsA/calculateProfileEntryRecurringDaily0
                              std::make_tuple(dt("2T08:10"), dt("3T20:50"), nullopt, daily_profile, dt("2T08:00"),
                                              dt("2T08:30"), 0, dt("3T08:00"), dt("3T08:30")),
+
+                             // Matches 1.6 ProfileTestsA/calculateProfileEntryRecurringDaily1
                              std::make_tuple(dt("2T08:10"), dt("3T20:50"), nullopt, daily_profile, dt("2T08:30"),
                                              dt("2T08:45"), 1, dt("3T08:30"), dt("3T08:45")),
+
+                             // Matches 1.6 ProfileTestsA/calculateProfileEntryRecurringDaily2
                              std::make_tuple(dt("2T08:10"), dt("3T20:50"), nullopt, daily_profile, dt("2T08:45"),
                                              dt("2T09:00"), 2, dt("3T08:45"), dt("3T09:00")),
+
+                             // Matches 1.6 ProfileTestsA/calculateProfileEntryRecurringDailyNoDuration
                              std::make_tuple(dt("2T08:10"), dt("4T08:00"), nullopt, daily_profile_no_duration,
                                              dt("2T08:45"), dt("3T08:00"), 2, dt("3T08:45"), dt("4T08:00")),
+
+                             // Matches 1.6 ProfileTestsA/calculateProfileEntryRecurringDailyBeforeValid
                              std::make_tuple(dt("8:10"), dt("2T20:50"), nullopt, daily_profile, dt("2T08:45"),
                                              dt("2T09:00"), 2, nullopt, nullopt),
                              std::make_tuple(dt("8:10"), dt("3T20:50"), nullopt, daily_profile_no_duration, dt("12:00"),
@@ -196,8 +214,7 @@ INSTANTIATE_TEST_SUITE_P(CalculateProfileEntryType_Param_Test_Instantiate, Calcu
                                              dt("3T16:30"), 0, dt("10T16:00"), dt("10T16:30")),
                              std::make_tuple(dt("3T16:10"), dt("10T20:50"), nullopt, weekly_profile, dt("3T16:30"),
                                              dt("3T16:45"), 1, dt("10T16:30"), dt("10T16:45")),
-                             std::make_tuple(dt("3T16:10"), dt("10T20:50"), nullopt, weekly_profile_no_duration,
-                                             dt("3T16:45"), dt("10T16:00"), 2, dt("10T16:45"), dt("17T16:00")),
+
                              std::make_tuple(dt("2023-12-30T08:10"), dt("3T20:50"), nullopt, weekly_profile,
                                              dt("3T16:45"), dt("3T17:00"), 2, nullopt, nullopt),
                              std::make_tuple(dt("2023-12-30T08:10"), dt("10T20:50"), nullopt,
@@ -208,17 +225,21 @@ INSTANTIATE_TEST_SUITE_P(CalculateProfileEntryType_Param_Test_Instantiate, Calcu
 
 TEST_P(CalculateProfileEntryType_Param_Test, CalculateProfileEntry_Positive) {
 
+    DateTime now = std::get<0>(GetParam());
+    DateTime end = std::get<1>(GetParam());
+    std::optional<DateTime> session_start = std::get<2>(GetParam());
     ChargingProfile profile = std::get<3>(GetParam());
+    DateTime expected_start = std::get<4>(GetParam());
+    DateTime expected_end = std::get<5>(GetParam());
     int period_index = std::get<6>(GetParam());
-
-    std::vector<period_entry_t> period_entries = calculate_profile_entry(
-        std::get<0>(GetParam()), std::get<1>(GetParam()), std::get<2>(GetParam()), profile, std::get<6>(GetParam()));
-
     std::optional<ocpp::DateTime> expected_2nd_entry_start = std::get<7>(GetParam());
     std::optional<ocpp::DateTime> expected_2nd_entry_end = std::get<8>(GetParam());
 
-    period_entry_t expected_entry{.start = std::get<4>(GetParam()),
-                                  .end = std::get<5>(GetParam()),
+    std::vector<period_entry_t> period_entries =
+        calculate_profile_entry(now, end, session_start, profile, period_index);
+
+    period_entry_t expected_entry{.start = expected_start,
+                                  .end = expected_end,
                                   .limit = profile.chargingSchedule.front().chargingSchedulePeriod[period_index].limit,
                                   .stack_level = profile.stackLevel,
                                   .charging_rate_unit = profile.chargingSchedule.front().chargingRateUnit};
@@ -232,15 +253,48 @@ TEST_P(CalculateProfileEntryType_Param_Test, CalculateProfileEntry_Positive) {
     if (!expected_2nd_entry_start.has_value()) {
         EXPECT_EQ(1, period_entries.size());
     } else {
-        // EXPECT_EQ(2, period_entries.size());
+        period_entry_t second_entry = period_entries.at(1);
 
         period_entry_t expected_second_entry{
             .start = expected_2nd_entry_start.value(),
             .end = expected_2nd_entry_end.value(),
-            .limit = daily_profile_no_duration.chargingSchedule.front().chargingSchedulePeriod[2].limit,
-            .stack_level = daily_profile_no_duration.stackLevel,
-            .charging_rate_unit = daily_profile_no_duration.chargingSchedule.front().chargingRateUnit};
+            .limit = profile.chargingSchedule.front().chargingSchedulePeriod[period_index].limit,
+            .stack_level = profile.stackLevel,
+            .charging_rate_unit = profile.chargingSchedule.front().chargingRateUnit};
+
+        EVLOG_debug << "         second_entry> " << second_entry;
+        EVLOG_debug << "expected_second_entry> " << expected_second_entry;
+
+        EXPECT_EQ(second_entry, expected_second_entry);
     }
+}
+
+/// This specific test needs to be run in isolation.
+/// Matches 1.6 ProfileTestsA/calculateProfileEntryRecurringWeeklyNoDuration
+TEST(ChargingProfileTypeTest, CalculateProfileEntry_RecurringWeeklyNoDuration) {
+    DateTime now("2024-01-03T16:10:00Z");
+    DateTime end("2024-01-17T20:50:00Z");
+
+    std::vector<period_entry_t> period_entries =
+        calculate_profile_entry(now, end, nullopt, weekly_profile_no_duration, 2);
+
+    ASSERT_GE(period_entries.size(), 2);
+
+    const auto* entry = &period_entries[0];
+
+    EXPECT_EQ(entry->start, DateTime("2024-01-03T16:45:00Z"));
+    EXPECT_EQ(entry->end, DateTime("2024-01-10T16:00:00Z"));
+    EXPECT_EQ(entry->limit, weekly_profile_no_duration.chargingSchedule.front().chargingSchedulePeriod[2].limit);
+    EXPECT_FALSE(entry->number_phases);
+    EXPECT_EQ(entry->stack_level, weekly_profile_no_duration.stackLevel);
+
+    entry = &period_entries[1];
+
+    EXPECT_EQ(entry->start, DateTime("2024-01-10T16:45:00Z"));
+    EXPECT_EQ(entry->end, DateTime("2024-01-17T16:00:00Z"));
+    EXPECT_EQ(entry->limit, weekly_profile_no_duration.chargingSchedule.front().chargingSchedulePeriod[2].limit);
+    EXPECT_FALSE(entry->number_phases);
+    EXPECT_EQ(entry->stack_level, weekly_profile_no_duration.stackLevel);
 }
 
 class CalculateProfileEntryType_NegativeBoundary_Param_Test
@@ -489,7 +543,8 @@ TEST(OCPPTypesTest, CalculateProfile_RelativeLimited) {
         EVLOG_debug << ">>> " << pet;
     }
 
-    // During C - session starts towards end of profiles duration. time window: starts 35" into session ends 55" into
+    // During C - session starts towards end of profiles duration. time window: starts 35" into session ends 55"
+    // into
     periods = calculate_profile(dt("13:55"), dt("14:15"), dt("13:20"), relative_profile);
     ASSERT_EQ(1, periods.size());
     EXPECT_TRUE(SmartChargingTestUtils::validate_profile_result(periods));
