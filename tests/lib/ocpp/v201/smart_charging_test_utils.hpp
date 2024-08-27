@@ -78,6 +78,30 @@ inline bool operator!=(const ChargingSchedule& a, const ChargingSchedule& b) {
     return !(a == b);
 }
 
+inline std::string to_string(const period_entry_t& entry) {
+    std::string result = "Period Entry: {";
+    result += "Start: " + entry.start.to_rfc3339() + ", ";
+    result += "End: " + entry.end.to_rfc3339() + ", ";
+    result += "Limit: " + std::to_string(entry.limit) + ", ";
+    if (entry.number_phases.has_value()) {
+        result += "Number of Phases: " + std::to_string(entry.number_phases.value()) + ", ";
+    }
+    result += "Stack Level: " + std::to_string(entry.stack_level) + ", ";
+    result += "ChargingRateUnit:" + conversions::charging_rate_unit_enum_to_string(entry.charging_rate_unit);
+
+    if (entry.min_charging_rate.has_value()) {
+        result += ", Min Charging Rate: " + std::to_string(entry.min_charging_rate.value());
+    }
+
+    result += "}";
+    return result;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const period_entry_t& entry) {
+    os << to_string(entry);
+    return os;
+}
+
 static ocpp::DateTime dt(const std::string& dt_string) {
     ocpp::DateTime dt;
 

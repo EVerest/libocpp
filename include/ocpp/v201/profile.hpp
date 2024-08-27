@@ -39,10 +39,6 @@ bool operator==(const period_entry_t& a, const period_entry_t& b);
 bool operator!=(const period_entry_t& a, const period_entry_t& b);
 bool operator==(const std::vector<period_entry_t>& a, const std::vector<period_entry_t>& b);
 
-std::string to_string(const period_entry_t& entry);
-
-std::ostream& operator<<(std::ostream& os, const period_entry_t& entry);
-
 /// \brief calculate the start times for the profile
 /// \param now the current date and time
 /// \param end the end of the composite schedule
