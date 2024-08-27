@@ -2,6 +2,7 @@
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
 #include "date/tz.h"
+#include "everest/logging.hpp"
 #include "lib/ocpp/common/database_testing_utils.hpp"
 #include "ocpp/common/types.hpp"
 #include "ocpp/v201/ctrlr_component_variables.hpp"
@@ -47,7 +48,6 @@ const static std::string DEVICE_MODEL_DB_IN_MEMORY_PATH = "file::memory:?cache=s
 
 class TestSmartChargingHandler : public SmartChargingHandler {
 public:
-    using SmartChargingHandler::get_profiles_on_evse;
     using SmartChargingHandler::validate_charging_station_max_profile;
     using SmartChargingHandler::validate_evse_exists;
     using SmartChargingHandler::validate_profile_schedules;
@@ -1048,7 +1048,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201,
     auto sut = handler.add_profile(profile, STATION_WIDE_ID);
 
     EXPECT_THAT(sut.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
-    EXPECT_THAT(handler.get_profiles(), testing::Contains(profile));
+    EXPECT_THAT(database_handler->get_all_charging_profiles(), testing::Contains(profile));
 }
 
 TEST_F(SmartChargingHandlerTestFixtureV201,
@@ -1061,7 +1061,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201,
     auto sut = handler.add_profile(profile, DEFAULT_EVSE_ID);
 
     EXPECT_THAT(sut.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
-    EXPECT_THAT(handler.get_profiles(), testing::Contains(profile));
+    EXPECT_THAT(database_handler->get_all_charging_profiles(), testing::Contains(profile));
 }
 
 TEST_F(SmartChargingHandlerTestFixtureV201,
@@ -1077,7 +1077,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201,
     auto sut1 = handler.add_profile(profile1, DEFAULT_EVSE_ID);
     auto sut2 = handler.add_profile(profile2, DEFAULT_EVSE_ID);
 
-    auto profiles = handler.get_profiles();
+    auto profiles = database_handler->get_all_charging_profiles();
 
     EXPECT_THAT(sut1.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
     EXPECT_THAT(sut2.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
@@ -1097,7 +1097,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201,
     auto sut1 = handler.add_profile(profile1, STATION_WIDE_ID);
     auto sut2 = handler.add_profile(profile2, DEFAULT_EVSE_ID);
 
-    auto profiles = handler.get_profiles();
+    auto profiles = database_handler->get_all_charging_profiles();
 
     EXPECT_THAT(sut1.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
     EXPECT_THAT(sut2.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
@@ -1117,7 +1117,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201,
     auto sut1 = handler.add_profile(profile1, DEFAULT_EVSE_ID);
     auto sut2 = handler.add_profile(profile2, DEFAULT_EVSE_ID + 1);
 
-    auto profiles = handler.get_profiles();
+    auto profiles = database_handler->get_all_charging_profiles();
 
     EXPECT_THAT(sut1.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
     EXPECT_THAT(sut2.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
@@ -1137,7 +1137,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201,
     auto sut1 = handler.add_profile(profile1, DEFAULT_EVSE_ID + 1);
     auto sut2 = handler.add_profile(profile2, STATION_WIDE_ID);
 
-    auto profiles = handler.get_profiles();
+    auto profiles = database_handler->get_all_charging_profiles();
 
     EXPECT_THAT(sut1.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
     EXPECT_THAT(sut2.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
@@ -1157,7 +1157,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201,
     auto sut1 = handler.add_profile(profile1, STATION_WIDE_ID);
     auto sut2 = handler.add_profile(profile2, STATION_WIDE_ID);
 
-    auto profiles = handler.get_profiles();
+    auto profiles = database_handler->get_all_charging_profiles();
 
     EXPECT_THAT(sut1.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
     EXPECT_THAT(sut2.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
@@ -1181,7 +1181,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201,
     auto sut2 = handler.add_profile(profile2, DEFAULT_EVSE_ID);
     auto sut3 = handler.add_profile(profile3, STATION_WIDE_ID);
 
-    auto profiles = handler.get_profiles();
+    auto profiles = database_handler->get_all_charging_profiles();
 
     EXPECT_THAT(sut1.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
     EXPECT_THAT(sut2.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
@@ -1202,7 +1202,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201,
     auto sut4 = handler.add_profile(profile4, STATION_WIDE_ID);
     auto sut5 = handler.add_profile(profile5, DEFAULT_EVSE_ID);
 
-    profiles = handler.get_profiles();
+    profiles = database_handler->get_all_charging_profiles();
 
     EXPECT_THAT(profiles, testing::Not(testing::Contains(profile2)));
     EXPECT_THAT(profiles, testing::Not(testing::Contains(profile3)));
@@ -1225,8 +1225,8 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K04FR01_AddProfile_OnlyAddsToOneEVSE
     EXPECT_THAT(response.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
     EXPECT_THAT(response2.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
 
-    auto sut1 = handler.get_profiles_on_evse(DEFAULT_EVSE_ID);
-    auto sut2 = handler.get_profiles_on_evse(DEFAULT_EVSE_ID + 1);
+    auto sut1 = this->database_handler->get_charging_profiles_for_evse(DEFAULT_EVSE_ID);
+    auto sut2 = this->database_handler->get_charging_profiles_for_evse(DEFAULT_EVSE_ID + 1);
 
     EXPECT_THAT(sut1, testing::Contains(profile1));
     EXPECT_THAT(sut1, testing::Not(testing::Contains(profile2)));
@@ -1284,7 +1284,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K01_ValidateAndAdd_RejectsInvalidPro
     EXPECT_THAT(status_info->additionalInfo->get(), testing::Eq(conversions::profile_validation_result_to_string(
                                                         ProfileValidationResultEnum::TxProfileMissingTransactionId)));
 
-    auto profiles = handler.get_profiles();
+    auto profiles = database_handler->get_all_charging_profiles();
     EXPECT_THAT(profiles, testing::Not(testing::Contains(profile)));
 }
 
@@ -1301,7 +1301,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K01_ValidateAndAdd_AddsValidProfiles
     EXPECT_THAT(sut.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
     EXPECT_THAT(sut.statusInfo.has_value(), testing::IsFalse());
 
-    auto profiles = handler.get_profiles();
+    auto profiles = database_handler->get_all_charging_profiles();
     EXPECT_THAT(profiles, testing::Contains(profile));
 }
 
@@ -1318,7 +1318,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K09_GetChargingProfiles_EvseId) {
     auto sut1 = handler.validate_and_add_profile(profile1, STATION_WIDE_ID);
     auto sut2 = handler.validate_and_add_profile(profile2, DEFAULT_EVSE_ID);
 
-    auto profiles = handler.get_profiles();
+    auto profiles = database_handler->get_all_charging_profiles();
     EXPECT_THAT(profiles, testing::SizeIs(2));
 
     auto reported_profiles = handler.get_reported_profiles(
@@ -1349,7 +1349,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K09_GetChargingProfiles_NoEvseId) {
     auto sut1 = handler.validate_and_add_profile(profile1, STATION_WIDE_ID);
     auto sut2 = handler.validate_and_add_profile(profile2, DEFAULT_EVSE_ID);
 
-    auto profiles = handler.get_profiles();
+    auto profiles = database_handler->get_all_charging_profiles();
     EXPECT_THAT(profiles, testing::SizeIs(2));
 
     auto reported_profiles = handler.get_reported_profiles(
@@ -1373,7 +1373,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K09_GetChargingProfiles_ProfileId) {
     auto sut1 = handler.validate_and_add_profile(profile1, STATION_WIDE_ID);
     auto sut2 = handler.validate_and_add_profile(profile2, DEFAULT_EVSE_ID);
 
-    auto profiles = handler.get_profiles();
+    auto profiles = database_handler->get_all_charging_profiles();
     EXPECT_THAT(profiles, testing::SizeIs(2));
 
     std::vector<int32_t> requested_profile_ids{1};
@@ -1399,7 +1399,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K09_GetChargingProfiles_EvseIdAndSta
     auto sut1 = handler.validate_and_add_profile(profile1, STATION_WIDE_ID);
     auto sut2 = handler.validate_and_add_profile(profile2, DEFAULT_EVSE_ID);
 
-    auto profiles = handler.get_profiles();
+    auto profiles = database_handler->get_all_charging_profiles();
     EXPECT_THAT(profiles, testing::SizeIs(2));
 
     auto reported_profiles = handler.get_reported_profiles(create_get_charging_profile_request(
@@ -1419,7 +1419,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K09_GetChargingProfiles_EvseIdAndSou
 
     auto sut1 = handler.validate_and_add_profile(profile, DEFAULT_EVSE_ID);
 
-    auto profiles = handler.get_profiles();
+    auto profiles = database_handler->get_all_charging_profiles();
     EXPECT_THAT(profiles, testing::SizeIs(1));
 
     std::vector<ChargingLimitSourceEnum> requested_sources_cso{ChargingLimitSourceEnum::CSO};
@@ -1449,7 +1449,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K09_GetChargingProfiles_EvseIdAndPur
     auto sut1 = handler.validate_and_add_profile(profile1, STATION_WIDE_ID);
     auto sut2 = handler.validate_and_add_profile(profile2, DEFAULT_EVSE_ID);
 
-    auto profiles = handler.get_profiles();
+    auto profiles = database_handler->get_all_charging_profiles();
     EXPECT_THAT(profiles, testing::SizeIs(2));
 
     auto reported_profiles = handler.get_reported_profiles(create_get_charging_profile_request(
@@ -1498,20 +1498,20 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K10_ClearChargingProfile_ClearsId) {
         create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")));
     handler.validate_and_add_profile(profile, STATION_WIDE_ID);
 
-    auto profiles = handler.get_profiles();
+    auto profiles = database_handler->get_all_charging_profiles();
     EXPECT_THAT(profiles, testing::Contains(profile));
 
     auto sut = handler.clear_profiles(create_clear_charging_profile_request(DEFAULT_PROFILE_ID));
     EXPECT_THAT(sut.status, testing::Eq(ClearChargingProfileStatusEnum::Accepted));
 
-    profiles = handler.get_profiles();
+    profiles = database_handler->get_all_charging_profiles();
     EXPECT_THAT(profiles, testing::Not(testing::Contains(profile)));
 }
 
 TEST_F(SmartChargingHandlerTestFixtureV201, K10_ClearChargingProfile_ClearsStackLevelPurposeCombination) {
     install_profile_on_evse(DEFAULT_EVSE_ID, DEFAULT_PROFILE_ID);
 
-    auto profiles = handler.get_profiles();
+    auto profiles = database_handler->get_all_charging_profiles();
     EXPECT_THAT(profiles, testing::Not(testing::IsEmpty()));
 
     auto sut = handler.clear_profiles(create_clear_charging_profile_request(
@@ -1519,14 +1519,14 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K10_ClearChargingProfile_ClearsStack
                                                     DEFAULT_STACK_LEVEL)));
     EXPECT_THAT(sut.status, testing::Eq(ClearChargingProfileStatusEnum::Accepted));
 
-    profiles = handler.get_profiles();
+    profiles = database_handler->get_all_charging_profiles();
     EXPECT_THAT(profiles, testing::IsEmpty());
 }
 
 TEST_F(SmartChargingHandlerTestFixtureV201, K10_ClearChargingProfile_UnknownStackLevelPurposeCombination) {
     install_profile_on_evse(DEFAULT_EVSE_ID, DEFAULT_PROFILE_ID);
 
-    auto profiles = handler.get_profiles();
+    auto profiles = database_handler->get_all_charging_profiles();
     EXPECT_THAT(profiles, testing::Not(testing::IsEmpty()));
 
     auto sut = handler.clear_profiles(create_clear_charging_profile_request(
@@ -1534,7 +1534,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K10_ClearChargingProfile_UnknownStac
                                                     STATION_WIDE_ID)));
     EXPECT_THAT(sut.status, testing::Eq(ClearChargingProfileStatusEnum::Unknown));
 
-    profiles = handler.get_profiles();
+    profiles = database_handler->get_all_charging_profiles();
     EXPECT_THAT(profiles, testing::Not(testing::IsEmpty()));
 }
 
@@ -1546,13 +1546,13 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K10_ClearChargingProfile_UnknownId) 
         create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")));
     handler.validate_and_add_profile(profile, STATION_WIDE_ID);
 
-    auto profiles = handler.get_profiles();
+    auto profiles = database_handler->get_all_charging_profiles();
     EXPECT_THAT(profiles, testing::Contains(profile));
 
     auto sut = handler.clear_profiles(create_clear_charging_profile_request(178));
     EXPECT_THAT(sut.status, testing::Eq(ClearChargingProfileStatusEnum::Unknown));
 
-    profiles = handler.get_profiles();
+    profiles = database_handler->get_all_charging_profiles();
     EXPECT_THAT(profiles, testing::Contains(profile));
 }
 
@@ -1622,6 +1622,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K08_GetValidProfiles_IfInvalidProfil
 
 TEST_F(SmartChargingHandlerTestFixtureV201, K02FR05_SmartChargingTransactionEnds_DeletesTxProfilesByTransactionId) {
     auto transaction_id = uuid();
+    EVLOG_debug << "TRANSACTION ID: " << transaction_id;
     this->evse_manager->open_transaction(DEFAULT_EVSE_ID, transaction_id);
     auto profile = create_charging_profile(DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
                                            create_charge_schedule(ChargingRateUnitEnum::A,
@@ -1634,7 +1635,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K02FR05_SmartChargingTransactionEnds
 
     handler.delete_transaction_tx_profiles(transaction_id);
 
-    EXPECT_THAT(handler.get_profiles(), testing::IsEmpty());
+    EXPECT_THAT(this->database_handler->get_all_charging_profiles(), testing::IsEmpty());
 }
 
 TEST_F(SmartChargingHandlerTestFixtureV201,
@@ -1655,7 +1656,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201,
 
     handler.delete_transaction_tx_profiles(transaction_id);
 
-    EXPECT_THAT(handler.get_profiles().size(), testing::Eq(1));
+    EXPECT_THAT(this->database_handler->get_all_charging_profiles().size(), testing::Eq(1));
 }
 
 TEST_F(SmartChargingHandlerTestFixtureV201, K05FR02_RequestStartTransactionRequest_ChargingProfileMustBeTxProfile) {

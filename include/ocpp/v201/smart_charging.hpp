@@ -119,8 +119,6 @@ private:
     std::shared_ptr<DeviceModel>& device_model;
 
     std::shared_ptr<ocpp::v201::DatabaseHandler> database_handler;
-    // cppcheck-suppress unusedStructMember
-    std::map<int32_t, std::vector<ChargingProfile>> charging_profiles;
 
 public:
     SmartChargingHandler(EvseManagerInterface& evse_manager, std::shared_ptr<DeviceModel>& device_model,
@@ -155,11 +153,6 @@ public:
     SetChargingProfileResponse
     add_profile(ChargingProfile& profile, int32_t evse_id,
                 ChargingLimitSourceEnum charging_limit_source = ChargingLimitSourceEnum::CSO) override;
-
-    ///
-    /// \brief Retrieves existing profiles on system.
-    ///
-    std::vector<ChargingProfile> get_profiles() const;
 
     ///
     /// \brief Clears profiles from the system using the given \p request
@@ -230,11 +223,6 @@ protected:
     /// of type ChargingStationExternalConstraints
     ///
     ProfileValidationResultEnum verify_no_conflicting_external_constraints_id(const ChargingProfile& profile) const;
-
-    ///
-    /// \brief Retrieves existing profiles on the EVSE \p evse_id
-    ///
-    std::vector<ChargingProfile> get_profiles_on_evse(int32_t evse_id) const;
 
 private:
     std::vector<ChargingProfile> get_evse_specific_tx_default_profiles() const;
