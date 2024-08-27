@@ -64,6 +64,8 @@ protected:
     }
 
     void TearDown() override {
+        // TODO: use in-memory db so we don't need to reset the db between tests
+        this->database_handler->clear_charging_profiles();
     }
 
     ChargingSchedule create_charge_schedule(ChargingRateUnitEnum charging_rate_unit) {

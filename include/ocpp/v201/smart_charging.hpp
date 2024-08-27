@@ -237,7 +237,6 @@ protected:
     std::vector<ChargingProfile> get_profiles_on_evse(int32_t evse_id) const;
 
 private:
-    std::vector<ChargingProfile> get_station_wide_profiles() const;
     std::vector<ChargingProfile> get_evse_specific_tx_default_profiles() const;
     std::vector<ChargingProfile> get_station_wide_tx_default_profiles() const;
     std::vector<ChargingProfile> get_valid_profiles_for_evse(int32_t evse_id);
