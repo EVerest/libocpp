@@ -725,9 +725,10 @@ void DatabaseHandler::transaction_delete(const std::string& transaction_id) {
 void DatabaseHandler::insert_or_update_charging_profile(const int evse_id, const v201::ChargingProfile& profile,
                                                         const ChargingLimitSourceEnum charging_limit_source) {
     // add or replace
-    std::string sql = "INSERT OR REPLACE INTO CHARGING_PROFILES (ID, EVSE_ID, STACK_LEVEL, CHARGING_PROFILE_PURPOSE, "
-                      "PROFILE, CHARGING_LIMIT_SOURCE) VALUES "
-                      "(@id, @evse_id, @stack_level, @charging_profile_purpose, @profile, @charging_limit_source)";
+    std::string sql =
+        "INSERT OR REPLACE INTO CHARGING_PROFILES (ID, EVSE_ID, STACK_LEVEL, CHARGING_PROFILE_PURPOSE, "
+        "TRANSACTION_ID, PROFILE, CHARGING_LIMIT_SOURCE) VALUES "
+        "(@id, @evse_id, @stack_level, @charging_profile_purpose, @transaction_id, @profile, @charging_limit_source)";
     auto stmt = this->database->new_statement(sql);
 
     json json_profile(profile);
@@ -738,6 +739,12 @@ void DatabaseHandler::insert_or_update_charging_profile(const int evse_id, const
     stmt->bind_text("@charging_profile_purpose",
                     conversions::charging_profile_purpose_enum_to_string(profile.chargingProfilePurpose),
                     SQLiteString::Transient);
+    if (profile.transactionId.has_value()) {
+        stmt->bind_text("@transaction_id", profile.transactionId.value().get(), SQLiteString::Transient);
+    } else {
+        stmt->bind_null("@transaction_id");
+    }
+
     stmt->bind_text("@profile", json_profile.dump(), SQLiteString::Transient);
     stmt->bind_text("@charging_limit_source", conversions::charging_limit_source_enum_to_string(charging_limit_source));
 
