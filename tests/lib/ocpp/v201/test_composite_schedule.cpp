@@ -571,6 +571,9 @@ TEST_F(ChargepointTestFixtureV201, K08_CalculateCompositeSchedule_RelativeProfil
         SmartChargingTestUtils::get_charging_profiles_from_directory(BASE_JSON_PATH + "/relative/");
     this->evse_manager->open_transaction(DEFAULT_EVSE_ID, profiles.at(0).transactionId.value());
 
+    // Doing this in order to avoid mocking system_clock::now()
+    auto transaction = std::move(this->evse_manager->get_evse(DEFAULT_EVSE_ID).get_transaction());
+
     CompositeSchedule expected = {
         .chargingSchedulePeriod = {{
             .startPeriod = 0,
@@ -593,6 +596,10 @@ TEST_F(ChargepointTestFixtureV201, K08_CalculateCompositeSchedule_RelativeProfil
     std::vector<ChargingProfile> profiles =
         SmartChargingTestUtils::get_charging_profiles_from_directory(BASE_JSON_PATH + "/relative/");
     this->evse_manager->open_transaction(DEFAULT_EVSE_ID, profiles.at(0).transactionId.value());
+
+    // Doing this in order to avoid mocking system_clock::now()
+    auto transaction = std::move(this->evse_manager->get_evse(DEFAULT_EVSE_ID).get_transaction());
+
     const DateTime start_time = ocpp::DateTime("2024-05-17T05:00:00");
     const DateTime end_time = ocpp::DateTime("2024-05-17T06:01:00");
 

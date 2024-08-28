@@ -655,31 +655,11 @@ CompositeSchedule SmartChargingHandler::calculate_composite_schedule(
 
     std::optional<ocpp::DateTime> session_start{};
 
-    // TODO: This is code that needs to be completed to finish the transition to v2.0.1
-    // 1.6 Connector->Transaction->StampedEnergyWh
-    // if (const auto& itt = connectors.find(connector_id); itt != connectors.end()) {
-    //     // connector exists!
-    //     if (itt->second->transaction) {
-    //         session_start.emplace(ocpp::DateTime(
-    //             floor<seconds>(itt->second->transaction->get_start_energy_wh()->timestamp.to_time_point())));
-    //     }
-    // }
-
-    // 2.0 EvseInterface->get_transaction()->EnhancedTransaction->get_transaction()->Transaction
-    // NOTE: No longer works because now using EVSEManager
-    // if (const auto& itt = this->evses.find(evse_id); itt != this->evses.end()) {
-    //     if (itt->second->get_transaction()) {
-    //         // const ocpp::DateTime now(date::utc_clock::now());
-    //         // EVLOG_info << "   2nd> has transation" << itt->second->get_transaction()->get_transaction();
-    //         session_start.emplace(start_time);
-    //     }
-    // }
-
-    // if (this->evse_manager.does_evse_exist(evse_id) and
-    //     this->evse_manager.get_evse(evse_id).get_transaction() != nullptr) {
-    //     const auto& transaction = this->evse_manager.get_evse(evse_id).get_transaction();
-    //     session_start = transaction->start_time;
-    // }
+    if (this->evse_manager.does_evse_exist(evse_id) and
+        this->evse_manager.get_evse(evse_id).get_transaction() != nullptr) {
+        const auto& transaction = this->evse_manager.get_evse(evse_id).get_transaction();
+        session_start = transaction->start_time;
+    }
 
     std::vector<period_entry_t> charging_station_external_constraints_periods{};
     std::vector<period_entry_t> charge_point_max_periods{};
