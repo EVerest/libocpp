@@ -185,6 +185,9 @@ public:
     /// \brief Deletes the profile with the given \p profile_id
     void delete_charging_profile(const int profile_id);
 
+    /// \brief Deletes the profiles with the given \p transaction_id
+    void delete_charging_profile_by_transaction_id(const std::string& transaction_id);
+
     /// \brief Deletes all profiles from table CHARGING_PROFILES
     void clear_charging_profiles();
 

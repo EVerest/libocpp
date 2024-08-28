@@ -4,6 +4,9 @@
 #include "comparators.hpp"
 #include "database_testing_utils.hpp"
 #include "ocpp/v201/enums.hpp"
+#include "gmock/gmock.h"
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <ocpp/v201/database_handler.hpp>
@@ -33,6 +36,14 @@ public:
 
         return transaction;
     }
+
+    std::string uuid() {
+        std::stringstream s;
+        s << uuid_generator();
+        return s.str();
+    }
+
+    boost::uuids::random_generator uuid_generator = boost::uuids::random_generator();
 };
 
 TEST_F(DatabaseHandlerTest, TransactionInsertAndGet) {
@@ -435,4 +446,30 @@ TEST_F(DatabaseHandlerTest, GetChargingLimitSourceForProfile_RetrievsSetSourceFo
 
     auto sut = this->database_handler.get_charging_limit_source_for_profile(profile_id);
     EXPECT_EQ(sut, ChargingLimitSourceEnum::EMS);
+}
+
+TEST_F(DatabaseHandlerTest, DeleteChargingProfileByTransactionId_DeletesByTransactionId) {
+    const auto profile_id = 1;
+    const auto transaction_id = uuid();
+    auto profile1 = ChargingProfile{
+        .id = profile_id, .stackLevel = 1, .chargingProfilePurpose = ChargingProfilePurposeEnum::TxDefaultProfile};
+    auto profile2 = ChargingProfile{.id = profile_id + 1,
+                                    .stackLevel = 1,
+                                    .chargingProfilePurpose = ChargingProfilePurposeEnum::TxProfile,
+                                    .transactionId = transaction_id};
+
+    this->database_handler.insert_or_update_charging_profile(1, profile1);
+    this->database_handler.insert_or_update_charging_profile(1, profile2);
+
+    auto profiles = this->database_handler.get_all_charging_profiles();
+    EXPECT_THAT(profiles, testing::SizeIs(2));
+    EXPECT_THAT(profiles, testing::Contains(profile1));
+    EXPECT_THAT(profiles, testing::Contains(profile2));
+
+    this->database_handler.delete_charging_profile_by_transaction_id(transaction_id);
+
+    auto sut = this->database_handler.get_all_charging_profiles();
+    EXPECT_THAT(sut, testing::SizeIs(1));
+    EXPECT_THAT(sut, testing::Contains(profile1));
+    EXPECT_THAT(sut, testing::Not(testing::Contains(profile2)));
 }

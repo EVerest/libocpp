@@ -3,6 +3,7 @@
 
 #include "date/tz.h"
 #include "everest/logging.hpp"
+#include "ocpp/common/database/sqlite_statement.hpp"
 #include "ocpp/common/message_queue.hpp"
 #include "ocpp/common/types.hpp"
 #include "ocpp/v201/ctrlr_component_variables.hpp"
@@ -220,13 +221,7 @@ SmartChargingHandler::SmartChargingHandler(EvseManagerInterface& evse_manager,
 }
 
 void SmartChargingHandler::delete_transaction_tx_profiles(const std::string& transaction_id) {
-    for (auto& profile : this->database_handler->get_all_charging_profiles()) {
-        if (profile.transactionId.has_value()) {
-            if (transaction_id == profile.transactionId.value().get()) {
-                this->database_handler->delete_charging_profile(profile.id);
-            }
-        }
-    }
+    this->database_handler->delete_charging_profile_by_transaction_id(transaction_id);
 }
 
 SetChargingProfileResponse SmartChargingHandler::validate_and_add_profile(ChargingProfile& profile, int32_t evse_id,
@@ -382,14 +377,17 @@ SmartChargingHandler::validate_tx_profile(const ChargingProfile& profile, int32_
         return ProfileValidationResultEnum::TxProfileTransactionNotOnEvse;
     }
 
-    auto charging_profiles = this->database_handler->get_all_charging_profiles();
+    auto conflicts_stmt = this->database_handler->new_statement(
+        "SELECT PROFILE FROM CHARGING_PROFILES WHERE TRANSACTION_ID = @transaction_id AND STACK_LEVEL = @stack_level");
+    conflicts_stmt->bind_int("@stack_level", profile.stackLevel);
+    if (profile.transactionId.has_value()) {
+        conflicts_stmt->bind_text("@transaction_id", profile.transactionId.value().get(),
+                                  common::SQLiteString::Transient);
+    } else {
+        conflicts_stmt->bind_null("@transaction_id");
+    }
 
-    auto conflicts_with = [&profile](const ChargingProfile& candidateProfile) {
-        return candidateProfile.transactionId == profile.transactionId &&
-               candidateProfile.stackLevel == profile.stackLevel;
-    };
-
-    if (std::any_of(charging_profiles.begin(), charging_profiles.end(), conflicts_with)) {
+    if (conflicts_stmt->step() == SQLITE_ROW) {
         return ProfileValidationResultEnum::TxProfileConflictingStackLevel;
     }
 
@@ -582,16 +580,11 @@ std::vector<ChargingProfile> SmartChargingHandler::get_valid_profiles(int32_t ev
 std::vector<ChargingProfile> SmartChargingHandler::get_evse_specific_tx_default_profiles() const {
     std::vector<ChargingProfile> evse_specific_tx_default_profiles;
 
-    auto charging_profiles = this->database_handler->get_all_charging_profiles_group_by_evse();
-
-    for (auto& [evse_id, profiles] : charging_profiles) {
-        if (evse_id != STATION_WIDE_ID) {
-            for (auto profile : profiles) {
-                if (profile.chargingProfilePurpose == ChargingProfilePurposeEnum::TxDefaultProfile) {
-                    evse_specific_tx_default_profiles.push_back(profile);
-                }
-            }
-        }
+    auto stmt = this->database_handler->new_statement("SELECT PROFILE FROM CHARGING_PROFILES WHERE "
+                                                      "EVSE_ID != 0 AND CHARGING_PROFILE_PURPOSE = 'TxDefaultProfile'");
+    while (stmt->step() != SQLITE_DONE) {
+        ChargingProfile profile = json::parse(stmt->column_text(0));
+        evse_specific_tx_default_profiles.push_back(profile);
     }
 
     return evse_specific_tx_default_profiles;
@@ -599,10 +592,12 @@ std::vector<ChargingProfile> SmartChargingHandler::get_evse_specific_tx_default_
 
 std::vector<ChargingProfile> SmartChargingHandler::get_station_wide_tx_default_profiles() const {
     std::vector<ChargingProfile> station_wide_tx_default_profiles;
-    for (auto profile : this->database_handler->get_charging_profiles_for_evse(STATION_WIDE_ID)) {
-        if (profile.chargingProfilePurpose == ChargingProfilePurposeEnum::TxDefaultProfile) {
-            station_wide_tx_default_profiles.push_back(profile);
-        }
+
+    auto stmt = this->database_handler->new_statement(
+        "SELECT PROFILE FROM CHARGING_PROFILES WHERE EVSE_ID = 0 AND CHARGING_PROFILE_PURPOSE = 'TxDefaultProfile'");
+    while (stmt->step() != SQLITE_DONE) {
+        ChargingProfile profile = json::parse(stmt->column_text(0));
+        station_wide_tx_default_profiles.push_back(profile);
     }
 
     return station_wide_tx_default_profiles;
@@ -638,11 +633,13 @@ void SmartChargingHandler::conform_validity_periods(ChargingProfile& profile) co
 ProfileValidationResultEnum
 SmartChargingHandler::verify_no_conflicting_external_constraints_id(const ChargingProfile& profile) const {
     auto result = ProfileValidationResultEnum::Valid;
-    for (auto existing_profile : this->database_handler->get_all_charging_profiles()) {
-        if (existing_profile.id == profile.id &&
-            existing_profile.chargingProfilePurpose == ChargingProfilePurposeEnum::ChargingStationExternalConstraints) {
-            result = ProfileValidationResultEnum::ExistingChargingStationExternalConstraints;
-        }
+    auto conflicts_stmt =
+        this->database_handler->new_statement("SELECT PROFILE FROM CHARGING_PROFILES WHERE ID = @profile_id AND "
+                                              "CHARGING_PROFILE_PURPOSE = 'ChargingStationExternalConstraints'");
+
+    conflicts_stmt->bind_int("@profile_id", profile.id);
+    if (conflicts_stmt->step() == SQLITE_ROW) {
+        result = ProfileValidationResultEnum::ExistingChargingStationExternalConstraints;
     }
 
     return result;

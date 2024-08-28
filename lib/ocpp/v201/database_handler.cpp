@@ -763,6 +763,16 @@ void DatabaseHandler::delete_charging_profile(const int profile_id) {
     }
 }
 
+void DatabaseHandler::delete_charging_profile_by_transaction_id(const std::string& transaction_id) {
+    std::string sql = "DELETE FROM CHARGING_PROFILES WHERE TRANSACTION_ID = @transaction_id";
+    auto stmt = this->database->new_statement(sql);
+
+    stmt->bind_text("@transaction_id", transaction_id);
+    if (stmt->step() != SQLITE_DONE) {
+        throw QueryExecutionException(this->database->get_error_message());
+    }
+}
+
 void DatabaseHandler::clear_charging_profiles() {
     this->database->clear_table("CHARGING_PROFILES");
 }
