@@ -198,6 +198,8 @@ public:
     virtual std::map<int32_t, std::vector<v201::ChargingProfile>> get_all_charging_profiles_group_by_evse();
 
     ChargingLimitSourceEnum get_charging_limit_source_for_profile(const int profile_id);
+
+    std::unique_ptr<common::SQLiteStatementInterface> new_statement(const std::string& sql);
 };
 
 } // namespace v201

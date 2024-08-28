@@ -839,5 +839,9 @@ ChargingLimitSourceEnum DatabaseHandler::get_charging_limit_source_for_profile(c
     return res;
 }
 
+std::unique_ptr<SQLiteStatementInterface> DatabaseHandler::new_statement(const std::string& sql) {
+    return this->database->new_statement(sql);
+}
+
 } // namespace v201
 } // namespace ocpp
