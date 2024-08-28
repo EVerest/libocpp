@@ -35,10 +35,6 @@ struct period_entry_t {
     }
 };
 
-bool operator==(const period_entry_t& a, const period_entry_t& b);
-bool operator!=(const period_entry_t& a, const period_entry_t& b);
-bool operator==(const std::vector<period_entry_t>& a, const std::vector<period_entry_t>& b);
-
 /// \brief calculate the start times for the profile
 /// \param now the current date and time
 /// \param end the end of the composite schedule

@@ -78,6 +78,35 @@ inline bool operator!=(const ChargingSchedule& a, const ChargingSchedule& b) {
     return !(a == b);
 }
 
+inline bool operator==(const period_entry_t& a, const period_entry_t& b) {
+    bool bRes = (a.start == b.start) && (a.end == b.end) && (a.limit == b.limit) && (a.stack_level == b.stack_level) &&
+                (a.charging_rate_unit == b.charging_rate_unit);
+    if (a.number_phases && b.number_phases) {
+        bRes = bRes && a.number_phases.value() == b.number_phases.value();
+    }
+    if (a.min_charging_rate && b.min_charging_rate) {
+        bRes = bRes && a.min_charging_rate.value() == b.min_charging_rate.value();
+    }
+    return bRes;
+}
+
+inline bool operator!=(const period_entry_t& a, const period_entry_t& b) {
+    return !(a == b);
+}
+
+inline bool operator==(const std::vector<period_entry_t>& a, const std::vector<period_entry_t>& b) {
+    bool bRes = a.size() == b.size();
+    if (bRes) {
+        for (std::uint8_t i = 0; i < a.size(); i++) {
+            bRes = a[i] == b[i];
+            if (!bRes) {
+                break;
+            }
+        }
+    }
+    return bRes;
+}
+
 inline std::string to_string(const period_entry_t& entry) {
     std::string result = "Period Entry: {";
     result += "Start: " + entry.start.to_rfc3339() + ", ";
