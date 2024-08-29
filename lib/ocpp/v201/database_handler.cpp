@@ -753,7 +753,7 @@ void DatabaseHandler::insert_or_update_charging_profile(const int evse_id, const
     }
 }
 
-void DatabaseHandler::delete_charging_profile(const int profile_id) {
+bool DatabaseHandler::delete_charging_profile(const int profile_id) {
     std::string sql = "DELETE FROM CHARGING_PROFILES WHERE ID = @profile_id;";
     auto stmt = this->database->new_statement(sql);
 
@@ -761,6 +761,8 @@ void DatabaseHandler::delete_charging_profile(const int profile_id) {
     if (stmt->step() != SQLITE_DONE) {
         throw QueryExecutionException(this->database->get_error_message());
     }
+
+    return stmt->changes() > 0;
 }
 
 void DatabaseHandler::delete_charging_profile_by_transaction_id(const std::string& transaction_id) {
@@ -773,8 +775,72 @@ void DatabaseHandler::delete_charging_profile_by_transaction_id(const std::strin
     }
 }
 
-void DatabaseHandler::clear_charging_profiles() {
-    this->database->clear_table("CHARGING_PROFILES");
+bool DatabaseHandler::clear_charging_profiles() {
+    return this->database->clear_table("CHARGING_PROFILES");
+}
+
+bool DatabaseHandler::clear_charging_profiles_matching_criteria(const std::optional<int32_t> profile_id,
+                                                                const std::optional<ClearChargingProfile>& criteria) {
+    // K10.FR.03, K10.FR.09
+    if (profile_id.has_value()) {
+        return this->delete_charging_profile(profile_id.value());
+    }
+
+    // criteria has no value, so clear all
+    if (!criteria.has_value()) {
+        return this->clear_charging_profiles();
+    }
+
+    if (criteria->chargingProfilePurpose.has_value() || criteria->evseId.has_value() ||
+        criteria->stackLevel.has_value()) {
+        std::string delete_query = "DELETE FROM CHARGING_PROFILES";
+        // Start with K10.FR.04, prevent deleting external constraints
+        std::vector<std::string> filters = {"CHARGING_PROFILE_PURPOSE != 'ChargingStationExternalConstraints'"};
+
+        if (criteria->chargingProfilePurpose.has_value()) {
+            filters.push_back("CHARGING_PROFILE_PURPOSE = @charging_profile_purpose");
+        }
+
+        if (criteria->stackLevel.has_value()) {
+            filters.push_back("STACK_LEVEL = @stack_level");
+        }
+
+        if (criteria->evseId.has_value()) {
+            filters.push_back("EVSE_ID = @evse_id");
+        }
+
+        if (filters.size() > 0) {
+            delete_query += " WHERE ";
+            for (int i = 0; i < filters.size() - 1; i++) {
+                delete_query += " " + filters[i] + " AND";
+            }
+            delete_query += " " + filters[filters.size() - 1];
+        }
+
+        auto stmt = this->database->new_statement(delete_query);
+        if (criteria->chargingProfilePurpose.has_value()) {
+            stmt->bind_text(
+                "@charging_profile_purpose",
+                conversions::charging_profile_purpose_enum_to_string(criteria->chargingProfilePurpose.value()),
+                SQLiteString::Transient);
+        }
+
+        if (criteria->stackLevel.has_value()) {
+            stmt->bind_int("@stack_level", criteria->stackLevel.value());
+        }
+
+        if (criteria->evseId.has_value()) {
+            stmt->bind_int("@evse_id", criteria->evseId.value());
+        }
+
+        if (stmt->step() != SQLITE_DONE) {
+            throw QueryExecutionException(this->database->get_error_message());
+        }
+
+        return stmt->changes() > 0;
+    }
+
+    return false;
 }
 
 std::vector<v201::ChargingProfile> DatabaseHandler::get_charging_profiles_for_evse(const int evse_id) {

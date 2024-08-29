@@ -139,40 +139,6 @@ bool value_exists_and_is_different(const std::optional<T>& requested_value, cons
 }
 
 /// \brief Checks if the given filter \p criteria and \p evse_id matches the given \p profile
-bool profile_matches_clear_criteria(const ChargingProfile& profile, const std::optional<int32_t> profile_id,
-                                    const std::optional<ClearChargingProfile>& criteria, const int32_t evse_id) {
-    if (profile.chargingProfilePurpose == ChargingProfilePurposeEnum::ChargingStationExternalConstraints) {
-        // K10.FR.04; profiles with ChargingStationExternalConstraints shall not be removed
-        return false;
-    }
-
-    // // K10.FR.03, K10.FR.09
-    if (profile_id.has_value() and profile_id.value() == profile.id) {
-        return true;
-    }
-
-    if (profile_id.has_value()) {
-        // profile_id has value but doesnt match
-        return false;
-    }
-
-    if (!criteria.has_value()) {
-        // criteria has no value, so clear all
-        return true;
-    }
-
-    const auto _criteria = criteria.value();
-
-    if (value_exists_and_is_different(_criteria.chargingProfilePurpose, profile.chargingProfilePurpose) or
-        value_exists_and_is_different(_criteria.stackLevel, profile.stackLevel) or
-        value_exists_and_is_different(_criteria.evseId, evse_id)) {
-        return false;
-    }
-
-    return true;
-}
-
-/// \brief Checks if the given filter \p criteria and \p evse_id matches the given \p profile
 bool profile_matches_get_criteria(const ChargingProfile& profile, const ChargingProfileCriterion& criteria,
                                   const std::optional<int32_t> requested_evse_id, const int32_t profile_evse_id) {
 
@@ -512,27 +478,13 @@ SetChargingProfileResponse SmartChargingHandler::add_profile(ChargingProfile& pr
 
 ClearChargingProfileResponse SmartChargingHandler::clear_profiles(const ClearChargingProfileRequest& request) {
     ClearChargingProfileResponse response;
-
-    const auto profile_id = request.chargingProfileId;
-    const auto criteria = request.chargingProfileCriteria;
-
     response.status = ClearChargingProfileStatusEnum::Unknown;
 
-    auto charging_profiles = this->database_handler->get_all_charging_profiles_group_by_evse();
-
-    for (auto& [existing_evse_id, evse_profiles] : charging_profiles) {
-        for (auto it = evse_profiles.begin(); it != evse_profiles.end();) {
-            // K10.FR.04: logical AND between the filters, if not set, the filter does not apply
-            if (profile_matches_clear_criteria(*it, profile_id, criteria, existing_evse_id)) {
-                response.status = ClearChargingProfileStatusEnum::Accepted;
-                it = evse_profiles.erase(it);
-                this->database_handler->delete_charging_profile(it->id);
-            } else {
-                // At least one of the filters did not match
-                ++it;
-            }
-        }
+    if (this->database_handler->clear_charging_profiles_matching_criteria(request.chargingProfileId,
+                                                                          request.chargingProfileCriteria)) {
+        response.status = ClearChargingProfileStatusEnum::Accepted;
     }
+
     return response;
 }
 

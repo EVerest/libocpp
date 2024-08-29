@@ -14,6 +14,7 @@
 using namespace ocpp;
 using namespace ocpp::v201;
 
+const int STATION_WIDE_ID = 0;
 const int DEFAULT_EVSE_ID = 1;
 
 class DatabaseHandlerTest : public DatabaseTestingUtils {
@@ -472,4 +473,184 @@ TEST_F(DatabaseHandlerTest, DeleteChargingProfileByTransactionId_DeletesByTransa
     EXPECT_THAT(sut, testing::SizeIs(1));
     EXPECT_THAT(sut, testing::Contains(profile1));
     EXPECT_THAT(sut, testing::Not(testing::Contains(profile2)));
+}
+
+TEST_F(DatabaseHandlerTest, ClearChargingProfilesMatchingCriteria_WhenGivenProfileId_DeletesProfile) {
+    const ClearChargingProfile clear_criteria;
+
+    const auto profile_id = 1;
+    auto p1 = ChargingProfile{
+        .id = profile_id, .stackLevel = 1, .chargingProfilePurpose = ChargingProfilePurposeEnum::TxDefaultProfile};
+    this->database_handler.insert_or_update_charging_profile(DEFAULT_EVSE_ID, p1);
+
+    auto profiles = this->database_handler.get_all_charging_profiles();
+    EXPECT_EQ(profiles.size(), 1);
+
+    auto sut = this->database_handler.clear_charging_profiles_matching_criteria(profile_id, clear_criteria);
+    EXPECT_TRUE(sut);
+
+    profiles = this->database_handler.get_all_charging_profiles();
+    EXPECT_EQ(profiles.size(), 0);
+}
+
+TEST_F(DatabaseHandlerTest, ClearChargingProfilesMatchingCriteria_WhenNotGivenProfileId_DoesNotDeleteProfile) {
+    const ClearChargingProfile clear_criteria;
+
+    const auto profile_id = 1;
+    auto p1 = ChargingProfile{
+        .id = profile_id, .stackLevel = 1, .chargingProfilePurpose = ChargingProfilePurposeEnum::TxDefaultProfile};
+    this->database_handler.insert_or_update_charging_profile(DEFAULT_EVSE_ID, p1);
+
+    auto profiles = this->database_handler.get_all_charging_profiles();
+    EXPECT_EQ(profiles.size(), 1);
+
+    auto sut = this->database_handler.clear_charging_profiles_matching_criteria({}, clear_criteria);
+    EXPECT_FALSE(sut);
+
+    profiles = this->database_handler.get_all_charging_profiles();
+    EXPECT_EQ(profiles.size(), 1);
+    EXPECT_THAT(profiles, testing::Contains(p1));
+}
+
+TEST_F(DatabaseHandlerTest, ClearChargingProfilesMatchingCriteria_WhenNotGivenCriteria_DeletesAllProfiles) {
+    const auto profile_id = 1;
+    auto p1 = ChargingProfile{
+        .id = profile_id, .stackLevel = 1, .chargingProfilePurpose = ChargingProfilePurposeEnum::TxDefaultProfile};
+    auto p2 = ChargingProfile{
+        .id = profile_id + 1, .stackLevel = 1, .chargingProfilePurpose = ChargingProfilePurposeEnum::TxProfile};
+    this->database_handler.insert_or_update_charging_profile(DEFAULT_EVSE_ID, p1);
+    this->database_handler.insert_or_update_charging_profile(DEFAULT_EVSE_ID + 1, p2);
+
+    auto profiles = this->database_handler.get_all_charging_profiles();
+    EXPECT_EQ(profiles.size(), 2);
+
+    auto sut = this->database_handler.clear_charging_profiles_matching_criteria({}, {});
+    EXPECT_TRUE(sut);
+
+    profiles = this->database_handler.get_all_charging_profiles();
+    EXPECT_EQ(profiles.size(), 0);
+}
+
+TEST_F(DatabaseHandlerTest, ClearChargingProfilesMatchingCriteria_WhenAllCriteriaMatch_DeletesProfile) {
+    const auto purpose = ChargingProfilePurposeEnum::TxDefaultProfile;
+    const auto stack_level = 1;
+
+    const ClearChargingProfile clear_criteria = {
+        .evseId = DEFAULT_EVSE_ID,
+        .chargingProfilePurpose = purpose,
+        .stackLevel = stack_level,
+    };
+
+    auto p1 = ChargingProfile{.id = 1, .stackLevel = stack_level, .chargingProfilePurpose = purpose};
+    this->database_handler.insert_or_update_charging_profile(DEFAULT_EVSE_ID, p1);
+
+    auto profiles = this->database_handler.get_all_charging_profiles();
+    EXPECT_EQ(profiles.size(), 1);
+
+    auto sut = this->database_handler.clear_charging_profiles_matching_criteria({}, clear_criteria);
+    EXPECT_TRUE(sut);
+
+    profiles = this->database_handler.get_all_charging_profiles();
+    EXPECT_EQ(profiles.size(), 0);
+}
+
+TEST_F(DatabaseHandlerTest, ClearChargingProfilesMatchingCriteria_UnknownPurpose_DoesNotDeleteProfile) {
+    const auto different_purpose = ChargingProfilePurposeEnum::TxProfile;
+    const auto stack_level = 1;
+
+    const ClearChargingProfile clear_criteria = {
+        .evseId = DEFAULT_EVSE_ID,
+        .chargingProfilePurpose = different_purpose,
+        .stackLevel = stack_level,
+    };
+
+    auto p1 = ChargingProfile{
+        .id = 1, .stackLevel = stack_level, .chargingProfilePurpose = ChargingProfilePurposeEnum::TxDefaultProfile};
+    this->database_handler.insert_or_update_charging_profile(DEFAULT_EVSE_ID, p1);
+
+    auto profiles = this->database_handler.get_all_charging_profiles();
+    EXPECT_EQ(profiles.size(), 1);
+    EXPECT_THAT(profiles, testing::Contains(p1));
+
+    auto sut = this->database_handler.clear_charging_profiles_matching_criteria({}, clear_criteria);
+    EXPECT_FALSE(sut);
+
+    profiles = this->database_handler.get_all_charging_profiles();
+    EXPECT_EQ(profiles.size(), 1);
+    EXPECT_THAT(profiles, testing::Contains(p1));
+}
+
+TEST_F(DatabaseHandlerTest, ClearChargingProfilesMatchingCriteria_UnknownStackLevel_DoesNotDeleteProfile) {
+    const auto purpose = ChargingProfilePurposeEnum::TxDefaultProfile;
+    const auto different_stack_level = 2;
+
+    const ClearChargingProfile clear_criteria = {
+        .evseId = DEFAULT_EVSE_ID,
+        .chargingProfilePurpose = purpose,
+        .stackLevel = different_stack_level,
+    };
+
+    auto p1 = ChargingProfile{.id = 1, .stackLevel = 1, .chargingProfilePurpose = purpose};
+    this->database_handler.insert_or_update_charging_profile(DEFAULT_EVSE_ID, p1);
+
+    auto profiles = this->database_handler.get_all_charging_profiles();
+    EXPECT_EQ(profiles.size(), 1);
+    EXPECT_THAT(profiles, testing::Contains(p1));
+
+    auto sut = this->database_handler.clear_charging_profiles_matching_criteria({}, clear_criteria);
+    EXPECT_FALSE(sut);
+
+    profiles = this->database_handler.get_all_charging_profiles();
+    EXPECT_EQ(profiles.size(), 1);
+    EXPECT_THAT(profiles, testing::Contains(p1));
+}
+
+TEST_F(DatabaseHandlerTest, ClearChargingProfilesMatchingCriteria_UnknownEvseId_DoesNotDeleteProfile) {
+    const auto purpose = ChargingProfilePurposeEnum::TxDefaultProfile;
+    const auto stack_level = 1;
+    const auto different_evse_id = DEFAULT_EVSE_ID + 1;
+
+    const ClearChargingProfile clear_criteria = {
+        .evseId = different_evse_id,
+        .chargingProfilePurpose = purpose,
+        .stackLevel = stack_level,
+    };
+
+    auto p1 = ChargingProfile{.id = 1, .stackLevel = stack_level, .chargingProfilePurpose = purpose};
+    this->database_handler.insert_or_update_charging_profile(DEFAULT_EVSE_ID, p1);
+
+    auto profiles = this->database_handler.get_all_charging_profiles();
+    EXPECT_EQ(profiles.size(), 1);
+    EXPECT_THAT(profiles, testing::Contains(p1));
+
+    auto sut = this->database_handler.clear_charging_profiles_matching_criteria({}, clear_criteria);
+    EXPECT_FALSE(sut);
+
+    profiles = this->database_handler.get_all_charging_profiles();
+    EXPECT_EQ(profiles.size(), 1);
+    EXPECT_THAT(profiles, testing::Contains(p1));
+}
+
+TEST_F(DatabaseHandlerTest, ClearChargingProfilesMatchingCriteria_DoesNotDeleteExternalConstraints) {
+    const auto purpose = ChargingProfilePurposeEnum::ChargingStationExternalConstraints;
+    const auto stack_level = 1;
+
+    const ClearChargingProfile clear_criteria = {
+        .evseId = STATION_WIDE_ID,
+        .chargingProfilePurpose = purpose,
+        .stackLevel = stack_level,
+    };
+
+    auto p1 = ChargingProfile{.id = 1, .stackLevel = stack_level, .chargingProfilePurpose = purpose};
+    this->database_handler.insert_or_update_charging_profile(STATION_WIDE_ID, p1);
+
+    auto profiles = this->database_handler.get_all_charging_profiles();
+    EXPECT_EQ(profiles.size(), 1);
+
+    auto sut = this->database_handler.clear_charging_profiles_matching_criteria({}, clear_criteria);
+    EXPECT_FALSE(sut);
+
+    profiles = this->database_handler.get_all_charging_profiles();
+    EXPECT_EQ(profiles.size(), 1);
+    EXPECT_THAT(profiles, testing::Contains(p1));
 }

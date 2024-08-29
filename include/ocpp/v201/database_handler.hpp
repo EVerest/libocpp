@@ -183,13 +183,17 @@ public:
         const ChargingLimitSourceEnum charging_limit_source = ChargingLimitSourceEnum::CSO);
 
     /// \brief Deletes the profile with the given \p profile_id
-    void delete_charging_profile(const int profile_id);
+    bool delete_charging_profile(const int profile_id);
 
     /// \brief Deletes the profiles with the given \p transaction_id
     void delete_charging_profile_by_transaction_id(const std::string& transaction_id);
 
     /// \brief Deletes all profiles from table CHARGING_PROFILES
-    void clear_charging_profiles();
+    bool clear_charging_profiles();
+
+    /// \brief Deletes all profiles from table CHARGING_PROFILES matching \p profile_id or \p criteria
+    bool clear_charging_profiles_matching_criteria(const std::optional<int32_t> profile_id,
+                                                   const std::optional<ClearChargingProfile>& criteria);
 
     /// \brief Retrieves the charging profiles stored on \p evse_id
     std::vector<v201::ChargingProfile> get_charging_profiles_for_evse(const int evse_id);
