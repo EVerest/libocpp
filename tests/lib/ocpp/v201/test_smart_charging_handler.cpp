@@ -1246,7 +1246,11 @@ TEST_F(SmartChargingHandlerTestFixtureV201, AddProfile_StoresChargingLimitSource
     auto response = handler.add_profile(profile, DEFAULT_EVSE_ID, charging_limit_source);
     EXPECT_THAT(response.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
 
-    auto sut = database_handler->get_charging_limit_source_for_profile(DEFAULT_PROFILE_ID);
+    ChargingProfileCriterion criteria = {
+        .chargingProfileId = {{profile.id}},
+    };
+    auto profiles = this->database_handler->get_charging_profiles_matching_criteria(DEFAULT_EVSE_ID, criteria);
+    const auto [e, p, sut] = profiles[0];
     EXPECT_THAT(sut, ChargingLimitSourceEnum::SO);
 }
 
@@ -1264,7 +1268,11 @@ TEST_F(SmartChargingHandlerTestFixtureV201, ValidateAndAddProfile_StoresCharging
     auto response = handler.validate_and_add_profile(profile, DEFAULT_EVSE_ID, charging_limit_source);
     EXPECT_THAT(response.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
 
-    auto sut = database_handler->get_charging_limit_source_for_profile(DEFAULT_PROFILE_ID);
+    ChargingProfileCriterion criteria = {
+        .chargingProfileId = {{profile.id}},
+    };
+    auto profiles = this->database_handler->get_charging_profiles_matching_criteria(DEFAULT_EVSE_ID, criteria);
+    const auto [e, p, sut] = profiles[0];
     EXPECT_THAT(sut, ChargingLimitSourceEnum::SO);
 }
 

@@ -3,10 +3,17 @@
 
 #include "everest/logging.hpp"
 #include "ocpp/common/database/sqlite_statement.hpp"
+#include "ocpp/v201/ocpp_enums.hpp"
+#include "ocpp/v201/ocpp_types.hpp"
+#include <boost/algorithm/string/join.hpp>
+#include <boost/range/adaptor/transformed.hpp>
+#include <numeric>
 #include <ocpp/common/message_queue.hpp>
 #include <ocpp/v201/database_handler.hpp>
 #include <ocpp/v201/types.hpp>
 #include <ocpp/v201/utils.hpp>
+#include <string>
+#include <vector>
 
 namespace ocpp {
 
@@ -809,13 +816,7 @@ bool DatabaseHandler::clear_charging_profiles_matching_criteria(const std::optio
             filters.push_back("EVSE_ID = @evse_id");
         }
 
-        if (filters.size() > 0) {
-            delete_query += " WHERE ";
-            for (int i = 0; i < filters.size() - 1; i++) {
-                delete_query += " " + filters[i] + " AND";
-            }
-            delete_query += " " + filters[filters.size() - 1];
-        }
+        delete_query += " WHERE " + boost::algorithm::join(filters, " AND ");
 
         auto stmt = this->database->new_statement(delete_query);
         if (criteria->chargingProfilePurpose.has_value()) {
@@ -841,6 +842,93 @@ bool DatabaseHandler::clear_charging_profiles_matching_criteria(const std::optio
     }
 
     return false;
+}
+
+std::vector<ReportedChargingProfile>
+DatabaseHandler::get_charging_profiles_matching_criteria(const std::optional<int32_t> evse_id,
+                                                         const ChargingProfileCriterion& criteria) {
+    auto results = std::vector<ReportedChargingProfile>();
+
+    std::string select_stmt = "SELECT EVSE_ID, PROFILE, CHARGING_LIMIT_SOURCE FROM CHARGING_PROFILES";
+    std::vector<std::string> where_clauses;
+
+    if (evse_id.has_value()) {
+        where_clauses.push_back("EVSE_ID = @evse_id");
+    }
+
+    if (criteria.chargingProfileId.has_value() && !criteria.chargingProfileId->empty()) {
+        std::string profile_ids =
+            boost::algorithm::join(criteria.chargingProfileId.value() |
+                                       boost::adaptors::transformed([](int32_t id) { return std::to_string(id); }),
+                                   ", ");
+
+        where_clauses.push_back("ID IN (" + profile_ids + ")");
+
+        select_stmt += " WHERE " + boost::algorithm::join(where_clauses, " AND ");
+
+        auto stmt = this->database->new_statement(select_stmt);
+
+        if (evse_id.has_value()) {
+            stmt->bind_int("@evse_id", evse_id.value());
+        }
+
+        while (stmt->step() != SQLITE_DONE) {
+            results.push_back(ReportedChargingProfile(
+                json::parse(stmt->column_text(1)),                                      // profile
+                stmt->column_int(0),                                                    // EVSE ID
+                conversions::string_to_charging_limit_source_enum(stmt->column_text(2)) // source
+                ));
+        }
+        return results;
+    }
+
+    if (criteria.chargingProfilePurpose.has_value()) {
+        where_clauses.push_back("CHARGING_PROFILE_PURPOSE = @charging_profile_purpose");
+    }
+
+    if (criteria.stackLevel.has_value()) {
+        where_clauses.push_back("STACK_LEVEL = @stack_level");
+    }
+
+    if (criteria.chargingLimitSource.has_value() && !criteria.chargingLimitSource->empty()) {
+        std::string sources = boost::algorithm::join(
+            criteria.chargingLimitSource.value() | boost::adaptors::transformed([](ChargingLimitSourceEnum source) {
+                return "'" + conversions::charging_limit_source_enum_to_string(source) + "'";
+            }),
+            ", ");
+
+        where_clauses.push_back("CHARGING_LIMIT_SOURCE IN (" + sources + ")");
+    }
+
+    if (!where_clauses.empty()) {
+        select_stmt += " WHERE " + boost::algorithm::join(where_clauses, " AND ");
+    }
+
+    auto stmt = this->database->new_statement(select_stmt);
+
+    if (criteria.chargingProfilePurpose.has_value()) {
+        stmt->bind_text("@charging_profile_purpose",
+                        conversions::charging_profile_purpose_enum_to_string(criteria.chargingProfilePurpose.value()),
+                        SQLiteString::Transient);
+    }
+
+    if (criteria.stackLevel.has_value()) {
+        stmt->bind_int("@stack_level", criteria.stackLevel.value());
+    }
+
+    if (evse_id.has_value()) {
+        stmt->bind_int("@evse_id", evse_id.value());
+    }
+
+    while (stmt->step() != SQLITE_DONE) {
+        results.push_back(
+            ReportedChargingProfile(json::parse(stmt->column_text(1)),                                      // profile
+                                    stmt->column_int(0),                                                    // EVSE ID
+                                    conversions::string_to_charging_limit_source_enum(stmt->column_text(2)) // source
+                                    ));
+    }
+
+    return results;
 }
 
 std::vector<v201::ChargingProfile> DatabaseHandler::get_charging_profiles_for_evse(const int evse_id) {

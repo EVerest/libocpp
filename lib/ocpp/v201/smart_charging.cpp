@@ -127,41 +127,6 @@ std::ostream& operator<<(std::ostream& os, const ProfileValidationResultEnum val
     return os;
 }
 
-bool charging_limit_source_exists_and_is_not_CSO(const ChargingProfileCriterion& criteria) {
-    return criteria.chargingLimitSource.has_value() and
-           std::find(criteria.chargingLimitSource.value().begin(), criteria.chargingLimitSource.value().end(),
-                     ChargingLimitSourceEnum::CSO) == criteria.chargingLimitSource.value().end();
-}
-
-template <typename T>
-bool value_exists_and_is_different(const std::optional<T>& requested_value, const T& actual_value) {
-    return requested_value.has_value() and requested_value.value() != actual_value;
-}
-
-/// \brief Checks if the given filter \p criteria and \p evse_id matches the given \p profile
-bool profile_matches_get_criteria(const ChargingProfile& profile, const ChargingProfileCriterion& criteria,
-                                  const std::optional<int32_t> requested_evse_id, const int32_t profile_evse_id) {
-
-    if (criteria.chargingProfileId.has_value()) {
-        const auto profile_ids = criteria.chargingProfileId.value();
-        return std::find(profile_ids.begin(), profile_ids.end(), profile.id) != profile_ids.end();
-    }
-
-    if (criteria.chargingProfileId.has_value()) {
-        // no profile matches the id, no need to do check match of the criteria
-        return false;
-    }
-
-    if (charging_limit_source_exists_and_is_not_CSO(criteria) or
-        value_exists_and_is_different(criteria.chargingProfilePurpose, profile.chargingProfilePurpose) or
-        value_exists_and_is_different(criteria.stackLevel, profile.stackLevel) or
-        value_exists_and_is_different(requested_evse_id, profile_evse_id)) {
-        return false;
-    }
-
-    return true;
-}
-
 const int32_t STATION_WIDE_ID = 0;
 
 CurrentPhaseType SmartChargingHandler::get_current_phase_type(const std::optional<EvseInterface*> evse_opt) const {
@@ -490,19 +455,7 @@ ClearChargingProfileResponse SmartChargingHandler::clear_profiles(const ClearCha
 
 std::vector<ReportedChargingProfile>
 SmartChargingHandler::get_reported_profiles(const GetChargingProfilesRequest& request) const {
-    std::vector<ReportedChargingProfile> profiles;
-
-    auto charging_profiles = this->database_handler->get_all_charging_profiles_group_by_evse();
-
-    for (auto& [existing_evse_id, evse_profiles] : charging_profiles) {
-        for (auto& profile : evse_profiles) {
-            if (profile_matches_get_criteria(profile, request.chargingProfile, request.evseId, existing_evse_id)) {
-                auto source = this->database_handler->get_charging_limit_source_for_profile(profile.id);
-                profiles.push_back(ReportedChargingProfile(profile, existing_evse_id, source));
-            }
-        }
-    }
-    return profiles;
+    return this->database_handler->get_charging_profiles_matching_criteria(request.evseId, request.chargingProfile);
 }
 
 std::vector<ChargingProfile> SmartChargingHandler::get_valid_profiles_for_evse(int32_t evse_id) {
