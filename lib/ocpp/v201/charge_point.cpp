@@ -71,8 +71,6 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
     device_model(device_model),
     database_handler(database_handler),
     registration_status(RegistrationStatusEnum::Rejected),
-    network_configuration_priority(0),
-    disable_automatic_websocket_reconnects(false),
     skip_invalid_csms_certificate_notifications(false),
     reset_scheduled(false),
     reset_scheduled_evseids{},
@@ -961,7 +959,7 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
         evse_connector_structure, database_handler,
         [this](auto evse_id, auto connector_id, auto status, bool initiated_by_trigger_message) {
             this->update_dm_availability_state(evse_id, connector_id, status);
-            if (this->websocket == nullptr || !this->websocket->is_connected() ||
+            if (this->connectivity_manager == nullptr || !this->connectivity_manager->is_websocket_connected() ||
                 this->registration_status != RegistrationStatusEnum::Accepted) {
                 return false;
             } else {
