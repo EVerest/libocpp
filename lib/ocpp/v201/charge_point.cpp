@@ -156,6 +156,8 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
     auto database_connection = std::make_unique<common::DatabaseConnection>(fs::path(core_database_path) / "cp.db");
     this->database_handler = std::make_shared<DatabaseHandler>(std::move(database_connection), sql_init_path);
 
+    initialize(evse_connector_structure, message_log_path);
+
     this->connectivity_manager =
         std::make_unique<ConnectivityManager>(*this->device_model, this->evse_security, this->logging,
                                               std::bind(&ChargePoint::message_callback, this, std::placeholders::_1));
@@ -183,8 +185,6 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
                 .value_or(false),
             this->device_model->get_value<int>(ControllerComponentVariables::MessageTimeout)},
         this->database_handler);
-
-    initialize(evse_connector_structure, message_log_path);
 }
 
 ChargePoint::~ChargePoint() {
