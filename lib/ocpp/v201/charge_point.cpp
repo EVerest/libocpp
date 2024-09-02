@@ -62,6 +62,50 @@ bool Callbacks::all_callbacks_valid() const {
 }
 
 ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
+                         std::shared_ptr<DeviceModel> device_model, std::shared_ptr<DatabaseHandler> database_handler,
+                         std::shared_ptr<MessageQueue<v201::MessageType>> message_queue,
+                         const std::string& message_log_path, const std::shared_ptr<EvseSecurity> evse_security,
+                         const Callbacks& callbacks) :
+    ocpp::ChargingStationBase(evse_security),
+    message_queue(message_queue),
+    device_model(device_model),
+    database_handler(database_handler),
+    registration_status(RegistrationStatusEnum::Rejected),
+    network_configuration_priority(0),
+    disable_automatic_websocket_reconnects(false),
+    skip_invalid_csms_certificate_notifications(false),
+    reset_scheduled(false),
+    reset_scheduled_evseids{},
+    firmware_status(FirmwareStatusEnum::Idle),
+    upload_log_status(UploadLogStatusEnum::Idle),
+    bootreason(BootReasonEnum::PowerUp),
+    ocsp_updater(this->evse_security, this->send_callback<GetCertificateStatusRequest, GetCertificateStatusResponse>(
+                                          MessageType::GetCertificateStatusResponse)),
+    monitoring_updater(
+        device_model, [this](const std::vector<EventData>& events) { this->notify_event_req(events); },
+        [this]() { return this->is_offline(); }),
+    csr_attempt(1),
+    client_certificate_expiration_check_timer([this]() { this->scheduled_check_client_certificate_expiration(); }),
+    v2g_certificate_expiration_check_timer([this]() { this->scheduled_check_v2g_certificate_expiration(); }),
+    callbacks(callbacks) {
+
+    // Make sure the received callback struct is completely filled early before we actually start running
+    if (!this->callbacks.all_callbacks_valid()) {
+        EVLOG_AND_THROW(std::invalid_argument("All non-optional callbacks must be supplied"));
+    }
+
+    if (!this->device_model) {
+        EVLOG_AND_THROW(std::invalid_argument("Device model should not be null"));
+    }
+
+    if (!this->database_handler) {
+        EVLOG_AND_THROW(std::invalid_argument("Database handler should not be null"));
+    }
+
+    initialize(evse_connector_structure, message_log_path);
+}
+
+ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
                          const std::string& device_model_storage_address, const bool initialize_device_model,
                          const std::string& device_model_migration_path, const std::string& device_model_config_path,
                          const std::string& ocpp_main_path, const std::string& core_database_path,
@@ -111,76 +155,8 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
         EVLOG_AND_THROW(std::invalid_argument("All non-optional callbacks must be supplied"));
     }
 
-    this->device_model->check_integrity(evse_connector_structure);
-
     auto database_connection = std::make_unique<common::DatabaseConnection>(fs::path(core_database_path) / "cp.db");
     this->database_handler = std::make_shared<DatabaseHandler>(std::move(database_connection), sql_init_path);
-    this->database_handler->open_connection();
-
-    // Set up the component state manager
-    this->component_state_manager = std::make_shared<ComponentStateManager>(
-        evse_connector_structure, database_handler,
-        [this](auto evse_id, auto connector_id, auto status, bool initiated_by_trigger_message) {
-            this->update_dm_availability_state(evse_id, connector_id, status);
-            if (this->connectivity_manager == nullptr || !this->connectivity_manager->is_websocket_connected() ||
-                this->registration_status != RegistrationStatusEnum::Accepted) {
-                return false;
-            } else {
-                this->status_notification_req(evse_id, connector_id, status, initiated_by_trigger_message);
-                return true;
-            }
-        });
-    if (this->callbacks.cs_effective_operative_status_changed_callback.has_value()) {
-        this->component_state_manager->set_cs_effective_availability_changed_callback(
-            this->callbacks.cs_effective_operative_status_changed_callback.value());
-    }
-    if (this->callbacks.evse_effective_operative_status_changed_callback.has_value()) {
-        this->component_state_manager->set_evse_effective_availability_changed_callback(
-            this->callbacks.evse_effective_operative_status_changed_callback.value());
-    }
-    this->component_state_manager->set_connector_effective_availability_changed_callback(
-        this->callbacks.connector_effective_operative_status_changed_callback);
-
-    auto transaction_meter_value_callback = [this](const MeterValue& _meter_value, EnhancedTransaction& transaction) {
-        if (_meter_value.sampledValue.empty() or !_meter_value.sampledValue.at(0).context.has_value()) {
-            EVLOG_info << "Not sending MeterValue due to no values";
-            return;
-        }
-
-        auto type = _meter_value.sampledValue.at(0).context.value();
-        if (type != ReadingContextEnum::Sample_Clock and type != ReadingContextEnum::Sample_Periodic) {
-            EVLOG_info << "Not sending MeterValue due to wrong context";
-            return;
-        }
-
-        const auto filter_vec = utils::get_measurands_vec(this->device_model->get_value<std::string>(
-            type == ReadingContextEnum::Sample_Clock ? ControllerComponentVariables::AlignedDataMeasurands
-                                                     : ControllerComponentVariables::SampledDataTxUpdatedMeasurands));
-
-        const auto filtered_meter_value = utils::get_meter_value_with_measurands_applied(_meter_value, filter_vec);
-
-        if (!filtered_meter_value.sampledValue.empty()) {
-            const auto trigger = type == ReadingContextEnum::Sample_Clock ? TriggerReasonEnum::MeterValueClock
-                                                                          : TriggerReasonEnum::MeterValuePeriodic;
-            this->transaction_event_req(TransactionEventEnum::Updated, DateTime(), transaction.get_transaction(),
-                                        trigger, transaction.get_seq_no(), std::nullopt, std::nullopt, std::nullopt,
-                                        std::vector<MeterValue>(1, filtered_meter_value), std::nullopt,
-                                        this->is_offline(), std::nullopt);
-        }
-    };
-
-    this->evse_manager = std::make_unique<EvseManager>(
-        evse_connector_structure, *this->device_model, this->database_handler, component_state_manager,
-        transaction_meter_value_callback, this->callbacks.pause_charging_callback);
-
-    this->smart_charging_handler =
-        std::make_shared<SmartChargingHandler>(*this->evse_manager, this->device_model, this->database_handler);
-
-    // configure logging
-    this->configure_message_logging_format(message_log_path);
-
-    // start monitoring
-    this->monitoring_updater.start_monitoring();
 
     this->connectivity_manager =
         std::make_unique<ConnectivityManager>(*this->device_model, this->evse_security, this->logging,
@@ -210,7 +186,7 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
             this->device_model->get_value<int>(ControllerComponentVariables::MessageTimeout)},
         this->database_handler);
 
-    this->auth_cache_cleanup_thread = std::thread(&ChargePoint::cache_cleanup_handler, this);
+    initialize(evse_connector_structure, message_log_path);
 }
 
 ChargePoint::~ChargePoint() {
@@ -955,8 +931,15 @@ void ChargePoint::on_log_status_notification(UploadLogStatusEnum status, int32_t
     this->send<LogStatusNotificationRequest>(call);
 }
 
-void ChargePoint::on_security_event(const CiString<50>& event_type, const std::optional<CiString<255>>& tech_info) {
-    this->security_event_notification_req(event_type, tech_info, false, false);
+void ChargePoint::on_security_event(const CiString<50>& event_type, const std::optional<CiString<255>>& tech_info,
+                                    const std::optional<bool>& critical) {
+    auto critical_security_event = true;
+    if (critical.has_value()) {
+        critical_security_event = critical.value();
+    } else {
+        critical_security_event = utils::is_critical(event_type);
+    }
+    this->security_event_notification_req(event_type, tech_info, false, critical_security_event);
 }
 
 void ChargePoint::on_variable_changed(const SetVariableData& set_variable_data) {
@@ -966,6 +949,73 @@ void ChargePoint::on_variable_changed(const SetVariableData& set_variable_data) 
 bool ChargePoint::send(CallError call_error) {
     this->message_queue->push(call_error);
     return true;
+}
+
+void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_structure,
+                             const std::string& message_log_path) {
+    this->device_model->check_integrity(evse_connector_structure);
+    this->database_handler->open_connection();
+    this->smart_charging_handler =
+        std::make_shared<SmartChargingHandler>(*this->evse_manager, this->device_model, this->database_handler);
+    this->component_state_manager = std::make_shared<ComponentStateManager>(
+        evse_connector_structure, database_handler,
+        [this](auto evse_id, auto connector_id, auto status, bool initiated_by_trigger_message) {
+            this->update_dm_availability_state(evse_id, connector_id, status);
+            if (this->websocket == nullptr || !this->websocket->is_connected() ||
+                this->registration_status != RegistrationStatusEnum::Accepted) {
+                return false;
+            } else {
+                this->status_notification_req(evse_id, connector_id, status, initiated_by_trigger_message);
+                return true;
+            }
+        });
+    if (this->callbacks.cs_effective_operative_status_changed_callback.has_value()) {
+        this->component_state_manager->set_cs_effective_availability_changed_callback(
+            this->callbacks.cs_effective_operative_status_changed_callback.value());
+    }
+    if (this->callbacks.evse_effective_operative_status_changed_callback.has_value()) {
+        this->component_state_manager->set_evse_effective_availability_changed_callback(
+            this->callbacks.evse_effective_operative_status_changed_callback.value());
+    }
+    this->component_state_manager->set_connector_effective_availability_changed_callback(
+        this->callbacks.connector_effective_operative_status_changed_callback);
+
+    auto transaction_meter_value_callback = [this](const MeterValue& _meter_value, EnhancedTransaction& transaction) {
+        if (_meter_value.sampledValue.empty() or !_meter_value.sampledValue.at(0).context.has_value()) {
+            EVLOG_info << "Not sending MeterValue due to no values";
+            return;
+        }
+
+        auto type = _meter_value.sampledValue.at(0).context.value();
+        if (type != ReadingContextEnum::Sample_Clock and type != ReadingContextEnum::Sample_Periodic) {
+            EVLOG_info << "Not sending MeterValue due to wrong context";
+            return;
+        }
+
+        const auto filter_vec = utils::get_measurands_vec(this->device_model->get_value<std::string>(
+            type == ReadingContextEnum::Sample_Clock ? ControllerComponentVariables::AlignedDataMeasurands
+                                                     : ControllerComponentVariables::SampledDataTxUpdatedMeasurands));
+
+        const auto filtered_meter_value = utils::get_meter_value_with_measurands_applied(_meter_value, filter_vec);
+
+        if (!filtered_meter_value.sampledValue.empty()) {
+            const auto trigger = type == ReadingContextEnum::Sample_Clock ? TriggerReasonEnum::MeterValueClock
+                                                                          : TriggerReasonEnum::MeterValuePeriodic;
+            this->transaction_event_req(TransactionEventEnum::Updated, DateTime(), transaction, trigger,
+                                        transaction.get_seq_no(), std::nullopt, std::nullopt, std::nullopt,
+                                        std::vector<MeterValue>(1, filtered_meter_value), std::nullopt,
+                                        this->is_offline(), std::nullopt);
+        }
+    };
+
+    this->evse_manager = std::make_unique<EvseManager>(
+        evse_connector_structure, *this->device_model, this->database_handler, component_state_manager,
+        transaction_meter_value_callback, this->callbacks.pause_charging_callback);
+
+    this->configure_message_logging_format(message_log_path);
+    this->monitoring_updater.start_monitoring();
+
+    this->auth_cache_cleanup_thread = std::thread(&ChargePoint::cache_cleanup_handler, this);
 }
 
 void ChargePoint::init_certificate_expiration_check_timers() {
@@ -1122,6 +1172,12 @@ void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& messa
         break;
     case MessageType::SetChargingProfile:
         this->handle_set_charging_profile_req(json_message);
+        break;
+    case MessageType::ClearChargingProfile:
+        this->handle_clear_charging_profile_req(json_message);
+        break;
+    case MessageType::GetChargingProfiles:
+        this->handle_get_charging_profiles_req(json_message);
         break;
     case MessageType::SetMonitoringBase:
         this->handle_set_monitoring_base_req(json_message);
@@ -1987,6 +2043,25 @@ void ChargePoint::meter_values_req(const int32_t evse_id, const std::vector<Mete
 
     ocpp::Call<MeterValuesRequest> call(req, this->message_queue->createMessageId());
     this->send<MeterValuesRequest>(call, initiated_by_trigger_message);
+}
+
+void ChargePoint::report_charging_profile_req(const int32_t request_id, const int32_t evse_id,
+                                              const ChargingLimitSourceEnum source,
+                                              const std::vector<ChargingProfile>& profiles, const bool tbc) {
+    ReportChargingProfilesRequest req;
+    req.requestId = request_id;
+    req.evseId = evse_id;
+    req.chargingLimitSource = source;
+    req.chargingProfile = profiles;
+    req.tbc = tbc;
+
+    ocpp::Call<ReportChargingProfilesRequest> call(req, this->message_queue->createMessageId());
+    this->send<ReportChargingProfilesRequest>(call);
+}
+
+void ChargePoint::report_charging_profile_req(const ReportChargingProfilesRequest& req) {
+    ocpp::Call<ReportChargingProfilesRequest> call(req, this->message_queue->createMessageId());
+    this->send<ReportChargingProfilesRequest>(call);
 }
 
 void ChargePoint::notify_event_req(const std::vector<EventData>& events) {
@@ -2980,6 +3055,21 @@ void ChargePoint::handle_set_charging_profile_req(Call<SetChargingProfileRequest
     SetChargingProfileResponse response;
     response.status = ChargingProfileStatusEnum::Rejected;
 
+    // K01.FR.29: Respond with a CallError if SmartCharging is not available for this Charging Station
+    bool is_smart_charging_available =
+        this->device_model->get_optional_value<bool>(ControllerComponentVariables::SmartChargingCtrlrAvailable)
+            .value_or(false);
+
+    if (!is_smart_charging_available) {
+        EVLOG_warning << "SmartChargingCtrlrAvailable is not set for Charging Station. Returning NotSupported error";
+
+        const auto call_error =
+            CallError(call.uniqueId, "NotSupported", "Charging Station does not support smart charging", json({}));
+        this->send(call_error);
+
+        return;
+    }
+
     // K01.FR.22: Reject ChargingStationExternalConstraints profiles in SetChargingProfileRequest
     if (msg.chargingProfile.chargingProfilePurpose == ChargingProfilePurposeEnum::ChargingStationExternalConstraints) {
         response.statusInfo = StatusInfo();
@@ -3005,6 +3095,91 @@ void ChargePoint::handle_set_charging_profile_req(Call<SetChargingProfileRequest
 
     ocpp::CallResult<SetChargingProfileResponse> call_result(response, call.uniqueId);
     this->send<SetChargingProfileResponse>(call_result);
+}
+
+void ChargePoint::handle_clear_charging_profile_req(Call<ClearChargingProfileRequest> call) {
+    EVLOG_debug << "Received ClearChargingProfileRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
+    const auto msg = call.msg;
+    ClearChargingProfileResponse response;
+    response.status = ClearChargingProfileStatusEnum::Unknown;
+
+    // K10.FR.06
+    if (msg.chargingProfileCriteria.has_value() and
+        msg.chargingProfileCriteria.value().chargingProfilePurpose.has_value() and
+        msg.chargingProfileCriteria.value().chargingProfilePurpose.value() ==
+            ChargingProfilePurposeEnum::ChargingStationExternalConstraints) {
+        response.statusInfo = StatusInfo();
+        response.statusInfo->reasonCode = "InvalidValue";
+        response.statusInfo->additionalInfo = "ChargingStationExternalConstraintsInClearChargingProfileRequest";
+        EVLOG_debug << "Rejecting SetChargingProfileRequest:\n reasonCode: " << response.statusInfo->reasonCode.get()
+                    << "\nadditionalInfo: " << response.statusInfo->additionalInfo->get();
+    } else {
+        response = this->smart_charging_handler->clear_profiles(msg);
+    }
+
+    ocpp::CallResult<ClearChargingProfileResponse> call_result(response, call.uniqueId);
+    this->send<ClearChargingProfileResponse>(call_result);
+}
+
+void ChargePoint::handle_get_charging_profiles_req(Call<GetChargingProfilesRequest> call) {
+    EVLOG_debug << "Received GetChargingProfilesRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
+    const auto msg = call.msg;
+    GetChargingProfilesResponse response;
+
+    const auto profiles_to_report = this->smart_charging_handler->get_reported_profiles(msg);
+
+    response.status =
+        profiles_to_report.empty() ? GetChargingProfileStatusEnum::NoProfiles : GetChargingProfileStatusEnum::Accepted;
+
+    ocpp::CallResult<GetChargingProfilesResponse> call_result(response, call.uniqueId);
+    this->send<GetChargingProfilesResponse>(call_result);
+
+    if (response.status == GetChargingProfileStatusEnum::NoProfiles) {
+        return;
+    }
+
+    // There are profiles to report.
+    // Prepare ReportChargingProfileRequest(s). The message defines the properties evseId and chargingLimitSource as
+    // required, so we can not report all profiles in a single ReportChargingProfilesRequest. We need to prepare a
+    // single ReportChargingProfilesRequest for each combination of evseId and chargingLimitSource
+    std::set<int32_t> evse_ids;                // will contain all evse_ids of the profiles
+    std::set<ChargingLimitSourceEnum> sources; // will contain all sources of the profiles
+
+    // fill evse_ids and sources sets
+    for (const auto& profile : profiles_to_report) {
+        evse_ids.insert(profile.evse_id);
+        sources.insert(profile.source);
+    }
+
+    std::vector<ReportChargingProfilesRequest> requests_to_send;
+
+    for (const auto evse_id : evse_ids) {
+        for (const auto source : sources) {
+            std::vector<ChargingProfile> original_profiles;
+            for (const auto& reported_profile : profiles_to_report) {
+                if (reported_profile.evse_id == evse_id and reported_profile.source == source) {
+                    original_profiles.push_back(reported_profile.profile);
+                }
+            }
+            if (not original_profiles.empty()) {
+                // prepare a ReportChargingProfilesRequest
+                ReportChargingProfilesRequest req;
+                req.requestId = msg.requestId; // K09.FR.01
+                req.evseId = evse_id;
+                req.chargingLimitSource = source;
+                req.chargingProfile = original_profiles;
+                req.tbc = true;
+                requests_to_send.push_back(req);
+            }
+        }
+    }
+
+    requests_to_send.back().tbc = false;
+
+    // requests_to_send are ready, send them and define tbc property
+    for (const auto& request_to_send : requests_to_send) {
+        this->report_charging_profile_req(request_to_send);
+    }
 }
 
 void ChargePoint::handle_firmware_update_req(Call<UpdateFirmwareRequest> call) {

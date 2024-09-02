@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
+// Copyright Pionix GmbH and Contributors to EVerest
 
 #pragma once
 
@@ -30,11 +30,13 @@
 #include <ocpp/v201/messages/CertificateSigned.hpp>
 #include <ocpp/v201/messages/ChangeAvailability.hpp>
 #include <ocpp/v201/messages/ClearCache.hpp>
+#include <ocpp/v201/messages/ClearChargingProfile.hpp>
 #include <ocpp/v201/messages/ClearVariableMonitoring.hpp>
 #include <ocpp/v201/messages/CustomerInformation.hpp>
 #include <ocpp/v201/messages/DataTransfer.hpp>
 #include <ocpp/v201/messages/DeleteCertificate.hpp>
 #include <ocpp/v201/messages/GetBaseReport.hpp>
+#include <ocpp/v201/messages/GetChargingProfiles.hpp>
 #include <ocpp/v201/messages/GetInstalledCertificateIds.hpp>
 #include <ocpp/v201/messages/GetLocalListVersion.hpp>
 #include <ocpp/v201/messages/GetLog.hpp>
@@ -49,6 +51,7 @@
 #include <ocpp/v201/messages/NotifyEvent.hpp>
 #include <ocpp/v201/messages/NotifyMonitoringReport.hpp>
 #include <ocpp/v201/messages/NotifyReport.hpp>
+#include <ocpp/v201/messages/ReportChargingProfiles.hpp>
 #include <ocpp/v201/messages/RequestStartTransaction.hpp>
 #include <ocpp/v201/messages/RequestStopTransaction.hpp>
 #include <ocpp/v201/messages/Reset.hpp>
@@ -345,7 +348,11 @@ public:
     /// CSMS
     /// \param type type of the security event
     /// \param tech_info additional info of the security event
-    virtual void on_security_event(const CiString<50>& event_type, const std::optional<CiString<255>>& tech_info) = 0;
+    /// \param critical if set this overwrites the default criticality recommended in the OCPP 2.0.1 appendix. A
+    /// critical security event is transmitted as a message to the CSMS, a non-critical one is just written to the
+    /// security log
+    virtual void on_security_event(const CiString<50>& event_type, const std::optional<CiString<255>>& tech_info,
+                                   const std::optional<bool>& critical = std::nullopt) = 0;
 
     /// \brief Event handler that will update the variable internally when it has been changed on the fly.
     /// \param set_variable_data contains data of the variable to set
@@ -414,7 +421,7 @@ private:
     std::unique_ptr<ConnectivityManager> connectivity_manager;
 
     // utility
-    std::unique_ptr<MessageQueue<v201::MessageType>> message_queue;
+    std::shared_ptr<MessageQueue<v201::MessageType>> message_queue;
     std::shared_ptr<DeviceModel> device_model;
     std::shared_ptr<DatabaseHandler> database_handler;
 
@@ -497,6 +504,7 @@ private:
     bool send(CallError call_error);
 
     // internal helper functions
+    void initialize(const std::map<int32_t, int32_t>& evse_connector_structure, const std::string& message_log_path);
     void init_certificate_expiration_check_timers();
     void scheduled_check_client_certificate_expiration();
     void scheduled_check_v2g_certificate_expiration();
@@ -670,6 +678,12 @@ private:
     void meter_values_req(const int32_t evse_id, const std::vector<MeterValue>& meter_values,
                           const bool initiated_by_trigger_message = false);
 
+    // Functional Block K: Smart Charging
+    void report_charging_profile_req(const int32_t request_id, const int32_t evse_id,
+                                     const ChargingLimitSourceEnum source, const std::vector<ChargingProfile>& profiles,
+                                     const bool tbc);
+    void report_charging_profile_req(const ReportChargingProfilesRequest& req);
+
     // Functional Block N: Diagnostics
     void notify_event_req(const std::vector<EventData>& events);
     void notify_customer_information_req(const std::string& data, const int32_t request_id);
@@ -713,6 +727,8 @@ private:
 
     // Functional Block K: Smart Charging
     void handle_set_charging_profile_req(Call<SetChargingProfileRequest> call);
+    void handle_clear_charging_profile_req(Call<ClearChargingProfileRequest> call);
+    void handle_get_charging_profiles_req(Call<GetChargingProfilesRequest> call);
 
     // Functional Block L: Firmware management
     void handle_firmware_update_req(Call<UpdateFirmwareRequest> call);
@@ -833,6 +849,22 @@ public:
                 const std::string& core_database_path, const std::string& sql_init_path,
                 const std::string& message_log_path, const std::shared_ptr<EvseSecurity> evse_security,
                 const Callbacks& callbacks);
+
+    /// \brief Construct a new ChargePoint object
+    /// \param evse_connector_structure Map that defines the structure of EVSE and connectors of the chargepoint. The
+    /// key represents the id of the EVSE and the value represents the number of connectors for this EVSE. The ids of
+    /// the EVSEs have to increment starting with 1.
+    /// \param device_model_storage device model storage instance
+    /// \param database_handler database handler instance
+    /// \param message_queue message queue instance
+    /// \param message_log_path Path to where logfiles are written to
+    /// \param evse_security Pointer to evse_security that manages security related operations
+    /// \param callbacks Callbacks that will be registered for ChargePoint
+    ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure, std::shared_ptr<DeviceModel> device_model,
+                std::shared_ptr<DatabaseHandler> database_handler,
+                std::shared_ptr<MessageQueue<v201::MessageType>> message_queue, const std::string& message_log_path,
+                const std::shared_ptr<EvseSecurity> evse_security, const Callbacks& callbacks);
+
     ~ChargePoint();
 
     void start(BootReasonEnum bootreason = BootReasonEnum::PowerUp) override;
@@ -893,7 +925,8 @@ public:
 
     void on_log_status_notification(UploadLogStatusEnum status, int32_t requestId) override;
 
-    void on_security_event(const CiString<50>& event_type, const std::optional<CiString<255>>& tech_info) override;
+    void on_security_event(const CiString<50>& event_type, const std::optional<CiString<255>>& tech_info,
+                           const std::optional<bool>& critical = std::nullopt) override;
 
     void on_variable_changed(const SetVariableData& set_variable_data) override;
 
