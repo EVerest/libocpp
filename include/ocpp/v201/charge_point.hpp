@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
+// Copyright Pionix GmbH and Contributors to EVerest
 
 #pragma once
 
@@ -11,6 +11,7 @@
 
 #include <ocpp/v201/average_meter_values.hpp>
 #include <ocpp/v201/charge_point_callbacks.hpp>
+#include <ocpp/v201/connectivity_manager.hpp>
 #include <ocpp/v201/ctrlr_component_variables.hpp>
 #include <ocpp/v201/database_handler.hpp>
 #include <ocpp/v201/device_model.hpp>
@@ -30,6 +31,7 @@
 #include <ocpp/v201/messages/CertificateSigned.hpp>
 #include <ocpp/v201/messages/ChangeAvailability.hpp>
 #include <ocpp/v201/messages/ClearCache.hpp>
+#include <ocpp/v201/messages/ClearChargingProfile.hpp>
 #include <ocpp/v201/messages/ClearDisplayMessage.hpp>
 #include <ocpp/v201/messages/ClearVariableMonitoring.hpp>
 #include <ocpp/v201/messages/CostUpdated.hpp>
@@ -37,6 +39,7 @@
 #include <ocpp/v201/messages/DataTransfer.hpp>
 #include <ocpp/v201/messages/DeleteCertificate.hpp>
 #include <ocpp/v201/messages/GetBaseReport.hpp>
+#include <ocpp/v201/messages/GetChargingProfiles.hpp>
 #include <ocpp/v201/messages/GetDisplayMessages.hpp>
 #include <ocpp/v201/messages/GetInstalledCertificateIds.hpp>
 #include <ocpp/v201/messages/GetLocalListVersion.hpp>
@@ -52,6 +55,7 @@
 #include <ocpp/v201/messages/NotifyEvent.hpp>
 #include <ocpp/v201/messages/NotifyMonitoringReport.hpp>
 #include <ocpp/v201/messages/NotifyReport.hpp>
+#include <ocpp/v201/messages/ReportChargingProfiles.hpp>
 #include <ocpp/v201/messages/RequestStartTransaction.hpp>
 #include <ocpp/v201/messages/RequestStopTransaction.hpp>
 #include <ocpp/v201/messages/Reset.hpp>
@@ -97,9 +101,6 @@ public:
     /// \param bootreason   Optional bootreason (default: PowerUp).
     virtual void start(BootReasonEnum bootreason = BootReasonEnum::PowerUp) = 0;
 
-    /// \brief Starts the websocket
-    virtual void start_websocket() = 0;
-
     /// \brief Stops the ChargePoint. Disconnects the websocket connection and stops MessageQueue and all timers
     virtual void stop() = 0;
 
@@ -107,11 +108,7 @@ public:
     virtual void connect_websocket() = 0;
 
     /// \brief Disconnects the the websocket connection to the CSMS if it is connected
-    /// \param code Optional websocket close status code (default: normal).
-
-    /// \brief Disconnects the the websocket connection to the CSMS if it is connected
-    /// \param code Optional websocket close status code (default: normal).
-    virtual void disconnect_websocket(const WebsocketCloseReason code = WebsocketCloseReason::Normal) = 0;
+    virtual void disconnect_websocket() = 0;
 
     /// \brief Chargepoint notifies about new firmware update status firmware_update_status. This function should be
     ///        called during a Firmware Update to indicate the current firmware_update_status.
@@ -240,7 +237,11 @@ public:
     /// CSMS
     /// \param type type of the security event
     /// \param tech_info additional info of the security event
-    virtual void on_security_event(const CiString<50>& event_type, const std::optional<CiString<255>>& tech_info) = 0;
+    /// \param critical if set this overwrites the default criticality recommended in the OCPP 2.0.1 appendix. A
+    /// critical security event is transmitted as a message to the CSMS, a non-critical one is just written to the
+    /// security log
+    virtual void on_security_event(const CiString<50>& event_type, const std::optional<CiString<255>>& tech_info,
+                                   const std::optional<bool>& critical = std::nullopt) = 0;
 
     /// \brief Event handler that will update the variable internally when it has been changed on the fly.
     /// \param set_variable_data contains data of the variable to set
@@ -306,9 +307,10 @@ class ChargePoint : public ChargePointInterface, private ocpp::ChargingStationBa
 
 private:
     std::unique_ptr<EvseManager> evse_manager;
+    std::unique_ptr<ConnectivityManager> connectivity_manager;
 
     // utility
-    std::unique_ptr<MessageQueue<v201::MessageType>> message_queue;
+    std::shared_ptr<MessageQueue<v201::MessageType>> message_queue;
     std::shared_ptr<DeviceModel> device_model;
     std::shared_ptr<DatabaseHandler> database_handler;
 
@@ -345,8 +347,6 @@ private:
     UploadLogStatusEnum upload_log_status;
     int32_t upload_log_status_id;
     BootReasonEnum bootreason;
-    int network_configuration_priority;
-    bool disable_automatic_websocket_reconnects;
     bool skip_invalid_csms_certificate_notifications;
 
     /// \brief Component responsible for maintaining and persisting the operational status of CS, EVSEs, and connectors.
@@ -393,24 +393,19 @@ private:
     bool send(CallError call_error);
 
     // internal helper functions
-    void init_websocket();
-    WebsocketConnectionOptions get_ws_connection_options(const int32_t configuration_slot);
+    void initialize(const std::map<int32_t, int32_t>& evse_connector_structure, const std::string& message_log_path);
     void init_certificate_expiration_check_timers();
     void scheduled_check_client_certificate_expiration();
     void scheduled_check_v2g_certificate_expiration();
+    void websocket_connected_callback(const int security_profile);
+    void websocket_disconnected_callback();
+    void websocket_connection_failed(ConnectionFailedReason reason);
     void update_dm_availability_state(const int32_t evse_id, const int32_t connector_id,
                                       const ConnectorStatusEnum status);
     void update_dm_evse_power(const int32_t evse_id, const MeterValue& meter_value);
 
     void trigger_authorization_cache_cleanup();
     void cache_cleanup_handler();
-
-    /// \brief Gets the configured NetworkConnectionProfile based on the given \p configuration_slot . The
-    /// central system uri ofthe connection options will not contain ws:// or wss:// because this method removes it if
-    /// present \param network_configuration_priority \return
-    std::optional<NetworkConnectionProfile> get_network_connection_profile(const int32_t configuration_slot);
-    /// \brief Moves websocket network_configuration_priority to next profile
-    void next_network_configuration_priority();
 
     /// \brief Removes all network connection profiles below the actual security profile and stores the new list in the
     /// device model
@@ -585,6 +580,12 @@ private:
     void meter_values_req(const int32_t evse_id, const std::vector<MeterValue>& meter_values,
                           const bool initiated_by_trigger_message = false);
 
+    // Functional Block K: Smart Charging
+    void report_charging_profile_req(const int32_t request_id, const int32_t evse_id,
+                                     const ChargingLimitSourceEnum source, const std::vector<ChargingProfile>& profiles,
+                                     const bool tbc);
+    void report_charging_profile_req(const ReportChargingProfilesRequest& req);
+
     // Functional Block N: Diagnostics
     void notify_event_req(const std::vector<EventData>& events);
     void notify_customer_information_req(const std::string& data, const int32_t request_id);
@@ -631,6 +632,8 @@ private:
 
     // Functional Block K: Smart Charging
     void handle_set_charging_profile_req(Call<SetChargingProfileRequest> call);
+    void handle_clear_charging_profile_req(Call<ClearChargingProfileRequest> call);
+    void handle_get_charging_profiles_req(Call<GetChargingProfilesRequest> call);
 
     // Functional Block L: Firmware management
     void handle_firmware_update_req(Call<UpdateFirmwareRequest> call);
@@ -756,17 +759,30 @@ public:
                 const std::string& core_database_path, const std::string& sql_init_path,
                 const std::string& message_log_path, const std::shared_ptr<EvseSecurity> evse_security,
                 const Callbacks& callbacks);
+
+    /// \brief Construct a new ChargePoint object
+    /// \param evse_connector_structure Map that defines the structure of EVSE and connectors of the chargepoint. The
+    /// key represents the id of the EVSE and the value represents the number of connectors for this EVSE. The ids of
+    /// the EVSEs have to increment starting with 1.
+    /// \param device_model_storage device model storage instance
+    /// \param database_handler database handler instance
+    /// \param message_queue message queue instance
+    /// \param message_log_path Path to where logfiles are written to
+    /// \param evse_security Pointer to evse_security that manages security related operations
+    /// \param callbacks Callbacks that will be registered for ChargePoint
+    ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure, std::shared_ptr<DeviceModel> device_model,
+                std::shared_ptr<DatabaseHandler> database_handler,
+                std::shared_ptr<MessageQueue<v201::MessageType>> message_queue, const std::string& message_log_path,
+                const std::shared_ptr<EvseSecurity> evse_security, const Callbacks& callbacks);
+
     ~ChargePoint();
 
     void start(BootReasonEnum bootreason = BootReasonEnum::PowerUp) override;
 
-    void start_websocket() override;
-
     void stop() override;
 
-    void connect_websocket() override;
-
-    void disconnect_websocket(const WebsocketCloseReason code = WebsocketCloseReason::Normal) override;
+    virtual void connect_websocket() override;
+    virtual void disconnect_websocket() override;
 
     void on_firmware_update_status_notification(int32_t request_id,
                                                 const FirmwareStatusEnum& firmware_update_status) override;
@@ -819,7 +835,8 @@ public:
 
     void on_log_status_notification(UploadLogStatusEnum status, int32_t requestId) override;
 
-    void on_security_event(const CiString<50>& event_type, const std::optional<CiString<255>>& tech_info) override;
+    void on_security_event(const CiString<50>& event_type, const std::optional<CiString<255>>& tech_info,
+                           const std::optional<bool>& critical = std::nullopt) override;
 
     void on_variable_changed(const SetVariableData& set_variable_data) override;
 

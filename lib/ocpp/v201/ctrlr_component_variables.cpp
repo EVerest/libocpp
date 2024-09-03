@@ -1102,7 +1102,7 @@ const ComponentVariable& SmartChargingCtrlrAvailable = {
         "Available",
     }),
 };
-const ComponentVariable& SmartChargingCtrlrAvailableEnabled = {
+const ComponentVariable& SmartChargingCtrlrEnabled = {
     ControllerComponents::SmartChargingCtrlr,
     std::nullopt,
     std::optional<Variable>({
