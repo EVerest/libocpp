@@ -18,7 +18,7 @@
 /// database is not set by an external source, like the CSMS.
 ///
 /// The data from the schema json files or database are read into some structs. Some structs could be reused from
-/// the DeviceModelStorage class, but some members are missing there and and to prevent too many database reads, some
+/// the DeviceModelInterface class, but some members are missing there and and to prevent too many database reads, some
 /// structs are 'redefined' in this class with the proper members.
 ///
 /// Since the DeviceModel class creates a map based on the device model database in the constructor, this class should
@@ -36,7 +36,7 @@
 #include <filesystem>
 
 #include <ocpp/common/database/database_handler_common.hpp>
-#include <ocpp/v201/device_model_storage.hpp>
+#include <ocpp/v201/device_model_interface.hpp>
 
 namespace ocpp::v201 {
 ///

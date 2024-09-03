@@ -233,7 +233,7 @@ GetVariableStatusEnum DeviceModel::request_value_internal(const Component& compo
         return GetVariableStatusEnum::UnknownVariable;
     }
 
-    const auto attribute_opt = this->storage->get_variable_attribute(component_id, variable_id, attribute_enum);
+    const auto attribute_opt = this->interface->get_variable_attribute(component_id, variable_id, attribute_enum);
 
     if ((not attribute_opt) or (not attribute_opt->value)) {
         return GetVariableStatusEnum::NotSupportedAttributeType;
@@ -274,7 +274,7 @@ SetVariableStatusEnum DeviceModel::set_value(const Component& component, const V
         return SetVariableStatusEnum::Rejected;
     }
 
-    const auto attribute = this->storage->get_variable_attribute(component, variable, attribute_enum);
+    const auto attribute = this->interface->get_variable_attribute(component, variable, attribute_enum);
 
     if (!attribute.has_value()) {
         return SetVariableStatusEnum::NotSupportedAttributeType;
@@ -287,7 +287,7 @@ SetVariableStatusEnum DeviceModel::set_value(const Component& component, const V
     }
 
     const auto success =
-        this->storage->set_variable_attribute_value(component, variable, attribute_enum, value, source);
+        this->interface->set_variable_attribute_value(component, variable, attribute_enum, value, source);
 
     // Only trigger for actual values
     if ((attribute_enum == AttributeEnum::Actual) && success && variable_listener) {
@@ -310,9 +310,9 @@ SetVariableStatusEnum DeviceModel::set_value(const Component& component, const V
     return success ? SetVariableStatusEnum::Accepted : SetVariableStatusEnum::Rejected;
 };
 
-DeviceModel::DeviceModel(std::unique_ptr<DeviceModelStorage> device_model_storage) :
-    storage{std::move(device_model_storage)} {
-    this->device_model = this->storage->get_device_model();
+DeviceModel::DeviceModel(std::unique_ptr<DeviceModelInterface> device_model_interface) :
+    interface{std::move(device_model_interface)} {
+    this->device_model = this->interface->get_device_model();
 }
 
 SetVariableStatusEnum DeviceModel::set_read_only_value(const Component& component, const Variable& variable,
@@ -347,8 +347,8 @@ std::vector<ReportData> DeviceModel::get_base_report_data(const ReportBaseEnum& 
 
             ComponentVariable cv = {component, std::nullopt, variable};
 
-            // request the variable attribute from the device model storage
-            const auto variable_attributes = this->storage->get_variable_attributes(component, variable);
+            // request the variable attribute from the device model
+            const auto variable_attributes = this->interface->get_variable_attributes(component, variable);
 
             // iterate over possibly (Actual, Target, MinSet, MaxSet)
             for (const auto& variable_attribute : variable_attributes) {
@@ -391,8 +391,8 @@ DeviceModel::get_custom_report_data(const std::optional<std::vector<ComponentVar
                     report_data.component = component;
                     report_data.variable = variable;
 
-                    //  request the variable attribute from the device model storage
-                    const auto variable_attributes = this->storage->get_variable_attributes(component, variable);
+                    //  request the variable attribute from the device model
+                    const auto variable_attributes = this->interface->get_variable_attributes(component, variable);
 
                     for (const auto& variable_attribute : variable_attributes) {
                         report_data.variableAttribute.push_back(variable_attribute);
@@ -412,7 +412,7 @@ DeviceModel::get_custom_report_data(const std::optional<std::vector<ComponentVar
 void DeviceModel::check_integrity(const std::map<int32_t, int32_t>& evse_connector_structure) {
     EVLOG_debug << "Checking integrity of device model in storage";
     try {
-        this->storage->check_integrity();
+        this->interface->check_integrity();
 
         int32_t nr_evse_components = 0;
         std::map<int32_t, int32_t> evse_id_nr_connector_components;
@@ -431,34 +431,33 @@ void DeviceModel::check_integrity(const std::map<int32_t, int32_t>& evse_connect
 
         // check if number of EVSE in the device model matches the configured number
         if (nr_evse_components != evse_connector_structure.size()) {
-            throw DeviceModelStorageError("Number of EVSE configured in device model is incompatible with number of "
-                                          "configured EVSEs of the ChargePoint");
+            throw DeviceModelError("Number of EVSE configured in device model is incompatible with number of "
+                                   "configured EVSEs of the ChargePoint");
         }
 
         for (const auto [evse_id, nr_of_connectors] : evse_connector_structure) {
             // check if number of Cpnnectors for this EVSE in the device model matches the configured number
             if (evse_id_nr_connector_components[evse_id] != nr_of_connectors) {
-                throw DeviceModelStorageError(
-                    "Number of Connectors configured in device model is incompatible with number "
-                    "of configured Connectors of the ChargePoint");
+                throw DeviceModelError("Number of Connectors configured in device model is incompatible with number "
+                                       "of configured Connectors of the ChargePoint");
             }
 
             // check if all relevant EVSE and Connector components can be found
             EVSE evse = {evse_id};
             Component evse_component = {"EVSE", std::nullopt, evse};
             if (!this->device_model.count(evse_component)) {
-                throw DeviceModelStorageError("Could not find required EVSE component in device model");
+                throw DeviceModelError("Could not find required EVSE component in device model");
             }
             for (size_t connector_id = 1; connector_id <= nr_of_connectors; connector_id++) {
                 evse_component.name = "Connector";
                 evse_component.evse.value().connectorId = connector_id;
                 if (!this->device_model.count(evse_component)) {
-                    throw DeviceModelStorageError("Could not find required Connector component in device model");
+                    throw DeviceModelError("Could not find required Connector component in device model");
                 }
             }
         }
-    } catch (const DeviceModelStorageError& e) {
-        EVLOG_error << "Integrity check in Device Model storage failed:" << e.what();
+    } catch (const DeviceModelError& e) {
+        EVLOG_error << "Integrity check in Device Model failed:" << e.what();
         throw e;
     }
 }
@@ -500,7 +499,7 @@ bool DeviceModel::update_monitor_reference(int32_t monitor_id, const std::string
 
     if (found_monitor) {
         try {
-            if (this->storage->update_monitoring_reference(monitor_id, reference_value)) {
+            if (this->interface->update_monitoring_reference(monitor_id, reference_value)) {
                 // Update value in-memory too
                 monitor_meta->reference_value = reference_value;
                 return true;
@@ -510,7 +509,7 @@ bool DeviceModel::update_monitor_reference(int32_t monitor_id, const std::string
             }
         } catch (const DatabaseException& e) {
             EVLOG_error << "Exception while updating trivial delta monitor reference with ID: " << monitor_id;
-            throw DeviceModelStorageError(e.what());
+            throw DeviceModelError(e.what());
         }
     } else {
         EVLOG_warning << "Could not find trivial delta monitor with ID: " << monitor_id
@@ -655,14 +654,14 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
         }
 
         try {
-            auto monitor_meta = this->storage->set_monitoring_data(request, type);
+            auto monitor_meta = this->interface->set_monitoring_data(request, type);
 
             if (monitor_meta.has_value()) {
                 // N07.FR.11
                 // In case of an existing monitor update
                 if (request_has_id && monitor_update_listener) {
-                    auto attribute = this->storage->get_variable_attribute(component_it->first, variable_it->first,
-                                                                           AttributeEnum::Actual);
+                    auto attribute = this->interface->get_variable_attribute(component_it->first, variable_it->first,
+                                                                             AttributeEnum::Actual);
 
                     if (attribute.has_value()) {
                         static std::string empty_value{};
@@ -686,7 +685,7 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
             }
         } catch (const DatabaseException& e) {
             EVLOG_error << "Set monitors failed:" << e.what();
-            throw DeviceModelStorageError(e.what());
+            throw DeviceModelError(e.what());
         }
 
         set_monitors_res.push_back(result);
@@ -811,7 +810,7 @@ std::vector<ClearMonitoringResult> DeviceModel::clear_monitors(const std::vector
         clear_monitor_res.id = id;
 
         try {
-            auto clear_result = this->storage->clear_variable_monitor(id, allow_protected);
+            auto clear_result = this->interface->clear_variable_monitor(id, allow_protected);
             if (clear_result == ClearMonitoringStatusEnum::Accepted) {
                 // Clear from memory too
                 for (auto& [component, variable_map] : this->device_model) {
@@ -824,7 +823,7 @@ std::vector<ClearMonitoringResult> DeviceModel::clear_monitors(const std::vector
             clear_monitor_res.status = clear_result;
         } catch (const DatabaseException& e) {
             EVLOG_error << "Clear monitors failed:" << e.what();
-            throw DeviceModelStorageError(e.what());
+            throw DeviceModelError(e.what());
         }
 
         clear_monitors_vec.push_back(clear_monitor_res);
@@ -835,7 +834,7 @@ std::vector<ClearMonitoringResult> DeviceModel::clear_monitors(const std::vector
 
 int32_t DeviceModel::clear_custom_monitors() {
     try {
-        int32_t deleted = this->storage->clear_custom_variable_monitors();
+        int32_t deleted = this->interface->clear_custom_variable_monitors();
 
         // Clear from memory too
         for (auto& [component, variable_map] : this->device_model) {
@@ -854,7 +853,7 @@ int32_t DeviceModel::clear_custom_monitors() {
         return deleted;
     } catch (const DatabaseException& e) {
         EVLOG_error << "Clear custom monitors failed:" << e.what();
-        throw DeviceModelStorageError(e.what());
+        throw DeviceModelError(e.what());
     }
 
     return 0;

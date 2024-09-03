@@ -23,7 +23,7 @@ DeviceModelStorageSqlite::DeviceModelStorageSqlite(const fs::path& db_path, cons
     if (init_db) {
         if (db_path.empty() || migration_files_path.empty() || config_path.empty()) {
             EVLOG_AND_THROW(
-                DeviceModelStorageError("Can not initialize device model storage: one of the paths is empty."));
+                DeviceModelError("Can not initialize device model storage: one of the paths is empty."));
         }
         InitDeviceModelDb init_device_model_db(db_path, migration_files_path);
         init_device_model_db.initialize_database(config_path, false);
@@ -481,7 +481,7 @@ void DeviceModelStorageSqlite::check_integrity() {
                   << "/" << select_stmt->column_text_nullable(4).value_or("<null>") << ")" << std::endl;
         } while (select_stmt->step() == SQLITE_ROW);
 
-        throw DeviceModelStorageError(error.str());
+        throw DeviceModelError(error.str());
     }
 }
 
