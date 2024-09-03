@@ -2651,9 +2651,8 @@ std::optional<KeyValue> ChargePointConfiguration::getCustomMultiLanguageMessages
 }
 
 std::optional<std::string> ChargePointConfiguration::getMultiLanguageSupportedLanguages() {
-    if (this->config.contains("CostAndPrice") &&
-        this->config["CostAndPrice"].contains("MultiLanguageSupportedLanguages")) {
-        return this->config["CostAndPrice"]["MultiLanguageSupportedLanguages"];
+    if (this->config.contains("CostAndPrice") && this->config["CostAndPrice"].contains("SupportedLanguages")) {
+        return this->config["CostAndPrice"]["SupportedLanguages"];
     }
 
     return std::nullopt;
@@ -2664,7 +2663,7 @@ std::optional<KeyValue> ChargePointConfiguration::getMultiLanguageSupportedLangu
     std::optional<std::string> languages = getMultiLanguageSupportedLanguages();
     if (languages.has_value()) {
         result = KeyValue();
-        result->key = "MultiLanguageSupportedLanguages";
+        result->key = "SupportedLanguages";
         result->value = languages.value();
         result->readonly = true;
     }
@@ -3068,7 +3067,7 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
         if (key == "CustomIdleFeeAfterStop") {
             return this->getCustomIdleFeeAfterStopKeyValue();
         }
-        if (key == "MultiLanguageSupportedLanguages") {
+        if (key == "SupportedLanguages") {
             return this->getMultiLanguageSupportedLanguagesKeyValue();
         }
         if (key == "CustomMultiLanguageMessages") {
