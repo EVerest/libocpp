@@ -352,10 +352,13 @@ struct DisplayMessageContent {
     friend void to_json(json& j, const DisplayMessageContent& m);
 };
 
+///
+/// \brief Type of an identifier string.
+///
 enum class IdentifierType {
-    SessionId,
-    IdToken,
-    TransactionId
+    SessionId,      ///< \brief Identifier is the session id.
+    IdToken,        ///< \brief Identifier is the id token.
+    TransactionId   ///< \brief Identifier is the transaction id.
 };
 
 struct DisplayMessage {

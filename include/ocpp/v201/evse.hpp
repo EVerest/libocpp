@@ -125,6 +125,14 @@ public:
     /// \brief Returns the phase type for the EVSE based on its SupplyPhases. It can be AC, DC, or Unknown.
     virtual CurrentPhaseType get_current_phase_type() = 0;
 
+    ///
+    /// \brief Set metervalue triggers for California Pricing.
+    /// \param trigger_metervalue_on_power_kw   Send metervalues on this amount of kw (with hysteresis).
+    /// \param trigger_metervalue_on_energy_kwh Send metervalues when this kwh is reached.
+    /// \param trigger_metervalue_at_time       Send metervalues at a specific time.
+    /// \param send_metervalue_function         Function used to send the metervalues.
+    /// \param io_service                       io service for the timers.
+    ///
     virtual void set_meter_value_pricing_triggers(
         std::optional<double> trigger_metervalue_on_power_kw, std::optional<double> trigger_metervalue_on_energy_kwh,
         std::optional<DateTime> trigger_metervalue_at_time,
@@ -165,7 +173,17 @@ private:
     /// \param timestamp
     void start_metering_timers(const DateTime& timestamp);
 
+    ///
+    /// \brief Send metervalue to CSMS after a pricing trigger occured.
+    /// \param meter_value  The metervalue to send.
+    ///
     void send_meter_value_on_pricing_trigger(const MeterValue& meter_value);
+
+    ///
+    /// \brief Reset pricing triggers.
+    ///
+    /// Resets timer, set all pricing trigger related members to std::nullopt and / or nullptr.
+    ///
     void reset_pricing_triggers(void);
 
     AverageMeterValues aligned_data_updated;
@@ -235,6 +253,14 @@ public:
 
     CurrentPhaseType get_current_phase_type();
 
+    ///
+    /// \brief Set pricing triggers to send the meter value.
+    /// \param trigger_metervalue_on_power_kw   Trigger for this amount of kw
+    /// \param trigger_metervalue_on_energy_kwh Trigger when amount of kwh is reached
+    /// \param trigger_metervalue_at_time       Trigger for a specific time
+    /// \param send_metervalue_function         Function to send metervalues when trigger 'fires'
+    /// \param io_service                       Io service needed for the timer
+    ///
     void set_meter_value_pricing_triggers(
         std::optional<double> trigger_metervalue_on_power_kw, std::optional<double> trigger_metervalue_on_energy_kwh,
         std::optional<DateTime> trigger_metervalue_at_time,

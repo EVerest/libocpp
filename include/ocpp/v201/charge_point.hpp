@@ -539,8 +539,23 @@ private:
     ///
     void handle_cost_and_tariff(const TransactionEventResponse& response,
                                 const TransactionEventRequest& original_message);
+
+    ///
+    /// \brief Check if multilanguage setting (variable) is enabled.
+    /// \return True if enabled.
+    ///
     bool is_multilanguage_enabled() const;
+
+    ///
+    /// \brief Check if tariff setting (variable) is enabled.
+    /// \return True if enabled.
+    ///
     bool is_tariff_enabled() const;
+
+    ///
+    /// \brief Check if cost setting (variable) is enabled.
+    /// \return True if enabled.
+    ///
     bool is_cost_enabled() const;
 
     /* OCPP message requests */
