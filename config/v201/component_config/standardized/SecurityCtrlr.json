@@ -22,6 +22,7 @@
     },
     "AdditionalRootCertificateCheck": {
       "variable_name": "AdditionalRootCertificateCheck",
+      "source": "OCPP",
       "characteristics": {
         "supportsMonitoring": true,
         "dataType": "boolean"
@@ -38,6 +39,7 @@
     },
     "BasicAuthPassword": {
       "variable_name": "BasicAuthPassword",
+      "source": "OCPP",
       "characteristics": {
         "minLimit": 16,
         "maxLimit": 40,
@@ -75,6 +77,7 @@
     },
     "CertSigningRepeatTimes": {
       "variable_name": "CertSigningRepeatTimes",
+      "source": "OCPP",
       "characteristics": {
         "supportsMonitoring": true,
         "dataType": "integer"
@@ -92,6 +95,7 @@
     },
     "CertSigningWaitMinimum": {
       "variable_name": "CertSigningWaitMinimum",
+      "source": "OCPP",
       "characteristics": {
         "unit": "s",
         "supportsMonitoring": true,
@@ -110,6 +114,7 @@
     },
     "SecurityCtrlrIdentity": {
       "variable_name": "Identity",
+      "source": "OCPP",
       "characteristics": {
         "supportsMonitoring": true,
         "dataType": "string"
@@ -127,6 +132,7 @@
     },
     "MaxCertificateChainSize": {
       "variable_name": "MaxCertificateChainSize",
+      "source": "OCPP",
       "characteristics": {
         "supportsMonitoring": true,
         "dataType": "integer"
@@ -142,6 +148,7 @@
     },
     "OrganizationName": {
       "variable_name": "OrganizationName",
+      "source": "OCPP",
       "characteristics": {
         "supportsMonitoring": true,
         "dataType": "string"
@@ -159,6 +166,7 @@
     },
     "SecurityProfile": {
       "variable_name": "SecurityProfile",
+      "source": "OCPP",
       "characteristics": {
         "minLimit": 1,
         "maxLimit": 3,
