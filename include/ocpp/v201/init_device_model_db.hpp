@@ -94,7 +94,7 @@ struct DeviceModelVariable {
     /// \brief Config monitors, if any
     std::vector<VariableMonitoringMeta> monitors;
     /// \brief Source of the variable.
-    std::optional<VariableSource> source;
+    std::optional<std::string> source;
 };
 
 /// \brief Convert from json to a ComponentKey struct.

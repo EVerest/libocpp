@@ -150,7 +150,7 @@ DeviceModelMap DeviceModelStorageSqlite::get_device_model() {
         }
 
         if (select_stmt->column_type(12) != SQLITE_NULL) {
-            meta_data.source = conversions::string_to_variable_source_enum(select_stmt->column_text(12));
+            meta_data.source = select_stmt->column_text(12);
         }
 
         meta_data.characteristics = characteristics;

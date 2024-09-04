@@ -386,8 +386,7 @@ void InitDeviceModelDb::insert_variable(const DeviceModelVariable& variable, con
     insert_variable_statement->bind_int("@required", required_int);
 
     if (variable.source.has_value()) {
-        insert_variable_statement->bind_text("@source",
-                                             conversions::variable_source_enum_to_string(variable.source.value()));
+        insert_variable_statement->bind_text("@source", variable.source.value());
     } else {
         insert_variable_statement->bind_null("@source");
     }
@@ -436,8 +435,7 @@ void InitDeviceModelDb::update_variable(const DeviceModelVariable& variable, con
     update_statement->bind_int("@required", required_int);
 
     if (variable.source.has_value()) {
-        update_statement->bind_text("@source", conversions::variable_source_enum_to_string(variable.source.value()),
-                                    ocpp::common::SQLiteString::Transient);
+        update_statement->bind_text("@source", variable.source.value(), ocpp::common::SQLiteString::Transient);
     } else {
         update_statement->bind_null("@source");
     }
@@ -912,7 +910,7 @@ std::map<ComponentKey, std::vector<DeviceModelVariable>> InitDeviceModelDb::get_
 
         if (select_statement->column_type(23) != SQLITE_NULL) {
             try {
-                variable->source = conversions::string_to_variable_source_enum(select_statement->column_text(23));
+                variable->source = select_statement->column_text(23);
             } catch (const std::out_of_range& e) {
                 EVLOG_error << e.what() << ": Variable Source will not be set (so default will be used)";
             }
@@ -1233,7 +1231,7 @@ void from_json(const json& j, DeviceModelVariable& c) {
     }
 
     if (j.contains("source")) {
-        c.source = conversions::string_to_variable_source_enum(j.at("source"));
+        c.source = j.at("source");
     }
 
     if (j.contains("monitors")) {
@@ -1312,7 +1310,7 @@ static void check_integrity(const std::map<ComponentKey, std::vector<DeviceModel
 ///
 static std::optional<std::string> check_integrity_required_value(const DeviceModelVariable& variable) {
     // Required value has a different source so it is correct that the value is not set here.
-    if (variable.source.has_value() && variable.source != VariableSource::OCPP) {
+    if (variable.source.has_value() && variable.source != "OCPP") {
         return std::nullopt;
     }
 

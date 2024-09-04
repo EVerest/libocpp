@@ -33,7 +33,7 @@ struct VariableMonitoringPeriodic {
 struct VariableMetaData {
     VariableCharacteristics characteristics;
     std::unordered_map<int64_t, VariableMonitoringMeta> monitors;
-    std::optional<VariableSource> source;
+    std::optional<std::string> source;
 };
 
 using VariableMap = std::map<Variable, VariableMetaData>;

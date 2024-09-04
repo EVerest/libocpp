@@ -38,30 +38,6 @@ constexpr int32_t MIN = Danger;
 constexpr int32_t MAX = Debug;
 } // namespace MonitoringLevelSeverity
 
-///
-/// \brief The VariableSource enum used for the device model
-///
-enum class VariableSource {
-    OCPP,
-    EVEREST_CORE
-};
-
-namespace conversions {
-///
-/// \brief Converts the given VariableSource to a string.
-/// \param s    The source to convert.
-/// \return The string representation of VariableSource
-///
-std::string variable_source_enum_to_string(const VariableSource s);
-
-///
-/// \brief Converts the given string representation of VariableSource to VariableSource enum
-/// \param s    The string to convert
-/// \return The VariableSource
-///
-VariableSource string_to_variable_source_enum(const std::string& s);
-} // namespace conversions
-
 } // namespace v201
 } // namespace ocpp
 
