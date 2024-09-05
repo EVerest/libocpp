@@ -2,7 +2,7 @@
 
 Profiles created to use as a baseline for testing Composite Schedule scenarios.
 The goal was to use actual Profiles from the standard as a baseline for Unit
-and Integration Testing via tools such as 
+and Integration Testing via tools such as
 [Appenzell](https://github.com/US-JOET/appenzell).
 
 ## Profiles
