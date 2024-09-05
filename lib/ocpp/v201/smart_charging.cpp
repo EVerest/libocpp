@@ -516,18 +516,25 @@ bool SmartChargingHandler::is_overlapping_validity_period(const ChargingProfile&
         return false;
     }
 
-    const std::vector<ChargingProfile> profiles =
-        this->database_handler->get_charging_profiles_for_evse(candidate_evse_id);
-    return std::any_of(profiles.begin(), profiles.end(), [&candidate_profile](const ChargingProfile& existing_profile) {
-        if (existing_profile.stackLevel == candidate_profile.stackLevel &&
-            existing_profile.chargingProfileKind == candidate_profile.chargingProfileKind &&
-            existing_profile.id != candidate_profile.id) {
+    auto overlap_stmt = this->database_handler->new_statement(
+        "SELECT PROFILE, json_extract(PROFILE, '$.chargingProfileKind') AS KIND FROM CHARGING_PROFILES WHERE EVSE_ID = "
+        "@evse_id AND ID != @profile_id AND CHARGING_PROFILES.STACK_LEVEL = @stack_level AND KIND = @kind");
 
-            return candidate_profile.validFrom <= existing_profile.validTo &&
-                   candidate_profile.validTo >= existing_profile.validFrom; // reject
+    overlap_stmt->bind_int("@evse_id", candidate_evse_id);
+    overlap_stmt->bind_int("@profile_id", candidate_profile.id);
+    overlap_stmt->bind_int("@stack_level", candidate_profile.stackLevel);
+    overlap_stmt->bind_text("@kind",
+                            conversions::charging_profile_kind_enum_to_string(candidate_profile.chargingProfileKind),
+                            common::SQLiteString::Transient);
+    while (overlap_stmt->step() != SQLITE_DONE) {
+        ChargingProfile existing_profile = json::parse(overlap_stmt->column_text(0));
+        if (candidate_profile.validFrom <= existing_profile.validTo &&
+            candidate_profile.validTo >= existing_profile.validFrom) {
+            return true;
         }
-        return false;
-    });
+    }
+
+    return false;
 }
 
 void SmartChargingHandler::conform_validity_periods(ChargingProfile& profile) const {
