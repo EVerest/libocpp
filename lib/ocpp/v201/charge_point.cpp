@@ -158,10 +158,6 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
 
     initialize(evse_connector_structure, message_log_path);
 
-    this->connectivity_manager =
-        std::make_unique<ConnectivityManager>(*this->device_model, this->evse_security, this->logging,
-                                              std::bind(&ChargePoint::message_callback, this, std::placeholders::_1));
-
     this->connectivity_manager->set_websocket_connected_callback(
         std::bind(&ChargePoint::websocket_connected_callback, this, std::placeholders::_1));
     this->connectivity_manager->set_websocket_disconnected_callback(
@@ -1015,6 +1011,10 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
     this->monitoring_updater.start_monitoring();
 
     this->auth_cache_cleanup_thread = std::thread(&ChargePoint::cache_cleanup_handler, this);
+
+    this->connectivity_manager =
+        std::make_unique<ConnectivityManager>(*this->device_model, this->evse_security, this->logging,
+                                              std::bind(&ChargePoint::message_callback, this, std::placeholders::_1));
 }
 
 void ChargePoint::init_certificate_expiration_check_timers() {
