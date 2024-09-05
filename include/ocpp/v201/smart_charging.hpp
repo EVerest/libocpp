@@ -60,6 +60,9 @@ struct ReportedChargingProfile {
         profile(profile), evse_id(evse_id), source(source) {
     }
 };
+
+/// \brief This is used to associate charging profiles with a source.
+/// Based on the source a different validation path can be taken.
 enum class AddChargingProfileSource {
     SetChargingProfile,
     RequestStartTransactionRequest
@@ -120,6 +123,9 @@ public:
     SmartChargingHandler(EvseManagerInterface& evse_manager, std::shared_ptr<DeviceModel>& device_model,
                          std::shared_ptr<ocpp::v201::DatabaseHandler> database_handler);
 
+    ///
+    /// \brief for the given \p transaction_id removes the associated charging profile.
+    ///
     void delete_transaction_tx_profiles(const std::string& transaction_id) override;
 
     ///
