@@ -655,7 +655,7 @@ CompositeSchedule SmartChargingHandler::calculate_composite_schedule(
 
     std::optional<ocpp::DateTime> session_start{};
 
-    if (this->evse_manager.does_evse_exist(evse_id) and
+    if (this->evse_manager.does_evse_exist(evse_id) and evse_id != 0 and
         this->evse_manager.get_evse(evse_id).get_transaction() != nullptr) {
         const auto& transaction = this->evse_manager.get_evse(evse_id).get_transaction();
         session_start = transaction->start_time;
