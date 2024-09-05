@@ -307,7 +307,6 @@ TEST_F(ChargePointFixture, CreateChargePoint_InitializeInCorrectOrder) {
     charge_point.stop();
 }
 
-TEST_F(ChargePointFixture, CreateChargePoint_EVSEConnectorStructureDefinedBadly_ThrowsDeviceModelStorageError) {
 TEST_F(ChargePointFixture, CreateChargePoint_EVSEConnectorStructureDefinedBadly_ThrowsDeviceModelError) {
     auto database_handler = create_database_handler();
     auto evse_security = std::make_shared<EvseSecurityMock>();
