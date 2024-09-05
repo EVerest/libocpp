@@ -96,8 +96,8 @@ typedef std::function<void(const VariableMonitoringMeta& updated_monitor, const 
 class DeviceModel {
 
 private:
-    DeviceModelMap device_model;
-    std::unique_ptr<DeviceModelInterface> interface;
+    DeviceModelMap device_model_map;
+    std::unique_ptr<DeviceModelInterface> device_model;
 
     /// \brief Listener for the internal change of a variable
     on_variable_changed variable_listener;

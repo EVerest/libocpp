@@ -219,8 +219,8 @@ bool include_in_summary_inventory(const ComponentVariable& cv, const VariableAtt
 GetVariableStatusEnum DeviceModel::request_value_internal(const Component& component_id, const Variable& variable_id,
                                                           const AttributeEnum& attribute_enum, std::string& value,
                                                           bool allow_write_only) {
-    const auto component_it = this->device_model.find(component_id);
-    if (component_it == this->device_model.end()) {
+    const auto component_it = this->device_model_map.find(component_id);
+    if (component_it == this->device_model_map.end()) {
         EVLOG_debug << "unknown component in " << component_id.name << "." << variable_id.name;
         return GetVariableStatusEnum::UnknownComponent;
     }
@@ -233,7 +233,7 @@ GetVariableStatusEnum DeviceModel::request_value_internal(const Component& compo
         return GetVariableStatusEnum::UnknownVariable;
     }
 
-    const auto attribute_opt = this->interface->get_variable_attribute(component_id, variable_id, attribute_enum);
+    const auto attribute_opt = this->device_model->get_variable_attribute(component_id, variable_id, attribute_enum);
 
     if ((not attribute_opt) or (not attribute_opt->value)) {
         return GetVariableStatusEnum::NotSupportedAttributeType;
@@ -253,11 +253,11 @@ SetVariableStatusEnum DeviceModel::set_value(const Component& component, const V
                                              const AttributeEnum& attribute_enum, const std::string& value,
                                              const std::string& source, bool allow_read_only) {
 
-    if (this->device_model.find(component) == this->device_model.end()) {
+    if (this->device_model_map.find(component) == this->device_model_map.end()) {
         return SetVariableStatusEnum::UnknownComponent;
     }
 
-    auto variable_map = this->device_model[component];
+    auto variable_map = this->device_model_map[component];
 
     if (variable_map.find(variable) == variable_map.end()) {
         return SetVariableStatusEnum::UnknownVariable;
@@ -274,7 +274,7 @@ SetVariableStatusEnum DeviceModel::set_value(const Component& component, const V
         return SetVariableStatusEnum::Rejected;
     }
 
-    const auto attribute = this->interface->get_variable_attribute(component, variable, attribute_enum);
+    const auto attribute = this->device_model->get_variable_attribute(component, variable, attribute_enum);
 
     if (!attribute.has_value()) {
         return SetVariableStatusEnum::NotSupportedAttributeType;
@@ -287,7 +287,7 @@ SetVariableStatusEnum DeviceModel::set_value(const Component& component, const V
     }
 
     const auto success =
-        this->interface->set_variable_attribute_value(component, variable, attribute_enum, value, source);
+        this->device_model->set_variable_attribute_value(component, variable, attribute_enum, value, source);
 
     // Only trigger for actual values
     if ((attribute_enum == AttributeEnum::Actual) && success && variable_listener) {
@@ -311,8 +311,8 @@ SetVariableStatusEnum DeviceModel::set_value(const Component& component, const V
 };
 
 DeviceModel::DeviceModel(std::unique_ptr<DeviceModelInterface> device_model_interface) :
-    interface{std::move(device_model_interface)} {
-    this->device_model = this->interface->get_device_model();
+    device_model{std::move(device_model_interface)} {
+    this->device_model_map = this->device_model->get_device_model();
 }
 
 SetVariableStatusEnum DeviceModel::set_read_only_value(const Component& component, const Variable& variable,
@@ -328,8 +328,8 @@ SetVariableStatusEnum DeviceModel::set_read_only_value(const Component& componen
 
 std::optional<VariableMetaData> DeviceModel::get_variable_meta_data(const Component& component,
                                                                     const Variable& variable) {
-    if (this->device_model.count(component) and this->device_model.at(component).count(variable)) {
-        return this->device_model.at(component).at(variable);
+    if (this->device_model_map.count(component) and this->device_model_map.at(component).count(variable)) {
+        return this->device_model_map.at(component).at(variable);
     } else {
         return std::nullopt;
     }
@@ -338,7 +338,7 @@ std::optional<VariableMetaData> DeviceModel::get_variable_meta_data(const Compon
 std::vector<ReportData> DeviceModel::get_base_report_data(const ReportBaseEnum& report_base) {
     std::vector<ReportData> report_data_vec;
 
-    for (auto const& [component, variable_map] : this->device_model) {
+    for (auto const& [component, variable_map] : this->device_model_map) {
         for (auto const& [variable, variable_meta_data] : variable_map) {
 
             ReportData report_data;
@@ -348,7 +348,7 @@ std::vector<ReportData> DeviceModel::get_base_report_data(const ReportBaseEnum& 
             ComponentVariable cv = {component, std::nullopt, variable};
 
             // request the variable attribute from the device model
-            const auto variable_attributes = this->interface->get_variable_attributes(component, variable);
+            const auto variable_attributes = this->device_model->get_variable_attributes(component, variable);
 
             // iterate over possibly (Actual, Target, MinSet, MaxSet)
             for (const auto& variable_attribute : variable_attributes) {
@@ -381,7 +381,7 @@ DeviceModel::get_custom_report_data(const std::optional<std::vector<ComponentVar
                                     const std::optional<std::vector<ComponentCriterionEnum>>& component_criteria) {
     std::vector<ReportData> report_data_vec;
 
-    for (auto const& [component, variable_map] : this->device_model) {
+    for (auto const& [component, variable_map] : this->device_model_map) {
         if (!component_criteria.has_value() or component_criteria_match(component, component_criteria.value())) {
 
             for (auto const& [variable, variable_meta_data] : variable_map) {
@@ -392,7 +392,7 @@ DeviceModel::get_custom_report_data(const std::optional<std::vector<ComponentVar
                     report_data.variable = variable;
 
                     //  request the variable attribute from the device model
-                    const auto variable_attributes = this->interface->get_variable_attributes(component, variable);
+                    const auto variable_attributes = this->device_model->get_variable_attributes(component, variable);
 
                     for (const auto& variable_attribute : variable_attributes) {
                         report_data.variableAttribute.push_back(variable_attribute);
@@ -412,12 +412,12 @@ DeviceModel::get_custom_report_data(const std::optional<std::vector<ComponentVar
 void DeviceModel::check_integrity(const std::map<int32_t, int32_t>& evse_connector_structure) {
     EVLOG_debug << "Checking integrity of device model in storage";
     try {
-        this->interface->check_integrity();
+        this->device_model->check_integrity();
 
         int32_t nr_evse_components = 0;
         std::map<int32_t, int32_t> evse_id_nr_connector_components;
 
-        for (const auto& [component, variable_map] : this->device_model) {
+        for (const auto& [component, variable_map] : this->device_model_map) {
             if (component.name == "EVSE") {
                 nr_evse_components++;
             } else if (component.name == "Connector") {
@@ -445,13 +445,13 @@ void DeviceModel::check_integrity(const std::map<int32_t, int32_t>& evse_connect
             // check if all relevant EVSE and Connector components can be found
             EVSE evse = {evse_id};
             Component evse_component = {"EVSE", std::nullopt, evse};
-            if (!this->device_model.count(evse_component)) {
+            if (!this->device_model_map.count(evse_component)) {
                 throw DeviceModelError("Could not find required EVSE component in device model");
             }
             for (size_t connector_id = 1; connector_id <= nr_of_connectors; connector_id++) {
                 evse_component.name = "Connector";
                 evse_component.evse.value().connectorId = connector_id;
-                if (!this->device_model.count(evse_component)) {
+                if (!this->device_model_map.count(evse_component)) {
                     throw DeviceModelError("Could not find required Connector component in device model");
                 }
             }
@@ -467,7 +467,7 @@ bool DeviceModel::update_monitor_reference(int32_t monitor_id, const std::string
     VariableMonitoringMeta* monitor_meta = nullptr;
 
     // See if this is a trivial delta monitor and that it exists
-    for (auto& [component, variable_map] : this->device_model) {
+    for (auto& [component, variable_map] : this->device_model_map) {
         bool found_monitor_id = false;
 
         for (auto& [variable, variable_meta_data] : variable_map) {
@@ -499,7 +499,7 @@ bool DeviceModel::update_monitor_reference(int32_t monitor_id, const std::string
 
     if (found_monitor) {
         try {
-            if (this->interface->update_monitoring_reference(monitor_id, reference_value)) {
+            if (this->device_model->update_monitoring_reference(monitor_id, reference_value)) {
                 // Update value in-memory too
                 monitor_meta->reference_value = reference_value;
                 return true;
@@ -545,7 +545,7 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
 
         if (request_has_id) {
             // Search through all the ID's
-            for (const auto& [component, variable_map] : this->device_model) {
+            for (const auto& [component, variable_map] : this->device_model_map) {
                 for (const auto& [variable, variable_meta] : variable_map) {
                     if (variable_meta.monitors.find(request.id.value()) != std::end(variable_meta.monitors)) {
                         id_found = true;
@@ -565,9 +565,9 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
             }
         }
 
-        auto component_it = this->device_model.find(request.component);
+        auto component_it = this->device_model_map.find(request.component);
 
-        if (component_it == this->device_model.end()) {
+        if (component_it == this->device_model_map.end()) {
             // N04.FR.16
             if (request_has_id && id_found) {
                 result.status = SetMonitoringStatusEnum::Rejected;
@@ -579,7 +579,7 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
             continue;
         }
 
-        auto& variable_map = this->device_model[request.component];
+        auto& variable_map = this->device_model_map[request.component];
 
         auto variable_it = variable_map.find(request.variable);
         if (variable_it == variable_map.end()) {
@@ -654,14 +654,14 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
         }
 
         try {
-            auto monitor_meta = this->interface->set_monitoring_data(request, type);
+            auto monitor_meta = this->device_model->set_monitoring_data(request, type);
 
             if (monitor_meta.has_value()) {
                 // N07.FR.11
                 // In case of an existing monitor update
                 if (request_has_id && monitor_update_listener) {
-                    auto attribute = this->interface->get_variable_attribute(component_it->first, variable_it->first,
-                                                                             AttributeEnum::Actual);
+                    auto attribute = this->device_model->get_variable_attribute(component_it->first, variable_it->first,
+                                                                                AttributeEnum::Actual);
 
                     if (attribute.has_value()) {
                         static std::string empty_value{};
@@ -697,7 +697,7 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
 std::vector<VariableMonitoringPeriodic> DeviceModel::get_periodic_monitors() {
     std::vector<VariableMonitoringPeriodic> periodics;
 
-    for (const auto& [component, variable_map] : this->device_model) {
+    for (const auto& [component, variable_map] : this->device_model_map) {
         for (const auto& [variable, variable_metadata] : variable_map) {
             std::vector<VariableMonitoringMeta> monitors;
 
@@ -724,11 +724,11 @@ std::vector<MonitoringData> DeviceModel::get_monitors(const std::vector<Monitori
     if (!component_variables.empty()) {
         for (auto& component_variable : component_variables) {
             // Case not handled by spec, skipping
-            if (this->device_model.find(component_variable.component) == this->device_model.end()) {
+            if (this->device_model_map.find(component_variable.component) == this->device_model_map.end()) {
                 continue;
             }
 
-            auto& variable_map = this->device_model[component_variable.component];
+            auto& variable_map = this->device_model_map[component_variable.component];
 
             // N02.FR.16 - if variable is missing, report all existing variables inside that component
             if (component_variable.variable.has_value() == false) {
@@ -776,7 +776,7 @@ std::vector<MonitoringData> DeviceModel::get_monitors(const std::vector<Monitori
         }
     } else {
         // N02.FR.11 - if criteria and component_variables are empty, return all existing monitors
-        for (const auto& [component, variable_map] : this->device_model) {
+        for (const auto& [component, variable_map] : this->device_model_map) {
             for (const auto& [variable, variable_metadata] : variable_map) {
                 std::vector<VariableMonitoring> monitors;
 
@@ -810,10 +810,10 @@ std::vector<ClearMonitoringResult> DeviceModel::clear_monitors(const std::vector
         clear_monitor_res.id = id;
 
         try {
-            auto clear_result = this->interface->clear_variable_monitor(id, allow_protected);
+            auto clear_result = this->device_model->clear_variable_monitor(id, allow_protected);
             if (clear_result == ClearMonitoringStatusEnum::Accepted) {
                 // Clear from memory too
-                for (auto& [component, variable_map] : this->device_model) {
+                for (auto& [component, variable_map] : this->device_model_map) {
                     for (auto& [variable, variable_metadata] : variable_map) {
                         variable_metadata.monitors.erase(static_cast<int64_t>(id));
                     }
@@ -834,10 +834,10 @@ std::vector<ClearMonitoringResult> DeviceModel::clear_monitors(const std::vector
 
 int32_t DeviceModel::clear_custom_monitors() {
     try {
-        int32_t deleted = this->interface->clear_custom_variable_monitors();
+        int32_t deleted = this->device_model->clear_custom_variable_monitors();
 
         // Clear from memory too
-        for (auto& [component, variable_map] : this->device_model) {
+        for (auto& [component, variable_map] : this->device_model_map) {
             for (auto& [variable, variable_metadata] : variable_map) {
                 // Delete while iterating all custom monitors
                 for (auto it = variable_metadata.monitors.begin(); it != variable_metadata.monitors.end();) {
