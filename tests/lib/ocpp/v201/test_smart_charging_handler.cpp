@@ -1584,4 +1584,15 @@ TEST_F(ChargepointTestFixtureV201,
     EXPECT_THAT(handler.get_profiles().size(), testing::Eq(1));
 }
 
+TEST_F(ChargepointTestFixtureV201, K05FR02_RequestStartTransactionRequest_ChargingProfileMustBeTxProfile) {
+    auto profile = create_charging_profile(DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::ChargingStationMaxProfile,
+                                           create_charge_schedule(ChargingRateUnitEnum::A,
+                                                                  create_charging_schedule_periods({0, 1, 2}),
+                                                                  ocpp::DateTime("2024-01-17T17:00:00")));
+
+    auto sut =
+        handler.validate_profile(profile, DEFAULT_EVSE_ID, AddChargingProfileSource::RequestStartTransactionRequest);
+    ASSERT_THAT(sut, testing::Eq(ProfileValidationResultEnum::RequestStartTransactionNonTxProfile));
+}
+
 } // namespace ocpp::v201

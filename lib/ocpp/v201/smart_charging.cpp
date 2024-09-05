@@ -73,6 +73,8 @@ std::string profile_validation_result_to_string(ProfileValidationResultEnum e) {
         return "DuplicateTxDefaultProfileFound";
     case ProfileValidationResultEnum::DuplicateProfileValidityPeriod:
         return "DuplicateProfileValidityPeriod";
+    case ProfileValidationResultEnum::RequestStartTransactionNonTxProfile:
+        return "RequestStartTransactionNonTxProfile";
     }
 
     throw EnumToStringException{e, "ProfileValidationResultEnum"};
@@ -109,6 +111,7 @@ std::string profile_validation_result_to_reason_code(ProfileValidationResultEnum
     case ProfileValidationResultEnum::TxProfileEvseIdNotGreaterThanZero:
     case ProfileValidationResultEnum::ChargingStationMaxProfileCannotBeRelative:
     case ProfileValidationResultEnum::ChargingStationMaxProfileEvseIdGreaterThanZero:
+    case ProfileValidationResultEnum::RequestStartTransactionNonTxProfile:
         return "InvalidValue";
     case ProfileValidationResultEnum::InvalidProfileType:
         return "InternalError";
@@ -249,9 +252,18 @@ SetChargingProfileResponse SmartChargingHandler::validate_and_add_profile(Chargi
 
 ProfileValidationResultEnum SmartChargingHandler::validate_profile(ChargingProfile& profile, int32_t evse_id,
                                                                    AddChargingProfileSource source_of_request) {
-    conform_validity_periods(profile);
 
     auto result = ProfileValidationResultEnum::Valid;
+
+    if (source_of_request == AddChargingProfileSource::RequestStartTransactionRequest) {
+        result = validate_request_start_transaction_profile(profile);
+        if (result != ProfileValidationResultEnum::Valid) {
+            return result;
+        }
+    }
+
+    conform_validity_periods(profile);
+
     if (evse_id != STATION_WIDE_ID) {
         result = this->validate_evse_exists(evse_id);
         if (result != ProfileValidationResultEnum::Valid) {
@@ -474,6 +486,14 @@ SmartChargingHandler::validate_profile_schedules(ChargingProfile& profile,
         }
     }
 
+    return ProfileValidationResultEnum::Valid;
+}
+
+ProfileValidationResultEnum
+SmartChargingHandler::validate_request_start_transaction_profile(const ChargingProfile& profile) const {
+    if (ChargingProfilePurposeEnum::TxProfile != profile.chargingProfilePurpose) {
+        return ProfileValidationResultEnum::RequestStartTransactionNonTxProfile;
+    }
     return ProfileValidationResultEnum::Valid;
 }
 

@@ -771,29 +771,6 @@ TEST_F(ChargePointFixture, K01FR29_SmartChargingCtrlrAvailableIsFalse_RespondsCa
     charge_point->handle_message(set_charging_profile_req);
 }
 
-TEST_F(ChargePointFixture, K05FR02_RequestStartTransactionRequest_SmartChargingCtrlrEnabledTrue_RejectsNonTxProfiles) {
-    const auto cv = ControllerComponentVariables::SmartChargingCtrlrEnabled;
-    this->device_model->set_value(cv.component, cv.variable.value(), AttributeEnum::Actual, "true", "TEST", true);
-
-    auto periods = create_charging_schedule_periods({0, 1, 2});
-
-    auto profile = create_charging_profile(
-        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxDefaultProfile,
-        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), DEFAULT_TX_ID);
-
-    RequestStartTransactionRequest req;
-    req.evseId = DEFAULT_EVSE_ID;
-    req.idToken = IdToken{.idToken = "Local", .type = IdTokenEnum::Local};
-    req.chargingProfile = profile;
-
-    auto start_transaction_req =
-        request_to_enhanced_message<RequestStartTransactionRequest, MessageType::RequestStartTransaction>(req);
-
-    EXPECT_CALL(*smart_charging_handler, validate_and_add_profile).Times(0);
-
-    charge_point->handle_message(start_transaction_req);
-}
-
 TEST_F(ChargePointFixture, K05FR05_RequestStartTransactionRequest_SmartChargingCtrlrEnabledTrue_ValidatesTxProfiles) {
     const auto cv = ControllerComponentVariables::SmartChargingCtrlrEnabled;
     this->device_model->set_value(cv.component, cv.variable.value(), AttributeEnum::Actual, "true", "TEST", true);
@@ -917,7 +894,7 @@ TEST_F(ChargePointFixture, K08FR07_GetCompositeSchedule_DoesNotCalculateComposit
 }
 
 TEST_F(ChargePointFixture,
-       K02FR04_RequestStartTransactionRequest_SmartChargingCtrlrEnabledFalse_DoesNotValidateTxProfiles) {
+       K05FR04_RequestStartTransactionRequest_SmartChargingCtrlrEnabledFalse_DoesNotValidateTxProfiles) {
     const auto cv = ControllerComponentVariables::SmartChargingCtrlrEnabled;
     this->device_model->set_value(cv.component, cv.variable.value(), AttributeEnum::Actual, "false", "TEST", true);
 

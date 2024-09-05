@@ -44,7 +44,8 @@ enum class ProfileValidationResultEnum {
     ChargingStationMaxProfileCannotBeRelative,
     ChargingStationMaxProfileEvseIdGreaterThanZero,
     DuplicateTxDefaultProfileFound,
-    DuplicateProfileValidityPeriod
+    DuplicateProfileValidityPeriod,
+    RequestStartTransactionNonTxProfile
 };
 
 /// \brief This enhances the ChargingProfile type by additional paramaters that are required in the
@@ -201,6 +202,10 @@ protected:
     /// we set it to the default value (3).
     ProfileValidationResultEnum validate_profile_schedules(ChargingProfile& profile,
                                                            std::optional<EvseInterface*> evse_opt = std::nullopt) const;
+
+    /// \brief validates that the given \p profile from a RequestStartTransactionRequest is of the correct type
+    /// TxProfile
+    ProfileValidationResultEnum validate_request_start_transaction_profile(const ChargingProfile& profile) const;
 
     ///
     /// \brief Checks a given \p profile and associated \p evse_id validFrom and validTo range
