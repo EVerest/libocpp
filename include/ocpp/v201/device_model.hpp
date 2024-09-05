@@ -159,9 +159,8 @@ public:
         if (response == GetVariableStatusEnum::Accepted) {
             return to_specific_type<T>(value);
         } else {
-            EVLOG_critical
-                << "Directly requested value for ComponentVariable that doesn't exist in the device model: "
-                << component_variable;
+            EVLOG_critical << "Directly requested value for ComponentVariable that doesn't exist in the device model: "
+                           << component_variable;
             EVLOG_AND_THROW(std::runtime_error(
                 "Directly requested value for ComponentVariable that doesn't exist in the device model."));
         }

@@ -140,4 +140,3 @@ public:
 
 } // namespace v201
 } // namespace ocpp
-
