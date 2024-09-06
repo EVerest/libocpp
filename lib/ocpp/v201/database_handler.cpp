@@ -2,6 +2,7 @@
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
 #include "everest/logging.hpp"
+#include "ocpp/common/database/sqlite_statement.hpp"
 #include <ocpp/common/message_queue.hpp>
 #include <ocpp/v201/database_handler.hpp>
 #include <ocpp/v201/types.hpp>
@@ -735,7 +736,8 @@ void DatabaseHandler::insert_or_update_charging_profile(const int evse_id, const
     stmt->bind_int("@evse_id", evse_id);
     stmt->bind_int("@stack_level", profile.stackLevel);
     stmt->bind_text("@charging_profile_purpose",
-                    conversions::charging_profile_purpose_enum_to_string(profile.chargingProfilePurpose));
+                    conversions::charging_profile_purpose_enum_to_string(profile.chargingProfilePurpose),
+                    SQLiteString::Transient);
     stmt->bind_text("@profile", json_profile.dump(), SQLiteString::Transient);
     stmt->bind_text("@charging_limit_source", conversions::charging_limit_source_enum_to_string(charging_limit_source));
 
