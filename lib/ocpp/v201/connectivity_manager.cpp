@@ -144,6 +144,9 @@ void ConnectivityManager::init_websocket() {
     const auto connection_options = this->get_ws_connection_options(std::stoi(configuration_slot));
     const auto network_connection_profile = this->get_network_connection_profile(std::stoi(configuration_slot));
 
+    // cache the network profiles
+    cache_network_connection_profiles();
+
     if (!network_connection_profile.has_value() or
         (this->configure_network_connection_profile_callback.has_value() and
          !this->configure_network_connection_profile_callback.value()(network_connection_profile.value()))) {
@@ -265,5 +268,17 @@ void ConnectivityManager::next_network_configuration_priority() {
         (this->network_configuration_priority + 1) % (network_connection_priorities.size());
 }
 
+void ConnectivityManager::cache_network_connection_profiles() {
+    auto network_connection_profiles_cache = ocpp::get_vector_from_csv(
+        this->device_model.get_value<std::string>(ControllerComponentVariables::NetworkConnectionProfiles));
+
+    // auto network_connection_profiles = json::parse(
+    //     this->device_model->get_value<std::string>(ControllerComponentVariables::NetworkConnectionProfiles));
+
+    for (auto network_profile : network_connection_profiles_cache) {
+        // this->network_connection_profiles_cache.push_back(network_profile);
+        EVLOG_info << "ncp----> " << network_profile;
+    }
+}
 } // namespace v201
 } // namespace ocpp

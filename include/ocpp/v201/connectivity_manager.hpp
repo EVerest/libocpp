@@ -111,6 +111,7 @@ public:
     bool send_to_websocket(const std::string& message);
 
 private:
+    std::vector<NetworkConnectionProfile> network_connection_profiles_cache;
     /// \brief Init the websocket
     ///
     void init_websocket();
@@ -123,6 +124,8 @@ private:
     /// \brief Moves websocket network_configuration_priority to next profile
     ///
     void next_network_configuration_priority();
+
+    void cache_network_connection_profiles();
 };
 
 } // namespace v201
