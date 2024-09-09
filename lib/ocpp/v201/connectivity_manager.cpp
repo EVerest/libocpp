@@ -6,7 +6,7 @@
 #include <everest/logging.hpp>
 #include <ocpp/v201/ctrlr_component_variables.hpp>
 #include <ocpp/v201/device_model.hpp>
-#include <ocpp/v201/messages/SetNetworkProfile.hpp>
+
 
 namespace {
 const auto WEBSOCKET_INIT_DELAY = std::chrono::seconds(2);
@@ -69,10 +69,8 @@ void ConnectivityManager::set_configure_network_connection_profile_callback(
 
 std::optional<NetworkConnectionProfile>
 ConnectivityManager::get_network_connection_profile(const int32_t configuration_slot) {
-    std::vector<SetNetworkProfileRequest> network_connection_profiles =
-        json::parse(this->device_model.get_value<std::string>(ControllerComponentVariables::NetworkConnectionProfiles));
 
-    for (const auto& network_profile : network_connection_profiles) {
+    for (const auto& network_profile : this->network_connection_profiles) {
         if (network_profile.configurationSlot == configuration_slot) {
             switch (auto security_profile = network_profile.connectionData.securityProfile) {
             case security::OCPP_1_6_ONLY_UNSECURED_TRANSPORT_WITHOUT_BASIC_AUTHENTICATION:
@@ -133,19 +131,22 @@ void ConnectivityManager::init_websocket() {
         EVLOG_AND_THROW(std::runtime_error("ChargePointId must not contain \':\'"));
     }
 
+    // cache the network profiles on initialization
+    cache_network_connection_profiles();
+
     const auto network_connection_priorities = ocpp::get_vector_from_csv(
         this->device_model.get_value<std::string>(ControllerComponentVariables::NetworkConfigurationPriority));
 
     if (network_connection_priorities.empty()) {
         EVLOG_AND_THROW(std::runtime_error("NetworkConfigurationPriority must not be empty"));
     }
+    
 
     const auto configuration_slot = network_connection_priorities.at(this->network_configuration_priority);
     const auto connection_options = this->get_ws_connection_options(std::stoi(configuration_slot));
+
     const auto network_connection_profile = this->get_network_connection_profile(std::stoi(configuration_slot));
 
-    // cache the network profiles
-    cache_network_connection_profiles();
 
     if (!network_connection_profile.has_value() or
         (this->configure_network_connection_profile_callback.has_value() and
@@ -269,16 +270,15 @@ void ConnectivityManager::next_network_configuration_priority() {
 }
 
 void ConnectivityManager::cache_network_connection_profiles() {
-    auto network_connection_profiles_cache = ocpp::get_vector_from_csv(
-        this->device_model.get_value<std::string>(ControllerComponentVariables::NetworkConnectionProfiles));
 
-    // auto network_connection_profiles = json::parse(
-    //     this->device_model->get_value<std::string>(ControllerComponentVariables::NetworkConnectionProfiles));
+    //get all the network connection profiles from the device model and cache them
+    this->network_connection_profiles =
+        json::parse(this->device_model.get_value<std::string>(ControllerComponentVariables::NetworkConnectionProfiles));
 
-    for (auto network_profile : network_connection_profiles_cache) {
-        // this->network_connection_profiles_cache.push_back(network_profile);
-        EVLOG_info << "ncp----> " << network_profile;
-    }
+        for (auto ncp: this->network_connection_profiles)
+        {
+            EVLOG_info << "ncp: -->" << ncp.configurationSlot;
+        }
 }
 } // namespace v201
 } // namespace ocpp
