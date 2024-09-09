@@ -1327,6 +1327,9 @@ void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& messa
     case MessageType::ClearDisplayMessage:
         this->handle_clear_display_message(json_message);
         break;
+    case MessageType::CostUpdated:
+        this->handle_costupdated_req(json_message);
+        break;
     default:
         if (message.messageTypeId == MessageTypeId::CALL) {
             const auto call_error = CallError(message.uniqueId, "NotImplemented", "", json({}));
@@ -3216,6 +3219,13 @@ void ChargePoint::handle_costupdated_req(const Call<CostUpdatedRequest> call) {
     // the 'RunningCost' struct.
     running_cost.cost = static_cast<double>(call.msg.totalCost);
     running_cost.transaction_id = call.msg.transactionId;
+
+    std::optional<int32_t> transaction_evse_id = get_transaction_evseid(running_cost.transaction_id);
+    if (!transaction_evse_id.has_value()) {
+        // We just put an error in the log as the spec does not define what to do here. It is not possible to return
+        // a 'Rejected' or something in that manner.
+        EVLOG_error << "Received CostUpdatedRequest, but transaction id is not a valid transaction id.";
+    }
 
     const int number_of_decimals =
         this->device_model->get_optional_value<int>(ControllerComponentVariables::NumberOfDecimalsForCostValues)

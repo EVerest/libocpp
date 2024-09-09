@@ -589,12 +589,12 @@ const ComponentVariable& CustomImplementationEnabled = {
 const ComponentVariable& CustomImplementationCaliforniaPricingEnabled = {
     ControllerComponents::CustomizationCtrlr,
     std::nullopt,
-    std::optional<Variable>({"CustomImplementationCaliforniaPricingEnabled", std::nullopt, std::nullopt}),
+    std::optional<Variable>({"CustomImplementationEnabled", std::nullopt, "org.openchargealliance.costmsg"}),
 };
 const ComponentVariable& CustomImplementationMultiLanguageEnabled = {
     ControllerComponents::CustomizationCtrlr,
     std::nullopt,
-    std::optional<Variable>({"CustomImplementationMultiLanguageEnabled", std::nullopt, std::nullopt}),
+    std::optional<Variable>({"CustomImplementationEnabled", std::nullopt, "org.openchargealliance.multilanguage"}),
 };
 const RequiredComponentVariable& BytesPerMessageGetReport = {
     ControllerComponents::DeviceDataCtrlr,
