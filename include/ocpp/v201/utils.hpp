@@ -74,7 +74,7 @@ std::optional<float> get_total_power_active_import(const MeterValue& meter_value
 bool is_critical(const std::string& security_event);
 
 /// \brief Converts the given \p csl of ChargingProfilePurpose strings into a std::set<ChargingProfilePurposeEnum>
-std::set<ChargingProfilePurposeEnum> get_purposes_to_ignore(const std::string &csl, const bool is_offline);
+std::set<ChargingProfilePurposeEnum> get_purposes_to_ignore(const std::string& csl, const bool is_offline);
 
 } // namespace utils
 } // namespace v201
