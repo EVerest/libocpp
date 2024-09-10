@@ -180,6 +180,23 @@
       "type": "string"
     }
   },
+  "IgnoredProfilePurposesOffline": {
+    "variable_name": "IgnoredProfilePurposesOffline",
+      "characteristics": {
+        "valuesList": "ChargingStationMaxProfile,TxDefaultProfile,TxProfile",
+        "supportsMonitoring": true,
+        "dataType": "MemberList"
+      },
+      "attributes": [
+        {
+          "type": "Actual",
+          "mutability": "ReadOnly",
+          "value": ""
+        }
+      ],
+      "description": "Allows configuration of comma seperated list of ChargingProfilePurposes that are ignored in the composite schedule caluclation when offline.",
+      "type": "string"
+  },
   "required": [
     "ChargingProfileMaxStackLevel",
     "ChargingScheduleChargingRateUnit",

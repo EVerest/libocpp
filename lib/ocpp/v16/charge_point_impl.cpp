@@ -3337,6 +3337,12 @@ IdTagInfo ChargePointImpl::authorize_id_token(CiString<20> idTag, const bool aut
 std::map<int32_t, ChargingSchedule> ChargePointImpl::get_all_composite_charging_schedules(const int32_t duration_s) {
 
     std::map<int32_t, ChargingSchedule> charging_schedules;
+    std::set<ChargingProfilePurposeType> purposes_to_ignore;
+
+    if (not this->websocket->is_connected()) {
+        const auto purposes_to_ignore_vec = this->configuration->getIgnoredProfilePurposesOffline();
+        purposes_to_ignore.insert(purposes_to_ignore_vec.begin(), purposes_to_ignore_vec.end());
+    }
 
     for (int connector_id = 0; connector_id <= this->configuration->getNumberOfConnectors(); connector_id++) {
         const auto start_time = ocpp::DateTime();
@@ -3344,7 +3350,7 @@ std::map<int32_t, ChargingSchedule> ChargePointImpl::get_all_composite_charging_
         const auto end_time = ocpp::DateTime(start_time.to_time_point() + duration);
 
         const auto valid_profiles =
-            this->smart_charging_handler->get_valid_profiles(start_time, end_time, connector_id);
+            this->smart_charging_handler->get_valid_profiles(start_time, end_time, connector_id, purposes_to_ignore);
         const auto composite_schedule = this->smart_charging_handler->calculate_composite_schedule(
             valid_profiles, start_time, end_time, connector_id, ChargingRateUnit::A);
         charging_schedules[connector_id] = composite_schedule;
@@ -3357,6 +3363,12 @@ std::map<int32_t, EnhancedChargingSchedule>
 ChargePointImpl::get_all_enhanced_composite_charging_schedules(const int32_t duration_s) {
 
     std::map<int32_t, EnhancedChargingSchedule> charging_schedules;
+    std::set<ChargingProfilePurposeType> purposes_to_ignore;
+
+    if (not this->websocket->is_connected()) {
+        const auto purposes_to_ignore_vec = this->configuration->getIgnoredProfilePurposesOffline();
+        purposes_to_ignore.insert(purposes_to_ignore_vec.begin(), purposes_to_ignore_vec.end());
+    }
 
     for (int connector_id = 0; connector_id <= this->configuration->getNumberOfConnectors(); connector_id++) {
         const auto start_time = ocpp::DateTime();
@@ -3364,7 +3376,7 @@ ChargePointImpl::get_all_enhanced_composite_charging_schedules(const int32_t dur
         const auto end_time = ocpp::DateTime(start_time.to_time_point() + duration);
 
         const auto valid_profiles =
-            this->smart_charging_handler->get_valid_profiles(start_time, end_time, connector_id);
+            this->smart_charging_handler->get_valid_profiles(start_time, end_time, connector_id, purposes_to_ignore);
         const auto composite_schedule = this->smart_charging_handler->calculate_enhanced_composite_schedule(
             valid_profiles, start_time, end_time, connector_id, ChargingRateUnit::A);
         charging_schedules[connector_id] = composite_schedule;
