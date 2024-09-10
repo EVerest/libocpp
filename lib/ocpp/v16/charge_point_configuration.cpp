@@ -346,6 +346,19 @@ std::vector<ChargingProfilePurposeType> ChargePointConfiguration::getSupportedCh
     return supported_purpose_types;
 }
 
+std::vector<ChargingProfilePurposeType> ChargePointConfiguration::getIgnoredProfilePurposesOffline() {
+    if (not this->config["Internal"].contains("IgnoredProfilePurposesOffline")) {
+        return {};
+    }
+
+    std::vector<ChargingProfilePurposeType> purpose_types;
+    const auto str_list = this->config["Internal"]["IgnoredProfilePurposesOffline"];
+    for (const auto& str : str_list) {
+        purpose_types.push_back(conversions::string_to_charging_profile_purpose_type(str));
+    }
+    return purpose_types;
+}
+
 int32_t ChargePointConfiguration::getMaxCompositeScheduleDuration() {
     return this->config["Internal"]["MaxCompositeScheduleDuration"];
 }
@@ -664,6 +677,22 @@ KeyValue ChargePointConfiguration::getSupportedChargingProfilePurposeTypesKeyVal
     kv.readonly = true;
     std::vector<std::string> purpose_types;
     for (const auto& entry : this->getSupportedChargingProfilePurposeTypes()) {
+        purpose_types.push_back(conversions::charging_profile_purpose_type_to_string(entry));
+    }
+    kv.value.emplace(to_csl(purpose_types));
+    return kv;
+}
+
+std::optional<KeyValue> ChargePointConfiguration::getIgnoredProfilePurposesOfflineKeyValue() {
+    if (this->getIgnoredProfilePurposesOffline().empty()) {
+        return std::nullopt;
+    }
+
+    KeyValue kv;
+    kv.key = "IgnoredProfilePurposesOfflineKeyValue";
+    kv.readonly = true;
+    std::vector<std::string> purpose_types;
+    for (const auto& entry : this->getIgnoredProfilePurposesOffline()) {
         purpose_types.push_back(conversions::charging_profile_purpose_type_to_string(entry));
     }
     kv.value.emplace(to_csl(purpose_types));
@@ -2941,6 +2970,9 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
     }
     if (key == "SupportedChargingProfilePurposeTypes") {
         return this->getSupportedChargingProfilePurposeTypesKeyValue();
+    }
+    if (key == "IgnoredProfilePurposesOffline") {
+        return this->getIgnoredProfilePurposesOfflineKeyValue();
     }
     if (key == "MaxCompositeScheduleDuration") {
         return this->getMaxCompositeScheduleDurationKeyValue();

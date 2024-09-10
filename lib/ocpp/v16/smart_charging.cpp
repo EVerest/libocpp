@@ -386,16 +386,19 @@ void SmartChargingHandler::clear_all_profiles() {
     }
 }
 
-std::vector<ChargingProfile> SmartChargingHandler::get_valid_profiles(const ocpp::DateTime& start_time,
-                                                                      const ocpp::DateTime& end_time,
-                                                                      const int connector_id) {
+std::vector<ChargingProfile>
+SmartChargingHandler::get_valid_profiles(const ocpp::DateTime& start_time, const ocpp::DateTime& end_time,
+                                         const int connector_id,
+                                         const std::set<ChargingProfilePurposeType>& purposes_to_ignore) {
     std::vector<ChargingProfile> valid_profiles;
 
     {
         std::lock_guard<std::mutex> lk(charge_point_max_profiles_map_mutex);
 
-        for (const auto& [stack_level, profile] : stack_level_charge_point_max_profiles_map) {
-            valid_profiles.push_back(profile);
+        if (not purposes_to_ignore.count(ChargingProfilePurposeType::ChargePointMaxProfile)) {
+            for (const auto& [stack_level, profile] : stack_level_charge_point_max_profiles_map) {
+                valid_profiles.push_back(profile);
+            }
         }
     }
 
@@ -413,26 +416,31 @@ std::vector<ChargingProfile> SmartChargingHandler::get_valid_profiles(const ocpp
 
             std::lock_guard<std::mutex> lk_txd(tx_default_profiles_map_mutex);
             std::lock_guard<std::mutex> lk_tx(tx_profiles_map_mutex);
-            for (const auto& [stack_level, profile] : itt->second->stack_level_tx_profiles_map) {
-                // only include profiles that match the transactionId (when there is one)
-                bool b_add{false};
 
-                if (profile.transactionId) {
-                    if ((transactionId) && (transactionId.value() == profile.transactionId.value())) {
-                        // there is a session/transaction in progress and the ID matches the profile
+            if (not purposes_to_ignore.count(ChargingProfilePurposeType::TxProfile)) {
+                for (const auto& [stack_level, profile] : itt->second->stack_level_tx_profiles_map) {
+                    // only include profiles that match the transactionId (when there is one)
+                    bool b_add{false};
+
+                    if (profile.transactionId) {
+                        if ((transactionId) && (transactionId.value() == profile.transactionId.value())) {
+                            // there is a session/transaction in progress and the ID matches the profile
+                            b_add = true;
+                        }
+                    } else {
+                        // profile doesn't have a transaction ID specified
                         b_add = true;
                     }
-                } else {
-                    // profile doesn't have a transaction ID specified
-                    b_add = true;
-                }
 
-                if (b_add) {
-                    valid_profiles.push_back(profile);
+                    if (b_add) {
+                        valid_profiles.push_back(profile);
+                    }
                 }
             }
-            for (const auto& [stack_level, profile] : itt->second->stack_level_tx_default_profiles_map) {
-                valid_profiles.push_back(profile);
+            if (not purposes_to_ignore.count(ChargingProfilePurposeType::TxDefaultProfile)) {
+                for (const auto& [stack_level, profile] : itt->second->stack_level_tx_default_profiles_map) {
+                    valid_profiles.push_back(profile);
+                }
             }
         }
     }
