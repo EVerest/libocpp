@@ -196,7 +196,7 @@ std::set<ChargingProfilePurposeEnum> get_purposes_to_ignore(const std::string& c
     if (not is_offline) {
         return {};
     }
-    
+
     if (csl.empty()) {
         return {};
     }
