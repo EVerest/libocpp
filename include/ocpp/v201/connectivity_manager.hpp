@@ -81,7 +81,8 @@ public:
 
     /// \brief Gets the configured NetworkConnectionProfile based on the given \p configuration_slot . The
     /// central system uri ofthe connection options will not contain ws:// or wss:// because this method removes it if
-    /// present. This returns the value from the cached network connection profiles. \param network_configuration_priority \return
+    /// present. This returns the value from the cached network connection profiles. \param
+    /// network_configuration_priority \return
     std::optional<NetworkConnectionProfile> get_network_connection_profile(const int32_t configuration_slot);
 
     /// \brief Check if the websocket is connected
