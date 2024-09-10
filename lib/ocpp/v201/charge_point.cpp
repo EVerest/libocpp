@@ -597,7 +597,8 @@ void ChargePoint::configure_message_logging_format(const std::string& message_lo
 }
 
 void ChargePoint::handle_cost_and_tariff(const TransactionEventResponse& response,
-                                         const TransactionEventRequest& original_message) {
+                                         const TransactionEventRequest& original_message,
+                                         const json& original_transaction_event_response) {
     const bool tariff_enabled = this->is_tariff_enabled();
 
     const bool cost_enabled = this->is_cost_enabled();
@@ -625,7 +626,17 @@ void ChargePoint::handle_cost_and_tariff(const TransactionEventResponse& respons
     // Check if cost is available and enabled, and if there is a totalcost message.
     if (cost_enabled && response.totalCost.has_value() && this->callbacks.set_running_cost_callback.has_value()) {
         RunningCost running_cost;
-        running_cost.cost = static_cast<double>(response.totalCost.value());
+        std::string total_cost;
+        // We use the original string and convert it to a double ourselves, as the nlohmann library converts it to a
+        // float first and then multiply by 10^5 for example (5 decimals) will give some rounding errors. With a initial
+        // double instead of float, we have (a bit) more accuracy.
+        if (original_transaction_event_response.contains("totalCost")) {
+            total_cost = original_transaction_event_response.at("totalCost").dump();
+            running_cost.cost = stod(total_cost);
+        } else {
+            running_cost.cost = static_cast<double>(response.totalCost.value());
+        }
+
         if (original_message.eventType == TransactionEventEnum::Ended) {
             running_cost.state = RunningCostState::Finished;
         } else {
@@ -2707,7 +2718,7 @@ void ChargePoint::handle_transaction_event_response(const EnhancedMessage<v201::
         this->callbacks.transaction_event_response_callback.value()(original_msg, call_result.msg);
     }
 
-    this->handle_cost_and_tariff(call_result.msg, original_msg);
+    this->handle_cost_and_tariff(call_result.msg, original_msg, message.message[CALLRESULT_PAYLOAD]);
 
     if (original_msg.eventType == TransactionEventEnum::Ended) {
         // nothing to do for TransactionEventEnum::Ended

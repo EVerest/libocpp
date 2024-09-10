@@ -245,7 +245,11 @@ void Evse::on_meter_value(const MeterValue& meter_value) {
     this->aligned_data_updated.set_values(meter_value);
     this->aligned_data_tx_end.set_values(meter_value);
     this->check_max_energy_on_invalid_id();
-    this->send_meter_value_on_pricing_trigger(meter_value);
+    std::optional<MeterValue> import_register_meter_value =
+        get_current_active_import_register_meter_value(ReadingContextEnum::Other);
+    if (import_register_meter_value.has_value()) {
+        this->send_meter_value_on_pricing_trigger(import_register_meter_value.value());
+    }
 }
 
 MeterValue Evse::get_meter_value() {
@@ -259,6 +263,27 @@ MeterValue Evse::get_idle_meter_value() {
 
 void Evse::clear_idle_meter_values() {
     this->aligned_data_updated.clear_values();
+}
+
+std::optional<MeterValue> Evse::get_current_active_import_register_meter_value(const ReadingContextEnum context) {
+    std::unique_lock<std::recursive_mutex> lk(this->meter_value_mutex);
+    MeterValue meter_value = this->meter_value;
+    lk.unlock();
+
+    meter_value.sampledValue.erase(
+        std::remove_if(meter_value.sampledValue.begin(), meter_value.sampledValue.end(), [](const SampledValue& value) {
+            return value.measurand != MeasurandEnum::Energy_Active_Import_Register or value.phase.has_value();
+        }));
+
+    if (meter_value.sampledValue.empty()) {
+        return std::nullopt;
+    }
+
+    for (SampledValue& v : meter_value.sampledValue) {
+        v.context = context;
+    }
+
+    return meter_value;
 }
 
 std::optional<float> Evse::get_active_import_register_meter_value() {
@@ -413,25 +438,29 @@ void Evse::set_meter_value_pricing_triggers(
     if (this->trigger_metervalue_at_time_timer != nullptr && trigger_metervalue_at_time.has_value()) {
         this->trigger_metervalue_at_time_timer->stop();
         this->trigger_metervalue_at_time_timer = nullptr;
-
-        std::chrono::time_point<date::utc_clock> trigger_timepoint = trigger_metervalue_at_time.value().to_time_point();
-        const std::chrono::time_point<date::utc_clock> now = date::utc_clock::now();
-
-        if (trigger_timepoint < now) {
-            EVLOG_error << "Could not set trigger metervalue because trigger time is in the past.";
-            return;
-        }
-
-        this->trigger_metervalue_at_time_timer = std::make_unique<Everest::SystemTimer>(&io_service, [this]() {
-            const std::optional<MeterValue>& meter_value = this->get_meter_value();
-            if (!meter_value.has_value()) {
-                EVLOG_error << "Send latest meter value because of chargepoint time trigger failed";
-            } else {
-                this->send_metervalue_function({meter_value.value()});
-            }
-        });
-        this->trigger_metervalue_at_time_timer->at(trigger_timepoint);
     }
+
+    std::chrono::time_point<date::utc_clock> trigger_timepoint = trigger_metervalue_at_time.value().to_time_point();
+    const std::chrono::time_point<date::utc_clock> now = date::utc_clock::now();
+
+    if (trigger_timepoint < now) {
+        EVLOG_error << "Could not set trigger metervalue because trigger time is in the past.";
+        return;
+    }
+
+    this->trigger_metervalue_at_time_timer = std::make_unique<Everest::SystemTimer>(&io_service, [this]() {
+        EVLOG_error << "Sending metervalue in timer";
+        const std::optional<MeterValue>& meter_value =
+            this->get_current_active_import_register_meter_value(ReadingContextEnum::Other);
+        if (!meter_value.has_value()) {
+            EVLOG_error << "Send latest meter value because of chargepoint time trigger failed";
+        } else {
+            this->send_metervalue_function({meter_value.value()});
+        }
+    });
+    EVLOG_error << "Set trigger metervalue at time " << trigger_timepoint;
+
+    this->trigger_metervalue_at_time_timer->at(trigger_timepoint);
 }
 
 void Evse::reset_pricing_triggers() {

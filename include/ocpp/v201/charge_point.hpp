@@ -536,9 +536,11 @@ private:
     /// \param response             The TransactionEventResponse where the tariff and cost information is added to.
     /// \param original_message     The original TransactionEventRequest, which contains some information we need as
     ///                             well.
+    /// \param original_transaction_event_response  The original json from the response.
     ///
     void handle_cost_and_tariff(const TransactionEventResponse& response,
-                                const TransactionEventRequest& original_message);
+                                const TransactionEventRequest& original_message,
+                                const json& original_transaction_event_response);
 
     ///
     /// \brief Check if multilanguage setting (variable) is enabled.
