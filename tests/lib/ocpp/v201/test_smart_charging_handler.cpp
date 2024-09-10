@@ -1232,7 +1232,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K04FR01_AddProfile_OnlyAddsToOneEVSE
     EXPECT_THAT(sut2, testing::Not(testing::Contains(profile1)));
 }
 
-TEST_F(SmartChargingHandlerTestFixtureV201, K01_ValidateAndAdd_RejectsInvalidProfiles) {
+TEST_F(SmartChargingHandlerTestFixtureV201, K01_ValidateAndAdd_RejectsInvalidProfilesWithReasonCode) {
     auto periods = create_charging_schedule_periods(0);
     auto profile = create_charging_profile(
         DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
