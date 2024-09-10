@@ -139,13 +139,11 @@ void ConnectivityManager::init_websocket() {
     if (network_connection_priorities.empty()) {
         EVLOG_AND_THROW(std::runtime_error("NetworkConfigurationPriority must not be empty"));
     }
-    
 
     const auto configuration_slot = network_connection_priorities.at(this->network_configuration_priority);
     const auto connection_options = this->get_ws_connection_options(std::stoi(configuration_slot));
 
     const auto network_connection_profile = this->get_network_connection_profile(std::stoi(configuration_slot));
-
 
     if (!network_connection_profile.has_value() or
         (this->configure_network_connection_profile_callback.has_value() and
