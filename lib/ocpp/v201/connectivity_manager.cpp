@@ -271,14 +271,14 @@ void ConnectivityManager::next_network_configuration_priority() {
 
 void ConnectivityManager::cache_network_connection_profiles() {
 
-    //get all the network connection profiles from the device model and cache them
+    if (!this->network_connection_profiles.empty()) {
+        EVLOG_info << " Network connection profiles already cached";
+        return;
+    }
+
+    // get all the network connection profiles from the device model and cache them
     this->network_connection_profiles =
         json::parse(this->device_model.get_value<std::string>(ControllerComponentVariables::NetworkConnectionProfiles));
-
-        for (auto ncp: this->network_connection_profiles)
-        {
-            EVLOG_info << "ncp: -->" << ncp.configurationSlot;
-        }
 }
 } // namespace v201
 } // namespace ocpp
