@@ -163,7 +163,8 @@ private:
     std::function<void(const std::vector<MeterValue>& meter_values)> send_metervalue_function;
     boost::asio::io_service io_service;
 
-    std::optional<MeterValue> get_current_active_import_register_meter_value(const ReadingContextEnum context);
+    std::optional<MeterValue> get_meter_value_with_measurand(const MeasurandEnum measurand,
+                                                             const ReadingContextEnum context);
 
     /// \brief gets the active import energy meter value from meter_value, normalized to Wh.
     std::optional<float> get_active_import_register_meter_value();

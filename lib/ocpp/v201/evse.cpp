@@ -245,11 +245,7 @@ void Evse::on_meter_value(const MeterValue& meter_value) {
     this->aligned_data_updated.set_values(meter_value);
     this->aligned_data_tx_end.set_values(meter_value);
     this->check_max_energy_on_invalid_id();
-    std::optional<MeterValue> import_register_meter_value =
-        get_current_active_import_register_meter_value(ReadingContextEnum::Other);
-    if (import_register_meter_value.has_value()) {
-        this->send_meter_value_on_pricing_trigger(import_register_meter_value.value());
-    }
+    this->send_meter_value_on_pricing_trigger(meter_value);
 }
 
 MeterValue Evse::get_meter_value() {
@@ -265,15 +261,23 @@ void Evse::clear_idle_meter_values() {
     this->aligned_data_updated.clear_values();
 }
 
-std::optional<MeterValue> Evse::get_current_active_import_register_meter_value(const ReadingContextEnum context) {
+std::optional<MeterValue> Evse::get_meter_value_with_measurand(const MeasurandEnum measurand,
+                                                               const ReadingContextEnum context) {
     std::unique_lock<std::recursive_mutex> lk(this->meter_value_mutex);
     MeterValue meter_value = this->meter_value;
     lk.unlock();
 
     meter_value.sampledValue.erase(
-        std::remove_if(meter_value.sampledValue.begin(), meter_value.sampledValue.end(), [](const SampledValue& value) {
-            return value.measurand != MeasurandEnum::Energy_Active_Import_Register or value.phase.has_value();
-        }));
+        std::remove_if(meter_value.sampledValue.begin(), meter_value.sampledValue.end(),
+                       [](const SampledValue& value) {
+                           if (!value.measurand.has_value() ||
+                               (value.measurand.value() != MeasurandEnum::Energy_Active_Import_Register)) {
+                               return true;
+                           }
+
+                           return false;
+                       }),
+        meter_value.sampledValue.end());
 
     if (meter_value.sampledValue.empty()) {
         return std::nullopt;
@@ -432,6 +436,18 @@ void Evse::set_meter_value_pricing_triggers(
     std::optional<DateTime> trigger_metervalue_at_time,
     std::function<void(const std::vector<MeterValue>& meter_values)> send_metervalue_function,
     boost::asio::io_service& io_service) {
+
+    EVLOG_debug << "Set metervalue pricing triggers: "
+                << (trigger_metervalue_at_time.has_value()
+                        ? "at time: " + trigger_metervalue_at_time.value().to_rfc3339()
+                        : "no time pricing trigger")
+                << (trigger_metervalue_on_energy_kwh.has_value()
+                        ? ", on energy kWh: " + std::to_string(trigger_metervalue_on_energy_kwh.value())
+                        : ", No energy kWh trigger, ")
+                << (trigger_metervalue_on_power_kw.has_value()
+                        ? ", on power kW: " + std::to_string(trigger_metervalue_on_power_kw.value())
+                        : ", No power kW trigger");
+
     this->send_metervalue_function = send_metervalue_function;
     this->trigger_metervalue_on_power_kw = trigger_metervalue_on_power_kw;
     this->trigger_metervalue_on_energy_kwh = trigger_metervalue_on_energy_kwh;
@@ -450,8 +466,8 @@ void Evse::set_meter_value_pricing_triggers(
 
     this->trigger_metervalue_at_time_timer = std::make_unique<Everest::SystemTimer>(&io_service, [this]() {
         EVLOG_error << "Sending metervalue in timer";
-        const std::optional<MeterValue>& meter_value =
-            this->get_current_active_import_register_meter_value(ReadingContextEnum::Other);
+        const std::optional<MeterValue>& meter_value = this->get_meter_value_with_measurand(
+            MeasurandEnum::Energy_Active_Import_Register, ReadingContextEnum::Other);
         if (!meter_value.has_value()) {
             EVLOG_error << "Send latest meter value because of chargepoint time trigger failed";
         } else {
@@ -487,9 +503,16 @@ void Evse::send_meter_value_on_pricing_trigger(const MeterValue& meter_value) {
             const std::optional<float> active_import_register_meter_value_wh = get_active_import_register_meter_value();
             if (active_import_register_meter_value_wh.has_value() &&
                 static_cast<double>(active_import_register_meter_value_wh.value()) >= trigger_energy_kwh * 1000) {
-                this->send_metervalue_function({meter_value});
-                this->trigger_metervalue_on_energy_kwh.reset();
-                return;
+                const std::optional<MeterValue> active_import_meter_value = get_meter_value_with_measurand(
+                    MeasurandEnum::Energy_Active_Import_Register, ReadingContextEnum::Other);
+                if (!active_import_meter_value.has_value()) {
+                    EVLOG_error
+                        << "No current active import register metervalue found. Can not send trigger metervalue.";
+                } else {
+                    this->send_metervalue_function({active_import_meter_value.value()});
+                    this->trigger_metervalue_on_energy_kwh.reset();
+                    return;
+                }
             }
         }
     }
@@ -525,7 +548,11 @@ void Evse::send_meter_value_on_pricing_trigger(const MeterValue& meter_value) {
             // Power threshold is crossed, send metervalues.
             if (!meter_value_sent) {
                 // Only send metervalue if it is not sent yet, otherwise only the last triggered metervalue is set.
-                this->send_metervalue_function({meter_value});
+                MeterValue mv = meter_value;
+                for (auto& sampled_value : mv.sampledValue) {
+                    sampled_value.context = ReadingContextEnum::Other;
+                }
+                this->send_metervalue_function({mv});
             }
             this->last_triggered_metervalue_power_kw = current_metervalue_kw;
         }

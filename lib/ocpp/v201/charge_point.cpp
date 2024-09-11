@@ -3763,6 +3763,10 @@ void ChargePoint::handle_get_display_message(const Call<GetDisplayMessagesReques
         ocpp::CallResult<GetDisplayMessagesResponse> call_result(response, call.uniqueId);
         this->send<GetDisplayMessagesResponse>(call_result);
         return;
+    } else {
+        response.status = GetDisplayMessagesStatusEnum::Accepted;
+        ocpp::CallResult<GetDisplayMessagesResponse> call_result(response, call.uniqueId);
+        this->send<GetDisplayMessagesResponse>(call_result);
     }
 
     // Send display messages. The response is empty, so we don't have to get that back.
