@@ -44,6 +44,10 @@ private:
     Everest::SteadyTimer websocket_timer;
     bool disable_automatic_websocket_reconnects;
     int network_configuration_priority;
+    /// @brief Local cached network connection profiles
+    std::vector<SetNetworkProfileRequest> network_connection_profiles;
+    /// @brief local cached network conenction priorities
+    std::vector<std::string> network_connection_priorities;
     WebsocketConnectionOptions current_connection_options{};
 
 public:
@@ -112,8 +116,6 @@ public:
     bool send_to_websocket(const std::string& message);
 
 private:
-    /// @brief Local cached network connection profiles
-    std::vector<SetNetworkProfileRequest> network_connection_profiles;
     /// \brief Init the websocket
     ///
     void init_websocket();
