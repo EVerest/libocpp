@@ -122,6 +122,9 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
     v2g_certificate_expiration_check_timer([this]() { this->scheduled_check_v2g_certificate_expiration(); }),
     callbacks(callbacks),
     stop_auth_cache_cleanup_handler(false) {
+    EVLOG_info << "This ChargePoint constructor should no longer be used in favor of the one that allows for "
+                  "dependency injection";
+
     // Make sure the received callback struct is completely filled early before we actually start running
     if (!this->callbacks.all_callbacks_valid(this->device_model)) {
         EVLOG_AND_THROW(std::invalid_argument("All non-optional callbacks must be supplied"));
