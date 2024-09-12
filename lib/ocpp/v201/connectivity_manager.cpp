@@ -130,10 +130,6 @@ void ConnectivityManager::init_websocket() {
     // cache the network profiles on initialization
     cache_network_connection_profiles();
 
-    if (this->network_connection_priorities.empty()) {
-        EVLOG_AND_THROW(std::runtime_error("NetworkConfigurationPriority must not be empty"));
-    }
-
     const auto configuration_slot = this->network_connection_priorities.at(this->network_configuration_priority);
     const auto connection_options = this->get_ws_connection_options(std::stoi(configuration_slot));
 
@@ -273,6 +269,10 @@ void ConnectivityManager::cache_network_connection_profiles() {
 
     this->network_connection_priorities = ocpp::get_vector_from_csv(
         this->device_model.get_value<std::string>(ControllerComponentVariables::NetworkConfigurationPriority));
+
+    if (this->network_connection_priorities.empty()) {
+        EVLOG_AND_THROW(std::runtime_error("NetworkConfigurationPriority must not be empty"));
+    }
 }
 } // namespace v201
 } // namespace ocpp
