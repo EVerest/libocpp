@@ -227,8 +227,6 @@ void Evse::release_transaction() {
     this->transaction = nullptr;
 
     this->reset_pricing_triggers();
-
-    // TODO mz should metervalue triggers be stored to the database as well???
 }
 
 std::unique_ptr<EnhancedTransaction>& Evse::get_transaction() {
