@@ -4098,7 +4098,9 @@ void ChargePointImpl::on_transaction_stopped(const int32_t connector, const std:
     this->transaction_handler->remove_active_transaction(connector);
     this->smart_charging_handler->clear_all_profiles_with_filter(std::nullopt, connector, std::nullopt,
                                                                  ChargingProfilePurposeType::TxProfile, false);
-
+    if (this->signal_set_charging_profiles_callback != nullptr) {
+        this->signal_set_charging_profiles_callback();
+    }
     reset_pricing_triggers(connector);
 }
 
