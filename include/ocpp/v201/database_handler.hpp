@@ -19,6 +19,7 @@
 namespace ocpp {
 namespace v201 {
 
+/// \brief Helper class for retrieving authorization cache entries from the database
 struct AuthorizationCacheEntry {
     IdTokenInfo id_token_info;
     DateTime last_used;
