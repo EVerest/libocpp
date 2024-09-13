@@ -120,7 +120,8 @@ void DatabaseHandler::authorization_cache_update_last_used(const std::string& id
     }
 }
 
-std::optional<AuthorizationCacheEntry> DatabaseHandler::authorization_cache_get_entry(const std::string& id_token_hash) {
+std::optional<AuthorizationCacheEntry>
+DatabaseHandler::authorization_cache_get_entry(const std::string& id_token_hash) {
     std::string sql = "SELECT ID_TOKEN_INFO, LAST_USED FROM AUTH_CACHE WHERE ID_TOKEN_HASH = @id_token_hash";
     auto select_stmt = this->database->new_statement(sql);
 
