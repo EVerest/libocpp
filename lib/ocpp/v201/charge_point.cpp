@@ -687,6 +687,11 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
 
     AuthorizeResponse response;
 
+    bool is_online = this->connectivity_manager->is_websocket_connected();
+    bool local_authorize_offline =
+        this->device_model->get_optional_value<bool>(ControllerComponentVariables::LocalAuthorizeOffline)
+            .value_or(true);
+
     // C03.FR.01 && C05.FR.01: We SHALL NOT send an authorize reqeust for IdTokenType Central
     if (id_token.type == IdTokenEnum::Central or
         !this->device_model->get_optional_value<bool>(ControllerComponentVariables::AuthCtrlrEnabled).value_or(true)) {
@@ -702,7 +707,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
         bool forwarded_to_csms = false;
 
         // If OCSP data is provided as argument, use it
-        if (this->connectivity_manager->is_websocket_connected() and ocsp_request_data.has_value()) {
+        if (is_online and ocsp_request_data.has_value()) {
             EVLOG_info << "Online: Pass provided OCSP data to CSMS";
             response = this->authorize_req(id_token, std::nullopt, ocsp_request_data);
             forwarded_to_csms = true;
@@ -719,14 +724,11 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
             bool contract_validation_offline =
                 this->device_model->get_optional_value<bool>(ControllerComponentVariables::ContractValidationOffline)
                     .value_or(true);
-            bool local_authorize_offline =
-                this->device_model->get_optional_value<bool>(ControllerComponentVariables::LocalAuthorizeOffline)
-                    .value_or(true);
 
             // C07.FR.01: When CS is online, it shall send an AuthorizeRequest
             // C07.FR.02: The AuthorizeRequest shall at least contain the OCSP data
             // TODO: local validation results are ignored if response is based only on OCSP data, is that acceptable?
-            if (this->connectivity_manager->is_websocket_connected()) {
+            if (is_online) {
                 // If no OCSP data was provided, check for a contract root
                 if (local_verify_result == CertificateValidationResult::IssuerNotFound) {
                     // C07.FR.06: Pass contract validation to CSMS when no contract root is found
@@ -820,7 +822,9 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
         }
 
         if (id_token_info.has_value()) {
-            if (id_token_info.value().status == AuthorizationStatusEnum::Accepted) {
+            if ((is_online and id_token_info.value().status == AuthorizationStatusEnum::Accepted) or
+                (!is_online and local_authorize_offline and
+                 id_token_info.value().status == AuthorizationStatusEnum::Accepted)) {
                 // C14.FR.02: If found in local list we shall start charging without an AuthorizeRequest
                 EVLOG_info << "Found valid entry in local authorization list";
                 response.idTokenInfo = id_token_info.value();
@@ -830,7 +834,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
                 EVLOG_info << "Found invalid entry in local authorization list but not sending Authorize.req because "
                               "RemoteAuthorization is disabled";
                 response.idTokenInfo.status = AuthorizationStatusEnum::Unknown;
-            } else if (this->connectivity_manager->is_websocket_connected()) {
+            } else if (is_online) {
                 // C14.FR.03: If a value found but not valid we shall send an authorize request
                 EVLOG_info << "Found invalid entry in local authorization list: Sending Authorize.req";
                 response = this->authorize_req(id_token, certificate, ocsp_request_data);
@@ -847,8 +851,9 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
     const auto auth_cache_enabled =
         this->device_model->get_optional_value<bool>(ControllerComponentVariables::AuthCacheCtrlrEnabled)
             .value_or(false);
+    bool local_pre_authorize = this->device_model->get_value<bool>(ControllerComponentVariables::LocalPreAuthorize);
 
-    if (auth_cache_enabled) {
+    if (auth_cache_enabled and ((is_online and local_pre_authorize) or (!is_online and local_authorize_offline))) {
         try {
             const auto cache_entry = this->database_handler->authorization_cache_get_entry(hashed_id_token);
             if (cache_entry.has_value()) {
@@ -869,8 +874,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
                                << ": Removing from cache and sending new request";
                     this->database_handler->authorization_cache_delete_entry(hashed_id_token);
                     this->update_authorization_cache_size();
-                } else if (this->device_model->get_value<bool>(ControllerComponentVariables::LocalPreAuthorize) and
-                           id_token_info.status == AuthorizationStatusEnum::Accepted) {
+                } else if (cache_entry.value().status == AuthorizationStatusEnum::Accepted) {
                     EVLOG_info << "Found valid entry in AuthCache";
                     this->database_handler->authorization_cache_update_last_used(hashed_id_token);
                     response.idTokenInfo = id_token_info;
@@ -895,7 +899,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
         }
     }
 
-    if (!this->connectivity_manager->is_websocket_connected() and
+    if (!is_online and
         this->device_model->get_optional_value<bool>(ControllerComponentVariables::OfflineTxForUnknownIdEnabled)
             .value_or(false)) {
         EVLOG_info << "Offline authorization due to OfflineTxForUnknownIdEnabled being enabled";
