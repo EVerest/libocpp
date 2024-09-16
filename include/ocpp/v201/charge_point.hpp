@@ -27,6 +27,7 @@
 #include "ocpp/v201/messages/Get15118EVCertificate.hpp"
 #include <ocpp/v201/messages/Authorize.hpp>
 #include <ocpp/v201/messages/BootNotification.hpp>
+#include <ocpp/v201/messages/CancelReservation.hpp>
 #include <ocpp/v201/messages/CertificateSigned.hpp>
 #include <ocpp/v201/messages/ChangeAvailability.hpp>
 #include <ocpp/v201/messages/ClearCache.hpp>
@@ -55,6 +56,7 @@
 #include <ocpp/v201/messages/ReportChargingProfiles.hpp>
 #include <ocpp/v201/messages/RequestStartTransaction.hpp>
 #include <ocpp/v201/messages/RequestStopTransaction.hpp>
+#include <ocpp/v201/messages/ReserveNow.hpp>
 #include <ocpp/v201/messages/Reset.hpp>
 #include <ocpp/v201/messages/SecurityEventNotification.hpp>
 #include <ocpp/v201/messages/SendLocalList.hpp>
@@ -196,6 +198,12 @@ struct Callbacks {
 
     /// \brief Callback function is called when the websocket connection status changes
     std::optional<std::function<void(const bool is_connected)>> connection_state_changed_callback;
+
+    /// \brief Callback function is called when a reservation request is received from the CSMS
+    std::optional<std::function<ReserveNowResponse(const ReserveNowRequest& reservation_request)>> reserve_now_callback;
+    /// \brief Callback function is called when a cancel reservation request is received from the CSMS
+    std::optional<std::function<CancelReservationResponse(const CancelReservationRequest& cancel_request)>>
+        cancel_reservation_callback;
 };
 
 /// \brief Combines ChangeAvailabilityRequest with persist flag for scheduled Availability changes
@@ -629,6 +637,27 @@ private:
     ///
     void set_evse_connectors_unavailable(EvseInterface& evse, bool persist);
 
+    ///
+    /// \brief Get connector type of Connector
+    /// \param evse_id          EVSE id
+    /// \param connector_id     Connector id
+    /// \return The connector type. If evse or connector id is not correct: std::nullopt.
+    ///
+    std::optional<ConnectorEnum> get_evse_connector_type(const uint32_t evse_id, const uint32_t connector_id);
+
+    ///
+    /// \brief Get connector status.
+    ///
+    /// This will search if there is a connector on this evse with status 'Available'. It will search through all
+    /// connectors and return on the first connector that is 'Available'.
+    ///
+    /// \param evse_id          The evse id.
+    /// \param connector_type   The connector type.
+    /// \return std::nullopt if connector type is given, but does not exist. Otherwise the connector status.
+    ///
+    std::optional<ConnectorStatusEnum> get_available_connector_or_status(const uint32_t evse_id,
+                                                                         std::optional<ConnectorEnum> connector_type);
+
     /// \brief Get the value optional offline flag
     /// \return true if the charge point is offline. std::nullopt if it is online;
     bool is_offline();
@@ -741,6 +770,10 @@ private:
     // Functional Block G: Availability
     void handle_change_availability_req(Call<ChangeAvailabilityRequest> call);
     void handle_heartbeat_response(CallResult<HeartbeatResponse> call);
+
+    // Function Block H: Reservations
+    void handle_reserve_now_request(Call<ReserveNowRequest> call);
+    void handle_cancel_reservation_callback(Call<CancelReservationRequest> call);
 
     // Functional Block K: Smart Charging
     void handle_set_charging_profile_req(Call<SetChargingProfileRequest> call);
