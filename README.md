@@ -481,7 +481,7 @@ sequenceDiagram
     ChargePoint->>+DeviceModel : SmartChargingCtrlrAvailable?
     DeviceModel-->>-ChargePoint : Component
 
-    rect Thistle 
+    rect Red 
     break SmartChargingCtrlrAvailable = false
         ChargePoint-->>CSMS : Smart Charging NotSupported CallError
     end
@@ -491,7 +491,7 @@ sequenceDiagram
 
     SmartCharging->>SmartCharging : validate_profile(Profile, EVSE ID)
 
-    rect Thistle 
+    rect Red 
     break Invalid Profile
         SmartCharging-->>ChargePoint : SetChargingProfileResponse: Rejected
         ChargePoint-->>CSMS : SetChargingProfileResponse: Rejected
@@ -525,7 +525,7 @@ sequenceDiagram
     ChargePoint->>+DeviceModel : ChargingScheduleChargingRateUnit?
     DeviceModel-->>-ChargePoint : Component
 
-    rect Thistle 
+    rect Red 
         break call.msg.chargingRateUnit is not supported
             ChargePoint-->>CSMS : ChargingScheduleChargingRateUnitUnsupported CallError
         end
@@ -533,7 +533,7 @@ sequenceDiagram
 
     ChargePoint->>+EvseManager : does_evse_exist(call.msg.evseId)
     EvseManager-->>-ChargePoint : bool
-    rect Thistle 
+    rect Red 
         break EVSE does not exist
             ChargePoint-->>CSMS : EvseDoesNotExist CallError
         end
@@ -545,21 +545,12 @@ sequenceDiagram
 
     ChargePoint->>+SmartChargingHandler : calculate_composite_schedule<br/>(vector<ChargingProfile, now, msg.duration, evseId, call.msg.chargingRateUnit)
 
-    rect Honeydew
-        loop ExternalConstraints, Max, TxDefault, and Tx Profiles
-            SmartChargingHandler->>+Profile: calculate_composite_schedule(profiles)
-            Profile-->>-SmartChargingHandler: composite_schedule 
-        end
+    loop ExternalConstraints, Max, TxDefault, and Tx Profiles
+        SmartChargingHandler->>+Profile: calculate_composite_schedule(profiles)
+        Profile-->>-SmartChargingHandler: composite_schedule 
     end
 
-    rect Honeydew
-        loop ExternalConstraints, Max, TxDefault, and Tx Profiles
-            SmartChargingHandler->>+Profile: calculate_composite_schedule(profiles)
-            Profile-->>-SmartChargingHandler: CompositeSchedule 
-        end
-    end
-
-        note right of SmartChargingHandler: Create consolidated CompositeSchedule<br />from all 4 Profile types
+    note right of SmartChargingHandler: Create consolidated CompositeSchedule<br />from all 4 Profile types
 
 
     SmartChargingHandler->>+Profile: calculate_composite_schedule(ExternalConstraints, Max, TxDefault, Tx)
@@ -582,10 +573,8 @@ sequenceDiagram
 
     ChargePoint->>+SmartChargingHandler : get_reported_profiles(criteria)
 
-    rect Honeydew
-        loop filter ChargingProfiles
-            SmartChargingHandler->>SmartChargingHandler: filter on ChargingProfile criteria 
-        end
+    loop filter ChargingProfiles
+        SmartChargingHandler->>SmartChargingHandler: filter on ChargingProfile criteria 
     end
 
     SmartChargingHandler-->>-ChargePoint : Vector<Profiles>
@@ -593,7 +582,7 @@ sequenceDiagram
     ChargePoint-->>CSMS : GetChargingProfilesResponse(profiles)
 
     alt no Profiles
-    rect Thistle
+    rect Red
         ChargePoint-->>CSMS : GetChargingProfilesResponse(NoProfiles) 
         ChargePoint->>CSMS : return
     end
@@ -618,7 +607,7 @@ sequenceDiagram
     CSMS->>+ChargePoint: ClearChargingProfileRequest(criteria)
 
     alt no Profiles matching criteria
-    rect Thistle
+    rect Red
         ChargePoint-->>CSMS : ClearChargingProfileResponse(Unknown) 
 
     end
