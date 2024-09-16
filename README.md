@@ -617,7 +617,7 @@ sequenceDiagram
     end    
 ```
 
-### Register event callbacks and on_handlers
+#### Register event callbacks and on_handlers
 
 - `all_connectors_unavailable_callback`
 
@@ -749,7 +749,7 @@ sequenceDiagram
 
   Called when a variable has been changed by the CSMS
 
-### Initialize the database
+#### Initialize the database
 
 - Use provided sql database or implement your own storage drive
 
