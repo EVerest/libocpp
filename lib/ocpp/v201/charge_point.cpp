@@ -810,8 +810,12 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
         }
     }
 
-    if (this->device_model->get_optional_value<bool>(ControllerComponentVariables::LocalAuthListCtrlrEnabled)
-            .value_or(false)) {
+    bool local_pre_authorize = this->device_model->get_value<bool>(ControllerComponentVariables::LocalPreAuthorize);
+    bool local_auth_list_enabled =
+        this->device_model->get_optional_value<bool>(ControllerComponentVariables::LocalAuthListCtrlrEnabled)
+            .value_or(false);
+
+    if (local_auth_list_enabled and ((is_online and local_pre_authorize) or (!is_online and local_authorize_offline))) {
         std::optional<IdTokenInfo> id_token_info = std::nullopt;
         try {
             id_token_info = this->database_handler->get_local_authorization_list_entry(id_token);
@@ -851,7 +855,6 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
     const auto auth_cache_enabled =
         this->device_model->get_optional_value<bool>(ControllerComponentVariables::AuthCacheCtrlrEnabled)
             .value_or(false);
-    bool local_pre_authorize = this->device_model->get_value<bool>(ControllerComponentVariables::LocalPreAuthorize);
 
     if (auth_cache_enabled and ((is_online and local_pre_authorize) or (!is_online and local_authorize_offline))) {
         try {
