@@ -91,8 +91,6 @@ The development of OCPP2.0.1 is in progress.
 | ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
 | [OCPP & California Pricing Requirements](https://www.openchargealliance.org/uploads/files/ocpp_and_dms_evse_regulation-v2.0.pdf)          | WIP                    |
 
-
-
 ## CSMS Compatibility
 
 ### CSMS Compatibility OCPP 1.6
@@ -462,14 +460,11 @@ To use libocpp as a auth token validator (e.g. before starting a transaction) yo
 
 ## Usage for OCPP 2.0.1
 
-
-### Current Support
-
-#### Smart Charging
+### Smart Charging
 
 Work to fully support OCPP 2.0.1 Smart Charging is ongoing. Most functional requirements for General Smart Charging use cases (that is, K01–K10) are now supported. For an up-to-date overview of which features are currently supported, please refer to the [OCPP 2.0.1 Status](doc/ocpp_201_status.md) document.
 
-##### K01 SetChargingProfile
+#### K01 SetChargingProfile
 
 Allows the CSMS to influence the charging power or current drawn from a specific EVSE or the
 entire Charging Station over a period of time.
@@ -505,7 +500,7 @@ sequenceDiagram
     ChargePoint-->>-CSMS : SetChargingProfileResponse: Accepted
 ```
 
-##### K08 Get Composite Schedule
+#### K08 Get Composite Schedule
 
 The CSMS requests the Charging Station to report the Composite Charging
 Schedule, as calculated by the Charging Station for a specific point of
@@ -561,7 +556,7 @@ sequenceDiagram
     ChargePoint-->>-CSMS : GetCompositeScheduleResponse(CompositeSchedule)
 ```
 
-##### K09 Get Charging Profiles
+#### K09 Get Charging Profiles
 
 Returns to the CSMS the Charging Schedules/limits installed on a Charging Station based on the 
 passed in criteria.
@@ -596,7 +591,7 @@ sequenceDiagram
     ChargePoint-->>-CSMS : ReportChargingProfilesRequest(profiles_to_report)
 ```
 
-##### K10 Clear Charging Profile
+#### K10 Clear Charging Profile
 
 Clears Charging Profiles installed on a Charging Station based on the
 passed in criteria.
@@ -617,7 +612,7 @@ sequenceDiagram
     end    
 ```
 
-#### Register event callbacks and on_handlers
+### Register event callbacks and on_handlers
 
 - `all_connectors_unavailable_callback`
 
@@ -749,7 +744,7 @@ sequenceDiagram
 
   Called when a variable has been changed by the CSMS
 
-#### Initialize the database
+### Initialize the database
 
 - Use provided sql database or implement your own storage drive
 
