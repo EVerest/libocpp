@@ -699,6 +699,10 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
         return response;
     }
 
+    bool disabled_remote_auth =
+        this->device_model->get_optional_value<bool>(ControllerComponentVariables::DisableRemoteAuthorization)
+            .value_or(false);
+
     // C07: Authorization using contract certificates
     if (id_token.type == IdTokenEnum::eMAID) {
         // Temporary variable that is set to true to avoid immediate response to allow the local auth list
@@ -707,7 +711,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
         bool forwarded_to_csms = false;
 
         // If OCSP data is provided as argument, use it
-        if (is_online and ocsp_request_data.has_value()) {
+        if (is_online and ocsp_request_data.has_value() and !disabled_remote_auth) {
             EVLOG_info << "Online: Pass provided OCSP data to CSMS";
             response = this->authorize_req(id_token, std::nullopt, ocsp_request_data);
             forwarded_to_csms = true;
@@ -728,7 +732,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
             // C07.FR.01: When CS is online, it shall send an AuthorizeRequest
             // C07.FR.02: The AuthorizeRequest shall at least contain the OCSP data
             // TODO: local validation results are ignored if response is based only on OCSP data, is that acceptable?
-            if (is_online) {
+            if (is_online and !disabled_remote_auth) {
                 // If no OCSP data was provided, check for a contract root
                 if (local_verify_result == CertificateValidationResult::IssuerNotFound) {
                     // C07.FR.06: Pass contract validation to CSMS when no contract root is found
@@ -912,8 +916,7 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
 
     // When set to true this instructs the Charging Station to not issue any AuthorizationRequests, but only use
     // Authorization Cache and Local Authorization List to determine validity of idTokens.
-    if (!this->device_model->get_optional_value<bool>(ControllerComponentVariables::DisableRemoteAuthorization)
-             .value_or(false)) {
+    if (disabled_remote_auth) {
         response = this->authorize_req(id_token, certificate, ocsp_request_data);
 
         if (auth_cache_enabled) {
