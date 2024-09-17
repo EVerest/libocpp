@@ -3205,7 +3205,7 @@ void ChargePoint::handle_reserve_now_request(Call<ReserveNowRequest> call) {
 
     if (evse_id.has_value()) {
         if (evse_id.value() < 0 || !evse_manager->does_evse_exist(evse_id.value())) {
-            EVLOG_error << "Trying to make a reservation, but evse " << evse_id << " is not a valid evse id.";
+            EVLOG_error << "Trying to make a reservation, but evse " << evse_id.value() << " is not a valid evse id.";
             this->send<ReserveNowResponse>(ocpp::CallResult<ReserveNowResponse>(response, call.uniqueId));
             return;
         }
@@ -3217,7 +3217,7 @@ void ChargePoint::handle_reserve_now_request(Call<ReserveNowRequest> call) {
         if (!status.has_value()) {
             EVLOG_info << "Trying to make a reservation for connector type "
                        << conversions::connector_enum_to_string(request.connectorType.value()) << " for evse "
-                       << evse_id << ", but this connector type does not exist.";
+                       << evse_id.value() << ", but this connector type does not exist.";
             this->send<ReserveNowResponse>(ocpp::CallResult<ReserveNowResponse>(response, call.uniqueId));
             return;
         } else {
@@ -3281,7 +3281,10 @@ void ChargePoint::handle_reserve_now_request(Call<ReserveNowRequest> call) {
     // Connector status is available!!
 
     // Call reserve now callback and wait for the response.
-    response = this->callbacks.reserve_now_callback.value()(call.msg);
+    ReserveNowRequest reservation_request = call.msg;
+    response.status = this->callbacks.reserve_now_callback.value()(
+        reservation_request.id, reservation_request.expiryDateTime, reservation_request.idToken,
+        reservation_request.connectorType, reservation_request.evseId, reservation_request.groupIdToken);
 
     // Reply with the response fromt he callback.
     const ocpp::CallResult<ReserveNowResponse> call_result(response, call.uniqueId);
@@ -3306,7 +3309,9 @@ void ChargePoint::handle_cancel_reservation_callback(Call<CancelReservationReque
         EVLOG_info << "Receiving a cancel reservation request, but reservation is not implemented.";
         response.status = CancelReservationStatusEnum::Rejected;
     } else {
-        response = this->callbacks.cancel_reservation_callback.value()(call.msg);
+        response.status = (this->callbacks.cancel_reservation_callback.value()(call.msg.reservationId)
+                               ? CancelReservationStatusEnum::Accepted
+                               : CancelReservationStatusEnum::Rejected);
     }
 
     const ocpp::CallResult<CancelReservationResponse> call_result(response, call.uniqueId);

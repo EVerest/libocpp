@@ -200,10 +200,13 @@ struct Callbacks {
     std::optional<std::function<void(const bool is_connected)>> connection_state_changed_callback;
 
     /// \brief Callback function is called when a reservation request is received from the CSMS
-    std::optional<std::function<ReserveNowResponse(const ReserveNowRequest& reservation_request)>> reserve_now_callback;
+    std::optional<std::function<ReserveNowStatusEnum(
+        const int32_t id, const ocpp::DateTime& expiry_date_time, const IdToken& id_token,
+        const std::optional<ConnectorEnum> connector_type, const std::optional<uint32_t> evse_id,
+        const std::optional<IdToken>& group_id_token)>>
+        reserve_now_callback;
     /// \brief Callback function is called when a cancel reservation request is received from the CSMS
-    std::optional<std::function<CancelReservationResponse(const CancelReservationRequest& cancel_request)>>
-        cancel_reservation_callback;
+    std::optional<std::function<bool(const int32_t reservationId)>> cancel_reservation_callback;
 };
 
 /// \brief Combines ChangeAvailabilityRequest with persist flag for scheduled Availability changes
