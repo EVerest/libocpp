@@ -322,7 +322,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K01FR09_IfTxProfileEvseHasNoActiveTr
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::TxProfileEvseHasNoActiveTransaction));
 }
 
-TEST_F(SmartChargingHandlerTestFixtureV201, K01FR19_NumberPhasesOtherThan1AndPhaseToUseSet_ThenProfileInvalid) {
+TEST_F(SmartChargingHandlerTestFixtureV201, K01FR19AndFR48_NumberPhasesOtherThan1AndPhaseToUseSet_ThenProfileInvalid) {
     auto periods = create_charging_schedule_periods_with_phases(0, 0, 1);
     auto profile = create_charging_profile(
         DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
@@ -335,7 +335,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K01FR19_NumberPhasesOtherThan1AndPha
 }
 
 TEST_F(SmartChargingHandlerTestFixtureV201,
-       K01FR20_IfPhaseToUseSetAndACPhaseSwitchingSupportedUndefined_ThenProfileIsInvalid) {
+       K01FR20AndFR48_IfPhaseToUseSetAndACPhaseSwitchingSupportedUndefined_ThenProfileIsInvalid) {
     // As a device model with ac switching supported default set to 'true', we want to create a new database with the
     // ac switching support not set. But this is an in memory database, which is kept open until all handles to it are
     // closed. So we close all connections to the database.
@@ -360,7 +360,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201,
 }
 
 TEST_F(SmartChargingHandlerTestFixtureV201,
-       K01FR20_IfPhaseToUseSetAndACPhaseSwitchingSupportedFalse_ThenProfileIsInvalid) {
+       K01FR20AndFR48_IfPhaseToUseSetAndACPhaseSwitchingSupportedFalse_ThenProfileIsInvalid) {
     // As a device model with ac switching supported default set to 'true', we want to create a new database with the
     // ac switching support not set. But this is an in memory database, which is kept open until all handles to it are
     // closed. So we close all connections to the database.
@@ -385,7 +385,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201,
 }
 
 TEST_F(SmartChargingHandlerTestFixtureV201,
-       K01FR20_IfPhaseToUseSetAndACPhaseSwitchingSupportedTrue_ThenProfileIsNotInvalid) {
+       K01FR20AndFR48_IfPhaseToUseSetAndACPhaseSwitchingSupportedTrue_ThenProfileIsNotInvalid) {
     auto periods = create_charging_schedule_periods_with_phases(0, 1, 1);
     auto profile = create_charging_profile(
         DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
