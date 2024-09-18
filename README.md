@@ -493,12 +493,14 @@ sequenceDiagram
     end
     end
 
-    SmartCharging->>SmartCharging : add_profile(Profile, EVSE ID)
+    SmartCharging->>+SmartCharging : add_profile(Profile, EVSE ID)
+    SmartCharging->>-EVerest : signal_set_charging_profiles_callback
 
     SmartCharging-->>-ChargePoint : SetChargingProfileResponse: Accepted
 
     ChargePoint-->>-CSMS : SetChargingProfileResponse: Accepted
 ```
+
 
 #### K08 Get Composite Schedule
 
