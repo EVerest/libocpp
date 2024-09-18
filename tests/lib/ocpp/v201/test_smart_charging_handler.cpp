@@ -446,7 +446,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201,
 }
 
 TEST_F(SmartChargingHandlerTestFixtureV201,
-       K01_ValidateChargingStationMaxProfile_NotChargingStationMaxProfile_Invalid) {
+       K01_PreCheck_ValidateChargingStationMaxProfile_NotChargingStationMaxProfile_Invalid) {
     auto periods = create_charging_schedule_periods({0, 1, 2});
     auto profile = create_charging_profile(DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxDefaultProfile,
                                            create_charge_schedule(ChargingRateUnitEnum::A));
@@ -590,6 +590,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201,
 
 TEST_F(SmartChargingHandlerTestFixtureV201,
        K01FR41_IfChargingProfileKindIsRelativeAndStartScheduleDoesExist_ThenProfileIsInvalid) {
+    // Per table 3.3. Charging profile recurrency a startSchedule is extraneous
     auto periods = create_charging_schedule_periods(0);
     auto profile = create_charging_profile(
         DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
@@ -830,6 +831,11 @@ TEST_F(SmartChargingHandlerTestFixtureV201,
 }
 
 TEST_F(SmartChargingHandlerTestFixtureV201, K01FR06_ExistingProfileLastsForever_RejectIncoming) {
+    /*
+     * install_profile_on_evse() bypasses our validation/conforming functions, so we need to store the profile as if it
+     * was already modified for storage and later checks. This requires validFrom and validTo to be set
+     */
+
     install_profile_on_evse(DEFAULT_EVSE_ID, DEFAULT_PROFILE_ID, ocpp::DateTime(date::utc_clock::time_point::min()),
                             ocpp::DateTime(date::utc_clock::time_point::max()));
 
