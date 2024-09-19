@@ -511,23 +511,23 @@ is `Rejected`:
 
 - `ChargingProfileNoChargingSchedulePeriods`
 
-  Thrown when the `ChargingProfile` doesn't have any Charging Schedule
+  Happens when the `ChargingProfile` doesn't have any Charging Schedule
   Periods.
 
 - `ChargingScheduleChargingRateUnitUnsupported`
 
-  Thrown when a chargingRateUnit is passed in that is not configured in the
+  Happens when a chargingRateUnit is passed in that is not configured in the
   `ChargingScheduleChargingRateUnit`. [K01.FR.26]
 
 - `ChargingSchedulePeriodInvalidPhaseToUse`
 
-  Thrown when an invalid `phaseToUse` is passed in.
+  Happens when an invalid `phaseToUse` is passed in.
   
   [K01.FR.19] [K01.FR.48]
 
 - `ChargingSchedulePeriodPhaseToUseACPhaseSwitchingUnsupported`
 
-  Thrown when phaseToUse is passed in and the EVSE does not have
+  Happens when phaseToUse is passed in and the EVSE does not have
   `ACPhaseSwitchingSupported` defined and set to true.
   [K01.FR.20] [K01.FR.48]
 
@@ -538,43 +538,43 @@ is `Rejected`:
 
 - `ChargingStationMaxProfileCannotBeRelative`
 
-  Thrown when a `ChargingStationMaxProfile.chargingProfileKind` is set to
+  Happens when a `ChargingStationMaxProfile.chargingProfileKind` is set to
   `Relative`. [K01.FR.38]
 
 - `ChargingStationMaxProfileEvseIdGreaterThanZero`  
 
-  Thrown when a `ChargingStationMaxProfile` is attempted to be set with an
+  Happens when a `ChargingStationMaxProfile` is attempted to be set with an
   EvseID isn't `0`. [K01.FR.03]
 
 - `ChargingProfileMissingRequiredStartSchedule`
 
-  Thrown when an `Absolute` or `Recurring` `ChargingProfile` doesn't have
+  Happens when an `Absolute` or `Recurring` `ChargingProfile` doesn't have
   a `startSchedule`. [K01.FR.40]
 
 - `ChargingProfileExtraneousStartSchedule`
 
-   Thrown when a Relative `ChargingProfile` has a `startSchedule`.
+   Happens when a Relative `ChargingProfile` has a `startSchedule`.
    [K01.FR.41]
 
 - `EvseDoesNotExist`
 
-  Thrown when the `evseId`of a `SetChargingProfileRequest` does not exist.
+  Happens when the `evseId`of a `SetChargingProfileRequest` does not exist.
   [K01.FR.28]
 
 - `ExistingChargingStationExternalConstraints`
   
-  Thrown when a `SetChargingProfileRequest` Profile has a purpose of
+  Happens when a `SetChargingProfileRequest` Profile has a purpose of
   `ChargingStationExternalConstraints` and one already exists with the same
   `ChargingProfile.id` exists. [K01.FR.05]
 
 - `InvalidProfileType`
 
-  Thrown when a `ChargingStationMaxProfile` is attempted to be set with a
+  Happens when a `ChargingStationMaxProfile` is attempted to be set with a
   `ChargingProfile` that isn't a `ChargingStationMaxProfile`.
 
 - `TxProfileEvseHasNoActiveTransaction`
 
-  Thrown when a `SetChargingProfileRequest` with a `TxProfile` is submitted
+  Happens when a `SetChargingProfileRequest` with a `TxProfile` is submitted
   and there is no transaction active on the specified EVSE. [K01.FR.09]
 
 - `TxProfileEvseIdNotGreaterThanZero`
@@ -588,11 +588,11 @@ is `Rejected`:
 
 - `TxProfileTransactionNotOnEvse`
   
-  Thrown when the provided `transactionId` is not known. [K01.FR.33]
+  Happens when the provided `transactionId` is not known. [K01.FR.33]
 
 - `TxProfileConflictingStackLevel`
 
-  Thrown when a `TxProfile` has a `stackLevel` and `transactionId`
+  Happens when a `TxProfile` has a `stackLevel` and `transactionId`
   combination already exists in a `TxProfile` with a different id in
   order to ensure that no two charging profiles with same stack level and
   purpose can be valid at the same time. [K01.FR.39]
