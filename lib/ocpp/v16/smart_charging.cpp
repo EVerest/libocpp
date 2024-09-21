@@ -385,7 +385,7 @@ SmartChargingHandler::get_valid_profiles(const ocpp::DateTime& start_time, const
         std::lock_guard<std::mutex> lk(charge_point_max_profiles_map_mutex);
 
         if (std::find(std::begin(purposes_to_ignore), std::end(purposes_to_ignore),
-                      ChargingProfilePurposeType::ChargePointMaxProfile) != std::end(purposes_to_ignore)) {
+                      ChargingProfilePurposeType::ChargePointMaxProfile) == std::end(purposes_to_ignore)) {
             for (const auto& [stack_level, profile] : stack_level_charge_point_max_profiles_map) {
                 valid_profiles.push_back(profile);
             }
@@ -407,7 +407,8 @@ SmartChargingHandler::get_valid_profiles(const ocpp::DateTime& start_time, const
             std::lock_guard<std::mutex> lk_txd(tx_default_profiles_map_mutex);
             std::lock_guard<std::mutex> lk_tx(tx_profiles_map_mutex);
 
-            if (not purposes_to_ignore.count(ChargingProfilePurposeType::TxProfile)) {
+            if (std::find(std::begin(purposes_to_ignore), std::end(purposes_to_ignore),
+                          ChargingProfilePurposeType::TxProfile) == std::end(purposes_to_ignore)) {
                 for (const auto& [stack_level, profile] : itt->second->stack_level_tx_profiles_map) {
                     // only include profiles that match the transactionId (when there is one)
                     bool b_add{false};
@@ -427,7 +428,8 @@ SmartChargingHandler::get_valid_profiles(const ocpp::DateTime& start_time, const
                     }
                 }
             }
-            if (not purposes_to_ignore.count(ChargingProfilePurposeType::TxDefaultProfile)) {
+            if (std::find(std::begin(purposes_to_ignore), std::end(purposes_to_ignore),
+                          ChargingProfilePurposeType::TxDefaultProfile) == std::end(purposes_to_ignore)) {
                 for (const auto& [stack_level, profile] : itt->second->stack_level_tx_default_profiles_map) {
                     valid_profiles.push_back(profile);
                 }
