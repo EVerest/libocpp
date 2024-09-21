@@ -193,13 +193,10 @@ bool is_critical(const std::string& security_event) {
 }
 
 std::set<ChargingProfilePurposeEnum> get_purposes_to_ignore(const std::string& csl, const bool is_offline) {
-    if (not is_offline) {
+    if (not is_offline or csl.empty()) {
         return {};
     }
 
-    if (csl.empty()) {
-        return {};
-    }
     std::set<ChargingProfilePurposeEnum> purposes_to_ignore;
     const auto purposes_to_ignore_vec = split_string(csl, ',');
 
