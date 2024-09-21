@@ -292,6 +292,13 @@ void ChargePointImpl::init_websocket() {
         }
         this->message_queue->resume(this->message_queue_resume_delay);
         this->connected_callback();
+
+        // signal_set_charging_profiles_callback since composite schedule could have changed if
+        // IgnoredProfilePurposesOffline are configured when becoming online
+        if (this->signal_set_charging_profiles_callback != nullptr and
+            not this->configuration->getIgnoredProfilePurposesOffline().empty()) {
+            this->signal_set_charging_profiles_callback();
+        }
     });
     this->websocket->register_disconnected_callback([this]() {
         if (this->connection_state_changed_callback != nullptr) {
@@ -306,6 +313,12 @@ void ChargePointImpl::init_websocket() {
         }
         if (this->v2g_certificate_timer != nullptr) {
             this->v2g_certificate_timer->stop();
+        }
+        // signal_set_charging_profiles_callback since composite schedule could have changed if
+        // IgnoredProfilePurposesOffline are configured when becoming offline
+        if (this->signal_set_charging_profiles_callback != nullptr and
+            not this->configuration->getIgnoredProfilePurposesOffline().empty()) {
+            this->signal_set_charging_profiles_callback();
         }
     });
     this->websocket->register_closed_callback([this](const WebsocketCloseReason reason) {
@@ -3381,7 +3394,7 @@ ChargePointImpl::get_all_enhanced_composite_charging_schedules(const int32_t dur
     std::map<int32_t, EnhancedChargingSchedule> charging_schedules;
     std::set<ChargingProfilePurposeType> purposes_to_ignore;
 
-    if (not this->websocket->is_connected()) {
+    if (this->websocket == nullptr or not this->websocket->is_connected()) {
         const auto purposes_to_ignore_vec = this->configuration->getIgnoredProfilePurposesOffline();
         purposes_to_ignore.insert(purposes_to_ignore_vec.begin(), purposes_to_ignore_vec.end());
     }

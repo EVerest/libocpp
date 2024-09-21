@@ -395,7 +395,8 @@ SmartChargingHandler::get_valid_profiles(const ocpp::DateTime& start_time, const
     {
         std::lock_guard<std::mutex> lk(charge_point_max_profiles_map_mutex);
 
-        if (not purposes_to_ignore.count(ChargingProfilePurposeType::ChargePointMaxProfile)) {
+        if (std::find(std::begin(purposes_to_ignore), std::end(purposes_to_ignore),
+                      ChargingProfilePurposeType::ChargePointMaxProfile) != std::end(purposes_to_ignore)) {
             for (const auto& [stack_level, profile] : stack_level_charge_point_max_profiles_map) {
                 valid_profiles.push_back(profile);
             }

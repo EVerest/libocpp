@@ -263,7 +263,7 @@
       "attributes": [
         {
           "type": "Actual",
-          "mutability": "ReadOnly",
+          "mutability": "ReadWrite",
           "value": ""
         }
       ],
