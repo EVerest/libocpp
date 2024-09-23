@@ -1782,6 +1782,9 @@ bool ChargePoint::is_evse_reserved_for_other(EvseInterface& evse, const IdToken&
             }
         }
     }
+
+    // TODO mz also check here if there is a reservation for a token and no evse id.
+
     return false;
 }
 
@@ -3169,8 +3172,6 @@ void ChargePoint::handle_heartbeat_response(CallResult<HeartbeatResponse> call) 
 }
 
 void ChargePoint::handle_reserve_now_request(Call<ReserveNowRequest> call) {
-    // TODO mz add FR's from specification
-
     ReserveNowResponse response;
     response.status = ReserveNowStatusEnum::Rejected;
     if (!this->callbacks.reserve_now_callback.has_value() ||
@@ -3227,7 +3228,6 @@ void ChargePoint::handle_reserve_now_request(Call<ReserveNowRequest> call) {
         // No evse id. Just search for all evse's if there is something available for reservation
         const uint64_t number_of_evses = evse_manager->get_number_of_evses();
         if (number_of_evses <= 0) {
-            // TODO mz send 'rejected' and log error!!!!
             EVLOG_error << "Trying to make a reservation, but number of evse's is 0";
             this->send<ReserveNowResponse>(ocpp::CallResult<ReserveNowResponse>(response, call.uniqueId));
             return;
@@ -3277,6 +3277,9 @@ void ChargePoint::handle_reserve_now_request(Call<ReserveNowRequest> call) {
         this->send<ReserveNowResponse>(ocpp::CallResult<ReserveNowResponse>(response, call.uniqueId));
         return;
     }
+
+    // TODO mz also when connector is not available, check if reservation id exists and if it does, it should overwrite
+    // the reservation
 
     // Connector status is available!!
 
