@@ -6,6 +6,7 @@
   "properties": {
     "ClockCtrlrEnabled": {
       "variable_name": "Enabled",
+      "source": "OCPP",
       "characteristics": {
         "supportsMonitoring": true,
         "dataType": "boolean"

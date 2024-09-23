@@ -43,11 +43,11 @@ public:
     using ChargePoint::smart_charging_handler;
 
     TestChargePoint(std::map<int32_t, int32_t>& evse_connector_structure,
-                    std::unique_ptr<DeviceModelStorage> device_model_storage, const std::string& ocpp_main_path,
+                    std::unique_ptr<DeviceModelInterface> device_model_interface, const std::string& ocpp_main_path,
                     const std::string& core_database_path, const std::string& sql_init_path,
                     const std::string& message_log_path, const std::shared_ptr<EvseSecurity> evse_security,
                     const Callbacks& callbacks, std::shared_ptr<SmartChargingHandlerInterface> smart_charging_handler) :
-        ChargePoint(evse_connector_structure, std::move(device_model_storage), ocpp_main_path, core_database_path,
+        ChargePoint(evse_connector_structure, std::move(device_model_interface), ocpp_main_path, core_database_path,
                     sql_init_path, message_log_path, evse_security, callbacks) {
         this->smart_charging_handler = smart_charging_handler;
     }
@@ -104,7 +104,7 @@ public:
 
     std::unique_ptr<TestChargePoint> create_charge_point() {
         std::map<int32_t, int32_t> evse_connector_structure = {{1, 1}, {2, 1}};
-        std::unique_ptr<DeviceModelStorage> device_model_storage =
+        std::unique_ptr<DeviceModelInterface> device_model_storage =
             std::make_unique<DeviceModelStorageSqlite>(DEVICE_MODEL_DB_IN_MEMORY_PATH);
         auto charge_point = std::make_unique<TestChargePoint>(evse_connector_structure, std::move(device_model_storage),
                                                               "", TEMP_OUTPUT_PATH, MIGRATION_FILES_LOCATION_V201,
@@ -325,7 +325,7 @@ TEST_F(ChargepointTestFixtureV201, CreateChargePoint_EVSEConnectorStructureDefin
 
     EXPECT_THROW(ocpp::v201::ChargePoint(evse_connector_structure, device_model, database_handler, message_queue,
                                          "/tmp", evse_security, callbacks),
-                 DeviceModelStorageError);
+                 DeviceModelError);
 }
 
 TEST_F(ChargepointTestFixtureV201, CreateChargePoint_MissingDeviceModel_ThrowsInvalidArgument) {

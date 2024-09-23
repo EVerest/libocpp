@@ -5,10 +5,10 @@
 
 #include <gmock/gmock.h>
 
-#include "ocpp/v201/device_model_storage.hpp"
+#include "ocpp/v201/device_model_interface.hpp"
 
 namespace ocpp::v201 {
-class DeviceModelStorageMock : public DeviceModelStorage {
+class DeviceModelStorageMock : public DeviceModelInterface {
 public:
     MOCK_METHOD(DeviceModelMap, get_device_model, ());
     MOCK_METHOD(std::optional<VariableAttribute>, get_variable_attribute,
