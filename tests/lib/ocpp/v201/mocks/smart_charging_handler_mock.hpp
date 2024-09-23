@@ -11,11 +11,19 @@
 namespace ocpp::v201 {
 class SmartChargingHandlerMock : public SmartChargingHandlerInterface {
 public:
-    MOCK_METHOD(SetChargingProfileResponse, validate_and_add_profile, (ChargingProfile & profile, int32_t evse_id));
-    MOCK_METHOD(ProfileValidationResultEnum, validate_profile, (ChargingProfile & profile, int32_t evse_id));
+    MOCK_METHOD(SetChargingProfileResponse, validate_and_add_profile,
+                (ChargingProfile & profile, int32_t evse_id, AddChargingProfileSource source_of_request));
+    MOCK_METHOD(ProfileValidationResultEnum, validate_profile,
+                (ChargingProfile & profile, int32_t evse_id, AddChargingProfileSource source_of_request));
+    MOCK_METHOD(void, delete_transaction_tx_profiles, (const std::string& transaction_id));
     MOCK_METHOD(SetChargingProfileResponse, add_profile, (ChargingProfile & profile, int32_t evse_id));
     MOCK_METHOD(ClearChargingProfileResponse, clear_profiles, (const ClearChargingProfileRequest& request), (override));
     MOCK_METHOD(std::vector<ReportedChargingProfile>, get_reported_profiles,
                 (const GetChargingProfilesRequest& request), (const, override));
+    MOCK_METHOD(std::vector<ChargingProfile>, get_valid_profiles, (int32_t evse_id));
+    MOCK_METHOD(CompositeSchedule, calculate_composite_schedule,
+                (std::vector<ChargingProfile> & valid_profiles, const ocpp::DateTime& start_time,
+                 const ocpp::DateTime& end_time, const int32_t evse_id,
+                 std::optional<ChargingRateUnitEnum> charging_rate_unit));
 };
 } // namespace ocpp::v201

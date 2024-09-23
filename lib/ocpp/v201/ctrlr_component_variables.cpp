@@ -899,6 +899,13 @@ const ComponentVariable& QueueAllMessages = {
         "QueueAllMessages",
     }),
 };
+const ComponentVariable& MessageTypesDiscardForQueueing = {
+    ControllerComponents::OCPPCommCtrlr,
+    std::nullopt,
+    std::optional<Variable>({
+        "MessageTypesDiscardForQueueing",
+    }),
+};
 const RequiredComponentVariable& ResetRetries = {
     ControllerComponents::OCPPCommCtrlr,
     std::nullopt,
