@@ -46,6 +46,7 @@ if(LIBOCPP_ENABLE_V16)
             ocpp/v16/ocpp_enums.cpp
             ocpp/v16/ocpp_types.cpp
             ocpp/v16/types.cpp
+            ocpp/v16/utils.cpp
     )
     add_subdirectory(ocpp/v16/messages)
 endif()
@@ -68,6 +69,7 @@ if(LIBOCPP_ENABLE_V201)
             ocpp/v201/notify_report_requests_splitter.cpp
             ocpp/v201/message_queue.cpp
             ocpp/v201/ocpp_enums.cpp
+            ocpp/v201/profile.cpp
             ocpp/v201/ocpp_types.cpp
             ocpp/v201/ocsp_updater.cpp
             ocpp/v201/monitoring_updater.cpp

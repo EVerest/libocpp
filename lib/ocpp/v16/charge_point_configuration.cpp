@@ -210,7 +210,7 @@ std::string to_csl(const std::vector<std::string>& vec) {
 }
 
 void ChargePointConfiguration::init_supported_measurands() {
-    const auto _supported_measurands = ocpp::get_vector_from_csv(this->config["Internal"]["SupportedMeasurands"]);
+    const auto _supported_measurands = ocpp::split_string(this->config["Internal"]["SupportedMeasurands"], ',');
     for (const auto& measurand : _supported_measurands) {
         try {
             const auto _measurand = conversions::string_to_measurand(measurand);
@@ -854,6 +854,26 @@ std::optional<KeyValue> ChargePointConfiguration::getQueueAllMessagesKeyValue() 
         queue_all_messages_kv.emplace(kv);
     }
     return queue_all_messages_kv;
+}
+
+std::optional<std::string> ChargePointConfiguration::getMessageTypesDiscardForQueueing() {
+    if (this->config["Internal"].contains("MessageTypesDiscardForQueueing")) {
+        return this->config["Internal"]["MessageTypesDiscardForQueueing"];
+    }
+    return std::nullopt;
+}
+
+std::optional<KeyValue> ChargePointConfiguration::getMessageTypesDiscardForQueueingKeyValue() {
+    std::optional<KeyValue> message_types_discard_for_queueing_kv = std::nullopt;
+    auto message_types_discard_for_queueing = this->getMessageTypesDiscardForQueueing();
+    if (message_types_discard_for_queueing.has_value()) {
+        KeyValue kv;
+        kv.key = "MessageTypesDiscardForQueueing";
+        kv.readonly = true;
+        kv.value.emplace(message_types_discard_for_queueing.value());
+        message_types_discard_for_queueing_kv.emplace(kv);
+    }
+    return message_types_discard_for_queueing_kv;
 }
 
 std::optional<int> ChargePointConfiguration::getMessageQueueSizeThreshold() {
@@ -2861,6 +2881,9 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
     }
     if (key == "QueueAllMessages") {
         return this->getQueueAllMessagesKeyValue();
+    }
+    if (key == "MessageTypesDiscardForQueueing") {
+        return this->getMessageTypesDiscardForQueueingKeyValue();
     }
     if (key == "MessageQueueSizeThreshold") {
         return this->getMessageQueueSizeThresholdKeyValue();

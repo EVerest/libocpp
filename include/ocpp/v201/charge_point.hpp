@@ -37,6 +37,7 @@
 #include <ocpp/v201/messages/DeleteCertificate.hpp>
 #include <ocpp/v201/messages/GetBaseReport.hpp>
 #include <ocpp/v201/messages/GetChargingProfiles.hpp>
+#include <ocpp/v201/messages/GetCompositeSchedule.hpp>
 #include <ocpp/v201/messages/GetInstalledCertificateIds.hpp>
 #include <ocpp/v201/messages/GetLocalListVersion.hpp>
 #include <ocpp/v201/messages/GetLog.hpp>
@@ -351,8 +352,10 @@ public:
     /// \param critical if set this overwrites the default criticality recommended in the OCPP 2.0.1 appendix. A
     /// critical security event is transmitted as a message to the CSMS, a non-critical one is just written to the
     /// security log
+    /// \param timestamp when this security event occured, if absent the current datetime is assumed
     virtual void on_security_event(const CiString<50>& event_type, const std::optional<CiString<255>>& tech_info,
-                                   const std::optional<bool>& critical = std::nullopt) = 0;
+                                   const std::optional<bool>& critical = std::nullopt,
+                                   const std::optional<DateTime>& timestamp = std::nullopt) = 0;
 
     /// \brief Event handler that will update the variable internally when it has been changed on the fly.
     /// \param set_variable_data contains data of the variable to set
@@ -411,18 +414,33 @@ public:
     /// change
     virtual std::map<SetVariableData, SetVariableResult>
     set_variables(const std::vector<SetVariableData>& set_variable_data_vector, const std::string& source) = 0;
+
+    /// \brief Gets a composite schedule based on the given \p request
+    /// \param request specifies different options for the request
+    /// \return GetCompositeScheduleResponse containing the status of the operation and the composite schedule if the
+    /// operation was successful
+    virtual GetCompositeScheduleResponse get_composite_schedule(const GetCompositeScheduleRequest& request) = 0;
+
+    /// \brief Gets composite schedules for all evse_ids (including 0) for the given \p duration and \p unit . If no
+    /// valid profiles are given for an evse for the specified period, the composite schedule will be empty for this
+    /// evse.
+    /// \param duration of the request from. Composite schedules will be retrieved from now to (now + duration)
+    /// \param unit of the period entries of the composite schedules
+    /// \return vector of composite schedules, one for each evse_id including 0.
+    virtual std::vector<CompositeSchedule> get_all_composite_schedules(const int32_t duration,
+                                                                       const ChargingRateUnitEnum& unit) = 0;
 };
 
 /// \brief Class implements OCPP2.0.1 Charging Station
 class ChargePoint : public ChargePointInterface, private ocpp::ChargingStationBase {
 
 private:
+    std::shared_ptr<DeviceModel> device_model;
     std::unique_ptr<EvseManager> evse_manager;
     std::unique_ptr<ConnectivityManager> connectivity_manager;
 
     // utility
     std::shared_ptr<MessageQueue<v201::MessageType>> message_queue;
-    std::shared_ptr<DeviceModel> device_model;
     std::shared_ptr<DatabaseHandler> database_handler;
 
     std::map<int32_t, AvailabilityChange> scheduled_change_availability_requests;
@@ -517,6 +535,7 @@ private:
 
     void trigger_authorization_cache_cleanup();
     void cache_cleanup_handler();
+    GetCompositeScheduleResponse get_composite_schedule_internal(const GetCompositeScheduleRequest& request);
 
     /// \brief Removes all network connection profiles below the actual security profile and stores the new list in the
     /// device model
@@ -645,7 +664,8 @@ private:
 
     // Functional Block A: Security
     void security_event_notification_req(const CiString<50>& event_type, const std::optional<CiString<255>>& tech_info,
-                                         const bool triggered_internally, const bool critical);
+                                         const bool triggered_internally, const bool critical,
+                                         const std::optional<DateTime>& timestamp = std::nullopt);
     void sign_certificate_req(const ocpp::CertificateSigningUseEnum& certificate_signing_use,
                               const bool initiated_by_trigger_message = false);
 
@@ -729,6 +749,7 @@ private:
     void handle_set_charging_profile_req(Call<SetChargingProfileRequest> call);
     void handle_clear_charging_profile_req(Call<ClearChargingProfileRequest> call);
     void handle_get_charging_profiles_req(Call<GetChargingProfilesRequest> call);
+    void handle_get_composite_schedule_req(Call<GetCompositeScheduleRequest> call);
 
     // Functional Block L: Firmware management
     void handle_firmware_update_req(Call<UpdateFirmwareRequest> call);
@@ -926,7 +947,8 @@ public:
     void on_log_status_notification(UploadLogStatusEnum status, int32_t requestId) override;
 
     void on_security_event(const CiString<50>& event_type, const std::optional<CiString<255>>& tech_info,
-                           const std::optional<bool>& critical = std::nullopt) override;
+                           const std::optional<bool>& critical = std::nullopt,
+                           const std::optional<DateTime>& timestamp = std::nullopt) override;
 
     void on_variable_changed(const SetVariableData& set_variable_data) override;
 
@@ -951,6 +973,11 @@ public:
 
     std::map<SetVariableData, SetVariableResult>
     set_variables(const std::vector<SetVariableData>& set_variable_data_vector, const std::string& source) override;
+
+    GetCompositeScheduleResponse get_composite_schedule(const GetCompositeScheduleRequest& request) override;
+
+    std::vector<CompositeSchedule> get_all_composite_schedules(const int32_t duration,
+                                                               const ChargingRateUnitEnum& unit) override;
 
     /// \brief Requests a value of a VariableAttribute specified by combination of \p component_id and \p variable_id
     /// from the device model
