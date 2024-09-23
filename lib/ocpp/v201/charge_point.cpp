@@ -213,6 +213,9 @@ void ChargePoint::start(BootReasonEnum bootreason) {
     this->load_charging_profiles();
     this->connectivity_manager->start();
 
+    const std::string firmware_version =
+        this->device_model->get_value<std::string>(ControllerComponentVariables::FirmwareVersion);
+
     if (this->bootreason == BootReasonEnum::RemoteReset) {
         this->security_event_notification_req(
             CiString<50>(ocpp::security_events::RESET_OR_REBOOT),
@@ -222,15 +225,16 @@ void ChargePoint::start(BootReasonEnum bootreason) {
             CiString<50>(ocpp::security_events::RESET_OR_REBOOT),
             std::optional<CiString<255>>("Charging Station rebooted due to a scheduled reset!"), true, true);
     } else if (this->bootreason == BootReasonEnum::PowerUp) {
-        std::string startup_message = "Charging Station powered up! Firmware version: ";
-        startup_message.append(
-            this->device_model->get_value<std::string>(ControllerComponentVariables::FirmwareVersion));
+        std::string startup_message = "Charging Station powered up! Firmware version: " + firmware_version;
         this->security_event_notification_req(CiString<50>(ocpp::security_events::STARTUP_OF_THE_DEVICE),
                                               std::optional<CiString<255>>(startup_message), true, true);
+    } else if (this->bootreason == BootReasonEnum::FirmwareUpdate) {
+        std::string startup_message =
+            "Charging station reboot after firmware update. Firmware version: " + firmware_version;
+        this->security_event_notification_req(CiString<50>(ocpp::security_events::FIRMWARE_UPDATED),
+                                              std::optional<CiString<255>>(startup_message), true, true);
     } else {
-        std::string startup_message = "Charging station reset or reboot. Firmware version: ";
-        startup_message.append(
-            this->device_model->get_value<std::string>(ControllerComponentVariables::FirmwareVersion));
+        std::string startup_message = "Charging station reset or reboot. Firmware version: " + firmware_version;
         this->security_event_notification_req(CiString<50>(ocpp::security_events::RESET_OR_REBOOT),
                                               std::optional<CiString<255>>(startup_message), true, true);
     }
@@ -442,6 +446,8 @@ void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime&
                                 trigger_reason, enhanced_transaction->get_seq_no(), std::nullopt, std::nullopt,
                                 transaction_id_token, meter_values, std::nullopt, this->is_offline(), std::nullopt);
 
+    // K02.FR.05 The transaction is over, so delete the TxProfiles associated with the transaction.
+    smart_charging_handler->delete_transaction_tx_profiles(enhanced_transaction->get_transaction().transactionId);
     evse_handle.release_transaction();
 
     bool send_reset = false;
@@ -551,7 +557,7 @@ std::string ChargePoint::get_customer_information(const std::optional<Certificat
             const auto entry = this->database_handler->authorization_cache_get_entry(hashed_id_token);
             if (entry.has_value()) {
                 s << "Hashed id_token stored in cache: " + hashed_id_token + "\n";
-                s << "IdTokenInfo: " << entry.value();
+                s << "IdTokenInfo: " << entry->id_token_info;
             }
         } catch (const DatabaseException& e) {
             EVLOG_warning << "Could not get authorization cache entry from database";
@@ -850,25 +856,35 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
         try {
             const auto cache_entry = this->database_handler->authorization_cache_get_entry(hashed_id_token);
             if (cache_entry.has_value()) {
-                if ((cache_entry.value().cacheExpiryDateTime.has_value() and
-                     cache_entry.value().cacheExpiryDateTime.value().to_time_point() < DateTime().to_time_point())) {
-                    EVLOG_info
-                        << "Found valid entry in AuthCache but expiry date passed: Removing from cache and sending "
-                           "new request";
+                const auto now = DateTime();
+                const IdTokenInfo& id_token_info = cache_entry->id_token_info;
+
+                const auto lifetime =
+                    this->device_model->get_optional_value<int>(ControllerComponentVariables::AuthCacheLifeTime);
+                const bool lifetime_expired =
+                    lifetime.has_value() && ((cache_entry->last_used.to_time_point() +
+                                              std::chrono::seconds(lifetime.value())) < now.to_time_point());
+                const bool cache_expiry_passed =
+                    id_token_info.cacheExpiryDateTime.has_value() and (id_token_info.cacheExpiryDateTime.value() < now);
+
+                if (lifetime_expired || cache_expiry_passed) {
+                    EVLOG_info << "Found valid entry in AuthCache but "
+                               << (lifetime_expired ? "lifetime expired" : "expiry date passed")
+                               << ": Removing from cache and sending new request";
                     this->database_handler->authorization_cache_delete_entry(hashed_id_token);
                     this->update_authorization_cache_size();
                 } else if (this->device_model->get_value<bool>(ControllerComponentVariables::LocalPreAuthorize) and
-                           cache_entry.value().status == AuthorizationStatusEnum::Accepted) {
+                           id_token_info.status == AuthorizationStatusEnum::Accepted) {
                     EVLOG_info << "Found valid entry in AuthCache";
                     this->database_handler->authorization_cache_update_last_used(hashed_id_token);
-                    response.idTokenInfo = cache_entry.value();
+                    response.idTokenInfo = id_token_info;
                     return response;
                 } else if (this->device_model
                                ->get_optional_value<bool>(ControllerComponentVariables::AuthCacheDisablePostAuthorize)
                                .value_or(false)) {
                     EVLOG_info << "Found invalid entry in AuthCache: Not sending new request because "
                                   "AuthCacheDisablePostAuthorize is enabled";
-                    response.idTokenInfo = cache_entry.value();
+                    response.idTokenInfo = id_token_info;
                     return response;
                 } else {
                     EVLOG_info << "Found invalid entry in AuthCache: Sending new request";
@@ -933,14 +949,14 @@ void ChargePoint::on_log_status_notification(UploadLogStatusEnum status, int32_t
 }
 
 void ChargePoint::on_security_event(const CiString<50>& event_type, const std::optional<CiString<255>>& tech_info,
-                                    const std::optional<bool>& critical) {
+                                    const std::optional<bool>& critical, const std::optional<DateTime>& timestamp) {
     auto critical_security_event = true;
     if (critical.has_value()) {
         critical_security_event = critical.value();
     } else {
         critical_security_event = utils::is_critical(event_type);
     }
-    this->security_event_notification_req(event_type, tech_info, false, critical_security_event);
+    this->security_event_notification_req(event_type, tech_info, false, critical_security_event, timestamp);
 }
 
 void ChargePoint::on_variable_changed(const SetVariableData& set_variable_data) {
@@ -1078,8 +1094,8 @@ void ChargePoint::remove_network_connection_profiles_below_actual_security_profi
                                   VARIABLE_ATTRIBUTE_VALUE_SOURCE_INTERNAL);
 
     // Update the NetworkConfigurationPriority so only remaining profiles are in there
-    const auto network_priority = ocpp::get_vector_from_csv(
-        this->device_model->get_value<std::string>(ControllerComponentVariables::NetworkConfigurationPriority));
+    const auto network_priority = ocpp::split_string(
+        this->device_model->get_value<std::string>(ControllerComponentVariables::NetworkConfigurationPriority), ',');
 
     auto in_network_profiles = [&network_connection_profiles](const std::string& item) {
         auto is_same_slot = [&item](const SetNetworkProfileRequest& profile) {
@@ -1679,7 +1695,7 @@ void ChargePoint::handle_variables_changed(const std::map<SetVariableData, SetVa
 bool ChargePoint::validate_set_variable(const SetVariableData& set_variable_data) {
     ComponentVariable cv = {set_variable_data.component, std::nullopt, set_variable_data.variable};
     if (cv == ControllerComponentVariables::NetworkConfigurationPriority) {
-        const auto network_configuration_priorities = ocpp::get_vector_from_csv(set_variable_data.attributeValue.get());
+        const auto network_configuration_priorities = ocpp::split_string(set_variable_data.attributeValue.get(), ',');
         const auto active_security_profile =
             this->device_model->get_value<int>(ControllerComponentVariables::SecurityProfile);
         for (const auto configuration_slot : network_configuration_priorities) {
@@ -1815,12 +1831,17 @@ bool ChargePoint::is_offline() {
 
 void ChargePoint::security_event_notification_req(const CiString<50>& event_type,
                                                   const std::optional<CiString<255>>& tech_info,
-                                                  const bool triggered_internally, const bool critical) {
+                                                  const bool triggered_internally, const bool critical,
+                                                  const std::optional<DateTime>& timestamp) {
     EVLOG_debug << "Sending SecurityEventNotification";
     SecurityEventNotificationRequest req;
 
     req.type = event_type;
-    req.timestamp = DateTime().to_rfc3339();
+    if (timestamp.has_value()) {
+        req.timestamp = timestamp.value().to_rfc3339();
+    } else {
+        req.timestamp = DateTime().to_rfc3339();
+    }
     req.techInfo = tech_info;
     this->logging->security(json(req).dump());
     if (critical) {
@@ -2920,7 +2941,7 @@ void ChargePoint::handle_trigger_message(Call<TriggerMessageRequest> call) {
 }
 
 void ChargePoint::handle_remote_start_transaction_request(Call<RequestStartTransactionRequest> call) {
-    const auto msg = call.msg;
+    auto msg = call.msg;
 
     RequestStartTransactionResponse response;
     response.status = RequestStartStopStatusEnum::Rejected;
@@ -2929,11 +2950,6 @@ void ChargePoint::handle_remote_start_transaction_request(Call<RequestStartTrans
     if (msg.evseId.has_value()) {
         const int32_t evse_id = msg.evseId.value();
         auto& evse = this->evse_manager->get_evse(evse_id);
-
-        // TODO F01.FR.26 If a Charging Station with support for Smart Charging receives a
-        // RequestStartTransactionRequest with an invalid ChargingProfile: The Charging Station SHALL respond
-        // with RequestStartTransactionResponse with status = Rejected and optionally with reasonCode =
-        // "InvalidProfile" or "InvalidSchedule".
 
         // F01.FR.23: Faulted or unavailable. F01.FR.24 / F02.FR.25: Occupied. Send rejected.
         const bool available = is_evse_connector_available(evse);
@@ -2954,6 +2970,36 @@ void ChargePoint::handle_remote_start_transaction_request(Call<RequestStartTrans
             response.status = RequestStartStopStatusEnum::Accepted;
 
             remote_start_id_per_evse[evse_id] = {msg.idToken, msg.remoteStartId};
+        }
+
+        // F01.FR.26 If a Charging Station with support for Smart Charging receives a
+        // RequestStartTransactionRequest with an invalid ChargingProfile: The Charging Station SHALL respond
+        // with RequestStartTransactionResponse with status = Rejected and optionally with reasonCode =
+        // "InvalidProfile" or "InvalidSchedule".
+
+        bool is_smart_charging_enabled =
+            this->device_model->get_optional_value<bool>(ControllerComponentVariables::SmartChargingCtrlrEnabled)
+                .value_or(false);
+
+        if (is_smart_charging_enabled) {
+            if (msg.chargingProfile.has_value()) {
+
+                auto charging_profile = msg.chargingProfile.value();
+
+                if (charging_profile.chargingProfilePurpose == ChargingProfilePurposeEnum::TxProfile) {
+
+                    const auto add_profile_response = this->smart_charging_handler->validate_and_add_profile(
+                        msg.chargingProfile.value(), evse_id, AddChargingProfileSource::RequestStartTransactionRequest);
+                    if (add_profile_response.status == ChargingProfileStatusEnum::Accepted) {
+                        EVLOG_debug << "Accepting SetChargingProfileRequest";
+                    } else {
+                        EVLOG_debug << "Rejecting SetChargingProfileRequest:\n reasonCode: "
+                                    << add_profile_response.statusInfo->reasonCode.get()
+                                    << "\nadditionalInfo: " << add_profile_response.statusInfo->additionalInfo->get();
+                        response.statusInfo = add_profile_response.statusInfo;
+                    }
+                }
+            }
         }
     } else {
         // F01.FR.07 RequestStartTransactionRequest does not contain an evseId. The Charging Station MAY reject the
@@ -3228,7 +3274,24 @@ void ChargePoint::handle_firmware_update_req(Call<UpdateFirmwareRequest> call) {
     } else {
         this->firmware_status_before_installing = FirmwareStatusEnum::Downloaded;
     }
-    UpdateFirmwareResponse response = callbacks.update_firmware_request_callback(call.msg);
+
+    UpdateFirmwareResponse response;
+    const auto msg = call.msg;
+    bool cert_valid_or_not_set = true;
+
+    // L01.FR.22 check if certificate is valid
+    if (msg.firmware.signingCertificate.has_value() and
+        this->evse_security->verify_certificate(msg.firmware.signingCertificate.value().get(),
+                                                ocpp::LeafCertificateType::MF) !=
+            ocpp::CertificateValidationResult::Valid) {
+        response.status = UpdateFirmwareStatusEnum::InvalidCertificate;
+        cert_valid_or_not_set = false;
+    }
+
+    if (cert_valid_or_not_set) {
+        // execute firwmare update callback
+        response = callbacks.update_firmware_request_callback(msg);
+    }
 
     ocpp::CallResult<UpdateFirmwareResponse> call_result(response, call.uniqueId);
     this->send<UpdateFirmwareResponse>(call_result);
