@@ -85,8 +85,6 @@ class UnexpectedMessageTypeFromCSMS : public std::runtime_error {
     using std::runtime_error::runtime_error;
 };
 
-
-
 /// \brief Combines ChangeAvailabilityRequest with persist flag for scheduled Availability changes
 struct AvailabilityChange {
     ChangeAvailabilityRequest request;

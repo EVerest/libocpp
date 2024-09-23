@@ -357,9 +357,9 @@ struct DisplayMessageContent {
 /// \brief Type of an identifier string.
 ///
 enum class IdentifierType {
-    SessionId,      ///< \brief Identifier is the session id.
-    IdToken,        ///< \brief Identifier is the id token.
-    TransactionId   ///< \brief Identifier is the transaction id.
+    SessionId,    ///< \brief Identifier is the session id.
+    IdToken,      ///< \brief Identifier is the id token.
+    TransactionId ///< \brief Identifier is the transaction id.
 };
 
 struct DisplayMessage {
