@@ -12,8 +12,6 @@ namespace ocpp {
 /// \brief Case insensitive compare for a case insensitive (Ci)String
 bool iequals(const std::string& lhs, const std::string rhs);
 
-std::vector<std::string> get_vector_from_csv(const std::string& csv_str);
-
 bool is_integer(const std::string& value);
 std::tuple<bool, int> is_positive_integer(const std::string& value);
 bool is_decimal_number(const std::string& value);
@@ -25,9 +23,10 @@ bool is_boolean(const std::string& value);
 /// \brief Split string on a given character.
 /// \param string_to_split  The string to split.
 /// \param c                The character to split the string on.
+/// \param trim             True if all strings must be trimmed as well. Defaults to 'false'.
 /// \return A vector with the string 'segments'.
 ///
-std::vector<std::string> split_string(const std::string& string_to_split, const char c);
+std::vector<std::string> split_string(const std::string& string_to_split, const char c, const bool trim = false);
 
 ///
 /// \brief Trim string, removing leading and trailing white spaces.

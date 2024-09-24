@@ -16,7 +16,7 @@ namespace utils {
 
 std::vector<MeasurandEnum> get_measurands_vec(const std::string& measurands_csv) {
     std::vector<MeasurandEnum> measurands;
-    std::vector<std::string> measurands_strings = ocpp::get_vector_from_csv(measurands_csv);
+    std::vector<std::string> measurands_strings = ocpp::split_string(measurands_csv, ',');
 
     for (const auto& measurand_string : measurands_strings) {
         try {
@@ -100,6 +100,15 @@ std::vector<MeterValue> get_meter_values_with_measurands_applied(
     }
 
     return meter_values_result;
+}
+
+MeterValue set_meter_value_reading_context(const MeterValue& meter_value, const ReadingContextEnum reading_context) {
+    MeterValue return_value = meter_value;
+    for (auto& sampled_value : return_value.sampledValue) {
+        sampled_value.context = reading_context;
+    }
+
+    return return_value;
 }
 
 std::string sha256(const std::string& str) {

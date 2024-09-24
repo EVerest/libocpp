@@ -14,16 +14,6 @@ bool iequals(const std::string& lhs, const std::string rhs) {
     return boost::algorithm::iequals(lhs, rhs);
 }
 
-std::vector<std::string> get_vector_from_csv(const std::string& csv_str) {
-    std::vector<std::string> csv;
-    std::string str;
-    std::stringstream ss(csv_str);
-    while (std::getline(ss, str, ',')) {
-        csv.push_back(str);
-    }
-    return csv;
-}
-
 bool is_integer(const std::string& value) {
     if (value.empty()) {
         return false;
@@ -86,12 +76,15 @@ bool is_rfc3339_datetime(const std::string& value) {
     return std::regex_match(value, datetime_pattern);
 }
 
-std::vector<std::string> split_string(const std::string& string_to_split, const char c) {
+std::vector<std::string> split_string(const std::string& string_to_split, const char c, const bool trim) {
     std::stringstream input(string_to_split);
     std::string temp;
     std::vector<std::string> result;
 
     while (std::getline(input, temp, c)) {
+        if (trim) {
+            temp = trim_string(temp);
+        }
         result.push_back(temp);
     }
 

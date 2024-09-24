@@ -46,6 +46,7 @@ if(LIBOCPP_ENABLE_V16)
             ocpp/v16/ocpp_enums.cpp
             ocpp/v16/ocpp_types.cpp
             ocpp/v16/types.cpp
+            ocpp/v16/utils.cpp
     )
     add_subdirectory(ocpp/v16/messages)
 endif()
@@ -55,6 +56,7 @@ if(LIBOCPP_ENABLE_V201)
         PRIVATE
             ocpp/v201/average_meter_values.cpp
             ocpp/v201/charge_point.cpp
+            ocpp/v201/charge_point_callbacks.cpp
             ocpp/v201/smart_charging.cpp
             ocpp/v201/connector.cpp
             ocpp/v201/ctrlr_component_variables.cpp

@@ -175,7 +175,7 @@ bool validate_value(const VariableCharacteristics& characteristics, const std::s
         if (!characteristics.valuesList.has_value()) {
             return true;
         }
-        const auto values_list = ocpp::get_vector_from_csv(characteristics.valuesList.value().get());
+        const auto values_list = ocpp::split_string(characteristics.valuesList.value().get(), ',');
         return std::find(values_list.begin(), values_list.end(), value) != values_list.end();
     }
     default: // same validation for MemberList or SequenceList
@@ -186,8 +186,8 @@ bool validate_value(const VariableCharacteristics& characteristics, const std::s
             if (!characteristics.valuesList.has_value()) {
                 return true;
             }
-            const auto values_list = ocpp::get_vector_from_csv(characteristics.valuesList.value().get());
-            const auto value_csv = get_vector_from_csv(value);
+            const auto values_list = ocpp::split_string(characteristics.valuesList.value().get(), ',');
+            const auto value_csv = ocpp::split_string(value, ',');
             for (const auto& v : value_csv) {
                 if (std::find(values_list.begin(), values_list.end(), v) == values_list.end()) {
                     return false;
@@ -218,7 +218,7 @@ bool include_in_summary_inventory(const ComponentVariable& cv, const VariableAtt
 
 GetVariableStatusEnum DeviceModel::request_value_internal(const Component& component_id, const Variable& variable_id,
                                                           const AttributeEnum& attribute_enum, std::string& value,
-                                                          bool allow_write_only) {
+                                                          bool allow_write_only) const {
     const auto component_it = this->device_model.find(component_id);
     if (component_it == this->device_model.end()) {
         EVLOG_debug << "unknown component in " << component_id.name << "." << variable_id.name;
