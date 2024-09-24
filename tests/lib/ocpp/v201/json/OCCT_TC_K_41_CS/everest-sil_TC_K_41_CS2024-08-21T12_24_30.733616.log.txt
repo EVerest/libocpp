@@ -1,0 +1,110 @@
+Test Case Name : TC_K_41_CS 
+Test Case Description : [Beta] Get Composite Schedule - Combining chargingProfilePurposes 
+Test Start Time : 21-08-2024 12:24:30 
+Test End Time : 21-08-2024 12:24:40 
+System Under Test (SUT) : CS 
+Communication Medium : WEBSOCKET
+OCPP Version : OCPP 2.0.1
+OCTT Instance :
+Build Number : Beta_2024-07_v3
+Configuration : everest-sil(317694626f10ce5db6a07e3c4a1f4bb8) 
+Certification Profile : [Smart Charging, ISO 15118 Support] 
+----------------------------------------------------------------------------------------------------------
+[12:24:30:755] [started_testcase]  K_SmartCharging_CS - TC_K_41_CS-[Beta] Get Composite Schedule - Combining chargingProfilePurposes
+[12:24:30:761] [info]  The value of resetBeforeTestcase is false
+[12:24:30:762] [info]  Start clearing internal states.
+[12:24:30:763] [REQUEST]
+[12:24:30:763] [msg-out]  [2, "abcc6c1a-6086-4063-9b45-37e2dda8b7ff", "GetVariables", {"getVariableData":[{"component":{"name":"TxCtrlr"},"variable":{"name":"TxStartPoint"}}]}]
+[12:24:30:764] [info]  Waiting for response message of type GetVariablesResponse
+[12:24:30:944] [RESPONSE]
+[12:24:30:944] [msg-in]  [3,"abcc6c1a-6086-4063-9b45-37e2dda8b7ff",{"getVariableResult":[{"attributeStatus":"Accepted","attributeType":"Actual","attributeValue":"PowerPathClosed","component":{"name":"TxCtrlr"},"variable":{"name":"TxStartPoint"}}]}]
+[12:24:30:963] [info]  Received response message of the expected type.
+[12:24:30:963] [REQUEST]
+[12:24:30:963] [msg-out]  [2, "4253ba9d-2e26-47ca-9873-127dc00941c3", "GetVariables", {"getVariableData":[{"component":{"name":"TxCtrlr"},"variable":{"name":"TxStopPoint"}}]}]
+[12:24:30:964] [info]  Waiting for response message of type GetVariablesResponse
+[12:24:31:029] [RESPONSE]
+[12:24:31:029] [msg-in]  [3,"4253ba9d-2e26-47ca-9873-127dc00941c3",{"getVariableResult":[{"attributeStatus":"Accepted","attributeType":"Actual","attributeValue":"EVConnected,Authorized","component":{"name":"TxCtrlr"},"variable":{"name":"TxStopPoint"}}]}]
+[12:24:31:032] [info]  Received response message of the expected type.
+[12:24:31:033] [info]  ========================= Starting Testcase Preparation ==========================
+[12:24:31:034] [REQUEST]
+[12:24:31:034] [msg-out]  [2, "10df0972-50d2-4c6d-b168-67922a9964f1", "GetVariables", {"getVariableData":[{"component":{"name":"TxCtrlr"},"variable":{"name":"StopTxOnInvalidId"}}]}]
+[12:24:31:034] [info]  Waiting for response message of type GetVariablesResponse
+[12:24:31:095] [RESPONSE]
+[12:24:31:095] [msg-in]  [3,"10df0972-50d2-4c6d-b168-67922a9964f1",{"getVariableResult":[{"attributeStatus":"Accepted","attributeType":"Actual","attributeValue":"true","component":{"name":"TxCtrlr"},"variable":{"name":"StopTxOnInvalidId"}}]}]
+[12:24:31:122] [info]  Received response message of the expected type.
+[12:24:31:132] [REQUEST]
+[12:24:31:132] [msg-out]  [2, "37e925b5-7a69-4d61-86b7-aee0ade44f95", "GetVariables", {"getVariableData":[{"component":{"name":"AuthCtrlr"},"variable":{"name":"Enabled"}}]}]
+[12:24:31:132] [info]  Waiting for response message of type GetVariablesResponse
+[12:24:31:198] [RESPONSE]
+[12:24:31:198] [msg-in]  [3,"37e925b5-7a69-4d61-86b7-aee0ade44f95",{"getVariableResult":[{"attributeStatus":"Accepted","attributeType":"Actual","attributeValue":"true","component":{"name":"AuthCtrlr"},"variable":{"name":"Enabled"}}]}]
+[12:24:31:238] [info]  Received response message of the expected type.
+[12:24:31:238] [info]  Entering state AuthorizedIdToken (evseId = 1)
+[12:24:31:241] [prompt]  Please authorize the transaction, with id: DEADBEEF, type is ISO14443, evseId is 1, connectorId is 1, 
+[12:24:31:946] [api_dismissed]  820117b5-564e-4c5f-8dbe-46f951117e0d
+[12:24:31:946] [info]  Got 'continue' on the previous API request, continuing.
+[12:24:31:946] [info]  Waiting for request message of type AuthorizeRequest
+[12:24:33:190] [REQUEST]
+[12:24:33:190] [msg-in]  [2,"3ed289ec-0a49-4535-af27-24873f948510","Authorize",{"idToken":{"idToken":"DEADBEEF","type":"ISO14443"}}]
+[12:24:33:197] [RESPONSE]
+[12:24:33:197] [msg-out]  [3, "3ed289ec-0a49-4535-af27-24873f948510", {"idTokenInfo":{"status":"Accepted"}}]
+[12:24:33:198] [info]  Reached state Authorized
+[12:24:33:198] [info]  Entering state EVConnectedPreSession (evseId = 1)
+[12:24:33:198] [prompt]  Please plug in your cable on EV side now.
+[12:24:34:943] [api_dismissed]  4ab4fa9b-eb21-49bc-9917-1d9dae9bb171
+[12:24:34:943] [info]  Got 'continue' on the previous API request, continuing.
+[12:24:34:943] [info]  We are entering the interleave statement
+[12:24:34:943] [info]  Waiting for request messages of type StatusNotificationRequest, NotifyEventRequest and TransactionEventRequest. Not all message types are mandatory, as some are optional. Please refer to the testcase document to see which ones are mandatory.
+[12:24:38:610] [REQUEST]
+[12:24:38:610] [msg-in]  [2,"7f741f6c-032f-4064-8185-2f2909f00864","StatusNotification",{"connectorId":1,"connectorStatus":"Occupied","evseId":1,"timestamp":"2024-08-21T12:24:38.592Z"}]
+[12:24:38:625] [RESPONSE]
+[12:24:38:625] [msg-out]  [3, "7f741f6c-032f-4064-8185-2f2909f00864", {}]
+[12:24:38:626] [info]  Waiting for request message of type TransactionEventRequest
+[12:24:38:671] [REQUEST]
+[12:24:38:671] [msg-in]  [2,"b50b42ba-8c0f-4b9e-a6c2-cd487dafb485","TransactionEvent",{"eventType":"Started","evse":{"connectorId":1,"id":1},"idToken":{"idToken":"DEADBEEF","type":"ISO14443"},"meterValue":[{"sampledValue":[{"context":"Transaction.Begin","location":"Outlet","measurand":"Energy.Active.Import.Register","unitOfMeasure":{"unit":"Wh"},"value":0.0},{"context":"Transaction.Begin","location":"Outlet","measurand":"Energy.Active.Import.Register","phase":"L1","unitOfMeasure":{"unit":"Wh"},"value":0.0},{"context":"Transaction.Begin","location":"Outlet","measurand":"Energy.Active.Import.Register","phase":"L2","unitOfMeasure":{"unit":"Wh"},"value":0.0},{"context":"Transaction.Begin","location":"Outlet","measurand":"Energy.Active.Import.Register","phase":"L3","unitOfMeasure":{"unit":"Wh"},"value":0.0},{"context":"Transaction.Begin","location":"Outlet","measurand":"Current.Import","phase":"L1","unitOfMeasure":{"unit":"A"},"value":0.0},{"context":"Transaction.Begin","location":"Outlet","measurand":"Current.Import","phase":"L2","unitOfMeasure":{"unit":"A"},"value":0.0},{"context":"Transaction.Begin","location":"Outlet","measurand":"Current.Import","phase":"L3","unitOfMeasure":{"unit":"A"},"value":0.0},{"context":"Transaction.Begin","location":"Outlet","measurand":"Current.Import","phase":"N","unitOfMeasure":{"unit":"A"},"value":0.0}],"timestamp":"2024-08-21T12:24:38.336Z"}],"offline":false,"seqNo":0,"timestamp":"2024-08-21T12:24:38.561Z","transactionInfo":{"chargingState":"EVConnected","transactionId":"e23889e3-0fc7-424a-b2e9-dce774521b83"},"triggerReason":"CablePluggedIn"}]
+[12:24:38:686] [RESPONSE]
+[12:24:38:686] [msg-out]  [3, "b50b42ba-8c0f-4b9e-a6c2-cd487dafb485", {"idTokenInfo":{"groupIdToken":{"idToken":"FFFFFFAA","type":"ISO14443"},"status":"Accepted"}}]
+[12:24:38:688] [info]  Reached state EVConnectedPreSession
+[12:24:38:688] [info]  Entering state EnergyTransferStarted (evseId = 1)
+[12:24:38:688] [info]  All checks cleared for EnergyTransferStarted
+[12:24:38:688] [info]  Waiting for the TransactionEvent 'ChargingStateChanged -> Charging'
+[12:24:38:689] [info]  Waiting for request message of type TransactionEventRequest
+[12:24:40:168] [REQUEST]
+[12:24:40:168] [msg-in]  [2,"b07783c1-202f-4ea3-b31c-238944a537df","TransactionEvent",{"eventType":"Updated","offline":false,"seqNo":1,"timestamp":"2024-08-21T12:24:40.131Z","transactionInfo":{"chargingState":"Charging","transactionId":"e23889e3-0fc7-424a-b2e9-dce774521b83"},"triggerReason":"ChargingStateChanged"}]
+[12:24:40:177] [RESPONSE]
+[12:24:40:177] [msg-out]  [3, "b07783c1-202f-4ea3-b31c-238944a537df", {}]
+[12:24:40:178] [info]  Reached state EnergyTransferStarted
+[12:24:40:179] [REQUEST]
+[12:24:40:179] [msg-out]  [2, "f8b08a68-c386-4cb9-88dd-640ed3aab3ab", "SetChargingProfile", {"chargingProfile":{"chargingProfileKind":"Absolute","chargingProfilePurpose":"ChargingStationMaxProfile","chargingSchedule":[{"chargingRateUnit":"A","chargingSchedulePeriod":[{"limit":10.000000,"numberPhases":3,"startPeriod":0}],"duration":86404,"id":1,"startSchedule":"2024-08-21T12:24:36Z"}],"id":1,"stackLevel":0},"evseId":0}]
+[12:24:40:180] [info]  Waiting for response message of type SetChargingProfileResponse
+[12:24:40:238] [RESPONSE]
+[12:24:40:238] [msg-in]  [3,"f8b08a68-c386-4cb9-88dd-640ed3aab3ab",{"status":"Accepted"}]
+[12:24:40:243] [info]  Received response message of the expected type.
+[12:24:40:243] [REQUEST]
+[12:24:40:243] [msg-out]  [2, "bf2276fc-d5d3-4d8a-be87-336974a54a87", "SetChargingProfile", {"chargingProfile":{"chargingProfileKind":"Absolute","chargingProfilePurpose":"TxDefaultProfile","chargingSchedule":[{"chargingRateUnit":"A","chargingSchedulePeriod":[{"limit":6.000000,"numberPhases":3,"startPeriod":0},{"limit":10.000000,"numberPhases":3,"startPeriod":60},{"limit":8.000000,"numberPhases":3,"startPeriod":120},{"limit":15.000000,"numberPhases":3,"startPeriod":180},{"limit":8.000000,"numberPhases":3,"startPeriod":260}],"duration":304,"id":1,"startSchedule":"2024-08-21T12:24:36Z"}],"id":2,"stackLevel":0,"validFrom":"2024-08-21T12:24:36Z","validTo":"2024-08-21T12:31:25Z"},"evseId":1}]
+[12:24:40:244] [info]  Waiting for response message of type SetChargingProfileResponse
+[12:24:40:295] [RESPONSE]
+[12:24:40:295] [msg-in]  [3,"bf2276fc-d5d3-4d8a-be87-336974a54a87",{"status":"Accepted"}]
+[12:24:40:303] [info]  Received response message of the expected type.
+[12:24:40:304] [REQUEST]
+[12:24:40:304] [msg-out]  [2, "f33b08c3-af97-4827-9e02-a7de025472b8", "SetChargingProfile", {"chargingProfile":{"chargingProfileKind":"Absolute","chargingProfilePurpose":"TxProfile","chargingSchedule":[{"chargingRateUnit":"A","chargingSchedulePeriod":[{"limit":8.000000,"numberPhases":3,"startPeriod":0},{"limit":11.000000,"numberPhases":3,"startPeriod":50},{"limit":16.000000,"numberPhases":3,"startPeriod":140},{"limit":6.000000,"numberPhases":3,"startPeriod":200},{"limit":12.000000,"numberPhases":3,"startPeriod":240}],"duration":264,"id":1,"startSchedule":"2024-08-21T12:24:36Z"}],"id":2,"stackLevel":0,"transactionId":"e23889e3-0fc7-424a-b2e9-dce774521b83"},"evseId":1}]
+[12:24:40:304] [info]  Waiting for response message of type SetChargingProfileResponse
+[12:24:40:355] [RESPONSE]
+[12:24:40:355] [msg-in]  [3,"f33b08c3-af97-4827-9e02-a7de025472b8",{"status":"Accepted"}]
+[12:24:40:364] [info]  Received response message of the expected type.
+[12:24:40:364] [info]  ========================== Starting Main Testcase Steps ==========================
+[12:24:40:365] [REQUEST]
+[12:24:40:365] [msg-out]  [2, "f00c9713-16a5-47bc-973d-a4d549e92f7e", "GetCompositeSchedule", {"chargingRateUnit":"A","duration":400,"evseId":1}]
+[12:24:40:366] [info]  Waiting for response message of type GetCompositeScheduleResponse
+[12:24:40:411] [RESPONSE]
+[12:24:40:411] [msg-in]  [3,"f00c9713-16a5-47bc-973d-a4d549e92f7e",{"schedule":{"chargingRateUnit":"A","chargingSchedulePeriod":[{"limit":10.0,"numberPhases":3,"startPeriod":0}],"duration":400,"evseId":1,"scheduleStart":"2024-08-21T12:24:40.000Z"},"status":"Accepted"}]
+[12:24:40:425] [info]  Received response message of the expected type.
+[12:24:40:425] [info]  CompositeSchedule should have had 6 periods.
+[12:24:40:428] [info]  The value of resetAfterTestcase is false
+[12:24:40:528] [info]  Testcase failed because of the following reasons:
+[12:24:40:528] [info]  CompositeSchedule should have had 6 periods.
+[12:24:40:530] [verdict]  FAIL
+[12:24:40:530] [info]  The test case has ended.
+[12:24:40:531] [stopped_testcase]  
+
+
+Test case result : FAIL
