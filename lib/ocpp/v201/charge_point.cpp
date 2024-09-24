@@ -268,7 +268,7 @@ void ChargePoint::on_firmware_update_status_notification(int32_t request_id,
             CiString<50>(ocpp::security_events::INVALIDFIRMWARESIGNATURE),
             std::optional<CiString<255>>("Signature of the provided firmware is not valid!"), true,
             true); // L01.FR.03 - critical because TC_L_06_CS requires this message to be sent
-    } else if (req.status == FirmwareStatusEnum::InstallVerificationFailed ||
+    } else if (req.status == FirmwareStatusEnum::InstallVerificationFailed or
                req.status == FirmwareStatusEnum::InstallationFailed) {
         this->restore_all_connector_states();
     }
@@ -615,14 +615,14 @@ void ChargePoint::handle_cost_and_tariff(const TransactionEventResponse& respons
     std::vector<DisplayMessageContent> cost_messages;
 
     // Check if there is a tariff message and if 'Tariff' is available and enabled
-    if (response.updatedPersonalMessage.has_value() && tariff_enabled) {
+    if (response.updatedPersonalMessage.has_value() and tariff_enabled) {
         MessageContent personal_message = response.updatedPersonalMessage.value();
         DisplayMessageContent message = message_content_to_display_message_content(personal_message);
         cost_messages.push_back(message);
 
         // If cost is enabled, the message will be sent to the running cost callback. But if it is not enabled, the
         // tariff message will be sent using the display message callback.
-        if (!cost_enabled && this->callbacks.set_display_message_callback.has_value() &&
+        if (!cost_enabled and this->callbacks.set_display_message_callback.has_value() and
             this->callbacks.set_display_message_callback != nullptr) {
             DisplayMessage display_message;
             display_message.message = message;
@@ -633,7 +633,7 @@ void ChargePoint::handle_cost_and_tariff(const TransactionEventResponse& respons
     }
 
     // Check if cost is available and enabled, and if there is a totalcost message.
-    if (cost_enabled && response.totalCost.has_value() && this->callbacks.set_running_cost_callback.has_value()) {
+    if (cost_enabled and response.totalCost.has_value() and this->callbacks.set_running_cost_callback.has_value()) {
         RunningCost running_cost;
         std::string total_cost;
         // We use the original string and convert it to a double ourselves, as the nlohmann library converts it to a
@@ -663,7 +663,7 @@ void ChargePoint::handle_cost_and_tariff(const TransactionEventResponse& respons
                 });
                 if (it != mv.sampledValue.end()) {
                     // Found a sampled metervalue we are searching for!
-                    if (!max_meter_value.has_value() || max_meter_value.value() < it->value) {
+                    if (!max_meter_value.has_value() or max_meter_value.value() < it->value) {
                         max_meter_value = it->value;
                     }
                 }
@@ -680,16 +680,16 @@ void ChargePoint::handle_cost_and_tariff(const TransactionEventResponse& respons
             // message, because there can only be one vendor id in custom data. If you not check the vendor id, it
             // is just possible for a csms to include them both.
             const json& custom_data = response.customData.value();
-            if (/*custom_data.contains("vendorId") &&
-                (custom_data.at("vendorId").get<std::string>() == "org.openchargealliance.org.qrcode") &&*/
-                custom_data.contains("qrCodeText") &&
+            if (/*custom_data.contains("vendorId") and
+                (custom_data.at("vendorId").get<std::string>() == "org.openchargealliance.org.qrcode") and */
+                custom_data.contains("qrCodeText") and
                 device_model->get_optional_value<bool>(ControllerComponentVariables::DisplayMessageQRCodeDisplayCapable)
                     .value_or(false)) {
                 running_cost.qr_code_text = custom_data.at("qrCodeText");
             }
 
             // Add multilanguage messages
-            if (custom_data.contains("updatedPersonalMessageExtra") && is_multilanguage_enabled()) {
+            if (custom_data.contains("updatedPersonalMessageExtra") and is_multilanguage_enabled()) {
                 // Get supported languages, which is stored in the values list of "Language" of
                 // "DisplayMessageCtrlr"
                 std::optional<VariableMetaData> metadata = device_model->get_variable_meta_data(
@@ -698,7 +698,7 @@ void ChargePoint::handle_cost_and_tariff(const TransactionEventResponse& respons
 
                 std::vector<std::string> supported_languages;
 
-                if (metadata.has_value() && metadata.value().characteristics.valuesList.has_value()) {
+                if (metadata.has_value() and metadata.value().characteristics.valuesList.has_value()) {
                     supported_languages =
                         ocpp::split_string(metadata.value().characteristics.valuesList.value(), ',', true);
                 } else {
@@ -733,7 +733,7 @@ void ChargePoint::handle_cost_and_tariff(const TransactionEventResponse& respons
             }
         }
 
-        if (tariff_enabled && !cost_messages.empty()) {
+        if (tariff_enabled and !cost_messages.empty()) {
             running_cost.cost_messages = cost_messages;
         }
 
@@ -756,14 +756,14 @@ bool ChargePoint::is_multilanguage_enabled() const {
 
 bool ChargePoint::is_tariff_enabled() const {
     return this->device_model->get_optional_value<bool>(ControllerComponentVariables::TariffCostCtrlrAvailableTariff)
-               .value_or(false) &&
+               .value_or(false) and
            this->device_model->get_optional_value<bool>(ControllerComponentVariables::TariffCostCtrlrEnabledTariff)
                .value_or(false);
 }
 
 bool ChargePoint::is_cost_enabled() const {
     return this->device_model->get_optional_value<bool>(ControllerComponentVariables::TariffCostCtrlrAvailableCost)
-               .value_or(false) &&
+               .value_or(false) and
            this->device_model->get_optional_value<bool>(ControllerComponentVariables::TariffCostCtrlrEnabledCost)
                .value_or(false);
 }
@@ -999,12 +999,12 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
                 const auto lifetime =
                     this->device_model->get_optional_value<int>(ControllerComponentVariables::AuthCacheLifeTime);
                 const bool lifetime_expired =
-                    lifetime.has_value() && ((cache_entry->last_used.to_time_point() +
-                                              std::chrono::seconds(lifetime.value())) < now.to_time_point());
+                    lifetime.has_value() and ((cache_entry->last_used.to_time_point() +
+                                               std::chrono::seconds(lifetime.value())) < now.to_time_point());
                 const bool cache_expiry_passed =
                     id_token_info.cacheExpiryDateTime.has_value() and (id_token_info.cacheExpiryDateTime.value() < now);
 
-                if (lifetime_expired || cache_expiry_passed) {
+                if (lifetime_expired or cache_expiry_passed) {
                     EVLOG_info << "Found valid entry in AuthCache but "
                                << (lifetime_expired ? "lifetime expired" : "expiry date passed")
                                << ": Removing from cache and sending new request";
@@ -1113,7 +1113,7 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
         evse_connector_structure, database_handler,
         [this](auto evse_id, auto connector_id, auto status, bool initiated_by_trigger_message) {
             this->update_dm_availability_state(evse_id, connector_id, status);
-            if (this->connectivity_manager == nullptr || !this->connectivity_manager->is_websocket_connected() ||
+            if (this->connectivity_manager == nullptr or !this->connectivity_manager->is_websocket_connected() or
                 this->registration_status != RegistrationStatusEnum::Accepted) {
                 return false;
             } else {
@@ -1482,7 +1482,7 @@ void ChargePoint::message_callback(const std::string& message) {
         this->send(call_error);
     } catch (json::exception& e) {
         EVLOG_error << "JSON exception during handling of message: " << e.what();
-        if (json_message.is_array() && json_message.size() > MESSAGE_ID) {
+        if (json_message.is_array() and json_message.size() > MESSAGE_ID) {
             auto call_error = CallError(enhanced_message.uniqueId, "FormationViolation", e.what(), json({}));
             this->send(call_error);
         }
@@ -1516,7 +1516,7 @@ void ChargePoint::change_all_connectors_to_unavailable_for_firmware_update() {
             }
         }
         // Check succeeded, trigger the callback if needed
-        if (this->callbacks.all_connectors_unavailable_callback.has_value() &&
+        if (this->callbacks.all_connectors_unavailable_callback.has_value() and
             this->are_all_connectors_effectively_inoperative()) {
             this->callbacks.all_connectors_unavailable_callback.value()();
         }
@@ -1735,7 +1735,7 @@ void ChargePoint::handle_scheduled_change_availability_requests(const int32_t ev
             this->execute_change_availability_request(req, persist);
             this->scheduled_change_availability_requests.erase(evse_id);
             // Check succeeded, trigger the callback if needed
-            if (this->callbacks.all_connectors_unavailable_callback.has_value() &&
+            if (this->callbacks.all_connectors_unavailable_callback.has_value() and
                 this->are_all_connectors_effectively_inoperative()) {
                 this->callbacks.all_connectors_unavailable_callback.value()();
             }
@@ -1755,10 +1755,10 @@ void ChargePoint::handle_scheduled_change_availability_requests(const int32_t ev
 static bool component_variable_change_requires_websocket_option_update_without_reconnect(
     const ComponentVariable& component_variable) {
 
-    return component_variable == ControllerComponentVariables::RetryBackOffRandomRange ||
-           component_variable == ControllerComponentVariables::RetryBackOffRepeatTimes ||
-           component_variable == ControllerComponentVariables::RetryBackOffWaitMinimum ||
-           component_variable == ControllerComponentVariables::NetworkProfileConnectionAttempts ||
+    return component_variable == ControllerComponentVariables::RetryBackOffRandomRange or
+           component_variable == ControllerComponentVariables::RetryBackOffRepeatTimes or
+           component_variable == ControllerComponentVariables::RetryBackOffWaitMinimum or
+           component_variable == ControllerComponentVariables::NetworkProfileConnectionAttempts or
            component_variable == ControllerComponentVariables::WebSocketPingInterval;
 }
 
@@ -1957,7 +1957,7 @@ bool ChargePoint::is_evse_connector_available(EvseInterface& evse) const {
             evse.get_connector(static_cast<int32_t>(i))->get_effective_connector_status();
 
         // At least one of the connectors is available / not faulted.
-        if (status != ConnectorStatusEnum::Faulted && status != ConnectorStatusEnum::Unavailable) {
+        if (status != ConnectorStatusEnum::Faulted and status != ConnectorStatusEnum::Unavailable) {
             return true;
         }
     }
@@ -2054,7 +2054,7 @@ void ChargePoint::sign_certificate_req(const ocpp::CertificateSigningUseEnum& ce
     const auto result = this->evse_security->generate_certificate_signing_request(
         certificate_signing_use, country.value(), organization.value(), common.value(), should_use_tpm);
 
-    if (result.status != GetCertificateSignRequestStatus::Accepted || !result.csr.has_value()) {
+    if (result.status != GetCertificateSignRequestStatus::Accepted or !result.csr.has_value()) {
         EVLOG_error << "CSR generation was unsuccessful for sign request: "
                     << ocpp::conversions::certificate_signing_use_enum_to_string(certificate_signing_use);
 
@@ -2208,13 +2208,13 @@ void ChargePoint::transaction_event_req(const TransactionEventEnum& event_type, 
     auto it = std::find_if(
         remote_start_id_per_evse.begin(), remote_start_id_per_evse.end(),
         [&id_token, &evse](const std::pair<int32_t, std::pair<IdToken, int32_t>>& remote_start_per_evse) {
-            if (id_token.has_value() && remote_start_per_evse.second.first.idToken == id_token.value().idToken) {
+            if (id_token.has_value() and remote_start_per_evse.second.first.idToken == id_token.value().idToken) {
 
                 if (remote_start_per_evse.first == 0) {
                     return true;
                 }
 
-                if (evse.has_value() && evse.value().id == remote_start_per_evse.first) {
+                if (evse.has_value() and evse.value().id == remote_start_per_evse.first) {
                     return true;
                 }
             }
@@ -2278,7 +2278,7 @@ void ChargePoint::notify_event_req(const std::vector<EventData>& events) {
 void ChargePoint::notify_customer_information_req(const std::string& data, const int32_t request_id) {
     size_t pos = 0;
     int32_t seq_no = 0;
-    while (pos < data.length() or pos == 0 && data.empty()) {
+    while (pos < data.length() or pos == 0 and data.empty()) {
         const auto req = [&]() {
             NotifyCustomerInformationRequest req;
             req.data = CiString<512>(data.substr(pos, 512));
@@ -2417,7 +2417,7 @@ void ChargePoint::handle_boot_notification_response(CallResult<BootNotificationR
     if (this->registration_status == RegistrationStatusEnum::Accepted) {
         this->message_queue->set_registration_status_accepted();
         // B01.FR.06 Only use boot timestamp if TimeSource contains Heartbeat
-        if (this->callbacks.time_sync_callback.has_value() &&
+        if (this->callbacks.time_sync_callback.has_value() and
             this->device_model->get_value<std::string>(ControllerComponentVariables::TimeSource).find("Heartbeat") !=
                 std::string::npos) {
             this->callbacks.time_sync_callback.value()(msg.currentTime);
@@ -2667,7 +2667,7 @@ void ChargePoint::handle_reset_req(Call<ResetRequest> call) {
     bool transaction_active = false;
     std::set<int32_t> evse_active_transactions;
     std::set<int32_t> evse_no_transactions;
-    if (msg.evseId.has_value() && this->evse_manager->get_evse(msg.evseId.value()).has_active_transaction()) {
+    if (msg.evseId.has_value() and this->evse_manager->get_evse(msg.evseId.value()).has_active_transaction()) {
         transaction_active = true;
         evse_active_transactions.emplace(msg.evseId.value());
     } else {
@@ -2705,7 +2705,7 @@ void ChargePoint::handle_reset_req(Call<ResetRequest> call) {
         response.status = ResetStatusEnum::Rejected;
     }
 
-    if (response.status == ResetStatusEnum::Accepted && transaction_active && msg.type == ResetEnum::OnIdle) {
+    if (response.status == ResetStatusEnum::Accepted and transaction_active and msg.type == ResetEnum::OnIdle) {
         if (msg.evseId.has_value()) {
             // B12.FR.07
             this->reset_scheduled_evseids.insert(msg.evseId.value());
@@ -2722,13 +2722,13 @@ void ChargePoint::handle_reset_req(Call<ResetRequest> call) {
 
     // Reset response is sent, now set evse connectors to unavailable and / or
     // stop transaction (depending on reset type)
-    if (response.status != ResetStatusEnum::Rejected && transaction_active) {
+    if (response.status != ResetStatusEnum::Rejected and transaction_active) {
         if (msg.type == ResetEnum::Immediate) {
             // B12.FR.08 and B12.FR.04
             for (const int32_t evse_id : evse_active_transactions) {
                 callbacks.stop_transaction_callback(evse_id, ReasonEnum::ImmediateReset);
             }
-        } else if (msg.type == ResetEnum::OnIdle && !evse_no_transactions.empty()) {
+        } else if (msg.type == ResetEnum::OnIdle and !evse_no_transactions.empty()) {
             for (const int32_t evse_id : evse_no_transactions) {
                 auto& evse = this->evse_manager->get_evse(evse_id);
                 this->set_evse_connectors_unavailable(evse, false);
@@ -3109,7 +3109,7 @@ void ChargePoint::handle_remote_start_transaction_request(Call<RequestStartTrans
         //    send rejected (F01.FR.21 & F01.FR.22)
         const bool reserved = is_evse_reserved_for_other(evse, call.msg.idToken, call.msg.groupIdToken);
 
-        if (!available || reserved) {
+        if (!available or reserved) {
             // Note: we only support TxStartPoint PowerPathClosed, so we did not implement starting a
             // transaction first (and send TransactionEventRequest (eventType = Started). Only if a transaction
             // is authorized, a TransactionEventRequest will be sent. Because of this, F01.FR.13 is not
@@ -3266,7 +3266,7 @@ void ChargePoint::handle_change_availability_req(Call<ChangeAvailabilityRequest>
 }
 
 void ChargePoint::handle_heartbeat_response(CallResult<HeartbeatResponse> call) {
-    if (this->callbacks.time_sync_callback.has_value() &&
+    if (this->callbacks.time_sync_callback.has_value() and
         this->device_model->get_value<std::string>(ControllerComponentVariables::TimeSource).find("Heartbeat") !=
             std::string::npos) {
         // the received currentTime was the time the CSMS received the heartbeat request
@@ -3281,7 +3281,7 @@ void ChargePoint::handle_costupdated_req(const Call<CostUpdatedRequest> call) {
     CostUpdatedResponse response;
     ocpp::CallResult<CostUpdatedResponse> call_result(response, call.uniqueId);
 
-    if (!is_cost_enabled() || !this->callbacks.set_running_cost_callback.has_value()) {
+    if (!is_cost_enabled() or !this->callbacks.set_running_cost_callback.has_value()) {
         this->send<CostUpdatedResponse>(call_result);
         return;
     }
@@ -3291,7 +3291,7 @@ void ChargePoint::handle_costupdated_req(const Call<CostUpdatedRequest> call) {
 
     if (device_model
             ->get_optional_value<bool>(ControllerComponentVariables::CustomImplementationCaliforniaPricingEnabled)
-            .value_or(false) &&
+            .value_or(false) and
         call.msg.customData.has_value()) {
         const json running_cost_json = call.msg.customData.value();
 
@@ -3329,7 +3329,7 @@ void ChargePoint::handle_costupdated_req(const Call<CostUpdatedRequest> call) {
     this->send<CostUpdatedResponse>(call_result);
 
     // In OCPP 2.0.1, the chargepoint status trigger is not used.
-    if (!triggers.at_energy_kwh.has_value() && !triggers.at_power_kw.has_value() && !triggers.at_time.has_value()) {
+    if (!triggers.at_energy_kwh.has_value() and !triggers.at_power_kw.has_value() and !triggers.at_time.has_value()) {
         return;
     }
 
@@ -3520,7 +3520,7 @@ void ChargePoint::handle_firmware_update_req(Call<UpdateFirmwareRequest> call) {
     ocpp::CallResult<UpdateFirmwareResponse> call_result(response, call.uniqueId);
     this->send<UpdateFirmwareResponse>(call_result);
 
-    if ((response.status == UpdateFirmwareStatusEnum::InvalidCertificate) ||
+    if ((response.status == UpdateFirmwareStatusEnum::InvalidCertificate) or
         (response.status == UpdateFirmwareStatusEnum::RevokedCertificate)) {
         // L01.FR.02
         this->security_event_notification_req(
@@ -3663,7 +3663,7 @@ void ChargePoint::handle_set_monitoring_base_req(Call<SetMonitoringBaseRequest> 
     } else {
         response.status = GenericDeviceModelStatusEnum::Accepted;
 
-        if (msg.monitoringBase == MonitoringBaseEnum::HardWiredOnly ||
+        if (msg.monitoringBase == MonitoringBaseEnum::HardWiredOnly or
             msg.monitoringBase == MonitoringBaseEnum::FactoryDefault) {
             try {
                 this->device_model->clear_custom_monitors();
@@ -3682,7 +3682,7 @@ void ChargePoint::handle_set_monitoring_level_req(Call<SetMonitoringLevelRequest
     SetMonitoringLevelResponse response;
     const auto& msg = call.msg;
 
-    if (msg.severity < MonitoringLevelSeverity::MIN || msg.severity > MonitoringLevelSeverity::MAX) {
+    if (msg.severity < MonitoringLevelSeverity::MIN or msg.severity > MonitoringLevelSeverity::MAX) {
         response.status = GenericStatusEnum::Rejected;
     } else {
         auto result = this->device_model->set_value(
@@ -3767,7 +3767,7 @@ void ChargePoint::notify_monitoring_report_req(const int request_id,
             // Construct sub-message part
             std::vector<MonitoringData> sub_data;
 
-            for (int32_t j = i; j < MAXIMUM_VARIABLE_SEND && j < montoring_data.size(); ++j) {
+            for (int32_t j = i; j < MAXIMUM_VARIABLE_SEND and j < montoring_data.size(); ++j) {
                 sub_data.push_back(std::move(montoring_data[i + j]));
             }
 
@@ -3907,11 +3907,11 @@ void ChargePoint::handle_set_display_message(const Call<SetDisplayMessageRequest
 
     // Check if transaction is valid: this is the case if there is no transaction id, or if the transaction id
     // belongs to a running transaction.
-    const bool transaction_valid = (!call.msg.message.transactionId.has_value() ||
+    const bool transaction_valid = (!call.msg.message.transactionId.has_value() or
                                     get_transaction_evseid(call.msg.message.transactionId.value()) != std::nullopt);
 
     // Check if display messages are available.
-    if (!display_message_available.has_value() || !display_message_available.value()) {
+    if (!display_message_available.has_value() or !display_message_available.value()) {
         error = true;
         response.status = DisplayMessageStatusEnum::Rejected;
     }
@@ -4270,7 +4270,7 @@ void ChargePoint::cache_cleanup_handler() {
             // Wait for next wakeup or timeout
             std::unique_lock lk(this->auth_cache_cleanup_mutex);
             if (this->auth_cache_cleanup_cv.wait_for(lk, std::chrono::minutes(15), [&]() {
-                    return this->stop_auth_cache_cleanup_handler || this->auth_cache_cleanup_required;
+                    return this->stop_auth_cache_cleanup_handler or this->auth_cache_cleanup_required;
                 })) {
                 EVLOG_debug << "Triggered authorization cache cleanup";
             } else {
@@ -4320,7 +4320,7 @@ GetCompositeScheduleResponse ChargePoint::get_composite_schedule_internal(const 
                               request.chargingRateUnit.value())) != supported_charging_rate_units.npos;
 
     // K01.FR.05 & K01.FR.07
-    if (this->evse_manager->does_evse_exist(request.evseId) && unit_supported) {
+    if (this->evse_manager->does_evse_exist(request.evseId) and unit_supported) {
         auto start_time = ocpp::DateTime();
         auto end_time = ocpp::DateTime(start_time.to_time_point() + std::chrono::seconds(request.duration));
 

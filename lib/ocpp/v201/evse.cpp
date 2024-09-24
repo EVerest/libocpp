@@ -420,7 +420,7 @@ void Evse::set_meter_value_pricing_triggers(
     this->send_metervalue_function = send_metervalue_function;
     this->trigger_metervalue_on_power_kw = trigger_metervalue_on_power_kw;
     this->trigger_metervalue_on_energy_kwh = trigger_metervalue_on_energy_kwh;
-    if (this->trigger_metervalue_at_time_timer != nullptr && trigger_metervalue_at_time.has_value()) {
+    if (this->trigger_metervalue_at_time_timer != nullptr and trigger_metervalue_at_time.has_value()) {
         this->trigger_metervalue_at_time_timer->stop();
         this->trigger_metervalue_at_time_timer = nullptr;
     }
@@ -474,7 +474,7 @@ void Evse::send_meter_value_on_pricing_trigger(const MeterValue& meter_value) {
             this->trigger_metervalue_on_energy_kwh.reset();
         } else {
             const std::optional<float> active_import_register_meter_value_wh = get_active_import_register_meter_value();
-            if (active_import_register_meter_value_wh.has_value() &&
+            if (active_import_register_meter_value_wh.has_value() and
                 static_cast<double>(active_import_register_meter_value_wh.value()) >= trigger_energy_kwh * 1000) {
                 const MeterValue active_import_meter_value = utils::get_meter_value_with_measurands_applied(
                     meter_value, {MeasurandEnum::Energy_Active_Import_Register, MeasurandEnum::Power_Active_Import});
@@ -496,7 +496,7 @@ void Evse::send_meter_value_on_pricing_trigger(const MeterValue& meter_value) {
     // prevent constant triggering.
     const std::optional<float> active_power_meter_value = utils::get_total_power_active_import(meter_value);
 
-    if (!this->trigger_metervalue_on_power_kw.has_value() || !active_power_meter_value.has_value()) {
+    if (!this->trigger_metervalue_on_power_kw.has_value() or !active_power_meter_value.has_value()) {
         return;
     }
 
@@ -518,9 +518,9 @@ void Evse::send_meter_value_on_pricing_trigger(const MeterValue& meter_value) {
         const double current_metervalue_kw = current_metervalue_w / 1000;
 
         if ( // Check if trigger value is crossed in upward direction.
-            (triggered_power_kw < trigger_power_kw && current_metervalue_kw >= (trigger_power_kw + hysterisis_kw)) ||
+            (triggered_power_kw < trigger_power_kw and current_metervalue_kw >= (trigger_power_kw + hysterisis_kw)) or
             // Check if trigger value is crossed in downward direction.
-            (triggered_power_kw > trigger_power_kw && current_metervalue_kw <= (trigger_power_kw - hysterisis_kw))) {
+            (triggered_power_kw > trigger_power_kw and current_metervalue_kw <= (trigger_power_kw - hysterisis_kw))) {
 
             // Power threshold is crossed, send metervalues.
             if (!meter_value_sent) {
@@ -559,7 +559,7 @@ OperationalStatusEnum Evse::get_effective_operational_status() {
 }
 
 Connector* Evse::get_connector(int32_t connector_id) {
-    if (connector_id <= 0 || connector_id > this->get_number_of_connectors()) {
+    if (connector_id <= 0 or connector_id > this->get_number_of_connectors()) {
         std::stringstream err_msg;
         err_msg << "ConnectorID " << connector_id << " out of bounds for EVSE " << this->evse_id;
         throw std::logic_error(err_msg.str());
@@ -573,7 +573,7 @@ CurrentPhaseType Evse::get_current_phase_type() {
     auto supply_phases = this->device_model.get_optional_value<int32_t>(evse_variable);
     if (supply_phases == std::nullopt) {
         return CurrentPhaseType::Unknown;
-    } else if (*supply_phases == 1 || *supply_phases == 3) {
+    } else if (*supply_phases == 1 or *supply_phases == 3) {
         return CurrentPhaseType::AC;
     } else if (*supply_phases == 0) {
         return CurrentPhaseType::DC;

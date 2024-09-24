@@ -136,11 +136,11 @@ struct Callbacks {
     std::optional<std::function<void(const bool is_connected)>> connection_state_changed_callback;
 
     /// \brief Callback functions called for get / set / clear display messages
-    std::optional<std::function<std::vector<DisplayMessage>(const GetDisplayMessagesRequest& request /* TODO */)>>
+    std::optional<std::function<std::vector<DisplayMessage>(const GetDisplayMessagesRequest& request)>>
         get_display_message_callback;
     std::optional<std::function<SetDisplayMessageResponse(const std::vector<DisplayMessage>& display_messages)>>
         set_display_message_callback;
-    std::optional<std::function<ClearDisplayMessageResponse(const ClearDisplayMessageRequest& request /* TODO */)>>
+    std::optional<std::function<ClearDisplayMessageResponse(const ClearDisplayMessageRequest& request)>>
         clear_display_message_callback;
 
     /// \brief Callback function is called when running cost is set.
