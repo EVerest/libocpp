@@ -837,6 +837,7 @@ TEST_F(CompositeScheduleTestFixtureV201, OCTT_TC_K_41_CS) {
 
     CompositeSchedule actual =
         handler.calculate_composite_schedule(profiles, start_time, end_time, DEFAULT_EVSE_ID, ChargingRateUnitEnum::A);
+
     ASSERT_EQ(actual, expected);
 }
 
