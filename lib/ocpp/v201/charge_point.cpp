@@ -1948,6 +1948,7 @@ bool ChargePoint::is_evse_reserved_for_other(EvseInterface& evse, const IdToken&
         }
     }
 
+    // TODO mz also check if connector status is not reserved, as there can be a reservation for evse id 0.
     // TODO mz also check here if there is a reservation for a token and no evse id.
 
     return false;
