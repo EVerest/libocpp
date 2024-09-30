@@ -33,6 +33,23 @@ struct Message {
     virtual std::string get_type() const = 0;
 };
 
+/// \brief Exception used when DateTime class is initialized by invalid timepoint string.
+class TimePointParseException : public std::exception {
+public:
+    explicit TimePointParseException(const std::string& timepoint_str) :
+        msg{"Timepoint string parsing failed. Could not convert: \"" + timepoint_str + "\" into DateTime."} {
+    }
+
+    ~TimePointParseException() noexcept override = default;
+
+    const char* what() const noexcept override {
+        return msg.c_str();
+    }
+
+private:
+    std::string msg;
+};
+
 /// \brief Contains a DateTime implementation that can parse and create RFC 3339 compatible strings
 class DateTimeImpl {
 private:
@@ -103,12 +120,6 @@ public:
 
     /// \brief Creates a new DateTime object from the given \p timepoint_str
     explicit DateTime(const std::string& timepoint_str);
-
-    /// \brief Assignment operator= that converts a given string \p s into a DateTime
-    DateTime& operator=(const std::string& s);
-
-    /// \brief Assignment operator= that converts a given char* \p c into a DateTime
-    DateTime& operator=(const char* c);
 };
 
 /// \brief Base exception for when a conversion from string to enum or vice versa fails
