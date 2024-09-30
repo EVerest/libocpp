@@ -45,4 +45,17 @@ template <> std::string MessageQueue<v201::MessageType>::messagetype_to_string(c
     return v201::conversions::messagetype_to_string(m);
 }
 
+template <> bool MessageQueue<v201::MessageType>::contains_transaction_messages(const CiString<36> transaction_id) {
+    std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
+    for (const auto control_message : this->transaction_message_queue) {
+        if (control_message->messageType == v201::MessageType::TransactionEvent) {
+            v201::TransactionEventRequest req = control_message->message.at(CALL_PAYLOAD);
+            if (req.transactionInfo.transactionId == transaction_id) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 } // namespace ocpp

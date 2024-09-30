@@ -37,7 +37,7 @@ static DisplayMessage message_info_to_display_message(const MessageInfo& message
 
 ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
                          std::shared_ptr<DeviceModel> device_model, std::shared_ptr<DatabaseHandler> database_handler,
-                         std::shared_ptr<MessageQueue<v201::MessageType>> message_queue,
+                         std::shared_ptr<MessageQueueInterface<v201::MessageType>> message_queue,
                          const std::string& message_log_path, const std::shared_ptr<EvseSecurity> evse_security,
                          const Callbacks& callbacks) :
     ocpp::ChargingStationBase(evse_security),

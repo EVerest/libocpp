@@ -42,4 +42,17 @@ template <> std::string MessageQueue<v16::MessageType>::messagetype_to_string(v1
     return v16::conversions::messagetype_to_string(m);
 }
 
+template <> bool MessageQueue<v16::MessageType>::contains_stop_transaction_message(const int32_t transaction_id) {
+    std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
+    for (const auto control_message : this->transaction_message_queue) {
+        if (control_message->messageType == v16::MessageType::StopTransaction) {
+            v16::StopTransactionRequest req = control_message->message.at(CALL_PAYLOAD);
+            if (req.transactionId == transaction_id) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 } // namespace ocpp

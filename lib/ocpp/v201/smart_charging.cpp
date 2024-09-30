@@ -445,7 +445,7 @@ ClearChargingProfileResponse SmartChargingHandler::clear_profiles(const ClearCha
     response.status = ClearChargingProfileStatusEnum::Unknown;
 
     if (this->database_handler.clear_charging_profiles_matching_criteria(request.chargingProfileId,
-                                                                          request.chargingProfileCriteria)) {
+                                                                         request.chargingProfileCriteria)) {
         response.status = ClearChargingProfileStatusEnum::Accepted;
     }
 
@@ -485,7 +485,7 @@ std::vector<ChargingProfile> SmartChargingHandler::get_evse_specific_tx_default_
     std::vector<ChargingProfile> evse_specific_tx_default_profiles;
 
     auto stmt = this->database_handler.new_statement("SELECT PROFILE FROM CHARGING_PROFILES WHERE "
-                                                      "EVSE_ID != 0 AND CHARGING_PROFILE_PURPOSE = 'TxDefaultProfile'");
+                                                     "EVSE_ID != 0 AND CHARGING_PROFILE_PURPOSE = 'TxDefaultProfile'");
     while (stmt->step() != SQLITE_DONE) {
         ChargingProfile profile = json::parse(stmt->column_text(0));
         evse_specific_tx_default_profiles.push_back(profile);
@@ -546,7 +546,7 @@ SmartChargingHandler::verify_no_conflicting_external_constraints_id(const Chargi
     auto result = ProfileValidationResultEnum::Valid;
     auto conflicts_stmt =
         this->database_handler.new_statement("SELECT PROFILE FROM CHARGING_PROFILES WHERE ID = @profile_id AND "
-                                              "CHARGING_PROFILE_PURPOSE = 'ChargingStationExternalConstraints'");
+                                             "CHARGING_PROFILE_PURPOSE = 'ChargingStationExternalConstraints'");
 
     conflicts_stmt->bind_int("@profile_id", profile.id);
     if (conflicts_stmt->step() == SQLITE_ROW) {
