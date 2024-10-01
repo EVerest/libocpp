@@ -52,12 +52,6 @@ All documentation and the issue tracking can be found in our main repository her
 | Smart Charging             | :heavy_check_mark: yes    |
 | Remote Trigger             | :heavy_check_mark: yes    |
 
-| Whitepapers & Application Notes                                                                                                                              | Supported              |
-| ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
-| [OCPP 1.6 Security Whitepaper (3rd edition)](https://www.openchargealliance.org/uploads/files/OCPP-1.6-security-whitepaper-edition-3.zip) | :heavy_check_mark: yes |
-| [Using ISO 15118 Plug & Charge with OCPP 1.6](https://www.openchargealliance.org/uploads/files/ocpp_1_6_ISO_15118_v10.pdf)                | :heavy_check_mark: yes                    |
-| [OCPP & California Pricing Requirements](https://www.openchargealliance.org/uploads/files/ocpp_and_dms_evse_regulation-v2.0.pdf)          | :heavy_check_mark: yes |
-
 ## CSMS Compatibility
 
 ### CSMS Compatibility OCPP 1.6
