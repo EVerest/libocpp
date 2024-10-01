@@ -10,7 +10,7 @@
 #include "ocpp/v201/ocpp_enums.hpp"
 #include "ocpp/v201/smart_charging.hpp"
 
-typedef std::variant<float, ocpp::v201::ChargingSchedule> ChargingLimitVariant;
+typedef std::variant<ocpp::v201::ConstantChargingLimit, ocpp::v201::ChargingSchedule> ChargingLimitVariant;
 
 namespace ocpp::v201 {
 class SmartChargingHandlerMock : public SmartChargingHandlerInterface {

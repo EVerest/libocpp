@@ -1688,7 +1688,10 @@ TEST_F(SmartChargingHandlerTestFixtureV201,
     device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.5",
                             "test");
 
-    float new_limit = 100.0;
+    ConstantChargingLimit new_limit = {
+        .limit = 100.0,
+        .charging_rate_unit = ChargingRateUnitEnum::A,
+    };
     double deltaChanged = 0.2;
     auto source = ChargingLimitSourceEnum::Other;
 
@@ -1703,7 +1706,10 @@ TEST_F(SmartChargingHandlerTestFixtureV201,
     device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.2",
                             "test");
 
-    float new_limit = 100.0;
+    ConstantChargingLimit new_limit = {
+        .limit = 100.0,
+        .charging_rate_unit = ChargingRateUnitEnum::A,
+    };
     double deltaChanged = 0.2;
     auto source = ChargingLimitSourceEnum::Other;
 
@@ -1718,7 +1724,10 @@ TEST_F(SmartChargingHandlerTestFixtureV201,
     device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.1",
                             "test");
 
-    float new_limit = 100.0;
+    ConstantChargingLimit new_limit = {
+        .limit = 100.0,
+        .charging_rate_unit = ChargingRateUnitEnum::A,
+    };
     double deltaChanged = 0.2;
     auto source = ChargingLimitSourceEnum::Other;
 
@@ -1729,7 +1738,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201,
 
 TEST_F(
     SmartChargingHandlerTestFixtureV201,
-    K12FR03_HandleExternalLimitsChanged_LimitChangeSignificanceExceeded_EnableChargingLimitWithSchedulesTrue_IncludesScheduleFromInteger) {
+    K12FR03_HandleExternalLimitsChanged_LimitChangeSignificanceExceeded_EnableChargingLimitWithSchedulesTrue_IncludesScheduleFromConstantLimit) {
     const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
     device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.1",
                             "test");
@@ -1737,15 +1746,18 @@ TEST_F(
     device_model->set_value(notify_charging_limit_cv.component, notify_charging_limit_cv.variable.value(),
                             AttributeEnum::Actual, "true", "test");
 
-    float new_limit = 100.0;
+    ConstantChargingLimit new_limit = {
+        .limit = 50.0,
+        .charging_rate_unit = ChargingRateUnitEnum::W,
+    };
     double deltaChanged = 0.2;
     auto source = ChargingLimitSourceEnum::Other;
 
     auto charging_schedule = ChargingSchedule{.id = 0,
-                                              .chargingRateUnit = ChargingRateUnitEnum::A,
+                                              .chargingRateUnit = new_limit.charging_rate_unit,
                                               .chargingSchedulePeriod = {ChargingSchedulePeriod{
                                                   .startPeriod = 0,
-                                                  .limit = new_limit,
+                                                  .limit = new_limit.limit,
                                               }}};
 
     auto resp = handler.handle_external_limits_changed(new_limit, deltaChanged, source);
@@ -1789,7 +1801,10 @@ TEST_F(
     device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.1",
                             "test");
 
-    float new_limit = 100.0;
+    ConstantChargingLimit new_limit = {
+        .limit = 100.0,
+        .charging_rate_unit = ChargingRateUnitEnum::A,
+    };
     double deltaChanged = 0.2;
     auto source = ChargingLimitSourceEnum::Other;
 
@@ -1809,7 +1824,10 @@ TEST_F(
     device_model->set_value(notify_charging_limit_cv.component, notify_charging_limit_cv.variable.value(),
                             AttributeEnum::Actual, "false", "test");
 
-    float new_limit = 100.0;
+    ConstantChargingLimit new_limit = {
+        .limit = 100.0,
+        .charging_rate_unit = ChargingRateUnitEnum::A,
+    };
     double deltaChanged = 0.2;
     auto source = ChargingLimitSourceEnum::Other;
 
@@ -1824,7 +1842,10 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K12FR04_HandleExternalLimitsChanged_
     device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.1",
                             "test");
 
-    float new_limit = 100.0;
+    ConstantChargingLimit new_limit = {
+        .limit = 100.0,
+        .charging_rate_unit = ChargingRateUnitEnum::A,
+    };
     double deltaChanged = 0.2;
     auto source = ChargingLimitSourceEnum::SO;
 
@@ -1839,7 +1860,10 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K12FR04_HandleExternalLimitsChanged_
     device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.1",
                             "test");
 
-    float new_limit = 100.0;
+    ConstantChargingLimit new_limit = {
+        .limit = 100.0,
+        .charging_rate_unit = ChargingRateUnitEnum::A,
+    };
     double deltaChanged = 0.2;
     auto source = ChargingLimitSourceEnum::CSO;
 

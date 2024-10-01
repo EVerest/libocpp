@@ -254,8 +254,8 @@ public:
     /// \param limit the new external limit
     /// \param percentage_delta the percent changed from the existing limits
     /// \param source the source of the external limit (NOTE: Should never be CSO)
-    virtual void on_external_limits_changed(const std::variant<float, ChargingSchedule>& limit, double percentage_delta,
-                                            ChargingLimitSourceEnum source) = 0;
+    virtual void on_external_limits_changed(const std::variant<ConstantChargingLimit, ChargingSchedule>& limit,
+                                            double percentage_delta, ChargingLimitSourceEnum source) = 0;
 
     /// \brief Data transfer mechanism initiated by charger
     /// \param vendorId
@@ -827,8 +827,8 @@ public:
 
     void on_variable_changed(const SetVariableData& set_variable_data) override;
 
-    void on_external_limits_changed(const std::variant<float, ChargingSchedule>& limit, double percentage_delta,
-                                    ChargingLimitSourceEnum source) override;
+    void on_external_limits_changed(const std::variant<ConstantChargingLimit, ChargingSchedule>& limit,
+                                    double percentage_delta, ChargingLimitSourceEnum source) override;
 
     std::optional<DataTransferResponse> data_transfer_req(const CiString<255>& vendorId,
                                                           const std::optional<CiString<50>>& messageId,

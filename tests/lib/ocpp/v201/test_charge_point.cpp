@@ -948,11 +948,14 @@ TEST_F(ChargepointTestFixtureV201, K12_OnExternalLimitsChanged_CallsHandler) {
     device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.1",
                             "test");
 
-    float limit = 100.0;
+    ConstantChargingLimit limit = {
+        .limit = 100.0,
+        .charging_rate_unit = ChargingRateUnitEnum::A,
+    };
     double deltaChanged = 0.2;
     auto source = ChargingLimitSourceEnum::Other;
 
-    const std::variant<float, ChargingSchedule> new_limit(limit);
+    const std::variant<ConstantChargingLimit, ChargingSchedule> new_limit(limit);
 
     EXPECT_CALL(*smart_charging_handler, handle_external_limits_changed(new_limit, deltaChanged, source));
 

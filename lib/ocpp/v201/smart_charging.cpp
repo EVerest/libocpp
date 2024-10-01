@@ -27,6 +27,11 @@ using namespace std::chrono;
 
 namespace ocpp::v201 {
 
+bool operator==(const ConstantChargingLimit& a, const ConstantChargingLimit& b) {
+    return std::fabs(a.limit - b.limit) <= std::numeric_limits<float>::epsilon() &&
+           a.charging_rate_unit == b.charging_rate_unit;
+}
+
 namespace conversions {
 std::string profile_validation_result_to_string(ProfileValidationResultEnum e) {
     switch (e) {
@@ -616,19 +621,19 @@ CompositeSchedule SmartChargingHandler::calculate_composite_schedule(
     return composite_schedule;
 }
 
-ChargingSchedule create_schedule_from_limit(const float limit) {
+ChargingSchedule create_schedule_from_limit(const ConstantChargingLimit limit) {
     return ChargingSchedule{
         .id = 0,
-        .chargingRateUnit = ChargingRateUnitEnum::A,
+        .chargingRateUnit = limit.charging_rate_unit,
         .chargingSchedulePeriod = {ChargingSchedulePeriod{
             .startPeriod = 0,
-            .limit = limit,
+            .limit = limit.limit,
         }},
     };
 }
 
 std::optional<NotifyChargingLimitRequest>
-SmartChargingHandler::handle_external_limits_changed(const std::variant<float, ChargingSchedule>& limit,
+SmartChargingHandler::handle_external_limits_changed(const std::variant<ConstantChargingLimit, ChargingSchedule>& limit,
                                                      double percentage_delta, ChargingLimitSourceEnum source) const {
     // K12.FR.04
     if (source == ChargingLimitSourceEnum::CSO) {
@@ -650,8 +655,8 @@ SmartChargingHandler::handle_external_limits_changed(const std::variant<float, C
         request = NotifyChargingLimitRequest{};
         request->chargingLimit = {.chargingLimitSource = source};
         if (notify_with_schedules.has_value() && notify_with_schedules.value()) {
-            if (const auto* limit_f = std::get_if<float>(&limit)) {
-                request->chargingSchedule = {{create_schedule_from_limit(*limit_f)}};
+            if (const auto* limit_c = std::get_if<ConstantChargingLimit>(&limit)) {
+                request->chargingSchedule = {{create_schedule_from_limit(*limit_c)}};
             } else if (const auto* limit_s = std::get_if<ChargingSchedule>(&limit)) {
                 request->chargingSchedule = {{*limit_s}};
             }

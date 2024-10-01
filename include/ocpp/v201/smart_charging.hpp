@@ -4,6 +4,7 @@
 #ifndef OCPP_V201_SMART_CHARGING_HPP
 #define OCPP_V201_SMART_CHARGING_HPP
 
+#include "ocpp/v201/comparators.hpp"
 #include <limits>
 #include <memory>
 #include <variant>
@@ -58,6 +59,13 @@ enum class AddChargingProfileSource {
     RequestStartTransactionRequest
 };
 
+struct ConstantChargingLimit {
+    float limit;
+    ChargingRateUnitEnum charging_rate_unit;
+};
+
+bool operator==(const ConstantChargingLimit& a, const ConstantChargingLimit& b);
+
 namespace conversions {
 /// \brief Converts the given ProfileValidationResultEnum \p e to human readable string
 /// \returns a string representation of the ProfileValidationResultEnum
@@ -101,8 +109,8 @@ public:
                                                            std::optional<ChargingRateUnitEnum> charging_rate_unit) = 0;
 
     virtual std::optional<NotifyChargingLimitRequest>
-    handle_external_limits_changed(const std::variant<float, ChargingSchedule>& limit, double percentage_delta,
-                                   ChargingLimitSourceEnum source) const = 0;
+    handle_external_limits_changed(const std::variant<ConstantChargingLimit, ChargingSchedule>& limit,
+                                   double percentage_delta, ChargingLimitSourceEnum source) const = 0;
 };
 
 /// \brief This class handles and maintains incoming ChargingProfiles and contains the logic
@@ -176,8 +184,8 @@ public:
     /// based on \p percentage_delta and builds the notification.
     ///
     std::optional<NotifyChargingLimitRequest>
-    handle_external_limits_changed(const std::variant<float, ChargingSchedule>& limit, double percentage_delta,
-                                   ChargingLimitSourceEnum source) const override;
+    handle_external_limits_changed(const std::variant<ConstantChargingLimit, ChargingSchedule>& limit,
+                                   double percentage_delta, ChargingLimitSourceEnum source) const override;
 
 protected:
     ///

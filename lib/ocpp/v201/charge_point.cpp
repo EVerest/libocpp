@@ -1013,7 +1013,7 @@ void ChargePoint::on_variable_changed(const SetVariableData& set_variable_data) 
     this->handle_variable_changed(set_variable_data);
 }
 
-void ChargePoint::on_external_limits_changed(const std::variant<float, ChargingSchedule>& limit,
+void ChargePoint::on_external_limits_changed(const std::variant<ConstantChargingLimit, ChargingSchedule>& limit,
                                              double percentage_delta, ChargingLimitSourceEnum source) {
     auto request = this->smart_charging_handler->handle_external_limits_changed(limit, percentage_delta, source);
     if (request.has_value()) {
