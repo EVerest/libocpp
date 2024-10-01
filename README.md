@@ -11,7 +11,7 @@ This C++ implementation is a crucial module of the EVerest software stack — su
 
 ## Table of Contents
 
-| [OCPP 2.0.1](OCPP-2-0-1.md) | [OCPP 1.6](OCPP-1-6.md) |
+| <a href="OCPP-2-0-1.md"  target="_blank">OCPP 2.0.1</a> | [OCPP 1.6](OCPP-1-6.md) |
 |--|--|
 | <ol><li>Quickstart for OCPP 2.0.1</li><li>Run OCPP 2.0.1 with EVerest</li><li>Integrate OCPP 2.0.1 library with charging station</li><li>Certification Profile Support</li><li>CSMS Compatibility</li><li>Database Initialization</li></ol> | <ol><li>Quickstart for OCPP 1.6</li><li>Run OCPP 1.6 with EVerest</li><li>Integrate OCPP 1.6 library with charging station</li><li>Feature Profile Support</li><li>CSMS Compatibility</li><li>Database Initialization</li></ol> |
 
