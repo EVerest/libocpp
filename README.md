@@ -1,7 +1,7 @@
 
 # EVerest OCPP C++ Implementation
 
-This C++ implementation is a crucial module of the EVerest software stack — supports both OCPP 1.6 and OCPP 2.0.1, enabling seamless communication between electric vehicle (EV) charging stations and their management systems.
+Libocpp is a comprehensive C++ library implementation of the Open Charge Point Protocol (OCPP) for versions 1.6 and 2.0.1. OCPP is a standardized communication protocol for electric vehicle charging stations and central management systems, developed by the Open Charge Alliance (OCA). For more information on OCPP, visit the [OCA website](https://openchargealliance.org/protocols/open-charge-point-protocol/).
 
 ### Development Status
 
