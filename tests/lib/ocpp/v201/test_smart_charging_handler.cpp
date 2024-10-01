@@ -33,6 +33,8 @@
 #include <sstream>
 #include <vector>
 
+#include "smart_charging_test_utils.hpp"
+
 namespace ocpp::v201 {
 
 static const int NR_OF_EVSES = 2;
@@ -1718,6 +1720,94 @@ TEST_F(SmartChargingHandlerTestFixtureV201,
     auto resp = handler.handle_external_limits_changed(new_limit, deltaChanged);
 
     ASSERT_THAT(resp.has_value(), testing::IsTrue());
+}
+
+TEST_F(
+    SmartChargingHandlerTestFixtureV201,
+    K12FR03_HandleExternalLimitsChanged_LimitChangeSignificanceExceeded_EnableChargingLimitWithSchedulesTrue_IncludesScheduleFromInteger) {
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.1",
+                            "test");
+    const auto& notify_charging_limit_cv = ControllerComponentVariables::NotifyChargingLimitWithSchedules;
+    device_model->set_value(notify_charging_limit_cv.component, notify_charging_limit_cv.variable.value(),
+                            AttributeEnum::Actual, "true", "test");
+
+    float new_limit = 100.0;
+    double deltaChanged = 0.2;
+
+    auto charging_schedule = ChargingSchedule{.id = 0,
+                                              .chargingRateUnit = ChargingRateUnitEnum::A,
+                                              .chargingSchedulePeriod = {ChargingSchedulePeriod{
+                                                  .startPeriod = 0,
+                                                  .limit = new_limit,
+                                              }}};
+
+    auto resp = handler.handle_external_limits_changed(new_limit, deltaChanged);
+
+    ASSERT_THAT(resp.has_value(), testing::IsTrue());
+    ASSERT_THAT(resp->chargingSchedule.has_value(), testing::IsTrue());
+    ASSERT_THAT(resp->chargingSchedule.value(), testing::Contains(charging_schedule));
+}
+
+TEST_F(
+    SmartChargingHandlerTestFixtureV201,
+    K12FR03_HandleExternalLimitsChanged_LimitChangeSignificanceExceeded_EnableChargingLimitWithSchedulesTrue_IncludesGivenSchedule) {
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.1",
+                            "test");
+    const auto& notify_charging_limit_cv = ControllerComponentVariables::NotifyChargingLimitWithSchedules;
+    device_model->set_value(notify_charging_limit_cv.component, notify_charging_limit_cv.variable.value(),
+                            AttributeEnum::Actual, "true", "test");
+
+    double deltaChanged = 0.2;
+
+    auto charging_schedule = ChargingSchedule{.id = 0,
+                                              .chargingRateUnit = ChargingRateUnitEnum::W,
+                                              .chargingSchedulePeriod = {ChargingSchedulePeriod{
+                                                  .startPeriod = 0,
+                                                  .limit = 20,
+                                              }}};
+
+    auto resp = handler.handle_external_limits_changed(charging_schedule, deltaChanged);
+
+    ASSERT_THAT(resp.has_value(), testing::IsTrue());
+    ASSERT_THAT(resp->chargingSchedule.has_value(), testing::IsTrue());
+    ASSERT_THAT(resp->chargingSchedule.value(), testing::Contains(charging_schedule));
+}
+
+TEST_F(
+    SmartChargingHandlerTestFixtureV201,
+    K12FR03_HandleExternalLimitsChanged_LimitChangeSignificanceExceeded_EnableChargingLimitWithSchedulesUnset_NoSchedule) {
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.1",
+                            "test");
+
+    float new_limit = 100.0;
+    double deltaChanged = 0.2;
+
+    auto resp = handler.handle_external_limits_changed(new_limit, deltaChanged);
+
+    ASSERT_THAT(resp.has_value(), testing::IsTrue());
+    ASSERT_THAT(resp->chargingSchedule.has_value(), testing::IsFalse());
+}
+
+TEST_F(
+    SmartChargingHandlerTestFixtureV201,
+    K12FR03_HandleExternalLimitsChanged_LimitChangeSignificanceExceeded_EnableChargingLimitWithSchedulesFalse_NoSchedule) {
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.1",
+                            "test");
+    const auto& notify_charging_limit_cv = ControllerComponentVariables::NotifyChargingLimitWithSchedules;
+    device_model->set_value(notify_charging_limit_cv.component, notify_charging_limit_cv.variable.value(),
+                            AttributeEnum::Actual, "false", "test");
+
+    float new_limit = 100.0;
+    double deltaChanged = 0.2;
+
+    auto resp = handler.handle_external_limits_changed(new_limit, deltaChanged);
+
+    ASSERT_THAT(resp.has_value(), testing::IsTrue());
+    ASSERT_THAT(resp->chargingSchedule.has_value(), testing::IsFalse());
 }
 
 } // namespace ocpp::v201

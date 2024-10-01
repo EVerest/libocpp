@@ -21,6 +21,7 @@
 #include <ocpp/common/constants.hpp>
 #include <ocpp/v201/smart_charging.hpp>
 #include <optional>
+#include <variant>
 
 using namespace std::chrono;
 
@@ -615,6 +616,17 @@ CompositeSchedule SmartChargingHandler::calculate_composite_schedule(
     return composite_schedule;
 }
 
+ChargingSchedule create_schedule_from_limit(const float limit) {
+    return ChargingSchedule{
+        .id = 0,
+        .chargingRateUnit = ChargingRateUnitEnum::A,
+        .chargingSchedulePeriod = {ChargingSchedulePeriod{
+            .startPeriod = 0,
+            .limit = limit,
+        }},
+    };
+}
+
 std::optional<NotifyChargingLimitRequest>
 SmartChargingHandler::handle_external_limits_changed(const std::variant<float, ChargingSchedule>& limit,
                                                      double percentage_delta) const {
@@ -622,8 +634,20 @@ SmartChargingHandler::handle_external_limits_changed(const std::variant<float, C
 
     const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
     const float limit_change_significance = this->device_model->get_value<double>(limit_change_cv);
+
+    const auto& notify_charging_limit_cv = ControllerComponentVariables::NotifyChargingLimitWithSchedules;
+    const std::optional<bool> notify_with_schedules =
+        this->device_model->get_optional_value<bool>(notify_charging_limit_cv);
+
     if (percentage_delta > limit_change_significance) {
         request = NotifyChargingLimitRequest{};
+        if (notify_with_schedules.has_value() && notify_with_schedules.value()) {
+            if (const auto* limit_f = std::get_if<float>(&limit)) {
+                request->chargingSchedule = {{create_schedule_from_limit(*limit_f)}};
+            } else if (const auto* limit_s = std::get_if<ChargingSchedule>(&limit)) {
+                request->chargingSchedule = {{*limit_s}};
+            }
+        }
     }
 
     return request;
