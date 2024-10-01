@@ -21,7 +21,7 @@ Check out the [Getting Started guide](doc/common/getting_started.md). It should 
 
 ## Get Involved
 
-See the [COMMUNITY.md](https://github.com/EVerest/EVerest/blob/main/COMMUNITY.md) and [CONTRIBUTING.md](https://github.com/EVerest/EVerest/blob/main/CONTRIBUTING.md) of the EVerest project to get involved.
+We welcome contributions and feedback! To get involved with the EVerest project and this OCPP implementation, please refer to our [COMMUNITY.md](https://github.com/EVerest/EVerest/blob/main/COMMUNITY.md) and [CONTRIBUTING.md](https://github.com/EVerest/EVerest/blob/main/CONTRIBUTING.md) guides.
 
 ## OCPP1.6
 
