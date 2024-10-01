@@ -1,4 +1,5 @@
-# EVerest OCPP 2.0.1 C++ Implementation
+# C++ implementation of OCPP 2.0.1
+
 ![Github Actions](https://github.com/EVerest/libocpp/actions/workflows/build_and_test.yaml/badge.svg)
 
 This is a C++ library implementation of OCPP for version 2.0.1
