@@ -1,19 +1,10 @@
-# C++ implementation of OCPP 1.6
+# EVerest C++ OCPP 1.6 Implementation
 ![Github Actions](https://github.com/EVerest/libocpp/actions/workflows/build_and_test.yaml/badge.svg)
 
-This is a C++ library implementation of OCPP for version 1.6
-(see [OCPP protocols at OCA website](https://openchargealliance.org/protocols/open-charge-point-protocol/)).
+This C++ library provides a complete and production-ready solution for integrating OCPP 1.6 into your electric vehicle (EV) charging stations. Our implementation enables seamless communication between charging stations and central management systems, supporting remote control, monitoring, and billing functionalities.
 
-It enables charging stations to communicate with cloud backends for remote
-control, monitoring and billing of charging processes.
+NOTE: [EVerest C++ OCPP 2.0.1](OCPP-2-0-1.md) is under active development, with core functionalities available.
 
-Libocpp can be used for the communication of one charging station and multiple EVSE using a single websocket connection.
-
-Libocpp provides a complete implementation of OCPP 1.6.
-
-## Get Involved
-
-See the [COMMUNITY.md](https://github.com/EVerest/EVerest/blob/main/COMMUNITY.md) and [CONTRIBUTING.md](https://github.com/EVerest/EVerest/blob/main/CONTRIBUTING.md) of the EVerest project to get involved.
 
 ## Table of contents
 
@@ -647,3 +638,7 @@ In order to connect through a custom network iface, a custom internal config var
     "IFace" : "enp43s0"
 }
 ```
+
+## Get Involved
+
+See the [COMMUNITY.md](https://github.com/EVerest/EVerest/blob/main/COMMUNITY.md) and [CONTRIBUTING.md](https://github.com/EVerest/EVerest/blob/main/CONTRIBUTING.md) of the EVerest project to get involved.
