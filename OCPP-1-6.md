@@ -1,9 +1,9 @@
-# EVerest C++ OCPP 1.6 Implementation
+# EVerest OCPP 1.6 C++ Implementation
 ![Github Actions](https://github.com/EVerest/libocpp/actions/workflows/build_and_test.yaml/badge.svg)
 
 This C++ library provides a complete and production-ready solution for integrating OCPP 1.6 into your electric vehicle (EV) charging stations. Our implementation enables seamless communication between charging stations and central management systems, supporting remote control, monitoring, and billing functionalities.
 
-NOTE: [EVerest C++ OCPP 2.0.1](OCPP-2-0-1.md) is under active development, with core functionalities available.
+NOTE: [EVerest OCPP 2.0.1](OCPP-2-0-1.md) is under active development, with core functionalities available.
 
 
 ## Table of contents
