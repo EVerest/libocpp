@@ -5,8 +5,8 @@ This C++ implementation is a crucial module of the EVerest software stack — su
 
 ### Development Status
 
-- OCPP 1.6: Fully implemented and production-ready
 - OCPP 2.0.1: Under active development, with core functionalities available
+- OCPP 1.6: Fully implemented and production-ready
 
 
 ## Table of Contents
