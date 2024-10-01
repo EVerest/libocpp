@@ -1678,4 +1678,46 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K05FR02_RequestStartTransactionReque
     ASSERT_THAT(sut, testing::Eq(ProfileValidationResultEnum::RequestStartTransactionNonTxProfile));
 }
 
+TEST_F(SmartChargingHandlerTestFixtureV201,
+       K12FR02_HandleExternalLimitsChanged_LimitChangeSignificanceNotMet_ReturnNone) {
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.5",
+                            "test");
+
+    float new_limit = 100.0;
+    double deltaChanged = 0.2;
+
+    auto resp = handler.handle_external_limits_changed(new_limit, deltaChanged);
+
+    ASSERT_THAT(resp.has_value(), testing::IsFalse());
+}
+
+TEST_F(SmartChargingHandlerTestFixtureV201,
+       K12FR02_HandleExternalLimitsChanged_LimitChangeSignificanceEqual_ReturnNone) {
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.2",
+                            "test");
+
+    float new_limit = 100.0;
+    double deltaChanged = 0.2;
+
+    auto resp = handler.handle_external_limits_changed(new_limit, deltaChanged);
+
+    ASSERT_THAT(resp.has_value(), testing::IsFalse());
+}
+
+TEST_F(SmartChargingHandlerTestFixtureV201,
+       K12FR02_HandleExternalLimitsChanged_LimitChangeSignificanceExceeded_ReturnNotifyChargingLimitRequest) {
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.1",
+                            "test");
+
+    float new_limit = 100.0;
+    double deltaChanged = 0.2;
+
+    auto resp = handler.handle_external_limits_changed(new_limit, deltaChanged);
+
+    ASSERT_THAT(resp.has_value(), testing::IsTrue());
+}
+
 } // namespace ocpp::v201

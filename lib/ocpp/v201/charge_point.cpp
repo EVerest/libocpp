@@ -1013,6 +1013,15 @@ void ChargePoint::on_variable_changed(const SetVariableData& set_variable_data) 
     this->handle_variable_changed(set_variable_data);
 }
 
+void ChargePoint::on_external_limits_changed(const std::variant<float, ChargingSchedule>& limit,
+                                             double percentage_delta) {
+    auto request = this->smart_charging_handler->handle_external_limits_changed(limit, percentage_delta);
+    if (request.has_value()) {
+        ocpp::Call<NotifyChargingLimitRequest> call(request.value(), this->message_queue->createMessageId());
+        this->send<NotifyChargingLimitRequest>(call);
+    }
+}
+
 bool ChargePoint::send(CallError call_error) {
     this->message_queue->push(call_error);
     return true;

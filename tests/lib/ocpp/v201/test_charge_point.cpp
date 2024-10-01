@@ -17,12 +17,14 @@
 #include "ocpp/v201/smart_charging.hpp"
 #include "ocpp/v201/types.hpp"
 #include "smart_charging_handler_mock.hpp"
+#include "smart_charging_test_utils.hpp"
 #include "gmock/gmock.h"
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <memory>
+#include <variant>
 
 static const int DEFAULT_EVSE_ID = 1;
 static const int DEFAULT_PROFILE_ID = 1;
@@ -939,6 +941,21 @@ TEST_F(ChargePointFunctionalityTestFixtureV201, K02FR05_TransactionEnds_WillDele
                 delete_transaction_tx_profiles(transaction->get_transaction().transactionId.get()));
     charge_point->on_transaction_finished(DEFAULT_EVSE_ID, timestamp, MeterValue(), ReasonEnum::StoppedByEV,
                                           TriggerReasonEnum::StopAuthorized, {}, {}, ChargingStateEnum::EVConnected);
+}
+
+TEST_F(ChargepointTestFixtureV201, K12_OnExternalLimitsChanged_CallsHandler) {
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.1",
+                            "test");
+
+    float limit = 100.0;
+    double deltaChanged = 0.2;
+
+    const std::variant<float, ChargingSchedule> new_limit(limit);
+
+    EXPECT_CALL(*smart_charging_handler, handle_external_limits_changed(new_limit, deltaChanged));
+
+    charge_point->on_external_limits_changed(new_limit, deltaChanged);
 }
 
 } // namespace ocpp::v201

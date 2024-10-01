@@ -249,6 +249,13 @@ public:
     ///
     virtual void on_variable_changed(const SetVariableData& set_variable_data) = 0;
 
+    /// \brief Notifies the ChargePoint that a new external limit has been set. This may send a
+    /// NotifyChargingLimitRequest if the \p percentage_delta is greater than our LimitChangeSignificance.
+    /// \param limit the new external limit
+    /// \param percentage_delta the percent changed from the existing limits
+    virtual void on_external_limits_changed(const std::variant<float, ChargingSchedule>& limit,
+                                            double percentage_delta) = 0;
+
     /// \brief Data transfer mechanism initiated by charger
     /// \param vendorId
     /// \param messageId
@@ -818,6 +825,9 @@ public:
                            const std::optional<DateTime>& timestamp = std::nullopt) override;
 
     void on_variable_changed(const SetVariableData& set_variable_data) override;
+
+    void on_external_limits_changed(const std::variant<float, ChargingSchedule>& limit,
+                                    double percentage_delta) override;
 
     std::optional<DataTransferResponse> data_transfer_req(const CiString<255>& vendorId,
                                                           const std::optional<CiString<50>>& messageId,

@@ -6,12 +6,14 @@
 
 #include <limits>
 #include <memory>
+#include <variant>
 
 #include <ocpp/v201/database_handler.hpp>
 #include <ocpp/v201/device_model.hpp>
 #include <ocpp/v201/evse_manager.hpp>
 #include <ocpp/v201/messages/ClearChargingProfile.hpp>
 #include <ocpp/v201/messages/GetChargingProfiles.hpp>
+#include <ocpp/v201/messages/NotifyChargingLimit.hpp>
 #include <ocpp/v201/messages/SetChargingProfile.hpp>
 #include <ocpp/v201/ocpp_enums.hpp>
 #include <ocpp/v201/ocpp_types.hpp>
@@ -97,6 +99,10 @@ public:
                                                            const ocpp::DateTime& start_time,
                                                            const ocpp::DateTime& end_time, const int32_t evse_id,
                                                            std::optional<ChargingRateUnitEnum> charging_rate_unit) = 0;
+
+    virtual std::optional<NotifyChargingLimitRequest>
+    handle_external_limits_changed(const std::variant<float, ChargingSchedule>& limit,
+                                   double percentage_delta) const = 0;
 };
 
 /// \brief This class handles and maintains incoming ChargingProfiles and contains the logic
@@ -164,6 +170,14 @@ public:
                                                    const ocpp::DateTime& start_time, const ocpp::DateTime& end_time,
                                                    const int32_t evse_id,
                                                    std::optional<ChargingRateUnitEnum> charging_rate_unit) override;
+
+    ///
+    /// \brief Determines whether or not we should notify the CSMS of a change to our limits
+    /// based on \p percentage_delta and builds the notification.
+    ///
+    std::optional<NotifyChargingLimitRequest>
+    handle_external_limits_changed(const std::variant<float, ChargingSchedule>& limit,
+                                   double percentage_delta) const override;
 
 protected:
     ///

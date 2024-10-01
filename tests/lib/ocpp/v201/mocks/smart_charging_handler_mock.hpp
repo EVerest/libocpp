@@ -3,11 +3,14 @@
 
 #include "gmock/gmock.h"
 #include <cstdint>
+#include <variant>
 #include <vector>
 
 #include "ocpp/v201/messages/SetChargingProfile.hpp"
 #include "ocpp/v201/ocpp_enums.hpp"
 #include "ocpp/v201/smart_charging.hpp"
+
+typedef std::variant<float, ocpp::v201::ChargingSchedule> ChargingLimitVariant;
 
 namespace ocpp::v201 {
 class SmartChargingHandlerMock : public SmartChargingHandlerInterface {
@@ -28,5 +31,7 @@ public:
                 (std::vector<ChargingProfile> & valid_profiles, const ocpp::DateTime& start_time,
                  const ocpp::DateTime& end_time, const int32_t evse_id,
                  std::optional<ChargingRateUnitEnum> charging_rate_unit));
+    MOCK_METHOD(std::optional<NotifyChargingLimitRequest>, handle_external_limits_changed,
+                (const ChargingLimitVariant& limit, double percentage_delta), (const, override));
 };
 } // namespace ocpp::v201

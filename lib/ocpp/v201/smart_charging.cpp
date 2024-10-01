@@ -9,6 +9,7 @@
 #include "ocpp/v201/ctrlr_component_variables.hpp"
 #include "ocpp/v201/device_model.hpp"
 #include "ocpp/v201/evse.hpp"
+#include "ocpp/v201/messages/NotifyChargingLimit.hpp"
 #include "ocpp/v201/messages/SetChargingProfile.hpp"
 #include "ocpp/v201/ocpp_enums.hpp"
 #include "ocpp/v201/ocpp_types.hpp"
@@ -612,6 +613,20 @@ CompositeSchedule SmartChargingHandler::calculate_composite_schedule(
     composite_schedule.evseId = evse_id;
 
     return composite_schedule;
+}
+
+std::optional<NotifyChargingLimitRequest>
+SmartChargingHandler::handle_external_limits_changed(const std::variant<float, ChargingSchedule>& limit,
+                                                     double percentage_delta) const {
+    std::optional<NotifyChargingLimitRequest> request = {};
+
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    const float limit_change_significance = this->device_model->get_value<double>(limit_change_cv);
+    if (percentage_delta > limit_change_significance) {
+        request = NotifyChargingLimitRequest{};
+    }
+
+    return request;
 }
 
 } // namespace ocpp::v201
