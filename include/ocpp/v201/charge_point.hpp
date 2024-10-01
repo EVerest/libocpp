@@ -253,8 +253,9 @@ public:
     /// NotifyChargingLimitRequest if the \p percentage_delta is greater than our LimitChangeSignificance.
     /// \param limit the new external limit
     /// \param percentage_delta the percent changed from the existing limits
-    virtual void on_external_limits_changed(const std::variant<float, ChargingSchedule>& limit,
-                                            double percentage_delta) = 0;
+    /// \param source the source of the external limit (NOTE: Should never be CSO)
+    virtual void on_external_limits_changed(const std::variant<float, ChargingSchedule>& limit, double percentage_delta,
+                                            ChargingLimitSourceEnum source) = 0;
 
     /// \brief Data transfer mechanism initiated by charger
     /// \param vendorId
@@ -826,8 +827,8 @@ public:
 
     void on_variable_changed(const SetVariableData& set_variable_data) override;
 
-    void on_external_limits_changed(const std::variant<float, ChargingSchedule>& limit,
-                                    double percentage_delta) override;
+    void on_external_limits_changed(const std::variant<float, ChargingSchedule>& limit, double percentage_delta,
+                                    ChargingLimitSourceEnum source) override;
 
     std::optional<DataTransferResponse> data_transfer_req(const CiString<255>& vendorId,
                                                           const std::optional<CiString<50>>& messageId,

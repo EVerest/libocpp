@@ -950,12 +950,13 @@ TEST_F(ChargepointTestFixtureV201, K12_OnExternalLimitsChanged_CallsHandler) {
 
     float limit = 100.0;
     double deltaChanged = 0.2;
+    auto source = ChargingLimitSourceEnum::Other;
 
     const std::variant<float, ChargingSchedule> new_limit(limit);
 
-    EXPECT_CALL(*smart_charging_handler, handle_external_limits_changed(new_limit, deltaChanged));
+    EXPECT_CALL(*smart_charging_handler, handle_external_limits_changed(new_limit, deltaChanged, source));
 
-    charge_point->on_external_limits_changed(new_limit, deltaChanged);
+    charge_point->on_external_limits_changed(new_limit, deltaChanged, source);
 }
 
 } // namespace ocpp::v201

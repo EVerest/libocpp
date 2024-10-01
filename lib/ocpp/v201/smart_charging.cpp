@@ -629,7 +629,14 @@ ChargingSchedule create_schedule_from_limit(const float limit) {
 
 std::optional<NotifyChargingLimitRequest>
 SmartChargingHandler::handle_external_limits_changed(const std::variant<float, ChargingSchedule>& limit,
-                                                     double percentage_delta) const {
+                                                     double percentage_delta, ChargingLimitSourceEnum source) const {
+    // K12.FR.04
+    if (source == ChargingLimitSourceEnum::CSO) {
+        // The spec does not define what we should do when the source
+        // given is CSO. Here we just throw.
+        throw std::invalid_argument("The source of an external limit should not be CSO.");
+    }
+
     std::optional<NotifyChargingLimitRequest> request = {};
 
     const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
@@ -641,6 +648,7 @@ SmartChargingHandler::handle_external_limits_changed(const std::variant<float, C
 
     if (percentage_delta > limit_change_significance) {
         request = NotifyChargingLimitRequest{};
+        request->chargingLimit = {.chargingLimitSource = source};
         if (notify_with_schedules.has_value() && notify_with_schedules.value()) {
             if (const auto* limit_f = std::get_if<float>(&limit)) {
                 request->chargingSchedule = {{create_schedule_from_limit(*limit_f)}};
