@@ -16,6 +16,7 @@
 #include <ocpp/v201/ocpp_enums.hpp>
 #include <ocpp/v201/ocpp_types.hpp>
 #include <ocpp/v201/transaction.hpp>
+#include <ocpp/v201/types.hpp>
 
 namespace ocpp::v201 {
 
@@ -46,19 +47,6 @@ enum class ProfileValidationResultEnum {
     DuplicateTxDefaultProfileFound,
     DuplicateProfileValidityPeriod,
     RequestStartTransactionNonTxProfile
-};
-
-/// \brief This enhances the ChargingProfile type by additional paramaters that are required in the
-/// ReportChargingProfilesRequest (EvseId, ChargingLimitSourceEnum)
-struct ReportedChargingProfile {
-    ChargingProfile profile;
-    int32_t evse_id;
-    ChargingLimitSourceEnum source;
-
-    ReportedChargingProfile(const ChargingProfile& profile, const int32_t evse_id,
-                            const ChargingLimitSourceEnum source) :
-        profile(profile), evse_id(evse_id), source(source) {
-    }
 };
 
 /// \brief This is used to associate charging profiles with a source.
