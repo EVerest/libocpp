@@ -1916,4 +1916,50 @@ TEST_F(SmartChargingHandlerTestFixtureV201,
     ASSERT_THAT(transaction_event_request.has_value(), testing::IsFalse());
 }
 
+TEST_F(SmartChargingHandlerTestFixtureV201,
+       K13FR02_HandleClearedChargingLimitRequest_LimitChangeSignificanceEqual_ReturnsClearedChargingLimitRequest) {
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.2",
+                            "test");
+
+    ConstantChargingLimit new_limit = {
+        .limit = 100.0,
+        .charging_rate_unit = ChargingRateUnitEnum::A,
+    };
+    double deltaChanged = 0.2;
+    auto source = ChargingLimitSourceEnum::Other;
+
+    auto resp = handler.handle_cleared_charging_limit(new_limit, deltaChanged, source);
+
+    auto cleared_charging_limit_request = resp.first;
+    auto transaction_event_request = resp.second;
+
+    ASSERT_THAT(cleared_charging_limit_request.chargingLimitSource, testing::Eq(source));
+    ASSERT_THAT(transaction_event_request.has_value(), testing::IsFalse());
+}
+
+TEST_F(
+    SmartChargingHandlerTestFixtureV201,
+    K13FR02_HandleClearedChargingLimitRequest_LimitChangeSignificanceExceeded_ReturnsClearedChargingLimitRequestAndTransactionEventRequest) {
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.1",
+                            "test");
+
+    ConstantChargingLimit new_limit = {
+        .limit = 100.0,
+        .charging_rate_unit = ChargingRateUnitEnum::A,
+    };
+    double deltaChanged = 0.2;
+    auto source = ChargingLimitSourceEnum::Other;
+
+    auto resp = handler.handle_cleared_charging_limit(new_limit, deltaChanged, source);
+
+    auto cleared_charging_limit_request = resp.first;
+    auto transaction_event_request = resp.second;
+
+    ASSERT_THAT(cleared_charging_limit_request.chargingLimitSource, testing::Eq(source));
+    ASSERT_THAT(transaction_event_request.has_value(), testing::IsTrue());
+    ASSERT_THAT(transaction_event_request.value().triggerReason, TriggerReasonEnum::ChargingRateChanged);
+}
+
 } // namespace ocpp::v201

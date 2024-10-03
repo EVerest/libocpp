@@ -677,7 +677,18 @@ SmartChargingHandler::handle_external_limits_cleared(const std::variant<Constant
     ClearedChargingLimitRequest cleared_charging_limit_request = {};
     cleared_charging_limit_request.chargingLimitSource = source;
 
-    auto requests = std::make_pair(cleared_charging_limit_request, std::nullopt);
+    std::optional<TransactionEventRequest> transaction_event_request = {};
+
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    const float limit_change_significance = this->device_model->get_value<double>(limit_change_cv);
+
+    // K13.FR.03
+    if (percentage_delta > limit_change_significance) {
+        transaction_event_request = TransactionEventRequest{};
+        transaction_event_request->triggerReason = TriggerReasonEnum::ChargingRateChanged;
+    }
+
+    auto requests = std::make_pair(cleared_charging_limit_request, transaction_event_request);
 
     return requests;
 }
