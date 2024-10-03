@@ -37,8 +37,7 @@ public:
                  std::optional<int32_t> evse_id),
                 (const, override));
     MOCK_METHOD((std::pair<ClearedChargingLimitRequest, std::optional<TransactionEventRequest>>),
-                handle_external_limits_cleared,
-                (const ChargingLimitVariant& limit, double percentage_delta, ChargingLimitSourceEnum source),
+                handle_external_limit_cleared, (double percentage_delta, ChargingLimitSourceEnum source),
                 (const, override));
 };
 } // namespace ocpp::v201

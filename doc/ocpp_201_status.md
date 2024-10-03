@@ -1400,8 +1400,8 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | ID        | Status | Remark |
 |-----------|--------|--------|
 | K13.FR.01 |        |        |
-| K13.FR.02 |        |        |
-| K13.FR.03 |        |        |
+| K13.FR.02 | ✅     |        |
+| K13.FR.03 | ✅     |        |
 
 ## SmartCharging - External Charging Limit with Local Controller
 

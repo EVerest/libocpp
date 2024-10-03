@@ -118,8 +118,7 @@ public:
                                    std::optional<int32_t> evse_id) const = 0;
 
     virtual std::pair<ClearedChargingLimitRequest, std::optional<TransactionEventRequest>>
-    handle_external_limits_cleared(const std::variant<ConstantChargingLimit, ChargingSchedule>& limit,
-                                   double percentage_delta, ChargingLimitSourceEnum source) const = 0;
+    handle_external_limit_cleared(double percentage_delta, ChargingLimitSourceEnum source) const = 0;
 };
 
 /// \brief This class handles and maintains incoming ChargingProfiles and contains the logic
@@ -198,8 +197,7 @@ public:
                                    std::optional<int32_t> evse_id) const override;
 
     virtual std::pair<ClearedChargingLimitRequest, std::optional<TransactionEventRequest>>
-    handle_external_limits_cleared(const std::variant<ConstantChargingLimit, ChargingSchedule>& limit,
-                                   double percentage_delta, ChargingLimitSourceEnum source) const override;
+    handle_external_limit_cleared(double percentage_delta, ChargingLimitSourceEnum source) const override;
 
 protected:
     ///

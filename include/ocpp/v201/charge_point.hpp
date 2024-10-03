@@ -259,6 +259,13 @@ public:
                                             double percentage_delta, ChargingLimitSourceEnum source,
                                             std::optional<int32_t> evse_id) = 0;
 
+    /// \brief Notifies the ChargePoint that an external limit has been cleared.
+    /// This shall send a ClearedChargingLimitRequest when called.
+    // This may send TransactionEventRequest if the \p percentage_delta is greater than our LimitChangeSignificance.
+    /// \param percentage_delta the percent changed from the existing limits
+    /// \param source the source of the external limit
+    virtual void on_external_limit_cleared(double percentage_delta, ChargingLimitSourceEnum source) = 0;
+
     /// \brief Data transfer mechanism initiated by charger
     /// \param vendorId
     /// \param messageId
@@ -832,6 +839,8 @@ public:
     void on_external_limits_changed(const std::variant<ConstantChargingLimit, ChargingSchedule>& limit,
                                     double percentage_delta, ChargingLimitSourceEnum source,
                                     std::optional<int32_t> evse_id) override;
+    
+    void on_external_limit_cleared(double percentage_delta, ChargingLimitSourceEnum source) override;
 
     std::optional<DataTransferResponse> data_transfer_req(const CiString<255>& vendorId,
                                                           const std::optional<CiString<50>>& messageId,
