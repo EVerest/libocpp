@@ -1894,4 +1894,23 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K12_HandleExternalLimitsChanged_Requ
     ASSERT_THAT(resp->evseId.value(), testing::Eq(evse_id));
 }
 
+TEST_F(SmartChargingHandlerTestFixtureV201,
+       K13FR02_HandleClearedChargingLimitRequest_ReturnsClearedChargingLimitRequest) {
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.5",
+                            "test");
+
+    ConstantChargingLimit new_limit = {
+        .limit = 100.0,
+        .charging_rate_unit = ChargingRateUnitEnum::A,
+    };
+    double deltaChanged = 0.2;
+    auto source = ChargingLimitSourceEnum::Other;
+
+    auto resp = handler.handle_external_limits_cleared(new_limit, deltaChanged, source);
+
+    // Not sure what else to assert on this get sent no matter what.
+    ASSERT_THAT(resp.chargingLimitSource, testing::Eq(source));
+}
+
 } // namespace ocpp::v201

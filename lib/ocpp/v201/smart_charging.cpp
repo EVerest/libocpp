@@ -9,6 +9,7 @@
 #include "ocpp/v201/ctrlr_component_variables.hpp"
 #include "ocpp/v201/device_model.hpp"
 #include "ocpp/v201/evse.hpp"
+#include "ocpp/v201/messages/ClearedChargingLimit.hpp"
 #include "ocpp/v201/messages/NotifyChargingLimit.hpp"
 #include "ocpp/v201/messages/SetChargingProfile.hpp"
 #include "ocpp/v201/ocpp_enums.hpp"
@@ -664,6 +665,16 @@ SmartChargingHandler::handle_external_limits_changed(const std::variant<Constant
             }
         }
     }
+
+    return request;
+}
+
+ClearedChargingLimitRequest
+SmartChargingHandler::handle_external_limits_cleared(const std::variant<ConstantChargingLimit, ChargingSchedule>& limit,
+                                                    double percentage_delta, ChargingLimitSourceEnum source) const {
+    // K13.FR.02
+    ClearedChargingLimitRequest request = {};
+    request.chargingLimitSource = source;
 
     return request;
 }

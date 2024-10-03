@@ -5,6 +5,7 @@
 #define OCPP_V201_SMART_CHARGING_HPP
 
 #include "ocpp/v201/comparators.hpp"
+#include "ocpp/v201/messages/ClearedChargingLimit.hpp"
 #include <limits>
 #include <memory>
 #include <variant>
@@ -112,6 +113,10 @@ public:
     handle_external_limits_changed(const std::variant<ConstantChargingLimit, ChargingSchedule>& limit,
                                    double percentage_delta, ChargingLimitSourceEnum source,
                                    std::optional<int32_t> evse_id) const = 0;
+
+    virtual ClearedChargingLimitRequest
+    handle_external_limits_cleared(const std::variant<ConstantChargingLimit, ChargingSchedule>& limit,
+                                   double percentage_delta, ChargingLimitSourceEnum source) const = 0;
 };
 
 /// \brief This class handles and maintains incoming ChargingProfiles and contains the logic
@@ -188,6 +193,10 @@ public:
     handle_external_limits_changed(const std::variant<ConstantChargingLimit, ChargingSchedule>& limit,
                                    double percentage_delta, ChargingLimitSourceEnum source,
                                    std::optional<int32_t> evse_id) const override;
+
+    virtual ClearedChargingLimitRequest
+    handle_external_limits_cleared(const std::variant<ConstantChargingLimit, ChargingSchedule>& limit,
+                                   double percentage_delta, ChargingLimitSourceEnum source) const override;
 
 protected:
     ///

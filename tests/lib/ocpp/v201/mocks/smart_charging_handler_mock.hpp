@@ -6,6 +6,7 @@
 #include <variant>
 #include <vector>
 
+#include "ocpp/v201/messages/ClearedChargingLimit.hpp"
 #include "ocpp/v201/messages/SetChargingProfile.hpp"
 #include "ocpp/v201/ocpp_enums.hpp"
 #include "ocpp/v201/smart_charging.hpp"
@@ -34,6 +35,9 @@ public:
     MOCK_METHOD(std::optional<NotifyChargingLimitRequest>, handle_external_limits_changed,
                 (const ChargingLimitVariant& limit, double percentage_delta, ChargingLimitSourceEnum source,
                  std::optional<int32_t> evse_id),
+                (const, override));
+    MOCK_METHOD(ClearedChargingLimitRequest, handle_external_limits_cleared,
+                (const ChargingLimitVariant& limit, double percentage_delta, ChargingLimitSourceEnum source),
                 (const, override));
 };
 } // namespace ocpp::v201
