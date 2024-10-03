@@ -10,6 +10,9 @@
 namespace {
 const auto WEBSOCKET_INIT_DELAY = std::chrono::seconds(2);
 const std::string VARIABLE_ATTRIBUTE_VALUE_SOURCE_INTERNAL = "internal";
+/// \brief Default timeout for the return value (future) of the `configure_network_connection_profile_callback`
+///        function.
+constexpr int32_t default_network_config_timeout_seconds = 60;
 } // namespace
 
 namespace ocpp {
@@ -41,16 +44,16 @@ void ConnectivityManager::set_websocket_connection_options(const WebsocketConnec
 }
 
 void ConnectivityManager::set_websocket_connection_options_without_reconnect() {
-    const auto configuration_slot = this->network_connection_priorities.at(this->network_configuration_priority);
-    const auto connection_options = this->get_ws_connection_options(std::stoi(configuration_slot));
+    const int configuration_slot = get_active_network_configuration_slot();
+    const auto connection_options = this->get_ws_connection_options(configuration_slot);
     this->set_websocket_connection_options(connection_options);
 }
 
-void ConnectivityManager::set_websocket_connected_callback(WebsocketConnectedCallback callback) {
+void ConnectivityManager::set_websocket_connected_callback(WebsocketConnectionCallback callback) {
     this->websocket_connected_callback = callback;
 }
 
-void ConnectivityManager::set_websocket_disconnected_callback(WebsocketDisconnectedCallback callback) {
+void ConnectivityManager::set_websocket_disconnected_callback(WebsocketConnectionCallback callback) {
     this->websocket_disconnected_callback = callback;
 }
 
@@ -89,6 +92,7 @@ bool ConnectivityManager::is_websocket_connected() {
 void ConnectivityManager::start() {
     init_websocket();
     if (websocket != nullptr) {
+        this->disable_automatic_websocket_reconnects = false;
         websocket->connect();
     }
 }
@@ -121,6 +125,50 @@ bool ConnectivityManager::send_to_websocket(const std::string& message) {
     return this->websocket->send(message);
 }
 
+void ConnectivityManager::on_network_disconnected(const std::optional<int32_t> configuration_slot,
+                                                  const std::optional<OCPPInterfaceEnum> ocpp_interface) {
+
+    if (!configuration_slot.has_value() and !ocpp_interface.has_value()) {
+        EVLOG_warning << "Network disconnected. Not clear which network is disconnected: configuration slot and ocpp "
+                         "interface are empty";
+        return;
+    }
+
+    const int actual_configuration_slot = get_active_network_configuration_slot();
+    std::optional<NetworkConnectionProfile> network_connection_profile =
+        this->get_network_connection_profile(actual_configuration_slot);
+
+    if (!network_connection_profile.has_value()) {
+        EVLOG_warning << "Network disconnected. No network connection profile configured";
+    } else if ((configuration_slot.has_value() and (configuration_slot.value() == actual_configuration_slot)) or
+               (ocpp_interface.has_value() and
+                (ocpp_interface.value() == network_connection_profile.value().ocppInterface))) {
+        this->disconnect_websocket(ocpp::WebsocketCloseReason::GoingAway);
+        // Since there is no connection anymore: reconnect with the next available network connection profile.
+        reconnect(ocpp::WebsocketCloseReason::GoingAway);
+    }
+}
+
+bool ConnectivityManager::on_try_switch_network_connection_profile(const int32_t configuration_slot) {
+    if (!is_higher_priority_profile(configuration_slot)) {
+        return false;
+    }
+
+    EVLOG_info << "Trying to connect with higher priority network connection profile (configuration slots: "
+               << this->get_active_network_configuration_slot() << " --> " << configuration_slot << ").";
+
+    const std::optional<NetworkConnectionProfile> network_connection_profile_opt =
+        this->get_network_connection_profile(configuration_slot);
+    if (!network_connection_profile_opt.has_value()) {
+        EVLOG_warning << "Could not find network connection profile belonging to configuration slot "
+                      << configuration_slot;
+        return false;
+    }
+
+    reconnect(WebsocketCloseReason::Normal, get_configuration_slot_priority(configuration_slot));
+    return true;
+}
+
 void ConnectivityManager::init_websocket() {
     if (this->device_model.get_value<std::string>(ControllerComponentVariables::ChargePointId).find(':') !=
         std::string::npos) {
@@ -131,15 +179,49 @@ void ConnectivityManager::init_websocket() {
     cache_network_connection_profiles();
 
     const auto configuration_slot = this->network_connection_priorities.at(this->network_configuration_priority);
-    const auto connection_options = this->get_ws_connection_options(std::stoi(configuration_slot));
+    const int config_slot_int = std::stoi(configuration_slot);
 
-    const auto network_connection_profile = this->get_network_connection_profile(std::stoi(configuration_slot));
+    const auto network_connection_profile = this->get_network_connection_profile(config_slot_int);
+    // Not const as the iface member can be set by the configure network connection profile callback
+    auto connection_options = this->get_ws_connection_options(config_slot_int);
+    bool can_use_connection_profile = true;
 
-    if (!network_connection_profile.has_value() or
-        (this->configure_network_connection_profile_callback.has_value() and
-         !this->configure_network_connection_profile_callback.value()(network_connection_profile.value()))) {
-        EVLOG_warning << "NetworkConnectionProfile could not be retrieved or configuration of network with the given "
-                         "profile failed";
+    if (!network_connection_profile.has_value()) {
+        EVLOG_warning << "No network connection profile configured for " << config_slot_int;
+        can_use_connection_profile = false;
+    } else if (this->configure_network_connection_profile_callback.has_value()) {
+        EVLOG_debug << "Request to configure network connection profile " << config_slot_int;
+
+        std::future<ConfigNetworkResult> config_status = this->configure_network_connection_profile_callback.value()(
+            config_slot_int, network_connection_profile.value());
+        const int32_t config_timeout =
+            this->device_model.get_optional_value<int>(ControllerComponentVariables::NetworkConfigTimeout)
+                .value_or(default_network_config_timeout_seconds);
+
+        std::future_status status = config_status.wait_for(std::chrono::seconds(config_timeout));
+
+        switch (status) {
+        case std::future_status::deferred:
+        case std::future_status::timeout: {
+            EVLOG_warning << "Timeout configuring config slot: " << config_slot_int;
+            can_use_connection_profile = false;
+        }
+        case std::future_status::ready: {
+            ConfigNetworkResult result = config_status.get();
+            if (result.success and result.network_profile_slot == config_slot_int) {
+                EVLOG_debug << "Config slot " << config_slot_int << " is configured";
+                // Set interface or ip to connection options.
+                connection_options.iface = result.interface_address;
+            } else {
+                EVLOG_warning << "Could not configure config slot " << config_slot_int;
+                can_use_connection_profile = false;
+            }
+            break;
+        }
+        }
+    }
+
+    if (!can_use_connection_profile) {
         this->websocket_timer.timeout(
             [this]() {
                 this->next_network_configuration_priority();
@@ -169,13 +251,9 @@ void ConnectivityManager::init_websocket() {
 
     this->websocket = std::make_unique<Websocket>(connection_options, this->evse_security, this->logging);
 
-    if (this->websocket_connected_callback.has_value()) {
-        this->websocket->register_connected_callback(websocket_connected_callback.value());
-    }
-
-    if (this->websocket_disconnected_callback.has_value()) {
-        this->websocket->register_disconnected_callback(websocket_disconnected_callback.value());
-    }
+    this->websocket->register_connected_callback(
+        std::bind(&ConnectivityManager::on_websocket_connected, this, std::placeholders::_1));
+    this->websocket->register_disconnected_callback(std::bind(&ConnectivityManager::on_websocket_disconnected, this));
 
     this->websocket->register_closed_callback(
         [this, connection_options, configuration_slot](const WebsocketCloseReason reason) {
@@ -184,14 +262,7 @@ void ConnectivityManager::init_websocket() {
                           << configuration_slot;
 
             if (!this->disable_automatic_websocket_reconnects) {
-                this->websocket_timer.timeout(
-                    [this, reason]() {
-                        if (reason != WebsocketCloseReason::ServiceRestart) {
-                            this->next_network_configuration_priority();
-                        }
-                        this->start();
-                    },
-                    WEBSOCKET_INIT_DELAY);
+                reconnect(reason);
             }
         });
 
@@ -246,6 +317,99 @@ WebsocketConnectionOptions ConnectivityManager::get_ws_connection_options(const 
         this->device_model.get_optional_value<std::string>(ControllerComponentVariables::TLSKeylogFile)};
 
     return connection_options;
+}
+
+void ConnectivityManager::on_websocket_connected([[maybe_unused]] int security_profile) {
+    const int actual_configuration_slot = get_active_network_configuration_slot();
+    std::optional<NetworkConnectionProfile> network_connection_profile =
+        this->get_network_connection_profile(actual_configuration_slot);
+
+    if (this->websocket_connected_callback.has_value() and network_connection_profile.has_value()) {
+        this->websocket_connected_callback.value()(actual_configuration_slot, network_connection_profile.value());
+    }
+}
+
+void ConnectivityManager::on_websocket_disconnected() {
+    int actual_configuration_slot = std::stoi(
+        ocpp::split_string(
+            this->device_model.get_value<std::string>(ControllerComponentVariables::NetworkConfigurationPriority), ',')
+            .at(this->network_configuration_priority));
+    std::optional<NetworkConnectionProfile> network_connection_profile =
+        this->get_network_connection_profile(actual_configuration_slot);
+
+    if (this->websocket_disconnected_callback.has_value() and network_connection_profile.has_value()) {
+        this->websocket_disconnected_callback.value()(actual_configuration_slot, network_connection_profile.value());
+    }
+}
+
+void ConnectivityManager::reconnect(WebsocketCloseReason reason, std::optional<int> next_priority) {
+    this->websocket_timer.timeout(
+        [this, reason, next_priority]() {
+            if (reason != WebsocketCloseReason::ServiceRestart) {
+                if (!next_priority.has_value()) {
+                    this->next_network_configuration_priority();
+                } else {
+                    this->network_configuration_priority = next_priority.value();
+                }
+            }
+            this->start();
+        },
+        WEBSOCKET_INIT_DELAY);
+}
+
+bool ConnectivityManager::is_higher_priority_profile(const int new_configuration_slot) {
+
+    const int current_slot = get_active_network_configuration_slot();
+    if (current_slot == 0) {
+        // No slot in use, new is always higher priority.
+        return true;
+    }
+
+    if (current_slot == new_configuration_slot) {
+        // Slot is the same, probably already connected
+        return false;
+    }
+
+    const std::optional<int> new_priority = get_configuration_slot_priority(new_configuration_slot);
+    if (!new_priority.has_value()) {
+        // Slot not found.
+        return false;
+    }
+
+    const std::optional<int> current_priority = get_configuration_slot_priority(current_slot);
+    if (!current_priority.has_value()) {
+        // Slot not found.
+        return false;
+    }
+
+    if (new_configuration_slot < current_slot) {
+        // Priority is indeed higher (lower index means higher priority)
+        return true;
+    }
+
+    return false;
+}
+
+int ConnectivityManager::get_active_network_configuration_slot() {
+    return std::stoi(
+        ocpp::split_string(
+            this->device_model.get_value<std::string>(ControllerComponentVariables::NetworkConfigurationPriority), ',')
+            .at(this->network_configuration_priority));
+}
+
+std::optional<int> ConnectivityManager::get_configuration_slot_priority(const int configuration_slot) {
+    // Convert to string as a vector of strings is used.
+    const std::string configuration_slot_string = std::to_string(configuration_slot);
+
+    const std::vector<std::string> network_connection_priorities = ocpp::split_string(
+        this->device_model.get_value<std::string>(ControllerComponentVariables::NetworkConfigurationPriority), ',');
+    auto it = std::find(network_connection_priorities.begin(), network_connection_priorities.end(),
+                        configuration_slot_string);
+    if (it != network_connection_priorities.end()) {
+        // Index is iterator - begin iterator
+        return it - network_connection_priorities.begin();
+    }
+    return std::nullopt;
 }
 
 void ConnectivityManager::next_network_configuration_priority() {

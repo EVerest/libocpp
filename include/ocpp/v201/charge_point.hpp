@@ -11,7 +11,6 @@
 
 #include <ocpp/v201/average_meter_values.hpp>
 #include <ocpp/v201/charge_point_callbacks.hpp>
-#include <ocpp/v201/connectivity_manager.hpp>
 #include <ocpp/v201/ctrlr_component_variables.hpp>
 #include <ocpp/v201/database_handler.hpp>
 #include <ocpp/v201/device_model.hpp>
@@ -108,6 +107,28 @@ public:
 
     /// \brief Disconnects the the websocket connection to the CSMS if it is connected
     virtual void disconnect_websocket() = 0;
+
+    ///
+    /// \brief Can be called when a network is disconnected, for example when an ethernet cable is removed.
+    ///
+    /// This is introduced because the websocket can take several minutes to timeout when a network interface becomes
+    /// unavailable, whereas the system can detect this sooner.
+    ///
+    /// \param configuration_slot   The slot of the network connection profile that is disconnected.
+    /// \param ocpp_interface       The interface that is disconnected.
+    ///
+    /// \note At least one of the two params must be provided, otherwise libocpp will not know which interface is down.
+    ///
+    virtual void on_network_disconnected(const std::optional<int32_t> configuration_slot,
+                                         const std::optional<OCPPInterfaceEnum> ocpp_interface) = 0;
+
+    /// \brief Switch to a specific network connection profile given the configuration slot.
+    ///
+    /// Switch will only be done when the configuration slot has a higher priority.
+    ///
+    /// \param configuration_slot Slot in which the configuration is stored
+    /// \return true if the switch is possible.
+    virtual bool on_try_switch_network_connection_profile(const int32_t configuration_slot) = 0;
 
     /// \brief Chargepoint notifies about new firmware update status firmware_update_status. This function should be
     ///        called during a Firmware Update to indicate the current firmware_update_status.
@@ -413,8 +434,10 @@ private:
     void init_certificate_expiration_check_timers();
     void scheduled_check_client_certificate_expiration();
     void scheduled_check_v2g_certificate_expiration();
-    void websocket_connected_callback(const int security_profile);
-    void websocket_disconnected_callback();
+    void websocket_connected_callback(const int configuration_slot,
+                                      const NetworkConnectionProfile& network_connection_profile);
+    void websocket_disconnected_callback(const int configuration_slot,
+                                         const NetworkConnectionProfile& network_connection_profile);
     void websocket_connection_failed(ConnectionFailedReason reason);
     void update_dm_availability_state(const int32_t evse_id, const int32_t connector_id,
                                       const ConnectorStatusEnum status);
@@ -819,6 +842,11 @@ public:
 
     virtual void connect_websocket() override;
     virtual void disconnect_websocket() override;
+
+    void on_network_disconnected(const std::optional<int32_t> configuration_slot,
+                                 const std::optional<OCPPInterfaceEnum> ocpp_interface) override;
+
+    bool on_try_switch_network_connection_profile(const int32_t configuration_slot) override;
 
     void on_firmware_update_status_notification(int32_t request_id,
                                                 const FirmwareStatusEnum& firmware_update_status) override;
