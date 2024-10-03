@@ -684,7 +684,12 @@ SmartChargingHandler::handle_external_limit_cleared(double percentage_delta, Cha
     // K13.FR.03
     if (percentage_delta > limit_change_significance) {
         transaction_event_request = TransactionEventRequest{};
+        transaction_event_request->eventType = TransactionEventEnum::Updated;
+        transaction_event_request->timestamp = ocpp::DateTime();
         transaction_event_request->triggerReason = TriggerReasonEnum::ChargingRateChanged;
+        // TODO: there are transaction specific attributes in this type.
+        // It is unclear how transactions are used when a external constraint is cleared.
+        // This will need to be updated based on further discussion.
     }
 
     auto requests = std::make_pair(cleared_charging_limit_request, transaction_event_request);
