@@ -36,7 +36,8 @@ public:
                 (const ChargingLimitVariant& limit, double percentage_delta, ChargingLimitSourceEnum source,
                  std::optional<int32_t> evse_id),
                 (const, override));
-    MOCK_METHOD(ClearedChargingLimitRequest, handle_external_limits_cleared,
+    MOCK_METHOD((std::pair<ClearedChargingLimitRequest, std::optional<TransactionEventRequest>>),
+                handle_external_limits_cleared,
                 (const ChargingLimitVariant& limit, double percentage_delta, ChargingLimitSourceEnum source),
                 (const, override));
 };

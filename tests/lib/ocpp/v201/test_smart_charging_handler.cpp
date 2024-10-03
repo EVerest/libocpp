@@ -1909,8 +1909,11 @@ TEST_F(SmartChargingHandlerTestFixtureV201,
 
     auto resp = handler.handle_external_limits_cleared(new_limit, deltaChanged, source);
 
-    // Not sure what else to assert on this get sent no matter what.
-    ASSERT_THAT(resp.chargingLimitSource, testing::Eq(source));
+    auto cleared_charging_limit_request = resp.first;
+    auto transaction_event_request = resp.second;
+
+    ASSERT_THAT(cleared_charging_limit_request.chargingLimitSource, testing::Eq(source));
+    ASSERT_THAT(transaction_event_request.has_value(), testing::IsFalse());
 }
 
 } // namespace ocpp::v201

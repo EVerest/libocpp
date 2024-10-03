@@ -6,8 +6,11 @@
 
 #include "ocpp/v201/comparators.hpp"
 #include "ocpp/v201/messages/ClearedChargingLimit.hpp"
+#include "ocpp/v201/messages/TransactionEvent.hpp"
 #include <limits>
 #include <memory>
+#include <optional>
+#include <utility>
 #include <variant>
 
 #include <ocpp/v201/database_handler.hpp>
@@ -114,7 +117,7 @@ public:
                                    double percentage_delta, ChargingLimitSourceEnum source,
                                    std::optional<int32_t> evse_id) const = 0;
 
-    virtual ClearedChargingLimitRequest
+    virtual std::pair<ClearedChargingLimitRequest, std::optional<TransactionEventRequest>>
     handle_external_limits_cleared(const std::variant<ConstantChargingLimit, ChargingSchedule>& limit,
                                    double percentage_delta, ChargingLimitSourceEnum source) const = 0;
 };
@@ -194,7 +197,7 @@ public:
                                    double percentage_delta, ChargingLimitSourceEnum source,
                                    std::optional<int32_t> evse_id) const override;
 
-    virtual ClearedChargingLimitRequest
+    virtual std::pair<ClearedChargingLimitRequest, std::optional<TransactionEventRequest>>
     handle_external_limits_cleared(const std::variant<ConstantChargingLimit, ChargingSchedule>& limit,
                                    double percentage_delta, ChargingLimitSourceEnum source) const override;
 

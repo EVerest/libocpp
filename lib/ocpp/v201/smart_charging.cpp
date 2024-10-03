@@ -22,6 +22,7 @@
 #include <ocpp/common/constants.hpp>
 #include <ocpp/v201/smart_charging.hpp>
 #include <optional>
+#include <utility>
 #include <variant>
 
 using namespace std::chrono;
@@ -669,14 +670,16 @@ SmartChargingHandler::handle_external_limits_changed(const std::variant<Constant
     return request;
 }
 
-ClearedChargingLimitRequest
+std::pair<ClearedChargingLimitRequest, std::optional<TransactionEventRequest>>
 SmartChargingHandler::handle_external_limits_cleared(const std::variant<ConstantChargingLimit, ChargingSchedule>& limit,
-                                                    double percentage_delta, ChargingLimitSourceEnum source) const {
+                                                     double percentage_delta, ChargingLimitSourceEnum source) const {
     // K13.FR.02
-    ClearedChargingLimitRequest request = {};
-    request.chargingLimitSource = source;
+    ClearedChargingLimitRequest cleared_charging_limit_request = {};
+    cleared_charging_limit_request.chargingLimitSource = source;
 
-    return request;
+    auto requests = std::make_pair(cleared_charging_limit_request, std::nullopt);
+
+    return requests;
 }
 
 } // namespace ocpp::v201
