@@ -330,15 +330,12 @@ void ConnectivityManager::on_websocket_connected([[maybe_unused]] int security_p
 }
 
 void ConnectivityManager::on_websocket_disconnected() {
-    int actual_configuration_slot = std::stoi(
-        ocpp::split_string(
-            this->device_model.get_value<std::string>(ControllerComponentVariables::NetworkConfigurationPriority), ',')
-            .at(this->network_configuration_priority));
     std::optional<NetworkConnectionProfile> network_connection_profile =
-        this->get_network_connection_profile(actual_configuration_slot);
+        this->get_network_connection_profile(this->get_active_network_configuration_slot());
 
     if (this->websocket_disconnected_callback.has_value() and network_connection_profile.has_value()) {
-        this->websocket_disconnected_callback.value()(actual_configuration_slot, network_connection_profile.value());
+        this->websocket_disconnected_callback.value()(this->get_active_network_configuration_slot(),
+                                                      network_connection_profile.value());
     }
 }
 
@@ -391,19 +388,14 @@ bool ConnectivityManager::is_higher_priority_profile(const int new_configuration
 }
 
 int ConnectivityManager::get_active_network_configuration_slot() {
-    return std::stoi(
-        ocpp::split_string(
-            this->device_model.get_value<std::string>(ControllerComponentVariables::NetworkConfigurationPriority), ',')
-            .at(this->network_configuration_priority));
+    return std::stoi(this->network_connection_priorities.at(this->network_configuration_priority));
 }
 
 std::optional<int> ConnectivityManager::get_configuration_slot_priority(const int configuration_slot) {
     // Convert to string as a vector of strings is used.
     const std::string configuration_slot_string = std::to_string(configuration_slot);
 
-    const std::vector<std::string> network_connection_priorities = ocpp::split_string(
-        this->device_model.get_value<std::string>(ControllerComponentVariables::NetworkConfigurationPriority), ',');
-    auto it = std::find(network_connection_priorities.begin(), network_connection_priorities.end(),
+    auto it = std::find(this->network_connection_priorities.begin(), this->network_connection_priorities.end(),
                         configuration_slot_string);
     if (it != network_connection_priorities.end()) {
         // Index is iterator - begin iterator
