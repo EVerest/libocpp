@@ -1,3 +1,5 @@
+![Header](doc/img/banner-ocpp.jpg)
+
 # C++ implementation of OCPP
 
 ![Github Actions](https://github.com/EVerest/libocpp/actions/workflows/build_and_test.yaml/badge.svg)
