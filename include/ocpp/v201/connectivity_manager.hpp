@@ -47,7 +47,7 @@ private:
     int network_configuration_priority;
     /// @brief Local cached network connection profiles
     std::vector<SetNetworkProfileRequest> network_connection_profiles;
-    /// @brief local cached network conenction priorities
+    /// @brief local cached network connection priorities
     std::vector<std::string> network_connection_priorities;
     WebsocketConnectionOptions current_connection_options{};
 
