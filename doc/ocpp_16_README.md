@@ -22,9 +22,11 @@ This C++ library provides a complete and production-ready solution for integrati
 - [Quickstart for OCPP 1.6](#quickstart-for-ocpp-16)
 - [Build and Install libocpp](#build-and-install-libocpp)
 - [Building the doxygen documentation](#building-the-doxygen-documentation)
-- [Unit testing](#unit-testing)
+- [Unit Testing](#unit-testing)
 - [Building with FetchContent instead of EDM](#building-with-fetchcontent-instead-of-edm)
-- [Support for security profile 2 and 3 with TPM in OCPP 1.6 using libwebsockets](#support-for-security-profile-2-and-3-with-tpm-in-ocpp-16-using-libwebsockets)
+- [Support for TPM keys](#support-for-tpm-keys)
+- [Support for websocket++](#support-for-websocket++)
+- [Support for iface](#support-for-iface)
  
 ## Functionality Support
 
@@ -462,7 +464,7 @@ Execute cmake and then make install:
   make install
 ```
 
-## Unit testing
+## Unit Testing
 
 GTest is required for building the test cases target.
 To build the target and run the tests you can reference the script `.ci/build-kit/install_and_test.sh`.
@@ -483,7 +485,7 @@ Run any required tests from build/tests.
 
 In [doc/build-with-fetchcontent](/doc/build-with-fetchcontent) you can find an example how to build libocpp with FetchContent instead of EDM.
 
-### Support for TPM keys
+## Support for TPM keys
 
 In order to use the TPM keys, it is mandatory to use the default libwebsocket implementation.
 
@@ -495,7 +497,7 @@ The old websocket++ implementation has been deprecated. For enabling websocket++
   cmake .. -DLIBOCPP_ENABLE_DEPRECATED_WEBSOCKETPP=ON
 ```
 
-### Support for iface
+## Support for iface
 
 In order to connect through a custom network iface, a custom internal config variable 'IFace' can be used.
 
