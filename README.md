@@ -24,13 +24,13 @@ The Open Charge Point Protocol (OCPP) is an open standard for communication betw
 
 | OCPP 2.0.1 | OCPP 1.6 |
 |------------|----------|
-| • [Quickstart Guide](/doc/ocpp_201_README.md#quickstart-for-ocpp-201) | • [Quickstart Guide](/doc/ocpp_16_README.md) |
+| • [Quickstart Guide](/doc/ocpp_201_README.md#quickstart-for-ocpp-201) | • [Quickstart Guide](/doc/ocpp_16_README.md#quickstart-for-ocpp-16) |
 | • [Build and Install libocpp](/doc/ocpp_201_README.md#build-and-install-libocpp) | • [Build and Install libocpp](/doc/ocpp_16_README.md#build-and-install-libocpp) |
-| • [Functionality Support](/doc/ocpp_201_README.md#integration-with-everest) | • [Functionality Support](/doc/ocpp_16_README.md) |
-| • [Integration with EVerest](/doc/ocpp_201_README.md#integration-with-everest) | • [Integration with EVerest](/doc/ocpp_16_README.md) |
-| • [Standalone Integration](/doc/ocpp_201_README.md#standalone-integration1) | • [Standalone Integration](/doc/ocpp_16_README.md) |
+| • [Functionality Support](/doc/ocpp_201_README.md#integration-with-everest) | • [Functionality Support](/doc/ocpp_16_README.md#functionality-support) |
+| • [Integration with EVerest](/doc/ocpp_201_README.md#integration-with-everest) | • [Integration with EVerest](/doc/ocpp_16_README.md#integration-with-everest) |
+| • [Standalone Integration](/doc/ocpp_201_README.md#standalone-integration) | • [Standalone Integration](/doc/ocpp_16_README.md#standalone-integration) |
 | • [Unit testing](doc/ocpp_201_README.md#unit-testing) | • [Unit testing](doc/ocpp_16_README.md#unit-testing) |
-| • [CSMS Compatibility](/doc/ocpp_201_README.md#csms-compatibility) | • [CSMS Compatibility](/doc/ocpp_16_README.md) |
+| • [CSMS Compatibility](/doc/ocpp_201_README.md#csms-compatibility) | • [CSMS Compatibility](/doc/ocpp_16_README.md#csms-compatibility) |
 
 ## Get Involved
 
