@@ -530,9 +530,3 @@ In order to connect through a custom network iface, a custom internal config var
 }
 ```
 
------
-
-## Get Involved
-
-See the [COMMUNITY.md](https://github.com/EVerest/EVerest/blob/main/COMMUNITY.md) and [CONTRIBUTING.md](https://github.com/EVerest/EVerest/blob/main/CONTRIBUTING.md) of the EVerest project to get involved.
-
