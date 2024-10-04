@@ -16,7 +16,7 @@ OCPP 2.0.1 is currently under development.
 ## Table of contents
 
 - [Functionality Support](#functionality-support)
-- [Integration with EVerest](#integration-with-everestt)
+- [Integration with EVerest](#integration-with-everest)
 - [Standalone Integration](#standalone-integration)
   - [Key Integration Points](#key-integration-points)
   - [Overview of the required callbacks and events and what libocpp expects to happen](#overview-of-the-required-callbacks-and-events-and-what-libocpp-expects-to-happen)
