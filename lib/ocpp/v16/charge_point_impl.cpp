@@ -75,7 +75,14 @@ ChargePointImpl::ChargePointImpl(const std::string& config, const fs::path& shar
             detailed_log_to_console, log_to_file, log_to_html, log_security, session_logging, nullptr,
             ocpp::LogRotationConfig(this->configuration->getLogRotationDateSuffix(),
                                     this->configuration->getLogRotationMaximumFileSize(),
-                                    this->configuration->getLogRotationMaximumFileCount()));
+                                    this->configuration->getLogRotationMaximumFileCount()),
+            [this](ocpp::LogRotationStatus status) {
+                if (status == ocpp::LogRotationStatus::RotatedWithDeletion) {
+                    this->securityEventNotification(
+                        CiString<50>(ocpp::security_events::SECURITYLOGWASCLEARED),
+                        CiString<255>("Security log was rotated and an old log was deleted in the process"), true);
+                }
+            });
     } else {
         this->logging = std::make_shared<ocpp::MessageLogging>(
             this->configuration->getLogMessages(), this->message_log_path, DateTime().to_rfc3339(), log_to_console,

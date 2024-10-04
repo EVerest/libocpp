@@ -597,7 +597,15 @@ void ChargePoint::configure_message_logging_format(const std::string& message_lo
             !log_formats.empty(), message_log_path, "libocpp_201", log_to_console, detailed_log_to_console, log_to_file,
             log_to_html, log_security, session_logging, logging_callback,
             ocpp::LogRotationConfig(log_rotation_date_suffix, log_rotation_maximum_file_size,
-                                    log_rotation_maximum_file_count));
+                                    log_rotation_maximum_file_count),
+            [this](ocpp::LogRotationStatus status) {
+                if (status == ocpp::LogRotationStatus::RotatedWithDeletion) {
+                    const auto& security_event = ocpp::security_events::SECURITYLOGWASCLEARED;
+                    std::string tech_info = "Security log was rotated and an old log was deleted in the process";
+                    this->security_event_notification_req(CiString<50>(security_event), CiString<255>(tech_info), true,
+                                                          utils::is_critical(security_event));
+                }
+            });
     } else {
         this->logging = std::make_shared<ocpp::MessageLogging>(
             !log_formats.empty(), message_log_path, DateTime().to_rfc3339(), log_to_console, detailed_log_to_console,
