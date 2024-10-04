@@ -379,7 +379,7 @@ bool ConnectivityManager::is_higher_priority_profile(const int new_configuration
         return false;
     }
 
-    if (new_configuration_slot < current_slot) {
+    if (new_priority.value() < current_priority.value()) {
         // Priority is indeed higher (lower index means higher priority)
         return true;
     }
