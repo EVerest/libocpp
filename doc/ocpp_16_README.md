@@ -15,7 +15,7 @@ This C++ library provides a complete and production-ready solution for integrati
   - [Key Integration Points](#key-integration-points)
   - [Overview of the required callbacks and events and what libocpp expects to happen](#overview-of-the-required-callbacks-and-events-and-what-libocpp-expects-to-happen)
   - [Usage for OCPP 1.6](#usage-for-ocpp-16)
-    - [hargePoint() constructo](#chargepoint-constructor)
+    - [ChargePoint() constructor](#chargepoint-constructor)
     - [registering callback](#registering-callbacks)
     - [Authorizatio](#authorization)
   - [Initialize the database](#initialize-the-database)
