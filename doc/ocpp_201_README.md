@@ -80,7 +80,7 @@ If you wish to integrate libocpp's OCPP 2.0.1 implementation directly into your 
 1. **Callbacks**: Register these to allow libocpp to execute control commands defined in OCPP (e.g., Reset.req or RemoteStartTransaction.req).
 2. **Event Handlers**: Implement these so your software can call libocpp's event handlers, enabling the library to track the charging station's state and trigger appropriate OCPP messages (e.g., MeterValues.req, StatusNotification.req).
 
-The main interface for integration is the [ChargePoint](include/ocpp/v201/charge_point.hpp) class.
+The main interface for integration is the [ChargePoint](/include/ocpp/v201/charge_point.hpp) class.
 
 ### Overview of the required callbacks and events and what libocpp expects to happen
 
@@ -236,7 +236,7 @@ Libocpp provides a small standalone OCPP2.0.1 client that you can control using 
 
 Install the dependencies and libocpp as described in [Build and Install libocpp](#build-and-install-libocpp).
 
-Make sure you modify the following config entries in the [config.json](config/v201/config.json) file according to the CSMS you want to connect to before executing make install.
+Make sure you modify the following config entries in the [config.json](/config/v201/config.json) file according to the CSMS you want to connect to before executing make install.
 
 ```json
 {
@@ -255,7 +255,7 @@ Change into libocpp/build and execute cmake and then make install:
   make -j$(nproc) install
 ```
 
-Use the following command to start the charge point. Replace the config with [config-docker.json](config/v201/config-docker.json) if you want to test with the [SteVe](https://github.com/steve-community/steve#docker) CSMS running in a docker container.
+Use the following command to start the charge point. Replace the config with [config-docker.json](/config/v201/config-docker.json) if you want to test with the [SteVe](https://github.com/steve-community/steve#docker) CSMS running in a docker container.
 
 ```bash
   ./dist/bin/charge_point \
@@ -321,7 +321,7 @@ Run any required tests from build/tests.
 
 ## Building with FetchContent instead of EDM
 
-In [doc/build-with-fetchcontent](doc/build-with-fetchcontent) you can find an example how to build libocpp with FetchContent instead of EDM.
+In [doc/build-with-fetchcontent](/doc/build-with-fetchcontent) you can find an example how to build libocpp with FetchContent instead of EDM.
 
 ### Support for TPM keys
 
