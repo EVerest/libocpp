@@ -796,6 +796,7 @@ enum class MessageDirection {
 
 enum class ConnectionFailedReason {
     InvalidCSMSCertificate = 0,
+    FailedToAuthenticateAtCsms
 };
 
 ///

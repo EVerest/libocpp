@@ -4294,6 +4294,11 @@ void ChargePoint::websocket_connection_failed(ConnectionFailedReason reason) {
             EVLOG_debug << "Skipping InvalidCsmsCertificate SecurityEvent since it has been sent already";
         }
         break;
+    case ConnectionFailedReason::FailedToAuthenticateAtCsms:
+        const auto& security_event = ocpp::security_events::FAILEDTOAUTHENTICATEATCSMS;
+        this->security_event_notification_req(CiString<50>(security_event), std::nullopt, true,
+                                              utils::is_critical(security_event));
+        break;
     }
 }
 

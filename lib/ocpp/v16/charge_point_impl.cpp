@@ -314,6 +314,12 @@ void ChargePointImpl::init_websocket() {
             this->switch_security_profile_callback();
         }
     });
+    this->websocket->register_connection_failed_callback([this](const ocpp::ConnectionFailedReason reason) {
+        if (reason == ocpp::ConnectionFailedReason::FailedToAuthenticateAtCsms) {
+            this->securityEventNotification(CiString<50>(ocpp::security_events::FAILEDTOAUTHENTICATEATCSMS),
+                                            std::nullopt, true);
+        }
+    });
 
     this->websocket->register_message_callback([this](const std::string& message) { this->message_callback(message); });
 }
