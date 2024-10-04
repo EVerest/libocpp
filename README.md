@@ -22,7 +22,7 @@ The Open Charge Point Protocol (OCPP) is an open standard for communication betw
 
 ## Table of Contents
 
-| OCPP 2.0.1 | OCPP 1.6 |
+| [OCPP 2.0.1](/doc/ocpp_201_README.md) | [OCPP 1.6](/doc/ocpp_16_README.md) |
 |------------|----------|
 | • [Quickstart Guide](/doc/ocpp_201_README.md#quickstart-for-ocpp-201) | • [Quickstart Guide](/doc/ocpp_16_README.md#quickstart-for-ocpp-16) |
 | • [Build and Install libocpp](/doc/ocpp_201_README.md#build-and-install-libocpp) | • [Build and Install libocpp](/doc/ocpp_16_README.md#build-and-install-libocpp) |
