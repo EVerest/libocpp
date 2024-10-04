@@ -36,7 +36,7 @@ OCPP 2.0.1 is currently under development.
 The development of OCPP 2.0.1 implementation is in progress — [OCPP 2.0.1 status](/doc/ocpp_201_status.md). The following table shows the current support for OCPP 2.0.1 functionalities in libocpp:
 
 | OCPP 2.0.1 Functionality   | Supported                  |
-| -------------------------- | -------------------------- |
+| :------------------------- | :------------------------- |
 | Core                       | :heavy_check_mark: Yes     |
 | Advanced Security          | :construction: In Progress |
 | Local Auth List Management | :hourglass: Planned        |
@@ -47,7 +47,7 @@ The development of OCPP 2.0.1 implementation is in progress — [OCPP 2.0.1 stat
 | ISO 15118 support          | :construction: In Progress |
 
 | Whitepapers & Application Notes        | Supported                  |
-| -------------------------------------- | -------------------------- |
+| :------------------------------------- | :------------------------- |
 | OCPP & California Pricing Requirements | :construction: In Progress |
 
 
@@ -88,7 +88,7 @@ If you wish to integrate libocpp's OCPP 2.0.1 implementation directly into your 
 ### Callbacks to register
 
 | Callbacks                                             | Description                                                                                                                                                                                                                                                                                                                                   |
-| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| :---------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | all_connectors_unavailable_callback                   | Notifies that all connectors are unavailable. Used to handle charge availability requests and firmware updates.                                                                                                                                                                                                                               |
 | boot_notification_callback                            | Callback to notify of a system boot                                                                                                                                                                                                                                                                                                           |
 | clear_customer_information_callback                   | Called to clear customer information based on passed in Customer Certificate, the IdToken for this request, and the Customer Identified that the request refers to. If IdToken is passed in will delete authorization cache entry from database.                                                                                              |
@@ -125,8 +125,8 @@ Use [provided SQLite database](/doc/database_migrations.md) or implement your ow
 
 ### OCPP 2.0.1 Use Cases
 
-| Clause | Use Case Name                 |
-| ------ | --------------------------------- |
+| Clause | Use Case Name                     |
+| :----- | :-------------------------------- |
 | A      | Security                          |
 | B      | Provisioning                      |
 | C      | Authorization                     |
@@ -399,7 +399,7 @@ sequenceDiagram
     end    
 ```
 
-
+-----
 
 ## Quickstart for OCPP 2.0.1
 
@@ -436,17 +436,17 @@ Use the following command to start the charge point. Replace the config with [co
 
 Type `help` to see a list of possible commands.
 
-## Building the doxygen documentation
+
+In the libocpp folder create a folder named build and cd into it.
+Execute cmake and then make install:
 
 ```bash
-  cmake -S . -B build
-  cmake --build build --target doxygen-ocpp
+  mkdir build && cd build
+  cmake ..
+  make install
 ```
 
-You will find the generated doxygen documentation at:
-`build/dist/docs/html/index.html`
-
-The main reference for the integration of libocpp for OCPP2.0.1 is the ocpp::v201::ChargePoint class defined in libocpp/include/ocpp/v201/charge_point.hpp.
+-----
 
 ## Build and install libocpp
 
@@ -464,14 +464,13 @@ Clone this repository.
   git clone https://github.com/EVerest/libocpp
 ```
 
-In the libocpp folder create a folder named build and cd into it.
-Execute cmake and then make install:
+-----
 
-```bash
-  mkdir build && cd build
-  cmake ..
-  make install
-```
+## Building with FetchContent instead of EDM
+
+In [doc/build-with-fetchcontent](/doc/build-with-fetchcontent) you can find an example how to build libocpp with FetchContent instead of EDM.
+
+-----
 
 ## Unit testing
 
@@ -490,11 +489,23 @@ make -j$(nproc) install
 
 Run any required tests from build/tests.
 
-## Building with FetchContent instead of EDM
+-----
 
-In [doc/build-with-fetchcontent](/doc/build-with-fetchcontent) you can find an example how to build libocpp with FetchContent instead of EDM.
+## Building the doxygen documentation
 
-### Support for TPM keys
+```bash
+  cmake -S . -B build
+  cmake --build build --target doxygen-ocpp
+```
+
+You will find the generated doxygen documentation at:
+`build/dist/docs/html/index.html`
+
+The main reference for the integration of libocpp for OCPP2.0.1 is the ocpp::v201::ChargePoint class defined in libocpp/include/ocpp/v201/charge_point.hpp.
+
+-----
+
+## Support for TPM keys
 
 In order to use the TPM keys, it is mandatory to use the default libwebsocket implementation.
 
@@ -506,7 +517,9 @@ The old websocket++ implementation has been deprecated. For enabling websocket++
   cmake .. -DLIBOCPP_ENABLE_DEPRECATED_WEBSOCKETPP=ON
 ```
 
-### Support for iface
+-----
+
+## Support for iface
 
 In order to connect through a custom network iface, a custom internal config variable 'IFace' can be used.
 
@@ -516,7 +529,7 @@ In order to connect through a custom network iface, a custom internal config var
 }
 ```
 
----
+-----
 
 ## Get Involved
 
