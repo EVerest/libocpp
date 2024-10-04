@@ -26,10 +26,9 @@ OCPP 2.0.1 is currently under development.
   - [OCPP 2.0.1 Use Cases](#ocpp-201-use-cases)
 - [Quickstart for OCPP 2.0.1](#quickstart-for-ocpp-201)
 - [Build and Install libocpp](#build-and-install-libocpp)
-- [Building the doxygen documentation](#building-the-doxygen-documentation)
-- [Unit testing](#unit-testing)
 - [Building with FetchContent instead of EDM](#building-with-fetchcontent-instead-of-edm)
-
+- [Unit testing](#unit-testing)
+- [Building the doxygen documentation](#building-the-doxygen-documentation)
 
 ## Functionality Support
 
@@ -508,6 +507,8 @@ The main reference for the integration of libocpp for OCPP2.0.1 is the ocpp::v20
 ## Support for TPM keys
 
 In order to use the TPM keys, it is mandatory to use the default libwebsocket implementation.
+
+-----
 
 ## Support for websocket++
 
