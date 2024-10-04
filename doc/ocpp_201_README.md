@@ -20,10 +20,10 @@ OCPP 2.0.1 is currently under development.
 - [Integration with EVerest](#integration-with-everest)
 - [Standalone Integration](#standalone-integration)
   - [Key Integration Points](#key-integration-points)
-  - [Overview of the required callbacks and events and what libocpp expects to happen](#overview-of-the-required-callbacks-and-events-and-what-libocpp-expects-to-happen)
-  - [Register event callbacks and on_handlers](#register-event-callbacks-and-on_handlers)
-  - [Smart Charging](#smart-charging)
+  - [Callbacks to register](#callbacks-to-register)
+  - [Event handlers to call](#event-handlers-to-call)
   - [Initialize the database](#initialize-the-database)
+  - [OCPP 2.0.1 Use Cases](#ocpp-201-use-cases)
 - [Quickstart for OCPP 2.0.1](#quickstart-for-ocpp-201)
 - [Build and Install libocpp](#build-and-install-libocpp)
 - [Building the doxygen documentation](#building-the-doxygen-documentation)
@@ -78,157 +78,75 @@ If you wish to integrate libocpp's OCPP 2.0.1 implementation directly into your 
 
 ### Key Integration Points
 
-1. **Callbacks**: Register these to allow libocpp to execute control commands defined in OCPP (e.g., Reset.req or RemoteStartTransaction.req).
-2. **Event Handlers**: Implement these so your software can call libocpp's event handlers, enabling the library to track the charging station's state and trigger appropriate OCPP messages (e.g., MeterValues.req, StatusNotification.req).
+1. **Callbacks**: Register these to allow libocpp to execute commands defined in OCPP (e.g., Reset.req or RemoteStartTransaction.req).
+2. **Event Handlers**: Call these to notify libocpp of events, enabling the library to track the charging station's state and trigger appropriate OCPP messages (e.g., MeterValues.req, StatusNotification.req).
 
-The main interface for integration is the [ChargePoint](/include/ocpp/v201/charge_point.hpp) class.
+> [!note]
+> The public API for these integrations are found in the [ChargePoint](/include/ocpp/v201/charge_point.hpp).
 
-### Overview of the required callbacks and events and what libocpp expects to happen
 
-The following section will give you a high level overview of how to integrate libocpp with your application. Please use the [Doxygen Documentation](#building-the-doxygen-documentation) as an additional source for the ChargePoint API.
+### Callbacks to register
 
-In EVerest the OCPP module leverages several other modules to perform tasks that relate to authorization, reservations, charging session handling and system tasks like rebooting or firmware updates.
+| Callbacks                                             | Description                                                                                                                                                                                                                                                                                                                                   |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| all_connectors_unavailable_callback                   | Notifies that all connectors are unavailable. Used to handle charge availability requests and firmware updates.                                                                                                                                                                                                                               |
+| boot_notification_callback                            | Callback to notify of a system boot                                                                                                                                                                                                                                                                                                           |
+| clear_customer_information_callback                   | Called to clear customer information based on passed in Customer Certificate, the IdToken for this request, and the Customer Identified that the request refers to. If IdToken is passed in will delete authorization cache entry from database.                                                                                              |
+| configure_network_connection_profile_callback         | Called to configure a network connection profile when none is configured.                                                                                                                                                                                                                                                                     |
+| connector_effective_operative_status_changed_callback | Notifies the user of liboccp that the Operative/Inoperative state of a specific EVSE has changed.                                                                                                                                                                                                                                             |
+| cs_effective_operative_status_changed_callback        | Used to notify the user of libocpp that the Operative/Inoperative state of the charging station itself has changed. Will also call evse_effective_operative_status_changed_callback for each EVSE, and connector_effective_operative_status_changed_callback for each connector whose status has changed.                                     |
+| data_transfer_callback                                | Used to handle arbitrary data transfers.                                                                                                                                                                                                                                                                                                      |
+| evse_effective_operative_status_changed_callback      | Notifies the user of libocpp that the Operative/Inoperative state of an EVSE has changed. If as a result the state of connectors changed as well, libocpp will additionally call the connector_effective_operative_status_changed_callback for each connector.                                                                                |
+| get_customer_information_callback                     | Returns human readable customer information based on the CertificateHashDataType, IdToken and Customer Identifier passed in.                                                                                                                                                                                                                  |
+| get_log_request_callback                              | Callback to return logs                                                                                                                                                                                                                                                                                                                       |
+| is_reservation_for_token_callback                     | Check if the current reservation for the given evse id is made for the id token / group id token.                                                                                                                                                                                                                                             |
+| is_reset_allowed_callback                             | Callback if reset is allowed. If evse_id has a value, reset only applies to the given evse id. If it has no value, applies to complete charging station.                                                                                                                                                                                      |
+| ocpp_messages_callback                                | Callback to congfigure ocpp message logging.                                                                                                                                                                                                                                                                                                  |
+| pause_charging_callback                               | Used to request pausing of charging, the "connector" parameter instructing which connector/EVSE to pause.                                                                                                                                                                                                                                     |
+| remote_start_transaction_callback                     | Called when the request can be accepted. The boolean authorize_remote_start indicates if Authorize.req needs to follow or not                                                                                                                                                                                                                 |
+| reset_callback                                        | Performs a reset of the requested type                                                                                                                                                                                                                                                                                                        |
+| security_event_callback                               | Used to react to a security event callback. This callback is called only if the SecurityEvent occured internally within libocpp. Typically this callback is used to log security events in the security log.                                                                                                                                  |
+| set_charging_profiles_callback                        | Indicates when a charging profile is received and accepted.                                                                                                                                                                                                                                                                                   |
+| stop_transaction_callback                             | Used to stop a transaction. Called when the idTagInfo.status of a StartTransaction.conf is not Accepted, when a RemoteStopTransaction.req is received, or when an UnlockConnector.req is received.                                                                                                                                            |
+| time_sync_callback                                    | Called on boot notification if the TimeSource ControllerComponent contains Heartbeat.                                                                                                                                                                                                                                                         |
+| transaction_event_callback                            | Called when a transaction_event was sent to the CSMS.                                                                                                                                                                                                                                                                                         |
+| transaction_event_response_callback                   | Called when a transaction_event_response was received from the CSMS.                                                                                                                                                                                                                                                                          |
+| unlock_connector_callback                             | Used by libocpp to force unlock a connector                                                                                                                                                                                                                                                                                                   |
+| update_firmware_request_callback                      | Initiates a firmware update request. Triggers a security event notification if the certificate is Invalid or Revoked.                                                                                                                                                                                                                         |
+| validate_network_profile_callback                     | Validates the submitted Network Profile. Is Rejected if:<br>\- No callback registered to validate network profile<br>\- CSMS attempted to set a network profile with a lower securityProfile<br>\- CSMS attempted to set a network profile that could not be validated<br>\- Network profile could not be written to the device model storage |
+| variable_changed_callback                             | Called when a variable has been changed by the CSMS                                                                                                                                                                                                                                                                                           |
 
-- Auth orchestrates authorization, utilizing different token providers like RFID reads and token validators. Libocpp mainly acts as a token validator, but in the case of RemoteStartTransactions it acts as a token provider as well
-- EvseManager manages the charging session and charging state machine by communicating with a "board support package", a driver for the charging hardware that abstracts away the control pilot, relay control, power meters, etc. The EvseManager also handles reservations.
-- System handles firmware updates, log uploads and resets
+### Event handlers to call
+**table**
 
-The following sections explain the steps you can follow to implement their functionality on your own and integrate the libocpp directly into your charging station software without relying on EVerest. However, in most cases it's much easier to write an EVerest driver using the *everest-core/interfaces/board_support_AC.yaml* interface.
+### Initialize the database
 
-### Register event callbacks and on_handlers
+Use [provided SQLite database](/doc/database_migrations.md) or implement your own storage drive.
 
-- `all_connectors_unavailable_callback`
+### OCPP 2.0.1 Use Cases
 
-  Notifies that all connectors are unavailable. Used to handle charge availability
-  requests and firmware updates.
-
-- `boot_notification_callback`
-
-  Callback to notify of a system boot
-
-- `clear_customer_information_callback`
-
-  Called to clear customer information based on passed in Customer Certificate, the
-  IdToken for this request, and the Customer Identified that the request refers to.
-  If IdToken is passed in will delete authorization cache entry from database.
-
-- `configure_network_connection_profile_callback`
-
-  Called to configure a network connection profile when none is configured.
-
-- `connector_effective_operative_status_changed_callback`
-
-  Notifies the user of liboccp that the Operative/Inoperative state of a specific EVSE
-  has changed.
-
-- `cs_effective_operative_status_changed_callback`
-
-  Used to notify the user of libocpp that the Operative/Inoperative state of the
-  charging station itself has changed. Will also call
-  `evse_effective_operative_status_changed_callback` for each EVSE, and
-  `connector_effective_operative_status_changed_callback` for each connector whose
-  status has changed.
-
-- `data_transfer_callback`
-
-  Used to handle arbitrary data transfers.
-
-- `evse_effective_operative_status_changed_callback`
-
-  Notifies the user of libocpp that the Operative/Inoperative state of an EVSE has
-  changed. If as a result the state of connectors changed as well, libocpp will
-  additionally call the connector_effective_operative_status_changed_callback for
-  each connector.
-
-- `get_customer_information_callback`
-
-  Returns human readable customer information based on the CertificateHashDataType,
-  IdToken and Customer Identifier passed in.
-
-- `get_log_request_callback`
-
-  Callback to return logs
-
-- `is_reservation_for_token_callback`
-
-  Check if the current reservation for the given evse id is made for the id
-  token / group id token.
-
-- `is_reset_allowed_callback`
-
-  Callback if reset is allowed. If evse_id has a value, reset only applies
-  to the given evse id. If it has no value, applies to complete charging station.
-
-- `ocpp_messages_callback`
-
-  Callback to congfigure ocpp message logging.
-
-- `pause_charging_callback`
-
-  Used to request pausing of charging, the "connector" parameter instructing which
-  connector/EVSE to pause.
-
-- `remote_start_transaction_callback`
-
-  Called when the request can be accepted. The boolean authorize_remote_start
-  indicates if Authorize.req needs to follow or not
-
-- `reset_callback`
-
-  Performs a reset of the requested type
-
-- `security_event_callback`
-
-  Used to react to a security event callback. This callback is
-  called only if the SecurityEvent occured internally within libocpp.
-  Typically this callback is used to log security events in the security log.
-
-- `set_charging_profiles_callback`
-
-  Indicates when a charging profile is received and accepted.
-
-- `stop_transaction_callback`
-
-  Used to stop a transaction. Called when the idTagInfo.status of a
-  StartTransaction.conf is not Accepted, when a RemoteStopTransaction.req is
-  received, or when an UnlockConnector.req is received.
-
-- `time_sync_callback`
-
-  Called on boot notification if the TimeSource ControllerComponent contains
-  Heartbeat.
-
-- `transaction_event_callback`
-
-  Called when a transaction_event was sent to the CSMS.
-
-- `transaction_event_response_callback`
-
-  Called when a transaction_event_response was received from the CSMS.
-
-- `unlock_connector_callback`
-
-  Used by libocpp to force unlock a connector
-
-- `update_firmware_request_callback`
-
-  Initiates a firmware update request. Triggers a security event notification
-  if the certificate is Invalid or Revoked.
-
-- `validate_network_profile_callback`
-
-  Validates the submitted Network Profile. Is Rejected if
-  - No callback registered to validate network profile
-  - CSMS attempted to set a network profile with a lower securityProfile
-  - CSMS attempted to set a network profile that could not be validated
-  - Network profile could not be written to the device model storage
-
-- `variable_changed_callback`
-
-  Called when a variable has been changed by the CSMS
+| Clause | Use Case Name                 |
+| ------ | --------------------------------- |
+| A      | Security                          |
+| B      | Provisioning                      |
+| C      | Authorization                     |
+| D      | LocalAuthorizationList Management |
+| E      | Transactions                      |
+| F      | RemoteControl                     |
+| G      | Availability                      |
+| H      | Reservation                       |
+| I      | TariffAndCost                     |
+| J      | MeterValues                       |
+| K      | SmartCharging                     |
+| L      | FirmwareManagement                |
+| M      | ISO 15118 CertificateManagement   |
+| N      | Diagnostics                       |
+| O      | DisplayMessage                    |
+| P      | DataTransfer                      |
 
 ### Smart Charging
 
+Smart Charging is a use case within OCPP.
 Work to fully support OCPP 2.0.1 Smart Charging is ongoing. Most functional requirements for General Smart Charging use cases (that is, K01–K10) are now supported. For an up-to-date overview of which features are currently supported, please refer to the [OCPP 2.0.1 Status](/doc/ocpp_201_status.md) document.
 
 #### K01 SetChargingProfile
@@ -481,9 +399,7 @@ sequenceDiagram
     end    
 ```
 
-### Initialize the database
 
-- Use provided sql database or implement your own storage drive
 
 ## Quickstart for OCPP 2.0.1
 
