@@ -25,7 +25,7 @@ This C++ library provides a complete and production-ready solution for integrati
 - [Unit Testing](#unit-testing)
 - [Building with FetchContent instead of EDM](#building-with-fetchcontent-instead-of-edm)
 - [Support for TPM keys](#support-for-tpm-keys)
-- [Support for websocket++](#support-for-websocket++)
+- [Support for websocket++](#support-for-websocket)
 - [Support for iface](#support-for-iface)
  
 ## Functionality Support
