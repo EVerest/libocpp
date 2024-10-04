@@ -1,6 +1,5 @@
-![Header](doc/img/banner-ocpp.jpg)
 
-# C++ implementation of OCPP
+![Header](doc/img/banner-ocpp.jpg)
 
 ![Github Actions](https://github.com/EVerest/libocpp/actions/workflows/build_and_test.yaml/badge.svg)
 
@@ -23,7 +22,7 @@ Check out the [Getting Started guide](doc/common/getting_started.md). It should 
 
 ## Get Involved
 
-We welcome contributions and feedback! To get involved with the EVerest project and this OCPP implementation, please refer to our [COMMUNITY.md](https://github.com/EVerest/EVerest/blob/main/COMMUNITY.md) and [CONTRIBUTING.md](https://github.com/EVerest/EVerest/blob/main/CONTRIBUTING.md) guides.
+We welcome contributions from the community! Whether you're interested in adding features, fixing bugs, or improving documentation, your help is valuable. Check out our [CONTRIBUTING.md](https://github.com/EVerest/EVerest/blob/main/CONTRIBUTING.md) guide to get started.
 
 ## OCPP1.6
 
