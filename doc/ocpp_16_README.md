@@ -1,51 +1,51 @@
-# C++ implementation of OCPP 1.6
 ![Github Actions](https://github.com/EVerest/libocpp/actions/workflows/build_and_test.yaml/badge.svg)
+
+-----
+
+# EVerest OCPP 1.6 Implementation (libocpp)
 
 This C++ library provides a complete and production-ready solution for integrating OCPP 1.6 into your electric vehicle (EV) charging stations. Our implementation enables seamless communication between charging stations and central management systems, supporting remote control, monitoring, and billing functionalities.
 
-NOTE: [EVerest OCPP 2.0.1](OCPP-2-0-1.md) is under active development, with core functionalities available.
-
-
 ## Table of contents
 
-- [Feature Profile Support OCPP 1.6](#feature-profile-support-ocpp-16)
-- [CSMS Compatibility OCPP 1.6](#csms-compatibility-ocpp-16)
+- [Functionality Support](#functionality-support)
+- [CSMS Compatibility](#csms-compatibility)
 - [Integration with EVerest](#integration-with-everest)
-  - [Run OCPP1.6 with EVerest](#run-ocpp16-with-everest)
-  - [Integrate this library with your Charging Station Implementation for OCPP1.6](#integrate-this-library-with-your-charging-station-implementation-for-ocpp16)
-    - [Overview of the required callbacks and events and what libocpp expects to happen](#overview-of-the-required-callbacks-and-events-and-what-libocpp-expects-to-happen)
-      - [ChargePoint() constructor](#chargepoint-constructor)
-      - [registering callbacks](#registering-callbacks)
-      - [Functions that need to be triggered from the outside after new information is availble (on\_... functions in the charge point API)](#functions-that-need-to-be-triggered-from-the-outside-after-new-information-is-availble-on_-functions-in-the-charge-point-api)
-      - [The following functions are triggered depending on different so called "Session Events" from the EvseManager](#the-following-functions-are-triggered-depending-on-different-so-called-session-events-from-the-evsemanager)
-      - [Authorization](#authorization)
-  - [Install libocpp](#install-libocpp)
-  - [Quickstart for OCPP 1.6](#quickstart-for-ocpp-16)
-  - [Building the doxygen documentation](#building-the-doxygen-documentation)
-  - [Unit testing](#unit-testing)
-  - [Building with FetchContent instead of EDM](#building-with-fetchcontent-instead-of-edm)
-  - [Support for security profile 2 and 3 with TPM in OCPP 1.6 using libwebsockets](#support-for-security-profile-2-and-3-with-tpm-in-ocpp-16-using-libwebsockets)
+- [Standalone Integration](#standalone-integration)
+  - [Key Integration Points](#key-integration-points)
+  - [Overview of the required callbacks and events and what libocpp expects to happen](#overview-of-the-required-callbacks-and-events-and-what-libocpp-expects-to-happen)
+  - [Usage for OCPP 1.6](#usage-for-ocpp-16)
+    - [hargePoint() constructo](#chargepoint-constructor)
+    - [registering callback](#registering-callbacks)
+    - [Authorizatio](#authorization)
+  - [Initialize the database](#initialize-the-database)
+- [Quickstart for OCPP 1.6](#quickstart-for-ocpp-16)
+- [Build and Install libocpp](#build-and-install-libocpp)
+- [Building the doxygen documentation](#building-the-doxygen-documentation)
+- [Unit testing](#unit-testing)
+- [Building with FetchContent instead of EDM](#building-with-fetchcontent-instead-of-edm)
+- [Support for security profile 2 and 3 with TPM in OCPP 1.6 using libwebsockets](#support-for-security-profile-2-and-3-with-tpm-in-ocpp-16-using-libwebsockets)
+ 
+## Functionality Support
 
-## OCPP 1.6 Support
+The EVerest OCPP 1.6 implementation (libocpp) provides comprehensive support for OCPP 1.6 functionalities. Below is an overview of the supported features:
 
-The following tables show the current support for the listed OCPP 1.6 feature profiles / functional blocks and application notes.
+| OCPP 1.6 Functionality       | Supported                    |
+| ---------------------------- | ---------------------------- |
+| Core                         | :heavy_check_mark: Yes |
+| Firmware Management          | :heavy_check_mark: Yes |
+| Local Auth List Management   | :heavy_check_mark: Yes |
+| Reservation                  | :heavy_check_mark: Yes |
+| Smart Charging               | :heavy_check_mark: Yes |
+| Remote Trigger               | :heavy_check_mark: Yes |
 
-All documentation and the issue tracking can be found in our main repository here: https://github.com/EVerest/
-
-### Feature Profile Support OCPP 1.6
-
-| Feature Profile            | Supported                 |
-| -------------------------- | ------------------------- |
-| Core                       | :heavy_check_mark: yes    |
-| Firmware Management        | :heavy_check_mark: yes    |
-| Local Auth List Management | :heavy_check_mark: yes    |
-| Reservation                | :heavy_check_mark: yes    |
-| Smart Charging             | :heavy_check_mark: yes    |
-| Remote Trigger             | :heavy_check_mark: yes    |
+| Whitepapers & Application Notes             | Supported              |
+| ------------------------------------------- | ---------------------- |
+| OCPP 1.6 Security Whitepaper (3rd edition)  | :heavy_check_mark: Yes |
+| Using ISO 15118 Plug & Charge with OCPP 1.6 | :heavy_check_mark: Yes |
+| OCPP & California Pricing Requirements      | :heavy_check_mark: Yes |
 
 ## CSMS Compatibility
-
-### CSMS Compatibility OCPP 1.6
 
 The EVerest implementation of OCPP 1.6 has been tested against the
 OCPP Compliance Test Tool (OCTT and OCTT2) during the implementation.
@@ -85,23 +85,20 @@ If you provide a CSMS that is not yet listed here, feel free to
 
 ## Integration with EVerest
 
-This library is automatically integrated as the OCPP and OCPP201 module within [everest-core](https://github.com/EVerest/everest-core) - the complete software stack for your charging station. It is recommended to use EVerest together with this OCPP implementation.
+The libocpp OCPP 1.6 module is automatically integrated within [everest-core](https://github.com/EVerest/everest-core) — the complete software stack for your charging station.
 
-### Run OCPP1.6 with EVerest
+When you run libocpp with OCPP 1.6 through EVerest, the build process of everest-core handles the installation of all necessary dependencies. This includes initializing the device model database using the [config.json](/config/v16/config.json) file.
 
-If you run libocpp with OCPP1.6 with EVerest, the build process of [everest-core](https://github.com/EVerest/everest-core) will take care of installing all necessary dependencies for you.
+## Standalone Integration
 
-## Integrate this library with your Charging Station Implementation for OCPP
+If you wish to integrate libocpp's OCPP 1.6 implementation directly into your charging station software without using the full EVerest stack, you'll need to register several **callbacks** and implement **event handlers**. This allows libocpp to interact with your charging station according to OCPP requirements.
 
-OCPP is a protocol that affects, controls and monitors many areas of a charging station's operation.
+### Key Integration Points
 
-If you want to integrate this library with your charging station implementation, you have to register a couple of **callbacks** and integrate **event handlers**. This is necessary for the library to interact with your charging station according to the requirements of OCPP.
+1. **Callbacks**: Register these to allow libocpp to execute control commands defined in OCPP (e.g., Reset.req or RemoteStartTransaction.req).
+2. **Event Handlers**: Implement these so your software can call libocpp's event handlers, enabling the library to track the charging station's state and trigger appropriate OCPP messages (e.g., MeterValues.req, StatusNotification.req).
 
-Libocpp needs registered **callbacks** in order to execute control commands defined within OCPP (e.g Reset.req or RemoteStartTransaction.req)
-
-The implementation must call **event handlers** of libocpp so that the library can track the state of the charging station and trigger OCPP messages accordingly (e.g. MeterValues.req , StatusNotification.req)
-
-Your reference within libocpp to interact is a single instance to the class [ChargePoint](include/ocpp/v16/charge_point.hpp) for OCPP 1.6.
+The main interface for integration is the [ChargePoint](include/ocpp/v16/charge_point.hpp) class.
 
 ### Overview of the required callbacks and events and what libocpp expects to happen
 
@@ -388,166 +385,10 @@ In EVerest authorization is handled by the Auth module and various auth token pr
 
 To use libocpp as a auth token validator (e.g. before starting a transaction) you can call the "authorize_id_token" function of the ChargePoint object.
 
-### Register event callbacks and on_handlers
-
-- `all_connectors_unavailable_callback`
-
-  Notifies that all connectors are unavailable. Used to handle charge availability
-  requests and firmware updates.
-
-- `boot_notification_callback`
-
-  Callback to notify of a system boot
-
-- `clear_customer_information_callback`
-
-  Called to clear customer information based on passed in Customer Certificate, the
-  IdToken for this request, and the Customer Identified that the request refers to.
-  If IdToken is passed in will delete authorization cache entry from database.
-
-- `configure_network_connection_profile_callback`
-
-  Called to configure a network connection profile when none is configured.
-
-- `connector_effective_operative_status_changed_callback`
-
-  Notifies the user of liboccp that the Operative/Inoperative state of a specific EVSE
-  has changed.
-
-- `cs_effective_operative_status_changed_callback`
-
-  Used to notify the user of libocpp that the Operative/Inoperative state of the
-  charging station itself has changed. Will also call
-  `evse_effective_operative_status_changed_callback` for each EVSE, and
-  `connector_effective_operative_status_changed_callback` for each connector whose
-  status has changed.
-
-- `data_transfer_callback`
-
-  Used to handle arbitrary data transfers.
-
-- `evse_effective_operative_status_changed_callback`
-
-  Notifies the user of libocpp that the Operative/Inoperative state of an EVSE has
-  changed. If as a result the state of connectors changed as well, libocpp will
-  additionally call the connector_effective_operative_status_changed_callback for
-  each connector.
-
-- `get_customer_information_callback`
-
-  Returns human readable customer information based on the CertificateHashDataType,
-  IdToken and Customer Identifier passed in.
-
-- `get_log_request_callback`
-
-  Callback to return logs
-
-- `is_reservation_for_token_callback`
-
-  Check if the current reservation for the given evse id is made for the id
-  token / group id token.
-
-- `is_reset_allowed_callback`
-
-  Callback if reset is allowed. If evse_id has a value, reset only applies
-  to the given evse id. If it has no value, applies to complete charging station.
-
-- `ocpp_messages_callback`
-
-  Callback to congfigure ocpp message logging.
-
-- `pause_charging_callback`
-
-  Used to request pausing of charging, the "connector" parameter instructing which
-  connector/EVSE to pause.
-
-- `remote_start_transaction_callback`
-
-  Called when the request can be accepted. The boolean authorize_remote_start
-  indicates if Authorize.req needs to follow or not
-
-- `reset_callback`
-
-  Performs a reset of the requested type
-
-- `security_event_callback`
-
-  Used to react to a security event callback. This callback is
-  called only if the SecurityEvent occured internally within libocpp.
-  Typically this callback is used to log security events in the security log.
-
-- `set_charging_profiles_callback`
-
-  Indicates when a charging profile is received and accepted.
-
-- `stop_transaction_callback`
-
-  Used to stop a transaction. Called when the idTagInfo.status of a
-  StartTransaction.conf is not Accepted, when a RemoteStopTransaction.req is
-  received, or when an UnlockConnector.req is received.
-
-- `time_sync_callback`
-
-  Called on boot notification if the TimeSource ControllerComponent contains
-  Heartbeat.
-
-- `transaction_event_callback`
-
-  Called when a transaction_event was sent to the CSMS.
-
-- `transaction_event_response_callback`
-
-  Called when a transaction_event_response was received from the CSMS.
-
-- `unlock_connector_callback`
-
-  Used by libocpp to force unlock a connector
-
-- `update_firmware_request_callback`
-
-  Initiates a firmware update request. Triggers a security event notification
-  if the certificate is Invalid or Revoked.
-
-- `validate_network_profile_callback`
-
-  Validates the submitted Network Profile. Is Rejected if
-  - No callback registered to validate network profile
-  - CSMS attempted to set a network profile with a lower securityProfile
-  - CSMS attempted to set a network profile that could not be validated
-  - Network profile could not be written to the device model storage
-
-- `variable_changed_callback`
-
-  Called when a variable has been changed by the CSMS
 
 ### Initialize the database
 
 - Use provided sql database or implement your own storage drive
-
-## Install libocpp
-
-For Debian GNU/Linux 11 you will need the following dependencies:
-
-```bash
-  sudo apt install build-essential cmake python3-pip libboost-all-dev libsqlite3-dev libssl-dev
-```
-
-OpenSSL version 3.0 or above is required.
-
-Clone this repository.
-
-```bash
-  git clone https://github.com/EVerest/libocpp
-```
-
-In the libocpp folder create a folder named build and cd into it.
-Execute cmake and then make install:
-
-```bash
-  mkdir build && cd build
-  cmake ..
-  make install
-```
 
 ## Quickstart for OCPP 1.6
 
@@ -594,7 +435,32 @@ Type `help` to see a list of possible commands.
 You will find the generated doxygen documentation at:
 `build/dist/docs/html/index.html`
 
-The main reference for the integration of libocpp for OCPP1.6 is the ocpp::v16::ChargePoint class defined in libocpp/include/ocpp/v16/charge_point.hpp .
+The main reference for the integration of libocpp for OCPP1.6 is the ocpp::v16::ChargePoint class defined in libocpp/include/ocpp/v16/charge_point.hpp.
+
+## Build and Install libocpp
+
+For Debian GNU/Linux 11 you will need the following dependencies:
+
+```bash
+  sudo apt install build-essential cmake python3-pip libboost-all-dev libsqlite3-dev libssl-dev
+```
+
+OpenSSL version 3.0 or above is required.
+
+Clone this repository.
+
+```bash
+  git clone https://github.com/EVerest/libocpp
+```
+
+In the libocpp folder create a folder named build and cd into it.
+Execute cmake and then make install:
+
+```bash
+  mkdir build && cd build
+  cmake ..
+  make install
+```
 
 ## Unit testing
 
