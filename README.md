@@ -11,7 +11,7 @@ The EVerest OCPP module, also known as libocpp, is a C++ implementation of the O
 
 ### What is OCPP?
 
-The Open Charge Point Protocol (OCPP) is an open standard for communication between electric vehicle (EV) charging stations and central management systems. Developed by the Open Charge Alliance (OCA), OCPP ensures interoperability among various charging station manufacturers and management systems, playing a vital role in the growth of EV infrastructure.
+OCPP is an open standard for communication between EV charging stations and central management systems. Developed by the Open Charge Alliance (OCA), OCPP ensures interoperability among various charging station manufacturers and management systems, playing a vital role in the EV infrastructure.
 
 
 ## Table of Contents
