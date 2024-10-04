@@ -2365,6 +2365,11 @@ void ChargePoint::handle_certificate_signed_req(Call<CertificateSignedRequest> c
         cert_signing_use == ocpp::CertificateSigningUseEnum::ChargingStationCertificate and
         this->device_model->get_value<int>(ControllerComponentVariables::SecurityProfile) == 3) {
         this->connectivity_manager->disconnect_websocket(WebsocketCloseReason::ServiceRestart);
+
+        const auto& security_event = ocpp::security_events::RECONFIGURATIONOFSECURITYPARAMETERS;
+        std::string tech_info = "Changed charging station certificate";
+        this->security_event_notification_req(CiString<50>(security_event), CiString<255>(tech_info), true,
+                                              utils::is_critical(security_event));
     }
 }
 
@@ -2663,8 +2668,14 @@ void ChargePoint::handle_set_network_profile_req(Call<SetNetworkProfileRequest> 
         return;
     }
 
-    EVLOG_info << "Received and stored a new network connection profile at configurationSlot: "
-               << msg.configurationSlot;
+    std::string tech_info = "Received and stored a new network connection profile at configurationSlot: " +
+                            std::to_string(msg.configurationSlot);
+    EVLOG_info << tech_info;
+
+    const auto& security_event = ocpp::security_events::RECONFIGURATIONOFSECURITYPARAMETERS;
+    this->security_event_notification_req(CiString<50>(security_event), CiString<255>(tech_info), true,
+                                          utils::is_critical(security_event));
+
     response.status = SetNetworkProfileStatusEnum::Accepted;
     ocpp::CallResult<SetNetworkProfileResponse> call_result(response, call.uniqueId);
     this->send<SetNetworkProfileResponse>(call_result);
@@ -3597,6 +3608,14 @@ void ChargePoint::handle_install_certificate_req(Call<InstallCertificateRequest>
         msg.certificate.get(), ocpp::evse_security_conversions::from_ocpp_v201(msg.certificateType));
     response.status = ocpp::evse_security_conversions::to_ocpp_v201(result);
 
+    if (response.status == InstallCertificateStatusEnum::Accepted) {
+        const auto& security_event = ocpp::security_events::RECONFIGURATIONOFSECURITYPARAMETERS;
+        std::string tech_info =
+            "Installed certificate: " + conversions::install_certificate_use_enum_to_string(msg.certificateType);
+        this->security_event_notification_req(CiString<50>(security_event), CiString<255>(tech_info), true,
+                                              utils::is_critical(security_event));
+    }
+
     ocpp::CallResult<InstallCertificateResponse> call_result(response, call.uniqueId);
     this->send<InstallCertificateResponse>(call_result);
 }
@@ -3612,6 +3631,13 @@ void ChargePoint::handle_delete_certificate_req(Call<DeleteCertificateRequest> c
     const auto status = this->evse_security->delete_certificate(certificate_hash_data);
 
     response.status = ocpp::evse_security_conversions::to_ocpp_v201(status);
+
+    if (response.status == DeleteCertificateStatusEnum::Accepted) {
+        const auto& security_event = ocpp::security_events::RECONFIGURATIONOFSECURITYPARAMETERS;
+        std::string tech_info = "Deleted certificate wit serial number: " + msg.certificateHashData.serialNumber.get();
+        this->security_event_notification_req(CiString<50>(security_event), CiString<255>(tech_info), true,
+                                              utils::is_critical(security_event));
+    }
 
     ocpp::CallResult<DeleteCertificateResponse> call_result(response, call.uniqueId);
     this->send<DeleteCertificateResponse>(call_result);
