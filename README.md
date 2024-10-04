@@ -9,20 +9,14 @@
 
 The EVerest OCPP module, also known as libocpp, is a C++ implementation of the Open Charge Point Protocol (OCPP) versions 1.6 and 2.0.1. It is designed to seamlessly integrate with the EVerest software stack for electric vehicle (EV) charging stations.
 
-## What is OCPP?
+### What is OCPP?
 
 The Open Charge Point Protocol (OCPP) is an open standard for communication between electric vehicle (EV) charging stations and central management systems. Developed by the Open Charge Alliance (OCA), OCPP ensures interoperability among various charging station manufacturers and management systems, playing a vital role in the growth of EV infrastructure.
 
-## Development Status
-
-| Version | Status |
-|---------|--------|
-| OCPP 2.0.1 | :construction: Under active development |
-| OCPP 1.6 | :white_check_mark: Complete implementation |
 
 ## Table of Contents
 
-| [OCPP 2.0.1](/doc/ocpp_201_README.md) | [OCPP 1.6](/doc/ocpp_16_README.md) |
+| [OCPP 2.0.1](/doc/ocpp_201_README.md) :construction: Under active development | [OCPP 1.6](/doc/ocpp_16_README.md) :white_check_mark: Complete implementation |
 |------------|----------|
 | • [Quickstart Guide](/doc/ocpp_201_README.md#quickstart-for-ocpp-201) | • [Quickstart Guide](/doc/ocpp_16_README.md#quickstart-for-ocpp-16) |
 | • [Build and Install libocpp](/doc/ocpp_201_README.md#build-and-install-libocpp) | • [Build and Install libocpp](/doc/ocpp_16_README.md#build-and-install-libocpp) |
