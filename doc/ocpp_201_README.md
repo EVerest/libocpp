@@ -16,6 +16,7 @@ OCPP 2.0.1 is currently under development.
 ## Table of contents
 
 - [Functionality Support](#functionality-support)
+- [CSMS Compatibility](#csms-compatibility)
 - [Integration with EVerest](#integration-with-everest)
 - [Standalone Integration](#standalone-integration)
   - [Key Integration Points](#key-integration-points)
