@@ -98,7 +98,7 @@ If you wish to integrate libocpp's OCPP 1.6 implementation directly into your ch
 1. **Callbacks**: Register these to allow libocpp to execute control commands defined in OCPP (e.g., Reset.req or RemoteStartTransaction.req).
 2. **Event Handlers**: Implement these so your software can call libocpp's event handlers, enabling the library to track the charging station's state and trigger appropriate OCPP messages (e.g., MeterValues.req, StatusNotification.req).
 
-The main interface for integration is the [ChargePoint](include/ocpp/v16/charge_point.hpp) class.
+The main interface for integration is the [ChargePoint](/include/ocpp/v16/charge_point.hpp) class.
 
 ### Overview of the required callbacks and events and what libocpp expects to happen
 
@@ -119,7 +119,7 @@ The following sections explain the steps you can follow to implement their funct
 The main entrypoint for libocpp for OCPP1.6 is the ocpp::v16::ChargePoint constructor.
 This is defined in libocpp/include/ocpp/v16/charge_point.hpp and takes the following parameters:
 
-- config: a std::string that contains the libocpp 1.6 config. There are example configs that work with a [SteVe](https://github.com/steve-community/steve) installation [running in Docker](https://github.com/EVerest/everest-utils/tree/main/docker/steve), for example: [config-docker.json](config/v16/config-docker.json)
+- config: a std::string that contains the libocpp 1.6 config. There are example configs that work with a [SteVe](https://github.com/steve-community/steve) installation [running in Docker](https://github.com/EVerest/everest-utils/tree/main/docker/steve), for example: [config-docker.json](/config/v16/config-docker.json)
 
 - share_path: a std::filesystem path containing the path to the OCPP modules folder, for example pointing to */usr/share/everest/modules/OCPP*. This path contains the following files and directories and is installed by the libocpp  install target:
 
@@ -160,7 +160,7 @@ This is defined in libocpp/include/ocpp/v16/charge_point.hpp and takes the follo
 
 - message_log_path: this points to the directory in which libocpp can put OCPP communication logfiles for debugging purposes. This behavior can be controlled by the "LogMessages" (set to true by default) and "LogMessagesFormat" (set to ["log", "html", "session_logging"] by default, "console" and "console_detailed" are also available) configuration keys in the "Internal" section of the config file. Please note that this is intended for debugging purposes only as it logs all communication, including authentication messages.
 
-- evse_security: this is a pointer to an implementation of the [evse_security](include/ocpp/common/evse_security.hpp) interface. This allows you to include your custom implementation of the security related operations according to this interface. If you set this value to nullptr, the internal implementation of the security related operations of libocpp will be used. In this case you need to specify the parameter security_configuration
+- evse_security: this is a pointer to an implementation of the [evse_security](/include/ocpp/common/evse_security.hpp) interface. This allows you to include your custom implementation of the security related operations according to this interface. If you set this value to nullptr, the internal implementation of the security related operations of libocpp will be used. In this case you need to specify the parameter security_configuration
 
 - security_configuration: this parameter should only be set in case the evse_security parameter is nullptr. It specifies the file paths that are required to set up the internal evse_security implementation. Note that you need to specify bundle files for the CA certificates and directories for the certificates and keys
 
@@ -396,7 +396,7 @@ Libocpp provides a small standalone OCPP1.6 client that you can control using co
 
 Install the dependencies and libocpp as described in [Install libocpp](#install-libocpp).
 
-Make sure you modify the following config entries in the [config.json](config/v16/config.json) file according to the CSMS you want to connect to before executing make install.
+Make sure you modify the following config entries in the [config.json](/config/v16/config.json) file according to the CSMS you want to connect to before executing make install.
 
 ```json
 {
@@ -415,7 +415,7 @@ Change into libocpp/build and execute cmake and then make install:
   make -j$(nproc) install
 ```
 
-Use the following command to start the charge point. Replace the config with [config-docker.json](config/v16/config-docker.json) if you want to test with the [SteVe](https://github.com/steve-community/steve#docker) CSMS running in a docker container.
+Use the following command to start the charge point. Replace the config with [config-docker.json](/config/v16/config-docker.json) if you want to test with the [SteVe](https://github.com/steve-community/steve#docker) CSMS running in a docker container.
 
 ```bash
   ./dist/bin/charge_point \
@@ -481,7 +481,7 @@ Run any required tests from build/tests.
 
 ## Building with FetchContent instead of EDM
 
-In [doc/build-with-fetchcontent](doc/build-with-fetchcontent) you can find an example how to build libocpp with FetchContent instead of EDM.
+In [doc/build-with-fetchcontent](/doc/build-with-fetchcontent) you can find an example how to build libocpp with FetchContent instead of EDM.
 
 ### Support for TPM keys
 
