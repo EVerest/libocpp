@@ -396,7 +396,7 @@ To use libocpp as a auth token validator (e.g. before starting a transaction) yo
 
 Libocpp provides a small standalone OCPP1.6 client that you can control using command line.
 
-Install the dependencies and libocpp as described in [Install libocpp](#install-libocpp).
+Install the dependencies and libocpp as described in [Build and Install libocpp](#build-and-install-libocpp).
 
 Make sure you modify the following config entries in the [config.json](/config/v16/config.json) file according to the CSMS you want to connect to before executing make install.
 
