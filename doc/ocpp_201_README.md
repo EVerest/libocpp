@@ -20,7 +20,7 @@ OCPP 2.0.1 is currently under development.
 - [Standalone Integration](#standalone-integration)
   - [Key Integration Points](#key-integration-points)
   - [Overview of the required callbacks and events and what libocpp expects to happen](#overview-of-the-required-callbacks-and-events-and-what-libocpp-expects-to-happen)
-  - [Register event callbacks and on_handlers](#register-event-callbacks-and-on-handlers)
+  - [Register event callbacks and on_handlers](#register-event-callbacks-and-on_handlers)
   - [Initialize the database](#initialize-the-database)
 - [Quickstart for OCPP 2.0.1](#quickstart-for-ocpp-201)
 - [Build and Install libocpp](#build-and-install-libocpp)
