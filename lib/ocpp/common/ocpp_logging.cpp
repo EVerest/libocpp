@@ -227,8 +227,8 @@ LogRotationStatus MessageLogging::rotate_log_if_needed(const std::filesystem::pa
 }
 
 LogRotationStatus MessageLogging::rotate_log_if_needed(const std::filesystem::path& path, std::ofstream& os,
-                                          std::function<void(std::ofstream& os)> before_close_of_os,
-                                          std::function<void(std::ofstream& os)> after_open_of_os) {
+                                                       std::function<void(std::ofstream& os)> before_close_of_os,
+                                                       std::function<void(std::ofstream& os)> after_open_of_os) {
     LogRotationStatus status = LogRotationStatus::NotRotated;
     if (not this->rotate_logs) {
         // do nothing if log rotation is turned off
