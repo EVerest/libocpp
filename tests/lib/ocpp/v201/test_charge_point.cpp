@@ -975,10 +975,12 @@ TEST_F(ChargepointTestFixtureV201, K13_OnExternalLimitsCleared_CallsHandler) {
         .limit = 100.0,
         .charging_rate_unit = ChargingRateUnitEnum::A,
     };
+
+    std::optional<int32_t> evse_id;
     double deltaChanged = 0.2;
     auto source = ChargingLimitSourceEnum::Other;
 
-    EXPECT_CALL(*smart_charging_handler, handle_external_limit_cleared(deltaChanged, source));
+    EXPECT_CALL(*smart_charging_handler, handle_external_limit_cleared(evse_id, deltaChanged, source));
 
     charge_point->on_external_limit_cleared(std::nullopt, deltaChanged, source);
 }

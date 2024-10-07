@@ -671,7 +671,8 @@ SmartChargingHandler::handle_external_limits_changed(const std::variant<Constant
 }
 
 std::pair<ClearedChargingLimitRequest, std::vector<TransactionEventRequest>>
-SmartChargingHandler::handle_external_limit_cleared(double percentage_delta, ChargingLimitSourceEnum source) const {
+SmartChargingHandler::handle_external_limit_cleared(std::optional<int32_t> evse_id, double percentage_delta,
+                                                    ChargingLimitSourceEnum source) const {
     // K13.FR.02
     ClearedChargingLimitRequest cleared_charging_limit_request = {};
     cleared_charging_limit_request.chargingLimitSource = source;

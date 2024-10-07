@@ -1027,7 +1027,7 @@ void ChargePoint::on_external_limits_changed(const std::variant<ConstantCharging
 
 void ChargePoint::on_external_limit_cleared(std::optional<int32_t> evse_id, double percentage_delta,
                                             ChargingLimitSourceEnum source) {
-    auto request = this->smart_charging_handler->handle_external_limit_cleared(percentage_delta, source);
+    auto request = this->smart_charging_handler->handle_external_limit_cleared(evse_id, percentage_delta, source);
 
     auto [cleared_charging_limit_request, transaction_event_requests] = request;
 

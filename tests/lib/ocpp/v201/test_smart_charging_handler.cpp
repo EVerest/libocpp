@@ -1907,7 +1907,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201,
     double deltaChanged = 0.2;
     auto source = ChargingLimitSourceEnum::Other;
 
-    auto resp = handler.handle_external_limit_cleared(deltaChanged, source);
+    auto resp = handler.handle_external_limit_cleared(std::nullopt, deltaChanged, source);
 
     auto [cleared_charging_limit_request, transaction_event_requests] = resp;
 
@@ -1928,7 +1928,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201,
     double deltaChanged = 0.2;
     auto source = ChargingLimitSourceEnum::Other;
 
-    auto resp = handler.handle_external_limit_cleared(deltaChanged, source);
+    auto resp = handler.handle_external_limit_cleared(std::nullopt, deltaChanged, source);
 
     auto [cleared_charging_limit_request, transaction_event_requests] = resp;
 
@@ -1950,7 +1950,7 @@ TEST_F(
     double deltaChanged = 0.2;
     auto source = ChargingLimitSourceEnum::Other;
 
-    auto resp = handler.handle_external_limit_cleared(deltaChanged, source);
+    auto resp = handler.handle_external_limit_cleared(std::nullopt, deltaChanged, source);
 
     auto [cleared_charging_limit_request, transaction_event_requests] = resp;
 
