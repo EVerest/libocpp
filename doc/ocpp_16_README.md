@@ -12,7 +12,6 @@ This C++ library provides a complete and production-ready solution for integrati
 - [CSMS Compatibility](#csms-compatibility)
 - [Integration with EVerest](#integration-with-everest)
 - [Standalone Integration](#standalone-integration)
-  - [Key Integration Points](#key-integration-points)
   - [Overview of the required callbacks and events and what libocpp expects to happen](#overview-of-the-required-callbacks-and-events-and-what-libocpp-expects-to-happen)
   - [Usage for OCPP 1.6](#usage-for-ocpp-16)
     - [ChargePoint() constructor](#chargepoint-constructor)
@@ -93,14 +92,15 @@ When you run libocpp with OCPP 1.6 through EVerest, the build process of everest
 
 ## Standalone Integration
 
-If you wish to integrate libocpp's OCPP 1.6 implementation directly into your charging station software without using the full EVerest stack, you'll need to register several **callbacks** and implement **event handlers**. This allows libocpp to interact with your charging station according to OCPP requirements.
+OCPP is a protocol that affects, controls and monitors many areas of a charging station's operation.
 
-### Key Integration Points
+If you want to integrate this library with your charging station implementation, you have to register a couple of **callbacks** and integrate **event handlers**. This is necessary for the library to interact with your charging station according to the requirements of OCPP.
 
-1. **Callbacks**: Register these to allow libocpp to execute control commands defined in OCPP (e.g., Reset.req or RemoteStartTransaction.req).
-2. **Event Handlers**: Implement these so your software can call libocpp's event handlers, enabling the library to track the charging station's state and trigger appropriate OCPP messages (e.g., MeterValues.req, StatusNotification.req).
+Libocpp needs registered **callbacks** in order to execute control commands defined within OCPP (e.g Reset.req or RemoteStartTransaction.req)
 
-The main interface for integration is the [ChargePoint](/include/ocpp/v16/charge_point.hpp) class.
+The implementation must call **event handlers** of libocpp so that the library can track the state of the charging station and trigger OCPP messages accordingly (e.g. MeterValues.req , StatusNotification.req)
+
+Your reference within libocpp to interact is a single instance to the class [ChargePoint](/include/ocpp/v16/charge_point.hpp) for OCPP 1.6 
 
 ### Overview of the required callbacks and events and what libocpp expects to happen
 
