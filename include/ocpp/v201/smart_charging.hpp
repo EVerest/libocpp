@@ -117,7 +117,7 @@ public:
                                    double percentage_delta, ChargingLimitSourceEnum source,
                                    std::optional<int32_t> evse_id) const = 0;
 
-    virtual std::pair<ClearedChargingLimitRequest, std::optional<TransactionEventRequest>>
+    virtual std::pair<ClearedChargingLimitRequest, std::vector<TransactionEventRequest>>
     handle_external_limit_cleared(double percentage_delta, ChargingLimitSourceEnum source) const = 0;
 };
 
@@ -196,7 +196,7 @@ public:
                                    double percentage_delta, ChargingLimitSourceEnum source,
                                    std::optional<int32_t> evse_id) const override;
 
-    virtual std::pair<ClearedChargingLimitRequest, std::optional<TransactionEventRequest>>
+    virtual std::pair<ClearedChargingLimitRequest, std::vector<TransactionEventRequest>>
     handle_external_limit_cleared(double percentage_delta, ChargingLimitSourceEnum source) const override;
 
 protected:

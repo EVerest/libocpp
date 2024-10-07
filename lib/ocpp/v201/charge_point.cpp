@@ -1028,16 +1028,17 @@ void ChargePoint::on_external_limits_changed(const std::variant<ConstantCharging
 void ChargePoint::on_external_limit_cleared(double percentage_delta, ChargingLimitSourceEnum source) {
     auto request = this->smart_charging_handler->handle_external_limit_cleared(percentage_delta, source);
 
-    auto [cleared_charging_limit_request, transaction_event_request] = request;
+    auto [cleared_charging_limit_request, transaction_event_requests] = request;
 
     ocpp::Call<ClearedChargingLimitRequest> call(cleared_charging_limit_request,
                                                  this->message_queue->createMessageId());
     this->send<ClearedChargingLimitRequest>(call);
 
-    if (transaction_event_request.has_value()) {
-        ocpp::Call<TransactionEventRequest> call(transaction_event_request.value(),
-                                                 this->message_queue->createMessageId());
-        this->send<TransactionEventRequest>(call);
+    if (transaction_event_requests.size() > 0) {
+        for (auto transaction_event_request : transaction_event_requests) {
+            ocpp::Call<TransactionEventRequest> call(transaction_event_request, this->message_queue->createMessageId());
+            this->send<TransactionEventRequest>(call);
+        }
     }
 }
 

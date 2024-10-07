@@ -670,29 +670,30 @@ SmartChargingHandler::handle_external_limits_changed(const std::variant<Constant
     return request;
 }
 
-std::pair<ClearedChargingLimitRequest, std::optional<TransactionEventRequest>>
+std::pair<ClearedChargingLimitRequest, std::vector<TransactionEventRequest>>
 SmartChargingHandler::handle_external_limit_cleared(double percentage_delta, ChargingLimitSourceEnum source) const {
     // K13.FR.02
     ClearedChargingLimitRequest cleared_charging_limit_request = {};
     cleared_charging_limit_request.chargingLimitSource = source;
 
-    std::optional<TransactionEventRequest> transaction_event_request = {};
+    std::vector<TransactionEventRequest> transaction_event_requests = {};
 
     const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
     const float limit_change_significance = this->device_model->get_value<double>(limit_change_cv);
 
     // K13.FR.03
     if (percentage_delta > limit_change_significance) {
-        transaction_event_request = TransactionEventRequest{};
-        transaction_event_request->eventType = TransactionEventEnum::Updated;
-        transaction_event_request->timestamp = ocpp::DateTime();
-        transaction_event_request->triggerReason = TriggerReasonEnum::ChargingRateChanged;
+        auto tmp = TransactionEventRequest{};
+        tmp.eventType = TransactionEventEnum::Updated;
+        tmp.timestamp = ocpp::DateTime();
+        tmp.triggerReason = TriggerReasonEnum::ChargingRateChanged;
         // TODO: there are transaction specific attributes in this type.
         // It is unclear how transactions are used when a external constraint is cleared.
         // This will need to be updated based on further discussion.
+        transaction_event_requests.push_back(tmp);
     }
 
-    auto requests = std::make_pair(cleared_charging_limit_request, transaction_event_request);
+    auto requests = std::make_pair(cleared_charging_limit_request, transaction_event_requests);
 
     return requests;
 }
