@@ -117,9 +117,9 @@ public:
                                    double percentage_delta, ChargingLimitSourceEnum source,
                                    std::optional<int32_t> evse_id) const = 0;
 
-    virtual std::pair<ClearedChargingLimitRequest, std::vector<TransactionEventRequest>>
-    handle_external_limit_cleared(std::optional<int32_t> evse_id, double percentage_delta,
-                                  ChargingLimitSourceEnum source) const = 0;
+    virtual std::optional<std::pair<ClearedChargingLimitRequest, std::vector<TransactionEventRequest>>>
+    handle_external_limit_cleared(double percentage_delta, ChargingLimitSourceEnum source,
+                                  std::optional<int32_t> evse_id) const = 0;
 };
 
 /// \brief This class handles and maintains incoming ChargingProfiles and contains the logic
@@ -197,9 +197,9 @@ public:
                                    double percentage_delta, ChargingLimitSourceEnum source,
                                    std::optional<int32_t> evse_id) const override;
 
-    virtual std::pair<ClearedChargingLimitRequest, std::vector<TransactionEventRequest>>
-    handle_external_limit_cleared(std::optional<int32_t> evse_id, double percentage_delta,
-                                  ChargingLimitSourceEnum source) const override;
+    virtual std::optional<std::pair<ClearedChargingLimitRequest, std::vector<TransactionEventRequest>>>
+    handle_external_limit_cleared(double percentage_delta, ChargingLimitSourceEnum source,
+                                  std::optional<int32_t> evse_id) const override;
 
 protected:
     ///
@@ -254,6 +254,7 @@ private:
     std::vector<ChargingProfile> get_valid_profiles_for_evse(int32_t evse_id);
     void conform_validity_periods(ChargingProfile& profile) const;
     CurrentPhaseType get_current_phase_type(const std::optional<EvseInterface*> evse_opt) const;
+    TransactionEventRequest create_transaction_event_request(std::unique_ptr<EnhancedTransaction>& tx) const;
 };
 
 } // namespace ocpp::v201

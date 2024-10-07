@@ -980,9 +980,9 @@ TEST_F(ChargepointTestFixtureV201, K13_OnExternalLimitsCleared_CallsHandler) {
     double deltaChanged = 0.2;
     auto source = ChargingLimitSourceEnum::Other;
 
-    EXPECT_CALL(*smart_charging_handler, handle_external_limit_cleared(evse_id, deltaChanged, source));
+    EXPECT_CALL(*smart_charging_handler, handle_external_limit_cleared(deltaChanged, source, evse_id));
 
-    charge_point->on_external_limit_cleared(std::nullopt, deltaChanged, source);
+    charge_point->on_external_limit_cleared(deltaChanged, source, std::nullopt);
 }
 
 } // namespace ocpp::v201

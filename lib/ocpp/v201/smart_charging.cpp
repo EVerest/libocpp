@@ -12,9 +12,11 @@
 #include "ocpp/v201/messages/ClearedChargingLimit.hpp"
 #include "ocpp/v201/messages/NotifyChargingLimit.hpp"
 #include "ocpp/v201/messages/SetChargingProfile.hpp"
+#include "ocpp/v201/messages/TransactionEvent.hpp"
 #include "ocpp/v201/ocpp_enums.hpp"
 #include "ocpp/v201/ocpp_types.hpp"
 #include "ocpp/v201/profile.hpp"
+#include "ocpp/v201/transaction.hpp"
 #include "ocpp/v201/utils.hpp"
 #include <algorithm>
 #include <cstring>
@@ -670,33 +672,76 @@ SmartChargingHandler::handle_external_limits_changed(const std::variant<Constant
     return request;
 }
 
-std::pair<ClearedChargingLimitRequest, std::vector<TransactionEventRequest>>
-SmartChargingHandler::handle_external_limit_cleared(std::optional<int32_t> evse_id, double percentage_delta,
-                                                    ChargingLimitSourceEnum source) const {
-    // K13.FR.02
-    ClearedChargingLimitRequest cleared_charging_limit_request = {};
-    cleared_charging_limit_request.chargingLimitSource = source;
+std::optional<std::pair<ClearedChargingLimitRequest, std::vector<TransactionEventRequest>>>
+SmartChargingHandler::handle_external_limit_cleared(double percentage_delta, ChargingLimitSourceEnum source,
+                                                    std::optional<int32_t> evse_id) const {
 
+    bool has_transaction = false;
+
+    std::pair<ClearedChargingLimitRequest, std::vector<TransactionEventRequest>> pair;
     std::vector<TransactionEventRequest> transaction_event_requests = {};
 
     const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
     const float limit_change_significance = this->device_model->get_value<double>(limit_change_cv);
 
-    // K13.FR.03
-    if (percentage_delta > limit_change_significance) {
-        auto tmp = TransactionEventRequest{};
-        tmp.eventType = TransactionEventEnum::Updated;
-        tmp.timestamp = ocpp::DateTime();
-        tmp.triggerReason = TriggerReasonEnum::ChargingRateChanged;
-        // TODO: there are transaction specific attributes in this type.
-        // It is unclear how transactions are used when a external constraint is cleared.
-        // This will need to be updated based on further discussion.
-        transaction_event_requests.push_back(tmp);
+    if (evse_id.has_value()) {
+        auto evse = &this->evse_manager.get_evse(evse_id.value());
+        if (evse->has_active_transaction()) {
+            has_transaction = true;
+            // K13.FR.03
+            if (percentage_delta > limit_change_significance) {
+                auto& tx = evse->get_transaction();
+                transaction_event_requests.push_back(this->create_transaction_event_request(tx));
+            }
+        }
+    } else {
+        for (auto& evse : this->evse_manager) {
+            if (evse.has_active_transaction()) {
+                has_transaction = true;
+
+                // K13.FR.03
+                if (percentage_delta > limit_change_significance) {
+
+                    auto& tx = evse.get_transaction();
+                    transaction_event_requests.push_back(this->create_transaction_event_request(tx));
+                }
+            }
+        }
     }
 
-    auto requests = std::make_pair(cleared_charging_limit_request, transaction_event_requests);
+    std::optional<std::pair<ClearedChargingLimitRequest, std::vector<TransactionEventRequest>>> request;
 
-    return requests;
+    if (has_transaction) {
+        // K13.FR.02
+        ClearedChargingLimitRequest cleared_charging_limit_request = {};
+
+        if (evse_id.has_value()) {
+            cleared_charging_limit_request.evseId = evse_id.value();
+        }
+
+        // There is not restriction on this source in the spec.
+        // K12.FR04 requires it not to be CSO. Not enforced here.
+        cleared_charging_limit_request.chargingLimitSource = source;
+        pair.first = cleared_charging_limit_request;
+
+        pair.second = transaction_event_requests;
+        request.emplace(pair);
+    }
+
+    return request;
+}
+
+TransactionEventRequest
+SmartChargingHandler::create_transaction_event_request(std::unique_ptr<EnhancedTransaction>& tx) const {
+    auto tmp = TransactionEventRequest{};
+    tmp.eventType = TransactionEventEnum::Updated;
+    tmp.timestamp = ocpp::DateTime();
+    tmp.triggerReason = TriggerReasonEnum::ChargingRateChanged;
+
+    tmp.seqNo = tx->get_seq_no();
+    tmp.transactionInfo = tx->get_transaction();
+
+    return tmp;
 }
 
 } // namespace ocpp::v201
