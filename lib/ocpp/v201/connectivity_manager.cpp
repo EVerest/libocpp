@@ -85,6 +85,23 @@ ConnectivityManager::get_network_connection_profile(const int32_t configuration_
     return std::nullopt;
 }
 
+std::optional<int> ConnectivityManager::get_configuration_slot_priority(const int configuration_slot) {
+    // Convert to string as a vector of strings is used.
+    const std::string configuration_slot_string = std::to_string(configuration_slot);
+
+    auto it = std::find(this->network_connection_priorities.begin(), this->network_connection_priorities.end(),
+                        configuration_slot_string);
+    if (it != network_connection_priorities.end()) {
+        // Index is iterator - begin iterator
+        return it - network_connection_priorities.begin();
+    }
+    return std::nullopt;
+}
+
+const std::vector<std::string>& ConnectivityManager::get_network_connection_priorities() const {
+    return network_connection_priorities;
+}
+
 bool ConnectivityManager::is_websocket_connected() {
     return this->websocket != nullptr && this->websocket->is_connected();
 }
@@ -389,19 +406,6 @@ bool ConnectivityManager::is_higher_priority_profile(const int new_configuration
 
 int ConnectivityManager::get_active_network_configuration_slot() {
     return std::stoi(this->network_connection_priorities.at(this->network_configuration_priority));
-}
-
-std::optional<int> ConnectivityManager::get_configuration_slot_priority(const int configuration_slot) {
-    // Convert to string as a vector of strings is used.
-    const std::string configuration_slot_string = std::to_string(configuration_slot);
-
-    auto it = std::find(this->network_connection_priorities.begin(), this->network_connection_priorities.end(),
-                        configuration_slot_string);
-    if (it != network_connection_priorities.end()) {
-        // Index is iterator - begin iterator
-        return it - network_connection_priorities.begin();
-    }
-    return std::nullopt;
 }
 
 void ConnectivityManager::next_network_configuration_priority() {

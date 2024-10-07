@@ -90,6 +90,14 @@ public:
     /// network_configuration_priority \return
     std::optional<NetworkConnectionProfile> get_network_connection_profile(const int32_t configuration_slot);
 
+    /// \brief Get the priority of the given configuration slot.
+    /// \param configuration_slot   The configuration slot to get the priority from.
+    /// \return The priority if the configuration slot exists.
+    ///
+    std::optional<int> get_configuration_slot_priority(const int configuration_slot);
+
+    const std::vector<std::string>& get_network_connection_priorities() const;
+
     /// \brief Check if the websocket is connected
     /// \return True is the websocket is connected, else false
     ///
@@ -173,12 +181,6 @@ private:
     /// \return The active slot the network is connected to or the pending slot.
     ///
     int get_active_network_configuration_slot();
-
-    /// \brief Get the priority of the given configuration slot.
-    /// \param configuration_slot   The configuration slot to get the priority from.
-    /// \return The priority if the configuration slot exists.
-    ///
-    std::optional<int> get_configuration_slot_priority(const int configuration_slot);
 
     /// \brief Moves websocket network_configuration_priority to next profile
     ///
