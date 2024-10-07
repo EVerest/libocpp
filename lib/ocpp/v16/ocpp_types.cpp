@@ -301,7 +301,6 @@ void to_json(json& j, const MeterValue& k) {
 void from_json(const json& j, MeterValue& k) {
     // the required parts of the message
     k.timestamp = ocpp::DateTime(std::string(j.at("timestamp")));
-    ;
     for (auto val : j.at("sampledValue")) {
         k.sampledValue.push_back(val);
     }
@@ -456,7 +455,6 @@ void to_json(json& j, const TransactionData& k) {
 void from_json(const json& j, TransactionData& k) {
     // the required parts of the message
     k.timestamp = ocpp::DateTime(std::string(j.at("timestamp")));
-    ;
     for (auto val : j.at("sampledValue")) {
         k.sampledValue.push_back(val);
     }

@@ -100,7 +100,7 @@ j["{{property.name}}"] = k.{{property.name}}.value();
  conversions::string_to_{{- property.type | snake_case}}(j.at("{{property.name}}"))
     {%- else %}
         {%- if property.type == 'ocpp::DateTime' %}
- ocpp::DateTime(std::string(j.at("{{property.name}}")));
+ ocpp::DateTime(std::string(j.at("{{property.name}}")))
         {%- else %}
  j.at("{{property.name}}")
         {%- endif %}
