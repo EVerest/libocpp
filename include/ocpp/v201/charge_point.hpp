@@ -337,6 +337,13 @@ public:
     /// \return vector of composite schedules, one for each evse_id including 0.
     virtual std::vector<CompositeSchedule> get_all_composite_schedules(const int32_t duration,
                                                                        const ChargingRateUnitEnum& unit) = 0;
+
+    virtual std::optional<NetworkConnectionProfile>
+    get_network_connection_profile(const int32_t configuration_slot) = 0;
+
+    virtual std::optional<int> get_configuration_slot_priority(const int configuration_slot) = 0;
+
+    virtual const std::vector<std::string>& get_network_connection_priorities() const = 0;
 };
 
 /// \brief Class implements OCPP2.0.1 Charging Station
@@ -931,6 +938,12 @@ public:
 
     std::vector<CompositeSchedule> get_all_composite_schedules(const int32_t duration,
                                                                const ChargingRateUnitEnum& unit) override;
+
+    std::optional<NetworkConnectionProfile> get_network_connection_profile(const int32_t configuration_slot) override;
+
+    std::optional<int> get_configuration_slot_priority(const int configuration_slot) override;
+
+    const std::vector<std::string>& get_network_connection_priorities() const override;
 
     /// \brief Requests a value of a VariableAttribute specified by combination of \p component_id and \p variable_id
     /// from the device model
