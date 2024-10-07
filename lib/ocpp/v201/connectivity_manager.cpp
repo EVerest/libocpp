@@ -222,6 +222,7 @@ void ConnectivityManager::init_websocket() {
         case std::future_status::timeout: {
             EVLOG_warning << "Timeout configuring config slot: " << config_slot_int;
             can_use_connection_profile = false;
+            break;
         }
         case std::future_status::ready: {
             ConfigNetworkResult result = config_status.get();
