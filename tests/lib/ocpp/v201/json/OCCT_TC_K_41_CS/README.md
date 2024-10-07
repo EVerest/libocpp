@@ -10,4 +10,3 @@ suite TC_K_41_CS test. It is compromised of three Profiles:
 
 All have a stackLevel of 0.
 
-This folder also contains the OCCT log file of the original failing test run.
