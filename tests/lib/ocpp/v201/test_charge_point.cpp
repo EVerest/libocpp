@@ -21,6 +21,7 @@
 #include "gmock/gmock.h"
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
+#include <cstdint>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <memory>
@@ -957,9 +958,11 @@ TEST_F(ChargepointTestFixtureV201, K12_OnExternalLimitsChanged_CallsHandler) {
 
     const std::variant<ConstantChargingLimit, ChargingSchedule> new_limit(limit);
 
-    EXPECT_CALL(*smart_charging_handler, handle_external_limits_changed(new_limit, deltaChanged, source));
+    const std::optional<int32_t> evse_id(DEFAULT_EVSE_ID);
 
-    charge_point->on_external_limits_changed(new_limit, deltaChanged, source);
+    EXPECT_CALL(*smart_charging_handler, handle_external_limits_changed(evse_id, new_limit, deltaChanged, source));
+
+    charge_point->on_external_limits_changed(DEFAULT_EVSE_ID, new_limit, deltaChanged, source);
 }
 
 } // namespace ocpp::v201

@@ -32,7 +32,8 @@ public:
                  const ocpp::DateTime& end_time, const int32_t evse_id,
                  std::optional<ChargingRateUnitEnum> charging_rate_unit));
     MOCK_METHOD(std::optional<NotifyChargingLimitRequest>, handle_external_limits_changed,
-                (const ChargingLimitVariant& limit, double percentage_delta, ChargingLimitSourceEnum source),
+                (std::optional<int32_t> evse_id, const ChargingLimitVariant& limit, double percentage_delta,
+                 ChargingLimitSourceEnum source),
                 (const, override));
 };
 } // namespace ocpp::v201
