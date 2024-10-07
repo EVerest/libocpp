@@ -25,6 +25,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <memory>
+#include <optional>
 #include <variant>
 
 static const int DEFAULT_EVSE_ID = 1;
@@ -979,7 +980,7 @@ TEST_F(ChargepointTestFixtureV201, K13_OnExternalLimitsCleared_CallsHandler) {
 
     EXPECT_CALL(*smart_charging_handler, handle_external_limit_cleared(deltaChanged, source));
 
-    charge_point->on_external_limit_cleared(deltaChanged, source);
+    charge_point->on_external_limit_cleared(std::nullopt, deltaChanged, source);
 }
 
 } // namespace ocpp::v201
