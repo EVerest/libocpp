@@ -1866,7 +1866,6 @@ void from_json(const json& j, VariableAttribute& k) {
     if (j.contains("type")) {
         k.type.emplace(conversions::string_to_attribute_enum(j.at("type")));
     }
-
     if (j.contains("value")) {
         const json& value = j.at("value");
         if (value.is_string()) {
@@ -1886,7 +1885,6 @@ void from_json(const json& j, VariableAttribute& k) {
             k.value = value.dump();
         }
     }
-
     if (j.contains("mutability")) {
         k.mutability.emplace(conversions::string_to_mutability_enum(j.at("mutability")));
     }
