@@ -224,167 +224,55 @@ TODO: in a future version of libocpp the callbacks will be organised in a struct
 
 Some general notes: the "connector" parameter of some of the callbacks refers to the connector number as understood in the OCPP 1.6 specification, "0" means the whole charging station, the connectors with EVSEs used for charging cars start at "1".
 
-- `register_pause_charging_callback`
-
-  this callback is used by libocpp to request pausing of charging, the "connector" parameter tells you which connector/EVSE has to pause charging
-
-- `register_resume_charging_callback`
-
-  this callback is used by libocpp the request resuming of charging, the "connector" parameter tells you which connector/EVSE can resume charging
-
-- `register_stop_transaction_callback`
-
-  in EVerest this calls the EvseManagers stop_transaction command which "Stops transactions and cancels charging externally, charging can only be resumed by replugging car. EVSE will also stop transaction automatically e.g. on disconnect, so this only needs to be called if the transaction should end before."
-  this will then signal the following events:
-  - ChargingFinished
-  - TransactionFinished
-
-- `register_unlock_connector_callback`
-
-  can be used by libocpp to force unlock a connector
-
-- `register_reserve_now_callback`
-
-  libocpp can use this to reserve a connector, reservation handling is outsourced to a reservation manager in EVerest that implements the reservation interface (everest-core/interfaces/reservation.yaml)
-
-- `register_upload_diagnostics_callback`
-
-  uses a function (in EVerest provided by the System module) to upload the requested diagnostics file
-
-- `register_upload_logs_callback`
-
-  uses a function (in EVerest provided by the System module) to upload the requested log file
-
-- `register_update_firmware_callback`
-
-  uses a function (in EVerest provided by the System module) to perform a firmware update
-
-- `register_signed_update_firmware_callback`
-
-  uses a function (in EVerest provided by the System module) to perform a signed firmware update
-
-- `register_provide_token_callback`
-
-  this callback is used in a remote start transaction to provide a token (prevalidated or not) to the authorization system
-
-- `register_set_connection_timeout_callback`
-
-  used by libocpp to set the authorization or plug in connection timeout in the authorization system based on the "ConnectionTimeout" configuration key
-
-- `register_disable_evse_callback`
-
-  used to disable the EVSE (ChangeAvailability.req)
-
-- `register_enable_evse_callback`
-
-  used to enable the EVSE (ChangeAvailability.req)
-
-- `register_cancel_reservation_callback`
-
-  used to cancel a reservation in the reservation manager (CancelReservation.req)
-
-- `register_signal_set_charging_profiles_callback`
-
-  used to signal that new charging schedule(s) have been set, you can then use
-  get_all_composite_charging_schedules(duration_s) to get the new valid charging schedules
-
-- `register_is_reset_allowed_callback`
-
-  used to inquire (in EVerest from the System module) if a reset is allowed
-
-- `register_reset_callback`
-
-  used to perform a reset of the requested type
-
-- `register_connection_state_changed_callback`
-
-  used to inform about the connection state to the CSMS (connected = true, disconnected = false)
-
-- `register_configuration_key_changed_callback`
-
-  used to react on a changed configuration key. This callback is called when the specified configuration key has been changed by the CSMS
+| Callbacks                                        | Description                             |
+| :----------------------------------------------- | :-------------------------------------- |
+| `register_pause_charging_callback`               | this callback is used by libocpp to request pausing of charging, the "connector" parameter tells you which connector/EVSE has to pause charging |
+| `register_resume_charging_callback`              | this callback is used by libocpp the request resuming of charging, the "connector" parameter tells you which connector/EVSE can resume charging |
+| `register_stop_transaction_callback`             | in EVerest this calls the EvseManagers stop_transaction command which "Stops transactions and cancels charging externally, charging can only be resumed by replugging car. EVSE will also stop transaction automatically e.g. on disconnect, so this only needs to be called if the transaction should end before." this will then signal the following events:<br>• ChargingFinished<br>• TransactionFinished |
+| `register_unlock_connector_callback`             | can be used by libocpp to force unlock a connector |
+| `register_reserve_now_callback`                  | libocpp can use this to reserve a connector, reservation handling is outsourced to a reservation manager in EVerest that implements the reservation interface (everest-core/interfaces/reservation.yaml) |
+| `register_upload_diagnostics_callback`           | uses a function (in EVerest provided by the System module) to upload the requested diagnostics file |
+| `register_upload_logs_callback`                  | uses a function (in EVerest provided by the System module) to upload the requested log file |
+| `register_update_firmware_callback`              | uses a function (in EVerest provided by the System module) to perform a firmware update |
+| `register_signed_update_firmware_callback`       | uses a function (in EVerest provided by the System module) to perform a signed firmware update |
+| `register_provide_token_callback`                | this callback is used in a remote start transaction to provide a token (prevalidated or not) to the authorization system |
+| `register_set_connection_timeout_callback`       | used by libocpp to set the authorization or plug in connection timeout in the authorization system based on the "ConnectionTimeout" configuration key |
+| `register_disable_evse_callback`                 | used to disable the EVSE (ChangeAvailability.req) |
+| `register_enable_evse_callback`                  | used to enable the EVSE (ChangeAvailability.req) |
+| `register_cancel_reservation_callback`           | used to cancel a reservation in the reservation manager (CancelReservation.req) |
+| `register_signal_set_charging_profiles_callback` | used to signal that new charging schedule(s) have been set, you can then use get_all_composite_charging_schedules(duration_s) to get the new valid charging schedules |
+| `register_is_reset_allowed_callback`             | used to inquire (in EVerest from the System module) if a reset is allowed |
+| `register_reset_callback`                        | used to perform a reset of the requested type |
+| `register_connection_state_changed_callback`     | used to inform about the connection state to the CSMS (connected = true, disconnected = false) |
+| `register_configuration_key_changed_callback`    | used to react on a changed configuration key. This callback is called when the specified configuration key has been changed by the CSMS |
 
 #### Functions that need to be triggered from the outside after new information is availble (on_... functions in the charge point API)
 
-- `on_log_status_notification(int32_t request_id, std::string log_status)`
-
-  can be used to notify libocpp of a log status notification
-
-- `on_firmware_update_status_notification(int32_t request_id, std::string firmware_update_status)`
-
-  can be used to notify libocpp of a firmware update status notification
-
-- `on_meter_values(int32_t connector, const Powermeter& powermeter)`
-
-  provides a Powermeter struct to libocpp (for sending meter values during charging sessions or periodically)
-
-- `on_max_current_offered(int32_t connector, int32_t max_current)`
-
-  the maximum current offered to the EV on this connector (in ampere)
+| on_ functions | Description |
+| :-------- | :---------- |
+| `on_log_status_notification(int32_t request_id, std::string log_status)` | can be used to notify libocpp of a log status notification |
+| `on_firmware_update_status_notification(int32_t request_id, std::string firmware_update_status)` | can be used to notify libocpp of a firmware update status notification |
+| `on_meter_values(int32_t connector, const Powermeter& powermeter)` | provides a Powermeter struct to libocpp (for sending meter values during charging sessions or periodically) |
+| `on_max_current_offered(int32_t connector, int32_t max_current)` | the maximum current offered to the EV on this connector (in ampere) |
 
 #### The following functions are triggered depending on different so called "Session Events" from the EvseManager
 
 each of these functions will have a small note what the Session Event was and what it triggers in libocpp
 
-- `on_enabled(int32_t connector)`
-
-  Notifies libocpp that the connector is functional and operational
-
-- `on_disabled(int32_t connector)`
-
-  Notifies libocpp that the connector is disabled
-
-- `on_transaction_started`
-
-  Notifies libocpp that a transaction at the given connector has started, this means that authorization is available and the car is plugged in.
-
-  Some of its parameters:
-
-  - `session_id` is an internal session_id originating in the EvseManager to keep track of the transaction, this is NOT to be mistaken for the transactionId from the StartTransactionResponse in OCPP!
-  - `id_token` is the token with which the transaction was authenticated
-  - `meter_start` contains the meter value in Wh for the connector at start of the transaction
-  - `timestamp` at the start of the transaction
-
-- `on_transaction_stopped`
-
-  Notifies libocpp that the transaction on the given connector with the given reason has been stopped.
-
-  Some of its parameters:
-
-  - `timestamp` at the end of the transaction
-  - `energy_wh_import` contains the meter value in Wh for the connector at end of the transaction
-
-- `on_suspend_charging_ev`
-
-  Notifies libocpp that the EV has paused charging
-
-- `on_suspend_charging_evse`
-
-  Notifies libocpp that the EVSE has paused charging
-
-- `on_resume_charging`
-
-  Notifies libocpp that charging has resumed
-
-- `on_session_started`
-
-  this is mostly used for logging and changing the connector state
-
-- `on_session_stopped`
-
-  this is mostly used for logging and changing the connector state
-
-- `on_error`
-
-  Notify libocpp of an error
-
-- `on_reservation_start`
-
-  Notifies libocpp that a reservation has started
-
-- `on_reservation_end`
-
-  Notifies libocpp that a reservation has ended
+| on _ functions                   | Description                                  |
+| :------------------------------- | :----------------------------------------- |
+| `on_enabled(int32_t connector)`  | Notifies libocpp that the connector is functional and operational |
+| `on_disabled(int32_t connector)` | Notifies libocpp that the connector is disabled |
+| `on_transaction_started`         | Notifies libocpp that a transaction at the given connector has started, this means that authorization is available and the car is plugged in.<br>Some of its parameters:<br>• session_id is an internal session_id originating in the EvseManager to keep track of the transaction, this is NOT to be mistaken for the transactionId from the StartTransactionResponse in OCPP!<br>• id_token is the token with which the transaction was authenticated<br>• meter_start contains the meter value in Wh for the connector at start of the transaction<br>• timestamp at the start of the transaction<br> |
+| `on_transaction_stopped`         | Notifies libocpp that the transaction on the given connector with the given reason has been stopped.<br>Some of its parameters:<br>• timestamp at the end of the transaction<br>• energy_wh_import contains the meter value in Wh for the connector at end of the transaction<br> |
+| `on_suspend_charging_ev`         | Notifies libocpp that the EV has paused charging |
+| `on_suspend_charging_evse`       | Notifies libocpp that the EVSE has paused charging |
+| `on_resume_charging`             | Notifies libocpp that charging has resumed |
+| `on_session_started`             | this is mostly used for logging and changing the connector state |
+| `on_session_stopped`             | this is mostly used for logging and changing the connector state |
+| `on_error`                       | Notify libocpp of an error |
+| `on_reservation_start`           | Notifies libocpp that a reservation has started |
+| `on_reservation_end`             | Notifies libocpp that a reservation has ended |
 
 #### Authorization
 
