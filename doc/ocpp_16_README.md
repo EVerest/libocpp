@@ -33,12 +33,12 @@ The EVerest OCPP 1.6 implementation (`libocpp`) provides comprehensive support f
 
 | OCPP 1.6 Functionality       | Supported                    |
 | ---------------------------- | ---------------------------- |
-| Core                         | :heavy_check_mark: Yes |
-| Firmware Management          | :heavy_check_mark: Yes |
-| Local Auth List Management   | :heavy_check_mark: Yes |
-| Reservation                  | :heavy_check_mark: Yes |
-| Smart Charging               | :heavy_check_mark: Yes |
-| Remote Trigger               | :heavy_check_mark: Yes |
+| Core                         | :heavy_check_mark: Yes       |
+| Firmware Management          | :heavy_check_mark: Yes       |
+| Local Auth List Management   | :heavy_check_mark: Yes       |
+| Reservation                  | :heavy_check_mark: Yes       |
+| Smart Charging               | :heavy_check_mark: Yes       |
+| Remote Trigger               | :heavy_check_mark: Yes       |
 
 | Whitepapers & Application Notes             | Supported              |
 | ------------------------------------------- | ---------------------- |
