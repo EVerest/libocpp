@@ -840,6 +840,10 @@ TEST(OCPPTypesTest, CalculateChargingSchedule_SingleDelayedStartLong) {
     ASSERT_EQ(expected, actual);
 }
 
+/*
+ * Overlap refers to the time windows overlapping.
+ */
+
 TEST(OCPPTypesTest, CalculateChargingSchedule_OverlapStart) {
     DateTime now = dt("12:00");
     DateTime end = dt("12:10");

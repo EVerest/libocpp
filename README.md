@@ -1,4 +1,5 @@
 # C++ implementation of OCPP
+
 ![Github Actions](https://github.com/EVerest/libocpp/actions/workflows/build_and_test.yaml/badge.svg)
 
 This is a C++ library implementation of OCPP for version 1.6 and 2.0.1
@@ -16,6 +17,7 @@ Libocpp provides a complete implementation of OCPP 1.6. The implementation of OC
 See the [COMMUNITY.md](https://github.com/EVerest/EVerest/blob/main/COMMUNITY.md) and [CONTRIBUTING.md](https://github.com/EVerest/EVerest/blob/main/CONTRIBUTING.md) of the EVerest project to get involved.
 
 ## Table of contents
+
 - [C++ implementation of OCPP](#c-implementation-of-ocpp)
   - [Table of contents](#table-of-contents)
   - [OCPP 1.6 Support](#feature-support)
@@ -49,7 +51,7 @@ See the [COMMUNITY.md](https://github.com/EVerest/EVerest/blob/main/COMMUNITY.md
 
 The following tables show the current support for the listed OCPP 1.6 feature profiles / functional blocks and application notes.
 
-All documentation and the issue tracking can be found in our main repository here: https://github.com/EVerest/
+All documentation and the issue tracking can be found in our main repository here: <https://github.com/EVerest/>
 
 ### Feature Profile Support OCPP 1.6
 
@@ -70,7 +72,7 @@ All documentation and the issue tracking can be found in our main repository her
 
 ## Support for OCPP 2.0.1
 
-The development of OCPP2.0.1 is in progress. 
+The development of OCPP2.0.1 is in progress.
 [Current implementation status.](/doc/ocpp_201_status.md)
 
 ### Feature Profile Support OCPP 2.0.1
@@ -90,8 +92,6 @@ The development of OCPP2.0.1 is in progress.
 | ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
 | [OCPP & California Pricing Requirements](https://www.openchargealliance.org/uploads/files/ocpp_and_dms_evse_regulation-v2.0.pdf)          | WIP                    |
 
-
-
 ## CSMS Compatibility
 
 ### CSMS Compatibility OCPP 1.6
@@ -103,34 +103,34 @@ The following table shows CSMS with which this library was tested.
 If you provide a CSMS that is not yet listed here, feel free to
 [contact us](https://lists.lfenergy.org/g/everest)!
 
--   chargecloud
--   chargeIQ
--   Chargetic
--   Compleo
--   Current
--   Daimler Truck
--   ev.energy
--   eDRV
--   Fastned
--   [Open Charging Cloud (GraphDefined)](https://github.com/OpenChargingCloud/WWCP_OCPP)
--   Electrip Global
--   EnergyStacks
--   EV-Meter
--   Fraunhofer IAO (ubstack CHARGE)
--   Green Motion
--   gridundco
--   ihomer (Infuse CPMS)
--   iLumen
--   JibeCompany (CharlieV CMS and Chargebroker proxy)
--   MSI
--   PUMP (PUMP Connect)
--   Scoptvision (Scopt Powerconnect)
--   Siemens
--   [SteVe](https://github.com/steve-community/steve)
--   Syntech
--   Trialog
--   ubitricity
--   Weev Energy
+- chargecloud
+- chargeIQ
+- Chargetic
+- Compleo
+- Current
+- Daimler Truck
+- ev.energy
+- eDRV
+- Fastned
+- [Open Charging Cloud (GraphDefined)](https://github.com/OpenChargingCloud/WWCP_OCPP)
+- Electrip Global
+- EnergyStacks
+- EV-Meter
+- Fraunhofer IAO (ubstack CHARGE)
+- Green Motion
+- gridundco
+- ihomer (Infuse CPMS)
+- iLumen
+- JibeCompany (CharlieV CMS and Chargebroker proxy)
+- MSI
+- PUMP (PUMP Connect)
+- Scoptvision (Scopt Powerconnect)
+- Siemens
+- [SteVe](https://github.com/steve-community/steve)
+- Syntech
+- Trialog
+- ubitricity
+- Weev Energy
 
 ### CSMS Compatibility OCPP 2.0.1
 
@@ -139,28 +139,30 @@ few CSMS and is continuously tested against OCTT2.
 
 Additionally, the implementation has been tested against those CSMS:
 
--   [CitrineOS](https://lfenergy.org/projects/citrineos/)
--   Chargepoint
--   Current
--   ihomer (Infuse CPMS)
--   Instituto Tecnológico de la Energía (ITE)
--   [MaEVe (Thoughtworks)](https://github.com/thoughtworks/maeve-csms)
--   [Monta](https://monta.com)
--   [Open Charging Cloud (GraphDefined)](https://github.com/OpenChargingCloud/WWCP_OCPP)
--   Switch EV
--   SWTCH
+- [CitrineOS](https://lfenergy.org/projects/citrineos/)
+- Chargepoint
+- Current
+- ihomer (Infuse CPMS)
+- Instituto Tecnológico de la Energía (ITE)
+- [MaEVe (Thoughtworks)](https://github.com/thoughtworks/maeve-csms)
+- [Monta](https://monta.com)
+- [Open Charging Cloud (GraphDefined)](https://github.com/OpenChargingCloud/WWCP_OCPP)
+- Switch EV
+- SWTCH
 
 ## Integration with EVerest
 
 This library is automatically integrated as the OCPP and OCPP201 module within [everest-core](https://github.com/EVerest/everest-core) - the complete software stack for your charging station. It is recommended to use EVerest together with this OCPP implementation.
 
 ### Run OCPP1.6 with EVerest
+
 If you run libocpp with OCPP1.6 with EVerest, the build process of [everest-core](https://github.com/EVerest/everest-core) will take care of installing all necessary dependencies for you.
 
 ### Run OCPP2.0.1 with EVerest
-If you run libocpp with OCPP1.6 with EVerest, the build process of [everest-core](https://github.com/EVerest/everest-core) will take care of installing all necessary dependencies for you. This includes the initialization of the device model database using the [component config](config/v201/component_config) files.
 
-## Integrate this library with your Charging Station Implementation for OCPP1.6
+If you run libocpp with OCPP1.6 with EVerest, the build process of [everest-core](https://github.com/EVerest/everest-core) will take care of installing all necessary dependencies for you. This includes the initialization of the device model database using the [config.json](config/v201/config.json) file.
+
+## Integrate this library with your Charging Station Implementation for OCPP
 
 OCPP is a protocol that affects, controls and monitors many areas of a charging station's operation.
 
@@ -177,18 +179,24 @@ Your reference within libocpp to interact is a single instance to the class [Cha
 The following section will give you a high level overview of how to integrate libocpp with your application. Please use the [Doxygen Documentation](#building-the-doxygen-documentation) as an additional source for the ChargePoint API.
 
 In EVerest the OCPP module leverages several other modules to perform tasks that relate to authorization, reservations, charging session handling and system tasks like rebooting or firmware updates.
+
 - Auth orchestrates authorization, utilizing different token providers like RFID reads and token validators. Libocpp mainly acts as a token validator, but in the case of RemoteStartTransactions it acts as a token provider as well
 - EvseManager manages the charging session and charging state machine by communicating with a "board support package", a driver for the charging hardware that abstracts away the control pilot, relay control, power meters, etc. The EvseManager also handles reservations.
 - System handles firmware updates, log uploads and resets
 
 The following sections explain the steps you can follow to implement their functionality on your own and integrate the libocpp directly into your charging station software without relying on EVerest. However, in most cases it's much easier to write an EVerest driver using the *everest-core/interfaces/board_support_AC.yaml* interface.
 
+### Usage for OCPP 1.6
+
 #### ChargePoint() constructor
+
 The main entrypoint for libocpp for OCPP1.6 is the ocpp::v16::ChargePoint constructor.
 This is defined in libocpp/include/ocpp/v16/charge_point.hpp and takes the following parameters:
+
 - config: a std::string that contains the libocpp 1.6 config. There are example configs that work with a [SteVe](https://github.com/steve-community/steve) installation [running in Docker](https://github.com/EVerest/everest-utils/tree/main/docker/steve), for example: [config-docker.json](config/v16/config-docker.json)
 
 - share_path: a std::filesystem path containing the path to the OCPP modules folder, for example pointing to */usr/share/everest/modules/OCPP*. This path contains the following files and directories and is installed by the libocpp  install target:
+
   ```bash
   .
   ├── config-docker.json
@@ -208,8 +216,9 @@ This is defined in libocpp/include/ocpp/v16/charge_point.hpp and takes the follo
       ├── SmartCharging.json
       └── Custom.json
   ```
+
   Here you can find:
-  -  the aforementioned config files
+  - the aforementioned config files
 
   - a *logging.ini* that is needed to initialize logging with Everest::Logging::init(path_to_logging_ini, "name_of_binary")
 
@@ -230,6 +239,7 @@ This is defined in libocpp/include/ocpp/v16/charge_point.hpp and takes the follo
 - security_configuration: this parameter should only be set in case the evse_security parameter is nullptr. It specifies the file paths that are required to set up the internal evse_security implementation. Note that you need to specify bundle files for the CA certificates and directories for the certificates and keys
 
   The directory layout expected is as follows
+
   ```bash
   .
   ├── ca
@@ -274,189 +284,356 @@ This is defined in libocpp/include/ocpp/v16/charge_point.hpp and takes the follo
   ```
 
 #### registering callbacks
+
 You can (and in many cases MUST) register a number of callbacks so libocpp can interact with the charger. In EVerest most of this functionality is orchestrated by the "EvseManager" module, but you can also register your own callbacks interacting directly with your chargers software. Following is a list of callbacks that you must register and a few words about their purpose.
 
 TODO: in a future version of libocpp the callbacks will be organised in a struct with optional members emphasizing the required and optional callbacks.
 
 Some general notes: the "connector" parameter of some of the callbacks refers to the connector number as understood in the OCPP 1.6 specification, "0" means the whole charging station, the connectors with EVSEs used for charging cars start at "1".
 
-- register_pause_charging_callback
+- `register_pause_charging_callback`
 
   this callback is used by libocpp to request pausing of charging, the "connector" parameter tells you which connector/EVSE has to pause charging
 
-- register_resume_charging_callback
+- `register_resume_charging_callback`
 
   this callback is used by libocpp the request resuming of charging, the "connector" parameter tells you which connector/EVSE can resume charging
 
-- register_stop_transaction_callback
+- `register_stop_transaction_callback`
 
   in EVerest this calls the EvseManagers stop_transaction command which "Stops transactions and cancels charging externally, charging can only be resumed by replugging car. EVSE will also stop transaction automatically e.g. on disconnect, so this only needs to be called if the transaction should end before."
   this will then signal the following events:
   - ChargingFinished
   - TransactionFinished
 
-- register_unlock_connector_callback
+- `register_unlock_connector_callback`
 
   can be used by libocpp to force unlock a connector
 
-- register_reserve_now_callback
+- `register_reserve_now_callback`
 
   libocpp can use this to reserve a connector, reservation handling is outsourced to a reservation manager in EVerest that implements the reservation interface (everest-core/interfaces/reservation.yaml)
 
-- register_upload_diagnostics_callback
+- `register_upload_diagnostics_callback`
 
   uses a function (in EVerest provided by the System module) to upload the requested diagnostics file
 
-- register_upload_logs_callback
+- `register_upload_logs_callback`
 
   uses a function (in EVerest provided by the System module) to upload the requested log file
 
-- register_update_firmware_callback
+- `register_update_firmware_callback`
 
   uses a function (in EVerest provided by the System module) to perform a firmware update
 
-- register_signed_update_firmware_callback
+- `register_signed_update_firmware_callback`
 
   uses a function (in EVerest provided by the System module) to perform a signed firmware update
 
-- register_provide_token_callback
+- `register_provide_token_callback`
 
   this callback is used in a remote start transaction to provide a token (prevalidated or not) to the authorization system
 
-- register_set_connection_timeout_callback
+- `register_set_connection_timeout_callback`
 
   used by libocpp to set the authorization or plug in connection timeout in the authorization system based on the "ConnectionTimeout" configuration key
 
-- register_disable_evse_callback
+- `register_disable_evse_callback`
 
   used to disable the EVSE (ChangeAvailability.req)
 
-- register_enable_evse_callback
+- `register_enable_evse_callback`
 
   used to enable the EVSE (ChangeAvailability.req)
 
-- register_cancel_reservation_callback
+- `register_cancel_reservation_callback`
 
   used to cancel a reservation in the reservation manager (CancelReservation.req)
 
-- register_signal_set_charging_profiles_callback
+- `register_signal_set_charging_profiles_callback`
 
   used to signal that new charging schedule(s) have been set, you can then use
   get_all_composite_charging_schedules(duration_s) to get the new valid charging schedules
 
-- register_is_reset_allowed_callback
+- `register_is_reset_allowed_callback`
 
   used to inquire (in EVerest from the System module) if a reset is allowed
 
-- register_reset_callback
+- `register_reset_callback`
 
   used to perform a reset of the requested type
 
-- register_connection_state_changed_callback
+- `register_connection_state_changed_callback`
 
   used to inform about the connection state to the CSMS (connected = true, disconnected = false)
 
-- register_configuration_key_changed_callback
+- `register_configuration_key_changed_callback`
+
   used to react on a changed configuration key. This callback is called when the specified configuration key has been changed by the CSMS
 
-
 #### Functions that need to be triggered from the outside after new information is availble (on_... functions in the charge point API)
-- on_log_status_notification(int32_t request_id, std::string log_status)
+
+- `on_log_status_notification(int32_t request_id, std::string log_status)`
 
   can be used to notify libocpp of a log status notification
 
-- on_firmware_update_status_notification(int32_t request_id, std::string firmware_update_status)
+- `on_firmware_update_status_notification(int32_t request_id, std::string firmware_update_status)`
 
   can be used to notify libocpp of a firmware update status notification
 
-- on_meter_values(int32_t connector, const Powermeter& powermeter)
+- `on_meter_values(int32_t connector, const Powermeter& powermeter)`
 
   provides a Powermeter struct to libocpp (for sending meter values during charging sessions or periodically)
 
-- on_max_current_offered(int32_t connector, int32_t max_current)
+- `on_max_current_offered(int32_t connector, int32_t max_current)`
 
   the maximum current offered to the EV on this connector (in ampere)
 
 #### The following functions are triggered depending on different so called "Session Events" from the EvseManager
+
 each of these functions will have a small note what the Session Event was and what it triggers in libocpp
 
-- on_enabled(int32_t connector)
+- `on_enabled(int32_t connector)`
 
   Notifies libocpp that the connector is functional and operational
 
-- on_disabled(int32_t connector)
+- `on_disabled(int32_t connector)`
 
   Notifies libocpp that the connector is disabled
 
-- on_transaction_started
+- `on_transaction_started`
 
   Notifies libocpp that a transaction at the given connector has started, this means that authorization is available and the car is plugged in.
 
   Some of its parameters:
 
-  session_id is an internal session_id originating in the EvseManager to keep track of the transaction, this is NOT to be mistaken for the transactionId from the StartTransactionResponse in OCPP!
+  - `session_id` is an internal session_id originating in the EvseManager to keep track of the transaction, this is NOT to be mistaken for the transactionId from the StartTransactionResponse in OCPP!
+  - `id_token` is the token with which the transaction was authenticated
+  - `meter_start` contains the meter value in Wh for the connector at start of the transaction
+  - `timestamp` at the start of the transaction
 
-  id_token is the token with which the transaction was authenticated
-
-  meter_start contains the meter value in Wh for the connector at start of the transaction
-
-  timestamp at the start of the transaction
-
-- on_transaction_stopped
+- `on_transaction_stopped`
 
   Notifies libocpp that the transaction on the given connector with the given reason has been stopped.
 
   Some of its parameters:
 
-  timestamp at the end of the transaction
+  - `timestamp` at the end of the transaction
+  - `energy_wh_import` contains the meter value in Wh for the connector at end of the transaction
 
-  energy_wh_import contains the meter value in Wh for the connector at end of the transaction
-
-- on_suspend_charging_ev
+- `on_suspend_charging_ev`
 
   Notifies libocpp that the EV has paused charging
 
-- on_suspend_charging_evse
+- `on_suspend_charging_evse`
 
   Notifies libocpp that the EVSE has paused charging
 
-- on_resume_charging
+- `on_resume_charging`
 
   Notifies libocpp that charging has resumed
 
-- on_session_started
+- `on_session_started`
 
   this is mostly used for logging and changing the connector state
 
-- on_session_stopped
+- `on_session_stopped`
 
   this is mostly used for logging and changing the connector state
 
-- on_error
+- `on_error`
 
   Notify libocpp of an error
 
-- on_reservation_start
+- `on_reservation_start`
 
   Notifies libocpp that a reservation has started
 
-- on_reservation_end
+- `on_reservation_end`
 
   Notifies libocpp that a reservation has ended
 
 #### Authorization
-In EVerest authorization is handled by the Auth module and various auth token providers and validators. The OCPP module acts as both a token provider (for pre validated tokens in RemoteStartTransactions) and a token validator (using the authorize requests, or plug & charge)
-To use libocpp as a auth token validator (e.g. before starting a transaction) you can call the "authorize_id_token" function of the ChargePoint object
 
-## Integrate this library with your Charging Station Implementation for OCPP2.0.1
-TODO
+In EVerest authorization is handled by the Auth module and various auth token providers and validators. The OCPP module acts as both a token provider (for pre validated tokens in RemoteStartTransactions) and a token validator (using the authorize requests, or plug & charge).
+
+To use libocpp as a auth token validator (e.g. before starting a transaction) you can call the "authorize_id_token" function of the ChargePoint object.
+
+## Usage for OCPP 2.0.1
+
+### Smart Charging
+
+Work to fully support OCPP 2.0.1 Smart Charging is ongoing. Most functional requirements for General Smart Charging use cases (that is, K01–K10) are now supported. For an up-to-date overview of which features are currently supported, please refer to the [OCPP 2.0.1 Status](doc/ocpp_201_status.md) document.
+
+#### K01 SetChargingProfile
+
+Allows the CSMS to influence the charging power or current drawn from a specific EVSE or the
+entire Charging Station over a period of time.
+
+[K01 SetChargingProfile Flow Diagram](./doc/v201/smart_charging_flow.md#k01-setchargingprofile)
+
+#### K08 Get Composite Schedule
+
+The CSMS requests the Charging Station to report the Composite Charging
+Schedule, as calculated by the Charging Station for a specific point of
+time, and may change over time due to external causes such as local
+balancing based on grid connection capacity and EVSE availablity.
+
+The Composite Schedule is the result of result of merging the time periods
+set in the `ChargingStationMaxProfile`, `ChargingStationExternalConstraints`,
+`TxDefaultProfile` and `TxProfile` type profiles.
+
+[K08 GetCompositeSchedule Flow Diagram](./doc/v201/smart_charging_flow.md#k08-get-composite-schedule)
+
+#### K09 Get Charging Profiles
+
+Returns to the CSMS the Charging Schedules/limits installed on a Charging Station based on the
+passed in criteria.
+
+[K09 GetChargingProfiles Flow Diagram](./doc/v201/smart_charging_flow.md#k09-get-charging-profiles)
+
+#### K10 Clear Charging Profile
+
+Clears Charging Profiles installed on a Charging Station based on the
+passed in criteria.
+
+[K10 ClearChargingProfile](./doc/v201/smart_charging_flow.md#k10-clear-charging-profile)
 
 ### Register event callbacks and on_handlers
 
+- `all_connectors_unavailable_callback`
+
+  Notifies that all connectors are unavailable. Used to handle charge availability
+  requests and firmware updates.
+
+- `boot_notification_callback`
+
+  Callback to notify of a system boot
+
+- `clear_customer_information_callback`
+
+  Called to clear customer information based on passed in Customer Certificate, the
+  IdToken for this request, and the Customer Identified that the request refers to.
+  If IdToken is passed in will delete authorization cache entry from database.
+
+- `configure_network_connection_profile_callback`
+
+  Called to configure a network connection profile when none is configured.
+
+- `connector_effective_operative_status_changed_callback`
+
+  Notifies the user of liboccp that the Operative/Inoperative state of a specific EVSE
+  has changed.
+
+- `cs_effective_operative_status_changed_callback`
+
+  Used to notify the user of libocpp that the Operative/Inoperative state of the
+  charging station itself has changed. Will also call
+  `evse_effective_operative_status_changed_callback` for each EVSE, and
+  `connector_effective_operative_status_changed_callback` for each connector whose
+  status has changed.
+
+- `data_transfer_callback`
+
+  Used to handle arbitrary data transfers.
+
+- `evse_effective_operative_status_changed_callback`
+
+  Notifies the user of libocpp that the Operative/Inoperative state of an EVSE has
+  changed. If as a result the state of connectors changed as well, libocpp will
+  additionally call the connector_effective_operative_status_changed_callback for
+  each connector.
+
+- `get_customer_information_callback`
+
+  Returns human readable customer information based on the CertificateHashDataType,
+  IdToken and Customer Identifier passed in.
+
+- `get_log_request_callback`
+
+  Callback to return logs
+
+- `is_reservation_for_token_callback`
+
+  Check if the current reservation for the given evse id is made for the id
+  token / group id token.
+
+- `is_reset_allowed_callback`
+
+  Callback if reset is allowed. If evse_id has a value, reset only applies
+  to the given evse id. If it has no value, applies to complete charging station.
+
+- `ocpp_messages_callback`
+
+  Callback to congfigure ocpp message logging.
+
+- `pause_charging_callback`
+
+  Used to request pausing of charging, the "connector" parameter instructing which
+  connector/EVSE to pause.
+
+- `remote_start_transaction_callback`
+
+  Called when the request can be accepted. The boolean authorize_remote_start
+  indicates if Authorize.req needs to follow or not
+
+- `reset_callback`
+
+  Performs a reset of the requested type
+
+- `security_event_callback`
+
+  Used to react to a security event callback. This callback is
+  called only if the SecurityEvent occured internally within libocpp.
+  Typically this callback is used to log security events in the security log.
+
+- `set_charging_profiles_callback`
+
+  Indicates when a charging profile is received and accepted.
+
+- `stop_transaction_callback`
+
+  Used to stop a transaction. Called when the idTagInfo.status of a
+  StartTransaction.conf is not Accepted, when a RemoteStopTransaction.req is
+  received, or when an UnlockConnector.req is received.
+
+- `time_sync_callback`
+
+  Called on boot notification if the TimeSource ControllerComponent contains
+  Heartbeat.
+
+- `transaction_event_callback`
+
+  Called when a transaction_event was sent to the CSMS.
+
+- `transaction_event_response_callback`
+
+  Called when a transaction_event_response was received from the CSMS.
+
+- `unlock_connector_callback`
+
+  Used by libocpp to force unlock a connector
+
+- `update_firmware_request_callback`
+
+  Initiates a firmware update request. Triggers a security event notification
+  if the certificate is Invalid or Revoked.
+
+- `validate_network_profile_callback`
+
+  Validates the submitted Network Profile. Is Rejected if
+  - No callback registered to validate network profile
+  - CSMS attempted to set a network profile with a lower securityProfile
+  - CSMS attempted to set a network profile that could not be validated
+  - Network profile could not be written to the device model storage
+
+- `variable_changed_callback`
+
+  Called when a variable has been changed by the CSMS
+
 ### Initialize the database
+
 - Use provided sql database or implement your own storage drive
-
-
 
 ## Install libocpp
 
@@ -519,15 +696,16 @@ Use the following command to start the charge point. Replace the config with [co
 Type `help` to see a list of possible commands.
 
 ## Building the doxygen documentation
+
 ```bash
   cmake -S . -B build
   cmake --build build --target doxygen-ocpp
 ```
+
 You will find the generated doxygen documentation at:
 `build/dist/docs/html/index.html`
 
-The main reference for the integration of libocpp for OCPP1.6 is the ocpp::v16::ChargePoint class defined in libocpp/include/ocpp/v16/charge_point.hpp . 
-
+The main reference for the integration of libocpp for OCPP1.6 is the ocpp::v16::ChargePoint class defined in libocpp/include/ocpp/v16/charge_point.hpp .
 
 ## Unit testing
 
@@ -536,15 +714,18 @@ To build the target and run the tests you can reference the script `.ci/build-ki
 The script allows the GitHub Actions runner to execute.
 
 Local testing:
+
 ```bash
 mkdir build
 cmake -B build -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX="./dist"
 cd build
 make -j$(nproc) install
 ```
+
 Run any required tests from build/tests.
 
 ## Building with FetchContent instead of EDM
+
 In [doc/build-with-fetchcontent](doc/build-with-fetchcontent) you can find an example how to build libocpp with FetchContent instead of EDM.
 
 ### Support for TPM keys
