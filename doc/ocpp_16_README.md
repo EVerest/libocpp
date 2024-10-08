@@ -14,7 +14,7 @@ This C++ library provides a complete and production-ready solution for integrati
 - [Standalone Integration](#standalone-integration)
   - [Overview of Expected Callbacks and Event Handlers](#overview-of-expected-callbacks-and-event-handlers)
   - [Usage for OCPP 1.6](#usage-for-ocpp-16)
-    - [`ChargePoint` constructor](#chargepoint-constructor)
+    - [`ChargePoint` Constructor](#chargepoint-constructor)
     - [Registering Callbacks](#registering-callbacks)
     - [Authorization](#authorization)
   - [Initialize the Database](#initialize-the-database)
@@ -71,35 +71,6 @@ If you provide a CSMS that is not yet listed here, feel free to
 | Fastned                         | Trialog |
 | Fraunhofer IAO (ubstack CHARGE) | ubitricity |
 | Green Motion                    | Weev Energy |
-
-- chargecloud
-- chargeIQ
-- Chargetic
-- Compleo
-- Current
-- Daimler Truck
-- ev.energy
-- eDRV
-- Fastned
-- [Open Charging Cloud (GraphDefined)](https://github.com/OpenChargingCloud/WWCP_OCPP)
-- Electrip Global
-- EnergyStacks
-- EV-Meter
-- Fraunhofer IAO (ubstack CHARGE)
-- Green Motion
-- gridundco
-- ihomer (Infuse CPMS)
-- iLumen
-- JibeCompany (CharlieV CMS and Chargebroker proxy)
-- MSI
-- PUMP (PUMP Connect)
-- Scoptvision (Scopt Powerconnect)
-- Siemens
-- [SteVe](https://github.com/steve-community/steve)
-- Syntech
-- Trialog
-- ubitricity
-- Weev Energy
 
 ## Integration with EVerest
 
@@ -233,7 +204,7 @@ This is defined in libocpp/include/ocpp/v16/charge_point.hpp and takes the follo
   │       └── V2G_ROOT_CA.key
   ```
 
-#### registering callbacks
+#### Registering Callbacks
 
 You can (and in many cases MUST) register a number of callbacks so libocpp can interact with the charger. In EVerest most of this functionality is orchestrated by the "EvseManager" module, but you can also register your own callbacks interacting directly with your chargers software. Following is a list of callbacks that you must register and a few words about their purpose.
 
