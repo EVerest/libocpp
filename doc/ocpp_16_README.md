@@ -313,7 +313,7 @@ Type `help` to see a list of possible commands.
 
 -----
 
-## Build and Install libocpp
+## Build and Install `libocpp`
 
 For Debian GNU/Linux 11 you will need the following dependencies:
 
