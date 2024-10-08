@@ -20,9 +20,9 @@ This C++ library provides a complete and production-ready solution for integrati
   - [Initialize the Database](#initialize-the-database)
 - [Quickstart for OCPP 1.6](#quickstart-for-ocpp-16)
 - [Build and Install `libocpp`](#build-and-install-libocpp)
-- [Building the Doxygen Documentation](#building-the-doxygen-documentation)
-- [Unit Testing](#unit-testing)
 - [Building with FetchContent Instead of EDM](#building-with-fetchcontent-instead-of-edm)
+- [Unit Testing](#unit-testing)
+- [Building the Doxygen Documentation](#building-the-doxygen-documentation)
 - [Support for TPM Keys](#support-for-tpm-keys)
 - [Support for `websocket++`](#support-for-websocket)
 - [Support for `iface`](#support-for-iface)
@@ -84,7 +84,8 @@ OCPP is a protocol that affects, controls, and monitors many areas of a charging
 
 The actual substance of how a charging station reacts to or initiates an OCPP command (such as `Reset.req` or `RemoteStartTransaction.req`) is left to the rest of the charging station's systems. This is done by providing means of (a) registering **callbacks** that can be triggered by a `libocpp` `ChargePoint` in response to certain events and (b) reacting to various **event handlers** defined on a `ChargePoint` in other areas of the charging station's codebase.
 
-> [!IMPORTANT] Integrating this library with your charging station requires both (a) defining **callbacks** that enable control of your station by `libocpp` and (b) calling `libocpp` **event handlers** in your charging station's systems in response to new events and data in order to keep `libocpp` up to date on station information.
+> [!IMPORTANT]
+> Integrating this library with your charging station requires both (a) defining **callbacks** that enable control of your station by `libocpp` and (b) calling `libocpp` **event handlers** in your charging station's systems in response to new events and data in order to keep `libocpp` up to date on station information.
 
 ### Terminology
 Throughout this document and the `libocpp` codebase, the following conventions are followed:
@@ -312,20 +313,6 @@ Type `help` to see a list of possible commands.
 
 -----
 
-## Building the Doxygen Documentation
-
-```bash
-  cmake -S . -B build
-  cmake --build build --target doxygen-ocpp
-```
-
-You will find the generated doxygen documentation at:
-`build/dist/docs/html/index.html`
-
-The main reference for the integration of libocpp for OCPP1.6 is the ocpp::v16::ChargePoint class defined in libocpp/include/ocpp/v16/charge_point.hpp.
-
------
-
 ## Build and Install libocpp
 
 For Debian GNU/Linux 11 you will need the following dependencies:
@@ -351,6 +338,15 @@ Execute cmake and then make install:
   make install
 ```
 
+-----
+
+## Building with FetchContent Instead of EDM
+
+In [doc/build-with-fetchcontent](/doc/build-with-fetchcontent) you can find an example how to build libocpp with FetchContent instead of EDM.
+
+-----
+
+
 ## Unit Testing
 
 GTest is required for building the test cases target.
@@ -370,9 +366,17 @@ Run any required tests from build/tests.
 
 -----
 
-## Building with FetchContent Instead of EDM
+## Building the Doxygen Documentation
 
-In [doc/build-with-fetchcontent](/doc/build-with-fetchcontent) you can find an example how to build libocpp with FetchContent instead of EDM.
+```bash
+  cmake -S . -B build
+  cmake --build build --target doxygen-ocpp
+```
+
+You will find the generated doxygen documentation at:
+`build/dist/docs/html/index.html`
+
+The main reference for the integration of libocpp for OCPP1.6 is the ocpp::v16::ChargePoint class defined in libocpp/include/ocpp/v16/charge_point.hpp.
 
 -----
 
