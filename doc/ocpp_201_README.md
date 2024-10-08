@@ -56,18 +56,20 @@ The development of OCPP 2.0.1 implementation is in progress — [OCPP 2.0.1 stat
 
 ## CSMS Compatibility
 
-The ongoing development of OCPP 2.0.1 implementation is continuously tested against OCTT2 (OCPP Compliance Testing Tool 2), and has been tested against several Charging Station Management Systems (CSMS):
+The ongoing development of OCPP 2.0.1 implementation is continuously tested against OCTT2 (OCPP Compliance Testing Tool 2), and has been tested against the following Charging Station Management Systems (CSMS):
 
-- [CitrineOS](https://lfenergy.org/projects/citrineos/)
-- Chargepoint
-- Current
-- ihomer (Infuse CPMS)
-- Instituto Tecnológico de la Energía (ITE)
-- [MaEVe (Thoughtworks)](https://github.com/thoughtworks/maeve-csms)
-- [Monta](https://monta.com)
-- [Open Charging Cloud (GraphDefined)](https://github.com/OpenChargingCloud/WWCP_OCPP)
-- Switch EV
-- SWTCH
+| CSMS                                                                                 |
+| :----------------------------------------------------------------------------------- |
+| Chargepoint                                                                          |
+| [CitrineOS](https://lfenergy.org/projects/citrineos/)                                |
+| Current                                                                              |
+| ihomer (Infuse CPMS)                                                                 |
+| Instituto Tecnológico de la Energía (ITE)                                            |
+| [MaEVe (Thoughtworks)](https://github.com/thoughtworks/maeve-csms)                   |
+| [Monta](https://monta.com)                                                           |
+| [Open Charging Cloud (GraphDefined)](https://github.com/OpenChargingCloud/WWCP_OCPP) |
+| Switch EV                                                                            |
+| SWTCH                                                                                |
 
 ## Integration with EVerest
 
