@@ -12,7 +12,7 @@ This C++ library provides a complete and production-ready solution for integrati
 - [CSMS Compatibility](#csms-compatibility)
 - [Integration with EVerest](#integration-with-everest)
 - [Standalone Integration](#standalone-integration)
-  - [Overview of the required callbacks and events and what libocpp expects to happen](#overview-of-the-required-callbacks-and-events-and-what-libocpp-expects-to-happen)
+  - [Overview of Expected Callbacks and Event Handlers](#overview-of-expected-callbacks-and-event-handlers)
   - [Usage for OCPP 1.6](#usage-for-ocpp-16)
     - [ChargePoint() constructor](#chargepoint-constructor)
     - [registering callbacks](#registering-callbacks)
