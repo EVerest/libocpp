@@ -5,7 +5,7 @@
 
 ---
 
-# EVerest OCPP Module (libocpp)
+# EVerest OCPP Module (`libocpp`)
 
 EVerest's Open Charge Point Protocol (OCPP) modules are based on `libocpp`, a standalone C++ library implementing client-side OCPP 1.6 and 2.0.1 communications. The library is designed to enable OCPP communications in electric vehicle charging stations, regardless of whether or not the stations are running EVerest.
  
