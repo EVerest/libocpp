@@ -338,11 +338,24 @@ public:
     virtual std::vector<CompositeSchedule> get_all_composite_schedules(const int32_t duration,
                                                                        const ChargingRateUnitEnum& unit) = 0;
 
+    /// \brief Gets the configured NetworkConnectionProfile based on the given \p configuration_slot . The
+    /// central system uri of the connection options will not contain ws:// or wss:// because this method removes it if
+    /// present. This returns the value from the cached network connection profiles. \param
+    /// network_configuration_priority \return
     virtual std::optional<NetworkConnectionProfile>
     get_network_connection_profile(const int32_t configuration_slot) = 0;
 
+    /// \brief Get the priority of the given configuration slot.
+    /// \param configuration_slot   The configuration slot to get the priority from.
+    /// \return The priority if the configuration slot exists.
+    ///
     virtual std::optional<int> get_configuration_slot_priority(const int configuration_slot) = 0;
 
+    /// @brief Get the network connection priorities.
+    /// Each item in the vector contains the configured configuration slots, where the slot with index 0 has the highest
+    /// priority.
+    /// @return The network connection priorities
+    ///
     virtual const std::vector<std::string>& get_network_connection_priorities() const = 0;
 };
 
