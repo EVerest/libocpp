@@ -107,7 +107,7 @@ Throughout this document and the `libocpp` codebase, the following conventions a
 
 The complete set of callbacks and event handlers defined on an OCPP 1.6 `ChargePoint` can be viewed in the latter's [header file](/include/ocpp/v16/charge_point.hpp).
 
-### Overview of the required callbacks and events and what libocpp expects to happen
+### Overview of Expected Callbacks and Event Handlers
 
 The following section will give you a high-level overview of how to integrate `libocpp` with your application. Please use the [Doxygen documentation](#building-the-doxygen-documentation) as an additional source of information about the `ChargePoint` API.
 
