@@ -85,7 +85,7 @@ public:
     void set_configure_network_connection_profile_callback(ConfigureNetworkConnectionProfileCallback callback);
 
     /// \brief Gets the configured NetworkConnectionProfile based on the given \p configuration_slot . The
-    /// central system uri ofthe connection options will not contain ws:// or wss:// because this method removes it if
+    /// central system uri of the connection options will not contain ws:// or wss:// because this method removes it if
     /// present. This returns the value from the cached network connection profiles. \param
     /// network_configuration_priority \return
     std::optional<NetworkConnectionProfile> get_network_connection_profile(const int32_t configuration_slot);
@@ -96,6 +96,11 @@ public:
     ///
     std::optional<int> get_configuration_slot_priority(const int configuration_slot);
 
+    /// @brief Get the network connection priorities.
+    /// Each item in the vector contains the configured configuration slots, where the slot with index 0 has the highest
+    /// priority.
+    /// @return The network connection priorities
+    ///
     const std::vector<std::string>& get_network_connection_priorities() const;
 
     /// \brief Check if the websocket is connected
