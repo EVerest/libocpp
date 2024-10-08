@@ -51,9 +51,26 @@ The EVerest OCPP 1.6 implementation (`libocpp`) provides comprehensive support f
 The EVerest implementation of OCPP 1.6 has been tested against the
 OCPP Compliance Test Tool (OCTT and OCTT2) during the implementation.
 
-The following table shows CSMSs with which this library was tested.
+The following table shows CSMS with which this library was tested.
 If you provide a CSMS that is not yet listed here, feel free to
 [contact us](https://lists.lfenergy.org/g/everest)!
+
+| CSMS                            |     |
+| :------------------------------ | :--------  |
+| chargecloud                     | gridundco |
+| chargeIQ                        | ihomer (Infuse CPMS) |
+| Chargetic                       | iLumen |
+| Compleo                         | JibeCompany (CharlieV CMS and Chargebroker proxy) |
+| Current                         | MSI |
+| Daimler Truck                   | [Open Charging Cloud (GraphDefined)](https://github.com/OpenChargingCloud/WWCP_OCPP) |
+| eDRV                            | PUMP (PUMP Connect) |
+| Electrip Global                 | Scoptvision (Scopt Powerconnect) |
+| EnergyStacks                    | Siemens |
+| EV-Meter                        | [SteVe](https://github.com/steve-community/steve) |
+| ev.energy                       | Syntech |
+| Fastned                         | Trialog |
+| Fraunhofer IAO (ubstack CHARGE) | ubitricity |
+| Green Motion                    | Weev Energy |
 
 - chargecloud
 - chargeIQ
@@ -283,11 +300,13 @@ To use libocpp as a auth token validator (e.g. before starting a transaction) yo
 
 ### Initialize the database
 
-- Use provided sql database or implement your own storage drive
+Use provided sql database or implement your own storage drive.
+
+-----
 
 ## Quickstart for OCPP 1.6
 
-Libocpp provides a small standalone OCPP1.6 client that you can control using command line.
+Libocpp provides a small standalone OCPP 1.6 client that you can control using command line.
 
 Install the dependencies and libocpp as described in [Build and Install libocpp](#build-and-install-libocpp).
 
@@ -320,7 +339,9 @@ Use the following command to start the charge point. Replace the config with [co
 
 Type `help` to see a list of possible commands.
 
-## Building the doxygen documentation
+-----
+
+## Building the Doxygen Documentation
 
 ```bash
   cmake -S . -B build
@@ -331,6 +352,8 @@ You will find the generated doxygen documentation at:
 `build/dist/docs/html/index.html`
 
 The main reference for the integration of libocpp for OCPP1.6 is the ocpp::v16::ChargePoint class defined in libocpp/include/ocpp/v16/charge_point.hpp.
+
+-----
 
 ## Build and Install libocpp
 
@@ -374,32 +397,35 @@ make -j$(nproc) install
 
 Run any required tests from build/tests.
 
-## Building with FetchContent instead of EDM
+-----
+
+## Building with FetchContent Instead of EDM
 
 In [doc/build-with-fetchcontent](/doc/build-with-fetchcontent) you can find an example how to build libocpp with FetchContent instead of EDM.
 
-## Support for TPM keys
+-----
 
-In order to use the TPM keys, it is mandatory to use the default libwebsocket implementation.
+## Support for TPM Keys
 
-## Support for websocket++
+In order to use the TPM keys, it is mandatory to use the default `libwebsocket` implementation.
 
-The old websocket++ implementation has been deprecated. For enabling websocket++ support use the following cmake option:
+-----
+
+## Support for `websocket++`
+
+The old `websocket++` implementation has been deprecated. For enabling `websocket++` support use the following cmake option:
 
 ```bash
   cmake .. -DLIBOCPP_ENABLE_DEPRECATED_WEBSOCKETPP=ON
 ```
+-----
 
-## Support for iface
+## Support for `iface`
 
-In order to connect through a custom network iface, a custom internal config variable 'IFace' can be used.
+In order to connect through a custom network `iface`, a custom internal config variable 'IFace' can be used.
 
 ```json
 "Internal": {        
     "IFace" : "enp43s0"
 }
 ```
-
-## Get Involved
-
-See the [COMMUNITY.md](https://github.com/EVerest/EVerest/blob/main/COMMUNITY.md) and [CONTRIBUTING.md](https://github.com/EVerest/EVerest/blob/main/CONTRIBUTING.md) of the EVerest project to get involved.
