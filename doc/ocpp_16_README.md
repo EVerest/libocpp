@@ -98,11 +98,14 @@ The actual substance of how a charging station reacts to or initiates an OCPP co
 
 > [!IMPORTANT] Integrating this library with your charging station requires both (a) defining **callbacks** that enable control of your station by `libocpp` and (b) calling `libocpp` **event handlers** in your charging station's systems in response to new events and data in order to keep `libocpp` up to date on station information.
 
-Libocpp needs registered **callbacks** in order to execute control commands defined within OCPP (e.g Reset.req or RemoteStartTransaction.req)
+### Terminology
+Throughout this document and the `libocpp` codebase, the following conventions are followed:
 
-The implementation must call **event handlers** of libocpp so that the library can track the state of the charging station and trigger OCPP messages accordingly (e.g. MeterValues.req , StatusNotification.req)
+- A **callback** is a function providing the actual station-specific implementation of an OCPP command. It allows a `libocpp` `ChargePoint` to control other systems within a charging station. By convention, each callback on a `ChargePoint` has a name suffixed with `_callback` (for instance, `unlock_connector_callback`). A suitable `std::function` can be **registered** as a callback on a `ChargePoint` by providing it as an argument for the relevant `register_` function (such as `register_unlock_connector_callback`).
 
-Your reference within libocpp to interact is a single instance to the class [ChargePoint](/include/ocpp/v16/charge_point.hpp) for OCPP 1.6 
+- An **event handler** is a public function defined on a `ChargePoint` that allows a charging station to update the state being tracked by the `ChargePoint` based on new information (meter values, charging session events, etc.) and (indirectly) send messages to a CSMS. By convention, the names of event handlers on the `ChargePoint` are each prefixed with `on_` (for instance, `on_meter_values`).
+
+The complete set of callbacks and event handlers defined on an OCPP 1.6 `ChargePoint` can be viewed in the latter's [header file](/include/ocpp/v16/charge_point.hpp).
 
 ### Overview of the required callbacks and events and what libocpp expects to happen
 
