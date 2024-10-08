@@ -104,7 +104,7 @@ Your reference within libocpp to interact is a single instance to the class [Cha
 
 ### Overview of the required callbacks and events and what libocpp expects to happen
 
-The following section will give you a high level overview of how to integrate libocpp with your application. Please use the [Doxygen Documentation](#building-the-doxygen-documentation) as an additional source for the ChargePoint API.
+The following section will give you a high-level overview of how to integrate `libocpp` with your application. Please use the [Doxygen documentation](#building-the-doxygen-documentation) as an additional source of information about the `ChargePoint` API.
 
 In EVerest the OCPP module leverages several other modules to perform tasks that relate to authorization, reservations, charging session handling and system tasks like rebooting or firmware updates.
 
