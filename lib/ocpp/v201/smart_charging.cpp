@@ -676,38 +676,16 @@ std::optional<std::pair<ClearedChargingLimitRequest, std::vector<TransactionEven
 SmartChargingHandler::handle_external_limit_cleared(double percentage_delta, ChargingLimitSourceEnum source,
                                                     std::optional<int32_t> evse_id) const {
 
-    bool has_transaction = false;
-
     std::pair<ClearedChargingLimitRequest, std::vector<TransactionEventRequest>> pair;
     std::vector<TransactionEventRequest> transaction_event_requests = {};
 
     const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
     const float limit_change_significance = this->device_model->get_value<double>(limit_change_cv);
 
-    if (evse_id.has_value()) {
-        auto evse = &this->evse_manager.get_evse(evse_id.value());
-        if (evse->has_active_transaction()) {
-            has_transaction = true;
-            // K13.FR.03
-            if (percentage_delta > limit_change_significance) {
-                auto& tx = evse->get_transaction();
-                transaction_event_requests.push_back(this->create_transaction_event_request(tx));
-            }
-        }
-    } else {
-        for (auto& evse : this->evse_manager) {
-            if (evse.has_active_transaction()) {
-                has_transaction = true;
+    const bool limit_change_significance_exceeded = percentage_delta > limit_change_significance;
 
-                // K13.FR.03
-                if (percentage_delta > limit_change_significance) {
-
-                    auto& tx = evse.get_transaction();
-                    transaction_event_requests.push_back(this->create_transaction_event_request(tx));
-                }
-            }
-        }
-    }
+    bool has_transaction = this->process_evses_with_active_transactions(limit_change_significance_exceeded,
+                                                                        transaction_event_requests, evse_id);
 
     std::optional<std::pair<ClearedChargingLimitRequest, std::vector<TransactionEventRequest>>> request;
 
@@ -742,6 +720,31 @@ SmartChargingHandler::create_transaction_event_request(std::unique_ptr<EnhancedT
     tmp.transactionInfo = tx->get_transaction();
 
     return tmp;
+}
+
+bool SmartChargingHandler::process_evses_with_active_transactions(
+    const bool limit_change_significance_exceeded, std::vector<TransactionEventRequest>& transaction_event_requests,
+    std::optional<int32_t> evse_id) const {
+    bool has_transaction = false;
+    if (evse_id.has_value()) {
+        auto evse = &this->evse_manager.get_evse(evse_id.value());
+        if (evse->has_active_transaction()) {
+            has_transaction = true;
+            // K13.FR.03
+            if (limit_change_significance_exceeded) {
+                auto& tx = evse->get_transaction();
+                transaction_event_requests.push_back(this->create_transaction_event_request(tx));
+            }
+        }
+    } else {
+        for (auto& evse : this->evse_manager) {
+            has_transaction = (process_evses_with_active_transactions(limit_change_significance_exceeded,
+                                                                      transaction_event_requests, evse.get_id()) ||
+                               has_transaction);
+        }
+    }
+
+    return has_transaction;
 }
 
 } // namespace ocpp::v201

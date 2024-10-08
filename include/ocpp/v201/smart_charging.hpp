@@ -255,6 +255,9 @@ private:
     void conform_validity_periods(ChargingProfile& profile) const;
     CurrentPhaseType get_current_phase_type(const std::optional<EvseInterface*> evse_opt) const;
     TransactionEventRequest create_transaction_event_request(std::unique_ptr<EnhancedTransaction>& tx) const;
+    bool process_evses_with_active_transactions(const bool limit_change_significance_exceeded,
+                                                std::vector<TransactionEventRequest>& transaction_event_requests,
+                                                std::optional<int32_t> evse_id) const;
 };
 
 } // namespace ocpp::v201
