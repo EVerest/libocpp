@@ -19,7 +19,7 @@ This C++ library provides a complete and production-ready solution for integrati
     - [Authorization](#authorization)
   - [Initialize the database](#initialize-the-database)
 - [Quickstart for OCPP 1.6](#quickstart-for-ocpp-16)
-- [Build and Install libocpp](#build-and-install-libocpp)
+- [Build and Install `libocpp`](#build-and-install-libocpp)
 - [Building the doxygen documentation](#building-the-doxygen-documentation)
 - [Unit Testing](#unit-testing)
 - [Building with FetchContent instead of EDM](#building-with-fetchcontent-instead-of-edm)
