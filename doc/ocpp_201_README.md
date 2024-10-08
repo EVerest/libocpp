@@ -20,8 +20,8 @@ OCPP 2.0.1 is currently under development.
 - [Integration with EVerest](#integration-with-everest)
 - [Standalone Integration](#standalone-integration)
   - [Key Integration Points](#key-integration-points)
-  - [Callbacks to register](#callbacks-to-register)
-  - [Event handlers to call](#event-handlers-to-call)
+  - [Callbacks to Register](#callbacks-to-register)
+  - [Event Handlers to Call](#event-handlers-to-call)
   - [Initialize the Database](#initialize-the-database)
   - [OCPP 2.0.1 Use Cases](#ocpp-201-use-cases)
 - [Quickstart for OCPP 2.0.1](#quickstart-for-ocpp-201)
@@ -30,8 +30,8 @@ OCPP 2.0.1 is currently under development.
 - [Unit Testing](#unit-testing)
 - [Building the Doxygen Documentation](#building-the-doxygen-documentation)
 - [Support for TPM Keys](#support-for-tpm-keys)
-- [Support for websocket++](#support-for-websocket)
-- [Support for iface](#support-for-iface)
+- [Support for `websocket++`](#support-for-websocket)
+- [Support for `iface`](#support-for-iface)
 
 
 ## Functionality Support
@@ -88,7 +88,7 @@ If you wish to integrate libocpp's OCPP 2.0.1 implementation directly into your 
 > The public API for these integrations are found in the [ChargePoint](/include/ocpp/v201/charge_point.hpp).
 
 
-### Callbacks to register
+### Callbacks to Register
 
 | callbacks                                               | description |
 | :------------------------------------------------------ | :---------- |
@@ -119,7 +119,7 @@ If you wish to integrate libocpp's OCPP 2.0.1 implementation directly into your 
 | `validate_network_profile_callback`                     | Validates the submitted Network Profile. Is Rejected if:<br>• No callback registered to validate network profile<br>• CSMS attempted to set a network profile with a lower securityProfile<br>• CSMS attempted to set a network profile that could not be validated<br>• Network profile could not be written to the device model storage<br> |
 | `variable_changed_callback`                             | Called when a variable has been changed by the CSMS |
 
-### Event handlers to call
+### Event Handlers to Call
 **table**
 
 ### Initialize the Database
@@ -451,7 +451,7 @@ Execute cmake and then make install:
 
 -----
 
-## Build and Install libocpp
+## Build and Install `libocpp`
 
 For Debian GNU/Linux 11 you will need the following dependencies:
 
@@ -510,13 +510,13 @@ The main reference for the integration of libocpp for OCPP2.0.1 is the ocpp::v20
 
 ## Support for TPM Keys
 
-In order to use the TPM keys, it is mandatory to use the default libwebsocket implementation.
+In order to use the TPM keys, it is mandatory to use the default `libwebsocket` implementation.
 
 -----
 
-## Support for websocket++
+## Support for `websocket++`
 
-The old websocket++ implementation has been deprecated. For enabling websocket++ support use the following cmake option:
+The old `websocket++` implementation has been deprecated. For enabling `websocket++` support use the following cmake option:
 
 ```bash
   cmake .. -DLIBOCPP_ENABLE_DEPRECATED_WEBSOCKETPP=ON
@@ -524,9 +524,9 @@ The old websocket++ implementation has been deprecated. For enabling websocket++
 
 -----
 
-## Support for iface
+## Support for `iface`
 
-In order to connect through a custom network iface, a custom internal config variable 'IFace' can be used.
+In order to connect through a custom network `iface`, a custom internal config variable 'IFace' can be used.
 
 ```json
 "Internal": {        
