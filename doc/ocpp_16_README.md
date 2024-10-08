@@ -29,7 +29,7 @@ This C++ library provides a complete and production-ready solution for integrati
  
 ## Functionality Support
 
-The EVerest OCPP 1.6 implementation (libocpp) provides comprehensive support for OCPP 1.6 functionalities. Below is an overview of the supported features:
+The EVerest OCPP 1.6 implementation (`libocpp`) provides comprehensive support for OCPP 1.6 functionalities. Below is an overview of the supported features:
 
 | OCPP 1.6 Functionality       | Supported                    |
 | ---------------------------- | ---------------------------- |
