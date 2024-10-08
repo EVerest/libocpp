@@ -22,7 +22,7 @@ This C++ library provides a complete and production-ready solution for integrati
 - [Build and Install `libocpp`](#build-and-install-libocpp)
 - [Building the Doxygen Documentation](#building-the-doxygen-documentation)
 - [Unit Testing](#unit-testing)
-- [Building with FetchContent instead of EDM](#building-with-fetchcontent-instead-of-edm)
+- [Building with FetchContent Instead of EDM](#building-with-fetchcontent-instead-of-edm)
 - [Support for TPM keys](#support-for-tpm-keys)
 - [Support for websocket++](#support-for-websocket)
 - [Support for iface](#support-for-iface)
