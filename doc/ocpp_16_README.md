@@ -14,7 +14,7 @@ This C++ library provides a complete and production-ready solution for integrati
 - [Standalone Integration](#standalone-integration)
   - [Overview of Expected Callbacks and Event Handlers](#overview-of-expected-callbacks-and-event-handlers)
   - [Usage for OCPP 1.6](#usage-for-ocpp-16)
-    - [ChargePoint() constructor](#chargepoint-constructor)
+    - [`ChargePoint` constructor](#chargepoint-constructor)
     - [registering callbacks](#registering-callbacks)
     - [Authorization](#authorization)
   - [Initialize the database](#initialize-the-database)
