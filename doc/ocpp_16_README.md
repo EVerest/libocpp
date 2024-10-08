@@ -92,7 +92,9 @@ When you run libocpp with OCPP 1.6 through EVerest, the build process of everest
 
 ## Standalone Integration
 
-OCPP is a protocol that affects, controls and monitors many areas of a charging station's operation.
+OCPP is a protocol that affects, controls, and monitors many areas of a charging station's operation. The `libocpp` library is just the messenger for this protocol. It is intended to provide mechanisms for connecting to and authenticating with a CSMS, sending and receiving the OCPP messages that govern behaviors in the standard, and to the track state required for a charging station to conform to the protocol all while minimizing hardware- or implementation-specific functionality.
+
+The actual substance of how a charging station reacts to or initiates an OCPP command (such as `Reset.req` or `RemoteStartTransaction.req`) is left to the rest of the charging station's systems. This is done by providing means of (a) registering **callbacks** that can be triggered by a `libocpp` `ChargePoint` in response to certain events and (b) reacting to various **event handlers** defined on a `ChargePoint` in other areas of the charging station's codebase.
 
 > [!IMPORTANT] Integrating this library with your charging station requires both (a) defining **callbacks** that enable control of your station by `libocpp` and (b) calling `libocpp` **event handlers** in your charging station's systems in response to new events and data in order to keep `libocpp` up to date on station information.
 
