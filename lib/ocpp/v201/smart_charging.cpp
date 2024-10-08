@@ -633,9 +633,9 @@ ChargingSchedule create_schedule_from_limit(const ConstantChargingLimit limit) {
 }
 
 std::optional<NotifyChargingLimitRequest>
-SmartChargingHandler::handle_external_limits_changed(std::optional<int32_t> evse_id,
-                                                     const std::variant<ConstantChargingLimit, ChargingSchedule>& limit,
-                                                     double percentage_delta, ChargingLimitSourceEnum source) const {
+SmartChargingHandler::handle_external_limits_changed(const std::variant<ConstantChargingLimit, ChargingSchedule>& limit,
+                                                     double percentage_delta, ChargingLimitSourceEnum source,
+                                                     std::optional<int32_t> evse_id) const {
     // K12.FR.04
     if (source == ChargingLimitSourceEnum::CSO) {
         // The spec does not define what we should do when the source

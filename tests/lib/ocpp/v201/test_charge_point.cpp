@@ -960,9 +960,9 @@ TEST_F(ChargepointTestFixtureV201, K12_OnExternalLimitsChanged_CallsHandler) {
 
     const std::optional<int32_t> evse_id(DEFAULT_EVSE_ID);
 
-    EXPECT_CALL(*smart_charging_handler, handle_external_limits_changed(evse_id, new_limit, deltaChanged, source));
+    EXPECT_CALL(*smart_charging_handler, handle_external_limits_changed(new_limit, deltaChanged, source, evse_id));
 
-    charge_point->on_external_limits_changed(DEFAULT_EVSE_ID, new_limit, deltaChanged, source);
+    charge_point->on_external_limits_changed(new_limit, deltaChanged, source, DEFAULT_EVSE_ID);
 }
 
 } // namespace ocpp::v201

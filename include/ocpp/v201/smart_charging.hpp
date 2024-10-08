@@ -109,9 +109,9 @@ public:
                                                            std::optional<ChargingRateUnitEnum> charging_rate_unit) = 0;
 
     virtual std::optional<NotifyChargingLimitRequest>
-    handle_external_limits_changed(std::optional<int32_t> evse_id,
-                                   const std::variant<ConstantChargingLimit, ChargingSchedule>& limit,
-                                   double percentage_delta, ChargingLimitSourceEnum source) const = 0;
+    handle_external_limits_changed(const std::variant<ConstantChargingLimit, ChargingSchedule>& limit,
+                                   double percentage_delta, ChargingLimitSourceEnum source,
+                                   std::optional<int32_t> evse_id) const = 0;
 };
 
 /// \brief This class handles and maintains incoming ChargingProfiles and contains the logic
@@ -185,9 +185,9 @@ public:
     /// based on \p percentage_delta and builds the notification.
     ///
     std::optional<NotifyChargingLimitRequest>
-    handle_external_limits_changed(std::optional<int32_t> evse_id,
-                                   const std::variant<ConstantChargingLimit, ChargingSchedule>& limit,
-                                   double percentage_delta, ChargingLimitSourceEnum source) const override;
+    handle_external_limits_changed(const std::variant<ConstantChargingLimit, ChargingSchedule>& limit,
+                                   double percentage_delta, ChargingLimitSourceEnum source,
+                                   std::optional<int32_t> evse_id) const override;
 
 protected:
     ///
