@@ -23,9 +23,9 @@ This C++ library provides a complete and production-ready solution for integrati
 - [Building the Doxygen Documentation](#building-the-doxygen-documentation)
 - [Unit Testing](#unit-testing)
 - [Building with FetchContent Instead of EDM](#building-with-fetchcontent-instead-of-edm)
-- [Support for TPM keys](#support-for-tpm-keys)
-- [Support for websocket++](#support-for-websocket)
-- [Support for iface](#support-for-iface)
+- [Support for TPM Keys](#support-for-tpm-keys)
+- [Support for `websocket++`](#support-for-websocket)
+- [Support for `iface`](#support-for-iface)
  
 ## Functionality Support
 
