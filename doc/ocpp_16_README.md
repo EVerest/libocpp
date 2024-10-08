@@ -121,7 +121,7 @@ The following sections explain the steps you can follow to implement their funct
 
 ### Usage for OCPP 1.6
 
-#### ChargePoint() constructor
+#### `ChargePoint` Constructor
 
 The main entrypoint for `libocpp` for OCPP 1.6 is the `ocpp::v16::ChargePoint` constructor.
 This is defined in libocpp/include/ocpp/v16/charge_point.hpp and takes the following parameters:
