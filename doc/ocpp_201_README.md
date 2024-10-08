@@ -22,13 +22,17 @@ OCPP 2.0.1 is currently under development.
   - [Key Integration Points](#key-integration-points)
   - [Callbacks to register](#callbacks-to-register)
   - [Event handlers to call](#event-handlers-to-call)
-  - [Initialize the database](#initialize-the-database)
+  - [Initialize the Database](#initialize-the-database)
   - [OCPP 2.0.1 Use Cases](#ocpp-201-use-cases)
 - [Quickstart for OCPP 2.0.1](#quickstart-for-ocpp-201)
-- [Build and Install libocpp](#build-and-install-libocpp)
-- [Building with FetchContent instead of EDM](#building-with-fetchcontent-instead-of-edm)
-- [Unit testing](#unit-testing)
-- [Building the doxygen documentation](#building-the-doxygen-documentation)
+- [Build and Install `libocpp`](#build-and-install-libocpp)
+- [Building with FetchContent Instead of EDM](#building-with-fetchcontent-instead-of-edm)
+- [Unit Testing](#unit-testing)
+- [Building the Doxygen Documentation](#building-the-doxygen-documentation)
+- [Support for TPM Keys](#support-for-tpm-keys)
+- [Support for websocket++](#support-for-websocket)
+- [Support for iface](#support-for-iface)
+
 
 ## Functionality Support
 
@@ -118,7 +122,7 @@ If you wish to integrate libocpp's OCPP 2.0.1 implementation directly into your 
 ### Event handlers to call
 **table**
 
-### Initialize the database
+### Initialize the Database
 
 Use [provided SQLite database](/doc/database_migrations.md) or implement your own storage drive.
 
@@ -447,7 +451,7 @@ Execute cmake and then make install:
 
 -----
 
-## Build and install libocpp
+## Build and Install libocpp
 
 For Debian GNU/Linux 11 you will need the following dependencies:
 
@@ -465,13 +469,13 @@ Clone this repository.
 
 -----
 
-## Building with FetchContent instead of EDM
+## Building with FetchContent Instead of EDM
 
 In [doc/build-with-fetchcontent](/doc/build-with-fetchcontent) you can find an example how to build libocpp with FetchContent instead of EDM.
 
 -----
 
-## Unit testing
+## Unit Testing
 
 GTest is required for building the test cases target.
 To build the target and run the tests you can reference the script `.ci/build-kit/install_and_test.sh`.
@@ -490,21 +494,21 @@ Run any required tests from build/tests.
 
 -----
 
-## Building the doxygen documentation
+## Building the Doxygen Documentation
 
 ```bash
   cmake -S . -B build
   cmake --build build --target doxygen-ocpp
 ```
 
-You will find the generated doxygen documentation at:
+You will find the generated Doxygen documentation at:
 `build/dist/docs/html/index.html`
 
 The main reference for the integration of libocpp for OCPP2.0.1 is the ocpp::v201::ChargePoint class defined in libocpp/include/ocpp/v201/charge_point.hpp.
 
 -----
 
-## Support for TPM keys
+## Support for TPM Keys
 
 In order to use the TPM keys, it is mandatory to use the default libwebsocket implementation.
 
