@@ -17,7 +17,7 @@ This C++ library provides a complete and production-ready solution for integrati
     - [`ChargePoint` constructor](#chargepoint-constructor)
     - [Registering Callbacks](#registering-callbacks)
     - [Authorization](#authorization)
-  - [Initialize the database](#initialize-the-database)
+  - [Initialize the Database](#initialize-the-database)
 - [Quickstart for OCPP 1.6](#quickstart-for-ocpp-16)
 - [Build and Install `libocpp`](#build-and-install-libocpp)
 - [Building the doxygen documentation](#building-the-doxygen-documentation)
