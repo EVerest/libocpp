@@ -247,7 +247,7 @@ Some general notes: the "connector" parameter of some of the callbacks refers to
 
 each of these functions will have a small note what the Session Event was and what it triggers in libocpp
 
-| on _ functions                   | Description                                  |
+| on_ functions                   | Description                                  |
 | :------------------------------- | :----------------------------------------- |
 | `on_enabled(int32_t connector)`  | Notifies libocpp that the connector is functional and operational |
 | `on_disabled(int32_t connector)` | Notifies libocpp that the connector is disabled |
