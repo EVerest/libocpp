@@ -94,7 +94,7 @@ When you run libocpp with OCPP 1.6 through EVerest, the build process of everest
 
 OCPP is a protocol that affects, controls and monitors many areas of a charging station's operation.
 
-If you want to integrate this library with your charging station implementation, you have to register a couple of **callbacks** and integrate **event handlers**. This is necessary for the library to interact with your charging station according to the requirements of OCPP.
+> [!IMPORTANT] Integrating this library with your charging station requires both (a) defining **callbacks** that enable control of your station by `libocpp` and (b) calling `libocpp` **event handlers** in your charging station's systems in response to new events and data in order to keep `libocpp` up to date on station information.
 
 Libocpp needs registered **callbacks** in order to execute control commands defined within OCPP (e.g Reset.req or RemoteStartTransaction.req)
 
