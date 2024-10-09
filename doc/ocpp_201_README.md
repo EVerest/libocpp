@@ -11,9 +11,9 @@ The `ocpp::v201` namespace exposes a `ChargePoint` class capable of client-side 
 The OCPP 2.0.1 implementation in `libocpp` is nearing completion, but there remain areas of active development. The OCA also does not currently plan to provide an official validation tool for all functionality within the protocol until the end of 2024. A high-level overview of supported functionality is provided [below](#supported-certification-profiles). For a more granular and up-to-date analysis of available OCPP 2.0.1 features in `libocpp`, please refer to the [OCPP 2.0.1 Status document](ocpp_201_status.md).
 
 
-## Table of contents
+## Table of Contents
 
-- [Functionality Support](#functionality-support)
+- [Supported Certification Profiles](#supported-certification-profiles)
 - [CSMS Compatibility](#csms-compatibility)
 - [Integration with EVerest](#integration-with-everest)
 - [Standalone Integration](#standalone-integration)
@@ -21,7 +21,7 @@ The OCPP 2.0.1 implementation in `libocpp` is nearing completion, but there rema
   - [Callbacks to Register](#callbacks-to-register)
   - [Event Handlers to Call](#event-handlers-to-call)
   - [Initialize the Database](#initialize-the-database)
-  - [OCPP 2.0.1 Use Cases](#ocpp-201-use-cases)
+  - [OCPP 2.0.1 Use Cases in `libocpp`](#ocpp-201-use-cases-in-libocpp)
 - [Quickstart for OCPP 2.0.1](#quickstart-for-ocpp-201)
 - [Build and Install `libocpp`](#build-and-install-libocpp)
 - [Building with FetchContent Instead of EDM](#building-with-fetchcontent-instead-of-edm)
