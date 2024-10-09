@@ -66,7 +66,7 @@ The ongoing development of OCPP 2.0.1 implementation is continuously tested agai
 | [MaEVe (Thoughtworks)](https://github.com/thoughtworks/maeve-csms)                   |
 | [Monta](https://monta.com)                                                           |
 | [Open Charging Cloud (GraphDefined)](https://github.com/OpenChargingCloud/WWCP_OCPP) |
-| Switch EV                                                                            |
+| [Switch EV](https://www.switch-ev.com/platform)                                                                            |
 | [SWTCH Energy](https://swtchenergy.com/)                                                                                |
 
 ## Integration with EVerest
