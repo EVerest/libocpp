@@ -83,8 +83,8 @@ If you wish to integrate libocpp's OCPP 2.0.1 implementation directly into your 
 
 ### Key Integration Points
 
-1. **Callbacks**: Register these to allow libocpp to execute commands defined in OCPP (e.g., Reset.req or RemoteStartTransaction.req).
-2. **Event Handlers**: Call these to notify libocpp of events, enabling the library to track the charging station's state and trigger appropriate OCPP messages (e.g., MeterValues.req, StatusNotification.req).
+1. [**Callbacks**](#callbacks-to-register): Register these to allow libocpp to execute commands defined in OCPP (e.g., Reset.req or RemoteStartTransaction.req).
+2. [**Event Handlers**](#event-handlers-to-call): Call these to notify libocpp of events, enabling the library to track the charging station's state and trigger appropriate OCPP messages (e.g., MeterValues.req, StatusNotification.req).
 
 > [!note]
 > The public API for these integrations are found in the [ChargePoint](/include/ocpp/v201/charge_point.hpp).
@@ -126,7 +126,7 @@ Event handlers to call are found in the [ChargePoint](https://github.com/EVerest
 
 ### Initialize the Database
 
-Use [provided SQLite database](/doc/database_migrations.md) or implement your own storage drive.
+Use provided [SQLite database](/doc/database_migrations.md) or implement your own storage drive.
 
 ### OCPP 2.0.1 Use Cases
 
