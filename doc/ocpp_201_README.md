@@ -122,7 +122,7 @@ If you wish to integrate libocpp's OCPP 2.0.1 implementation directly into your 
 | `variable_changed_callback`                             | Called when a variable has been changed by the CSMS |
 
 ### Event Handlers to Call
-**table**
+Event handlers to call are found in the [ChargePoint](https://github.com/EVerest/libocpp/blob/2124d055f9cc8f253d3a2441ec2d70686174d0ed/include/ocpp/v201/charge_point.hpp#L116).
 
 ### Initialize the Database
 
