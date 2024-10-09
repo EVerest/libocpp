@@ -62,7 +62,7 @@ The ongoing development of OCPP 2.0.1 implementation is continuously tested agai
 | [CitrineOS](https://lfenergy.org/projects/citrineos/)                                |
 | [Current](https://www.current.eco/)                                                                              |
 | ihomer (Infuse CPMS)                                                                 |
-| Instituto Tecnológico de la Energía (ITE)                                            |
+| [Instituto Tecnológico de la Energía (ITE) HySGrid+](https://www.ite.es/i-d-i/proyectos/hysgrid/)                                            |
 | [MaEVe (Thoughtworks)](https://github.com/thoughtworks/maeve-csms)                   |
 | [Monta](https://monta.com)                                                           |
 | [Open Charging Cloud (GraphDefined)](https://github.com/OpenChargingCloud/WWCP_OCPP) |
