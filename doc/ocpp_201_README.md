@@ -32,9 +32,9 @@ The OCPP 2.0.1 implementation in `libocpp` is nearing completion, but there rema
 - [Support for `iface`](#support-for-iface)
 
 
-## Functionality Support
+## Supported Certification Profiles
 
-The development of OCPP 2.0.1 implementation is in progress — [OCPP 2.0.1 status](/doc/ocpp_201_status.md). The following table shows the current support for OCPP 2.0.1 functionalities in libocpp:
+Some optional OCPP 2.0.1 features are still being actively developed by the `libocpp` community. The following table shows which portions of the OCPP 2.0.1 implementation within `libocpp` are still being built out, broken down by [OCPP 2.0.1 Certification Profile](https://openchargealliance.org/certificationocpp/certification-ocpp-2-0-1/):
 
 | OCPP 2.0.1 Functionality   | Supported                  |
 | :------------------------- | :------------------------- |
