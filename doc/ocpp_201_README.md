@@ -142,7 +142,7 @@ Use provided [SQLite database](/doc/database_migrations.md) or implement your ow
 | H      | Reservation                       |
 | I      | TariffAndCost                     |
 | J      | MeterValues                       |
-| K      | SmartCharging                     |
+| K      | [SmartCharging](#smart-charging)  |
 | L      | FirmwareManagement                |
 | M      | ISO 15118 CertificateManagement   |
 | N      | Diagnostics                       |
