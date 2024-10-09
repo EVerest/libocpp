@@ -67,7 +67,7 @@ The ongoing development of OCPP 2.0.1 implementation is continuously tested agai
 | [Monta](https://monta.com)                                                           |
 | [Open Charging Cloud (GraphDefined)](https://github.com/OpenChargingCloud/WWCP_OCPP) |
 | Switch EV                                                                            |
-| SWTCH                                                                                |
+| [SWTCH Energy](https://swtchenergy.com/)                                                                                |
 
 ## Integration with EVerest
 
