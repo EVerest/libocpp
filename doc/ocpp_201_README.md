@@ -81,13 +81,14 @@ Once `everest-core` has been built with your station-specific `libocpp` configur
 
 If you wish to integrate libocpp's OCPP 2.0.1 implementation directly into your charging station software without using the full EVerest stack, you'll need to register several **callbacks** and implement **event handlers**. This allows libocpp to interact with your charging station according to OCPP requirements.
 
-### Key Integration Points
+### Terminology
+Throughout this document and the `libocpp` codebase, the following conventions are followed:
 
-1. [**Callbacks**](#callbacks-to-register): Register these to allow libocpp to execute commands defined in OCPP (e.g., Reset.req or RemoteStartTransaction.req).
-2. [**Event Handlers**](#event-handlers-to-call): Call these to notify libocpp of events, enabling the library to track the charging station's state and trigger appropriate OCPP messages (e.g., MeterValues.req, StatusNotification.req).
+- A **callback** is a function providing the actual station-specific implementation of an OCPP command. It allows a `libocpp` `ChargePoint` to control other systems within a charging station. By convention, each callback on a `ChargePoint` has a name suffixed with `_callback` (for instance, `unlock_connector_callback`). A `Callbacks` `struct` containing a complete set of desired callback implementations (as suitable `std::function` instances) should be provided to a 2.0.1 `ChargePoint` at construction time.
 
-> [!note]
-> The public API for these integrations are found in the [ChargePoint](/include/ocpp/v201/charge_point.hpp).
+- An **event handler** is a public function defined on a `ChargePoint` that allows a charging station to update the state being tracked by the `ChargePoint` based on new information (meter values, charging session events, etc.) and (indirectly) send messages to a CSMS. By convention, the names of event handlers on the `ChargePoint` are each prefixed with `on_` (for instance, `on_meter_value`).
+
+The complete set of callbacks and event handlers defined on an OCPP 2.0.1 `ChargePoint` can be viewed in the latter's [header file](/include/ocpp/v201/charge_point.hpp). Please use the [Doxygen documentation](#building-the-doxygen-documentation) as an additional source of information about the `ChargePoint` API.
 
 
 ### Callbacks to Register
