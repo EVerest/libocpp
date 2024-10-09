@@ -146,24 +146,24 @@ This section includes an overview of how a subset of the OCPP 2.0.1 use cases th
 >
 > Please refer to the [OCPP 2.0.1 standard](https://openchargealliance.org/protocols/open-charge-point-protocol/#OCPP2.0.1) for more details. Functional blocks, use cases, and functional requirements are addressed in Part 2 of Edition 2.
 
-| Clause | Use Case Name                     |
-| :----- | :-------------------------------- |
-| A      | Security                          |
-| B      | Provisioning                      |
-| C      | Authorization                     |
-| D      | LocalAuthorizationList Management |
-| E      | Transactions                      |
-| F      | RemoteControl                     |
-| G      | Availability                      |
-| H      | Reservation                       |
-| I      | TariffAndCost                     |
-| J      | MeterValues                       |
-| K      | [SmartCharging](#smart-charging)  |
-| L      | FirmwareManagement                |
-| M      | ISO 15118 CertificateManagement   |
-| N      | Diagnostics                       |
-| O      | DisplayMessage                    |
-| P      | DataTransfer                      |
+| Functional Block | Subject.                                    |
+| :--------------- | :------------------------------------------ |
+| A                | Security                                    |
+| B                | Provisioning                                |
+| C                | Authorization                               |
+| D                | Local Authorization List Management         |
+| E                | Transactions                                |
+| F                | Remote Control                              |
+| G                | Availability                                |
+| H                | Reservation                                 |
+| I                | Tariff and Cost                             |
+| J                | Meter Values                                |
+| K                | [Smart Charging](#smart-charging-use-cases) |
+| L                | Firmware Management                         |
+| M                | ISO 15118 Certificate Management            |
+| N                | Diagnostics                                 |
+| O                | Display Message                             |
+| P                | Data Transfer                               |
 
 ### Smart Charging Use Cases
 
