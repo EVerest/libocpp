@@ -51,7 +51,7 @@ The EVerest OCPP 1.6 implementation (`libocpp`) provides comprehensive support f
 The EVerest implementation of OCPP 1.6 has been tested against the
 OCPP Compliance Test Tool (OCTT and OCTT2) during the implementation.
 
-The following table shows CSMS with which this library was tested.
+The following table shows CSMSs with which this library was tested.
 If you provide a CSMS that is not yet listed here, feel free to
 [contact us](https://lists.lfenergy.org/g/everest)!
 
