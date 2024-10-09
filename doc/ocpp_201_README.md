@@ -6,7 +6,8 @@
 
 The `ocpp::v201` namespace exposes a `ChargePoint` class capable of client-side OCPP 2.0.1 communications. It enables charging stations to communicate with a cloud backend over a websocket for the remote control of charging stations and administration of charging sessions.
 
-> [!NOTE] For more information about the differences between versions of the Open Charge Point Protocol, please refer to the [Open Charge Alliance's website](https://openchargealliance.org/protocols/open-charge-point-protocol/).
+> [!NOTE]
+> For more information about the differences between versions of the Open Charge Point Protocol, please refer to the [Open Charge Alliance's website](https://openchargealliance.org/protocols/open-charge-point-protocol/).
 
 The OCPP 2.0.1 implementation in `libocpp` is nearing completion, but there remain areas of active development. The OCA also does not currently plan to provide an official validation tool for all functionality within the protocol until the end of 2024. A high-level overview of supported functionality is provided [below](#supported-certification-profiles). For a more granular and up-to-date analysis of available OCPP 2.0.1 features in `libocpp`, please refer to the [OCPP 2.0.1 Status document](ocpp_201_status.md).
 
