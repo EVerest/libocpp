@@ -945,7 +945,7 @@ TEST_F(ChargePointFunctionalityTestFixtureV201, K02FR05_TransactionEnds_WillDele
                                           TriggerReasonEnum::StopAuthorized, {}, {}, ChargingStateEnum::EVConnected);
 }
 
-TEST_F(ChargepointTestFixtureV201, K12_OnExternalLimitsChanged_CallsHandler) {
+TEST_F(ChargePointFunctionalityTestFixtureV201, K12_OnExternalLimitsChanged_CallsHandler) {
     const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
     device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.1",
                             "test");
@@ -966,7 +966,7 @@ TEST_F(ChargepointTestFixtureV201, K12_OnExternalLimitsChanged_CallsHandler) {
     charge_point->on_external_limits_changed(new_limit, deltaChanged, source, DEFAULT_EVSE_ID);
 }
 
-TEST_F(ChargepointTestFixtureV201, K13_OnExternalLimitsCleared_CallsHandler) {
+TEST_F(ChargePointFunctionalityTestFixtureV201, K13_OnExternalLimitsCleared_CallsHandler) {
     const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
     device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.1",
                             "test");
