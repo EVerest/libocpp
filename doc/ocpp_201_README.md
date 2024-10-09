@@ -127,8 +127,10 @@ The complete set of callbacks and event handlers defined on an OCPP 2.0.1 `Charg
 | `validate_network_profile_callback`                     | Validates the submitted Network Profile. Is Rejected if:<br>• No callback registered to validate network profile<br>• CSMS attempted to set a network profile with a lower securityProfile<br>• CSMS attempted to set a network profile that could not be validated<br>• Network profile could not be written to the device model storage<br> |
 | `variable_changed_callback`                             | Called when a variable has been changed by the CSMS |
 
-### Event Handlers to Call
-Event handlers to call are found in the [ChargePoint](https://github.com/EVerest/libocpp/blob/2124d055f9cc8f253d3a2441ec2d70686174d0ed/include/ocpp/v201/charge_point.hpp#L116).
+### Event Handlers
+
+<!-- FIXME: Add a table of the current event handlers, or get rid of this section. -->
+The complete set of event handlers defined on an OCPP 2.0.1 `ChargePoint` can be viewed in the latter's [header file](/include/ocpp/v201/charge_point.hpp). Please use the [Doxygen documentation](#building-the-doxygen-documentation) as an additional source of information about the `ChargePoint` API.
 
 ### Initialize the Database
 
