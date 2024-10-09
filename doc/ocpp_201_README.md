@@ -158,10 +158,15 @@ This section includes an overview of how a subset of the OCPP 2.0.1 use cases th
 | O      | DisplayMessage                    |
 | P      | DataTransfer                      |
 
-### Smart Charging
+### Smart Charging Use Cases
 
-Smart Charging is a use case within OCPP.
-Work to fully support OCPP 2.0.1 Smart Charging is ongoing. Most functional requirements for General Smart Charging use cases (that is, K01–K10) are now supported. For an up-to-date overview of which features are currently supported, please refer to the [OCPP 2.0.1 Status](/doc/ocpp_201_status.md) document.
+The use cases within the Smart Charging functional block are subdivided into the following three categories of use cases:
+
+1. General Smart Charging (Use Cases K01–K10)
+2. External Charging Limit-based Smart Charging (K11–K14)
+3. ISO 15118-based Smart Charging (K15–K17)
+
+Support for General and External Charging Limit-based Smart Charging is largely complete, with ISO 15118-based Smart Charging under active development. For an up-to-date overview of exactly which features are currently supported as well as design decisions that have been made to address optional or ambiguous functional requirements, please refer to the [OCPP 2.0.1 Status document](ocpp_201_status.md).
 
 #### K01 SetChargingProfile
 
