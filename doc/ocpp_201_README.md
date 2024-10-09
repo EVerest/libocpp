@@ -134,7 +134,7 @@ The complete set of event handlers defined on an OCPP 2.0.1 `ChargePoint` can be
 
 ### Initialize the Database
 
-Use provided [SQLite database](/doc/database_migrations.md) or implement your own storage drive.
+To initialize the database where a `ChargePoint` will persist state, please use the provided [SQLite database](/doc/database_migrations.md) or implement your own storage drive.
 
 ## OCPP 2.0.1 Use Cases in `libocpp`
 
