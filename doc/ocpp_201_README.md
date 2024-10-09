@@ -71,9 +71,11 @@ The ongoing development of OCPP 2.0.1 implementation is continuously tested agai
 
 ## Integration with EVerest
 
-The libocpp OCPP 2.0.1 module is automatically integrated within [everest-core](https://github.com/EVerest/everest-core) — the complete software stack for your charging station. 
+EVerest provides a simplified OCPP 2.0.1 integration path through its `OCPP201` module.
 
-When you run libocpp with OCPP 2.0.1 through EVerest, the build process of everest-core handles the installation of all necessary dependencies. This includes initializing the device model database using the [config.json](config/v201/config.json) file.
+When setting up a development environment (or building) EVerest through the [`everest-core`](https://github.com/EVerest/everest-core) project, a version of `libocpp` will be pulled down as a dependency. If you wish to use the `OCPP201` module, you will want to defined your charging station's Device Model in the [`config.json` file](config/v201/config.json) for the `libocpp` repository pulled in by `everest-core` as a dependency. This configuration will be incorporated into `everest-core` during the latter's build process.
+
+Once `everest-core` has been built with your station-specific `libocpp` configuration, you can then specify and configure `OCPP201` as a module in the [runtime configuration](https://everest.github.io/nightly/general/04_detail_module_concept.html#wiring-it-all-together-the-run-configuration) of your EVerest deployment.
 
 ## Standalone Integration
 
