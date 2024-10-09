@@ -143,11 +143,12 @@ The OCPP 2.0.1 specification is broken down into concrete functional requirement
 
 This section includes an overview of how a subset of the OCPP 2.0.1 use cases that supported by `libocpp` are implemented in conjunction with callbacks provided by the charging station. We hope it serves as a useful guide to portions of the `libocpp` API and illustrates patterns of interaction between `libocpp` and other systems within a charging station.
 
-> [!NOTE] Our goal is not to reproduce the entire OCPP 2.0.1 specification in this document. Rather we intend to illustrate how various use cases are realized using `ChargePoint` methods in `libocpp` in conjunction with callback implementations and event handlers.
+> [!NOTE]
+> Our goal is not to reproduce the entire OCPP 2.0.1 specification in this document. Rather we intend to illustrate how various use cases are realized using `ChargePoint` methods in `libocpp` in conjunction with callback implementations and event handlers.
 >
 > Please refer to the [OCPP 2.0.1 standard](https://openchargealliance.org/protocols/open-charge-point-protocol/#OCPP2.0.1) for more details. Functional blocks, use cases, and functional requirements are addressed in Part 2 of Edition 2.
 
-| Functional Block | Subject.                                    |
+| Functional Block | Subject                                     |
 | :--------------- | :------------------------------------------ |
 | A                | Security                                    |
 | B                | Provisioning                                |
