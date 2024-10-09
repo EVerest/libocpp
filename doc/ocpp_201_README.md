@@ -45,7 +45,7 @@ Some optional OCPP 2.0.1 features are still being actively developed by the `lib
 | Advanced Device Management | :hourglass: Planned        |
 | Advanced User Interface    | :hourglass: Planned        |
 | Reservation                | :hourglass: Planned        |
-| ISO 15118 support          | :construction: In Progress |
+| ISO 15118 Support          | :construction: In Progress |
 
 | Whitepapers & Application Notes        | Supported                  |
 | :------------------------------------- | :------------------------- |
