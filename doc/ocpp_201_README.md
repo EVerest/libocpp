@@ -2,15 +2,13 @@
 
 -----
 
-# EVerest OCPP 2.0.1 Implementation (libocpp)
-This is a C++ library implementation of OCPP for version 2.0.1
-(see [OCPP protocols at OCA website](https://openchargealliance.org/protocols/open-charge-point-protocol/)).
+# OCPP 2.0.1 in `libocpp`
 
-It enables charging stations to communicate with cloud backends for remote control, monitoring and billing of charging processes.
+The `ocpp::v201` namespace exposes a `ChargePoint` class capable of client-side OCPP 2.0.1 communications. It enables charging stations to communicate with a cloud backend over a websocket for the remote control of charging stations and administration of charging sessions.
 
-Libocpp can be used for the communication of one charging station and multiple EVSE using a single websocket connection.
+> [!NOTE] For more information about the differences between versions of the Open Charge Point Protocol, please refer to the [Open Charge Alliance's website](https://openchargealliance.org/protocols/open-charge-point-protocol/).
 
-OCPP 2.0.1 is currently under development.
+The OCPP 2.0.1 implementation in `libocpp` is nearing completion, but there remain areas of active development. The OCA also does not currently plan to provide an official validation tool for all functionality within the protocol until the end of 2024. A high-level overview of supported functionality is provided [below](#supported-certification-profiles). For a more granular and up-to-date analysis of available OCPP 2.0.1 features in `libocpp`, please refer to the [OCPP 2.0.1 Status document](ocpp_201_status.md).
 
 
 ## Table of contents
