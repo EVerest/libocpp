@@ -79,7 +79,12 @@ Once `everest-core` has been built with your station-specific `libocpp` configur
 
 ## Standalone Integration
 
-If you wish to integrate libocpp's OCPP 2.0.1 implementation directly into your charging station software without using the full EVerest stack, you'll need to register several **callbacks** and implement **event handlers**. This allows libocpp to interact with your charging station according to OCPP requirements.
+OCPP is a protocol that affects, controls, and monitors many areas of a charging station's operation. The `libocpp` library is just the messenger for this protocol. It is intended to provide mechanisms for connecting to and authenticating with a CSMS, sending and receiving the OCPP messages that govern behaviors in the standard, and to the track state required for a charging station to conform to the protocol all while minimizing hardware- or implementation-specific functionality.
+
+The actual substance of how a charging station reacts to an OCPP command (such as `ResetRequest`) or when it should consider sending a command to the CSMS (such as `NotifyChargingLimitRequest`) is left to the rest of the charging station's systems. This is done by providing means of (a) registering **callbacks** that can be triggered by a `libocpp` `ChargePoint` in response to certain events and (b) reacting to various **event handlers** defined on a `ChargePoint` in other areas of the charging station's codebase.
+
+> [!IMPORTANT]
+> Integrating this library with your charging station requires both (a) defining **callbacks** that enable control of your station by `libocpp` and (b) calling `libocpp` **event handlers** in your charging station's systems in response to new events and data in order to keep `libocpp` up to date on station information.
 
 ### Terminology
 Throughout this document and the `libocpp` codebase, the following conventions are followed:
