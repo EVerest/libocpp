@@ -58,7 +58,7 @@ The ongoing development of OCPP 2.0.1 implementation is continuously tested agai
 
 | CSMS                                                                                 |
 | :----------------------------------------------------------------------------------- |
-| Chargepoint                                                                          |
+| [ChargePoint](https://www.chargepoint.com/businesses/software)                                                                          |
 | [CitrineOS](https://lfenergy.org/projects/citrineos/)                                |
 | [Current](https://www.current.eco/)                                                                              |
 | ihomer (Infuse CPMS)                                                                 |
