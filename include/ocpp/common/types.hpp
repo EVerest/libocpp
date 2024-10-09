@@ -40,8 +40,6 @@ public:
         msg{"Timepoint string parsing failed. Could not convert: \"" + timepoint_str + "\" into DateTime."} {
     }
 
-    ~TimePointParseException() noexcept override = default;
-
     const char* what() const noexcept override {
         return msg.c_str();
     }
