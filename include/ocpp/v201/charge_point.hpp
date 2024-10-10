@@ -790,7 +790,6 @@ public:
                 const std::string& sql_init_path, const std::string& message_log_path,
                 const std::shared_ptr<EvseSecurity> evse_security, const Callbacks& callbacks);
 
-
     ~ChargePoint();
 
     void start(BootReasonEnum bootreason = BootReasonEnum::PowerUp) override;
