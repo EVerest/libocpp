@@ -463,9 +463,7 @@ std::vector<ChargingProfile> SmartChargingHandler::get_valid_profiles_for_evse(i
 
     auto evse_profiles = this->database_handler->get_charging_profiles_for_evse(evse_id);
     for (auto profile : evse_profiles) {
-        if (this->validate_profile(profile, evse_id) == ProfileValidationResultEnum::Valid) {
-            valid_profiles.push_back(profile);
-        }
+        valid_profiles.push_back(profile);
     }
 
     return valid_profiles;

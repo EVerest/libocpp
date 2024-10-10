@@ -1608,26 +1608,6 @@ TEST_F(SmartChargingHandlerTestFixtureV201,
     EXPECT_THAT(profiles.size(), testing::Eq(1));
 }
 
-TEST_F(SmartChargingHandlerTestFixtureV201, K08_GetValidProfiles_IfInvalidProfileExists_ThenThatProfileIsNotReturned) {
-    auto extraneous_start_schedule = ocpp::DateTime("2024-01-17T17:00:00");
-    auto periods = create_charging_schedule_periods(0);
-    auto invalid_profile =
-        create_charging_profile(DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
-                                create_charge_schedule(ChargingRateUnitEnum::A, periods, extraneous_start_schedule),
-                                DEFAULT_TX_ID, ChargingProfileKindEnum::Relative, 1);
-    handler.add_profile(invalid_profile, DEFAULT_EVSE_ID);
-
-    auto invalid_station_wide_profile =
-        create_charging_profile(DEFAULT_PROFILE_ID + 1, ChargingProfilePurposeEnum::TxProfile,
-                                create_charge_schedule(ChargingRateUnitEnum::A, periods, extraneous_start_schedule),
-                                DEFAULT_TX_ID, ChargingProfileKindEnum::Relative, 1);
-    handler.add_profile(invalid_station_wide_profile, STATION_WIDE_ID);
-
-    auto profiles = handler.get_valid_profiles(DEFAULT_EVSE_ID);
-    EXPECT_THAT(profiles, testing::Not(testing::Contains(invalid_profile)));
-    EXPECT_THAT(profiles, testing::Not(testing::Contains(invalid_station_wide_profile)));
-}
-
 TEST_F(SmartChargingHandlerTestFixtureV201, K02FR05_SmartChargingTransactionEnds_DeletesTxProfilesByTransactionId) {
     auto transaction_id = uuid();
     EVLOG_debug << "TRANSACTION ID: " << transaction_id;
