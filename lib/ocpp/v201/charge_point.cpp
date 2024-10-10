@@ -86,9 +86,7 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
         evse_connector_structure, std::make_shared<DeviceModel>(std::move(device_model_storage)),
         std::make_shared<DatabaseHandler>(
             std::make_unique<common::DatabaseConnection>(fs::path(core_database_path) / "cp.db"), sql_init_path),
-        nullptr /* message_queue initialized in this constructor */, message_log_path, evse_security, callbacks)
-{
-
+        nullptr /* message_queue initialized in this constructor */, message_log_path, evse_security, callbacks) {
     std::set<v201::MessageType> message_types_discard_for_queueing;
     try {
         const auto message_types_discard_for_queueing_csl = ocpp::split_string(
