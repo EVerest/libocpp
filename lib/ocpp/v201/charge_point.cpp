@@ -119,6 +119,18 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
         this->database_handler);
 }
 
+ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
+                         const std::string& device_model_storage_address, const bool initialize_device_model,
+                         const std::string& device_model_migration_path, const std::string& device_model_config_path,
+                         const std::string& ocpp_main_path, const std::string& core_database_path,
+                         const std::string& sql_init_path, const std::string& message_log_path,
+                         const std::shared_ptr<EvseSecurity> evse_security, const Callbacks& callbacks) :
+    ChargePoint(evse_connector_structure,
+                std::make_unique<DeviceModelStorageSqlite>(device_model_storage_address, device_model_migration_path,
+                                                           device_model_config_path, initialize_device_model),
+                ocpp_main_path, core_database_path, sql_init_path, message_log_path, evse_security, callbacks) {
+}
+
 ChargePoint::~ChargePoint() {
     {
         std::scoped_lock lk(this->auth_cache_cleanup_mutex);
