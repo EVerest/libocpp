@@ -369,16 +369,372 @@ This approach can also be used later in development for testing an actual statio
 ### Installing System Dependencies
 Before proceeding further in this section, please ensure you have installed the system dependencies of `libocpp` as described in the [Build and Install `libocpp`](#build-and-install-libocpp) section.
 
-Make sure you modify the following config entries in the [config.json](/config/v201/config.json) file according to the CSMS you want to connect to before executing make install.
+### Configuring Your Charging Station
 
-```json
-{
-  "Internal": {
-    "ChargePointId": "",
-    "CentralSystemURI": ""
-  }
-}
-```
+Before building the client binary, you will want to update the [`libocpp` configuration file](/config/v201/config.json) with accurate information about your desired charging station's hardware and how to access your CSMS. This configuration file includes an OCPP 2.0.1 device model for a charging station with two EVSEs, support for multiple network profiles, certificate-based authentication, etc. It also offers a host of `libocpp`-specific settings in an `InternalCtrlr` settings block.
+
+Tailoring a device model to your station hardware and software is a large subject that deserves its own documentation. For now, we recommend at least validating the following about variables in the `InternalCtrlr`:
+
+1. the `ChargePointId` variable matches the ID you've set (or plan to set) for this charging station in the CSMS, and
+2. within the value of the `NetworkConnectionProfiles` variable, the `ocppCsmsUrl` field for the network connection profile you plan to use matches the websocket URL for your CSMS.
+
+For completeness, we've also provided a table below of each `InternalCtrlr` variable as well as available metadata about the variable coming from the [`InternalCtrlr`'s JSON Schema file](/config/v201/component_config/standardized/InternalCtrlr.json).
+
+<details><summary><code>InternalCtrlr</code> Variables</summary>
+  <p>
+    <markdown-accessiblity-table data-catalyst="">
+      <table role="table">
+        <thead>
+          <tr>
+            <th>Variable</th>
+            <th>Type</th>
+            <th>Default</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th>InternalCtrlrEnabled</th>
+            <td>boolean</td>
+            <td>true</td>
+            <td>None Provided</td>
+          </tr>
+          <tr>
+            <th>ChargePointId</th>
+            <td>string</td>
+            <td></td>
+            <td>None Provided</td>
+          </tr>
+          <tr>
+            <th>NetworkConnectionProfiles</th>
+            <td>string</td>
+            <td>
+              <code>"[{\"configurationSlot\": 1, \"connectionData\": {\"messageTimeout\": 30, \"ocppCsmsUrl\": \"ws://localhost:9000\", \"ocppInterface\": \"Wired0\", \"ocppTransport\": \"JSON\", \"ocppVersion\": \"OCPP20\", \"securityProfile\": 1}}]"</code>
+            </td>
+            <td>
+              List of NetworkConnectionProfiles that define the functional and
+              technical parameters of a communication link. Must be a (JSON) string
+              with the format of <code>SetNetworkProfileRequest</code>.
+            </td>
+          </tr>
+          <tr>
+            <th>ChargeBoxSerialNumber</th>
+            <td>string</td>
+            <td></td>
+            <td>None Provided</td>
+          </tr>
+          <tr>
+            <th>ChargePointModel</th>
+            <td>string</td>
+            <td></td>
+            <td>None Provided</td>
+          </tr>
+          <tr>
+            <th>ChargePointSerialNumber</th>
+            <td>string</td>
+            <td></td>
+            <td>None Provided</td>
+          </tr>
+          <tr>
+            <th>ChargePointVendor</th>
+            <td>string</td>
+            <td></td>
+            <td>None Provided</td>
+          </tr>
+          <tr>
+            <th>FirmwareVersion</th>
+            <td>string</td>
+            <td></td>
+            <td>None Provided</td>
+          </tr>
+          <tr>
+            <th>ICCID</th>
+            <td>string</td>
+            <td></td>
+            <td>None Provided</td>
+          </tr>
+          <tr>
+            <th>IMSI</th>
+            <td>string</td>
+            <td></td>
+            <td>None Provided</td>
+          </tr>
+          <tr>
+            <th>MeterSerialNumber</th>
+            <td>string</td>
+            <td></td>
+            <td>None Provided</td>
+          </tr>
+          <tr>
+            <th>MeterType</th>
+            <td>string</td>
+            <td></td>
+            <td>None Provided</td>
+          </tr>
+          <tr>
+            <th>SupportedCiphers12</th>
+            <td>string</td>
+            <td>
+              <code>"ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384"</code>
+            </td>
+            <td>None Provided</td>
+          </tr>
+          <tr>
+            <th>SupportedCiphers13</th>
+            <td>string</td>
+            <td>
+              <code>"TLS_AES_256_GCM_SHA384:TLS_AES_128_GCM_SHA256"</code>
+            </td>
+            <td>None Provided</td>
+          </tr>
+          <tr>
+            <th>AuthorizeConnectorZeroOnConnectorOne</th>
+            <td>boolean</td>
+            <td>true</td>
+            <td>None Provided</td>
+          </tr>
+          <tr>
+            <th>LogMessages</th>
+            <td>boolean</td>
+            <td>true</td>
+            <td>None Provided</td>
+          </tr>
+          <tr>
+            <th>LogMessagesFormat</th>
+            <td>string</td>
+            <td><code>"log,html,security"</code></td>
+            <td>
+              Supported log formats are <code>console</code>, <code>log</code>,
+              <code>html</code>, <code>console_detailed</code>,
+              <code>callback</code> and <code>security</code>.
+              <code>"security"</code> logs security events into a seperate logfile
+            </td>
+          </tr>
+          <tr>
+            <th>LogRotation</th>
+            <td>boolean</td>
+            <td>false</td>
+            <td>Enable log rotation</td>
+          </tr>
+          <tr>
+            <th>LogRotationDateSuffix</th>
+            <td>boolean</td>
+            <td>false</td>
+            <td>
+              Use a datetime suffix in log rotation files instead of the traditional
+              <code>.0</code>, <code>.1</code>
+            </td>
+          </tr>
+          <tr>
+            <th>LogRotationMaximumFileSize</th>
+            <td>integer</td>
+            <td>0</td>
+            <td>
+              Maximum file size in bytes for the log file after which it will be
+              rotated. Setting this to 0 disables log rotation.
+            </td>
+          </tr>
+          <tr>
+            <th>LogRotationMaximumFileCount</th>
+            <td>integer</td>
+            <td>0</td>
+            <td>
+              Maximum amount of files before rotated logs will be deleted. Setting
+              this to 0 disables log rotation.
+            </td>
+          </tr>
+          <tr>
+            <th>SupportedChargingProfilePurposeTypes</th>
+            <td>string</td>
+            <td><code>"ChargePointMaxProfile,TxDefaultProfile,TxProfile"</code></td>
+            <td>None Provided</td>
+          </tr>
+          <tr>
+            <th>MaxCompositeScheduleDuration</th>
+            <td>integer</td>
+            <td>31536000</td>
+            <td>None Provided</td>
+          </tr>
+          <tr>
+            <th>NumberOfConnectors</th>
+            <td>integer</td>
+            <td>1</td>
+            <td>None Provided</td>
+          </tr>
+          <tr>
+            <th>UseSslDefaultVerifyPaths</th>
+            <td>boolean</td>
+            <td>true</td>
+            <td>Use default verify paths for validating CSMS server certificate</td>
+          </tr>
+          <tr>
+            <th>VerifyCsmsCommonName</th>
+            <td>boolean</td>
+            <td>true</td>
+            <td>None Provided</td>
+          </tr>
+          <tr>
+            <th>UseTPM</th>
+            <td>boolean</td>
+            <td>false</td>
+            <td>None Provided</td>
+          </tr>
+          <tr>
+            <th>VerifyCsmsAllowWildcards</th>
+            <td>boolean</td>
+            <td>false</td>
+            <td>None Provided</td>
+          </tr>
+          <tr>
+            <th>IFace</th>
+            <td>string</td>
+            <td><code>""</code></td>
+            <td>None Provided</td>
+          </tr>
+          <tr>
+            <th>EnableTLSKeylog</th>
+            <td>boolean</td>
+            <td>false</td>
+            <td>None Provided</td>
+          </tr>
+          <tr>
+            <th>TLSKeylogFile</th>
+            <td>string</td>
+            <td>/tmp/ocpp_tlskey.log</td>
+            <td>None Provided</td>
+          </tr>
+          <tr>
+            <th>OcspRequestInterval</th>
+            <td>integer</td>
+            <td>604800</td>
+            <td>
+              Interval in seconds used to request OCSP revocation status information
+              on the CSO Sub-CA certificates
+            </td>
+          </tr>
+          <tr>
+            <th>WebsocketPingPayload</th>
+            <td>string</td>
+            <td>hello there</td>
+            <td>None Provided</td>
+          </tr>
+          <tr>
+            <th>WebsocketPongTimeout</th>
+            <td>integer</td>
+            <td>5</td>
+            <td>None Provided</td>
+          </tr>
+          <tr>
+            <th>MonitorsProcessingInterval</th>
+            <td>integer</td>
+            <td>1</td>
+            <td>
+              Defines the interval at which the periodic monitors will be processed,
+              in seconds
+            </td>
+          </tr>
+          <tr>
+            <th>MaxCustomerInformationDataLength</th>
+            <td>integer</td>
+            <td>51200</td>
+            <td>Maximum number of characters of Customer Information data</td>
+          </tr>
+          <tr>
+            <th>V2GCertificateExpireCheckInitialDelaySeconds</th>
+            <td>integer</td>
+            <td>60</td>
+            <td>
+              Seconds to wait after boot notification to first check the V2G leaf
+              certificate for expiration and potential renewal
+            </td>
+          </tr>
+          <tr>
+            <th>V2GCertificateExpireCheckIntervalSeconds</th>
+            <td>integer</td>
+            <td>43200</td>
+            <td>
+              Seconds between two checks for V2G leaf certificate expiration and
+              potential renewal
+            </td>
+          </tr>
+          <tr>
+            <th>ClientCertificateExpireCheckInitialDelaySeconds</th>
+            <td>integer</td>
+            <td>60</td>
+            <td>
+              Seconds to wait after boot notification to first check the client
+              certificate for expiration and potential renewal
+            </td>
+          </tr>
+          <tr>
+            <th>ClientCertificateExpireCheckIntervalSeconds</th>
+            <td>integer</td>
+            <td>43200</td>
+            <td>
+              Seconds between two checks for client certificate expiration and
+              potential renewal
+            </td>
+          </tr>
+          <tr>
+            <th>UpdateCertificateSymlinks</th>
+            <td>boolean</td>
+            <td>false</td>
+            <td>None Provided</td>
+          </tr>
+          <tr>
+            <th>MessageQueueSizeThreshold</th>
+            <td>integer</td>
+            <td></td>
+            <td>
+              Threshold for the size of in-memory message queues used to buffer
+              messages (and store e.g. while offline). If threshold is exceeded,
+              messages  will be dropped according to OCPP specification to avoid
+              memory issues.
+            </td>
+          </tr>
+          <tr>
+            <th>MaxMessageSize</th>
+            <td>integer</td>
+            <td>32000</td>
+            <td>
+              Maximum size in bytes for messages sent to the CSMS via websocket. If
+              a message exceeds this size and is eligible to be split into multiple
+              messages, it will be split. Otherwise, this value is ignored.
+            </td>
+          </tr>
+          <tr>
+            <th>SupportedCriteria</th>
+            <td>string</td>
+            <td><code>"Enabled,Active,Problem,Available"</code></td>
+            <td>
+              List of criteria supported for a get custom report.
+              <code>Enabled,Active,Problem,Available</code>
+            </td>
+          </tr>
+          <tr>
+            <th>RoundClockAlignedTimestamps</th>
+            <td>boolean</td>
+            <td>false</td>
+            <td>
+              If enabled the <code>metervalues</code> configured with the
+              <code>AlignedDataCtrlr</code> will be rounded to the exact time
+              intervals
+            </td>
+          </tr>
+          <tr>
+            <th>ResumeTransactionsOnBoot</th>
+            <td>boolean</td>
+            <td>false</td>
+            <td>
+              If enabled the transactions that were active before shutdown will be
+              resumed, if possible
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </markdown-accessiblity-table>
+  </p>
+</details>
 
 Change into libocpp/build and execute cmake and then make install:
 
