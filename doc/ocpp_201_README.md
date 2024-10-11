@@ -355,7 +355,6 @@ sequenceDiagram
     end    
 ```
 
------
 
 ## Quickstart for OCPP 2.0.1
 
