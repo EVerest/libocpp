@@ -332,7 +332,6 @@ sequenceDiagram
     ChargePoint-->>-CSMS : ReportChargingProfilesRequest(profiles_to_report)
 ```
 
------
 
 #### K10 Clear Charging Profile
 
