@@ -366,7 +366,8 @@ This section walks you through how to sanity check that your `libocpp` developme
 
 This approach can also be used later in development for testing an actual station's device model and configuration is valid in the eyes of a CSMS.
 
-Install the dependencies and libocpp as described in [Build and Install libocpp](#build-and-install-libocpp).
+### Installing System Dependencies
+Before proceeding further in this section, please ensure you have installed the system dependencies of `libocpp` as described in the [Build and Install `libocpp`](#build-and-install-libocpp) section.
 
 Make sure you modify the following config entries in the [config.json](/config/v201/config.json) file according to the CSMS you want to connect to before executing make install.
 
