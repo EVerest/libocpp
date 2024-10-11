@@ -295,7 +295,6 @@ sequenceDiagram
     ChargePoint-->>-CSMS : GetCompositeScheduleResponse(CompositeSchedule)
 ```
 
------
 
 #### K09 Get Charging Profiles
 
