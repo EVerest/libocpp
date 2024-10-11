@@ -238,7 +238,6 @@ is `Rejected`:
 | `TxProfileTransactionNotOnEvse`                               | Happens when the provided `transactionId` is not known. [K01.FR.33] |
 | `TxProfileConflictingStackLevel`                              | Happens when a TxProfile has a stackLevel and transactionId combination already exists in a TxProfile with a different id in order to ensure that no two charging profiles with same stack level and purpose can be valid at the same time. [K01.FR.39] |
 
------
 
 #### K08 Get Composite Schedule
 
