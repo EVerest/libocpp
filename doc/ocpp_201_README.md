@@ -355,7 +355,16 @@ sequenceDiagram
 
 ## Quickstart for OCPP 2.0.1
 
-Libocpp provides a small standalone OCPP2.0.1 client that you can control using command line.
+This section walks you through how to sanity check that your `libocpp` development environment is set up effectively. The process will involve the following:
+
+1. Ensuring you've installed `libocpp`'s system dependencies
+2. Standing up and configuring a CSMS (that is, an OCPP server) locally
+3. Updating the default OCPP device model file
+4. Updating the CSMS to make it aware of your test station's device model
+5. Building `libocpp` as an OCPP 2.0.1 client executable
+6. Running this freshly built binary
+
+This approach can also be used later in development for testing an actual station's device model and configuration is valid in the eyes of a CSMS.
 
 Install the dependencies and libocpp as described in [Build and Install libocpp](#build-and-install-libocpp).
 
