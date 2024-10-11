@@ -18,11 +18,10 @@ The OCPP 2.0.1 implementation in `libocpp` is nearing completion, but there rema
 - [CSMS Compatibility](#csms-compatibility)
 - [Integration with EVerest](#integration-with-everest)
 - [Standalone Integration](#standalone-integration)
-  - [Key Integration Points](#key-integration-points)
   - [Callbacks to Register](#callbacks-to-register)
-  - [Event Handlers to Call](#event-handlers-to-call)
+  - [Event Handlers](#event-handlers)
   - [Initialize the Database](#initialize-the-database)
-  - [OCPP 2.0.1 Use Cases in `libocpp`](#ocpp-201-use-cases-in-libocpp)
+- [OCPP 2.0.1 Use Cases in `libocpp`](#ocpp-201-use-cases-in-libocpp)
 - [Quickstart for OCPP 2.0.1](#quickstart-for-ocpp-201)
 - [Build and Install `libocpp`](#build-and-install-libocpp)
 - [Building with FetchContent Instead of EDM](#building-with-fetchcontent-instead-of-edm)
@@ -99,7 +98,7 @@ The complete set of callbacks and event handlers defined on an OCPP 2.0.1 `Charg
 
 ### Callbacks to Register
 
-| callbacks                                               | description |
+| Callbacks                                               | Description |
 | :------------------------------------------------------ | :---------- |
 | `all_connectors_unavailable_callback`                   | Notifies that all connectors are unavailable. Used to handle charge availability requests and firmware updates. |
 | `boot_notification_callback`                            | Callback to notify of a system boot |
