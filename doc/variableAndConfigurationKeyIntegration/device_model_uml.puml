@@ -1,0 +1,33 @@
+@startuml
+class ChargePoint {
+  - device_model: DeviceModel
+}
+
+class DeviceModel {
+  - storage: DeviceModelStorage
+  + get_device_model(): DeviceModelRepresentation
+  + get_value(...): T
+  + set_value(...): SetVariableStatusEnum
+}
+
+class DeviceModelStorage {
+  + get_device_model(): DeviceModelRepresentation
+  + get_variable_attribute(...): std::optional<VariableAttribute>
+  + set_variable_attribute_value(...): bool
+}
+
+note left of ChargePoint
+  ChargePoint and DeviceModel are
+  implemented within the library.
+end note
+
+note right of DeviceModelStorage
+  Libocpp contains a DeviceModelStorage implementation
+  and altenatively a custom implementation can be fed into 
+  the library.
+end note
+
+ChargePoint --> DeviceModel
+DeviceModel --> DeviceModelStorage
+
+@enduml
