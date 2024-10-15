@@ -50,7 +50,7 @@ sequenceDiagram
     ChargePoint->>+DeviceModel : SmartChargingCtrlrAvailable?
     DeviceModel-->>-ChargePoint : Component
 
-    rect Red 
+    rect rgb(128,202,255) 
     break SmartChargingCtrlrAvailable = false
         ChargePoint-->>CSMS : Smart Charging NotSupported CallError
     end
@@ -60,7 +60,7 @@ sequenceDiagram
 
     SmartCharging->>SmartCharging : validate_profile(Profile, EVSE ID)
 
-    rect Red 
+    rect rgb(128,202,255) 
     break Invalid Profile
         SmartCharging-->>ChargePoint : SetChargingProfileResponse: Rejected
         ChargePoint-->>CSMS : SetChargingProfileResponse: Rejected
@@ -119,7 +119,7 @@ sequenceDiagram
     ChargePoint->>+DeviceModel : ChargingScheduleChargingRateUnit?
     DeviceModel-->>-ChargePoint : Component
 
-    rect Red 
+    rect rgb(128,202,255) 
         break call.msg.chargingRateUnit is not supported
             ChargePoint-->>CSMS : ChargingScheduleChargingRateUnitUnsupported CallError
         end
@@ -127,7 +127,7 @@ sequenceDiagram
 
     ChargePoint->>+EvseManager : does_evse_exist(call.msg.evseId)
     EvseManager-->>-ChargePoint : bool
-    rect Red 
+    rect rgb(128,202,255) 
         break EVSE does not exist
             ChargePoint-->>CSMS : EvseDoesNotExist CallError
         end
@@ -177,7 +177,7 @@ sequenceDiagram
     ChargePoint-->>CSMS : GetChargingProfilesResponse(profiles)
 
     alt no Profiles
-    rect Red
+    rect rgb(128,202,255)
         ChargePoint-->>CSMS : GetChargingProfilesResponse(NoProfiles) 
         ChargePoint->>CSMS : return
     end
@@ -203,7 +203,7 @@ sequenceDiagram
     CSMS->>+ChargePoint: ClearChargingProfileRequest(criteria)
 
     alt no Profiles matching criteria
-    rect Red
+    rect rgb(128,202,255)
         ChargePoint-->>CSMS : ClearChargingProfileResponse(Unknown) 
 
     end
