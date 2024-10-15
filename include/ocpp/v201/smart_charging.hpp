@@ -4,14 +4,21 @@
 #ifndef OCPP_V201_SMART_CHARGING_HPP
 #define OCPP_V201_SMART_CHARGING_HPP
 
+#include "ocpp/v201/comparators.hpp"
+#include "ocpp/v201/messages/ClearedChargingLimit.hpp"
+#include "ocpp/v201/messages/TransactionEvent.hpp"
 #include <limits>
 #include <memory>
+#include <optional>
+#include <utility>
+#include <variant>
 
 #include <ocpp/v201/database_handler.hpp>
 #include <ocpp/v201/device_model.hpp>
 #include <ocpp/v201/evse_manager.hpp>
 #include <ocpp/v201/messages/ClearChargingProfile.hpp>
 #include <ocpp/v201/messages/GetChargingProfiles.hpp>
+#include <ocpp/v201/messages/NotifyChargingLimit.hpp>
 #include <ocpp/v201/messages/SetChargingProfile.hpp>
 #include <ocpp/v201/ocpp_enums.hpp>
 #include <ocpp/v201/ocpp_types.hpp>
@@ -56,6 +63,13 @@ enum class AddChargingProfileSource {
     RequestStartTransactionRequest
 };
 
+struct ConstantChargingLimit {
+    float limit;
+    ChargingRateUnitEnum charging_rate_unit;
+};
+
+bool operator==(const ConstantChargingLimit& a, const ConstantChargingLimit& b);
+
 namespace conversions {
 /// \brief Converts the given ProfileValidationResultEnum \p e to human readable string
 /// \returns a string representation of the ProfileValidationResultEnum
@@ -97,6 +111,15 @@ public:
                                                            const ocpp::DateTime& start_time,
                                                            const ocpp::DateTime& end_time, const int32_t evse_id,
                                                            std::optional<ChargingRateUnitEnum> charging_rate_unit) = 0;
+
+    virtual std::optional<std::pair<NotifyChargingLimitRequest, std::vector<TransactionEventRequest>>>
+    handle_external_limits_changed(const std::variant<ConstantChargingLimit, ChargingSchedule>& limit,
+                                   double percentage_delta, ChargingLimitSourceEnum source,
+                                   std::optional<int32_t> evse_id) const = 0;
+
+    virtual std::optional<std::pair<ClearedChargingLimitRequest, std::vector<TransactionEventRequest>>>
+    handle_external_limit_cleared(double percentage_delta, ChargingLimitSourceEnum source,
+                                  std::optional<int32_t> evse_id) const = 0;
 };
 
 /// \brief This class handles and maintains incoming ChargingProfiles and contains the logic
@@ -165,6 +188,23 @@ public:
                                                    const int32_t evse_id,
                                                    std::optional<ChargingRateUnitEnum> charging_rate_unit) override;
 
+    ///
+    /// \brief Determines whether or not we should notify the CSMS of a changed external limit
+    /// based on \p percentage_delta and builds the notification.
+    ///
+    std::optional<std::pair<NotifyChargingLimitRequest, std::vector<TransactionEventRequest>>>
+    handle_external_limits_changed(const std::variant<ConstantChargingLimit, ChargingSchedule>& limit,
+                                   double percentage_delta, ChargingLimitSourceEnum source,
+                                   std::optional<int32_t> evse_id) const override;
+
+    ///
+    /// \brief Determines whether or not we should notify the CSMS of a cleared external limit
+    /// based on \p percentage_delta and builds the notification.
+    ///
+    std::optional<std::pair<ClearedChargingLimitRequest, std::vector<TransactionEventRequest>>>
+    handle_external_limit_cleared(double percentage_delta, ChargingLimitSourceEnum source,
+                                  std::optional<int32_t> evse_id) const override;
+
 protected:
     ///
     /// \brief validates the existence of the given \p evse_id according to the specification
@@ -218,6 +258,10 @@ private:
     std::vector<ChargingProfile> get_valid_profiles_for_evse(int32_t evse_id);
     void conform_validity_periods(ChargingProfile& profile) const;
     CurrentPhaseType get_current_phase_type(const std::optional<EvseInterface*> evse_opt) const;
+    TransactionEventRequest create_transaction_event_request(std::unique_ptr<EnhancedTransaction>& tx) const;
+    bool process_evses_with_active_transactions(const bool limit_change_significance_exceeded,
+                                                std::vector<TransactionEventRequest>& transaction_event_requests,
+                                                std::optional<int32_t> evse_id) const;
 };
 
 } // namespace ocpp::v201

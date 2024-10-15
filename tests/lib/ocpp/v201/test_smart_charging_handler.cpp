@@ -10,6 +10,8 @@
 #include "ocpp/v201/device_model_storage_sqlite.hpp"
 #include "ocpp/v201/init_device_model_db.hpp"
 #include "ocpp/v201/ocpp_types.hpp"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <filesystem>
@@ -31,7 +33,10 @@
 
 #include "comparators.hpp"
 #include <sstream>
+#include <stdexcept>
 #include <vector>
+
+#include "smart_charging_test_utils.hpp"
 
 namespace ocpp::v201 {
 
@@ -1676,6 +1681,453 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K05FR02_RequestStartTransactionReque
     auto sut =
         handler.validate_profile(profile, DEFAULT_EVSE_ID, AddChargingProfileSource::RequestStartTransactionRequest);
     ASSERT_THAT(sut, testing::Eq(ProfileValidationResultEnum::RequestStartTransactionNonTxProfile));
+}
+
+TEST_F(SmartChargingHandlerTestFixtureV201, K11FR04_HandleChangedChargingLimitRequest_NoTransactionExists) {
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.1",
+                            "test");
+
+    ConstantChargingLimit new_limit = {
+        .limit = 100.0,
+        .charging_rate_unit = ChargingRateUnitEnum::A,
+    };
+
+    double deltaChanged = 0.2;
+    auto source = ChargingLimitSourceEnum::Other;
+
+    auto resp = handler.handle_external_limits_changed(new_limit, deltaChanged, source, std::nullopt);
+    ASSERT_THAT(resp.has_value(), testing::IsTrue());
+
+    auto [notify_charging_limit_request, transaction_event_requests] = resp.value();
+    ASSERT_THAT(transaction_event_requests.size(), testing::Eq(0));
+}
+
+TEST_F(SmartChargingHandlerTestFixtureV201, K11FR04_HandleChangedChargingLimitRequest_OneTransactionExists) {
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.1",
+                            "test");
+
+    std::string transaction_id = uuid();
+    this->evse_manager->open_transaction(DEFAULT_EVSE_ID, transaction_id);
+
+    ConstantChargingLimit new_limit = {
+        .limit = 100.0,
+        .charging_rate_unit = ChargingRateUnitEnum::A,
+    };
+
+    double deltaChanged = 0.2;
+    auto source = ChargingLimitSourceEnum::Other;
+
+    auto resp = handler.handle_external_limits_changed(new_limit, deltaChanged, source, std::nullopt);
+    ASSERT_THAT(resp.has_value(), testing::IsTrue());
+
+    auto [notify_charging_limit_request, transaction_event_requests] = resp.value();
+    ASSERT_THAT(transaction_event_requests.size(), testing::Eq(1));
+}
+
+TEST_F(SmartChargingHandlerTestFixtureV201,
+       K12FR02_HandleExternalLimitsChanged_LimitChangeSignificanceNotMet_ReturnNone) {
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.5",
+                            "test");
+
+    ConstantChargingLimit new_limit = {
+        .limit = 100.0,
+        .charging_rate_unit = ChargingRateUnitEnum::A,
+    };
+    double deltaChanged = 0.2;
+    auto source = ChargingLimitSourceEnum::Other;
+
+    auto resp = handler.handle_external_limits_changed(new_limit, deltaChanged, source, DEFAULT_EVSE_ID);
+
+    ASSERT_THAT(resp.has_value(), testing::IsFalse());
+}
+
+TEST_F(SmartChargingHandlerTestFixtureV201,
+       K12FR02_HandleExternalLimitsChanged_LimitChangeSignificanceEqual_ReturnNone) {
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.2",
+                            "test");
+
+    ConstantChargingLimit new_limit = {
+        .limit = 100.0,
+        .charging_rate_unit = ChargingRateUnitEnum::A,
+    };
+    double deltaChanged = 0.2;
+    auto source = ChargingLimitSourceEnum::Other;
+
+    auto resp = handler.handle_external_limits_changed(new_limit, deltaChanged, source, DEFAULT_EVSE_ID);
+
+    ASSERT_THAT(resp.has_value(), testing::IsFalse());
+}
+
+TEST_F(SmartChargingHandlerTestFixtureV201,
+       K12FR02_HandleExternalLimitsChanged_LimitChangeSignificanceExceeded_ReturnNotifyChargingLimitRequest) {
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.1",
+                            "test");
+
+    ConstantChargingLimit new_limit = {
+        .limit = 100.0,
+        .charging_rate_unit = ChargingRateUnitEnum::A,
+    };
+    double deltaChanged = 0.2;
+    auto source = ChargingLimitSourceEnum::Other;
+
+    auto resp = handler.handle_external_limits_changed(new_limit, deltaChanged, source, DEFAULT_EVSE_ID);
+
+    ASSERT_THAT(resp.has_value(), testing::IsTrue());
+}
+
+TEST_F(
+    SmartChargingHandlerTestFixtureV201,
+    K12FR03_HandleExternalLimitsChanged_LimitChangeSignificanceExceeded_EnableChargingLimitWithSchedulesTrue_IncludesScheduleFromConstantLimit) {
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.1",
+                            "test");
+    const auto& notify_charging_limit_cv = ControllerComponentVariables::NotifyChargingLimitWithSchedules;
+    device_model->set_value(notify_charging_limit_cv.component, notify_charging_limit_cv.variable.value(),
+                            AttributeEnum::Actual, "true", "test");
+
+    ConstantChargingLimit new_limit = {
+        .limit = 50.0,
+        .charging_rate_unit = ChargingRateUnitEnum::W,
+    };
+    double deltaChanged = 0.2;
+    auto source = ChargingLimitSourceEnum::Other;
+
+    auto charging_schedule = ChargingSchedule{.id = 0,
+                                              .chargingRateUnit = new_limit.charging_rate_unit,
+                                              .chargingSchedulePeriod = {ChargingSchedulePeriod{
+                                                  .startPeriod = 0,
+                                                  .limit = new_limit.limit,
+                                              }}};
+
+    auto resp = handler.handle_external_limits_changed(new_limit, deltaChanged, source, DEFAULT_EVSE_ID);
+
+    ASSERT_THAT(resp.has_value(), testing::IsTrue());
+    auto [notify_charging_limit_request, s] = resp.value();
+
+    ASSERT_THAT(notify_charging_limit_request.chargingSchedule.has_value(), testing::IsTrue());
+    ASSERT_THAT(notify_charging_limit_request.chargingSchedule.value(), testing::Contains(charging_schedule));
+}
+
+TEST_F(
+    SmartChargingHandlerTestFixtureV201,
+    K12FR03_HandleExternalLimitsChanged_LimitChangeSignificanceExceeded_EnableChargingLimitWithSchedulesTrue_IncludesGivenSchedule) {
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.1",
+                            "test");
+    const auto& notify_charging_limit_cv = ControllerComponentVariables::NotifyChargingLimitWithSchedules;
+    device_model->set_value(notify_charging_limit_cv.component, notify_charging_limit_cv.variable.value(),
+                            AttributeEnum::Actual, "true", "test");
+
+    double deltaChanged = 0.2;
+    auto source = ChargingLimitSourceEnum::Other;
+
+    auto charging_schedule = ChargingSchedule{.id = 0,
+                                              .chargingRateUnit = ChargingRateUnitEnum::W,
+                                              .chargingSchedulePeriod = {ChargingSchedulePeriod{
+                                                  .startPeriod = 0,
+                                                  .limit = 20,
+                                              }}};
+
+    auto resp = handler.handle_external_limits_changed(charging_schedule, deltaChanged, source, DEFAULT_EVSE_ID);
+
+    ASSERT_THAT(resp.has_value(), testing::IsTrue());
+
+    auto [notify_charging_limit_request, s] = resp.value();
+
+    ASSERT_THAT(notify_charging_limit_request.chargingSchedule.has_value(), testing::IsTrue());
+    ASSERT_THAT(notify_charging_limit_request.chargingSchedule.value(), testing::Contains(charging_schedule));
+}
+
+TEST_F(
+    SmartChargingHandlerTestFixtureV201,
+    K12FR03_HandleExternalLimitsChanged_LimitChangeSignificanceExceeded_EnableChargingLimitWithSchedulesUnset_NoSchedule) {
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.1",
+                            "test");
+
+    ConstantChargingLimit new_limit = {
+        .limit = 100.0,
+        .charging_rate_unit = ChargingRateUnitEnum::A,
+    };
+    double deltaChanged = 0.2;
+    auto source = ChargingLimitSourceEnum::Other;
+
+    auto resp = handler.handle_external_limits_changed(new_limit, deltaChanged, source, DEFAULT_EVSE_ID);
+
+    ASSERT_THAT(resp.has_value(), testing::IsTrue());
+    auto [notify_charging_limit_request, s] = resp.value();
+
+    ASSERT_THAT(notify_charging_limit_request.chargingSchedule.has_value(), testing::IsFalse());
+}
+
+TEST_F(
+    SmartChargingHandlerTestFixtureV201,
+    K12FR03_HandleExternalLimitsChanged_LimitChangeSignificanceExceeded_EnableChargingLimitWithSchedulesFalse_NoSchedule) {
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.1",
+                            "test");
+    const auto& notify_charging_limit_cv = ControllerComponentVariables::NotifyChargingLimitWithSchedules;
+    device_model->set_value(notify_charging_limit_cv.component, notify_charging_limit_cv.variable.value(),
+                            AttributeEnum::Actual, "false", "test");
+
+    ConstantChargingLimit new_limit = {
+        .limit = 100.0,
+        .charging_rate_unit = ChargingRateUnitEnum::A,
+    };
+    double deltaChanged = 0.2;
+    auto source = ChargingLimitSourceEnum::Other;
+
+    auto resp = handler.handle_external_limits_changed(new_limit, deltaChanged, source, DEFAULT_EVSE_ID);
+
+    ASSERT_THAT(resp.has_value(), testing::IsTrue());
+    auto [notify_charging_limit_request, s] = resp.value();
+
+    ASSERT_THAT(notify_charging_limit_request.chargingSchedule.has_value(), testing::IsFalse());
+}
+
+TEST_F(SmartChargingHandlerTestFixtureV201, K12FR04_HandleExternalLimitsChanged_NotificationIncludesSource) {
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.1",
+                            "test");
+
+    ConstantChargingLimit new_limit = {
+        .limit = 100.0,
+        .charging_rate_unit = ChargingRateUnitEnum::A,
+    };
+    double deltaChanged = 0.2;
+    auto source = ChargingLimitSourceEnum::SO;
+
+    auto resp = handler.handle_external_limits_changed(new_limit, deltaChanged, source, DEFAULT_EVSE_ID);
+
+    ASSERT_THAT(resp.has_value(), testing::IsTrue());
+    auto [notify_charging_limit_request, s] = resp.value();
+
+    ASSERT_THAT(notify_charging_limit_request.chargingLimit.chargingLimitSource, testing::Eq(source));
+}
+
+TEST_F(SmartChargingHandlerTestFixtureV201, K12FR04_HandleExternalLimitsChanged_ThrowsIfSourceIsCSO) {
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.1",
+                            "test");
+
+    ConstantChargingLimit new_limit = {
+        .limit = 100.0,
+        .charging_rate_unit = ChargingRateUnitEnum::A,
+    };
+    double deltaChanged = 0.2;
+    auto source = ChargingLimitSourceEnum::CSO;
+
+    EXPECT_THROW(handler.handle_external_limits_changed(new_limit, deltaChanged, source, DEFAULT_EVSE_ID),
+                 std::invalid_argument);
+}
+
+TEST_F(SmartChargingHandlerTestFixtureV201, K12_HandleExternalLimitsChanged_RequestHasGivenEvseId) {
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.1",
+                            "test");
+
+    auto evse_id = 2;
+
+    ConstantChargingLimit new_limit = {
+        .limit = 100.0,
+        .charging_rate_unit = ChargingRateUnitEnum::A,
+    };
+    double deltaChanged = 0.2;
+    auto source = ChargingLimitSourceEnum::SO;
+
+    auto resp = handler.handle_external_limits_changed(new_limit, deltaChanged, source, evse_id);
+
+    ASSERT_THAT(resp.has_value(), testing::IsTrue());
+
+    auto [notify_charging_limit_request, s] = resp.value();
+
+    ASSERT_THAT(notify_charging_limit_request.chargingLimit.chargingLimitSource, testing::Eq(source));
+    ASSERT_THAT(notify_charging_limit_request.evseId.has_value(), testing::IsTrue());
+    ASSERT_THAT(notify_charging_limit_request.evseId.value(), testing::Eq(evse_id));
+}
+
+TEST_F(SmartChargingHandlerTestFixtureV201,
+       K13FR01_HandleClearedChargingLimitRequest_NoTransactionForEvseId_NoRequestCreated) {
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.5",
+                            "test");
+
+    ConstantChargingLimit new_limit = {
+        .limit = 100.0,
+        .charging_rate_unit = ChargingRateUnitEnum::A,
+    };
+    double deltaChanged = 0.2;
+    auto source = ChargingLimitSourceEnum::Other;
+
+    auto resp = handler.handle_external_limit_cleared(deltaChanged, source, DEFAULT_EVSE_ID);
+
+    ASSERT_THAT(resp.has_value(), testing::IsFalse());
+}
+
+TEST_F(SmartChargingHandlerTestFixtureV201,
+       K13FR01_HandleClearedChargingLimitRequest_NoTransactionExists_NoRequestCreated) {
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.1",
+                            "test");
+
+    ConstantChargingLimit new_limit = {
+        .limit = 100.0,
+        .charging_rate_unit = ChargingRateUnitEnum::A,
+    };
+    double deltaChanged = 0.2;
+    auto source = ChargingLimitSourceEnum::Other;
+
+    auto resp = handler.handle_external_limit_cleared(deltaChanged, source, std::nullopt);
+    ASSERT_THAT(resp.has_value(), testing::IsFalse());
+}
+
+TEST_F(
+    SmartChargingHandlerTestFixtureV201,
+    K13FR02_HandleClearedChargingLimitRequest_TransactionForEvseId_UnderLimitChangeSignificance_OnlyClearedChargingLimitRequest) {
+
+    std::string transaction_id = uuid();
+    this->evse_manager->open_transaction(DEFAULT_EVSE_ID, transaction_id);
+
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.5",
+                            "test");
+
+    ConstantChargingLimit new_limit = {
+        .limit = 100.0,
+        .charging_rate_unit = ChargingRateUnitEnum::A,
+    };
+    double deltaChanged = 0.2;
+    auto source = ChargingLimitSourceEnum::Other;
+
+    auto resp = handler.handle_external_limit_cleared(deltaChanged, source, DEFAULT_EVSE_ID);
+
+    ASSERT_THAT(resp.has_value(), testing::IsTrue());
+    auto [f, s] = resp.value();
+    ASSERT_THAT(f.evseId, testing::Eq(DEFAULT_EVSE_ID));
+    ASSERT_THAT(f.chargingLimitSource, testing::Eq(source));
+
+    ASSERT_THAT(s.size(), testing::Eq(0));
+}
+
+TEST_F(
+    SmartChargingHandlerTestFixtureV201,
+    K13FR02_HandleClearedChargingLimitRequest_TransactionForEvseId_LimitChangeSignificanceEqual_OnlyClearedChargingLimitRequest) {
+
+    std::string transaction_id = uuid();
+    this->evse_manager->open_transaction(DEFAULT_EVSE_ID, transaction_id);
+
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.2",
+                            "test");
+
+    ConstantChargingLimit new_limit = {
+        .limit = 100.0,
+        .charging_rate_unit = ChargingRateUnitEnum::A,
+    };
+    double deltaChanged = 0.2;
+    auto source = ChargingLimitSourceEnum::Other;
+
+    auto resp = handler.handle_external_limit_cleared(deltaChanged, source, DEFAULT_EVSE_ID);
+    ASSERT_THAT(resp.has_value(), testing::IsTrue());
+    auto [f, s] = resp.value();
+    ASSERT_THAT(f.evseId, testing::Eq(DEFAULT_EVSE_ID));
+    ASSERT_THAT(f.chargingLimitSource, testing::Eq(source));
+
+    ASSERT_THAT(s.size(), testing::Eq(0));
+}
+
+TEST_F(
+    SmartChargingHandlerTestFixtureV201,
+    K13FR03_HandleClearedChargingLimitRequest_HasTransaction_LimitChangeSignificanceExceeded_BothClearedChargingLimitRequestAndTransactionEventRequest) {
+
+    std::string transaction_id = uuid();
+    this->evse_manager->open_transaction(DEFAULT_EVSE_ID, transaction_id);
+
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.1",
+                            "test");
+
+    ConstantChargingLimit new_limit = {
+        .limit = 100.0,
+        .charging_rate_unit = ChargingRateUnitEnum::A,
+    };
+    double deltaChanged = 0.2;
+    auto source = ChargingLimitSourceEnum::Other;
+
+    auto resp = handler.handle_external_limit_cleared(deltaChanged, source, DEFAULT_EVSE_ID);
+    ASSERT_THAT(resp.has_value(), testing::IsTrue());
+    auto [f, s] = resp.value();
+    ASSERT_THAT(f.evseId, testing::Eq(DEFAULT_EVSE_ID));
+    ASSERT_THAT(f.chargingLimitSource, testing::Eq(source));
+
+    ASSERT_THAT(s.size(), testing::Eq(1));
+    ASSERT_THAT(s.at(0).eventType, testing::Eq(TransactionEventEnum::Updated));
+    ASSERT_THAT(s.at(0).triggerReason, testing::Eq(TriggerReasonEnum::ChargingRateChanged));
+    ASSERT_THAT(s.at(0).transactionInfo.transactionId, testing::Eq(CiString<36>(transaction_id)));
+}
+
+TEST_F(
+    SmartChargingHandlerTestFixtureV201,
+    K13FR03_HandleClearedChargingLimitRequest_NoEvseId_TransactionExists_LimitChangeSignificanceExceeded_BothClearedChargingLimitRequestAndSingleTransactionEventRequest) {
+
+    std::string transaction_id = uuid();
+    this->evse_manager->open_transaction(DEFAULT_EVSE_ID, transaction_id);
+
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.1",
+                            "test");
+
+    ConstantChargingLimit new_limit = {
+        .limit = 100.0,
+        .charging_rate_unit = ChargingRateUnitEnum::A,
+    };
+    double deltaChanged = 0.2;
+    auto source = ChargingLimitSourceEnum::Other;
+
+    auto resp = handler.handle_external_limit_cleared(deltaChanged, source, std::nullopt);
+    ASSERT_THAT(resp.has_value(), testing::IsTrue());
+    auto [f, s] = resp.value();
+    ASSERT_THAT(f.evseId.has_value(), testing::IsFalse());
+    ASSERT_THAT(f.chargingLimitSource, testing::Eq(source));
+
+    ASSERT_THAT(s.size(), testing::Eq(1));
+    ASSERT_THAT(s.at(0).eventType, testing::Eq(TransactionEventEnum::Updated));
+    ASSERT_THAT(s.at(0).triggerReason, testing::Eq(TriggerReasonEnum::ChargingRateChanged));
+    ASSERT_THAT(s.at(0).transactionInfo.transactionId, testing::Eq(CiString<36>(transaction_id)));
+}
+
+TEST_F(
+    SmartChargingHandlerTestFixtureV201,
+    K13FR03_HandleClearedChargingLimitRequest_NoEvseId_TransactionsExist_LimitChangeSignificanceExceeded_BothClearedChargingLimitRequestAndMultipleTransactionEventRequest) {
+
+    std::string transaction_id_a = uuid();
+    std::string transaction_id_b = uuid();
+    this->evse_manager->open_transaction(DEFAULT_EVSE_ID, transaction_id_a);
+    this->evse_manager->open_transaction(DEFAULT_EVSE_ID + 1, transaction_id_b);
+
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.1",
+                            "test");
+
+    ConstantChargingLimit new_limit = {
+        .limit = 100.0,
+        .charging_rate_unit = ChargingRateUnitEnum::A,
+    };
+    double deltaChanged = 0.2;
+    auto source = ChargingLimitSourceEnum::Other;
+
+    auto resp = handler.handle_external_limit_cleared(deltaChanged, source, std::nullopt);
+    ASSERT_THAT(resp.has_value(), testing::IsTrue());
+    auto [f, s] = resp.value();
+    ASSERT_THAT(f.evseId.has_value(), testing::IsFalse());
+    ASSERT_THAT(f.chargingLimitSource, testing::Eq(source));
+
+    ASSERT_THAT(s.size(), testing::Eq(2));
 }
 
 } // namespace ocpp::v201

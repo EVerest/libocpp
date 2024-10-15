@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright Pionix GmbH and Contributors to EVerest
 
+#include <cstdint>
 #include <ocpp/common/types.hpp>
 #include <ocpp/v201/charge_point.hpp>
 #include <ocpp/v201/ctrlr_component_variables.hpp>
@@ -1065,6 +1066,50 @@ void ChargePoint::on_security_event(const CiString<50>& event_type, const std::o
 
 void ChargePoint::on_variable_changed(const SetVariableData& set_variable_data) {
     this->handle_variable_changed(set_variable_data);
+}
+
+void ChargePoint::on_external_limits_changed(const std::variant<ConstantChargingLimit, ChargingSchedule>& limit,
+                                             double percentage_delta, ChargingLimitSourceEnum source,
+                                             std::optional<int32_t> evse_id) {
+    auto request =
+        this->smart_charging_handler->handle_external_limits_changed(limit, percentage_delta, source, evse_id);
+    if (request.has_value()) {
+        auto [cleared_charging_limit_request, transaction_event_requests] = request.value();
+
+        ocpp::Call<NotifyChargingLimitRequest> call(cleared_charging_limit_request,
+                                                    this->message_queue->createMessageId());
+        this->send<NotifyChargingLimitRequest>(call);
+
+        if (transaction_event_requests.size() > 0) {
+            for (auto transaction_event_request : transaction_event_requests) {
+                ocpp::Call<TransactionEventRequest> call(transaction_event_request,
+                                                         this->message_queue->createMessageId());
+                this->send<TransactionEventRequest>(call);
+            }
+        }
+    }
+}
+
+void ChargePoint::on_external_limit_cleared(double percentage_delta, ChargingLimitSourceEnum source,
+                                            std::optional<int32_t> evse_id) {
+    auto request = this->smart_charging_handler->handle_external_limit_cleared(percentage_delta, source, evse_id);
+
+    if (request.has_value()) {
+
+        auto [cleared_charging_limit_request, transaction_event_requests] = request.value();
+
+        ocpp::Call<ClearedChargingLimitRequest> call(cleared_charging_limit_request,
+                                                     this->message_queue->createMessageId());
+        this->send<ClearedChargingLimitRequest>(call);
+
+        if (transaction_event_requests.size() > 0) {
+            for (auto transaction_event_request : transaction_event_requests) {
+                ocpp::Call<TransactionEventRequest> call(transaction_event_request,
+                                                         this->message_queue->createMessageId());
+                this->send<TransactionEventRequest>(call);
+            }
+        }
+    }
 }
 
 bool ChargePoint::send(CallError call_error) {

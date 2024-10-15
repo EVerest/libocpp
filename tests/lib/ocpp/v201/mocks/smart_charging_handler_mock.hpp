@@ -3,11 +3,15 @@
 
 #include "gmock/gmock.h"
 #include <cstdint>
+#include <variant>
 #include <vector>
 
+#include "ocpp/v201/messages/ClearedChargingLimit.hpp"
 #include "ocpp/v201/messages/SetChargingProfile.hpp"
 #include "ocpp/v201/ocpp_enums.hpp"
 #include "ocpp/v201/smart_charging.hpp"
+
+typedef std::variant<ocpp::v201::ConstantChargingLimit, ocpp::v201::ChargingSchedule> ChargingLimitVariant;
 
 namespace ocpp::v201 {
 class SmartChargingHandlerMock : public SmartChargingHandlerInterface {
@@ -28,5 +32,14 @@ public:
                 (std::vector<ChargingProfile> & valid_profiles, const ocpp::DateTime& start_time,
                  const ocpp::DateTime& end_time, const int32_t evse_id,
                  std::optional<ChargingRateUnitEnum> charging_rate_unit));
+    MOCK_METHOD((std::optional<std::pair<NotifyChargingLimitRequest, std::vector<TransactionEventRequest>>>),
+                handle_external_limits_changed,
+                (const ChargingLimitVariant& limit, double percentage_delta, ChargingLimitSourceEnum source,
+                 std::optional<int32_t> evse_id),
+                (const, override));
+    MOCK_METHOD((std::optional<std::pair<ClearedChargingLimitRequest, std::vector<TransactionEventRequest>>>),
+                handle_external_limit_cleared,
+                (double percentage_delta, ChargingLimitSourceEnum source, std::optional<int32_t> evse_id),
+                (const, override));
 };
 } // namespace ocpp::v201

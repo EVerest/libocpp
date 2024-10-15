@@ -9,10 +9,14 @@
 #include "ocpp/v201/ctrlr_component_variables.hpp"
 #include "ocpp/v201/device_model.hpp"
 #include "ocpp/v201/evse.hpp"
+#include "ocpp/v201/messages/ClearedChargingLimit.hpp"
+#include "ocpp/v201/messages/NotifyChargingLimit.hpp"
 #include "ocpp/v201/messages/SetChargingProfile.hpp"
+#include "ocpp/v201/messages/TransactionEvent.hpp"
 #include "ocpp/v201/ocpp_enums.hpp"
 #include "ocpp/v201/ocpp_types.hpp"
 #include "ocpp/v201/profile.hpp"
+#include "ocpp/v201/transaction.hpp"
 #include "ocpp/v201/utils.hpp"
 #include <algorithm>
 #include <cstring>
@@ -20,10 +24,17 @@
 #include <ocpp/common/constants.hpp>
 #include <ocpp/v201/smart_charging.hpp>
 #include <optional>
+#include <utility>
+#include <variant>
 
 using namespace std::chrono;
 
 namespace ocpp::v201 {
+
+bool operator==(const ConstantChargingLimit& a, const ConstantChargingLimit& b) {
+    return std::fabs(a.limit - b.limit) <= std::numeric_limits<float>::epsilon() &&
+           a.charging_rate_unit == b.charging_rate_unit;
+}
 
 namespace conversions {
 std::string profile_validation_result_to_string(ProfileValidationResultEnum e) {
@@ -612,6 +623,141 @@ CompositeSchedule SmartChargingHandler::calculate_composite_schedule(
     composite_schedule.evseId = evse_id;
 
     return composite_schedule;
+}
+
+ChargingSchedule create_schedule_from_limit(const ConstantChargingLimit limit) {
+    return ChargingSchedule{
+        .id = 0,
+        .chargingRateUnit = limit.charging_rate_unit,
+        .chargingSchedulePeriod = {ChargingSchedulePeriod{
+            .startPeriod = 0,
+            .limit = limit.limit,
+        }},
+    };
+}
+
+std::optional<std::pair<NotifyChargingLimitRequest, std::vector<TransactionEventRequest>>>
+SmartChargingHandler::handle_external_limits_changed(const std::variant<ConstantChargingLimit, ChargingSchedule>& limit,
+                                                     double percentage_delta, ChargingLimitSourceEnum source,
+                                                     std::optional<int32_t> evse_id) const {
+    // K12.FR.04
+    if (source == ChargingLimitSourceEnum::CSO) {
+        // The spec does not define what we should do when the source
+        // given is CSO. Here we just throw.
+        throw std::invalid_argument("The source of an external limit should not be CSO.");
+    }
+
+    NotifyChargingLimitRequest notify_charging_limit_request = {};
+    std::vector<TransactionEventRequest> transaction_event_requests = {};
+
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    const float limit_change_significance = this->device_model->get_value<double>(limit_change_cv);
+
+    const auto& notify_charging_limit_cv = ControllerComponentVariables::NotifyChargingLimitWithSchedules;
+    const std::optional<bool> notify_with_schedules =
+        this->device_model->get_optional_value<bool>(notify_charging_limit_cv);
+
+    std::optional<std::pair<NotifyChargingLimitRequest, std::vector<TransactionEventRequest>>> request = {};
+    std::pair<NotifyChargingLimitRequest, std::vector<TransactionEventRequest>> pair;
+
+    const bool limit_change_significance_exceeded = percentage_delta > limit_change_significance;
+
+    if (limit_change_significance_exceeded) {
+        notify_charging_limit_request = NotifyChargingLimitRequest{};
+        notify_charging_limit_request.evseId = evse_id;
+        notify_charging_limit_request.chargingLimit = {.chargingLimitSource = source};
+        if (notify_with_schedules.has_value() && notify_with_schedules.value()) {
+            if (const auto* limit_c = std::get_if<ConstantChargingLimit>(&limit)) {
+                notify_charging_limit_request.chargingSchedule = {{create_schedule_from_limit(*limit_c)}};
+            } else if (const auto* limit_s = std::get_if<ChargingSchedule>(&limit)) {
+                notify_charging_limit_request.chargingSchedule = {{*limit_s}};
+            }
+        }
+        pair.first = notify_charging_limit_request;
+
+        // K11.FR.04
+        this->process_evses_with_active_transactions(limit_change_significance_exceeded, transaction_event_requests,
+                                                     evse_id);
+
+        pair.second = transaction_event_requests;
+        request.emplace(pair);
+    }
+    return request;
+}
+
+std::optional<std::pair<ClearedChargingLimitRequest, std::vector<TransactionEventRequest>>>
+SmartChargingHandler::handle_external_limit_cleared(double percentage_delta, ChargingLimitSourceEnum source,
+                                                    std::optional<int32_t> evse_id) const {
+
+    std::pair<ClearedChargingLimitRequest, std::vector<TransactionEventRequest>> pair;
+    std::vector<TransactionEventRequest> transaction_event_requests = {};
+
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    const float limit_change_significance = this->device_model->get_value<double>(limit_change_cv);
+
+    const bool limit_change_significance_exceeded = percentage_delta > limit_change_significance;
+
+    bool has_transaction = this->process_evses_with_active_transactions(limit_change_significance_exceeded,
+                                                                        transaction_event_requests, evse_id);
+
+    std::optional<std::pair<ClearedChargingLimitRequest, std::vector<TransactionEventRequest>>> request;
+
+    if (has_transaction) {
+        // K13.FR.02
+        ClearedChargingLimitRequest cleared_charging_limit_request = {};
+
+        if (evse_id.has_value()) {
+            cleared_charging_limit_request.evseId = evse_id.value();
+        }
+
+        // There is not restriction on this source in the spec.
+        // K12.FR04 requires it not to be CSO. Not enforced here.
+        cleared_charging_limit_request.chargingLimitSource = source;
+        pair.first = cleared_charging_limit_request;
+
+        pair.second = transaction_event_requests;
+        request.emplace(pair);
+    }
+
+    return request;
+}
+
+TransactionEventRequest
+SmartChargingHandler::create_transaction_event_request(std::unique_ptr<EnhancedTransaction>& tx) const {
+    auto tmp = TransactionEventRequest{};
+    tmp.eventType = TransactionEventEnum::Updated;
+    tmp.timestamp = ocpp::DateTime();
+    tmp.triggerReason = TriggerReasonEnum::ChargingRateChanged;
+
+    tmp.seqNo = tx->get_seq_no();
+    tmp.transactionInfo = tx->get_transaction();
+
+    return tmp;
+}
+
+bool SmartChargingHandler::process_evses_with_active_transactions(
+    const bool limit_change_significance_exceeded, std::vector<TransactionEventRequest>& transaction_event_requests,
+    std::optional<int32_t> evse_id) const {
+    bool has_transaction = false;
+    if (evse_id.has_value()) {
+        auto evse = &this->evse_manager.get_evse(evse_id.value());
+        if (evse->has_active_transaction()) {
+            has_transaction = true;
+            // K13.FR.03
+            if (limit_change_significance_exceeded) {
+                auto& tx = evse->get_transaction();
+                transaction_event_requests.push_back(this->create_transaction_event_request(tx));
+            }
+        }
+    } else {
+        for (auto& evse : this->evse_manager) {
+            has_transaction = (process_evses_with_active_transactions(limit_change_significance_exceeded,
+                                                                      transaction_event_requests, evse.get_id()) ||
+                               has_transaction);
+        }
+    }
+
+    return has_transaction;
 }
 
 } // namespace ocpp::v201
