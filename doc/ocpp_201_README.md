@@ -355,12 +355,18 @@ sequenceDiagram
 
 This section walks you through how to sanity check that your `libocpp` development environment is set up effectively. The process will involve the following:
 
-1. Download `libocpp` from GitHub
-2. Ensuring you've installed `libocpp`'s system dependencies
+<!--
+    Some of the following sections have been commented out due to the lack of a charge_point client implementation for OCPP 2.0.1.
+-->
+<!--
 3. Standing up and configuring a CSMS (that is, an OCPP server) locally
 4. Updating the default OCPP device model file
 5. Building `libocpp` as an OCPP 2.0.1 client executable
 6. Running this freshly built binary
+-->
+1. Download `libocpp` from GitHub
+2. Ensuring you've installed `libocpp`'s system dependencies
+7. Running unit tests
 
 This approach can also be used later in development for testing an actual station's device model and configuration is valid in the eyes of a CSMS.
 
@@ -389,7 +395,10 @@ To be able to build `libocpp`, your system needs a compatible compiler, build to
 > [!WARNING]
 > OpenSSL version 3.0 or above is required.
 
-
+<!--
+    The following sections have been commented out due to the lack of a charge_point client implementation for OCPP 2.0.1.
+-->
+<!--
 ### Standing up a CSMS
 The configuration of a `libocpp` deployment includes information about the websocket URL(s) one or more `ChargePoint`s will use to communicate with a CSMS that supports OCPP 2.0.1. Before continuing, ensure that you have access to such an application for testing purposes. If not, there are free options that play nicely with EVerest and support simple local deployments _via_ containers. These include [CitrineOS](https://citrineos.github.io/) and [MaEVe](https://github.com/thoughtworks/maeve-csms/).
 
@@ -790,9 +799,10 @@ Congratulations! You've successfully built `libocpp`! The `build/dist` directory
 ```
 
 Type `help` to see a list of possible commands.
+-->
 
 
-## Unit Testing
+### Unit Testing
 
 GTest is required for building the test cases target.
 To build the target and run the tests you can reference the script `.ci/build-kit/install_and_test.sh`.
