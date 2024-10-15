@@ -23,7 +23,6 @@ The OCPP 2.0.1 implementation in `libocpp` is nearing completion, but there rema
   - [Initialize the Database](#initialize-the-database)
 - [OCPP 2.0.1 Use Cases in `libocpp`](#ocpp-201-use-cases-in-libocpp)
 - [Quickstart for OCPP 2.0.1](#quickstart-for-ocpp-201)
-- [Build and Install `libocpp`](#build-and-install-libocpp)
 - [Building with FetchContent Instead of EDM](#building-with-fetchcontent-instead-of-edm)
 - [Unit Testing](#unit-testing)
 - [Building the Doxygen Documentation](#building-the-doxygen-documentation)
@@ -356,21 +355,56 @@ sequenceDiagram
 
 This section walks you through how to sanity check that your `libocpp` development environment is set up effectively. The process will involve the following:
 
-1. Ensuring you've installed `libocpp`'s system dependencies
-2. Standing up and configuring a CSMS (that is, an OCPP server) locally
-3. Updating the default OCPP device model file
-4. Updating the CSMS to make it aware of your test station's device model
+1. Download `libocpp` from GitHub
+2. Ensuring you've installed `libocpp`'s system dependencies
+3. Standing up and configuring a CSMS (that is, an OCPP server) locally
+4. Updating the default OCPP device model file
 5. Building `libocpp` as an OCPP 2.0.1 client executable
 6. Running this freshly built binary
 
 This approach can also be used later in development for testing an actual station's device model and configuration is valid in the eyes of a CSMS.
 
+
+### Download `libocpp`
+You'll first want to download the source code for `libocpp` from this repository:
+
+```bash
+git clone https://github.com/EVerest/libocpp.git
+```
+
+
 ### Installing System Dependencies
-Before proceeding further in this section, please ensure you have installed the system dependencies of `libocpp` as described in the [Build and Install `libocpp`](#build-and-install-libocpp) section.
+To be able to build `libocpp`, your system needs a compatible compiler, build tools, and development libraries and headers for several dependencies installed. For instance, on Debian GNU/Linux 11, these can be installed as follows:
+
+```bash
+    sudo apt install build-essential \
+                     cmake \
+                     ninja-build \
+                     libboost-all-dev \
+                     libsqlite3-dev \
+                     libssl-dev \
+                     python3-pip
+```
+
+> [!WARNING]
+> OpenSSL version 3.0 or above is required.
+
+
+### Standing up a CSMS
+The configuration of a `libocpp` deployment includes information about the websocket URL(s) one or more `ChargePoint`s will use to communicate with a CSMS that supports OCPP 2.0.1. Before continuing, ensure that you have access to such an application for testing purposes. If not, there are free options that play nicely with EVerest and support simple local deployments _via_ containers. These include [CitrineOS](https://citrineos.github.io/) and [MaEVe](https://github.com/thoughtworks/maeve-csms/).
+
+Once you have access to a CSMS, you can (1) register a new charge point ID for testing and (2) provide this charge point ID and the CSMS websocket URL as the `ChargePointId` and within the `NetworkConnectionProfiles` variable in the `InternalCtrlr`, respectively. Instructions for accomplishing step (1) should be provided in your CSMS's documentation. More information about step (2) is provided in the [next section](#configuring-your-charging-station).
+
 
 ### Configuring Your Charging Station
-
 Before building the client binary, you will want to update the [`libocpp` configuration file](/config/v201/config.json) with accurate information about your desired charging station's hardware and how to access your CSMS. This configuration file includes an OCPP 2.0.1 device model for a charging station with two EVSEs, support for multiple network profiles, certificate-based authentication, etc. It also offers a host of `libocpp`-specific settings in an `InternalCtrlr` settings block.
+
+> [!INFO]
+> We are editing this configuration prior to compiling `libocpp` here for convenience, but it is not a requirement. Doing so simply copies your customized configuration into the appropriate location in the `libocpp` installation directory. Specifically, you can provide any config file to `charge_point` by passing it to the `--config` parameter at runtime, providing its path relative to
+> ```
+>     <installation directory>/share/everest/modules/OCPP
+> ```
+> (For instance, `<installation directory>` in this tutorial is `build/dist` within your `libocpp` repository.)
 
 Tailoring a device model to your station hardware and software is a large subject that deserves its own documentation. For now, we recommend at least validating the following about variables in the `InternalCtrlr`:
 
@@ -735,59 +769,28 @@ For completeness, we've also provided a table below of each `InternalCtrlr` vari
   </p>
 </details>
 
-Change into libocpp/build and execute cmake and then make install:
+
+### Building `libocpp` as an OCPP 2.0.1 Client Executable
+From the root directory of the `libocpp` repository, you can then configure, build, and install this library (including the charge point client) using CMake and Ninja:
 
 ```bash
-  cd build
-  cmake -DLIBOCPP16_BUILD_EXAMPLES=ON -DCMAKE_INSTALL_PREFIX=./dist ..
-  make -j$(nproc) install
+    cmake -B build -G Ninja -DBUILD_TESTING=ON \
+                            -DCMAKE_INSTALL_PREFIX="./build/dist" \
+                            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+    cmake -B -DCMAKE_INSTALL_PREFIX=./dist ..
+    make -j$(nproc) install
 ```
 
-Use the following command to start the charge point. Replace the config with [config-docker.json](/config/v201/config-docker.json) if you want to test with the [SteVe](https://github.com/steve-community/steve#docker) CSMS running in a docker container.
+
+### Running the `libocpp` Charge Point Binary
+Congratulations! You've successfully built `libocpp`! The `build/dist` directory should now contain an installation of `libocpp` including a simple OCPP client binary at `build/dist/bin/charge_point`. It can be run by providing a working directory and `libocpp` configuration file as follows:
 
 ```bash
-  ./dist/bin/charge_point \
-    --maindir ./dist \
-    --conf config.json
+  ./dist/bin/charge_point --maindir ./dist --conf config.json
 ```
 
 Type `help` to see a list of possible commands.
 
-
-In the libocpp folder create a folder named build and cd into it.
-Execute cmake and then make install:
-
-```bash
-  mkdir build && cd build
-  cmake ..
-  make install
-```
-
------
-
-## Build and Install `libocpp`
-
-For Debian GNU/Linux 11 you will need the following dependencies:
-
-```bash
-  sudo apt install build-essential cmake python3-pip libboost-all-dev libsqlite3-dev libssl-dev
-```
-
-OpenSSL version 3.0 or above is required.
-
-Clone this repository.
-
-```bash
-  git clone https://github.com/EVerest/libocpp
-```
-
------
-
-## Building with FetchContent Instead of EDM
-
-In [doc/build-with-fetchcontent](/doc/build-with-fetchcontent) you can find an example how to build libocpp with FetchContent instead of EDM.
-
------
 
 ## Unit Testing
 
@@ -804,9 +807,14 @@ cd build
 make -j$(nproc) install
 ```
 
+
+## Building with FetchContent Instead of EDM
+
+In [doc/build-with-fetchcontent](/doc/build-with-fetchcontent) you can find an example how to build libocpp with FetchContent instead of EDM.
+
+
 Run any required tests from build/tests.
 
------
 
 ## Building the Doxygen Documentation
 
@@ -820,13 +828,11 @@ You will find the generated Doxygen documentation at:
 
 The main reference for the integration of libocpp for OCPP2.0.1 is the ocpp::v201::ChargePoint class defined in libocpp/include/ocpp/v201/charge_point.hpp.
 
------
 
 ## Support for TPM Keys
 
 In order to use the TPM keys, it is mandatory to use the default `libwebsocket` implementation.
 
------
 
 ## Support for `websocket++`
 
@@ -836,7 +842,6 @@ The old `websocket++` implementation has been deprecated. For enabling `websocke
   cmake .. -DLIBOCPP_ENABLE_DEPRECATED_WEBSOCKETPP=ON
 ```
 
------
 
 ## Support for `iface`
 
