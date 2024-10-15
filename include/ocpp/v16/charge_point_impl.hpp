@@ -96,7 +96,7 @@ private:
 
     std::unique_ptr<Websocket> websocket;
     Everest::SteadyTimer websocket_timer;
-    std::unique_ptr<MessageQueue<v16::MessageType>> message_queue;
+    std::unique_ptr<MessageQueueInterface<v16::MessageType>> message_queue;
     std::map<int32_t, std::shared_ptr<Connector>> connectors;
     std::unique_ptr<SmartChargingHandler> smart_charging_handler;
     int32_t heartbeat_interval;

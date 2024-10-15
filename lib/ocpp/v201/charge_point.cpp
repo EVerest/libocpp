@@ -37,7 +37,7 @@ static DisplayMessage message_info_to_display_message(const MessageInfo& message
 
 ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
                          std::shared_ptr<DeviceModel> device_model, std::shared_ptr<DatabaseHandler> database_handler,
-                         std::shared_ptr<MessageQueue<v201::MessageType>> message_queue,
+                         std::shared_ptr<MessageQueueInterface<v201::MessageType>> message_queue,
                          const std::string& message_log_path, const std::shared_ptr<EvseSecurity> evse_security,
                          const Callbacks& callbacks) :
     ocpp::ChargingStationBase(evse_security),
@@ -1132,7 +1132,7 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
         transaction_meter_value_callback, this->callbacks.pause_charging_callback);
 
     this->smart_charging_handler =
-        std::make_shared<SmartChargingHandler>(*this->evse_manager, this->device_model, this->database_handler);
+        std::make_shared<SmartChargingHandler>(*this->evse_manager, *this->device_model, *this->database_handler);
 
     this->configure_message_logging_format(message_log_path);
     this->monitoring_updater.start_monitoring();

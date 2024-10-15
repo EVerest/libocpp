@@ -104,13 +104,13 @@ public:
 class SmartChargingHandler : public SmartChargingHandlerInterface {
 private:
     EvseManagerInterface& evse_manager;
-    std::shared_ptr<DeviceModel>& device_model;
+    DeviceModel& device_model;
 
-    std::shared_ptr<ocpp::v201::DatabaseHandler> database_handler;
+    ocpp::v201::DatabaseHandler& database_handler;
 
 public:
-    SmartChargingHandler(EvseManagerInterface& evse_manager, std::shared_ptr<DeviceModel>& device_model,
-                         std::shared_ptr<ocpp::v201::DatabaseHandler> database_handler);
+    SmartChargingHandler(EvseManagerInterface& evse_manager, DeviceModel& device_model,
+                         ocpp::v201::DatabaseHandler& database_handler);
 
     ///
     /// \brief for the given \p transaction_id removes the associated charging profile.

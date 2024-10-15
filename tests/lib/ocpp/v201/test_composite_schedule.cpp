@@ -47,7 +47,8 @@ static const int DEFAULT_PROFILE_ID = 1;
 static const int DEFAULT_STACK_LEVEL = 1;
 static const std::string DEFAULT_TX_ID = "10c75ff7-74f5-44f5-9d01-f649f3ac7b78";
 const static std::string MIGRATION_FILES_PATH = "./resources/v201/device_model_migration_files";
-const static std::string CONFIG_PATH = "./resources/example_config/v201/component_config";
+const static std::string SCHEMAS_PATH = "./resources/example_config/v201/component_config";
+const static std::string CONFIG_PATH = "./resources/example_config/v201/config.json";
 const static std::string DEVICE_MODEL_DB_IN_MEMORY_PATH = "file::memory:?cache=shared";
 
 class TestSmartChargingHandler : public SmartChargingHandler {
@@ -165,7 +166,7 @@ protected:
 
     void create_device_model_db(const std::string& path) {
         InitDeviceModelDb db(path, MIGRATION_FILES_PATH);
-        db.initialize_database(CONFIG_PATH, true);
+        db.initialize_database(SCHEMAS_PATH, true);
     }
 
     std::shared_ptr<DeviceModel>
@@ -186,13 +187,14 @@ protected:
         return device_model;
     }
 
-    TestSmartChargingHandler create_smart_charging_handler() {
+    std::shared_ptr<DatabaseHandler> create_database_handler() {
         std::unique_ptr<common::DatabaseConnection> database_connection =
             std::make_unique<common::DatabaseConnection>(fs::path("/tmp/ocpp201") / "cp.db");
         std::shared_ptr<DatabaseHandler> database_handler =
             std::make_shared<DatabaseHandler>(std::move(database_connection), MIGRATION_FILES_LOCATION_V201);
         database_handler->open_connection();
-        return TestSmartChargingHandler(*this->evse_manager, device_model, database_handler);
+
+        return database_handler;
     }
 
     // Default values used within the tests
@@ -202,7 +204,8 @@ protected:
 
     bool ignore_no_transaction = true;
     std::shared_ptr<DeviceModel> device_model = create_device_model();
-    TestSmartChargingHandler handler = create_smart_charging_handler();
+    std::shared_ptr<DatabaseHandler> database_handler = create_database_handler();
+    TestSmartChargingHandler handler = TestSmartChargingHandler(*evse_manager, *device_model, *database_handler);
     boost::uuids::random_generator uuid_generator = boost::uuids::random_generator();
 };
 
