@@ -21,7 +21,7 @@ EVerest's Open Charge Point Protocol (OCPP) modules are based on this library—
 |------------|----------|
 | • [Quickstart Guide](/doc/ocpp_201_README.md#quickstart-for-ocpp-201) | • [Quickstart Guide](/doc/ocpp_16_README.md#quickstart-for-ocpp-16) |
 | • [Build and Install libocpp](/doc/ocpp_201_README.md#build-and-install-libocpp) | • [Build and Install libocpp](/doc/ocpp_16_README.md#build-and-install-libocpp) |
-| • [Functionality Support](/doc/ocpp_201_README.md#integration-with-everest) | • [Functionality Support](/doc/ocpp_16_README.md#functionality-support) |
+| • [Supported Certification Profiles](/doc/ocpp_201_README.md#supported-certification-profiles) | • [Functionality Support](/doc/ocpp_16_README.md#functionality-support) |
 | • [Integration with EVerest](/doc/ocpp_201_README.md#integration-with-everest) | • [Integration with EVerest](/doc/ocpp_16_README.md#integration-with-everest) |
 | • [Standalone Integration](/doc/ocpp_201_README.md#standalone-integration) | • [Standalone Integration](/doc/ocpp_16_README.md#standalone-integration) |
 | • [Unit testing](doc/ocpp_201_README.md#unit-testing) | • [Unit testing](doc/ocpp_16_README.md#unit-testing) |
