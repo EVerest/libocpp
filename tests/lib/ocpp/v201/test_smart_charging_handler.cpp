@@ -1683,6 +1683,49 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K05FR02_RequestStartTransactionReque
     ASSERT_THAT(sut, testing::Eq(ProfileValidationResultEnum::RequestStartTransactionNonTxProfile));
 }
 
+TEST_F(SmartChargingHandlerTestFixtureV201, K11FR04_HandleChangedChargingLimitRequest_NoTransactionExists) {
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.1",
+                            "test");
+
+    ConstantChargingLimit new_limit = {
+        .limit = 100.0,
+        .charging_rate_unit = ChargingRateUnitEnum::A,
+    };
+
+    double deltaChanged = 0.2;
+    auto source = ChargingLimitSourceEnum::Other;
+
+    auto resp = handler.handle_external_limits_changed(new_limit, deltaChanged, source, std::nullopt);
+    ASSERT_THAT(resp.has_value(), testing::IsTrue());
+
+    auto [notify_charging_limit_request, transaction_event_requests] = resp.value();
+    ASSERT_THAT(transaction_event_requests.size(), testing::Eq(0));
+}
+
+TEST_F(SmartChargingHandlerTestFixtureV201, K11FR04_HandleChangedChargingLimitRequest_OneTransactionExists) {
+    const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
+    device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.1",
+                            "test");
+
+    std::string transaction_id = uuid();
+    this->evse_manager->open_transaction(DEFAULT_EVSE_ID, transaction_id);
+
+    ConstantChargingLimit new_limit = {
+        .limit = 100.0,
+        .charging_rate_unit = ChargingRateUnitEnum::A,
+    };
+
+    double deltaChanged = 0.2;
+    auto source = ChargingLimitSourceEnum::Other;
+
+    auto resp = handler.handle_external_limits_changed(new_limit, deltaChanged, source, std::nullopt);
+    ASSERT_THAT(resp.has_value(), testing::IsTrue());
+
+    auto [notify_charging_limit_request, transaction_event_requests] = resp.value();
+    ASSERT_THAT(transaction_event_requests.size(), testing::Eq(1));
+}
+
 TEST_F(SmartChargingHandlerTestFixtureV201,
        K12FR02_HandleExternalLimitsChanged_LimitChangeSignificanceNotMet_ReturnNone) {
     const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
@@ -1764,8 +1807,10 @@ TEST_F(
     auto resp = handler.handle_external_limits_changed(new_limit, deltaChanged, source, DEFAULT_EVSE_ID);
 
     ASSERT_THAT(resp.has_value(), testing::IsTrue());
-    ASSERT_THAT(resp->chargingSchedule.has_value(), testing::IsTrue());
-    ASSERT_THAT(resp->chargingSchedule.value(), testing::Contains(charging_schedule));
+    auto [notify_charging_limit_request, s] = resp.value();
+
+    ASSERT_THAT(notify_charging_limit_request.chargingSchedule.has_value(), testing::IsTrue());
+    ASSERT_THAT(notify_charging_limit_request.chargingSchedule.value(), testing::Contains(charging_schedule));
 }
 
 TEST_F(
@@ -1791,8 +1836,11 @@ TEST_F(
     auto resp = handler.handle_external_limits_changed(charging_schedule, deltaChanged, source, DEFAULT_EVSE_ID);
 
     ASSERT_THAT(resp.has_value(), testing::IsTrue());
-    ASSERT_THAT(resp->chargingSchedule.has_value(), testing::IsTrue());
-    ASSERT_THAT(resp->chargingSchedule.value(), testing::Contains(charging_schedule));
+
+    auto [notify_charging_limit_request, s] = resp.value();
+
+    ASSERT_THAT(notify_charging_limit_request.chargingSchedule.has_value(), testing::IsTrue());
+    ASSERT_THAT(notify_charging_limit_request.chargingSchedule.value(), testing::Contains(charging_schedule));
 }
 
 TEST_F(
@@ -1812,7 +1860,9 @@ TEST_F(
     auto resp = handler.handle_external_limits_changed(new_limit, deltaChanged, source, DEFAULT_EVSE_ID);
 
     ASSERT_THAT(resp.has_value(), testing::IsTrue());
-    ASSERT_THAT(resp->chargingSchedule.has_value(), testing::IsFalse());
+    auto [notify_charging_limit_request, s] = resp.value();
+
+    ASSERT_THAT(notify_charging_limit_request.chargingSchedule.has_value(), testing::IsFalse());
 }
 
 TEST_F(
@@ -1835,7 +1885,9 @@ TEST_F(
     auto resp = handler.handle_external_limits_changed(new_limit, deltaChanged, source, DEFAULT_EVSE_ID);
 
     ASSERT_THAT(resp.has_value(), testing::IsTrue());
-    ASSERT_THAT(resp->chargingSchedule.has_value(), testing::IsFalse());
+    auto [notify_charging_limit_request, s] = resp.value();
+
+    ASSERT_THAT(notify_charging_limit_request.chargingSchedule.has_value(), testing::IsFalse());
 }
 
 TEST_F(SmartChargingHandlerTestFixtureV201, K12FR04_HandleExternalLimitsChanged_NotificationIncludesSource) {
@@ -1853,7 +1905,9 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K12FR04_HandleExternalLimitsChanged_
     auto resp = handler.handle_external_limits_changed(new_limit, deltaChanged, source, DEFAULT_EVSE_ID);
 
     ASSERT_THAT(resp.has_value(), testing::IsTrue());
-    ASSERT_THAT(resp->chargingLimit.chargingLimitSource, testing::Eq(source));
+    auto [notify_charging_limit_request, s] = resp.value();
+
+    ASSERT_THAT(notify_charging_limit_request.chargingLimit.chargingLimitSource, testing::Eq(source));
 }
 
 TEST_F(SmartChargingHandlerTestFixtureV201, K12FR04_HandleExternalLimitsChanged_ThrowsIfSourceIsCSO) {
@@ -1877,7 +1931,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K12_HandleExternalLimitsChanged_Requ
     device_model->set_value(limit_change_cv.component, limit_change_cv.variable.value(), AttributeEnum::Actual, "0.1",
                             "test");
 
-    auto evse_id = 12;
+    auto evse_id = 2;
 
     ConstantChargingLimit new_limit = {
         .limit = 100.0,
@@ -1889,9 +1943,12 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K12_HandleExternalLimitsChanged_Requ
     auto resp = handler.handle_external_limits_changed(new_limit, deltaChanged, source, evse_id);
 
     ASSERT_THAT(resp.has_value(), testing::IsTrue());
-    ASSERT_THAT(resp->chargingLimit.chargingLimitSource, testing::Eq(source));
-    ASSERT_THAT(resp->evseId.has_value(), testing::IsTrue());
-    ASSERT_THAT(resp->evseId.value(), testing::Eq(evse_id));
+
+    auto [notify_charging_limit_request, s] = resp.value();
+
+    ASSERT_THAT(notify_charging_limit_request.chargingLimit.chargingLimitSource, testing::Eq(source));
+    ASSERT_THAT(notify_charging_limit_request.evseId.has_value(), testing::IsTrue());
+    ASSERT_THAT(notify_charging_limit_request.evseId.value(), testing::Eq(evse_id));
 }
 
 TEST_F(SmartChargingHandlerTestFixtureV201,

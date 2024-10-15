@@ -636,7 +636,7 @@ ChargingSchedule create_schedule_from_limit(const ConstantChargingLimit limit) {
     };
 }
 
-std::optional<NotifyChargingLimitRequest>
+std::optional<std::pair<NotifyChargingLimitRequest, std::vector<TransactionEventRequest>>>
 SmartChargingHandler::handle_external_limits_changed(const std::variant<ConstantChargingLimit, ChargingSchedule>& limit,
                                                      double percentage_delta, ChargingLimitSourceEnum source,
                                                      std::optional<int32_t> evse_id) const {
@@ -647,7 +647,8 @@ SmartChargingHandler::handle_external_limits_changed(const std::variant<Constant
         throw std::invalid_argument("The source of an external limit should not be CSO.");
     }
 
-    std::optional<NotifyChargingLimitRequest> request = {};
+    NotifyChargingLimitRequest notify_charging_limit_request = {};
+    std::vector<TransactionEventRequest> transaction_event_requests = {};
 
     const auto& limit_change_cv = ControllerComponentVariables::LimitChangeSignificance;
     const float limit_change_significance = this->device_model->get_value<double>(limit_change_cv);
@@ -656,19 +657,31 @@ SmartChargingHandler::handle_external_limits_changed(const std::variant<Constant
     const std::optional<bool> notify_with_schedules =
         this->device_model->get_optional_value<bool>(notify_charging_limit_cv);
 
-    if (percentage_delta > limit_change_significance) {
-        request = NotifyChargingLimitRequest{};
-        request->evseId = evse_id;
-        request->chargingLimit = {.chargingLimitSource = source};
+    std::optional<std::pair<NotifyChargingLimitRequest, std::vector<TransactionEventRequest>>> request = {};
+    std::pair<NotifyChargingLimitRequest, std::vector<TransactionEventRequest>> pair;
+
+    const bool limit_change_significance_exceeded = percentage_delta > limit_change_significance;
+
+    if (limit_change_significance_exceeded) {
+        notify_charging_limit_request = NotifyChargingLimitRequest{};
+        notify_charging_limit_request.evseId = evse_id;
+        notify_charging_limit_request.chargingLimit = {.chargingLimitSource = source};
         if (notify_with_schedules.has_value() && notify_with_schedules.value()) {
             if (const auto* limit_c = std::get_if<ConstantChargingLimit>(&limit)) {
-                request->chargingSchedule = {{create_schedule_from_limit(*limit_c)}};
+                notify_charging_limit_request.chargingSchedule = {{create_schedule_from_limit(*limit_c)}};
             } else if (const auto* limit_s = std::get_if<ChargingSchedule>(&limit)) {
-                request->chargingSchedule = {{*limit_s}};
+                notify_charging_limit_request.chargingSchedule = {{*limit_s}};
             }
         }
-    }
+        pair.first = notify_charging_limit_request;
 
+        // K11.FR.04
+        this->process_evses_with_active_transactions(limit_change_significance_exceeded, transaction_event_requests,
+                                                     evse_id);
+
+        pair.second = transaction_event_requests;
+        request.emplace(pair);
+    }
     return request;
 }
 

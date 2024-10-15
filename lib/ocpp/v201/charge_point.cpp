@@ -1020,8 +1020,19 @@ void ChargePoint::on_external_limits_changed(const std::variant<ConstantCharging
     auto request =
         this->smart_charging_handler->handle_external_limits_changed(limit, percentage_delta, source, evse_id);
     if (request.has_value()) {
-        ocpp::Call<NotifyChargingLimitRequest> call(request.value(), this->message_queue->createMessageId());
+        auto [cleared_charging_limit_request, transaction_event_requests] = request.value();
+
+        ocpp::Call<NotifyChargingLimitRequest> call(cleared_charging_limit_request,
+                                                    this->message_queue->createMessageId());
         this->send<NotifyChargingLimitRequest>(call);
+
+        if (transaction_event_requests.size() > 0) {
+            for (auto transaction_event_request : transaction_event_requests) {
+                ocpp::Call<TransactionEventRequest> call(transaction_event_request,
+                                                         this->message_queue->createMessageId());
+                this->send<TransactionEventRequest>(call);
+            }
+        }
     }
 }
 

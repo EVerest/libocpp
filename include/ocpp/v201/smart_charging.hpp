@@ -112,7 +112,7 @@ public:
                                                            const ocpp::DateTime& end_time, const int32_t evse_id,
                                                            std::optional<ChargingRateUnitEnum> charging_rate_unit) = 0;
 
-    virtual std::optional<NotifyChargingLimitRequest>
+    virtual std::optional<std::pair<NotifyChargingLimitRequest, std::vector<TransactionEventRequest>>>
     handle_external_limits_changed(const std::variant<ConstantChargingLimit, ChargingSchedule>& limit,
                                    double percentage_delta, ChargingLimitSourceEnum source,
                                    std::optional<int32_t> evse_id) const = 0;
@@ -189,15 +189,19 @@ public:
                                                    std::optional<ChargingRateUnitEnum> charging_rate_unit) override;
 
     ///
-    /// \brief Determines whether or not we should notify the CSMS of a cleared external limit
+    /// \brief Determines whether or not we should notify the CSMS of a changed external limit
     /// based on \p percentage_delta and builds the notification.
     ///
-    std::optional<NotifyChargingLimitRequest>
+    std::optional<std::pair<NotifyChargingLimitRequest, std::vector<TransactionEventRequest>>>
     handle_external_limits_changed(const std::variant<ConstantChargingLimit, ChargingSchedule>& limit,
                                    double percentage_delta, ChargingLimitSourceEnum source,
                                    std::optional<int32_t> evse_id) const override;
 
-    virtual std::optional<std::pair<ClearedChargingLimitRequest, std::vector<TransactionEventRequest>>>
+    ///
+    /// \brief Determines whether or not we should notify the CSMS of a cleared external limit
+    /// based on \p percentage_delta and builds the notification.
+    ///
+    std::optional<std::pair<ClearedChargingLimitRequest, std::vector<TransactionEventRequest>>>
     handle_external_limit_cleared(double percentage_delta, ChargingLimitSourceEnum source,
                                   std::optional<int32_t> evse_id) const override;
 

@@ -1266,7 +1266,7 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | K01.FR.40 | ✅     | `Absolute`/`Recurring` profiles without `startSchedule` fields are rejected.                    |
 | K01.FR.41 | ✅     | `Relative` profiles with `startSchedule` fields are rejected.                                   |
 | K01.FR.42 | ⛽️     |                                                                                                 |
-| K01.FR.43 |        |  Open question to OCA - https://oca.causewaynow.com/wg/OCA-TWG/mail/thread/4254                |
+| K01.FR.43 |        |  Open question to OCA - <https://oca.causewaynow.com/wg/OCA-TWG/mail/thread/4254>                |
 | K01.FR.44 | ✅     | We reject invalid profiles instead of modifying and accepting them.                             |
 | K01.FR.45 | ✅     | We reject invalid profiles instead of modifying and accepting them.                             |
 | K01.FR.46 | ⛽️     | K08                                                                                             |
@@ -1381,7 +1381,7 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | K11.FR.01 |        |        |
 | K11.FR.02 |        |        |
 | K11.FR.03 |        |        |
-| K11.FR.04 |        |        |
+| K11.FR.04 | ✅     |        |
 | K11.FR.05 |        |        |
 | K11.FR.06 |        |        |
 
@@ -1392,7 +1392,7 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | K12.FR.01 |        |        |
 | K12.FR.02 | ✅     |        |
 | K12.FR.03 | ✅     |        |
-| K12.FR.04 | ✅     |        |
+| K12.FR.04 | ✅     | The spec does not define what we should do when the source given is CSO. The system currently throws and exception. |
 | K12.FR.05 |        |        |
 
 ## SmartCharging - Reset / Release External Charging Limit
