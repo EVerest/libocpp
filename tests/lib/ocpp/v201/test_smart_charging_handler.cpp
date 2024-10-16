@@ -921,7 +921,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201,
         create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), {},
         ChargingProfileKindEnum::Absolute, DEFAULT_STACK_LEVEL, ocpp::DateTime("2024-01-01T13:00:00"),
         ocpp::DateTime("2024-02-01T13:00:00"));
-    auto response = handler.validate_and_add_profile(existing_profile, DEFAULT_EVSE_ID);
+    auto response = handler.conform_validate_and_add_profile(existing_profile, DEFAULT_EVSE_ID);
     EXPECT_THAT(response.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
 
     this->evse_manager->open_transaction(DEFAULT_EVSE_ID, DEFAULT_TX_ID);
@@ -932,11 +932,11 @@ TEST_F(SmartChargingHandlerTestFixtureV201,
         ChargingProfileKindEnum::Absolute, DEFAULT_STACK_LEVEL, ocpp::DateTime("2024-01-15T13:00:00"),
         ocpp::DateTime("2024-02-01T13:00:00"));
 
-    response = handler.validate_and_add_profile(profile, DEFAULT_EVSE_ID);
+    response = handler.conform_validate_and_add_profile(profile, DEFAULT_EVSE_ID);
     EXPECT_THAT(response.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
 
     // verify TxDefaultProfile can still be validated when TxProfile was added
-    auto sut = handler.validate_profile(existing_profile, DEFAULT_EVSE_ID);
+    auto sut = handler.conform_and_validate_profile(existing_profile, DEFAULT_EVSE_ID);
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::Valid));
 }
 
@@ -1293,7 +1293,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201, ValidateAndAddProfile_StoresCharging
         DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
         create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), DEFAULT_TX_ID);
 
-    auto response = handler.validate_and_add_profile(profile, DEFAULT_EVSE_ID, charging_limit_source);
+    auto response = handler.conform_validate_and_add_profile(profile, DEFAULT_EVSE_ID, charging_limit_source);
     EXPECT_THAT(response.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
 
     ChargingProfileCriterion criteria = {
@@ -1513,7 +1513,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K09_GetChargingProfiles_ReportsProfi
         DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxDefaultProfile,
         create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")));
 
-    auto response = handler.validate_and_add_profile(profile, DEFAULT_EVSE_ID, charging_limit_source);
+    auto response = handler.conform_validate_and_add_profile(profile, DEFAULT_EVSE_ID, charging_limit_source);
     EXPECT_THAT(response.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
 
     std::vector<int32_t> requested_profile_ids{1};
@@ -1709,7 +1709,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K05FR02_RequestStartTransactionReque
 TEST_F(SmartChargingHandlerTestFixtureV201, K01_ValidateChargingStationMaxProfile_AllowsExistingMatchingProfile) {
     auto profile =
         SmartChargingTestUtils::get_charging_profile_from_file("max/ChargingStationMaxProfile_grid_hourly.json");
-    auto res = handler.validate_and_add_profile(profile, STATION_WIDE_ID);
+    auto res = handler.conform_validate_and_add_profile(profile, STATION_WIDE_ID);
     ASSERT_THAT(res.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
 
     auto sut = handler.validate_charging_station_max_profile(profile, STATION_WIDE_ID);
@@ -1719,7 +1719,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K01_ValidateChargingStationMaxProfil
 
 TEST_F(SmartChargingHandlerTestFixtureV201, K01_ValidateTxDefaultProfile_AllowsExistingMatchingProfile) {
     auto profile = SmartChargingTestUtils::get_charging_profile_from_file("singles/Absolute_301.json");
-    auto res = handler.validate_and_add_profile(profile, DEFAULT_EVSE_ID);
+    auto res = handler.conform_validate_and_add_profile(profile, DEFAULT_EVSE_ID);
     ASSERT_THAT(res.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
 
     auto sut = handler.validate_tx_default_profile(profile, DEFAULT_EVSE_ID);
@@ -1731,7 +1731,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K01_ValidateTxProfile_AllowsExisting
     auto profile = SmartChargingTestUtils::get_charging_profile_from_file("baseline/TxProfile_1.json");
     this->evse_manager->open_transaction(DEFAULT_EVSE_ID, profile.transactionId.value());
 
-    auto res = handler.validate_and_add_profile(profile, DEFAULT_EVSE_ID);
+    auto res = handler.conform_validate_and_add_profile(profile, DEFAULT_EVSE_ID);
     ASSERT_THAT(res.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
 
     auto sut = handler.validate_tx_profile(profile, DEFAULT_EVSE_ID);
