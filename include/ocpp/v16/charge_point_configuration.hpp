@@ -84,6 +84,9 @@ public:
     KeyValue getLogRotationMaximumFileCountKeyValue();
     std::vector<ChargingProfilePurposeType> getSupportedChargingProfilePurposeTypes();
     KeyValue getSupportedChargingProfilePurposeTypesKeyValue();
+    std::vector<ChargingProfilePurposeType> getIgnoredProfilePurposesOffline();
+    std::optional<KeyValue> getIgnoredProfilePurposesOfflineKeyValue();
+    bool setIgnoredProfilePurposesOffline(const std::string& ignored_profile_purposes_offline);
     int32_t getMaxCompositeScheduleDuration();
     KeyValue getMaxCompositeScheduleDurationKeyValue();
     std::string getSupportedCiphers12();
