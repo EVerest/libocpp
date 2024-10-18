@@ -178,6 +178,61 @@
       ],
       "description": "A list of supported quantities for use in a ChargingSchedule. Allowed values: 'A' and 'W\ufffd",
       "type": "string"
+    },
+    "CompositeScheduleDefaultLimitAmps": {
+      "variable_name": "CompositeScheduleDefaultLimitAmps",
+      "characteristics": {
+        "unit": "A",
+        "minLimit": 0,
+        "supportsMonitoring": true,
+        "dataType": "integer"
+      },
+      "attributes": [
+        {
+          "type": "Actual",
+          "mutability": "ReadOnly",
+          "value": 48
+        }
+      ],
+      "type": "integer",
+      "description": "Default amps limit applied when composite schedule is calculated and no limit was provided by the CSMS"      
+    },
+    "CompositeScheduleDefaultLimitWatts": {
+      "variable_name": "CompositeScheduleDefaultLimitWatts",
+      "characteristics": {
+        "unit": "W",
+        "minLimit": 0,
+        "supportsMonitoring": true,
+        "dataType": "integer"
+      },
+      "attributes": [
+        {
+          "type": "Actual",
+          "mutability": "ReadOnly",
+          "value": 33120
+        }
+      ],
+      "type": "integer",
+      "description": "Default watts limit applied when composite schedule is calculated and no limit was provided by the CSMS"
+    },
+    "CompositeScheduleDefaultNumberPhases": {
+      "variable_name": "CompositeScheduleDefaultNumberPhases",
+      "characteristics": {
+        "unit": "W",
+        "minLimit": 1,
+        "maxLimit": 3,
+        "supportsMonitoring": true,
+        "dataType": "integer"
+      },
+      "attributes": [
+        {
+          "type": "Actual",
+          "mutability": "ReadOnly",
+          "value": 3
+        }
+      ],
+      "type": "integer",
+      "description": "Default number of phases applied when composite schedule is calculated and no limit was provided by the CSMS"   
     }
   },
   "required": [

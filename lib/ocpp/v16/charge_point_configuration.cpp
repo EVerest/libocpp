@@ -350,14 +350,69 @@ int32_t ChargePointConfiguration::getMaxCompositeScheduleDuration() {
     return this->config["Internal"]["MaxCompositeScheduleDuration"];
 }
 
-std::string ChargePointConfiguration::getSupportedCiphers12() {
+std::optional<int32_t> ChargePointConfiguration::getCompositeScheduleDefaultLimitAmps() {
+    if (this->config["Internal"].contains("CompositeScheduleDefaultLimitAmps")) {
+        return this->config["Internal"]["CompositeScheduleDefaultLimitAmps"];
+    }
+    return std::nullopt;
+}
 
+std::optional<KeyValue> ChargePointConfiguration::getCompositeScheduleDefaultLimitAmpsKeyValue() {
+    const auto opt_value = this->getCompositeScheduleDefaultLimitAmps();
+    if (opt_value.has_value()) {
+        KeyValue kv;
+        kv.key = "CompositeScheduleDefaultLimitAmps";
+        kv.readonly = true;
+        kv.value = std::to_string(opt_value.value());
+        return kv;
+    }
+    return std::nullopt;
+}
+
+std::optional<int32_t> ChargePointConfiguration::getCompositeScheduleDefaultLimitWatts() {
+    if (this->config["Internal"].contains("CompositeScheduleDefaultLimitWatts")) {
+        return this->config["Internal"]["CompositeScheduleDefaultLimitWatts"];
+    }
+    return std::nullopt;
+}
+
+std::optional<KeyValue> ChargePointConfiguration::getCompositeScheduleDefaultLimitWattsKeyValue() {
+    const auto opt_value = this->getCompositeScheduleDefaultLimitWatts();
+    if (opt_value.has_value()) {
+        KeyValue kv;
+        kv.key = "CompositeScheduleDefaultLimitWatts";
+        kv.readonly = true;
+        kv.value = std::to_string(opt_value.value());
+        return kv;
+    }
+    return std::nullopt;
+}
+
+std::optional<int32_t> ChargePointConfiguration::getCompositeScheduleDefaultNumberPhases() {
+    if (this->config["Internal"].contains("CompositeScheduleDefaultNumberPhases")) {
+        return this->config["Internal"]["CompositeScheduleDefaultNumberPhases"];
+    }
+    return std::nullopt;
+}
+
+std::optional<KeyValue> ChargePointConfiguration::getCompositeScheduleDefaultNumberPhasesKeyValue() {
+    const auto opt_value = this->getCompositeScheduleDefaultNumberPhases();
+    if (opt_value.has_value()) {
+        KeyValue kv;
+        kv.key = "CompositeScheduleDefaultNumberPhases";
+        kv.readonly = true;
+        kv.value = std::to_string(opt_value.value());
+        return kv;
+    }
+    return std::nullopt;
+}
+
+std::string ChargePointConfiguration::getSupportedCiphers12() {
     std::vector<std::string> supported_ciphers = this->config["Internal"]["SupportedCiphers12"];
     return boost::algorithm::join(supported_ciphers, ":");
 }
 
 std::string ChargePointConfiguration::getSupportedCiphers13() {
-
     std::vector<std::string> supported_ciphers = this->config["Internal"]["SupportedCiphers13"];
     return boost::algorithm::join(supported_ciphers, ":");
 }
@@ -2842,6 +2897,15 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
     }
     if (key == "MaxCompositeScheduleDuration") {
         return this->getMaxCompositeScheduleDurationKeyValue();
+    }
+    if (key == "CompositeScheduleDefaultLimitAmps") {
+        return this->getCompositeScheduleDefaultLimitAmpsKeyValue();
+    }
+    if (key == "CompositeScheduleDefaultLimitWatts") {
+        return this->getCompositeScheduleDefaultLimitWattsKeyValue();
+    }
+    if (key == "CompositeScheduleDefaultNumberPhases") {
+        return this->getCompositeScheduleDefaultNumberPhasesKeyValue();
     }
     if (key == "WebsocketPingPayload") {
         return this->getWebsocketPingPayloadKeyValue();

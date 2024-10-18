@@ -598,16 +598,28 @@ CompositeSchedule SmartChargingHandler::calculate_composite_schedule(
         }
     }
 
+    const auto default_amps_limit =
+        this->device_model->get_optional_value<int>(ControllerComponentVariables::CompositeScheduleDefaultLimitAmps)
+            .value_or(DEFAULT_LIMIT_AMPS);
+    const auto default_watts_limit =
+        this->device_model->get_optional_value<int>(ControllerComponentVariables::CompositeScheduleDefaultLimitWatts)
+            .value_or(DEFAULT_LIMIT_WATTS);
+    const auto default_number_phases =
+        this->device_model->get_optional_value<int>(ControllerComponentVariables::CompositeScheduleDefaultNumberPhases)
+            .value_or(DEFAULT_AND_MAX_NUMBER_PHASES);
+
     auto charging_station_external_constraints = ocpp::v201::calculate_composite_schedule(
-        charging_station_external_constraints_periods, start_time, end_time, charging_rate_unit);
-    auto composite_charge_point_max =
-        ocpp::v201::calculate_composite_schedule(charge_point_max_periods, start_time, end_time, charging_rate_unit);
-    auto composite_tx_default =
-        ocpp::v201::calculate_composite_schedule(tx_default_periods, start_time, end_time, charging_rate_unit);
-    auto composite_tx = ocpp::v201::calculate_composite_schedule(tx_periods, start_time, end_time, charging_rate_unit);
+        charging_station_external_constraints_periods, start_time, end_time, charging_rate_unit, default_number_phases);
+    auto composite_charge_point_max = ocpp::v201::calculate_composite_schedule(
+        charge_point_max_periods, start_time, end_time, charging_rate_unit, default_number_phases);
+    auto composite_tx_default = ocpp::v201::calculate_composite_schedule(tx_default_periods, start_time, end_time,
+                                                                         charging_rate_unit, default_number_phases);
+    auto composite_tx = ocpp::v201::calculate_composite_schedule(tx_periods, start_time, end_time, charging_rate_unit,
+                                                                 default_number_phases);
 
     CompositeSchedule composite_schedule = ocpp::v201::calculate_composite_schedule(
-        charging_station_external_constraints, composite_charge_point_max, composite_tx_default, composite_tx);
+        charging_station_external_constraints, composite_charge_point_max, composite_tx_default, composite_tx,
+        default_amps_limit, default_watts_limit, default_number_phases);
 
     // Set the EVSE ID for the resulting CompositeSchedule
     composite_schedule.evseId = evse_id;
