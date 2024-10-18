@@ -5,6 +5,7 @@
 #include <limits>
 #include <optional>
 
+#include <ocpp/common/constants.hpp>
 #include <ocpp/common/types.hpp>
 #include <ocpp/v16/ocpp_enums.hpp>
 #include <ocpp/v16/ocpp_types.hpp>
@@ -17,15 +18,6 @@ using std::chrono::duration_cast;
 using std::chrono::seconds;
 
 namespace {
-// TODO(james-ctc): get the maximum charge defaults from configuration
-// TODO(james-ctc): get the low voltage value from configuration (230V, 110V etc.)
-
-// the default is to allow maximum charge
-constexpr float default_limit_A = 48.0;    // in Amps
-constexpr float default_limit_W = 33120.0; // in Watts
-constexpr std::int32_t default_number_phases =
-    ocpp::v16::DEFAULT_AND_MAX_NUMBER_PHASES; // also the maximum number of phases
-constexpr float low_voltage = 230;            // in Volts
 
 using ocpp::v16::EnhancedChargingSchedulePeriod;
 
@@ -87,7 +79,8 @@ void update_itt(const int schedule_duration, std::vector<EnhancedChargingSchedul
 }
 
 std::pair<float, std::int32_t> convert_limit(const ocpp::v16::period_entry_t* const entry,
-                                             const ocpp::v16::ChargingRateUnit selected_unit) {
+                                             const ocpp::v16::ChargingRateUnit selected_unit,
+                                             const int32_t default_number_phases, const int32_t supply_voltage) {
     assert(entry != nullptr);
     float limit = entry->limit;
     std::int32_t number_phases = entry->number_phases.value_or(default_number_phases);
@@ -95,9 +88,9 @@ std::pair<float, std::int32_t> convert_limit(const ocpp::v16::period_entry_t* co
     // if the units are the same - don't change the values
     if (selected_unit != entry->charging_rate_unit) {
         if (selected_unit == ocpp::v16::ChargingRateUnit::A) {
-            limit = entry->limit / (low_voltage * number_phases);
+            limit = entry->limit / (supply_voltage * number_phases);
         } else {
-            limit = entry->limit * (low_voltage * number_phases);
+            limit = entry->limit * (supply_voltage * number_phases);
         }
     }
 
@@ -406,7 +399,9 @@ std::vector<period_entry_t> calculate_profile(const DateTime& now, const DateTim
 /// \return the calculated composite schedule
 EnhancedChargingSchedule calculate_composite_schedule(std::vector<period_entry_t>& in_combined_schedules,
                                                       const DateTime& in_now, const DateTime& in_end,
-                                                      std::optional<ChargingRateUnit> in_charging_rate_unit) {
+                                                      std::optional<ChargingRateUnit> in_charging_rate_unit,
+                                                      const int32_t default_number_phases,
+                                                      const int32_t supply_voltage) {
     const ChargingRateUnit selected_unit =
         (in_charging_rate_unit) ? in_charging_rate_unit.value() : ChargingRateUnit::A;
     const auto now = floor_seconds(in_now);
@@ -451,7 +446,8 @@ EnhancedChargingSchedule calculate_composite_schedule(std::vector<period_entry_t
             current = earliest;
         } else {
             // there is a schedule to use
-            const auto [limit, number_phases] = convert_limit(chosen, selected_unit);
+            const auto [limit, number_phases] =
+                convert_limit(chosen, selected_unit, default_number_phases, supply_voltage);
             composite.chargingSchedulePeriod.push_back(
                 {elapsed_seconds(current, now), limit, number_phases, chosen->stack_level});
             if (chosen->end < next_earliest) {
@@ -473,7 +469,9 @@ EnhancedChargingSchedule calculate_composite_schedule(std::vector<period_entry_t
 /// \note all composite schedules must have the same units configured
 EnhancedChargingSchedule calculate_composite_schedule(const EnhancedChargingSchedule& charge_point_max,
                                                       const EnhancedChargingSchedule& tx_default,
-                                                      const EnhancedChargingSchedule& tx) {
+                                                      const EnhancedChargingSchedule& tx, const float default_limit_A,
+                                                      const float default_limit_W, const int32_t default_number_phases,
+                                                      const int32_t supply_voltage) {
     EnhancedChargingSchedule combined{
         tx_default.chargingRateUnit, {}, tx_default.duration, tx_default.startSchedule, tx_default.minChargingRate};
     if (tx.minChargingRate) {

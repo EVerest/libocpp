@@ -674,7 +674,8 @@ TEST(OCPPTypesTest, CalculateChargingSchedule_Empty) {
         .scheduleStart = dt("12:00"),
         .chargingRateUnit = ChargingRateUnitEnum::A};
 
-    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, dt("12:00"), dt("12:10"), std::nullopt);
+    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, dt("12:00"), dt("12:10"), std::nullopt,
+                                                            DEFAULT_AND_MAX_NUMBER_PHASES, LOW_VOLTAGE);
 
     ASSERT_EQ(expected, actual);
 }
@@ -696,7 +697,8 @@ TEST(OCPPTypesTest, CalculateChargingSchedule_Exact) {
         .chargingRateUnit = ChargingRateUnitEnum::A,
     };
 
-    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, now, end, ChargingRateUnitEnum::A);
+    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, now, end, ChargingRateUnitEnum::A,
+                                                            DEFAULT_AND_MAX_NUMBER_PHASES, LOW_VOLTAGE);
 
     ASSERT_EQ(expected, actual);
 }
@@ -720,7 +722,8 @@ TEST(OCPPTypesTest, CalculateChargingSchedule_ShortExact) {
         .chargingRateUnit = ChargingRateUnitEnum::A,
     };
 
-    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, now, end, ChargingRateUnitEnum::A);
+    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, now, end, ChargingRateUnitEnum::A,
+                                                            DEFAULT_AND_MAX_NUMBER_PHASES, LOW_VOLTAGE);
 
     ASSERT_EQ(expected, actual);
 }
@@ -743,7 +746,8 @@ TEST(OCPPTypesTest, CalculateChargingSchedule_LongExact) {
         .chargingRateUnit = ChargingRateUnitEnum::A,
     };
 
-    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, now, end, ChargingRateUnitEnum::A);
+    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, now, end, ChargingRateUnitEnum::A,
+                                                            DEFAULT_AND_MAX_NUMBER_PHASES, LOW_VOLTAGE);
 
     ASSERT_EQ(expected, actual);
 }
@@ -768,7 +772,8 @@ TEST(OCPPTypesTest, CalculateChargingSchedule_AlmostExact) {
         .chargingRateUnit = ChargingRateUnitEnum::A,
     };
 
-    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, now, end, std::nullopt);
+    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, now, end, std::nullopt,
+                                                            DEFAULT_AND_MAX_NUMBER_PHASES, LOW_VOLTAGE);
 
     ASSERT_EQ(expected, actual);
 }
@@ -790,7 +795,8 @@ TEST(OCPPTypesTest, CalculateChargingSchedule_SingleLong) {
         .chargingRateUnit = ChargingRateUnitEnum::A,
     };
 
-    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, now, end, std::nullopt);
+    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, now, end, std::nullopt,
+                                                            DEFAULT_AND_MAX_NUMBER_PHASES, LOW_VOLTAGE);
 
     ASSERT_EQ(expected, actual);
 }
@@ -813,7 +819,8 @@ TEST(OCPPTypesTest, CalculateChargingSchedule_SingleShort) {
         .chargingRateUnit = ChargingRateUnitEnum::A,
     };
 
-    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, now, end, std::nullopt);
+    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, now, end, std::nullopt,
+                                                            DEFAULT_AND_MAX_NUMBER_PHASES, LOW_VOLTAGE);
 
     ASSERT_EQ(expected, actual);
 }
@@ -835,7 +842,8 @@ TEST(OCPPTypesTest, CalculateChargingSchedule_SingleDelayedStartLong) {
         .chargingRateUnit = ChargingRateUnitEnum::A,
     };
 
-    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, now, end, std::nullopt);
+    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, now, end, std::nullopt,
+                                                            DEFAULT_AND_MAX_NUMBER_PHASES, LOW_VOLTAGE);
 
     ASSERT_EQ(expected, actual);
 }
@@ -855,7 +863,8 @@ TEST(OCPPTypesTest, CalculateChargingSchedule_OverlapStart) {
         .chargingRateUnit = ChargingRateUnitEnum::A,
     };
 
-    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, now, end, std::nullopt);
+    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, now, end, std::nullopt,
+                                                            DEFAULT_AND_MAX_NUMBER_PHASES, LOW_VOLTAGE);
 
     ASSERT_EQ(expected, actual);
 }
@@ -875,7 +884,8 @@ TEST(OCPPTypesTest, CalculateChargingSchedule_OverlapEnd) {
         .chargingRateUnit = ChargingRateUnitEnum::A,
     };
 
-    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, now, end, std::nullopt);
+    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, now, end, std::nullopt,
+                                                            DEFAULT_AND_MAX_NUMBER_PHASES, LOW_VOLTAGE);
 
     ASSERT_EQ(expected, actual);
 }
@@ -896,7 +906,8 @@ TEST(OCPPTypesTest, CalculateChargingSchedule_OverlapMiddle) {
         .chargingRateUnit = ChargingRateUnitEnum::A,
     };
 
-    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, now, end, std::nullopt);
+    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, now, end, std::nullopt,
+                                                            DEFAULT_AND_MAX_NUMBER_PHASES, LOW_VOLTAGE);
 
     ASSERT_EQ(expected, actual);
 }
@@ -915,7 +926,8 @@ TEST(OCPPTypesTest, CalculateChargingSchedule_OverlapIgnore) {
         .chargingRateUnit = ChargingRateUnitEnum::A,
     };
 
-    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, now, end, std::nullopt);
+    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, now, end, std::nullopt,
+                                                            DEFAULT_AND_MAX_NUMBER_PHASES, LOW_VOLTAGE);
 
     ASSERT_EQ(expected, actual);
 }
@@ -935,7 +947,8 @@ TEST(OCPPTypesTest, CalculateChargingSchedule_NoGapA) {
         .chargingRateUnit = ChargingRateUnitEnum::A,
     };
 
-    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, now, end, std::nullopt);
+    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, now, end, std::nullopt,
+                                                            DEFAULT_AND_MAX_NUMBER_PHASES, LOW_VOLTAGE);
 
     ASSERT_EQ(expected, actual);
 }
@@ -955,7 +968,8 @@ TEST(OCPPTypesTest, CalculateChargingSchedule_NoGapB) {
         .chargingRateUnit = ChargingRateUnitEnum::A,
     };
 
-    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, now, end, std::nullopt);
+    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, now, end, std::nullopt,
+                                                            DEFAULT_AND_MAX_NUMBER_PHASES, LOW_VOLTAGE);
 
     ASSERT_EQ(expected, actual);
 }
@@ -975,7 +989,8 @@ TEST(OCPPTypesTest, CalculateChargingSchedule_Overlap) {
         .chargingRateUnit = ChargingRateUnitEnum::A,
     };
 
-    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, now, end, std::nullopt);
+    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, now, end, std::nullopt,
+                                                            DEFAULT_AND_MAX_NUMBER_PHASES, LOW_VOLTAGE);
 
     ASSERT_EQ(expected, actual);
 }
@@ -996,7 +1011,8 @@ TEST(OCPPTypesTest, CalculateChargingSchedule_OverlapInverted) {
         .chargingRateUnit = ChargingRateUnitEnum::A,
     };
 
-    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, now, end, std::nullopt);
+    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, now, end, std::nullopt,
+                                                            DEFAULT_AND_MAX_NUMBER_PHASES, LOW_VOLTAGE);
 
     ASSERT_EQ(expected, actual);
 }
@@ -1017,7 +1033,8 @@ TEST(OCPPTypesTest, CalculateChargingSchedule_1SecondGap) {
         .chargingRateUnit = ChargingRateUnitEnum::A,
     };
 
-    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, now, end, std::nullopt);
+    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, now, end, std::nullopt,
+                                                            DEFAULT_AND_MAX_NUMBER_PHASES, LOW_VOLTAGE);
 
     ASSERT_EQ(expected, actual);
 }
@@ -1039,7 +1056,8 @@ TEST(OCPPTypesTest, CalculateChargingSchedule_WithPhaseToUse) {
         .chargingRateUnit = ChargingRateUnitEnum::A,
     };
 
-    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, now, end, std::nullopt);
+    CompositeSchedule actual = calculate_composite_schedule(combined_schedules, now, end, std::nullopt,
+                                                            DEFAULT_AND_MAX_NUMBER_PHASES, LOW_VOLTAGE);
 
     ASSERT_EQ(expected, actual);
 }
@@ -1055,8 +1073,9 @@ TEST(OCPPTypesTest, CalculateChargingScheduleCombined_Default) {
 
     };
 
-    const CompositeSchedule actual =
-        calculate_composite_schedule(DEFAULT_SCHEDULE, DEFAULT_SCHEDULE, DEFAULT_SCHEDULE, DEFAULT_SCHEDULE);
+    const CompositeSchedule actual = calculate_composite_schedule(
+        DEFAULT_SCHEDULE, DEFAULT_SCHEDULE, DEFAULT_SCHEDULE, DEFAULT_SCHEDULE, DEFAULT_LIMIT_AMPS, DEFAULT_LIMIT_WATTS,
+        DEFAULT_AND_MAX_NUMBER_PHASES, LOW_VOLTAGE);
 
     ASSERT_EQ(expected, actual);
 }
@@ -1079,7 +1098,9 @@ TEST(OCPPTypesTest, CalculateChargingScheduleCombined_CombinedTxDefault) {
         .chargingRateUnit = ChargingRateUnitEnum::A,
     };
 
-    const CompositeSchedule actual = calculate_composite_schedule(profile, profile, tx_default_schedule, profile);
+    const CompositeSchedule actual =
+        calculate_composite_schedule(profile, profile, tx_default_schedule, profile, DEFAULT_LIMIT_AMPS,
+                                     DEFAULT_LIMIT_WATTS, DEFAULT_AND_MAX_NUMBER_PHASES, LOW_VOLTAGE);
 
     ASSERT_EQ(expected, actual);
 }
@@ -1110,8 +1131,9 @@ TEST(OCPPTypesTest, CalculateChargingScheduleCombined_CombinedTxDefaultTx) {
         .chargingRateUnit = ChargingRateUnitEnum::A,
     };
 
-    const CompositeSchedule actual =
-        calculate_composite_schedule(DEFAULT_SCHEDULE, charging_station_max, tx_default_schedule, tx_schedule);
+    const CompositeSchedule actual = calculate_composite_schedule(
+        DEFAULT_SCHEDULE, charging_station_max, tx_default_schedule, tx_schedule, DEFAULT_LIMIT_AMPS,
+        DEFAULT_LIMIT_WATTS, DEFAULT_AND_MAX_NUMBER_PHASES, LOW_VOLTAGE);
 
     ASSERT_EQ(expected, actual);
 }
@@ -1154,8 +1176,9 @@ TEST(OCPPTypesTest, CalculateChargingScheduleCombined_CombinedOverlapTxAndTxDefa
         .chargingRateUnit = ChargingRateUnitEnum::A,
     };
 
-    const CompositeSchedule actual =
-        calculate_composite_schedule(DEFAULT_SCHEDULE, charging_station_max, tx_default_schedule, tx_schedule);
+    const CompositeSchedule actual = calculate_composite_schedule(
+        DEFAULT_SCHEDULE, charging_station_max, tx_default_schedule, tx_schedule, DEFAULT_LIMIT_AMPS,
+        DEFAULT_LIMIT_WATTS, DEFAULT_AND_MAX_NUMBER_PHASES, LOW_VOLTAGE);
 
     ASSERT_EQ(expected, actual);
 }
@@ -1202,8 +1225,9 @@ TEST(OCPPTypesTest, CalculateChargingScheduleCombined_CombinedOverlapTxTxDefault
         .chargingRateUnit = ChargingRateUnitEnum::A,
     };
 
-    const CompositeSchedule actual =
-        calculate_composite_schedule(DEFAULT_SCHEDULE, charging_station_max, tx_default_schedule, tx_schedule);
+    const CompositeSchedule actual = calculate_composite_schedule(
+        DEFAULT_SCHEDULE, charging_station_max, tx_default_schedule, tx_schedule, DEFAULT_LIMIT_AMPS,
+        DEFAULT_LIMIT_WATTS, DEFAULT_AND_MAX_NUMBER_PHASES, LOW_VOLTAGE);
 
     ASSERT_EQ(expected, actual);
 }

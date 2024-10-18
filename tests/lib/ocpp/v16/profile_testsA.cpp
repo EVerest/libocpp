@@ -24,6 +24,7 @@ using std::chrono::seconds;
 constexpr int default_numberPhases = 3;
 constexpr float default_limit_A{48.0};
 constexpr float default_limit_W{33120.0};
+constexpr int default_supply_voltage = 230;
 
 // ----------------------------------------------------------------------------
 // Test charging profiles
@@ -1347,7 +1348,8 @@ TEST(ProfileTestsA, calculateCompositeScheduleEmpty) {
     DateTime now("2024-01-01T12:00:00Z");
     DateTime end(now.to_time_point() + minutes(10));
     std::vector<period_entry_t> combined_schedules{};
-    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt);
+    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt, default_numberPhases,
+                                            default_supply_voltage);
 
     // expect a schedule of duration 10 minutes with defaults
     EXPECT_EQ(res.chargingRateUnit, ChargingRateUnit::A);
@@ -1365,7 +1367,8 @@ TEST(ProfileTestsA, calculateCompositeScheduleExact) {
     DateTime now("2024-01-01T12:00:00Z");
     DateTime end(now.to_time_point() + minutes(10));
     std::vector<period_entry_t> combined_schedules{{now, end, 24.0, {3}, 1, ChargingRateUnit::A, std::nullopt}};
-    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt);
+    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt, default_numberPhases,
+                                            default_supply_voltage);
 
     // expect a schedule of duration 10 minutes with the schedule
     EXPECT_EQ(res.chargingRateUnit, ChargingRateUnit::A);
@@ -1384,7 +1387,8 @@ TEST(ProfileTestsA, calculateCompositeScheduleExactShort) {
     DateTime end(now.to_time_point() + minutes(10));
     std::vector<period_entry_t> combined_schedules{
         {now, DateTime(end.to_time_point() - seconds(1)), 24.0, {3}, 1, ChargingRateUnit::A, std::nullopt}};
-    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt);
+    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt, default_numberPhases,
+                                            default_supply_voltage);
 
     // expect a schedule of duration 10 minutes with the schedule
     EXPECT_EQ(res.chargingRateUnit, ChargingRateUnit::A);
@@ -1406,7 +1410,8 @@ TEST(ProfileTestsA, calculateCompositeScheduleExactLong) {
     DateTime end(now.to_time_point() + minutes(10));
     std::vector<period_entry_t> combined_schedules{
         {DateTime(now.to_time_point() - seconds(1)), end, 24.0, {3}, 1, ChargingRateUnit::A, std::nullopt}};
-    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt);
+    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt, default_numberPhases,
+                                            default_supply_voltage);
 
     // expect a schedule of duration 10 minutes with the schedule
     EXPECT_EQ(res.chargingRateUnit, ChargingRateUnit::A);
@@ -1430,7 +1435,8 @@ TEST(ProfileTestsA, calculateCompositeScheduleExactAlmost) {
                                                     1,
                                                     ChargingRateUnit::A,
                                                     std::nullopt}};
-    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt);
+    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt, default_numberPhases,
+                                            default_supply_voltage);
     // std::cout << combined_schedules << std::endl;
     // std::cout << res << std::endl;
 
@@ -1462,7 +1468,8 @@ TEST(ProfileTestsA, calculateCompositeScheduleSingleLong) {
                                                     1,
                                                     ChargingRateUnit::A,
                                                     std::nullopt}};
-    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt);
+    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt, default_numberPhases,
+                                            default_supply_voltage);
 
     // expect a schedule of duration 10 minutes with info from the schedule
     EXPECT_EQ(res.chargingRateUnit, ChargingRateUnit::A);
@@ -1486,7 +1493,8 @@ TEST(ProfileTestsA, calculateCompositeScheduleSingleShort) {
                                                     1,
                                                     ChargingRateUnit::A,
                                                     std::nullopt}};
-    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt);
+    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt, default_numberPhases,
+                                            default_supply_voltage);
 
     // expect a schedule of duration 10 minutes with info from the schedule + default
     EXPECT_EQ(res.chargingRateUnit, ChargingRateUnit::A);
@@ -1513,7 +1521,8 @@ TEST(ProfileTestsA, calculateCompositeScheduleSingleDelayedStartLong) {
                                                     1,
                                                     ChargingRateUnit::A,
                                                     std::nullopt}};
-    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt);
+    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt, default_numberPhases,
+                                            default_supply_voltage);
 
     // expecting default, then schedule
     EXPECT_EQ(res.chargingRateUnit, ChargingRateUnit::A);
@@ -1540,7 +1549,8 @@ TEST(ProfileTestsA, calculateCompositeScheduleSingleDelayedStartShort) {
                                                     1,
                                                     ChargingRateUnit::A,
                                                     std::nullopt}};
-    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt);
+    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt, default_numberPhases,
+                                            default_supply_voltage);
 
     // expecting default, then schedule, then default
     EXPECT_EQ(res.chargingRateUnit, ChargingRateUnit::A);
@@ -1577,7 +1587,8 @@ TEST(ProfileTestsA, calculateCompositeScheduleOverlapStart) {
                                                     1,
                                                     ChargingRateUnit::A,
                                                     std::nullopt}};
-    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt);
+    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt, default_numberPhases,
+                                            default_supply_voltage);
 
     // expecting schedule stack level 1 then schedule stack level 21
     EXPECT_EQ(res.chargingRateUnit, ChargingRateUnit::A);
@@ -1611,7 +1622,8 @@ TEST(ProfileTestsA, calculateCompositeScheduleOverlapEnd) {
                                                     1,
                                                     ChargingRateUnit::A,
                                                     std::nullopt}};
-    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt);
+    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt, default_numberPhases,
+                                            default_supply_voltage);
 
     // expecting schedule stack level 21 then schedule stack level 1
     EXPECT_EQ(res.chargingRateUnit, ChargingRateUnit::A);
@@ -1645,7 +1657,8 @@ TEST(ProfileTestsA, calculateCompositeScheduleOverlapMiddle) {
                                                     1,
                                                     ChargingRateUnit::A,
                                                     std::nullopt}};
-    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt);
+    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt, default_numberPhases,
+                                            default_supply_voltage);
 
     // expecting schedule stack level 1 then schedule stack level 21 and then back to 1
     EXPECT_EQ(res.chargingRateUnit, ChargingRateUnit::A);
@@ -1682,7 +1695,8 @@ TEST(ProfileTestsA, calculateCompositeScheduleOverlapIgnore) {
                                                     31,
                                                     ChargingRateUnit::A,
                                                     std::nullopt}};
-    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt);
+    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt, default_numberPhases,
+                                            default_supply_voltage);
 
     // expecting schedule stack level 31 only
     EXPECT_EQ(res.chargingRateUnit, ChargingRateUnit::A);
@@ -1713,7 +1727,8 @@ TEST(ProfileTestsA, calculateCompositeScheduleNoGapA) {
                                                     31,
                                                     ChargingRateUnit::A,
                                                     std::nullopt}};
-    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt);
+    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt, default_numberPhases,
+                                            default_supply_voltage);
 
     // expecting 2 schedules
     EXPECT_EQ(res.chargingRateUnit, ChargingRateUnit::A);
@@ -1747,7 +1762,8 @@ TEST(ProfileTestsA, calculateCompositeScheduleNoGapB) {
                                                     31,
                                                     ChargingRateUnit::A,
                                                     std::nullopt}};
-    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt);
+    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt, default_numberPhases,
+                                            default_supply_voltage);
 
     // expecting 2 schedules
     EXPECT_EQ(res.chargingRateUnit, ChargingRateUnit::A);
@@ -1781,7 +1797,8 @@ TEST(ProfileTestsA, calculateCompositeSchedule1sOverlapA) {
                                                     31,
                                                     ChargingRateUnit::A,
                                                     std::nullopt}};
-    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt);
+    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt, default_numberPhases,
+                                            default_supply_voltage);
 
     // expecting 2 schedules
     EXPECT_EQ(res.chargingRateUnit, ChargingRateUnit::A);
@@ -1815,7 +1832,8 @@ TEST(ProfileTestsA, calculateCompositeSchedule1sOverlapB) {
                                                     31,
                                                     ChargingRateUnit::A,
                                                     std::nullopt}};
-    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt);
+    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt, default_numberPhases,
+                                            default_supply_voltage);
     // std::cout << combined_schedules << std::endl;
     // std::cout << res << std::endl;
 
@@ -1851,7 +1869,8 @@ TEST(ProfileTestsA, calculateCompositeSchedule1SGap) {
                                                     31,
                                                     ChargingRateUnit::A,
                                                     std::nullopt}};
-    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt);
+    auto res = calculate_composite_schedule(combined_schedules, now, end, std::nullopt, default_numberPhases,
+                                            default_supply_voltage);
 
     // expecting 2 schedules
     EXPECT_EQ(res.chargingRateUnit, ChargingRateUnit::A);
@@ -1877,7 +1896,8 @@ TEST(ProfileTestsA, calculateCompositeSchedule1SGap) {
 TEST(ProfileTestsA, combinedEmpty) {
     const auto start = DateTime{"2024-01-01T12:00:00Z"};
     EnhancedChargingSchedule schedule{ChargingRateUnit::A, {}, 600, start, 10.0};
-    const auto res = calculate_composite_schedule(schedule, schedule, schedule);
+    const auto res = calculate_composite_schedule(schedule, schedule, schedule, default_limit_A, default_limit_W,
+                                                  default_numberPhases, default_supply_voltage);
     EXPECT_EQ(res.chargingRateUnit, ChargingRateUnit::A);
     EXPECT_EQ(res.duration.value_or(-1), 600);
     EXPECT_EQ(res.startSchedule, start);
@@ -1894,7 +1914,8 @@ TEST(ProfileTestsA, combinedTxDefault) {
     EnhancedChargingSchedule tx_default_schedule{ChargingRateUnit::A, {{0, 10.0, std::nullopt}}, 600, start, 10.0};
     EnhancedChargingSchedule schedule{ChargingRateUnit::A, {}, 600, start, 6.0};
 
-    const auto res = calculate_composite_schedule(schedule, tx_default_schedule, schedule);
+    const auto res = calculate_composite_schedule(schedule, tx_default_schedule, schedule, default_limit_A,
+                                                  default_limit_W, default_numberPhases, default_supply_voltage);
     EXPECT_EQ(res.chargingRateUnit, ChargingRateUnit::A);
     EXPECT_EQ(res.duration.value_or(-1), 600);
     EXPECT_EQ(res.startSchedule, start);
@@ -1912,7 +1933,8 @@ TEST(ProfileTestsA, combinedTxDefaultTx) {
     EnhancedChargingSchedule tx_schedule{ChargingRateUnit::A, {{0, 32.0, std::nullopt}}, 600, start, std::nullopt};
     EnhancedChargingSchedule schedule{ChargingRateUnit::A, {}, 600, start, 6.0};
 
-    const auto res = calculate_composite_schedule(schedule, tx_default_schedule, tx_schedule);
+    const auto res = calculate_composite_schedule(schedule, tx_default_schedule, tx_schedule, default_limit_A,
+                                                  default_limit_W, default_numberPhases, default_supply_voltage);
     EXPECT_EQ(res.chargingRateUnit, ChargingRateUnit::A);
     EXPECT_EQ(res.duration.value_or(-1), 600);
     EXPECT_EQ(res.startSchedule, start);
@@ -1931,7 +1953,8 @@ TEST(ProfileTestsA, combinedTxDefaultTxMin) {
     EnhancedChargingSchedule cpm_schedule{ChargingRateUnit::A, {{0, 6.0, std::nullopt}}, 600, start, std::nullopt};
     EnhancedChargingSchedule schedule{ChargingRateUnit::A, {}, 600, start, 6.0};
 
-    const auto res = calculate_composite_schedule(cpm_schedule, tx_default_schedule, tx_schedule);
+    const auto res = calculate_composite_schedule(cpm_schedule, tx_default_schedule, tx_schedule, default_limit_A,
+                                                  default_limit_W, default_numberPhases, default_supply_voltage);
     EXPECT_EQ(res.chargingRateUnit, ChargingRateUnit::A);
     EXPECT_EQ(res.duration.value_or(-1), 600);
     EXPECT_EQ(res.startSchedule, start);
@@ -1956,7 +1979,8 @@ TEST(ProfileTestsA, combinedOverlapA) {
     EnhancedChargingSchedule cpm_schedule{
         ChargingRateUnit::A, {{0, no_limit_specified, std::nullopt}}, 600, start, std::nullopt};
 
-    const auto res = calculate_composite_schedule(cpm_schedule, tx_default_schedule, tx_schedule);
+    const auto res = calculate_composite_schedule(cpm_schedule, tx_default_schedule, tx_schedule, default_limit_A,
+                                                  default_limit_W, default_numberPhases, default_supply_voltage);
     // std::cout << res << std::endl;
 
     EXPECT_EQ(res.chargingRateUnit, ChargingRateUnit::A);
@@ -1995,7 +2019,8 @@ TEST(ProfileTestsA, combinedOverlapB) {
         start,
         std::nullopt};
 
-    const auto res = calculate_composite_schedule(cpm_schedule, tx_default_schedule, tx_schedule);
+    const auto res = calculate_composite_schedule(cpm_schedule, tx_default_schedule, tx_schedule, default_limit_A,
+                                                  default_limit_W, default_numberPhases, default_supply_voltage);
     // std::cout << res << std::endl;
 
     EXPECT_EQ(res.chargingRateUnit, ChargingRateUnit::A);
