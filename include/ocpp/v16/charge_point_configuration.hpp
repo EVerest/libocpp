@@ -86,6 +86,12 @@ public:
     KeyValue getSupportedChargingProfilePurposeTypesKeyValue();
     int32_t getMaxCompositeScheduleDuration();
     KeyValue getMaxCompositeScheduleDurationKeyValue();
+    std::optional<int32_t> getCompositeScheduleDefaultLimitAmps();
+    std::optional<KeyValue> getCompositeScheduleDefaultLimitAmpsKeyValue();
+    std::optional<int32_t> getCompositeScheduleDefaultLimitWatts();
+    std::optional<KeyValue> getCompositeScheduleDefaultLimitWattsKeyValue();
+    std::optional<int32_t> getCompositeScheduleDefaultNumberPhases();
+    std::optional<KeyValue> getCompositeScheduleDefaultNumberPhasesKeyValue();
     std::string getSupportedCiphers12();
     KeyValue getSupportedCiphers12KeyValue();
     std::string getSupportedCiphers13();
