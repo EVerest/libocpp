@@ -115,12 +115,18 @@ public:
     /// unavailable, whereas the system can detect this sooner.
     ///
     /// \param configuration_slot   The slot of the network connection profile that is disconnected.
+    ///
+    virtual void on_network_disconnected(const std::optional<int32_t> configuration_slot) = 0;
+
+    ///
+    /// \brief Can be called when a network is disconnected, for example when an ethernet cable is removed.
+    ///
+    /// This is introduced because the websocket can take several minutes to timeout when a network interface becomes
+    /// unavailable, whereas the system can detect this sooner.
+    ///
     /// \param ocpp_interface       The interface that is disconnected.
     ///
-    /// \note At least one of the two params must be provided, otherwise libocpp will not know which interface is down.
-    ///
-    virtual void on_network_disconnected(const std::optional<int32_t> configuration_slot,
-                                         const std::optional<OCPPInterfaceEnum> ocpp_interface) = 0;
+    virtual void on_network_disconnected(const std::optional<OCPPInterfaceEnum> ocpp_interface) = 0;
 
     /// \brief Switch to a specific network connection profile given the configuration slot.
     ///
@@ -356,7 +362,7 @@ public:
     /// priority.
     /// @return The network connection priorities
     ///
-    virtual const std::vector<std::string>& get_network_connection_priorities() const = 0;
+    virtual const std::vector<int>& get_network_connection_priorities() const = 0;
 };
 
 /// \brief Class implements OCPP2.0.1 Charging Station
@@ -863,8 +869,9 @@ public:
     virtual void connect_websocket() override;
     virtual void disconnect_websocket() override;
 
-    void on_network_disconnected(const std::optional<int32_t> configuration_slot,
-                                 const std::optional<OCPPInterfaceEnum> ocpp_interface) override;
+    void on_network_disconnected(const std::optional<int32_t> configuration_slot) override;
+
+    void on_network_disconnected(const std::optional<OCPPInterfaceEnum> ocpp_interface) override;
 
     bool on_try_switch_network_connection_profile(const int32_t configuration_slot) override;
 
@@ -956,7 +963,7 @@ public:
 
     std::optional<int> get_configuration_slot_priority(const int configuration_slot) override;
 
-    const std::vector<std::string>& get_network_connection_priorities() const override;
+    const std::vector<int>& get_network_connection_priorities() const override;
 
     /// \brief Requests a value of a VariableAttribute specified by combination of \p component_id and \p variable_id
     /// from the device model

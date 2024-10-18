@@ -234,9 +234,12 @@ void ChargePoint::disconnect_websocket() {
     this->connectivity_manager->disconnect_websocket();
 }
 
-void ChargePoint::on_network_disconnected(const std::optional<int32_t> configuration_slot,
-                                          const std::optional<OCPPInterfaceEnum> ocpp_interface) {
-    this->connectivity_manager->on_network_disconnected(configuration_slot, ocpp_interface);
+void ChargePoint::on_network_disconnected(const std::optional<int32_t> configuration_slot) {
+    this->connectivity_manager->on_network_disconnected(configuration_slot);
+}
+
+void ChargePoint::on_network_disconnected(const std::optional<OCPPInterfaceEnum> ocpp_interface) {
+    this->connectivity_manager->on_network_disconnected(ocpp_interface);
 }
 
 bool ChargePoint::on_try_switch_network_connection_profile(const int32_t configuration_slot) {
@@ -4528,7 +4531,7 @@ std::optional<int> ChargePoint::get_configuration_slot_priority(const int config
     return this->connectivity_manager->get_configuration_slot_priority(configuration_slot);
 }
 
-const std::vector<std::string>& ChargePoint::get_network_connection_priorities() const {
+const std::vector<int>& ChargePoint::get_network_connection_priorities() const {
     return this->connectivity_manager->get_network_connection_priorities();
 }
 

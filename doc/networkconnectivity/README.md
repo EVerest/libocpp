@@ -37,11 +37,9 @@ It will bind to the given network interface (a string containing the name of the
 ## Connect to higher network connection profile priority (optional)
 
 Normally, when libocpp is connected with a network connection profile, it will not disconnect. 
-However, there may be a situation where libocpp is connected to a profile with priority 2 or lower, and you find out at system level that an interface (with a higher priority) has changed and is now up. 
-In this case, you might want to tell libocpp that the higher priority interface is up and that it can try to connect to it. 
-For example, if the modem has 2nd priority, but you want to avoid high costs due to data rates and switch back to the wired network as soon as it is available.
-A call is implemented for exactly this reason:  `bool on_try_switch_network_connection_profile(const int32_t configuration_slot)`.  
-When you call this function, you are telling libocpp that there is a network connection profile available, and that it may try to connect to that network connection profile (although the priority of that profile may be higher and there may be some more checks).
+However, there may be a situation where libocpp is connected to a profile with priority 2 or lower, and you find out at system level that an interface (with a higher priority) has changed and is now up.
+A call is added so that you can suggest that libocpp switch to this profile: `bool on_try_switch_network_connection_profile(const int32_t configuration_slot)`.
+libocpp will inform the caller by the return value if it tries to switch to this profile.
 
 ## Disconnected / connected callbacks
 
