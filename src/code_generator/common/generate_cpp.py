@@ -192,6 +192,37 @@ enum_types['ExtendedTriggerMessageResponse'] = dict()
 enum_types['ExtendedTriggerMessageResponse']['status'] = 'TriggerMessageStatusEnumType'
 
 
+# messages from OCPP 2.1
+v21_messages = ['AFRRSignal',
+                'AdjustPeriodicEventStream',
+                'BatterySwap',
+                'ChangeTransactionTariff',
+                'ClearDERControl',
+                'ClearTariffs',
+                'ClosePeriodicEventStream',
+                'GetCRL',
+                'GetDERControl',
+                'GetPeriodicEventStream',
+                'GetTariffs',
+                'NotifyAllowedEnergyTransfer',
+                'NotifyCRL',
+                'NotifyDERAlarm',
+                'NotifyDERStartStop',
+                'NotifyPeriodicEventStream',
+                'NotifyPriorityCharging',
+                'NotifyQRCodeScanned',
+                'NotifySettlement',
+                'OpenPeriodicEventStream',
+                'PullDynamicScheduleUpdate',
+                'RequestBatterySwap',
+                'SetDERControl',
+                'SetDefaultTariff',
+                'UpdateDynamicSchedule',
+                'UsePriorityCharging',
+                'VatNumberValidation',
+                ]
+
+
 def object_exists(name: str) -> bool:
     """Check if an object (i.e. dataclass) already exists."""
     for el in parsed_types:
@@ -205,7 +236,9 @@ def add_enum_type(name: str, enums: Tuple[str]):
     """Add special class for enum types."""
     for el in parsed_enums:
         if el['name'] == name:
-            raise Exception('Warning: enum ' + name + ' already exists')
+            #raise Exception('Warning: enum ' + name + ' already exists')
+            print(f'Warning: enum {name} already exists')
+            return
     print("Adding enum type: %s" % name)
     add = True
     for el in parsed_enums_unique:
@@ -377,10 +410,20 @@ def parse_schemas(version: str, schema_dir: Path = Path('schemas/json/'),
     generated_header_dir = generated_dir / 'include' / 'ocpp' / version
     generated_source_dir = generated_dir / 'lib' / 'ocpp' / version
 
+    generated_header_dir_v21 = generated_header_dir
+    generated_source_dir_v21 = generated_source_dir
+    if version == 'v201':
+        generated_header_dir_v21 = generated_dir / 'include' / 'ocpp' / 'v21'
+        generated_source_dir_v21 = generated_dir / 'lib' / 'ocpp' / 'v21'
+
     if not generated_header_dir.exists():
         generated_header_dir.mkdir(parents=True)
     if not generated_source_dir.exists():
         generated_source_dir.mkdir(parents=True)
+    if not generated_header_dir_v21.exists():
+        generated_header_dir_v21.mkdir(parents=True)
+    if not generated_source_dir_v21.exists():
+        generated_source_dir_v21.mkdir(parents=True)
 
     enums_hpp_fn = Path(generated_header_dir, 'ocpp_enums.hpp')
     enums_cpp_fn = Path(generated_source_dir, 'ocpp_enums.cpp')
@@ -389,14 +432,26 @@ def parse_schemas(version: str, schema_dir: Path = Path('schemas/json/'),
     messages_header_dir = generated_header_dir / 'messages'
     messages_source_dir = generated_source_dir / 'messages'
     messages_cmakelists_txt_fn = Path(messages_source_dir, 'CMakeLists.txt')
+    messages_header_dir_v21 = generated_header_dir_v21 / 'messages'
+    messages_source_dir_v21 = generated_source_dir_v21 / 'messages'
+    messages_cmakelists_txt_fn_v21 = Path(messages_source_dir_v21, 'CMakeLists.txt')
+
     message_files = []
+    message_files_v21 = []
     first = True
     for action, type_of_action in schemas.items():
-        message_files.append(action)
+        if action in v21_messages:
+            message_files_v21.append(action)
+        else:
+            message_files.append(action)
         if not messages_header_dir.exists():
             messages_header_dir.mkdir(parents=True)
         if not messages_source_dir.exists():
             messages_source_dir.mkdir(parents=True)
+        if not messages_header_dir_v21.exists():
+            messages_header_dir_v21.mkdir(parents=True)
+        if not messages_source_dir_v21.exists():
+            messages_source_dir_v21.mkdir(parents=True)
         writemode = dict()
         writemode['req'] = 'w'
         writemode['res'] = 'a+'
@@ -473,11 +528,22 @@ def parse_schemas(version: str, schema_dir: Path = Path('schemas/json/'),
 
                 sorted_types.insert(insert_at, class_type)
 
+            message_version = version
             generated_class_hpp_fn = Path(messages_header_dir, action + '.hpp')
+            generated_class_cpp_fn = Path(messages_source_dir, action + '.cpp')
+            conversions_namespace_prefix = ''
+
+            if action in v21_messages:
+                print(f'"{action}" is a OCPP 2.1 message')
+                message_version = 'v21'
+                generated_class_hpp_fn = Path(messages_header_dir_v21, action + '.hpp')
+                generated_class_cpp_fn = Path(messages_source_dir_v21, action + '.cpp')
+                conversions_namespace_prefix = 'ocpp::v201::'
+
             with open(generated_class_hpp_fn, writemode[type_key]) as out:
                 out.write(message_hpp_template.render({
                     'types': sorted_types,
-                    'namespace': version_path,
+                    'namespace': message_version,
                     'enum_types': parsed_enums,
                     'uses_optional': message_uses_optional,
                     'needs_enums': message_needs_enums,
@@ -489,15 +555,15 @@ def parse_schemas(version: str, schema_dir: Path = Path('schemas/json/'),
                         'is_request': (type_name == 'Request')
                     }
                 }))
-            generated_class_cpp_fn = Path(messages_source_dir, action + '.cpp')
             with open(generated_class_cpp_fn, writemode[type_key]) as out:
                 out.write(message_cpp_template.render({
                     'types': sorted_types,
-                    'namespace': version_path,
+                    'namespace': message_version,
                     'enum_types': parsed_enums,
                     'uses_optional': message_uses_optional,
                     'needs_enums': message_needs_enums,
                     'needs_types': message_needs_types,
+                    'conversions_namespace_prefix': conversions_namespace_prefix,
                     'action': {
                         'name': action,
                         'class_name': action_class_name,
@@ -554,6 +620,11 @@ def parse_schemas(version: str, schema_dir: Path = Path('schemas/json/'),
                 }))
             first = False
 
+    if version == 'v201':
+        with open(messages_cmakelists_txt_fn_v21, 'w') as out:
+            out.write(messages_cmakelists_txt_template.render({
+                'messages': sorted(message_files_v21)
+            }))
     with open(messages_cmakelists_txt_fn, 'w') as out:
         out.write(messages_cmakelists_txt_template.render({
             'messages': sorted(message_files)
@@ -584,6 +655,10 @@ def parse_schemas(version: str, schema_dir: Path = Path('schemas/json/'),
         messages_header_dir)], cwd=messages_header_dir)
     subprocess.run(["sh", "-c", "find {} -regex '.*\\.\\(cpp\\|hpp\\)' -exec clang-format -style=file -i {{}} \\;".format(
         messages_source_dir)], cwd=messages_source_dir)
+    subprocess.run(["sh", "-c", "find {} -regex '.*\\.\\(cpp\\|hpp\\)' -exec clang-format -style=file -i {{}} \\;".format(
+        messages_header_dir_v21)], cwd=messages_header_dir_v21)
+    subprocess.run(["sh", "-c", "find {} -regex '.*\\.\\(cpp\\|hpp\\)' -exec clang-format -style=file -i {{}} \\;".format(
+        messages_source_dir_v21)], cwd=messages_source_dir_v21)
     subprocess.run(["clang-format", "-style=file",  "-i",
                    enums_hpp_fn, ocpp_types_hpp_fn], cwd=generated_header_dir)
     subprocess.run(["clang-format", "-style=file",  "-i",
@@ -600,7 +675,7 @@ if __name__ == "__main__":
     parser.add_argument("--out", metavar='OUT',
                         help="Dir in which the generated code will be put", required=True)
     parser.add_argument("--version", metavar='VERSION',
-                        help="Version of OCPP [1.6 or 2.0.1]", required=True)
+                        help="Version of OCPP [1.6, 2.0.1, or 2.1]", required=True)
 
     args = parser.parse_args()
     version = args.version
