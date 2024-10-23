@@ -20,6 +20,7 @@ struct FirmwareStatusNotificationRequest : public ocpp::Message {
     FirmwareStatusEnum status;
     std::optional<CustomData> customData;
     std::optional<int32_t> requestId;
+    std::optional<StatusInfo> statusInfo;
 
     /// \brief Provides the type of this FirmwareStatusNotification message as a human readable string
     /// \returns the message type as a human readable string

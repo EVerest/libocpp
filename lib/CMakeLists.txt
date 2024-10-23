@@ -81,6 +81,7 @@ if(LIBOCPP_ENABLE_V201)
             ocpp/v201/connectivity_manager.cpp
     )
     add_subdirectory(ocpp/v201/messages)
+    add_subdirectory(ocpp/v21/messages)
 endif()
 
 add_subdirectory(ocpp/common/websocket)

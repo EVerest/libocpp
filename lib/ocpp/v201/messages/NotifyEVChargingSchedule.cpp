@@ -28,6 +28,12 @@ void to_json(json& j, const NotifyEVChargingScheduleRequest& k) {
     if (k.customData) {
         j["customData"] = k.customData.value();
     }
+    if (k.selectedScheduleTupleId) {
+        j["selectedScheduleTupleId"] = k.selectedScheduleTupleId.value();
+    }
+    if (k.powerToleranceAcceptance) {
+        j["powerToleranceAcceptance"] = k.powerToleranceAcceptance.value();
+    }
 }
 
 void from_json(const json& j, NotifyEVChargingScheduleRequest& k) {
@@ -39,6 +45,12 @@ void from_json(const json& j, NotifyEVChargingScheduleRequest& k) {
     // the optional parts of the message
     if (j.contains("customData")) {
         k.customData.emplace(j.at("customData"));
+    }
+    if (j.contains("selectedScheduleTupleId")) {
+        k.selectedScheduleTupleId.emplace(j.at("selectedScheduleTupleId"));
+    }
+    if (j.contains("powerToleranceAcceptance")) {
+        k.powerToleranceAcceptance.emplace(j.at("powerToleranceAcceptance"));
     }
 }
 

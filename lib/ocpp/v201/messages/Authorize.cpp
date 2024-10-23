@@ -81,6 +81,18 @@ void to_json(json& j, const AuthorizeResponse& k) {
     if (k.certificateStatus) {
         j["certificateStatus"] = conversions::authorize_certificate_status_enum_to_string(k.certificateStatus.value());
     }
+    if (k.allowedEnergyTransfer) {
+        j["allowedEnergyTransfer"] = json::array();
+        for (auto val : k.allowedEnergyTransfer.value()) {
+            j["allowedEnergyTransfer"].push_back(conversions::energy_transfer_mode_enum_to_string(val));
+        }
+    }
+    if (k.tariff) {
+        j["tariff"] = k.tariff.value();
+    }
+    if (k.transactionLimit) {
+        j["transactionLimit"] = k.transactionLimit.value();
+    }
 }
 
 void from_json(const json& j, AuthorizeResponse& k) {
@@ -94,6 +106,20 @@ void from_json(const json& j, AuthorizeResponse& k) {
     if (j.contains("certificateStatus")) {
         k.certificateStatus.emplace(
             conversions::string_to_authorize_certificate_status_enum(j.at("certificateStatus")));
+    }
+    if (j.contains("allowedEnergyTransfer")) {
+        json arr = j.at("allowedEnergyTransfer");
+        std::vector<EnergyTransferModeEnum> vec;
+        for (auto val : arr) {
+            vec.push_back(conversions::string_to_energy_transfer_mode_enum(val));
+        }
+        k.allowedEnergyTransfer.emplace(vec);
+    }
+    if (j.contains("tariff")) {
+        k.tariff.emplace(j.at("tariff"));
+    }
+    if (j.contains("transactionLimit")) {
+        k.transactionLimit.emplace(j.at("transactionLimit"));
     }
 }
 

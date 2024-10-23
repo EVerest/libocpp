@@ -29,7 +29,7 @@ void to_json(json& j, const ReserveNowRequest& k) {
         j["customData"] = k.customData.value();
     }
     if (k.connectorType) {
-        j["connectorType"] = conversions::connector_enum_to_string(k.connectorType.value());
+        j["connectorType"] = k.connectorType.value();
     }
     if (k.evseId) {
         j["evseId"] = k.evseId.value();
@@ -50,7 +50,7 @@ void from_json(const json& j, ReserveNowRequest& k) {
         k.customData.emplace(j.at("customData"));
     }
     if (j.contains("connectorType")) {
-        k.connectorType.emplace(conversions::string_to_connector_enum(j.at("connectorType")));
+        k.connectorType.emplace(j.at("connectorType"));
     }
     if (j.contains("evseId")) {
         k.evseId.emplace(j.at("evseId"));

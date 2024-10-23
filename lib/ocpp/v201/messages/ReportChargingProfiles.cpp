@@ -21,7 +21,7 @@ void to_json(json& j, const ReportChargingProfilesRequest& k) {
     // the required parts of the message
     j = json{
         {"requestId", k.requestId},
-        {"chargingLimitSource", conversions::charging_limit_source_enum_to_string(k.chargingLimitSource)},
+        {"chargingLimitSource", k.chargingLimitSource},
         {"chargingProfile", k.chargingProfile},
         {"evseId", k.evseId},
     };
@@ -37,7 +37,7 @@ void to_json(json& j, const ReportChargingProfilesRequest& k) {
 void from_json(const json& j, ReportChargingProfilesRequest& k) {
     // the required parts of the message
     k.requestId = j.at("requestId");
-    k.chargingLimitSource = conversions::string_to_charging_limit_source_enum(j.at("chargingLimitSource"));
+    k.chargingLimitSource = j.at("chargingLimitSource");
     for (auto val : j.at("chargingProfile")) {
         k.chargingProfile.push_back(val);
     }

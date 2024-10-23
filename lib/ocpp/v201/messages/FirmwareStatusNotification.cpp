@@ -29,6 +29,9 @@ void to_json(json& j, const FirmwareStatusNotificationRequest& k) {
     if (k.requestId) {
         j["requestId"] = k.requestId.value();
     }
+    if (k.statusInfo) {
+        j["statusInfo"] = k.statusInfo.value();
+    }
 }
 
 void from_json(const json& j, FirmwareStatusNotificationRequest& k) {
@@ -41,6 +44,9 @@ void from_json(const json& j, FirmwareStatusNotificationRequest& k) {
     }
     if (j.contains("requestId")) {
         k.requestId.emplace(j.at("requestId"));
+    }
+    if (j.contains("statusInfo")) {
+        k.statusInfo.emplace(j.at("statusInfo"));
     }
 }
 

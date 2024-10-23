@@ -19,8 +19,9 @@ namespace v201 {
 struct PublishFirmwareStatusNotificationRequest : public ocpp::Message {
     PublishFirmwareStatusEnum status;
     std::optional<CustomData> customData;
-    std::optional<std::vector<CiString<512>>> location;
+    std::optional<std::vector<CiString<2000>>> location;
     std::optional<int32_t> requestId;
+    std::optional<StatusInfo> statusInfo;
 
     /// \brief Provides the type of this PublishFirmwareStatusNotification message as a human readable string
     /// \returns the message type as a human readable string

@@ -9,7 +9,6 @@
 #include <optional>
 
 #include <ocpp/common/types.hpp>
-#include <ocpp/v201/ocpp_enums.hpp>
 #include <ocpp/v201/ocpp_types.hpp>
 
 namespace ocpp {
@@ -17,7 +16,7 @@ namespace v201 {
 
 /// \brief Contains a OCPP ClearedChargingLimit message
 struct ClearedChargingLimitRequest : public ocpp::Message {
-    ChargingLimitSourceEnum chargingLimitSource;
+    CiString<20> chargingLimitSource;
     std::optional<CustomData> customData;
     std::optional<int32_t> evseId;
 

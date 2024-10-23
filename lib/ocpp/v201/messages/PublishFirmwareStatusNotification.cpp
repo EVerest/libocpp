@@ -35,6 +35,9 @@ void to_json(json& j, const PublishFirmwareStatusNotificationRequest& k) {
     if (k.requestId) {
         j["requestId"] = k.requestId.value();
     }
+    if (k.statusInfo) {
+        j["statusInfo"] = k.statusInfo.value();
+    }
 }
 
 void from_json(const json& j, PublishFirmwareStatusNotificationRequest& k) {
@@ -47,7 +50,7 @@ void from_json(const json& j, PublishFirmwareStatusNotificationRequest& k) {
     }
     if (j.contains("location")) {
         json arr = j.at("location");
-        std::vector<CiString<512>> vec;
+        std::vector<CiString<2000>> vec;
         for (auto val : arr) {
             vec.push_back(val);
         }
@@ -55,6 +58,9 @@ void from_json(const json& j, PublishFirmwareStatusNotificationRequest& k) {
     }
     if (j.contains("requestId")) {
         k.requestId.emplace(j.at("requestId"));
+    }
+    if (j.contains("statusInfo")) {
+        k.statusInfo.emplace(j.at("statusInfo"));
     }
 }
 

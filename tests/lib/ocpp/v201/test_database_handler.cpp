@@ -788,12 +788,13 @@ TEST_F(DatabaseHandlerTest, GetChargingProfilesMatchingCriteria_MatchingProfileS
     auto profile_3 = ChargingProfile{.id = profile_id_3,
                                      .stackLevel = stack_level + 1,
                                      .chargingProfilePurpose = ChargingProfilePurposeEnum::TxProfile};
-    this->database_handler.insert_or_update_charging_profile(DEFAULT_EVSE_ID, profile_3, ChargingLimitSourceEnum::EMS);
+    this->database_handler.insert_or_update_charging_profile(DEFAULT_EVSE_ID, profile_3,
+                                                             ChargingLimitSourceEnumStringType::EMS);
 
     auto profiles = this->database_handler.get_all_charging_profiles();
     EXPECT_EQ(profiles.size(), 3);
 
-    ChargingProfileCriterion criteria = {.chargingLimitSource = {{ChargingLimitSourceEnum::CSO}}};
+    ChargingProfileCriterion criteria = {.chargingLimitSource = {{ChargingLimitSourceEnumStringType::CSO}}};
 
     std::vector<ReportedChargingProfile> sut =
         this->database_handler.get_charging_profiles_matching_criteria(std::nullopt, criteria);
@@ -819,13 +820,14 @@ TEST_F(DatabaseHandlerTest, GetChargingProfilesMatchingCriteria_MatchingProfileS
     auto profile_3 = ChargingProfile{.id = profile_id_3,
                                      .stackLevel = stack_level + 1,
                                      .chargingProfilePurpose = ChargingProfilePurposeEnum::TxProfile};
-    this->database_handler.insert_or_update_charging_profile(DEFAULT_EVSE_ID, profile_3, ChargingLimitSourceEnum::EMS);
+    this->database_handler.insert_or_update_charging_profile(DEFAULT_EVSE_ID, profile_3,
+                                                             ChargingLimitSourceEnumStringType::EMS);
 
     auto profiles = this->database_handler.get_all_charging_profiles();
     EXPECT_EQ(profiles.size(), 3);
 
     ChargingProfileCriterion criteria = {
-        .chargingLimitSource = {{ChargingLimitSourceEnum::CSO, ChargingLimitSourceEnum::EMS}}};
+        .chargingLimitSource = {{ChargingLimitSourceEnumStringType::CSO, ChargingLimitSourceEnumStringType::EMS}}};
 
     std::vector<ReportedChargingProfile> sut =
         this->database_handler.get_charging_profiles_matching_criteria(std::nullopt, criteria);
@@ -851,14 +853,15 @@ TEST_F(DatabaseHandlerTest, GetChargingProfilesMatchingCriteria_AllCriteriaSetRe
     auto profile_3 = ChargingProfile{.id = profile_id_3,
                                      .stackLevel = stack_level + 1,
                                      .chargingProfilePurpose = ChargingProfilePurposeEnum::TxProfile};
-    this->database_handler.insert_or_update_charging_profile(DEFAULT_EVSE_ID, profile_3, ChargingLimitSourceEnum::CSO);
+    this->database_handler.insert_or_update_charging_profile(DEFAULT_EVSE_ID, profile_3,
+                                                             ChargingLimitSourceEnumStringType::CSO);
 
     auto profiles = this->database_handler.get_all_charging_profiles();
     EXPECT_EQ(profiles.size(), 3);
 
     ChargingProfileCriterion criteria = {.chargingProfilePurpose = ChargingProfilePurposeEnum::TxProfile,
                                          .stackLevel = 2,
-                                         .chargingLimitSource = {{ChargingLimitSourceEnum::CSO}}};
+                                         .chargingLimitSource = {{ChargingLimitSourceEnumStringType::CSO}}};
 
     std::vector<ReportedChargingProfile> sut =
         this->database_handler.get_charging_profiles_matching_criteria(std::nullopt, criteria);
@@ -884,14 +887,15 @@ TEST_F(DatabaseHandlerTest, GetChargingProfilesMatchingCriteria_AllCriteriaSetRe
     auto profile_3 = ChargingProfile{.id = profile_id_3,
                                      .stackLevel = stack_level + 1,
                                      .chargingProfilePurpose = ChargingProfilePurposeEnum::TxProfile};
-    this->database_handler.insert_or_update_charging_profile(DEFAULT_EVSE_ID, profile_3, ChargingLimitSourceEnum::CSO);
+    this->database_handler.insert_or_update_charging_profile(DEFAULT_EVSE_ID, profile_3,
+                                                             ChargingLimitSourceEnumStringType::CSO);
 
     auto profiles = this->database_handler.get_all_charging_profiles();
     EXPECT_EQ(profiles.size(), 3);
 
     ChargingProfileCriterion criteria = {.chargingProfilePurpose = ChargingProfilePurposeEnum::TxProfile,
                                          .stackLevel = 2,
-                                         .chargingLimitSource = {{ChargingLimitSourceEnum::EMS}}};
+                                         .chargingLimitSource = {{ChargingLimitSourceEnumStringType::EMS}}};
 
     std::vector<ReportedChargingProfile> sut =
         this->database_handler.get_charging_profiles_matching_criteria(std::nullopt, criteria);
@@ -917,14 +921,15 @@ TEST_F(DatabaseHandlerTest, GetChargingProfilesMatchingCriteria_AllCriteriaSetRe
     auto profile_3 = ChargingProfile{.id = profile_id_3,
                                      .stackLevel = stack_level + 1,
                                      .chargingProfilePurpose = ChargingProfilePurposeEnum::TxProfile};
-    this->database_handler.insert_or_update_charging_profile(DEFAULT_EVSE_ID, profile_3, ChargingLimitSourceEnum::CSO);
+    this->database_handler.insert_or_update_charging_profile(DEFAULT_EVSE_ID, profile_3,
+                                                             ChargingLimitSourceEnumStringType::CSO);
 
     auto profiles = this->database_handler.get_all_charging_profiles();
     EXPECT_EQ(profiles.size(), 3);
 
     ChargingProfileCriterion criteria = {.chargingProfilePurpose = ChargingProfilePurposeEnum::TxProfile,
                                          .stackLevel = 2,
-                                         .chargingLimitSource = {{ChargingLimitSourceEnum::EMS}}};
+                                         .chargingLimitSource = {{ChargingLimitSourceEnumStringType::EMS}}};
 
     std::vector<ReportedChargingProfile> sut =
         this->database_handler.get_charging_profiles_matching_criteria(std::nullopt, criteria);
@@ -950,7 +955,8 @@ TEST_F(DatabaseHandlerTest, GetChargingProfilesMatchingCriteriaAndEvseId0_AllCri
     auto profile_3 = ChargingProfile{.id = profile_id_3,
                                      .stackLevel = stack_level + 1,
                                      .chargingProfilePurpose = ChargingProfilePurposeEnum::TxProfile};
-    this->database_handler.insert_or_update_charging_profile(DEFAULT_EVSE_ID, profile_3, ChargingLimitSourceEnum::CSO);
+    this->database_handler.insert_or_update_charging_profile(DEFAULT_EVSE_ID, profile_3,
+                                                             ChargingLimitSourceEnumStringType::CSO);
 
     auto profiles = this->database_handler.get_all_charging_profiles();
     EXPECT_EQ(profiles.size(), 3);
@@ -958,7 +964,7 @@ TEST_F(DatabaseHandlerTest, GetChargingProfilesMatchingCriteriaAndEvseId0_AllCri
     ChargingProfileCriterion criteria = {
         .chargingProfilePurpose = ChargingProfilePurposeEnum::TxDefaultProfile,
         .stackLevel = 2,
-        .chargingLimitSource = {{ChargingLimitSourceEnum::CSO}},
+        .chargingLimitSource = {{ChargingLimitSourceEnumStringType::CSO}},
     };
 
     std::vector<ReportedChargingProfile> sut =
@@ -1007,7 +1013,8 @@ TEST_F(DatabaseHandlerTest, GetChargingProfilesMatchingCriteria_MatchingProfileI
     auto profile_2 = ChargingProfile{.id = profile_id_2,
                                      .stackLevel = stack_level + 1,
                                      .chargingProfilePurpose = ChargingProfilePurposeEnum::TxDefaultProfile};
-    this->database_handler.insert_or_update_charging_profile(STATION_WIDE_ID, profile_2, ChargingLimitSourceEnum::EMS);
+    this->database_handler.insert_or_update_charging_profile(STATION_WIDE_ID, profile_2,
+                                                             ChargingLimitSourceEnumStringType::EMS);
 
     auto profiles = this->database_handler.get_all_charging_profiles();
     EXPECT_EQ(profiles.size(), 2);
@@ -1020,8 +1027,10 @@ TEST_F(DatabaseHandlerTest, GetChargingProfilesMatchingCriteria_MatchingProfileI
         this->database_handler.get_charging_profiles_matching_criteria({}, criteria);
     EXPECT_EQ(sut.size(), 2);
 
-    EXPECT_THAT(sut, testing::Contains(testing::FieldsAre(profile_1, DEFAULT_EVSE_ID, ChargingLimitSourceEnum::CSO)));
-    EXPECT_THAT(sut, testing::Contains(testing::FieldsAre(profile_2, STATION_WIDE_ID, ChargingLimitSourceEnum::EMS)));
+    EXPECT_THAT(
+        sut, testing::Contains(testing::FieldsAre(profile_1, DEFAULT_EVSE_ID, ChargingLimitSourceEnumStringType::CSO)));
+    EXPECT_THAT(
+        sut, testing::Contains(testing::FieldsAre(profile_2, STATION_WIDE_ID, ChargingLimitSourceEnumStringType::EMS)));
 }
 
 TEST_F(DatabaseHandlerTest, GetChargingProfilesMatchingCriteria_MatchingCriteria_ReturnsEVSEAndSource) {
@@ -1036,7 +1045,8 @@ TEST_F(DatabaseHandlerTest, GetChargingProfilesMatchingCriteria_MatchingCriteria
     auto profile_2 = ChargingProfile{.id = profile_id_2,
                                      .stackLevel = stack_level + 1,
                                      .chargingProfilePurpose = ChargingProfilePurposeEnum::TxDefaultProfile};
-    this->database_handler.insert_or_update_charging_profile(STATION_WIDE_ID, profile_2, ChargingLimitSourceEnum::EMS);
+    this->database_handler.insert_or_update_charging_profile(STATION_WIDE_ID, profile_2,
+                                                             ChargingLimitSourceEnumStringType::EMS);
 
     auto profiles = this->database_handler.get_all_charging_profiles();
     EXPECT_EQ(profiles.size(), 2);
@@ -1049,8 +1059,10 @@ TEST_F(DatabaseHandlerTest, GetChargingProfilesMatchingCriteria_MatchingCriteria
         this->database_handler.get_charging_profiles_matching_criteria({}, criteria);
     EXPECT_EQ(sut.size(), 2);
 
-    EXPECT_THAT(sut, testing::Contains(testing::FieldsAre(profile_1, DEFAULT_EVSE_ID, ChargingLimitSourceEnum::CSO)));
-    EXPECT_THAT(sut, testing::Contains(testing::FieldsAre(profile_2, STATION_WIDE_ID, ChargingLimitSourceEnum::EMS)));
+    EXPECT_THAT(
+        sut, testing::Contains(testing::FieldsAre(profile_1, DEFAULT_EVSE_ID, ChargingLimitSourceEnumStringType::CSO)));
+    EXPECT_THAT(
+        sut, testing::Contains(testing::FieldsAre(profile_2, STATION_WIDE_ID, ChargingLimitSourceEnumStringType::EMS)));
 }
 
 TEST_F(DatabaseHandlerTest, GetChargingProfilesMatchingCriteria_OnlyEVSEIDSet_ReturnsProfileOnEVSE) {
@@ -1065,7 +1077,8 @@ TEST_F(DatabaseHandlerTest, GetChargingProfilesMatchingCriteria_OnlyEVSEIDSet_Re
     auto profile_2 = ChargingProfile{.id = profile_id_2,
                                      .stackLevel = stack_level + 1,
                                      .chargingProfilePurpose = ChargingProfilePurposeEnum::TxDefaultProfile};
-    this->database_handler.insert_or_update_charging_profile(STATION_WIDE_ID, profile_2, ChargingLimitSourceEnum::EMS);
+    this->database_handler.insert_or_update_charging_profile(STATION_WIDE_ID, profile_2,
+                                                             ChargingLimitSourceEnumStringType::EMS);
 
     auto profiles = this->database_handler.get_all_charging_profiles();
     EXPECT_EQ(profiles.size(), 2);
@@ -1074,5 +1087,6 @@ TEST_F(DatabaseHandlerTest, GetChargingProfilesMatchingCriteria_OnlyEVSEIDSet_Re
         this->database_handler.get_charging_profiles_matching_criteria(DEFAULT_EVSE_ID, {});
     EXPECT_EQ(sut.size(), 1);
 
-    EXPECT_THAT(sut, testing::Contains(testing::FieldsAre(profile_1, DEFAULT_EVSE_ID, ChargingLimitSourceEnum::CSO)));
+    EXPECT_THAT(
+        sut, testing::Contains(testing::FieldsAre(profile_1, DEFAULT_EVSE_ID, ChargingLimitSourceEnumStringType::CSO)));
 }

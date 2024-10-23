@@ -74,8 +74,8 @@ struct Callbacks {
     /// \return True if evse is reserved for the given id token / group id token, false if it is reserved for another
     ///         one.
     ///
-    std::function<bool(const int32_t evse_id, const CiString<36> idToken,
-                       const std::optional<CiString<36>> groupIdToken)>
+    std::function<bool(const int32_t evse_id, const CiString<255> idToken,
+                       const std::optional<CiString<255>> groupIdToken)>
         is_reservation_for_token_callback;
     std::function<UpdateFirmwareResponse(const UpdateFirmwareRequest& request)> update_firmware_request_callback;
     // callback to be called when a variable has been changed by the CSMS

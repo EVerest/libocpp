@@ -17,10 +17,11 @@ namespace v201 {
 
 /// \brief Contains a OCPP NotifyEVChargingNeeds message
 struct NotifyEVChargingNeedsRequest : public ocpp::Message {
-    ChargingNeeds chargingNeeds;
     int32_t evseId;
+    ChargingNeeds chargingNeeds;
     std::optional<CustomData> customData;
     std::optional<int32_t> maxScheduleTuples;
+    std::optional<ocpp::DateTime> timestamp;
 
     /// \brief Provides the type of this NotifyEVChargingNeeds message as a human readable string
     /// \returns the message type as a human readable string

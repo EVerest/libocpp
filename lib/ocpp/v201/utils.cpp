@@ -123,7 +123,7 @@ std::string sha256(const std::string& str) {
 }
 
 std::string generate_token_hash(const IdToken& token) {
-    return sha256(conversions::id_token_enum_to_string(token.type) + token.idToken.get());
+    return sha256(token.type.get() + token.idToken.get());
 }
 
 ocpp::DateTime align_timestamp(const DateTime timestamp, std::chrono::seconds align_interval) {

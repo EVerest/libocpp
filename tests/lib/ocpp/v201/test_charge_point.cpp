@@ -182,8 +182,8 @@ public:
     testing::MockFunction<RequestStartStopStatusEnum(const RequestStartTransactionRequest& request,
                                                      const bool authorize_remote_start)>
         remote_start_transaction_callback_mock;
-    testing::MockFunction<bool(const int32_t evse_id, const CiString<36> idToken,
-                               const std::optional<CiString<36>> groupIdToken)>
+    testing::MockFunction<bool(const int32_t evse_id, const CiString<255> idToken,
+                               const std::optional<CiString<255>> groupIdToken)>
         is_reservation_for_token_callback_mock;
     testing::MockFunction<UpdateFirmwareResponse(const UpdateFirmwareRequest& request)>
         update_firmware_request_callback_mock;
@@ -666,7 +666,7 @@ TEST_F(ChargePointFunctionalityTestFixtureV201, K01_SetChargingProfileRequest_Va
         request_to_enhanced_message<SetChargingProfileRequest, MessageType::SetChargingProfile>(req);
 
     EXPECT_CALL(*smart_charging_handler,
-                validate_and_add_profile(profile, DEFAULT_EVSE_ID, ChargingLimitSourceEnum::CSO,
+                validate_and_add_profile(profile, DEFAULT_EVSE_ID, ChargingLimitSourceEnumStringType::CSO,
                                          DEFAULT_REQUEST_TO_ADD_PROFILE_SOURCE));
 
     charge_point->handle_message(set_charging_profile_req);
@@ -783,7 +783,7 @@ TEST_F(ChargePointFunctionalityTestFixtureV201,
 
     RequestStartTransactionRequest req;
     req.evseId = DEFAULT_EVSE_ID;
-    req.idToken = IdToken{.idToken = "Local", .type = IdTokenEnum::Local};
+    req.idToken = IdToken{.idToken = "Local", .type = IdTokenEnumStringType::Local};
     req.chargingProfile = profile;
 
     auto start_transaction_req =
@@ -909,7 +909,7 @@ TEST_F(ChargePointFunctionalityTestFixtureV201,
 
     RequestStartTransactionRequest req;
     req.evseId = DEFAULT_EVSE_ID;
-    req.idToken = IdToken{.idToken = "Local", .type = IdTokenEnum::Local};
+    req.idToken = IdToken{.idToken = "Local", .type = IdTokenEnumStringType::Local};
     req.chargingProfile = profile;
 
     auto start_transaction_req =

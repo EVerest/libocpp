@@ -20,6 +20,7 @@ struct TriggerMessageRequest : public ocpp::Message {
     MessageTriggerEnum requestedMessage;
     std::optional<CustomData> customData;
     std::optional<EVSE> evse;
+    std::optional<CiString<50>> customTrigger;
 
     /// \brief Provides the type of this TriggerMessage message as a human readable string
     /// \returns the message type as a human readable string

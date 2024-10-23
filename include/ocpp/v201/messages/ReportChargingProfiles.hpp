@@ -18,7 +18,7 @@ namespace v201 {
 /// \brief Contains a OCPP ReportChargingProfiles message
 struct ReportChargingProfilesRequest : public ocpp::Message {
     int32_t requestId;
-    ChargingLimitSourceEnum chargingLimitSource;
+    CiString<20> chargingLimitSource;
     std::vector<ChargingProfile> chargingProfile;
     int32_t evseId;
     std::optional<CustomData> customData;

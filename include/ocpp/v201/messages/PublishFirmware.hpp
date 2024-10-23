@@ -17,7 +17,7 @@ namespace v201 {
 
 /// \brief Contains a OCPP PublishFirmware message
 struct PublishFirmwareRequest : public ocpp::Message {
-    CiString<512> location;
+    CiString<2000> location;
     CiString<32> checksum;
     int32_t requestId;
     std::optional<CustomData> customData;

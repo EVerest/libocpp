@@ -21,7 +21,7 @@ struct ReserveNowRequest : public ocpp::Message {
     ocpp::DateTime expiryDateTime;
     IdToken idToken;
     std::optional<CustomData> customData;
-    std::optional<ConnectorEnum> connectorType;
+    std::optional<CiString<20>> connectorType;
     std::optional<int32_t> evseId;
     std::optional<IdToken> groupIdToken;
 

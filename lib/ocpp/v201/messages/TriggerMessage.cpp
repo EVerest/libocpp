@@ -29,6 +29,9 @@ void to_json(json& j, const TriggerMessageRequest& k) {
     if (k.evse) {
         j["evse"] = k.evse.value();
     }
+    if (k.customTrigger) {
+        j["customTrigger"] = k.customTrigger.value();
+    }
 }
 
 void from_json(const json& j, TriggerMessageRequest& k) {
@@ -41,6 +44,9 @@ void from_json(const json& j, TriggerMessageRequest& k) {
     }
     if (j.contains("evse")) {
         k.evse.emplace(j.at("evse"));
+    }
+    if (j.contains("customTrigger")) {
+        k.customTrigger.emplace(j.at("customTrigger"));
     }
 }
 

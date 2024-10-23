@@ -40,7 +40,7 @@ struct GetCertificateStatusResponse : public ocpp::Message {
     GetCertificateStatusEnum status;
     std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
-    std::optional<CiString<5500>> ocspResult;
+    std::optional<CiString<18000>> ocspResult;
 
     /// \brief Provides the type of this GetCertificateStatusResponse message as a human readable string
     /// \returns the message type as a human readable string
