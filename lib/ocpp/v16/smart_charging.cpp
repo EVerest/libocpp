@@ -150,11 +150,7 @@ EnhancedChargingSchedule SmartChargingHandler::calculate_enhanced_composite_sche
         this->configuration.getCompositeScheduleDefaultNumberPhases().value_or(DEFAULT_AND_MAX_NUMBER_PHASES);
     const auto supply_voltage = this->configuration.getSupplyVoltage().value_or(LOW_VOLTAGE);
 
-    CompositeScheduleDefaultLimits default_limits = {
-        default_amps_limit,
-        default_watts_limit,
-        default_number_phases
-    };
+    CompositeScheduleDefaultLimits default_limits = {default_amps_limit, default_watts_limit, default_number_phases};
 
     auto composite_charge_point_max = ocpp::v16::calculate_composite_schedule(
         charge_point_max, start_time, end_time, charging_rate_unit, default_number_phases, supply_voltage);

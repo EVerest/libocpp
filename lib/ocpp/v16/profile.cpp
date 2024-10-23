@@ -568,7 +568,6 @@ EnhancedChargingSchedule calculate_composite_schedule(const EnhancedChargingSche
                    duration_tx_default);
         update_itt(duration, tx_itt, tx.chargingSchedulePeriod.end(), period_tx, duration_tx);
 
-
         if (period.startPeriod != -1) {
             if (!period.numberPhases.has_value()) {
                 period.numberPhases = default_limits.number_phases;

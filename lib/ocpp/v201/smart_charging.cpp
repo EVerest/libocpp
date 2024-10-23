@@ -610,11 +610,7 @@ CompositeSchedule SmartChargingHandler::calculate_composite_schedule(
     const auto supply_voltage =
         this->device_model->get_optional_value<int>(ControllerComponentVariables::SupplyVoltage).value_or(LOW_VOLTAGE);
 
-    CompositeScheduleDefaultLimits default_limits = {
-        default_amps_limit,
-        default_watts_limit,
-        default_number_phases
-    };
+    CompositeScheduleDefaultLimits default_limits = {default_amps_limit, default_watts_limit, default_number_phases};
 
     auto charging_station_external_constraints =
         ocpp::v201::calculate_composite_schedule(charging_station_external_constraints_periods, start_time, end_time,
@@ -626,9 +622,9 @@ CompositeSchedule SmartChargingHandler::calculate_composite_schedule(
     auto composite_tx = ocpp::v201::calculate_composite_schedule(tx_periods, start_time, end_time, charging_rate_unit,
                                                                  default_number_phases, supply_voltage);
 
-    CompositeSchedule composite_schedule = ocpp::v201::calculate_composite_schedule(
-        charging_station_external_constraints, composite_charge_point_max, composite_tx_default, composite_tx,
-        default_limits, supply_voltage);
+    CompositeSchedule composite_schedule =
+        ocpp::v201::calculate_composite_schedule(charging_station_external_constraints, composite_charge_point_max,
+                                                 composite_tx_default, composite_tx, default_limits, supply_voltage);
 
     // Set the EVSE ID for the resulting CompositeSchedule
     composite_schedule.evseId = evse_id;

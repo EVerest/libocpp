@@ -21,11 +21,7 @@ using ocpp::v16::period_entry_t;
 using std::chrono::minutes;
 using std::chrono::seconds;
 
-constexpr CompositeScheduleDefaultLimits DEFAULT_LIMITS = {
-    48,
-    33120,
-    3
-};
+constexpr CompositeScheduleDefaultLimits DEFAULT_LIMITS = {48, 33120, 3};
 constexpr int default_supply_voltage = 230;
 
 // ----------------------------------------------------------------------------
@@ -1915,7 +1911,8 @@ TEST(ProfileTestsA, combinedTxDefault) {
     EnhancedChargingSchedule tx_default_schedule{ChargingRateUnit::A, {{0, 10.0, std::nullopt}}, 600, start, 10.0};
     EnhancedChargingSchedule schedule{ChargingRateUnit::A, {}, 600, start, 6.0};
 
-    const auto res = calculate_composite_schedule(schedule, tx_default_schedule, schedule, DEFAULT_LIMITS, default_supply_voltage);
+    const auto res =
+        calculate_composite_schedule(schedule, tx_default_schedule, schedule, DEFAULT_LIMITS, default_supply_voltage);
     EXPECT_EQ(res.chargingRateUnit, ChargingRateUnit::A);
     EXPECT_EQ(res.duration.value_or(-1), 600);
     EXPECT_EQ(res.startSchedule, start);
@@ -1933,7 +1930,8 @@ TEST(ProfileTestsA, combinedTxDefaultTx) {
     EnhancedChargingSchedule tx_schedule{ChargingRateUnit::A, {{0, 32.0, std::nullopt}}, 600, start, std::nullopt};
     EnhancedChargingSchedule schedule{ChargingRateUnit::A, {}, 600, start, 6.0};
 
-    const auto res = calculate_composite_schedule(schedule, tx_default_schedule, tx_schedule, DEFAULT_LIMITS, default_supply_voltage);
+    const auto res = calculate_composite_schedule(schedule, tx_default_schedule, tx_schedule, DEFAULT_LIMITS,
+                                                  default_supply_voltage);
     EXPECT_EQ(res.chargingRateUnit, ChargingRateUnit::A);
     EXPECT_EQ(res.duration.value_or(-1), 600);
     EXPECT_EQ(res.startSchedule, start);
@@ -1952,7 +1950,8 @@ TEST(ProfileTestsA, combinedTxDefaultTxMin) {
     EnhancedChargingSchedule cpm_schedule{ChargingRateUnit::A, {{0, 6.0, std::nullopt}}, 600, start, std::nullopt};
     EnhancedChargingSchedule schedule{ChargingRateUnit::A, {}, 600, start, 6.0};
 
-    const auto res = calculate_composite_schedule(cpm_schedule, tx_default_schedule, tx_schedule, DEFAULT_LIMITS, default_supply_voltage);
+    const auto res = calculate_composite_schedule(cpm_schedule, tx_default_schedule, tx_schedule, DEFAULT_LIMITS,
+                                                  default_supply_voltage);
     EXPECT_EQ(res.chargingRateUnit, ChargingRateUnit::A);
     EXPECT_EQ(res.duration.value_or(-1), 600);
     EXPECT_EQ(res.startSchedule, start);
@@ -1977,7 +1976,8 @@ TEST(ProfileTestsA, combinedOverlapA) {
     EnhancedChargingSchedule cpm_schedule{
         ChargingRateUnit::A, {{0, no_limit_specified, std::nullopt}}, 600, start, std::nullopt};
 
-    const auto res = calculate_composite_schedule(cpm_schedule, tx_default_schedule, tx_schedule, DEFAULT_LIMITS, default_supply_voltage);
+    const auto res = calculate_composite_schedule(cpm_schedule, tx_default_schedule, tx_schedule, DEFAULT_LIMITS,
+                                                  default_supply_voltage);
     // std::cout << res << std::endl;
 
     EXPECT_EQ(res.chargingRateUnit, ChargingRateUnit::A);
@@ -2016,7 +2016,8 @@ TEST(ProfileTestsA, combinedOverlapB) {
         start,
         std::nullopt};
 
-    const auto res = calculate_composite_schedule(cpm_schedule, tx_default_schedule, tx_schedule, DEFAULT_LIMITS, default_supply_voltage);
+    const auto res = calculate_composite_schedule(cpm_schedule, tx_default_schedule, tx_schedule, DEFAULT_LIMITS,
+                                                  default_supply_voltage);
     // std::cout << res << std::endl;
 
     EXPECT_EQ(res.chargingRateUnit, ChargingRateUnit::A);

@@ -473,7 +473,8 @@ ChargingSchedulePeriod minimize_charging_schedule_period_by_limit(
 CompositeSchedule calculate_composite_schedule(const CompositeSchedule& charging_station_external_constraints,
                                                const CompositeSchedule& charging_station_max,
                                                const CompositeSchedule& tx_default, const CompositeSchedule& tx,
-                                               const CompositeScheduleDefaultLimits& default_limits, int32_t supply_voltage) {
+                                               const CompositeScheduleDefaultLimits& default_limits,
+                                               int32_t supply_voltage) {
 
     CompositeSchedule combined{
         .chargingSchedulePeriod = {},
@@ -486,7 +487,7 @@ CompositeSchedule calculate_composite_schedule(const CompositeSchedule& charging
 
     const float default_limit = (tx_default.chargingRateUnit == ChargingRateUnitEnum::A)
                                     ? static_cast<float>(default_limits.amps)
-                                    : static_cast<float>(default_limits.watts)   ;
+                                    : static_cast<float>(default_limits.watts);
 
     int current_period = 0;
 

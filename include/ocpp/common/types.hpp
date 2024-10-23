@@ -827,7 +827,7 @@ enum class QueueType {
     None,
 };
 
-/// \brief Struct containing default limits for amps, watts and number of phases 
+/// \brief Struct containing default limits for amps, watts and number of phases
 struct CompositeScheduleDefaultLimits {
     int32_t amps;
     int32_t watts;

@@ -16,11 +16,7 @@
 
 #include "smart_charging_test_utils.hpp"
 
-constexpr ocpp::CompositeScheduleDefaultLimits DEFAULT_LIMITS = {
-    48,
-    33120,
-    3
-};
+constexpr ocpp::CompositeScheduleDefaultLimits DEFAULT_LIMITS = {48, 33120, 3};
 
 namespace {
 using namespace ocpp::v201;
@@ -1079,8 +1075,8 @@ TEST(OCPPTypesTest, CalculateChargingScheduleCombined_Default) {
 
     };
 
-    const CompositeSchedule actual = calculate_composite_schedule(
-        DEFAULT_SCHEDULE, DEFAULT_SCHEDULE, DEFAULT_SCHEDULE, DEFAULT_SCHEDULE, DEFAULT_LIMITS, LOW_VOLTAGE);
+    const CompositeSchedule actual = calculate_composite_schedule(DEFAULT_SCHEDULE, DEFAULT_SCHEDULE, DEFAULT_SCHEDULE,
+                                                                  DEFAULT_SCHEDULE, DEFAULT_LIMITS, LOW_VOLTAGE);
 
     ASSERT_EQ(expected, actual);
 }
