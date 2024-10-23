@@ -74,7 +74,7 @@ public:
 
     virtual SetChargingProfileResponse validate_and_add_profile(
         ChargingProfile& profile, int32_t evse_id,
-        ChargingLimitSourceEnum charging_limit_source = ChargingLimitSourceEnum::CSO,
+        CiString<20> charging_limit_source = ChargingLimitSourceEnumStringType::CSO,
         AddChargingProfileSource source_of_request = AddChargingProfileSource::SetChargingProfile) = 0;
 
     virtual void delete_transaction_tx_profiles(const std::string& transaction_id) = 0;
@@ -85,7 +85,7 @@ public:
 
     virtual SetChargingProfileResponse
     add_profile(ChargingProfile& profile, int32_t evse_id,
-                ChargingLimitSourceEnum charging_limit_source = ChargingLimitSourceEnum::CSO) = 0;
+                CiString<20> charging_limit_source = ChargingLimitSourceEnumStringType::CSO) = 0;
 
     virtual ClearChargingProfileResponse clear_profiles(const ClearChargingProfileRequest& request) = 0;
 
@@ -123,7 +123,7 @@ public:
     ///
     SetChargingProfileResponse validate_and_add_profile(
         ChargingProfile& profile, int32_t evse_id,
-        ChargingLimitSourceEnum charging_limit_source = ChargingLimitSourceEnum::CSO,
+        CiString<20> charging_limit_source = ChargingLimitSourceEnumStringType::CSO,
         AddChargingProfileSource source_of_request = AddChargingProfileSource::SetChargingProfile) override;
 
     ///
@@ -140,7 +140,7 @@ public:
     ///
     SetChargingProfileResponse
     add_profile(ChargingProfile& profile, int32_t evse_id,
-                ChargingLimitSourceEnum charging_limit_source = ChargingLimitSourceEnum::CSO) override;
+                CiString<20> charging_limit_source = ChargingLimitSourceEnumStringType::CSO) override;
 
     ///
     /// \brief Clears profiles from the system using the given \p request

@@ -19,7 +19,7 @@ namespace v201 {
 struct AuthorizeRequest : public ocpp::Message {
     IdToken idToken;
     std::optional<CustomData> customData;
-    std::optional<CiString<5500>> certificate;
+    std::optional<CiString<10000>> certificate;
     std::optional<std::vector<OCSPRequestData>> iso15118CertificateHashData;
 
     /// \brief Provides the type of this Authorize message as a human readable string
@@ -42,6 +42,9 @@ struct AuthorizeResponse : public ocpp::Message {
     IdTokenInfo idTokenInfo;
     std::optional<CustomData> customData;
     std::optional<AuthorizeCertificateStatusEnum> certificateStatus;
+    std::optional<std::vector<EnergyTransferModeEnum>> allowedEnergyTransfer;
+    std::optional<Tariff> tariff;
+    std::optional<TransactionLimit> transactionLimit;
 
     /// \brief Provides the type of this AuthorizeResponse message as a human readable string
     /// \returns the message type as a human readable string

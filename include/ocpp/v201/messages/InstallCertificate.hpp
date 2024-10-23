@@ -18,7 +18,7 @@ namespace v201 {
 /// \brief Contains a OCPP InstallCertificate message
 struct InstallCertificateRequest : public ocpp::Message {
     InstallCertificateUseEnum certificateType;
-    CiString<5500> certificate;
+    CiString<10000> certificate;
     std::optional<CustomData> customData;
 
     /// \brief Provides the type of this InstallCertificate message as a human readable string

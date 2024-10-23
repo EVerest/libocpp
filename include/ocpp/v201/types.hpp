@@ -145,14 +145,13 @@ enum class MessageType {
 };
 
 /// \brief This enhances the ChargingProfile type by additional paramaters that are required in the
-/// ReportChargingProfilesRequest (EvseId, ChargingLimitSourceEnum)
+/// ReportChargingProfilesRequest (EvseId, ChargingLimitSource)
 struct ReportedChargingProfile {
     ChargingProfile profile;
     int32_t evse_id;
-    ChargingLimitSourceEnum source;
+    CiString<20> source;
 
-    ReportedChargingProfile(const ChargingProfile& profile, const int32_t evse_id,
-                            const ChargingLimitSourceEnum source) :
+    ReportedChargingProfile(const ChargingProfile& profile, const int32_t evse_id, const CiString<20> source) :
         profile(profile), evse_id(evse_id), source(source) {
     }
 };
@@ -172,6 +171,28 @@ MessageType string_to_messagetype(const std::string& s);
 /// \returns an output stream with the MessageType written to
 std::ostream& operator<<(std::ostream& os, const MessageType& message_type);
 
+namespace ChargingLimitSourceEnumStringType {
+inline const CiString<20> EMS = "EMS";
+inline const CiString<20> OTHER = "Other";
+inline const CiString<20> SO = "SO";
+inline const CiString<20> CSO = "CSO";
+} // namespace ChargingLimitSourceEnumStringType
+
+namespace IdTokenEnumStringType {
+inline const CiString<20> Value = "Value";
+inline const CiString<20> Central = "Central";
+inline const CiString<20> DirectPayment = "DirectPayment";
+inline const CiString<20> eMAID = "eMAID";
+inline const CiString<20> EVCCID = "EVCCID";
+inline const CiString<20> ISO14443 = "ISO14443";
+inline const CiString<20> ISO15693 = "ISO15693";
+inline const CiString<20> KeyCode = "KeyCode";
+inline const CiString<20> Local = "Local";
+inline const CiString<20> MacAddress = "MacAddress";
+inline const CiString<20> NEMA = "NEMA";
+inline const CiString<20> NoAuthorization = "NoAuthorization";
+inline const CiString<20> VIN = "VIN";
+} // namespace IdTokenEnumStringType
 } // namespace v201
 } // namespace ocpp
 

@@ -19,8 +19,10 @@ namespace v201 {
 struct Get15118EVCertificateRequest : public ocpp::Message {
     CiString<50> iso15118SchemaVersion;
     CertificateActionEnum action;
-    CiString<5600> exiRequest;
+    CiString<11000> exiRequest;
     std::optional<CustomData> customData;
+    std::optional<int32_t> maximumContractCertificateChains;
+    std::optional<std::vector<CiString<255>>> prioritizedEMAIDs;
 
     /// \brief Provides the type of this Get15118EVCertificate message as a human readable string
     /// \returns the message type as a human readable string
@@ -40,9 +42,10 @@ std::ostream& operator<<(std::ostream& os, const Get15118EVCertificateRequest& k
 /// \brief Contains a OCPP Get15118EVCertificateResponse message
 struct Get15118EVCertificateResponse : public ocpp::Message {
     Iso15118EVCertificateStatusEnum status;
-    CiString<5600> exiResponse;
+    CiString<17000> exiResponse;
     std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
+    std::optional<int32_t> remainingContracts;
 
     /// \brief Provides the type of this Get15118EVCertificateResponse message as a human readable string
     /// \returns the message type as a human readable string

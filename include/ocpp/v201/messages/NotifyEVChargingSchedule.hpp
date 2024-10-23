@@ -21,6 +21,8 @@ struct NotifyEVChargingScheduleRequest : public ocpp::Message {
     ChargingSchedule chargingSchedule;
     int32_t evseId;
     std::optional<CustomData> customData;
+    std::optional<int32_t> selectedScheduleTupleId;
+    std::optional<bool> powerToleranceAcceptance;
 
     /// \brief Provides the type of this NotifyEVChargingSchedule message as a human readable string
     /// \returns the message type as a human readable string

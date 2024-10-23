@@ -28,6 +28,15 @@ void to_json(json& j, const Get15118EVCertificateRequest& k) {
     if (k.customData) {
         j["customData"] = k.customData.value();
     }
+    if (k.maximumContractCertificateChains) {
+        j["maximumContractCertificateChains"] = k.maximumContractCertificateChains.value();
+    }
+    if (k.prioritizedEMAIDs) {
+        j["prioritizedEMAIDs"] = json::array();
+        for (auto val : k.prioritizedEMAIDs.value()) {
+            j["prioritizedEMAIDs"].push_back(val);
+        }
+    }
 }
 
 void from_json(const json& j, Get15118EVCertificateRequest& k) {
@@ -39,6 +48,17 @@ void from_json(const json& j, Get15118EVCertificateRequest& k) {
     // the optional parts of the message
     if (j.contains("customData")) {
         k.customData.emplace(j.at("customData"));
+    }
+    if (j.contains("maximumContractCertificateChains")) {
+        k.maximumContractCertificateChains.emplace(j.at("maximumContractCertificateChains"));
+    }
+    if (j.contains("prioritizedEMAIDs")) {
+        json arr = j.at("prioritizedEMAIDs");
+        std::vector<CiString<255>> vec;
+        for (auto val : arr) {
+            vec.push_back(val);
+        }
+        k.prioritizedEMAIDs.emplace(vec);
     }
 }
 
@@ -66,6 +86,9 @@ void to_json(json& j, const Get15118EVCertificateResponse& k) {
     if (k.statusInfo) {
         j["statusInfo"] = k.statusInfo.value();
     }
+    if (k.remainingContracts) {
+        j["remainingContracts"] = k.remainingContracts.value();
+    }
 }
 
 void from_json(const json& j, Get15118EVCertificateResponse& k) {
@@ -79,6 +102,9 @@ void from_json(const json& j, Get15118EVCertificateResponse& k) {
     }
     if (j.contains("statusInfo")) {
         k.statusInfo.emplace(j.at("statusInfo"));
+    }
+    if (j.contains("remainingContracts")) {
+        k.remainingContracts.emplace(j.at("remainingContracts"));
     }
 }
 

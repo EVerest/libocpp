@@ -23,11 +23,14 @@ struct TransactionEventRequest : public ocpp::Message {
     int32_t seqNo;
     Transaction transactionInfo;
     std::optional<CustomData> customData;
+    std::optional<CostDetails> costDetails;
     std::optional<std::vector<MeterValue>> meterValue;
     std::optional<bool> offline;
     std::optional<int32_t> numberOfPhasesUsed;
-    std::optional<int32_t> cableMaxCurrent;
+    std::optional<float> cableMaxCurrent;
     std::optional<int32_t> reservationId;
+    std::optional<PreconditioningStatusEnum> preconditioningStatus;
+    std::optional<bool> evseSleep;
     std::optional<EVSE> evse;
     std::optional<IdToken> idToken;
 
@@ -52,7 +55,9 @@ struct TransactionEventResponse : public ocpp::Message {
     std::optional<float> totalCost;
     std::optional<int32_t> chargingPriority;
     std::optional<IdTokenInfo> idTokenInfo;
+    std::optional<TransactionLimit> transactionLimit;
     std::optional<MessageContent> updatedPersonalMessage;
+    std::optional<std::vector<MessageContent>> updatedPersonalMessageExtra;
 
     /// \brief Provides the type of this TransactionEventResponse message as a human readable string
     /// \returns the message type as a human readable string

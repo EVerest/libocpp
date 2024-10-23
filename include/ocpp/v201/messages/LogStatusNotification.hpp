@@ -20,6 +20,7 @@ struct LogStatusNotificationRequest : public ocpp::Message {
     UploadLogStatusEnum status;
     std::optional<CustomData> customData;
     std::optional<int32_t> requestId;
+    std::optional<StatusInfo> statusInfo;
 
     /// \brief Provides the type of this LogStatusNotification message as a human readable string
     /// \returns the message type as a human readable string

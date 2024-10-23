@@ -817,7 +817,7 @@ std::optional<std::string> ChargePoint::get_evse_transaction_id(int32_t evse_id)
     return evse.get_transaction()->transactionId.get();
 }
 
-AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std::optional<CiString<5500>>& certificate,
+AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std::optional<CiString<10000>>& certificate,
                                               const std::optional<std::vector<OCSPRequestData>>& ocsp_request_data) {
     // TODO(piet): C01.FR.14
     // TODO(piet): C01.FR.15
@@ -829,14 +829,14 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
     AuthorizeResponse response;
 
     // C03.FR.01 && C05.FR.01: We SHALL NOT send an authorize reqeust for IdTokenType Central
-    if (id_token.type == IdTokenEnum::Central or
+    if (id_token.type == IdTokenEnumStringType::Central or
         !this->device_model->get_optional_value<bool>(ControllerComponentVariables::AuthCtrlrEnabled).value_or(true)) {
         response.idTokenInfo.status = AuthorizationStatusEnum::Accepted;
         return response;
     }
 
     // C07: Authorization using contract certificates
-    if (id_token.type == IdTokenEnum::eMAID) {
+    if (id_token.type == IdTokenEnumStringType::eMAID) {
         // Temporary variable that is set to true to avoid immediate response to allow the local auth list
         // or auth cache to be tried
         bool try_local_auth_list_or_cache = false;
@@ -1937,8 +1937,8 @@ bool ChargePoint::is_evse_reserved_for_other(EvseInterface& evse, const IdToken&
         const ConnectorStatusEnum status =
             evse.get_connector(static_cast<int32_t>(i))->get_effective_connector_status();
         if (status == ConnectorStatusEnum::Reserved) {
-            const std::optional<CiString<36>> groupIdToken =
-                group_id_token.has_value() ? group_id_token.value().idToken : std::optional<CiString<36>>{};
+            const std::optional<CiString<255>> groupIdToken =
+                group_id_token.has_value() ? group_id_token.value().idToken : std::optional<CiString<255>>{};
 
             if (!callbacks.is_reservation_for_token_callback(evse.get_id(), id_token.idToken, groupIdToken)) {
                 return true;
@@ -2121,7 +2121,7 @@ void ChargePoint::notify_report_req(const int request_id, const std::vector<Repo
     }
 }
 
-AuthorizeResponse ChargePoint::authorize_req(const IdToken id_token, const std::optional<CiString<5500>>& certificate,
+AuthorizeResponse ChargePoint::authorize_req(const IdToken id_token, const std::optional<CiString<10000>>& certificate,
                                              const std::optional<std::vector<OCSPRequestData>>& ocsp_request_data) {
     AuthorizeRequest req;
     req.idToken = id_token;
@@ -2251,8 +2251,8 @@ void ChargePoint::meter_values_req(const int32_t evse_id, const std::vector<Mete
 }
 
 void ChargePoint::report_charging_profile_req(const int32_t request_id, const int32_t evse_id,
-                                              const ChargingLimitSourceEnum source,
-                                              const std::vector<ChargingProfile>& profiles, const bool tbc) {
+                                              const CiString<20> source, const std::vector<ChargingProfile>& profiles,
+                                              const bool tbc) {
     ReportChargingProfilesRequest req;
     req.requestId = request_id;
     req.evseId = evse_id;
@@ -2800,7 +2800,7 @@ void ChargePoint::handle_transaction_event_response(const EnhancedMessage<v201::
 
     // C03.FR.0x and C05.FR.01: We SHALL NOT store central information in the Authorization Cache
     // C10.FR.05
-    if (id_token.type != IdTokenEnum::Central and
+    if (id_token.type != IdTokenEnumStringType::Central and
         this->device_model->get_optional_value<bool>(ControllerComponentVariables::AuthCacheCtrlrEnabled)
             .value_or(true)) {
         try {
@@ -3144,7 +3144,7 @@ void ChargePoint::handle_remote_start_transaction_request(Call<RequestStartTrans
                 if (charging_profile.chargingProfilePurpose == ChargingProfilePurposeEnum::TxProfile) {
 
                     const auto add_profile_response = this->smart_charging_handler->validate_and_add_profile(
-                        msg.chargingProfile.value(), evse_id, ChargingLimitSourceEnum::CSO,
+                        msg.chargingProfile.value(), evse_id, ChargingLimitSourceEnumStringType::CSO,
                         AddChargingProfileSource::RequestStartTransactionRequest);
                     if (add_profile_response.status == ChargingProfileStatusEnum::Accepted) {
                         EVLOG_debug << "Accepting SetChargingProfileRequest";
@@ -3444,11 +3444,12 @@ void ChargePoint::handle_get_charging_profiles_req(Call<GetChargingProfilesReque
     }
 
     // There are profiles to report.
-    // Prepare ReportChargingProfileRequest(s). The message defines the properties evseId and chargingLimitSource as
-    // required, so we can not report all profiles in a single ReportChargingProfilesRequest. We need to prepare a
-    // single ReportChargingProfilesRequest for each combination of evseId and chargingLimitSource
-    std::set<int32_t> evse_ids;                // will contain all evse_ids of the profiles
-    std::set<ChargingLimitSourceEnum> sources; // will contain all sources of the profiles
+    // Prepare ReportChargingProfileRequest(s). The message defines the properties evseId and
+    // ChargingLimitSourceEnumStringType as required, so we can not report all profiles in a single
+    // ReportChargingProfilesRequest. We need to prepare a single ReportChargingProfilesRequest for each combination of
+    // evseId and ChargingLimitSourceEnumStringType
+    std::set<int32_t> evse_ids;     // will contain all evse_ids of the profiles
+    std::set<CiString<20>> sources; // will contain all sources of the profiles
 
     // fill evse_ids and sources sets
     for (const auto& profile : profiles_to_report) {

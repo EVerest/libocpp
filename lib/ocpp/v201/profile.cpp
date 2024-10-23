@@ -101,7 +101,7 @@ void period_entry_t::init(const DateTime& in_start, int in_duration, const Charg
     const auto start_tp = std::chrono::floor<seconds>(in_start.to_time_point());
     start = std::move(DateTime(start_tp + seconds(in_period.startPeriod)));
     end = std::move(DateTime(start_tp + seconds(in_duration)));
-    limit = in_period.limit;
+    limit = in_period.limit.value_or(0); // FIXME
     number_phases = in_period.numberPhases;
     stack_level = in_profile.stackLevel;
     charging_rate_unit = in_profile.chargingSchedule.front().chargingRateUnit;
@@ -357,12 +357,13 @@ CompositeSchedule calculate_composite_schedule(std::vector<period_entry_t>& in_c
     const auto now = floor_seconds(in_now);
     const auto end = floor_seconds(in_end);
 
+    // FIXME: designated initializers
     CompositeSchedule composite{
-        .chargingSchedulePeriod = {},
         .evseId = EVSEID_NOT_SET,
         .duration = elapsed_seconds(end, now),
         .scheduleStart = now,
         .chargingRateUnit = selected_unit,
+        .chargingSchedulePeriod = {},
     };
 
     // sort the combined_schedules in stack priority order
@@ -446,19 +447,19 @@ minimize_charging_schedule_period_by_limit(const int current, const ChargingSche
 
     if (prevailing_period.limit == NO_LIMIT_SPECIFIED && candidate_period.limit != NO_LIMIT_SPECIFIED) {
         adjusted_period = candidate_period;
-    } else if (candidate_period.limit != NO_LIMIT_SPECIFIED) {
+    } else if (candidate_period.limit.has_value()) {
         const auto charge_point_max_phases = candidate_period.numberPhases.value_or(DEFAULT_AND_MAX_NUMBER_PHASES);
 
         const auto period_max_phases = prevailing_period.numberPhases.value_or(DEFAULT_AND_MAX_NUMBER_PHASES);
         adjusted_period.numberPhases = std::min(charge_point_max_phases, period_max_phases);
 
         if (current_charging_rate_unit_enum == ChargingRateUnitEnum::A) {
-            if (candidate_period.limit < prevailing_period.limit) {
-                adjusted_period.limit = candidate_period.limit;
+            if (candidate_period.limit.value() < prevailing_period.limit.value_or(DEFAULT_LIMIT_AMPS)) {
+                adjusted_period.limit = candidate_period.limit.value();
             }
         } else {
-            const auto charge_point_limit_per_phase = candidate_period.limit / charge_point_max_phases;
-            const auto period_limit_per_phase = prevailing_period.limit / period_max_phases;
+            const auto charge_point_limit_per_phase = candidate_period.limit.value() / charge_point_max_phases;
+            const auto period_limit_per_phase = prevailing_period.limit.value_or(0) / period_max_phases; // FIXME
 
             adjusted_period.limit = std::floor(std::min(charge_point_limit_per_phase, period_limit_per_phase) *
                                                adjusted_period.numberPhases.value());
@@ -472,13 +473,13 @@ CompositeSchedule calculate_composite_schedule(const CompositeSchedule& charging
                                                const CompositeSchedule& charging_station_max,
                                                const CompositeSchedule& tx_default, const CompositeSchedule& tx) {
 
+    // FIXME: designated initializers
     CompositeSchedule combined{
-        .chargingSchedulePeriod = {},
         .evseId = EVSEID_NOT_SET,
         .duration = tx_default.duration,
         .scheduleStart = tx_default.scheduleStart,
         .chargingRateUnit = tx_default.chargingRateUnit,
-
+        .chargingSchedulePeriod = {},
     };
 
     const float default_limit =

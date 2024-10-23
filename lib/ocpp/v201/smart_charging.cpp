@@ -156,7 +156,7 @@ void SmartChargingHandler::delete_transaction_tx_profiles(const std::string& tra
 }
 
 SetChargingProfileResponse SmartChargingHandler::validate_and_add_profile(ChargingProfile& profile, int32_t evse_id,
-                                                                          ChargingLimitSourceEnum charging_limit_source,
+                                                                          CiString<20> charging_limit_source,
                                                                           AddChargingProfileSource source_of_request) {
     SetChargingProfileResponse response;
     response.status = ChargingProfileStatusEnum::Rejected;
@@ -423,7 +423,7 @@ SmartChargingHandler::validate_request_start_transaction_profile(const ChargingP
 }
 
 SetChargingProfileResponse SmartChargingHandler::add_profile(ChargingProfile& profile, int32_t evse_id,
-                                                             ChargingLimitSourceEnum charging_limit_source) {
+                                                             CiString<20> charging_limit_source) {
     SetChargingProfileResponse response;
     response.status = ChargingProfileStatusEnum::Accepted;
 

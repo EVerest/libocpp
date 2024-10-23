@@ -20,8 +20,8 @@ std::string NotifyEVChargingNeedsRequest::get_type() const {
 void to_json(json& j, const NotifyEVChargingNeedsRequest& k) {
     // the required parts of the message
     j = json{
-        {"chargingNeeds", k.chargingNeeds},
         {"evseId", k.evseId},
+        {"chargingNeeds", k.chargingNeeds},
     };
     // the optional parts of the message
     if (k.customData) {
@@ -30,12 +30,15 @@ void to_json(json& j, const NotifyEVChargingNeedsRequest& k) {
     if (k.maxScheduleTuples) {
         j["maxScheduleTuples"] = k.maxScheduleTuples.value();
     }
+    if (k.timestamp) {
+        j["timestamp"] = k.timestamp.value().to_rfc3339();
+    }
 }
 
 void from_json(const json& j, NotifyEVChargingNeedsRequest& k) {
     // the required parts of the message
-    k.chargingNeeds = j.at("chargingNeeds");
     k.evseId = j.at("evseId");
+    k.chargingNeeds = j.at("chargingNeeds");
 
     // the optional parts of the message
     if (j.contains("customData")) {
@@ -43,6 +46,9 @@ void from_json(const json& j, NotifyEVChargingNeedsRequest& k) {
     }
     if (j.contains("maxScheduleTuples")) {
         k.maxScheduleTuples.emplace(j.at("maxScheduleTuples"));
+    }
+    if (j.contains("timestamp")) {
+        k.timestamp.emplace(ocpp::DateTime(std::string(j.at("timestamp"))));
     }
 }
 
