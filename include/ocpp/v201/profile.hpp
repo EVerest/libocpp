@@ -78,24 +78,22 @@ std::vector<period_entry_t> calculate_profile(const DateTime& now, const DateTim
 CompositeSchedule calculate_composite_schedule(std::vector<period_entry_t>& combined_schedules, const DateTime& now,
                                                const DateTime& end,
                                                std::optional<ChargingRateUnitEnum> charging_rate_unit,
-                                               const int32_t default_number_phases, const int32_t supply_voltage);
+                                               int32_t default_number_phases, int32_t supply_voltage);
 
 /// \brief calculate the combined composite schedule from all of the different types of
 ///        CompositeSchedules
 /// \param charge_point_max the composite schedule for ChargePointMax profiles
 /// \param tx_default the composite schedule for TxDefault profiles
 /// \param tx the composite schedule for Tx profiles
-/// \param default_limit_A default amps limit if no existing period limit applies
-/// \param default_limit_W default watts limit if no existing period limit applies
-/// \param default_number_phases default number of phases if no existing period limit applies
+/// \param default_limits default limits if no existing period limit applies
 /// \param supply_voltage Supply voltage of the grid. This value is only used in case a conversion between smart
 /// charging amp and watt limits is required \return the calculated combined composite schedule \note all composite
 /// schedules must have the same units configured
 CompositeSchedule calculate_composite_schedule(const CompositeSchedule& charging_station_external_constraints,
                                                const CompositeSchedule& charging_station_max,
                                                const CompositeSchedule& tx_default, const CompositeSchedule& tx,
-                                               const int32_t default_limit_A, const int32_t default_limit_W,
-                                               const int32_t default_number_phases, const int32_t supply_voltage);
+                                               const CompositeScheduleDefaultLimits& default_limits,
+                                               int32_t supply_voltage);
 
 } // namespace v201
 } // namespace ocpp

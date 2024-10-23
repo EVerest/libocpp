@@ -448,7 +448,7 @@ std::optional<KeyValue> ChargePointConfiguration::getSupplyVoltageKeyValue() {
 }
 
 void ChargePointConfiguration::setSupplyVoltage(int32_t supply_voltage) {
-    if (this->getSupplyVoltage() != std::nullopt) {
+    if (this->getSupplyVoltage().has_value()) {
         this->config["Internal"]["SupplyVoltage"] = supply_voltage;
         this->setInUserConfig("Internal", "SupplyVoltage", supply_voltage);
     }
@@ -3623,7 +3623,7 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
     }
 
     if (key == "CompositeScheduleDefaultLimitAmps") {
-        if (this->getCompositeScheduleDefaultLimitAmps() == std::nullopt) {
+        if (not this->getCompositeScheduleDefaultLimitAmps().has_value()) {
             return ConfigurationStatus::NotSupported;
         }
         try {
@@ -3639,7 +3639,7 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         }
     }
     if (key == "CompositeScheduleDefaultLimitWatts") {
-        if (this->getCompositeScheduleDefaultLimitWatts() == std::nullopt) {
+        if (not this->getCompositeScheduleDefaultLimitWatts().has_value()) {
             return ConfigurationStatus::NotSupported;
         }
         try {
@@ -3655,7 +3655,7 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         }
     }
     if (key == "CompositeScheduleDefaultNumberPhases") {
-        if (this->getCompositeScheduleDefaultNumberPhases() == std::nullopt) {
+        if (not this->getCompositeScheduleDefaultNumberPhases().has_value()) {
             return ConfigurationStatus::NotSupported;
         }
         try {
@@ -3671,7 +3671,7 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         }
     }
     if (key == "SupplyVoltage") {
-        if (this->getSupplyVoltage() == std::nullopt) {
+        if (not this->getSupplyVoltage().has_value()) {
             return ConfigurationStatus::NotSupported;
         }
         try {

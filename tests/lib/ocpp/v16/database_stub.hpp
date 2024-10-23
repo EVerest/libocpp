@@ -137,7 +137,7 @@ protected:
     std::map<int32_t, std::shared_ptr<Connector>> connectors;
     std::shared_ptr<stubs::DatabaseHandlerTest> database_handler;
     std::unique_ptr<ocpp::common::DatabaseConnectionInterface> database_interface;
-    std::shared_ptr<ChargePointConfiguration> configuration;
+    std::unique_ptr<ChargePointConfiguration> configuration;
 
     void add_connectors(unsigned int n) {
         for (unsigned int i = 0; i <= n; i++) {
@@ -159,7 +159,7 @@ protected:
         std::ifstream ifs(CONFIG_FILE_LOCATION_V16);
         const std::string config_file((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
         configuration =
-            std::make_shared<ChargePointConfiguration>(config_file, CONFIG_DIR_V16, USER_CONFIG_FILE_LOCATION_V16);
+            std::make_unique<ChargePointConfiguration>(config_file, CONFIG_DIR_V16, USER_CONFIG_FILE_LOCATION_V16);
     }
 
     void TearDown() override {

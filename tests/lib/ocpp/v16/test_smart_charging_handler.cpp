@@ -51,7 +51,7 @@ protected:
         std::ifstream ifs(CONFIG_FILE_LOCATION_V16);
         const std::string config_file((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
         this->configuration =
-            std::make_shared<ChargePointConfiguration>(config_file, CONFIG_DIR_V16, USER_CONFIG_FILE_LOCATION_V16);
+            std::make_unique<ChargePointConfiguration>(config_file, CONFIG_DIR_V16, USER_CONFIG_FILE_LOCATION_V16);
     }
 
     void addConnector(int id) {
@@ -209,7 +209,7 @@ protected:
         auto database = std::make_unique<common::DatabaseConnection>(database_path / (chargepoint_id + ".db"));
         std::shared_ptr<DatabaseHandlerMock> database_handler =
             std::make_shared<DatabaseHandlerMock>(std::move(database), init_script_path);
-        auto handler = new SmartChargingHandler(connectors, database_handler, configuration);
+        auto handler = new SmartChargingHandler(connectors, database_handler, *configuration);
         return handler;
     }
 
@@ -225,7 +225,7 @@ protected:
         auto database = std::make_unique<common::DatabaseConnection>(database_path / (chargepoint_id + ".db"));
         std::shared_ptr<DatabaseHandlerMock> database_handler =
             std::make_shared<DatabaseHandlerMock>(std::move(database), init_script_path);
-        auto handler = new SmartChargingHandler(connectors, database_handler, configuration);
+        auto handler = new SmartChargingHandler(connectors, database_handler, *configuration);
 
         return handler;
     }
@@ -245,7 +245,7 @@ protected:
     // Default values used within the tests
     std::map<int32_t, std::shared_ptr<Connector>> connectors;
     std::shared_ptr<DatabaseHandler> database_handler;
-    std::shared_ptr<ChargePointConfiguration> configuration;
+    std::unique_ptr<ChargePointConfiguration> configuration;
 
     const int connector_id = 1;
     bool ignore_no_transaction = true;

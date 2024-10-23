@@ -172,7 +172,7 @@ ChargePointImpl::ChargePointImpl(const std::string& config, const fs::path& shar
     }
 
     this->smart_charging_handler =
-        std::make_unique<SmartChargingHandler>(this->connectors, this->database_handler, this->configuration);
+        std::make_unique<SmartChargingHandler>(this->connectors, this->database_handler, *this->configuration);
     this->load_charging_profiles();
 
     // ISO15118 PnC handlers

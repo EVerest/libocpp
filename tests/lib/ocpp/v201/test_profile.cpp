@@ -16,6 +16,12 @@
 
 #include "smart_charging_test_utils.hpp"
 
+constexpr ocpp::CompositeScheduleDefaultLimits DEFAULT_LIMITS = {
+    48,
+    33120,
+    3
+};
+
 namespace {
 using namespace ocpp::v201;
 using namespace ocpp;
@@ -1074,8 +1080,7 @@ TEST(OCPPTypesTest, CalculateChargingScheduleCombined_Default) {
     };
 
     const CompositeSchedule actual = calculate_composite_schedule(
-        DEFAULT_SCHEDULE, DEFAULT_SCHEDULE, DEFAULT_SCHEDULE, DEFAULT_SCHEDULE, DEFAULT_LIMIT_AMPS, DEFAULT_LIMIT_WATTS,
-        DEFAULT_AND_MAX_NUMBER_PHASES, LOW_VOLTAGE);
+        DEFAULT_SCHEDULE, DEFAULT_SCHEDULE, DEFAULT_SCHEDULE, DEFAULT_SCHEDULE, DEFAULT_LIMITS, LOW_VOLTAGE);
 
     ASSERT_EQ(expected, actual);
 }
@@ -1099,8 +1104,7 @@ TEST(OCPPTypesTest, CalculateChargingScheduleCombined_CombinedTxDefault) {
     };
 
     const CompositeSchedule actual =
-        calculate_composite_schedule(profile, profile, tx_default_schedule, profile, DEFAULT_LIMIT_AMPS,
-                                     DEFAULT_LIMIT_WATTS, DEFAULT_AND_MAX_NUMBER_PHASES, LOW_VOLTAGE);
+        calculate_composite_schedule(profile, profile, tx_default_schedule, profile, DEFAULT_LIMITS, LOW_VOLTAGE);
 
     ASSERT_EQ(expected, actual);
 }
@@ -1132,8 +1136,7 @@ TEST(OCPPTypesTest, CalculateChargingScheduleCombined_CombinedTxDefaultTx) {
     };
 
     const CompositeSchedule actual = calculate_composite_schedule(
-        DEFAULT_SCHEDULE, charging_station_max, tx_default_schedule, tx_schedule, DEFAULT_LIMIT_AMPS,
-        DEFAULT_LIMIT_WATTS, DEFAULT_AND_MAX_NUMBER_PHASES, LOW_VOLTAGE);
+        DEFAULT_SCHEDULE, charging_station_max, tx_default_schedule, tx_schedule, DEFAULT_LIMITS, LOW_VOLTAGE);
 
     ASSERT_EQ(expected, actual);
 }
@@ -1177,8 +1180,7 @@ TEST(OCPPTypesTest, CalculateChargingScheduleCombined_CombinedOverlapTxAndTxDefa
     };
 
     const CompositeSchedule actual = calculate_composite_schedule(
-        DEFAULT_SCHEDULE, charging_station_max, tx_default_schedule, tx_schedule, DEFAULT_LIMIT_AMPS,
-        DEFAULT_LIMIT_WATTS, DEFAULT_AND_MAX_NUMBER_PHASES, LOW_VOLTAGE);
+        DEFAULT_SCHEDULE, charging_station_max, tx_default_schedule, tx_schedule, DEFAULT_LIMITS, LOW_VOLTAGE);
 
     ASSERT_EQ(expected, actual);
 }
@@ -1226,8 +1228,7 @@ TEST(OCPPTypesTest, CalculateChargingScheduleCombined_CombinedOverlapTxTxDefault
     };
 
     const CompositeSchedule actual = calculate_composite_schedule(
-        DEFAULT_SCHEDULE, charging_station_max, tx_default_schedule, tx_schedule, DEFAULT_LIMIT_AMPS,
-        DEFAULT_LIMIT_WATTS, DEFAULT_AND_MAX_NUMBER_PHASES, LOW_VOLTAGE);
+        DEFAULT_SCHEDULE, charging_station_max, tx_default_schedule, tx_schedule, DEFAULT_LIMITS, LOW_VOLTAGE);
 
     ASSERT_EQ(expected, actual);
 }
