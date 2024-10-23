@@ -75,7 +75,14 @@ ChargePointImpl::ChargePointImpl(const std::string& config, const fs::path& shar
             detailed_log_to_console, log_to_file, log_to_html, log_security, session_logging, nullptr,
             ocpp::LogRotationConfig(this->configuration->getLogRotationDateSuffix(),
                                     this->configuration->getLogRotationMaximumFileSize(),
-                                    this->configuration->getLogRotationMaximumFileCount()));
+                                    this->configuration->getLogRotationMaximumFileCount()),
+            [this](ocpp::LogRotationStatus status) {
+                if (status == ocpp::LogRotationStatus::RotatedWithDeletion) {
+                    this->securityEventNotification(
+                        CiString<50>(ocpp::security_events::SECURITYLOGWASCLEARED),
+                        CiString<255>("Security log was rotated and an old log was deleted in the process"), true);
+                }
+            });
     } else {
         this->logging = std::make_shared<ocpp::MessageLogging>(
             this->configuration->getLogMessages(), this->message_log_path, DateTime().to_rfc3339(), log_to_console,
@@ -164,9 +171,8 @@ ChargePointImpl::ChargePointImpl(const std::string& config, const fs::path& shar
         this->connectors.insert(std::make_pair(id, std::make_shared<Connector>(id)));
     }
 
-    this->smart_charging_handler = std::make_unique<SmartChargingHandler>(
-        this->connectors, this->database_handler,
-        this->configuration->getAllowChargingProfileWithoutStartSchedule().value_or(false));
+    this->smart_charging_handler =
+        std::make_unique<SmartChargingHandler>(this->connectors, this->database_handler, *this->configuration);
     this->load_charging_profiles();
 
     // ISO15118 PnC handlers
@@ -305,6 +311,12 @@ void ChargePointImpl::init_websocket() {
     this->websocket->register_closed_callback([this](const WebsocketCloseReason reason) {
         if (this->switch_security_profile_callback != nullptr) {
             this->switch_security_profile_callback();
+        }
+    });
+    this->websocket->register_connection_failed_callback([this](const ocpp::ConnectionFailedReason reason) {
+        if (reason == ocpp::ConnectionFailedReason::FailedToAuthenticateAtCsms) {
+            this->securityEventNotification(CiString<50>(ocpp::security_events::FAILEDTOAUTHENTICATEATCSMS),
+                                            std::nullopt, true);
         }
     });
 
@@ -1230,6 +1242,9 @@ void ChargePointImpl::message_callback(const std::string& message) {
     EnhancedMessage<v16::MessageType> enhanced_message;
     try {
         enhanced_message = this->message_queue->receive(message);
+    } catch (const TimePointParseException& e) {
+        EVLOG_error << "Exception during handling of message: " << e.what();
+        this->send(CallError(enhanced_message.uniqueId, "FormationViolation", e.what(), json({})));
     } catch (const json::exception& e) {
         EVLOG_error << "JSON exception during reception of message: " << e.what();
         this->send(CallError(MessageId("-1"), "GenericError", e.what(), json({})));
@@ -3334,7 +3349,8 @@ IdTagInfo ChargePointImpl::authorize_id_token(CiString<20> idTag, const bool aut
     return id_tag_info;
 }
 
-std::map<int32_t, ChargingSchedule> ChargePointImpl::get_all_composite_charging_schedules(const int32_t duration_s) {
+std::map<int32_t, ChargingSchedule> ChargePointImpl::get_all_composite_charging_schedules(const int32_t duration_s,
+                                                                                          const ChargingRateUnit unit) {
 
     std::map<int32_t, ChargingSchedule> charging_schedules;
 
@@ -3346,7 +3362,7 @@ std::map<int32_t, ChargingSchedule> ChargePointImpl::get_all_composite_charging_
         const auto valid_profiles =
             this->smart_charging_handler->get_valid_profiles(start_time, end_time, connector_id);
         const auto composite_schedule = this->smart_charging_handler->calculate_composite_schedule(
-            valid_profiles, start_time, end_time, connector_id, ChargingRateUnit::A);
+            valid_profiles, start_time, end_time, connector_id, unit);
         charging_schedules[connector_id] = composite_schedule;
     }
 
@@ -3354,7 +3370,7 @@ std::map<int32_t, ChargingSchedule> ChargePointImpl::get_all_composite_charging_
 }
 
 std::map<int32_t, EnhancedChargingSchedule>
-ChargePointImpl::get_all_enhanced_composite_charging_schedules(const int32_t duration_s) {
+ChargePointImpl::get_all_enhanced_composite_charging_schedules(const int32_t duration_s, const ChargingRateUnit unit) {
 
     std::map<int32_t, EnhancedChargingSchedule> charging_schedules;
 
@@ -3366,7 +3382,7 @@ ChargePointImpl::get_all_enhanced_composite_charging_schedules(const int32_t dur
         const auto valid_profiles =
             this->smart_charging_handler->get_valid_profiles(start_time, end_time, connector_id);
         const auto composite_schedule = this->smart_charging_handler->calculate_enhanced_composite_schedule(
-            valid_profiles, start_time, end_time, connector_id, ChargingRateUnit::A);
+            valid_profiles, start_time, end_time, connector_id, unit);
         charging_schedules[connector_id] = composite_schedule;
     }
 
@@ -3916,7 +3932,7 @@ std::optional<DataTransferResponse> ChargePointImpl::data_transfer(const CiStrin
     ocpp::Call<DataTransferRequest> call(req, this->message_queue->createMessageId());
     auto data_transfer_future = this->send_async<DataTransferRequest>(call);
 
-    if (!this->websocket->is_connected()) {
+    if (this->websocket == nullptr or !this->websocket->is_connected()) {
         EVLOG_warning << "Attempting to send DataTransfer.req but charging station is offline";
         return std::nullopt;
     }

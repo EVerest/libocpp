@@ -9,6 +9,7 @@
 #include <optional>
 
 #include <ocpp/common/types.hpp>
+#include <ocpp/v201/constants.hpp>
 #include <ocpp/v201/ocpp_enums.hpp>
 #include <ocpp/v201/ocpp_types.hpp>
 
@@ -42,7 +43,7 @@ std::ostream& operator<<(std::ostream& os, const Get15118EVCertificateRequest& k
 /// \brief Contains a OCPP Get15118EVCertificateResponse message
 struct Get15118EVCertificateResponse : public ocpp::Message {
     Iso15118EVCertificateStatusEnum status;
-    CiString<17000> exiResponse;
+    CiString<ISO15118_GET_EV_CERTIFICATE_EXI_RESPONSE_SIZE> exiResponse;
     std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
     std::optional<int32_t> remainingContracts;
