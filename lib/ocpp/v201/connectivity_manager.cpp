@@ -139,20 +139,14 @@ bool ConnectivityManager::send_to_websocket(const std::string& message) {
     return this->websocket->send(message);
 }
 
-void ConnectivityManager::on_network_disconnected(const std::optional<int32_t> configuration_slot) {
-
-    if (!configuration_slot.has_value()) {
-        EVLOG_warning << "Network disconnected. Not clear which network is disconnected: configuration slot is empty";
-        return;
-    }
-
+void ConnectivityManager::on_network_disconnected(int32_t configuration_slot) {
     const int actual_configuration_slot = get_active_network_configuration_slot();
     std::optional<NetworkConnectionProfile> network_connection_profile =
         this->get_network_connection_profile(actual_configuration_slot);
 
     if (!network_connection_profile.has_value()) {
         EVLOG_warning << "Network disconnected. No network connection profile configured";
-    } else if (configuration_slot.has_value() and (configuration_slot.value() == actual_configuration_slot)) {
+    } else if (configuration_slot == actual_configuration_slot) {
         // Since there is no connection anymore: disconnect the websocket, the manager will try to connect with the next
         // available network connection profile as we enable reconnects.
         this->disconnect_websocket(ocpp::WebsocketCloseReason::GoingAway);
@@ -160,12 +154,7 @@ void ConnectivityManager::on_network_disconnected(const std::optional<int32_t> c
     }
 }
 
-void ConnectivityManager::on_network_disconnected(const std::optional<OCPPInterfaceEnum> ocpp_interface) {
-
-    if (!ocpp_interface.has_value()) {
-        EVLOG_warning << "Network disconnected. Not clear which network is disconnected: ocpp interface is empty";
-        return;
-    }
+void ConnectivityManager::on_network_disconnected(OCPPInterfaceEnum ocpp_interface) {
 
     const int actual_configuration_slot = get_active_network_configuration_slot();
     std::optional<NetworkConnectionProfile> network_connection_profile =
@@ -173,8 +162,7 @@ void ConnectivityManager::on_network_disconnected(const std::optional<OCPPInterf
 
     if (!network_connection_profile.has_value()) {
         EVLOG_warning << "Network disconnected. No network connection profile configured";
-    } else if (ocpp_interface.has_value() and
-               (ocpp_interface.value() == network_connection_profile.value().ocppInterface)) {
+    } else if (ocpp_interface == network_connection_profile.value().ocppInterface) {
         // Since there is no connection anymore: disconnect the websocket, the manager will try to connect with the next
         // available network connection profile as we enable reconnects.
         this->disconnect_websocket(ocpp::WebsocketCloseReason::GoingAway);

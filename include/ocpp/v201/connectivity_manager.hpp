@@ -137,7 +137,7 @@ public:
     ///
     /// \param configuration_slot   The slot of the network connection profile that is disconnected.
     ///
-    void on_network_disconnected(const std::optional<int32_t> configuration_slot);
+    void on_network_disconnected(int32_t configuration_slot);
 
     ///
     /// \brief Can be called when a network is disconnected, for example when an ethernet cable is removed.
@@ -147,7 +147,7 @@ public:
     ///
     /// \param ocpp_interface       The interface that is disconnected.
     ///
-    void on_network_disconnected(const std::optional<OCPPInterfaceEnum> ocpp_interface);
+    void on_network_disconnected(OCPPInterfaceEnum ocpp_interface);
 
     /// \brief Switch to a specific network connection profile given the configuration slot.
     ///
