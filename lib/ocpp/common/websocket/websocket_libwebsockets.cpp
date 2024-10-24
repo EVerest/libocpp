@@ -232,7 +232,7 @@ static bool verify_csms_cn(const std::string& hostname, bool preverified, const 
 }
 
 WebsocketLibwebsockets::WebsocketLibwebsockets(const WebsocketConnectionOptions& connection_options,
-                                 std::shared_ptr<EvseSecurity> evse_security) :
+                                               std::shared_ptr<EvseSecurity> evse_security) :
     WebsocketBase(), evse_security(evse_security), stop_deferred_handler(false) {
 
     set_connection_options(connection_options);
@@ -318,7 +318,7 @@ static const struct lws_protocols protocols[] = {{local_protocol_name, callback_
                                                  LWS_PROTOCOL_LIST_TERM};
 
 bool WebsocketLibwebsockets::tls_init(SSL_CTX* ctx, const std::string& path_chain, const std::string& path_key,
-                               bool custom_key, std::optional<std::string>& password) {
+                                      bool custom_key, std::optional<std::string>& password) {
     auto rc = SSL_CTX_set_cipher_list(ctx, this->connection_options.supported_ciphers_12.c_str());
     if (rc != 1) {
         EVLOG_debug << "SSL_CTX_set_cipher_list return value: " << rc;

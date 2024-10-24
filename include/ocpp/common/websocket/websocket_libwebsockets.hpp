@@ -25,7 +25,7 @@ class WebsocketLibwebsockets final : public WebsocketBase {
 public:
     /// \brief Creates a new Websocket object with the providede \p connection_options
     explicit WebsocketLibwebsockets(const WebsocketConnectionOptions& connection_options,
-                             std::shared_ptr<EvseSecurity> evse_security);
+                                    std::shared_ptr<EvseSecurity> evse_security);
 
     ~WebsocketLibwebsockets();
 
