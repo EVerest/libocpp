@@ -16,7 +16,7 @@ namespace ocpp {
 Websocket::Websocket(const WebsocketConnectionOptions& connection_options, std::shared_ptr<EvseSecurity> evse_security,
                      std::shared_ptr<MessageLogging> logging) :
     logging(logging) {
-    this->websocket = std::make_unique<WebsocketTlsTPM>(connection_options, evse_security);
+    this->websocket = std::make_unique<WebsocketLibwebsockets>(connection_options, evse_security);
 }
 
 Websocket::~Websocket() {
