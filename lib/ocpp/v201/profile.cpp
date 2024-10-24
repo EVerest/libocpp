@@ -570,7 +570,8 @@ CompositeSchedule calculate_composite_schedule(const CompositeSchedule& charging
             period.startPeriod = current_period;
 
             // check this new period is a change from the previous one
-            if ((period.limit != last.limit) || (period.numberPhases.value() != last.numberPhases.value())) {
+            if ((period.limit != last.limit) ||
+                (!last.numberPhases.has_value() || (period.numberPhases.value() != last.numberPhases.value()))) {
                 combined.chargingSchedulePeriod.push_back(period);
             }
             current_period = duration;
