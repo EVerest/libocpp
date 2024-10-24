@@ -86,6 +86,8 @@ protected:
             start_schedule,
             duration,
             min_charging_rate,
+            std::nullopt,
+            std::nullopt,
             sales_tariff,
         };
     }
@@ -107,6 +109,8 @@ protected:
             start_schedule,
             duration,
             min_charging_rate,
+            std::nullopt,
+            std::nullopt,
             sales_tariff,
         };
     }
@@ -212,6 +216,10 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_Foundati
     const DateTime start_time = ocpp::DateTime("2024-01-17T00:00:00");
     const DateTime end_time = ocpp::DateTime("2024-01-18T00:00:00");
     CompositeSchedule expected = {
+        .evseId = DEFAULT_EVSE_ID,
+        .duration = 86400,
+        .scheduleStart = start_time,
+        .chargingRateUnit = ChargingRateUnitEnum::W,
         .chargingSchedulePeriod = {{
                                        .startPeriod = 0,
                                        .limit = 1.0,
@@ -332,10 +340,6 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_Foundati
                                        .limit = 24.0,
                                        .numberPhases = 1,
                                    }},
-        .evseId = DEFAULT_EVSE_ID,
-        .duration = 86400,
-        .scheduleStart = start_time,
-        .chargingRateUnit = ChargingRateUnitEnum::W,
     };
 
     CompositeSchedule actual =
@@ -354,15 +358,15 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_LayeredT
         const DateTime end_time = ocpp::DateTime("2024-01-18T18:22:00");
 
         CompositeSchedule expected = {
+            .evseId = DEFAULT_EVSE_ID,
+            .duration = 1080,
+            .scheduleStart = start_time,
+            .chargingRateUnit = ChargingRateUnitEnum::W,
             .chargingSchedulePeriod = {{
                 .startPeriod = 0,
                 .limit = 19.0,
                 .numberPhases = 1,
             }},
-            .evseId = DEFAULT_EVSE_ID,
-            .duration = 1080,
-            .scheduleStart = start_time,
-            .chargingRateUnit = ChargingRateUnitEnum::W,
         };
 
         CompositeSchedule actual = handler.calculate_composite_schedule(profiles, start_time, end_time, DEFAULT_EVSE_ID,
@@ -377,6 +381,10 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_LayeredT
         const DateTime end_time = ocpp::DateTime("2024-01-17T18:33:00");
 
         CompositeSchedule expected = {
+            .evseId = DEFAULT_EVSE_ID,
+            .duration = 1740,
+            .scheduleStart = start_time,
+            .chargingRateUnit = ChargingRateUnitEnum::W,
             .chargingSchedulePeriod = {{
                                            .startPeriod = 0,
                                            .limit = 2000.0,
@@ -387,10 +395,6 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_LayeredT
                                            .limit = 19.0,
                                            .numberPhases = 1,
                                        }},
-            .evseId = DEFAULT_EVSE_ID,
-            .duration = 1740,
-            .scheduleStart = start_time,
-            .chargingRateUnit = ChargingRateUnitEnum::W,
         };
 
         CompositeSchedule actual = handler.calculate_composite_schedule(profiles, start_time, end_time, DEFAULT_EVSE_ID,
@@ -405,6 +409,10 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_LayeredT
         const DateTime end_time = ocpp::DateTime("2024-01-17T19:04:00");
 
         CompositeSchedule expected = {
+            .evseId = DEFAULT_EVSE_ID,
+            .duration = 3600,
+            .scheduleStart = start_time,
+            .chargingRateUnit = ChargingRateUnitEnum::W,
             .chargingSchedulePeriod = {{
                                            .startPeriod = 0,
                                            .limit = 2000.0,
@@ -420,10 +428,6 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_LayeredT
                                            .limit = 20.0,
                                            .numberPhases = 1,
                                        }},
-            .evseId = DEFAULT_EVSE_ID,
-            .duration = 3600,
-            .scheduleStart = start_time,
-            .chargingRateUnit = ChargingRateUnitEnum::W,
         };
 
         CompositeSchedule actual = handler.calculate_composite_schedule(profiles, start_time, end_time, DEFAULT_EVSE_ID,
@@ -441,15 +445,15 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_LayeredR
     const DateTime end_time = ocpp::DateTime("2024-02-17T18:05:00");
 
     CompositeSchedule expected = {
+        .evseId = DEFAULT_EVSE_ID,
+        .duration = 60,
+        .scheduleStart = start_time,
+        .chargingRateUnit = ChargingRateUnitEnum::W,
         .chargingSchedulePeriod = {{
             .startPeriod = 0,
             .limit = 2000.0,
             .numberPhases = 1,
         }},
-        .evseId = DEFAULT_EVSE_ID,
-        .duration = 60,
-        .scheduleStart = start_time,
-        .chargingRateUnit = ChargingRateUnitEnum::W,
     };
 
     CompositeSchedule actual =
@@ -464,6 +468,10 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_LayeredT
     const DateTime start_time = ocpp::DateTime("2024-01-17T18:00:00");
     const DateTime end_time = ocpp::DateTime("2024-01-17T18:05:00");
     CompositeSchedule expected = {
+        .evseId = DEFAULT_EVSE_ID,
+        .duration = 300,
+        .scheduleStart = start_time,
+        .chargingRateUnit = ChargingRateUnitEnum::W,
         .chargingSchedulePeriod = {{
                                        .startPeriod = 0,
                                        .limit = DEFAULT_LIMIT_WATTS,
@@ -475,10 +483,6 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_LayeredT
                                            profiles.at(0).chargingSchedule.front().chargingSchedulePeriod.front().limit,
                                        .numberPhases = 1,
                                    }},
-        .evseId = DEFAULT_EVSE_ID,
-        .duration = 300,
-        .scheduleStart = start_time,
-        .chargingRateUnit = ChargingRateUnitEnum::W,
     };
 
     CompositeSchedule actual =
@@ -493,6 +497,10 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_LayeredR
     const DateTime start_time = ocpp::DateTime("2024-02-19T18:00:00");
     const DateTime end_time = ocpp::DateTime("2024-02-19T19:04:00");
     CompositeSchedule expected = {
+        .evseId = DEFAULT_EVSE_ID,
+        .duration = 3840,
+        .scheduleStart = start_time,
+        .chargingRateUnit = ChargingRateUnitEnum::W,
         .chargingSchedulePeriod =
             {{
                  .startPeriod = 0,
@@ -514,10 +522,6 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_LayeredR
                  .limit = 20.0,
                  .numberPhases = 1,
              }},
-        .evseId = DEFAULT_EVSE_ID,
-        .duration = 3840,
-        .scheduleStart = start_time,
-        .chargingRateUnit = ChargingRateUnitEnum::W,
     };
 
     CompositeSchedule actual =
@@ -534,6 +538,10 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_Validate
     const DateTime end_time = ocpp::DateTime("2024-01-18T06:00:00");
     std::vector<ChargingProfile> profiles = SmartChargingTestUtils::get_baseline_profile_vector();
     CompositeSchedule expected = {
+        .evseId = DEFAULT_EVSE_ID,
+        .duration = 43140,
+        .scheduleStart = start_time,
+        .chargingRateUnit = ChargingRateUnitEnum::W,
         .chargingSchedulePeriod = {{
                                        .startPeriod = 0,
                                        .limit = 2000.0,
@@ -549,10 +557,6 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_Validate
                                        .limit = 6000.0,
                                        .numberPhases = 3,
                                    }},
-        .evseId = DEFAULT_EVSE_ID,
-        .duration = 43140,
-        .scheduleStart = start_time,
-        .chargingRateUnit = ChargingRateUnitEnum::W,
     };
 
     CompositeSchedule actual =
@@ -573,15 +577,15 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_Relative
     auto transaction = std::move(this->evse_manager->get_evse(DEFAULT_EVSE_ID).get_transaction());
 
     CompositeSchedule expected = {
+        .evseId = DEFAULT_EVSE_ID,
+        .duration = 3600,
+        .scheduleStart = start_time,
+        .chargingRateUnit = ChargingRateUnitEnum::W,
         .chargingSchedulePeriod = {{
             .startPeriod = 0,
             .limit = 2000.0,
             .numberPhases = 1,
         }},
-        .evseId = DEFAULT_EVSE_ID,
-        .duration = 3600,
-        .scheduleStart = start_time,
-        .chargingRateUnit = ChargingRateUnitEnum::W,
     };
 
     CompositeSchedule actual =
@@ -602,6 +606,10 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_Relative
     const DateTime end_time = ocpp::DateTime("2024-05-17T06:01:00");
 
     CompositeSchedule expected = {
+        .evseId = DEFAULT_EVSE_ID,
+        .duration = 3660,
+        .scheduleStart = start_time,
+        .chargingRateUnit = ChargingRateUnitEnum::W,
         .chargingSchedulePeriod = {{
                                        .startPeriod = 0,
                                        .limit = 2000.0,
@@ -612,10 +620,6 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_Relative
                                        .limit = 7.0,
                                        .numberPhases = 1,
                                    }},
-        .evseId = DEFAULT_EVSE_ID,
-        .duration = 3660,
-        .scheduleStart = start_time,
-        .chargingRateUnit = ChargingRateUnitEnum::W,
     };
 
     CompositeSchedule actual =
@@ -634,6 +638,10 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_DemoCase
     const DateTime end_time = ocpp::DateTime("2024-01-18T06:00:00");
 
     CompositeSchedule expected = {
+        .evseId = DEFAULT_EVSE_ID,
+        .duration = 43200,
+        .scheduleStart = start_time,
+        .chargingRateUnit = ChargingRateUnitEnum::W,
         .chargingSchedulePeriod = {{
                                        .startPeriod = 0,
                                        .limit = 2000.0,
@@ -649,10 +657,6 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_DemoCase
                                        .limit = 6000.0,
                                        .numberPhases = 1,
                                    }},
-        .evseId = DEFAULT_EVSE_ID,
-        .duration = 43200,
-        .scheduleStart = start_time,
-        .chargingRateUnit = ChargingRateUnitEnum::W,
     };
 
     CompositeSchedule actual =
@@ -671,6 +675,10 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_DemoCase
     const DateTime end_time = ocpp::DateTime("2024-01-20T06:00:00");
 
     CompositeSchedule expected = {
+        .evseId = DEFAULT_EVSE_ID,
+        .duration = 43200,
+        .scheduleStart = start_time,
+        .chargingRateUnit = ChargingRateUnitEnum::W,
         .chargingSchedulePeriod = {{
                                        .startPeriod = 0,
                                        .limit = 11000.0,
@@ -681,10 +689,6 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_DemoCase
                                        .limit = 6000.0,
                                        .numberPhases = 1,
                                    }},
-        .evseId = DEFAULT_EVSE_ID,
-        .duration = 43200,
-        .scheduleStart = start_time,
-        .chargingRateUnit = ChargingRateUnitEnum::W,
     };
 
     CompositeSchedule actual =
@@ -703,6 +707,10 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_MaxOverr
     const DateTime end_time = ocpp::DateTime("2024-01-17T02:00:00");
 
     CompositeSchedule expected = {
+        .evseId = DEFAULT_EVSE_ID,
+        .duration = 7200,
+        .scheduleStart = start_time,
+        .chargingRateUnit = ChargingRateUnitEnum::W,
         .chargingSchedulePeriod = {{
                                        .startPeriod = 0,
                                        .limit = 10.0,
@@ -713,10 +721,6 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_MaxOverr
                                        .limit = 20.0,
                                        .numberPhases = 1,
                                    }},
-        .evseId = DEFAULT_EVSE_ID,
-        .duration = 7200,
-        .scheduleStart = start_time,
-        .chargingRateUnit = ChargingRateUnitEnum::W,
     };
 
     CompositeSchedule actual =
@@ -732,6 +736,10 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_MaxOverr
     const DateTime end_time = ocpp::DateTime("2024-01-18T00:00:00");
 
     CompositeSchedule expected = {
+        .evseId = DEFAULT_EVSE_ID,
+        .duration = 7200,
+        .scheduleStart = start_time,
+        .chargingRateUnit = ChargingRateUnitEnum::W,
         .chargingSchedulePeriod = {{
                                        .startPeriod = 0,
                                        .limit = 230.0,
@@ -742,10 +750,6 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_MaxOverr
                                        .limit = 10.0,
                                        .numberPhases = 1,
                                    }},
-        .evseId = DEFAULT_EVSE_ID,
-        .duration = 7200,
-        .scheduleStart = start_time,
-        .chargingRateUnit = ChargingRateUnitEnum::W,
     };
 
     CompositeSchedule actual =
@@ -761,6 +765,10 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_External
     const DateTime end_time = ocpp::DateTime("2024-01-17T02:00:00");
 
     CompositeSchedule expected = {
+        .evseId = DEFAULT_EVSE_ID,
+        .duration = 7200,
+        .scheduleStart = start_time,
+        .chargingRateUnit = ChargingRateUnitEnum::W,
         .chargingSchedulePeriod = {{
                                        .startPeriod = 0,
                                        .limit = 10.0,
@@ -771,10 +779,6 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_External
                                        .limit = 20.0,
                                        .numberPhases = 1,
                                    }},
-        .evseId = DEFAULT_EVSE_ID,
-        .duration = 7200,
-        .scheduleStart = start_time,
-        .chargingRateUnit = ChargingRateUnitEnum::W,
     };
 
     CompositeSchedule actual =
@@ -790,6 +794,10 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_External
     const DateTime end_time = ocpp::DateTime("2024-01-18T00:00:00");
 
     CompositeSchedule expected = {
+        .evseId = DEFAULT_EVSE_ID,
+        .duration = 7200,
+        .scheduleStart = start_time,
+        .chargingRateUnit = ChargingRateUnitEnum::W,
         .chargingSchedulePeriod = {{
                                        .startPeriod = 0,
                                        .limit = 230.0,
@@ -800,10 +808,6 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_External
                                        .limit = 10.0,
                                        .numberPhases = 1,
                                    }},
-        .evseId = DEFAULT_EVSE_ID,
-        .duration = 7200,
-        .scheduleStart = start_time,
-        .chargingRateUnit = ChargingRateUnitEnum::W,
     };
 
     CompositeSchedule actual =
@@ -819,6 +823,10 @@ TEST_F(CompositeScheduleTestFixtureV201, OCTT_TC_K_41_CS) {
     const DateTime end_time = ocpp::DateTime("2024-08-21T12:31:20");
 
     CompositeSchedule expected = {
+        .evseId = DEFAULT_EVSE_ID,
+        .duration = 400,
+        .scheduleStart = start_time,
+        .chargingRateUnit = ChargingRateUnitEnum::A,
         .chargingSchedulePeriod = {{
                                        .startPeriod = 0,
                                        .limit = 8.0,
@@ -829,10 +837,6 @@ TEST_F(CompositeScheduleTestFixtureV201, OCTT_TC_K_41_CS) {
                                    {.startPeriod = 236, .limit = 10.0, .numberPhases = 3},
                                    {.startPeriod = 260, .limit = 8.0, .numberPhases = 3},
                                    {.startPeriod = 300, .limit = 10.0, .numberPhases = 3}},
-        .evseId = DEFAULT_EVSE_ID,
-        .duration = 400,
-        .scheduleStart = start_time,
-        .chargingRateUnit = ChargingRateUnitEnum::A,
     };
 
     CompositeSchedule actual =

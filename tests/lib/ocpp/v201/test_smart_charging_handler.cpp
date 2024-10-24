@@ -86,6 +86,8 @@ protected:
             start_schedule,
             duration,
             min_charging_rate,
+            std::nullopt,
+            std::nullopt,
             sales_tariff,
         };
     }
@@ -107,6 +109,8 @@ protected:
             start_schedule,
             duration,
             min_charging_rate,
+            std::nullopt,
+            std::nullopt,
             sales_tariff,
         };
     }
@@ -164,7 +168,7 @@ protected:
     }
 
     ChargingProfileCriterion
-    create_charging_profile_criteria(std::optional < std::vector<ocpp::CiString<20>> sources = std::nullopt,
+    create_charging_profile_criteria(std::optional<std::vector<ocpp::CiString<20>>> sources = std::nullopt,
                                      std::optional<std::vector<int32_t>> ids = std::nullopt,
                                      std::optional<ChargingProfilePurposeEnum> purpose = std::nullopt,
                                      std::optional<int32_t> stack_level = std::nullopt) {
@@ -1458,8 +1462,8 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K09_GetChargingProfiles_EvseIdAndSou
     auto profiles = database_handler->get_all_charging_profiles();
     EXPECT_THAT(profiles, testing::SizeIs(1));
 
-    std::vector<ChargingLimitSource> requested_sources_cso{ChargingLimitSourceEnumStringType::CSO};
-    std::vector<ChargingLimitSource> requested_sources_ems{ChargingLimitSourceEnumStringType::EMS};
+    std::vector<CiString<20>> requested_sources_cso{ChargingLimitSourceEnumStringType::CSO};
+    std::vector<CiString<20>> requested_sources_ems{ChargingLimitSourceEnumStringType::EMS};
 
     auto reported_profiles = handler.get_reported_profiles(create_get_charging_profile_request(
         DEFAULT_REQUEST_ID, create_charging_profile_criteria(requested_sources_cso), DEFAULT_EVSE_ID));

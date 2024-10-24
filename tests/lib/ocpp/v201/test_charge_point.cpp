@@ -102,6 +102,8 @@ public:
             start_schedule,
             duration,
             min_charging_rate,
+            std::nullopt,
+            std::nullopt,
             sales_tariff,
         };
     }
