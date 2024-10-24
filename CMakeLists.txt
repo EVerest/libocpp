@@ -16,7 +16,7 @@ option(BUILD_TESTING "Build unit tests, used if standalone project" OFF)
 option(CMAKE_RUN_CLANG_TIDY "Run clang-tidy" OFF)
 option(LIBOCPP16_BUILD_EXAMPLES "Build charge_point binary" OFF)
 option(OCPP_INSTALL "Install the library (shared data might be installed anyway)" ${EVC_MAIN_PROJECT})
-option(LIBOCPP_ENABLE_DEPRECATED_WEBSOCKETPP "[Deprecated] Websocket++ usage has been deprecated" OFF)
+option(LIBOCPP_ENABLE_DEPRECATED_WEBSOCKETPP "Websocket++ has been removed from the project" OFF)
 
 option(LIBOCPP_ENABLE_V16 "Enable OCPP 1.6 in the ocpp library" ON)
 option(LIBOCPP_ENABLE_V201 "Enable OCPP 2.0.1 in the ocpp library" ON)
@@ -26,7 +26,7 @@ if((NOT LIBOCPP_ENABLE_V16) AND (NOT LIBOCPP_ENABLE_V201))
 endif()
 
 if(LIBOCPP_ENABLE_DEPRECATED_WEBSOCKETPP)
-    message(FATAL_ERROR "Websocket++ has been deprecated")
+    message(FATAL_ERROR "Websocket++ has been removed")
 endif()
 
 if((${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME} OR ${PROJECT_NAME}_BUILD_TESTING) AND BUILD_TESTING)

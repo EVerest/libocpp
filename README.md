@@ -553,7 +553,7 @@ In order to use the TPM keys, it is mandatory to use the default libwebsocket im
 
 ## Support for websocket++
 
-The old websocket++ implementation has been deprecated. Enabling websocket++ will not start compilation.
+The old websocket++ implementation has been removed. Enabling websocket++ will prevent compilation from starting.
 
 ### Support for iface
 
