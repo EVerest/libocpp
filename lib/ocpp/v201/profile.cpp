@@ -102,10 +102,15 @@ void period_entry_t::init(const DateTime& in_start, int in_duration, const Charg
     const auto start_tp = std::chrono::floor<seconds>(in_start.to_time_point());
     start = std::move(DateTime(start_tp + seconds(in_period.startPeriod)));
     end = std::move(DateTime(start_tp + seconds(in_duration)));
-    limit = in_period.limit.value_or(0); // FIXME
     number_phases = in_period.numberPhases;
     stack_level = in_profile.stackLevel;
     charging_rate_unit = in_profile.chargingSchedule.front().chargingRateUnit;
+    // FIXME: are default limits correct here or does period_entry_t need an optional limit?
+    if (charging_rate_unit == ChargingRateUnitEnum::A) {
+        limit = in_period.limit.value_or(DEFAULT_LIMIT_AMPS); // FIXME
+    } else {
+        limit = in_period.limit.value_or(DEFAULT_LIMIT_WATTS); // FIXME
+    }
     min_charging_rate = in_profile.chargingSchedule.front().minChargingRate;
 }
 

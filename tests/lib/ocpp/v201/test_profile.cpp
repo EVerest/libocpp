@@ -1089,12 +1089,15 @@ TEST(OCPPTypesTest, CalculateChargingScheduleCombined_Default) {
 
 TEST(OCPPTypesTest, CalculateChargingScheduleCombined_CombinedTxDefault) {
     CompositeSchedule profile = DEFAULT_SCHEDULE;
+    ChargingSchedulePeriod period1;
+    period1.startPeriod = 0;
+    period1.limit = 10.0;
     CompositeSchedule tx_default_schedule = {
         .evseId = EVSEID_NOT_SET,
         .duration = 600,
         .scheduleStart = dt("12:00"),
         .chargingRateUnit = ChargingRateUnitEnum::A,
-        .chargingSchedulePeriod = {{0, 10.0, nullopt}},
+        .chargingSchedulePeriod = {period1},
     };
     CompositeSchedule expected = CompositeSchedule{
         .evseId = EVSEID_NOT_SET,
@@ -1113,19 +1116,25 @@ TEST(OCPPTypesTest, CalculateChargingScheduleCombined_CombinedTxDefault) {
 
 TEST(OCPPTypesTest, CalculateChargingScheduleCombined_CombinedTxDefaultTx) {
     CompositeSchedule charging_station_max = DEFAULT_SCHEDULE;
+    ChargingSchedulePeriod period1;
+    period1.startPeriod = 0;
+    period1.limit = 10.0;
     CompositeSchedule tx_default_schedule = {
         .evseId = EVSEID_NOT_SET,
         .duration = 600,
         .scheduleStart = dt("12:00"),
         .chargingRateUnit = ChargingRateUnitEnum::A,
-        .chargingSchedulePeriod = {{0, 10.0, nullopt}},
+        .chargingSchedulePeriod = {period1},
     };
+    ChargingSchedulePeriod period2;
+    period2.startPeriod = 0;
+    period2.limit = 32.0;
     CompositeSchedule tx_schedule = {
         .evseId = EVSEID_NOT_SET,
         .duration = 600,
         .scheduleStart = dt("12:00"),
         .chargingRateUnit = ChargingRateUnitEnum::A,
-        .chargingSchedulePeriod = {{0, 32.0, nullopt}},
+        .chargingSchedulePeriod = {period2},
     };
 
     CompositeSchedule expected = {
