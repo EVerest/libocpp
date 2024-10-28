@@ -668,8 +668,8 @@ TEST_F(ChargePointFunctionalityTestFixtureV201, K01_SetChargingProfileRequest_Va
         request_to_enhanced_message<SetChargingProfileRequest, MessageType::SetChargingProfile>(req);
 
     EXPECT_CALL(*smart_charging_handler,
-                validate_and_add_profile(profile, DEFAULT_EVSE_ID, ChargingLimitSourceEnumStringType::CSO,
-                                         DEFAULT_REQUEST_TO_ADD_PROFILE_SOURCE));
+                conform_validate_and_add_profile(profile, DEFAULT_EVSE_ID, ChargingLimitSourceEnumStringType::CSO,
+                                                 DEFAULT_REQUEST_TO_ADD_PROFILE_SOURCE));
 
     charge_point->handle_message(set_charging_profile_req);
 }
@@ -691,7 +691,7 @@ TEST_F(ChargePointFunctionalityTestFixtureV201, K01FR07_SetChargingProfileReques
     SetChargingProfileResponse accept_response;
     accept_response.status = ChargingProfileStatusEnum::Accepted;
 
-    ON_CALL(*smart_charging_handler, validate_and_add_profile).WillByDefault(testing::Return(accept_response));
+    ON_CALL(*smart_charging_handler, conform_validate_and_add_profile).WillByDefault(testing::Return(accept_response));
     EXPECT_CALL(set_charging_profiles_callback_mock, Call);
 
     charge_point->handle_message(set_charging_profile_req);
@@ -719,7 +719,7 @@ TEST_F(ChargePointFunctionalityTestFixtureV201, K01FR07_SetChargingProfileReques
     reject_response.statusInfo->additionalInfo = conversions::profile_validation_result_to_string(
         ProfileValidationResultEnum::TxProfileEvseHasNoActiveTransaction);
 
-    ON_CALL(*smart_charging_handler, validate_and_add_profile).WillByDefault(testing::Return(reject_response));
+    ON_CALL(*smart_charging_handler, conform_validate_and_add_profile).WillByDefault(testing::Return(reject_response));
     EXPECT_CALL(set_charging_profiles_callback_mock, Call).Times(0);
 
     charge_point->handle_message(set_charging_profile_req);
@@ -740,7 +740,7 @@ TEST_F(ChargePointFunctionalityTestFixtureV201,
     auto set_charging_profile_req =
         request_to_enhanced_message<SetChargingProfileRequest, MessageType::SetChargingProfile>(req);
 
-    EXPECT_CALL(*smart_charging_handler, validate_and_add_profile).Times(0);
+    EXPECT_CALL(*smart_charging_handler, conform_validate_and_add_profile).Times(0);
     EXPECT_CALL(set_charging_profiles_callback_mock, Call).Times(0);
 
     charge_point->handle_message(set_charging_profile_req);
@@ -767,7 +767,7 @@ TEST_F(ChargePointFunctionalityTestFixtureV201, K01FR29_SmartChargingCtrlrAvaila
     auto set_charging_profile_req =
         request_to_enhanced_message<SetChargingProfileRequest, MessageType::SetChargingProfile>(req);
 
-    EXPECT_CALL(*smart_charging_handler, validate_and_add_profile).Times(0);
+    EXPECT_CALL(*smart_charging_handler, conform_validate_and_add_profile).Times(0);
 
     charge_point->handle_message(set_charging_profile_req);
 }
@@ -791,7 +791,7 @@ TEST_F(ChargePointFunctionalityTestFixtureV201,
     auto start_transaction_req =
         request_to_enhanced_message<RequestStartTransactionRequest, MessageType::RequestStartTransaction>(req);
 
-    EXPECT_CALL(*smart_charging_handler, validate_and_add_profile).Times(1);
+    EXPECT_CALL(*smart_charging_handler, conform_validate_and_add_profile).Times(1);
 
     charge_point->handle_message(start_transaction_req);
 }
@@ -817,7 +817,7 @@ TEST_F(ChargePointFunctionalityTestFixtureV201, K01FR29_SmartChargingCtrlrAvaila
     auto set_charging_profile_req =
         request_to_enhanced_message<SetChargingProfileRequest, MessageType::SetChargingProfile>(req);
 
-    EXPECT_CALL(*smart_charging_handler, validate_and_add_profile).Times(1);
+    EXPECT_CALL(*smart_charging_handler, conform_validate_and_add_profile).Times(1);
 
     charge_point->handle_message(set_charging_profile_req);
 }
@@ -917,7 +917,7 @@ TEST_F(ChargePointFunctionalityTestFixtureV201,
     auto start_transaction_req =
         request_to_enhanced_message<RequestStartTransactionRequest, MessageType::RequestStartTransaction>(req);
 
-    EXPECT_CALL(*smart_charging_handler, validate_and_add_profile).Times(0);
+    EXPECT_CALL(*smart_charging_handler, conform_validate_and_add_profile).Times(0);
 
     charge_point->handle_message(start_transaction_req);
 }
