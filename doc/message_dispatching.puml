@@ -1,0 +1,51 @@
+
+@startuml
+
+interface MessageDispatcherInterface {
+    +dispatch_call(const json& call, bool triggered = false)
+    +dispatch_call_async(const json& call, bool triggered = false): std::future<EnhancedMessage<T>>
+    +dispatch_call_result(const json& call_result)
+    +dispatch_call_error(const json& call_error)
+}
+
+class v16::MessageDispatcher {
+    - MessageQueue& message_queue
+    - ChargePointConfiguration& configuration
+    - RegistrationStatus& registration_status
+}
+
+class v201::MessageDispatcher {
+    - MessageQueue& message_queue
+    - DeviceModel& device_model
+    - ConnectivityManager& connectivity_manager
+    - RegistrationStatusEnum& registration_status
+}
+
+interface v201::DataTransferInterface {
+    +data_transfer_req(request: DataTransferRequest): std::optional<DataTransferResponse>
+    +handle_data_transfer_req(call: Call<DataTransferRequest>)
+}
+
+class v201::DataTransfer {
+    -MessageDispatcherInterface &message_dispatcher
+    -std::optional<std::function<DataTransferResponse(DataTransferRequest)>> data_transfer_callback
+}
+
+class v201::ChargePoint {
+    std::unique_ptr<MessageDispatcherInterface> message_dispatcher;
+    std::unique_ptr<v201::DataTransferInterface> data_transfer;
+}
+
+class v16::ChargePoint {
+    std::unique_ptr<MessageDispatcherInterface> message_dispatcher;
+}
+
+MessageDispatcherInterface <|-- v16::MessageDispatcher  
+MessageDispatcherInterface <|-- v201::MessageDispatcher
+v201::DataTransferInterface <|-- v201::DataTransfer
+MessageDispatcherInterface *-- v201::DataTransfer
+MessageDispatcherInterface *-- v201::ChargePoint
+v201::DataTransferInterface *-- v201::ChargePoint
+MessageDispatcherInterface *-- v16::ChargePoint
+
+@enduml
