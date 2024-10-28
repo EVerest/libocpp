@@ -16,6 +16,6 @@ ninja -j$(nproc) -C build install
 
 trap "cp build/Testing/Temporary/LastTest.log /ext/ctest-report" EXIT
 
-ninja -j$(nproc) -C build test
+CTEST_OUTPUT_ON_FAILURE=1 ninja -j$(nproc) -C build test
 
 # cmake  -B build -G Ninja -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX="./dist" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
