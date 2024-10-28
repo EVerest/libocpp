@@ -7,6 +7,9 @@
 #include <memory>
 #include <set>
 
+#include <ocpp/common/message_dispatcher.hpp>
+#include <ocpp/v201/functional_blocks/data_transfer.hpp>
+
 #include <ocpp/common/charging_station_base.hpp>
 
 #include <ocpp/v201/average_meter_values.hpp>
@@ -373,6 +376,9 @@ private:
     std::unique_ptr<EvseManager> evse_manager;
     std::unique_ptr<ConnectivityManager> connectivity_manager;
 
+    std::unique_ptr<MessageDispatcherInterface<MessageType>> message_dispatcher;
+    std::unique_ptr<DataTransferInterface> data_transfer;
+
     // utility
     std::shared_ptr<MessageQueue<v201::MessageType>> message_queue;
     std::shared_ptr<DatabaseHandler> database_handler;
@@ -401,7 +407,7 @@ private:
     std::atomic_bool stop_auth_cache_cleanup_handler;
 
     // states
-    RegistrationStatusEnum registration_status;
+    std::atomic<RegistrationStatusEnum> registration_status;
     FirmwareStatusEnum firmware_status;
     // The request ID in the last firmware update status received
     std::optional<int32_t> firmware_status_id;
@@ -452,8 +458,6 @@ private:
 
     /// \brief optional delay to resumption of message queue after reconnecting to the CSMS
     std::chrono::seconds message_queue_resume_delay = std::chrono::seconds(0);
-
-    bool send(CallError call_error);
 
     // internal helper functions
     void initialize(const std::map<int32_t, int32_t>& evse_connector_structure, const std::string& message_log_path);
@@ -745,23 +749,13 @@ private:
     void handle_set_display_message(Call<SetDisplayMessageRequest> call);
     void handle_clear_display_message(Call<ClearDisplayMessageRequest> call);
 
-    // Functional Block P: DataTransfer
-    void handle_data_transfer_req(Call<DataTransferRequest> call);
-
-    // general message handling
-    template <class T> bool send(ocpp::Call<T> call, const bool initiated_by_trigger_message = false);
-
-    template <class T> std::future<EnhancedMessage<v201::MessageType>> send_async(ocpp::Call<T> call);
-
-    template <class T> bool send(ocpp::CallResult<T> call_result);
-
     // Generates async sending callbacks
     template <class RequestType, class ResponseType>
     std::function<ResponseType(RequestType)> send_callback(MessageType expected_response_message_type) {
         return [this, expected_response_message_type](auto request) {
             MessageId message_id = MessageId(to_string(this->uuid_generator()));
             const auto enhanced_response =
-                this->send_async<RequestType>(ocpp::Call<RequestType>(request, message_id)).get();
+                this->message_dispatcher->dispatch_call_async(ocpp::Call<RequestType>(request, message_id)).get();
             if (enhanced_response.messageType != expected_response_message_type) {
                 throw UnexpectedMessageTypeFromCSMS(
                     std::string("Got unexpected message type from CSMS, expected: ") +
