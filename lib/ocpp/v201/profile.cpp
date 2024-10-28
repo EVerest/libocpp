@@ -457,7 +457,7 @@ ChargingSchedulePeriod minimize_charging_schedule_period_by_limit(
         return adjusted_period;
     }
 
-    if (!prevailing_period.limit.has_value() && !candidate_period.limit.has_value()) {
+    if (!prevailing_period.limit.has_value() && candidate_period.limit.has_value()) {
         adjusted_period = candidate_period;
     } else if (candidate_period.limit.has_value()) {
         const auto charge_point_max_phases = candidate_period.numberPhases.value_or(default_number_phases);
@@ -466,7 +466,7 @@ ChargingSchedulePeriod minimize_charging_schedule_period_by_limit(
         adjusted_period.numberPhases = std::min(charge_point_max_phases, period_max_phases);
 
         if (current_charging_rate_unit_enum == ChargingRateUnitEnum::A) {
-            if (candidate_period.limit.value() < prevailing_period.limit.value_or(DEFAULT_LIMIT_AMPS)) {
+            if (candidate_period.limit.value() < prevailing_period.limit.value_or(0)) {
                 adjusted_period.limit = candidate_period.limit.value();
             }
         } else {
@@ -551,7 +551,7 @@ CompositeSchedule calculate_composite_schedule(const CompositeSchedule& charging
         }
 
         if (period_tx_default.startPeriod != NO_START_PERIOD) {
-            if ((!period.limit.has_value()) && (!period_tx_default.limit.has_value())) {
+            if ((!period.limit.has_value()) && period_tx_default.limit.has_value()) {
                 period = period_tx_default;
             }
         }
@@ -589,7 +589,9 @@ CompositeSchedule calculate_composite_schedule(const CompositeSchedule& charging
             current_period = duration;
             last = period;
         } else {
-            ChargingSchedulePeriod no_start_period{NO_START_PERIOD};
+            ChargingSchedulePeriod no_start_period;
+            no_start_period.startPeriod = current_period;
+            no_start_period.limit = default_limit; // FIXME?
             no_start_period.numberPhases = default_limits.number_phases;
             combined.chargingSchedulePeriod.push_back(no_start_period);
             current_period = end;
