@@ -78,60 +78,15 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
 }
 
 ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
-                         const std::string& device_model_storage_address, const bool initialize_device_model,
-                         const std::string& device_model_migration_path, const std::string& device_model_config_path,
-                         const std::string& ocpp_main_path, const std::string& core_database_path,
-                         const std::string& sql_init_path, const std::string& message_log_path,
-                         const std::shared_ptr<EvseSecurity> evse_security, const Callbacks& callbacks) :
-    ChargePoint(evse_connector_structure,
-                std::make_unique<DeviceModelStorageSqlite>(device_model_storage_address, device_model_migration_path,
-                                                           device_model_config_path, initialize_device_model),
-                ocpp_main_path, core_database_path, sql_init_path, message_log_path, evse_security, callbacks) {
-}
-
-ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
-                         const std::string& device_model_storage_address, const std::string& ocpp_main_path,
-                         const std::string& core_database_path, const std::string& sql_init_path,
-                         const std::string& message_log_path, const std::shared_ptr<EvseSecurity> evse_security,
-                         const Callbacks& callbacks) :
-    ChargePoint(evse_connector_structure, std::make_unique<DeviceModelStorageSqlite>(device_model_storage_address),
-                ocpp_main_path, core_database_path, sql_init_path, message_log_path, evse_security, callbacks) {
-}
-
-ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
                          std::unique_ptr<DeviceModelStorage> device_model_storage, const std::string& ocpp_main_path,
                          const std::string& core_database_path, const std::string& sql_init_path,
                          const std::string& message_log_path, const std::shared_ptr<EvseSecurity> evse_security,
                          const Callbacks& callbacks) :
-    ocpp::ChargingStationBase(evse_security),
-    registration_status(RegistrationStatusEnum::Rejected),
-    skip_invalid_csms_certificate_notifications(false),
-    reset_scheduled(false),
-    reset_scheduled_evseids{},
-    firmware_status(FirmwareStatusEnum::Idle),
-    upload_log_status(UploadLogStatusEnum::Idle),
-    bootreason(BootReasonEnum::PowerUp),
-    ocsp_updater(this->evse_security, this->send_callback<GetCertificateStatusRequest, GetCertificateStatusResponse>(
-                                          MessageType::GetCertificateStatusResponse)),
-    device_model(std::make_shared<DeviceModel>(std::move(device_model_storage))),
-    monitoring_updater(
-        device_model, [this](const std::vector<EventData>& events) { this->notify_event_req(events); },
-        [this]() { return this->is_offline(); }),
-    csr_attempt(1),
-    client_certificate_expiration_check_timer([this]() { this->scheduled_check_client_certificate_expiration(); }),
-    v2g_certificate_expiration_check_timer([this]() { this->scheduled_check_v2g_certificate_expiration(); }),
-    callbacks(callbacks),
-    stop_auth_cache_cleanup_handler(false) {
-    // Make sure the received callback struct is completely filled early before we actually start running
-    if (!this->callbacks.all_callbacks_valid(this->device_model)) {
-        EVLOG_AND_THROW(std::invalid_argument("All non-optional callbacks must be supplied"));
-    }
-
-    auto database_connection = std::make_unique<common::DatabaseConnection>(fs::path(core_database_path) / "cp.db");
-    this->database_handler = std::make_shared<DatabaseHandler>(std::move(database_connection), sql_init_path);
-
-    initialize(evse_connector_structure, message_log_path);
-
+    ChargePoint(
+        evse_connector_structure, std::make_shared<DeviceModel>(std::move(device_model_storage)),
+        std::make_shared<DatabaseHandler>(
+            std::make_unique<common::DatabaseConnection>(fs::path(core_database_path) / "cp.db"), sql_init_path),
+        nullptr /* message_queue initialized in this constructor */, message_log_path, evse_security, callbacks) {
     std::set<v201::MessageType> message_types_discard_for_queueing;
     try {
         const auto message_types_discard_for_queueing_csl = ocpp::split_string(
@@ -164,6 +119,18 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
         this->database_handler);
 }
 
+ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
+                         const std::string& device_model_storage_address, const bool initialize_device_model,
+                         const std::string& device_model_migration_path, const std::string& device_model_config_path,
+                         const std::string& ocpp_main_path, const std::string& core_database_path,
+                         const std::string& sql_init_path, const std::string& message_log_path,
+                         const std::shared_ptr<EvseSecurity> evse_security, const Callbacks& callbacks) :
+    ChargePoint(evse_connector_structure,
+                std::make_unique<DeviceModelStorageSqlite>(device_model_storage_address, device_model_migration_path,
+                                                           device_model_config_path, initialize_device_model),
+                ocpp_main_path, core_database_path, sql_init_path, message_log_path, evse_security, callbacks) {
+}
+
 ChargePoint::~ChargePoint() {
     {
         std::scoped_lock lk(this->auth_cache_cleanup_mutex);
@@ -183,8 +150,8 @@ void ChargePoint::start(BootReasonEnum bootreason) {
     // get transaction messages from db (if there are any) so they can be sent again.
     this->message_queue->get_persisted_messages_from_db();
     this->boot_notification_req(bootreason);
-    // K01.27 - call load_charging_profiles when system boots
-    this->load_charging_profiles();
+    // call clear_invalid_charging_profiles when system boots
+    this->clear_invalid_charging_profiles();
     this->connectivity_manager->start();
 
     const std::string firmware_version =
@@ -597,7 +564,15 @@ void ChargePoint::configure_message_logging_format(const std::string& message_lo
             !log_formats.empty(), message_log_path, "libocpp_201", log_to_console, detailed_log_to_console, log_to_file,
             log_to_html, log_security, session_logging, logging_callback,
             ocpp::LogRotationConfig(log_rotation_date_suffix, log_rotation_maximum_file_size,
-                                    log_rotation_maximum_file_count));
+                                    log_rotation_maximum_file_count),
+            [this](ocpp::LogRotationStatus status) {
+                if (status == ocpp::LogRotationStatus::RotatedWithDeletion) {
+                    const auto& security_event = ocpp::security_events::SECURITYLOGWASCLEARED;
+                    std::string tech_info = "Security log was rotated and an old log was deleted in the process";
+                    this->security_event_notification_req(CiString<50>(security_event), CiString<255>(tech_info), true,
+                                                          utils::is_critical(security_event));
+                }
+            });
     } else {
         this->logging = std::make_shared<ocpp::MessageLogging>(
             !log_formats.empty(), message_log_path, DateTime().to_rfc3339(), log_to_console, detailed_log_to_console,
@@ -1187,6 +1162,13 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
         this->connectivity_manager->set_configure_network_connection_profile_callback(
             this->callbacks.configure_network_connection_profile_callback.value());
     }
+
+    Component ocpp_comm_ctrlr = {"OCPPCommCtrlr"};
+    Variable field_length = {"FieldLength"};
+    field_length.instance = "Get15118EVCertificateResponse.exiResponse";
+    this->device_model->set_value(ocpp_comm_ctrlr, field_length, AttributeEnum::Actual,
+                                  std::to_string(ISO15118_GET_EV_CERTIFICATE_EXI_RESPONSE_SIZE),
+                                  VARIABLE_ATTRIBUTE_VALUE_SOURCE_INTERNAL, true);
 }
 
 void ChargePoint::init_certificate_expiration_check_timers() {
@@ -1403,11 +1385,17 @@ void ChargePoint::message_callback(const std::string& message) {
         this->logging->central_system("Unknown", message);
         EVLOG_error << "JSON exception during reception of message: " << e.what();
         this->send(CallError(MessageId("-1"), "RpcFrameworkError", e.what(), json({})));
+        const auto& security_event = ocpp::security_events::INVALIDMESSAGES;
+        this->security_event_notification_req(CiString<50>(security_event), CiString<255>(message), true,
+                                              utils::is_critical(security_event));
         return;
     } catch (const EnumConversionException& e) {
         EVLOG_error << "EnumConversionException during handling of message: " << e.what();
         auto call_error = CallError(MessageId("-1"), "FormationViolation", e.what(), json({}));
         this->send(call_error);
+        const auto& security_event = ocpp::security_events::INVALIDMESSAGES;
+        this->security_event_notification_req(CiString<50>(security_event), CiString<255>(message), true,
+                                              utils::is_critical(security_event));
         return;
     }
 
@@ -1482,8 +1470,16 @@ void ChargePoint::message_callback(const std::string& message) {
         EVLOG_error << "Exception during handling of message: " << e.what();
         auto call_error = CallError(enhanced_message.uniqueId, "OccurrenceConstraintViolation", e.what(), json({}));
         this->send(call_error);
+    } catch (const ConnectorOutOfRangeException& e) {
+        EVLOG_error << "Exception during handling of message: " << e.what();
+        auto call_error = CallError(enhanced_message.uniqueId, "OccurrenceConstraintViolation", e.what(), json({}));
+        this->send(call_error);
     } catch (const EnumConversionException& e) {
         EVLOG_error << "EnumConversionException during handling of message: " << e.what();
+        auto call_error = CallError(enhanced_message.uniqueId, "FormationViolation", e.what(), json({}));
+        this->send(call_error);
+    } catch (const TimePointParseException& e) {
+        EVLOG_error << "Exception during handling of message: " << e.what();
         auto call_error = CallError(enhanced_message.uniqueId, "FormationViolation", e.what(), json({}));
         this->send(call_error);
     } catch (json::exception& e) {
@@ -2079,9 +2075,9 @@ void ChargePoint::security_event_notification_req(const CiString<50>& event_type
 
     req.type = event_type;
     if (timestamp.has_value()) {
-        req.timestamp = timestamp.value().to_rfc3339();
+        req.timestamp = timestamp.value();
     } else {
-        req.timestamp = DateTime().to_rfc3339();
+        req.timestamp = DateTime();
     }
     req.techInfo = tech_info;
     this->logging->security(json(req).dump());
@@ -2253,7 +2249,7 @@ void ChargePoint::status_notification_req(const int32_t evse_id, const int32_t c
     StatusNotificationRequest req;
     req.connectorId = connector_id;
     req.evseId = evse_id;
-    req.timestamp = DateTime().to_rfc3339();
+    req.timestamp = DateTime();
     req.connectorStatus = status;
 
     ocpp::Call<StatusNotificationRequest> call(req, this->message_queue->createMessageId());
@@ -2439,6 +2435,11 @@ void ChargePoint::handle_certificate_signed_req(Call<CertificateSignedRequest> c
         cert_signing_use == ocpp::CertificateSigningUseEnum::ChargingStationCertificate and
         this->device_model->get_value<int>(ControllerComponentVariables::SecurityProfile) == 3) {
         this->connectivity_manager->disconnect_websocket(WebsocketCloseReason::ServiceRestart);
+
+        const auto& security_event = ocpp::security_events::RECONFIGURATIONOFSECURITYPARAMETERS;
+        std::string tech_info = "Changed charging station certificate";
+        this->security_event_notification_req(CiString<50>(security_event), CiString<255>(tech_info), true,
+                                              utils::is_critical(security_event));
     }
 }
 
@@ -2737,8 +2738,14 @@ void ChargePoint::handle_set_network_profile_req(Call<SetNetworkProfileRequest> 
         return;
     }
 
-    EVLOG_info << "Received and stored a new network connection profile at configurationSlot: "
-               << msg.configurationSlot;
+    std::string tech_info = "Received and stored a new network connection profile at configurationSlot: " +
+                            std::to_string(msg.configurationSlot);
+    EVLOG_info << tech_info;
+
+    const auto& security_event = ocpp::security_events::RECONFIGURATIONOFSECURITYPARAMETERS;
+    this->security_event_notification_req(CiString<50>(security_event), CiString<255>(tech_info), true,
+                                          utils::is_critical(security_event));
+
     response.status = SetNetworkProfileStatusEnum::Accepted;
     ocpp::CallResult<SetNetworkProfileResponse> call_result(response, call.uniqueId);
     this->send<SetNetworkProfileResponse>(call_result);
@@ -3231,8 +3238,9 @@ void ChargePoint::handle_remote_start_transaction_request(Call<RequestStartTrans
 
                 if (charging_profile.chargingProfilePurpose == ChargingProfilePurposeEnum::TxProfile) {
 
-                    const auto add_profile_response = this->smart_charging_handler->validate_and_add_profile(
-                        msg.chargingProfile.value(), evse_id, AddChargingProfileSource::RequestStartTransactionRequest);
+                    const auto add_profile_response = this->smart_charging_handler->conform_validate_and_add_profile(
+                        msg.chargingProfile.value(), evse_id, ChargingLimitSourceEnum::CSO,
+                        AddChargingProfileSource::RequestStartTransactionRequest);
                     if (add_profile_response.status == ChargingProfileStatusEnum::Accepted) {
                         EVLOG_debug << "Accepting SetChargingProfileRequest";
                     } else {
@@ -3252,14 +3260,13 @@ void ChargePoint::handle_remote_start_transaction_request(Call<RequestStartTrans
         EVLOG_warning << "No evse id given. Can not remote start transaction.";
     }
 
-    const ocpp::CallResult<RequestStartTransactionResponse> call_result(response, call.uniqueId);
-    this->send<RequestStartTransactionResponse>(call_result);
-
     if (response.status == RequestStartStopStatusEnum::Accepted) {
-        // F01.FR.01 and F01.FR.02
-        this->callbacks.remote_start_transaction_callback(
+        response.status = this->callbacks.remote_start_transaction_callback(
             msg, this->device_model->get_value<bool>(ControllerComponentVariables::AuthorizeRemoteStart));
     }
+
+    const ocpp::CallResult<RequestStartTransactionResponse> call_result(response, call.uniqueId);
+    this->send<RequestStartTransactionResponse>(call_result);
 }
 
 void ChargePoint::handle_remote_stop_transaction_request(Call<RequestStopTransactionRequest> call) {
@@ -3276,12 +3283,12 @@ void ChargePoint::handle_remote_stop_transaction_request(Call<RequestStopTransac
         response.status = RequestStartStopStatusEnum::Rejected;
     }
 
+    if (response.status == RequestStartStopStatusEnum::Accepted) {
+        response.status = this->callbacks.stop_transaction_callback(evseid.value(), ReasonEnum::Remote);
+    }
+
     const ocpp::CallResult<RequestStopTransactionResponse> call_result(response, call.uniqueId);
     this->send<RequestStopTransactionResponse>(call_result);
-
-    if (response.status == RequestStartStopStatusEnum::Accepted) {
-        this->callbacks.stop_transaction_callback(evseid.value(), ReasonEnum::Remote);
-    }
 }
 
 void ChargePoint::handle_change_availability_req(Call<ChangeAvailabilityRequest> call) {
@@ -3627,7 +3634,7 @@ void ChargePoint::handle_set_charging_profile_req(Call<SetChargingProfileRequest
         return;
     }
 
-    response = this->smart_charging_handler->validate_and_add_profile(msg.chargingProfile, msg.evseId);
+    response = this->smart_charging_handler->conform_validate_and_add_profile(msg.chargingProfile, msg.evseId);
     if (response.status == ChargingProfileStatusEnum::Accepted) {
         EVLOG_debug << "Accepting SetChargingProfileRequest";
         this->callbacks.set_charging_profiles_callback();
@@ -3822,6 +3829,14 @@ void ChargePoint::handle_install_certificate_req(Call<InstallCertificateRequest>
         msg.certificate.get(), ocpp::evse_security_conversions::from_ocpp_v201(msg.certificateType));
     response.status = ocpp::evse_security_conversions::to_ocpp_v201(result);
 
+    if (response.status == InstallCertificateStatusEnum::Accepted) {
+        const auto& security_event = ocpp::security_events::RECONFIGURATIONOFSECURITYPARAMETERS;
+        std::string tech_info =
+            "Installed certificate: " + conversions::install_certificate_use_enum_to_string(msg.certificateType);
+        this->security_event_notification_req(CiString<50>(security_event), CiString<255>(tech_info), true,
+                                              utils::is_critical(security_event));
+    }
+
     ocpp::CallResult<InstallCertificateResponse> call_result(response, call.uniqueId);
     this->send<InstallCertificateResponse>(call_result);
 }
@@ -3837,6 +3852,13 @@ void ChargePoint::handle_delete_certificate_req(Call<DeleteCertificateRequest> c
     const auto status = this->evse_security->delete_certificate(certificate_hash_data);
 
     response.status = ocpp::evse_security_conversions::to_ocpp_v201(status);
+
+    if (response.status == DeleteCertificateStatusEnum::Accepted) {
+        const auto& security_event = ocpp::security_events::RECONFIGURATIONOFSECURITYPARAMETERS;
+        std::string tech_info = "Deleted certificate wit serial number: " + msg.certificateHashData.serialNumber.get();
+        this->security_event_notification_req(CiString<50>(security_event), CiString<255>(tech_info), true,
+                                              utils::is_critical(security_event));
+    }
 
     ocpp::CallResult<DeleteCertificateResponse> call_result(response, call.uniqueId);
     this->send<DeleteCertificateResponse>(call_result);
@@ -4292,7 +4314,7 @@ std::optional<DataTransferResponse> ChargePoint::data_transfer_req(const DataTra
     ocpp::Call<DataTransferRequest> call(request, this->message_queue->createMessageId());
     auto data_transfer_future = this->send_async<DataTransferRequest>(call);
 
-    if (!this->connectivity_manager->is_websocket_connected()) {
+    if (this->connectivity_manager == nullptr or !this->connectivity_manager->is_websocket_connected()) {
         return std::nullopt;
     }
 
@@ -4493,6 +4515,11 @@ void ChargePoint::websocket_connection_failed(ConnectionFailedReason reason) {
             EVLOG_debug << "Skipping InvalidCsmsCertificate SecurityEvent since it has been sent already";
         }
         break;
+    case ConnectionFailedReason::FailedToAuthenticateAtCsms:
+        const auto& security_event = ocpp::security_events::FAILEDTOAUTHENTICATEATCSMS;
+        this->security_event_notification_req(CiString<50>(security_event), std::nullopt, true,
+                                              utils::is_critical(security_event));
+        break;
     }
 }
 
@@ -4670,19 +4697,15 @@ void ChargePoint::execute_change_availability_request(ChangeAvailabilityRequest 
     }
 }
 
-// K01.27 - load profiles from database
-void ChargePoint::load_charging_profiles() {
+void ChargePoint::clear_invalid_charging_profiles() {
     try {
         auto evses = this->database_handler->get_all_charging_profiles_group_by_evse();
         EVLOG_info << "Found " << evses.size() << " evse in the database";
         for (const auto& [evse_id, profiles] : evses) {
             for (auto profile : profiles) {
                 try {
-                    if (this->smart_charging_handler->validate_profile(profile, evse_id) ==
+                    if (this->smart_charging_handler->conform_and_validate_profile(profile, evse_id) !=
                         ProfileValidationResultEnum::Valid) {
-                        this->smart_charging_handler->add_profile(profile, evse_id);
-                    } else {
-                        // delete if not valid anymore
                         this->database_handler->delete_charging_profile(profile.id);
                     }
                 } catch (const QueryExecutionException& e) {

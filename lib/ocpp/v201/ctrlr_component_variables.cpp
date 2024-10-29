@@ -254,6 +254,20 @@ const ComponentVariable& IFace = {
         "IFace",
     }),
 };
+const ComponentVariable& EnableTLSKeylog = {
+    ControllerComponents::InternalCtrlr,
+    std::nullopt,
+    std::optional<Variable>({
+        "EnableTLSKeylog",
+    }),
+};
+const ComponentVariable& TLSKeylogFile = {
+    ControllerComponents::InternalCtrlr,
+    std::nullopt,
+    std::optional<Variable>({
+        "TLSKeylogFile",
+    }),
+};
 const ComponentVariable& OcspRequestInterval = {
     ControllerComponents::InternalCtrlr,
     std::nullopt,
@@ -1148,6 +1162,26 @@ const RequiredComponentVariable& PeriodsPerSchedule = {
     std::optional<Variable>({
         "PeriodsPerSchedule",
     }),
+};
+const RequiredComponentVariable& CompositeScheduleDefaultLimitAmps = {
+    ControllerComponents::SmartChargingCtrlr,
+    std::nullopt,
+    std::optional<Variable>({"CompositeScheduleDefaultLimitAmps"}),
+};
+const RequiredComponentVariable& CompositeScheduleDefaultLimitWatts = {
+    ControllerComponents::SmartChargingCtrlr,
+    std::nullopt,
+    std::optional<Variable>({"CompositeScheduleDefaultLimitWatts"}),
+};
+const RequiredComponentVariable& CompositeScheduleDefaultNumberPhases = {
+    ControllerComponents::SmartChargingCtrlr,
+    std::nullopt,
+    std::optional<Variable>({"CompositeScheduleDefaultNumberPhases"}),
+};
+const RequiredComponentVariable& SupplyVoltage = {
+    ControllerComponents::SmartChargingCtrlr,
+    std::nullopt,
+    std::optional<Variable>({"SupplyVoltage"}),
 };
 const ComponentVariable& Phases3to1 = {
     ControllerComponents::SmartChargingCtrlr,

@@ -108,7 +108,9 @@ void ConnectivityManager::connect() {
 
 void ConnectivityManager::disconnect_websocket(WebsocketCloseReason code) {
     if (this->websocket != nullptr) {
-        this->disable_automatic_websocket_reconnects = true;
+        if (code != WebsocketCloseReason::ServiceRestart) {
+            this->disable_automatic_websocket_reconnects = true;
+        }
         this->websocket->disconnect(code);
     }
 }
@@ -241,7 +243,9 @@ WebsocketConnectionOptions ConnectivityManager::get_ws_connection_options(const 
         this->device_model.get_optional_value<bool>(ControllerComponentVariables::UseTPM).value_or(false),
         this->device_model.get_optional_value<bool>(ControllerComponentVariables::VerifyCsmsAllowWildcards)
             .value_or(false),
-        this->device_model.get_optional_value<std::string>(ControllerComponentVariables::IFace)};
+        this->device_model.get_optional_value<std::string>(ControllerComponentVariables::IFace),
+        this->device_model.get_optional_value<bool>(ControllerComponentVariables::EnableTLSKeylog).value_or(false),
+        this->device_model.get_optional_value<std::string>(ControllerComponentVariables::TLSKeylogFile)};
 
     return connection_options;
 }

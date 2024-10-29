@@ -690,8 +690,10 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_DemoCase
     CompositeSchedule actual =
         handler.calculate_composite_schedule(profiles, start_time, end_time, DEFAULT_EVSE_ID, ChargingRateUnitEnum::W);
 
-    ASSERT_EQ(ProfileValidationResultEnum::Valid, handler.validate_profile(profiles.at(0), DEFAULT_EVSE_ID));
-    ASSERT_EQ(ProfileValidationResultEnum::Valid, handler.validate_profile(profiles.at(1), DEFAULT_EVSE_ID));
+    ASSERT_EQ(ProfileValidationResultEnum::Valid,
+              handler.conform_and_validate_profile(profiles.at(0), DEFAULT_EVSE_ID));
+    ASSERT_EQ(ProfileValidationResultEnum::Valid,
+              handler.conform_and_validate_profile(profiles.at(1), DEFAULT_EVSE_ID));
     ASSERT_EQ(actual, expected);
 }
 
@@ -808,6 +810,36 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_External
 
     CompositeSchedule actual =
         handler.calculate_composite_schedule(profiles, start_time, end_time, DEFAULT_EVSE_ID, ChargingRateUnitEnum::W);
+    ASSERT_EQ(actual, expected);
+}
+
+TEST_F(CompositeScheduleTestFixtureV201, OCTT_TC_K_41_CS) {
+    std::vector<ChargingProfile> profiles =
+        SmartChargingTestUtils::get_charging_profiles_from_directory(BASE_JSON_PATH + "/OCCT_TC_K_41_CS/");
+
+    const DateTime start_time = ocpp::DateTime("2024-08-21T12:24:40");
+    const DateTime end_time = ocpp::DateTime("2024-08-21T12:31:20");
+
+    CompositeSchedule expected = {
+        .chargingSchedulePeriod = {{
+                                       .startPeriod = 0,
+                                       .limit = 8.0,
+                                       .numberPhases = 3,
+                                   },
+                                   {.startPeriod = 46, .limit = 10.0, .numberPhases = 3},
+                                   {.startPeriod = 196, .limit = 6.0, .numberPhases = 3},
+                                   {.startPeriod = 236, .limit = 10.0, .numberPhases = 3},
+                                   {.startPeriod = 260, .limit = 8.0, .numberPhases = 3},
+                                   {.startPeriod = 300, .limit = 10.0, .numberPhases = 3}},
+        .evseId = DEFAULT_EVSE_ID,
+        .duration = 400,
+        .scheduleStart = start_time,
+        .chargingRateUnit = ChargingRateUnitEnum::A,
+    };
+
+    CompositeSchedule actual =
+        handler.calculate_composite_schedule(profiles, start_time, end_time, DEFAULT_EVSE_ID, ChargingRateUnitEnum::A);
+
     ASSERT_EQ(actual, expected);
 }
 

@@ -8,6 +8,7 @@
 #include <libwebsockets.h>
 
 #include <atomic>
+#include <fstream>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -23,6 +24,19 @@
 #else
 #define SSL_CTX_new_ex(LIB, PROP, METHOD) SSL_CTX_new(METHOD)
 #endif
+
+namespace {
+std::optional<std::filesystem::path> keylog_file;
+
+void keylog_callback(const SSL* ssl, const char* line) {
+    if (keylog_file.has_value()) {
+        std::ofstream keylog_ofs;
+        keylog_ofs.open(keylog_file.value(), std::ofstream::out | std::ofstream::app);
+        keylog_ofs << line << std::endl;
+        keylog_ofs.close();
+    }
+}
+} // namespace
 
 template <> class std::default_delete<lws_context> {
 public:
@@ -197,6 +211,17 @@ static bool verify_csms_cn(const std::string& hostname, bool preverified, const 
                 EVLOG_error << "Failed to verify server certificate cn with hostname: " << hostname
                             << " and with server certificate cs: " << common_name
                             << " with wildcards: " << allow_wildcards;
+            }
+
+            if (not allow_wildcards) {
+                int wildcard_result = X509_check_host(server_cert, hostname.c_str(), hostname.length(),
+                                                      X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS, nullptr);
+                if (result != wildcard_result) {
+                    EVLOG_error << "Failed to verify server certificate hostname: \"" << hostname
+                                << "\". Server certificate common name \"" << common_name
+                                << "\" likely contains wildcards. Please check your OCPP configuration and set "
+                                   "VerifyCsmsAllowWildcards to true if you want to allow wildcard certificates.";
+                }
             }
 
             return false;
@@ -552,6 +577,12 @@ void WebsocketTlsTPM::client_loop() {
             return;
         }
 
+        if (this->connection_options.enable_tls_keylog and this->connection_options.keylog_file.has_value()) {
+            EVLOG_info << "Logging TLS secrets to: " << this->connection_options.keylog_file.value().string();
+            keylog_file = this->connection_options.keylog_file;
+            SSL_CTX_set_keylog_callback(ssl_ctx, keylog_callback);
+        }
+
         // Init TLS data
         if (tls_init(ssl_ctx, path_chain, path_key, custom_key, private_key_password) == false) {
             EVLOG_error << "Unable to init tls";
@@ -831,9 +862,9 @@ void WebsocketTlsTPM::close(const WebsocketCloseReason code, const std::string& 
     // Clear any irrelevant data after a DC
     recv_buffered_message.clear();
 
-    this->push_deferred_callback([this]() {
+    this->push_deferred_callback([this, code]() {
         if (this->closed_callback) {
-            this->closed_callback(WebsocketCloseReason::Normal);
+            this->closed_callback(code);
         } else {
             EVLOG_error << "Closed callback not registered!";
         }
@@ -1218,19 +1249,11 @@ int WebsocketTlsTPM::process_callback(void* wsi_ptr, int callback_reason, void* 
             auto& str = this->connection_options.hostName.value();
             EVLOG_info << "User-Host is set to " << str;
 
-            if (0 != lws_add_http_header_by_token(wsi, lws_token_indexes::WSI_TOKEN_HOST,
-                                                  reinterpret_cast<const unsigned char*>(str.c_str()), str.length(),
-                                                  ptr, end_header)) {
-                EVLOG_AND_THROW(std::runtime_error("Could not append authorization header."));
-            }
-
-            /*
             if (0 != lws_add_http_header_by_name(wsi, reinterpret_cast<const unsigned char*>("User-Host"),
                                                  reinterpret_cast<const unsigned char*>(str.c_str()), str.length(), ptr,
                                                  end_header)) {
-                EVLOG_AND_THROW(std::runtime_error("Could not append authorization header."));
+                EVLOG_AND_THROW(std::runtime_error("Could not append User-Host header."));
             }
-            */
         }
 
         if (this->connection_options.security_profile == 1 || this->connection_options.security_profile == 2) {
@@ -1262,9 +1285,20 @@ int WebsocketTlsTPM::process_callback(void* wsi_ptr, int callback_reason, void* 
         return 0;
     } break;
 
-    case LWS_CALLBACK_CLIENT_CONNECTION_ERROR:
-        EVLOG_error << "CLIENT_CONNECTION_ERROR: " << (in ? reinterpret_cast<char*>(in) : "(null)");
+    case LWS_CALLBACK_CLIENT_CONNECTION_ERROR: {
+        std::string error_message = (in ? reinterpret_cast<char*>(in) : "(null)");
+        EVLOG_error << "CLIENT_CONNECTION_ERROR: " << error_message;
         ERR_print_errors_fp(stderr);
+
+        if (error_message.find("HS: ws upgrade unauthorized") != std::string::npos) {
+            this->push_deferred_callback([this]() {
+                if (this->connection_failed_callback) {
+                    this->connection_failed_callback(ConnectionFailedReason::FailedToAuthenticateAtCsms);
+                } else {
+                    EVLOG_error << "Connection failed callback not registered!";
+                }
+            });
+        }
 
         if (data->get_state() == EConnectionState::CONNECTING) {
             data->update_state(EConnectionState::ERROR);
@@ -1273,7 +1307,7 @@ int WebsocketTlsTPM::process_callback(void* wsi_ptr, int callback_reason, void* 
 
         on_conn_fail();
         return -1;
-
+    }
     case LWS_CALLBACK_CONNECTING:
         EVLOG_debug << "Client connecting...";
         data->update_state(EConnectionState::CONNECTING);
