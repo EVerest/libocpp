@@ -22,7 +22,7 @@ class v201::MessageDispatcher {
     - RegistrationStatusEnum& registration_status
 }
 
-class v201::DataTransferInterface {
+interface v201::DataTransferInterface {
     +data_transfer_req(request: DataTransferRequest): std::optional<DataTransferResponse>
     +handle_data_transfer_req(call: Call<DataTransferRequest>)
 }
@@ -39,7 +39,6 @@ class v201::ChargePoint {
 
 class v16::ChargePoint {
     std::unique_ptr<MessageDispatcherInterface> message_dispatcher;
-    std::unique_ptr<v201::DataTransferInterface> data_transfer;
 }
 
 MessageDispatcherInterface <|-- v16::MessageDispatcher  
