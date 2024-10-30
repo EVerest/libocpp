@@ -8,6 +8,7 @@
 #include <ocpp/v201/messages/FirmwareStatusNotification.hpp>
 #include <ocpp/v201/messages/LogStatusNotification.hpp>
 #include <ocpp/v201/messages/NotifyDisplayMessages.hpp>
+#include <ocpp/v201/messages/ReservationStatusUpdate.hpp>
 #include <ocpp/v201/notify_report_requests_splitter.hpp>
 
 #include <optional>
@@ -763,6 +764,10 @@ void ChargePoint::on_reserved(const int32_t evse_id, const int32_t connector_id)
     this->evse_manager->get_evse(evse_id).submit_event(connector_id, ConnectorEvent::Reserve);
 }
 
+void ChargePoint::on_reservation_cleared(const int32_t evse_id, const int32_t connector_id) {
+    this->evse_manager->get_evse(evse_id).submit_event(connector_id, ConnectorEvent::ReservationCleared);
+}
+
 bool ChargePoint::on_charging_state_changed(const uint32_t evse_id, const ChargingStateEnum charging_state,
                                             const TriggerReasonEnum trigger_reason) {
     auto& evse = this->evse_manager->get_evse(evse_id);
@@ -1073,6 +1078,15 @@ void ChargePoint::on_security_event(const CiString<50>& event_type, const std::o
 
 void ChargePoint::on_variable_changed(const SetVariableData& set_variable_data) {
     this->handle_variable_changed(set_variable_data);
+}
+
+void ChargePoint::on_reservation_status(const int32_t reservation_id, const ReservationUpdateStatusEnum status) {
+    ReservationStatusUpdateRequest req;
+    req.reservationId = reservation_id;
+    req.reservationUpdateStatus = status;
+
+    ocpp::Call<ReservationStatusUpdateRequest> call(req, this->message_queue->createMessageId());
+    this->send<ReservationStatusUpdateRequest>(call);
 }
 
 bool ChargePoint::send(CallError call_error) {
@@ -2040,7 +2054,8 @@ ChargePoint::get_available_connector_or_status(const uint32_t evse_id, std::opti
 
         std::optional<ConnectorEnum> evse_connector_type =
             this->get_evse_connector_type(static_cast<uint32_t>(evse_id), i);
-        if (!connector_type.has_value() || (evse_connector_type.value() == connector_type.value())) {
+        if (!connector_type.has_value() ||
+            (!evse_connector_type.has_value() || evse_connector_type.value() == connector_type.value())) {
             type_found = true;
             // We found an available connector, also store the status.
             found_status = connector_status;
@@ -3405,7 +3420,7 @@ void ChargePoint::handle_reserve_now_request(Call<ReserveNowRequest> call) {
         return;
     }
 
-    const std::optional<int32_t> evse_id = request.evseId.value();
+    const std::optional<int32_t> evse_id = request.evseId;
 
     ConnectorStatusEnum connector_status = ConnectorStatusEnum::Unavailable;
 
@@ -3422,8 +3437,8 @@ void ChargePoint::handle_reserve_now_request(Call<ReserveNowRequest> call) {
 
         if (!status.has_value()) {
             EVLOG_info << "Trying to make a reservation for connector type "
-                       << conversions::connector_enum_to_string(request.connectorType.value()) << " for evse "
-                       << evse_id.value() << ", but this connector type does not exist.";
+                       << conversions::connector_enum_to_string(request.connectorType.value_or(ConnectorEnum::Unknown))
+                       << " for evse " << evse_id.value() << ", but this connector type does not exist.";
             this->send<ReserveNowResponse>(ocpp::CallResult<ReserveNowResponse>(response, call.uniqueId));
             return;
         } else {
@@ -3457,36 +3472,12 @@ void ChargePoint::handle_reserve_now_request(Call<ReserveNowRequest> call) {
             this->send<ReserveNowResponse>(ocpp::CallResult<ReserveNowResponse>(response, call.uniqueId));
             return;
         }
+
+        EVLOG_info << "Handle reserve now request 7";
     }
 
-    if (connector_status != ConnectorStatusEnum::Available) {
-        switch (connector_status) {
-        case ConnectorStatusEnum::Occupied:
-        case ConnectorStatusEnum::Reserved:
-            // H01.FR.11
-            response.status = ReserveNowStatusEnum::Occupied;
-            break;
-        case ConnectorStatusEnum::Unavailable:
-            // H01.FR.14
-            response.status = ReserveNowStatusEnum::Unavailable;
-            break;
-        case ConnectorStatusEnum::Faulted:
-            // H01.FR.12
-            response.status = ReserveNowStatusEnum::Faulted;
-            break;
-        case ConnectorStatusEnum::Available:
-            // This can not happen, see check above, but this will silence compiler warnings.
-            break;
-        }
-
-        this->send<ReserveNowResponse>(ocpp::CallResult<ReserveNowResponse>(response, call.uniqueId));
-        return;
-    }
-
-    // TODO mz also when connector is not available, check if reservation id exists and if it does, it should overwrite
-    // the reservation
-
-    // Connector status is available!!
+    // Connector exists and might or might not be available, but if the reservation id is already existing, reservation
+    // should be overwritten.
 
     // Call reserve now callback and wait for the response.
     ReserveNowRequest reservation_request = call.msg;

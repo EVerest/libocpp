@@ -197,6 +197,11 @@ public:
     /// \param connector_id     Reserved connector id
     virtual void on_reserved(const int32_t evse_id, const int32_t connector_id) = 0;
 
+    /// \brief Event handler that should be called when the reservation of the connector is cleared.
+    /// \param evse_id          Cleared EVSE id
+    /// \param connector_id     Cleared connector id.
+    virtual void on_reservation_cleared(const int32_t evse_id, const int32_t connector_id) = 0;
+
     /// \brief Event handler that will update the charging state internally when it has been changed.
     /// \param evse_id          The evse id of which the charging state has changed.
     /// \param charging_state   The new charging state.
@@ -250,6 +255,11 @@ public:
     /// \param set_variable_data contains data of the variable to set
     ///
     virtual void on_variable_changed(const SetVariableData& set_variable_data) = 0;
+
+    /// \brief Event handler that will send a ReservationStatusUpdate request.
+    /// \param reservation_id   The reservation id.
+    /// \param status           The status.
+    virtual void on_reservation_status(const int32_t reservation_id, const ReservationUpdateStatusEnum status) = 0;
 
     /// \brief Data transfer mechanism initiated by charger
     /// \param vendorId
