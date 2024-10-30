@@ -47,7 +47,7 @@
         "WebsocketPongTimeout": 5,
         "UseSslDefaultVerifyPaths": true,
         "VerifyCsmsCommonName": true,
-        "VerifyCsmsAllowWildcards": false,
+        "VerifyCsmsAllowWildcards": true,
         "OcspRequestInterval": 604800,
         "SeccLeafSubjectCommonName": "cp001",
         "SeccLeafSubjectCountry": "DE",
