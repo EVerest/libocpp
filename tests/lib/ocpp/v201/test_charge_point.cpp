@@ -785,7 +785,7 @@ TEST_F(ChargePointFunctionalityTestFixtureV201,
     RequestStartTransactionRequest req;
     req.evseId = DEFAULT_EVSE_ID;
     req.idToken.idToken = "Local";
-    req.idToken.type = IdTokenEnum::Local;
+    req.idToken.type = IdTokenEnumStringType::Local;
     req.chargingProfile = profile;
 
     auto start_transaction_req =
@@ -912,7 +912,7 @@ TEST_F(ChargePointFunctionalityTestFixtureV201,
     RequestStartTransactionRequest req;
     req.evseId = DEFAULT_EVSE_ID;
     req.idToken.idToken = "Local";
-    req.idToken.type = IdTokenEnum::Local;
+    req.idToken.type = IdTokenEnumStringType::Local;
     req.chargingProfile = profile;
 
     auto start_transaction_req =
