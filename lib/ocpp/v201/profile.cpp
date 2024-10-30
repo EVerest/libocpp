@@ -364,14 +364,12 @@ CompositeSchedule calculate_composite_schedule(std::vector<period_entry_t>& in_c
     const auto now = floor_seconds(in_now);
     const auto end = floor_seconds(in_end);
 
-    // FIXME: designated initializers
-    CompositeSchedule composite{
-        .evseId = EVSEID_NOT_SET,
-        .duration = elapsed_seconds(end, now),
-        .scheduleStart = now,
-        .chargingRateUnit = selected_unit,
-        .chargingSchedulePeriod = {},
-    };
+    CompositeSchedule composite;
+    composite.chargingSchedulePeriod = {};
+    composite.evseId = EVSEID_NOT_SET;
+    composite.duration = elapsed_seconds(end, now);
+    composite.scheduleStart = now;
+    composite.chargingRateUnit = selected_unit;
 
     // sort the combined_schedules in stack priority order
     struct {
@@ -488,14 +486,12 @@ CompositeSchedule calculate_composite_schedule(const CompositeSchedule& charging
                                                const CompositeScheduleDefaultLimits& default_limits,
                                                int32_t supply_voltage) {
 
-    // FIXME: designated initializers
-    CompositeSchedule combined{
-        .evseId = EVSEID_NOT_SET,
-        .duration = tx_default.duration,
-        .scheduleStart = tx_default.scheduleStart,
-        .chargingRateUnit = tx_default.chargingRateUnit,
-        .chargingSchedulePeriod = {},
-    };
+    CompositeSchedule combined;
+    combined.chargingSchedulePeriod = {};
+    combined.evseId = EVSEID_NOT_SET;
+    combined.duration = tx_default.duration;
+    combined.scheduleStart = tx_default.scheduleStart;
+    combined.chargingRateUnit = tx_default.chargingRateUnit;
 
     const float default_limit = (tx_default.chargingRateUnit == ChargingRateUnitEnum::A)
                                     ? static_cast<float>(default_limits.amps)
