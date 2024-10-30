@@ -52,7 +52,7 @@
         "SeccLeafSubjectCommonName": "cp001",
         "SeccLeafSubjectCountry": "DE",
         "SeccLeafSubjectOrganization": "Pionix",
-        "ConnectorEvseIds": "1,2",
+        "ConnectorEvseIds": "DE*PNX*100001,DE*PNX*100002",
         "AllowChargingProfileWithoutStartSchedule": false,
         "WaitForStopTransactionsOnResetTimeout": 60,
         "QueueAllMessages": true,
