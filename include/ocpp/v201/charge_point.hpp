@@ -874,6 +874,8 @@ public:
 
     void on_reserved(const int32_t evse_id, const int32_t connector_id) override;
 
+    void on_reservation_cleared(const int32_t evse_id, const int32_t connector_id) override;
+
     bool on_charging_state_changed(
         const uint32_t evse_id, const ChargingStateEnum charging_state,
         const TriggerReasonEnum trigger_reason = TriggerReasonEnum::ChargingStateChanged) override;
@@ -892,6 +894,8 @@ public:
                            const std::optional<DateTime>& timestamp = std::nullopt) override;
 
     void on_variable_changed(const SetVariableData& set_variable_data) override;
+
+    void on_reservation_status(const int32_t reservation_id, const ReservationUpdateStatusEnum status) override;
 
     std::optional<DataTransferResponse> data_transfer_req(const CiString<255>& vendorId,
                                                           const std::optional<CiString<50>>& messageId,

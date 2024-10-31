@@ -1945,21 +1945,12 @@ std::optional<int32_t> ChargePoint::get_transaction_evseid(const CiString<36>& t
 bool ChargePoint::is_evse_reserved_for_other(EvseInterface& evse, const IdToken& id_token,
                                              const std::optional<IdToken>& group_id_token) const {
     const uint32_t connectors = evse.get_number_of_connectors();
-    for (uint32_t i = 1; i <= connectors; ++i) {
-        const ConnectorStatusEnum status =
-            evse.get_connector(static_cast<int32_t>(i))->get_effective_connector_status();
-        if (status == ConnectorStatusEnum::Reserved) {
-            const std::optional<CiString<36>> groupIdToken =
-                group_id_token.has_value() ? group_id_token.value().idToken : std::optional<CiString<36>>{};
+    const std::optional<CiString<36>> groupIdToken =
+        group_id_token.has_value() ? group_id_token.value().idToken : std::optional<CiString<36>>{};
 
-            if (!callbacks.is_reservation_for_token_callback(evse.get_id(), id_token.idToken, groupIdToken)) {
-                return true;
-            }
-        }
+    if (!callbacks.is_reservation_for_token_callback(evse.get_id(), id_token.idToken, groupIdToken)) {
+        return true;
     }
-
-    // TODO mz also check if connector status is not reserved, as there can be a reservation for evse id 0.
-    // TODO mz also check here if there is a reservation for a token and no evse id.
 
     return false;
 }
@@ -1995,7 +1986,6 @@ void ChargePoint::set_evse_connectors_unavailable(EvseInterface& evse, bool pers
 }
 
 std::optional<ConnectorEnum> ChargePoint::get_evse_connector_type(const uint32_t evse_id, const uint32_t connector_id) {
-    // TODO mz add logging???
     EvseInterface* evse = nullptr;
     try {
         evse = &this->evse_manager->get_evse(static_cast<int32_t>(evse_id));
@@ -3467,13 +3457,10 @@ void ChargePoint::handle_reserve_now_request(Call<ReserveNowRequest> call) {
         }
 
         if (!status_found) {
-            // TODO mz what to do here? All 'get_available_connector_or_status' returned nothing...
             EVLOG_info << "Trying to make a reservation but could not get connector status.";
             this->send<ReserveNowResponse>(ocpp::CallResult<ReserveNowResponse>(response, call.uniqueId));
             return;
         }
-
-        EVLOG_info << "Handle reserve now request 7";
     }
 
     // Connector exists and might or might not be available, but if the reservation id is already existing, reservation
@@ -3485,13 +3472,16 @@ void ChargePoint::handle_reserve_now_request(Call<ReserveNowRequest> call) {
         reservation_request.id, reservation_request.expiryDateTime, reservation_request.idToken,
         reservation_request.connectorType, reservation_request.evseId, reservation_request.groupIdToken);
 
-    // Reply with the response fromt he callback.
+    // Reply with the response from the callback.
     const ocpp::CallResult<ReserveNowResponse> call_result(response, call.uniqueId);
     this->send<ReserveNowResponse>(call_result);
 
     if (response.status == ReserveNowStatusEnum::Accepted) {
-        // TODO mz send status notification request with connector status `Reserved`???
-        // TODO mz set a status of the connector somewhere???
+        EVLOG_debug << "Reservation with id " << reservation_request.id << " for "
+                    << (reservation_request.evseId.has_value()
+                            ? " evse_id: " + std::to_string(reservation_request.evseId.value())
+                            : "")
+                    << " is accepted";
     }
 }
 
