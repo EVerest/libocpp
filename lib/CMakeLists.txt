@@ -6,6 +6,7 @@ target_compile_options(ocpp
     PRIVATE
          #-Werror # turn warnings into errors
         -Wimplicit-fallthrough  # avoid unintended fallthroughs
+        -pedantic-errors
 )
 
 target_compile_definitions(ocpp
@@ -157,18 +158,6 @@ target_link_libraries(ocpp
         nlohmann_json::nlohmann_json
         date::date-tz
 )
-
-if(LIBOCPP_ENABLE_DEPRECATED_WEBSOCKETPP)
-    target_link_libraries(ocpp
-    PUBLIC
-        websocketpp::websocketpp
-    )
-
-    target_compile_definitions(ocpp
-        PRIVATE
-            LIBOCPP_ENABLE_DEPRECATED_WEBSOCKETPP
-    )
-endif()
 
 if(LIBOCPP_USE_BOOST_FILESYSTEM)
     find_package(Boost REQUIRED COMPONENTS filesystem)
