@@ -214,6 +214,11 @@ void ConnectivityManager::try_connect_websocket() {
     this->active_network_configuration_priority =
         get_priority_from_configuration_slot(configuration_slot_to_set).value();
 
+    if (connection_options->security_profile ==
+        security::OCPP_1_6_ONLY_UNSECURED_TRANSPORT_WITHOUT_BASIC_AUTHENTICATION) {
+        EVLOG_warning << "Using insecure security profile 0 without authentication";
+    }
+
     EVLOG_info << "Open websocket with NetworkConfigurationPriority: "
                << this->active_network_configuration_priority + 1 << " which is configurationSlot "
                << configuration_slot_to_set;
