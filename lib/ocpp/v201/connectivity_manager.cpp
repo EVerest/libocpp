@@ -200,7 +200,7 @@ void ConnectivityManager::init_websocket() {
 
     // cache the network profiles on initialization
     if (!cache_network_connection_profiles()) {
-        EVLOG_warning << "Network connection profiles could not be cached, aborting websocket init";
+        EVLOG_warning << "No network connection profiles configured, aborting websocket connection.";
         return;
     }
 
