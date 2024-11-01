@@ -6,6 +6,7 @@ target_compile_options(ocpp
     PRIVATE
          #-Werror # turn warnings into errors
         -Wimplicit-fallthrough  # avoid unintended fallthroughs
+        -pedantic-errors
 )
 
 target_compile_definitions(ocpp
@@ -56,6 +57,7 @@ if(LIBOCPP_ENABLE_V201)
         PRIVATE
             ocpp/v201/average_meter_values.cpp
             ocpp/v201/charge_point.cpp
+            ocpp/v201/charge_point_callbacks.cpp
             ocpp/v201/smart_charging.cpp
             ocpp/v201/connector.cpp
             ocpp/v201/ctrlr_component_variables.cpp
@@ -156,18 +158,6 @@ target_link_libraries(ocpp
         nlohmann_json::nlohmann_json
         date::date-tz
 )
-
-if(LIBOCPP_ENABLE_DEPRECATED_WEBSOCKETPP)
-    target_link_libraries(ocpp
-    PUBLIC
-        websocketpp::websocketpp
-    )
-
-    target_compile_definitions(ocpp
-        PRIVATE
-            LIBOCPP_ENABLE_DEPRECATED_WEBSOCKETPP
-    )
-endif()
 
 if(LIBOCPP_USE_BOOST_FILESYSTEM)
     find_package(Boost REQUIRED COMPONENTS filesystem)

@@ -71,13 +71,14 @@ std::optional<DataTransferResponse> ChargePoint::data_transfer(const CiString<25
     return this->charge_point->data_transfer(vendorId, messageId, data);
 }
 
-std::map<int32_t, ChargingSchedule> ChargePoint::get_all_composite_charging_schedules(const int32_t duration_s) {
-    return this->charge_point->get_all_composite_charging_schedules(duration_s);
+std::map<int32_t, ChargingSchedule> ChargePoint::get_all_composite_charging_schedules(const int32_t duration_s,
+                                                                                      const ChargingRateUnit unit) {
+    return this->charge_point->get_all_composite_charging_schedules(duration_s, unit);
 }
 
 std::map<int32_t, EnhancedChargingSchedule>
-ChargePoint::get_all_enhanced_composite_charging_schedules(const int32_t duration_s) {
-    return this->charge_point->get_all_enhanced_composite_charging_schedules(duration_s);
+ChargePoint::get_all_enhanced_composite_charging_schedules(const int32_t duration_s, const ChargingRateUnit unit) {
+    return this->charge_point->get_all_enhanced_composite_charging_schedules(duration_s, unit);
 }
 
 void ChargePoint::on_meter_values(int32_t connector, const Measurement& measurement) {
@@ -119,12 +120,12 @@ void ChargePoint::on_transaction_stopped(const int32_t connector, const std::str
                                                signed_meter_value);
 }
 
-void ChargePoint::on_suspend_charging_ev(int32_t connector) {
-    this->charge_point->on_suspend_charging_ev(connector);
+void ChargePoint::on_suspend_charging_ev(int32_t connector, const std::optional<CiString<50>> info) {
+    this->charge_point->on_suspend_charging_ev(connector, info);
 }
 
-void ChargePoint::on_suspend_charging_evse(int32_t connector) {
-    this->charge_point->on_suspend_charging_evse(connector);
+void ChargePoint::on_suspend_charging_evse(int32_t connector, const std::optional<CiString<50>> info) {
+    this->charge_point->on_suspend_charging_evse(connector, info);
 }
 
 void ChargePoint::on_resume_charging(int32_t connector) {

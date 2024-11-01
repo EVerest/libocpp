@@ -10,7 +10,7 @@
 #include <ocpp/common/charging_station_base.hpp>
 
 #include <ocpp/v201/average_meter_values.hpp>
-#include <ocpp/v201/connectivity_manager.hpp>
+#include <ocpp/v201/charge_point_callbacks.hpp>
 #include <ocpp/v201/ctrlr_component_variables.hpp>
 #include <ocpp/v201/database_handler.hpp>
 #include <ocpp/v201/device_model.hpp>
@@ -31,13 +31,16 @@
 #include <ocpp/v201/messages/ChangeAvailability.hpp>
 #include <ocpp/v201/messages/ClearCache.hpp>
 #include <ocpp/v201/messages/ClearChargingProfile.hpp>
+#include <ocpp/v201/messages/ClearDisplayMessage.hpp>
 #include <ocpp/v201/messages/ClearVariableMonitoring.hpp>
+#include <ocpp/v201/messages/CostUpdated.hpp>
 #include <ocpp/v201/messages/CustomerInformation.hpp>
 #include <ocpp/v201/messages/DataTransfer.hpp>
 #include <ocpp/v201/messages/DeleteCertificate.hpp>
 #include <ocpp/v201/messages/GetBaseReport.hpp>
 #include <ocpp/v201/messages/GetChargingProfiles.hpp>
 #include <ocpp/v201/messages/GetCompositeSchedule.hpp>
+#include <ocpp/v201/messages/GetDisplayMessages.hpp>
 #include <ocpp/v201/messages/GetInstalledCertificateIds.hpp>
 #include <ocpp/v201/messages/GetLocalListVersion.hpp>
 #include <ocpp/v201/messages/GetLog.hpp>
@@ -59,6 +62,7 @@
 #include <ocpp/v201/messages/SecurityEventNotification.hpp>
 #include <ocpp/v201/messages/SendLocalList.hpp>
 #include <ocpp/v201/messages/SetChargingProfile.hpp>
+#include <ocpp/v201/messages/SetDisplayMessage.hpp>
 #include <ocpp/v201/messages/SetMonitoringBase.hpp>
 #include <ocpp/v201/messages/SetMonitoringLevel.hpp>
 #include <ocpp/v201/messages/SetNetworkProfile.hpp>
@@ -78,124 +82,6 @@ namespace v201 {
 
 class UnexpectedMessageTypeFromCSMS : public std::runtime_error {
     using std::runtime_error::runtime_error;
-};
-
-struct Callbacks {
-    ///\brief Function to check if the callback struct is completely filled. All std::functions should hold a function,
-    ///       all std::optional<std::functions> should either be empty or hold a function.
-    ///
-    ///\retval false if any of the normal callbacks are nullptr or any of the optional ones are filled with a nullptr
-    ///        true otherwise
-    bool all_callbacks_valid() const;
-
-    ///
-    /// \brief Callback if reset is allowed. If evse_id has a value, reset only applies to the given evse id. If it has
-    ///        no value, applies to complete charging station.
-    ///
-    std::function<bool(const std::optional<const int32_t> evse_id, const ResetEnum& reset_type)>
-        is_reset_allowed_callback;
-    std::function<void(const std::optional<const int32_t> evse_id, const ResetEnum& reset_type)> reset_callback;
-    std::function<void(const int32_t evse_id, const ReasonEnum& stop_reason)> stop_transaction_callback;
-    std::function<void(const int32_t evse_id)> pause_charging_callback;
-
-    /// \brief Used to notify the user of libocpp that the Operative/Inoperative state of the charging station changed
-    /// If as a result the state of EVSEs or connectors changed as well, libocpp will additionally call the
-    /// evse_effective_operative_status_changed_callback once for each EVSE whose status changed, and
-    /// connector_effective_operative_status_changed_callback once for each connector whose status changed.
-    /// If left empty, the callback is ignored.
-    /// \param new_status The operational status the CS switched to
-    std::optional<std::function<void(const OperationalStatusEnum new_status)>>
-        cs_effective_operative_status_changed_callback;
-
-    /// \brief Used to notify the user of libocpp that the Operative/Inoperative state of an EVSE changed
-    /// If as a result the state of connectors changed as well, libocpp will additionally call the
-    /// connector_effective_operative_status_changed_callback once for each connector whose status changed.
-    /// If left empty, the callback is ignored.
-    /// \param evse_id The id of the EVSE
-    /// \param new_status The operational status the EVSE switched to
-    std::optional<std::function<void(const int32_t evse_id, const OperationalStatusEnum new_status)>>
-        evse_effective_operative_status_changed_callback;
-
-    /// \brief Used to notify the user of libocpp that the Operative/Inoperative state of a connector changed.
-    /// \param evse_id The id of the EVSE
-    /// \param connector_id The ID of the connector within the EVSE
-    /// \param new_status The operational status the connector switched to
-    std::function<void(const int32_t evse_id, const int32_t connector_id, const OperationalStatusEnum new_status)>
-        connector_effective_operative_status_changed_callback;
-
-    std::function<GetLogResponse(const GetLogRequest& request)> get_log_request_callback;
-    std::function<UnlockConnectorResponse(const int32_t evse_id, const int32_t connecor_id)> unlock_connector_callback;
-    // callback to be called when the request can be accepted. authorize_remote_start indicates if Authorize.req needs
-    // to follow or not
-    std::function<void(const RequestStartTransactionRequest& request, const bool authorize_remote_start)>
-        remote_start_transaction_callback;
-    ///
-    /// \brief Check if the current reservation for the given evse id is made for the id token / group id token.
-    /// \return True if evse is reserved for the given id token / group id token, false if it is reserved for another
-    ///         one.
-    ///
-    std::function<bool(const int32_t evse_id, const CiString<36> idToken,
-                       const std::optional<CiString<36>> groupIdToken)>
-        is_reservation_for_token_callback;
-    std::function<UpdateFirmwareResponse(const UpdateFirmwareRequest& request)> update_firmware_request_callback;
-    // callback to be called when a variable has been changed by the CSMS
-    std::optional<std::function<void(const SetVariableData& set_variable_data)>> variable_changed_callback;
-    // callback is called when receiving a SetNetworkProfile.req from the CSMS
-    std::optional<std::function<SetNetworkProfileStatusEnum(
-        const int32_t configuration_slot, const NetworkConnectionProfile& network_connection_profile)>>
-        validate_network_profile_callback;
-    std::optional<std::function<bool(const NetworkConnectionProfile& network_connection_profile)>>
-        configure_network_connection_profile_callback;
-    std::optional<std::function<void(const ocpp::DateTime& currentTime)>> time_sync_callback;
-
-    /// \brief callback to be called to congfigure ocpp message logging
-    std::optional<std::function<void(const std::string& message, MessageDirection direction)>> ocpp_messages_callback;
-
-    ///
-    /// \brief callback function that can be used to react to a security event callback. This callback is
-    /// called only if the SecurityEvent occured internally within libocpp
-    /// Typically this callback is used to log security events in the security log
-    ///
-    std::function<void(const CiString<50>& event_type, const std::optional<CiString<255>>& tech_info)>
-        security_event_callback;
-
-    /// \brief Callback for indicating when a charging profile is received and was accepted.
-    std::function<void()> set_charging_profiles_callback;
-
-    /// \brief  Callback for when a bootnotification response is received
-    std::optional<std::function<void(const ocpp::v201::BootNotificationResponse& boot_notification_response)>>
-        boot_notification_callback;
-
-    /// \brief Callback function that can be used to get (human readable) customer information based on the given
-    /// arguments
-    std::optional<std::function<std::string(const std::optional<CertificateHashDataType> customer_certificate,
-                                            const std::optional<IdToken> id_token,
-                                            const std::optional<CiString<64>> customer_identifier)>>
-        get_customer_information_callback;
-
-    /// \brief Callback function that can be called to clear customer information based on the given arguments
-    std::optional<std::function<void(const std::optional<CertificateHashDataType> customer_certificate,
-                                     const std::optional<IdToken> id_token,
-                                     const std::optional<CiString<64>> customer_identifier)>>
-        clear_customer_information_callback;
-
-    /// \brief Callback function that can be called when all connectors are unavailable
-    std::optional<std::function<void()>> all_connectors_unavailable_callback;
-
-    /// \brief Callback function that can be used to handle arbitrary data transfers for all vendorId and
-    /// messageId
-    std::optional<std::function<DataTransferResponse(const DataTransferRequest& request)>> data_transfer_callback;
-
-    /// \brief Callback function that is called when a transaction_event was sent to the CSMS
-    std::optional<std::function<void(const TransactionEventRequest& transaction_event)>> transaction_event_callback;
-
-    /// \brief Callback function that is called when a transaction_event_response was received from the CSMS
-    std::optional<std::function<void(const TransactionEventRequest& transaction_event,
-                                     const TransactionEventResponse& transaction_event_response)>>
-        transaction_event_response_callback;
-
-    /// \brief Callback function is called when the websocket connection status changes
-    std::optional<std::function<void(const bool is_connected)>> connection_state_changed_callback;
 };
 
 /// \brief Combines ChangeAvailabilityRequest with persist flag for scheduled Availability changes
@@ -221,6 +107,34 @@ public:
 
     /// \brief Disconnects the the websocket connection to the CSMS if it is connected
     virtual void disconnect_websocket() = 0;
+
+    ///
+    /// \brief Can be called when a network is disconnected, for example when an ethernet cable is removed.
+    ///
+    /// This is introduced because the websocket can take several minutes to timeout when a network interface becomes
+    /// unavailable, whereas the system can detect this sooner.
+    ///
+    /// \param configuration_slot   The slot of the network connection profile that is disconnected.
+    ///
+    virtual void on_network_disconnected(int32_t configuration_slot) = 0;
+
+    ///
+    /// \brief Can be called when a network is disconnected, for example when an ethernet cable is removed.
+    ///
+    /// This is introduced because the websocket can take several minutes to timeout when a network interface becomes
+    /// unavailable, whereas the system can detect this sooner.
+    ///
+    /// \param ocpp_interface       The interface that is disconnected.
+    ///
+    virtual void on_network_disconnected(OCPPInterfaceEnum ocpp_interface) = 0;
+
+    /// \brief Switch to a specific network connection profile given the configuration slot.
+    ///
+    /// Switch will only be done when the configuration slot has a higher priority.
+    ///
+    /// \param configuration_slot Slot in which the configuration is stored
+    /// \return true if the switch is possible.
+    virtual bool on_try_switch_network_connection_profile(const int32_t configuration_slot) = 0;
 
     /// \brief Chargepoint notifies about new firmware update status firmware_update_status. This function should be
     ///        called during a Firmware Update to indicate the current firmware_update_status.
@@ -429,6 +343,26 @@ public:
     /// \return vector of composite schedules, one for each evse_id including 0.
     virtual std::vector<CompositeSchedule> get_all_composite_schedules(const int32_t duration,
                                                                        const ChargingRateUnitEnum& unit) = 0;
+
+    /// \brief Gets the configured NetworkConnectionProfile based on the given \p configuration_slot . The
+    /// central system uri of the connection options will not contain ws:// or wss:// because this method removes it if
+    /// present. This returns the value from the cached network connection profiles. \param
+    /// network_configuration_priority \return
+    virtual std::optional<NetworkConnectionProfile>
+    get_network_connection_profile(const int32_t configuration_slot) = 0;
+
+    /// \brief Get the priority of the given configuration slot.
+    /// \param configuration_slot   The configuration slot to get the priority from.
+    /// \return The priority if the configuration slot exists.
+    ///
+    virtual std::optional<int> get_configuration_slot_priority(const int configuration_slot) = 0;
+
+    /// @brief Get the network connection priorities.
+    /// Each item in the vector contains the configured configuration slots, where the slot with index 0 has the highest
+    /// priority.
+    /// @return The network connection priorities
+    ///
+    virtual const std::vector<int>& get_network_connection_priorities() const = 0;
 };
 
 /// \brief Class implements OCPP2.0.1 Charging Station
@@ -526,8 +460,10 @@ private:
     void init_certificate_expiration_check_timers();
     void scheduled_check_client_certificate_expiration();
     void scheduled_check_v2g_certificate_expiration();
-    void websocket_connected_callback(const int security_profile);
-    void websocket_disconnected_callback();
+    void websocket_connected_callback(const int configuration_slot,
+                                      const NetworkConnectionProfile& network_connection_profile);
+    void websocket_disconnected_callback(const int configuration_slot,
+                                         const NetworkConnectionProfile& network_connection_profile);
     void websocket_connection_failed(ConnectionFailedReason reason);
     void update_dm_availability_state(const int32_t evse_id, const int32_t connector_id,
                                       const ConnectorStatusEnum status);
@@ -660,6 +596,36 @@ private:
     /// @param message_log_path path to file logging
     void configure_message_logging_format(const std::string& message_log_path);
 
+    ///
+    /// \brief Create cost and / or tariff message and call the callbacks to send it, if tariff and / or cost is
+    /// enabled.
+    /// \param response             The TransactionEventResponse where the tariff and cost information is added to.
+    /// \param original_message     The original TransactionEventRequest, which contains some information we need as
+    ///                             well.
+    /// \param original_transaction_event_response  The original json from the response.
+    ///
+    void handle_cost_and_tariff(const TransactionEventResponse& response,
+                                const TransactionEventRequest& original_message,
+                                const json& original_transaction_event_response);
+
+    ///
+    /// \brief Check if multilanguage setting (variable) is enabled.
+    /// \return True if enabled.
+    ///
+    bool is_multilanguage_enabled() const;
+
+    ///
+    /// \brief Check if tariff setting (variable) is enabled.
+    /// \return True if enabled.
+    ///
+    bool is_tariff_enabled() const;
+
+    ///
+    /// \brief Check if cost setting (variable) is enabled.
+    /// \return True if enabled.
+    ///
+    bool is_cost_enabled() const;
+
     /* OCPP message requests */
 
     // Functional Block A: Security
@@ -745,6 +711,9 @@ private:
     void handle_change_availability_req(Call<ChangeAvailabilityRequest> call);
     void handle_heartbeat_response(CallResult<HeartbeatResponse> call);
 
+    // Functional Block I: TariffAndCost
+    void handle_costupdated_req(const Call<CostUpdatedRequest> call);
+
     // Functional Block K: Smart Charging
     void handle_set_charging_profile_req(Call<SetChargingProfileRequest> call);
     void handle_clear_charging_profile_req(Call<ClearChargingProfileRequest> call);
@@ -768,6 +737,11 @@ private:
     void handle_set_variable_monitoring_req(const EnhancedMessage<v201::MessageType>& message);
     void handle_get_monitoring_report_req(Call<GetMonitoringReportRequest> call);
     void handle_clear_variable_monitoring_req(Call<ClearVariableMonitoringRequest> call);
+
+    // Functional Block O: DisplayMessage
+    void handle_get_display_message(Call<GetDisplayMessagesRequest> call);
+    void handle_set_display_message(Call<SetDisplayMessageRequest> call);
+    void handle_clear_display_message(Call<ClearDisplayMessageRequest> call);
 
     // Functional Block P: DataTransfer
     void handle_data_transfer_req(Call<DataTransferRequest> call);
@@ -810,50 +784,23 @@ protected:
     std::shared_ptr<SmartChargingHandlerInterface> smart_charging_handler;
 
     void handle_message(const EnhancedMessage<v201::MessageType>& message);
-    void load_charging_profiles();
+    void clear_invalid_charging_profiles();
 
 public:
     /// \brief Construct a new ChargePoint object
     /// \param evse_connector_structure Map that defines the structure of EVSE and connectors of the chargepoint. The
     /// key represents the id of the EVSE and the value represents the number of connectors for this EVSE. The ids of
     /// the EVSEs have to increment starting with 1.
-    /// \param device_model_storage_address address to device model storage (e.g. location of SQLite database)
-    /// \param initialize_device_model  Set to true to initialize the device model database
-    /// \param device_model_migration_path  Path to the device model database migration files
-    /// \param device_model_config_path    Path to the device model config
-    /// \param ocpp_main_path Path where utility files for OCPP are read and written to
-    /// \param core_database_path Path to directory where core database is located
+    /// \param device_model device model instance
+    /// \param database_handler database handler instance
+    /// \param message_queue message queue instance
     /// \param message_log_path Path to where logfiles are written to
-    /// \param evse_security Pointer to evse_security that manages security related operations; if nullptr
-    /// security_configuration must be set
+    /// \param evse_security Pointer to evse_security that manages security related operations
     /// \param callbacks Callbacks that will be registered for ChargePoint
-    /// \param security_configuration specifies the file paths that are required to set up the internal evse_security
-    /// implementation
-    ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
-                const std::string& device_model_storage_address, const bool initialize_device_model,
-                const std::string& device_model_migration_path, const std::string& device_model_config_path,
-                const std::string& ocpp_main_path, const std::string& core_database_path,
-                const std::string& sql_init_path, const std::string& message_log_path,
+    ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure, std::shared_ptr<DeviceModel> device_model,
+                std::shared_ptr<DatabaseHandler> database_handler,
+                std::shared_ptr<MessageQueue<v201::MessageType>> message_queue, const std::string& message_log_path,
                 const std::shared_ptr<EvseSecurity> evse_security, const Callbacks& callbacks);
-
-    /// \brief Construct a new ChargePoint object
-    /// \param evse_connector_structure Map that defines the structure of EVSE and connectors of the chargepoint. The
-    /// key represents the id of the EVSE and the value represents the number of connectors for this EVSE. The ids of
-    /// the EVSEs have to increment starting with 1.
-    /// \param device_model_storage_address address to device model storage (e.g. location of SQLite database)
-    /// \param ocpp_main_path Path where utility files for OCPP are read and written to
-    /// \param core_database_path Path to directory where core database is located
-    /// \param message_log_path Path to where logfiles are written to
-    /// \param evse_security Pointer to evse_security that manages security related operations; if nullptr
-    /// security_configuration must be set
-    /// \param callbacks Callbacks that will be registered for ChargePoint
-    /// \param security_configuration specifies the file paths that are required to set up the internal evse_security
-    /// implementation
-    ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
-                const std::string& device_model_storage_address, const std::string& ocpp_main_path,
-                const std::string& core_database_path, const std::string& sql_init_path,
-                const std::string& message_log_path, const std::shared_ptr<EvseSecurity> evse_security,
-                const Callbacks& callbacks);
 
     /// \brief Construct a new ChargePoint object
     /// \param evse_connector_structure Map that defines the structure of EVSE and connectors of the chargepoint. The
@@ -875,15 +822,21 @@ public:
     /// \param evse_connector_structure Map that defines the structure of EVSE and connectors of the chargepoint. The
     /// key represents the id of the EVSE and the value represents the number of connectors for this EVSE. The ids of
     /// the EVSEs have to increment starting with 1.
-    /// \param device_model device model instance
-    /// \param database_handler database handler instance
-    /// \param message_queue message queue instance
+    /// \param device_model_storage_address address to device model storage (e.g. location of SQLite database)
+    /// \param initialize_device_model  Set to true to initialize the device model database
+    /// \param device_model_migration_path  Path to the device model database migration files
+    /// \param device_model_config_path    Path to the device model config
+    /// \param ocpp_main_path Path where utility files for OCPP are read and written to
+    /// \param core_database_path Path to directory where core database is located
     /// \param message_log_path Path to where logfiles are written to
-    /// \param evse_security Pointer to evse_security that manages security related operations
+    /// \param evse_security Pointer to evse_security that manages security related operations; if nullptr
+    /// security_configuration must be set
     /// \param callbacks Callbacks that will be registered for ChargePoint
-    ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure, std::shared_ptr<DeviceModel> device_model,
-                std::shared_ptr<DatabaseHandler> database_handler,
-                std::shared_ptr<MessageQueue<v201::MessageType>> message_queue, const std::string& message_log_path,
+    ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
+                const std::string& device_model_storage_address, const bool initialize_device_model,
+                const std::string& device_model_migration_path, const std::string& device_model_config_path,
+                const std::string& ocpp_main_path, const std::string& core_database_path,
+                const std::string& sql_init_path, const std::string& message_log_path,
                 const std::shared_ptr<EvseSecurity> evse_security, const Callbacks& callbacks);
 
     ~ChargePoint();
@@ -894,6 +847,12 @@ public:
 
     virtual void connect_websocket() override;
     virtual void disconnect_websocket() override;
+
+    void on_network_disconnected(int32_t configuration_slot) override;
+
+    void on_network_disconnected(OCPPInterfaceEnum ocpp_interface) override;
+
+    bool on_try_switch_network_connection_profile(const int32_t configuration_slot) override;
 
     void on_firmware_update_status_notification(int32_t request_id,
                                                 const FirmwareStatusEnum& firmware_update_status) override;
@@ -978,6 +937,12 @@ public:
 
     std::vector<CompositeSchedule> get_all_composite_schedules(const int32_t duration,
                                                                const ChargingRateUnitEnum& unit) override;
+
+    std::optional<NetworkConnectionProfile> get_network_connection_profile(const int32_t configuration_slot) override;
+
+    std::optional<int> get_configuration_slot_priority(const int configuration_slot) override;
+
+    const std::vector<int>& get_network_connection_priorities() const override;
 
     /// \brief Requests a value of a VariableAttribute specified by combination of \p component_id and \p variable_id
     /// from the device model

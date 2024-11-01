@@ -198,6 +198,13 @@ const ComponentVariable& RoundClockAlignedTimestamps = {
         "RoundClockAlignedTimestamps",
     }),
 };
+const ComponentVariable& NetworkConfigTimeout = {
+    ControllerComponents::InternalCtrlr,
+    std::nullopt,
+    std::optional<Variable>({
+        "NetworkConfigTimeout",
+    }),
+};
 const ComponentVariable& SupportedChargingProfilePurposeTypes = {
     ControllerComponents::InternalCtrlr,
     std::nullopt,
@@ -252,6 +259,20 @@ const ComponentVariable& IFace = {
     std::nullopt,
     std::optional<Variable>({
         "IFace",
+    }),
+};
+const ComponentVariable& EnableTLSKeylog = {
+    ControllerComponents::InternalCtrlr,
+    std::nullopt,
+    std::optional<Variable>({
+        "EnableTLSKeylog",
+    }),
+};
+const ComponentVariable& TLSKeylogFile = {
+    ControllerComponents::InternalCtrlr,
+    std::nullopt,
+    std::optional<Variable>({
+        "TLSKeylogFile",
     }),
 };
 const ComponentVariable& OcspRequestInterval = {
@@ -586,6 +607,16 @@ const ComponentVariable& CustomImplementationEnabled = {
         "CustomImplementationEnabled",
     }),
 };
+const ComponentVariable& CustomImplementationCaliforniaPricingEnabled = {
+    ControllerComponents::CustomizationCtrlr,
+    std::nullopt,
+    std::optional<Variable>({"CustomImplementationEnabled", std::nullopt, "org.openchargealliance.costmsg"}),
+};
+const ComponentVariable& CustomImplementationMultiLanguageEnabled = {
+    ControllerComponents::CustomizationCtrlr,
+    std::nullopt,
+    std::optional<Variable>({"CustomImplementationEnabled", std::nullopt, "org.openchargealliance.multilanguage"}),
+};
 const RequiredComponentVariable& BytesPerMessageGetReport = {
     ControllerComponents::DeviceDataCtrlr,
     std::nullopt,
@@ -658,6 +689,17 @@ const RequiredComponentVariable& DisplayMessageSupportedPriorities = {
         "SupportedPriorities",
     }),
 };
+const ComponentVariable& DisplayMessageSupportedStates = {
+    ControllerComponents::DisplayMessageCtrlr, std::nullopt,
+    std::optional<Variable>({"SupportedStates", std::nullopt, std::nullopt})};
+
+const ComponentVariable& DisplayMessageQRCodeDisplayCapable = {
+    ControllerComponents::DisplayMessageCtrlr, std::nullopt,
+    std::optional<Variable>({"QRCodeDisplayCapable", std::nullopt, std::nullopt})};
+
+const ComponentVariable& DisplayMessageLanguage = {ControllerComponents::DisplayMessageCtrlr, std::nullopt,
+                                                   std::optional<Variable>({"Language", std::nullopt, std::nullopt})};
+
 const ComponentVariable& CentralContractValidationAllowed = {
     ControllerComponents::ISO15118Ctrlr,
     std::nullopt,
@@ -1128,6 +1170,26 @@ const RequiredComponentVariable& PeriodsPerSchedule = {
         "PeriodsPerSchedule",
     }),
 };
+const RequiredComponentVariable& CompositeScheduleDefaultLimitAmps = {
+    ControllerComponents::SmartChargingCtrlr,
+    std::nullopt,
+    std::optional<Variable>({"CompositeScheduleDefaultLimitAmps"}),
+};
+const RequiredComponentVariable& CompositeScheduleDefaultLimitWatts = {
+    ControllerComponents::SmartChargingCtrlr,
+    std::nullopt,
+    std::optional<Variable>({"CompositeScheduleDefaultLimitWatts"}),
+};
+const RequiredComponentVariable& CompositeScheduleDefaultNumberPhases = {
+    ControllerComponents::SmartChargingCtrlr,
+    std::nullopt,
+    std::optional<Variable>({"CompositeScheduleDefaultNumberPhases"}),
+};
+const RequiredComponentVariable& SupplyVoltage = {
+    ControllerComponents::SmartChargingCtrlr,
+    std::nullopt,
+    std::optional<Variable>({"SupplyVoltage"}),
+};
 const ComponentVariable& Phases3to1 = {
     ControllerComponents::SmartChargingCtrlr,
     std::nullopt,
@@ -1190,6 +1252,11 @@ const RequiredComponentVariable& TotalCostFallbackMessage = {
         "TotalCostFallbackMessage",
     }),
 };
+
+const ComponentVariable& NumberOfDecimalsForCostValues = {
+    ControllerComponents::TariffCostCtrlr, std::nullopt,
+    std::optional<Variable>({"NumberOfDecimalsForCostValues", std::nullopt, std::nullopt})};
+
 const RequiredComponentVariable& EVConnectionTimeOut = {
     ControllerComponents::TxCtrlr,
     std::nullopt,

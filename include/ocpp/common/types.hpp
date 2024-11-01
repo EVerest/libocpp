@@ -33,6 +33,21 @@ struct Message {
     virtual std::string get_type() const = 0;
 };
 
+/// \brief Exception used when DateTime class is initialized by invalid timepoint string.
+class TimePointParseException : public std::exception {
+public:
+    explicit TimePointParseException(const std::string& timepoint_str) :
+        msg{"Timepoint string parsing failed. Could not convert: \"" + timepoint_str + "\" into DateTime."} {
+    }
+
+    const char* what() const noexcept override {
+        return msg.c_str();
+    }
+
+private:
+    std::string msg;
+};
+
 /// \brief Contains a DateTime implementation that can parse and create RFC 3339 compatible strings
 class DateTimeImpl {
 private:
@@ -103,12 +118,6 @@ public:
 
     /// \brief Creates a new DateTime object from the given \p timepoint_str
     explicit DateTime(const std::string& timepoint_str);
-
-    /// \brief Assignment operator= that converts a given string \p s into a DateTime
-    DateTime& operator=(const std::string& s);
-
-    /// \brief Assignment operator= that converts a given char* \p c into a DateTime
-    DateTime& operator=(const char* c);
 };
 
 /// \brief Base exception for when a conversion from string to enum or vice versa fails
@@ -353,13 +362,23 @@ struct DisplayMessageContent {
     friend void to_json(json& j, const DisplayMessageContent& m);
 };
 
+///
+/// \brief Type of an identifier string.
+///
+enum class IdentifierType {
+    SessionId,    ///< \brief Identifier is the session id.
+    IdToken,      ///< \brief Identifier is the id token.
+    TransactionId ///< \brief Identifier is the transaction id.
+};
+
 struct DisplayMessage {
     std::optional<int32_t> id;
     std::optional<v201::MessagePriorityEnum> priority;
     std::optional<v201::MessageStateEnum> state;
     std::optional<DateTime> timestamp_from;
     std::optional<DateTime> timestamp_to;
-    std::optional<std::string> transaction_id;
+    std::optional<std::string> identifier_id;
+    std::optional<IdentifierType> identifier_type;
     DisplayMessageContent message;
     std::optional<std::string> qr_code;
 };
@@ -786,6 +805,7 @@ enum class MessageDirection {
 
 enum class ConnectionFailedReason {
     InvalidCSMSCertificate = 0,
+    FailedToAuthenticateAtCsms
 };
 
 ///
@@ -805,6 +825,13 @@ enum class QueueType {
     Normal,
     Transaction,
     None,
+};
+
+/// \brief Struct containing default limits for amps, watts and number of phases
+struct CompositeScheduleDefaultLimits {
+    int32_t amps;
+    int32_t watts;
+    int32_t number_phases;
 };
 
 } // namespace ocpp

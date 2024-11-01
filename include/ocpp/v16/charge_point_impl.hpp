@@ -495,17 +495,22 @@ public:
                                                       const std::optional<std::string>& data);
 
     /// \brief Calculates ChargingProfiles configured by the CSMS of all connectors from now until now + given \p
-    /// duration_s
+    /// duration_s and  the given \p unit
     /// \param duration_s
+    /// \param unit defaults to A
     /// \return ChargingSchedules of all connectors
-    std::map<int32_t, ChargingSchedule> get_all_composite_charging_schedules(const int32_t duration_s);
+    std::map<int32_t, ChargingSchedule>
+    get_all_composite_charging_schedules(const int32_t duration_s, const ChargingRateUnit unit = ChargingRateUnit::A);
 
     /// \brief Calculates EnhancedChargingSchedule(s) configured by the CSMS of all connectors from now until now +
-    /// given \p duration_s . EnhancedChargingSchedules contain EnhancedChargingSchedulePeriod(s) that are enhanced by
-    /// the stackLevel that was provided for the ChargingProfile
+    /// given \p duration_s and the given \p unit . EnhancedChargingSchedules contain EnhancedChargingSchedulePeriod(s)
+    /// that are enhanced by the stackLevel that was provided for the ChargingProfile
     /// \param duration_s
-    /// \return ChargingSchedules of all connectors
-    std::map<int32_t, EnhancedChargingSchedule> get_all_enhanced_composite_charging_schedules(const int32_t duration_s);
+    /// \param unit
+    /// defaults to A \return ChargingSchedules of all connectors
+    std::map<int32_t, EnhancedChargingSchedule>
+    get_all_enhanced_composite_charging_schedules(const int32_t duration_s,
+                                                  const ChargingRateUnit unit = ChargingRateUnit::A);
 
     /// \brief Stores the given \p powermeter values for the given \p connector . This function can be called when a new
     /// meter value is present.
@@ -575,11 +580,13 @@ public:
 
     /// \brief This function should be called when EV indicates that it suspends charging on the given \p connector
     /// \param connector
-    void on_suspend_charging_ev(int32_t connector);
+    /// \param info
+    void on_suspend_charging_ev(int32_t connector, const std::optional<CiString<50>> info = std::nullopt);
 
     /// \brief This function should be called when EVSE indicates that it suspends charging on the given \p connector
     /// \param connector
-    void on_suspend_charging_evse(int32_t connector);
+    /// \param info
+    void on_suspend_charging_evse(int32_t connector, const std::optional<CiString<50>> info = std::nullopt);
 
     /// \brief This function should be called when charging resumes on the given \p connector
     /// \param connector
