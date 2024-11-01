@@ -75,8 +75,11 @@ ConnectivityManager::get_network_connection_profile(const int32_t configuration_
 
     for (const auto& network_profile : this->cached_network_connection_profiles) {
         if (network_profile.configurationSlot == configuration_slot) {
-            if (network_profile.connectionData.securityProfile ==
-                security::OCPP_1_6_ONLY_UNSECURED_TRANSPORT_WITHOUT_BASIC_AUTHENTICATION) {
+            if (!this->device_model
+                     .get_optional_value<bool>(ControllerComponentVariables::AllowSecurityLevelZeroConnections)
+                     .value_or(false) &&
+                network_profile.connectionData.securityProfile ==
+                    security::OCPP_1_6_ONLY_UNSECURED_TRANSPORT_WITHOUT_BASIC_AUTHENTICATION) {
                 throw std::invalid_argument(
                     "security_profile = " + std::to_string(network_profile.connectionData.securityProfile) +
                     " not officially allowed in OCPP 2.0.1");
