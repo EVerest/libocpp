@@ -815,7 +815,7 @@
                   "mutability": "ReadOnly"
               }
           ],
-          "description": "If enabled the transactions that were active before shutdown will be resumed, if possible",
+          "description": "If enabled we allow connections using security level 0. This does pose a security risk and is not allowed according to the OCPP spec",
           "default": false,
           "type": "boolean"
       }
