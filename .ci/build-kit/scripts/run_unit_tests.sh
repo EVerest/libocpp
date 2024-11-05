@@ -10,5 +10,3 @@ if [ $retVal -ne 0 ]; then
     echo "Unit tests failed with return code $retVal"
     exit $retVal
 fi
-
-set -e
