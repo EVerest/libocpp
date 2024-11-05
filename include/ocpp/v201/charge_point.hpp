@@ -580,25 +580,18 @@ private:
     void set_evse_connectors_unavailable(EvseInterface& evse, bool persist);
 
     ///
-    /// \brief Get connector type of Connector
-    /// \param evse_id          EVSE id
-    /// \param connector_id     Connector id
-    /// \return The connector type. If evse or connector id is not correct: std::nullopt.
-    ///
-    std::optional<ConnectorEnum> get_evse_connector_type(const uint32_t evse_id, const uint32_t connector_id);
-
-    ///
     /// \brief Get connector status.
     ///
     /// This will search if there is a connector on this evse with status 'Available'. It will search through all
-    /// connectors and return on the first connector that is 'Available'.
+    /// connectors, optionally filtering by connector type, and return on the first connector that is 'Available'. If
+    /// there is no 'Available' connector, it will return the status of one of the connectors.
     ///
     /// \param evse_id          The evse id.
-    /// \param connector_type   The connector type.
-    /// \return std::nullopt if connector type is given, but does not exist. Otherwise the connector status.
+    /// \param connector_type   The connector type to filter on (optional).
+    /// \return Connector status. If connector type is given and does not exist, std::nullopt.
     ///
-    std::optional<ConnectorStatusEnum> get_available_connector_or_status(const uint32_t evse_id,
-                                                                         std::optional<ConnectorEnum> connector_type);
+    std::optional<ConnectorStatusEnum> get_connector_status(const uint32_t evse_id,
+                                                            std::optional<ConnectorEnum> connector_type);
 
     /// \brief Get the value optional offline flag
     /// \return true if the charge point is offline. std::nullopt if it is online;
@@ -747,6 +740,7 @@ private:
     // Function Block H: Reservations
     void handle_reserve_now_request(Call<ReserveNowRequest> call);
     void handle_cancel_reservation_callback(Call<CancelReservationRequest> call);
+    void send_reserve_now_rejected_response(const MessageId& unique_id, const std::string status_info);
 
     // Functional Block I: TariffAndCost
     void handle_costupdated_req(const Call<CostUpdatedRequest> call);

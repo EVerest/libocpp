@@ -86,6 +86,56 @@ uint32_t Evse::get_number_of_connectors() const {
     return static_cast<uint32_t>(this->id_connector_map.size());
 }
 
+std::optional<ConnectorStatusEnum> Evse::get_connector_status(const uint32_t evse_id,
+                                                              std::optional<ConnectorEnum> connector_type) {
+    bool type_found = false;
+    ConnectorStatusEnum found_status = ConnectorStatusEnum::Unavailable;
+    const uint32_t number_of_connectors = this->get_number_of_connectors();
+    if (number_of_connectors == 0) {
+        return std::nullopt;
+    }
+
+    for (uint32_t i = 1; i <= number_of_connectors; ++i) {
+        Connector* connector;
+        try {
+            connector = this->get_connector(static_cast<int32_t>(i));
+        } catch (const std::logic_error&) {
+            EVLOG_error << "Connector with id " << i << " does not exist";
+            continue;
+        }
+
+        if (connector == nullptr) {
+            EVLOG_error << "Connector with id " << i << " does not exist";
+            continue;
+        }
+
+        const ConnectorStatusEnum connector_status = connector->get_effective_connector_status();
+
+        const std::optional<ConnectorEnum> evse_connector_type =
+            this->get_evse_connector_type(static_cast<uint32_t>(evse_id), i);
+        if (!connector_type.has_value() ||
+            (!evse_connector_type.has_value() || evse_connector_type.value() == connector_type.value())) {
+            type_found = true;
+            // We found an available connector, also store the status.
+            found_status = connector_status;
+            if (found_status == ConnectorStatusEnum::Available) {
+                // There is an available connector with the correct type and status: we don't have to search
+                // any further.
+                return found_status;
+            }
+
+            // If status is not available, we keep on searching. If no connector is available, the status of
+            // (at least one of) the connectors is stored to return that later if no available connector is found.
+        }
+    }
+
+    if (!type_found) {
+        return std::nullopt;
+    }
+
+    return found_status;
+}
+
 void Evse::try_resume_transaction() {
     // Get an open transactions from the database and resume it if there is one
     auto transaction = this->database_handler->transaction_get(evse_id);
@@ -119,6 +169,25 @@ void Evse::delete_database_transaction() {
     } catch (const QueryExecutionException& e) {
         EVLOG_error << "Can't delete transaction: " << e.what();
     }
+}
+
+std::optional<ConnectorEnum> Evse::get_evse_connector_type(const uint32_t evse_id, const uint32_t connector_id) {
+
+    auto connector = this->get_connector(static_cast<int32_t>(connector_id));
+    if (connector == nullptr) {
+        return std::nullopt;
+    }
+
+    ComponentVariable connector_cv =
+        ConnectorComponentVariables::get_component_variable(evse_id, connector_id, ConnectorComponentVariables::Type);
+
+    const std::optional<std::string> connector_type =
+        this->device_model.get_optional_value<std::string>(connector_cv, AttributeEnum::Actual);
+    if (!connector_type.has_value()) {
+        return std::nullopt;
+    }
+
+    return conversions::string_to_connector_enum(connector_type.value());
 }
 
 void Evse::open_transaction(const std::string& transaction_id, const int32_t connector_id, const DateTime& timestamp,

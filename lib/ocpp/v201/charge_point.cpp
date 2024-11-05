@@ -1997,33 +1997,8 @@ void ChargePoint::set_evse_connectors_unavailable(EvseInterface& evse, bool pers
     }
 }
 
-std::optional<ConnectorEnum> ChargePoint::get_evse_connector_type(const uint32_t evse_id, const uint32_t connector_id) {
-    EvseInterface* evse = nullptr;
-    try {
-        evse = &this->evse_manager->get_evse(static_cast<int32_t>(evse_id));
-    } catch (EvseOutOfRangeException&) {
-        return std::nullopt;
-    }
-
-    auto connector = evse->get_connector(static_cast<int32_t>(connector_id));
-    if (connector == nullptr) {
-        return std::nullopt;
-    }
-
-    ComponentVariable connector_cv =
-        ConnectorComponentVariables::get_component_variable(evse_id, connector_id, ConnectorComponentVariables::Type);
-
-    const std::optional<std::string> connector_type =
-        this->device_model->get_optional_value<std::string>(connector_cv, AttributeEnum::Actual);
-    if (!connector_type.has_value()) {
-        return std::nullopt;
-    }
-
-    return conversions::string_to_connector_enum(connector_type.value());
-}
-
-std::optional<ConnectorStatusEnum>
-ChargePoint::get_available_connector_or_status(const uint32_t evse_id, std::optional<ConnectorEnum> connector_type) {
+std::optional<ConnectorStatusEnum> ChargePoint::get_connector_status(const uint32_t evse_id,
+                                                                     std::optional<ConnectorEnum> connector_type) {
     EvseInterface* evse;
     try {
         evse = &evse_manager->get_evse(static_cast<int32_t>(evse_id));
@@ -2032,51 +2007,7 @@ ChargePoint::get_available_connector_or_status(const uint32_t evse_id, std::opti
         return std::nullopt;
     }
 
-    bool type_found = false;
-    ConnectorStatusEnum found_status = ConnectorStatusEnum::Unavailable;
-    const uint32_t number_of_connectors = evse->get_number_of_connectors();
-    if (number_of_connectors == 0) {
-        return std::nullopt;
-    }
-
-    for (uint32_t i = 1; i <= number_of_connectors; ++i) {
-        Connector* connector;
-        try {
-            connector = evse->get_connector(static_cast<int32_t>(i));
-        } catch (const std::logic_error&) {
-            EVLOG_error << "Reserve now request: Connector with id " << i << " does not exist";
-        }
-
-        if (connector == nullptr) {
-            EVLOG_error << "Reserve now request: Connector with id " << i << " does not exist";
-            continue;
-        }
-
-        ConnectorStatusEnum connector_status = connector->get_effective_connector_status();
-
-        std::optional<ConnectorEnum> evse_connector_type =
-            this->get_evse_connector_type(static_cast<uint32_t>(evse_id), i);
-        if (!connector_type.has_value() ||
-            (!evse_connector_type.has_value() || evse_connector_type.value() == connector_type.value())) {
-            type_found = true;
-            // We found an available connector, also store the status.
-            found_status = connector_status;
-            if (found_status == ConnectorStatusEnum::Available) {
-                // There is an available connector with the correct type and status: we don't have to search
-                // any further.
-                return found_status;
-            }
-
-            // If status is not available, we keep on searching. If no connector is available, the status of
-            // (at least one of) the connectors is stored to return that later if no available connector is found.
-        }
-    }
-
-    if (!type_found) {
-        return std::nullopt;
-    }
-
-    return found_status;
+    return evse->get_connector_status(evse_id, connector_type);
 }
 
 bool ChargePoint::is_offline() {
@@ -3396,16 +3327,27 @@ void ChargePoint::handle_heartbeat_response(CallResult<HeartbeatResponse> call) 
 void ChargePoint::handle_reserve_now_request(Call<ReserveNowRequest> call) {
     ReserveNowResponse response;
     response.status = ReserveNowStatusEnum::Rejected;
-    if (!this->callbacks.reserve_now_callback.has_value() ||
-        !this->device_model->get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrAvailable)
-             .value_or(false) ||
-        !this->device_model->get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrEnabled)
-             .value_or(false)) {
+    bool reservation_available = true;
+
+    std::string status_info;
+
+    if (!this->callbacks.reserve_now_callback.has_value()) {
+        reservation_available = false;
+        status_info = "Reservation is not implemented";
+    } else if (!this->device_model->get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrAvailable)
+                    .value_or(false)) {
+        status_info = "Reservation is not available";
+        reservation_available = false;
+    } else if (!this->device_model->get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrEnabled)) {
+        reservation_available = false;
+        status_info = "Reservation is not enabled";
+    }
+
+    if (!reservation_available) {
         // Reservation not available / implemented, return 'Rejected'.
         // H01.FR.01
-        EVLOG_info << "Receiving a reservation request, but reservation is not implemented.";
-        const ocpp::CallResult<ReserveNowResponse> call_result(response, call.uniqueId);
-        this->send<ReserveNowResponse>(call_result);
+        EVLOG_info << "Receiving a reservation request, but reservation is not enabled or implemented.";
+        send_reserve_now_rejected_response(call.uniqueId, status_info);
         return;
     }
 
@@ -3415,10 +3357,11 @@ void ChargePoint::handle_reserve_now_request(Call<ReserveNowRequest> call) {
         !this->device_model->get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrNonEvseSpecific)
              .value_or(false)) {
         // H01.FR.19
-        EVLOG_warning
-            << "Trying to make a reservation, but no evse id was given while it should be sent in the request.";
-        const ocpp::CallResult<ReserveNowResponse> call_result(response, call.uniqueId);
-        this->send<ReserveNowResponse>(call_result);
+        EVLOG_warning << "Trying to make a reservation, but no evse id was given while it should be sent in the "
+                         "request when NonEvseSpecific is disabled.";
+        send_reserve_now_rejected_response(
+            call.uniqueId,
+            "No evse id was given while it should be sent in the request when NonEvseSpecific is disabled");
         return;
     }
 
@@ -3427,21 +3370,21 @@ void ChargePoint::handle_reserve_now_request(Call<ReserveNowRequest> call) {
     ConnectorStatusEnum connector_status = ConnectorStatusEnum::Unavailable;
 
     if (evse_id.has_value()) {
-        if (evse_id.value() < 0 || !evse_manager->does_evse_exist(evse_id.value())) {
+        if (!evse_manager->does_evse_exist(evse_id.value())) {
             EVLOG_error << "Trying to make a reservation, but evse " << evse_id.value() << " is not a valid evse id.";
-            this->send<ReserveNowResponse>(ocpp::CallResult<ReserveNowResponse>(response, call.uniqueId));
+            send_reserve_now_rejected_response(call.uniqueId, "Evse id does not exist");
             return;
         }
 
         // Check if there is a connector available for this evse id.
         std::optional<ConnectorStatusEnum> status =
-            get_available_connector_or_status(static_cast<uint32_t>(evse_id.value()), request.connectorType);
+            get_connector_status(static_cast<uint32_t>(evse_id.value()), request.connectorType);
 
         if (!status.has_value()) {
             EVLOG_info << "Trying to make a reservation for connector type "
                        << conversions::connector_enum_to_string(request.connectorType.value_or(ConnectorEnum::Unknown))
                        << " for evse " << evse_id.value() << ", but this connector type does not exist.";
-            this->send<ReserveNowResponse>(ocpp::CallResult<ReserveNowResponse>(response, call.uniqueId));
+            send_reserve_now_rejected_response(call.uniqueId, "Connector type does not exist");
             return;
         } else {
             connector_status = status.value();
@@ -3450,14 +3393,14 @@ void ChargePoint::handle_reserve_now_request(Call<ReserveNowRequest> call) {
         // No evse id. Just search for all evse's if there is something available for reservation
         const uint64_t number_of_evses = evse_manager->get_number_of_evses();
         if (number_of_evses <= 0) {
+            send_reserve_now_rejected_response(call.uniqueId, "No evse's found in charging station");
             EVLOG_error << "Trying to make a reservation, but number of evse's is 0";
-            this->send<ReserveNowResponse>(ocpp::CallResult<ReserveNowResponse>(response, call.uniqueId));
             return;
         }
 
         bool status_found = false;
         for (uint64_t i = 1; i <= number_of_evses; i++) {
-            std::optional<ConnectorStatusEnum> status = get_available_connector_or_status(i, request.connectorType);
+            std::optional<ConnectorStatusEnum> status = get_connector_status(i, request.connectorType);
             if (status.has_value()) {
                 status_found = true;
                 connector_status = status.value();
@@ -3469,8 +3412,7 @@ void ChargePoint::handle_reserve_now_request(Call<ReserveNowRequest> call) {
         }
 
         if (!status_found) {
-            EVLOG_info << "Trying to make a reservation but could not get connector status.";
-            this->send<ReserveNowResponse>(ocpp::CallResult<ReserveNowResponse>(response, call.uniqueId));
+            send_reserve_now_rejected_response(call.uniqueId, "Could not get status info from connector");
             return;
         }
     }
@@ -3517,6 +3459,15 @@ void ChargePoint::handle_cancel_reservation_callback(Call<CancelReservationReque
 
     const ocpp::CallResult<CancelReservationResponse> call_result(response, call.uniqueId);
     this->send<CancelReservationResponse>(call_result);
+}
+
+void ChargePoint::send_reserve_now_rejected_response(const MessageId& unique_id, const std::string status_info) {
+    ReserveNowResponse response;
+    response.status = ReserveNowStatusEnum::Rejected;
+    response.statusInfo = StatusInfo();
+    response.statusInfo->additionalInfo = status_info;
+    const ocpp::CallResult<ReserveNowResponse> call_result(response, unique_id);
+    this->send<ReserveNowResponse>(call_result);
 }
 
 void ChargePoint::handle_costupdated_req(const Call<CostUpdatedRequest> call) {
