@@ -10,4 +10,15 @@ cmake \
     -DCMAKE_INSTALL_PREFIX="$EXT_MOUNT/dist" \
     -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
-ninja -j$(nproc) -C build
+retVal=$?
+if [ $retVal -ne 0 ]; then
+    echo "Configuring failed with return code $retVal"
+    exit $retVal
+fi
+
+ninja -C "$EXT_MOUNT/build"
+retVal=$?
+if [ $retVal -ne 0 ]; then
+    echo "Compiling failed with return code $retVal"
+    exit $retVal
+fi
