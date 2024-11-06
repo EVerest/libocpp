@@ -789,6 +789,12 @@ protected:
     void clear_invalid_charging_profiles();
 
 public:
+    /// \addtogroup chargepoint_constructors
+    /// @{
+
+    /// @name 201_constructors Constructors for 2.0.1
+    /// @{
+
     /// \brief Construct a new ChargePoint object
     /// \param evse_connector_structure Map that defines the structure of EVSE and connectors of the chargepoint. The
     /// key represents the id of the EVSE and the value represents the number of connectors for this EVSE. The ids of
@@ -840,6 +846,10 @@ public:
                 const std::string& ocpp_main_path, const std::string& core_database_path,
                 const std::string& sql_init_path, const std::string& message_log_path,
                 const std::shared_ptr<EvseSecurity> evse_security, const Callbacks& callbacks);
+
+    /// @}  // End chargepoint 2.0.1 member group
+
+    /// @}  // End chargepoint 2.0.1 topic
 
     ~ChargePoint();
 
