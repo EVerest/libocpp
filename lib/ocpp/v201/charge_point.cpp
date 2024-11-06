@@ -3367,8 +3367,6 @@ void ChargePoint::handle_reserve_now_request(Call<ReserveNowRequest> call) {
 
     const std::optional<int32_t> evse_id = request.evseId;
 
-    ConnectorStatusEnum connector_status = ConnectorStatusEnum::Unavailable;
-
     if (evse_id.has_value()) {
         if (!evse_manager->does_evse_exist(evse_id.value())) {
             EVLOG_error << "Trying to make a reservation, but evse " << evse_id.value() << " is not a valid evse id.";
@@ -3386,8 +3384,6 @@ void ChargePoint::handle_reserve_now_request(Call<ReserveNowRequest> call) {
                        << " for evse " << evse_id.value() << ", but this connector type does not exist.";
             send_reserve_now_rejected_response(call.uniqueId, "Connector type does not exist");
             return;
-        } else {
-            connector_status = status.value();
         }
     } else {
         // No evse id. Just search for all evse's if there is something available for reservation
@@ -3403,8 +3399,7 @@ void ChargePoint::handle_reserve_now_request(Call<ReserveNowRequest> call) {
             std::optional<ConnectorStatusEnum> status = get_connector_status(i, request.connectorType);
             if (status.has_value()) {
                 status_found = true;
-                connector_status = status.value();
-                if (connector_status == ConnectorStatusEnum::Available) {
+                if (status.value() == ConnectorStatusEnum::Available) {
                     // There is at least one connector available!
                     break;
                 }
