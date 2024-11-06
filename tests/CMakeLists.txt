@@ -93,12 +93,12 @@ setup_target_for_coverage_gcovr_html(
     NAME ${PROJECT_NAME}_gcovr_coverage
     EXECUTABLE ctest
     DEPENDENCIES libocpp_unit_tests
-    EXCLUDE "src/*"
+    EXCLUDE "src/*" "tests/*"
 )
 
 setup_target_for_coverage_gcovr_xml(
     NAME ${PROJECT_NAME}_gcovr_coverage_xml
     EXECUTABLE ctest
     DEPENDENCIES libocpp_unit_tests
-    EXCLUDE "src/*"
+    EXCLUDE "src/*" "tests/*"
 )
