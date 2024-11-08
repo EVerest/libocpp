@@ -12,6 +12,7 @@
 #include <ocpp/v201/messages/GetDisplayMessages.hpp>
 #include <ocpp/v201/messages/GetLog.hpp>
 #include <ocpp/v201/messages/RequestStartTransaction.hpp>
+#include <ocpp/v201/messages/ReserveNow.hpp>
 #include <ocpp/v201/messages/SetDisplayMessage.hpp>
 #include <ocpp/v201/messages/TransactionEvent.hpp>
 #include <ocpp/v201/messages/UnlockConnector.hpp>
@@ -153,11 +154,7 @@ struct Callbacks {
         set_running_cost_callback;
 
     /// \brief Callback function is called when a reservation request is received from the CSMS
-    std::optional<std::function<ReserveNowStatusEnum(
-        const int32_t id, const ocpp::DateTime& expiry_date_time, const IdToken& id_token,
-        const std::optional<ConnectorEnum> connector_type, const std::optional<uint32_t> evse_id,
-        const std::optional<IdToken>& group_id_token)>>
-        reserve_now_callback;
+    std::optional<std::function<ReserveNowStatusEnum(const ReserveNowRequest& request)>> reserve_now_callback;
     /// \brief Callback function is called when a cancel reservation request is received from the CSMS
     std::optional<std::function<bool(const int32_t reservationId)>> cancel_reservation_callback;
 };

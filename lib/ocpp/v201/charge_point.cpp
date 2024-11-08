@@ -3416,10 +3416,8 @@ void ChargePoint::handle_reserve_now_request(Call<ReserveNowRequest> call) {
     // should be overwritten.
 
     // Call reserve now callback and wait for the response.
-    ReserveNowRequest reservation_request = call.msg;
-    response.status = this->callbacks.reserve_now_callback.value()(
-        reservation_request.id, reservation_request.expiryDateTime, reservation_request.idToken,
-        reservation_request.connectorType, reservation_request.evseId, reservation_request.groupIdToken);
+    const ReserveNowRequest reservation_request = call.msg;
+    response.status = this->callbacks.reserve_now_callback.value()(reservation_request);
 
     // Reply with the response from the callback.
     const ocpp::CallResult<ReserveNowResponse> call_result(response, call.uniqueId);
@@ -3456,7 +3454,7 @@ void ChargePoint::handle_cancel_reservation_callback(Call<CancelReservationReque
     this->send<CancelReservationResponse>(call_result);
 }
 
-void ChargePoint::send_reserve_now_rejected_response(const MessageId& unique_id, const std::string status_info) {
+void ChargePoint::send_reserve_now_rejected_response(const MessageId& unique_id, const std::string& status_info) {
     ReserveNowResponse response;
     response.status = ReserveNowStatusEnum::Rejected;
     response.statusInfo = StatusInfo();

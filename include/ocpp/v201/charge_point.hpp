@@ -740,7 +740,7 @@ private:
     // Function Block H: Reservations
     void handle_reserve_now_request(Call<ReserveNowRequest> call);
     void handle_cancel_reservation_callback(Call<CancelReservationRequest> call);
-    void send_reserve_now_rejected_response(const MessageId& unique_id, const std::string status_info);
+    void send_reserve_now_rejected_response(const MessageId& unique_id, const std::string& status_info);
 
     // Functional Block I: TariffAndCost
     void handle_costupdated_req(const Call<CostUpdatedRequest> call);
