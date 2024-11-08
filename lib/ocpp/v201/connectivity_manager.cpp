@@ -103,7 +103,12 @@ bool ConnectivityManager::is_websocket_connected() {
     return this->websocket != nullptr && this->websocket->is_connected();
 }
 
-void ConnectivityManager::start() {
+void ConnectivityManager::start(bool autoconnect) {
+    if (!autoconnect) {
+        // Only cache the network profiles, starting the websocket is done by calling connect() later
+        this->cache_network_connection_profiles();
+        return;
+    }
     init_websocket();
     if (websocket != nullptr) {
         this->disable_automatic_websocket_reconnects = false;

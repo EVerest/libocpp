@@ -96,8 +96,9 @@ public:
     virtual ~ChargePointInterface() = default;
 
     /// \brief Starts the ChargePoint, initializes and connects to the Websocket endpoint
-    /// \param bootreason   Optional bootreason (default: PowerUp).
-    virtual void start(BootReasonEnum bootreason = BootReasonEnum::PowerUp) = 0;
+    /// \param bootreason  Optional bootreason (default: PowerUp).
+    /// \param autoconnect Set to false if you only want to initialize and not connect yet and use connect_websocket() to actually connect
+    virtual void start(BootReasonEnum bootreason = BootReasonEnum::PowerUp, bool autoconnect = true) = 0;
 
     /// \brief Stops the ChargePoint. Disconnects the websocket connection and stops MessageQueue and all timers
     virtual void stop() = 0;
@@ -843,7 +844,7 @@ public:
 
     ~ChargePoint();
 
-    void start(BootReasonEnum bootreason = BootReasonEnum::PowerUp) override;
+    void start(BootReasonEnum bootreason = BootReasonEnum::PowerUp, bool autoconnect = true) override;
 
     void stop() override;
 

@@ -109,8 +109,9 @@ public:
     bool is_websocket_connected();
 
     /// \brief Start the connectivity manager
+    /// \param autoconnect Set to false if you only want to initialize and not connect yet and use connect() to connect
     ///
-    void start();
+    void start(bool autoconnect = true);
 
     /// \brief Stop the connectivity manager
     ///
