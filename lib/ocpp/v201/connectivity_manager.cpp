@@ -109,27 +109,27 @@ void ConnectivityManager::start(bool autoconnect) {
         this->cache_network_connection_profiles();
         return;
     }
-    init_websocket();
-    if (websocket != nullptr) {
+    if (init_websocket() && websocket != nullptr) {
         this->disable_automatic_websocket_reconnects = false;
         websocket->connect();
     }
 }
 
 void ConnectivityManager::stop() {
-    this->websocket_timer.stop();
     disconnect_websocket(WebsocketCloseReason::Normal);
 }
 
 void ConnectivityManager::connect() {
     if (this->websocket != nullptr and !this->websocket->is_connected()) {
         this->disable_automatic_websocket_reconnects = false;
-        this->init_websocket();
-        this->websocket->connect();
+        if (this->init_websocket()) {
+            this->websocket->connect();
+        }
     }
 }
 
 void ConnectivityManager::disconnect_websocket(WebsocketCloseReason code) {
+    this->websocket_timer.stop();
     if (this->websocket != nullptr) {
         if (code != WebsocketCloseReason::ServiceRestart) {
             this->disable_automatic_websocket_reconnects = true;
@@ -156,6 +156,7 @@ void ConnectivityManager::on_network_disconnected(int32_t configuration_slot) {
     } else if (configuration_slot == actual_configuration_slot) {
         // Since there is no connection anymore: disconnect the websocket, the manager will try to connect with the next
         // available network connection profile as we enable reconnects.
+        EVLOG_info << "ConnectivityManager::on_network_disconnected";
         this->disconnect_websocket(ocpp::WebsocketCloseReason::GoingAway);
         this->disable_automatic_websocket_reconnects = false;
     }
@@ -172,15 +173,16 @@ void ConnectivityManager::on_network_disconnected(OCPPInterfaceEnum ocpp_interfa
     } else if (ocpp_interface == network_connection_profile.value().ocppInterface) {
         // Since there is no connection anymore: disconnect the websocket, the manager will try to connect with the next
         // available network connection profile as we enable reconnects.
+        EVLOG_info << "ConnectivityManager::on_network_disconnected";
         this->disconnect_websocket(ocpp::WebsocketCloseReason::GoingAway);
         this->disable_automatic_websocket_reconnects = false;
     }
 }
 
 bool ConnectivityManager::on_try_switch_network_connection_profile(const int32_t configuration_slot) {
-    if (!is_higher_priority_profile(configuration_slot)) {
-        return false;
-    }
+    // if (!is_higher_priority_profile(configuration_slot)) {
+    //     return false;
+    // }
 
     EVLOG_info << "Trying to connect with higher priority network connection profile (configuration slots: "
                << this->get_active_network_configuration_slot() << " --> " << configuration_slot << ").";
@@ -197,7 +199,8 @@ bool ConnectivityManager::on_try_switch_network_connection_profile(const int32_t
     return true;
 }
 
-void ConnectivityManager::init_websocket() {
+bool ConnectivityManager::init_websocket() {
+    EVLOG_info << "ConnectivityManager::init_websocket()";
     if (this->device_model.get_value<std::string>(ControllerComponentVariables::ChargePointId).find(':') !=
         std::string::npos) {
         EVLOG_AND_THROW(std::runtime_error("ChargePointId must not contain \':\'"));
@@ -206,7 +209,7 @@ void ConnectivityManager::init_websocket() {
     // cache the network profiles on initialization
     if (!cache_network_connection_profiles()) {
         EVLOG_warning << "No network connection profiles configured, aborting websocket connection.";
-        return;
+        return false;
     }
 
     const int config_slot_int = this->get_active_network_configuration_slot();
@@ -253,13 +256,20 @@ void ConnectivityManager::init_websocket() {
     }
 
     if (!can_use_connection_profile) {
+        EVLOG_info << "websocket_timer set_timeout";
+        if (this->disable_automatic_websocket_reconnects) {
+            return false;
+        }
+
         this->websocket_timer.timeout(
             [this]() {
+                EVLOG_info << "websocket_timer.timeout 1";
                 this->next_network_configuration_priority();
                 this->start();
             },
             WEBSOCKET_INIT_DELAY);
-        return;
+
+        return true;
     }
 
     EVLOG_info << "Open websocket with NetworkConfigurationPriority: " << this->network_configuration_priority + 1
@@ -293,6 +303,7 @@ void ConnectivityManager::init_websocket() {
     }
 
     this->websocket->register_message_callback([this](const std::string& message) { this->message_callback(message); });
+    return true;
 }
 
 WebsocketConnectionOptions ConnectivityManager::get_ws_connection_options(const int32_t configuration_slot) {

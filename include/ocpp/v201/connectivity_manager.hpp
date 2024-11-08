@@ -161,7 +161,7 @@ public:
 private:
     /// \brief Init the websocket
     ///
-    void init_websocket();
+    bool init_websocket();
 
     /// \brief Get the current websocket connection options
     /// \returns the current websocket connection options
