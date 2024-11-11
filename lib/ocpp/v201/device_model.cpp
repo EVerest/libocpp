@@ -310,8 +310,8 @@ SetVariableStatusEnum DeviceModel::set_value(const Component& component, const V
     return success ? SetVariableStatusEnum::Accepted : SetVariableStatusEnum::Rejected;
 };
 
-DeviceModel::DeviceModel(std::unique_ptr<DeviceModelInterface> device_model_interface) :
-    device_model{std::move(device_model_interface)} {
+DeviceModel::DeviceModel(std::unique_ptr<DeviceModelStorageInterface> device_model_storage_interface) :
+    device_model{std::move(device_model_storage_interface)} {
     this->device_model_map = this->device_model->get_device_model();
 }
 

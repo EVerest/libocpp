@@ -58,10 +58,10 @@ private:
 /// \brief Abstract base class for device model interface. This class provides an interface for accessing and modifying
 /// device model data. Implementations of this class should provide concrete implementations for the virtual methods
 /// declared here.
-class DeviceModelInterface {
+class DeviceModelStorageInterface {
 
 public:
-    virtual ~DeviceModelInterface() = default;
+    virtual ~DeviceModelStorageInterface() = default;
 
     /// \brief Gets the device model from the device model interface
     /// \return std::map<Component, std::map<Variable, VariableMetaData>> that will contain a full representation of the

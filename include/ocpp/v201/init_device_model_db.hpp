@@ -36,7 +36,7 @@
 #include <filesystem>
 
 #include <ocpp/common/database/database_handler_common.hpp>
-#include <ocpp/v201/device_model_interface.hpp>
+#include <ocpp/v201/device_model_storage_interface.hpp>
 
 namespace ocpp::v201 {
 ///

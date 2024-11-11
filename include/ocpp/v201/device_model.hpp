@@ -8,7 +8,7 @@
 
 #include <everest/logging.hpp>
 
-#include <ocpp/v201/device_model_interface.hpp>
+#include <ocpp/v201/device_model_storage_interface.hpp>
 
 namespace ocpp {
 namespace v201 {
@@ -97,7 +97,7 @@ class DeviceModel {
 
 private:
     DeviceModelMap device_model_map;
-    std::unique_ptr<DeviceModelInterface> device_model;
+    std::unique_ptr<DeviceModelStorageInterface> device_model;
 
     /// \brief Listener for the internal change of a variable
     on_variable_changed variable_listener;
@@ -138,8 +138,8 @@ private:
 
 public:
     /// \brief Constructor for the device model
-    /// \param device_model_interface pointer to a device model interface class
-    explicit DeviceModel(std::unique_ptr<DeviceModelInterface> device_model_interface);
+    /// \param device_model_storage_interface pointer to a device model interface class
+    explicit DeviceModel(std::unique_ptr<DeviceModelStorageInterface> device_model_storage_interface);
 
     /// \brief Direct access to value of a VariableAttribute for the given component, variable and attribute_enum. This
     /// should only be called for variables that have a role standardized in the OCPP2.0.1 specification.
