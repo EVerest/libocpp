@@ -285,6 +285,8 @@ void WebsocketLibwebsockets::set_connection_options(const WebsocketConnectionOpt
         security::SecurityProfile::UNSECURED_TRANSPORT_WITH_BASIC_AUTHENTICATION) {
         this->connection_options.csms_uri.set_secure(true);
     }
+
+    this->connection_attempts = 1; // reset connection attempts
 }
 
 static int callback_minimal(struct lws* wsi, enum lws_callback_reasons reason, void* user, void* in, size_t len) {
