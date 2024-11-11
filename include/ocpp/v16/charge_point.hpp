@@ -45,7 +45,7 @@ private:
     /// Constructors for chargepoint, 1.6 and 2.0.1
     /// @{
 
-    /// @name 16_constructors Constructors for 1.6
+    /// @name Constructors for 1.6
     /// @{
 
 public:
@@ -190,7 +190,7 @@ public:
     /// Handlers that can be called from the implementing class.
     /// @{
 
-    /// @name handlers
+    /// @name Handlers
     /// The handlers
     /// @{
 
@@ -360,7 +360,7 @@ public:
     /// Callbacks will call be called when necessary and must be implemented by the calling class.
     /// @{
 
-    /// @name callbacks
+    /// @name Callbacks
     /// Callbacks
     /// @{
 
@@ -557,21 +557,6 @@ public:
     void register_security_event_callback(
         const std::function<void(const std::string& type, const std::string& tech_info)>& callback);
 
-    /// @} // End ocpp 16 callbacks group / topic
-
-    /// @} // End group
-
-    /// \brief Gets the configured configuration key requested in the given \p request
-    /// \param request specifies the keys that should be returned. If empty or not set, all keys will be reported
-    /// \return a response containing the requested key(s) including the values and unkown keys if present
-    GetConfigurationResponse get_configuration_key(const GetConfigurationRequest& request);
-
-    /// \brief Sets a custom configuration key
-    /// \param key
-    /// \param value
-    /// \return Indicates the result of the operation
-    ConfigurationStatus set_custom_configuration_key(CiString<50> key, CiString<500> value);
-
     /// \brief registers a \p callback function that can be used to check, if the \p connector is reserved for the given
     /// \p id_token. The is_token_reserved_for_connector_callback is called when a RemoteStartTransaction.req is
     /// received.
@@ -592,6 +577,21 @@ public:
     /// \ingroup ocpp16_callbacks
     void register_set_display_message_callback(
         const std::function<DataTransferResponse(const std::vector<DisplayMessage>&)> set_display_message_callback);
+
+    /// @} // End ocpp 16 callbacks group / topic
+
+    /// @} // End group
+
+    /// \brief Gets the configured configuration key requested in the given \p request
+    /// \param request specifies the keys that should be returned. If empty or not set, all keys will be reported
+    /// \return a response containing the requested key(s) including the values and unkown keys if present
+    GetConfigurationResponse get_configuration_key(const GetConfigurationRequest& request);
+
+    /// \brief Sets a custom configuration key
+    /// \param key
+    /// \param value
+    /// \return Indicates the result of the operation
+    ConfigurationStatus set_custom_configuration_key(CiString<50> key, CiString<500> value);
 
     /// \brief Delay draining the message queue after reconnecting, so the CSMS can perform post-reconnect checks first
     /// \param delay The delay period (seconds)

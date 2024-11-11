@@ -48,7 +48,7 @@ Please see the [Getting Started documentation for OCPP1.6](../v16/getting_starte
 
 ## Get Started with OCPP2.0.1
 
-Please see the [Getting Started documentation for OCPP1.6](../v201/getting_started.md).
+Please see the [Getting Started documentation for OCPP2.0.1](../v201/getting_started.md).
 
 ## Building the doxygen documentation
 
