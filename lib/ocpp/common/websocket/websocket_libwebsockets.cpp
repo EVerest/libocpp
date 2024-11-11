@@ -700,6 +700,8 @@ bool WebsocketLibwebsockets::connect() {
         return false;
     }
 
+    this->shutting_down = false;
+
     EVLOG_info << "Connecting to uri: " << this->connection_options.csms_uri.string() << " with security-profile "
                << this->connection_options.security_profile
                << (this->connection_options.use_tpm_tls ? " with TPM keys" : "");
@@ -761,16 +763,6 @@ bool WebsocketLibwebsockets::connect() {
         empty.swap(recv_message_queue);
     }
 
-    // Bind reconnect callback
-    this->reconnect_callback = [this]() {
-        // close connection before reconnecting
-        if (this->m_is_connected) {
-            this->close(WebsocketCloseReason::AbnormalClose, "before reconnecting");
-        }
-
-        this->connect();
-    };
-
     bool timeouted = false;
     bool connected = false;
 
@@ -786,7 +778,7 @@ bool WebsocketLibwebsockets::connect() {
         // will send back another message, and since we're waiting for that message to be
         // sent over the wire on the client_loop, not giving the opportunity to the loop to
         // advance we will have a dead-lock
-        this->recv_message_thread = std::make_unique<std::thread>(&WebsocketLibwebsockets::recv_loop, this);;
+        this->recv_message_thread = std::make_unique<std::thread>(&WebsocketLibwebsockets::recv_loop, this);
 
         // Wait until connect or timeout
         timeouted = !conn_cv.wait_for(lock, std::chrono::seconds(60), [&]() {
@@ -838,11 +830,12 @@ void WebsocketLibwebsockets::reconnect(long delay) {
         std::lock_guard<std::mutex> lk(this->reconnect_mutex);
         this->reconnect_timer_tpm.timeout(
             [this]() {
-                if (this->reconnect_callback) {
-                    this->reconnect_callback();
-                } else {
-                    EVLOG_error << "Invalid reconnect callback!";
+                // close connection before reconnecting
+                if (this->m_is_connected) {
+                    this->close(WebsocketCloseReason::AbnormalClose, "before reconnecting");
                 }
+
+                this->connect();
             },
             std::chrono::milliseconds(delay));
     }
