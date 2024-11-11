@@ -246,15 +246,17 @@ WebsocketLibwebsockets::~WebsocketLibwebsockets() {
         local_data->do_interrupt();
     }
 
-    if (websocket_thread != nullptr) {
+    std::lock_guard lock(this->connection_mutex);
+
+    if (websocket_thread != nullptr && websocket_thread->joinable()) {
         websocket_thread->join();
     }
 
-    if (recv_message_thread != nullptr) {
+    if (recv_message_thread != nullptr && recv_message_thread->joinable()) {
         recv_message_thread->join();
     }
 
-    if (this->deferred_callback_thread != nullptr) {
+    if (this->deferred_callback_thread != nullptr && deferred_callback_thread->joinable()) {
         {
             std::scoped_lock tmp_lock(this->deferred_callback_mutex);
             this->stop_deferred_handler = true;
@@ -713,17 +715,24 @@ bool WebsocketLibwebsockets::connect() {
     // use new connection context
     conn_data = local_data;
 
-    // Wait old thread for a clean state
-    if (this->websocket_thread) {
-        // Awake libwebsockets thread to quickly exit
-        request_write();
-        this->websocket_thread->join();
-    }
+    {
+        std::scoped_lock lock(connection_mutex);
 
-    if (this->recv_message_thread) {
-        // Awake the receiving message thread to finish
-        recv_message_cv.notify_one();
-        this->recv_message_thread->join();
+        // Wait old thread for a clean state
+        if (this->websocket_thread || this->recv_message_thread) {
+            // Awake libwebsockets thread to quickly exit
+            if (this->websocket_thread && this->websocket_thread->joinable()) {
+                request_write();
+                this->websocket_thread->join();
+                this->websocket_thread.reset();
+            }
+            if (this->recv_message_thread && this->recv_message_thread->joinable()) {
+                // Awake the receiving message thread to finish
+                recv_message_cv.notify_one();
+                this->recv_message_thread->join();
+                this->recv_message_thread.reset();
+            }
+        }
     }
 
     if (this->deferred_callback_thread == nullptr) {
@@ -767,7 +776,7 @@ bool WebsocketLibwebsockets::connect() {
         std::unique_lock<std::mutex> lock(connection_mutex);
 
         // Release other threads
-        this->websocket_thread.reset(new std::thread(&WebsocketLibwebsockets::client_loop, this));
+        this->websocket_thread = std::make_unique<std::thread>(&WebsocketLibwebsockets::client_loop, this);
 
         // TODO(ioan): remove this thread when the fix will be moved into 'MessageQueue'
         // The reason for having a received message processing thread is that because
@@ -775,7 +784,7 @@ bool WebsocketLibwebsockets::connect() {
         // will send back another message, and since we're waiting for that message to be
         // sent over the wire on the client_loop, not giving the opportunity to the loop to
         // advance we will have a dead-lock
-        this->recv_message_thread.reset(new std::thread(&WebsocketLibwebsockets::recv_loop, this));
+        this->recv_message_thread = std::make_unique<std::thread>(&WebsocketLibwebsockets::recv_loop, this);;
 
         // Wait until connect or timeout
         timeouted = !conn_cv.wait_for(lock, std::chrono::seconds(60), [&]() {
