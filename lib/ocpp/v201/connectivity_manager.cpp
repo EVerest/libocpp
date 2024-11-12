@@ -222,6 +222,11 @@ bool ConnectivityManager::init_websocket() {
     if (!network_connection_profile.has_value()) {
         EVLOG_warning << "No network connection profile configured for " << config_slot_int;
         can_use_connection_profile = false;
+    } else if (const auto& security_profile_cv = ControllerComponentVariables::SecurityProfile;
+               network_connection_profile.value().securityProfile <
+               this->device_model.get_value<int>(security_profile_cv)) {
+        EVLOG_info << "Slot #" << config_slot_int << " has a lower security profile than current security profile";
+        can_use_connection_profile = false;
     } else if (this->configure_network_connection_profile_callback.has_value()) {
         EVLOG_debug << "Request to configure network connection profile " << config_slot_int;
 
