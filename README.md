@@ -31,18 +31,18 @@ OCPP1.6 is fully implemented.
 
 | Feature Profile            | Supported                 |
 | -------------------------- | ------------------------- |
-| Core                       | :heavy_check_mark: yes    |
-| Firmware Management        | :heavy_check_mark: yes    |
-| Local Auth List Management | :heavy_check_mark: yes    |
-| Reservation                | :heavy_check_mark: yes    |
-| Smart Charging             | :heavy_check_mark: yes    |
-| Remote Trigger             | :heavy_check_mark: yes    |
+| Core                       | ✅ yes    |
+| Firmware Management        | ✅ yes    |
+| Local Auth List Management | ✅ yes    |
+| Reservation                | ✅ yes    |
+| Smart Charging             | ✅ yes    |
+| Remote Trigger             | ✅ yes    |
 
 | Whitepapers & Application Notes                                                                                                                              | Supported              |
 | ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
-| [OCPP 1.6 Security Whitepaper (3rd edition)](https://www.openchargealliance.org/uploads/files/OCPP-1.6-security-whitepaper-edition-3.zip) | :heavy_check_mark: yes |
-| [Using ISO 15118 Plug & Charge with OCPP 1.6](https://www.openchargealliance.org/uploads/files/ocpp_1_6_ISO_15118_v10.pdf)                | :heavy_check_mark: yes                    |
-| [OCPP & California Pricing Requirements](https://www.openchargealliance.org/uploads/files/ocpp_and_dms_evse_regulation-v2.0.pdf)          | :heavy_check_mark: yes |
+| [OCPP 1.6 Security Whitepaper (3rd edition)](https://openchargealliance.org/wp-content/uploads/2023/11/OCPP-1.6-security-whitepaper-edition-3-2.zip) | ✅ yes |
+| [Using ISO 15118 Plug & Charge with OCPP 1.6](https://openchargealliance.org/wp-content/uploads/2023/11/ocpp_1_6_ISO_15118_v10.pdf)                | ✅ yes                    |
+| [OCPP & California Pricing Requirements](https://openchargealliance.org/wp-content/uploads/2024/09/ocpp_and_dms_evse_regulation-v3.1.pdf)          | ✅ yes |
 
 ### CSMS Compatibility
 
@@ -86,28 +86,28 @@ The following table shows the known CSMS with which this library was tested.
 
 | Feature Profile                      | Supported                 |
 | -------------------------------------| ------------------------- |
-| A. Security                          | :heavy_check_mark: yes  |
-| B. Provisioning                      | :heavy_check_mark: yes  |
-| C. Authorization                     | :heavy_check_mark: yes  |
-| D. LocalAuthorizationList Management | :heavy_check_mark: yes  |
-| E. Transactions                      | :heavy_check_mark: yes  |
-| F. RemoteControl                     | :heavy_check_mark: yes  |
-| G. Availability                      | :heavy_check_mark: yes  |
+| A. Security                          | ✅ yes  |
+| B. Provisioning                      | ✅ yes  |
+| C. Authorization                     | ✅ yes  |
+| D. LocalAuthorizationList Management | ✅ yes  |
+| E. Transactions                      | ✅ yes  |
+| F. RemoteControl                     | ✅ yes  |
+| G. Availability                      | ✅ yes  |
 | H. Reservation                       | WIP                       |
-| I. TariffAndCost                     | :heavy_check_mark: yes  |
-| J. MeterValues                       | :heavy_check_mark: yes  |
+| I. TariffAndCost                     | ✅ yes  |
+| J. MeterValues                       | ✅ yes  |
 | K. SmartCharging                     | WIP                       |
-| L. FirmwareManagement                | :heavy_check_mark: yes  |
-| M. ISO 15118 CertificateManagement   | :heavy_check_mark: yes  |
-| N. Diagnostics                       | :heavy_check_mark: yes  |
-| O. DisplayMessage                    | :heavy_check_mark: yes  |
-| P. DataTransfer                      | :heavy_check_mark: yes  |
+| L. FirmwareManagement                | ✅ yes  |
+| M. ISO 15118 CertificateManagement   | ✅ yes  |
+| N. Diagnostics                       | ✅ yes  |
+| O. DisplayMessage                    | ✅ yes  |
+| P. DataTransfer                      | ✅ yes  |
 
-The development of OCPP2.0.1 is in progress. Check the [detailed current implementation status.](/doc/ocpp_201_status.md).
+The development of OCPP2.0.1 is in progress. Check the [detailed current implementation status.](doc/v201/ocpp_201_status.md).
 
 | Whitepapers & Application Notes                                                                                                                              | Supported              |
 | ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
-| [OCPP & California Pricing Requirements](https://www.openchargealliance.org/uploads/files/ocpp_and_dms_evse_regulation-v2.0.pdf)          | :heavy_check_mark: yes                  |
+| [OCPP & California Pricing Requirements](https://openchargealliance.org/wp-content/uploads/2024/09/ocpp_and_dms_evse_regulation-v3.1.pdf)          | ✅ yes                  |
 
 ### CSMS Compatibility OCPP 2.0.1
 
