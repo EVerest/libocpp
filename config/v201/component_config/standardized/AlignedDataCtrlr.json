@@ -6,7 +6,6 @@
   "properties": {
     "AlignedDataCtrlrEnabled": {
       "variable_name": "Enabled",
-      "source": "OCPP",
       "characteristics": {
         "supportsMonitoring": true,
         "dataType": "boolean"
@@ -23,7 +22,6 @@
     },
     "AlignedDataCtrlrAvailable": {
       "variable_name": "Available",
-      "source": "OCPP",
       "characteristics": {
         "supportsMonitoring": true,
         "dataType": "boolean"
@@ -40,7 +38,6 @@
     },
     "AlignedDataInterval": {
       "variable_name": "Interval",
-      "source": "OCPP",
       "characteristics": {
         "unit": "s",
         "supportsMonitoring": true,
