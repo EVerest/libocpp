@@ -46,7 +46,9 @@ void ConnectivityManager::set_websocket_connection_options(const WebsocketConnec
 void ConnectivityManager::set_websocket_connection_options_without_reconnect() {
     const int configuration_slot = get_active_network_configuration_slot();
     const auto connection_options = this->get_ws_connection_options(configuration_slot);
-    this->set_websocket_connection_options(connection_options);
+    if (connection_options.has_value()) {
+        this->set_websocket_connection_options(connection_options.value());
+    }
 }
 
 void ConnectivityManager::set_websocket_connected_callback(WebsocketConnectionCallback callback) {
@@ -109,8 +111,8 @@ void ConnectivityManager::start(bool autoconnect) {
         this->cache_network_connection_profiles();
         return;
     }
+    this->disable_automatic_websocket_reconnects = false;
     if (init_websocket() && websocket != nullptr) {
-        this->disable_automatic_websocket_reconnects = false;
         websocket->connect();
     }
 }
@@ -130,10 +132,10 @@ void ConnectivityManager::connect() {
 
 void ConnectivityManager::disconnect_websocket(WebsocketCloseReason code) {
     this->websocket_timer.stop();
+    if (code != WebsocketCloseReason::ServiceRestart) {
+        this->disable_automatic_websocket_reconnects = true;
+    }
     if (this->websocket != nullptr) {
-        if (code != WebsocketCloseReason::ServiceRestart) {
-            this->disable_automatic_websocket_reconnects = true;
-        }
         this->websocket->disconnect(code);
     }
 }
@@ -222,6 +224,9 @@ bool ConnectivityManager::init_websocket() {
     if (!network_connection_profile.has_value()) {
         EVLOG_warning << "No network connection profile configured for " << config_slot_int;
         can_use_connection_profile = false;
+    } else if (!connection_options.has_value()) {
+        EVLOG_warning << "Connection profile configured for " << config_slot_int << " failed: not valid URL";
+        can_use_connection_profile = false;
     } else if (const auto& security_profile_cv = ControllerComponentVariables::SecurityProfile;
                network_connection_profile.value().securityProfile <
                this->device_model.get_value<int>(security_profile_cv)) {
@@ -250,7 +255,7 @@ bool ConnectivityManager::init_websocket() {
             if (result.success and result.network_profile_slot == config_slot_int) {
                 EVLOG_debug << "Config slot " << config_slot_int << " is configured";
                 // Set interface or ip to connection options.
-                connection_options.iface = result.interface_address;
+                connection_options->iface = result.interface_address;
             } else {
                 EVLOG_warning << "Could not configure config slot " << config_slot_int;
                 can_use_connection_profile = false;
@@ -262,19 +267,18 @@ bool ConnectivityManager::init_websocket() {
 
     if (!can_use_connection_profile) {
         EVLOG_info << "websocket_timer set_timeout";
-        if (this->disable_automatic_websocket_reconnects) {
-            return false;
+        if (!this->disable_automatic_websocket_reconnects) {
+            // if we are not going to hibernate
+            this->websocket_timer.timeout(
+                [this]() {
+                    EVLOG_info << "websocket_timer.timeout 1";
+                    this->next_network_configuration_priority();
+                    this->start();
+                },
+                WEBSOCKET_INIT_DELAY);
         }
 
-        this->websocket_timer.timeout(
-            [this]() {
-                EVLOG_info << "websocket_timer.timeout 1";
-                this->next_network_configuration_priority();
-                this->start();
-            },
-            WEBSOCKET_INIT_DELAY);
-
-        return true;
+        return false;
     }
 
     EVLOG_info << "Open websocket with NetworkConfigurationPriority: " << this->network_configuration_priority + 1
@@ -296,7 +300,7 @@ bool ConnectivityManager::init_websocket() {
     }
 
     if (this->websocket == nullptr) {
-        this->websocket = std::make_unique<Websocket>(connection_options, this->evse_security, this->logging);
+        this->websocket = std::make_unique<Websocket>(connection_options.value(), this->evse_security, this->logging);
 
         this->websocket->register_connected_callback(
             std::bind(&ConnectivityManager::on_websocket_connected, this, std::placeholders::_1));
@@ -305,7 +309,7 @@ bool ConnectivityManager::init_websocket() {
         this->websocket->register_closed_callback(
             std::bind(&ConnectivityManager::on_websocket_closed, this, std::placeholders::_1));
     } else {
-        this->websocket->set_connection_options(connection_options);
+        this->websocket->set_connection_options(connection_options.value());
     }
 
     // Attach external callbacks everytime since they might have changed
@@ -317,7 +321,8 @@ bool ConnectivityManager::init_websocket() {
     return true;
 }
 
-WebsocketConnectionOptions ConnectivityManager::get_ws_connection_options(const int32_t configuration_slot) {
+std::optional<WebsocketConnectionOptions>
+ConnectivityManager::get_ws_connection_options(const int32_t configuration_slot) {
     const auto network_connection_profile_opt = this->get_network_connection_profile(configuration_slot);
 
     if (!network_connection_profile_opt.has_value()) {
@@ -327,40 +332,48 @@ WebsocketConnectionOptions ConnectivityManager::get_ws_connection_options(const 
 
     const auto network_connection_profile = network_connection_profile_opt.value();
 
-    auto uri = Uri::parse_and_validate(
-        network_connection_profile.ocppCsmsUrl.get(),
-        this->device_model.get_value<std::string>(ControllerComponentVariables::SecurityCtrlrIdentity),
-        network_connection_profile.securityProfile);
+    try {
+        auto uri = Uri::parse_and_validate(
+            network_connection_profile.ocppCsmsUrl.get(),
+            this->device_model.get_value<std::string>(ControllerComponentVariables::SecurityCtrlrIdentity),
+            network_connection_profile.securityProfile);
 
-    WebsocketConnectionOptions connection_options{
-        OcppProtocolVersion::v201,
-        uri,
-        network_connection_profile.securityProfile,
-        this->device_model.get_optional_value<std::string>(ControllerComponentVariables::BasicAuthPassword),
-        this->device_model.get_value<int>(ControllerComponentVariables::RetryBackOffRandomRange),
-        this->device_model.get_value<int>(ControllerComponentVariables::RetryBackOffRepeatTimes),
-        this->device_model.get_value<int>(ControllerComponentVariables::RetryBackOffWaitMinimum),
-        this->device_model.get_value<int>(ControllerComponentVariables::NetworkProfileConnectionAttempts),
-        this->device_model.get_value<std::string>(ControllerComponentVariables::SupportedCiphers12),
-        this->device_model.get_value<std::string>(ControllerComponentVariables::SupportedCiphers13),
-        this->device_model.get_value<int>(ControllerComponentVariables::WebSocketPingInterval),
-        this->device_model.get_optional_value<std::string>(ControllerComponentVariables::WebsocketPingPayload)
-            .value_or("payload"),
-        this->device_model.get_optional_value<int>(ControllerComponentVariables::WebsocketPongTimeout).value_or(5),
-        this->device_model.get_optional_value<bool>(ControllerComponentVariables::UseSslDefaultVerifyPaths)
-            .value_or(true),
-        this->device_model.get_optional_value<bool>(ControllerComponentVariables::AdditionalRootCertificateCheck)
-            .value_or(false),
-        std::nullopt, // hostName
-        this->device_model.get_optional_value<bool>(ControllerComponentVariables::VerifyCsmsCommonName).value_or(true),
-        this->device_model.get_optional_value<bool>(ControllerComponentVariables::UseTPM).value_or(false),
-        this->device_model.get_optional_value<bool>(ControllerComponentVariables::VerifyCsmsAllowWildcards)
-            .value_or(false),
-        this->device_model.get_optional_value<std::string>(ControllerComponentVariables::IFace),
-        this->device_model.get_optional_value<bool>(ControllerComponentVariables::EnableTLSKeylog).value_or(false),
-        this->device_model.get_optional_value<std::string>(ControllerComponentVariables::TLSKeylogFile)};
+        WebsocketConnectionOptions connection_options{
+            OcppProtocolVersion::v201,
+            uri,
+            network_connection_profile.securityProfile,
+            this->device_model.get_optional_value<std::string>(ControllerComponentVariables::BasicAuthPassword),
+            this->device_model.get_value<int>(ControllerComponentVariables::RetryBackOffRandomRange),
+            this->device_model.get_value<int>(ControllerComponentVariables::RetryBackOffRepeatTimes),
+            this->device_model.get_value<int>(ControllerComponentVariables::RetryBackOffWaitMinimum),
+            this->device_model.get_value<int>(ControllerComponentVariables::NetworkProfileConnectionAttempts),
+            this->device_model.get_value<std::string>(ControllerComponentVariables::SupportedCiphers12),
+            this->device_model.get_value<std::string>(ControllerComponentVariables::SupportedCiphers13),
+            this->device_model.get_value<int>(ControllerComponentVariables::WebSocketPingInterval),
+            this->device_model.get_optional_value<std::string>(ControllerComponentVariables::WebsocketPingPayload)
+                .value_or("payload"),
+            this->device_model.get_optional_value<int>(ControllerComponentVariables::WebsocketPongTimeout).value_or(5),
+            this->device_model.get_optional_value<bool>(ControllerComponentVariables::UseSslDefaultVerifyPaths)
+                .value_or(true),
+            this->device_model.get_optional_value<bool>(ControllerComponentVariables::AdditionalRootCertificateCheck)
+                .value_or(false),
+            std::nullopt, // hostName
+            this->device_model.get_optional_value<bool>(ControllerComponentVariables::VerifyCsmsCommonName)
+                .value_or(true),
+            this->device_model.get_optional_value<bool>(ControllerComponentVariables::UseTPM).value_or(false),
+            this->device_model.get_optional_value<bool>(ControllerComponentVariables::VerifyCsmsAllowWildcards)
+                .value_or(false),
+            this->device_model.get_optional_value<std::string>(ControllerComponentVariables::IFace),
+            this->device_model.get_optional_value<bool>(ControllerComponentVariables::EnableTLSKeylog).value_or(false),
+            this->device_model.get_optional_value<std::string>(ControllerComponentVariables::TLSKeylogFile)};
 
-    return connection_options;
+        return connection_options;
+
+    } catch (const std::invalid_argument& e) {
+        EVLOG_error << "Could not configure the connection options: " << e.what();
+    }
+
+    return std::nullopt;
 }
 
 void ConnectivityManager::on_websocket_connected([[maybe_unused]] int security_profile) {

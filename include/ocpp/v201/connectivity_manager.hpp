@@ -166,7 +166,7 @@ private:
     /// \brief Get the current websocket connection options
     /// \returns the current websocket connection options
     ///
-    WebsocketConnectionOptions get_ws_connection_options(const int32_t configuration_slot);
+    std::optional<WebsocketConnectionOptions> get_ws_connection_options(const int32_t configuration_slot);
 
     /// \brief Function invoked when the web socket connected with the \p security_profile
     ///
