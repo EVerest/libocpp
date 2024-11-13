@@ -582,18 +582,20 @@ private:
     void set_evse_connectors_unavailable(EvseInterface& evse, bool persist);
 
     ///
-    /// \brief Get connector status.
+    /// \brief Check if there is a connector available with the given connector type.
+    /// \param evse_id          The evse to check for.
+    /// \param connector_type   The connector type.
+    /// \return True when a connector is available and the evse id exists.
     ///
-    /// This will search if there is a connector on this evse with status 'Available'. It will search through all
-    /// connectors, optionally filtering by connector type, and return on the first connector that is 'Available'. If
-    /// there is no 'Available' connector, it will return the status of one of the connectors.
+    bool is_connector_available(const uint32_t evse_id, std::optional<ConnectorEnum> connector_type);
+
     ///
-    /// \param evse_id          The evse id.
-    /// \param connector_type   The connector type to filter on (optional).
-    /// \return Connector status. If connector type is given and does not exist, std::nullopt.
+    /// \brief Check if the connector exists on the given evse id.
+    /// \param evse_id          The evse id to check for.
+    /// \param connector_type   The connector type.
+    /// \return False if evse id does not exist or evse does not have the given connector type.
     ///
-    std::optional<ConnectorStatusEnum> get_connector_status(const uint32_t evse_id,
-                                                            std::optional<ConnectorEnum> connector_type);
+    bool does_connector_exist(const uint32_t evse_id, std::optional<ConnectorEnum> connector_type);
 
     /// \brief Get the value optional offline flag
     /// \return true if the charge point is offline. std::nullopt if it is online;

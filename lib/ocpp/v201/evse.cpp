@@ -86,8 +86,40 @@ uint32_t Evse::get_number_of_connectors() const {
     return static_cast<uint32_t>(this->id_connector_map.size());
 }
 
-std::optional<ConnectorStatusEnum> Evse::get_connector_status(const uint32_t evse_id,
-                                                              std::optional<ConnectorEnum> connector_type) {
+bool Evse::does_connector_exist(const ConnectorEnum connector_type) {
+    const uint32_t number_of_connectors = this->get_number_of_connectors();
+    if (number_of_connectors == 0) {
+        return false;
+    }
+
+    if (connector_type == ConnectorEnum::Unknown) {
+        return true;
+    }
+
+    for (uint32_t i = 1; i <= number_of_connectors; ++i) {
+        Connector* connector;
+        try {
+            connector = this->get_connector(static_cast<int32_t>(i));
+        } catch (const std::logic_error&) {
+            EVLOG_error << "Connector with id " << i << " does not exist";
+            continue;
+        }
+
+        if (connector == nullptr) {
+            EVLOG_error << "Connector with id " << i << " does not exist";
+            continue;
+        }
+
+        ConnectorEnum type = this->get_evse_connector_type(i).value_or(ConnectorEnum::Unknown);
+        if (type == ConnectorEnum::Unknown || type == connector_type) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+std::optional<ConnectorStatusEnum> Evse::get_connector_status(std::optional<ConnectorEnum> connector_type) {
     bool type_found = false;
     ConnectorStatusEnum found_status = ConnectorStatusEnum::Unavailable;
     const uint32_t number_of_connectors = this->get_number_of_connectors();
@@ -111,8 +143,7 @@ std::optional<ConnectorStatusEnum> Evse::get_connector_status(const uint32_t evs
 
         const ConnectorStatusEnum connector_status = connector->get_effective_connector_status();
 
-        const std::optional<ConnectorEnum> evse_connector_type =
-            this->get_evse_connector_type(static_cast<uint32_t>(evse_id), i);
+        const std::optional<ConnectorEnum> evse_connector_type = this->get_evse_connector_type(i);
         if (!connector_type.has_value() ||
             (!evse_connector_type.has_value() || evse_connector_type.value() == connector_type.value())) {
             type_found = true;
@@ -171,15 +202,15 @@ void Evse::delete_database_transaction() {
     }
 }
 
-std::optional<ConnectorEnum> Evse::get_evse_connector_type(const uint32_t evse_id, const uint32_t connector_id) {
+std::optional<ConnectorEnum> Evse::get_evse_connector_type(const uint32_t connector_id) {
 
     auto connector = this->get_connector(static_cast<int32_t>(connector_id));
     if (connector == nullptr) {
         return std::nullopt;
     }
 
-    ComponentVariable connector_cv =
-        ConnectorComponentVariables::get_component_variable(evse_id, connector_id, ConnectorComponentVariables::Type);
+    ComponentVariable connector_cv = ConnectorComponentVariables::get_component_variable(
+        this->evse_id, connector_id, ConnectorComponentVariables::Type);
 
     const std::optional<std::string> connector_type =
         this->device_model.get_optional_value<std::string>(connector_cv, AttributeEnum::Actual);
@@ -226,7 +257,8 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
         try {
             this->database_handler->transaction_insert(*this->transaction.get(), this->evse_id);
         } catch (const QueryExecutionException& e) {
-            // Delete previous transactions that should not exist anyway and try again. Otherwise throw to higher level
+            // Delete previous transactions that should not exist anyway and try again. Otherwise throw to higher
+            // level
             this->delete_database_transaction();
             this->database_handler->transaction_insert(*this->transaction.get(), this->evse_id);
         }
@@ -561,8 +593,8 @@ void Evse::send_meter_value_on_pricing_trigger(const MeterValue& meter_value) {
         }
     }
 
-    // Check if there is a power kw trigger and if that is triggered. For the power kw trigger, we added hysterisis to
-    // prevent constant triggering.
+    // Check if there is a power kw trigger and if that is triggered. For the power kw trigger, we added hysterisis
+    // to prevent constant triggering.
     const std::optional<float> active_power_meter_value = utils::get_total_power_active_import(meter_value);
 
     if (!this->trigger_metervalue_on_power_kw.has_value() or !active_power_meter_value.has_value()) {
