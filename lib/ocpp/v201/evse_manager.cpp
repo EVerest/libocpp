@@ -44,7 +44,7 @@ const EvseInterface& EvseManager::get_evse(const int32_t id) const {
 }
 
 bool EvseManager::does_evse_exist(const int32_t id) const {
-    return id > 0 && static_cast<uint64_t>(id) <= this->evses.size();
+    return id >= 0 && static_cast<uint64_t>(id) <= this->evses.size();
 }
 
 size_t EvseManager::get_number_of_evses() const {

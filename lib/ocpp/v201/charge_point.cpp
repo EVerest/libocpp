@@ -3368,7 +3368,7 @@ void ChargePoint::handle_reserve_now_request(Call<ReserveNowRequest> call) {
     const std::optional<int32_t> evse_id = request.evseId;
 
     if (evse_id.has_value()) {
-        if (!evse_manager->does_evse_exist(evse_id.value())) {
+        if (evse_id <= 0 || !evse_manager->does_evse_exist(evse_id.value())) {
             EVLOG_error << "Trying to make a reservation, but evse " << evse_id.value() << " is not a valid evse id.";
             send_reserve_now_rejected_response(call.uniqueId, "Evse id does not exist");
             return;
@@ -4719,7 +4719,8 @@ std::vector<CompositeSchedule> ChargePoint::get_all_composite_schedules(const in
             composite_schedule_response.schedule.has_value()) {
             composite_schedules.push_back(composite_schedule_response.schedule.value());
         } else {
-            EVLOG_warning << "Could not internally retrieve composite schedule: " << composite_schedule_response;
+            EVLOG_warning << "Could not internally retrieve composite schedule for evse id " << evse_id << ": "
+                          << composite_schedule_response;
         }
     }
 
