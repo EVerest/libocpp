@@ -60,4 +60,4 @@ Please see the [Getting Started documentation for OCPP2.0.1](../v201/getting_sta
 You will find the generated doxygen documentation at:
 `build/dist/docs/html/index.html`
 
-The main reference for the integration of libocpp for OCPP1.6 is the ocpp::v16::ChargePoint class defined in libocpp/include/ocpp/v16/charge_point.hpp , for OCPP2.0.1 that is the ocpp::v201::ChargePoint class defined in libocpp/include/ocpp/v201/charge_point.hpp .
+The main reference for the integration of libocpp for OCPP1.6 is the ocpp::v16::ChargePoint class defined in `v16/charge_point.hpp` , for OCPP2.0.1 that is the ocpp::v201::ChargePoint class defined in `v201/charge_point.hpp` .

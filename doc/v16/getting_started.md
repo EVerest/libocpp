@@ -10,7 +10,7 @@ Libocpp needs registered **callbacks** in order to execute control commands defi
 
 The implementation must call **event handlers** of libocpp so that the library can track the state of the charging station and trigger OCPP messages accordingly (e.g. MeterValues.req , StatusNotification.req)
 
-Your reference within libocpp to interact is a single instance to the class ocpp::v16::ChargePoint ([ChargePoint](include/ocpp/v16/charge_point.hpp)) defined in libocpp/include/ocpp/v16/charge_point.hpp for OCPP 1.6.
+Your reference within libocpp to interact is a single instance to the class ocpp::v16::ChargePoint ([ChargePoint](include/ocpp/v16/charge_point.hpp)) defined in `ocpp/v16/charge_point.hpp` for OCPP 1.6.
 
 ### Overview of the required callbacks and events and what libocpp expects to happen
 
@@ -27,9 +27,9 @@ The following sections explain the steps you can follow to implement their funct
 #### ChargePoint() constructor
 
 The main entrypoint for libocpp for OCPP1.6 is the ocpp::v16::ChargePoint constructor.
-This is defined in libocpp/include/ocpp/v16/charge_point.hpp and takes the following parameters:
+This is defined in `v16/charge_point.hpp` and takes the following parameters:
 
-- config: a std::string that contains the libocpp 1.6 config. There are example configs that work with a [SteVe](https://github.com/steve-community/steve) installation [running in Docker](https://github.com/EVerest/everest-utils/tree/main/docker/steve), for example: [config-docker.json](config/v16/config-docker.json)
+- config: a std::string that contains the libocpp 1.6 config. There are example configs that work with a [SteVe](https://github.com/steve-community/steve) installation for example `config/v16/config-docker.json`.
 
 - share_path: a std::filesystem path containing the path to the OCPP modules folder, for example pointing to */usr/share/everest/modules/OCPP*. This path contains the following files and directories and is installed by the libocpp  install target:
 
@@ -70,7 +70,7 @@ This is defined in libocpp/include/ocpp/v16/charge_point.hpp and takes the follo
 
 - message_log_path: this points to the directory in which libocpp can put OCPP communication logfiles for debugging purposes. This behavior can be controlled by the "LogMessages" (set to true by default) and "LogMessagesFormat" (set to ["log", "html", "session_logging"] by default, "console" and "console_detailed" are also available) configuration keys in the "Internal" section of the config file. Please note that this is intended for debugging purposes only as it logs all communication, including authentication messages.
 
-- evse_security: this is a pointer to an implementation of the [evse_security](include/ocpp/common/evse_security.hpp) interface. This allows you to include your custom implementation of the security related operations according to this interface. If you set this value to nullptr, the internal implementation of the security related operations of libocpp will be used. In this case you need to specify the parameter security_configuration
+- evse_security: this is a pointer to an implementation of the `common/evse_security.hpp` interface. This allows you to include your custom implementation of the security related operations according to this interface. If you set this value to nullptr, the internal implementation of the security related operations of libocpp will be used. In this case you need to specify the parameter security_configuration
 
 - security_configuration: this parameter should only be set in case the evse_security parameter is nullptr. It specifies the file paths that are required to set up the internal evse_security implementation. Note that you need to specify bundle files for the CA certificates and directories for the certificates and keys
 
