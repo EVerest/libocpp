@@ -1246,7 +1246,7 @@ This document contains the status of which OCPP 2.0.1 numbered functional requir
 | K01.FR.16 | ✅     |                                                                                                 |
 | K01.FR.17 | ⛽️     | K08 - The application of `ChargingProfileSchedules` are done via the `CompositeSchedule` from `GetCompositeSchedule` |
 | K01.FR.19 | ✅     |                                                                                                 |
-| K01.FR.20 | ✅     | Suggests `ACPhaseSwitchingSupported` should be per EVSE, conflicting with the rest of the spec. |
+| K01.FR.20 | ✅     | ACPhaseSwitchingSupported [discussion](https://lfenergy.zulipchat.com/#narrow/stream/417676-EVerest.3A-Cloud-communication/topic/libocpp.20DeviceModel.20and.20ACPhaseSwitchingSupported) |
 | K01.FR.21 |        | There is an active community discussion on this topic.                                          |
 | K01.FR.22 |        |                                                                                                 |
 | K01.FR.26 | ✅     |                                                                                                 |
