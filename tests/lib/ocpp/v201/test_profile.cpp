@@ -26,6 +26,7 @@ using std::nullopt;
 using std::chrono::minutes;
 using std::chrono::seconds;
 
+// it was required to introduce this default because the `limit` property became optional in the 2.1 message
 auto FIXME_DEFAULT_LIMIT = 0;
 
 period_entry_t gen_pe(ocpp::DateTime start, ocpp::DateTime end, ChargingProfile profile, int period_at) {
