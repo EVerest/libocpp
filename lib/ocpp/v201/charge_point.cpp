@@ -75,14 +75,7 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
         EVLOG_AND_THROW(std::invalid_argument("Database handler should not be null"));
     }
 
-    if (!this->message_queue) {
-        EVLOG_AND_THROW(std::invalid_argument("Message Queue should not be null"));
-    }
-
     initialize(evse_connector_structure, message_log_path);
-
-    this->message_dispatcher =
-        std::make_unique<MessageDispatcher>(*this->message_queue, *this->device_model, registration_status);
 }
 
 ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
@@ -95,39 +88,6 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
         std::make_shared<DatabaseHandler>(
             std::make_unique<common::DatabaseConnection>(fs::path(core_database_path) / "cp.db"), sql_init_path),
         nullptr /* message_queue initialized in this constructor */, message_log_path, evse_security, callbacks) {
-    std::set<v201::MessageType> message_types_discard_for_queueing;
-    try {
-        const auto message_types_discard_for_queueing_csl = ocpp::split_string(
-            this->device_model
-                ->get_optional_value<std::string>(ControllerComponentVariables::MessageTypesDiscardForQueueing)
-                .value_or(""),
-            ',');
-        std::transform(message_types_discard_for_queueing_csl.begin(), message_types_discard_for_queueing_csl.end(),
-                       std::inserter(message_types_discard_for_queueing, message_types_discard_for_queueing.end()),
-                       [](const std::string element) { return conversions::string_to_messagetype(element); });
-    } catch (const StringToEnumException& e) {
-        EVLOG_warning << "Could not convert configured MessageType value of MessageTypesDiscardForQueueing. Please "
-                         "check you configuration: "
-                      << e.what();
-    } catch (...) {
-        EVLOG_warning << "Could not apply MessageTypesDiscardForQueueing configuration";
-    }
-
-    this->message_queue = std::make_unique<ocpp::MessageQueue<v201::MessageType>>(
-        [this](json message) -> bool { return this->connectivity_manager->send_to_websocket(message.dump()); },
-        MessageQueueConfig<v201::MessageType>{
-            this->device_model->get_value<int>(ControllerComponentVariables::MessageAttempts),
-            this->device_model->get_value<int>(ControllerComponentVariables::MessageAttemptInterval),
-            this->device_model->get_optional_value<int>(ControllerComponentVariables::MessageQueueSizeThreshold)
-                .value_or(DEFAULT_MESSAGE_QUEUE_SIZE_THRESHOLD),
-            this->device_model->get_optional_value<bool>(ControllerComponentVariables::QueueAllMessages)
-                .value_or(false),
-            message_types_discard_for_queueing,
-            this->device_model->get_value<int>(ControllerComponentVariables::MessageTimeout)},
-        this->database_handler);
-
-    this->message_dispatcher =
-        std::make_unique<MessageDispatcher>(*this->message_queue, *this->device_model, registration_status);
 }
 
 ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
@@ -1175,6 +1135,42 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
         std::bind(&ChargePoint::websocket_disconnected_callback, this, std::placeholders::_1, std::placeholders::_2));
     this->connectivity_manager->set_websocket_connection_failed_callback(
         std::bind(&ChargePoint::websocket_connection_failed, this, std::placeholders::_1));
+
+    if (this->message_queue == nullptr) {
+        std::set<v201::MessageType> message_types_discard_for_queueing;
+        try {
+            const auto message_types_discard_for_queueing_csl = ocpp::split_string(
+                this->device_model
+                    ->get_optional_value<std::string>(ControllerComponentVariables::MessageTypesDiscardForQueueing)
+                    .value_or(""),
+                ',');
+            std::transform(message_types_discard_for_queueing_csl.begin(), message_types_discard_for_queueing_csl.end(),
+                           std::inserter(message_types_discard_for_queueing, message_types_discard_for_queueing.end()),
+                           [](const std::string element) { return conversions::string_to_messagetype(element); });
+        } catch (const StringToEnumException& e) {
+            EVLOG_warning << "Could not convert configured MessageType value of MessageTypesDiscardForQueueing. Please "
+                             "check you configuration: "
+                          << e.what();
+        } catch (...) {
+            EVLOG_warning << "Could not apply MessageTypesDiscardForQueueing configuration";
+        }
+
+        this->message_queue = std::make_unique<ocpp::MessageQueue<v201::MessageType>>(
+            [this](json message) -> bool { return this->connectivity_manager->send_to_websocket(message.dump()); },
+            MessageQueueConfig<v201::MessageType>{
+                this->device_model->get_value<int>(ControllerComponentVariables::MessageAttempts),
+                this->device_model->get_value<int>(ControllerComponentVariables::MessageAttemptInterval),
+                this->device_model->get_optional_value<int>(ControllerComponentVariables::MessageQueueSizeThreshold)
+                    .value_or(DEFAULT_MESSAGE_QUEUE_SIZE_THRESHOLD),
+                this->device_model->get_optional_value<bool>(ControllerComponentVariables::QueueAllMessages)
+                    .value_or(false),
+                message_types_discard_for_queueing,
+                this->device_model->get_value<int>(ControllerComponentVariables::MessageTimeout)},
+            this->database_handler);
+    }
+
+    this->message_dispatcher =
+        std::make_unique<MessageDispatcher>(*this->message_queue, *this->device_model, registration_status);
 
     if (this->callbacks.configure_network_connection_profile_callback.has_value()) {
         this->connectivity_manager->set_configure_network_connection_profile_callback(
