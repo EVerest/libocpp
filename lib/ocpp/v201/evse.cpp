@@ -143,9 +143,12 @@ std::optional<ConnectorStatusEnum> Evse::get_connector_status(std::optional<Conn
 
         const ConnectorStatusEnum connector_status = connector->get_effective_connector_status();
 
-        const std::optional<ConnectorEnum> evse_connector_type = this->get_evse_connector_type(i);
-        if (!connector_type.has_value() ||
-            (!evse_connector_type.has_value() || evse_connector_type.value() == connector_type.value())) {
+        const ConnectorEnum evse_connector_type = this->get_evse_connector_type(i).value_or(ConnectorEnum::Unknown);
+        const ConnectorEnum input_connector_type = connector_type.value_or(ConnectorEnum::Unknown);
+        const bool connector_type_unknown =
+            evse_connector_type == ConnectorEnum::Unknown || input_connector_type == ConnectorEnum::Unknown;
+
+        if (connector_type_unknown || evse_connector_type == input_connector_type) {
             type_found = true;
             // We found an available connector, also store the status.
             found_status = connector_status;
