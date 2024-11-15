@@ -2908,6 +2908,16 @@ void ChargePointImpl::handleReserveNowRequest(ocpp::Call<ReserveNowRequest> call
 
     ocpp::CallResult<ReserveNowResponse> call_result(response, call.uniqueId);
     this->message_dispatcher->dispatch_call_result(call_result);
+
+    if (response.status == ReservationStatus::Accepted && call.msg.connectorId == 0) {
+        // TODO mz submit event reserved for connector zero here, but make sure that operative / inoperative handling
+        // still works and faulted handling etc, since the Faulted and Unavailable states are a little bit special, the
+        // hnadling is a little complicated !!!!
+
+        this->status->submit_event(0, FSMEvent::ReserveConnector, ocpp::DateTime());
+
+        // TODO mz change state back to previous state or available after reservation was consumed
+    }
 }
 
 void ChargePointImpl::handleCancelReservationRequest(ocpp::Call<CancelReservationRequest> call) {
