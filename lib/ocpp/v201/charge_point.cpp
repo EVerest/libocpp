@@ -123,7 +123,9 @@ void ChargePoint::start(BootReasonEnum bootreason, bool autoconnect) {
     this->boot_notification_req(bootreason);
     // call clear_invalid_charging_profiles when system boots
     this->clear_invalid_charging_profiles();
-    this->connectivity_manager->start(autoconnect);
+    if (autoconnect) {
+        this->connectivity_manager->connect();
+    }
 
     const std::string firmware_version =
         this->device_model->get_value<std::string>(ControllerComponentVariables::FirmwareVersion);
@@ -157,7 +159,7 @@ void ChargePoint::stop() {
     this->heartbeat_timer.stop();
     this->boot_notification_timer.stop();
     this->certificate_signed_timer.stop();
-    this->connectivity_manager->stop();
+    this->connectivity_manager->disconnect();
     this->client_certificate_expiration_check_timer.stop();
     this->v2g_certificate_expiration_check_timer.stop();
     this->monitoring_updater.stop_monitoring();
@@ -169,19 +171,15 @@ void ChargePoint::connect_websocket() {
 }
 
 void ChargePoint::disconnect_websocket() {
-    this->connectivity_manager->disconnect_websocket();
-}
-
-void ChargePoint::on_network_disconnected(int32_t configuration_slot) {
-    this->connectivity_manager->on_network_disconnected(configuration_slot);
+    this->connectivity_manager->disconnect();
 }
 
 void ChargePoint::on_network_disconnected(OCPPInterfaceEnum ocpp_interface) {
     this->connectivity_manager->on_network_disconnected(ocpp_interface);
 }
 
-bool ChargePoint::on_try_switch_network_connection_profile(const int32_t configuration_slot) {
-    return this->connectivity_manager->on_try_switch_network_connection_profile(configuration_slot);
+void ChargePoint::connect_websocket(const int32_t configuration_slot) {
+    this->connectivity_manager->connect(configuration_slot);
 }
 
 void ChargePoint::on_firmware_update_status_notification(int32_t request_id,
@@ -1748,7 +1746,6 @@ void ChargePoint::handle_variable_changed(const SetVariableData& set_variable_da
         if (this->device_model->get_value<int>(ControllerComponentVariables::SecurityProfile) < 3) {
             // TODO: A01.FR.11 log the change of BasicAuth in Security Log
             this->connectivity_manager->set_websocket_authorization_key(set_variable_data.attributeValue.get());
-            this->connectivity_manager->disconnect_websocket(WebsocketCloseReason::ServiceRestart);
         }
     }
     if (component_variable == ControllerComponentVariables::HeartbeatInterval and
@@ -2330,7 +2327,7 @@ void ChargePoint::handle_certificate_signed_req(Call<CertificateSignedRequest> c
     if (response.status == CertificateSignedStatusEnum::Accepted and
         cert_signing_use == ocpp::CertificateSigningUseEnum::ChargingStationCertificate and
         this->device_model->get_value<int>(ControllerComponentVariables::SecurityProfile) == 3) {
-        this->connectivity_manager->disconnect_websocket(WebsocketCloseReason::ServiceRestart);
+        this->connectivity_manager->on_reconfiguration_of_security_parameters();
 
         const auto& security_event = ocpp::security_events::RECONFIGURATIONOFSECURITYPARAMETERS;
         std::string tech_info = "Changed charging station certificate";
@@ -4464,12 +4461,12 @@ std::optional<NetworkConnectionProfile> ChargePoint::get_network_connection_prof
     return this->connectivity_manager->get_network_connection_profile(configuration_slot);
 }
 
-std::optional<int> ChargePoint::get_configuration_slot_priority(const int configuration_slot) {
-    return this->connectivity_manager->get_configuration_slot_priority(configuration_slot);
+std::optional<int> ChargePoint::get_priority_from_configuration_slot(const int configuration_slot) {
+    return this->connectivity_manager->get_priority_from_configuration_slot(configuration_slot);
 }
 
-const std::vector<int>& ChargePoint::get_network_connection_priorities() const {
-    return this->connectivity_manager->get_network_connection_priorities();
+const std::vector<int>& ChargePoint::get_network_connection_slots() const {
+    return this->connectivity_manager->get_network_connection_slots();
 }
 
 // Static functions

@@ -43,13 +43,13 @@ private:
     std::optional<ConfigureNetworkConnectionProfileCallback> configure_network_connection_profile_callback;
 
     Everest::SteadyTimer websocket_timer;
-    bool disable_automatic_websocket_reconnects;
-    int network_configuration_priority;
+    std::optional<int32_t> pending_configuration_slot;
+    bool disconnect_triggered;
+    int32_t active_network_configuration_priority;
     /// @brief Local cached network connection profiles
     std::vector<SetNetworkProfileRequest> cached_network_connection_profiles;
     /// @brief local cached network connection priorities
-    std::vector<int> network_connection_priorities;
-    WebsocketConnectionOptions current_connection_options{};
+    std::vector<int32_t> network_connection_slots;
 
     int last_security_level{0};
 
@@ -89,43 +89,35 @@ public:
     /// \brief Gets the configured NetworkConnectionProfile based on the given \p configuration_slot . The
     /// central system uri of the connection options will not contain ws:// or wss:// because this method removes it if
     /// present. This returns the value from the cached network connection profiles. \param
-    /// network_configuration_priority \return
+    /// active_network_configuration_priority \return
     std::optional<NetworkConnectionProfile> get_network_connection_profile(const int32_t configuration_slot);
 
     /// \brief Get the priority of the given configuration slot.
     /// \param configuration_slot   The configuration slot to get the priority from.
     /// \return The priority if the configuration slot exists.
     ///
-    std::optional<int> get_configuration_slot_priority(const int configuration_slot);
+    std::optional<int32_t> get_priority_from_configuration_slot(const int configuration_slot);
 
-    /// @brief Get the network connection priorities.
+    /// @brief Get the network connection slots sorted by priority.
     /// Each item in the vector contains the configured configuration slots, where the slot with index 0 has the highest
     /// priority.
-    /// @return The network connection priorities
+    /// @return The network connection slots
     ///
-    const std::vector<int>& get_network_connection_priorities() const;
+    const std::vector<int>& get_network_connection_slots() const;
 
     /// \brief Check if the websocket is connected
     /// \return True is the websocket is connected, else false
     ///
     bool is_websocket_connected();
 
-    /// \brief Start the connectivity manager
-    /// \param autoconnect Set to false if you only want to initialize and not connect yet and use connect() to connect
-    ///
-    void start(bool autoconnect = true);
-
-    /// \brief Stop the connectivity manager
-    ///
-    void stop();
-
     /// \brief Connect to the websocket
+    /// \param configuration_slot   The configuration slot to get the priority from.
     ///
-    void connect();
+    void connect(std::optional<int32_t> configuration_slot = std::nullopt);
 
-    /// \brief Disconnect the websocket with a specific \p reason
+    /// \brief Disconnect the websocket
     ///
-    void disconnect_websocket(WebsocketCloseReason code = WebsocketCloseReason::Normal);
+    void disconnect();
 
     /// \brief send a \p message over the websocket
     /// \returns true if the message was sent successfully
@@ -138,35 +130,21 @@ public:
     /// This is introduced because the websocket can take several minutes to timeout when a network interface becomes
     /// unavailable, whereas the system can detect this sooner.
     ///
-    /// \param configuration_slot   The slot of the network connection profile that is disconnected.
-    ///
-    void on_network_disconnected(int32_t configuration_slot);
-
-    ///
-    /// \brief Can be called when a network is disconnected, for example when an ethernet cable is removed.
-    ///
-    /// This is introduced because the websocket can take several minutes to timeout when a network interface becomes
-    /// unavailable, whereas the system can detect this sooner.
-    ///
     /// \param ocpp_interface       The interface that is disconnected.
     ///
     void on_network_disconnected(OCPPInterfaceEnum ocpp_interface);
 
-    /// \brief Switch to a specific network connection profile given the configuration slot.
+    /// \brief Called when the chargin station certificate is changed
     ///
-    /// Switch will only be done when the configuration slot has a higher priority.
-    ///
-    /// \param configuration_slot Slot in which the configuration is stored
-    /// \return true if the switch is possible.
-    bool on_try_switch_network_connection_profile(const int32_t configuration_slot);
+    void on_reconfiguration_of_security_parameters();
 
     void confirm_successfull_connection();
     void remove_network_connection_profiles_below_actual_security_profile();
 
 private:
-    /// \brief Init the websocket
+    /// \brief Initializes the websocket and tries to connect
     ///
-    bool init_websocket();
+    void try_connect_websocket();
 
     /// \brief Get the current websocket connection options
     /// \returns the current websocket connection options
@@ -185,31 +163,28 @@ private:
     ///
     void on_websocket_closed(ocpp::WebsocketCloseReason reason);
 
-    /// \brief Reconnect with the give websocket \p reason
-    ///
-    void reconnect(WebsocketCloseReason reason, std::optional<int> next_priority = std::nullopt);
-
-    ///
-    /// \brief Returns true if the provided configuration slot is of higher priority compared to the one currently
-    ///        in use.
-    /// \param new_configuration_slot   The configuration slot to check.
-    /// \return True when given slot is of higher priority.
-    ///
-    bool is_higher_priority_profile(const int new_configuration_slot);
-
     ///
     /// \brief Get the active network configuration slot in use.
     /// \return The active slot the network is connected to or the pending slot.
     ///
     int get_active_network_configuration_slot();
 
-    /// \brief Moves websocket network_configuration_priority to next profile
     ///
-    void next_network_configuration_priority();
+    /// \brief Get the network configuration slot of the given priority.
+    /// \param priority   The priority to get the configuration slot.
+    /// \return The configuration slot.
+    ///
+    int get_configuration_slot_from_priority(const int priority);
 
-    /// @brief Cache all the network connection profiles. Must be called once during initialization
-    /// \return True if the network connection profiles could be cached, else False.
-    bool cache_network_connection_profiles();
+    ///
+    /// \brief Get the next prioritized network configuration slot of the given configuration slot.
+    /// \param configuration_slot   The current configuration slot.
+    /// \return The next prioritized configuration slot.
+    ///
+    int get_next_configuration_slot(int32_t configuration_slot);
+
+    /// @brief Cache all the network connection profiles
+    void cache_network_connection_profiles();
 
     void check_cache_for_invalid_security_profiles();
 };
