@@ -158,6 +158,8 @@ public:
     /// \return true if the switch is possible.
     bool on_try_switch_network_connection_profile(const int32_t configuration_slot);
 
+    void confirm_successfull_connection();
+
 private:
     /// \brief Init the websocket
     ///

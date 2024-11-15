@@ -71,7 +71,7 @@ void ConnectivityManager::set_configure_network_connection_profile_callback(
 std::optional<NetworkConnectionProfile>
 ConnectivityManager::get_network_connection_profile(const int32_t configuration_slot) {
 
-    for (const auto& network_profile : this->network_connection_profiles) {
+    for (const auto& network_profile : this->cached_network_connection_profiles) {
         if (network_profile.configurationSlot == configuration_slot) {
             switch (auto security_profile = network_profile.connectionData.securityProfile) {
             case security::OCPP_1_6_ONLY_UNSECURED_TRANSPORT_WITHOUT_BASIC_AUTHENTICATION:
@@ -199,6 +199,69 @@ bool ConnectivityManager::on_try_switch_network_connection_profile(const int32_t
     this->disconnect_websocket(WebsocketCloseReason::Normal);
     reconnect(WebsocketCloseReason::Normal, get_configuration_slot_priority(configuration_slot));
     return true;
+}
+
+void ConnectivityManager::remove_network_connection_profiles_below_actual_security_profile() {
+    // Remove all the profiles that are a lower security level than security_level
+    const auto security_level = this->device_model.get_value<int>(ControllerComponentVariables::SecurityProfile);
+
+    auto network_connection_profiles = json::parse(
+        this->device_model.get_value<std::string>(ControllerComponentVariables::NetworkConnectionProfiles));
+
+    auto is_lower_security_level = [security_level](const SetNetworkProfileRequest& item) {
+        return item.connectionData.securityProfile < security_level;
+    };
+
+    network_connection_profiles.erase(
+        std::remove_if(network_connection_profiles.begin(), network_connection_profiles.end(), is_lower_security_level),
+        network_connection_profiles.end());
+
+    this->device_model.set_value(ControllerComponentVariables::NetworkConnectionProfiles.component,
+                                  ControllerComponentVariables::NetworkConnectionProfiles.variable.value(),
+                                  AttributeEnum::Actual, network_connection_profiles.dump(),
+                                  VARIABLE_ATTRIBUTE_VALUE_SOURCE_INTERNAL);
+
+    // Update the NetworkConfigurationPriority so only remaining profiles are in there
+    const auto network_priority = ocpp::split_string(
+        this->device_model.get_value<std::string>(ControllerComponentVariables::NetworkConfigurationPriority), ',');
+
+    auto in_network_profiles = [&network_connection_profiles](const std::string& item) {
+        auto is_same_slot = [&item](const SetNetworkProfileRequest& profile) {
+            return std::to_string(profile.configurationSlot) == item;
+        };
+        return std::any_of(network_connection_profiles.begin(), network_connection_profiles.end(), is_same_slot);
+    };
+
+    std::string new_network_priority;
+    for (const auto& item : network_priority) {
+        if (in_network_profiles(item)) {
+            if (!new_network_priority.empty()) {
+                new_network_priority += ',';
+            }
+            new_network_priority += item;
+        }
+    }
+
+    this->device_model.set_value(ControllerComponentVariables::NetworkConfigurationPriority.component,
+                                  ControllerComponentVariables::NetworkConfigurationPriority.variable.value(),
+                                  AttributeEnum::Actual, new_network_priority,
+                                  VARIABLE_ATTRIBUTE_VALUE_SOURCE_INTERNAL);
+}
+
+void ConnectivityManager::confirm_successfull_connection() {
+    const int config_slot_int = this->get_active_network_configuration_slot();
+
+    const auto network_connection_profile = this->get_network_connection_profile(config_slot_int);
+
+    if (const auto& security_profile_cv = ControllerComponentVariables::SecurityProfile;
+        security_profile_cv.variable.has_value()) {
+        this->device_model.set_read_only_value(security_profile_cv.component, security_profile_cv.variable.value(),
+                                               AttributeEnum::Actual,
+                                               std::to_string(network_connection_profile.value().securityProfile),
+                                               VARIABLE_ATTRIBUTE_VALUE_SOURCE_INTERNAL);
+    }
+
+    this->remove_network_connection_profiles_below_actual_security_profile();
 }
 
 bool ConnectivityManager::init_websocket() {
@@ -469,13 +532,13 @@ void ConnectivityManager::next_network_configuration_priority() {
 
 bool ConnectivityManager::cache_network_connection_profiles() {
 
-    if (!this->network_connection_profiles.empty()) {
+    if (!this->cached_network_connection_profiles.empty()) {
         EVLOG_debug << " Network connection profiles already cached";
         return true;
     }
 
     // get all the network connection profiles from the device model and cache them
-    this->network_connection_profiles =
+    this->cached_network_connection_profiles =
         json::parse(this->device_model.get_value<std::string>(ControllerComponentVariables::NetworkConnectionProfiles));
 
     for (const std::string& str : ocpp::split_string(
