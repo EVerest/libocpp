@@ -48,7 +48,8 @@ public:
     ///
     /// This will search if there is a connector on this evse with status 'Available'. It will search through all
     /// connectors, optionally filtering by connector type, and return on the first connector that is 'Available'. If
-    /// there is no 'Available' connector, it will return the status of one of the connectors.
+    /// there is no 'Available' connector, it will return the status of the last found connector with the given
+    /// connector type.
     ///
     /// \param connector_type   The connector type to filter on (optional).
     /// \return Connector status. If connector type is given and does not exist, std::nullopt.
