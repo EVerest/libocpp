@@ -201,6 +201,43 @@ bool ConnectivityManager::on_try_switch_network_connection_profile(const int32_t
     return true;
 }
 
+void ConnectivityManager::check_cache_for_invalid_security_profiles() {
+    const auto security_level = this->device_model.get_value<int>(ControllerComponentVariables::SecurityProfile);
+
+    if (this->last_security_level == security_level) {
+        return;
+    }
+    this->last_security_level = security_level;
+
+    auto before_slot = this->get_active_network_configuration_slot();
+
+    EVLOG_info << "Before cleanup";
+    for (auto slot: this->network_connection_priorities) {
+        EVLOG_info << "Slot " << slot << " sec level: " << this->get_network_connection_profile(slot)->securityProfile;
+    }
+
+    auto is_lower_security_level = [this, security_level](const int slot) {
+        const auto opt_profile = this->get_network_connection_profile(slot);
+        return !opt_profile.has_value() || opt_profile->securityProfile < security_level;
+    };
+
+    this->network_connection_priorities.erase(
+        std::remove_if(this->network_connection_priorities.begin(), this->network_connection_priorities.end(), is_lower_security_level),
+        this->network_connection_priorities.end());
+
+    EVLOG_info << "After cleanup";
+    for (auto slot: this->network_connection_priorities) {
+        EVLOG_info << "Slot " << slot << " sec level: " << this->get_network_connection_profile(slot)->securityProfile;
+    }
+
+    auto opt_priority = this->get_configuration_slot_priority(before_slot);
+    if (opt_priority) {
+        this->network_configuration_priority = *opt_priority;
+    } else {
+        this->next_network_configuration_priority();
+    }
+}
+
 void ConnectivityManager::remove_network_connection_profiles_below_actual_security_profile() {
     // Remove all the profiles that are a lower security level than security_level
     const auto security_level = this->device_model.get_value<int>(ControllerComponentVariables::SecurityProfile);
@@ -262,6 +299,7 @@ void ConnectivityManager::confirm_successfull_connection() {
     }
 
     this->remove_network_connection_profiles_below_actual_security_profile();
+    this->check_cache_for_invalid_security_profiles();
 }
 
 bool ConnectivityManager::init_websocket() {
@@ -277,6 +315,9 @@ bool ConnectivityManager::init_websocket() {
         return false;
     }
 
+    // Check the cache runtime since security profile might change async
+    this->check_cache_for_invalid_security_profiles();
+
     const int config_slot_int = this->get_active_network_configuration_slot();
 
     const auto network_connection_profile = this->get_network_connection_profile(config_slot_int);
@@ -289,11 +330,6 @@ bool ConnectivityManager::init_websocket() {
         can_use_connection_profile = false;
     } else if (!connection_options.has_value()) {
         EVLOG_warning << "Connection profile configured for " << config_slot_int << " failed: not valid URL";
-        can_use_connection_profile = false;
-    } else if (const auto& security_profile_cv = ControllerComponentVariables::SecurityProfile;
-               network_connection_profile.value().securityProfile <
-               this->device_model.get_value<int>(security_profile_cv)) {
-        EVLOG_info << "Slot #" << config_slot_int << " has a lower security profile than current security profile";
         can_use_connection_profile = false;
     } else if (this->configure_network_connection_profile_callback.has_value()) {
         EVLOG_debug << "Request to configure network connection profile " << config_slot_int;
@@ -352,14 +388,6 @@ bool ConnectivityManager::init_websocket() {
         this->device_model.set_read_only_value(
             active_network_profile_cv.component, active_network_profile_cv.variable.value(), AttributeEnum::Actual,
             std::to_string(config_slot_int), VARIABLE_ATTRIBUTE_VALUE_SOURCE_INTERNAL);
-    }
-
-    if (const auto& security_profile_cv = ControllerComponentVariables::SecurityProfile;
-        security_profile_cv.variable.has_value()) {
-        this->device_model.set_read_only_value(security_profile_cv.component, security_profile_cv.variable.value(),
-                                               AttributeEnum::Actual,
-                                               std::to_string(network_connection_profile.value().securityProfile),
-                                               VARIABLE_ATTRIBUTE_VALUE_SOURCE_INTERNAL);
     }
 
     if (this->websocket == nullptr) {

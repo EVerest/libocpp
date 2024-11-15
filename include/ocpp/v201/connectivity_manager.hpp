@@ -46,10 +46,12 @@ private:
     bool disable_automatic_websocket_reconnects;
     int network_configuration_priority;
     /// @brief Local cached network connection profiles
-    std::vector<SetNetworkProfileRequest> network_connection_profiles;
+    std::vector<SetNetworkProfileRequest> cached_network_connection_profiles;
     /// @brief local cached network connection priorities
     std::vector<int> network_connection_priorities;
     WebsocketConnectionOptions current_connection_options{};
+
+    int last_security_level{0};
 
 public:
     ConnectivityManager(DeviceModel& device_model, std::shared_ptr<EvseSecurity> evse_security,
@@ -159,6 +161,7 @@ public:
     bool on_try_switch_network_connection_profile(const int32_t configuration_slot);
 
     void confirm_successfull_connection();
+    void remove_network_connection_profiles_below_actual_security_profile();
 
 private:
     /// \brief Init the websocket
@@ -207,6 +210,8 @@ private:
     /// @brief Cache all the network connection profiles. Must be called once during initialization
     /// \return True if the network connection profiles could be cached, else False.
     bool cache_network_connection_profiles();
+
+    void check_cache_for_invalid_security_profiles();
 };
 
 } // namespace v201
