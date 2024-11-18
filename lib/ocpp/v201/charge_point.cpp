@@ -258,7 +258,8 @@ ChargePoint::on_get_15118_ev_certificate_request(const Get15118EVCertificateRequ
     }
 
     EVLOG_debug << "Received Get15118EVCertificateRequest " << request;
-    auto future_res = this->message_dispatcher->dispatch_call_async(ocpp::Call<Get15118EVCertificateRequest>(request));
+    auto future_res = this->message_dispatcher->dispatch_call_async(
+        ocpp::Call<Get15118EVCertificateRequest>(request));
 
     if (future_res.wait_for(DEFAULT_WAIT_FOR_FUTURE_TIMEOUT) == std::future_status::timeout) {
         EVLOG_warning << "Waiting for Get15118EVCertificateRequest.conf future timed out!";

@@ -26,12 +26,12 @@ protected:
 
 TEST_F(ControlMessageV16Test, test_is_transactional) {
 
-    EXPECT_TRUE(is_transaction_message((ControlMessage<v16::MessageType>{
-        Call<v16::StartTransactionRequest>{
-            v16::StartTransactionRequest{}}}.messageType)));
-    EXPECT_TRUE(is_transaction_message((ControlMessage<v16::MessageType>{
-        Call<v16::StopTransactionRequest>{
-            v16::StopTransactionRequest{}}}.messageType)));
+    EXPECT_TRUE(is_transaction_message(
+        (ControlMessage<v16::MessageType>{Call<v16::StartTransactionRequest>{v16::StartTransactionRequest{}}}
+             .messageType)));
+    EXPECT_TRUE(is_transaction_message(
+        (ControlMessage<v16::MessageType>{Call<v16::StopTransactionRequest>{v16::StopTransactionRequest{}}}
+             .messageType)));
     EXPECT_TRUE(is_transaction_message(ControlMessage<v16::MessageType>{
         Call<v16::SecurityEventNotificationRequest>{v16::SecurityEventNotificationRequest{}}}
                                            .messageType));
@@ -43,10 +43,12 @@ TEST_F(ControlMessageV16Test, test_is_transactional) {
 
 TEST_F(ControlMessageV16Test, test_is_transactional_update) {
 
-    EXPECT_TRUE(!(ControlMessage<v16::MessageType>{Call<v16::StartTransactionRequest>{v16::StartTransactionRequest{}}})
-                     .is_transaction_update_message());
-    EXPECT_TRUE(!(ControlMessage<v16::MessageType>{Call<v16::StopTransactionRequest>{v16::StopTransactionRequest{}}})
-                     .is_transaction_update_message());
+    EXPECT_TRUE(
+        !(ControlMessage<v16::MessageType>{Call<v16::StartTransactionRequest>{v16::StartTransactionRequest{}}})
+             .is_transaction_update_message());
+    EXPECT_TRUE(
+        !(ControlMessage<v16::MessageType>{Call<v16::StopTransactionRequest>{v16::StopTransactionRequest{}}})
+             .is_transaction_update_message());
     EXPECT_TRUE(!(ControlMessage<v16::MessageType>{
                       Call<v16::SecurityEventNotificationRequest>{v16::SecurityEventNotificationRequest{}}})
                      .is_transaction_update_message());
