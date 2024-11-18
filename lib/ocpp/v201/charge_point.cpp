@@ -111,7 +111,7 @@ ChargePoint::~ChargePoint() {
     this->auth_cache_cleanup_thread.join();
 }
 
-void ChargePoint::start(BootReasonEnum bootreason, bool autoconnect) {
+void ChargePoint::start(BootReasonEnum bootreason, std::optional<int32_t> configuration_slot) {
     this->message_queue->start();
 
     this->bootreason = bootreason;
@@ -123,9 +123,7 @@ void ChargePoint::start(BootReasonEnum bootreason, bool autoconnect) {
     this->boot_notification_req(bootreason);
     // call clear_invalid_charging_profiles when system boots
     this->clear_invalid_charging_profiles();
-    if (autoconnect) {
-        this->connectivity_manager->connect();
-    }
+    this->connectivity_manager->connect(configuration_slot);
 
     const std::string firmware_version =
         this->device_model->get_value<std::string>(ControllerComponentVariables::FirmwareVersion);

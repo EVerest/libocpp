@@ -100,9 +100,10 @@ public:
 
     /// \brief Starts the ChargePoint, initializes and connects to the Websocket endpoint
     /// \param bootreason  Optional bootreason (default: PowerUp).
-    /// \param autoconnect Set to false if you only want to initialize and not connect yet and use connect_websocket()
-    /// to actually connect
-    virtual void start(BootReasonEnum bootreason = BootReasonEnum::PowerUp, bool autoconnect = true) = 0;
+    /// \param configuration_slot Configuration slot used to connect websocket
+
+    virtual void start(BootReasonEnum bootreason = BootReasonEnum::PowerUp,
+                       std::optional<int32_t> configuration_slot = std::nullopt) = 0;
 
     /// \brief Stops the ChargePoint. Disconnects the websocket connection and stops MessageQueue and all timers
     virtual void stop() = 0;
@@ -114,7 +115,7 @@ public:
     /// a specific network connection profile given the configuration slot
     /// if it is not yet connected.
     ///
-    /// \param configuration_slot Slot in which the configuration is stored
+    /// \param configuration_slot Configuration slot used to connect websocket
     virtual void connect_websocket(const int32_t configuration_slot) = 0;
 
     /// \brief Disconnects the the websocket connection to the CSMS if it is connected
@@ -854,7 +855,8 @@ public:
 
     ~ChargePoint();
 
-    void start(BootReasonEnum bootreason = BootReasonEnum::PowerUp, bool autoconnect = true) override;
+    void start(BootReasonEnum bootreason = BootReasonEnum::PowerUp,
+               std::optional<int32_t> configuration_slot = std::nullopt) override;
 
     void stop() override;
 
