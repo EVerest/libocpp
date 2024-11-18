@@ -40,8 +40,8 @@ std::ostream& operator<<(std::ostream& os, const AFRRSignalRequest& k);
 /// \brief Contains a OCPP AFRRSignalResponse message
 struct AFRRSignalResponse : public ocpp::Message {
     GenericStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this AFRRSignalResponse message as a human readable string
     /// \returns the message type as a human readable string

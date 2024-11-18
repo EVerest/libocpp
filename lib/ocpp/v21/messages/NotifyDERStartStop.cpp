@@ -25,14 +25,14 @@ void to_json(json& j, const NotifyDERStartStopRequest& k) {
         {"timestamp", k.timestamp.to_rfc3339()},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.supersededIds) {
         j["supersededIds"] = json::array();
         for (auto val : k.supersededIds.value()) {
             j["supersededIds"].push_back(val);
         }
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -43,9 +43,6 @@ void from_json(const json& j, NotifyDERStartStopRequest& k) {
     k.timestamp = ocpp::DateTime(std::string(j.at("timestamp")));
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("supersededIds")) {
         json arr = j.at("supersededIds");
         std::vector<CiString<36>> vec;
@@ -53,6 +50,9 @@ void from_json(const json& j, NotifyDERStartStopRequest& k) {
             vec.push_back(val);
         }
         k.supersededIds.emplace(vec);
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 

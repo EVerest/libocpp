@@ -20,9 +20,9 @@ struct NotifyReportRequest : public ocpp::Message {
     int32_t requestId;
     ocpp::DateTime generatedAt;
     int32_t seqNo;
-    std::optional<CustomData> customData;
     std::optional<std::vector<ReportData>> reportData;
     std::optional<bool> tbc;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this NotifyReport message as a human readable string
     /// \returns the message type as a human readable string

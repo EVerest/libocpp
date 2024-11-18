@@ -20,8 +20,8 @@ struct NotifyCustomerInformationRequest : public ocpp::Message {
     int32_t seqNo;
     ocpp::DateTime generatedAt;
     int32_t requestId;
-    std::optional<CustomData> customData;
     std::optional<bool> tbc;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this NotifyCustomerInformation message as a human readable string
     /// \returns the message type as a human readable string

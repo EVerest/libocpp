@@ -26,11 +26,11 @@ void to_json(json& j, const ReportChargingProfilesRequest& k) {
         {"evseId", k.evseId},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.tbc) {
         j["tbc"] = k.tbc.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -44,11 +44,11 @@ void from_json(const json& j, ReportChargingProfilesRequest& k) {
     k.evseId = j.at("evseId");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("tbc")) {
         k.tbc.emplace(j.at("tbc"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 

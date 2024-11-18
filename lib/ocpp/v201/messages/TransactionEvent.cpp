@@ -27,9 +27,6 @@ void to_json(json& j, const TransactionEventRequest& k) {
         {"transactionInfo", k.transactionInfo},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.costDetails) {
         j["costDetails"] = k.costDetails.value();
     }
@@ -64,6 +61,9 @@ void to_json(json& j, const TransactionEventRequest& k) {
     if (k.idToken) {
         j["idToken"] = k.idToken.value();
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 void from_json(const json& j, TransactionEventRequest& k) {
@@ -75,9 +75,6 @@ void from_json(const json& j, TransactionEventRequest& k) {
     k.transactionInfo = j.at("transactionInfo");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("costDetails")) {
         k.costDetails.emplace(j.at("costDetails"));
     }
@@ -114,6 +111,9 @@ void from_json(const json& j, TransactionEventRequest& k) {
     if (j.contains("idToken")) {
         k.idToken.emplace(j.at("idToken"));
     }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
 }
 
 /// \brief Writes the string representation of the given TransactionEventRequest \p k to the given output stream \p os
@@ -131,9 +131,6 @@ void to_json(json& j, const TransactionEventResponse& k) {
     // the required parts of the message
     j = json({}, true);
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.totalCost) {
         j["totalCost"] = k.totalCost.value();
     }
@@ -159,15 +156,15 @@ void to_json(json& j, const TransactionEventResponse& k) {
             j["updatedPersonalMessageExtra"].push_back(val);
         }
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 void from_json(const json& j, TransactionEventResponse& k) {
     // the required parts of the message
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("totalCost")) {
         k.totalCost.emplace(j.at("totalCost"));
     }
@@ -190,6 +187,9 @@ void from_json(const json& j, TransactionEventResponse& k) {
             vec.push_back(val);
         }
         k.updatedPersonalMessageExtra.emplace(vec);
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 

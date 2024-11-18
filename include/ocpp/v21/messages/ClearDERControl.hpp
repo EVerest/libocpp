@@ -19,9 +19,9 @@ namespace v21 {
 /// \brief Contains a OCPP ClearDERControl message
 struct ClearDERControlRequest : public ocpp::Message {
     bool isDefault;
-    std::optional<CustomData> customData;
     std::optional<DERControlEnum> controlType;
     std::optional<CiString<36>> controlId;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this ClearDERControl message as a human readable string
     /// \returns the message type as a human readable string
@@ -41,8 +41,8 @@ std::ostream& operator<<(std::ostream& os, const ClearDERControlRequest& k);
 /// \brief Contains a OCPP ClearDERControlResponse message
 struct ClearDERControlResponse : public ocpp::Message {
     DERControlStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this ClearDERControlResponse message as a human readable string
     /// \returns the message type as a human readable string

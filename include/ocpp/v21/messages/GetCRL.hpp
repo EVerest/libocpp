@@ -41,8 +41,8 @@ std::ostream& operator<<(std::ostream& os, const GetCRLRequest& k);
 struct GetCRLResponse : public ocpp::Message {
     int32_t requestId;
     GenericStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this GetCRLResponse message as a human readable string
     /// \returns the message type as a human readable string

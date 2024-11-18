@@ -40,8 +40,8 @@ std::ostream& operator<<(std::ostream& os, const ChangeTransactionTariffRequest&
 /// \brief Contains a OCPP ChangeTransactionTariffResponse message
 struct ChangeTransactionTariffResponse : public ocpp::Message {
     TariffStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this ChangeTransactionTariffResponse message as a human readable string
     /// \returns the message type as a human readable string

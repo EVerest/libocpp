@@ -1,4 +1,4 @@
-{% if action.is_request %}
+{% if action.is_request or action.is_send %}
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - {{year}} Pionix GmbH and Contributors to EVerest
 // This code is generated using the generator in 'src/code_generator/common`, please do not edit manually
@@ -68,7 +68,7 @@ std::ostream& operator<<(std::ostream& os, const {{ type.name }}& k);
 {% endif %}
 {% endfor %}
 
-{% if not action.is_request %}
+{% if not action.is_request or action.is_send %}
 } // namespace {{namespace}}
 } // namespace ocpp
 

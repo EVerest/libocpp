@@ -39,9 +39,9 @@ std::ostream& operator<<(std::ostream& os, const PullDynamicScheduleUpdateReques
 /// \brief Contains a OCPP PullDynamicScheduleUpdateResponse message
 struct PullDynamicScheduleUpdateResponse : public ocpp::Message {
     ChargingProfileStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<ChargingScheduleUpdate> scheduleUpdate;
     std::optional<StatusInfo> statusInfo;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this PullDynamicScheduleUpdateResponse message as a human readable string
     /// \returns the message type as a human readable string

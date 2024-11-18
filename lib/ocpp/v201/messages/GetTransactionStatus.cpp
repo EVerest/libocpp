@@ -21,11 +21,11 @@ void to_json(json& j, const GetTransactionStatusRequest& k) {
     // the required parts of the message
     j = json({}, true);
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.transactionId) {
         j["transactionId"] = k.transactionId.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -33,11 +33,11 @@ void from_json(const json& j, GetTransactionStatusRequest& k) {
     // the required parts of the message
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("transactionId")) {
         k.transactionId.emplace(j.at("transactionId"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -58,11 +58,11 @@ void to_json(json& j, const GetTransactionStatusResponse& k) {
         {"messagesInQueue", k.messagesInQueue},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.ongoingIndicator) {
         j["ongoingIndicator"] = k.ongoingIndicator.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -71,11 +71,11 @@ void from_json(const json& j, GetTransactionStatusResponse& k) {
     k.messagesInQueue = j.at("messagesInQueue");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("ongoingIndicator")) {
         k.ongoingIndicator.emplace(j.at("ongoingIndicator"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 

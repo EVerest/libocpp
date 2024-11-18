@@ -18,8 +18,8 @@ namespace v21 {
 
 /// \brief Contains a OCPP GetTariffs message
 struct GetTariffsRequest : public ocpp::Message {
-    std::optional<CustomData> customData;
     std::optional<int32_t> evseId;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this GetTariffs message as a human readable string
     /// \returns the message type as a human readable string
@@ -39,9 +39,9 @@ std::ostream& operator<<(std::ostream& os, const GetTariffsRequest& k);
 /// \brief Contains a OCPP GetTariffsResponse message
 struct GetTariffsResponse : public ocpp::Message {
     TariffStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
     std::optional<std::vector<TariffAssignment>> tariffAssignments;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this GetTariffsResponse message as a human readable string
     /// \returns the message type as a human readable string

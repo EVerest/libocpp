@@ -21,11 +21,11 @@ void to_json(json& j, const GetTariffsRequest& k) {
     // the required parts of the message
     j = json({}, true);
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.evseId) {
         j["evseId"] = k.evseId.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -33,11 +33,11 @@ void from_json(const json& j, GetTariffsRequest& k) {
     // the required parts of the message
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("evseId")) {
         k.evseId.emplace(j.at("evseId"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -58,9 +58,6 @@ void to_json(json& j, const GetTariffsResponse& k) {
         {"status", ocpp::v201::conversions::tariff_status_enum_to_string(k.status)},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.statusInfo) {
         j["statusInfo"] = k.statusInfo.value();
     }
@@ -70,6 +67,9 @@ void to_json(json& j, const GetTariffsResponse& k) {
             j["tariffAssignments"].push_back(val);
         }
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 void from_json(const json& j, GetTariffsResponse& k) {
@@ -77,9 +77,6 @@ void from_json(const json& j, GetTariffsResponse& k) {
     k.status = ocpp::v201::conversions::string_to_tariff_status_enum(j.at("status"));
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("statusInfo")) {
         k.statusInfo.emplace(j.at("statusInfo"));
     }
@@ -90,6 +87,9 @@ void from_json(const json& j, GetTariffsResponse& k) {
             vec.push_back(val);
         }
         k.tariffAssignments.emplace(vec);
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 

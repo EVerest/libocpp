@@ -21,8 +21,8 @@ struct ReportChargingProfilesRequest : public ocpp::Message {
     CiString<20> chargingLimitSource;
     std::vector<ChargingProfile> chargingProfile;
     int32_t evseId;
-    std::optional<CustomData> customData;
     std::optional<bool> tbc;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this ReportChargingProfiles message as a human readable string
     /// \returns the message type as a human readable string

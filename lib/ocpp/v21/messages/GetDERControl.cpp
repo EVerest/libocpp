@@ -23,14 +23,14 @@ void to_json(json& j, const GetDERControlRequest& k) {
         {"isDefault", k.isDefault},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.controlType) {
         j["controlType"] = ocpp::v201::conversions::dercontrol_enum_to_string(k.controlType.value());
     }
     if (k.controlId) {
         j["controlId"] = k.controlId.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -39,14 +39,14 @@ void from_json(const json& j, GetDERControlRequest& k) {
     k.isDefault = j.at("isDefault");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("controlType")) {
         k.controlType.emplace(ocpp::v201::conversions::string_to_dercontrol_enum(j.at("controlType")));
     }
     if (j.contains("controlId")) {
         k.controlId.emplace(j.at("controlId"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -67,9 +67,6 @@ void to_json(json& j, const GetDERControlResponse& k) {
         {"status", ocpp::v201::conversions::dercontrol_status_enum_to_string(k.status)},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.curve) {
         j["curve"] = json::array();
         for (auto val : k.curve.value()) {
@@ -118,6 +115,9 @@ void to_json(json& j, const GetDERControlResponse& k) {
             j["limitMaxDischarge"].push_back(val);
         }
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 void from_json(const json& j, GetDERControlResponse& k) {
@@ -125,9 +125,6 @@ void from_json(const json& j, GetDERControlResponse& k) {
     k.status = ocpp::v201::conversions::string_to_dercontrol_status_enum(j.at("status"));
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("curve")) {
         json arr = j.at("curve");
         std::vector<DERCurveGet> vec;
@@ -191,6 +188,9 @@ void from_json(const json& j, GetDERControlResponse& k) {
             vec.push_back(val);
         }
         k.limitMaxDischarge.emplace(vec);
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 

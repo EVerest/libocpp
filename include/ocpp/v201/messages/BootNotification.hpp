@@ -41,8 +41,8 @@ struct BootNotificationResponse : public ocpp::Message {
     ocpp::DateTime currentTime;
     int32_t interval;
     RegistrationStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this BootNotificationResponse message as a human readable string
     /// \returns the message type as a human readable string

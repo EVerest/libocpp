@@ -40,8 +40,8 @@ std::ostream& operator<<(std::ostream& os, const RequestBatterySwapRequest& k);
 /// \brief Contains a OCPP BatterySwapResponse message
 struct RequestBatterySwapResponse : public ocpp::Message {
     GenericStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this BatterySwapResponse message as a human readable string
     /// \returns the message type as a human readable string

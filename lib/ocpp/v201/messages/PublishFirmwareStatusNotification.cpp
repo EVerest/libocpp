@@ -23,9 +23,6 @@ void to_json(json& j, const PublishFirmwareStatusNotificationRequest& k) {
         {"status", conversions::publish_firmware_status_enum_to_string(k.status)},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.location) {
         j["location"] = json::array();
         for (auto val : k.location.value()) {
@@ -38,6 +35,9 @@ void to_json(json& j, const PublishFirmwareStatusNotificationRequest& k) {
     if (k.statusInfo) {
         j["statusInfo"] = k.statusInfo.value();
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 void from_json(const json& j, PublishFirmwareStatusNotificationRequest& k) {
@@ -45,9 +45,6 @@ void from_json(const json& j, PublishFirmwareStatusNotificationRequest& k) {
     k.status = conversions::string_to_publish_firmware_status_enum(j.at("status"));
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("location")) {
         json arr = j.at("location");
         std::vector<CiString<2000>> vec;
@@ -61,6 +58,9 @@ void from_json(const json& j, PublishFirmwareStatusNotificationRequest& k) {
     }
     if (j.contains("statusInfo")) {
         k.statusInfo.emplace(j.at("statusInfo"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 

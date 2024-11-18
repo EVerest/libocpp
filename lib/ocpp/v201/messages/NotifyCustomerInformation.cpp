@@ -26,11 +26,11 @@ void to_json(json& j, const NotifyCustomerInformationRequest& k) {
         {"requestId", k.requestId},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.tbc) {
         j["tbc"] = k.tbc.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -42,11 +42,11 @@ void from_json(const json& j, NotifyCustomerInformationRequest& k) {
     k.requestId = j.at("requestId");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("tbc")) {
         k.tbc.emplace(j.at("tbc"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 

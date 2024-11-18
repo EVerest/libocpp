@@ -20,8 +20,8 @@ namespace v21 {
 struct NotifyCRLRequest : public ocpp::Message {
     int32_t requestId;
     NotifyCRLStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<CiString<2000>> location;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this NotifyCRL message as a human readable string
     /// \returns the message type as a human readable string

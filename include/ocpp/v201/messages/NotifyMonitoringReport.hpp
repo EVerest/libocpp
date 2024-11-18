@@ -20,9 +20,9 @@ struct NotifyMonitoringReportRequest : public ocpp::Message {
     int32_t requestId;
     int32_t seqNo;
     ocpp::DateTime generatedAt;
-    std::optional<CustomData> customData;
     std::optional<std::vector<MonitoringData>> monitor;
     std::optional<bool> tbc;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this NotifyMonitoringReport message as a human readable string
     /// \returns the message type as a human readable string

@@ -57,11 +57,11 @@ void to_json(json& j, const UsePriorityChargingResponse& k) {
         {"status", ocpp::v201::conversions::priority_charging_status_enum_to_string(k.status)},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.statusInfo) {
         j["statusInfo"] = k.statusInfo.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -70,11 +70,11 @@ void from_json(const json& j, UsePriorityChargingResponse& k) {
     k.status = ocpp::v201::conversions::string_to_priority_charging_status_enum(j.at("status"));
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("statusInfo")) {
         k.statusInfo.emplace(j.at("statusInfo"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 

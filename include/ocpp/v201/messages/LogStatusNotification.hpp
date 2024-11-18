@@ -18,9 +18,9 @@ namespace v201 {
 /// \brief Contains a OCPP LogStatusNotification message
 struct LogStatusNotificationRequest : public ocpp::Message {
     UploadLogStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<int32_t> requestId;
     std::optional<StatusInfo> statusInfo;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this LogStatusNotification message as a human readable string
     /// \returns the message type as a human readable string

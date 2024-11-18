@@ -23,14 +23,14 @@ void to_json(json& j, const TriggerMessageRequest& k) {
         {"requestedMessage", conversions::message_trigger_enum_to_string(k.requestedMessage)},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.evse) {
         j["evse"] = k.evse.value();
     }
     if (k.customTrigger) {
         j["customTrigger"] = k.customTrigger.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -39,14 +39,14 @@ void from_json(const json& j, TriggerMessageRequest& k) {
     k.requestedMessage = conversions::string_to_message_trigger_enum(j.at("requestedMessage"));
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("evse")) {
         k.evse.emplace(j.at("evse"));
     }
     if (j.contains("customTrigger")) {
         k.customTrigger.emplace(j.at("customTrigger"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -67,11 +67,11 @@ void to_json(json& j, const TriggerMessageResponse& k) {
         {"status", conversions::trigger_message_status_enum_to_string(k.status)},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.statusInfo) {
         j["statusInfo"] = k.statusInfo.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -80,11 +80,11 @@ void from_json(const json& j, TriggerMessageResponse& k) {
     k.status = conversions::string_to_trigger_message_status_enum(j.at("status"));
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("statusInfo")) {
         k.statusInfo.emplace(j.at("statusInfo"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 

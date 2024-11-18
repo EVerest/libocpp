@@ -21,9 +21,9 @@ struct Get15118EVCertificateRequest : public ocpp::Message {
     CiString<50> iso15118SchemaVersion;
     CertificateActionEnum action;
     CiString<11000> exiRequest;
-    std::optional<CustomData> customData;
     std::optional<int32_t> maximumContractCertificateChains;
     std::optional<std::vector<CiString<255>>> prioritizedEMAIDs;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this Get15118EVCertificate message as a human readable string
     /// \returns the message type as a human readable string
@@ -44,9 +44,9 @@ std::ostream& operator<<(std::ostream& os, const Get15118EVCertificateRequest& k
 struct Get15118EVCertificateResponse : public ocpp::Message {
     Iso15118EVCertificateStatusEnum status;
     CiString<ISO15118_GET_EV_CERTIFICATE_EXI_RESPONSE_SIZE> exiResponse;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
     std::optional<int32_t> remainingContracts;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this Get15118EVCertificateResponse message as a human readable string
     /// \returns the message type as a human readable string

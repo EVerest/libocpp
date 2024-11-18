@@ -20,8 +20,8 @@ struct NotifyDERStartStopRequest : public ocpp::Message {
     CiString<36> controlId;
     bool started;
     ocpp::DateTime timestamp;
-    std::optional<CustomData> customData;
     std::optional<std::vector<CiString<36>>> supersededIds;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this NotifyDERStartStop message as a human readable string
     /// \returns the message type as a human readable string

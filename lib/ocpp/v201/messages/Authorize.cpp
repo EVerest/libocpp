@@ -23,9 +23,6 @@ void to_json(json& j, const AuthorizeRequest& k) {
         {"idToken", k.idToken},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.certificate) {
         j["certificate"] = k.certificate.value();
     }
@@ -35,6 +32,9 @@ void to_json(json& j, const AuthorizeRequest& k) {
             j["iso15118CertificateHashData"].push_back(val);
         }
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 void from_json(const json& j, AuthorizeRequest& k) {
@@ -42,9 +42,6 @@ void from_json(const json& j, AuthorizeRequest& k) {
     k.idToken = j.at("idToken");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("certificate")) {
         k.certificate.emplace(j.at("certificate"));
     }
@@ -55,6 +52,9 @@ void from_json(const json& j, AuthorizeRequest& k) {
             vec.push_back(val);
         }
         k.iso15118CertificateHashData.emplace(vec);
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -75,9 +75,6 @@ void to_json(json& j, const AuthorizeResponse& k) {
         {"idTokenInfo", k.idTokenInfo},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.certificateStatus) {
         j["certificateStatus"] = conversions::authorize_certificate_status_enum_to_string(k.certificateStatus.value());
     }
@@ -90,8 +87,8 @@ void to_json(json& j, const AuthorizeResponse& k) {
     if (k.tariff) {
         j["tariff"] = k.tariff.value();
     }
-    if (k.transactionLimit) {
-        j["transactionLimit"] = k.transactionLimit.value();
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -100,9 +97,6 @@ void from_json(const json& j, AuthorizeResponse& k) {
     k.idTokenInfo = j.at("idTokenInfo");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("certificateStatus")) {
         k.certificateStatus.emplace(
             conversions::string_to_authorize_certificate_status_enum(j.at("certificateStatus")));
@@ -118,8 +112,8 @@ void from_json(const json& j, AuthorizeResponse& k) {
     if (j.contains("tariff")) {
         k.tariff.emplace(j.at("tariff"));
     }
-    if (j.contains("transactionLimit")) {
-        k.transactionLimit.emplace(j.at("transactionLimit"));
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 

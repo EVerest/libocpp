@@ -26,9 +26,6 @@ void to_json(json& j, const NotifySettlementRequest& k) {
         {"settlementTime", k.settlementTime.to_rfc3339()},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.transactionId) {
         j["transactionId"] = k.transactionId.value();
     }
@@ -47,6 +44,9 @@ void to_json(json& j, const NotifySettlementRequest& k) {
     if (k.vatNumber) {
         j["vatNumber"] = k.vatNumber.value();
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 void from_json(const json& j, NotifySettlementRequest& k) {
@@ -57,9 +57,6 @@ void from_json(const json& j, NotifySettlementRequest& k) {
     k.settlementTime = ocpp::DateTime(std::string(j.at("settlementTime")));
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("transactionId")) {
         k.transactionId.emplace(j.at("transactionId"));
     }
@@ -78,6 +75,9 @@ void from_json(const json& j, NotifySettlementRequest& k) {
     if (j.contains("vatNumber")) {
         k.vatNumber.emplace(j.at("vatNumber"));
     }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
 }
 
 /// \brief Writes the string representation of the given NotifySettlementRequest \p k to the given output stream \p os
@@ -95,14 +95,14 @@ void to_json(json& j, const NotifySettlementResponse& k) {
     // the required parts of the message
     j = json({}, true);
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.receiptURL) {
         j["receiptURL"] = k.receiptURL.value();
     }
     if (k.receiptId) {
         j["receiptId"] = k.receiptId.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -110,14 +110,14 @@ void from_json(const json& j, NotifySettlementResponse& k) {
     // the required parts of the message
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("receiptURL")) {
         k.receiptURL.emplace(j.at("receiptURL"));
     }
     if (j.contains("receiptId")) {
         k.receiptId.emplace(j.at("receiptId"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 

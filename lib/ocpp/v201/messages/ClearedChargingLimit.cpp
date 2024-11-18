@@ -23,11 +23,11 @@ void to_json(json& j, const ClearedChargingLimitRequest& k) {
         {"chargingLimitSource", k.chargingLimitSource},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.evseId) {
         j["evseId"] = k.evseId.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -36,11 +36,11 @@ void from_json(const json& j, ClearedChargingLimitRequest& k) {
     k.chargingLimitSource = j.at("chargingLimitSource");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("evseId")) {
         k.evseId.emplace(j.at("evseId"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 

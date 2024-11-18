@@ -20,8 +20,8 @@ struct NotifyEventRequest : public ocpp::Message {
     ocpp::DateTime generatedAt;
     int32_t seqNo;
     std::vector<EventData> eventData;
-    std::optional<CustomData> customData;
     std::optional<bool> tbc;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this NotifyEvent message as a human readable string
     /// \returns the message type as a human readable string

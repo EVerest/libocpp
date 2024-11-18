@@ -18,9 +18,9 @@ namespace v201 {
 /// \brief Contains a OCPP NotifyDisplayMessages message
 struct NotifyDisplayMessagesRequest : public ocpp::Message {
     int32_t requestId;
-    std::optional<CustomData> customData;
     std::optional<std::vector<MessageInfo>> messageInfo;
     std::optional<bool> tbc;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this NotifyDisplayMessages message as a human readable string
     /// \returns the message type as a human readable string

@@ -50,9 +50,6 @@ void to_json(json& j, const GetPeriodicEventStreamResponse& k) {
     // the required parts of the message
     j = json({}, true);
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.constantStreamData) {
         if (j.size() == 0) {
             j = json{{"constantStreamData", json::array()}};
@@ -63,15 +60,15 @@ void to_json(json& j, const GetPeriodicEventStreamResponse& k) {
             j["constantStreamData"].push_back(val);
         }
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 void from_json(const json& j, GetPeriodicEventStreamResponse& k) {
     // the required parts of the message
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("constantStreamData")) {
         json arr = j.at("constantStreamData");
         std::vector<ConstantStreamData> vec;
@@ -79,6 +76,9 @@ void from_json(const json& j, GetPeriodicEventStreamResponse& k) {
             vec.push_back(val);
         }
         k.constantStreamData.emplace(vec);
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 

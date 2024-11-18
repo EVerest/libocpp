@@ -40,8 +40,8 @@ std::ostream& operator<<(std::ostream& os, const SetDefaultTariffRequest& k);
 /// \brief Contains a OCPP SetDefaultTariffResponse message
 struct SetDefaultTariffResponse : public ocpp::Message {
     TariffStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this SetDefaultTariffResponse message as a human readable string
     /// \returns the message type as a human readable string

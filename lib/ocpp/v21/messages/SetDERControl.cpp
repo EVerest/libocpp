@@ -25,9 +25,6 @@ void to_json(json& j, const SetDERControlRequest& k) {
         {"controlType", ocpp::v201::conversions::dercontrol_enum_to_string(k.controlType)},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.curve) {
         j["curve"] = k.curve.value();
     }
@@ -52,6 +49,9 @@ void to_json(json& j, const SetDERControlRequest& k) {
     if (k.limitMaxDischarge) {
         j["limitMaxDischarge"] = k.limitMaxDischarge.value();
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 void from_json(const json& j, SetDERControlRequest& k) {
@@ -61,9 +61,6 @@ void from_json(const json& j, SetDERControlRequest& k) {
     k.controlType = ocpp::v201::conversions::string_to_dercontrol_enum(j.at("controlType"));
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("curve")) {
         k.curve.emplace(j.at("curve"));
     }
@@ -88,6 +85,9 @@ void from_json(const json& j, SetDERControlRequest& k) {
     if (j.contains("limitMaxDischarge")) {
         k.limitMaxDischarge.emplace(j.at("limitMaxDischarge"));
     }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
 }
 
 /// \brief Writes the string representation of the given SetDERControlRequest \p k to the given output stream \p os
@@ -107,9 +107,6 @@ void to_json(json& j, const SetDERControlResponse& k) {
         {"status", ocpp::v201::conversions::dercontrol_status_enum_to_string(k.status)},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.statusInfo) {
         j["statusInfo"] = k.statusInfo.value();
     }
@@ -119,6 +116,9 @@ void to_json(json& j, const SetDERControlResponse& k) {
             j["supersededIds"].push_back(val);
         }
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 void from_json(const json& j, SetDERControlResponse& k) {
@@ -126,9 +126,6 @@ void from_json(const json& j, SetDERControlResponse& k) {
     k.status = ocpp::v201::conversions::string_to_dercontrol_status_enum(j.at("status"));
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("statusInfo")) {
         k.statusInfo.emplace(j.at("statusInfo"));
     }
@@ -139,6 +136,9 @@ void from_json(const json& j, SetDERControlResponse& k) {
             vec.push_back(val);
         }
         k.supersededIds.emplace(vec);
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 

@@ -23,14 +23,14 @@ void to_json(json& j, const ClearDERControlRequest& k) {
         {"isDefault", k.isDefault},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.controlType) {
         j["controlType"] = ocpp::v201::conversions::dercontrol_enum_to_string(k.controlType.value());
     }
     if (k.controlId) {
         j["controlId"] = k.controlId.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -39,14 +39,14 @@ void from_json(const json& j, ClearDERControlRequest& k) {
     k.isDefault = j.at("isDefault");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("controlType")) {
         k.controlType.emplace(ocpp::v201::conversions::string_to_dercontrol_enum(j.at("controlType")));
     }
     if (j.contains("controlId")) {
         k.controlId.emplace(j.at("controlId"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -67,11 +67,11 @@ void to_json(json& j, const ClearDERControlResponse& k) {
         {"status", ocpp::v201::conversions::dercontrol_status_enum_to_string(k.status)},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.statusInfo) {
         j["statusInfo"] = k.statusInfo.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -80,11 +80,11 @@ void from_json(const json& j, ClearDERControlResponse& k) {
     k.status = ocpp::v201::conversions::string_to_dercontrol_status_enum(j.at("status"));
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("statusInfo")) {
         k.statusInfo.emplace(j.at("statusInfo"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 

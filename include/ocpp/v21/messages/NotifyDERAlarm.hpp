@@ -21,9 +21,9 @@ struct NotifyDERAlarmRequest : public ocpp::Message {
     DERControlEnum controlType;
     ocpp::DateTime timestamp;
     std::string extraInfo;
-    std::optional<CustomData> customData;
     std::optional<GridEventFaultEnum> gridEventFault;
     std::optional<bool> alarmEnded;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this NotifyDERAlarm message as a human readable string
     /// \returns the message type as a human readable string

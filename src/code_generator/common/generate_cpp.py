@@ -223,6 +223,9 @@ v21_messages = ['AFRRSignal',
                 ]
 
 
+send_messages = ['NotifyPeriodicEventStream']
+
+
 def object_exists(name: str) -> bool:
     """Check if an object (i.e. dataclass) already exists."""
     for el in parsed_types:
@@ -384,11 +387,12 @@ def parse_schemas(version: str, schema_dir: Path = Path('schemas/json/'),
     schema_files = list(schema_dir.glob('*.json'))
     for schema_file in sorted(schema_files):
         print(f"Schema file: {schema_file}")
-        with open(schema_file, 'r') as schema_dump:
+        with open(schema_file, 'r', encoding='utf-8-sig') as schema_dump:
             schema = json.load(schema_dump)
             stripped_fn = schema_file.stem
             action = ''
             request = False
+            send = False
             if stripped_fn.endswith('Request'):
                 request = True
                 action = stripped_fn[0:-7]
@@ -398,16 +402,31 @@ def parse_schemas(version: str, schema_dir: Path = Path('schemas/json/'),
                 request = True
                 action = stripped_fn
             else:
-                raise Exception('Invalid schema file', schema_file)
+                # check if this is one of the SEND messages that do not have a Response
+                if stripped_fn in send_messages:
+                    print(f'{stripped_fn} is one of the new OCPP 2.1 SEND messages')
+                    # not a Request or Response but a SEND message
+                    send = True
+                    action = stripped_fn
+                else:
+                    raise Exception('Invalid schema file', schema_file)
 
-            schemas.setdefault(action, {}).update(
-                {'req' if request else 'res': schema})
+            if request:
+                schemas.setdefault(action, {}).update({'req': schema})
+            else:
+                if send:
+                    schemas.setdefault(action, {}).update({'send': schema})
+                else:
+                    schemas.setdefault(action, {}).update({'res': schema})
 
     # check if for every action, the request and response exists
     for key, value in schemas.items():
         if 'req' not in value or 'res' not in value:
+            if 'send' in value:
+                print('Message is a SEND message')
+                continue
             raise Exception(
-                'Either response or request is missing for action: ' + key)
+                'Either response or request is missing for action: ' + key, value)
 
     generated_header_dir = generated_dir / 'include' / 'ocpp' / version
     generated_source_dir = generated_dir / 'lib' / 'ocpp' / version
@@ -457,13 +476,17 @@ def parse_schemas(version: str, schema_dir: Path = Path('schemas/json/'),
         writemode = dict()
         writemode['req'] = 'w'
         writemode['res'] = 'a+'
+        writemode['send'] = 'w'
 
         message_uses_optional = False
         message_needs_enums = False
         message_needs_types = False
         message_needs_constants = False
 
-        for (type_name, type_key) in (('Request', 'req'), ('Response', 'res')):
+        for (type_name, type_key) in (('Request', 'req'), ('Response', 'res'), ('', 'send')):
+            if not type_key in type_of_action:
+                print(f'{type_key} not available for {type_of_action}')
+                continue
             parsed_types.clear()
             parsed_enums.clear()
 
@@ -504,7 +527,10 @@ def parse_schemas(version: str, schema_dir: Path = Path('schemas/json/'),
             if action == 'Get15118EVCertificate':
                 message_needs_constants = True
 
-        for (type_name, type_key) in (('Request', 'req'), ('Response', 'res')):
+        for (type_name, type_key) in (('Request', 'req'), ('Response', 'res'), ('', 'send')):
+            if not type_key in type_of_action:
+                print(f'type key {type_key} not available, skipping.')
+                continue
             parsed_types.clear()
             parsed_enums.clear()
 
@@ -558,7 +584,8 @@ def parse_schemas(version: str, schema_dir: Path = Path('schemas/json/'),
                         'name': action,
                         'class_name': action_class_name,
                         'type_key': type_key,
-                        'is_request': (type_name == 'Request')
+                        'is_request': (type_name == 'Request'),
+                        'is_send': (type_key == 'send')
                     }
                 }))
             with open(generated_class_cpp_fn, writemode[type_key]) as out:
@@ -574,7 +601,8 @@ def parse_schemas(version: str, schema_dir: Path = Path('schemas/json/'),
                         'name': action,
                         'class_name': action_class_name,
                         'type_key': type_key,
-                        'is_request': (type_name == 'Request')
+                        'is_request': (type_name == 'Request'),
+                        'is_send': (type_key == 'send')
                     }
                 }))
             with open(enums_hpp_fn, 'w' if first else 'a+') as out:

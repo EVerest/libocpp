@@ -36,8 +36,8 @@ std::ostream& operator<<(std::ostream& os, const GetPeriodicEventStreamRequest& 
 
 /// \brief Contains a OCPP GetPeriodicEventStreamResponse message
 struct GetPeriodicEventStreamResponse : public ocpp::Message {
-    std::optional<CustomData> customData;
     std::optional<std::vector<ConstantStreamData>> constantStreamData;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this GetPeriodicEventStreamResponse message as a human readable string
     /// \returns the message type as a human readable string

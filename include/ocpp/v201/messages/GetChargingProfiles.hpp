@@ -19,8 +19,8 @@ namespace v201 {
 struct GetChargingProfilesRequest : public ocpp::Message {
     int32_t requestId;
     ChargingProfileCriterion chargingProfile;
-    std::optional<CustomData> customData;
     std::optional<int32_t> evseId;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this GetChargingProfiles message as a human readable string
     /// \returns the message type as a human readable string
@@ -40,8 +40,8 @@ std::ostream& operator<<(std::ostream& os, const GetChargingProfilesRequest& k);
 /// \brief Contains a OCPP GetChargingProfilesResponse message
 struct GetChargingProfilesResponse : public ocpp::Message {
     GetChargingProfileStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this GetChargingProfilesResponse message as a human readable string
     /// \returns the message type as a human readable string

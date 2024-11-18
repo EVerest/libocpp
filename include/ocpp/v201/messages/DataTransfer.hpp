@@ -18,9 +18,9 @@ namespace v201 {
 /// \brief Contains a OCPP DataTransfer message
 struct DataTransferRequest : public ocpp::Message {
     CiString<255> vendorId;
-    std::optional<CustomData> customData;
     std::optional<CiString<50>> messageId;
     std::optional<json> data;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this DataTransfer message as a human readable string
     /// \returns the message type as a human readable string
@@ -40,9 +40,9 @@ std::ostream& operator<<(std::ostream& os, const DataTransferRequest& k);
 /// \brief Contains a OCPP DataTransferResponse message
 struct DataTransferResponse : public ocpp::Message {
     DataTransferStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
     std::optional<json> data;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this DataTransferResponse message as a human readable string
     /// \returns the message type as a human readable string

@@ -20,9 +20,9 @@ struct NotifyEVChargingScheduleRequest : public ocpp::Message {
     ocpp::DateTime timeBase;
     ChargingSchedule chargingSchedule;
     int32_t evseId;
-    std::optional<CustomData> customData;
     std::optional<int32_t> selectedScheduleTupleId;
     std::optional<bool> powerToleranceAcceptance;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this NotifyEVChargingSchedule message as a human readable string
     /// \returns the message type as a human readable string
@@ -42,8 +42,8 @@ std::ostream& operator<<(std::ostream& os, const NotifyEVChargingScheduleRequest
 /// \brief Contains a OCPP NotifyEVChargingScheduleResponse message
 struct NotifyEVChargingScheduleResponse : public ocpp::Message {
     GenericStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this NotifyEVChargingScheduleResponse message as a human readable string
     /// \returns the message type as a human readable string

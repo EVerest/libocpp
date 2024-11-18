@@ -25,9 +25,6 @@ void to_json(json& j, const ReserveNowRequest& k) {
         {"idToken", k.idToken},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.connectorType) {
         j["connectorType"] = k.connectorType.value();
     }
@@ -36,6 +33,9 @@ void to_json(json& j, const ReserveNowRequest& k) {
     }
     if (k.groupIdToken) {
         j["groupIdToken"] = k.groupIdToken.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -46,9 +46,6 @@ void from_json(const json& j, ReserveNowRequest& k) {
     k.idToken = j.at("idToken");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("connectorType")) {
         k.connectorType.emplace(j.at("connectorType"));
     }
@@ -57,6 +54,9 @@ void from_json(const json& j, ReserveNowRequest& k) {
     }
     if (j.contains("groupIdToken")) {
         k.groupIdToken.emplace(j.at("groupIdToken"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -77,11 +77,11 @@ void to_json(json& j, const ReserveNowResponse& k) {
         {"status", conversions::reserve_now_status_enum_to_string(k.status)},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.statusInfo) {
         j["statusInfo"] = k.statusInfo.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -90,11 +90,11 @@ void from_json(const json& j, ReserveNowResponse& k) {
     k.status = conversions::string_to_reserve_now_status_enum(j.at("status"));
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("statusInfo")) {
         k.statusInfo.emplace(j.at("statusInfo"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 

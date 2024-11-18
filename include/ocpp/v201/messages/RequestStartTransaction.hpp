@@ -19,10 +19,10 @@ namespace v201 {
 struct RequestStartTransactionRequest : public ocpp::Message {
     IdToken idToken;
     int32_t remoteStartId;
-    std::optional<CustomData> customData;
     std::optional<int32_t> evseId;
     std::optional<IdToken> groupIdToken;
     std::optional<ChargingProfile> chargingProfile;
+    std::optional<CustomData> customData;
     std::optional<TransactionLimit> transactionLimit;
 
     /// \brief Provides the type of this StartTransaction message as a human readable string
@@ -43,9 +43,9 @@ std::ostream& operator<<(std::ostream& os, const RequestStartTransactionRequest&
 /// \brief Contains a OCPP StartTransactionResponse message
 struct RequestStartTransactionResponse : public ocpp::Message {
     RequestStartStopStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
     std::optional<CiString<36>> transactionId;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this StartTransactionResponse message as a human readable string
     /// \returns the message type as a human readable string

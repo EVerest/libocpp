@@ -21,9 +21,6 @@ void to_json(json& j, const ClearTariffsRequest& k) {
     // the required parts of the message
     j = json({}, true);
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.tariffIds) {
         if (j.size() == 0) {
             j = json{{"tariffIds", json::array()}};
@@ -37,15 +34,15 @@ void to_json(json& j, const ClearTariffsRequest& k) {
     if (k.tariffKind) {
         j["tariffKind"] = ocpp::v201::conversions::tariff_kind_enum_to_string(k.tariffKind.value());
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 void from_json(const json& j, ClearTariffsRequest& k) {
     // the required parts of the message
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("tariffIds")) {
         json arr = j.at("tariffIds");
         std::vector<CiString<60>> vec;
@@ -56,6 +53,9 @@ void from_json(const json& j, ClearTariffsRequest& k) {
     }
     if (j.contains("tariffKind")) {
         k.tariffKind.emplace(ocpp::v201::conversions::string_to_tariff_kind_enum(j.at("tariffKind")));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 

@@ -22,13 +22,13 @@ struct NotifySettlementRequest : public ocpp::Message {
     PaymentStatusEnum status;
     float settlementAmount;
     ocpp::DateTime settlementTime;
-    std::optional<CustomData> customData;
     std::optional<CiString<36>> transactionId;
     std::optional<CiString<500>> statusInfo;
     std::optional<CiString<50>> receiptId;
     std::optional<CiString<2000>> receiptUrl;
     std::optional<Address> vatCompany;
     std::optional<CiString<20>> vatNumber;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this NotifySettlement message as a human readable string
     /// \returns the message type as a human readable string
@@ -47,9 +47,9 @@ std::ostream& operator<<(std::ostream& os, const NotifySettlementRequest& k);
 
 /// \brief Contains a OCPP NotifySettlementResponse message
 struct NotifySettlementResponse : public ocpp::Message {
-    std::optional<CustomData> customData;
     std::optional<CiString<2000>> receiptURL;
     std::optional<CiString<50>> receiptId;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this NotifySettlementResponse message as a human readable string
     /// \returns the message type as a human readable string

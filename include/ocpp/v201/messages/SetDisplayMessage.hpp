@@ -38,8 +38,8 @@ std::ostream& operator<<(std::ostream& os, const SetDisplayMessageRequest& k);
 /// \brief Contains a OCPP SetDisplayMessageResponse message
 struct SetDisplayMessageResponse : public ocpp::Message {
     DisplayMessageStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this SetDisplayMessageResponse message as a human readable string
     /// \returns the message type as a human readable string

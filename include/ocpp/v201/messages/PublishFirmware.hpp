@@ -20,9 +20,9 @@ struct PublishFirmwareRequest : public ocpp::Message {
     CiString<2000> location;
     CiString<32> checksum;
     int32_t requestId;
-    std::optional<CustomData> customData;
     std::optional<int32_t> retries;
     std::optional<int32_t> retryInterval;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this PublishFirmware message as a human readable string
     /// \returns the message type as a human readable string
@@ -42,8 +42,8 @@ std::ostream& operator<<(std::ostream& os, const PublishFirmwareRequest& k);
 /// \brief Contains a OCPP PublishFirmwareResponse message
 struct PublishFirmwareResponse : public ocpp::Message {
     GenericStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this PublishFirmwareResponse message as a human readable string
     /// \returns the message type as a human readable string

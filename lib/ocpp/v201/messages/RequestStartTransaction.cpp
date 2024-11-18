@@ -24,9 +24,6 @@ void to_json(json& j, const RequestStartTransactionRequest& k) {
         {"remoteStartId", k.remoteStartId},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.evseId) {
         j["evseId"] = k.evseId.value();
     }
@@ -39,6 +36,9 @@ void to_json(json& j, const RequestStartTransactionRequest& k) {
     if (k.transactionLimit) {
         j["transactionLimit"] = k.transactionLimit.value();
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 void from_json(const json& j, RequestStartTransactionRequest& k) {
@@ -47,9 +47,6 @@ void from_json(const json& j, RequestStartTransactionRequest& k) {
     k.remoteStartId = j.at("remoteStartId");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("evseId")) {
         k.evseId.emplace(j.at("evseId"));
     }
@@ -61,6 +58,9 @@ void from_json(const json& j, RequestStartTransactionRequest& k) {
     }
     if (j.contains("transactionLimit")) {
         k.transactionLimit.emplace(j.at("transactionLimit"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -81,14 +81,14 @@ void to_json(json& j, const RequestStartTransactionResponse& k) {
         {"status", conversions::request_start_stop_status_enum_to_string(k.status)},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.statusInfo) {
         j["statusInfo"] = k.statusInfo.value();
     }
     if (k.transactionId) {
         j["transactionId"] = k.transactionId.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -97,14 +97,14 @@ void from_json(const json& j, RequestStartTransactionResponse& k) {
     k.status = conversions::string_to_request_start_stop_status_enum(j.at("status"));
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("statusInfo")) {
         k.statusInfo.emplace(j.at("statusInfo"));
     }
     if (j.contains("transactionId")) {
         k.transactionId.emplace(j.at("transactionId"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 

@@ -39,8 +39,8 @@ std::ostream& operator<<(std::ostream& os, const NotifyAllowedEnergyTransferRequ
 /// \brief Contains a OCPP NotifyAllowedEnergyTransferResponse message
 struct NotifyAllowedEnergyTransferResponse : public ocpp::Message {
     NotifyAllowedEnergyTransferStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this NotifyAllowedEnergyTransferResponse message as a human readable string
     /// \returns the message type as a human readable string

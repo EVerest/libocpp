@@ -13,11 +13,11 @@ using json = nlohmann::json;
 namespace ocpp {
 namespace v21 {
 
-std::string NotifyPeriodicEventStreamRequest::get_type() const {
+std::string NotifyPeriodicEventStream::get_type() const {
     return "NotifyPeriodicEventStream";
 }
 
-void to_json(json& j, const NotifyPeriodicEventStreamRequest& k) {
+void to_json(json& j, const NotifyPeriodicEventStream& k) {
     // the required parts of the message
     j = json{
         {"data", k.data},
@@ -30,7 +30,7 @@ void to_json(json& j, const NotifyPeriodicEventStreamRequest& k) {
     }
 }
 
-void from_json(const json& j, NotifyPeriodicEventStreamRequest& k) {
+void from_json(const json& j, NotifyPeriodicEventStream& k) {
     // the required parts of the message
     for (auto val : j.at("data")) {
         k.data.push_back(val);
@@ -44,47 +44,9 @@ void from_json(const json& j, NotifyPeriodicEventStreamRequest& k) {
     }
 }
 
-/// \brief Writes the string representation of the given NotifyPeriodicEventStreamRequest \p k to the given output
-/// stream \p os \returns an output stream with the NotifyPeriodicEventStreamRequest written to
-std::ostream& operator<<(std::ostream& os, const NotifyPeriodicEventStreamRequest& k) {
-    os << json(k).dump(4);
-    return os;
-}
-
-std::string NotifyPeriodicEventStreamResponse::get_type() const {
-    return "NotifyPeriodicEventStreamResponse";
-}
-
-void to_json(json& j, const NotifyPeriodicEventStreamResponse& k) {
-    // the required parts of the message
-    j = json{
-        {"status", ocpp::v201::conversions::generic_status_enum_to_string(k.status)},
-    };
-    // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
-    if (k.statusInfo) {
-        j["statusInfo"] = k.statusInfo.value();
-    }
-}
-
-void from_json(const json& j, NotifyPeriodicEventStreamResponse& k) {
-    // the required parts of the message
-    k.status = ocpp::v201::conversions::string_to_generic_status_enum(j.at("status"));
-
-    // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
-    if (j.contains("statusInfo")) {
-        k.statusInfo.emplace(j.at("statusInfo"));
-    }
-}
-
-/// \brief Writes the string representation of the given NotifyPeriodicEventStreamResponse \p k to the given output
-/// stream \p os \returns an output stream with the NotifyPeriodicEventStreamResponse written to
-std::ostream& operator<<(std::ostream& os, const NotifyPeriodicEventStreamResponse& k) {
+/// \brief Writes the string representation of the given NotifyPeriodicEventStream \p k to the given output stream \p os
+/// \returns an output stream with the NotifyPeriodicEventStream written to
+std::ostream& operator<<(std::ostream& os, const NotifyPeriodicEventStream& k) {
     os << json(k).dump(4);
     return os;
 }

@@ -19,8 +19,8 @@ namespace v201 {
 struct GetCompositeScheduleRequest : public ocpp::Message {
     int32_t duration;
     int32_t evseId;
-    std::optional<CustomData> customData;
     std::optional<ChargingRateUnitEnum> chargingRateUnit;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this GetCompositeSchedule message as a human readable string
     /// \returns the message type as a human readable string
@@ -40,9 +40,9 @@ std::ostream& operator<<(std::ostream& os, const GetCompositeScheduleRequest& k)
 /// \brief Contains a OCPP GetCompositeScheduleResponse message
 struct GetCompositeScheduleResponse : public ocpp::Message {
     GenericStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
     std::optional<CompositeSchedule> schedule;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this GetCompositeScheduleResponse message as a human readable string
     /// \returns the message type as a human readable string

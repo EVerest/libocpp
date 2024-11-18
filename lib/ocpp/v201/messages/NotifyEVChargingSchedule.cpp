@@ -25,14 +25,14 @@ void to_json(json& j, const NotifyEVChargingScheduleRequest& k) {
         {"evseId", k.evseId},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.selectedScheduleTupleId) {
         j["selectedScheduleTupleId"] = k.selectedScheduleTupleId.value();
     }
     if (k.powerToleranceAcceptance) {
         j["powerToleranceAcceptance"] = k.powerToleranceAcceptance.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -43,14 +43,14 @@ void from_json(const json& j, NotifyEVChargingScheduleRequest& k) {
     k.evseId = j.at("evseId");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("selectedScheduleTupleId")) {
         k.selectedScheduleTupleId.emplace(j.at("selectedScheduleTupleId"));
     }
     if (j.contains("powerToleranceAcceptance")) {
         k.powerToleranceAcceptance.emplace(j.at("powerToleranceAcceptance"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -71,11 +71,11 @@ void to_json(json& j, const NotifyEVChargingScheduleResponse& k) {
         {"status", conversions::generic_status_enum_to_string(k.status)},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.statusInfo) {
         j["statusInfo"] = k.statusInfo.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -84,11 +84,11 @@ void from_json(const json& j, NotifyEVChargingScheduleResponse& k) {
     k.status = conversions::string_to_generic_status_enum(j.at("status"));
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("statusInfo")) {
         k.statusInfo.emplace(j.at("statusInfo"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 

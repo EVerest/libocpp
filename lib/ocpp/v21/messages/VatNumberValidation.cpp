@@ -23,11 +23,11 @@ void to_json(json& j, const VatNumberValidationRequest& k) {
         {"vatNumber", k.vatNumber},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.evseId) {
         j["evseId"] = k.evseId.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -36,11 +36,11 @@ void from_json(const json& j, VatNumberValidationRequest& k) {
     k.vatNumber = j.at("vatNumber");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("evseId")) {
         k.evseId.emplace(j.at("evseId"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -62,9 +62,6 @@ void to_json(json& j, const VatNumberValidationResponse& k) {
         {"status", ocpp::v201::conversions::generic_status_enum_to_string(k.status)},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.company) {
         j["company"] = k.company.value();
     }
@@ -74,6 +71,9 @@ void to_json(json& j, const VatNumberValidationResponse& k) {
     if (k.evseId) {
         j["evseId"] = k.evseId.value();
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 void from_json(const json& j, VatNumberValidationResponse& k) {
@@ -82,9 +82,6 @@ void from_json(const json& j, VatNumberValidationResponse& k) {
     k.status = ocpp::v201::conversions::string_to_generic_status_enum(j.at("status"));
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("company")) {
         k.company.emplace(j.at("company"));
     }
@@ -93,6 +90,9 @@ void from_json(const json& j, VatNumberValidationResponse& k) {
     }
     if (j.contains("evseId")) {
         k.evseId.emplace(j.at("evseId"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 

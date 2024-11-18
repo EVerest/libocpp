@@ -21,7 +21,6 @@ struct SetDERControlRequest : public ocpp::Message {
     bool isDefault;
     CiString<36> controlId;
     DERControlEnum controlType;
-    std::optional<CustomData> customData;
     std::optional<DERCurve> curve;
     std::optional<EnterService> enterService;
     std::optional<FixedPF> fixedPFAbsorb;
@@ -30,6 +29,7 @@ struct SetDERControlRequest : public ocpp::Message {
     std::optional<FreqDroop> freqDroop;
     std::optional<Gradient> gradient;
     std::optional<LimitMaxDischarge> limitMaxDischarge;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this SetDERControl message as a human readable string
     /// \returns the message type as a human readable string
@@ -49,9 +49,9 @@ std::ostream& operator<<(std::ostream& os, const SetDERControlRequest& k);
 /// \brief Contains a OCPP SetDERControlResponse message
 struct SetDERControlResponse : public ocpp::Message {
     DERControlStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
     std::optional<std::vector<CiString<36>>> supersededIds;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this SetDERControlResponse message as a human readable string
     /// \returns the message type as a human readable string

@@ -40,8 +40,8 @@ std::ostream& operator<<(std::ostream& os, const UsePriorityChargingRequest& k);
 /// \brief Contains a OCPP UsePriorityChargingResponse message
 struct UsePriorityChargingResponse : public ocpp::Message {
     PriorityChargingStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this UsePriorityChargingResponse message as a human readable string
     /// \returns the message type as a human readable string

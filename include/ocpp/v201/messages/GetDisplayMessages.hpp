@@ -18,10 +18,10 @@ namespace v201 {
 /// \brief Contains a OCPP GetDisplayMessages message
 struct GetDisplayMessagesRequest : public ocpp::Message {
     int32_t requestId;
-    std::optional<CustomData> customData;
     std::optional<std::vector<int32_t>> id;
     std::optional<MessagePriorityEnum> priority;
     std::optional<MessageStateEnum> state;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this GetDisplayMessages message as a human readable string
     /// \returns the message type as a human readable string
@@ -41,8 +41,8 @@ std::ostream& operator<<(std::ostream& os, const GetDisplayMessagesRequest& k);
 /// \brief Contains a OCPP GetDisplayMessagesResponse message
 struct GetDisplayMessagesResponse : public ocpp::Message {
     GetDisplayMessagesStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this GetDisplayMessagesResponse message as a human readable string
     /// \returns the message type as a human readable string

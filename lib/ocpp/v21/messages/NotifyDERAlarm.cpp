@@ -25,14 +25,14 @@ void to_json(json& j, const NotifyDERAlarmRequest& k) {
         {"extraInfo", k.extraInfo},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.gridEventFault) {
         j["gridEventFault"] = ocpp::v201::conversions::grid_event_fault_enum_to_string(k.gridEventFault.value());
     }
     if (k.alarmEnded) {
         j["alarmEnded"] = k.alarmEnded.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -43,14 +43,14 @@ void from_json(const json& j, NotifyDERAlarmRequest& k) {
     k.extraInfo = j.at("extraInfo");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("gridEventFault")) {
         k.gridEventFault.emplace(ocpp::v201::conversions::string_to_grid_event_fault_enum(j.at("gridEventFault")));
     }
     if (j.contains("alarmEnded")) {
         k.alarmEnded.emplace(j.at("alarmEnded"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 

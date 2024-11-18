@@ -17,8 +17,8 @@ namespace v201 {
 
 /// \brief Contains a OCPP GetInstalledCertificateIds message
 struct GetInstalledCertificateIdsRequest : public ocpp::Message {
-    std::optional<CustomData> customData;
     std::optional<std::vector<GetCertificateIdUseEnum>> certificateType;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this GetInstalledCertificateIds message as a human readable string
     /// \returns the message type as a human readable string
@@ -38,9 +38,9 @@ std::ostream& operator<<(std::ostream& os, const GetInstalledCertificateIdsReque
 /// \brief Contains a OCPP GetInstalledCertificateIdsResponse message
 struct GetInstalledCertificateIdsResponse : public ocpp::Message {
     GetInstalledCertificateStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
     std::optional<std::vector<CertificateHashDataChain>> certificateHashDataChain;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this GetInstalledCertificateIdsResponse message as a human readable string
     /// \returns the message type as a human readable string
