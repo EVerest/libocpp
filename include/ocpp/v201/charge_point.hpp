@@ -108,15 +108,12 @@ public:
     /// \brief Stops the ChargePoint. Disconnects the websocket connection and stops MessageQueue and all timers
     virtual void stop() = 0;
 
-    /// \brief Initializes the websocket and connects to CSMS if it is not yet connected
-    virtual void connect_websocket() = 0;
-
     /// \brief Initializes the websocket and connects to CSMS
     /// a specific network connection profile given the configuration slot
     /// if it is not yet connected.
     ///
     /// \param configuration_slot Configuration slot used to connect websocket
-    virtual void connect_websocket(const int32_t configuration_slot) = 0;
+    virtual void connect_websocket(std::optional<int32_t> configuration_slot = std::nullopt) = 0;
 
     /// \brief Disconnects the the websocket connection to the CSMS if it is connected
     virtual void disconnect_websocket() = 0;
@@ -482,10 +479,6 @@ private:
     GetCompositeScheduleResponse
     get_composite_schedule_internal(const GetCompositeScheduleRequest& request,
                                     const std::set<ChargingProfilePurposeEnum>& profiles_to_ignore = {});
-
-    /// \brief Removes all network connection profiles below the actual security profile and stores the new list in the
-    /// device model
-    void remove_network_connection_profiles_below_actual_security_profile();
 
     void message_callback(const std::string& message);
     void update_aligned_data_interval();
@@ -860,8 +853,7 @@ public:
 
     void stop() override;
 
-    virtual void connect_websocket() override;
-    void connect_websocket(const int32_t configuration_slot) override;
+    void connect_websocket(std::optional<int32_t> configuration_slot = std::nullopt) override;
     virtual void disconnect_websocket() override;
 
     void on_network_disconnected(OCPPInterfaceEnum ocpp_interface) override;

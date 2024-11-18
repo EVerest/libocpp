@@ -115,7 +115,7 @@ bool ConnectivityManager::is_websocket_connected() {
 }
 
 void ConnectivityManager::connect(std::optional<int32_t> configuration_slot_opt) {
-    const int32_t configuration_slot = configuration_slot_opt.value_or(1);
+    const int32_t configuration_slot = configuration_slot_opt.value_or(this->get_active_network_configuration_slot());
     const std::optional<NetworkConnectionProfile> network_connection_profile_opt =
         this->get_network_connection_profile(configuration_slot);
     if (!network_connection_profile_opt.has_value()) {

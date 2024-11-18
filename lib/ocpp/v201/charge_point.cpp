@@ -164,10 +164,6 @@ void ChargePoint::stop() {
     this->message_queue->stop();
 }
 
-void ChargePoint::connect_websocket() {
-    this->connectivity_manager->connect();
-}
-
 void ChargePoint::disconnect_websocket() {
     this->connectivity_manager->disconnect();
 }
@@ -176,7 +172,7 @@ void ChargePoint::on_network_disconnected(OCPPInterfaceEnum ocpp_interface) {
     this->connectivity_manager->on_network_disconnected(ocpp_interface);
 }
 
-void ChargePoint::connect_websocket(const int32_t configuration_slot) {
+void ChargePoint::connect_websocket(std::optional<int32_t> configuration_slot) {
     this->connectivity_manager->connect(configuration_slot);
 }
 
