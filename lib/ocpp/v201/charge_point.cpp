@@ -258,8 +258,7 @@ ChargePoint::on_get_15118_ev_certificate_request(const Get15118EVCertificateRequ
     }
 
     EVLOG_debug << "Received Get15118EVCertificateRequest " << request;
-    auto future_res = this->message_dispatcher->dispatch_call_async(
-        ocpp::Call<Get15118EVCertificateRequest>(request));
+    auto future_res = this->message_dispatcher->dispatch_call_async(ocpp::Call<Get15118EVCertificateRequest>(request));
 
     if (future_res.wait_for(DEFAULT_WAIT_FOR_FUTURE_TIMEOUT) == std::future_status::timeout) {
         EVLOG_warning << "Waiting for Get15118EVCertificateRequest.conf future timed out!";
@@ -1171,6 +1170,12 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
 
     this->message_dispatcher =
         std::make_unique<MessageDispatcher>(*this->message_queue, *this->device_model, registration_status);
+    this->data_transfer = std::make_unique<DataTransfer>(
+        *this->message_dispatcher, this->callbacks.data_transfer_callback,
+        [&connectivity_manager = this->connectivity_manager]() {
+            return connectivity_manager->is_websocket_connected();
+        },
+        DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
 
     if (this->callbacks.configure_network_connection_profile_callback.has_value()) {
         this->connectivity_manager->set_configure_network_connection_profile_callback(
@@ -1290,7 +1295,7 @@ void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& messa
         this->handle_remote_stop_transaction_request(json_message);
         break;
     case MessageType::DataTransfer:
-        this->handle_data_transfer_req(json_message);
+        this->data_transfer->handle_data_transfer_req(json_message);
         break;
     case MessageType::GetLog:
         this->handle_get_log_req(json_message);
@@ -4045,65 +4050,14 @@ void ChargePoint::handle_clear_display_message(const Call<ClearDisplayMessageReq
     this->message_dispatcher->dispatch_call_result(call_result);
 }
 
-void ChargePoint::handle_data_transfer_req(Call<DataTransferRequest> call) {
-    const auto msg = call.msg;
-    DataTransferResponse response;
-
-    if (this->callbacks.data_transfer_callback.has_value()) {
-        response = this->callbacks.data_transfer_callback.value()(call.msg);
-    } else {
-        response.status = DataTransferStatusEnum::UnknownVendorId;
-        EVLOG_warning << "Received a DataTransferRequest but no data transfer callback was registered";
-    }
-
-    ocpp::CallResult<DataTransferResponse> call_result(response, call.uniqueId);
-    this->message_dispatcher->dispatch_call_result(call_result);
-}
-
 std::optional<DataTransferResponse> ChargePoint::data_transfer_req(const CiString<255>& vendorId,
                                                                    const std::optional<CiString<50>>& messageId,
                                                                    const std::optional<json>& data) {
-    DataTransferRequest req;
-    req.vendorId = vendorId;
-    req.messageId = messageId;
-    req.data = data;
-
-    return this->data_transfer_req(req);
+    return this->data_transfer->data_transfer_req(vendorId, messageId, data);
 }
 
 std::optional<DataTransferResponse> ChargePoint::data_transfer_req(const DataTransferRequest& request) {
-    DataTransferResponse response;
-    response.status = DataTransferStatusEnum::Rejected;
-
-    ocpp::Call<DataTransferRequest> call(request);
-    auto data_transfer_future = this->message_dispatcher->dispatch_call_async(call);
-
-    if (this->connectivity_manager == nullptr or !this->connectivity_manager->is_websocket_connected()) {
-        return std::nullopt;
-    }
-
-    if (data_transfer_future.wait_for(DEFAULT_WAIT_FOR_FUTURE_TIMEOUT) == std::future_status::timeout) {
-        EVLOG_warning << "Waiting for DataTransfer.conf future timed out";
-        return std::nullopt;
-    }
-
-    auto enhanced_message = data_transfer_future.get();
-    if (enhanced_message.messageType == MessageType::DataTransferResponse) {
-        try {
-            ocpp::CallResult<DataTransferResponse> call_result = enhanced_message.message;
-            response = call_result.msg;
-        } catch (const EnumConversionException& e) {
-            EVLOG_error << "EnumConversionException during handling of message: " << e.what();
-            auto call_error = CallError(enhanced_message.uniqueId, "FormationViolation", e.what(), json({}));
-            this->message_dispatcher->dispatch_call_error(call_error);
-            return std::nullopt;
-        }
-    }
-    if (enhanced_message.offline) {
-        return std::nullopt;
-    }
-
-    return response;
+    return this->data_transfer->data_transfer_req(request);
 }
 
 void ChargePoint::handle_send_local_authorization_list_req(Call<SendLocalListRequest> call) {
