@@ -20,6 +20,14 @@
 
 namespace ocpp::v201 {
 struct Callbacks {
+    /// @addtogroup ocpp201_callbacks OCPP 2.0.1 callbacks
+    /// Callbacks will call be called when necessary and must be implemented by the calling class.
+    /// @{
+
+    /// @name Callbacks
+    /// Callbacks
+    /// @{
+
     /// \brief Function to check if the callback struct is completely filled. All std::functions should hold a function,
     ///       all std::optional<std::functions> should either be empty or hold a function.
     /// \param device_model The device model, to check if certain modules are enabled / available.
@@ -157,5 +165,9 @@ struct Callbacks {
     std::optional<std::function<ReserveNowStatusEnum(const ReserveNowRequest& request)>> reserve_now_callback;
     /// \brief Callback function is called when a cancel reservation request is received from the CSMS
     std::optional<std::function<bool(const int32_t reservationId)>> cancel_reservation_callback;
+
+    /// @} // End ocpp 201 callbacks group / topic
+
+    /// @} // End group
 };
 } // namespace ocpp::v201
