@@ -1069,12 +1069,7 @@ void ChargePoint::on_reservation_status(const int32_t reservation_id, const Rese
     req.reservationUpdateStatus = status;
 
     ocpp::Call<ReservationStatusUpdateRequest> call(req, this->message_queue->createMessageId());
-    this->send<ReservationStatusUpdateRequest>(call);
-}
-
-bool ChargePoint::send(CallError call_error) {
-    this->message_queue->push(call_error);
-    return true;
+    this->message_dispatcher->dispatch_call(call);
 }
 
 void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_structure,
@@ -3453,7 +3448,7 @@ void ChargePoint::handle_reserve_now_request(Call<ReserveNowRequest> call) {
 
     // Reply with the response from the callback.
     const ocpp::CallResult<ReserveNowResponse> call_result(response, call.uniqueId);
-    this->send<ReserveNowResponse>(call_result);
+    this->message_dispatcher->dispatch_call_result(call_result);
 
     if (response.status == ReserveNowStatusEnum::Accepted) {
         EVLOG_debug << "Reservation with id " << reservation_request.id << " for "
@@ -3483,7 +3478,7 @@ void ChargePoint::handle_cancel_reservation_callback(Call<CancelReservationReque
     }
 
     const ocpp::CallResult<CancelReservationResponse> call_result(response, call.uniqueId);
-    this->send<CancelReservationResponse>(call_result);
+    this->message_dispatcher->dispatch_call_result(call_result);
 }
 
 void ChargePoint::send_reserve_now_rejected_response(const MessageId& unique_id, const std::string& status_info) {
@@ -3492,7 +3487,7 @@ void ChargePoint::send_reserve_now_rejected_response(const MessageId& unique_id,
     response.statusInfo = StatusInfo();
     response.statusInfo->additionalInfo = status_info;
     const ocpp::CallResult<ReserveNowResponse> call_result(response, unique_id);
-    this->send<ReserveNowResponse>(call_result);
+    this->message_dispatcher->dispatch_call_result(call_result);
 }
 
 void ChargePoint::handle_costupdated_req(const Call<CostUpdatedRequest> call) {
