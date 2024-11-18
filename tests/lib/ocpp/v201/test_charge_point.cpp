@@ -540,13 +540,13 @@ TEST_F(ChargePointConstructorTestFixtureV201, CreateChargePoint_InitializeInCorr
 }
 
 TEST_F(ChargePointConstructorTestFixtureV201,
-       CreateChargePoint_EVSEConnectorStructureDefinedBadly_ThrowsDeviceModelStorageError) {
+       CreateChargePoint_EVSEConnectorStructureDefinedBadly_ThrowsDeviceModelError) {
     configure_callbacks_with_mocks();
     auto evse_connector_structure = std::map<int32_t, int32_t>();
 
     EXPECT_THROW(ocpp::v201::ChargePoint(evse_connector_structure, device_model, database_handler,
                                          create_message_queue(database_handler), "/tmp", evse_security, callbacks),
-                 DeviceModelStorageError);
+                 DeviceModelError);
 }
 
 TEST_F(ChargePointConstructorTestFixtureV201, CreateChargePoint_MissingDeviceModel_ThrowsInvalidArgument) {
@@ -853,7 +853,8 @@ TEST_F(ChargePointFunctionalityTestFixtureV201,
                                 DEFAULT_TX_ID),
     };
 
-    ON_CALL(*smart_charging_handler, get_valid_profiles(DEFAULT_EVSE_ID)).WillByDefault(testing::Return(profiles));
+    ON_CALL(*smart_charging_handler, get_valid_profiles(DEFAULT_EVSE_ID, testing::_))
+        .WillByDefault(testing::Return(profiles));
     EXPECT_CALL(*smart_charging_handler,
                 calculate_composite_schedule(profiles, testing::_, testing::_, DEFAULT_EVSE_ID, req.chargingRateUnit));
 
@@ -869,7 +870,7 @@ TEST_F(ChargePointFunctionalityTestFixtureV201,
     auto get_composite_schedule_req =
         request_to_enhanced_message<GetCompositeScheduleRequest, MessageType::GetCompositeSchedule>(req);
 
-    EXPECT_CALL(*smart_charging_handler, get_valid_profiles(testing::_)).Times(0);
+    EXPECT_CALL(*smart_charging_handler, get_valid_profiles(testing::_, testing::_)).Times(0);
     EXPECT_CALL(*smart_charging_handler,
                 calculate_composite_schedule(testing::_, testing::_, testing::_, testing::_, testing::_))
         .Times(0);
@@ -890,7 +891,7 @@ TEST_F(ChargePointFunctionalityTestFixtureV201,
     device_model->set_value(charging_rate_unit_cv.component, charging_rate_unit_cv.variable.value(),
                             AttributeEnum::Actual, "A", "test", true);
 
-    EXPECT_CALL(*smart_charging_handler, get_valid_profiles(testing::_)).Times(0);
+    EXPECT_CALL(*smart_charging_handler, get_valid_profiles(testing::_, testing::_)).Times(0);
     EXPECT_CALL(*smart_charging_handler,
                 calculate_composite_schedule(testing::_, testing::_, testing::_, testing::_, testing::_))
         .Times(0);

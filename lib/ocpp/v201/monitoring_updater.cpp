@@ -209,9 +209,8 @@ void MonitoringUpdater::evaluate_monitor(const VariableMonitoringMeta& monitor_m
                                          const VariableAttribute& attribute, const std::string& value_previous,
                                          const std::string& value_current) {
     // Don't care about periodic
-    switch (monitor_meta.monitor.type) {
-    case MonitorEnum::Periodic:
-    case MonitorEnum::PeriodicClockAligned:
+    if (monitor_meta.monitor.type == MonitorEnum::Periodic or
+        monitor_meta.monitor.type == MonitorEnum::PeriodicClockAligned) {
         return;
     }
 
@@ -265,7 +264,7 @@ void MonitoringUpdater::evaluate_monitor(const VariableMonitoringMeta& monitor_m
                 if (!this->device_model->update_monitor_reference(monitor_id, value_current)) {
                     EVLOG_warning << "Could not update delta monitor: " << monitor_id << " reference!";
                 }
-            } catch (const DeviceModelStorageError& e) {
+            } catch (const DeviceModelError& e) {
                 EVLOG_error << "Could not update delta monitor reference with exception: " << e.what();
             }
         }

@@ -5,10 +5,10 @@
 
 #include <gmock/gmock.h>
 
-#include "ocpp/v201/device_model_storage.hpp"
+#include "ocpp/v201/device_model_storage_interface.hpp"
 
 namespace ocpp::v201 {
-class DeviceModelStorageMock : public DeviceModelStorage {
+class DeviceModelStorageMock : public DeviceModelStorageInterface {
 public:
     MOCK_METHOD(DeviceModelMap, get_device_model, ());
     MOCK_METHOD(std::optional<VariableAttribute>, get_variable_attribute,
@@ -24,5 +24,7 @@ public:
     MOCK_METHOD(ClearMonitoringStatusEnum, clear_variable_monitor, (int, bool));
     MOCK_METHOD(int32_t, clear_custom_variable_monitors, ());
     MOCK_METHOD(void, check_integrity, ());
+    MOCK_METHOD(bool, update_monitoring_reference, (int32_t monitor_id, const std::string& reference_value),
+                (override));
 };
 } // namespace ocpp::v201

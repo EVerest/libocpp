@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.14)
 
 project(ocpp
-    VERSION 0.18.0
+    VERSION 0.20.0
     DESCRIPTION "A C++ implementation of the Open Charge Point Protocol"
     LANGUAGES CXX
 )
@@ -31,6 +31,9 @@ endif()
 
 if((${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME} OR ${PROJECT_NAME}_BUILD_TESTING) AND BUILD_TESTING)
     set(LIBOCPP_BUILD_TESTING ON)
+    evc_include(CodeCoverage)
+
+    append_coverage_compiler_flags()
 endif()
 
 # dependencies
@@ -129,7 +132,7 @@ find_package(Doxygen)
 if(DOXYGEN_FOUND)
     set(DOXYGEN_OUTPUT_DIRECTORY dist/docs)
     set(DOXYGEN_USE_MDFILE_AS_MAINPAGE README.md)
-    doxygen_add_docs(doxygen-${PROJECT_NAME} README.md include lib src)
+    doxygen_add_docs(doxygen-${PROJECT_NAME} README.md include lib src doc)
 else()
     message("Doxygen is needed to generate documentation")
 endif()
