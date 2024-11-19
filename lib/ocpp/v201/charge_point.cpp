@@ -2403,7 +2403,7 @@ void ChargePoint::handle_boot_notification_response(CallResult<BootNotificationR
             this->callbacks.time_sync_callback.value()(msg.currentTime);
         }
 
-        this->connectivity_manager->confirm_successfull_connection();
+        this->connectivity_manager->confirm_successful_connection();
 
         // set timers
         if (msg.interval > 0) {
@@ -4118,7 +4118,7 @@ void ChargePoint::websocket_connected_callback(const int configuration_slot,
     this->message_queue->resume(this->message_queue_resume_delay);
 
     if (this->registration_status == RegistrationStatusEnum::Accepted) {
-        this->connectivity_manager->confirm_successfull_connection();
+        this->connectivity_manager->confirm_successful_connection();
 
         if (this->time_disconnected.time_since_epoch() != 0s) {
             // handle offline threshold

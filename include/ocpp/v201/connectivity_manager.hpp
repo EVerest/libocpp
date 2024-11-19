@@ -138,7 +138,7 @@ public:
     ///
     void on_reconfiguration_of_security_parameters();
 
-    void confirm_successfull_connection();
+    void confirm_successful_connection();
     void remove_network_connection_profiles_below_actual_security_profile();
 
 private:
