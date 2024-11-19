@@ -26,6 +26,20 @@ bool is_websocket_connected() {
     return true;
 }
 
+TEST(DataTransferTest, HandleDataTransferReq_NotImplemented) {
+    MockMessageDispatcher mock_dispatcher;
+    DataTransfer data_transfer(mock_dispatcher, std::nullopt, is_websocket_connected,
+                               ocpp::DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
+
+    DataTransferRequest request = create_example_request();
+    ocpp::Call<DataTransferRequest> call(request);
+    ocpp::EnhancedMessage<MessageType> enhanced_message;
+    enhanced_message.messageType = MessageType::Authorize; // this cant be handled by DataTransfer functional block
+    enhanced_message.message = call;
+
+    EXPECT_THROW(data_transfer.handle_message(enhanced_message), MessageTypeNotImplementedException);
+}
+
 TEST(DataTransferTest, HandleDataTransferReq_NoCallback) {
     MockMessageDispatcher mock_dispatcher;
     DataTransfer data_transfer(mock_dispatcher, std::nullopt, is_websocket_connected,
@@ -33,13 +47,16 @@ TEST(DataTransferTest, HandleDataTransferReq_NoCallback) {
 
     DataTransferRequest request = create_example_request();
     ocpp::Call<DataTransferRequest> call(request);
+    ocpp::EnhancedMessage<MessageType> enhanced_message;
+    enhanced_message.messageType = MessageType::DataTransfer;
+    enhanced_message.message = call;
 
     EXPECT_CALL(mock_dispatcher, dispatch_call_result(_)).WillOnce(Invoke([](const json& call_result) {
         auto response = call_result[ocpp::CALLRESULT_PAYLOAD].get<DataTransferResponse>();
         EXPECT_EQ(response.status, DataTransferStatusEnum::UnknownVendorId);
     }));
 
-    data_transfer.handle_data_transfer_req(call);
+    data_transfer.handle_message(enhanced_message);
 }
 
 TEST(DataTransferTest, HandleDataTransferReq_WithCallback) {
@@ -56,13 +73,17 @@ TEST(DataTransferTest, HandleDataTransferReq_WithCallback) {
 
     DataTransferRequest request = create_example_request();
     ocpp::Call<DataTransferRequest> call(request);
+    ocpp::EnhancedMessage<MessageType> enhanced_message;
+    enhanced_message.messageType = MessageType::DataTransfer;
+    enhanced_message.message = call;
+
 
     EXPECT_CALL(mock_dispatcher, dispatch_call_result(_)).WillOnce(Invoke([](const json& call_result) {
         auto response = call_result[ocpp::CALLRESULT_PAYLOAD].get<DataTransferResponse>();
         EXPECT_EQ(response.status, DataTransferStatusEnum::Accepted);
     }));
 
-    data_transfer.handle_data_transfer_req(call);
+    data_transfer.handle_message(enhanced_message);
 }
 
 TEST(DataTransferTest, DataTransferReq_NotConnected) {

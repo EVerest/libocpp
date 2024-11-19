@@ -7,7 +7,13 @@
 namespace ocpp {
 namespace v201 {
 
-void DataTransfer::handle_data_transfer_req(Call<DataTransferRequest> call) {
+void DataTransfer::handle_message(const EnhancedMessage<MessageType>& message) {
+
+    if (message.messageType != MessageType::DataTransfer) {
+        throw MessageTypeNotImplementedException(message.messageType);
+    }
+
+    Call<DataTransferRequest> call = message.message;
     const auto msg = call.msg;
     DataTransferResponse response;
     response.status = DataTransferStatusEnum::UnknownVendorId;

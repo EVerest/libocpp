@@ -4,14 +4,17 @@
 #pragma once
 
 #include <ocpp/v201/message_dispatcher.hpp>
+#include <ocpp/v201/message_handler.hpp>
 #include <ocpp/v201/messages/DataTransfer.hpp>
 
 namespace ocpp {
 namespace v201 {
 
-class DataTransferInterface {
+class DataTransferInterface : public MessageHandlerInterface {
 
 public:
+    virtual ~DataTransferInterface() {};
+
     /// \brief Sends a DataTransfer.req message to the CSMS using the given parameters
     /// \param vendorId
     /// \param messageId
@@ -26,9 +29,6 @@ public:
     /// \return DataTransferResponse containing the result from CSMS. In case no response is received from the CSMS
     /// because the message timed out or the charging station is offline, std::nullopt is returned
     virtual std::optional<DataTransferResponse> data_transfer_req(const DataTransferRequest& request) = 0;
-
-    /// \brief Handles the given DataTransfer.req \p call by the CSMS by responding with a CallResult
-    virtual void handle_data_transfer_req(Call<DataTransferRequest> call) = 0;
 };
 
 class DataTransfer : public DataTransferInterface {
@@ -49,7 +49,7 @@ public:
         is_websocket_connected(is_websocket_connected),
         response_timeout(response_timeout){};
 
-    void handle_data_transfer_req(Call<DataTransferRequest> call) override;
+    void handle_message(const EnhancedMessage<MessageType>& message) override;
 
     std::optional<DataTransferResponse> data_transfer_req(const CiString<255>& vendorId,
                                                           const std::optional<CiString<50>>& messageId,
