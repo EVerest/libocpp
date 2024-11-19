@@ -13,7 +13,7 @@ namespace v201 {
 class DataTransferInterface : public MessageHandlerInterface {
 
 public:
-    virtual ~DataTransferInterface() {};
+    virtual ~DataTransferInterface(){};
 
     /// \brief Sends a DataTransfer.req message to the CSMS using the given parameters
     /// \param vendorId
@@ -37,16 +37,14 @@ private:
     MessageDispatcherInterface<MessageType>& message_dispatcher;
     std::optional<std::function<DataTransferResponse(const DataTransferRequest& request)>> data_transfer_callback;
     std::chrono::seconds response_timeout;
-    std::function<bool()> is_websocket_connected;
 
 public:
     DataTransfer(MessageDispatcherInterface<MessageType>& message_dispatcher,
                  const std::optional<std::function<DataTransferResponse(const DataTransferRequest& request)>>&
                      data_transfer_callback,
-                 const std::function<bool()> is_websocket_connected, const std::chrono::seconds response_timeout) :
+                 const std::chrono::seconds response_timeout) :
         message_dispatcher(message_dispatcher),
         data_transfer_callback(data_transfer_callback),
-        is_websocket_connected(is_websocket_connected),
         response_timeout(response_timeout){};
 
     void handle_message(const EnhancedMessage<MessageType>& message) override;

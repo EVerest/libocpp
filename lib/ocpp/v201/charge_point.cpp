@@ -1171,11 +1171,7 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
     this->message_dispatcher =
         std::make_unique<MessageDispatcher>(*this->message_queue, *this->device_model, registration_status);
     this->data_transfer = std::make_unique<DataTransfer>(
-        *this->message_dispatcher, this->callbacks.data_transfer_callback,
-        [&connectivity_manager = this->connectivity_manager]() {
-            return connectivity_manager->is_websocket_connected();
-        },
-        DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
+        *this->message_dispatcher, this->callbacks.data_transfer_callback, DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
 
     if (this->callbacks.configure_network_connection_profile_callback.has_value()) {
         this->connectivity_manager->set_configure_network_connection_profile_callback(

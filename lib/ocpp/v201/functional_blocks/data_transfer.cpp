@@ -47,10 +47,6 @@ std::optional<DataTransferResponse> DataTransfer::data_transfer_req(const DataTr
     ocpp::Call<DataTransferRequest> call(request);
     auto data_transfer_future = this->message_dispatcher.dispatch_call_async(call);
 
-    if (not this->is_websocket_connected()) {
-        return std::nullopt;
-    }
-
     if (data_transfer_future.wait_for(this->response_timeout) == std::future_status::timeout) {
         EVLOG_warning << "Waiting for DataTransfer.conf future timed out";
         return std::nullopt;

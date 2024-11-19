@@ -22,14 +22,9 @@ DataTransferRequest create_example_request() {
     return request;
 }
 
-bool is_websocket_connected() {
-    return true;
-}
-
 TEST(DataTransferTest, HandleDataTransferReq_NotImplemented) {
     MockMessageDispatcher mock_dispatcher;
-    DataTransfer data_transfer(mock_dispatcher, std::nullopt, is_websocket_connected,
-                               ocpp::DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
+    DataTransfer data_transfer(mock_dispatcher, std::nullopt, ocpp::DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
 
     DataTransferRequest request = create_example_request();
     ocpp::Call<DataTransferRequest> call(request);
@@ -42,8 +37,7 @@ TEST(DataTransferTest, HandleDataTransferReq_NotImplemented) {
 
 TEST(DataTransferTest, HandleDataTransferReq_NoCallback) {
     MockMessageDispatcher mock_dispatcher;
-    DataTransfer data_transfer(mock_dispatcher, std::nullopt, is_websocket_connected,
-                               ocpp::DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
+    DataTransfer data_transfer(mock_dispatcher, std::nullopt, ocpp::DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
 
     DataTransferRequest request = create_example_request();
     ocpp::Call<DataTransferRequest> call(request);
@@ -68,15 +62,13 @@ TEST(DataTransferTest, HandleDataTransferReq_WithCallback) {
         return response;
     };
 
-    DataTransfer data_transfer(mock_dispatcher, callback, is_websocket_connected,
-                               ocpp::DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
+    DataTransfer data_transfer(mock_dispatcher, callback, ocpp::DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
 
     DataTransferRequest request = create_example_request();
     ocpp::Call<DataTransferRequest> call(request);
     ocpp::EnhancedMessage<MessageType> enhanced_message;
     enhanced_message.messageType = MessageType::DataTransfer;
     enhanced_message.message = call;
-
 
     EXPECT_CALL(mock_dispatcher, dispatch_call_result(_)).WillOnce(Invoke([](const json& call_result) {
         auto response = call_result[ocpp::CALLRESULT_PAYLOAD].get<DataTransferResponse>();
@@ -86,24 +78,9 @@ TEST(DataTransferTest, HandleDataTransferReq_WithCallback) {
     data_transfer.handle_message(enhanced_message);
 }
 
-TEST(DataTransferTest, DataTransferReq_NotConnected) {
-    MockMessageDispatcher mock_dispatcher;
-    DataTransfer data_transfer(
-        mock_dispatcher, std::nullopt, []() { return false; }, ocpp::DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
-
-    DataTransferRequest request = create_example_request();
-
-    EXPECT_CALL(mock_dispatcher, dispatch_call_async(_, _)).Times(1);
-
-    auto response = data_transfer.data_transfer_req(request);
-
-    EXPECT_FALSE(response.has_value());
-}
-
 TEST(DataTransferTest, DataTransferReq_Offline) {
     MockMessageDispatcher mock_dispatcher;
-    DataTransfer data_transfer(mock_dispatcher, std::nullopt, is_websocket_connected,
-                               ocpp::DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
+    DataTransfer data_transfer(mock_dispatcher, std::nullopt, ocpp::DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
 
     DataTransferRequest request = create_example_request();
 
@@ -120,7 +97,7 @@ TEST(DataTransferTest, DataTransferReq_Offline) {
 
 TEST(DataTransferTest, DataTransferReq_Timeout) {
     MockMessageDispatcher mock_dispatcher;
-    DataTransfer data_transfer(mock_dispatcher, std::nullopt, is_websocket_connected, std::chrono::seconds(1));
+    DataTransfer data_transfer(mock_dispatcher, std::nullopt, std::chrono::seconds(1));
 
     DataTransferRequest request = create_example_request();
 
@@ -138,8 +115,7 @@ TEST(DataTransferTest, DataTransferReq_Timeout) {
 
 TEST(DataTransferTest, DataTransferReq_Accepted) {
     MockMessageDispatcher mock_dispatcher;
-    DataTransfer data_transfer(mock_dispatcher, std::nullopt, is_websocket_connected,
-                               ocpp::DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
+    DataTransfer data_transfer(mock_dispatcher, std::nullopt, ocpp::DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
 
     DataTransferRequest request = create_example_request();
 
@@ -163,8 +139,7 @@ TEST(DataTransferTest, DataTransferReq_Accepted) {
 
 TEST(DataTransferTest, DataTransferReq_EnumConversionException) {
     MockMessageDispatcher mock_dispatcher;
-    DataTransfer data_transfer(mock_dispatcher, std::nullopt, is_websocket_connected,
-                               ocpp::DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
+    DataTransfer data_transfer(mock_dispatcher, std::nullopt, ocpp::DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
 
     DataTransferRequest request = create_example_request();
 
@@ -191,8 +166,7 @@ TEST(DataTransferTest, DataTransferReq_EnumConversionException) {
 
 TEST(DataTransferTest, DataTransferReq_JsonException) {
     MockMessageDispatcher mock_dispatcher;
-    DataTransfer data_transfer(mock_dispatcher, std::nullopt, is_websocket_connected,
-                               ocpp::DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
+    DataTransfer data_transfer(mock_dispatcher, std::nullopt, ocpp::DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
 
     DataTransferRequest request = create_example_request();
 
