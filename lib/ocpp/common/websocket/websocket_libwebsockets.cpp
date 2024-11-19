@@ -728,7 +728,7 @@ bool WebsocketLibwebsockets::connect() {
             this->websocket_thread.reset();
         }
 
-        if (this->recv_message_thread && this->websocket_thread->joinable()) {
+        if (this->recv_message_thread && this->recv_message_thread->joinable()) {
             // Awake the receiving message thread to finish
             recv_message_cv.notify_one();
             this->recv_message_thread->join();
