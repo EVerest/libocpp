@@ -85,10 +85,9 @@ public:
     ///
     void set_configure_network_connection_profile_callback(ConfigureNetworkConnectionProfileCallback callback);
 
-    /// \brief Gets the configured NetworkConnectionProfile based on the given \p configuration_slot . The
-    /// central system uri of the connection options will not contain ws:// or wss:// because this method removes it if
-    /// present. This returns the value from the cached network connection profiles. \param
-    /// active_network_configuration_priority \return
+    /// \brief Gets the cached NetworkConnectionProfile based on the given \p configuration_slot.
+    /// This returns the value from the cached network connection profiles.
+    /// \return Returns a profile if the slot is found
     std::optional<NetworkConnectionProfile> get_network_connection_profile(const int32_t configuration_slot);
 
     /// \brief Get the priority of the given configuration slot.
@@ -130,7 +129,7 @@ public:
     /// This is introduced because the websocket can take several minutes to timeout when a network interface becomes
     /// unavailable, whereas the system can detect this sooner.
     ///
-    /// \param ocpp_interface       The interface that is disconnected.
+    /// \param ocpp_interface The interface that is disconnected.
     ///
     void on_network_disconnected(OCPPInterfaceEnum ocpp_interface);
 
@@ -179,14 +178,14 @@ private:
 
     ///
     /// \brief Get the network configuration slot of the given priority.
-    /// \param priority   The priority to get the configuration slot.
+    /// \param priority The priority to get the configuration slot.
     /// \return The configuration slot.
     ///
     int get_configuration_slot_from_priority(const int priority);
 
     ///
     /// \brief Get the next prioritized network configuration slot of the given configuration slot.
-    /// \param configuration_slot   The current configuration slot.
+    /// \param configuration_slot The current configuration slot.
     /// \return The next prioritized configuration slot.
     ///
     int get_next_configuration_slot(int32_t configuration_slot);
