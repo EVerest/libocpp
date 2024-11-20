@@ -111,7 +111,7 @@ ChargePoint::~ChargePoint() {
     this->auth_cache_cleanup_thread.join();
 }
 
-void ChargePoint::start(BootReasonEnum bootreason, std::optional<int32_t> configuration_slot) {
+void ChargePoint::start(BootReasonEnum bootreason, bool start_connecting) {
     this->message_queue->start();
 
     this->bootreason = bootreason;
@@ -123,7 +123,9 @@ void ChargePoint::start(BootReasonEnum bootreason, std::optional<int32_t> config
     this->boot_notification_req(bootreason);
     // call clear_invalid_charging_profiles when system boots
     this->clear_invalid_charging_profiles();
-    this->connectivity_manager->connect(configuration_slot);
+    if (start_connecting) {
+        this->connectivity_manager->connect();
+    }
 
     const std::string firmware_version =
         this->device_model->get_value<std::string>(ControllerComponentVariables::FirmwareVersion);
@@ -172,8 +174,8 @@ void ChargePoint::on_network_disconnected(OCPPInterfaceEnum ocpp_interface) {
     this->connectivity_manager->on_network_disconnected(ocpp_interface);
 }
 
-void ChargePoint::connect_websocket(std::optional<int32_t> configuration_slot) {
-    this->connectivity_manager->connect(configuration_slot);
+void ChargePoint::connect_websocket(std::optional<int32_t> network_profile_slot) {
+    this->connectivity_manager->connect(network_profile_slot);
 }
 
 void ChargePoint::on_firmware_update_status_notification(int32_t request_id,

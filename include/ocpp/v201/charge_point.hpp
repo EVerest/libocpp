@@ -100,20 +100,19 @@ public:
 
     /// \brief Starts the ChargePoint, initializes and connects to the Websocket endpoint
     /// \param bootreason  Optional bootreason (default: PowerUp).
-    /// \param configuration_slot Configuration slot used to connect websocket
-
-    virtual void start(BootReasonEnum bootreason = BootReasonEnum::PowerUp,
-                       std::optional<int32_t> configuration_slot = std::nullopt) = 0;
+    /// \param start_connecting Optional, set to false to initialize but not start connecting. Otherwise will connect to
+    /// the first network profile. (default: true)
+    virtual void start(BootReasonEnum bootreason = BootReasonEnum::PowerUp, bool start_connecting = true) = 0;
 
     /// \brief Stops the ChargePoint. Disconnects the websocket connection and stops MessageQueue and all timers
     virtual void stop() = 0;
 
-    /// \brief Initializes the websocket and connects to CSMS
-    /// a specific network connection profile given the configuration slot
-    /// if it is not yet connected.
+    /// \brief Initializes the websocket and connects to a CSMS. Provide a network_profile_slot to connect to that
+    /// specific slot.
     ///
-    /// \param configuration_slot Configuration slot used to connect websocket
-    virtual void connect_websocket(std::optional<int32_t> configuration_slot = std::nullopt) = 0;
+    /// \param network_profile_slot Optional slot to use when connecting. std::nullopt means the slot will be determined
+    /// automatically.
+    virtual void connect_websocket(std::optional<int32_t> network_profile_slot = std::nullopt) = 0;
 
     /// \brief Disconnects the the websocket connection to the CSMS if it is connected
     virtual void disconnect_websocket() = 0;
@@ -848,12 +847,11 @@ public:
 
     ~ChargePoint();
 
-    void start(BootReasonEnum bootreason = BootReasonEnum::PowerUp,
-               std::optional<int32_t> configuration_slot = std::nullopt) override;
+    void start(BootReasonEnum bootreason = BootReasonEnum::PowerUp, bool start_connecting = true) override;
 
     void stop() override;
 
-    void connect_websocket(std::optional<int32_t> configuration_slot = std::nullopt) override;
+    void connect_websocket(std::optional<int32_t> network_profile_slot = std::nullopt) override;
     virtual void disconnect_websocket() override;
 
     void on_network_disconnected(OCPPInterfaceEnum ocpp_interface) override;

@@ -44,14 +44,13 @@ private:
 
     Everest::SteadyTimer websocket_timer;
     std::optional<int32_t> pending_configuration_slot;
-    bool disconnect_triggered;
+    bool wants_to_be_connected;
     int32_t active_network_configuration_priority;
+    int last_known_security_level;
     /// @brief Local cached network connection profiles
     std::vector<SetNetworkProfileRequest> cached_network_connection_profiles;
     /// @brief local cached network connection priorities
     std::vector<int32_t> network_connection_slots;
-
-    int last_security_level{0};
 
 public:
     ConnectivityManager(DeviceModel& device_model, std::shared_ptr<EvseSecurity> evse_security,
@@ -111,9 +110,10 @@ public:
     bool is_websocket_connected();
 
     /// \brief Connect to the websocket
-    /// \param configuration_slot   The configuration slot to get the priority from.
+    /// \param configuration_slot Optional the network_profile_slot to connect to. std::nullopt will select the slot
+    /// internally.
     ///
-    void connect(std::optional<int32_t> configuration_slot = std::nullopt);
+    void connect(std::optional<int32_t> network_profile_slot = std::nullopt);
 
     /// \brief Disconnect the websocket
     ///
@@ -134,12 +134,12 @@ public:
     ///
     void on_network_disconnected(OCPPInterfaceEnum ocpp_interface);
 
-    /// \brief Called when the chargin station certificate is changed
+    /// \brief Called when the charging station certificate is changed
     ///
     void on_reconfiguration_of_security_parameters();
 
+    /// \brief Confirms the connection is successful so the security profile requirements can be handled
     void confirm_successful_connection();
-    void remove_network_connection_profiles_below_actual_security_profile();
 
 private:
     /// \brief Initializes the websocket and tries to connect
@@ -147,9 +147,17 @@ private:
     void try_connect_websocket();
 
     /// \brief Get the current websocket connection options
-    /// \returns the current websocket connection options
+    /// \return the current websocket connection options
     ///
     std::optional<WebsocketConnectionOptions> get_ws_connection_options(const int32_t configuration_slot);
+
+    /// \brief Calls the configuration callback to get the interface to use, if there is a callback
+    /// \param slot The configuration slot to get the interface for
+    /// \param profile The network connection profile to get the interface for
+    ///
+    /// \return A string containing the network interface to use, nullptr if the request failed or the callback is not
+    /// configured
+    std::optional<std::string> get_network_configuration_interface(int slot, const NetworkConnectionProfile& profile);
 
     /// \brief Function invoked when the web socket connected with the \p security_profile
     ///
@@ -183,10 +191,16 @@ private:
     ///
     int get_next_configuration_slot(int32_t configuration_slot);
 
-    /// @brief Cache all the network connection profiles
+    /// \brief Cache all the network connection profiles
     void cache_network_connection_profiles();
 
+    /// \brief Removes all connection profiles from the cache that have a security profile lower than the currently
+    /// connected security profile
     void check_cache_for_invalid_security_profiles();
+
+    /// \brief Removes all connection profiles from the database that have a security profile lower than the currently
+    /// connected security profile
+    void remove_network_connection_profiles_below_actual_security_profile();
 };
 
 } // namespace v201
