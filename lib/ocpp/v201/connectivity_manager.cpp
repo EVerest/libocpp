@@ -71,7 +71,7 @@ void ConnectivityManager::set_configure_network_connection_profile_callback(
 }
 
 std::optional<NetworkConnectionProfile>
-ConnectivityManager::get_network_connection_profile(const int32_t configuration_slot) {
+ConnectivityManager::get_network_connection_profile(const int32_t configuration_slot) const {
 
     for (const auto& network_profile : this->cached_network_connection_profiles) {
         if (network_profile.configurationSlot == configuration_slot) {
@@ -88,7 +88,7 @@ ConnectivityManager::get_network_connection_profile(const int32_t configuration_
     return std::nullopt;
 }
 
-std::optional<int32_t> ConnectivityManager::get_priority_from_configuration_slot(const int configuration_slot) {
+std::optional<int32_t> ConnectivityManager::get_priority_from_configuration_slot(const int configuration_slot) const {
     auto it =
         std::find(this->network_connection_slots.begin(), this->network_connection_slots.end(), configuration_slot);
     if (it != this->network_connection_slots.end()) {
@@ -98,7 +98,7 @@ std::optional<int32_t> ConnectivityManager::get_priority_from_configuration_slot
     return std::nullopt;
 }
 
-int ConnectivityManager::get_active_network_configuration_slot() {
+int ConnectivityManager::get_active_network_configuration_slot() const {
     return this->network_connection_slots.at(this->active_network_configuration_priority);
 }
 

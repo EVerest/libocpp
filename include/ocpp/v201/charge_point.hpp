@@ -352,13 +352,13 @@ public:
     /// present. This returns the value from the cached network connection profiles. \param
     /// network_configuration_priority \return
     virtual std::optional<NetworkConnectionProfile>
-    get_network_connection_profile(const int32_t configuration_slot) = 0;
+    get_network_connection_profile(const int32_t configuration_slot) const = 0;
 
     /// \brief Get the priority of the given configuration slot.
     /// \param configuration_slot   The configuration slot to get the priority from.
     /// \return The priority if the configuration slot exists.
     ///
-    virtual std::optional<int> get_priority_from_configuration_slot(const int configuration_slot) = 0;
+    virtual std::optional<int> get_priority_from_configuration_slot(const int configuration_slot) const = 0;
 
     /// @brief Get the network connection slots sorted by priority.
     /// Each item in the vector contains the configured configuration slots, where the slot with index 0 has the highest
@@ -940,9 +940,9 @@ public:
     std::vector<CompositeSchedule> get_all_composite_schedules(const int32_t duration,
                                                                const ChargingRateUnitEnum& unit) override;
 
-    std::optional<NetworkConnectionProfile> get_network_connection_profile(const int32_t configuration_slot) override;
+    std::optional<NetworkConnectionProfile> get_network_connection_profile(const int32_t configuration_slot) const override;
 
-    std::optional<int> get_priority_from_configuration_slot(const int configuration_slot) override;
+    std::optional<int> get_priority_from_configuration_slot(const int configuration_slot) const override;
 
     const std::vector<int>& get_network_connection_slots() const override;
 

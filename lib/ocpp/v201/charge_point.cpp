@@ -4453,11 +4453,11 @@ std::vector<CompositeSchedule> ChargePoint::get_all_composite_schedules(const in
     return composite_schedules;
 }
 
-std::optional<NetworkConnectionProfile> ChargePoint::get_network_connection_profile(const int32_t configuration_slot) {
+std::optional<NetworkConnectionProfile> ChargePoint::get_network_connection_profile(const int32_t configuration_slot) const {
     return this->connectivity_manager->get_network_connection_profile(configuration_slot);
 }
 
-std::optional<int> ChargePoint::get_priority_from_configuration_slot(const int configuration_slot) {
+std::optional<int> ChargePoint::get_priority_from_configuration_slot(const int configuration_slot) const {
     return this->connectivity_manager->get_priority_from_configuration_slot(configuration_slot);
 }
 

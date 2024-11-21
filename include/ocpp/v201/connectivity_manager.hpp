@@ -88,13 +88,13 @@ public:
     /// \brief Gets the cached NetworkConnectionProfile based on the given \p configuration_slot.
     /// This returns the value from the cached network connection profiles.
     /// \return Returns a profile if the slot is found
-    std::optional<NetworkConnectionProfile> get_network_connection_profile(const int32_t configuration_slot);
+    std::optional<NetworkConnectionProfile> get_network_connection_profile(const int32_t configuration_slot) const;
 
     /// \brief Get the priority of the given configuration slot.
     /// \param configuration_slot   The configuration slot to get the priority from.
     /// \return The priority if the configuration slot exists.
     ///
-    std::optional<int32_t> get_priority_from_configuration_slot(const int configuration_slot);
+    std::optional<int32_t> get_priority_from_configuration_slot(const int configuration_slot) const;
 
     /// @brief Get the network connection slots sorted by priority.
     /// Each item in the vector contains the configured configuration slots, where the slot with index 0 has the highest
@@ -174,7 +174,7 @@ private:
     /// \brief Get the active network configuration slot in use.
     /// \return The active slot the network is connected to or the pending slot.
     ///
-    int get_active_network_configuration_slot();
+    int get_active_network_configuration_slot() const;
 
     ///
     /// \brief Get the network configuration slot of the given priority.
