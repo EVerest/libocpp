@@ -940,7 +940,8 @@ public:
     std::vector<CompositeSchedule> get_all_composite_schedules(const int32_t duration,
                                                                const ChargingRateUnitEnum& unit) override;
 
-    std::optional<NetworkConnectionProfile> get_network_connection_profile(const int32_t configuration_slot) const override;
+    std::optional<NetworkConnectionProfile>
+    get_network_connection_profile(const int32_t configuration_slot) const override;
 
     std::optional<int> get_priority_from_configuration_slot(const int configuration_slot) const override;
 
