@@ -2372,7 +2372,7 @@ void ChargePointImpl::handleClearChargingProfileRequest(ocpp::Call<ClearCharging
         response.status = ClearChargingProfileStatus::Accepted;
     } else if (!call.msg.id and
                this->smart_charging_handler->clear_all_profiles_with_filter(
-                   call.msg.id, call.msg.connectorId, call.msg.stackLevel, call.msg.chargingProfilePurpose, false)) {
+                   std::nullopt, call.msg.connectorId, call.msg.stackLevel, call.msg.chargingProfilePurpose, false)) {
         response.status = ClearChargingProfileStatus::Accepted;
     }
 
