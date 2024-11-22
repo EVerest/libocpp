@@ -84,6 +84,7 @@ if(LIBOCPP_ENABLE_V201)
             ocpp/v201/message_dispatcher.cpp
             ocpp/v201/functional_blocks/data_transfer.cpp
             ocpp/v201/functional_blocks/reservation.cpp
+            ocpp/v201/functional_blocks/display_message.cpp
     )
     add_subdirectory(ocpp/v201/messages)
 endif()
