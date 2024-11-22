@@ -79,13 +79,13 @@ struct Callbacks {
     std::function<RequestStartStopStatusEnum(const RequestStartTransactionRequest& request,
                                              const bool authorize_remote_start)>
         remote_start_transaction_callback;
+
     ///
     /// \brief Check if the current reservation for the given evse id is made for the id token / group id token.
-    /// \return True if evse is reserved for the given id token / group id token, false if it is reserved for another
-    ///         one.
+    /// \return The reservation check status of this evse / id token.
     ///
-    std::function<bool(const int32_t evse_id, const CiString<36> idToken,
-                       const std::optional<CiString<36>> groupIdToken)>
+    std::function<ocpp::ReservationCheckStatus(const int32_t evse_id, const CiString<36> idToken,
+                                               const std::optional<CiString<36>> groupIdToken)>
         is_reservation_for_token_callback;
     std::function<UpdateFirmwareResponse(const UpdateFirmwareRequest& request)> update_firmware_request_callback;
     // callback to be called when a variable has been changed by the CSMS

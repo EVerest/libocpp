@@ -834,6 +834,15 @@ struct CompositeScheduleDefaultLimits {
     int32_t number_phases;
 };
 
+/// \brief Status of a reservation check.
+enum class ReservationCheckStatus {
+    NotReserved,                              ///< @brief No reservation of this evse and / or id token
+    ReservedForToken,                         ///< @brief Reservation for this token.
+    ReservedForOtherTokenAndParentToken,      ///< @brief Reserved for other token and parent token.
+    ReservedForOtherTokenAndHasNoParentToken, ///< @brief Reserved for other token and reservation has no parent token.
+    ReservedForOtherTokenAndHasParentToken,   ///< @brief Reserved for other token but reservation has a parent token.
+};
+
 } // namespace ocpp
 
 #endif

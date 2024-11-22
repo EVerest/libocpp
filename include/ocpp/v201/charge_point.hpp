@@ -568,16 +568,10 @@ private:
     /// \param evse             The evse id that must be checked. Reservation will be checked for all connectors.
     /// \param id_token         The id token to check if it is reserved for that token.
     /// \param group_id_token   The group id token to check if it is reserved for that group id.
-    /// \return True when one of the EVSE connectors is reserved for another id token or group id token than the given
-    ///         tokens.
-    ///         If id_token is different than reserved id_token, but group_id_token is equal to reserved group_id_token,
-    ///         returns true.
-    ///         If both are different, returns true.
-    ///         If id_token is equal to reserved id_token or group_id_token is equal, return false.
-    ///         If there is no reservation, return false.
+    /// \return The status of the reservation for this evse, id token and group id token.
     ///
-    bool is_evse_reserved_for_other(EvseInterface& evse, const IdToken& id_token,
-                                    const std::optional<IdToken>& group_id_token) const;
+    ReservationCheckStatus is_evse_reserved_for_other(EvseInterface& evse, const IdToken& id_token,
+                                                      const std::optional<IdToken>& group_id_token) const;
 
     ///
     /// \brief Check if one of the connectors of the evse is available (both connectors faulted or unavailable or on of

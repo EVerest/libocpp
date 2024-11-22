@@ -1968,17 +1968,13 @@ std::optional<int32_t> ChargePoint::get_transaction_evseid(const CiString<36>& t
     return std::nullopt;
 }
 
-bool ChargePoint::is_evse_reserved_for_other(EvseInterface& evse, const IdToken& id_token,
-                                             const std::optional<IdToken>& group_id_token) const {
-    const uint32_t connectors = evse.get_number_of_connectors();
+ocpp::ReservationCheckStatus
+ChargePoint::is_evse_reserved_for_other(EvseInterface& evse, const IdToken& id_token,
+                                        const std::optional<IdToken>& group_id_token) const {
     const std::optional<CiString<36>> groupIdToken =
         group_id_token.has_value() ? group_id_token.value().idToken : std::optional<CiString<36>>{};
 
-    if (!callbacks.is_reservation_for_token_callback(evse.get_id(), id_token.idToken, groupIdToken)) {
-        return true;
-    }
-
-    return false;
+    return callbacks.is_reservation_for_token_callback(evse.get_id(), id_token.idToken, groupIdToken);
 }
 
 bool ChargePoint::is_evse_connector_available(EvseInterface& evse) const {
@@ -3184,9 +3180,14 @@ void ChargePoint::handle_remote_start_transaction_request(Call<RequestStartTrans
 
         // When available but there was a reservation for another token id or group token id:
         //    send rejected (F01.FR.21 & F01.FR.22)
-        const bool reserved = is_evse_reserved_for_other(evse, call.msg.idToken, call.msg.groupIdToken);
+        ocpp::ReservationCheckStatus reservation_status =
+            is_evse_reserved_for_other(evse, call.msg.idToken, call.msg.groupIdToken);
 
-        if (!available or reserved) {
+        const bool is_reserved =
+            (reservation_status == ocpp::ReservationCheckStatus::ReservedForOtherTokenAndParentToken ||
+             reservation_status == ocpp::ReservationCheckStatus::ReservedForOtherTokenAndHasNoParentToken);
+
+        if (!available or is_reserved) {
             // Note: we only support TxStartPoint PowerPathClosed, so we did not implement starting a
             // transaction first (and send TransactionEventRequest (eventType = Started). Only if a transaction
             // is authorized, a TransactionEventRequest will be sent. Because of this, F01.FR.13 is not
