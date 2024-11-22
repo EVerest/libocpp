@@ -2323,7 +2323,7 @@ void ChargePoint::handle_certificate_signed_req(Call<CertificateSignedRequest> c
     if (response.status == CertificateSignedStatusEnum::Accepted and
         cert_signing_use == ocpp::CertificateSigningUseEnum::ChargingStationCertificate and
         this->device_model->get_value<int>(ControllerComponentVariables::SecurityProfile) == 3) {
-        this->connectivity_manager->on_reconfiguration_of_security_parameters();
+        this->connectivity_manager->on_charging_station_certificate_changed();
 
         const auto& security_event = ocpp::security_events::RECONFIGURATIONOFSECURITYPARAMETERS;
         std::string tech_info = "Changed charging station certificate";

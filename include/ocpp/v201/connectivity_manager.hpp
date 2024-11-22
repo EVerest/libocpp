@@ -135,7 +135,7 @@ public:
 
     /// \brief Called when the charging station certificate is changed
     ///
-    void on_reconfiguration_of_security_parameters();
+    void on_charging_station_certificate_changed();
 
     /// \brief Confirms the connection is successful so the security profile requirements can be handled
     void confirm_successful_connection();
@@ -154,9 +154,10 @@ private:
     /// \param slot The configuration slot to get the interface for
     /// \param profile The network connection profile to get the interface for
     ///
-    /// \return A string containing the network interface to use, nullptr if the request failed or the callback is not
-    /// configured
-    std::optional<std::string> get_network_configuration_interface(int slot, const NetworkConnectionProfile& profile);
+    /// \return The network configuration containing the network interface to use, nullptr if the request failed or the
+    /// callback is not configured
+    std::optional<ConfigNetworkResult>
+    handle_configure_network_connection_profile_callback(int slot, const NetworkConnectionProfile& profile);
 
     /// \brief Function invoked when the web socket connected with the \p security_profile
     ///

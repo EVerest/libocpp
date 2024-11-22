@@ -185,11 +185,12 @@ void ConnectivityManager::try_connect_websocket() {
         EVLOG_warning << "Connection profile configured for " << configuration_slot_to_set << " failed: not valid URL";
         can_use_connection_profile = false;
     } else if (this->configure_network_connection_profile_callback.has_value()) {
-        if (std::optional<std::string> interface_address =
-                get_network_configuration_interface(configuration_slot_to_set, network_connection_profile.value());
-            interface_address.has_value()) {
-            connection_options->iface = interface_address;
+        std::optional<ConfigNetworkResult> config = handle_configure_network_connection_profile_callback(
+            configuration_slot_to_set, network_connection_profile.value());
+        if (config.has_value() && config->success) {
+            connection_options->iface = config->interface_address;
         } else {
+            EVLOG_warning << "Could not use config slot " << configuration_slot_to_set;
             can_use_connection_profile = false;
         }
     }
@@ -244,13 +245,12 @@ void ConnectivityManager::try_connect_websocket() {
     this->websocket->connect();
 }
 
-std::optional<std::string>
-ConnectivityManager::get_network_configuration_interface(int slot, const NetworkConnectionProfile& profile) {
+std::optional<ConfigNetworkResult>
+ConnectivityManager::handle_configure_network_connection_profile_callback(int slot,
+                                                                          const NetworkConnectionProfile& profile) {
     if (!this->configure_network_connection_profile_callback.has_value()) {
         return std::nullopt;
     }
-
-    EVLOG_debug << "Request to configure network connection profile " << slot;
 
     std::future<ConfigNetworkResult> config_status =
         this->configure_network_connection_profile_callback.value()(slot, profile);
@@ -258,20 +258,11 @@ ConnectivityManager::get_network_configuration_interface(int slot, const Network
         this->device_model.get_optional_value<int>(ControllerComponentVariables::NetworkConfigTimeout)
             .value_or(default_network_config_timeout_seconds);
 
-    switch (config_status.wait_for(std::chrono::seconds(config_timeout))) {
-    case std::future_status::deferred:
-    case std::future_status::timeout:
-        EVLOG_warning << "Timeout configuring config slot: " << slot;
-        return std::nullopt;
-
-    case std::future_status::ready:
-        if (ConfigNetworkResult result = config_status.get(); result.success) {
-            EVLOG_debug << "Config slot " << slot << " is configured";
-            return result.interface_address;
-        }
-        EVLOG_warning << "Could not configure config slot " << slot;
-        break;
+    if (config_status.wait_for(std::chrono::seconds(config_timeout)) == std::future_status::ready) {
+        return config_status.get();
     }
+
+    EVLOG_warning << "Timeout configuring config slot: " << slot;
     return std::nullopt;
 }
 
@@ -314,7 +305,7 @@ void ConnectivityManager::on_network_disconnected(OCPPInterfaceEnum ocpp_interfa
     }
 }
 
-void ConnectivityManager::on_reconfiguration_of_security_parameters() {
+void ConnectivityManager::on_charging_station_certificate_changed() {
     if (this->websocket != nullptr) {
         // After the websocket gets closed a reconnect will be triggered
         this->websocket->disconnect(WebsocketCloseReason::ServiceRestart);
