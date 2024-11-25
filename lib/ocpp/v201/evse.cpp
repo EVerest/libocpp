@@ -223,8 +223,7 @@ std::optional<ConnectorEnum> Evse::get_evse_connector_type(const uint32_t connec
 
     try {
         return conversions::string_to_connector_enum(connector_type.value());
-    }
-    catch (const StringToEnumException& e) {
+    } catch (const StringToEnumException& e) {
         EVLOG_warning << "Could not convert to ConnectorEnum: " << connector_type.value();
         return std::nullopt;
     }

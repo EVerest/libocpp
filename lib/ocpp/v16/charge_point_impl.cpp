@@ -1961,8 +1961,7 @@ void ChargePointImpl::handleRemoteStartTransactionRequest(ocpp::Call<RemoteStart
             const ocpp::ReservationCheckStatus reservation_status =
                 is_token_reserved_for_connector_callback(connector, call.msg.idTag.get());
 
-            const bool is_reserved =
-                (reservation_status == ocpp::ReservationCheckStatus::ReservedForOtherToken);
+            const bool is_reserved = (reservation_status == ocpp::ReservationCheckStatus::ReservedForOtherToken);
 
             if (this->status->get_state(connector) == ChargePointStatus::Reserved && is_reserved) {
                 obtainable = false;
