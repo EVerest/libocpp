@@ -3193,8 +3193,7 @@ void ChargePoint::handle_remote_start_transaction_request(Call<RequestStartTrans
             is_evse_reserved_for_other(evse, call.msg.idToken, call.msg.groupIdToken);
 
         const bool is_reserved =
-            (reservation_status == ocpp::ReservationCheckStatus::ReservedForOtherTokenAndParentToken ||
-             reservation_status == ocpp::ReservationCheckStatus::ReservedForOtherTokenAndHasNoParentToken);
+            (reservation_status == ocpp::ReservationCheckStatus::ReservedForOtherToken);
 
         if (!available or is_reserved) {
             // Note: we only support TxStartPoint PowerPathClosed, so we did not implement starting a

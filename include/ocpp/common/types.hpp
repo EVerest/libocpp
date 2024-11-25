@@ -838,8 +838,7 @@ struct CompositeScheduleDefaultLimits {
 enum class ReservationCheckStatus {
     NotReserved,                              ///< @brief No reservation of this evse and / or id token
     ReservedForToken,                         ///< @brief Reservation for this token.
-    ReservedForOtherTokenAndParentToken,      ///< @brief Reserved for other token and parent token.
-    ReservedForOtherTokenAndHasNoParentToken, ///< @brief Reserved for other token and reservation has no parent token.
+    ReservedForOtherToken,                    ///< @brief Reserved for other token and reservation has no parent token or parent token does not match.
     ReservedForOtherTokenAndHasParentToken,   ///< @brief Reserved for other token but reservation has a parent token.
 };
 
