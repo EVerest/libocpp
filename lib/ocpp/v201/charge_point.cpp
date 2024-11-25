@@ -1067,7 +1067,7 @@ void ChargePoint::on_reservation_status(const int32_t reservation_id, const Rese
     req.reservationId = reservation_id;
     req.reservationUpdateStatus = status;
 
-    ocpp::Call<ReservationStatusUpdateRequest> call(req, this->message_queue->createMessageId());
+    ocpp::Call<ReservationStatusUpdateRequest> call(req);
     this->message_dispatcher->dispatch_call(call);
 }
 
