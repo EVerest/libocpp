@@ -1,6 +1,4 @@
 
-![Header](doc/img/banner-ocpp.jpg)
-
 ![Github Actions](https://github.com/EVerest/libocpp/actions/workflows/build_and_test.yaml/badge.svg)
 
 This is a C++ library implementation of OCPP for version 1.6, 2.0.1 and 2.1.
