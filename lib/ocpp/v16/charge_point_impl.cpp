@@ -2373,9 +2373,9 @@ void ChargePointImpl::handleClearChargingProfileRequest(ocpp::Call<ClearCharging
     ClearChargingProfileResponse response;
     response.status = ClearChargingProfileStatus::Unknown;
 
-    bool connectorIdValid=true;
+    bool connectorIdValid = true;
     if (call.msg.id.has_value() && ( call.msg.id < 0 || call.msg.id > this->configuration->getNumberOfConnectors())){
-        connectorIdValid=false;
+        connectorIdValid = false;
     }
 
     if (connectorIdValid) {
@@ -2897,13 +2897,20 @@ void ChargePointImpl::handleReserveNowRequest(ocpp::Call<ReserveNowRequest> call
     ReserveNowResponse response;
     response.status = ReservationStatus::Rejected;
 
-    if (this->status->get_state(call.msg.connectorId) == ChargePointStatus::Faulted) {
-        response.status = ReservationStatus::Faulted;
-    } else if (this->reserve_now_callback != nullptr &&
-               this->configuration->getSupportedFeatureProfiles().find("Reservation") != std::string::npos) {
-        if (call.msg.connectorId != 0 || this->configuration->getReserveConnectorZeroSupported().value_or(false)) {
-            response.status = this->reserve_now_callback(call.msg.reservationId, call.msg.connectorId,
-                                                         call.msg.expiryDate, call.msg.idTag, call.msg.parentIdTag);
+    bool connectorIdInRange = false;
+    if (call.msg.connectorId <0 || call.msg.connectorId > this->configuration->getNumberOfConnectors()) {
+        connectorIdInRange = false;
+    }
+
+    if (connectorIdInRange) {
+        if (this->status->get_state(call.msg.connectorId) == ChargePointStatus::Faulted) {
+            response.status = ReservationStatus::Faulted;
+        } else if (this->reserve_now_callback != nullptr &&
+                   this->configuration->getSupportedFeatureProfiles().find("Reservation") != std::string::npos) {
+            if (call.msg.connectorId != 0 || this->configuration->getReserveConnectorZeroSupported().value_or(false)) {
+                response.status = this->reserve_now_callback(call.msg.reservationId, call.msg.connectorId,
+                                                             call.msg.expiryDate, call.msg.idTag, call.msg.parentIdTag);
+            }
         }
     }
 
