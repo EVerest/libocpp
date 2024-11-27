@@ -2243,7 +2243,7 @@ void ChargePointImpl::handleUnlockConnectorRequest(ocpp::Call<UnlockConnectorReq
 
     UnlockConnectorResponse response;
     auto connector = call.msg.connectorId;
-    if (connector == 0 || connector > this->configuration->getNumberOfConnectors()) {
+    if (connector <= 0 || connector > this->configuration->getNumberOfConnectors()) {
         response.status = UnlockStatus::NotSupported;
     } else {
         // this message is not intended to remotely stop a transaction, but if a transaction is still ongoing it is
