@@ -2373,18 +2373,25 @@ void ChargePointImpl::handleClearChargingProfileRequest(ocpp::Call<ClearCharging
     ClearChargingProfileResponse response;
     response.status = ClearChargingProfileStatus::Unknown;
 
-    // clear all charging profiles
-    if (!call.msg.id && !call.msg.connectorId && !call.msg.chargingProfilePurpose && !call.msg.stackLevel) {
-        this->smart_charging_handler->clear_all_profiles();
-        response.status = ClearChargingProfileStatus::Accepted;
-    } else if (call.msg.id &&
-               this->smart_charging_handler->clear_all_profiles_with_filter(
-                   call.msg.id, call.msg.connectorId, call.msg.stackLevel, call.msg.chargingProfilePurpose, true)) {
-        response.status = ClearChargingProfileStatus::Accepted;
-    } else if (!call.msg.id and
-               this->smart_charging_handler->clear_all_profiles_with_filter(
-                   std::nullopt, call.msg.connectorId, call.msg.stackLevel, call.msg.chargingProfilePurpose, false)) {
-        response.status = ClearChargingProfileStatus::Accepted;
+    bool connectorIdValid=true;
+    if (call.msg.id.has_value() && ( call.msg.id < 0 || call.msg.id > this->configuration->getNumberOfConnectors())){
+        connectorIdValid=false;
+    }
+
+    if (connectorIdValid) {
+        // clear all charging profiles
+        if (!call.msg.id && !call.msg.connectorId && !call.msg.chargingProfilePurpose && !call.msg.stackLevel) {
+            this->smart_charging_handler->clear_all_profiles();
+            response.status = ClearChargingProfileStatus::Accepted;
+        } else if (call.msg.id &&
+                   this->smart_charging_handler->clear_all_profiles_with_filter(
+                       call.msg.id, call.msg.connectorId, call.msg.stackLevel, call.msg.chargingProfilePurpose, true)) {
+            response.status = ClearChargingProfileStatus::Accepted;
+        } else if (!call.msg.id and
+                   this->smart_charging_handler->clear_all_profiles_with_filter(
+                       std::nullopt, call.msg.connectorId, call.msg.stackLevel, call.msg.chargingProfilePurpose, false)) {
+            response.status = ClearChargingProfileStatus::Accepted;
+        }
     }
 
     ocpp::CallResult<ClearChargingProfileResponse> call_result(response, call.uniqueId);
