@@ -1931,8 +1931,9 @@ void ChargePointImpl::handleRemoteStartTransactionRequest(ocpp::Call<RemoteStart
     std::vector<int32_t> referenced_connectors;
 
     if (call.msg.connectorId) {
-        if (call.msg.connectorId.value() <= 0) {
-            EVLOG_warning << "Received RemoteStartTransactionRequest with connector id <= 0";
+        if (call.msg.connectorId.value() <= 0 or call.msg.connectorId.value() > this->configuration->getNumberOfConnectors()) {
+            EVLOG_warning << "Received RemoteStartTransactionRequest with connector id <= 0 or > "
+                    << this->configuration->getNumberOfConnectors();
             response.status = RemoteStartStopStatus::Rejected;
             ocpp::CallResult<RemoteStartTransactionResponse> call_result(response, call.uniqueId);
             this->message_dispatcher->dispatch_call_result(call_result);
