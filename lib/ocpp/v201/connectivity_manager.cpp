@@ -28,7 +28,8 @@ ConnectivityManager::ConnectivityManager(DeviceModel& device_model, std::shared_
     message_callback{message_callback},
     wants_to_be_connected{false},
     active_network_configuration_priority{0},
-    last_known_security_level{0} {
+    last_known_security_level{0},
+    connected_ocpp_version{OcppProtocolVersion::Unknown} {
     cache_network_connection_profiles();
 }
 
@@ -367,13 +368,15 @@ ConnectivityManager::get_ws_connection_options(const int32_t configuration_slot)
     return std::nullopt;
 }
 
-void ConnectivityManager::on_websocket_connected([[maybe_unused]] OcppProtocolVersion protocol) {
+void ConnectivityManager::on_websocket_connected(OcppProtocolVersion protocol) {
+    this->connected_ocpp_version = protocol;
     const int actual_configuration_slot = get_active_network_configuration_slot();
     std::optional<NetworkConnectionProfile> network_connection_profile =
         this->get_network_connection_profile(actual_configuration_slot);
 
     if (this->websocket_connected_callback.has_value() and network_connection_profile.has_value()) {
-        this->websocket_connected_callback.value()(actual_configuration_slot, network_connection_profile.value());
+        this->websocket_connected_callback.value()(actual_configuration_slot, network_connection_profile.value(),
+                                                   this->connected_ocpp_version);
     }
 }
 
@@ -383,7 +386,7 @@ void ConnectivityManager::on_websocket_disconnected() {
 
     if (this->websocket_disconnected_callback.has_value() and network_connection_profile.has_value()) {
         this->websocket_disconnected_callback.value()(this->get_active_network_configuration_slot(),
-                                                      network_connection_profile.value());
+                                                      network_connection_profile.value(), this->connected_ocpp_version);
     }
 }
 
