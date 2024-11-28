@@ -398,7 +398,7 @@ WebsocketConnectionOptions ChargePointImpl::get_ws_connection_options() {
 void ChargePointImpl::connect_websocket() {
     if (!this->websocket->is_connected()) {
         this->init_websocket();
-        this->websocket->connect();
+        this->websocket_timer.timeout([this]() { this->websocket->connect(); }, std::chrono::seconds(0));
     }
 }
 
@@ -1073,7 +1073,7 @@ bool ChargePointImpl::start(const std::map<int, ChargePointStatus>& connector_st
     this->bootreason = bootreason;
     this->init_state_machine(connector_status_map);
     this->init_websocket();
-    this->websocket->connect();
+    this->websocket_timer.timeout([this]() { this->websocket->connect(); }, std::chrono::seconds(0));
     // push transaction messages including SecurityEventNotification.req onto the message queue
     this->message_queue->get_persisted_messages_from_db(this->configuration->getDisableSecurityEventNotifications());
     this->boot_notification();
