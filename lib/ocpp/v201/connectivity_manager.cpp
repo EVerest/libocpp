@@ -80,9 +80,8 @@ ConnectivityManager::get_network_connection_profile(const int32_t configuration_
                      .value_or(false) &&
                 network_profile.connectionData.securityProfile ==
                     security::OCPP_1_6_ONLY_UNSECURED_TRANSPORT_WITHOUT_BASIC_AUTHENTICATION) {
-                throw std::invalid_argument(
-                    "security_profile = " + std::to_string(network_profile.connectionData.securityProfile) +
-                    " not officially allowed in OCPP 2.0.1");
+                EVLOG_error << "security_profile 0 not officially allowed in OCPP 2.0.1, skipping profile";
+                return std::nullopt;
             }
 
             return network_profile.connectionData;
