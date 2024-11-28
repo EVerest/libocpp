@@ -17,8 +17,8 @@ namespace ocpp {
 
 struct WebsocketConnectionOptions {
     std::vector<OcppProtocolVersion> ocpp_versions; // List of allowed protocols ordered by preference
-    Uri csms_uri;         // the URI of the CSMS
-    int security_profile; // FIXME: change type to `SecurityProfile`
+    Uri csms_uri;                                   // the URI of the CSMS
+    int security_profile;                           // FIXME: change type to `SecurityProfile`
     std::optional<std::string> authorization_key;
     int retry_backoff_random_range_s;
     int retry_backoff_repeat_times;
