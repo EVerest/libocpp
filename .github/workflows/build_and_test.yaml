@@ -34,7 +34,7 @@ jobs:
       coverage_report_path: gcovr-coverage
       coverage_xml_path: gcovr-coverage-xml.xml
       #LTODO: tmp
-      build_kit_base_image_tag: feature/add-doxygen
+      build_kit_base_image_tag: feature-add-doxygen
   build_docs:
     name: Build Doxygen Documentation
     needs:
