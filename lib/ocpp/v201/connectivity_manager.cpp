@@ -226,7 +226,7 @@ void ConnectivityManager::try_connect_websocket() {
         this->websocket = std::make_unique<Websocket>(connection_options.value(), this->evse_security, this->logging);
 
         this->websocket->register_connected_callback(
-            std::bind(&ConnectivityManager::on_websocket_connected, this, std::placeholders::_1));
+            [this](OcppProtocolVersion protocol) { this->on_websocket_connected(protocol); });
         this->websocket->register_disconnected_callback(
             std::bind(&ConnectivityManager::on_websocket_disconnected, this));
         this->websocket->register_closed_callback(
@@ -330,7 +330,7 @@ ConnectivityManager::get_ws_connection_options(const int32_t configuration_slot)
             network_connection_profile.securityProfile);
 
         WebsocketConnectionOptions connection_options{
-            OcppProtocolVersion::v201,
+            {OcppProtocolVersion::v201},
             uri,
             network_connection_profile.securityProfile,
             this->device_model.get_optional_value<std::string>(ControllerComponentVariables::BasicAuthPassword),
@@ -367,7 +367,7 @@ ConnectivityManager::get_ws_connection_options(const int32_t configuration_slot)
     return std::nullopt;
 }
 
-void ConnectivityManager::on_websocket_connected([[maybe_unused]] int security_profile) {
+void ConnectivityManager::on_websocket_connected([[maybe_unused]] OcppProtocolVersion protocol) {
     const int actual_configuration_slot = get_active_network_configuration_slot();
     std::optional<NetworkConnectionProfile> network_connection_profile =
         this->get_network_connection_profile(actual_configuration_slot);

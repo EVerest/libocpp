@@ -161,7 +161,7 @@ private:
 
     /// \brief Function invoked when the web socket connected with the \p security_profile
     ///
-    void on_websocket_connected(const int security_profile);
+    void on_websocket_connected(OcppProtocolVersion protocol);
 
     /// \brief Function invoked when the web socket disconnected
     ///
