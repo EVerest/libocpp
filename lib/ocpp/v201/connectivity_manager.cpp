@@ -417,6 +417,17 @@ void ConnectivityManager::cache_network_connection_profiles() {
     this->cached_network_connection_profiles =
         json::parse(this->device_model.get_value<std::string>(ControllerComponentVariables::NetworkConnectionProfiles));
 
+    if (!this->device_model.get_optional_value<bool>(ControllerComponentVariables::AllowSecurityLevelZeroConnections)
+             .value_or(false) &&
+        std::none_of(this->cached_network_connection_profiles.begin(), this->cached_network_connection_profiles.end(),
+                     [](const SetNetworkProfileRequest& profile) {
+                         return profile.connectionData.securityProfile !=
+                                security::OCPP_1_6_ONLY_UNSECURED_TRANSPORT_WITHOUT_BASIC_AUTHENTICATION;
+                     })) {
+        throw std::invalid_argument(
+            "All profiles configured have security_profile 0 which is not officially allowed in OCPP 2.0.1");
+    }
+
     for (const std::string& str : ocpp::split_string(
              this->device_model.get_value<std::string>(ControllerComponentVariables::NetworkConfigurationPriority),
              ',')) {
