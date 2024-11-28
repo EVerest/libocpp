@@ -17,6 +17,7 @@ on:
 jobs:
   ci:
     name: Build, Lint and Test
+    #LTODO tmp
     uses: everest/everest-ci/.github/workflows/continuous_integration.yml@feature/add-doxygen
     permissions:
       contents: read
@@ -32,6 +33,8 @@ jobs:
       ctest_report_path: ctest-report
       coverage_report_path: gcovr-coverage
       coverage_xml_path: gcovr-coverage-xml.xml
+      #LTODO: tmp
+      build_kit_base_image_tag: feature/add-doxygen
   build_docs:
     name: Build Doxygen Documentation
     needs:
