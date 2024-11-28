@@ -651,7 +651,8 @@ void WebsocketLibwebsockets::client_loop() {
     auto& uri = this->connection_options.csms_uri;
 
     std::string ocpp_versions;
-    for (bool first = true; auto version : this->connection_options.ocpp_versions) {
+    bool first = true;
+    for (auto version : this->connection_options.ocpp_versions) {
         if (!first) {
             ocpp_versions += ", ";
         }
