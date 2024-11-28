@@ -1931,9 +1931,10 @@ void ChargePointImpl::handleRemoteStartTransactionRequest(ocpp::Call<RemoteStart
     std::vector<int32_t> referenced_connectors;
 
     if (call.msg.connectorId) {
-        if (call.msg.connectorId.value() <= 0 or call.msg.connectorId.value() > this->configuration->getNumberOfConnectors()) {
+        if (call.msg.connectorId.value() <= 0 or
+            call.msg.connectorId.value() > this->configuration->getNumberOfConnectors()) {
             EVLOG_warning << "Received RemoteStartTransactionRequest with connector id <= 0 or > "
-                    << this->configuration->getNumberOfConnectors();
+                          << this->configuration->getNumberOfConnectors();
             response.status = RemoteStartStopStatus::Rejected;
             ocpp::CallResult<RemoteStartTransactionResponse> call_result(response, call.uniqueId);
             this->message_dispatcher->dispatch_call_result(call_result);
@@ -2286,7 +2287,7 @@ void ChargePointImpl::handleSetChargingProfileRequest(ocpp::Call<SetChargingProf
     auto profile = call.msg.csChargingProfiles;
     const int connector_id = call.msg.connectorId;
 
-    if(connector_id >0 and connector_id <= this->configuration->getNumberOfConnectors()) {
+    if (connector_id > 0 and connector_id <= this->configuration->getNumberOfConnectors()) {
         const auto supported_purpose_types = this->configuration->getSupportedChargingProfilePurposeTypes();
         if (std::find(supported_purpose_types.begin(), supported_purpose_types.end(),
                       call.msg.csChargingProfiles.chargingProfilePurpose) == supported_purpose_types.end()) {
@@ -2375,7 +2376,7 @@ void ChargePointImpl::handleClearChargingProfileRequest(ocpp::Call<ClearCharging
     response.status = ClearChargingProfileStatus::Unknown;
 
     bool connectorIdValid = true;
-    if (call.msg.id.has_value() && ( call.msg.id < 0 || call.msg.id > this->configuration->getNumberOfConnectors())){
+    if (call.msg.id.has_value() && (call.msg.id < 0 || call.msg.id > this->configuration->getNumberOfConnectors())) {
         connectorIdValid = false;
     }
 
@@ -2388,9 +2389,9 @@ void ChargePointImpl::handleClearChargingProfileRequest(ocpp::Call<ClearCharging
                    this->smart_charging_handler->clear_all_profiles_with_filter(
                        call.msg.id, call.msg.connectorId, call.msg.stackLevel, call.msg.chargingProfilePurpose, true)) {
             response.status = ClearChargingProfileStatus::Accepted;
-        } else if (!call.msg.id and
-                   this->smart_charging_handler->clear_all_profiles_with_filter(
-                       std::nullopt, call.msg.connectorId, call.msg.stackLevel, call.msg.chargingProfilePurpose, false)) {
+        } else if (!call.msg.id and this->smart_charging_handler->clear_all_profiles_with_filter(
+                                        std::nullopt, call.msg.connectorId, call.msg.stackLevel,
+                                        call.msg.chargingProfilePurpose, false)) {
             response.status = ClearChargingProfileStatus::Accepted;
         }
     }
@@ -2899,7 +2900,7 @@ void ChargePointImpl::handleReserveNowRequest(ocpp::Call<ReserveNowRequest> call
     response.status = ReservationStatus::Rejected;
 
     bool connectorIdInRange = false;
-    if (call.msg.connectorId <0 || call.msg.connectorId > this->configuration->getNumberOfConnectors()) {
+    if (call.msg.connectorId < 0 || call.msg.connectorId > this->configuration->getNumberOfConnectors()) {
         connectorIdInRange = false;
     }
 
