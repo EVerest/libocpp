@@ -135,7 +135,7 @@ void ConnectivityManager::connect(std::optional<int32_t> configuration_slot_opt)
         // After the websocket gets closed a reconnect will be triggered
         this->websocket->disconnect(WebsocketCloseReason::ServiceRestart);
     } else {
-        std::thread([this]() { this->try_connect_websocket(); }).detach();
+        this->try_connect_websocket();
     }
 }
 

@@ -763,9 +763,6 @@ bool WebsocketLibwebsockets::connect() {
         empty.swap(recv_message_queue);
     }
 
-    bool timeouted = false;
-    bool connected = false;
-
     {
         std::unique_lock<std::mutex> lock(connection_mutex);
 
@@ -780,37 +777,8 @@ bool WebsocketLibwebsockets::connect() {
         // advance we will have a dead-lock
         this->recv_message_thread = std::make_unique<std::thread>(&WebsocketLibwebsockets::recv_loop, this);
 
-        // Wait until connect or timeout
-        timeouted = !conn_cv.wait_for(lock, std::chrono::seconds(60), [&]() {
-            return !local_data->is_connecting() && EConnectionState::INITIALIZE != local_data->get_state();
-        });
-
-        connected = (local_data->get_state() == EConnectionState::CONNECTED);
     }
-
-    if (!connected) {
-        EVLOG_info << "Connect failed with state: " << (int)local_data->get_state() << " Timeouted: " << timeouted;
-
-        // If we timeouted the on_conn_fail was not dispatched, since it did not had the chance
-        if (timeouted && local_data->get_state() != EConnectionState::ERROR) {
-            EVLOG_error << "Conn failed with timeout, without disconnect dispatch, dispatching manually.";
-            on_conn_fail();
-        }
-
-        // Interrupt and drop the connection data
-        local_data->do_interrupt();
-
-        // Also interrupt the latest conenction, if it was set by a parallel thread
-        auto local = conn_data;
-
-        if (local != nullptr) {
-            local->do_interrupt();
-        }
-
-        conn_data.reset();
-    }
-
-    return (connected);
+    return true;
 }
 
 void WebsocketLibwebsockets::reconnect(long delay) {
