@@ -20,6 +20,115 @@ namespace ocpp {
 struct ConnectionData;
 struct WebsocketMessage;
 
+/// \brief Thread safe message queue
+template<typename T>
+class SafeQueue {
+    using safe_queue_reference = typename std::queue<T>::reference;
+    using safe_queue_const_reference = typename std::queue<T>::const_reference;
+
+public:
+    /// \return True if the queue is empty
+    inline bool empty() const
+    {
+        std::lock_guard lock(mutex);
+        return queue.empty();
+    }
+    
+    inline safe_queue_reference front() const
+    {
+        std::lock_guard lock(mutex);
+        return queue.front();
+    }
+
+    inline safe_queue_const_reference front()
+    {
+        std::lock_guard lock(mutex);
+        return queue.front();
+    }
+
+    /// \return retrieves and removes the first element in the queue. Undefined behavior if the queue is empty
+    inline T pop()
+    {
+        std::lock_guard lock(mutex);
+
+        T front = std::move(queue.front());
+        queue.pop();
+
+        return front;
+    }
+
+    /// \brief Queues an element and notifies any threads waiting on the internal conditional variable
+    inline void push(T&& value)
+    {
+        {
+            std::lock_guard<std::mutex> lock(mutex);
+            queue.push(value);
+        }
+
+        notify_waiting_thread();
+    }
+
+    /// \brief Queues an element and notifies any threads waiting on the internal conditional variable
+    inline void push(const T& value)
+    {
+        {
+            std::lock_guard<std::mutex> lock(mutex);
+            queue.push(value);
+        }
+
+        notify_waiting_thread();
+    }
+
+    /// \brief Clears the queue
+    inline void clear()
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+
+        std::queue<T> empty;
+        empty.swap(queue);
+    }
+
+    /// \brief Waits seconds for the queue to receive an element
+    /// \param seconds Count of seconds to wait, pass in a value <= 0 to wait indefinitely
+    inline void wait_on_queue(int seconds = -1)
+    {
+        std::unique_lock<std::mutex> lock(mutex);
+
+        if(seconds > 0) {
+            cv.wait_for(lock, std::chrono::seconds(seconds),
+                        [&]() { return (false == queue.empty()); });
+        } else {
+            cv.wait(lock, [&]() { return (false == queue.empty()); });
+        }
+    }
+
+    /// \brief Same as 'wait_on_queue' but receives an additional predicate to wait upon
+    template<class Predicate>
+    inline void wait_on_queue(Predicate pred, int seconds = -1)
+    {
+        std::unique_lock<std::mutex> lock(mutex);
+
+        if(seconds > 0) {
+            cv.wait_for(lock, std::chrono::seconds(seconds),
+                        [&]() { return (false == queue.empty()) or pred(); });
+        } else {
+            cv.wait(lock, [&]() { return (false == queue.empty()) or pred(); });
+        }
+    }
+
+    /// \brief Notifies a single waiting thread to wake up
+    inline void notify_waiting_thread()
+    {
+        cv.notify_one();
+    }
+
+private:
+    std::queue<T> queue;
+
+    mutable std::mutex mutex;
+    std::condition_variable cv;
+};
+
 /// \brief Experimental libwebsockets TLS connection
 class WebsocketLibwebsockets final : public WebsocketBase {
 public:
@@ -91,24 +200,21 @@ private:
     Everest::SteadyTimer reconnect_timer_tpm;
     std::unique_ptr<std::thread> websocket_thread;
     std::shared_ptr<ConnectionData> conn_data;
-    std::condition_variable conn_cv;
+    std::condition_variable conn_cv;    
 
-    std::mutex queue_mutex;
+    // Queue of outgoing messages
+    SafeQueue<std::shared_ptr<WebsocketMessage>> message_queue;
 
-    std::queue<std::shared_ptr<WebsocketMessage>> message_queue;
-    std::condition_variable msg_send_cv;
+    // Utils for sending out a message
     std::mutex msg_send_cv_mutex;
+    std::condition_variable msg_send_cv;    
 
     std::unique_ptr<std::thread> recv_message_thread;
-    std::mutex recv_mutex;
-    std::queue<std::string> recv_message_queue;
-    std::condition_variable recv_message_cv;
+    SafeQueue<std::string> recv_message_queue;
     std::string recv_buffered_message;
 
     std::unique_ptr<std::thread> deferred_callback_thread;
-    std::queue<std::function<void()>> deferred_callback_queue;
-    std::mutex deferred_callback_mutex;
-    std::condition_variable deferred_callback_cv;
+    SafeQueue<std::function<void()>> deferred_callback_queue;
     std::atomic_bool stop_deferred_handler;
 
     OcppProtocolVersion connected_ocpp_version;
