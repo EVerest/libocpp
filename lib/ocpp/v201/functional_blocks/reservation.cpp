@@ -10,7 +10,7 @@
 namespace ocpp::v201 {
 Reservation::Reservation(
     MessageDispatcherInterface<MessageType>& message_dispatcher, std::shared_ptr<DeviceModel> device_model,
-    EvseManager& evse_manager,
+    EvseManagerInterface& evse_manager,
     std::function<ReserveNowStatusEnum(const ReserveNowRequest& request)> reserve_now_callback,
     std::function<bool(const int32_t reservationId)> cancel_reservation_callback,
     const std::function<ocpp::ReservationCheckStatus(const int32_t evse_id, const CiString<36> idToken,
