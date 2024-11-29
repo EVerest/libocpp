@@ -1073,7 +1073,7 @@ bool ChargePointImpl::start(const std::map<int, ChargePointStatus>& connector_st
     this->bootreason = bootreason;
     this->init_state_machine(connector_status_map);
     this->init_websocket();
-    this->websocket_timer.timeout([this]() { this->websocket->connect(); }, std::chrono::seconds(0));
+    std::thread([this]() { this->websocket->connect(); }).detach();
     // push transaction messages including SecurityEventNotification.req onto the message queue
     this->message_queue->get_persisted_messages_from_db(this->configuration->getDisableSecurityEventNotifications());
     this->boot_notification();

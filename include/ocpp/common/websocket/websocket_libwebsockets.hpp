@@ -104,6 +104,7 @@ private:
     std::queue<std::string> recv_message_queue;
     std::condition_variable recv_message_cv;
     std::string recv_buffered_message;
+    std::mutex thread_mutex;
 
     std::unique_ptr<std::thread> deferred_callback_thread;
     std::queue<std::function<void()>> deferred_callback_queue;

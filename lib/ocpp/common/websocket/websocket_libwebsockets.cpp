@@ -246,7 +246,7 @@ WebsocketLibwebsockets::~WebsocketLibwebsockets() {
         local_data->do_interrupt();
     }
 
-    std::lock_guard lock(this->connection_mutex);
+    std::lock_guard lock(this->thread_mutex);
 
     if (this->websocket_thread != nullptr && this->websocket_thread->joinable()) {
         this->websocket_thread->join();
@@ -721,7 +721,7 @@ bool WebsocketLibwebsockets::connect() {
     conn_data = local_data;
 
     {
-        std::scoped_lock lock(connection_mutex);
+        std::scoped_lock lock(connection_mutex, thread_mutex);
 
         // Wait old thread for a clean state
         if (this->websocket_thread && this->websocket_thread->joinable()) {
@@ -946,6 +946,11 @@ void WebsocketLibwebsockets::on_conn_fail() {
 
     this->m_is_connected = false;
     recv_buffered_message.clear();
+
+    if (this->shutting_down) {
+        EVLOG_error << "Not reconnecting because the websocket was forcefully disconnect";
+        return;
+    }
 
     // -1 indicates to always attempt to reconnect
     if (this->connection_options.max_connection_attempts == -1 or
