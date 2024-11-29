@@ -776,7 +776,6 @@ bool WebsocketLibwebsockets::connect() {
         // sent over the wire on the client_loop, not giving the opportunity to the loop to
         // advance we will have a dead-lock
         this->recv_message_thread = std::make_unique<std::thread>(&WebsocketLibwebsockets::recv_loop, this);
-
     }
     return true;
 }
