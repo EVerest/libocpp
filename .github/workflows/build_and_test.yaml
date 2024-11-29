@@ -108,6 +108,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: doxygen-docs
+          path: doxygen-docs
       - name: Deploy doxygen docs
         id: deploy_doxygen_docs
         uses: ./everest-ci/github-actions/deploy-doxygen-docs
