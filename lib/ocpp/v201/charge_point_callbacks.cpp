@@ -79,8 +79,6 @@ bool Callbacks::all_callbacks_valid(std::shared_ptr<DeviceModel> device_model) c
 
     if (valid) {
         if (device_model->get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrAvailable)
-                .value_or(false) and
-            device_model->get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrEnabled)
                 .value_or(false)) {
             if (!this->reserve_now_callback.has_value() or this->reserve_now_callback == nullptr) {
                 EVLOG_error << "Reservation is set to 'Available' and 'Enabled' in device model, but "
