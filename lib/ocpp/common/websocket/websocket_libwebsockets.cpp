@@ -249,6 +249,8 @@ WebsocketLibwebsockets::~WebsocketLibwebsockets() {
         local_data->do_interrupt();
     }
 
+    // At this moment the 'this->connection_mutex' is called on_conn_fail and in that case
+    // we lock it twice resulting in undefined behavior 
     std::lock_guard lock(this->connection_mutex);
 
     if (this->websocket_thread != nullptr && this->websocket_thread->joinable()) {
@@ -260,11 +262,9 @@ WebsocketLibwebsockets::~WebsocketLibwebsockets() {
     }
 
     if (this->deferred_callback_thread != nullptr && this->deferred_callback_thread->joinable()) {
-        {
-            std::scoped_lock tmp_lock(this->deferred_callback_mutex);
-            this->stop_deferred_handler = true;
-        }
-        this->deferred_callback_cv.notify_one();
+        this->stop_deferred_handler.store(true);
+        this->deferred_callback_queue.notify_waiting_thread();
+
         this->deferred_callback_thread->join();
     }
 }
@@ -463,13 +463,11 @@ void WebsocketLibwebsockets::recv_loop() {
         while (true) {
             std::string message{};
 
-            {
-                std::lock_guard lk(this->recv_mutex);
+            {                
                 if (recv_message_queue.empty())
                     break;
 
-                message = std::move(recv_message_queue.front());
-                recv_message_queue.pop();
+                message = recv_message_queue.pop();
             }
 
             // Invoke our processing callback, that might trigger a send back that
@@ -478,11 +476,7 @@ void WebsocketLibwebsockets::recv_loop() {
         }
 
         // While we are empty, sleep
-        {
-            std::unique_lock<std::mutex> lock(this->recv_mutex);
-            recv_message_cv.wait_for(lock, std::chrono::seconds(1),
-                                     [&]() { return (false == recv_message_queue.empty()); });
-        }
+        recv_message_queue.wait_on_queue();
     }
 
     EVLOG_debug << "Exit recv loop with ID: " << std::hex << std::this_thread::get_id();
@@ -704,13 +698,8 @@ void WebsocketLibwebsockets::client_loop() {
         while (n >= 0 && (!local_data->is_interupted())) {
             // Set to -1 for continuous servicing, of required, not recommended
             n = lws_service(local_data->lws_ctx.get(), 0);
-
-            bool message_queue_empty;
-            {
-                std::lock_guard<std::mutex> lock(this->queue_mutex);
-                message_queue_empty = message_queue.empty();
-            }
-            if (!message_queue_empty) {
+            
+            if (!message_queue.empty()) {
                 lws_callback_on_writable(local_data->get_conn());
             }
         }
@@ -761,7 +750,8 @@ bool WebsocketLibwebsockets::connect() {
 
         if (this->recv_message_thread && this->recv_message_thread->joinable()) {
             // Awake the receiving message thread to finish
-            recv_message_cv.notify_one();
+            recv_message_queue.notify_waiting_thread();
+            
             this->recv_message_thread->join();
             this->recv_message_thread.reset();
         }
@@ -778,18 +768,9 @@ bool WebsocketLibwebsockets::connect() {
         this->reconnect_timer_tpm.stop();
     }
 
-    // Clear any pending messages on a new connection
-    {
-        std::lock_guard<std::mutex> lock(queue_mutex);
-        std::queue<std::shared_ptr<WebsocketMessage>> empty;
-        empty.swap(message_queue);
-    }
-
-    {
-        std::lock_guard<std::mutex> lock(recv_mutex);
-        std::queue<std::string> empty;
-        empty.swap(recv_message_queue);
-    }
+    // Clear any pending outgoing/incoming messages on a new connection
+    message_queue.clear();
+    recv_message_queue.clear();
 
     bool timeouted = false;
     bool connected = false;
@@ -994,13 +975,7 @@ void WebsocketLibwebsockets::on_message(std::string&& message) {
     }
 
     EVLOG_debug << "Received message over TLS websocket polling for process: " << message;
-
-    {
-        std::lock_guard<std::mutex> lock(this->recv_mutex);
-        recv_message_queue.push(std::move(message));
-    }
-
-    recv_message_cv.notify_one();
+    recv_message_queue.push(std::move(message));
 }
 
 static bool send_internal(lws* wsi, WebsocketMessage* msg) {
@@ -1073,9 +1048,7 @@ void WebsocketLibwebsockets::on_writable() {
     while (true) {
         WebsocketMessage* message = nullptr;
 
-        {
-            std::lock_guard<std::mutex> lock(this->queue_mutex);
-
+        {            
             // Break if we have en empty queue
             if (message_queue.empty())
                 break;
@@ -1092,13 +1065,9 @@ void WebsocketLibwebsockets::on_writable() {
             EVLOG_debug << "Websocket message fully written, popping processing thread from queue!";
 
             // If we have written all bytes to libwebsockets it means that if we received
-            // this writable callback everything is sent over the wire, mark the message
-            // as 'sent' and remove it from the queue
-            {
-                std::lock_guard<std::mutex> lock(this->queue_mutex);
-                message->message_sent = true;
-                message_queue.pop();
-            }
+            // this writable callback everything is sent over the wire, remove the message
+            // from the queue and mark it as sent
+            message_queue.pop()->message_sent = true;
 
             EVLOG_debug << "Notifying waiting thread!";
             // Notify any waiting thread to check it's state
@@ -1112,22 +1081,13 @@ void WebsocketLibwebsockets::on_writable() {
     // If we still have message ONLY poll a single one that can be processed in the invoke of the function
     // libwebsockets is designed so that when a message is sent to the wire from the internal buffer it
     // will invoke 'on_writable' again and we can execute the code above
-    bool any_message_polled;
-    {
-        std::lock_guard<std::mutex> lock(this->queue_mutex);
-        any_message_polled = not message_queue.empty();
-    }
+    bool any_message_polled = not message_queue.empty();
 
     // Poll a single message
     if (any_message_polled) {
         EVLOG_debug << "Client writable, sending message part!";
 
-        WebsocketMessage* message = nullptr;
-
-        {
-            std::lock_guard<std::mutex> lock(this->queue_mutex);
-            message = message_queue.front().get();
-        }
+        WebsocketMessage* message = message_queue.front().get();
 
         if (message == nullptr) {
             EVLOG_AND_THROW(std::runtime_error("Null message in queue, fatal error!"));
@@ -1185,11 +1145,7 @@ void WebsocketLibwebsockets::poll_message(const std::shared_ptr<WebsocketMessage
     }
 
     EVLOG_debug << "Queueing message over TLS websocket: " << msg->payload;
-
-    {
-        std::lock_guard<std::mutex> lock(this->queue_mutex);
-        message_queue.emplace(msg);
-    }
+    message_queue.push(msg);
 
     // Request a write callback
     request_write();
@@ -1409,25 +1365,13 @@ int WebsocketLibwebsockets::process_callback(void* wsi_ptr, int callback_reason,
 
     case LWS_CALLBACK_CLIENT_WRITEABLE:
         on_writable();
-        {
-            bool message_queue_empty;
-            {
-                std::lock_guard<std::mutex> lock(this->queue_mutex);
-                message_queue_empty = message_queue.empty();
-            }
-            if (false == message_queue_empty) {
-                lws_callback_on_writable(wsi);
-            }
+        if (false == message_queue.empty()) {
+            lws_callback_on_writable(wsi);
         }
         break;
 
-    case LWS_CALLBACK_CLIENT_RECEIVE_PONG: {
-        bool message_queue_empty;
-        {
-            std::lock_guard<std::mutex> lock(this->queue_mutex);
-            message_queue_empty = message_queue.empty();
-        }
-        if (false == message_queue_empty) {
+    case LWS_CALLBACK_CLIENT_RECEIVE_PONG: {        
+        if (false == message_queue.empty()) {
             lws_callback_on_writable(data->get_conn());
         }
     } break;
@@ -1441,25 +1385,13 @@ int WebsocketLibwebsockets::process_callback(void* wsi_ptr, int callback_reason,
             recv_buffered_message.clear();
         }
 
-        {
-            bool message_queue_empty;
-            {
-                std::lock_guard<std::mutex> lock(this->queue_mutex);
-                message_queue_empty = message_queue.empty();
-            }
-            if (false == message_queue_empty) {
-                lws_callback_on_writable(data->get_conn());
-            }
+        if (false == message_queue.empty()) {
+            lws_callback_on_writable(data->get_conn());
         }
         break;
 
-    case LWS_CALLBACK_EVENT_WAIT_CANCELLED: {
-        bool message_queue_empty;
-        {
-            std::lock_guard<std::mutex> lock(this->queue_mutex);
-            message_queue_empty = message_queue.empty();
-        }
-        if (false == message_queue_empty) {
+    case LWS_CALLBACK_EVENT_WAIT_CANCELLED: {        
+        if (false == message_queue.empty()) {
             lws_callback_on_writable(data->get_conn());
         }
     } break;
@@ -1490,26 +1422,24 @@ void WebsocketLibwebsockets::push_deferred_callback(const std::function<void()>&
         return;
     }
 
-    std::scoped_lock tmp_lock(this->deferred_callback_mutex);
     this->deferred_callback_queue.push(callback);
-    this->deferred_callback_cv.notify_one();
 }
 
 void WebsocketLibwebsockets::handle_deferred_callback_queue() {
     while (true) {
         std::function<void()> callback;
-        {
-            std::unique_lock lock(this->deferred_callback_mutex);
-            this->deferred_callback_cv.wait(
-                lock, [this]() { return !this->deferred_callback_queue.empty() or stop_deferred_handler; });
-
+        {            
+            this->deferred_callback_queue.wait_on_queue([this]() {
+                return this->stop_deferred_handler.load();
+            });
+            
             if (stop_deferred_handler and this->deferred_callback_queue.empty()) {
                 break;
             }
 
-            callback = this->deferred_callback_queue.front();
-            this->deferred_callback_queue.pop();
+            callback = this->deferred_callback_queue.pop();
         }
+
         // This needs to be out of lock scope otherwise we still keep the mutex locked while executing the callback.
         // This would block the callers of push_deferred_callback()
         if (callback) {
