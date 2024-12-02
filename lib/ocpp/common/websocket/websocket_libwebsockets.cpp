@@ -712,7 +712,7 @@ void WebsocketLibwebsockets::client_loop() {
 // Will be called from external threads as well
 bool WebsocketLibwebsockets::start_connecting() {
     if (!this->initialized()) {
-        return false;
+        EVLOG_error << "Websocket not properly initialized. A reconnect attempt will not be made." return false;
     }
 
     // Clear shutting down so we allow to reconnect again as well
@@ -872,7 +872,7 @@ void WebsocketLibwebsockets::close(const WebsocketCloseReason code, const std::s
     this->m_is_connected = false;
 
     // Notify any message senders that are waiting, since we can't send messages any more
-    msg_send_cv.notify_all();
+    message_queue.notify_waiting_thread();
 
     // Clear any irrelevant data after a DC
     recv_buffered_message.clear();
@@ -919,7 +919,7 @@ void WebsocketLibwebsockets::on_conn_close() {
     this->cancel_reconnect_timer();
 
     // Notify any message senders that are waiting, since we can't send messages any more
-    msg_send_cv.notify_all();
+    message_queue.notify_waiting_thread();
 
     // Clear any irrelevant data after a DC
     recv_buffered_message.clear();
@@ -1065,13 +1065,13 @@ void WebsocketLibwebsockets::on_writable() {
             EVLOG_debug << "Websocket message fully written, popping processing thread from queue!";
 
             // If we have written all bytes to libwebsockets it means that if we received
-            // this writable callback everything is sent over the wire, remove the message
-            // from the queue and mark it as sent
-            message_queue.pop()->message_sent = true;
+            // this writable callback everything is sent over the wire, mark it as sent and remove
+            message->message_sent = true;
+            message_queue.pop();
 
             EVLOG_debug << "Notifying waiting thread!";
             // Notify any waiting thread to check it's state
-            msg_send_cv.notify_all();
+            message_queue.notify_waiting_thread();
         } else {
             // If the message was not polled, we reached the first unpolled and break
             break;
@@ -1081,10 +1081,8 @@ void WebsocketLibwebsockets::on_writable() {
     // If we still have message ONLY poll a single one that can be processed in the invoke of the function
     // libwebsockets is designed so that when a message is sent to the wire from the internal buffer it
     // will invoke 'on_writable' again and we can execute the code above
-    bool any_message_polled = not message_queue.empty();
-
-    // Poll a single message
-    if (any_message_polled) {
+    if (!message_queue.empty()) {
+        // Poll a single message
         EVLOG_debug << "Client writable, sending message part!";
 
         WebsocketMessage* message = message_queue.front().get();
@@ -1150,13 +1148,12 @@ void WebsocketLibwebsockets::poll_message(const std::shared_ptr<WebsocketMessage
     // Request a write callback
     request_write();
 
-    {
-        std::unique_lock lock(this->msg_send_cv_mutex);
-        if (msg_send_cv.wait_for(lock, std::chrono::seconds(20), [&] { return (true == msg->message_sent); })) {
-            EVLOG_debug << "Successfully sent last message over TLS websocket!";
-        } else {
-            EVLOG_warning << "Could not send last message over TLS websocket!";
-        }
+    message_queue.wait_on_custom([&] { return (true == msg->message_sent); }, 20);
+
+    if (msg->message_sent) {
+        EVLOG_debug << "Successfully sent last message over TLS websocket!";
+    } else {
+        EVLOG_warning << "Could not send last message over TLS websocket!";
     }
 }
 

@@ -103,6 +103,17 @@ public:
         }
     }
 
+    /// \brief Waits on the queue for a custom event
+    template <class Predicate> inline void wait_on_custom(Predicate pred, int seconds = -1) {
+        std::unique_lock<std::mutex> lock(mutex);
+
+        if (seconds > 0) {
+            cv.wait_for(lock, std::chrono::seconds(seconds), [&]() { return pred(); });
+        } else {
+            cv.wait(lock, [&]() { return pred(); });
+        }
+    }
+
     /// \brief Notifies a single waiting thread to wake up
     inline void notify_waiting_thread() {
         cv.notify_one();
@@ -125,6 +136,42 @@ public:
     ~WebsocketLibwebsockets();
 
     void set_connection_options(const WebsocketConnectionOptions& connection_options) override;
+
+    /*
+        Behavior to clarity:
+            1. what happens when we called 'start_connecting' and someone called it again:
+                -
+            2. what happens when we 'start_connecting' and it returns 'false' because of
+            some very bad config. should we still attempt to reconnect on a 'false' return?
+            3. why is a function called 'reconnect' required, if the 'start_connecting'
+            handles the reconnection internally? does anyone use the 'reconnect' externally?
+            4. what happens when we 'start_connecting' and are in the process of attempting to
+            connect but we are not connected yet, just attempting to in 'lws_client_connect_via_info'
+            and while we are not connecting someone calls 'start_connecting' again? Should we close
+            the connection, reinitialize the connection options and restart the client thread? but if
+            somebody checked 'is_connected' and because it returns false while we are 'trying' it doesn't
+            attempt to disconnect first before calling 'start_connecting'
+            5. instead of having a 'disconnect' or 'close' function shouldn't we have a 'stop_connecting'
+            one that does the opposite of 'start_connecting', that is to stop the attempts to connect?
+            6. in that case should we re-name 'bool Websocket::is_connected()' to 'is_connecting()'?
+
+
+            7. Looks bad because of the above reasons
+            if (this->is_websocket_connected()) {
+                // After the websocket gets closed a reconnect will be triggered
+                this->websocket->disconnect(WebsocketCloseReason::ServiceRestart);
+            } else {
+                this->try_connect_websocket();
+            }
+
+            should become:
+            if (this->is_websocket_trying_to_connect()) {
+                // After the websocket gets closed a reconnect will be triggered
+                this->websocket->stop_connecting(WebsocketCloseReason::ServiceRestart);
+            } else {
+                this->try_start_connecting_websocket();
+            }
+    */
 
     /// \brief Starts the connection attempts. It will try to initialize the connection options and the
     ///        security context
@@ -192,10 +239,6 @@ private:
 
     // Queue of outgoing messages
     SafeQueue<std::shared_ptr<WebsocketMessage>> message_queue;
-
-    // Utils for sending out a message
-    std::mutex msg_send_cv_mutex;
-    std::condition_variable msg_send_cv;
 
     std::unique_ptr<std::thread> recv_message_thread;
     SafeQueue<std::string> recv_message_queue;
