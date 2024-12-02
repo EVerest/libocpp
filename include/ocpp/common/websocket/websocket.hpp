@@ -28,8 +28,11 @@ public:
                        std::shared_ptr<EvseSecurity> evse_security, std::shared_ptr<MessageLogging> logging);
     ~Websocket();
 
-    /// \brief connect to a websocket (TLS or non-TLS depending on the central system uri in the configuration).
-    bool connect();
+    /// \brief Starts the connection attempts. It will try to initialize the connection options and the
+    ///        security context
+    /// \returns true if the websocket successfully initialized the connection options and security context and
+    ///          if it successfully started the connection thread. Does not wait for a successful connection
+    bool start_connecting();
 
     void set_connection_options(const WebsocketConnectionOptions& connection_options);
 

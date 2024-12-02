@@ -22,9 +22,9 @@ Websocket::Websocket(const WebsocketConnectionOptions& connection_options, std::
 Websocket::~Websocket() {
 }
 
-bool Websocket::connect() {
+bool Websocket::start_connecting() {
     this->logging->sys("Connecting");
-    return this->websocket->connect();
+    return this->websocket->start_connecting();
 }
 
 void Websocket::set_connection_options(const WebsocketConnectionOptions& connection_options) {
