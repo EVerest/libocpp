@@ -60,10 +60,11 @@ public:
     virtual void on_reserved(const int32_t evse_id, const int32_t connector_id) override;
     virtual void on_reservation_cleared(const int32_t evse_id, const int32_t connector_id) override;
 
+private: // Functions
+
     void handle_reserve_now_request(Call<ReserveNowRequest> call);
     void handle_cancel_reservation_callback(Call<CancelReservationRequest> call);
 
-private: // Functions
     void send_reserve_now_rejected_response(const MessageId& unique_id, const std::string& status_info);
 
     ///

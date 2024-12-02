@@ -79,7 +79,7 @@ void Reservation::handle_reserve_now_request(Call<ReserveNowRequest> call) {
                     .value_or(false)) {
         status_info = "Reservation is not available";
         reservation_available = false;
-    } else if (!this->device_model->get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrEnabled)) {
+    } else if (!this->device_model->get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrEnabled).value_or(false)) {
         reservation_available = false;
         status_info = "Reservation is not enabled";
     }
@@ -138,7 +138,8 @@ void Reservation::handle_reserve_now_request(Call<ReserveNowRequest> call) {
                 connector_exists = true;
             }
 
-            if (this->is_connector_available(i, request.connectorType)) {
+            // TODO mz do something with the result from is_connector_available or leave the call away.
+            if (connector_exists && this->is_connector_available(i, request.connectorType)) {
                 // There is at least one connector available!
                 break;
             }
