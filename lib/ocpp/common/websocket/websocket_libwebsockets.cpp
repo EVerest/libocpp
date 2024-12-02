@@ -68,7 +68,7 @@ enum class EConnectionState {
 /// \brief Message to return in the callback to close the socket connection
 static constexpr int LWS_CLOSE_SOCKET_RESPONSE_MESSAGE = -1;
 
-/// \brief Per thread connection data
+/// \brief Current connection data, sets the internal state of the
 struct ConnectionData {
     ConnectionData() :
         wsi(nullptr), owner(nullptr), is_running(true), is_marked_close(false), state(EConnectionState::INITIALIZE) {
@@ -493,6 +493,77 @@ void WebsocketLibwebsockets::client_loop() {
     // Bind thread for checks
     local_data->bind_thread(std::this_thread::get_id());
 
+    lws_client_connect_info i;
+    memset(&i, 0, sizeof(lws_client_connect_info));
+
+    // No SSL
+    int ssl_connection = 0;
+
+    if (this->connection_options.security_profile == 2 || this->connection_options.security_profile == 3) {
+        ssl_connection = LCCSCF_USE_SSL;
+
+        // Skip server hostname check
+        if (this->connection_options.verify_csms_common_name == false) {
+            ssl_connection |= LCCSCF_SKIP_SERVER_CERT_HOSTNAME_CHECK;
+        }
+
+        // Debugging if required
+        // ssl_connection |= LCCSCF_ALLOW_SELFSIGNED;
+        // ssl_connection |= LCCSCF_ALLOW_INSECURE;
+        // ssl_connection |= LCCSCF_ALLOW_EXPIRED;
+    }
+
+    auto& uri = this->connection_options.csms_uri;
+
+    // TODO: No idea who releases the strdup?
+    i.context = local_data->lws_ctx.get();
+    i.port = uri.get_port();
+    i.address = strdup(uri.get_hostname().c_str());                       // Base address, as resolved by getnameinfo
+    i.path = strdup((uri.get_path() + uri.get_chargepoint_id()).c_str()); // Path of resource
+    i.host = i.address;
+    i.origin = i.address;
+    i.ssl_connection = ssl_connection;
+    i.protocol = strdup(conversions::ocpp_protocol_version_to_string(this->connection_options.ocpp_version).c_str());
+    i.local_protocol_name = local_protocol_name;
+    i.pwsi = &local_data->wsi;
+    i.userdata = local_data.get(); // See lws_context 'user'
+
+    if (this->connection_options.iface.has_value()) {
+        i.iface = this->connection_options.iface.value().c_str();
+    }
+
+    // Print data for debug
+    EVLOG_info << "LWS connect with info "
+               << "port: [" << i.port << "] address: [" << i.address << "] path: [" << i.path << "] protocol: ["
+               << i.protocol << "]";
+
+    if (lws_client_connect_via_info(&i) == nullptr) {
+        EVLOG_error << "LWS connect failed!";
+        // This condition can occur when connecting fails to an IP address
+        // retries need to be attempted
+        local_data->update_state(EConnectionState::ERROR);
+        on_conn_fail();
+    } else {
+        EVLOG_debug << "Init client loop with ID: " << std::hex << std::this_thread::get_id();
+
+        // Process while we're running
+        int n = 0;
+
+        while (n >= 0 && (!local_data->is_interupted())) {
+            // Set to -1 for continuous servicing, of required, not recommended
+            n = lws_service(local_data->lws_ctx.get(), 0);
+
+            if (!message_queue.empty()) {
+                lws_callback_on_writable(local_data->get_conn());
+            }
+        }
+
+        // Client loop finished for our tid
+        EVLOG_debug << "Exit client loop with ID: " << std::hex << std::this_thread::get_id();
+    }
+}
+
+bool WebsocketLibwebsockets::initialize_connection_options(std::shared_ptr<ConnectionData>& local_data) {
     // lws_set_log_level(LLL_ERR | LLL_WARN | LLL_NOTICE | LLL_INFO | LLL_DEBUG | LLL_PARSER | LLL_HEADER | LLL_EXT |
     //                          LLL_CLIENT | LLL_LATENCY | LLL_THREAD | LLL_USER, nullptr);
     lws_set_log_level(LLL_ERR, nullptr);
@@ -531,13 +602,7 @@ void WebsocketLibwebsockets::client_loop() {
             if (certificate_response.status != ocpp::GetCertificateInfoStatus::Accepted or
                 !certificate_response.info.has_value()) {
                 EVLOG_error << "Connecting with security profile 3 but no client side certificate is present or valid";
-
-                local_data->update_state(EConnectionState::ERROR);
-                on_conn_fail();
-
-                // Notify conn waiter
-                conn_cv.notify_one();
-                return;
+                return false;
             }
 
             const auto& certificate_info = certificate_response.info.value();
@@ -548,13 +613,7 @@ void WebsocketLibwebsockets::client_loop() {
                 path_chain = certificate_info.certificate_single_path.value();
             } else {
                 EVLOG_error << "Connecting with security profile 3 but no client side certificate is present or valid";
-
-                local_data->update_state(EConnectionState::ERROR);
-                on_conn_fail();
-
-                // Notify conn waiter
-                conn_cv.notify_one();
-                return;
+                return false;
             }
 
             path_key = certificate_info.key_path;
@@ -581,14 +640,8 @@ void WebsocketLibwebsockets::client_loop() {
 
         if (ssl_ctx == nullptr) {
             ERR_print_errors_fp(stderr);
-            EVLOG_error << "Unable to create ssl ctx";
-
-            local_data->update_state(EConnectionState::ERROR);
-            on_conn_fail();
-
-            // Notify conn waiter
-            conn_cv.notify_one();
-            return;
+            EVLOG_error << "Unable to create ssl context";
+            return false;
         }
 
         if (this->connection_options.enable_tls_keylog and this->connection_options.keylog_file.has_value()) {
@@ -598,15 +651,9 @@ void WebsocketLibwebsockets::client_loop() {
         }
 
         // Init TLS data
-        if (tls_init(ssl_ctx, path_chain, path_key, custom_key, private_key_password) == false) {
-            EVLOG_error << "Unable to init tls";
-
-            local_data->update_state(EConnectionState::ERROR);
-            on_conn_fail();
-
-            // Notify conn waiter
-            conn_cv.notify_one();
-            return;
+        if (!tls_init(ssl_ctx, path_chain, path_key, custom_key, private_key_password)) {
+            EVLOG_error << "Unable to init tls security options for websocket";
+            return false;
         }
 
         // Setup our context
@@ -618,124 +665,41 @@ void WebsocketLibwebsockets::client_loop() {
 
     lws_context* lws_ctx = lws_create_context(&info);
     if (nullptr == lws_ctx) {
-        EVLOG_error << "lws init failed!";
-        local_data->update_state(EConnectionState::FINALIZED);
-        return;
+        EVLOG_error << "lws create context failed";
+        return false;
     }
 
     // Conn acquire the lws context
     local_data->lws_ctx = std::unique_ptr<lws_context>(lws_ctx);
 
-    lws_client_connect_info i;
-    memset(&i, 0, sizeof(lws_client_connect_info));
-
-    // No SSL
-    int ssl_connection = 0;
-
-    if (this->connection_options.security_profile == 2 || this->connection_options.security_profile == 3) {
-        ssl_connection = LCCSCF_USE_SSL;
-
-        // Skip server hostname check
-        if (this->connection_options.verify_csms_common_name == false) {
-            ssl_connection |= LCCSCF_SKIP_SERVER_CERT_HOSTNAME_CHECK;
-        }
-
-        // TODO: Completely remove after test
-        // ssl_connection |= LCCSCF_ALLOW_SELFSIGNED;
-        // ssl_connection |= LCCSCF_ALLOW_INSECURE;
-        // ssl_connection |= LCCSCF_ALLOW_EXPIRED;
-    }
-
-    auto& uri = this->connection_options.csms_uri;
-
-    std::string ocpp_versions;
-    bool first = true;
-    for (auto version : this->connection_options.ocpp_versions) {
-        if (!first) {
-            ocpp_versions += ", ";
-        }
-        first = false;
-        ocpp_versions += conversions::ocpp_protocol_version_to_string(version);
-    }
-
-    // TODO: No idea who releases the strdup?
-    i.context = lws_ctx;
-    i.port = uri.get_port();
-    i.address = strdup(uri.get_hostname().c_str());                       // Base address, as resolved by getnameinfo
-    i.path = strdup((uri.get_path() + uri.get_chargepoint_id()).c_str()); // Path of resource
-    i.host = i.address;
-    i.origin = i.address;
-    i.ssl_connection = ssl_connection;
-    i.protocol = strdup(ocpp_versions.c_str());
-    i.local_protocol_name = local_protocol_name;
-    i.pwsi = &local_data->wsi;
-    i.userdata = local_data.get(); // See lws_context 'user'
-
-    if (this->connection_options.iface.has_value()) {
-        i.iface = this->connection_options.iface.value().c_str();
-    }
-
-    // Print data for debug
-    EVLOG_info << "LWS connect with info "
-               << "port: [" << i.port << "] address: [" << i.address << "] path: [" << i.path << "] protocol: ["
-               << i.protocol << "]";
-
-    if (lws_client_connect_via_info(&i) == nullptr) {
-        EVLOG_error << "LWS connect failed!";
-        // This condition can occur when connecting fails to an IP address
-        // retries need to be attempted
-        local_data->update_state(EConnectionState::ERROR);
-        on_conn_fail();
-
-        // Notify conn waiter
-        conn_cv.notify_one();
-    } else {
-        EVLOG_debug << "Init client loop with ID: " << std::hex << std::this_thread::get_id();
-
-        // Process while we're running
-        int n = 0;
-
-        while (n >= 0 && (!local_data->is_interupted())) {
-            // Set to -1 for continuous servicing, of required, not recommended
-            n = lws_service(local_data->lws_ctx.get(), 0);
-
-            if (!message_queue.empty()) {
-                lws_callback_on_writable(local_data->get_conn());
-            }
-        }
-
-        // Client loop finished for our tid
-        EVLOG_debug << "Exit client loop with ID: " << std::hex << std::this_thread::get_id();
-    }
+    return true;
 }
 
 // Will be called from external threads as well
 bool WebsocketLibwebsockets::start_connecting() {
     if (!this->initialized()) {
-        EVLOG_error << "Websocket not properly initialized. A reconnect attempt will not be made." return false;
+        EVLOG_error << "Websocket not properly initialized. A reconnect attempt will not be made.";
+        return false;
     }
+
+    // TODO: introduce all necessary steps for:
+    // 1. a connection attempt is in progress
+    // 2. we are already connected
 
     // Clear shutting down so we allow to reconnect again as well
     this->shutting_down = false;
 
-    EVLOG_info << "Connecting to uri: " << this->connection_options.csms_uri.string() << " with security-profile "
-               << this->connection_options.security_profile
+    EVLOG_info << "Starting connection attempts to uri: " << this->connection_options.csms_uri.string()
+               << " with security-profile " << this->connection_options.security_profile
                << (this->connection_options.use_tpm_tls ? " with TPM keys" : "");
 
     this->connected_ocpp_version = OcppProtocolVersion::Unknown;
 
-    // new connection context
-    std::shared_ptr<ConnectionData> local_data = std::make_shared<ConnectionData>();
-    local_data->set_owner(this);
-
-    // Interrupt any previous connection
+    // If we already have a connection attempt started for now shut it down
     std::shared_ptr<ConnectionData> tmp_data = conn_data;
     if (tmp_data != nullptr) {
         tmp_data->do_interrupt();
     }
-
-    // use new connection context
-    conn_data = local_data;
 
     {
         std::scoped_lock lock(connection_mutex);
@@ -757,6 +721,18 @@ bool WebsocketLibwebsockets::start_connecting() {
         }
     }
 
+    // New connection context
+    std::shared_ptr<ConnectionData> new_connection_data = std::make_shared<ConnectionData>();
+    new_connection_data->set_owner(this);
+
+    // TODO: Is this behavior required, or do we need to reconnect regardless of how bad the config is?
+    if (!initialize_connection_options(new_connection_data)) {
+        EVLOG_error << "Could not initialize connection options. A reconnect attempt will not be made.";
+        return false;
+    }
+
+    conn_data = new_connection_data;
+
     if (this->deferred_callback_thread == nullptr) {
         this->deferred_callback_thread =
             std::make_unique<std::thread>(&WebsocketLibwebsockets::handle_deferred_callback_queue, this);
@@ -772,9 +748,6 @@ bool WebsocketLibwebsockets::start_connecting() {
     message_queue.clear();
     recv_message_queue.clear();
 
-    bool timeouted = false;
-    bool connected = false;
-
     {
         std::unique_lock<std::mutex> lock(connection_mutex);
 
@@ -788,38 +761,9 @@ bool WebsocketLibwebsockets::start_connecting() {
         // sent over the wire on the client_loop, not giving the opportunity to the loop to
         // advance we will have a dead-lock
         this->recv_message_thread = std::make_unique<std::thread>(&WebsocketLibwebsockets::recv_loop, this);
-
-        // Wait until connect or timeout
-        timeouted = !conn_cv.wait_for(lock, std::chrono::seconds(60), [&]() {
-            return !local_data->is_connecting() && EConnectionState::INITIALIZE != local_data->get_state();
-        });
-
-        connected = (local_data->get_state() == EConnectionState::CONNECTED);
     }
 
-    if (!connected) {
-        EVLOG_info << "Connect failed with state: " << (int)local_data->get_state() << " Timeouted: " << timeouted;
-
-        // If we timeouted the on_conn_fail was not dispatched, since it did not had the chance
-        if (timeouted && local_data->get_state() != EConnectionState::ERROR) {
-            EVLOG_error << "Conn failed with timeout, without disconnect dispatch, dispatching manually.";
-            on_conn_fail();
-        }
-
-        // Interrupt and drop the connection data
-        local_data->do_interrupt();
-
-        // Also interrupt the latest conenction, if it was set by a parallel thread
-        auto local = conn_data;
-
-        if (local != nullptr) {
-            local->do_interrupt();
-        }
-
-        conn_data.reset();
-    }
-
-    return (connected);
+    return true;
 }
 
 void WebsocketLibwebsockets::reconnect(long delay) {
@@ -1289,7 +1233,6 @@ int WebsocketLibwebsockets::process_callback(void* wsi_ptr, int callback_reason,
 
         if (data->get_state() == EConnectionState::CONNECTING) {
             data->update_state(EConnectionState::ERROR);
-            conn_cv.notify_one();
         }
 
         on_conn_fail();
@@ -1314,7 +1257,6 @@ int WebsocketLibwebsockets::process_callback(void* wsi_ptr, int callback_reason,
     case LWS_CALLBACK_CLIENT_ESTABLISHED:
         if (data->get_state() == EConnectionState::CONNECTING) {
             data->update_state(EConnectionState::CONNECTED);
-            conn_cv.notify_one();
         }
 
         on_conn_connected();

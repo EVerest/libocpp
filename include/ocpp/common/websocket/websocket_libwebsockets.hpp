@@ -179,7 +179,8 @@ public:
     ///          if it successfully started the connection thread. Does not wait for a successful connection
     bool start_connecting() override;
 
-    /// \brief Reconnects the websocket using the delay, a reason for this reconnect can be provided with the
+    /// \brief Reconnects the websocket after the delay. Will stop the current connection attempts
+    ///        and will call the 'start_connecting' after the delay
     /// \param reason parameter
     /// \param delay delay of the reconnect attempt
     void reconnect(long delay) override;
@@ -198,6 +199,10 @@ public:
     int process_callback(void* wsi_ptr, int callback_reason, void* user, void* in, size_t len);
 
 private:
+    /// \brief Initializes the connection options, including the security info
+    /// \return True if it was successful, false otherwise
+    bool initialize_connection_options(std::shared_ptr<ConnectionData>& new_connection_data);
+
     bool tls_init(struct ssl_ctx_st* ctx, const std::string& path_chain, const std::string& path_key, bool custom_key,
                   std::optional<std::string>& password);
     void client_loop();
@@ -235,7 +240,6 @@ private:
     Everest::SteadyTimer reconnect_timer_tpm;
     std::unique_ptr<std::thread> websocket_thread;
     std::shared_ptr<ConnectionData> conn_data;
-    std::condition_variable conn_cv;
 
     // Queue of outgoing messages
     SafeQueue<std::shared_ptr<WebsocketMessage>> message_queue;
