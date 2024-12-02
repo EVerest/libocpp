@@ -250,7 +250,7 @@ void ConnectivityManager::try_connect_websocket() {
 
     this->websocket->register_message_callback([this](const std::string& message) { this->message_callback(message); });
 
-    this->websocket->connect();
+    this->websocket->start_connecting();
 }
 
 std::optional<ConfigNetworkResult>

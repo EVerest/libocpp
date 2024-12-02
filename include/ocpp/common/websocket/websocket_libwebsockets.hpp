@@ -21,34 +21,29 @@ struct ConnectionData;
 struct WebsocketMessage;
 
 /// \brief Thread safe message queue
-template<typename T>
-class SafeQueue {
+template <typename T> class SafeQueue {
     using safe_queue_reference = typename std::queue<T>::reference;
     using safe_queue_const_reference = typename std::queue<T>::const_reference;
 
 public:
     /// \return True if the queue is empty
-    inline bool empty() const
-    {
+    inline bool empty() const {
         std::lock_guard lock(mutex);
         return queue.empty();
     }
-    
-    inline safe_queue_reference front() const
-    {
+
+    inline safe_queue_reference front() const {
         std::lock_guard lock(mutex);
         return queue.front();
     }
 
-    inline safe_queue_const_reference front()
-    {
+    inline safe_queue_const_reference front() {
         std::lock_guard lock(mutex);
         return queue.front();
     }
 
     /// \return retrieves and removes the first element in the queue. Undefined behavior if the queue is empty
-    inline T pop()
-    {
+    inline T pop() {
         std::lock_guard lock(mutex);
 
         T front = std::move(queue.front());
@@ -58,8 +53,7 @@ public:
     }
 
     /// \brief Queues an element and notifies any threads waiting on the internal conditional variable
-    inline void push(T&& value)
-    {
+    inline void push(T&& value) {
         {
             std::lock_guard<std::mutex> lock(mutex);
             queue.push(value);
@@ -69,8 +63,7 @@ public:
     }
 
     /// \brief Queues an element and notifies any threads waiting on the internal conditional variable
-    inline void push(const T& value)
-    {
+    inline void push(const T& value) {
         {
             std::lock_guard<std::mutex> lock(mutex);
             queue.push(value);
@@ -80,8 +73,7 @@ public:
     }
 
     /// \brief Clears the queue
-    inline void clear()
-    {
+    inline void clear() {
         std::lock_guard<std::mutex> lock(mutex);
 
         std::queue<T> empty;
@@ -90,35 +82,29 @@ public:
 
     /// \brief Waits seconds for the queue to receive an element
     /// \param seconds Count of seconds to wait, pass in a value <= 0 to wait indefinitely
-    inline void wait_on_queue(int seconds = -1)
-    {
+    inline void wait_on_queue(int seconds = -1) {
         std::unique_lock<std::mutex> lock(mutex);
 
-        if(seconds > 0) {
-            cv.wait_for(lock, std::chrono::seconds(seconds),
-                        [&]() { return (false == queue.empty()); });
+        if (seconds > 0) {
+            cv.wait_for(lock, std::chrono::seconds(seconds), [&]() { return (false == queue.empty()); });
         } else {
             cv.wait(lock, [&]() { return (false == queue.empty()); });
         }
     }
 
     /// \brief Same as 'wait_on_queue' but receives an additional predicate to wait upon
-    template<class Predicate>
-    inline void wait_on_queue(Predicate pred, int seconds = -1)
-    {
+    template <class Predicate> inline void wait_on_queue(Predicate pred, int seconds = -1) {
         std::unique_lock<std::mutex> lock(mutex);
 
-        if(seconds > 0) {
-            cv.wait_for(lock, std::chrono::seconds(seconds),
-                        [&]() { return (false == queue.empty()) or pred(); });
+        if (seconds > 0) {
+            cv.wait_for(lock, std::chrono::seconds(seconds), [&]() { return (false == queue.empty()) or pred(); });
         } else {
             cv.wait(lock, [&]() { return (false == queue.empty()) or pred(); });
         }
     }
 
     /// \brief Notifies a single waiting thread to wake up
-    inline void notify_waiting_thread()
-    {
+    inline void notify_waiting_thread() {
         cv.notify_one();
     }
 
@@ -140,9 +126,11 @@ public:
 
     void set_connection_options(const WebsocketConnectionOptions& connection_options) override;
 
-    /// \brief connect to a TLS websocket
-    /// \returns true if the websocket is initialized and a connection attempt is made
-    bool connect() override;
+    /// \brief Starts the connection attempts. It will try to initialize the connection options and the
+    ///        security context
+    /// \returns true if the websocket successfully initialized the connection options and security context and
+    ///          if it successfully started the connection thread. Does not wait for a successful connection
+    bool start_connecting() override;
 
     /// \brief Reconnects the websocket using the delay, a reason for this reconnect can be provided with the
     /// \param reason parameter
@@ -200,14 +188,14 @@ private:
     Everest::SteadyTimer reconnect_timer_tpm;
     std::unique_ptr<std::thread> websocket_thread;
     std::shared_ptr<ConnectionData> conn_data;
-    std::condition_variable conn_cv;    
+    std::condition_variable conn_cv;
 
     // Queue of outgoing messages
     SafeQueue<std::shared_ptr<WebsocketMessage>> message_queue;
 
     // Utils for sending out a message
     std::mutex msg_send_cv_mutex;
-    std::condition_variable msg_send_cv;    
+    std::condition_variable msg_send_cv;
 
     std::unique_ptr<std::thread> recv_message_thread;
     SafeQueue<std::string> recv_message_queue;

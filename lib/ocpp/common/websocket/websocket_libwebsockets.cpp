@@ -250,7 +250,7 @@ WebsocketLibwebsockets::~WebsocketLibwebsockets() {
     }
 
     // At this moment the 'this->connection_mutex' is called on_conn_fail and in that case
-    // we lock it twice resulting in undefined behavior 
+    // we lock it twice resulting in undefined behavior
     std::lock_guard lock(this->connection_mutex);
 
     if (this->websocket_thread != nullptr && this->websocket_thread->joinable()) {
@@ -463,7 +463,7 @@ void WebsocketLibwebsockets::recv_loop() {
         while (true) {
             std::string message{};
 
-            {                
+            {
                 if (recv_message_queue.empty())
                     break;
 
@@ -698,7 +698,7 @@ void WebsocketLibwebsockets::client_loop() {
         while (n >= 0 && (!local_data->is_interupted())) {
             // Set to -1 for continuous servicing, of required, not recommended
             n = lws_service(local_data->lws_ctx.get(), 0);
-            
+
             if (!message_queue.empty()) {
                 lws_callback_on_writable(local_data->get_conn());
             }
@@ -710,7 +710,7 @@ void WebsocketLibwebsockets::client_loop() {
 }
 
 // Will be called from external threads as well
-bool WebsocketLibwebsockets::connect() {
+bool WebsocketLibwebsockets::start_connecting() {
     if (!this->initialized()) {
         return false;
     }
@@ -751,7 +751,7 @@ bool WebsocketLibwebsockets::connect() {
         if (this->recv_message_thread && this->recv_message_thread->joinable()) {
             // Awake the receiving message thread to finish
             recv_message_queue.notify_waiting_thread();
-            
+
             this->recv_message_thread->join();
             this->recv_message_thread.reset();
         }
@@ -844,7 +844,7 @@ void WebsocketLibwebsockets::reconnect(long delay) {
                     this->close(WebsocketCloseReason::AbnormalClose, "before reconnecting");
                 }
 
-                this->connect();
+                this->start_connecting();
             },
             std::chrono::milliseconds(delay));
     }
@@ -1048,7 +1048,7 @@ void WebsocketLibwebsockets::on_writable() {
     while (true) {
         WebsocketMessage* message = nullptr;
 
-        {            
+        {
             // Break if we have en empty queue
             if (message_queue.empty())
                 break;
@@ -1370,7 +1370,7 @@ int WebsocketLibwebsockets::process_callback(void* wsi_ptr, int callback_reason,
         }
         break;
 
-    case LWS_CALLBACK_CLIENT_RECEIVE_PONG: {        
+    case LWS_CALLBACK_CLIENT_RECEIVE_PONG: {
         if (false == message_queue.empty()) {
             lws_callback_on_writable(data->get_conn());
         }
@@ -1390,7 +1390,7 @@ int WebsocketLibwebsockets::process_callback(void* wsi_ptr, int callback_reason,
         }
         break;
 
-    case LWS_CALLBACK_EVENT_WAIT_CANCELLED: {        
+    case LWS_CALLBACK_EVENT_WAIT_CANCELLED: {
         if (false == message_queue.empty()) {
             lws_callback_on_writable(data->get_conn());
         }
@@ -1428,11 +1428,9 @@ void WebsocketLibwebsockets::push_deferred_callback(const std::function<void()>&
 void WebsocketLibwebsockets::handle_deferred_callback_queue() {
     while (true) {
         std::function<void()> callback;
-        {            
-            this->deferred_callback_queue.wait_on_queue([this]() {
-                return this->stop_deferred_handler.load();
-            });
-            
+        {
+            this->deferred_callback_queue.wait_on_queue([this]() { return this->stop_deferred_handler.load(); });
+
             if (stop_deferred_handler and this->deferred_callback_queue.empty()) {
                 break;
             }
