@@ -58,20 +58,24 @@ using evse_security::is_custom_private_key_file;
 using evse_security::OpenSSLProvider;
 
 enum class EConnectionState {
-    INITIALIZE, ///< Initialization state
-    CONNECTING, ///< Trying to connect
-    CONNECTED,  ///< Successfully connected
-    ERROR,      ///< We couldn't connect
-    FINALIZED,  ///< We finalized the connection and we're never going to connect again
+    INITIALIZE,   ///< Initialization state
+    CONNECTING,   ///< Trying to connect
+    RECONNECTING, ///< After the first connect attempt, we'll change the state to reconnecting
+    CONNECTED,    ///< Successfully connected
+    ERROR,        ///< We couldn't connect, but we will try again soon internally
+    FINALIZED,    ///< We finalized the connection and we're never going to connect again
 };
 
 /// \brief Message to return in the callback to close the socket connection
 static constexpr int LWS_CLOSE_SOCKET_RESPONSE_MESSAGE = -1;
 
+/// \brief How much we wait for a message to be sent in seconds
+static constexpr int MESSAGE_SEND_TIMEOUT = 20;
+
 /// \brief Current connection data, sets the internal state of the
 struct ConnectionData {
-    ConnectionData() :
-        wsi(nullptr), owner(nullptr), is_running(true), is_marked_close(false), state(EConnectionState::INITIALIZE) {
+    ConnectionData(WebsocketLibwebsockets* owner) :
+        wsi(nullptr), owner(owner), is_running(true), state(EConnectionState::INITIALIZE) {
     }
 
     ~ConnectionData() {
@@ -81,52 +85,70 @@ struct ConnectionData {
         owner = nullptr;
     }
 
-    void bind_thread(std::thread::id id) {
-        lws_thread_id = id;
+public:
+    void bind_thread_client(std::thread::id id) {
+        std::lock_guard lock(this->mutex);
+        websocket_client_thread_id = id;
     }
 
-    std::thread::id get_lws_thread_id() {
-        return lws_thread_id;
+    void bind_thread_message(std::thread::id id) {
+        std::lock_guard lock(this->mutex);
+        websocket_recv_thread_id = id;
+    }
+
+    std::thread::id get_client_thread_id() {
+        std::lock_guard lock(this->mutex);
+        return websocket_client_thread_id;
+    }
+
+    std::thread::id get_message_thread_id() {
+        std::lock_guard lock(this->mutex);
+        return websocket_recv_thread_id;
     }
 
     void update_state(EConnectionState in_state) {
+        std::lock_guard lock(this->mutex);
         state = in_state;
     }
 
-    void do_interrupt() {
-        is_running = false;
+    EConnectionState get_state() {
+        std::lock_guard lock(this->mutex);
+        return state;
     }
 
-    void request_close() {
-        is_marked_close = true;
+public:
+    /// \brief Requests the threads that are processing to exit as soon as possible
+    /// in a ordered manner
+    void do_interrupt_and_exit() {
+        std::lock_guard lock(this->mutex);
+
+        if (std::this_thread::get_id() == this->websocket_client_thread_id) {
+            EVLOG_AND_THROW(std::runtime_error("Attempted to interrupt connection from websocket thread!"));
+        }
+
+        if (is_running) {
+            is_running = false;
+
+            // Notify if we are on a different thread
+            if (lws_ctx) {
+                // Attempt to revive the running thread
+                lws_cancel_service(lws_ctx.get());
+            }
+        }
     }
 
     bool is_interupted() {
+        std::lock_guard lock(this->mutex);
         return (is_running == false);
     }
 
-    bool is_connecting() {
-        return (state.load() == EConnectionState::CONNECTING);
-    }
-
-    bool is_close_requested() {
-        return is_marked_close;
-    }
-
-    auto get_state() {
-        return state.load();
-    }
-
+public:
     lws* get_conn() {
         return wsi;
     }
 
     WebsocketLibwebsockets* get_owner() {
-        return owner.load();
-    }
-
-    void set_owner(WebsocketLibwebsockets* o) {
-        owner = o;
+        return owner;
     }
 
 public:
@@ -139,20 +161,22 @@ public:
     lws* wsi;
 
 private:
-    std::atomic<WebsocketLibwebsockets*> owner;
+    std::mutex mutex;
 
-    std::thread::id lws_thread_id;
+    bool is_running;
+    EConnectionState state;
 
-    std::atomic_bool is_running;
-    std::atomic_bool is_marked_close;
-    std::atomic<EConnectionState> state;
+    WebsocketLibwebsockets* owner;
+
+private:
+    /// \brief Websocket client thread ID
+    std::thread::id websocket_client_thread_id;
+    /// \brief Websocket received message thread ID
+    std::thread::id websocket_recv_thread_id;
 };
 
 struct WebsocketMessage {
     WebsocketMessage() : sent_bytes(0), message_sent(false) {
-    }
-
-    virtual ~WebsocketMessage() {
     }
 
 public:
@@ -244,28 +268,26 @@ WebsocketLibwebsockets::WebsocketLibwebsockets(const WebsocketConnectionOptions&
 }
 
 WebsocketLibwebsockets::~WebsocketLibwebsockets() {
-    std::shared_ptr<ConnectionData> local_data = conn_data;
-    if (local_data != nullptr) {
-        local_data->do_interrupt();
+    if (this->m_is_connected || is_trying_to_connect()) {
+        this->close(WebsocketCloseReason::Normal, "websocket destructor");
     }
 
-    // At this moment the 'this->connection_mutex' is called on_conn_fail and in that case
-    // we lock it twice resulting in undefined behavior
-    std::lock_guard lock(this->connection_mutex);
-
-    if (this->websocket_thread != nullptr && this->websocket_thread->joinable()) {
-        this->websocket_thread->join();
-    }
-
-    if (this->recv_message_thread != nullptr && this->recv_message_thread->joinable()) {
-        this->recv_message_thread->join();
-    }
+    std::unique_lock lock(this->connection_mutex);
+    std::optional<std::thread> thread_callbacks;
 
     if (this->deferred_callback_thread != nullptr && this->deferred_callback_thread->joinable()) {
-        this->stop_deferred_handler.store(true);
-        this->deferred_callback_queue.notify_waiting_thread();
+        thread_callbacks = std::move(*this->deferred_callback_thread);
+    }
 
-        this->deferred_callback_thread->join();
+    // Unlock to prevent deadlock
+    lock.unlock();
+
+    // Join after the unlocks, allow the worker threads to finish
+    this->stop_deferred_handler.store(true);
+    this->deferred_callback_queue.notify_waiting_thread();
+
+    if (thread_callbacks.has_value()) {
+        thread_callbacks.value().join();
     }
 }
 
@@ -448,12 +470,9 @@ bool WebsocketLibwebsockets::tls_init(SSL_CTX* ctx, const std::string& path_chai
     return true;
 }
 
-void WebsocketLibwebsockets::recv_loop() {
-    std::shared_ptr<ConnectionData> local_data = conn_data;
-
+void WebsocketLibwebsockets::thread_websocket_message_recv_loop(std::shared_ptr<ConnectionData> local_data) {
     if (local_data == nullptr) {
-        EVLOG_error << "Failed recv loop context init!";
-        return;
+        EVLOG_AND_THROW(std::runtime_error("Null 'ConnectionData' in message thread, fatal error!"));
     }
 
     EVLOG_debug << "Init recv loop with ID: " << std::hex << std::this_thread::get_id();
@@ -480,87 +499,6 @@ void WebsocketLibwebsockets::recv_loop() {
     }
 
     EVLOG_debug << "Exit recv loop with ID: " << std::hex << std::this_thread::get_id();
-}
-
-void WebsocketLibwebsockets::client_loop() {
-    std::shared_ptr<ConnectionData> local_data = conn_data;
-
-    if (local_data == nullptr) {
-        EVLOG_error << "Failed client loop context init!";
-        return;
-    }
-
-    // Bind thread for checks
-    local_data->bind_thread(std::this_thread::get_id());
-
-    lws_client_connect_info i;
-    memset(&i, 0, sizeof(lws_client_connect_info));
-
-    // No SSL
-    int ssl_connection = 0;
-
-    if (this->connection_options.security_profile == 2 || this->connection_options.security_profile == 3) {
-        ssl_connection = LCCSCF_USE_SSL;
-
-        // Skip server hostname check
-        if (this->connection_options.verify_csms_common_name == false) {
-            ssl_connection |= LCCSCF_SKIP_SERVER_CERT_HOSTNAME_CHECK;
-        }
-
-        // Debugging if required
-        // ssl_connection |= LCCSCF_ALLOW_SELFSIGNED;
-        // ssl_connection |= LCCSCF_ALLOW_INSECURE;
-        // ssl_connection |= LCCSCF_ALLOW_EXPIRED;
-    }
-
-    auto& uri = this->connection_options.csms_uri;
-
-    // TODO: No idea who releases the strdup?
-    i.context = local_data->lws_ctx.get();
-    i.port = uri.get_port();
-    i.address = strdup(uri.get_hostname().c_str());                       // Base address, as resolved by getnameinfo
-    i.path = strdup((uri.get_path() + uri.get_chargepoint_id()).c_str()); // Path of resource
-    i.host = i.address;
-    i.origin = i.address;
-    i.ssl_connection = ssl_connection;
-    i.protocol = strdup(conversions::ocpp_protocol_version_to_string(this->connection_options.ocpp_version).c_str());
-    i.local_protocol_name = local_protocol_name;
-    i.pwsi = &local_data->wsi;
-    i.userdata = local_data.get(); // See lws_context 'user'
-
-    if (this->connection_options.iface.has_value()) {
-        i.iface = this->connection_options.iface.value().c_str();
-    }
-
-    // Print data for debug
-    EVLOG_info << "LWS connect with info "
-               << "port: [" << i.port << "] address: [" << i.address << "] path: [" << i.path << "] protocol: ["
-               << i.protocol << "]";
-
-    if (lws_client_connect_via_info(&i) == nullptr) {
-        EVLOG_error << "LWS connect failed!";
-        // This condition can occur when connecting fails to an IP address
-        // retries need to be attempted
-        local_data->update_state(EConnectionState::ERROR);
-        on_conn_fail();
-    } else {
-        EVLOG_debug << "Init client loop with ID: " << std::hex << std::this_thread::get_id();
-
-        // Process while we're running
-        int n = 0;
-
-        while (n >= 0 && (!local_data->is_interupted())) {
-            // Set to -1 for continuous servicing, of required, not recommended
-            n = lws_service(local_data->lws_ctx.get(), 0);
-
-            if (!message_queue.empty()) {
-                lws_callback_on_writable(local_data->get_conn());
-            }
-        }
-
-        // Client loop finished for our tid
-        EVLOG_debug << "Exit client loop with ID: " << std::hex << std::this_thread::get_id();
-    }
 }
 
 bool WebsocketLibwebsockets::initialize_connection_options(std::shared_ptr<ConnectionData>& local_data) {
@@ -675,16 +613,193 @@ bool WebsocketLibwebsockets::initialize_connection_options(std::shared_ptr<Conne
     return true;
 }
 
+void WebsocketLibwebsockets::thread_websocket_client_loop(std::shared_ptr<ConnectionData> local_data) {
+    if (local_data == nullptr) {
+        EVLOG_AND_THROW(std::runtime_error("Null 'ConnectionData' in client thread, fatal error!"));
+    }
+
+    EVLOG_debug << "Init client loop with ID: " << std::hex << std::this_thread::get_id();
+    bool try_reconnect = true;
+
+    do {
+        if (!initialize_connection_options(local_data)) {
+            EVLOG_error << "Could not initialize connection options.";
+
+            local_data->update_state(EConnectionState::ERROR);
+            on_conn_fail();
+        } else {
+            lws_client_connect_info i;
+            memset(&i, 0, sizeof(lws_client_connect_info));
+
+            // No SSL
+            int ssl_connection = 0;
+
+            if (this->connection_options.security_profile == 2 || this->connection_options.security_profile == 3) {
+                ssl_connection = LCCSCF_USE_SSL;
+
+                // Skip server hostname check
+                if (this->connection_options.verify_csms_common_name == false) {
+                    ssl_connection |= LCCSCF_SKIP_SERVER_CERT_HOSTNAME_CHECK;
+                }
+
+                // Debugging if required
+                // ssl_connection |= LCCSCF_ALLOW_SELFSIGNED;
+                // ssl_connection |= LCCSCF_ALLOW_INSECURE;
+                // ssl_connection |= LCCSCF_ALLOW_EXPIRED;
+            }
+
+            auto& uri = this->connection_options.csms_uri;
+
+            // TODO: No idea who releases the strdup?
+            i.context = local_data->lws_ctx.get();
+            i.port = uri.get_port();
+            i.address = strdup(uri.get_hostname().c_str()); // Base address, as resolved by getnameinfo
+            i.path = strdup((uri.get_path() + uri.get_chargepoint_id()).c_str()); // Path of resource
+            i.host = i.address;
+            i.origin = i.address;
+            i.ssl_connection = ssl_connection;
+            i.protocol =
+                strdup(conversions::ocpp_protocol_version_to_string(this->connection_options.ocpp_version).c_str());
+            i.local_protocol_name = local_protocol_name;
+            i.pwsi = &local_data->wsi; // Will set the local_data->wsi to a valid value in case of a successful connect
+            i.userdata = local_data.get(); // See lws_context 'user'
+
+            if (this->connection_options.iface.has_value()) {
+                i.iface = this->connection_options.iface.value().c_str();
+            }
+
+            // Print data for debug
+            EVLOG_info << "LWS connect with info "
+                       << "port: [" << i.port << "] address: [" << i.address << "] path: [" << i.path << "] protocol: ["
+                       << i.protocol << "]";
+
+            if (lws_client_connect_via_info(&i) == nullptr) {
+                EVLOG_error << "LWS connect failed!";
+                // This condition can occur when connecting fails to an IP address
+                // retries need to be attempted
+                local_data->update_state(EConnectionState::ERROR);
+                on_conn_fail();
+            } else {
+                // Process while we're running
+                int n = 0;
+
+                while (n >= 0 && (!local_data->is_interupted())) {
+                    // Set to -1 for continuous servicing, of required, not recommended
+                    n = lws_service(local_data->lws_ctx.get(), 0);
+
+                    if (!message_queue.empty()) {
+                        lws_callback_on_writable(local_data->get_conn());
+                    }
+                }
+            }
+        } // End init connection
+
+        long reconnect_delay = 0;
+
+        if (local_data->is_interupted() || local_data->get_state() == EConnectionState::FINALIZED) {
+            EVLOG_info << "Connection interrupted or cleanly finalized, exiting websocket loop";
+            try_reconnect = false;
+        } else if (local_data->get_state() != EConnectionState::CONNECTED) {
+            // Any other failure than a successful connect
+
+            // -1 indicates to always attempt to reconnect
+            if (this->connection_options.max_connection_attempts == -1 or
+                this->connection_attempts <= this->connection_options.max_connection_attempts) {
+                local_data->update_state(EConnectionState::RECONNECTING);
+                reconnect_delay = this->get_reconnect_interval();
+                try_reconnect = true;
+
+                // Increment reconn attempts
+                this->connection_attempts += 1;
+
+                EVLOG_info << "Connection not successful, attempting internal reconnect in: " << reconnect_delay;
+            } else {
+                local_data->update_state(EConnectionState::FINALIZED);
+                try_reconnect = false;
+
+                EVLOG_info << "Connection reconnect attempts exhausted, exiting websocket loop";
+            }
+        }
+
+        // Wait until new connection attempt
+        if (local_data->get_state() == EConnectionState::RECONNECTING) {
+            auto end_time = std::chrono::steady_clock::now() + std::chrono::milliseconds(reconnect_delay);
+
+            while ((std::chrono::steady_clock::now() < end_time) && (false == local_data->is_interupted())) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            }
+
+            if (true == local_data->is_interupted()) {
+                try_reconnect = false;
+                EVLOG_info << "Interrupred reconnect attempt, not reconnecting!";
+            } else {
+                EVLOG_info << "Attempting reconnect after a wait of: " << reconnect_delay << " milli";
+            }
+        }
+    } while (try_reconnect); // End trying to connect
+
+    // Client loop finished for our tid
+    EVLOG_debug << "Exit websocket client loop with ID: " << std::hex << std::this_thread::get_id();
+}
+
+void WebsocketLibwebsockets::clear_all_queues() {
+    message_queue.clear();
+    recv_buffered_message.clear();
+    recv_message_queue.clear();
+}
+
+void WebsocketLibwebsockets::safe_close_threads() {
+    // If we already have a connection attempt started for now shut it down first
+    std::shared_ptr<ConnectionData> local_conn_data = conn_data;
+
+    if (local_conn_data != nullptr) {
+        if (std::this_thread::get_id() == local_conn_data->get_client_thread_id()) {
+            EVLOG_AND_THROW(std::runtime_error("Trying to start connection from client thread!"));
+        } else if (std::this_thread::get_id() == local_conn_data->get_message_thread_id()) {
+            EVLOG_AND_THROW(std::runtime_error("Trying to start connection from message thread!"));
+        }
+
+        local_conn_data->do_interrupt_and_exit();
+    }
+
+    // Clear any pending outgoing/incoming messages on a new connection
+    clear_all_queues();
+
+    // Notify any message senders that are waiting, since we can't send messages any more
+    message_queue.notify_waiting_thread();
+    recv_message_queue.notify_waiting_thread();
+
+    // Wait old thread for a clean state
+    if (this->websocket_thread && this->websocket_thread->joinable()) {
+        // Awake libwebsockets thread to quickly exit
+        request_write();
+        this->websocket_thread->join();
+        this->websocket_thread.reset();
+    }
+
+    if (this->recv_message_thread && this->recv_message_thread->joinable()) {
+        // Awake the receiving message thread to finish
+        recv_message_queue.notify_waiting_thread();
+        this->recv_message_thread->join();
+        this->recv_message_thread.reset();
+    }
+}
+
+bool WebsocketLibwebsockets::is_trying_to_connect() {
+    std::scoped_lock lock(this->connection_mutex);
+
+    std::shared_ptr<ConnectionData> local_conn_data = conn_data;
+    return (local_conn_data != nullptr) && (local_conn_data->get_state() != EConnectionState::FINALIZED);
+}
+
 // Will be called from external threads as well
 bool WebsocketLibwebsockets::start_connecting() {
+    std::scoped_lock lock(this->connection_mutex);
+
     if (!this->initialized()) {
         EVLOG_error << "Websocket not properly initialized. A reconnect attempt will not be made.";
         return false;
     }
-
-    // TODO: introduce all necessary steps for:
-    // 1. a connection attempt is in progress
-    // 2. we are already connected
 
     // Clear shutting down so we allow to reconnect again as well
     this->shutting_down = false;
@@ -695,48 +810,11 @@ bool WebsocketLibwebsockets::start_connecting() {
 
     this->connected_ocpp_version = OcppProtocolVersion::Unknown;
 
-    // If we already have a connection attempt started for now shut it down
-    std::shared_ptr<ConnectionData> tmp_data = conn_data;
-    if (tmp_data != nullptr) {
-        tmp_data->do_interrupt();
-    }
+    // If we already have a connection attempt started for now shut it down first
+    safe_close_threads();
 
-    {
-        std::scoped_lock lock(connection_mutex);
-
-        // Wait old thread for a clean state
-        if (this->websocket_thread && this->websocket_thread->joinable()) {
-            // Awake libwebsockets thread to quickly exit
-            request_write();
-            this->websocket_thread->join();
-            this->websocket_thread.reset();
-        }
-
-        if (this->recv_message_thread && this->recv_message_thread->joinable()) {
-            // Awake the receiving message thread to finish
-            recv_message_queue.notify_waiting_thread();
-
-            this->recv_message_thread->join();
-            this->recv_message_thread.reset();
-        }
-    }
-
-    // New connection context
-    std::shared_ptr<ConnectionData> new_connection_data = std::make_shared<ConnectionData>();
-    new_connection_data->set_owner(this);
-
-    // TODO: Is this behavior required, or do we need to reconnect regardless of how bad the config is?
-    if (!initialize_connection_options(new_connection_data)) {
-        EVLOG_error << "Could not initialize connection options. A reconnect attempt will not be made.";
-        return false;
-    }
-
-    conn_data = new_connection_data;
-
-    if (this->deferred_callback_thread == nullptr) {
-        this->deferred_callback_thread =
-            std::make_unique<std::thread>(&WebsocketLibwebsockets::handle_deferred_callback_queue, this);
-    }
+    // Create a new connection data (only created here, owner never changes)
+    conn_data = std::make_shared<ConnectionData>(this);
 
     // Stop any pending reconnect timer
     {
@@ -744,82 +822,56 @@ bool WebsocketLibwebsockets::start_connecting() {
         this->reconnect_timer_tpm.stop();
     }
 
-    // Clear any pending outgoing/incoming messages on a new connection
-    message_queue.clear();
-    recv_message_queue.clear();
-
-    {
-        std::unique_lock<std::mutex> lock(connection_mutex);
-
-        // Release other threads
-        this->websocket_thread = std::make_unique<std::thread>(&WebsocketLibwebsockets::client_loop, this);
-
-        // TODO(ioan): remove this thread when the fix will be moved into 'MessageQueue'
-        // The reason for having a received message processing thread is that because
-        // if we dispatch a message receive from the client_loop thread, then the callback
-        // will send back another message, and since we're waiting for that message to be
-        // sent over the wire on the client_loop, not giving the opportunity to the loop to
-        // advance we will have a dead-lock
-        this->recv_message_thread = std::make_unique<std::thread>(&WebsocketLibwebsockets::recv_loop, this);
+    // This should always be running, start it only once
+    if (this->deferred_callback_thread == nullptr) {
+        this->deferred_callback_thread =
+            std::make_unique<std::thread>(&WebsocketLibwebsockets::thread_deferred_callback_queue, this);
     }
+
+    // Release other threads
+    this->websocket_thread =
+        std::make_unique<std::thread>(&WebsocketLibwebsockets::thread_websocket_client_loop, this, this->conn_data);
+
+    // TODO(ioan): remove this thread when the fix will be moved into 'MessageQueue'
+    // The reason for having a received message processing thread is that because
+    // if we dispatch a message receive from the client_loop thread, then the callback
+    // will send back another message, and since we're waiting for that message to be
+    // sent over the wire on the client_loop, not giving the opportunity to the loop to
+    // advance we will have a dead-lock
+    this->recv_message_thread = std::make_unique<std::thread>(
+        &WebsocketLibwebsockets::thread_websocket_message_recv_loop, this, this->conn_data);
+
+    // Bind threads for various checks
+    this->conn_data->bind_thread_client(this->websocket_thread->get_id());
+    this->conn_data->bind_thread_message(this->recv_message_thread->get_id());
 
     return true;
 }
 
-void WebsocketLibwebsockets::reconnect(long delay) {
-    if (this->shutting_down) {
-        EVLOG_info << "Not reconnecting because the websocket is being shutdown.";
+void WebsocketLibwebsockets::close(const WebsocketCloseReason code, const std::string& reason) {
+    bool trying_connecting = is_trying_to_connect() || this->m_is_connected;
+
+    if (!trying_connecting) {
+        EVLOG_warning << "Trying to close inactive websocket with code: " << (int)code << " and reason: " << reason
+                      << ", returning";
         return;
     }
 
-    EVLOG_info << "Reconnecting in: " << delay << "ms"
-               << ", attempt: " << this->connection_attempts;
+    EVLOG_info << "Closing websocket with code: " << (int)code << " and reason: " << reason;
 
-    if (this->m_is_connected) {
-        this->close(WebsocketCloseReason::AbnormalClose, "before reconnecting");
-    }
+    std::scoped_lock lock(this->connection_mutex);
 
-    {
-        std::lock_guard<std::mutex> lk(this->reconnect_mutex);
-        this->reconnect_timer_tpm.timeout(
-            [this]() {
-                // close connection before reconnecting
-                if (this->m_is_connected) {
-                    this->close(WebsocketCloseReason::AbnormalClose, "before reconnecting");
-                }
+    // Close any incoming thread
+    safe_close_threads();
 
-                this->start_connecting();
-            },
-            std::chrono::milliseconds(delay));
-    }
-}
-
-void WebsocketLibwebsockets::close(const WebsocketCloseReason code, const std::string& reason) {
-    if (!reason.empty()) {
-        EVLOG_info << "Closing websocket: " << reason;
-    }
+    // Release the connection data and state
+    conn_data.reset();
+    this->m_is_connected = false;
 
     {
         std::lock_guard<std::mutex> lk(this->reconnect_mutex);
         this->reconnect_timer_tpm.stop();
     }
-
-    std::shared_ptr<ConnectionData> local_data = conn_data;
-    if (local_data != nullptr) {
-        // Set the trigger from us
-        local_data->request_close();
-        local_data->do_interrupt();
-    }
-    // Release the connection data
-    conn_data.reset();
-
-    this->m_is_connected = false;
-
-    // Notify any message senders that are waiting, since we can't send messages any more
-    message_queue.notify_waiting_thread();
-
-    // Clear any irrelevant data after a DC
-    recv_buffered_message.clear();
 
     this->push_deferred_callback([this, code]() {
         if (this->closed_callback) {
@@ -836,6 +888,32 @@ void WebsocketLibwebsockets::close(const WebsocketCloseReason code, const std::s
     });
 }
 
+void WebsocketLibwebsockets::reconnect(long delay) {
+    if (this->shutting_down) {
+        EVLOG_info << "Not reconnecting because the websocket is being shutdown.";
+        return;
+    }
+
+    if (this->m_is_connected || is_trying_to_connect()) {
+        this->close(WebsocketCloseReason::AbnormalClose, "before manually reconnecting");
+    }
+
+    EVLOG_info << "Externally called reconnect in: " << delay << "ms"
+               << ", attempt: " << this->connection_attempts;
+
+    std::lock_guard<std::mutex> lk(this->reconnect_mutex);
+    this->reconnect_timer_tpm.timeout(
+        [this]() {
+            // close connection before reconnecting
+            if (this->m_is_connected || is_trying_to_connect()) {
+                this->close(WebsocketCloseReason::AbnormalClose, "before manually reconnecting");
+            }
+
+            this->start_connecting();
+        },
+        std::chrono::milliseconds(delay));
+}
+
 void WebsocketLibwebsockets::on_conn_connected() {
     EVLOG_info << "OCPP client successfully connected to server with version: " << this->connected_ocpp_version;
 
@@ -844,7 +922,7 @@ void WebsocketLibwebsockets::on_conn_connected() {
     this->reconnecting = false;
 
     // Clear any irrelevant data after a DC
-    recv_buffered_message.clear();
+    clear_all_queues();
 
     this->push_deferred_callback([this]() {
         if (connected_callback) {
@@ -858,15 +936,18 @@ void WebsocketLibwebsockets::on_conn_connected() {
 void WebsocketLibwebsockets::on_conn_close() {
     EVLOG_info << "OCPP client closed connection to server";
 
-    std::lock_guard<std::mutex> lk(this->connection_mutex);
     this->m_is_connected = false;
-    this->cancel_reconnect_timer();
+
+    {
+        std::lock_guard<std::mutex> lk(this->reconnect_mutex);
+        this->reconnect_timer_tpm.stop();
+    }
+
+    // Clear any irrelevant data after a DC
+    clear_all_queues();
 
     // Notify any message senders that are waiting, since we can't send messages any more
     message_queue.notify_waiting_thread();
-
-    // Clear any irrelevant data after a DC
-    recv_buffered_message.clear();
 
     this->push_deferred_callback([this]() {
         if (this->closed_callback) {
@@ -886,7 +967,6 @@ void WebsocketLibwebsockets::on_conn_close() {
 void WebsocketLibwebsockets::on_conn_fail() {
     EVLOG_error << "OCPP client connection to server failed";
 
-    std::lock_guard<std::mutex> lk(this->connection_mutex);
     if (this->m_is_connected) {
         this->push_deferred_callback([this]() {
             if (this->disconnected_callback) {
@@ -898,18 +978,12 @@ void WebsocketLibwebsockets::on_conn_fail() {
     }
 
     this->m_is_connected = false;
-    recv_buffered_message.clear();
 
-    // -1 indicates to always attempt to reconnect
-    if (this->connection_options.max_connection_attempts == -1 or
-        this->connection_attempts <= this->connection_options.max_connection_attempts) {
-        this->reconnect(this->get_reconnect_interval());
+    // Clear any irrelevant data after a DC
+    clear_all_queues();
 
-        // Increment reconn attempts
-        this->connection_attempts += 1;
-    } else {
-        this->close(WebsocketCloseReason::Normal, "reconnect attempts exhausted");
-    }
+    // Notify any message senders that are waiting, since we can't send messages any more
+    message_queue.notify_waiting_thread();
 }
 
 void WebsocketLibwebsockets::on_message(std::string&& message) {
@@ -1050,8 +1124,9 @@ void WebsocketLibwebsockets::on_writable() {
 }
 
 void WebsocketLibwebsockets::request_write() {
-    std::shared_ptr<ConnectionData> local_data = conn_data;
     if (this->m_is_connected) {
+        std::shared_ptr<ConnectionData> local_data = conn_data;
+
         if (local_data != nullptr) {
             if (local_data->get_conn()) {
                 // Notify waiting processing thread to wake up. According to docs it is ok to call from another
@@ -1073,7 +1148,7 @@ void WebsocketLibwebsockets::poll_message(const std::shared_ptr<WebsocketMessage
     std::shared_ptr<ConnectionData> local_data = conn_data;
 
     if (local_data != nullptr) {
-        auto cd_tid = local_data->get_lws_thread_id();
+        auto cd_tid = local_data->get_client_thread_id();
 
         if (std::this_thread::get_id() == cd_tid) {
             EVLOG_AND_THROW(std::runtime_error("Deadlock detected, polling send from client lws thread!"));
@@ -1092,7 +1167,7 @@ void WebsocketLibwebsockets::poll_message(const std::shared_ptr<WebsocketMessage
     // Request a write callback
     request_write();
 
-    message_queue.wait_on_custom([&] { return (true == msg->message_sent); }, 20);
+    message_queue.wait_on_custom([&] { return (true == msg->message_sent); }, MESSAGE_SEND_TIMEOUT);
 
     if (msg->message_sent) {
         EVLOG_debug << "Successfully sent last message over TLS websocket!";
@@ -1274,7 +1349,6 @@ int WebsocketLibwebsockets::process_callback(void* wsi_ptr, int callback_reason,
 
         if (close_code != LWS_CLOSE_STATUS_NORMAL) {
             data->update_state(EConnectionState::ERROR);
-            data->do_interrupt();
             on_conn_fail();
         }
 
@@ -1283,17 +1357,16 @@ int WebsocketLibwebsockets::process_callback(void* wsi_ptr, int callback_reason,
     }
 
     case LWS_CALLBACK_CLIENT_CLOSED:
-        EVLOG_info << "Client closed, was requested: " << data->is_close_requested();
+        EVLOG_info << "Client closed, was requested: " << data->is_interupted();
 
         // Determine if the close connection was requested or if the server went away
-        if (data->is_close_requested()) {
+        // case in which we receive a 'LWS_CALLBACK_CLIENT_CLOSED' that was not requested
+        if (data->is_interupted()) {
             data->update_state(EConnectionState::FINALIZED);
-            data->do_interrupt();
             on_conn_close();
         } else {
             // It means the server went away, attempt to reconnect
             data->update_state(EConnectionState::ERROR);
-            data->do_interrupt();
             on_conn_fail();
         }
 
@@ -1364,7 +1437,7 @@ void WebsocketLibwebsockets::push_deferred_callback(const std::function<void()>&
     this->deferred_callback_queue.push(callback);
 }
 
-void WebsocketLibwebsockets::handle_deferred_callback_queue() {
+void WebsocketLibwebsockets::thread_deferred_callback_queue() {
     while (true) {
         std::function<void()> callback;
         {

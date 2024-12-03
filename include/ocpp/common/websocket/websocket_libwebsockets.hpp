@@ -137,42 +137,6 @@ public:
 
     void set_connection_options(const WebsocketConnectionOptions& connection_options) override;
 
-    /*
-        Behavior to clarity:
-            1. what happens when we called 'start_connecting' and someone called it again:
-                -
-            2. what happens when we 'start_connecting' and it returns 'false' because of
-            some very bad config. should we still attempt to reconnect on a 'false' return?
-            3. why is a function called 'reconnect' required, if the 'start_connecting'
-            handles the reconnection internally? does anyone use the 'reconnect' externally?
-            4. what happens when we 'start_connecting' and are in the process of attempting to
-            connect but we are not connected yet, just attempting to in 'lws_client_connect_via_info'
-            and while we are not connecting someone calls 'start_connecting' again? Should we close
-            the connection, reinitialize the connection options and restart the client thread? but if
-            somebody checked 'is_connected' and because it returns false while we are 'trying' it doesn't
-            attempt to disconnect first before calling 'start_connecting'
-            5. instead of having a 'disconnect' or 'close' function shouldn't we have a 'stop_connecting'
-            one that does the opposite of 'start_connecting', that is to stop the attempts to connect?
-            6. in that case should we re-name 'bool Websocket::is_connected()' to 'is_connecting()'?
-
-
-            7. Looks bad because of the above reasons
-            if (this->is_websocket_connected()) {
-                // After the websocket gets closed a reconnect will be triggered
-                this->websocket->disconnect(WebsocketCloseReason::ServiceRestart);
-            } else {
-                this->try_connect_websocket();
-            }
-
-            should become:
-            if (this->is_websocket_trying_to_connect()) {
-                // After the websocket gets closed a reconnect will be triggered
-                this->websocket->stop_connecting(WebsocketCloseReason::ServiceRestart);
-            } else {
-                this->try_start_connecting_websocket();
-            }
-    */
-
     /// \brief Starts the connection attempts. It will try to initialize the connection options and the
     ///        security context
     /// \returns true if the websocket successfully initialized the connection options and security context and
@@ -184,6 +148,10 @@ public:
     /// \param reason parameter
     /// \param delay delay of the reconnect attempt
     void reconnect(long delay) override;
+
+    /// \brief Indicates if the websocket has a valid connection data and is trying to
+    ///        connect/reconnect internally even if for the moment it might not be connected
+    bool is_trying_to_connect();
 
     /// \brief closes the websocket
     void close(const WebsocketCloseReason code, const std::string& reason) override;
@@ -205,8 +173,16 @@ private:
 
     bool tls_init(struct ssl_ctx_st* ctx, const std::string& path_chain, const std::string& path_key, bool custom_key,
                   std::optional<std::string>& password);
-    void client_loop();
-    void recv_loop();
+
+    /// \brief Websocket processing thread loop
+    void thread_websocket_client_loop(std::shared_ptr<ConnectionData> local_data);
+
+    /// \brief Function to handle received messages. Required since from the received message
+    ///        callback we also send messages that must block and wait on the client thread
+    void thread_websocket_message_recv_loop(std::shared_ptr<ConnectionData> local_data);
+
+    /// \brief Function to handle the deferred callbacks
+    void thread_deferred_callback_queue();
 
     /// \brief Called when a TLS websocket connection is established, calls the connected callback
     void on_conn_connected();
@@ -227,11 +203,14 @@ private:
 
     void poll_message(const std::shared_ptr<WebsocketMessage>& msg);
 
-    /// \brief Function to handle the deferred callbacks
-    void handle_deferred_callback_queue();
-
     /// \brief Add a callback to the queue of callbacks to be executed. All will be executed from a single thread
     void push_deferred_callback(const std::function<void()>& callback);
+
+    // \brief Safely closes the already running connection threads
+    void safe_close_threads();
+
+    /// \brief Clears all messages and message queues both incoming and outgoing
+    void clear_all_queues();
 
 private:
     std::shared_ptr<EvseSecurity> evse_security;
