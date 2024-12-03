@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
-#include <cert_rehash/c_rehash.hpp>
 #include <evse_security/crypto/openssl/openssl_provider.hpp>
 #include <ocpp/common/websocket/websocket_libwebsockets.hpp>
 
@@ -380,7 +379,6 @@ bool WebsocketLibwebsockets::tls_init(SSL_CTX* ctx, const std::string& path_chai
         EVLOG_info << "Loading CA csms bundle to verify server certificate: " << ca_csms;
 
         if (std::filesystem::is_directory(ca_csms)) {
-            hash_dir(ca_csms.c_str());
             rc = SSL_CTX_load_verify_locations(ctx, NULL, ca_csms.c_str());
         } else {
             rc = SSL_CTX_load_verify_locations(ctx, ca_csms.c_str(), NULL);
