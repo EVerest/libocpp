@@ -2495,7 +2495,7 @@ void ChargePointImpl::handleTriggerMessageRequest(ocpp::Call<TriggerMessageReque
                 const auto meter_value = this->get_latest_meter_value(
                     c, this->configuration->getMeterValuesSampledDataVector(), ReadingContext::Trigger);
                 if (meter_value.has_value()) {
-                    this->send_meter_value_trigger(c, meter_value.value(), true);
+                    this->send_meter_value(c, meter_value.value(), true);
                 } else {
                     EVLOG_warning << "Could not send triggered meter value for uninitialized measurement at connector#"
                                   << c;
