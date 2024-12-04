@@ -17,8 +17,6 @@
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
 
-#include <pthread.h>
-
 #define USING_OPENSSL_3 (OPENSSL_VERSION_NUMBER >= 0x30000000L)
 
 #if USING_OPENSSL_3
@@ -270,12 +268,13 @@ WebsocketLibwebsockets::WebsocketLibwebsockets(const WebsocketConnectionOptions&
 }
 
 WebsocketLibwebsockets::~WebsocketLibwebsockets() {
-    if (this->m_is_connected || is_trying_to_connect()) {
-        this->close(WebsocketCloseReason::Normal, "websocket destructor");
-    }
-
     std::scoped_lock lock(this->connection_mutex);
 
+    if (this->m_is_connected || is_trying_to_connect_internal()) {
+        this->close_internal(WebsocketCloseReason::Normal, "websocket destructor");
+    }
+
+    // In the dtor we must make sure the deferred callback thread finishes
     if (this->deferred_callback_thread != nullptr && this->deferred_callback_thread->joinable()) {
         this->stop_deferred_handler.store(true);
         this->deferred_callback_queue.notify_waiting_thread();
@@ -770,7 +769,6 @@ void WebsocketLibwebsockets::safe_close_threads() {
 
     // Notify any message senders that are waiting, since we can't send messages any more
     message_queue.notify_waiting_thread();
-    recv_message_queue.notify_waiting_thread();
 
     // Wait old thread for a clean state
     if (this->websocket_thread && this->websocket_thread->joinable()) {
@@ -790,7 +788,10 @@ void WebsocketLibwebsockets::safe_close_threads() {
 
 bool WebsocketLibwebsockets::is_trying_to_connect() {
     std::scoped_lock lock(this->connection_mutex);
+    return is_trying_to_connect_internal();
+}
 
+bool WebsocketLibwebsockets::is_trying_to_connect_internal() {
     std::shared_ptr<ConnectionData> local_conn_data = conn_data;
     return (local_conn_data != nullptr) && (local_conn_data->get_state() != EConnectionState::FINALIZED);
 }
@@ -835,8 +836,6 @@ bool WebsocketLibwebsockets::start_connecting() {
     this->websocket_thread =
         std::make_unique<std::thread>(&WebsocketLibwebsockets::thread_websocket_client_loop, this, this->conn_data);
 
-    pthread_setname_np(websocket_thread->native_handle(), "Websocket_Thread_Loop");
-
     // TODO(ioan): remove this thread when the fix will be moved into 'MessageQueue'
     // The reason for having a received message processing thread is that because
     // if we dispatch a message receive from the client_loop thread, then the callback
@@ -846,8 +845,6 @@ bool WebsocketLibwebsockets::start_connecting() {
     this->recv_message_thread = std::make_unique<std::thread>(
         &WebsocketLibwebsockets::thread_websocket_message_recv_loop, this, this->conn_data);
 
-    pthread_setname_np(websocket_thread->native_handle(), "Websocket_Recv_Message_Loop");
-
     // Bind threads for various checks
     this->conn_data->bind_thread_client(this->websocket_thread->get_id());
     this->conn_data->bind_thread_message(this->recv_message_thread->get_id());
@@ -856,7 +853,12 @@ bool WebsocketLibwebsockets::start_connecting() {
 }
 
 void WebsocketLibwebsockets::close(const WebsocketCloseReason code, const std::string& reason) {
-    bool trying_connecting = is_trying_to_connect() || this->m_is_connected;
+    std::scoped_lock lock(this->connection_mutex);
+    close_internal(code, reason);
+}
+
+void WebsocketLibwebsockets::close_internal(const WebsocketCloseReason code, const std::string& reason) {
+    bool trying_connecting = is_trying_to_connect_internal() || this->m_is_connected;
 
     if (!trying_connecting) {
         EVLOG_warning << "Trying to close inactive websocket with code: " << (int)code << " and reason: " << reason
@@ -865,8 +867,6 @@ void WebsocketLibwebsockets::close(const WebsocketCloseReason code, const std::s
     }
 
     EVLOG_info << "Closing websocket with code: " << (int)code << " and reason: " << reason;
-
-    std::scoped_lock lock(this->connection_mutex);
 
     // Close any ongoing thread
     safe_close_threads();
@@ -896,13 +896,15 @@ void WebsocketLibwebsockets::close(const WebsocketCloseReason code, const std::s
 }
 
 void WebsocketLibwebsockets::reconnect(long delay) {
+    std::scoped_lock lock(this->connection_mutex);
+
     if (this->shutting_down) {
         EVLOG_info << "Not reconnecting because the websocket is being shutdown.";
         return;
     }
 
-    if (this->m_is_connected || is_trying_to_connect()) {
-        this->close(WebsocketCloseReason::AbnormalClose, "before manually reconnecting");
+    if (this->m_is_connected || is_trying_to_connect_internal()) {
+        this->close_internal(WebsocketCloseReason::AbnormalClose, "before manually reconnecting");
     }
 
     EVLOG_info << "Externally called reconnect in: " << delay << "ms"
@@ -919,91 +921,6 @@ void WebsocketLibwebsockets::reconnect(long delay) {
             this->start_connecting();
         },
         std::chrono::milliseconds(delay));
-}
-
-void WebsocketLibwebsockets::on_conn_connected() {
-    EVLOG_info << "OCPP client successfully connected to server with version: " << this->connected_ocpp_version;
-
-    this->connection_attempts = 1; // reset connection attempts
-    this->m_is_connected = true;
-    this->reconnecting = false;
-
-    // Clear any irrelevant data after a DC
-    clear_all_queues();
-
-    this->push_deferred_callback([this]() {
-        if (connected_callback) {
-            this->connected_callback(this->connected_ocpp_version);
-        } else {
-            EVLOG_error << "Connected callback not registered!";
-        }
-    });
-}
-
-void WebsocketLibwebsockets::on_conn_close() {
-    EVLOG_info << "OCPP client closed connection to server";
-
-    this->m_is_connected = false;
-
-    {
-        std::lock_guard<std::mutex> lk(this->reconnect_mutex);
-        this->reconnect_timer_tpm.stop();
-    }
-
-    // Clear any irrelevant data after a DC
-    clear_all_queues();
-
-    // Notify any message senders that are waiting, since we can't send messages any more
-    message_queue.notify_waiting_thread();
-
-    this->push_deferred_callback([this]() {
-        if (this->closed_callback) {
-            this->closed_callback(WebsocketCloseReason::Normal);
-        } else {
-            EVLOG_error << "Closed callback not registered!";
-        }
-
-        if (this->disconnected_callback) {
-            this->disconnected_callback();
-        } else {
-            EVLOG_error << "Disconnected callback not registered!";
-        }
-    });
-}
-
-void WebsocketLibwebsockets::on_conn_fail() {
-    EVLOG_error << "OCPP client connection to server failed";
-
-    if (this->m_is_connected) {
-        this->push_deferred_callback([this]() {
-            if (this->disconnected_callback) {
-                this->disconnected_callback();
-            } else {
-                EVLOG_error << "Disconnected callback not registered!";
-            }
-        });
-    }
-
-    this->m_is_connected = false;
-
-    // Clear any irrelevant data after a DC
-    clear_all_queues();
-
-    // Notify any message senders that are waiting, since we can't send messages any more
-    message_queue.notify_waiting_thread();
-
-    // TODO: See if this is required for a faster fail
-    // lws_set_timeout(conn_data->get_conn(), (enum pending_timeout)1, LWS_TO_KILL_ASYNC);
-}
-
-void WebsocketLibwebsockets::on_message(std::string&& message) {
-    if (!this->initialized()) {
-        EVLOG_error << "Message received but TLS websocket has not been correctly initialized. Discarding message.";
-        return;
-    }
-
-    EVLOG_debug << "Received message over TLS websocket polling for process: " << message;
-    recv_message_queue.push(std::move(message));
 }
 
 static bool send_internal(lws* wsi, WebsocketMessage* msg) {
@@ -1052,83 +969,6 @@ static bool send_internal(lws* wsi, WebsocketMessage* msg) {
     }
 
     return true;
-}
-
-void WebsocketLibwebsockets::on_writable() {
-    if (!this->initialized() || !this->m_is_connected) {
-        EVLOG_error << "Message sending but TLS websocket has not been correctly initialized/connected.";
-        return;
-    }
-
-    std::shared_ptr<ConnectionData> local_data = conn_data;
-
-    if (local_data == nullptr) {
-        EVLOG_error << "Message sending TLS websocket with null connection data!";
-        return;
-    }
-
-    if (local_data->is_interupted() || local_data->get_state() == EConnectionState::FINALIZED) {
-        EVLOG_error << "Trying to write message to interrupted/finalized state!";
-        return;
-    }
-
-    // Execute while we have messages that were polled
-    while (true) {
-        WebsocketMessage* message = nullptr;
-
-        // Break if we have en empty queue
-        if (message_queue.empty())
-            break;
-
-        message = message_queue.front().get();
-
-        if (message == nullptr) {
-            EVLOG_AND_THROW(std::runtime_error("Null message in queue, fatal error!"));
-        }
-
-        // This message was polled in a previous iteration
-        if (message->sent_bytes >= message->payload.length()) {
-            EVLOG_debug << "Websocket message fully written, popping processing thread from queue!";
-
-            // If we have written all bytes to libwebsockets it means that if we received
-            // this writable callback everything is sent over the wire, mark it as sent and remove
-            message->message_sent = true;
-            message_queue.pop();
-
-            EVLOG_debug << "Notifying waiting thread!";
-            // Notify any waiting thread to check it's state
-            message_queue.notify_waiting_thread();
-        } else {
-            // If the message was not polled, we reached the first unpolled and break
-            break;
-        }
-    }
-
-    // If we still have message ONLY poll a single one that can be processed in the invoke of the function
-    // libwebsockets is designed so that when a message is sent to the wire from the internal buffer it
-    // will invoke 'on_writable' again and we can execute the code above
-    if (!message_queue.empty()) {
-        // Poll a single message
-        EVLOG_debug << "Client writable, sending message part!";
-
-        WebsocketMessage* message = message_queue.front().get();
-
-        if (message == nullptr) {
-            EVLOG_AND_THROW(std::runtime_error("Null message in queue, fatal error!"));
-        }
-
-        if (message->sent_bytes >= message->payload.length()) {
-            EVLOG_AND_THROW(std::runtime_error("Already polled message should be handled above, fatal error!"));
-        }
-
-        // Continue sending message part, for a single message only
-        bool sent = send_internal(local_data->get_conn(), message);
-
-        // If we failed, attempt again later
-        if (!sent) {
-            message->sent_bytes = 0;
-        }
-    }
 }
 
 void WebsocketLibwebsockets::request_write() {
@@ -1386,7 +1226,7 @@ int WebsocketLibwebsockets::process_callback(void* wsi_ptr, int callback_reason,
         break;
 
     case LWS_CALLBACK_CLIENT_WRITEABLE:
-        on_writable();
+        on_conn_writable();
         if (false == message_queue.empty()) {
             lws_callback_on_writable(wsi);
         }
@@ -1403,7 +1243,7 @@ int WebsocketLibwebsockets::process_callback(void* wsi_ptr, int callback_reason,
 
         // Message is complete
         if (lws_remaining_packet_payload(wsi) <= 0) {
-            on_message(std::move(recv_buffered_message));
+            on_conn_message(std::move(recv_buffered_message));
             recv_buffered_message.clear();
         }
 
@@ -1436,6 +1276,173 @@ int WebsocketLibwebsockets::process_callback(void* wsi_ptr, int callback_reason,
 
     // Return -1 on fatal error (-1 is request to close the socket)
     return 0;
+}
+
+void WebsocketLibwebsockets::on_conn_connected() {
+    // Called on the websocket client thread
+    EVLOG_info << "OCPP client successfully connected to server with version: " << this->connected_ocpp_version;
+
+    this->connection_attempts = 1; // reset connection attempts
+    this->m_is_connected = true;
+    this->reconnecting = false;
+
+    // Clear any irrelevant data after a DC
+    clear_all_queues();
+
+    this->push_deferred_callback([this]() {
+        if (connected_callback) {
+            this->connected_callback(this->connected_ocpp_version);
+        } else {
+            EVLOG_error << "Connected callback not registered!";
+        }
+    });
+}
+
+void WebsocketLibwebsockets::on_conn_close() {
+    // Called on the websocket client thread
+    EVLOG_info << "OCPP client closed connection to server";
+
+    this->m_is_connected = false;
+
+    {
+        std::lock_guard<std::mutex> lk(this->reconnect_mutex);
+        this->reconnect_timer_tpm.stop();
+    }
+
+    // Clear any irrelevant data after a DC
+    clear_all_queues();
+
+    // Notify any message senders that are waiting, since we can't send messages any more
+    message_queue.notify_waiting_thread();
+
+    this->push_deferred_callback([this]() {
+        if (this->closed_callback) {
+            this->closed_callback(WebsocketCloseReason::Normal);
+        } else {
+            EVLOG_error << "Closed callback not registered!";
+        }
+
+        if (this->disconnected_callback) {
+            this->disconnected_callback();
+        } else {
+            EVLOG_error << "Disconnected callback not registered!";
+        }
+    });
+}
+
+void WebsocketLibwebsockets::on_conn_message(std::string&& message) {
+    // Called on the websocket client thread
+    if (!this->initialized()) {
+        EVLOG_error << "Message received but TLS websocket has not been correctly initialized. Discarding message.";
+        return;
+    }
+
+    EVLOG_debug << "Received message over TLS websocket polling for process: " << message;
+    recv_message_queue.push(std::move(message));
+}
+
+void WebsocketLibwebsockets::on_conn_writable() {
+    // Called on the websocket client thread
+    if (!this->initialized() || !this->m_is_connected) {
+        EVLOG_error << "Message sending but TLS websocket has not been correctly initialized/connected.";
+        return;
+    }
+
+    std::shared_ptr<ConnectionData> local_data = conn_data;
+
+    if (local_data == nullptr) {
+        EVLOG_error << "Message sending TLS websocket with null connection data!";
+        return;
+    }
+
+    if (local_data->is_interupted() || local_data->get_state() == EConnectionState::FINALIZED) {
+        EVLOG_error << "Trying to write message to interrupted/finalized state!";
+        return;
+    }
+
+    // Execute while we have messages that were polled
+    while (true) {
+        WebsocketMessage* message = nullptr;
+
+        // Break if we have en empty queue
+        if (message_queue.empty())
+            break;
+
+        message = message_queue.front().get();
+
+        if (message == nullptr) {
+            EVLOG_AND_THROW(std::runtime_error("Null message in queue, fatal error!"));
+        }
+
+        // This message was polled in a previous iteration
+        if (message->sent_bytes >= message->payload.length()) {
+            EVLOG_debug << "Websocket message fully written, popping processing thread from queue!";
+
+            // If we have written all bytes to libwebsockets it means that if we received
+            // this writable callback everything is sent over the wire, mark it as sent and remove
+            message->message_sent = true;
+            message_queue.pop();
+
+            EVLOG_debug << "Notifying waiting thread!";
+            // Notify any waiting thread to check it's state
+            message_queue.notify_waiting_thread();
+        } else {
+            // If the message was not polled, we reached the first unpolled and break
+            break;
+        }
+    }
+
+    // If we still have message ONLY poll a single one that can be processed in the invoke of the function
+    // libwebsockets is designed so that when a message is sent to the wire from the internal buffer it
+    // will invoke 'on_conn_writable' again and we can execute the code above
+    if (!message_queue.empty()) {
+        // Poll a single message
+        EVLOG_debug << "Client writable, sending message part!";
+
+        WebsocketMessage* message = message_queue.front().get();
+
+        if (message == nullptr) {
+            EVLOG_AND_THROW(std::runtime_error("Null message in queue, fatal error!"));
+        }
+
+        if (message->sent_bytes >= message->payload.length()) {
+            EVLOG_AND_THROW(std::runtime_error("Already polled message should be handled above, fatal error!"));
+        }
+
+        // Continue sending message part, for a single message only
+        bool sent = send_internal(local_data->get_conn(), message);
+
+        // If we failed, attempt again later
+        if (!sent) {
+            message->sent_bytes = 0;
+        }
+    }
+}
+
+void WebsocketLibwebsockets::on_conn_fail() {
+    // Called on the websocket client thread
+    EVLOG_error << "OCPP client connection to server failed";
+
+    if (this->m_is_connected) {
+        this->push_deferred_callback([this]() {
+            if (this->disconnected_callback) {
+                this->disconnected_callback();
+            } else {
+                EVLOG_error << "Disconnected callback not registered!";
+            }
+        });
+    }
+
+    this->m_is_connected = false;
+
+    // Clear any irrelevant data after a DC
+    clear_all_queues();
+
+    // Notify any message senders that are waiting, since we can't send messages any more
+    message_queue.notify_waiting_thread();
+
+    // TODO: See if this is required for a faster fail
+    // lws_set_timeout(conn_data->get_conn(), (enum pending_timeout)1, LWS_TO_KILL_ASYNC);
 }
 
 void WebsocketLibwebsockets::push_deferred_callback(const std::function<void()>& callback) {
