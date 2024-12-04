@@ -90,10 +90,9 @@ public:
     explicit WebsocketBase();
     virtual ~WebsocketBase();
 
-    /// \brief Starts the connection attempts. It will try to initialize the connection options and the
-    ///        security context
-    /// \returns true if the websocket successfully initialized the connection options and security context and
-    ///          if it successfully started the connection thread. Does not wait for a successful connection
+    /// \brief Starts the connection attempts. It will init the websocket processing thread
+    /// \returns true if the websocket is successfully initialized, false otherwise. Does
+    ///          not wait for a successful connection
     virtual bool start_connecting() = 0;
 
     /// \brief sets this connection_options to the given \p connection_options and resets the connection_attempts

@@ -137,10 +137,9 @@ public:
 
     void set_connection_options(const WebsocketConnectionOptions& connection_options) override;
 
-    /// \brief Starts the connection attempts. It will try to initialize the connection options and the
-    ///        security context
-    /// \returns true if the websocket successfully initialized the connection options and security context and
-    ///          if it successfully started the connection thread. Does not wait for a successful connection
+    /// \brief Starts the connection attempts. It will init the websocket processing thread
+    /// \returns true if the websocket is successfully initialized, false otherwise. Does
+    ///          not wait for a successful connection
     bool start_connecting() override;
 
     /// \brief Reconnects the websocket after the delay. Will stop the current connection attempts
@@ -148,10 +147,6 @@ public:
     /// \param reason parameter
     /// \param delay delay of the reconnect attempt
     void reconnect(long delay) override;
-
-    /// \brief Indicates if the websocket has a valid connection data and is trying to
-    ///        connect/reconnect internally even if for the moment it might not be connected
-    bool is_trying_to_connect();
 
     /// \brief closes the websocket
     void close(const WebsocketCloseReason code, const std::string& reason) override;
@@ -162,6 +157,10 @@ public:
 
     /// \brief send a websocket ping
     void ping() override;
+
+    /// \brief Indicates if the websocket has a valid connection data and is trying to
+    ///        connect/reconnect internally even if for the moment it might not be connected
+    bool is_trying_to_connect();
 
 public:
     int process_callback(void* wsi_ptr, int callback_reason, void* user, void* in, size_t len);
