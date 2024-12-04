@@ -127,7 +127,7 @@ void Reservation::handle_reserve_now_request(Call<ReserveNowRequest> call) {
     } else {
         // No evse id. Just search for all evse's if there is something available for reservation
         const uint64_t number_of_evses = evse_manager.get_number_of_evses();
-        if (number_of_evses <= 0) {
+        if (number_of_evses == 0) {
             send_reserve_now_rejected_response(call.uniqueId, "No evse's found in charging station");
             EVLOG_error << "Trying to make a reservation, but number of evse's is 0";
             return;
