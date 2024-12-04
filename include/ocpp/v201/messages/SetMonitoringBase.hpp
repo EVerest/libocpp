@@ -38,8 +38,8 @@ std::ostream& operator<<(std::ostream& os, const SetMonitoringBaseRequest& k);
 /// \brief Contains a OCPP SetMonitoringBaseResponse message
 struct SetMonitoringBaseResponse : public ocpp::Message {
     GenericDeviceModelStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this SetMonitoringBaseResponse message as a human readable string
     /// \returns the message type as a human readable string

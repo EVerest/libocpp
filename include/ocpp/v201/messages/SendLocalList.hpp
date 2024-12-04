@@ -19,8 +19,8 @@ namespace v201 {
 struct SendLocalListRequest : public ocpp::Message {
     int32_t versionNumber;
     UpdateEnum updateType;
-    std::optional<CustomData> customData;
     std::optional<std::vector<AuthorizationData>> localAuthorizationList;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this SendLocalList message as a human readable string
     /// \returns the message type as a human readable string
@@ -40,8 +40,8 @@ std::ostream& operator<<(std::ostream& os, const SendLocalListRequest& k);
 /// \brief Contains a OCPP SendLocalListResponse message
 struct SendLocalListResponse : public ocpp::Message {
     SendLocalListStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this SendLocalListResponse message as a human readable string
     /// \returns the message type as a human readable string

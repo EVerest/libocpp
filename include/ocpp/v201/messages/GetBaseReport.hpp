@@ -39,8 +39,8 @@ std::ostream& operator<<(std::ostream& os, const GetBaseReportRequest& k);
 /// \brief Contains a OCPP GetBaseReportResponse message
 struct GetBaseReportResponse : public ocpp::Message {
     GenericDeviceModelStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this GetBaseReportResponse message as a human readable string
     /// \returns the message type as a human readable string
