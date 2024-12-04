@@ -661,7 +661,7 @@ void WebsocketLibwebsockets::thread_websocket_client_loop(std::shared_ptr<Connec
         EVLOG_AND_THROW(std::runtime_error("Null 'ConnectionData' in client thread, fatal error!"));
     }
 
-    EVLOG_debug << "Init client loop with ID: " << std::hex << std::this_thread::get_id();
+    EVLOG_info << "Init client loop with ID: " << std::hex << std::this_thread::get_id();
     bool try_reconnect = true;
 
     do {
@@ -757,6 +757,7 @@ void WebsocketLibwebsockets::thread_websocket_client_loop(std::shared_ptr<Connec
         if (local_data->is_interupted() || local_data->get_state() == EConnectionState::FINALIZED) {
             EVLOG_info << "Connection interrupted or cleanly finalized, exiting websocket loop";
             try_reconnect = false;
+            // TODO:
         } else if (local_data->get_state() != EConnectionState::CONNECTED) {
             // Any other failure than a successful connect
 
@@ -798,7 +799,7 @@ void WebsocketLibwebsockets::thread_websocket_client_loop(std::shared_ptr<Connec
     } while (try_reconnect); // End trying to connect
 
     // Client loop finished for our tid
-    EVLOG_debug << "Exit websocket client loop with ID: " << std::hex << std::this_thread::get_id();
+    EVLOG_info << "Exit websocket client loop with ID: " << std::hex << std::this_thread::get_id();
 }
 
 void WebsocketLibwebsockets::clear_all_queues() {
@@ -1219,7 +1220,7 @@ int WebsocketLibwebsockets::process_callback(void* wsi_ptr, int callback_reason,
 
     case LWS_CALLBACK_CLIENT_CONNECTION_ERROR: {
         std::string error_message = (in ? reinterpret_cast<char*>(in) : "(null)");
-        EVLOG_error << "CLIENT_CONNECTION_ERROR: " << error_message;
+        EVLOG_error << "CLIENT_CONNECTION_ERROR: [" << error_message << "]. Attempting reconnect";
         ERR_print_errors_fp(stderr);
 
         if (error_message.find("HS: ws upgrade unauthorized") != std::string::npos) {
@@ -1232,12 +1233,8 @@ int WebsocketLibwebsockets::process_callback(void* wsi_ptr, int callback_reason,
             });
         }
 
-        EVLOG_error << "Updating ERROR STATE";
-
         data->update_state(EConnectionState::ERROR);
         on_conn_fail();
-
-        EVLOG_error << "Failed conn and returning";
 
         return 0;
     }
@@ -1270,29 +1267,26 @@ int WebsocketLibwebsockets::process_callback(void* wsi_ptr, int callback_reason,
         unsigned char* pp = reinterpret_cast<unsigned char*>(in);
         unsigned short close_code = (unsigned short)((pp[0] << 8) | pp[1]);
 
-        EVLOG_info << "Unsolicited client close reason: " << close_reason << " close code: " << close_code;
-
-        if (close_code != LWS_CLOSE_STATUS_NORMAL) {
-            data->update_state(EConnectionState::ERROR);
-            on_conn_fail();
-        } else {
-            data->update_state(EConnectionState::FINALIZED);
-            on_conn_close();
-        }
+        // In the case that the websocket (server) has closed the
+        // connection we  must ALWAYS try to reconnect
+        EVLOG_info << "Websocket peer initiated close with reason: [" << close_reason << "] close code: [" << close_code
+                   << "]. Reconnecting";
+        data->update_state(EConnectionState::ERROR);
+        on_conn_fail();
 
         // Return 0 to print peer close reason
         return 0;
     }
 
     case LWS_CALLBACK_CLIENT_CLOSED:
-        EVLOG_info << "Client closed, was requested: " << data->is_interupted();
-
         // Determine if the close connection was requested or if the server went away
         // case in which we receive a 'LWS_CALLBACK_CLIENT_CLOSED' that was not requested
         if (data->is_interupted()) {
+            EVLOG_info << "Client closed, was requested internally, finalizing connection, not reconnecting";
             data->update_state(EConnectionState::FINALIZED);
             on_conn_close();
         } else {
+            EVLOG_info << "Client closed, was not requested internally, attempting reconnection";
             // It means the server went away, attempt to reconnect
             data->update_state(EConnectionState::ERROR);
             on_conn_fail();
