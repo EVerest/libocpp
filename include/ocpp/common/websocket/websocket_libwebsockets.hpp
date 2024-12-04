@@ -167,6 +167,10 @@ public:
     int process_callback(void* wsi_ptr, int callback_reason, void* user, void* in, size_t len);
 
 private:
+    bool is_trying_to_connect_internal();
+    void close_internal(const WebsocketCloseReason code, const std::string& reason);
+
+private:
     /// \brief Initializes the connection options, including the security info
     /// \return True if it was successful, false otherwise
     bool initialize_connection_options(std::shared_ptr<ConnectionData>& new_connection_data);
@@ -194,11 +198,12 @@ private:
     void on_conn_fail();
 
     /// \brief When the connection can send data
-    void on_writable();
+    void on_conn_writable();
 
     /// \brief Called when a message is received over the TLS websocket, calls the message callback
-    void on_message(std::string&& message);
+    void on_conn_message(std::string&& message);
 
+    /// \brief Requests a message write, awakes the websocket loop from 'poll'
     void request_write();
 
     void poll_message(const std::shared_ptr<WebsocketMessage>& msg);
