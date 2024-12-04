@@ -156,13 +156,47 @@ public:
     }
 
 public:
+    /// \brief This should be used for a cleanup before calling the
+    ///        init functions because releasing the unique ptrs has
+    ///        as an effect the invocation of 'callback_minimal' during
+    ///        '::lws_context_destroy(ptr);' and that causes a deadlock
+    void reset_connection_data() {
+        // Destroy them outside the lock scope
+        std::unique_ptr<SSL_CTX> clear_sec;
+        std::unique_ptr<lws_context> clear_lws;
+
+        {
+            std::lock_guard lock(this->mutex);
+            this->wsi = nullptr;
+
+            if (this->sec_context) {
+                this->sec_context.swap(clear_sec);
+            }
+
+            if (this->lws_ctx) {
+                this->lws_ctx.swap(clear_lws);
+            }
+        }
+    }
+
     void init_connection_context(lws_context* lws_ctx) {
         std::lock_guard lock(this->mutex);
+
+        if (this->lws_ctx || this->sec_context) {
+            EVLOG_AND_THROW(std::runtime_error("Cleanup must be called before re-initing a connection!"));
+        }
+
+        // Causes a deadlock in callback_minimal if not reset
         this->lws_ctx = std::unique_ptr<lws_context>(lws_ctx);
     }
 
     void init_security_context(SSL_CTX* ssl_ctx) {
         std::lock_guard lock(this->mutex);
+
+        if (this->lws_ctx || this->sec_context) {
+            EVLOG_AND_THROW(std::runtime_error("Cleanup must be called before re-initing a connection!"));
+        }
+
         this->sec_context = std::unique_ptr<SSL_CTX>(ssl_ctx);
     }
 
@@ -181,8 +215,8 @@ public:
         return lws_ctx.get();
     }
 
+    // No need for sync here since its set on construction
     WebsocketLibwebsockets* get_owner() {
-        std::lock_guard lock(this->mutex);
         return owner;
     }
 
@@ -305,7 +339,7 @@ WebsocketLibwebsockets::WebsocketLibwebsockets(const WebsocketConnectionOptions&
 }
 
 WebsocketLibwebsockets::~WebsocketLibwebsockets() {
-    std::scoped_lock lock(this->connection_mutex);
+    std::lock_guard lock(this->connection_mutex);
 
     std::shared_ptr<ConnectionData> local_conn_data = conn_data;
     if (local_conn_data != nullptr) {
@@ -366,9 +400,9 @@ static int callback_minimal(struct lws* wsi, enum lws_callback_reasons reason, v
     // Get user safely, since on some callbacks (void *user) can be different than what we set
     if (wsi != nullptr) {
         if (ConnectionData* data = reinterpret_cast<ConnectionData*>(lws_wsi_user(wsi))) {
-            auto owner = data->get_owner();
+            auto* owner = data->get_owner();
             if (owner not_eq nullptr) {
-                return data->get_owner()->process_callback(wsi, static_cast<int>(reason), user, in, len);
+                return owner->process_callback(wsi, static_cast<int>(reason), user, in, len);
             } else {
                 EVLOG_debug << "callback_minimal called, but data->owner is nullptr. Reason: " << reason;
             }
@@ -730,8 +764,6 @@ void WebsocketLibwebsockets::thread_websocket_client_loop(std::shared_ptr<Connec
                 int n = 0;
                 bool processing = true;
 
-                EVLOG_debug << "Started processing lws service";
-
                 do {
                     // We can grab the 'state' and 'lws_ctx' members here since we're only
                     // setting them from this thread and not from the exterior
@@ -748,7 +780,9 @@ void WebsocketLibwebsockets::thread_websocket_client_loop(std::shared_ptr<Connec
                     }
                 } while (n >= 0 && processing);
 
-                EVLOG_debug << "Finished processing lws service.";
+                // After this point no minimal_callback can be called, we have finished
+                // using the connection information and we will recreate it if required
+                local_data->reset_connection_data();
             }
         } // End init connection
 
@@ -866,7 +900,7 @@ void WebsocketLibwebsockets::safe_close_threads() {
 }
 
 bool WebsocketLibwebsockets::is_trying_to_connect() {
-    std::scoped_lock lock(this->connection_mutex);
+    std::lock_guard lock(this->connection_mutex);
     return is_trying_to_connect_internal();
 }
 
@@ -877,7 +911,7 @@ bool WebsocketLibwebsockets::is_trying_to_connect_internal() {
 
 // Will be called from external threads as well
 bool WebsocketLibwebsockets::start_connecting() {
-    std::scoped_lock lock(this->connection_mutex);
+    std::lock_guard lock(this->connection_mutex);
 
     if (!this->initialized()) {
         EVLOG_error << "Websocket not properly initialized. A reconnect attempt will not be made.";
@@ -932,7 +966,7 @@ bool WebsocketLibwebsockets::start_connecting() {
 }
 
 void WebsocketLibwebsockets::close(const WebsocketCloseReason code, const std::string& reason) {
-    std::scoped_lock lock(this->connection_mutex);
+    std::lock_guard lock(this->connection_mutex);
     close_internal(code, reason);
 }
 
@@ -975,7 +1009,7 @@ void WebsocketLibwebsockets::close_internal(const WebsocketCloseReason code, con
 }
 
 void WebsocketLibwebsockets::reconnect(long delay) {
-    std::scoped_lock lock(this->connection_mutex);
+    std::lock_guard lock(this->connection_mutex);
 
     if (this->shutting_down) {
         EVLOG_info << "Not reconnecting because the websocket is being shutdown.";
@@ -1055,11 +1089,9 @@ void WebsocketLibwebsockets::request_write() {
         std::shared_ptr<ConnectionData> local_data = conn_data;
 
         if (local_data != nullptr) {
-            if (local_data->get_conn()) {
-                // Notify waiting processing thread to wake up. According to docs
-                // it is ok  to call from another thread.
-                local_data->request_awake();
-            }
+            // Notify waiting processing thread to wake up. According to docs
+            // it is ok  to call from another thread.
+            local_data->request_awake();
         }
     } else {
         EVLOG_debug << "Requested write with offline TLS websocket!";
