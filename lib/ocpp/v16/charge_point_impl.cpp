@@ -1270,7 +1270,7 @@ void ChargePointImpl::message_callback(const std::string& message) {
         return;
     } catch (const std::runtime_error& e) {
         EVLOG_error << "runtime_error during reception of message: " << e.what();
-        this->send(CallError(MessageId("-1"), "GenericError", e.what(), json({})));
+        this->message_dispatcher->dispatch_call_error(CallError(MessageId("-1"), "GenericError", e.what(), json({})));
         return;
     }
 
