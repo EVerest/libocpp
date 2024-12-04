@@ -274,22 +274,13 @@ WebsocketLibwebsockets::~WebsocketLibwebsockets() {
         this->close(WebsocketCloseReason::Normal, "websocket destructor");
     }
 
-    std::unique_lock lock(this->connection_mutex);
-    std::optional<std::thread> thread_callbacks;
+    std::scoped_lock lock(this->connection_mutex);
 
     if (this->deferred_callback_thread != nullptr && this->deferred_callback_thread->joinable()) {
-        thread_callbacks = std::move(*this->deferred_callback_thread);
-    }
+        this->stop_deferred_handler.store(true);
+        this->deferred_callback_queue.notify_waiting_thread();
 
-    // Unlock to prevent deadlock
-    lock.unlock();
-
-    // Join after the unlocks, allow the worker threads to finish
-    this->stop_deferred_handler.store(true);
-    this->deferred_callback_queue.notify_waiting_thread();
-
-    if (thread_callbacks.has_value()) {
-        thread_callbacks.value().join();
+        this->deferred_callback_thread->join();
     }
 }
 
