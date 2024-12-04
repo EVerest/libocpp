@@ -74,7 +74,7 @@ static constexpr int MESSAGE_SEND_TIMEOUT = 20;
 
 /// \brief Current connection data, sets the internal state of the
 struct ConnectionData {
-    ConnectionData(WebsocketLibwebsockets* owner) :
+    explicit ConnectionData(WebsocketLibwebsockets* owner) :
         wsi(nullptr), owner(owner), is_running(true), state(EConnectionState::INITIALIZE) {
     }
 
@@ -269,6 +269,16 @@ WebsocketLibwebsockets::WebsocketLibwebsockets(const WebsocketConnectionOptions&
 
 WebsocketLibwebsockets::~WebsocketLibwebsockets() {
     std::scoped_lock lock(this->connection_mutex);
+
+    std::shared_ptr<ConnectionData> local_conn_data = conn_data;
+    if (local_conn_data != nullptr) {
+        auto tid = std::this_thread::get_id();
+
+        if (tid == local_conn_data->get_client_thread_id() || tid == local_conn_data->get_message_thread_id()) {
+            EVLOG_error << "Trying to destruct websocket from utility thread!";
+            std::terminate();
+        }
+    }
 
     if (this->m_is_connected || is_trying_to_connect_internal()) {
         this->close_internal(WebsocketCloseReason::Normal, "websocket destructor");
@@ -761,7 +771,9 @@ void WebsocketLibwebsockets::safe_close_threads() {
     bool in_message_thread = false;
 
     if (local_conn_data != nullptr) {
-        if (std::this_thread::get_id() == local_conn_data->get_client_thread_id()) {
+        auto tid = std::this_thread::get_id();
+
+        if (tid == local_conn_data->get_client_thread_id()) {
             EVLOG_AND_THROW(std::runtime_error("Trying to start/stop/reconnect from client thread!"));
         }
 
@@ -776,7 +788,7 @@ void WebsocketLibwebsockets::safe_close_threads() {
         // else if (std::this_thread::get_id() == local_conn_data->get_message_thread_id()) {
         //      EVLOG_AND_THROW(std::runtime_error("Trying to start/stop/reconnect connection from message thread!")); }
 
-        in_message_thread = (std::this_thread::get_id() == local_conn_data->get_message_thread_id());
+        in_message_thread = (tid == local_conn_data->get_message_thread_id());
         local_conn_data->do_interrupt_and_exit();
     }
 
