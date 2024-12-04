@@ -233,7 +233,10 @@ static bool verify_csms_cn(const std::string& hostname, bool preverified, const 
 
 WebsocketLibwebsockets::WebsocketLibwebsockets(const WebsocketConnectionOptions& connection_options,
                                                std::shared_ptr<EvseSecurity> evse_security) :
-    WebsocketBase(), evse_security(evse_security), stop_deferred_handler(false) {
+    WebsocketBase(),
+    evse_security(evse_security),
+    stop_deferred_handler(false),
+    connected_ocpp_version{OcppProtocolVersion::Unknown} {
 
     set_connection_options(connection_options);
 
@@ -246,15 +249,17 @@ WebsocketLibwebsockets::~WebsocketLibwebsockets() {
         local_data->do_interrupt();
     }
 
-    if (websocket_thread != nullptr) {
-        websocket_thread->join();
+    std::lock_guard lock(this->connection_mutex);
+
+    if (this->websocket_thread != nullptr && this->websocket_thread->joinable()) {
+        this->websocket_thread->join();
     }
 
-    if (recv_message_thread != nullptr) {
-        recv_message_thread->join();
+    if (this->recv_message_thread != nullptr && this->recv_message_thread->joinable()) {
+        this->recv_message_thread->join();
     }
 
-    if (this->deferred_callback_thread != nullptr) {
+    if (this->deferred_callback_thread != nullptr && this->deferred_callback_thread->joinable()) {
         {
             std::scoped_lock tmp_lock(this->deferred_callback_mutex);
             this->stop_deferred_handler = true;
@@ -276,6 +281,15 @@ void WebsocketLibwebsockets::set_connection_options(const WebsocketConnectionOpt
                                     std::to_string(connection_options.security_profile));
     }
 
+    if (connection_options.ocpp_versions.empty()) {
+        throw std::invalid_argument("Connection options must contain at least 1 option");
+    }
+
+    if (std::any_of(connection_options.ocpp_versions.begin(), connection_options.ocpp_versions.end(),
+                    [](OcppProtocolVersion version) { return version == OcppProtocolVersion::Unknown; })) {
+        throw std::invalid_argument("Ocpp_versions may not contain 'Unknown'");
+    }
+
     set_connection_options_base(connection_options);
 
     // Set secure URI only if it is in TLS mode
@@ -283,6 +297,8 @@ void WebsocketLibwebsockets::set_connection_options(const WebsocketConnectionOpt
         security::SecurityProfile::UNSECURED_TRANSPORT_WITH_BASIC_AUTHENTICATION) {
         this->connection_options.csms_uri.set_secure(true);
     }
+
+    this->connection_attempts = 1; // reset connection attempts
 }
 
 static int callback_minimal(struct lws* wsi, enum lws_callback_reasons reason, void* user, void* in, size_t len) {
@@ -370,11 +386,15 @@ bool WebsocketLibwebsockets::tls_init(SSL_CTX* ctx, const std::string& path_chai
     }
 
     if (this->evse_security->is_ca_certificate_installed(ocpp::CaCertificateType::CSMS)) {
-        std::string ca_csms = this->evse_security->get_verify_file(ocpp::CaCertificateType::CSMS);
+        std::string ca_csms = this->evse_security->get_verify_location(ocpp::CaCertificateType::CSMS);
 
         EVLOG_info << "Loading CA csms bundle to verify server certificate: " << ca_csms;
 
-        rc = SSL_CTX_load_verify_locations(ctx, ca_csms.c_str(), NULL);
+        if (std::filesystem::is_directory(ca_csms)) {
+            rc = SSL_CTX_load_verify_locations(ctx, NULL, ca_csms.c_str());
+        } else {
+            rc = SSL_CTX_load_verify_locations(ctx, ca_csms.c_str(), NULL);
+        }
 
         if (rc != 1) {
             EVLOG_error << "Could not load CA verify locations, error: " << ERR_error_string(ERR_get_error(), NULL);
@@ -634,6 +654,16 @@ void WebsocketLibwebsockets::client_loop() {
 
     auto& uri = this->connection_options.csms_uri;
 
+    std::string ocpp_versions;
+    bool first = true;
+    for (auto version : this->connection_options.ocpp_versions) {
+        if (!first) {
+            ocpp_versions += ", ";
+        }
+        first = false;
+        ocpp_versions += conversions::ocpp_protocol_version_to_string(version);
+    }
+
     // TODO: No idea who releases the strdup?
     i.context = lws_ctx;
     i.port = uri.get_port();
@@ -642,7 +672,7 @@ void WebsocketLibwebsockets::client_loop() {
     i.host = i.address;
     i.origin = i.address;
     i.ssl_connection = ssl_connection;
-    i.protocol = strdup(conversions::ocpp_protocol_version_to_string(this->connection_options.ocpp_version).c_str());
+    i.protocol = strdup(ocpp_versions.c_str());
     i.local_protocol_name = local_protocol_name;
     i.pwsi = &local_data->wsi;
     i.userdata = local_data.get(); // See lws_context 'user'
@@ -696,9 +726,14 @@ bool WebsocketLibwebsockets::connect() {
         return false;
     }
 
+    // Clear shutting down so we allow to reconnect again as well
+    this->shutting_down = false;
+
     EVLOG_info << "Connecting to uri: " << this->connection_options.csms_uri.string() << " with security-profile "
                << this->connection_options.security_profile
                << (this->connection_options.use_tpm_tls ? " with TPM keys" : "");
+
+    this->connected_ocpp_version = OcppProtocolVersion::Unknown;
 
     // new connection context
     std::shared_ptr<ConnectionData> local_data = std::make_shared<ConnectionData>();
@@ -713,17 +748,23 @@ bool WebsocketLibwebsockets::connect() {
     // use new connection context
     conn_data = local_data;
 
-    // Wait old thread for a clean state
-    if (this->websocket_thread) {
-        // Awake libwebsockets thread to quickly exit
-        request_write();
-        this->websocket_thread->join();
-    }
+    {
+        std::scoped_lock lock(connection_mutex);
 
-    if (this->recv_message_thread) {
-        // Awake the receiving message thread to finish
-        recv_message_cv.notify_one();
-        this->recv_message_thread->join();
+        // Wait old thread for a clean state
+        if (this->websocket_thread && this->websocket_thread->joinable()) {
+            // Awake libwebsockets thread to quickly exit
+            request_write();
+            this->websocket_thread->join();
+            this->websocket_thread.reset();
+        }
+
+        if (this->recv_message_thread && this->recv_message_thread->joinable()) {
+            // Awake the receiving message thread to finish
+            recv_message_cv.notify_one();
+            this->recv_message_thread->join();
+            this->recv_message_thread.reset();
+        }
     }
 
     if (this->deferred_callback_thread == nullptr) {
@@ -750,16 +791,6 @@ bool WebsocketLibwebsockets::connect() {
         empty.swap(recv_message_queue);
     }
 
-    // Bind reconnect callback
-    this->reconnect_callback = [this]() {
-        // close connection before reconnecting
-        if (this->m_is_connected) {
-            this->close(WebsocketCloseReason::AbnormalClose, "before reconnecting");
-        }
-
-        this->connect();
-    };
-
     bool timeouted = false;
     bool connected = false;
 
@@ -767,7 +798,7 @@ bool WebsocketLibwebsockets::connect() {
         std::unique_lock<std::mutex> lock(connection_mutex);
 
         // Release other threads
-        this->websocket_thread.reset(new std::thread(&WebsocketLibwebsockets::client_loop, this));
+        this->websocket_thread = std::make_unique<std::thread>(&WebsocketLibwebsockets::client_loop, this);
 
         // TODO(ioan): remove this thread when the fix will be moved into 'MessageQueue'
         // The reason for having a received message processing thread is that because
@@ -775,7 +806,7 @@ bool WebsocketLibwebsockets::connect() {
         // will send back another message, and since we're waiting for that message to be
         // sent over the wire on the client_loop, not giving the opportunity to the loop to
         // advance we will have a dead-lock
-        this->recv_message_thread.reset(new std::thread(&WebsocketLibwebsockets::recv_loop, this));
+        this->recv_message_thread = std::make_unique<std::thread>(&WebsocketLibwebsockets::recv_loop, this);
 
         // Wait until connect or timeout
         timeouted = !conn_cv.wait_for(lock, std::chrono::seconds(60), [&]() {
@@ -827,11 +858,12 @@ void WebsocketLibwebsockets::reconnect(long delay) {
         std::lock_guard<std::mutex> lk(this->reconnect_mutex);
         this->reconnect_timer_tpm.timeout(
             [this]() {
-                if (this->reconnect_callback) {
-                    this->reconnect_callback();
-                } else {
-                    EVLOG_error << "Invalid reconnect callback!";
+                // close connection before reconnecting
+                if (this->m_is_connected) {
+                    this->close(WebsocketCloseReason::AbnormalClose, "before reconnecting");
                 }
+
+                this->connect();
             },
             std::chrono::milliseconds(delay));
     }
@@ -880,7 +912,7 @@ void WebsocketLibwebsockets::close(const WebsocketCloseReason code, const std::s
 }
 
 void WebsocketLibwebsockets::on_conn_connected() {
-    EVLOG_info << "OCPP client successfully connected to server";
+    EVLOG_info << "OCPP client successfully connected to server with version: " << this->connected_ocpp_version;
 
     this->connection_attempts = 1; // reset connection attempts
     this->m_is_connected = true;
@@ -891,7 +923,7 @@ void WebsocketLibwebsockets::on_conn_connected() {
 
     this->push_deferred_callback([this]() {
         if (connected_callback) {
-            this->connected_callback(this->connection_options.security_profile);
+            this->connected_callback(this->connected_ocpp_version);
         } else {
             EVLOG_error << "Connected callback not registered!";
         }
@@ -1313,6 +1345,17 @@ int WebsocketLibwebsockets::process_callback(void* wsi_ptr, int callback_reason,
     case LWS_CALLBACK_CONNECTING:
         EVLOG_debug << "Client connecting...";
         data->update_state(EConnectionState::CONNECTING);
+        break;
+
+    case LWS_CALLBACK_CLIENT_FILTER_PRE_ESTABLISH:
+        try {
+            char buffer[16] = {0};
+            lws_hdr_copy(wsi, buffer, 16, WSI_TOKEN_PROTOCOL);
+            this->connected_ocpp_version = ocpp::conversions::string_to_ocpp_protocol_version(buffer);
+        } catch (StringToEnumException& e) {
+            EVLOG_warning << "CSMS did not select protocol: " << e.what();
+            this->connected_ocpp_version = OcppProtocolVersion::Unknown;
+        }
         break;
 
     case LWS_CALLBACK_CLIENT_ESTABLISHED:

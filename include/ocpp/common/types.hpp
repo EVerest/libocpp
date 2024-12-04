@@ -610,7 +610,9 @@ std::ostream& operator<<(std::ostream& os, const CertificateHashDataChain& k);
 
 enum class OcppProtocolVersion {
     v16,
-    v201
+    v201,
+    v21,
+    Unknown,
 };
 
 namespace conversions {
@@ -832,6 +834,15 @@ struct CompositeScheduleDefaultLimits {
     int32_t amps;
     int32_t watts;
     int32_t number_phases;
+};
+
+/// \brief Status of a reservation check.
+enum class ReservationCheckStatus {
+    NotReserved,           ///< @brief No reservation of this evse and / or id token
+    ReservedForToken,      ///< @brief Reservation for this token.
+    ReservedForOtherToken, ///< @brief Reserved for other token and reservation has no parent token or parent token does
+                           ///< not match.
+    ReservedForOtherTokenAndHasParentToken, ///< @brief Reserved for other token but reservation has a parent token.
 };
 
 } // namespace ocpp

@@ -185,8 +185,8 @@ public:
     testing::MockFunction<RequestStartStopStatusEnum(const RequestStartTransactionRequest& request,
                                                      const bool authorize_remote_start)>
         remote_start_transaction_callback_mock;
-    testing::MockFunction<bool(const int32_t evse_id, const CiString<255> idToken,
-                               const std::optional<CiString<255>> groupIdToken)>
+    testing::MockFunction<ocpp::ReservationCheckStatus(const int32_t evse_id, const CiString<255> idToken,
+                                                       const std::optional<CiString<255>> groupIdToken)>
         is_reservation_for_token_callback_mock;
     testing::MockFunction<UpdateFirmwareResponse(const UpdateFirmwareRequest& request)>
         update_firmware_request_callback_mock;
@@ -627,7 +627,7 @@ public:
 
     template <class T, MessageType M> EnhancedMessage<MessageType> request_to_enhanced_message(const T& req) {
         auto message_id = uuid();
-        ocpp::Call<T> call(req, message_id);
+        ocpp::Call<T> call(req);
         EnhancedMessage<MessageType> enhanced_message;
         enhanced_message.uniqueId = message_id;
         enhanced_message.messageType = M;

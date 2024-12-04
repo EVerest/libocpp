@@ -8,6 +8,7 @@
 #include <set>
 
 #include <ocpp/common/message_dispatcher.hpp>
+#include <ocpp/v201/functional_blocks/data_transfer.hpp>
 
 #include <ocpp/common/charging_station_base.hpp>
 
@@ -29,6 +30,7 @@
 #include "ocpp/v201/messages/Get15118EVCertificate.hpp"
 #include <ocpp/v201/messages/Authorize.hpp>
 #include <ocpp/v201/messages/BootNotification.hpp>
+#include <ocpp/v201/messages/CancelReservation.hpp>
 #include <ocpp/v201/messages/CertificateSigned.hpp>
 #include <ocpp/v201/messages/ChangeAvailability.hpp>
 #include <ocpp/v201/messages/ClearCache.hpp>
@@ -60,6 +62,7 @@
 #include <ocpp/v201/messages/ReportChargingProfiles.hpp>
 #include <ocpp/v201/messages/RequestStartTransaction.hpp>
 #include <ocpp/v201/messages/RequestStopTransaction.hpp>
+#include <ocpp/v201/messages/ReserveNow.hpp>
 #include <ocpp/v201/messages/Reset.hpp>
 #include <ocpp/v201/messages/SecurityEventNotification.hpp>
 #include <ocpp/v201/messages/SendLocalList.hpp>
@@ -98,14 +101,20 @@ public:
     virtual ~ChargePointInterface() = default;
 
     /// \brief Starts the ChargePoint, initializes and connects to the Websocket endpoint
-    /// \param bootreason   Optional bootreason (default: PowerUp).
-    virtual void start(BootReasonEnum bootreason = BootReasonEnum::PowerUp) = 0;
+    /// \param bootreason  Optional bootreason (default: PowerUp).
+    /// \param start_connecting Optional, set to false to initialize but not start connecting. Otherwise will connect to
+    /// the first network profile. (default: true)
+    virtual void start(BootReasonEnum bootreason = BootReasonEnum::PowerUp, bool start_connecting = true) = 0;
 
     /// \brief Stops the ChargePoint. Disconnects the websocket connection and stops MessageQueue and all timers
     virtual void stop() = 0;
 
-    /// \brief Initializes the websocket and connects to CSMS if it is not yet connected
-    virtual void connect_websocket() = 0;
+    /// \brief Initializes the websocket and connects to a CSMS. Provide a network_profile_slot to connect to that
+    /// specific slot.
+    ///
+    /// \param network_profile_slot Optional slot to use when connecting. std::nullopt means the slot will be determined
+    /// automatically.
+    virtual void connect_websocket(std::optional<int32_t> network_profile_slot = std::nullopt) = 0;
 
     /// \brief Disconnects the the websocket connection to the CSMS if it is connected
     virtual void disconnect_websocket() = 0;
@@ -124,27 +133,9 @@ public:
     /// This is introduced because the websocket can take several minutes to timeout when a network interface becomes
     /// unavailable, whereas the system can detect this sooner.
     ///
-    /// \param configuration_slot   The slot of the network connection profile that is disconnected.
-    ///
-    virtual void on_network_disconnected(int32_t configuration_slot) = 0;
-
-    ///
-    /// \brief Can be called when a network is disconnected, for example when an ethernet cable is removed.
-    ///
-    /// This is introduced because the websocket can take several minutes to timeout when a network interface becomes
-    /// unavailable, whereas the system can detect this sooner.
-    ///
     /// \param ocpp_interface       The interface that is disconnected.
     ///
     virtual void on_network_disconnected(OCPPInterfaceEnum ocpp_interface) = 0;
-
-    /// \brief Switch to a specific network connection profile given the configuration slot.
-    ///
-    /// Switch will only be done when the configuration slot has a higher priority.
-    ///
-    /// \param configuration_slot Slot in which the configuration is stored
-    /// \return true if the switch is possible.
-    virtual bool on_try_switch_network_connection_profile(const int32_t configuration_slot) = 0;
 
     /// \brief Chargepoint notifies about new firmware update status firmware_update_status. This function should be
     ///        called during a Firmware Update to indicate the current firmware_update_status.
@@ -232,6 +223,11 @@ public:
     /// \param connector_id     Reserved connector id
     virtual void on_reserved(const int32_t evse_id, const int32_t connector_id) = 0;
 
+    /// \brief Event handler that should be called when the reservation of the connector is cleared.
+    /// \param evse_id          Cleared EVSE id
+    /// \param connector_id     Cleared connector id.
+    virtual void on_reservation_cleared(const int32_t evse_id, const int32_t connector_id) = 0;
+
     /// \brief Event handler that will update the charging state internally when it has been changed.
     /// \param evse_id          The evse id of which the charging state has changed.
     /// \param charging_state   The new charging state.
@@ -272,6 +268,11 @@ public:
     /// \param set_variable_data contains data of the variable to set
     ///
     virtual void on_variable_changed(const SetVariableData& set_variable_data) = 0;
+
+    /// \brief Event handler that will send a ReservationStatusUpdate request.
+    /// \param reservation_id   The reservation id.
+    /// \param status           The status.
+    virtual void on_reservation_status(const int32_t reservation_id, const ReservationUpdateStatusEnum status) = 0;
 
     /// @}  // End handlers group
 
@@ -363,20 +364,20 @@ public:
     /// present. This returns the value from the cached network connection profiles. \param
     /// network_configuration_priority \return
     virtual std::optional<NetworkConnectionProfile>
-    get_network_connection_profile(const int32_t configuration_slot) = 0;
+    get_network_connection_profile(const int32_t configuration_slot) const = 0;
 
     /// \brief Get the priority of the given configuration slot.
     /// \param configuration_slot   The configuration slot to get the priority from.
     /// \return The priority if the configuration slot exists.
     ///
-    virtual std::optional<int> get_configuration_slot_priority(const int configuration_slot) = 0;
+    virtual std::optional<int> get_priority_from_configuration_slot(const int configuration_slot) const = 0;
 
-    /// @brief Get the network connection priorities.
+    /// @brief Get the network connection slots sorted by priority.
     /// Each item in the vector contains the configured configuration slots, where the slot with index 0 has the highest
     /// priority.
-    /// @return The network connection priorities
+    /// @return The network connection slots
     ///
-    virtual const std::vector<int>& get_network_connection_priorities() const = 0;
+    virtual const std::vector<int>& get_network_connection_slots() const = 0;
 };
 
 /// \brief Class implements OCPP2.0.1 Charging Station
@@ -388,6 +389,7 @@ private:
     std::unique_ptr<ConnectivityManager> connectivity_manager;
 
     std::unique_ptr<MessageDispatcherInterface<MessageType>> message_dispatcher;
+    std::unique_ptr<DataTransferInterface> data_transfer;
 
     // utility
     std::shared_ptr<MessageQueue<v201::MessageType>> message_queue;
@@ -489,10 +491,6 @@ private:
     get_composite_schedule_internal(const GetCompositeScheduleRequest& request,
                                     const std::set<ChargingProfilePurposeEnum>& profiles_to_ignore = {});
 
-    /// \brief Removes all network connection profiles below the actual security profile and stores the new list in the
-    /// device model
-    void remove_network_connection_profiles_below_actual_security_profile();
-
     void message_callback(const std::string& message);
     void update_aligned_data_interval();
 
@@ -556,16 +554,10 @@ private:
     /// \param evse             The evse id that must be checked. Reservation will be checked for all connectors.
     /// \param id_token         The id token to check if it is reserved for that token.
     /// \param group_id_token   The group id token to check if it is reserved for that group id.
-    /// \return True when one of the EVSE connectors is reserved for another id token or group id token than the given
-    ///         tokens.
-    ///         If id_token is different than reserved id_token, but group_id_token is equal to reserved group_id_token,
-    ///         returns true.
-    ///         If both are different, returns true.
-    ///         If id_token is equal to reserved id_token or group_id_token is equal, return false.
-    ///         If there is no reservation, return false.
+    /// \return The status of the reservation for this evse, id token and group id token.
     ///
-    bool is_evse_reserved_for_other(EvseInterface& evse, const IdToken& id_token,
-                                    const std::optional<IdToken>& group_id_token) const;
+    ReservationCheckStatus is_evse_reserved_for_other(EvseInterface& evse, const IdToken& id_token,
+                                                      const std::optional<IdToken>& group_id_token) const;
 
     ///
     /// \brief Check if one of the connectors of the evse is available (both connectors faulted or unavailable or on of
@@ -582,6 +574,22 @@ private:
     ///                 connector if it was already set to true and if that is the case, it will be persisted anyway.
     ///
     void set_evse_connectors_unavailable(EvseInterface& evse, bool persist);
+
+    ///
+    /// \brief Check if there is a connector available with the given connector type.
+    /// \param evse_id          The evse to check for.
+    /// \param connector_type   The connector type.
+    /// \return True when a connector is available and the evse id exists.
+    ///
+    bool is_connector_available(const uint32_t evse_id, std::optional<ConnectorEnum> connector_type);
+
+    ///
+    /// \brief Check if the connector exists on the given evse id.
+    /// \param evse_id          The evse id to check for.
+    /// \param connector_type   The connector type.
+    /// \return False if evse id does not exist or evse does not have the given connector type.
+    ///
+    bool does_connector_exist(const uint32_t evse_id, std::optional<ConnectorEnum> connector_type);
 
     /// \brief Get the value optional offline flag
     /// \return true if the charge point is offline. std::nullopt if it is online;
@@ -726,6 +734,11 @@ private:
     void handle_change_availability_req(Call<ChangeAvailabilityRequest> call);
     void handle_heartbeat_response(CallResult<HeartbeatResponse> call);
 
+    // Function Block H: Reservations
+    void handle_reserve_now_request(Call<ReserveNowRequest> call);
+    void handle_cancel_reservation_callback(Call<CancelReservationRequest> call);
+    void send_reserve_now_rejected_response(const MessageId& unique_id, const std::string& status_info);
+
     // Functional Block I: TariffAndCost
     void handle_costupdated_req(const Call<CostUpdatedRequest> call);
 
@@ -758,16 +771,12 @@ private:
     void handle_set_display_message(Call<SetDisplayMessageRequest> call);
     void handle_clear_display_message(Call<ClearDisplayMessageRequest> call);
 
-    // Functional Block P: DataTransfer
-    void handle_data_transfer_req(Call<DataTransferRequest> call);
-
     // Generates async sending callbacks
     template <class RequestType, class ResponseType>
     std::function<ResponseType(RequestType)> send_callback(MessageType expected_response_message_type) {
         return [this, expected_response_message_type](auto request) {
-            MessageId message_id = MessageId(to_string(this->uuid_generator()));
             const auto enhanced_response =
-                this->message_dispatcher->dispatch_call_async(ocpp::Call<RequestType>(request, message_id)).get();
+                this->message_dispatcher->dispatch_call_async(ocpp::Call<RequestType>(request)).get();
             if (enhanced_response.messageType != expected_response_message_type) {
                 throw UnexpectedMessageTypeFromCSMS(
                     std::string("Got unexpected message type from CSMS, expected: ") +
@@ -787,6 +796,11 @@ private:
     /// \brief Immediately execute the given \param request to change the operational state of a component
     /// If \param persist is set to true, the change will be persisted across a reboot
     void execute_change_availability_request(ChangeAvailabilityRequest request, bool persist);
+
+    /// \brief Helper function to determine if a certificate installation should be allowed
+    /// \param cert_type is the certificate type to be checked
+    /// \return true if it should be allowed
+    bool should_allow_certificate_install(InstallCertificateUseEnum cert_type) const;
 
 protected:
     std::shared_ptr<SmartChargingHandlerInterface> smart_charging_handler;
@@ -859,18 +873,14 @@ public:
 
     ~ChargePoint();
 
-    void start(BootReasonEnum bootreason = BootReasonEnum::PowerUp) override;
+    void start(BootReasonEnum bootreason = BootReasonEnum::PowerUp, bool start_connecting = true) override;
 
     void stop() override;
 
-    virtual void connect_websocket() override;
+    void connect_websocket(std::optional<int32_t> network_profile_slot = std::nullopt) override;
     virtual void disconnect_websocket() override;
 
-    void on_network_disconnected(int32_t configuration_slot) override;
-
     void on_network_disconnected(OCPPInterfaceEnum ocpp_interface) override;
-
-    bool on_try_switch_network_connection_profile(const int32_t configuration_slot) override;
 
     void on_firmware_update_status_notification(int32_t request_id,
                                                 const FirmwareStatusEnum& firmware_update_status) override;
@@ -910,6 +920,8 @@ public:
 
     void on_reserved(const int32_t evse_id, const int32_t connector_id) override;
 
+    void on_reservation_cleared(const int32_t evse_id, const int32_t connector_id) override;
+
     bool on_charging_state_changed(
         const uint32_t evse_id, const ChargingStateEnum charging_state,
         const TriggerReasonEnum trigger_reason = TriggerReasonEnum::ChargingStateChanged) override;
@@ -928,6 +940,8 @@ public:
                            const std::optional<DateTime>& timestamp = std::nullopt) override;
 
     void on_variable_changed(const SetVariableData& set_variable_data) override;
+
+    void on_reservation_status(const int32_t reservation_id, const ReservationUpdateStatusEnum status) override;
 
     std::optional<DataTransferResponse> data_transfer_req(const CiString<255>& vendorId,
                                                           const std::optional<CiString<50>>& messageId,
@@ -956,11 +970,12 @@ public:
     std::vector<CompositeSchedule> get_all_composite_schedules(const int32_t duration,
                                                                const ChargingRateUnitEnum& unit) override;
 
-    std::optional<NetworkConnectionProfile> get_network_connection_profile(const int32_t configuration_slot) override;
+    std::optional<NetworkConnectionProfile>
+    get_network_connection_profile(const int32_t configuration_slot) const override;
 
-    std::optional<int> get_configuration_slot_priority(const int configuration_slot) override;
+    std::optional<int> get_priority_from_configuration_slot(const int configuration_slot) const override;
 
-    const std::vector<int>& get_network_connection_priorities() const override;
+    const std::vector<int>& get_network_connection_slots() const override;
 
     /// \brief Requests a value of a VariableAttribute specified by combination of \p component_id and \p variable_id
     /// from the device model

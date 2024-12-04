@@ -10,6 +10,7 @@
 #include <ocpp/v201/messages/FirmwareStatusNotification.hpp>
 #include <ocpp/v201/messages/LogStatusNotification.hpp>
 #include <ocpp/v201/messages/NotifyDisplayMessages.hpp>
+#include <ocpp/v201/messages/ReservationStatusUpdate.hpp>
 #include <ocpp/v201/notify_report_requests_splitter.hpp>
 
 #include <optional>
@@ -111,7 +112,7 @@ ChargePoint::~ChargePoint() {
     this->auth_cache_cleanup_thread.join();
 }
 
-void ChargePoint::start(BootReasonEnum bootreason) {
+void ChargePoint::start(BootReasonEnum bootreason, bool start_connecting) {
     this->message_queue->start();
 
     this->bootreason = bootreason;
@@ -123,7 +124,9 @@ void ChargePoint::start(BootReasonEnum bootreason) {
     this->boot_notification_req(bootreason);
     // call clear_invalid_charging_profiles when system boots
     this->clear_invalid_charging_profiles();
-    this->connectivity_manager->start();
+    if (start_connecting) {
+        this->connectivity_manager->connect();
+    }
 
     const std::string firmware_version =
         this->device_model->get_value<std::string>(ControllerComponentVariables::FirmwareVersion);
@@ -157,31 +160,23 @@ void ChargePoint::stop() {
     this->heartbeat_timer.stop();
     this->boot_notification_timer.stop();
     this->certificate_signed_timer.stop();
-    this->connectivity_manager->stop();
+    this->connectivity_manager->disconnect();
     this->client_certificate_expiration_check_timer.stop();
     this->v2g_certificate_expiration_check_timer.stop();
     this->monitoring_updater.stop_monitoring();
     this->message_queue->stop();
 }
 
-void ChargePoint::connect_websocket() {
-    this->connectivity_manager->connect();
-}
-
 void ChargePoint::disconnect_websocket() {
-    this->connectivity_manager->disconnect_websocket();
-}
-
-void ChargePoint::on_network_disconnected(int32_t configuration_slot) {
-    this->connectivity_manager->on_network_disconnected(configuration_slot);
+    this->connectivity_manager->disconnect();
 }
 
 void ChargePoint::on_network_disconnected(OCPPInterfaceEnum ocpp_interface) {
     this->connectivity_manager->on_network_disconnected(ocpp_interface);
 }
 
-bool ChargePoint::on_try_switch_network_connection_profile(const int32_t configuration_slot) {
-    return this->connectivity_manager->on_try_switch_network_connection_profile(configuration_slot);
+void ChargePoint::connect_websocket(std::optional<int32_t> network_profile_slot) {
+    this->connectivity_manager->connect(network_profile_slot);
 }
 
 void ChargePoint::on_firmware_update_status_notification(int32_t request_id,
@@ -203,7 +198,7 @@ void ChargePoint::on_firmware_update_status_notification(int32_t request_id,
         this->firmware_status_id = request_id;
     }
 
-    ocpp::Call<FirmwareStatusNotificationRequest> call(req, this->message_queue->createMessageId());
+    ocpp::Call<FirmwareStatusNotificationRequest> call(req);
     this->message_dispatcher->dispatch_call_async(call);
 
     if (req.status == FirmwareStatusEnum::Installed) {
@@ -232,7 +227,7 @@ void ChargePoint::on_firmware_update_status_notification(int32_t request_id,
         if (transaction_active) {
             this->firmware_status = FirmwareStatusEnum::InstallScheduled;
             req.status = firmware_status;
-            ocpp::Call<FirmwareStatusNotificationRequest> call(req, this->message_queue->createMessageId());
+            ocpp::Call<FirmwareStatusNotificationRequest> call(req);
             this->message_dispatcher->dispatch_call_async(call);
         }
         this->change_all_connectors_to_unavailable_for_firmware_update();
@@ -258,8 +253,7 @@ ChargePoint::on_get_15118_ev_certificate_request(const Get15118EVCertificateRequ
     }
 
     EVLOG_debug << "Received Get15118EVCertificateRequest " << request;
-    auto future_res = this->message_dispatcher->dispatch_call_async(
-        ocpp::Call<Get15118EVCertificateRequest>(request, this->message_queue->createMessageId()));
+    auto future_res = this->message_dispatcher->dispatch_call_async(ocpp::Call<Get15118EVCertificateRequest>(request));
 
     if (future_res.wait_for(DEFAULT_WAIT_FOR_FUTURE_TIMEOUT) == std::future_status::timeout) {
         EVLOG_warning << "Waiting for Get15118EVCertificateRequest.conf future timed out!";
@@ -746,6 +740,10 @@ void ChargePoint::on_reserved(const int32_t evse_id, const int32_t connector_id)
     this->evse_manager->get_evse(evse_id).submit_event(connector_id, ConnectorEvent::Reserve);
 }
 
+void ChargePoint::on_reservation_cleared(const int32_t evse_id, const int32_t connector_id) {
+    this->evse_manager->get_evse(evse_id).submit_event(connector_id, ConnectorEvent::ReservationCleared);
+}
+
 bool ChargePoint::on_charging_state_changed(const uint32_t evse_id, const ChargingStateEnum charging_state,
                                             const TriggerReasonEnum trigger_reason) {
     auto& evse = this->evse_manager->get_evse(evse_id);
@@ -1039,7 +1037,7 @@ void ChargePoint::on_log_status_notification(UploadLogStatusEnum status, int32_t
     this->upload_log_status = status;
     this->upload_log_status_id = requestId;
 
-    ocpp::Call<LogStatusNotificationRequest> call(request, this->message_queue->createMessageId());
+    ocpp::Call<LogStatusNotificationRequest> call(request);
     this->message_dispatcher->dispatch_call(call);
 }
 
@@ -1056,6 +1054,15 @@ void ChargePoint::on_security_event(const CiString<50>& event_type, const std::o
 
 void ChargePoint::on_variable_changed(const SetVariableData& set_variable_data) {
     this->handle_variable_changed(set_variable_data);
+}
+
+void ChargePoint::on_reservation_status(const int32_t reservation_id, const ReservationUpdateStatusEnum status) {
+    ReservationStatusUpdateRequest req;
+    req.reservationId = reservation_id;
+    req.reservationUpdateStatus = status;
+
+    ocpp::Call<ReservationStatusUpdateRequest> call(req);
+    this->message_dispatcher->dispatch_call(call);
 }
 
 void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_structure,
@@ -1130,9 +1137,13 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
                                               std::bind(&ChargePoint::message_callback, this, std::placeholders::_1));
 
     this->connectivity_manager->set_websocket_connected_callback(
-        std::bind(&ChargePoint::websocket_connected_callback, this, std::placeholders::_1, std::placeholders::_2));
+        [this](int configuration_slot, const NetworkConnectionProfile& network_connection_profile, auto) {
+            this->websocket_connected_callback(configuration_slot, network_connection_profile);
+        });
     this->connectivity_manager->set_websocket_disconnected_callback(
-        std::bind(&ChargePoint::websocket_disconnected_callback, this, std::placeholders::_1, std::placeholders::_2));
+        [this](int configuration_slot, const NetworkConnectionProfile& network_connection_profile, auto) {
+            this->websocket_disconnected_callback(configuration_slot, network_connection_profile);
+        });
     this->connectivity_manager->set_websocket_connection_failed_callback(
         std::bind(&ChargePoint::websocket_connection_failed, this, std::placeholders::_1));
 
@@ -1171,6 +1182,8 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
 
     this->message_dispatcher =
         std::make_unique<MessageDispatcher>(*this->message_queue, *this->device_model, registration_status);
+    this->data_transfer = std::make_unique<DataTransfer>(
+        *this->message_dispatcher, this->callbacks.data_transfer_callback, DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
 
     if (this->callbacks.configure_network_connection_profile_callback.has_value()) {
         this->connectivity_manager->set_configure_network_connection_profile_callback(
@@ -1206,182 +1219,149 @@ void ChargePoint::init_certificate_expiration_check_timers() {
             .value_or(60)));
 }
 
-void ChargePoint::remove_network_connection_profiles_below_actual_security_profile() {
-    // Remove all the profiles that are a lower security level than security_level
-    const auto security_level = this->device_model->get_value<int>(ControllerComponentVariables::SecurityProfile);
-
-    auto network_connection_profiles = json::parse(
-        this->device_model->get_value<std::string>(ControllerComponentVariables::NetworkConnectionProfiles));
-
-    auto is_lower_security_level = [security_level](const SetNetworkProfileRequest& item) {
-        return item.connectionData.securityProfile < security_level;
-    };
-
-    network_connection_profiles.erase(
-        std::remove_if(network_connection_profiles.begin(), network_connection_profiles.end(), is_lower_security_level),
-        network_connection_profiles.end());
-
-    this->device_model->set_value(ControllerComponentVariables::NetworkConnectionProfiles.component,
-                                  ControllerComponentVariables::NetworkConnectionProfiles.variable.value(),
-                                  AttributeEnum::Actual, network_connection_profiles.dump(),
-                                  VARIABLE_ATTRIBUTE_VALUE_SOURCE_INTERNAL);
-
-    // Update the NetworkConfigurationPriority so only remaining profiles are in there
-    const auto network_priority = ocpp::split_string(
-        this->device_model->get_value<std::string>(ControllerComponentVariables::NetworkConfigurationPriority), ',');
-
-    auto in_network_profiles = [&network_connection_profiles](const std::string& item) {
-        auto is_same_slot = [&item](const SetNetworkProfileRequest& profile) {
-            return std::to_string(profile.configurationSlot) == item;
-        };
-        return std::any_of(network_connection_profiles.begin(), network_connection_profiles.end(), is_same_slot);
-    };
-
-    std::string new_network_priority;
-    for (const auto& item : network_priority) {
-        if (in_network_profiles(item)) {
-            if (!new_network_priority.empty()) {
-                new_network_priority += ',';
-            }
-            new_network_priority += item;
-        }
-    }
-
-    this->device_model->set_value(ControllerComponentVariables::NetworkConfigurationPriority.component,
-                                  ControllerComponentVariables::NetworkConfigurationPriority.variable.value(),
-                                  AttributeEnum::Actual, new_network_priority,
-                                  VARIABLE_ATTRIBUTE_VALUE_SOURCE_INTERNAL);
-}
-
 void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& message) {
     const auto& json_message = message.message;
-    switch (message.messageType) {
-    case MessageType::BootNotificationResponse:
-        this->handle_boot_notification_response(json_message);
-        break;
-    case MessageType::SetVariables:
-        this->handle_set_variables_req(json_message);
-        break;
-    case MessageType::GetVariables:
-        this->handle_get_variables_req(message);
-        break;
-    case MessageType::GetBaseReport:
-        this->handle_get_base_report_req(json_message);
-        break;
-    case MessageType::GetReport:
-        this->handle_get_report_req(message);
-        break;
-    case MessageType::Reset:
-        this->handle_reset_req(json_message);
-        break;
-    case MessageType::SetNetworkProfile:
-        this->handle_set_network_profile_req(json_message);
-        break;
-    case MessageType::ChangeAvailability:
-        this->handle_change_availability_req(json_message);
-        break;
-    case MessageType::TransactionEventResponse:
-        this->handle_transaction_event_response(message);
-        break;
-    case MessageType::RequestStartTransaction:
-        this->handle_remote_start_transaction_request(json_message);
-        break;
-    case MessageType::RequestStopTransaction:
-        this->handle_remote_stop_transaction_request(json_message);
-        break;
-    case MessageType::DataTransfer:
-        this->handle_data_transfer_req(json_message);
-        break;
-    case MessageType::GetLog:
-        this->handle_get_log_req(json_message);
-        break;
-    case MessageType::ClearCache:
-        this->handle_clear_cache_req(json_message);
-        break;
-    case MessageType::UpdateFirmware:
-        this->handle_firmware_update_req(json_message);
-        break;
-    case MessageType::UnlockConnector:
-        this->handle_unlock_connector(json_message);
-        break;
-    case MessageType::TriggerMessage:
-        this->handle_trigger_message(json_message);
-        break;
-    case MessageType::SignCertificateResponse:
-        this->handle_sign_certificate_response(json_message);
-        break;
-    case MessageType::HeartbeatResponse:
-        this->handle_heartbeat_response(json_message);
-        break;
-    case MessageType::SendLocalList:
-        this->handle_send_local_authorization_list_req(json_message);
-        break;
-    case MessageType::GetLocalListVersion:
-        this->handle_get_local_authorization_list_version_req(json_message);
-        break;
-    case MessageType::CertificateSigned:
-        this->handle_certificate_signed_req(json_message);
-        break;
-    case MessageType::GetTransactionStatus:
-        this->handle_get_transaction_status(json_message);
-        break;
-    case MessageType::GetInstalledCertificateIds:
-        this->handle_get_installed_certificate_ids_req(json_message);
-        break;
-    case MessageType::InstallCertificate:
-        this->handle_install_certificate_req(json_message);
-        break;
-    case MessageType::DeleteCertificate:
-        this->handle_delete_certificate_req(json_message);
-        break;
-    case MessageType::CustomerInformation:
-        this->handle_customer_information_req(json_message);
-        break;
-    case MessageType::SetChargingProfile:
-        this->handle_set_charging_profile_req(json_message);
-        break;
-    case MessageType::ClearChargingProfile:
-        this->handle_clear_charging_profile_req(json_message);
-        break;
-    case MessageType::GetChargingProfiles:
-        this->handle_get_charging_profiles_req(json_message);
-        break;
-    case MessageType::GetCompositeSchedule:
-        this->handle_get_composite_schedule_req(json_message);
-        break;
-    case MessageType::SetMonitoringBase:
-        this->handle_set_monitoring_base_req(json_message);
-        break;
-    case MessageType::SetMonitoringLevel:
-        this->handle_set_monitoring_level_req(json_message);
-        break;
-    case MessageType::SetVariableMonitoring:
-        this->handle_set_variable_monitoring_req(message);
-        break;
-    case MessageType::GetMonitoringReport:
-        this->handle_get_monitoring_report_req(json_message);
-        break;
-    case MessageType::ClearVariableMonitoring:
-        this->handle_clear_variable_monitoring_req(json_message);
-        break;
-    case MessageType::GetDisplayMessages:
-        this->handle_get_display_message(json_message);
-        break;
-    case MessageType::SetDisplayMessage:
-        this->handle_set_display_message(json_message);
-        break;
-    case MessageType::ClearDisplayMessage:
-        this->handle_clear_display_message(json_message);
-        break;
-    case MessageType::CostUpdated:
-        this->handle_costupdated_req(json_message);
-        break;
-    default:
+    try {
+        switch (message.messageType) {
+        case MessageType::BootNotificationResponse:
+            this->handle_boot_notification_response(json_message);
+            break;
+        case MessageType::SetVariables:
+            this->handle_set_variables_req(json_message);
+            break;
+        case MessageType::GetVariables:
+            this->handle_get_variables_req(message);
+            break;
+        case MessageType::GetBaseReport:
+            this->handle_get_base_report_req(json_message);
+            break;
+        case MessageType::GetReport:
+            this->handle_get_report_req(message);
+            break;
+        case MessageType::Reset:
+            this->handle_reset_req(json_message);
+            break;
+        case MessageType::SetNetworkProfile:
+            this->handle_set_network_profile_req(json_message);
+            break;
+        case MessageType::ChangeAvailability:
+            this->handle_change_availability_req(json_message);
+            break;
+        case MessageType::TransactionEventResponse:
+            this->handle_transaction_event_response(message);
+            break;
+        case MessageType::RequestStartTransaction:
+            this->handle_remote_start_transaction_request(json_message);
+            break;
+        case MessageType::RequestStopTransaction:
+            this->handle_remote_stop_transaction_request(json_message);
+            break;
+        case MessageType::DataTransfer:
+            this->data_transfer->handle_message(message);
+            break;
+        case MessageType::GetLog:
+            this->handle_get_log_req(json_message);
+            break;
+        case MessageType::ClearCache:
+            this->handle_clear_cache_req(json_message);
+            break;
+        case MessageType::UpdateFirmware:
+            this->handle_firmware_update_req(json_message);
+            break;
+        case MessageType::UnlockConnector:
+            this->handle_unlock_connector(json_message);
+            break;
+        case MessageType::TriggerMessage:
+            this->handle_trigger_message(json_message);
+            break;
+        case MessageType::SignCertificateResponse:
+            this->handle_sign_certificate_response(json_message);
+            break;
+        case MessageType::HeartbeatResponse:
+            this->handle_heartbeat_response(json_message);
+            break;
+        case MessageType::ReserveNow:
+            this->handle_reserve_now_request(json_message);
+            break;
+        case MessageType::CancelReservation:
+            this->handle_cancel_reservation_callback(json_message);
+            break;
+        case MessageType::SendLocalList:
+            this->handle_send_local_authorization_list_req(json_message);
+            break;
+        case MessageType::GetLocalListVersion:
+            this->handle_get_local_authorization_list_version_req(json_message);
+            break;
+        case MessageType::CertificateSigned:
+            this->handle_certificate_signed_req(json_message);
+            break;
+        case MessageType::GetTransactionStatus:
+            this->handle_get_transaction_status(json_message);
+            break;
+        case MessageType::GetInstalledCertificateIds:
+            this->handle_get_installed_certificate_ids_req(json_message);
+            break;
+        case MessageType::InstallCertificate:
+            this->handle_install_certificate_req(json_message);
+            break;
+        case MessageType::DeleteCertificate:
+            this->handle_delete_certificate_req(json_message);
+            break;
+        case MessageType::CustomerInformation:
+            this->handle_customer_information_req(json_message);
+            break;
+        case MessageType::SetChargingProfile:
+            this->handle_set_charging_profile_req(json_message);
+            break;
+        case MessageType::ClearChargingProfile:
+            this->handle_clear_charging_profile_req(json_message);
+            break;
+        case MessageType::GetChargingProfiles:
+            this->handle_get_charging_profiles_req(json_message);
+            break;
+        case MessageType::GetCompositeSchedule:
+            this->handle_get_composite_schedule_req(json_message);
+            break;
+        case MessageType::SetMonitoringBase:
+            this->handle_set_monitoring_base_req(json_message);
+            break;
+        case MessageType::SetMonitoringLevel:
+            this->handle_set_monitoring_level_req(json_message);
+            break;
+        case MessageType::SetVariableMonitoring:
+            this->handle_set_variable_monitoring_req(message);
+            break;
+        case MessageType::GetMonitoringReport:
+            this->handle_get_monitoring_report_req(json_message);
+            break;
+        case MessageType::ClearVariableMonitoring:
+            this->handle_clear_variable_monitoring_req(json_message);
+            break;
+        case MessageType::GetDisplayMessages:
+            this->handle_get_display_message(json_message);
+            break;
+        case MessageType::SetDisplayMessage:
+            this->handle_set_display_message(json_message);
+            break;
+        case MessageType::ClearDisplayMessage:
+            this->handle_clear_display_message(json_message);
+            break;
+        case MessageType::CostUpdated:
+            this->handle_costupdated_req(json_message);
+            break;
+        default:
+            if (message.messageTypeId == MessageTypeId::CALL) {
+                const auto call_error = CallError(message.uniqueId, "NotImplemented", "", json({}));
+                this->message_dispatcher->dispatch_call_error(call_error);
+            }
+            break;
+        }
+    } catch (const MessageTypeNotImplementedException& e) {
+        EVLOG_warning << e.what();
         if (message.messageTypeId == MessageTypeId::CALL) {
             const auto call_error = CallError(message.uniqueId, "NotImplemented", "", json({}));
             this->message_dispatcher->dispatch_call_error(call_error);
         }
-        break;
     }
 }
 
@@ -1786,7 +1766,6 @@ void ChargePoint::handle_variable_changed(const SetVariableData& set_variable_da
         if (this->device_model->get_value<int>(ControllerComponentVariables::SecurityProfile) < 3) {
             // TODO: A01.FR.11 log the change of BasicAuth in Security Log
             this->connectivity_manager->set_websocket_authorization_key(set_variable_data.attributeValue.get());
-            this->connectivity_manager->disconnect_websocket(WebsocketCloseReason::ServiceRestart);
         }
     }
     if (component_variable == ControllerComponentVariables::HeartbeatInterval and
@@ -1948,22 +1927,13 @@ std::optional<int32_t> ChargePoint::get_transaction_evseid(const CiString<36>& t
     return std::nullopt;
 }
 
-bool ChargePoint::is_evse_reserved_for_other(EvseInterface& evse, const IdToken& id_token,
-                                             const std::optional<IdToken>& group_id_token) const {
-    const uint32_t connectors = evse.get_number_of_connectors();
-    for (uint32_t i = 1; i <= connectors; ++i) {
-        const ConnectorStatusEnum status =
-            evse.get_connector(static_cast<int32_t>(i))->get_effective_connector_status();
-        if (status == ConnectorStatusEnum::Reserved) {
-            const std::optional<CiString<255>> groupIdToken =
-                group_id_token.has_value() ? group_id_token.value().idToken : std::optional<CiString<255>>{};
+ocpp::ReservationCheckStatus
+ChargePoint::is_evse_reserved_for_other(EvseInterface& evse, const IdToken& id_token,
+                                        const std::optional<IdToken>& group_id_token) const {
+    const std::optional<CiString<255>> groupIdToken =
+        group_id_token.has_value() ? group_id_token.value().idToken : std::optional<CiString<255>>{};
 
-            if (!callbacks.is_reservation_for_token_callback(evse.get_id(), id_token.idToken, groupIdToken)) {
-                return true;
-            }
-        }
-    }
-    return false;
+    return callbacks.is_reservation_for_token_callback(evse.get_id(), id_token.idToken, groupIdToken);
 }
 
 bool ChargePoint::is_evse_connector_available(EvseInterface& evse) const {
@@ -1996,6 +1966,36 @@ void ChargePoint::set_evse_connectors_unavailable(EvseInterface& evse, bool pers
     }
 }
 
+bool ChargePoint::is_connector_available(const uint32_t evse_id, std::optional<ConnectorEnum> connector_type) {
+    EvseInterface* evse;
+    try {
+        evse = &evse_manager->get_evse(static_cast<int32_t>(evse_id));
+    } catch (const EvseOutOfRangeException&) {
+        EVLOG_error << "Evse id " << evse_id << " is not a valid evse id.";
+        return false;
+    }
+
+    std::optional<ConnectorStatusEnum> status =
+        evse->get_connector_status(connector_type.value_or(ConnectorEnum::Unknown));
+    if (!status.has_value()) {
+        return false;
+    }
+
+    return status.value() == ConnectorStatusEnum::Available;
+}
+
+bool ChargePoint::does_connector_exist(const uint32_t evse_id, std::optional<ConnectorEnum> connector_type) {
+    EvseInterface* evse;
+    try {
+        evse = &evse_manager->get_evse(static_cast<int32_t>(evse_id));
+    } catch (const EvseOutOfRangeException&) {
+        EVLOG_error << "Evse id " << evse_id << " is not a valid evse id.";
+        return false;
+    }
+
+    return evse->does_connector_exist(connector_type.value_or(ConnectorEnum::Unknown));
+}
+
 bool ChargePoint::is_offline() {
     return !this->connectivity_manager->is_websocket_connected();
 }
@@ -2016,7 +2016,7 @@ void ChargePoint::security_event_notification_req(const CiString<50>& event_type
     req.techInfo = tech_info;
     this->logging->security(json(req).dump());
     if (critical) {
-        ocpp::Call<SecurityEventNotificationRequest> call(req, this->message_queue->createMessageId());
+        ocpp::Call<SecurityEventNotificationRequest> call(req);
         this->message_dispatcher->dispatch_call(call);
     }
     if (triggered_internally and this->callbacks.security_event_callback != nullptr) {
@@ -2091,7 +2091,7 @@ void ChargePoint::sign_certificate_req(const ocpp::CertificateSigningUseEnum& ce
 
     this->awaited_certificate_signing_use_enum = certificate_signing_use;
 
-    ocpp::Call<SignCertificateRequest> call(req, this->message_queue->createMessageId());
+    ocpp::Call<SignCertificateRequest> call(req);
     this->message_dispatcher->dispatch_call(call, initiated_by_trigger_message);
 }
 
@@ -2111,7 +2111,7 @@ void ChargePoint::boot_notification_req(const BootReasonEnum& reason, const bool
     req.reason = reason;
     req.chargingStation = charging_station;
 
-    ocpp::Call<BootNotificationRequest> call(req, this->message_queue->createMessageId());
+    ocpp::Call<BootNotificationRequest> call(req);
     this->message_dispatcher->dispatch_call(call, initiated_by_trigger_message);
 }
 
@@ -2125,14 +2125,14 @@ void ChargePoint::notify_report_req(const int request_id, const std::vector<Repo
     req.tbc = false;
 
     if (report_data.size() <= 1) {
-        ocpp::Call<NotifyReportRequest> call(req, this->message_queue->createMessageId());
+        ocpp::Call<NotifyReportRequest> call(req);
         this->message_dispatcher->dispatch_call(call);
     } else {
         NotifyReportRequestsSplitter splitter{
             req,
             this->device_model->get_optional_value<size_t>(ControllerComponentVariables::MaxMessageSize)
                 .value_or(DEFAULT_MAX_MESSAGE_SIZE),
-            [this]() { return this->message_queue->createMessageId(); }};
+            [this]() { return ocpp::create_message_id(); }};
         for (const auto& msg : splitter.create_call_payloads()) {
             this->message_queue->push_call(msg);
         }
@@ -2153,7 +2153,7 @@ AuthorizeResponse ChargePoint::authorize_req(const IdToken id_token, const std::
         return response;
     }
 
-    ocpp::Call<AuthorizeRequest> call(req, this->message_queue->createMessageId());
+    ocpp::Call<AuthorizeRequest> call(req);
     auto future = this->message_dispatcher->dispatch_call_async(call);
 
     if (future.wait_for(DEFAULT_WAIT_FOR_FUTURE_TIMEOUT) == std::future_status::timeout) {
@@ -2186,7 +2186,7 @@ void ChargePoint::status_notification_req(const int32_t evse_id, const int32_t c
     req.timestamp = DateTime();
     req.connectorStatus = status;
 
-    ocpp::Call<StatusNotificationRequest> call(req, this->message_queue->createMessageId());
+    ocpp::Call<StatusNotificationRequest> call(req);
     this->message_dispatcher->dispatch_call(call, initiated_by_trigger_message);
 }
 
@@ -2194,7 +2194,7 @@ void ChargePoint::heartbeat_req(const bool initiated_by_trigger_message) {
     HeartbeatRequest req;
 
     heartbeat_request_time = std::chrono::steady_clock::now();
-    ocpp::Call<HeartbeatRequest> call(req, this->message_queue->createMessageId());
+    ocpp::Call<HeartbeatRequest> call(req);
     this->message_dispatcher->dispatch_call(call, initiated_by_trigger_message);
 }
 
@@ -2222,7 +2222,7 @@ void ChargePoint::transaction_event_req(const TransactionEventEnum& event_type, 
     req.offline = offline;
     req.reservationId = reservation_id;
 
-    ocpp::Call<TransactionEventRequest> call(req, this->message_queue->createMessageId());
+    ocpp::Call<TransactionEventRequest> call(req);
 
     // Check if id token is in the remote start map, because when a remote
     // start request is done, the first transaction event request should
@@ -2264,7 +2264,7 @@ void ChargePoint::meter_values_req(const int32_t evse_id, const std::vector<Mete
     req.evseId = evse_id;
     req.meterValue = meter_values;
 
-    ocpp::Call<MeterValuesRequest> call(req, this->message_queue->createMessageId());
+    ocpp::Call<MeterValuesRequest> call(req);
     this->message_dispatcher->dispatch_call(call, initiated_by_trigger_message);
 }
 
@@ -2278,12 +2278,12 @@ void ChargePoint::report_charging_profile_req(const int32_t request_id, const in
     req.chargingProfile = profiles;
     req.tbc = tbc;
 
-    ocpp::Call<ReportChargingProfilesRequest> call(req, this->message_queue->createMessageId());
+    ocpp::Call<ReportChargingProfilesRequest> call(req);
     this->message_dispatcher->dispatch_call(call);
 }
 
 void ChargePoint::report_charging_profile_req(const ReportChargingProfilesRequest& req) {
-    ocpp::Call<ReportChargingProfilesRequest> call(req, this->message_queue->createMessageId());
+    ocpp::Call<ReportChargingProfilesRequest> call(req);
     this->message_dispatcher->dispatch_call(call);
 }
 
@@ -2293,7 +2293,7 @@ void ChargePoint::notify_event_req(const std::vector<EventData>& events) {
     req.generatedAt = DateTime();
     req.seqNo = 0;
 
-    ocpp::Call<NotifyEventRequest> call(req, this->message_queue->createMessageId());
+    ocpp::Call<NotifyEventRequest> call(req);
     this->message_dispatcher->dispatch_call(call);
 }
 
@@ -2311,7 +2311,7 @@ void ChargePoint::notify_customer_information_req(const std::string& data, const
             return req;
         }();
 
-        ocpp::Call<NotifyCustomerInformationRequest> call(req, this->message_queue->createMessageId());
+        ocpp::Call<NotifyCustomerInformationRequest> call(req);
         this->message_dispatcher->dispatch_call(call);
 
         pos += 512;
@@ -2368,7 +2368,7 @@ void ChargePoint::handle_certificate_signed_req(Call<CertificateSignedRequest> c
     if (response.status == CertificateSignedStatusEnum::Accepted and
         cert_signing_use == ocpp::CertificateSigningUseEnum::ChargingStationCertificate and
         this->device_model->get_value<int>(ControllerComponentVariables::SecurityProfile) == 3) {
-        this->connectivity_manager->disconnect_websocket(WebsocketCloseReason::ServiceRestart);
+        this->connectivity_manager->on_charging_station_certificate_changed();
 
         const auto& security_event = ocpp::security_events::RECONFIGURATIONOFSECURITYPARAMETERS;
         std::string tech_info = "Changed charging station certificate";
@@ -2450,7 +2450,7 @@ void ChargePoint::handle_boot_notification_response(CallResult<BootNotificationR
             this->callbacks.time_sync_callback.value()(msg.currentTime);
         }
 
-        this->remove_network_connection_profiles_below_actual_security_profile();
+        this->connectivity_manager->confirm_successful_connection();
 
         // set timers
         if (msg.interval > 0) {
@@ -3086,7 +3086,7 @@ void ChargePoint::handle_trigger_message(Call<TriggerMessageRequest> call) {
             request.status = UploadLogStatusEnum::Idle;
         }
 
-        ocpp::Call<LogStatusNotificationRequest> call(request, this->message_queue->createMessageId());
+        ocpp::Call<LogStatusNotificationRequest> call(request);
         this->message_dispatcher->dispatch_call(call, true);
     } break;
 
@@ -3105,7 +3105,7 @@ void ChargePoint::handle_trigger_message(Call<TriggerMessageRequest> call) {
             break;
         }
 
-        ocpp::Call<FirmwareStatusNotificationRequest> call(request, this->message_queue->createMessageId());
+        ocpp::Call<FirmwareStatusNotificationRequest> call(request);
         this->message_dispatcher->dispatch_call(call, true);
     } break;
 
@@ -3139,9 +3139,12 @@ void ChargePoint::handle_remote_start_transaction_request(Call<RequestStartTrans
 
         // When available but there was a reservation for another token id or group token id:
         //    send rejected (F01.FR.21 & F01.FR.22)
-        const bool reserved = is_evse_reserved_for_other(evse, call.msg.idToken, call.msg.groupIdToken);
+        ocpp::ReservationCheckStatus reservation_status =
+            is_evse_reserved_for_other(evse, call.msg.idToken, call.msg.groupIdToken);
 
-        if (!available or reserved) {
+        const bool is_reserved = (reservation_status == ocpp::ReservationCheckStatus::ReservedForOtherToken);
+
+        if (!available or is_reserved) {
             // Note: we only support TxStartPoint PowerPathClosed, so we did not implement starting a
             // transaction first (and send TransactionEventRequest (eventType = Started). Only if a transaction
             // is authorized, a TransactionEventRequest will be sent. Because of this, F01.FR.13 is not
@@ -3307,6 +3310,142 @@ void ChargePoint::handle_heartbeat_response(CallResult<HeartbeatResponse> call) 
         ocpp::DateTime currentTimeCompensated(call.msg.currentTime.to_time_point() + timeOfFlight);
         this->callbacks.time_sync_callback.value()(currentTimeCompensated);
     }
+}
+
+void ChargePoint::handle_reserve_now_request(Call<ReserveNowRequest> call) {
+    ReserveNowResponse response;
+    response.status = ReserveNowStatusEnum::Rejected;
+    bool reservation_available = true;
+
+    std::string status_info;
+
+    if (!this->callbacks.reserve_now_callback.has_value()) {
+        reservation_available = false;
+        status_info = "Reservation is not implemented";
+    } else if (!this->device_model->get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrAvailable)
+                    .value_or(false)) {
+        status_info = "Reservation is not available";
+        reservation_available = false;
+    } else if (!this->device_model->get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrEnabled)) {
+        reservation_available = false;
+        status_info = "Reservation is not enabled";
+    }
+
+    if (!reservation_available) {
+        // Reservation not available / implemented, return 'Rejected'.
+        // H01.FR.01
+        EVLOG_info << "Receiving a reservation request, but reservation is not enabled or implemented.";
+        send_reserve_now_rejected_response(call.uniqueId, status_info);
+        return;
+    }
+
+    // Check if we need a specific evse id during a reservation and if that is the case, if we recevied an evse id.
+    const ReserveNowRequest request = call.msg;
+    if (!request.evseId.has_value() &&
+        !this->device_model->get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrNonEvseSpecific)
+             .value_or(false)) {
+        // H01.FR.19
+        EVLOG_warning << "Trying to make a reservation, but no evse id was given while it should be sent in the "
+                         "request when NonEvseSpecific is disabled.";
+        send_reserve_now_rejected_response(
+            call.uniqueId,
+            "No evse id was given while it should be sent in the request when NonEvseSpecific is disabled");
+        return;
+    }
+
+    const std::optional<int32_t> evse_id = request.evseId;
+
+    if (evse_id.has_value()) {
+        if (evse_id <= 0 || !evse_manager->does_evse_exist(evse_id.value())) {
+            EVLOG_error << "Trying to make a reservation, but evse " << evse_id.value() << " is not a valid evse id.";
+            send_reserve_now_rejected_response(call.uniqueId, "Evse id does not exist");
+            return;
+        }
+
+        // Check if there is a connector available for this evse id.
+        if (!does_connector_exist(static_cast<uint32_t>(evse_id.value()), request.connectorType)) {
+            EVLOG_info << "Trying to make a reservation for connector type "
+                       << conversions::connector_enum_to_string(request.connectorType.value_or(ConnectorEnum::Unknown))
+                       << " for evse " << evse_id.value() << ", but this connector type does not exist.";
+            send_reserve_now_rejected_response(call.uniqueId, "Connector type does not exist");
+            return;
+        }
+    } else {
+        // No evse id. Just search for all evse's if there is something available for reservation
+        const uint64_t number_of_evses = evse_manager->get_number_of_evses();
+        if (number_of_evses <= 0) {
+            send_reserve_now_rejected_response(call.uniqueId, "No evse's found in charging station");
+            EVLOG_error << "Trying to make a reservation, but number of evse's is 0";
+            return;
+        }
+
+        bool connector_exists = false;
+        for (uint64_t i = 1; i <= number_of_evses; i++) {
+            if (this->does_connector_exist(i, request.connectorType)) {
+                connector_exists = true;
+            }
+
+            if (this->is_connector_available(i, request.connectorType)) {
+                // There is at least one connector available!
+                break;
+            }
+        }
+
+        if (!connector_exists) {
+            send_reserve_now_rejected_response(call.uniqueId, "Could not get status info from connector");
+            return;
+        }
+    }
+
+    // Connector exists and might or might not be available, but if the reservation id is already existing, reservation
+    // should be overwritten.
+
+    // Call reserve now callback and wait for the response.
+    const ReserveNowRequest reservation_request = call.msg;
+    response.status = this->callbacks.reserve_now_callback.value()(reservation_request);
+
+    // Reply with the response from the callback.
+    const ocpp::CallResult<ReserveNowResponse> call_result(response, call.uniqueId);
+    this->message_dispatcher->dispatch_call_result(call_result);
+
+    if (response.status == ReserveNowStatusEnum::Accepted) {
+        EVLOG_debug << "Reservation with id " << reservation_request.id << " for "
+                    << (reservation_request.evseId.has_value()
+                            ? " evse_id: " + std::to_string(reservation_request.evseId.value())
+                            : "")
+                    << " is accepted";
+    }
+}
+
+void ChargePoint::handle_cancel_reservation_callback(Call<CancelReservationRequest> call) {
+
+    CancelReservationResponse response;
+    if (!this->callbacks.cancel_reservation_callback.has_value() ||
+        !this->device_model->get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrAvailable)
+             .value_or(false) ||
+        !this->device_model->get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrEnabled)
+             .value_or(false)) {
+        // Reservation not available / implemented, return 'Rejected'.
+        // H01.FR.01
+        EVLOG_info << "Receiving a cancel reservation request, but reservation is not implemented.";
+        response.status = CancelReservationStatusEnum::Rejected;
+    } else {
+        response.status = (this->callbacks.cancel_reservation_callback.value()(call.msg.reservationId)
+                               ? CancelReservationStatusEnum::Accepted
+                               : CancelReservationStatusEnum::Rejected);
+    }
+
+    const ocpp::CallResult<CancelReservationResponse> call_result(response, call.uniqueId);
+    this->message_dispatcher->dispatch_call_result(call_result);
+}
+
+void ChargePoint::send_reserve_now_rejected_response(const MessageId& unique_id, const std::string& status_info) {
+    ReserveNowResponse response;
+    response.status = ReserveNowStatusEnum::Rejected;
+    response.statusInfo = StatusInfo();
+    response.statusInfo->additionalInfo = status_info;
+    const ocpp::CallResult<ReserveNowResponse> call_result(response, unique_id);
+    this->message_dispatcher->dispatch_call_result(call_result);
 }
 
 void ChargePoint::handle_costupdated_req(const Call<CostUpdatedRequest> call) {
@@ -3602,24 +3741,50 @@ void ChargePoint::handle_get_installed_certificate_ids_req(Call<GetInstalledCert
     this->message_dispatcher->dispatch_call_result(call_result);
 }
 
+bool ChargePoint::should_allow_certificate_install(InstallCertificateUseEnum cert_type) const {
+    const int security_profile = this->device_model->get_value<int>(ControllerComponentVariables::SecurityProfile);
+
+    if (security_profile > 1) {
+        return true;
+    }
+    switch (cert_type) {
+    case InstallCertificateUseEnum::CSMSRootCertificate:
+        return this->device_model
+            ->get_optional_value<bool>(ControllerComponentVariables::AllowCSMSRootCertInstallWithUnsecureConnection)
+            .value_or(true);
+
+    case InstallCertificateUseEnum::ManufacturerRootCertificate:
+        return this->device_model
+            ->get_optional_value<bool>(ControllerComponentVariables::AllowMFRootCertInstallWithUnsecureConnection)
+            .value_or(true);
+    default:
+        return true;
+    }
+}
+
 void ChargePoint::handle_install_certificate_req(Call<InstallCertificateRequest> call) {
     EVLOG_debug << "Received InstallCertificateRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
 
     const auto msg = call.msg;
     InstallCertificateResponse response;
 
-    const auto result = this->evse_security->install_ca_certificate(
-        msg.certificate.get(), ocpp::evse_security_conversions::from_ocpp_v201(msg.certificateType));
-    response.status = ocpp::evse_security_conversions::to_ocpp_v201(result);
-
-    if (response.status == InstallCertificateStatusEnum::Accepted) {
-        const auto& security_event = ocpp::security_events::RECONFIGURATIONOFSECURITYPARAMETERS;
-        std::string tech_info =
-            "Installed certificate: " + conversions::install_certificate_use_enum_to_string(msg.certificateType);
-        this->security_event_notification_req(CiString<50>(security_event), CiString<255>(tech_info), true,
-                                              utils::is_critical(security_event));
+    if (!should_allow_certificate_install(msg.certificateType)) {
+        response.status = InstallCertificateStatusEnum::Rejected;
+        response.statusInfo = StatusInfo();
+        response.statusInfo->reasonCode = "UnsecureConnection";
+        response.statusInfo->additionalInfo = "CertificateInstallationNotAllowedWithUnsecureConnection";
+    } else {
+        const auto result = this->evse_security->install_ca_certificate(
+            msg.certificate.get(), ocpp::evse_security_conversions::from_ocpp_v201(msg.certificateType));
+        response.status = ocpp::evse_security_conversions::to_ocpp_v201(result);
+        if (response.status == InstallCertificateStatusEnum::Accepted) {
+            const auto& security_event = ocpp::security_events::RECONFIGURATIONOFSECURITYPARAMETERS;
+            std::string tech_info =
+                "Installed certificate: " + conversions::install_certificate_use_enum_to_string(msg.certificateType);
+            this->security_event_notification_req(CiString<50>(security_event), CiString<255>(tech_info), true,
+                                                  utils::is_critical(security_event));
+        }
     }
-
     ocpp::CallResult<InstallCertificateResponse> call_result(response, call.uniqueId);
     this->message_dispatcher->dispatch_call_result(call_result);
 }
@@ -3795,7 +3960,7 @@ void ChargePoint::notify_monitoring_report_req(const int request_id,
         req.monitor.emplace(montoring_data);
         req.tbc = false;
 
-        ocpp::Call<NotifyMonitoringReportRequest> call(req, this->message_queue->createMessageId());
+        ocpp::Call<NotifyMonitoringReportRequest> call(req);
         this->message_dispatcher->dispatch_call(call);
     } else {
         // Split for larger message sizes
@@ -3821,7 +3986,7 @@ void ChargePoint::notify_monitoring_report_req(const int request_id,
 
             req.monitor = sub_data;
 
-            ocpp::Call<NotifyMonitoringReportRequest> call(req, this->message_queue->createMessageId());
+            ocpp::Call<NotifyMonitoringReportRequest> call(req);
             this->message_dispatcher->dispatch_call(call);
 
             sequence_num++;
@@ -3923,7 +4088,7 @@ void ChargePoint::handle_get_display_message(const Call<GetDisplayMessagesReques
 
     // Send display messages. The response is empty, so we don't have to get that back.
     // Sending multiple messages is not supported for now, because there is no need to split them up (yet).
-    ocpp::Call<NotifyDisplayMessagesRequest> request(messages_request, this->message_queue->createMessageId());
+    ocpp::Call<NotifyDisplayMessagesRequest> request(messages_request);
     this->message_dispatcher->dispatch_call(request);
 }
 
@@ -4020,65 +4185,14 @@ void ChargePoint::handle_clear_display_message(const Call<ClearDisplayMessageReq
     this->message_dispatcher->dispatch_call_result(call_result);
 }
 
-void ChargePoint::handle_data_transfer_req(Call<DataTransferRequest> call) {
-    const auto msg = call.msg;
-    DataTransferResponse response;
-
-    if (this->callbacks.data_transfer_callback.has_value()) {
-        response = this->callbacks.data_transfer_callback.value()(call.msg);
-    } else {
-        response.status = DataTransferStatusEnum::UnknownVendorId;
-        EVLOG_warning << "Received a DataTransferRequest but no data transfer callback was registered";
-    }
-
-    ocpp::CallResult<DataTransferResponse> call_result(response, call.uniqueId);
-    this->message_dispatcher->dispatch_call_result(call_result);
-}
-
 std::optional<DataTransferResponse> ChargePoint::data_transfer_req(const CiString<255>& vendorId,
                                                                    const std::optional<CiString<50>>& messageId,
                                                                    const std::optional<json>& data) {
-    DataTransferRequest req;
-    req.vendorId = vendorId;
-    req.messageId = messageId;
-    req.data = data;
-
-    return this->data_transfer_req(req);
+    return this->data_transfer->data_transfer_req(vendorId, messageId, data);
 }
 
 std::optional<DataTransferResponse> ChargePoint::data_transfer_req(const DataTransferRequest& request) {
-    DataTransferResponse response;
-    response.status = DataTransferStatusEnum::Rejected;
-
-    ocpp::Call<DataTransferRequest> call(request, this->message_queue->createMessageId());
-    auto data_transfer_future = this->message_dispatcher->dispatch_call_async(call);
-
-    if (this->connectivity_manager == nullptr or !this->connectivity_manager->is_websocket_connected()) {
-        return std::nullopt;
-    }
-
-    if (data_transfer_future.wait_for(DEFAULT_WAIT_FOR_FUTURE_TIMEOUT) == std::future_status::timeout) {
-        EVLOG_warning << "Waiting for DataTransfer.conf future timed out";
-        return std::nullopt;
-    }
-
-    auto enhanced_message = data_transfer_future.get();
-    if (enhanced_message.messageType == MessageType::DataTransferResponse) {
-        try {
-            ocpp::CallResult<DataTransferResponse> call_result = enhanced_message.message;
-            response = call_result.msg;
-        } catch (const EnumConversionException& e) {
-            EVLOG_error << "EnumConversionException during handling of message: " << e.what();
-            auto call_error = CallError(enhanced_message.uniqueId, "FormationViolation", e.what(), json({}));
-            this->message_dispatcher->dispatch_call_error(call_error);
-            return std::nullopt;
-        }
-    }
-    if (enhanced_message.offline) {
-        return std::nullopt;
-    }
-
-    return response;
+    return this->data_transfer->data_transfer_req(request);
 }
 
 void ChargePoint::handle_send_local_authorization_list_req(Call<SendLocalListRequest> call) {
@@ -4190,33 +4304,29 @@ void ChargePoint::websocket_connected_callback(const int configuration_slot,
                                                const NetworkConnectionProfile& network_connection_profile) {
     this->message_queue->resume(this->message_queue_resume_delay);
 
-    const auto& security_profile_cv = ControllerComponentVariables::SecurityProfile;
-    if (security_profile_cv.variable.has_value()) {
-        this->device_model->set_read_only_value(
-            security_profile_cv.component, security_profile_cv.variable.value(), AttributeEnum::Actual,
-            std::to_string(network_connection_profile.securityProfile), VARIABLE_ATTRIBUTE_VALUE_SOURCE_INTERNAL);
-    }
+    if (this->registration_status == RegistrationStatusEnum::Accepted) {
+        this->connectivity_manager->confirm_successful_connection();
 
-    if (this->registration_status == RegistrationStatusEnum::Accepted and
-        this->time_disconnected.time_since_epoch() != 0s) {
-        // handle offline threshold
-        //  Get the current time point using steady_clock
-        auto offline_duration = std::chrono::steady_clock::now() - this->time_disconnected;
+        if (this->time_disconnected.time_since_epoch() != 0s) {
+            // handle offline threshold
+            //  Get the current time point using steady_clock
+            auto offline_duration = std::chrono::steady_clock::now() - this->time_disconnected;
 
-        // B04.FR.01
-        // If offline period exceeds offline threshold then send the status notification for all connectors
-        if (offline_duration >
-            std::chrono::seconds(this->device_model->get_value<int>(ControllerComponentVariables::OfflineThreshold))) {
-            EVLOG_debug << "offline for more than offline threshold ";
-            this->component_state_manager->send_status_notification_all_connectors();
-        } else {
-            // B04.FR.02
-            // If offline period doesn't exceed offline threshold then send the status notification for all
-            // connectors that changed state
-            EVLOG_debug << "offline for less than offline threshold ";
-            this->component_state_manager->send_status_notification_changed_connectors();
+            // B04.FR.01
+            // If offline period exceeds offline threshold then send the status notification for all connectors
+            if (offline_duration > std::chrono::seconds(this->device_model->get_value<int>(
+                                       ControllerComponentVariables::OfflineThreshold))) {
+                EVLOG_debug << "offline for more than offline threshold ";
+                this->component_state_manager->send_status_notification_all_connectors();
+            } else {
+                // B04.FR.02
+                // If offline period doesn't exceed offline threshold then send the status notification for all
+                // connectors that changed state
+                EVLOG_debug << "offline for less than offline threshold ";
+                this->component_state_manager->send_status_notification_changed_connectors();
+            }
+            this->init_certificate_expiration_check_timers(); // re-init as timers are stopped on disconnect
         }
-        this->init_certificate_expiration_check_timers(); // re-init as timers are stopped on disconnect
     }
     this->time_disconnected = std::chrono::time_point<std::chrono::steady_clock>();
 
@@ -4521,23 +4631,25 @@ std::vector<CompositeSchedule> ChargePoint::get_all_composite_schedules(const in
             composite_schedule_response.schedule.has_value()) {
             composite_schedules.push_back(composite_schedule_response.schedule.value());
         } else {
-            EVLOG_warning << "Could not internally retrieve composite schedule: " << composite_schedule_response;
+            EVLOG_warning << "Could not internally retrieve composite schedule for evse id " << evse_id << ": "
+                          << composite_schedule_response;
         }
     }
 
     return composite_schedules;
 }
 
-std::optional<NetworkConnectionProfile> ChargePoint::get_network_connection_profile(const int32_t configuration_slot) {
+std::optional<NetworkConnectionProfile>
+ChargePoint::get_network_connection_profile(const int32_t configuration_slot) const {
     return this->connectivity_manager->get_network_connection_profile(configuration_slot);
 }
 
-std::optional<int> ChargePoint::get_configuration_slot_priority(const int configuration_slot) {
-    return this->connectivity_manager->get_configuration_slot_priority(configuration_slot);
+std::optional<int> ChargePoint::get_priority_from_configuration_slot(const int configuration_slot) const {
+    return this->connectivity_manager->get_priority_from_configuration_slot(configuration_slot);
 }
 
-const std::vector<int>& ChargePoint::get_network_connection_priorities() const {
-    return this->connectivity_manager->get_network_connection_priorities();
+const std::vector<int>& ChargePoint::get_network_connection_slots() const {
+    return this->connectivity_manager->get_network_connection_slots();
 }
 
 // Static functions

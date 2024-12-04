@@ -87,8 +87,6 @@ private:
 private:
     std::shared_ptr<EvseSecurity> evse_security;
 
-    std::function<void()> reconnect_callback;
-
     // Connection related data
     Everest::SteadyTimer reconnect_timer_tpm;
     std::unique_ptr<std::thread> websocket_thread;
@@ -112,6 +110,8 @@ private:
     std::mutex deferred_callback_mutex;
     std::condition_variable deferred_callback_cv;
     std::atomic_bool stop_deferred_handler;
+
+    OcppProtocolVersion connected_ocpp_version;
 };
 
 } // namespace ocpp

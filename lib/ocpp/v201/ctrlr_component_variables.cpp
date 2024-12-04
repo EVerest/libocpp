@@ -359,6 +359,27 @@ const ComponentVariable& ResumeTransactionsOnBoot = {
         "ResumeTransactionsOnBoot",
     }),
 };
+const ComponentVariable& AllowCSMSRootCertInstallWithUnsecureConnection = {
+    ControllerComponents::InternalCtrlr,
+    std::nullopt,
+    std::optional<Variable>({
+        "AllowCSMSRootCertInstallWithUnsecureConnection",
+    }),
+};
+const ComponentVariable& AllowMFRootCertInstallWithUnsecureConnection = {
+    ControllerComponents::InternalCtrlr,
+    std::nullopt,
+    std::optional<Variable>({
+        "AllowMFRootCertInstallWithUnsecureConnection",
+    }),
+};
+const ComponentVariable& AllowSecurityLevelZeroConnections = {
+    ControllerComponents::InternalCtrlr,
+    std::nullopt,
+    std::optional<Variable>({
+        "AllowSecurityLevelZeroConnections",
+    }),
+};
 const ComponentVariable& AlignedDataCtrlrEnabled = {
     ControllerComponents::AlignedDataCtrlr,
     std::nullopt,
