@@ -16,7 +16,7 @@ class EvseManagerInterface;
 
 class ReservationInterface : public MessageHandlerInterface {
 public:
-    virtual ~ReservationInterface() {};
+    virtual ~ReservationInterface(){};
     virtual void on_reservation_status(const int32_t reservation_id, const ReservationUpdateStatusEnum status) = 0;
     virtual ocpp::ReservationCheckStatus
     is_evse_reserved_for_other(const EvseInterface& evse, const IdToken& id_token,
@@ -61,7 +61,6 @@ public:
     virtual void on_reservation_cleared(const int32_t evse_id, const int32_t connector_id) override;
 
 private: // Functions
-
     void handle_reserve_now_request(Call<ReserveNowRequest> call);
     void handle_cancel_reservation_callback(Call<CancelReservationRequest> call);
 
