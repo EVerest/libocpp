@@ -686,7 +686,7 @@ void WebsocketLibwebsockets::thread_websocket_client_loop(std::shared_ptr<Connec
                     auto state = local_data->get_state();
                     processing = (!local_data->is_interupted()) &&
                                  (state != EConnectionState::FINALIZED && state != EConnectionState::ERROR);
-                    
+
                     if (processing && !message_queue.empty()) {
                         lws_callback_on_writable(local_data->get_conn());
                     }
@@ -868,7 +868,7 @@ void WebsocketLibwebsockets::close(const WebsocketCloseReason code, const std::s
 
     std::scoped_lock lock(this->connection_mutex);
 
-    // Close any incoming thread
+    // Close any ongoing thread
     safe_close_threads();
 
     // Release the connection data and state
