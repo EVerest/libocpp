@@ -1966,7 +1966,7 @@ void ChargePoint::set_evse_connectors_unavailable(EvseInterface& evse, bool pers
     }
 }
 
-bool ChargePoint::is_connector_available(const uint32_t evse_id, std::optional<ConnectorEnum> connector_type) {
+bool ChargePoint::is_connector_available(const uint32_t evse_id, std::optional<CiString<20>> connector_type) {
     EvseInterface* evse;
     try {
         evse = &evse_manager->get_evse(static_cast<int32_t>(evse_id));
@@ -1976,7 +1976,7 @@ bool ChargePoint::is_connector_available(const uint32_t evse_id, std::optional<C
     }
 
     std::optional<ConnectorStatusEnum> status =
-        evse->get_connector_status(connector_type.value_or(ConnectorEnum::Unknown));
+        evse->get_connector_status(connector_type.value_or(ConnectorEnumStringType::Unknown));
     if (!status.has_value()) {
         return false;
     }
@@ -1984,7 +1984,7 @@ bool ChargePoint::is_connector_available(const uint32_t evse_id, std::optional<C
     return status.value() == ConnectorStatusEnum::Available;
 }
 
-bool ChargePoint::does_connector_exist(const uint32_t evse_id, std::optional<ConnectorEnum> connector_type) {
+bool ChargePoint::does_connector_exist(const uint32_t evse_id, std::optional<CiString<20>> connector_type) {
     EvseInterface* evse;
     try {
         evse = &evse_manager->get_evse(static_cast<int32_t>(evse_id));
@@ -1993,7 +1993,7 @@ bool ChargePoint::does_connector_exist(const uint32_t evse_id, std::optional<Con
         return false;
     }
 
-    return evse->does_connector_exist(connector_type.value_or(ConnectorEnum::Unknown));
+    return evse->does_connector_exist(connector_type.value_or(ConnectorEnumStringType::Unknown));
 }
 
 bool ChargePoint::is_offline() {
@@ -3365,7 +3365,7 @@ void ChargePoint::handle_reserve_now_request(Call<ReserveNowRequest> call) {
         // Check if there is a connector available for this evse id.
         if (!does_connector_exist(static_cast<uint32_t>(evse_id.value()), request.connectorType)) {
             EVLOG_info << "Trying to make a reservation for connector type "
-                       << conversions::connector_enum_to_string(request.connectorType.value_or(ConnectorEnum::Unknown))
+                       << request.connectorType.value_or(ConnectorEnumStringType::Unknown)
                        << " for evse " << evse_id.value() << ", but this connector type does not exist.";
             send_reserve_now_rejected_response(call.uniqueId, "Connector type does not exist");
             return;

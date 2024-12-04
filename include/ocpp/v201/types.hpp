@@ -193,6 +193,41 @@ inline const CiString<20> NEMA = "NEMA";
 inline const CiString<20> NoAuthorization = "NoAuthorization";
 inline const CiString<20> VIN = "VIN";
 } // namespace IdTokenEnumStringType
+
+namespace ConnectorEnumStringType {
+inline const CiString<20> cCCS1 = "cCCS1";     // Combined Charging System 1 (captive cabled) a.k.a. Combo 1
+inline const CiString<20> cCCS2 = "cCCS2";     //  Combined Charging System 2 (captive cabled) a.k.a. Combo 2
+inline const CiString<20> cChaoJi = "cChaoJi"; //  ChaoJi (captive cabled) a.k.a. CHAdeMO 3.0
+inline const CiString<20> cG105 = "cG105";     //  JARI G105-1993 (captive cabled) a.k.a. CHAdeMO (captive cabled)
+inline const CiString<20> cGBT_DC = "cGBT-DC"; //  GB/T 20234.3 DC connector (captive cabled)
+inline const CiString<20> cLECCS = "cLECCS";   //  Light Equipment Combined Charging System IS17017 (captive cabled)
+inline const CiString<20> cMCS = "cMCS";       //  Megawatt Charging System (captive cabled)
+inline const CiString<20> cNACS = "cNACS";     //  North American Charging Standard (captive cabled)
+inline const CiString<20> cNACS_CCS1 = "cNACS-CCS1"; //  Tesla MagicDock with built-in NACS to CCS1 adapter
+inline const CiString<20> cTesla = "cTesla";         //  Tesla Connector (captive cabled)
+inline const CiString<20> cType1 = "cType1";         //  IEC62196-2 Type 1 connector (captive cabled) a.k.a. J1772
+inline const CiString<20> cType2 = "cType2"; //  IEC62196-2 Type 2 connector (captive cabled) a.k.a. Mennekes connector
+inline const CiString<20> cUltraChaoJi = "cUltraChaoJi"; //  Ultra-ChaoJi for megawatt charging
+inline const CiString<20> s309_1P_16A = "s309-1P-16A ";  //  16A 1 phase IEC60309 socket
+inline const CiString<20> s309_1P_32A = "s309-1P-32A ";  //  32A 1 phase IEC60309 socket
+inline const CiString<20> s309_3P_16A = "s309-3P-16A";   //  16A 3 phase IEC60309 socket
+inline const CiString<20> s309_3P_32A = "s309-3P-32A";   //  32A 3 phase IEC60309 socket
+inline const CiString<20> sBS1361 = "sBS1361";           //  UK domestic socket a.k.a. 13Amp
+inline const CiString<20> sCEE_7_7 = "sCEE-7-7";         //  CEE 7/7 16A socket. May represent 7/4 and 7/5 a.k.a Schuko
+inline const CiString<20> sType2 = "sType2";             //  IEC62196-2 Type 2 socket a.k.a. Mennekes connector
+inline const CiString<20> sType3 = "sType3";             //  IEC62196-2 Type 3 socket a.k.a. Scame
+inline const CiString<20> wInductive = "wInductive";     //  Wireless inductively coupled connection (generic)
+inline const CiString<20> wResonant = "wResonant";       //  Wireless resonant coupled connection (generic)
+inline const CiString<20> Other1PhMax16A =
+    "Other1PhMax16A"; //  Other single phase (domestic) sockets not mentioned above, rated at no more than 16A. CEE7/17,
+                      //  AS3112, NEMA 5-15, NEMA 5-20, JISC8303, TIS166, SI 32, CPCS-CCC, SEV1011, etc.
+inline const CiString<20> Other1PhOver16A =
+    "Other1PhOver16A";                           //  Other single phase sockets not mentioned above (over 16A)
+inline const CiString<20> Other3Ph = "Other3Ph"; //  Other 3 phase sockets not mentioned above. NEMA14-30, NEMA14-50.
+inline const CiString<20> Pan = "Pan";           //  Pantograph connector
+inline const CiString<20> Undetermined = "Undetermined"; //  Yet to be determined (e.g. before plugged in)
+inline const CiString<20> Unknown = "Unknown";           // Unknown/not determinable
+} // namespace ConnectorEnumStringType
 } // namespace v201
 } // namespace ocpp
 

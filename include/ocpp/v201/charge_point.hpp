@@ -581,7 +581,7 @@ private:
     /// \param connector_type   The connector type.
     /// \return True when a connector is available and the evse id exists.
     ///
-    bool is_connector_available(const uint32_t evse_id, std::optional<ConnectorEnum> connector_type);
+    bool is_connector_available(const uint32_t evse_id, std::optional<CiString<20>> connector_type);
 
     ///
     /// \brief Check if the connector exists on the given evse id.
@@ -589,7 +589,7 @@ private:
     /// \param connector_type   The connector type.
     /// \return False if evse id does not exist or evse does not have the given connector type.
     ///
-    bool does_connector_exist(const uint32_t evse_id, std::optional<ConnectorEnum> connector_type);
+    bool does_connector_exist(const uint32_t evse_id, std::optional<CiString<20>> connector_type);
 
     /// \brief Get the value optional offline flag
     /// \return true if the charge point is offline. std::nullopt if it is online;
