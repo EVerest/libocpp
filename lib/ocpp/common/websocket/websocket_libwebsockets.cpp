@@ -486,8 +486,13 @@ void WebsocketLibwebsockets::thread_websocket_message_recv_loop(std::shared_ptr<
             this->message_callback(message);
         }
 
-        // While we are empty, sleep
-        recv_message_queue.wait_on_queue();
+        // While we are empty, sleep, only if we have not been interrupted in the
+        // message_callback. An interrupt can be caused in the message callback
+        // if we receive a certain message type that will cause the implementation
+        // in the charge point to attempt a reconnect (BasicAuthPass for example)
+        if (!local_data->is_interupted()) {
+            recv_message_queue.wait_on_queue(1);
+        }
     }
 
     EVLOG_debug << "Exit recv loop with ID: " << std::hex << std::this_thread::get_id();
@@ -753,14 +758,25 @@ void WebsocketLibwebsockets::clear_all_queues() {
 void WebsocketLibwebsockets::safe_close_threads() {
     // If we already have a connection attempt started for now shut it down first
     std::shared_ptr<ConnectionData> local_conn_data = conn_data;
+    bool in_message_thread = false;
 
     if (local_conn_data != nullptr) {
         if (std::this_thread::get_id() == local_conn_data->get_client_thread_id()) {
-            EVLOG_AND_THROW(std::runtime_error("Trying to start connection from client thread!"));
-        } else if (std::this_thread::get_id() == local_conn_data->get_message_thread_id()) {
-            EVLOG_AND_THROW(std::runtime_error("Trying to start connection from message thread!"));
+            EVLOG_AND_THROW(std::runtime_error("Trying to start/stop/reconnect from client thread!"));
         }
 
+        // TODO(ioan): reintroduce this check after we have solved the problem of a main processing
+        // loop in the libocpp. The problem is that a start/stop operation is executed from the
+        // message thread, because in message_callback we can initiate a reconnect when we receive
+        // a message of the type 'BasicAuthPass'. In turn, because there's no main processing
+        // loop with it's own thread, the response is polled immediately, and there's special behavior
+        // that requires a reconnect that is called from the message thread.
+        // The resulting problem is that we could have this thread dangling for a bit, since we are forced to detach
+
+        // else if (std::this_thread::get_id() == local_conn_data->get_message_thread_id()) {
+        //      EVLOG_AND_THROW(std::runtime_error("Trying to start/stop/reconnect connection from message thread!")); }
+
+        in_message_thread = (std::this_thread::get_id() == local_conn_data->get_message_thread_id());
         local_conn_data->do_interrupt_and_exit();
     }
 
@@ -778,11 +794,19 @@ void WebsocketLibwebsockets::safe_close_threads() {
         this->websocket_thread.reset();
     }
 
-    if (this->recv_message_thread && this->recv_message_thread->joinable()) {
-        // Awake the receiving message thread to finish
-        recv_message_queue.notify_waiting_thread();
-        this->recv_message_thread->join();
-        this->recv_message_thread.reset();
+    if (in_message_thread) {
+        if (this->recv_message_thread) {
+            // See the note above 'in_message_thread' on why we detach
+            this->recv_message_thread->detach();
+            this->recv_message_thread.reset();
+        }
+    } else {
+        if (this->recv_message_thread && this->recv_message_thread->joinable()) {
+            // Awake the receiving message thread to finish
+            recv_message_queue.notify_waiting_thread();
+            this->recv_message_thread->join();
+            this->recv_message_thread.reset();
+        }
     }
 }
 
