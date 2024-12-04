@@ -137,11 +137,6 @@ void Reservation::handle_reserve_now_request(Call<ReserveNowRequest> call) {
         for (uint64_t i = 1; i <= number_of_evses; i++) {
             if (this->does_connector_exist(i, request.connectorType)) {
                 connector_exists = true;
-            }
-
-            // TODO mz do something with the result from is_connector_available or leave the call away.
-            if (connector_exists && this->is_connector_available(i, request.connectorType)) {
-                // There is at least one connector available!
                 break;
             }
         }
