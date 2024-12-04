@@ -17,6 +17,8 @@
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
 
+#include <pthread.h>
+
 #define USING_OPENSSL_3 (OPENSSL_VERSION_NUMBER >= 0x30000000L)
 
 #if USING_OPENSSL_3
@@ -682,15 +684,24 @@ void WebsocketLibwebsockets::thread_websocket_client_loop(std::shared_ptr<Connec
             } else {
                 // Process while we're running
                 int n = 0;
+                bool processing = true;
 
-                while (n >= 0 && (!local_data->is_interupted())) {
+                EVLOG_debug << "Started processing lws service";
+
+                do {
                     // Set to -1 for continuous servicing, of required, not recommended
                     n = lws_service(local_data->lws_ctx.get(), 0);
 
-                    if (!message_queue.empty()) {
+                    auto state = local_data->get_state();
+                    processing = (!local_data->is_interupted()) &&
+                                 (state != EConnectionState::FINALIZED && state != EConnectionState::ERROR);
+                    
+                    if (processing && !message_queue.empty()) {
                         lws_callback_on_writable(local_data->get_conn());
                     }
-                }
+                } while (n >= 0 && processing);
+
+                EVLOG_debug << "Finished processing lws service.";
             }
         } // End init connection
 
@@ -712,7 +723,8 @@ void WebsocketLibwebsockets::thread_websocket_client_loop(std::shared_ptr<Connec
                 // Increment reconn attempts
                 this->connection_attempts += 1;
 
-                EVLOG_info << "Connection not successful, attempting internal reconnect in: " << reconnect_delay;
+                EVLOG_info << "Connection not successful, attempting internal reconnect in: " << reconnect_delay
+                           << "ms";
             } else {
                 local_data->update_state(EConnectionState::FINALIZED);
                 try_reconnect = false;
@@ -733,7 +745,7 @@ void WebsocketLibwebsockets::thread_websocket_client_loop(std::shared_ptr<Connec
                 try_reconnect = false;
                 EVLOG_info << "Interrupred reconnect attempt, not reconnecting!";
             } else {
-                EVLOG_info << "Attempting reconnect after a wait of: " << reconnect_delay << " milli";
+                EVLOG_info << "Attempting reconnect after a wait of: " << reconnect_delay << "ms";
             }
         }
     } while (try_reconnect); // End trying to connect
@@ -832,6 +844,8 @@ bool WebsocketLibwebsockets::start_connecting() {
     this->websocket_thread =
         std::make_unique<std::thread>(&WebsocketLibwebsockets::thread_websocket_client_loop, this, this->conn_data);
 
+    pthread_setname_np(websocket_thread->native_handle(), "Websocket_Thread_Loop");
+
     // TODO(ioan): remove this thread when the fix will be moved into 'MessageQueue'
     // The reason for having a received message processing thread is that because
     // if we dispatch a message receive from the client_loop thread, then the callback
@@ -840,6 +854,8 @@ bool WebsocketLibwebsockets::start_connecting() {
     // advance we will have a dead-lock
     this->recv_message_thread = std::make_unique<std::thread>(
         &WebsocketLibwebsockets::thread_websocket_message_recv_loop, this, this->conn_data);
+
+    pthread_setname_np(websocket_thread->native_handle(), "Websocket_Recv_Message_Loop");
 
     // Bind threads for various checks
     this->conn_data->bind_thread_client(this->websocket_thread->get_id());
@@ -984,6 +1000,9 @@ void WebsocketLibwebsockets::on_conn_fail() {
 
     // Notify any message senders that are waiting, since we can't send messages any more
     message_queue.notify_waiting_thread();
+
+    // TODO: See if this is required for a faster fail
+    // lws_set_timeout(conn_data->get_conn(), (enum pending_timeout)1, LWS_TO_KILL_ASYNC);
 }
 
 void WebsocketLibwebsockets::on_message(std::string&& message) {
@@ -1066,13 +1085,11 @@ void WebsocketLibwebsockets::on_writable() {
     while (true) {
         WebsocketMessage* message = nullptr;
 
-        {
-            // Break if we have en empty queue
-            if (message_queue.empty())
-                break;
+        // Break if we have en empty queue
+        if (message_queue.empty())
+            break;
 
-            message = message_queue.front().get();
-        }
+        message = message_queue.front().get();
 
         if (message == nullptr) {
             EVLOG_AND_THROW(std::runtime_error("Null message in queue, fatal error!"));
@@ -1306,12 +1323,14 @@ int WebsocketLibwebsockets::process_callback(void* wsi_ptr, int callback_reason,
             });
         }
 
-        if (data->get_state() == EConnectionState::CONNECTING) {
-            data->update_state(EConnectionState::ERROR);
-        }
+        EVLOG_error << "Updating ERROR STATE";
 
+        data->update_state(EConnectionState::ERROR);
         on_conn_fail();
-        return -1;
+
+        EVLOG_error << "Failed conn and returning";
+
+        return 0;
     }
     case LWS_CALLBACK_CONNECTING:
         EVLOG_debug << "Client connecting...";
@@ -1330,10 +1349,7 @@ int WebsocketLibwebsockets::process_callback(void* wsi_ptr, int callback_reason,
         break;
 
     case LWS_CALLBACK_CLIENT_ESTABLISHED:
-        if (data->get_state() == EConnectionState::CONNECTING) {
-            data->update_state(EConnectionState::CONNECTED);
-        }
-
+        data->update_state(EConnectionState::CONNECTED);
         on_conn_connected();
 
         // Attempt first write after connection
@@ -1350,6 +1366,9 @@ int WebsocketLibwebsockets::process_callback(void* wsi_ptr, int callback_reason,
         if (close_code != LWS_CLOSE_STATUS_NORMAL) {
             data->update_state(EConnectionState::ERROR);
             on_conn_fail();
+        } else {
+            data->update_state(EConnectionState::FINALIZED);
+            on_conn_close();
         }
 
         // Return 0 to print peer close reason
