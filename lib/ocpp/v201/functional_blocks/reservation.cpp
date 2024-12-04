@@ -79,7 +79,8 @@ void Reservation::handle_reserve_now_request(Call<ReserveNowRequest> call) {
                     .value_or(false)) {
         status_info = "Reservation is not available";
         reservation_available = false;
-    } else if (!this->device_model->get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrEnabled).value_or(false)) {
+    } else if (!this->device_model->get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrEnabled)
+                    .value_or(false)) {
         reservation_available = false;
         status_info = "Reservation is not enabled";
     }

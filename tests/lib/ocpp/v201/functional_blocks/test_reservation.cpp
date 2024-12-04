@@ -65,18 +65,15 @@ protected: // Functions
 
         // Check values
         const bool reservation_available_in_device_model =
-            dm->get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrAvailable)
-                .value_or(false);
+            dm->get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrAvailable).value_or(false);
         EXPECT_EQ(reservation_available_in_device_model, is_reservation_available);
 
         const bool reservation_enabled_in_device_model =
-            dm->get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrEnabled)
-                .value_or(false);
+            dm->get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrEnabled).value_or(false);
         EXPECT_EQ(reservation_enabled_in_device_model, is_reservation_enabled);
 
         const bool non_evse_specific_enabled_device_model =
-            dm->get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrNonEvseSpecific)
-                .value_or(false);
+            dm->get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrNonEvseSpecific).value_or(false);
         EXPECT_EQ(non_evse_specific_enabled_device_model, non_evse_specific_enabled);
 
         return dm;
