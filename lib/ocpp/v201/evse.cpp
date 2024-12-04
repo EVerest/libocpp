@@ -143,10 +143,11 @@ std::optional<ConnectorStatusEnum> Evse::get_connector_status(std::optional<CiSt
 
         const ConnectorStatusEnum connector_status = connector->get_effective_connector_status();
 
-        const CiString<20> evse_connector_type = this->get_evse_connector_type(i).value_or(ConnectorEnumStringType::Unknown);
+        const CiString<20> evse_connector_type =
+            this->get_evse_connector_type(i).value_or(ConnectorEnumStringType::Unknown);
         const CiString<20> input_connector_type = connector_type.value_or(ConnectorEnumStringType::Unknown);
-        const bool connector_type_unknown =
-            evse_connector_type == ConnectorEnumStringType::Unknown || input_connector_type == ConnectorEnumStringType::Unknown;
+        const bool connector_type_unknown = evse_connector_type == ConnectorEnumStringType::Unknown ||
+                                            input_connector_type == ConnectorEnumStringType::Unknown;
 
         if (connector_type_unknown || evse_connector_type == input_connector_type) {
             type_found = true;

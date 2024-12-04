@@ -3015,7 +3015,7 @@ void ChargePoint::handle_trigger_message(Call<TriggerMessageRequest> call) {
         return;
     }
 
-    auto send_evse_message = [&](std::function<void(int32_t evse_id, EvseInterface & evse)> send) {
+    auto send_evse_message = [&](std::function<void(int32_t evse_id, EvseInterface& evse)> send) {
         if (evse_ptr != nullptr) {
             send(msg.evse.value().id, *evse_ptr);
         } else {
@@ -3365,8 +3365,8 @@ void ChargePoint::handle_reserve_now_request(Call<ReserveNowRequest> call) {
         // Check if there is a connector available for this evse id.
         if (!does_connector_exist(static_cast<uint32_t>(evse_id.value()), request.connectorType)) {
             EVLOG_info << "Trying to make a reservation for connector type "
-                       << request.connectorType.value_or(ConnectorEnumStringType::Unknown)
-                       << " for evse " << evse_id.value() << ", but this connector type does not exist.";
+                       << request.connectorType.value_or(ConnectorEnumStringType::Unknown) << " for evse "
+                       << evse_id.value() << ", but this connector type does not exist.";
             send_reserve_now_rejected_response(call.uniqueId, "Connector type does not exist");
             return;
         }
