@@ -2245,7 +2245,7 @@ void ChargePointImpl::handleUnlockConnectorRequest(ocpp::Call<UnlockConnectorReq
 
     UnlockConnectorResponse response;
     auto connector = call.msg.connectorId;
-    if (connector <= 0 || connector > this->configuration->getNumberOfConnectors()) {
+    if (connector <= 0 or connector > this->configuration->getNumberOfConnectors()) {
         response.status = UnlockStatus::NotSupported;
     } else {
         // this message is not intended to remotely stop a transaction, but if a transaction is still ongoing it is
@@ -2287,36 +2287,35 @@ void ChargePointImpl::handleSetChargingProfileRequest(ocpp::Call<SetChargingProf
     auto profile = call.msg.csChargingProfiles;
     const int connector_id = call.msg.connectorId;
 
-    if (connector_id > 0 and connector_id <= this->configuration->getNumberOfConnectors()) {
-        const auto supported_purpose_types = this->configuration->getSupportedChargingProfilePurposeTypes();
-        if (std::find(supported_purpose_types.begin(), supported_purpose_types.end(),
-                      call.msg.csChargingProfiles.chargingProfilePurpose) == supported_purpose_types.end()) {
-            EVLOG_warning << "Rejecting SetChargingProfileRequest because purpose type is not supported: "
-                          << call.msg.csChargingProfiles.chargingProfilePurpose;
-            response.status = ChargingProfileStatus::Rejected;
-        } else if (this->smart_charging_handler->validate_profile(
-                       profile, connector_id, false, this->configuration->getChargeProfileMaxStackLevel(),
-                       this->configuration->getMaxChargingProfilesInstalled(),
-                       this->configuration->getChargingScheduleMaxPeriods(),
-                       this->configuration->getChargingScheduleAllowedChargingRateUnitVector())) {
-            response.status = ChargingProfileStatus::Accepted;
-            // If a charging profile with the same chargingProfileId, or the same combination of stackLevel /
-            // ChargingProfilePurpose, exists on the Charge Point, the new charging profile SHALL replace the
-            // existing charging profile, otherwise it SHALL be added.
-            this->smart_charging_handler->clear_all_profiles_with_filter(profile.chargingProfileId, std::nullopt,
-                                                                         std::nullopt, std::nullopt, true);
-            if (profile.chargingProfilePurpose == ChargingProfilePurposeType::ChargePointMaxProfile) {
-                this->smart_charging_handler->add_charge_point_max_profile(profile);
-            } else if (profile.chargingProfilePurpose == ChargingProfilePurposeType::TxDefaultProfile) {
-                this->smart_charging_handler->add_tx_default_profile(profile, connector_id);
-            } else if (profile.chargingProfilePurpose == ChargingProfilePurposeType::TxProfile) {
-                this->smart_charging_handler->add_tx_profile(profile, connector_id);
-            }
-            response.status = ChargingProfileStatus::Accepted;
-        } else {
-            response.status = ChargingProfileStatus::Rejected;
+    const auto supported_purpose_types = this->configuration->getSupportedChargingProfilePurposeTypes();
+    if (std::find(supported_purpose_types.begin(), supported_purpose_types.end(),
+                  call.msg.csChargingProfiles.chargingProfilePurpose) == supported_purpose_types.end()) {
+        EVLOG_warning << "Rejecting SetChargingProfileRequest because purpose type is not supported: "
+                      << call.msg.csChargingProfiles.chargingProfilePurpose;
+        response.status = ChargingProfileStatus::Rejected;
+    } else if (this->smart_charging_handler->validate_profile(
+                   profile, connector_id, false, this->configuration->getChargeProfileMaxStackLevel(),
+                   this->configuration->getMaxChargingProfilesInstalled(),
+                   this->configuration->getChargingScheduleMaxPeriods(),
+                   this->configuration->getChargingScheduleAllowedChargingRateUnitVector())) {
+        response.status = ChargingProfileStatus::Accepted;
+        // If a charging profile with the same chargingProfileId, or the same combination of stackLevel /
+        // ChargingProfilePurpose, exists on the Charge Point, the new charging profile SHALL replace the
+        // existing charging profile, otherwise it SHALL be added.
+        this->smart_charging_handler->clear_all_profiles_with_filter(profile.chargingProfileId, std::nullopt,
+                                                                     std::nullopt, std::nullopt, true);
+        if (profile.chargingProfilePurpose == ChargingProfilePurposeType::ChargePointMaxProfile) {
+            this->smart_charging_handler->add_charge_point_max_profile(profile);
+        } else if (profile.chargingProfilePurpose == ChargingProfilePurposeType::TxDefaultProfile) {
+            this->smart_charging_handler->add_tx_default_profile(profile, connector_id);
+        } else if (profile.chargingProfilePurpose == ChargingProfilePurposeType::TxProfile) {
+            this->smart_charging_handler->add_tx_profile(profile, connector_id);
         }
+        response.status = ChargingProfileStatus::Accepted;
+    } else {
+        response.status = ChargingProfileStatus::Rejected;
     }
+
     ocpp::CallResult<SetChargingProfileResponse> call_result(response, call.uniqueId);
     this->message_dispatcher->dispatch_call_result(call_result);
 
@@ -2375,25 +2374,18 @@ void ChargePointImpl::handleClearChargingProfileRequest(ocpp::Call<ClearCharging
     ClearChargingProfileResponse response;
     response.status = ClearChargingProfileStatus::Unknown;
 
-    bool connectorIdValid = true;
-    if (call.msg.id.has_value() && (call.msg.id < 0 || call.msg.id > this->configuration->getNumberOfConnectors())) {
-        connectorIdValid = false;
-    }
-
-    if (connectorIdValid) {
-        // clear all charging profiles
-        if (!call.msg.id && !call.msg.connectorId && !call.msg.chargingProfilePurpose && !call.msg.stackLevel) {
-            this->smart_charging_handler->clear_all_profiles();
-            response.status = ClearChargingProfileStatus::Accepted;
-        } else if (call.msg.id &&
-                   this->smart_charging_handler->clear_all_profiles_with_filter(
-                       call.msg.id, call.msg.connectorId, call.msg.stackLevel, call.msg.chargingProfilePurpose, true)) {
-            response.status = ClearChargingProfileStatus::Accepted;
-        } else if (!call.msg.id and this->smart_charging_handler->clear_all_profiles_with_filter(
-                                        std::nullopt, call.msg.connectorId, call.msg.stackLevel,
-                                        call.msg.chargingProfilePurpose, false)) {
-            response.status = ClearChargingProfileStatus::Accepted;
-        }
+    // clear all charging profiles
+    if (!call.msg.id && !call.msg.connectorId && !call.msg.chargingProfilePurpose && !call.msg.stackLevel) {
+        this->smart_charging_handler->clear_all_profiles();
+        response.status = ClearChargingProfileStatus::Accepted;
+    } else if (call.msg.id &&
+               this->smart_charging_handler->clear_all_profiles_with_filter(
+                   call.msg.id, call.msg.connectorId, call.msg.stackLevel, call.msg.chargingProfilePurpose, true)) {
+        response.status = ClearChargingProfileStatus::Accepted;
+    } else if (!call.msg.id and
+               this->smart_charging_handler->clear_all_profiles_with_filter(
+                   std::nullopt, call.msg.connectorId, call.msg.stackLevel, call.msg.chargingProfilePurpose, false)) {
+        response.status = ClearChargingProfileStatus::Accepted;
     }
 
     ocpp::CallResult<ClearChargingProfileResponse> call_result(response, call.uniqueId);
@@ -2899,20 +2891,13 @@ void ChargePointImpl::handleReserveNowRequest(ocpp::Call<ReserveNowRequest> call
     ReserveNowResponse response;
     response.status = ReservationStatus::Rejected;
 
-    bool connectorIdInRange = false;
-    if (call.msg.connectorId < 0 || call.msg.connectorId > this->configuration->getNumberOfConnectors()) {
-        connectorIdInRange = false;
-    }
-
-    if (connectorIdInRange) {
-        if (this->status->get_state(call.msg.connectorId) == ChargePointStatus::Faulted) {
-            response.status = ReservationStatus::Faulted;
-        } else if (this->reserve_now_callback != nullptr &&
-                   this->configuration->getSupportedFeatureProfiles().find("Reservation") != std::string::npos) {
-            if (call.msg.connectorId != 0 || this->configuration->getReserveConnectorZeroSupported().value_or(false)) {
-                response.status = this->reserve_now_callback(call.msg.reservationId, call.msg.connectorId,
-                                                             call.msg.expiryDate, call.msg.idTag, call.msg.parentIdTag);
-            }
+    if (this->status->get_state(call.msg.connectorId) == ChargePointStatus::Faulted) {
+        response.status = ReservationStatus::Faulted;
+    } else if (this->reserve_now_callback != nullptr &&
+               this->configuration->getSupportedFeatureProfiles().find("Reservation") != std::string::npos) {
+        if (call.msg.connectorId != 0 || this->configuration->getReserveConnectorZeroSupported().value_or(false)) {
+            response.status = this->reserve_now_callback(call.msg.reservationId, call.msg.connectorId,
+                                                         call.msg.expiryDate, call.msg.idTag, call.msg.parentIdTag);
         }
     }
 
