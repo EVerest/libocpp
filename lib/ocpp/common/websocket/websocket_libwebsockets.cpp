@@ -117,14 +117,27 @@ public:
     }
 
 public:
+    /// \brief Requests an active connection to awake from 'poll' and process again
+    void request_awake() {
+        if (std::this_thread::get_id() == this->websocket_client_thread_id) {
+            EVLOG_AND_THROW(std::runtime_error("Attempted to awake connection from websocket thread!"));
+        }
+
+        std::lock_guard lock(this->mutex);
+
+        if (lws_ctx) {
+            lws_cancel_service(lws_ctx.get());
+        }
+    }
+
     /// \brief Requests the threads that are processing to exit as soon as possible
     /// in a ordered manner
     void do_interrupt_and_exit() {
-        std::lock_guard lock(this->mutex);
-
         if (std::this_thread::get_id() == this->websocket_client_thread_id) {
             EVLOG_AND_THROW(std::runtime_error("Attempted to interrupt connection from websocket thread!"));
         }
+
+        std::lock_guard lock(this->mutex);
 
         if (is_running) {
             is_running = false;
@@ -143,22 +156,45 @@ public:
     }
 
 public:
+    void init_connection_context(lws_context* lws_ctx) {
+        std::lock_guard lock(this->mutex);
+        this->lws_ctx = std::unique_ptr<lws_context>(lws_ctx);
+    }
+
+    void init_security_context(SSL_CTX* ssl_ctx) {
+        std::lock_guard lock(this->mutex);
+        this->sec_context = std::unique_ptr<SSL_CTX>(ssl_ctx);
+    }
+
+    void init_connection(lws* lws) {
+        std::lock_guard lock(this->mutex);
+        this->wsi = lws;
+    }
+
     lws* get_conn() {
+        std::lock_guard lock(this->mutex);
         return wsi;
     }
 
+    lws_context* get_context() {
+        std::lock_guard lock(this->mutex);
+        return lws_ctx.get();
+    }
+
     WebsocketLibwebsockets* get_owner() {
+        std::lock_guard lock(this->mutex);
         return owner;
     }
 
-public:
-    // This public block will only be used from client loop thread, no locking needed
+private:
     // Openssl context, must be destroyed in this order
     std::unique_ptr<SSL_CTX> sec_context;
     // libwebsockets state
     std::unique_ptr<lws_context> lws_ctx;
-
+    // Internal used WSI
     lws* wsi;
+    // Owner, set on creation
+    WebsocketLibwebsockets* owner;
 
 private:
     std::mutex mutex;
@@ -166,13 +202,14 @@ private:
     bool is_running;
     EConnectionState state;
 
-    WebsocketLibwebsockets* owner;
-
 private:
     /// \brief Websocket client thread ID
     std::thread::id websocket_client_thread_id;
     /// \brief Websocket received message thread ID
     std::thread::id websocket_recv_thread_id;
+
+    // Required for access of state
+    friend class WebsocketLibwebsockets;
 };
 
 struct WebsocketMessage {
@@ -605,7 +642,7 @@ bool WebsocketLibwebsockets::initialize_connection_options(std::shared_ptr<Conne
         info.provided_client_ssl_ctx = ssl_ctx;
 
         // Connection acquire the contexts
-        local_data->sec_context = std::unique_ptr<SSL_CTX>(ssl_ctx);
+        local_data->init_security_context(ssl_ctx);
     }
 
     lws_context* lws_ctx = lws_create_context(&info);
@@ -615,8 +652,7 @@ bool WebsocketLibwebsockets::initialize_connection_options(std::shared_ptr<Conne
     }
 
     // Conn acquire the lws context
-    local_data->lws_ctx = std::unique_ptr<lws_context>(lws_ctx);
-
+    local_data->init_connection_context(lws_ctx);
     return true;
 }
 
@@ -656,6 +692,7 @@ void WebsocketLibwebsockets::thread_websocket_client_loop(std::shared_ptr<Connec
             }
 
             auto& uri = this->connection_options.csms_uri;
+            lws* local_lws = nullptr;
 
             // TODO: No idea who releases the strdup?
             i.context = local_data->lws_ctx.get();
@@ -668,7 +705,7 @@ void WebsocketLibwebsockets::thread_websocket_client_loop(std::shared_ptr<Connec
             i.protocol =
                 strdup(conversions::ocpp_protocol_version_to_string(this->connection_options.ocpp_version).c_str());
             i.local_protocol_name = local_protocol_name;
-            i.pwsi = &local_data->wsi; // Will set the local_data->wsi to a valid value in case of a successful connect
+            i.pwsi = &local_lws; // Will set the local_data->wsi to a valid value in case of a successful connect
             i.userdata = local_data.get(); // See lws_context 'user'
 
             if (this->connection_options.iface.has_value()) {
@@ -687,6 +724,8 @@ void WebsocketLibwebsockets::thread_websocket_client_loop(std::shared_ptr<Connec
                 local_data->update_state(EConnectionState::ERROR);
                 on_conn_fail();
             } else {
+                local_data->init_connection(local_lws);
+
                 // Process while we're running
                 int n = 0;
                 bool processing = true;
@@ -694,10 +733,13 @@ void WebsocketLibwebsockets::thread_websocket_client_loop(std::shared_ptr<Connec
                 EVLOG_debug << "Started processing lws service";
 
                 do {
+                    // We can grab the 'state' and 'lws_ctx' members here since we're only
+                    // setting them from this thread and not from the exterior
+
                     // Set to -1 for continuous servicing, of required, not recommended
                     n = lws_service(local_data->lws_ctx.get(), 0);
 
-                    auto state = local_data->get_state();
+                    auto state = local_data->state;
                     processing = (!local_data->is_interupted()) &&
                                  (state != EConnectionState::FINALIZED && state != EConnectionState::ERROR);
 
@@ -1013,9 +1055,9 @@ void WebsocketLibwebsockets::request_write() {
 
         if (local_data != nullptr) {
             if (local_data->get_conn()) {
-                // Notify waiting processing thread to wake up. According to docs it is ok to call from another
-                // thread.
-                lws_cancel_service(local_data->lws_ctx.get());
+                // Notify waiting processing thread to wake up. According to docs
+                // it is ok  to call from another thread.
+                local_data->request_awake();
             }
         }
     } else {
