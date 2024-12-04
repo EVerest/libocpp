@@ -327,8 +327,6 @@ TEST_F(ReservationTest, handle_reserve_now_connectors_not_existing) {
 TEST_F(ReservationTest, handle_reserve_now_one_connector_not_existing) {
     // Try to make a non evse specific reservation. One connector does not have the given connector, but the other does,
     // so the reservation request should be accepted.
-    std::optional<ConnectorEnum> tesla_connector_type = ConnectorEnum::cTesla;
-
     const ocpp::EnhancedMessage<MessageType> request =
         create_example_reserve_now_request(std::nullopt, ConnectorEnum::cTesla);
 
@@ -337,7 +335,6 @@ TEST_F(ReservationTest, handle_reserve_now_one_connector_not_existing) {
 
     EvseMock& m2 = evse_manager.get_mock(2);
     EXPECT_CALL(m2, does_connector_exist(ConnectorEnum::cTesla)).WillOnce(Return(true));
-    EXPECT_CALL(m2, get_connector_status(tesla_connector_type)).WillOnce(Return(ConnectorStatusEnum::Unavailable));
 
     EXPECT_CALL(reserve_now_callback_mock, Call(_)).WillOnce(Return(ReserveNowStatusEnum::Accepted));
 
@@ -353,18 +350,14 @@ TEST_F(ReservationTest, handle_reserve_now_all_connectors_not_available) {
     // Try to make a reservation with all connectors unavailable. Since the evse manager has the last word in this,
     // we try to do the request and it can be accepted anyway (or at least the correct reason for not accepting the
     // reservation can be returned, if this is a real scenario).
-    std::optional<ConnectorEnum> tesla_connector_type = ConnectorEnum::cTesla;
-
     const ocpp::EnhancedMessage<MessageType> request =
         create_example_reserve_now_request(std::nullopt, ConnectorEnum::cTesla);
 
     EvseMock& m1 = evse_manager.get_mock(1);
     EXPECT_CALL(m1, does_connector_exist(ConnectorEnum::cTesla)).WillOnce(Return(true));
-    EXPECT_CALL(m1, get_connector_status(tesla_connector_type)).WillOnce(Return(ConnectorStatusEnum::Unavailable));
 
     EvseMock& m2 = evse_manager.get_mock(2);
-    EXPECT_CALL(m2, does_connector_exist(ConnectorEnum::cTesla)).WillOnce(Return(true));
-    EXPECT_CALL(m2, get_connector_status(tesla_connector_type)).WillOnce(Return(ConnectorStatusEnum::Unavailable));
+    EXPECT_CALL(m2, does_connector_exist(ConnectorEnum::cTesla)).Times(0);
 
     EXPECT_CALL(reserve_now_callback_mock, Call(_)).WillOnce(Return(ReserveNowStatusEnum::Accepted));
 
@@ -378,14 +371,11 @@ TEST_F(ReservationTest, handle_reserve_now_all_connectors_not_available) {
 
 TEST_F(ReservationTest, handle_reserve_now_non_specific_evse_successful) {
     // Try to make a non evse specific reservation which is accepted.
-    std::optional<ConnectorEnum> tesla_connector_type = ConnectorEnum::cTesla;
-
     const ocpp::EnhancedMessage<MessageType> request =
         create_example_reserve_now_request(std::nullopt, ConnectorEnum::cTesla);
 
     EvseMock& m1 = evse_manager.get_mock(1);
     EXPECT_CALL(m1, does_connector_exist(ConnectorEnum::cTesla)).WillOnce(Return(true));
-    EXPECT_CALL(m1, get_connector_status(tesla_connector_type)).WillOnce(Return(ConnectorStatusEnum::Available));
 
     EXPECT_CALL(reserve_now_callback_mock, Call(_)).WillOnce(Return(ReserveNowStatusEnum::Accepted));
 
