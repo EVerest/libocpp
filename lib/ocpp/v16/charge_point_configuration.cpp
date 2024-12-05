@@ -43,6 +43,19 @@ ChargePointConfiguration::ChargePointConfiguration(const std::string& config, co
     }
 
     try {
+        const auto internal_schema_path = schemas_path / "Internal.json";
+        if (fs::exists(internal_schema_path)) {
+            std::ifstream ifs(internal_schema_path.c_str());
+            std::string internal_schema_file((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
+            this->internal_schema = json::parse(internal_schema_file);
+            EVLOG_debug << "value check: " << internal_schema["properties"]["CentralSystemURI"]["readOnly"];
+        }
+    } catch (const json::parse_error& e) {
+        EVLOG_error << "Error while parsing Internal.json file.";
+        EVLOG_AND_THROW(e);
+    }
+
+    try {
         auto patch = schemas.get_validator()->validate(this->config);
         if (patch.is_null()) {
             // no defaults substituted
@@ -541,7 +554,7 @@ KeyValue ChargePointConfiguration::getChargePointIdKeyValue() {
 KeyValue ChargePointConfiguration::getCentralSystemURIKeyValue() {
     KeyValue kv;
     kv.key = "CentralSystemURI";
-    kv.readonly = true;
+    kv.readonly = this->internal_schema["properties"][kv.key]["readOnly"];
     kv.value.emplace(this->getCentralSystemURI());
     return kv;
 }
@@ -2966,6 +2979,11 @@ ConfigurationStatus ChargePointConfiguration::setCustomKey(CiString<50> key, CiS
     return ConfigurationStatus::Accepted;
 }
 
+void ChargePointConfiguration::setCentralSystemURI(std::string centralSystemUri) {
+    this->config["Internal"]["CentralSystemURI"] = centralSystemUri;
+    this->setInUserConfig("Internal", "CentralSystemURI", centralSystemUri);
+}
+
 std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
     std::lock_guard<std::recursive_mutex> lock(this->configuration_mutex);
     // Internal Profile
@@ -3872,6 +3890,10 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
 
     if (key == "Language") {
         this->setLanguage(value);
+    }
+
+    if (key == "CentralSystemURI") {
+        this->setCentralSystemURI(value.get());
     }
 
     if (this->config.contains("Custom") and this->config["Custom"].contains(key.get())) {
