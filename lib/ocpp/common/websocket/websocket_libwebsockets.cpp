@@ -8,8 +8,10 @@
 #include <libwebsockets.h>
 
 #include <atomic>
+#include <condition_variable>
 #include <fstream>
 #include <memory>
+#include <mutex>
 #include <stdexcept>
 #include <string>
 
@@ -797,7 +799,6 @@ void WebsocketLibwebsockets::thread_websocket_client_loop(std::shared_ptr<Connec
         if (local_data->is_interupted() || local_data->get_state() == EConnectionState::FINALIZED) {
             EVLOG_info << "Connection interrupted or cleanly finalized, exiting websocket loop";
             try_reconnect = false;
-            // TODO:
         } else if (local_data->get_state() != EConnectionState::CONNECTED) {
             // Any other failure than a successful connect
 

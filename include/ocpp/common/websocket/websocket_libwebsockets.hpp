@@ -7,11 +7,8 @@
 #include <ocpp/common/safe_queue.hpp>
 #include <ocpp/common/websocket/websocket_base.hpp>
 
-#include <condition_variable>
 #include <memory>
-#include <mutex>
 #include <optional>
-#include <queue>
 #include <string>
 
 struct ssl_ctx_st;
@@ -32,29 +29,19 @@ public:
 
     void set_connection_options(const WebsocketConnectionOptions& connection_options) override;
 
-    /// \brief Starts the connection attempts. It will init the websocket processing thread
-    /// \returns true if the websocket is successfully initialized, false otherwise. Does
-    ///          not wait for a successful connection
     bool start_connecting() override;
 
-    /// \brief Reconnects the websocket after the delay. Will stop the current connection attempts
-    ///        and will call the 'start_connecting' after the delay
-    /// \param reason parameter
-    /// \param delay delay of the reconnect attempt
     void reconnect(long delay) override;
 
-    /// \brief closes the websocket
     void close(const WebsocketCloseReason code, const std::string& reason) override;
 
-    /// \brief send a \p message over the websocket
-    /// \returns true if the message was sent successfully
     bool send(const std::string& message) override;
 
-    /// \brief send a websocket ping
     void ping() override;
 
     /// \brief Indicates if the websocket has a valid connection data and is trying to
     ///        connect/reconnect internally even if for the moment it might not be connected
+    /// \return True if the websocket is connected or trying to connect, false otherwise
     bool is_trying_to_connect();
 
 public:
