@@ -734,6 +734,16 @@ void WebsocketLibwebsockets::thread_websocket_client_loop(std::shared_ptr<Connec
             auto& uri = this->connection_options.csms_uri;
             lws* local_lws = nullptr;
 
+            std::string ocpp_versions;
+            bool first = true;
+            for (auto version : this->connection_options.ocpp_versions) {
+                if (!first) {
+                    ocpp_versions += ", ";
+                }
+                first = false;
+                ocpp_versions += conversions::ocpp_protocol_version_to_string(version);
+            }
+
             // TODO: No idea who releases the strdup?
             i.context = local_data->lws_ctx.get();
             i.port = uri.get_port();
@@ -742,8 +752,7 @@ void WebsocketLibwebsockets::thread_websocket_client_loop(std::shared_ptr<Connec
             i.host = i.address;
             i.origin = i.address;
             i.ssl_connection = ssl_connection;
-            i.protocol =
-                strdup(conversions::ocpp_protocol_version_to_string(this->connection_options.ocpp_version).c_str());
+            i.protocol = strdup(ocpp_versions.c_str());
             i.local_protocol_name = local_protocol_name;
             i.pwsi = &local_lws; // Will set the local_data->wsi to a valid value in case of a successful connect
             i.userdata = local_data.get(); // See lws_context 'user'
@@ -1397,6 +1406,12 @@ void WebsocketLibwebsockets::on_conn_connected() {
     this->connection_attempts = 1; // reset connection attempts
     this->m_is_connected = true;
     this->reconnecting = false;
+
+    // Stop any dangling reconnect
+    {
+        std::lock_guard<std::mutex> lk(this->reconnect_mutex);
+        this->reconnect_timer_tpm.stop();
+    }
 
     // Clear any irrelevant data after a DC
     clear_all_queues();
