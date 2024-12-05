@@ -179,7 +179,7 @@ public:
         }
     }
 
-    void init_connection_context(lws_context* lws_ctx) {
+    void init_connection_context(lws_context* lws_ctx, SSL_CTX* ssl_ctx) {
         std::lock_guard lock(this->mutex);
 
         if (this->lws_ctx || this->sec_context) {
@@ -188,16 +188,10 @@ public:
 
         // Causes a deadlock in callback_minimal if not reset
         this->lws_ctx = std::unique_ptr<lws_context>(lws_ctx);
-    }
 
-    void init_security_context(SSL_CTX* ssl_ctx) {
-        std::lock_guard lock(this->mutex);
-
-        if (this->lws_ctx || this->sec_context) {
-            EVLOG_AND_THROW(std::runtime_error("Cleanup must be called before re-initing a connection!"));
+        if (ssl_ctx) {
+            this->sec_context = std::unique_ptr<SSL_CTX>(ssl_ctx);
         }
-
-        this->sec_context = std::unique_ptr<SSL_CTX>(ssl_ctx);
     }
 
     void init_connection(lws* lws) {
@@ -611,6 +605,7 @@ bool WebsocketLibwebsockets::initialize_connection_options(std::shared_ptr<Conne
 
     // Lifetime of this is important since we use the data from this in private_key_callback()
     std::optional<std::string> private_key_password;
+    SSL_CTX* ssl_ctx = nullptr;
 
     if (this->connection_options.security_profile == 2 || this->connection_options.security_profile == 3) {
         // Setup context - need to know the key type first
@@ -642,7 +637,6 @@ bool WebsocketLibwebsockets::initialize_connection_options(std::shared_ptr<Conne
             private_key_password = certificate_info.password;
         }
 
-        SSL_CTX* ssl_ctx = nullptr;
         bool custom_key = false;
 
         if (!path_key.empty()) {
@@ -680,9 +674,6 @@ bool WebsocketLibwebsockets::initialize_connection_options(std::shared_ptr<Conne
 
         // Setup our context
         info.provided_client_ssl_ctx = ssl_ctx;
-
-        // Connection acquire the contexts
-        local_data->init_security_context(ssl_ctx);
     }
 
     lws_context* lws_ctx = lws_create_context(&info);
@@ -691,8 +682,8 @@ bool WebsocketLibwebsockets::initialize_connection_options(std::shared_ptr<Conne
         return false;
     }
 
-    // Conn acquire the lws context
-    local_data->init_connection_context(lws_ctx);
+    // Conn acquire the lws context and security context
+    local_data->init_connection_context(lws_ctx, ssl_ctx);
     return true;
 }
 
