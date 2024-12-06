@@ -361,12 +361,6 @@ WebsocketLibwebsockets::~WebsocketLibwebsockets() {
         }
     }
 
-    // Stop the dangling timer
-    {
-        std::lock_guard<std::mutex> lk(this->reconnect_mutex);
-        this->reconnect_timer_tpm.stop();
-    }
-
     if (this->m_is_connected || is_trying_to_connect_internal()) {
         this->close_internal(WebsocketCloseReason::Normal, "websocket destructor");
     }
