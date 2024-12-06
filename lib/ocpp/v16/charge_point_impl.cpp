@@ -397,7 +397,6 @@ WebsocketConnectionOptions ChargePointImpl::get_ws_connection_options() {
 
 void ChargePointImpl::connect_websocket() {
     if (!this->websocket->is_connected()) {
-        this->init_websocket();
         this->websocket->start_connecting();
     }
 }
@@ -1840,7 +1839,6 @@ void ChargePointImpl::switchSecurityProfile(int32_t new_security_profile, int32_
     // we need to reinitialize because it could be plain or tls websocket
     this->websocket_timer.timeout(
         [this, max_connection_attempts, new_security_profile]() {
-            this->init_websocket();
             auto connection_options = this->get_ws_connection_options();
             connection_options.security_profile = new_security_profile;
             connection_options.max_connection_attempts = max_connection_attempts;
