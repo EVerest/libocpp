@@ -890,16 +890,21 @@ std::optional<MeterValue> ChargePointImpl::get_latest_meter_value(int32_t connec
 
             case Measurand::Temperature: {
                 // temperature
-                const auto temperature = measurement.temperature_C;
-                if (temperature) {
+                for (const auto temperature : measurement.temperature_C) {
                     sample.unit.emplace(UnitOfMeasure::Celsius);
-                    if (temperature.value().location.has_value()) {
-                        sample.location.emplace(conversions::string_to_location(temperature.value().location.value()));
-                    } else {
-                        sample.location.emplace(Location::EV);
+                    if (temperature.location.has_value()) {
+                        try {
+                            sample.location.emplace(conversions::string_to_location(temperature.location.value()));
+                        } catch (const StringToEnumException& e) {
+                            EVLOG_warning << "Could not convert string: " << temperature.location.value()
+                                          << " to Location";
+                        }
                     }
-                    sample.value = ocpp::conversions::double_to_string(temperature.value().value);
-                } else {
+                    sample.value = ocpp::conversions::double_to_string(temperature.value);
+                    filtered_meter_value.sampledValue.push_back(sample);
+                    sample = {};
+                }
+                if (measurement.temperature_C.empty()) {
                     EVLOG_debug << "Measurement does not contain temperature_C configured measurand";
                 }
                 break;
