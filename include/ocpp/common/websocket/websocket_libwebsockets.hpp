@@ -70,13 +70,13 @@ private:
     void thread_deferred_callback_queue();
 
     /// \brief Called when a TLS websocket connection is established, calls the connected callback
-    void on_conn_connected();
+    void on_conn_connected(ConnectionData* conn_data);
 
     /// \brief Called when a TLS websocket connection is closed
-    void on_conn_close();
+    void on_conn_close(ConnectionData* conn_data);
 
     /// \brief Called when a TLS websocket connection fails to be established
-    void on_conn_fail();
+    void on_conn_fail(ConnectionData* conn_data);
 
     /// \brief When the connection can send data
     void on_conn_writable();
