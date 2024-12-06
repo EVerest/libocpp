@@ -90,9 +90,10 @@ public:
     explicit WebsocketBase();
     virtual ~WebsocketBase();
 
-    /// \brief connect to a websocket
-    /// \returns true if the websocket is initialized and a connection attempt is made
-    virtual bool connect() = 0;
+    /// \brief Starts the connection attempts. It will init the websocket processing thread
+    /// \returns true if the websocket is successfully initialized, false otherwise. Does
+    ///          not wait for a successful connection
+    virtual bool start_connecting() = 0;
 
     /// \brief sets this connection_options to the given \p connection_options and resets the connection_attempts
     virtual void set_connection_options(const WebsocketConnectionOptions& connection_options) = 0;
