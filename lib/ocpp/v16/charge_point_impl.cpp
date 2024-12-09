@@ -899,10 +899,11 @@ std::optional<MeterValue> ChargePointImpl::get_latest_meter_value(int32_t connec
                             EVLOG_debug << "Could not convert string: " << temperature.location.value()
                                         << " to Location";
                         }
+                    } else {
+                        sample.location = std::nullopt;
                     }
                     sample.value = ocpp::conversions::double_to_string(temperature.value);
                     filtered_meter_value.sampledValue.push_back(sample);
-                    sample = {};
                 }
                 if (measurement.temperature_C.empty()) {
                     EVLOG_debug << "Measurement does not contain temperature_C configured measurand";
