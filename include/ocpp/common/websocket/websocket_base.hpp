@@ -49,7 +49,7 @@ protected:
     WebsocketConnectionOptions connection_options;
     std::function<void(OcppProtocolVersion protocol)> connected_callback;
     std::function<void()> disconnected_callback;
-    std::function<void(const WebsocketCloseReason reason)> closed_callback;
+    std::function<void(const WebsocketCloseReason reason)> stopped_connecting_callback;
     std::function<void(const std::string& message)> message_callback;
     std::function<void(ConnectionFailedReason)> connection_failed_callback;
     std::shared_ptr<boost::asio::steady_timer> reconnect_timer;
@@ -119,7 +119,7 @@ public:
 
     /// \brief register a \p callback that is called when the websocket connection has been closed and will not attempt
     /// to reconnect
-    void register_closed_callback(const std::function<void(const WebsocketCloseReason reason)>& callback);
+    void register_stopped_connecting_callback(const std::function<void(const WebsocketCloseReason reason)>& callback);
 
     /// \brief register a \p callback that is called when the websocket receives a message
     void register_message_callback(const std::function<void(const std::string& message)>& callback);

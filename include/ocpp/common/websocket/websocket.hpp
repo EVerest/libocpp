@@ -18,7 +18,7 @@ private:
     std::unique_ptr<WebsocketBase> websocket;
     std::function<void(OcppProtocolVersion protocol)> connected_callback;
     std::function<void()> disconnected_callback;
-    std::function<void(const WebsocketCloseReason reason)> closed_callback;
+    std::function<void(const WebsocketCloseReason reason)> stopped_connecting_callback;
     std::function<void(const std::string& message)> message_callback;
     std::shared_ptr<MessageLogging> logging;
 
@@ -50,9 +50,9 @@ public:
     /// \brief register a \p callback that is called when the websocket connection is disconnected
     void register_disconnected_callback(const std::function<void()>& callback);
 
-    /// \brief register a \p callback that is called when the websocket connection has been closed and will not attempt
+    /// \brief register a \p callback that is called when the websocket connection has been stopped and will not attempt
     /// to reconnect
-    void register_closed_callback(const std::function<void(const WebsocketCloseReason)>& callback);
+    void register_stopped_connecting_callback(const std::function<void(const WebsocketCloseReason)>& callback);
 
     /// \brief register a \p callback that is called when the websocket receives a message
     void register_message_callback(const std::function<void(const std::string& message)>& callback);

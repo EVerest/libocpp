@@ -63,10 +63,11 @@ void Websocket::register_disconnected_callback(const std::function<void()>& call
     });
 }
 
-void Websocket::register_closed_callback(const std::function<void(const WebsocketCloseReason reason)>& callback) {
-    this->closed_callback = callback;
-    this->websocket->register_closed_callback(
-        [this](const WebsocketCloseReason reason) { this->closed_callback(reason); });
+void Websocket::register_stopped_connecting_callback(
+    const std::function<void(const WebsocketCloseReason reason)>& callback) {
+    this->stopped_connecting_callback = callback;
+    this->websocket->register_stopped_connecting_callback(
+        [this](const WebsocketCloseReason reason) { this->stopped_connecting_callback(reason); });
 }
 
 void Websocket::register_message_callback(const std::function<void(const std::string& message)>& callback) {
