@@ -896,8 +896,8 @@ std::optional<MeterValue> ChargePointImpl::get_latest_meter_value(int32_t connec
                         try {
                             sample.location.emplace(conversions::string_to_location(temperature.location.value()));
                         } catch (const StringToEnumException& e) {
-                            EVLOG_warning << "Could not convert string: " << temperature.location.value()
-                                          << " to Location";
+                            EVLOG_debug << "Could not convert string: " << temperature.location.value()
+                                        << " to Location";
                         }
                     }
                     sample.value = ocpp::conversions::double_to_string(temperature.value);
