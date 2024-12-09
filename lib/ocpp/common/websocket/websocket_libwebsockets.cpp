@@ -829,23 +829,6 @@ void WebsocketLibwebsockets::thread_websocket_client_loop(std::shared_ptr<Connec
 
                 EVLOG_info << "Connection reconnect attempts exhausted, exiting websocket loop, passing back control "
                               "to the application logic";
-
-                // Give back control to the application
-                if (false == local_data->is_close_executed()) {
-                    this->push_deferred_callback([this]() {
-                        if (this->closed_callback) {
-                            this->closed_callback(WebsocketCloseReason::Normal);
-                        } else {
-                            EVLOG_error << "Closed callback not registered!";
-                        }
-
-                        if (this->disconnected_callback) {
-                            this->disconnected_callback();
-                        } else {
-                            EVLOG_error << "Disconnected callback not registered!";
-                        }
-                    });
-                }
             }
         }
 
@@ -865,6 +848,23 @@ void WebsocketLibwebsockets::thread_websocket_client_loop(std::shared_ptr<Connec
             }
         }
     } while (try_reconnect); // End trying to connect
+
+    // Give back control to the application
+    if (false == local_data->is_close_executed()) {
+        this->push_deferred_callback([this]() {
+            if (this->closed_callback) {
+                this->closed_callback(WebsocketCloseReason::Normal);
+            } else {
+                EVLOG_error << "Closed callback not registered!";
+            }
+
+            if (this->disconnected_callback) {
+                this->disconnected_callback();
+            } else {
+                EVLOG_error << "Disconnected callback not registered!";
+            }
+        });
+    }
 
     // Client loop finished for our tid
     EVLOG_info << "Exit websocket client loop with ID: " << std::hex << std::this_thread::get_id();
@@ -1019,26 +1019,6 @@ void WebsocketLibwebsockets::close_internal(const WebsocketCloseReason code, con
 
     // Close any ongoing thread
     safe_close_threads();
-
-    // Only call this if it was not called already, that can happen in the
-    // case where we did not had the opportunity to init/connect at least once
-    // and therefore the minimal_callback is not called to have the time to call
-    // the 'close_callback'
-    if (conn_data && (false == conn_data->is_close_executed())) {
-        this->push_deferred_callback([this, code]() {
-            if (this->closed_callback) {
-                this->closed_callback(code);
-            } else {
-                EVLOG_error << "Closed callback not registered!";
-            }
-
-            if (this->disconnected_callback) {
-                this->disconnected_callback();
-            } else {
-                EVLOG_error << "Disconnected callback not registered!";
-            }
-        });
-    }
 
     // Release the connection data and state
     conn_data.reset();
