@@ -77,7 +77,7 @@ static constexpr int MESSAGE_SEND_TIMEOUT = 20;
 /// \brief Current connection data, sets the internal state of the
 struct ConnectionData {
     explicit ConnectionData(WebsocketLibwebsockets* owner) :
-        wsi(nullptr), owner(owner), is_running(true), is_close_run(false), state(EConnectionState::INITIALIZE) {
+        wsi(nullptr), owner(owner), is_running(true), is_stopped_run(false), state(EConnectionState::INITIALIZE) {
     }
 
     ~ConnectionData() {
@@ -157,14 +157,14 @@ public:
         return (is_running == false);
     }
 
-    void mark_close_executed() {
+    void mark_stop_executed() {
         std::lock_guard lock(this->mutex);
-        this->is_close_run = true;
+        this->is_stopped_run = true;
     }
 
-    bool is_close_executed() {
+    bool is_stop_executed() {
         std::lock_guard lock(this->mutex);
-        return this->is_close_run;
+        return this->is_stopped_run;
     }
 
 public:
@@ -199,7 +199,7 @@ public:
         }
 
         // Reset the close status
-        is_close_run = false;
+        is_stopped_run = false;
 
         // Causes a deadlock in callback_minimal if not reset
         this->lws_ctx = std::unique_ptr<lws_context>(lws_ctx);
@@ -243,7 +243,7 @@ private:
     std::mutex mutex;
 
     bool is_running;
-    bool is_close_run;
+    bool is_stopped_run;
     EConnectionState state;
 
 private:
@@ -365,7 +365,8 @@ WebsocketLibwebsockets::~WebsocketLibwebsockets() {
         this->close_internal(WebsocketCloseReason::Normal, "websocket destructor");
     }
 
-    // In the dtor we must make sure the deferred callback thread finishes
+    // In the dtor we must make sure the deferred callback thread
+    // finishes since the callbacks capture a reference to 'this'
     if (this->deferred_callback_thread != nullptr && this->deferred_callback_thread->joinable()) {
         this->stop_deferred_handler.store(true);
         this->deferred_callback_queue.notify_waiting_thread();
@@ -850,12 +851,12 @@ void WebsocketLibwebsockets::thread_websocket_client_loop(std::shared_ptr<Connec
     } while (try_reconnect); // End trying to connect
 
     // Give back control to the application
-    if (false == local_data->is_close_executed()) {
+    if (false == local_data->is_stop_executed()) {
         this->push_deferred_callback([this]() {
-            if (this->closed_callback) {
-                this->closed_callback(WebsocketCloseReason::Normal);
+            if (this->stopped_connecting_callback) {
+                this->stopped_connecting_callback(WebsocketCloseReason::Normal);
             } else {
-                EVLOG_error << "Closed callback not registered!";
+                EVLOG_error << "Stopped connecting callback not registered!";
             }
 
             if (this->disconnected_callback) {
@@ -1448,10 +1449,10 @@ void WebsocketLibwebsockets::on_conn_close(ConnectionData* conn_data) {
     message_queue.notify_waiting_thread();
 
     this->push_deferred_callback([this]() {
-        if (this->closed_callback) {
-            this->closed_callback(WebsocketCloseReason::Normal);
+        if (this->stopped_connecting_callback) {
+            this->stopped_connecting_callback(WebsocketCloseReason::Normal);
         } else {
-            EVLOG_error << "Closed callback not registered!";
+            EVLOG_error << "Stopped connecting callback not registered!";
         }
 
         if (this->disconnected_callback) {
@@ -1461,8 +1462,8 @@ void WebsocketLibwebsockets::on_conn_close(ConnectionData* conn_data) {
         }
     });
 
-    // We have polled the close
-    conn_data->mark_close_executed();
+    // We have polled the stopped connected
+    conn_data->mark_stop_executed();
 }
 
 void WebsocketLibwebsockets::on_conn_fail(ConnectionData* conn_data) {

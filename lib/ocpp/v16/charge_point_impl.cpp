@@ -323,7 +323,7 @@ void ChargePointImpl::init_websocket() {
             this->signal_set_charging_profiles_callback();
         }
     });
-    this->websocket->register_closed_callback([this](const WebsocketCloseReason reason) {
+    this->websocket->register_stopped_connecting_callback([this](const WebsocketCloseReason reason) {
         if (this->switch_security_profile_callback != nullptr) {
             this->switch_security_profile_callback();
         }
