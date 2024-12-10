@@ -1,34 +1,4 @@
-## OCPP 2.0.1 Use Cases in `libocpp`
-
-The OCPP 2.0.1 specification is broken down into concrete functional requirements using a three-tier system. At the top, there are sixteen **functional blocks** lettered A through P that describe the high-level desired capabilities of actors adhering to the standard. These functional blocks are then broken into **use cases** that describe different scenarios in which one or more charging stations, local controllers, and charging station management systems might find themselves. The required and optional behaviors of these systems in these scenarios are then declared as **functional requirements** within each use case.
-
-This section includes an overview of how a subset of the OCPP 2.0.1 use cases that supported by `libocpp` are implemented in conjunction with callbacks provided by the charging station. We hope it serves as a useful guide to portions of the `libocpp` API and illustrates patterns of interaction between `libocpp` and other systems within a charging station.
-
-> [!NOTE]
-> Our goal is not to reproduce the entire OCPP 2.0.1 specification in this document. Rather we intend to illustrate how various use cases are realized using `ChargePoint` methods in `libocpp` in conjunction with callback implementations and event handlers.
->
-> Please refer to the [OCPP 2.0.1 standard](https://openchargealliance.org/protocols/open-charge-point-protocol/#OCPP2.0.1) for more details. Functional blocks, use cases, and functional requirements are addressed in Part 2 of Edition 2.
-
-| Functional Block | Subject                                     |
-| :--------------- | :------------------------------------------ |
-| A                | Security                                    |
-| B                | Provisioning                                |
-| C                | Authorization                               |
-| D                | Local Authorization List Management         |
-| E                | Transactions                                |
-| F                | Remote Control                              |
-| G                | Availability                                |
-| H                | Reservation                                 |
-| I                | Tariff and Cost                             |
-| J                | Meter Values                                |
-| K                | [Smart Charging](#smart-charging-use-cases) |
-| L                | Firmware Management                         |
-| M                | ISO 15118 Certificate Management            |
-| N                | Diagnostics                                 |
-| O                | Display Message                             |
-| P                | Data Transfer                               |
-
-### Smart Charging Use Cases
+# Smart Charging Use Cases
 
 The use cases within the Smart Charging functional block are subdivided into the following three categories of use cases:
 
@@ -38,7 +8,7 @@ The use cases within the Smart Charging functional block are subdivided into the
 
 Support for General and External Charging Limit-based Smart Charging is largely complete, with ISO 15118-based Smart Charging under active development. For an up-to-date overview of exactly which features are currently supported as well as design decisions that have been made to address optional or ambiguous functional requirements, please refer to the [OCPP 2.0.1 Status document](ocpp_201_status.md).
 
-#### K01 SetChargingProfile
+## K01 SetChargingProfile
 
 Allows the CSMS to influence the charging power or current drawn from a specific EVSE or the
 entire Charging Station over a period of time.
@@ -99,8 +69,7 @@ is `Rejected`:
 | `TxProfileTransactionNotOnEvse`                               | Happens when the provided `transactionId` is not known. [K01.FR.33] |
 | `TxProfileConflictingStackLevel`                              | Happens when a TxProfile has a stackLevel and transactionId combination already exists in a TxProfile with a different id in order to ensure that no two charging profiles with same stack level and purpose can be valid at the same time. [K01.FR.39] |
 
-
-#### K08 Get Composite Schedule
+## K08 Get Composite Schedule
 
 The CSMS requests the Charging Station to report the Composite Charging
 Schedule, as calculated by the Charging Station for a specific point of
@@ -155,8 +124,7 @@ sequenceDiagram
     ChargePoint-->>-CSMS : GetCompositeScheduleResponse(CompositeSchedule)
 ```
 
-
-#### K09 Get Charging Profiles
+## K09 Get Charging Profiles
 
 Returns to the CSMS the Charging Schedules/limits installed on a Charging Station based on the 
 passed in criteria.
@@ -191,8 +159,7 @@ sequenceDiagram
     ChargePoint-->>-CSMS : ReportChargingProfilesRequest(profiles_to_report)
 ```
 
-
-#### K10 Clear Charging Profile
+## K10 Clear Charging Profile
 
 Clears Charging Profiles installed on a Charging Station based on the
 passed in criteria.
