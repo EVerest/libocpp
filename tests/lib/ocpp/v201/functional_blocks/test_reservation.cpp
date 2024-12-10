@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright Pionix GmbH and Contributors to EVerest
 
-#include "evse_manager_fake.hpp"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <evse_manager_fake.hpp>
 #include <message_dispatcher_mock.hpp>
 
 #include <ocpp/v201/functional_blocks/reservation.hpp>
@@ -12,6 +12,7 @@
 #include <ocpp/v201/ctrlr_component_variables.hpp>
 #include <ocpp/v201/device_model_storage_sqlite.hpp>
 #include <ocpp/v201/init_device_model_db.hpp>
+#include <ocpp/v201/messages/Reset.hpp>
 
 const static std::string MIGRATION_FILES_PATH = "./resources/v201/device_model_migration_files";
 const static std::string CONFIG_PATH = "./resources/example_config/v201/component_config";
@@ -504,6 +505,42 @@ TEST_F(ReservationTest, handle_cancel_reservation_rejected) {
     EXPECT_CALL(cancel_reservation_callback_mock, Call(_)).WillOnce(Return(false));
 
     this->reservation->handle_message(request);
+}
+
+TEST_F(ReservationTest, handle_message_wrong_type) {
+    // Try to handle a message with the wrong type, should throw an exception.
+    ResetRequest request;
+    request.type = ResetEnum::Immediate;
+    ocpp::Call<ResetRequest> call(request);
+    ocpp::EnhancedMessage<MessageType> enhanced_message;
+    enhanced_message.messageType = MessageType::Reset;
+    enhanced_message.message = call;
+
+    EXPECT_THROW(reservation->handle_message(enhanced_message), MessageTypeNotImplementedException);
+}
+
+TEST_F(ReservationTest, handle_reserve_now_no_evses) {
+    // Try to make a 'global' reservation, but there are no evse's in the evse manager.
+    EvseManagerFake evse_manager_no_evses{0};
+    Reservation r{mock_dispatcher,
+                  this->device_model,
+                  evse_manager_no_evses,
+                  reserve_now_callback_mock.AsStdFunction(),
+                  cancel_reservation_callback_mock.AsStdFunction(),
+                  is_reservation_for_token_callback_mock.AsStdFunction()};
+
+    const ocpp::EnhancedMessage<MessageType> request =
+        create_example_reserve_now_request(std::nullopt, ConnectorEnum::cTesla);
+
+    EXPECT_CALL(mock_dispatcher, dispatch_call_result(_)).WillOnce(Invoke([](const json& call_result) {
+        auto response = call_result[ocpp::CALLRESULT_PAYLOAD].get<ReserveNowResponse>();
+        EXPECT_EQ(response.status, ReserveNowStatusEnum::Rejected);
+        ASSERT_TRUE(response.statusInfo.has_value());
+        ASSERT_TRUE(response.statusInfo.value().additionalInfo.has_value());
+        EXPECT_EQ(response.statusInfo.value().additionalInfo.value(), "No evse's found in charging station");
+    }));
+
+    r.handle_message(request);
 }
 
 TEST_F(ReservationTest, on_reservation_status) {

@@ -210,22 +210,4 @@ bool Reservation::does_connector_exist(const uint32_t evse_id, std::optional<Con
     return evse->does_connector_exist(connector_type.value_or(ConnectorEnum::Unknown));
 }
 
-bool Reservation::is_connector_available(const uint32_t evse_id, std::optional<ConnectorEnum> connector_type) {
-    EvseInterface* evse;
-    try {
-        evse = &evse_manager.get_evse(static_cast<int32_t>(evse_id));
-    } catch (const EvseOutOfRangeException&) {
-        EVLOG_error << "Evse id " << evse_id << " is not a valid evse id.";
-        return false;
-    }
-
-    std::optional<ConnectorStatusEnum> status =
-        evse->get_connector_status(connector_type.value_or(ConnectorEnum::Unknown));
-    if (!status.has_value()) {
-        return false;
-    }
-
-    return status.value() == ConnectorStatusEnum::Available;
-}
-
 } // namespace ocpp::v201
