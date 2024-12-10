@@ -478,7 +478,8 @@ void ChargePointImpl::update_clock_aligned_meter_values_interval() {
     }
 }
 
-void ChargePointImpl::try_resume_transactions(const std::set<std::string>& resuming_session_ids) {
+void ChargePointImpl::try_resume_transactions(const std::vector<int>& transactionIdsInFlight,
+                                              const std::set<std::string>& resuming_session_ids) {
     std::vector<ocpp::v16::TransactionEntry> transactions;
     try {
         transactions = this->database_handler->get_transactions(true);
@@ -514,10 +515,15 @@ void ChargePointImpl::try_resume_transactions(const std::set<std::string>& resum
 
         EVLOG_info << "Trying to resume transaction with session_id: " << transaction_entry.session_id
                    << " and transaction_id: " << transaction_entry.transaction_id;
-
-        if (this->message_queue->contains_stop_transaction_message(transaction_entry.transaction_id)) {
+        // The case is possible that the transacion_id is already earesed from this->message_queue,
+        // then the else case enters and the transaction is stopped again. To avoid, that the transactiondIdsInFlight
+        // are additionally checked.
+        if (this->message_queue->contains_stop_transaction_message(transaction_entry.transaction_id) ||
+            std::find(transactionIdsInFlight.begin(), transactionIdsInFlight.end(), transaction_entry.transaction_id) !=
+                transactionIdsInFlight.end()) {
             // StopTransaction.req is already queued for the transaction in the database, so we mark the transaction as
             // stopped and wait for the StopTransaction.conf
+            EVLOG_info << "Is already sent";
             transaction->set_finished();
             this->transaction_handler->add_stopped_transaction(transaction->get_connector());
         } else {
@@ -1074,10 +1080,12 @@ bool ChargePointImpl::start(const std::map<int, ChargePointStatus>& connector_st
     this->init_state_machine(connector_status_map);
     this->init_websocket();
     this->websocket->connect();
+    std::vector<int> transactionIdsInFlight;
     // push transaction messages including SecurityEventNotification.req onto the message queue
-    this->message_queue->get_persisted_messages_from_db(this->configuration->getDisableSecurityEventNotifications());
+    this->message_queue->get_persisted_messages_from_db(transactionIdsInFlight,
+                                                        this->configuration->getDisableSecurityEventNotifications());
     this->boot_notification();
-    this->try_resume_transactions(resuming_session_ids);
+    this->try_resume_transactions(transactionIdsInFlight, resuming_session_ids);
     this->call_set_connection_timeout();
 
     switch (bootreason) {
