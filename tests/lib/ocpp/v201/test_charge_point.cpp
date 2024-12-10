@@ -163,6 +163,8 @@ public:
         callbacks.update_firmware_request_callback = update_firmware_request_callback_mock.AsStdFunction();
         callbacks.security_event_callback = security_event_callback_mock.AsStdFunction();
         callbacks.set_charging_profiles_callback = set_charging_profiles_callback_mock.AsStdFunction();
+        callbacks.reserve_now_callback = reserve_now_callback_mock.AsStdFunction();
+        callbacks.cancel_reservation_callback = cancel_reservation_callback_mock.AsStdFunction();
     }
 
     std::shared_ptr<DeviceModel> device_model;
@@ -191,6 +193,9 @@ public:
     testing::MockFunction<void(const CiString<50>& event_type, const std::optional<CiString<255>>& tech_info)>
         security_event_callback_mock;
     testing::MockFunction<void()> set_charging_profiles_callback_mock;
+    testing::MockFunction<ReserveNowStatusEnum(const ReserveNowRequest& request)> reserve_now_callback_mock;
+    testing::MockFunction<bool(const int32_t reservationId)> cancel_reservation_callback_mock;
+
     ocpp::v201::Callbacks callbacks;
 };
 
