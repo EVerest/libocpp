@@ -511,6 +511,7 @@ void ChargePoint::clear_customer_information(const std::optional<CertificateHash
 }
 
 void ChargePoint::configure_message_logging_format(const std::string& message_log_path) {
+    EVLOG_error << "configure_message_logging_format";
     auto log_formats = this->device_model->get_value<std::string>(ControllerComponentVariables::LogMessagesFormat);
     bool log_to_console = log_formats.find("console") != log_formats.npos;
     bool detailed_log_to_console = log_formats.find("console_detailed") != log_formats.npos;
@@ -518,7 +519,9 @@ void ChargePoint::configure_message_logging_format(const std::string& message_lo
     bool log_to_html = log_formats.find("html") != log_formats.npos;
     bool log_security = log_formats.find("security") != log_formats.npos;
     bool session_logging = log_formats.find("session_logging") != log_formats.npos;
+    bool sanitize_callback = log_formats.find("sanitize") != log_formats.npos;
     bool message_callback = log_formats.find("callback") != log_formats.npos;
+    std::function<std::string(const std::string& message)> sanitize_ocpp_messages_callback = nullptr;
     std::function<void(const std::string& message, MessageDirection direction)> logging_callback = nullptr;
     bool log_rotation =
         this->device_model->get_optional_value<bool>(ControllerComponentVariables::LogRotation).value_or(false);
@@ -532,6 +535,10 @@ void ChargePoint::configure_message_logging_format(const std::string& message_lo
         this->device_model->get_optional_value<uint64_t>(ControllerComponentVariables::LogRotationMaximumFileCount)
             .value_or(0);
 
+    if (sanitize_callback) {
+        sanitize_ocpp_messages_callback = this->callbacks.sanitize_ocpp_messages_callback.value_or(nullptr);
+    }
+
     if (message_callback) {
         logging_callback = this->callbacks.ocpp_messages_callback.value_or(nullptr);
     }
@@ -539,7 +546,7 @@ void ChargePoint::configure_message_logging_format(const std::string& message_lo
     if (log_rotation) {
         this->logging = std::make_shared<ocpp::MessageLogging>(
             !log_formats.empty(), message_log_path, "libocpp_201", log_to_console, detailed_log_to_console, log_to_file,
-            log_to_html, log_security, session_logging, logging_callback,
+            log_to_html, log_security, session_logging, sanitize_ocpp_messages_callback, logging_callback,
             ocpp::LogRotationConfig(log_rotation_date_suffix, log_rotation_maximum_file_size,
                                     log_rotation_maximum_file_count),
             [this](ocpp::LogRotationStatus status) {
@@ -553,7 +560,7 @@ void ChargePoint::configure_message_logging_format(const std::string& message_lo
     } else {
         this->logging = std::make_shared<ocpp::MessageLogging>(
             !log_formats.empty(), message_log_path, DateTime().to_rfc3339(), log_to_console, detailed_log_to_console,
-            log_to_file, log_to_html, log_security, session_logging, logging_callback);
+            log_to_file, log_to_html, log_security, session_logging, sanitize_ocpp_messages_callback, logging_callback);
     }
 }
 

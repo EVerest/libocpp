@@ -60,6 +60,7 @@ private:
     std::filesystem::path security_log_file;
     std::ofstream security_log_os;
     std::mutex output_file_mutex;
+    std::function<std::string(const std::string& message)> sanitize_message_callback;
     std::function<void(const std::string& message, MessageDirection direction)> message_callback;
     std::function<void(LogRotationStatus status)> status_callback;
     std::map<std::string, std::string> lookup_map;
@@ -113,14 +114,14 @@ public:
     explicit MessageLogging(
         bool log_messages, const std::string& message_log_path, const std::string& output_file_name,
         bool log_to_console, bool detailed_log_to_console, bool log_to_file, bool log_to_html, bool log_security,
-        bool session_logging,
+        bool session_logging, std::function<std::string(const std::string& message)> sanitize_message_callback,
         std::function<void(const std::string& message, MessageDirection direction)> message_callback);
 
     /// \brief Creates a new MessageLogging object with the provided configuration and enabled log rotation
     explicit MessageLogging(
         bool log_messages, const std::string& message_log_path, const std::string& output_file_name,
         bool log_to_console, bool detailed_log_to_console, bool log_to_file, bool log_to_html, bool log_security,
-        bool session_logging,
+        bool session_logging, std::function<std::string(const std::string& message)> sanitize_message_callback,
         std::function<void(const std::string& message, MessageDirection direction)> message_callback,
         LogRotationConfig log_rotation_config, std::function<void(LogRotationStatus status)> status_callback);
     ~MessageLogging();
