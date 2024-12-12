@@ -9,8 +9,15 @@
 
 namespace ocpp {
 
+enum class EThreadNotifyPolicy {
+    ThreadNotify_Never,
+    ThreadNotify_Push,
+    ThreadNotify_Pop,
+    ThreadNotify_Always,
+};
+
 /// \brief Thread safe message queue
-template <typename T> class SafeQueue {
+template <typename T, EThreadNotifyPolicy Policy = EThreadNotifyPolicy::ThreadNotify_Push> class SafeQueue {
     using safe_queue_reference = typename std::queue<T>::reference;
     using safe_queue_const_reference = typename std::queue<T>::const_reference;
 
@@ -33,10 +40,18 @@ public:
 
     /// \return retrieves and removes the first element in the queue. Undefined behavior if the queue is empty
     inline T pop() {
-        std::lock_guard lock(mutex);
+        std::unique_lock<std::mutex> lock(mutex);
 
         T front = std::move(queue.front());
         queue.pop();
+
+        // Unlock here and notify
+        lock.unlock();
+
+        if constexpr (Policy == EThreadNotifyPolicy::ThreadNotify_Always ||
+                      Policy == EThreadNotifyPolicy::ThreadNotify_Pop) {
+            notify_waiting_thread();
+        }
 
         return front;
     }
@@ -48,7 +63,10 @@ public:
             queue.push(value);
         }
 
-        notify_waiting_thread();
+        if constexpr (Policy == EThreadNotifyPolicy::ThreadNotify_Always ||
+                      Policy == EThreadNotifyPolicy::ThreadNotify_Push) {
+            notify_waiting_thread();
+        }
     }
 
     /// \brief Queues an element and notifies any threads waiting on the internal conditional variable
@@ -58,15 +76,24 @@ public:
             queue.push(value);
         }
 
-        notify_waiting_thread();
+        if constexpr (Policy == EThreadNotifyPolicy::ThreadNotify_Always ||
+                      Policy == EThreadNotifyPolicy::ThreadNotify_Push) {
+            notify_waiting_thread();
+        }
     }
 
     /// \brief Clears the queue
     inline void clear() {
-        std::lock_guard<std::mutex> lock(mutex);
+        {
+            std::lock_guard<std::mutex> lock(mutex);
 
-        std::queue<T> empty;
-        empty.swap(queue);
+            std::queue<T> empty;
+            empty.swap(queue);
+        }
+
+        // Clear should make all waiting threads
+        // wake to check for other states
+        notify_waiting_thread();
     }
 
     /// \brief Waits for the queue to receive an element

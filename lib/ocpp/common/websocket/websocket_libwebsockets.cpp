@@ -907,9 +907,6 @@ void WebsocketLibwebsockets::safe_close_threads() {
     // Clear any pending outgoing/incoming messages on a new connection
     clear_all_queues();
 
-    // Notify any message senders that are waiting, since we can't send messages any more
-    message_queue.notify_waiting_thread();
-
     // Wait old thread for a clean state
     if (this->websocket_thread && this->websocket_thread->joinable()) {
         // Awake libwebsockets thread to quickly exit
@@ -927,7 +924,6 @@ void WebsocketLibwebsockets::safe_close_threads() {
     } else {
         if (this->recv_message_thread && this->recv_message_thread->joinable()) {
             // Awake the receiving message thread to finish
-            recv_message_queue.notify_waiting_thread();
             this->recv_message_thread->join();
             this->recv_message_thread.reset();
         }
@@ -1446,9 +1442,6 @@ void WebsocketLibwebsockets::on_conn_close(ConnectionData* conn_data) {
     // Clear any irrelevant data after a DC
     clear_all_queues();
 
-    // Notify any message senders that are waiting, since we can't send messages any more
-    message_queue.notify_waiting_thread();
-
     this->push_deferred_callback([this]() {
         if (this->stopped_connecting_callback) {
             this->stopped_connecting_callback(WebsocketCloseReason::Normal);
@@ -1485,9 +1478,6 @@ void WebsocketLibwebsockets::on_conn_fail(ConnectionData* conn_data) {
 
     // Clear any irrelevant data after a DC
     clear_all_queues();
-
-    // Notify any message senders that are waiting, since we can't send messages any more
-    message_queue.notify_waiting_thread();
 
     // TODO: See if this is required for a faster fail
     // lws_set_timeout(conn_data->get_conn(), (enum pending_timeout)1, LWS_TO_KILL_ASYNC);
@@ -1545,10 +1535,6 @@ void WebsocketLibwebsockets::on_conn_writable() {
             // this writable callback everything is sent over the wire, mark it as sent and remove
             message->message_sent = true;
             message_queue.pop();
-
-            EVLOG_debug << "Notifying waiting thread!";
-            // Notify any waiting thread to check it's state
-            message_queue.notify_waiting_thread();
         } else {
             // If the message was not polled, we reached the first unpolled and break
             break;
