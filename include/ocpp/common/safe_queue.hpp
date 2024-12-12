@@ -10,9 +10,13 @@
 namespace ocpp {
 
 enum class EThreadNotifyPolicy {
+    // Never notify the waiting thread
     ThreadNotify_Never,
+    // Notify the waiting thread when we push an element in the queue
     ThreadNotify_Push,
+    // Notify the waiting thread when we pop an element from the queue
     ThreadNotify_Pop,
+    // Always notify a waiting thread on all operations
     ThreadNotify_Always,
 };
 
@@ -91,9 +95,11 @@ public:
             empty.swap(queue);
         }
 
-        // Clear should make all waiting threads
-        // wake to check for other states
-        notify_waiting_thread();
+        if constexpr (Policy != EThreadNotifyPolicy::ThreadNotify_Never) {
+            // Clear should make all waiting threads
+            // wake to check for other states
+            notify_waiting_thread();
+        }
     }
 
     /// \brief Waits for the queue to receive an element
