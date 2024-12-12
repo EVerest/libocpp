@@ -8,6 +8,7 @@
 #include <libwebsockets.h>
 
 #include <atomic>
+#include <chrono>
 #include <condition_variable>
 #include <fstream>
 #include <memory>
@@ -26,6 +27,8 @@
 #else
 #define SSL_CTX_new_ex(LIB, PROP, METHOD) SSL_CTX_new(METHOD)
 #endif
+
+using namespace std::chrono_literals;
 
 namespace {
 std::optional<std::filesystem::path> keylog_file;
@@ -72,7 +75,7 @@ enum class EConnectionState {
 static constexpr int LWS_CLOSE_SOCKET_RESPONSE_MESSAGE = -1;
 
 /// \brief How much we wait for a message to be sent in seconds
-static constexpr int MESSAGE_SEND_TIMEOUT = 20;
+static constexpr int MESSAGE_SEND_TIMEOUT_S = 1;
 
 /// \brief Current connection data, sets the internal state of the
 struct ConnectionData {
@@ -87,7 +90,6 @@ struct ConnectionData {
         owner = nullptr;
     }
 
-public:
     void bind_thread_client(std::thread::id id) {
         std::lock_guard lock(this->mutex);
         websocket_client_thread_id = id;
@@ -118,7 +120,6 @@ public:
         return state;
     }
 
-public:
     /// \brief Requests an active connection to awake from 'poll' and process again
     void request_awake() {
         if (std::this_thread::get_id() == this->websocket_client_thread_id) {
@@ -239,14 +240,13 @@ private:
     // Owner, set on creation
     WebsocketLibwebsockets* owner;
 
-private:
-    std::mutex mutex;
-
+    // State variables
     bool is_running;
     bool is_stopped_run;
     EConnectionState state;
 
-private:
+    std::mutex mutex;
+
     /// \brief Websocket client thread ID
     std::thread::id websocket_client_thread_id;
     /// \brief Websocket received message thread ID
@@ -583,7 +583,7 @@ void WebsocketLibwebsockets::thread_websocket_message_recv_loop(std::shared_ptr<
         // if we receive a certain message type that will cause the implementation
         // in the charge point to attempt a reconnect (BasicAuthPass for example)
         if (!local_data->is_interupted()) {
-            recv_message_queue.wait_on_queue(1);
+            recv_message_queue.wait_on_queue_element(1s);
         }
     }
 
@@ -786,7 +786,7 @@ void WebsocketLibwebsockets::thread_websocket_client_loop(std::shared_ptr<Connec
                     // We can grab the 'state' and 'lws_ctx' members here since we're only
                     // setting them from this thread and not from the exterior
 
-                    // Set to -1 for continuous servicing, of required, not recommended
+                    // Set to -1 for continuous servicing, if required, not recommended
                     n = lws_service(local_data->lws_ctx.get(), 0);
 
                     auto state = local_data->state;
@@ -872,9 +872,9 @@ void WebsocketLibwebsockets::thread_websocket_client_loop(std::shared_ptr<Connec
 }
 
 void WebsocketLibwebsockets::clear_all_queues() {
-    message_queue.clear();
-    recv_buffered_message.clear();
-    recv_message_queue.clear();
+    this->message_queue.clear();
+    this->recv_buffered_message.clear();
+    this->recv_message_queue.clear();
 }
 
 void WebsocketLibwebsockets::safe_close_threads() {
@@ -1149,7 +1149,8 @@ void WebsocketLibwebsockets::poll_message(const std::shared_ptr<WebsocketMessage
     // Request a write callback
     request_write();
 
-    message_queue.wait_on_custom([&] { return (true == msg->message_sent); }, MESSAGE_SEND_TIMEOUT);
+    message_queue.wait_on_custom_event([&] { return (true == msg->message_sent); },
+                                       std::chrono::seconds(MESSAGE_SEND_TIMEOUT_S));
 
     if (msg->message_sent) {
         EVLOG_debug << "Successfully sent last message over TLS websocket!";
@@ -1594,7 +1595,8 @@ void WebsocketLibwebsockets::thread_deferred_callback_queue() {
     while (true) {
         std::function<void()> callback;
         {
-            this->deferred_callback_queue.wait_on_queue([this]() { return this->stop_deferred_handler.load(); });
+            this->deferred_callback_queue.wait_on_queue_element_predicate(
+                [this]() { return this->stop_deferred_handler.load(); });
 
             if (stop_deferred_handler and this->deferred_callback_queue.empty()) {
                 break;

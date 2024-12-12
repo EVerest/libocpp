@@ -21,12 +21,12 @@ public:
         return queue.empty();
     }
 
-    inline safe_queue_reference front() const {
+    inline safe_queue_reference front() {
         std::lock_guard lock(mutex);
         return queue.front();
     }
 
-    inline safe_queue_const_reference front() {
+    inline safe_queue_const_reference front() const {
         std::lock_guard lock(mutex);
         return queue.front();
     }
@@ -69,35 +69,33 @@ public:
         empty.swap(queue);
     }
 
-    /// \brief Waits seconds for the queue to receive an element
-    /// \param seconds Count of seconds to wait, pass in a value <= 0 to wait indefinitely
-    inline void wait_on_queue(int seconds = -1) {
-        std::unique_lock<std::mutex> lock(mutex);
-
-        if (seconds > 0) {
-            cv.wait_for(lock, std::chrono::seconds(seconds), [&]() { return (false == queue.empty()); });
-        } else {
-            cv.wait(lock, [&]() { return (false == queue.empty()); });
-        }
+    /// \brief Waits for the queue to receive an element
+    /// \param timeout to wait for an element, pass in a value <= 0 to wait indefinitely
+    inline void wait_on_queue_element(std::chrono::milliseconds timeout = std::chrono::milliseconds(0)) {
+        wait_on_queue_element_predicate([]() { return false; }, timeout);
     }
 
     /// \brief Same as 'wait_on_queue' but receives an additional predicate to wait upon
-    template <class Predicate> inline void wait_on_queue(Predicate pred, int seconds = -1) {
+    template <class Predicate>
+    inline void wait_on_queue_element_predicate(Predicate pred,
+                                                std::chrono::milliseconds timeout = std::chrono::milliseconds(0)) {
         std::unique_lock<std::mutex> lock(mutex);
 
-        if (seconds > 0) {
-            cv.wait_for(lock, std::chrono::seconds(seconds), [&]() { return (false == queue.empty()) or pred(); });
+        if (timeout.count() > 0) {
+            cv.wait_for(lock, timeout, [&]() { return (false == queue.empty()) or pred(); });
         } else {
             cv.wait(lock, [&]() { return (false == queue.empty()) or pred(); });
         }
     }
 
     /// \brief Waits on the queue for a custom event
-    template <class Predicate> inline void wait_on_custom(Predicate pred, int seconds = -1) {
+    /// \param timeout to wait for an element, pass in a value <= 0 to wait indefinitely
+    template <class Predicate>
+    inline void wait_on_custom_event(Predicate pred, std::chrono::milliseconds timeout = std::chrono::milliseconds(0)) {
         std::unique_lock<std::mutex> lock(mutex);
 
-        if (seconds > 0) {
-            cv.wait_for(lock, std::chrono::seconds(seconds), [&]() { return pred(); });
+        if (timeout.count() > 0) {
+            cv.wait_for(lock, timeout, [&]() { return pred(); });
         } else {
             cv.wait(lock, [&]() { return pred(); });
         }
