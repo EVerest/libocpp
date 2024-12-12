@@ -405,7 +405,7 @@ EnhancedChargingSchedule calculate_composite_schedule(std::vector<period_entry_t
         (in_charging_rate_unit) ? in_charging_rate_unit.value() : ChargingRateUnit::A;
     const auto now = floor_seconds(in_now);
     const auto end = floor_seconds(in_end);
-    EnhancedChargingSchedule composite{selected_unit, {}, elapsed_seconds(end, now), now, std::nullopt};
+    EnhancedChargingSchedule composite{selected_unit, {}, elapsed_seconds(end, now), now, std::nullopt, false};
 
     // sort the combined_schedules in stack priority order
     struct {
@@ -447,6 +447,9 @@ EnhancedChargingSchedule calculate_composite_schedule(std::vector<period_entry_t
             // there is a schedule to use
             const auto [limit, number_phases] =
                 convert_limit(chosen, selected_unit, default_number_phases, supply_voltage);
+            if (selected_unit != chosen->charging_rate_unit) {
+                composite.profileTransformed = true;
+            }
             composite.chargingSchedulePeriod.push_back(
                 {elapsed_seconds(current, now), limit, number_phases, chosen->stack_level});
             if (chosen->end < next_earliest) {

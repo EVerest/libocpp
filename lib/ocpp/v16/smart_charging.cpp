@@ -95,6 +95,7 @@ ChargingSchedule SmartChargingHandler::calculate_composite_schedule(
     composite_schedule.duration = enhanced_composite_schedule.duration;
     composite_schedule.startSchedule = enhanced_composite_schedule.startSchedule;
     composite_schedule.minChargingRate = enhanced_composite_schedule.minChargingRate;
+    composite_schedule.profileTransformed = enhanced_composite_schedule.profileTransformed;
     for (const auto enhanced_period : enhanced_composite_schedule.chargingSchedulePeriod) {
         ChargingSchedulePeriod period;
         period.startPeriod = enhanced_period.startPeriod;
