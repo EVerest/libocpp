@@ -2288,34 +2288,41 @@ void ChargePointImpl::handleSetChargingProfileRequest(ocpp::Call<SetChargingProf
     const int connector_id = call.msg.connectorId;
 
     const auto supported_purpose_types = this->configuration->getSupportedChargingProfilePurposeTypes();
-    if (std::find(supported_purpose_types.begin(), supported_purpose_types.end(),
-                  call.msg.csChargingProfiles.chargingProfilePurpose) == supported_purpose_types.end()) {
-        EVLOG_warning << "Rejecting SetChargingProfileRequest because purpose type is not supported: "
-                      << call.msg.csChargingProfiles.chargingProfilePurpose;
-        response.status = ChargingProfileStatus::Rejected;
-    } else if (this->smart_charging_handler->validate_profile(
-                   profile, connector_id, false, this->configuration->getChargeProfileMaxStackLevel(),
-                   this->configuration->getMaxChargingProfilesInstalled(),
-                   this->configuration->getChargingScheduleMaxPeriods(),
-                   this->configuration->getChargingScheduleAllowedChargingRateUnitVector())) {
-        response.status = ChargingProfileStatus::Accepted;
-        // If a charging profile with the same chargingProfileId, or the same combination of stackLevel /
-        // ChargingProfilePurpose, exists on the Charge Point, the new charging profile SHALL replace the
-        // existing charging profile, otherwise it SHALL be added.
-        this->smart_charging_handler->clear_all_profiles_with_filter(profile.chargingProfileId, std::nullopt,
-                                                                     std::nullopt, std::nullopt, true);
-        if (profile.chargingProfilePurpose == ChargingProfilePurposeType::ChargePointMaxProfile) {
-            this->smart_charging_handler->add_charge_point_max_profile(profile);
-        } else if (profile.chargingProfilePurpose == ChargingProfilePurposeType::TxDefaultProfile) {
-            this->smart_charging_handler->add_tx_default_profile(profile, connector_id);
-        } else if (profile.chargingProfilePurpose == ChargingProfilePurposeType::TxProfile) {
-            this->smart_charging_handler->add_tx_profile(profile, connector_id);
-        }
-        response.status = ChargingProfileStatus::Accepted;
-    } else {
-        response.status = ChargingProfileStatus::Rejected;
+
+    bool connectorIdInValidRange = true;
+    if (connector_id > this->configuration->getNumberOfConnectors() or connector_id < 0) {
+        connectorIdInValidRange = false;
     }
 
+    if (connectorIdInValidRange) {
+        if (std::find(supported_purpose_types.begin(), supported_purpose_types.end(),
+                      call.msg.csChargingProfiles.chargingProfilePurpose) == supported_purpose_types.end()) {
+            EVLOG_warning << "Rejecting SetChargingProfileRequest because purpose type is not supported: "
+                          << call.msg.csChargingProfiles.chargingProfilePurpose;
+            response.status = ChargingProfileStatus::Rejected;
+        } else if (this->smart_charging_handler->validate_profile(
+                       profile, connector_id, false, this->configuration->getChargeProfileMaxStackLevel(),
+                       this->configuration->getMaxChargingProfilesInstalled(),
+                       this->configuration->getChargingScheduleMaxPeriods(),
+                       this->configuration->getChargingScheduleAllowedChargingRateUnitVector())) {
+            response.status = ChargingProfileStatus::Accepted;
+            // If a charging profile with the same chargingProfileId, or the same combination of stackLevel /
+            // ChargingProfilePurpose, exists on the Charge Point, the new charging profile SHALL replace the
+            // existing charging profile, otherwise it SHALL be added.
+            this->smart_charging_handler->clear_all_profiles_with_filter(profile.chargingProfileId, std::nullopt,
+                                                                         std::nullopt, std::nullopt, true);
+            if (profile.chargingProfilePurpose == ChargingProfilePurposeType::ChargePointMaxProfile) {
+                this->smart_charging_handler->add_charge_point_max_profile(profile);
+            } else if (profile.chargingProfilePurpose == ChargingProfilePurposeType::TxDefaultProfile) {
+                this->smart_charging_handler->add_tx_default_profile(profile, connector_id);
+            } else if (profile.chargingProfilePurpose == ChargingProfilePurposeType::TxProfile) {
+                this->smart_charging_handler->add_tx_profile(profile, connector_id);
+            }
+            response.status = ChargingProfileStatus::Accepted;
+        } else {
+            response.status = ChargingProfileStatus::Rejected;
+        }
+    }
     ocpp::CallResult<SetChargingProfileResponse> call_result(response, call.uniqueId);
     this->message_dispatcher->dispatch_call_result(call_result);
 
