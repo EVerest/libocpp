@@ -107,7 +107,7 @@ private:
     std::shared_ptr<ConnectionData> conn_data;
 
     // Queue of outgoing messages, notify thread only when we remove messages
-    SafeQueue<std::shared_ptr<WebsocketMessage>, EThreadNotifyPolicy::ThreadNotify_Pop> message_queue;
+    SafeQueue<std::shared_ptr<WebsocketMessage>> message_queue;
 
     std::unique_ptr<std::thread> recv_message_thread;
     SafeQueue<std::string> recv_message_queue;

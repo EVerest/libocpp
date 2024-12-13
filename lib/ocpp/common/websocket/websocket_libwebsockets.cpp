@@ -1581,7 +1581,7 @@ void WebsocketLibwebsockets::thread_deferred_callback_queue() {
     while (true) {
         std::function<void()> callback;
         {
-            this->deferred_callback_queue.wait_on_queue_element_predicate(
+            this->deferred_callback_queue.wait_on_queue_element_or_predicate(
                 [this]() { return this->stop_deferred_handler.load(); });
 
             if (stop_deferred_handler and this->deferred_callback_queue.empty()) {
