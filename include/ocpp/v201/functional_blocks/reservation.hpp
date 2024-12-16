@@ -22,7 +22,7 @@ typedef std::function<ocpp::ReservationCheckStatus(const int32_t evse_id, const 
 
 class ReservationInterface : public MessageHandlerInterface {
 public:
-    virtual ~ReservationInterface() {};
+    virtual ~ReservationInterface(){};
     virtual void on_reservation_status(const int32_t reservation_id, const ReservationUpdateStatusEnum status) = 0;
     virtual ocpp::ReservationCheckStatus
     is_evse_reserved_for_other(const EvseInterface& evse, const IdToken& id_token,

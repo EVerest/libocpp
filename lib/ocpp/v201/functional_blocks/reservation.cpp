@@ -48,8 +48,7 @@ ocpp::ReservationCheckStatus
 Reservation::is_evse_reserved_for_other(const EvseInterface& evse, const IdToken& id_token,
                                         const std::optional<IdToken>& group_id_token) const {
     const std::optional<CiString<36>> no = std::nullopt;
-    const std::optional<CiString<36>> groupIdToken =
-        group_id_token.has_value() ? group_id_token.value().idToken : no;
+    const std::optional<CiString<36>> groupIdToken = group_id_token.has_value() ? group_id_token.value().idToken : no;
 
     return this->is_reservation_for_token_callback(evse.get_id(), id_token.idToken, groupIdToken);
 }
