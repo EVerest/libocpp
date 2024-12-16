@@ -44,12 +44,9 @@ ChargePointConfiguration::ChargePointConfiguration(const std::string& config, co
 
     try {
         const auto internal_schema_path = schemas_path / "Internal.json";
-        if (fs::exists(internal_schema_path)) {
-            std::ifstream ifs(internal_schema_path.c_str());
-            std::string internal_schema_file((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
-            this->internal_schema = json::parse(internal_schema_file);
-            EVLOG_debug << "value check: " << internal_schema["properties"]["CentralSystemURI"]["readOnly"];
-        }
+        std::ifstream ifs(internal_schema_path.c_str());
+        std::string internal_schema_file((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
+        this->internal_schema = json::parse(internal_schema_file);
     } catch (const json::parse_error& e) {
         EVLOG_error << "Error while parsing Internal.json file.";
         EVLOG_AND_THROW(e);
@@ -2980,6 +2977,7 @@ ConfigurationStatus ChargePointConfiguration::setCustomKey(CiString<50> key, CiS
 }
 
 void ChargePointConfiguration::setCentralSystemURI(std::string centralSystemUri) {
+    EVLOG_warning << "CentralSystemURI changed to: " << centralSystemUri;
     this->config["Internal"]["CentralSystemURI"] = centralSystemUri;
     this->setInUserConfig("Internal", "CentralSystemURI", centralSystemUri);
 }
@@ -3894,6 +3892,7 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
 
     if (key == "CentralSystemURI") {
         this->setCentralSystemURI(value.get());
+        return ConfigurationStatus::RebootRequired;
     }
 
     if (this->config.contains("Custom") and this->config["Custom"].contains(key.get())) {
