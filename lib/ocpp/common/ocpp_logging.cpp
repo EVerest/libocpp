@@ -281,19 +281,17 @@ MessageLogging::~MessageLogging() {
 }
 
 void MessageLogging::charge_point(const std::string& message_type, const std::string& json_str) {
-    std::string copy_json_str = json_str;
-    if (this->sanitize_message_callback != nullptr) {
-        copy_json_str = this->sanitize_message_callback(copy_json_str);
-    }
+    const std::string& effective_json_str =
+        (this->sanitize_message_callback != nullptr) ? this->sanitize_message_callback(json_str) : json_str;
     if (this->message_callback != nullptr) {
-        this->message_callback(copy_json_str, MessageDirection::ChargingStationToCSMS);
+        this->message_callback(effective_json_str, MessageDirection::ChargingStationToCSMS);
     }
-    auto formatted = format_message(message_type, copy_json_str);
+    auto formatted = format_message(message_type, effective_json_str);
     log_output(0, formatted.message_type, formatted.message);
     if (this->session_logging) {
         std::scoped_lock lock(this->session_id_logging_mutex);
         for (auto const& [session_id, logging] : this->session_id_logging) {
-            logging->charge_point(message_type, copy_json_str);
+            logging->charge_point(message_type, effective_json_str);
         }
     }
 }
