@@ -1515,13 +1515,11 @@ void WebsocketLibwebsockets::on_conn_writable() {
 
     // Execute while we have messages that were polled
     while (true) {
-        std::shared_ptr<WebsocketMessage> message;
-
         // Break if we have en empty queue
         if (message_queue.empty())
             break;
 
-        message = message_queue.front();
+        auto message = message_queue.front();
 
         if (message == nullptr) {
             EVLOG_AND_THROW(std::runtime_error("Null message in queue, fatal error!"));
@@ -1548,7 +1546,7 @@ void WebsocketLibwebsockets::on_conn_writable() {
         // Poll a single message
         EVLOG_debug << "Client writable, sending message part!";
 
-        std::shared_ptr<WebsocketMessage> message = message_queue.front();
+        auto message = message_queue.front();
 
         if (message == nullptr) {
             EVLOG_AND_THROW(std::runtime_error("Null message in queue, fatal error!"));
