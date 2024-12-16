@@ -33,8 +33,10 @@ protected: // Functions
         database_connection->open_connection();
         this->device_model = create_device_model();
         this->reservation = std::make_unique<Reservation>(
-            mock_dispatcher, this->device_model, evse_manager, reserve_now_callback_mock.AsStdFunction(),
+            mock_dispatcher, *this->device_model, evse_manager, reserve_now_callback_mock.AsStdFunction(),
             cancel_reservation_callback_mock.AsStdFunction(), is_reservation_for_token_callback_mock.AsStdFunction());
+        default_test_token.idToken = "SOME_TOKEN";
+        default_test_token.type = IdTokenEnum::ISO14443;
     }
 
     ///
@@ -53,16 +55,16 @@ protected: // Functions
     /// \param non_evse_specific_enabled    Enable/disable non evse specific reservations in the device model.
     /// \return The created device model.
     ///
-    std::shared_ptr<DeviceModel> create_device_model(const bool is_reservation_available = true,
+    std::unique_ptr<DeviceModel> create_device_model(const bool is_reservation_available = true,
                                                      const bool is_reservation_enabled = true,
                                                      const bool non_evse_specific_enabled = true) {
         create_device_model_db(DEVICE_MODEL_DB_IN_MEMORY_PATH);
         auto device_model_storage = std::make_unique<DeviceModelStorageSqlite>(DEVICE_MODEL_DB_IN_MEMORY_PATH);
-        auto dm = std::make_shared<DeviceModel>(std::move(device_model_storage));
+        auto dm = std::make_unique<DeviceModel>(std::move(device_model_storage));
         // Defaults
-        set_reservation_available(dm, is_reservation_available);
-        set_reservation_enabled(dm, is_reservation_enabled);
-        set_non_evse_specific(dm, non_evse_specific_enabled);
+        set_reservation_available(dm.get(), is_reservation_available);
+        set_reservation_enabled(dm.get(), is_reservation_enabled);
+        set_non_evse_specific(dm.get(), non_evse_specific_enabled);
 
         // Check values
         const bool reservation_available_in_device_model =
@@ -85,7 +87,7 @@ protected: // Functions
     /// \param device_model The device model to set the value in.
     /// \param enabled      True to set to enabled.
     ///
-    void set_reservation_enabled(std::shared_ptr<DeviceModel> device_model, const bool enabled) {
+    void set_reservation_enabled(DeviceModel* device_model, const bool enabled) {
         const auto& reservation_enabled = ControllerComponentVariables::ReservationCtrlrEnabled;
         EXPECT_EQ(device_model->set_value(reservation_enabled.component, reservation_enabled.variable.value(),
                                           AttributeEnum::Actual, enabled ? "true" : "false", "default", true),
@@ -97,7 +99,7 @@ protected: // Functions
     /// \param device_model The device model to set the value in.
     /// \param available    True to set to available.
     ///
-    void set_reservation_available(std::shared_ptr<DeviceModel> device_model, const bool available) {
+    void set_reservation_available(DeviceModel* device_model, const bool available) {
         const auto& reservation_available = ControllerComponentVariables::ReservationCtrlrAvailable;
         EXPECT_EQ(device_model->set_value(reservation_available.component, reservation_available.variable.value(),
                                           AttributeEnum::Actual, (available ? "true" : "false"), "default", true),
@@ -109,7 +111,7 @@ protected: // Functions
     /// \param device_model                 The device model to set the value in.
     /// \param non_evse_specific_enabled    True to enable non evse specific reservations.
     ///
-    void set_non_evse_specific(std::shared_ptr<DeviceModel> device_model, const bool non_evse_specific_enabled) {
+    void set_non_evse_specific(DeviceModel* device_model, const bool non_evse_specific_enabled) {
         const auto& non_evse_specific = ControllerComponentVariables::ReservationCtrlrNonEvseSpecific;
         EXPECT_EQ(device_model->set_value(non_evse_specific.component, non_evse_specific.variable.value(),
                                           AttributeEnum::Actual, (non_evse_specific_enabled ? "true" : "false"),
@@ -130,10 +132,7 @@ protected: // Functions
         request.connectorType = connector_type;
         request.evseId = evse_id;
         request.id = 1;
-        IdToken id_token;
-        id_token.idToken = "SOME_TOKEN";
-        id_token.type = IdTokenEnum::ISO14443;
-        request.idToken = id_token;
+        request.idToken = default_test_token;
         ocpp::Call<ReserveNowRequest> call(request);
         ocpp::EnhancedMessage<MessageType> enhanced_message;
         enhanced_message.messageType = MessageType::ReserveNow;
@@ -162,7 +161,11 @@ protected: // Members
     std::unique_ptr<ocpp::common::DatabaseConnection> database_connection;
     MockMessageDispatcher mock_dispatcher;
     EvseManagerFake evse_manager{NR_OF_EVSES};
-    std::shared_ptr<DeviceModel> device_model;
+    // Device model is a unique ptr here because of the database: it is stored in memory so as soon as the handle to
+    // the database closes, the database is removed. So the handle should be opened before creating the devide model.
+    // So the device model is initialized on nullptr, then the handle is opened, the devide model is created and the
+    // handle stays open until the whole test is destructed.
+    std::unique_ptr<DeviceModel> device_model;
     MockFunction<ReserveNowStatusEnum(const ReserveNowRequest& request)> reserve_now_callback_mock;
     MockFunction<bool(const int32_t reservationId)> cancel_reservation_callback_mock;
     MockFunction<ocpp::ReservationCheckStatus(const int32_t evse_id, const ocpp::CiString<36> idToken,
@@ -170,11 +173,13 @@ protected: // Members
         is_reservation_for_token_callback_mock;
     // Make reservation a unique ptr so we can create it after creating the device model.
     std::unique_ptr<Reservation> reservation;
+
+    IdToken default_test_token;
 };
 
 TEST_F(ReservationTest, handle_reserve_now_reservation_not_available) {
     // In the device model, reservation is set to not available. This should reject the request.
-    set_reservation_available(this->device_model, false);
+    set_reservation_available(this->device_model.get(), false);
 
     EXPECT_CALL(mock_dispatcher, dispatch_call_result(_)).WillOnce(Invoke([](const json& call_result) {
         auto response = call_result[ocpp::CALLRESULT_PAYLOAD].get<ReserveNowResponse>();
@@ -197,7 +202,7 @@ TEST_F(ReservationTest, handle_reserve_now_reservation_not_available) {
 TEST_F(ReservationTest, handle_reserve_now_callback_nullptr) {
     // The callback to make the reservation is a nullptr. This should reject the request.
     Reservation r{mock_dispatcher,
-                  this->device_model,
+                  *this->device_model,
                   evse_manager,
                   nullptr,
                   cancel_reservation_callback_mock.AsStdFunction(),
@@ -223,7 +228,7 @@ TEST_F(ReservationTest, handle_reserve_now_callback_nullptr) {
 
 TEST_F(ReservationTest, handle_reserve_now_reservation_disabled) {
     // In the device model, reservation is set to not enabled. This should reject the request.
-    set_reservation_enabled(this->device_model, false);
+    set_reservation_enabled(this->device_model.get(), false);
 
     const bool reservation_enabled_in_device_model =
         this->device_model->get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrEnabled)
@@ -251,7 +256,7 @@ TEST_F(ReservationTest, handle_reserve_now_reservation_disabled) {
 TEST_F(ReservationTest, handle_reserve_now_non_evse_specific_disabled) {
     // In the device model, non evse specific reservations are disabled. So when we try to make a reservation for
     // a non specific evse (no evse id given), the request should be rejected.
-    set_non_evse_specific(this->device_model, false);
+    set_non_evse_specific(this->device_model.get(), false);
 
     EXPECT_CALL(mock_dispatcher, dispatch_call_result(_)).WillOnce(Invoke([](const json& call_result) {
         auto response = call_result[ocpp::CALLRESULT_PAYLOAD].get<ReserveNowResponse>();
@@ -307,10 +312,10 @@ TEST_F(ReservationTest, handle_reserve_now_connectors_not_existing) {
     // Try to make a  non evse specific reservation for a connector type that does not exist. This should reject the
     // request.
     EvseMock& m1 = evse_manager.get_mock(1);
-    EXPECT_CALL(m1, does_connector_exist(ConnectorEnum::cG105)).WillOnce(Return(false));
+    ON_CALL(m1, does_connector_exist(ConnectorEnum::cG105)).WillByDefault(Return(false));
 
     EvseMock& m2 = evse_manager.get_mock(2);
-    EXPECT_CALL(m2, does_connector_exist(ConnectorEnum::cG105)).WillOnce(Return(false));
+    ON_CALL(m2, does_connector_exist(ConnectorEnum::cG105)).WillByDefault(Return(false));
 
     EXPECT_CALL(mock_dispatcher, dispatch_call_result(_)).WillOnce(Invoke([](const json& call_result) {
         auto response = call_result[ocpp::CALLRESULT_PAYLOAD].get<ReserveNowResponse>();
@@ -392,14 +397,10 @@ TEST_F(ReservationTest, handle_reserve_now_specific_evse_successful) {
     // Try to make a reservation for an existing evse, which is accepted.
     std::optional<ConnectorEnum> tesla_connector_type = ConnectorEnum::cTesla;
 
-    const ocpp::EnhancedMessage<MessageType> request = create_example_reserve_now_request(2, ConnectorEnum::cTesla);
-
-    EvseMock& m1 = evse_manager.get_mock(1);
-    EXPECT_CALL(m1, does_connector_exist(ConnectorEnum::cTesla)).Times(0);
-    EXPECT_CALL(m1, get_connector_status(tesla_connector_type)).Times(0);
+    const ocpp::EnhancedMessage<MessageType> request = create_example_reserve_now_request(2, tesla_connector_type);
 
     EvseMock& m2 = evse_manager.get_mock(2);
-    EXPECT_CALL(m2, does_connector_exist(ConnectorEnum::cTesla)).WillOnce(Return(true));
+    ON_CALL(m2, does_connector_exist(ConnectorEnum::cTesla)).WillByDefault(Return(true));
 
     EXPECT_CALL(reserve_now_callback_mock, Call(_)).WillOnce(Return(ReserveNowStatusEnum::Accepted));
 
@@ -415,14 +416,10 @@ TEST_F(ReservationTest, handle_reserve_now_specific_evse_occupied) {
     // Try to make a reservation for a non specific evse, but all evse's are occupied.
     std::optional<ConnectorEnum> tesla_connector_type = ConnectorEnum::cTesla;
 
-    const ocpp::EnhancedMessage<MessageType> request = create_example_reserve_now_request(2, ConnectorEnum::cTesla);
-
-    EvseMock& m1 = evse_manager.get_mock(1);
-    EXPECT_CALL(m1, does_connector_exist(ConnectorEnum::cTesla)).Times(0);
-    EXPECT_CALL(m1, get_connector_status(tesla_connector_type)).Times(0);
+    const ocpp::EnhancedMessage<MessageType> request = create_example_reserve_now_request(2, tesla_connector_type);
 
     EvseMock& m2 = evse_manager.get_mock(2);
-    EXPECT_CALL(m2, does_connector_exist(ConnectorEnum::cTesla)).WillOnce(Return(true));
+    ON_CALL(m2, does_connector_exist(ConnectorEnum::cTesla)).WillByDefault(Return(true));
 
     EXPECT_CALL(reserve_now_callback_mock, Call(_)).WillOnce(Return(ReserveNowStatusEnum::Occupied));
 
@@ -437,7 +434,7 @@ TEST_F(ReservationTest, handle_reserve_now_specific_evse_occupied) {
 TEST_F(ReservationTest, handle_cancel_reservation_reservation_not_available) {
     // Try to cancel a reservation, while Reservations is not available in the device model. This will reject the
     // request.
-    set_reservation_available(this->device_model, false);
+    set_reservation_available(this->device_model.get(), false);
 
     EXPECT_CALL(mock_dispatcher, dispatch_call_result(_)).WillOnce(Invoke([](const json& call_result) {
         auto response = call_result[ocpp::CALLRESULT_PAYLOAD].get<CancelReservationResponse>();
@@ -451,7 +448,7 @@ TEST_F(ReservationTest, handle_cancel_reservation_reservation_not_available) {
 
 TEST_F(ReservationTest, handle_cancel_reservation_reservation_not_enabled) {
     // Try to cancel a reservation, while Reservations is not enabled in the device model. This will reject the request.
-    set_reservation_enabled(this->device_model, false);
+    set_reservation_enabled(this->device_model.get(), false);
 
     EXPECT_CALL(mock_dispatcher, dispatch_call_result(_)).WillOnce(Invoke([](const json& call_result) {
         auto response = call_result[ocpp::CALLRESULT_PAYLOAD].get<CancelReservationResponse>();
@@ -465,7 +462,7 @@ TEST_F(ReservationTest, handle_cancel_reservation_reservation_not_enabled) {
 
 TEST_F(ReservationTest, handle_cancel_reservation_callback_nullptr) {
     // Try to cancel a reservation, while the cancel reservation callback is a nullptr. This will reject the request.
-    Reservation r{mock_dispatcher, this->device_model,
+    Reservation r{mock_dispatcher, *this->device_model,
                   evse_manager,    reserve_now_callback_mock.AsStdFunction(),
                   nullptr,         is_reservation_for_token_callback_mock.AsStdFunction()};
 
@@ -523,7 +520,7 @@ TEST_F(ReservationTest, handle_reserve_now_no_evses) {
     // Try to make a 'global' reservation, but there are no evse's in the evse manager.
     EvseManagerFake evse_manager_no_evses{0};
     Reservation r{mock_dispatcher,
-                  this->device_model,
+                  *this->device_model,
                   evse_manager_no_evses,
                   reserve_now_callback_mock.AsStdFunction(),
                   cancel_reservation_callback_mock.AsStdFunction(),

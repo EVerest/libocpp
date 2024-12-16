@@ -8,14 +8,10 @@
 #include <ocpp/v201/functional_blocks/reservation.hpp>
 
 namespace ocpp::v201 {
-Reservation::Reservation(
-    MessageDispatcherInterface<MessageType>& message_dispatcher, std::shared_ptr<DeviceModel> device_model,
-    EvseManagerInterface& evse_manager,
-    std::function<ReserveNowStatusEnum(const ReserveNowRequest& request)> reserve_now_callback,
-    std::function<bool(const int32_t reservationId)> cancel_reservation_callback,
-    const std::function<ocpp::ReservationCheckStatus(const int32_t evse_id, const CiString<36> idToken,
-                                                     const std::optional<CiString<36>> groupIdToken)>
-        is_reservation_for_token_callback) :
+Reservation::Reservation(MessageDispatcherInterface<MessageType>& message_dispatcher, DeviceModel& device_model,
+                         EvseManagerInterface& evse_manager, ReserveNowCallback reserve_now_callback,
+                         CancelReservationCallback cancel_reservation_callback,
+                         const IsReservationForTokenCallback is_reservation_for_token_callback) :
     message_dispatcher(message_dispatcher),
     device_model(device_model),
     evse_manager(evse_manager),
@@ -51,8 +47,9 @@ void Reservation::on_reservation_status(const int32_t reservation_id, const Rese
 ocpp::ReservationCheckStatus
 Reservation::is_evse_reserved_for_other(const EvseInterface& evse, const IdToken& id_token,
                                         const std::optional<IdToken>& group_id_token) const {
+    const std::optional<CiString<36>> no = std::nullopt;
     const std::optional<CiString<36>> groupIdToken =
-        group_id_token.has_value() ? group_id_token.value().idToken : std::optional<CiString<36>>{};
+        group_id_token.has_value() ? group_id_token.value().idToken : no;
 
     return this->is_reservation_for_token_callback(evse.get_id(), id_token.idToken, groupIdToken);
 }
@@ -75,11 +72,11 @@ void Reservation::handle_reserve_now_request(Call<ReserveNowRequest> call) {
     if (this->reserve_now_callback == nullptr) {
         reservation_available = false;
         status_info = "Reservation is not implemented";
-    } else if (!this->device_model->get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrAvailable)
+    } else if (!this->device_model.get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrAvailable)
                     .value_or(false)) {
         status_info = "Reservation is not available";
         reservation_available = false;
-    } else if (!this->device_model->get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrEnabled)
+    } else if (!this->device_model.get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrEnabled)
                     .value_or(false)) {
         reservation_available = false;
         status_info = "Reservation is not enabled";
@@ -96,7 +93,7 @@ void Reservation::handle_reserve_now_request(Call<ReserveNowRequest> call) {
     // Check if we need a specific evse id during a reservation and if that is the case, if we recevied an evse id.
     const ReserveNowRequest request = call.msg;
     if (!request.evseId.has_value() &&
-        !this->device_model->get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrNonEvseSpecific)
+        !this->device_model.get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrNonEvseSpecific)
              .value_or(false)) {
         // H01.FR.19
         EVLOG_warning << "Trying to make a reservation, but no evse id was given while it should be sent in the "
@@ -117,7 +114,8 @@ void Reservation::handle_reserve_now_request(Call<ReserveNowRequest> call) {
         }
 
         // Check if there is a connector available for this evse id.
-        if (!does_connector_exist(static_cast<uint32_t>(evse_id.value()), request.connectorType)) {
+        if (!this->evse_manager.does_connector_exist(static_cast<uint32_t>(evse_id.value()),
+                                                     request.connectorType.value_or(ConnectorEnum::Unknown))) {
             EVLOG_info << "Trying to make a reservation for connector type "
                        << conversions::connector_enum_to_string(request.connectorType.value_or(ConnectorEnum::Unknown))
                        << " for evse " << evse_id.value() << ", but this connector type does not exist.";
@@ -135,7 +133,7 @@ void Reservation::handle_reserve_now_request(Call<ReserveNowRequest> call) {
 
         bool connector_exists = false;
         for (uint64_t i = 1; i <= number_of_evses; i++) {
-            if (this->does_connector_exist(i, request.connectorType)) {
+            if (this->evse_manager.does_connector_exist(i, request.connectorType.value_or(ConnectorEnum::Unknown))) {
                 connector_exists = true;
                 break;
             }
@@ -171,9 +169,9 @@ void Reservation::handle_cancel_reservation_callback(Call<CancelReservationReque
 
     CancelReservationResponse response;
     if (this->cancel_reservation_callback == nullptr ||
-        !this->device_model->get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrAvailable)
+        !this->device_model.get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrAvailable)
              .value_or(false) ||
-        !this->device_model->get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrEnabled)
+        !this->device_model.get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrEnabled)
              .value_or(false)) {
         // Reservation not available / implemented, return 'Rejected'.
         // H01.FR.01
@@ -196,18 +194,6 @@ void Reservation::send_reserve_now_rejected_response(const MessageId& unique_id,
     response.statusInfo->additionalInfo = status_info;
     const ocpp::CallResult<ReserveNowResponse> call_result(response, unique_id);
     this->message_dispatcher.dispatch_call_result(call_result);
-}
-
-bool Reservation::does_connector_exist(const uint32_t evse_id, std::optional<ConnectorEnum> connector_type) {
-    EvseInterface* evse;
-    try {
-        evse = &evse_manager.get_evse(static_cast<int32_t>(evse_id));
-    } catch (const EvseOutOfRangeException&) {
-        EVLOG_error << "Evse id " << evse_id << " is not a valid evse id.";
-        return false;
-    }
-
-    return evse->does_connector_exist(connector_type.value_or(ConnectorEnum::Unknown));
 }
 
 } // namespace ocpp::v201

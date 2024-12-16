@@ -10,7 +10,6 @@
 #include <ocpp/v201/messages/FirmwareStatusNotification.hpp>
 #include <ocpp/v201/messages/LogStatusNotification.hpp>
 #include <ocpp/v201/messages/NotifyDisplayMessages.hpp>
-#include <ocpp/v201/messages/ReservationStatusUpdate.hpp>
 #include <ocpp/v201/notify_report_requests_splitter.hpp>
 
 #include <optional>
@@ -1189,8 +1188,9 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
     if (device_model->get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrAvailable)
             .value_or(false)) {
         this->reservation = std::make_unique<Reservation>(
-            *this->message_dispatcher, device_model, *this->evse_manager, this->callbacks.reserve_now_callback.value(),
-            this->callbacks.cancel_reservation_callback.value(), this->callbacks.is_reservation_for_token_callback);
+            *this->message_dispatcher, *this->device_model, *this->evse_manager,
+            this->callbacks.reserve_now_callback.value(), this->callbacks.cancel_reservation_callback.value(),
+            this->callbacks.is_reservation_for_token_callback);
     }
 
     if (this->callbacks.configure_network_connection_profile_callback.has_value()) {
