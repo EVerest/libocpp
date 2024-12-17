@@ -593,6 +593,10 @@ EnhancedChargingSchedule calculate_composite_schedule(const EnhancedChargingSche
         }
     }
 
+    if ( charge_point_max.profileTransformed or tx_default.profileTransformed or tx.profileTransformed){
+    	combined.profileTransformed=true;
+    }
+
     return combined;
 }
 
