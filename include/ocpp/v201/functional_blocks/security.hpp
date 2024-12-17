@@ -12,7 +12,6 @@
 #include <ocpp/v201/messages/CertificateSigned.hpp>
 #include <ocpp/v201/messages/SignCertificate.hpp>
 
-
 namespace ocpp::v201 {
 typedef std::function<void(const CiString<50>& event_type, const std::optional<CiString<255>>& tech_info)>
     SecurityEventCallback;
@@ -32,23 +31,20 @@ public:
 
 class Security : public SecurityInterface {
 public:
-    Security(MessageDispatcherInterface<MessageType>& message_dispatcher, DeviceModel &device_model,
-             MessageLogging &logging,
-             EvseSecurity& evse_security,    ConnectivityManager& connectivity_manager,
-             OcspUpdater& ocsp_updater,
-             SecurityEventCallback security_event_callback);
+    Security(MessageDispatcherInterface<MessageType>& message_dispatcher, DeviceModel& device_model,
+             MessageLogging& logging, EvseSecurity& evse_security, ConnectivityManagerInterface& connectivity_manager,
+             OcspUpdaterInterface& ocsp_updater, SecurityEventCallback security_event_callback);
     virtual ~Security();
     void handle_message(const EnhancedMessage<MessageType>& message) override;
     virtual void stop() override;
-
 
 private: // Members
     MessageDispatcherInterface<MessageType>& message_dispatcher;
     DeviceModel& device_model;
     MessageLogging& logging;
     EvseSecurity& evse_security;
-    ConnectivityManager& connectivity_manager;
-    OcspUpdater& ocsp_updater;
+    ConnectivityManagerInterface& connectivity_manager;
+    OcspUpdaterInterface& ocsp_updater;
 
     SecurityEventCallback security_event_callback;
 

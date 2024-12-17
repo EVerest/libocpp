@@ -21,7 +21,8 @@ set(TEST_PROFILES_LOCATION_V201 "${CMAKE_CURRENT_BINARY_DIR}/resources/profiles/
 
 
 add_executable(libocpp_unit_tests
-    config/v201/resources_wrong/component_config_required_no_value/standardized/UnitTestCtrlr.json)
+    config/v201/resources_wrong/component_config_required_no_value/standardized/UnitTestCtrlr.json
+    lib/ocpp/v201/device_model_test_helper.hpp lib/ocpp/v201/device_model_test_helper.cpp)
 
 target_compile_definitions(libocpp_unit_tests
     PRIVATE
