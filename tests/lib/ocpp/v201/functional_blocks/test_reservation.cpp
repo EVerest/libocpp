@@ -383,7 +383,10 @@ TEST_F(ReservationTest, handle_reserve_now_non_specific_evse_successful) {
     EvseMock& m1 = evse_manager.get_mock(1);
     EXPECT_CALL(m1, does_connector_exist(ConnectorEnum::cTesla)).WillOnce(Return(true));
 
-    EXPECT_CALL(reserve_now_callback_mock, Call(_)).WillOnce(Return(ReserveNowStatusEnum::Accepted));
+    ON_CALL(reserve_now_callback_mock, Call(_)).WillByDefault(Invoke([](const ReserveNowRequest reserve_now_request) {
+        EXPECT_FALSE(reserve_now_request.evseId.has_value());
+        return ReserveNowStatusEnum::Accepted;
+    }));
 
     EXPECT_CALL(mock_dispatcher, dispatch_call_result(_)).WillOnce(Invoke([](const json& call_result) {
         auto response = call_result[ocpp::CALLRESULT_PAYLOAD].get<ReserveNowResponse>();
@@ -402,7 +405,11 @@ TEST_F(ReservationTest, handle_reserve_now_specific_evse_successful) {
     EvseMock& m2 = evse_manager.get_mock(2);
     ON_CALL(m2, does_connector_exist(ConnectorEnum::cTesla)).WillByDefault(Return(true));
 
-    EXPECT_CALL(reserve_now_callback_mock, Call(_)).WillOnce(Return(ReserveNowStatusEnum::Accepted));
+    ON_CALL(reserve_now_callback_mock, Call(_)).WillByDefault(Invoke([](const ReserveNowRequest reserve_now_request) {
+        EXPECT_TRUE(reserve_now_request.evseId.has_value());
+        EXPECT_EQ(reserve_now_request.evseId.value(), 2);
+        return ReserveNowStatusEnum::Accepted;
+    }));
 
     EXPECT_CALL(mock_dispatcher, dispatch_call_result(_)).WillOnce(Invoke([](const json& call_result) {
         auto response = call_result[ocpp::CALLRESULT_PAYLOAD].get<ReserveNowResponse>();
