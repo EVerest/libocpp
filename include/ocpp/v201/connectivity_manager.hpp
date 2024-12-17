@@ -148,25 +148,24 @@ public:
                         std::shared_ptr<MessageLogging> logging,
                         const std::function<void(const std::string& message)>& message_callback);
 
-    virtual void set_websocket_authorization_key(const std::string& authorization_key) override;
-    virtual void set_websocket_connection_options(const WebsocketConnectionOptions& connection_options) override;
-    virtual void set_websocket_connection_options_without_reconnect() override;
-    virtual void set_websocket_connected_callback(WebsocketConnectionCallback callback) override;
-    virtual void set_websocket_disconnected_callback(WebsocketConnectionCallback callback) override;
-    virtual void set_websocket_connection_failed_callback(WebsocketConnectionFailedCallback callback) override;
-    virtual void
-    set_configure_network_connection_profile_callback(ConfigureNetworkConnectionProfileCallback callback) override;
-    virtual std::optional<NetworkConnectionProfile>
+    void set_websocket_authorization_key(const std::string& authorization_key) override;
+    void set_websocket_connection_options(const WebsocketConnectionOptions& connection_options) override;
+    void set_websocket_connection_options_without_reconnect() override;
+    void set_websocket_connected_callback(WebsocketConnectionCallback callback) override;
+    void set_websocket_disconnected_callback(WebsocketConnectionCallback callback) override;
+    void set_websocket_connection_failed_callback(WebsocketConnectionFailedCallback callback) override;
+    void set_configure_network_connection_profile_callback(ConfigureNetworkConnectionProfileCallback callback) override;
+    std::optional<NetworkConnectionProfile>
     get_network_connection_profile(const int32_t configuration_slot) const override;
-    virtual std::optional<int32_t> get_priority_from_configuration_slot(const int configuration_slot) const override;
-    virtual const std::vector<int>& get_network_connection_slots() const override;
-    virtual bool is_websocket_connected() override;
-    virtual void connect(std::optional<int32_t> network_profile_slot = std::nullopt) override;
-    virtual void disconnect() override;
-    virtual bool send_to_websocket(const std::string& message) override;
-    virtual void on_network_disconnected(OCPPInterfaceEnum ocpp_interface) override;
-    virtual void on_charging_station_certificate_changed() override;
-    virtual void confirm_successful_connection() override;
+    std::optional<int32_t> get_priority_from_configuration_slot(const int configuration_slot) const override;
+    const std::vector<int>& get_network_connection_slots() const override;
+    bool is_websocket_connected() override;
+    void connect(std::optional<int32_t> network_profile_slot = std::nullopt) override;
+    void disconnect() override;
+    bool send_to_websocket(const std::string& message) override;
+    void on_network_disconnected(OCPPInterfaceEnum ocpp_interface) override;
+    void on_charging_station_certificate_changed() override;
+    void confirm_successful_connection() override;
 
 private:
     /// \brief Initializes the websocket and tries to connect

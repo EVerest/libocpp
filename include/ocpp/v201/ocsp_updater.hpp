@@ -61,10 +61,10 @@ public:
     virtual ~OcspUpdater() {
     }
 
-    virtual void start() override;
-    virtual void stop() override;
+    void start() override;
+    void stop() override;
 
-    virtual void trigger_ocsp_cache_update() override;
+    void trigger_ocsp_cache_update() override;
 
 private:
     // Updater thread responsible for executing the updates
