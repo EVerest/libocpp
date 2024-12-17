@@ -10,8 +10,9 @@
 namespace ocpp::v201 {
 
 Security::Security(MessageDispatcherInterface<MessageType>& message_dispatcher, DeviceModel& device_model,
-                   MessageLogging& logging, EvseSecurity& evse_security, ConnectivityManager& connectivity_manager,
-                   OcspUpdater& ocsp_updater, SecurityEventCallback security_event_callback) :
+                   MessageLogging& logging, EvseSecurity& evse_security,
+                   ConnectivityManagerInterface& connectivity_manager, OcspUpdaterInterface& ocsp_updater,
+                   SecurityEventCallback security_event_callback) :
     message_dispatcher(message_dispatcher),
     device_model(device_model),
     logging(logging),
