@@ -2953,7 +2953,7 @@ ConfigurationStatus ChargePointConfiguration::setCustomKey(CiString<50> key, CiS
 
         // validate the updated key against the schema
         Schemas schema(custom_schema);
-        json modelUnderTest=config["Custom"];
+        json modelUnderTest = config["Custom"];
         modelUnderTest[key] = new_value;
         schema.get_validator()->validate(modelUnderTest); // throws exception on error
         config["Custom"][key] = new_value;
