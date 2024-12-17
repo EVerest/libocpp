@@ -176,12 +176,13 @@ void ConnectivityManager::try_connect_websocket() {
 
     const int configuration_slot_to_set =
         this->pending_configuration_slot.value_or(this->get_active_network_configuration_slot());
+    const std::optional<int> priority_to_set = this->get_priority_from_configuration_slot(configuration_slot_to_set);
     const auto network_connection_profile = this->get_network_connection_profile(configuration_slot_to_set);
     // Not const as the iface member can be set by the configure network connection profile callback
     auto connection_options = this->get_ws_connection_options(configuration_slot_to_set);
     bool can_use_connection_profile = true;
 
-    if (!network_connection_profile.has_value()) {
+    if (!network_connection_profile.has_value() || !priority_to_set.has_value()) {
         EVLOG_warning << "No network connection profile configured for " << configuration_slot_to_set;
         can_use_connection_profile = false;
     } else if (!connection_options.has_value()) {
@@ -211,8 +212,7 @@ void ConnectivityManager::try_connect_websocket() {
     }
 
     this->pending_configuration_slot.reset();
-    this->active_network_configuration_priority =
-        get_priority_from_configuration_slot(configuration_slot_to_set).value();
+    this->active_network_configuration_priority = priority_to_set.value();
 
     if (connection_options->security_profile ==
         security::OCPP_1_6_ONLY_UNSECURED_TRANSPORT_WITHOUT_BASIC_AUTHENTICATION) {
@@ -237,8 +237,8 @@ void ConnectivityManager::try_connect_websocket() {
             [this](OcppProtocolVersion protocol) { this->on_websocket_connected(protocol); });
         this->websocket->register_disconnected_callback(
             std::bind(&ConnectivityManager::on_websocket_disconnected, this));
-        this->websocket->register_closed_callback(
-            std::bind(&ConnectivityManager::on_websocket_closed, this, std::placeholders::_1));
+        this->websocket->register_stopped_connecting_callback(
+            std::bind(&ConnectivityManager::on_websocket_stopped_connecting, this, std::placeholders::_1));
     } else {
         this->websocket->set_connection_options(connection_options.value());
     }
@@ -250,7 +250,7 @@ void ConnectivityManager::try_connect_websocket() {
 
     this->websocket->register_message_callback([this](const std::string& message) { this->message_callback(message); });
 
-    this->websocket->connect();
+    this->websocket->start_connecting();
 }
 
 std::optional<ConfigNetworkResult>
@@ -397,7 +397,7 @@ void ConnectivityManager::on_websocket_disconnected() {
     }
 }
 
-void ConnectivityManager::on_websocket_closed(ocpp::WebsocketCloseReason reason) {
+void ConnectivityManager::on_websocket_stopped_connecting(ocpp::WebsocketCloseReason reason) {
     EVLOG_warning << "Closed websocket of NetworkConfigurationPriority: "
                   << this->active_network_configuration_priority + 1 << " which is configurationSlot "
                   << this->get_active_network_configuration_slot();
