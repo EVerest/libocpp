@@ -2501,22 +2501,25 @@ KeyValue ChargePointConfiguration::getWaitForStopTransactionsOnResetTimeoutKeyVa
 }
 
 // California Pricing Requirements
-bool ChargePointConfiguration::getCustomDisplayCostAndPriceEnabled() {
+std::optional<bool> ChargePointConfiguration::getCustomDisplayCostAndPriceEnabled() {
     if (this->config.contains("CostAndPrice") and
         this->config.at("CostAndPrice").contains("CustomDisplayCostAndPrice")) {
         return this->config["CostAndPrice"]["CustomDisplayCostAndPrice"];
     }
 
-    return false;
+    return std::nullopt;
 }
 
-KeyValue ChargePointConfiguration::getCustomDisplayCostAndPriceEnabledKeyValue() {
-    const bool enabled = getCustomDisplayCostAndPriceEnabled();
-    KeyValue kv;
-    kv.key = "CustomDisplayCostAndPrice";
-    kv.value = std::to_string(enabled);
-    kv.readonly = true;
-    return kv;
+std::optional<KeyValue> ChargePointConfiguration::getCustomDisplayCostAndPriceEnabledKeyValue() {
+    const std::optional<bool> enabled = getCustomDisplayCostAndPriceEnabled();
+    std::optional<KeyValue> kv_opt = std::nullopt;
+    if (enabled.has_value()) {
+        kv_opt = KeyValue();
+        kv_opt->key = "CustomDisplayCostAndPrice";
+        kv_opt->value = ocpp::conversions::bool_to_string(enabled.value());
+        kv_opt->readonly = false;
+    }
+    return kv_opt;
 }
 
 std::optional<uint32_t> ChargePointConfiguration::getPriceNumberOfDecimalsForCostValues() {

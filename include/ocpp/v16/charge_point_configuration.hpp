@@ -445,8 +445,8 @@ public:
     KeyValue getWaitForStopTransactionsOnResetTimeoutKeyValue();
 
     // California Pricing Requirements
-    bool getCustomDisplayCostAndPriceEnabled();
-    KeyValue getCustomDisplayCostAndPriceEnabledKeyValue();
+    std::optional<bool> getCustomDisplayCostAndPriceEnabled();
+    std::optional<KeyValue> getCustomDisplayCostAndPriceEnabledKeyValue();
 
     std::optional<uint32_t> getPriceNumberOfDecimalsForCostValues();
     std::optional<KeyValue> getPriceNumberOfDecimalsForCostValuesKeyValue();
