@@ -16,7 +16,7 @@ protected:
         "hello there hello there hello there hello there hello there hello there hello there hello there "
         "hello there hello there hello there hello there hello there hello there hello there hello there "
         "hello there hello there hello there hello there hello there hello there hello there hello there";
-    const ocpp::v201::IdToken valid_central_token = {"valid", ocpp::v201::IdTokenEnum::Central};
+    const ocpp::v201::IdToken valid_central_token = {"valid", ocpp::v201::IdTokenEnumStringType::Central};
     void SetUp() override {
     }
 
@@ -34,8 +34,8 @@ TEST_F(V201UtilsTest, test_valid_sha256) {
 }
 
 TEST_F(V201UtilsTest, test_valid_generate_token_hash) {
-    ocpp::v201::IdToken valid_iso14443_token = {"ABAD1DEA", ocpp::v201::IdTokenEnum::ISO14443};
-    ocpp::v201::IdToken valid_iso15693_token = {"ABAD1DEA", ocpp::v201::IdTokenEnum::ISO15693};
+    ocpp::v201::IdToken valid_iso14443_token = {"ABAD1DEA", ocpp::v201::IdTokenEnumStringType::ISO14443};
+    ocpp::v201::IdToken valid_iso15693_token = {"ABAD1DEA", ocpp::v201::IdTokenEnumStringType::ISO15693};
 
     ASSERT_EQ("63f3202a9c2e08a033a861481c6259e7a70a2b6e243f91233ebf26f33859c113",
               ocpp::v201::utils::generate_token_hash(valid_central_token));

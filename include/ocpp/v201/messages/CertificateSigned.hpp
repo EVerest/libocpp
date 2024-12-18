@@ -18,8 +18,8 @@ namespace v201 {
 /// \brief Contains a OCPP CertificateSigned message
 struct CertificateSignedRequest : public ocpp::Message {
     CiString<10000> certificateChain;
-    std::optional<CustomData> customData;
     std::optional<CertificateSigningUseEnum> certificateType;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this CertificateSigned message as a human readable string
     /// \returns the message type as a human readable string
@@ -39,8 +39,8 @@ std::ostream& operator<<(std::ostream& os, const CertificateSignedRequest& k);
 /// \brief Contains a OCPP CertificateSignedResponse message
 struct CertificateSignedResponse : public ocpp::Message {
     CertificateSignedStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this CertificateSignedResponse message as a human readable string
     /// \returns the message type as a human readable string

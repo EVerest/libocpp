@@ -38,8 +38,8 @@ std::ostream& operator<<(std::ostream& os, const RequestStopTransactionRequest& 
 /// \brief Contains a OCPP StopTransactionResponse message
 struct RequestStopTransactionResponse : public ocpp::Message {
     RequestStartStopStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this StopTransactionResponse message as a human readable string
     /// \returns the message type as a human readable string

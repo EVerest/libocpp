@@ -18,8 +18,8 @@ namespace v201 {
 struct SecurityEventNotificationRequest : public ocpp::Message {
     CiString<50> type;
     ocpp::DateTime timestamp;
-    std::optional<CustomData> customData;
     std::optional<CiString<255>> techInfo;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this SecurityEventNotification message as a human readable string
     /// \returns the message type as a human readable string

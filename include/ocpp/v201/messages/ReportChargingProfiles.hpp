@@ -18,11 +18,11 @@ namespace v201 {
 /// \brief Contains a OCPP ReportChargingProfiles message
 struct ReportChargingProfilesRequest : public ocpp::Message {
     int32_t requestId;
-    ChargingLimitSourceEnum chargingLimitSource;
+    CiString<20> chargingLimitSource;
     std::vector<ChargingProfile> chargingProfile;
     int32_t evseId;
-    std::optional<CustomData> customData;
     std::optional<bool> tbc;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this ReportChargingProfiles message as a human readable string
     /// \returns the message type as a human readable string

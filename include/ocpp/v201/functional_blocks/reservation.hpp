@@ -16,8 +16,8 @@ class EvseManagerInterface;
 
 typedef std::function<ReserveNowStatusEnum(const ReserveNowRequest& request)> ReserveNowCallback;
 typedef std::function<bool(const int32_t reservationId)> CancelReservationCallback;
-typedef std::function<ocpp::ReservationCheckStatus(const int32_t evse_id, const CiString<36> idToken,
-                                                   const std::optional<CiString<36>> groupIdToken)>
+typedef std::function<ocpp::ReservationCheckStatus(const int32_t evse_id, const CiString<255> idToken,
+                                                   const std::optional<CiString<255>> groupIdToken)>
     IsReservationForTokenCallback;
 
 class ReservationInterface : public MessageHandlerInterface {

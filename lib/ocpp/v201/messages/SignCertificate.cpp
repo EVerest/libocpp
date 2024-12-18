@@ -23,11 +23,11 @@ void to_json(json& j, const SignCertificateRequest& k) {
         {"csr", k.csr},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.certificateType) {
         j["certificateType"] = conversions::certificate_signing_use_enum_to_string(k.certificateType.value());
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -36,11 +36,11 @@ void from_json(const json& j, SignCertificateRequest& k) {
     k.csr = j.at("csr");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("certificateType")) {
         k.certificateType.emplace(conversions::string_to_certificate_signing_use_enum(j.at("certificateType")));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -61,11 +61,11 @@ void to_json(json& j, const SignCertificateResponse& k) {
         {"status", conversions::generic_status_enum_to_string(k.status)},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.statusInfo) {
         j["statusInfo"] = k.statusInfo.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -74,11 +74,11 @@ void from_json(const json& j, SignCertificateResponse& k) {
     k.status = conversions::string_to_generic_status_enum(j.at("status"));
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("statusInfo")) {
         k.statusInfo.emplace(j.at("statusInfo"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
