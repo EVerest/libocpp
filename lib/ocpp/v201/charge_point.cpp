@@ -517,7 +517,9 @@ void ChargePoint::configure_message_logging_format(const std::string& message_lo
     bool log_to_html = log_formats.find("html") != log_formats.npos;
     bool log_security = log_formats.find("security") != log_formats.npos;
     bool session_logging = log_formats.find("session_logging") != log_formats.npos;
+    bool sanitize_callback = log_formats.find("sanitize") != log_formats.npos;
     bool message_callback = log_formats.find("callback") != log_formats.npos;
+    std::function<std::string(const std::string& message)> sanitize_ocpp_messages_callback = nullptr;
     std::function<void(const std::string& message, MessageDirection direction)> logging_callback = nullptr;
     bool log_rotation =
         this->device_model->get_optional_value<bool>(ControllerComponentVariables::LogRotation).value_or(false);
@@ -531,6 +533,10 @@ void ChargePoint::configure_message_logging_format(const std::string& message_lo
         this->device_model->get_optional_value<uint64_t>(ControllerComponentVariables::LogRotationMaximumFileCount)
             .value_or(0);
 
+    if (sanitize_callback) {
+        sanitize_ocpp_messages_callback = this->callbacks.sanitize_ocpp_messages_callback.value_or(nullptr);
+    }
+
     if (message_callback) {
         logging_callback = this->callbacks.ocpp_messages_callback.value_or(nullptr);
     }
@@ -538,7 +544,7 @@ void ChargePoint::configure_message_logging_format(const std::string& message_lo
     if (log_rotation) {
         this->logging = std::make_shared<ocpp::MessageLogging>(
             !log_formats.empty(), message_log_path, "libocpp_201", log_to_console, detailed_log_to_console, log_to_file,
-            log_to_html, log_security, session_logging, logging_callback,
+            log_to_html, log_security, session_logging, sanitize_ocpp_messages_callback, logging_callback,
             ocpp::LogRotationConfig(log_rotation_date_suffix, log_rotation_maximum_file_size,
                                     log_rotation_maximum_file_count),
             [this](ocpp::LogRotationStatus status) {
@@ -552,7 +558,7 @@ void ChargePoint::configure_message_logging_format(const std::string& message_lo
     } else {
         this->logging = std::make_shared<ocpp::MessageLogging>(
             !log_formats.empty(), message_log_path, DateTime().to_rfc3339(), log_to_console, detailed_log_to_console,
-            log_to_file, log_to_html, log_security, session_logging, logging_callback);
+            log_to_file, log_to_html, log_security, session_logging, sanitize_ocpp_messages_callback, logging_callback);
     }
 }
 
@@ -1820,8 +1826,18 @@ void ChargePoint::handle_variables_changed(const std::map<SetVariableData, SetVa
     // iterate over set_variable_results
     for (const auto& [set_variable_data, set_variable_result] : set_variable_results) {
         if (set_variable_result.attributeStatus == SetVariableStatusEnum::Accepted) {
-            EVLOG_info << set_variable_data.component.name << ":" << set_variable_data.variable.name << " changed to "
-                       << set_variable_data.attributeValue.get();
+            std::optional<MutabilityEnum> mutability =
+                this->device_model->get_mutability(set_variable_data.component, set_variable_data.variable,
+                                                   set_variable_data.attributeType.value_or(AttributeEnum::Actual));
+            // If a nullopt is returned for whatever reason, assume it's write-only to prevent leaking secrets
+            if (!mutability.has_value() || (mutability.value() == MutabilityEnum::WriteOnly)) {
+                EVLOG_info << "Write-only " << set_variable_data.component.name << ":"
+                           << set_variable_data.variable.name << " changed";
+            } else {
+                EVLOG_info << set_variable_data.component.name << ":" << set_variable_data.variable.name
+                           << " changed to " << set_variable_data.attributeValue.get();
+            }
+
             // handles required behavior specified within OCPP2.0.1 (e.g. reconnect when BasicAuthPassword has changed)
             this->handle_variable_changed(set_variable_data);
             // notifies libocpp user application that a variable has changed
