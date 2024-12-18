@@ -222,6 +222,7 @@ struct EnhancedChargingSchedule {
     std::optional<int32_t> duration;
     std::optional<ocpp::DateTime> startSchedule;
     std::optional<float> minChargingRate;
+    bool profileTransformed = false; // indicates that a profile was transformed from chargingRateUnit
 };
 
 /// \brief Conversion from a given EnhancedChargingSchedule \p k to a given json object \p j
