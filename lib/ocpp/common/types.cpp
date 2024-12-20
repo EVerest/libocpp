@@ -528,9 +528,7 @@ std::ostream& operator<<(std::ostream& os, const RPM& k) {
 
 void to_json(json& j, const Measurement& k) {
     to_json(j, k.power_meter);
-    if (k.temperature_C) {
-        j["temperature_C"] = k.temperature_C.value();
-    }
+    j["temperature_C"] = k.temperature_C;
     if (k.soc_Percent) {
         j["soc_Percent"] = k.soc_Percent.value();
     }
@@ -541,9 +539,7 @@ void to_json(json& j, const Measurement& k) {
 
 void from_json(const json& j, Measurement& k) {
     from_json(j, k.power_meter);
-    if (j.contains("temperature_C")) {
-        k.temperature_C.emplace(j.at("temperature_C"));
-    }
+    k.temperature_C = j.at("temperature_C");
     if (j.contains("soc_Percent")) {
         k.soc_Percent.emplace(j.at("soc_Percent"));
     }
@@ -1068,6 +1064,10 @@ std::string ocpp_protocol_version_to_string(OcppProtocolVersion e) {
         return "ocpp1.6";
     case OcppProtocolVersion::v201:
         return "ocpp2.0.1";
+    case OcppProtocolVersion::v21:
+        return "ocpp2.1";
+    case OcppProtocolVersion::Unknown:
+        return "unknown";
     }
 
     throw EnumToStringException{e, "OcppProtocolVersion"};
@@ -1079,6 +1079,12 @@ OcppProtocolVersion string_to_ocpp_protocol_version(const std::string& s) {
     }
     if (s == "ocpp2.0.1") {
         return OcppProtocolVersion::v201;
+    }
+    if (s == "ocpp2.1") {
+        return OcppProtocolVersion::v21;
+    }
+    if (s == "unknown") {
+        return OcppProtocolVersion::Unknown;
     }
     throw StringToEnumException{s, "OcppProtocolVersion"};
 }
@@ -1177,7 +1183,9 @@ std::string bool_to_string(bool b) {
 }
 
 bool string_to_bool(const std::string& s) {
-    if (s == "true") {
+    std::string out = s;
+    std::transform(out.begin(), out.end(), out.begin(), ::tolower);
+    if (out == "true") {
         return true;
     }
     return false;

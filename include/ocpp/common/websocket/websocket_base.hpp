@@ -16,9 +16,9 @@
 namespace ocpp {
 
 struct WebsocketConnectionOptions {
-    OcppProtocolVersion ocpp_version;
-    Uri csms_uri;         // the URI of the CSMS
-    int security_profile; // FIXME: change type to `SecurityProfile`
+    std::vector<OcppProtocolVersion> ocpp_versions; // List of allowed protocols ordered by preference
+    Uri csms_uri;                                   // the URI of the CSMS
+    int security_profile;                           // FIXME: change type to `SecurityProfile`
     std::optional<std::string> authorization_key;
     int retry_backoff_random_range_s;
     int retry_backoff_repeat_times;
@@ -47,9 +47,9 @@ class WebsocketBase {
 protected:
     std::atomic_bool m_is_connected;
     WebsocketConnectionOptions connection_options;
-    std::function<void(const int security_profile)> connected_callback;
+    std::function<void(OcppProtocolVersion protocol)> connected_callback;
     std::function<void()> disconnected_callback;
-    std::function<void(const WebsocketCloseReason reason)> closed_callback;
+    std::function<void(const WebsocketCloseReason reason)> stopped_connecting_callback;
     std::function<void(const std::string& message)> message_callback;
     std::function<void(ConnectionFailedReason)> connection_failed_callback;
     std::shared_ptr<boost::asio::steady_timer> reconnect_timer;
@@ -90,9 +90,10 @@ public:
     explicit WebsocketBase();
     virtual ~WebsocketBase();
 
-    /// \brief connect to a websocket
-    /// \returns true if the websocket is initialized and a connection attempt is made
-    virtual bool connect() = 0;
+    /// \brief Starts the connection attempts. It will init the websocket processing thread
+    /// \returns true if the websocket is successfully initialized, false otherwise. Does
+    ///          not wait for a successful connection
+    virtual bool start_connecting() = 0;
 
     /// \brief sets this connection_options to the given \p connection_options and resets the connection_attempts
     virtual void set_connection_options(const WebsocketConnectionOptions& connection_options) = 0;
@@ -111,14 +112,14 @@ public:
     virtual void close(const WebsocketCloseReason code, const std::string& reason) = 0;
 
     /// \brief register a \p callback that is called when the websocket is connected successfully
-    void register_connected_callback(const std::function<void(const int security_profile)>& callback);
+    void register_connected_callback(const std::function<void(OcppProtocolVersion protocol)>& callback);
 
     /// \brief register a \p callback that is called when the websocket connection is disconnected
     void register_disconnected_callback(const std::function<void()>& callback);
 
     /// \brief register a \p callback that is called when the websocket connection has been closed and will not attempt
     /// to reconnect
-    void register_closed_callback(const std::function<void(const WebsocketCloseReason reason)>& callback);
+    void register_stopped_connecting_callback(const std::function<void(const WebsocketCloseReason reason)>& callback);
 
     /// \brief register a \p callback that is called when the websocket receives a message
     void register_message_callback(const std::function<void(const std::string& message)>& callback);

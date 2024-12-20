@@ -288,7 +288,7 @@ void ChargePointImpl::init_websocket() {
     auto connection_options = this->get_ws_connection_options();
 
     this->websocket = std::make_unique<Websocket>(connection_options, this->evse_security, this->logging);
-    this->websocket->register_connected_callback([this](const int security_profile) {
+    this->websocket->register_connected_callback([this](OcppProtocolVersion protocol) {
         if (this->connection_state_changed_callback != nullptr) {
             this->connection_state_changed_callback(true);
         }
@@ -323,7 +323,7 @@ void ChargePointImpl::init_websocket() {
             this->signal_set_charging_profiles_callback();
         }
     });
-    this->websocket->register_closed_callback([this](const WebsocketCloseReason reason) {
+    this->websocket->register_stopped_connecting_callback([this](const WebsocketCloseReason reason) {
         if (this->switch_security_profile_callback != nullptr) {
             this->switch_security_profile_callback();
         }
@@ -370,7 +370,7 @@ WebsocketConnectionOptions ChargePointImpl::get_ws_connection_options() {
     auto uri = Uri::parse_and_validate(this->configuration->getCentralSystemURI(),
                                        this->configuration->getChargePointId(), security_profile);
 
-    WebsocketConnectionOptions connection_options{OcppProtocolVersion::v16,
+    WebsocketConnectionOptions connection_options{{OcppProtocolVersion::v16},
                                                   uri,
                                                   security_profile,
                                                   this->configuration->getAuthorizationKey(),
@@ -397,8 +397,7 @@ WebsocketConnectionOptions ChargePointImpl::get_ws_connection_options() {
 
 void ChargePointImpl::connect_websocket() {
     if (!this->websocket->is_connected()) {
-        this->init_websocket();
-        this->websocket->connect();
+        this->websocket->start_connecting();
     }
 }
 
@@ -890,16 +889,23 @@ std::optional<MeterValue> ChargePointImpl::get_latest_meter_value(int32_t connec
 
             case Measurand::Temperature: {
                 // temperature
-                const auto temperature = measurement.temperature_C;
-                if (temperature) {
+                for (const auto temperature : measurement.temperature_C) {
                     sample.unit.emplace(UnitOfMeasure::Celsius);
-                    if (temperature.value().location.has_value()) {
-                        sample.location.emplace(conversions::string_to_location(temperature.value().location.value()));
+                    if (temperature.location.has_value()) {
+                        try {
+                            sample.location.emplace(conversions::string_to_location(temperature.location.value()));
+                        } catch (const StringToEnumException& e) {
+                            EVLOG_debug << "Could not convert string: " << temperature.location.value()
+                                        << " to Location";
+                        }
                     } else {
-                        sample.location.emplace(Location::EV);
+                        sample.location = std::nullopt;
                     }
-                    sample.value = ocpp::conversions::double_to_string(temperature.value().value);
-                } else {
+                    sample.value = ocpp::conversions::double_to_string(temperature.value);
+                    filtered_meter_value.sampledValue.push_back(sample);
+                    sample.value.clear();
+                }
+                if (measurement.temperature_C.empty()) {
                     EVLOG_debug << "Measurement does not contain temperature_C configured measurand";
                 }
                 break;
@@ -1073,7 +1079,7 @@ bool ChargePointImpl::start(const std::map<int, ChargePointStatus>& connector_st
     this->bootreason = bootreason;
     this->init_state_machine(connector_status_map);
     this->init_websocket();
-    this->websocket->connect();
+    this->websocket->start_connecting();
     // push transaction messages including SecurityEventNotification.req onto the message queue
     this->message_queue->get_persisted_messages_from_db(this->configuration->getDisableSecurityEventNotifications());
     this->boot_notification();
@@ -1263,8 +1269,13 @@ void ChargePointImpl::message_callback(const std::string& message) {
         EVLOG_error << "Exception during handling of message: " << e.what();
         this->message_dispatcher->dispatch_call_error(
             CallError(enhanced_message.uniqueId, "FormationViolation", e.what(), json({})));
+        return;
     } catch (const json::exception& e) {
         EVLOG_error << "JSON exception during reception of message: " << e.what();
+        this->message_dispatcher->dispatch_call_error(CallError(MessageId("-1"), "GenericError", e.what(), json({})));
+        return;
+    } catch (const std::runtime_error& e) {
+        EVLOG_error << "runtime_error during reception of message: " << e.what();
         this->message_dispatcher->dispatch_call_error(CallError(MessageId("-1"), "GenericError", e.what(), json({})));
         return;
     }
@@ -1828,12 +1839,11 @@ void ChargePointImpl::switchSecurityProfile(int32_t new_security_profile, int32_
     // we need to reinitialize because it could be plain or tls websocket
     this->websocket_timer.timeout(
         [this, max_connection_attempts, new_security_profile]() {
-            this->init_websocket();
             auto connection_options = this->get_ws_connection_options();
             connection_options.security_profile = new_security_profile;
             connection_options.max_connection_attempts = max_connection_attempts;
             this->websocket->set_connection_options(connection_options);
-            this->websocket->connect();
+            this->websocket->start_connecting();
         },
         WEBSOCKET_INIT_DELAY);
 }
@@ -1926,8 +1936,10 @@ void ChargePointImpl::handleRemoteStartTransactionRequest(ocpp::Call<RemoteStart
     std::vector<int32_t> referenced_connectors;
 
     if (call.msg.connectorId) {
-        if (call.msg.connectorId.value() <= 0) {
-            EVLOG_warning << "Received RemoteStartTransactionRequest with connector id <= 0";
+        if (call.msg.connectorId.value() <= 0 or
+            call.msg.connectorId.value() > this->configuration->getNumberOfConnectors()) {
+            EVLOG_warning << "Received RemoteStartTransactionRequest with connector id <= 0 or > "
+                          << this->configuration->getNumberOfConnectors();
             response.status = RemoteStartStopStatus::Rejected;
             ocpp::CallResult<RemoteStartTransactionResponse> call_result(response, call.uniqueId);
             this->message_dispatcher->dispatch_call_result(call_result);
@@ -2238,7 +2250,7 @@ void ChargePointImpl::handleUnlockConnectorRequest(ocpp::Call<UnlockConnectorReq
 
     UnlockConnectorResponse response;
     auto connector = call.msg.connectorId;
-    if (connector == 0 || connector > this->configuration->getNumberOfConnectors()) {
+    if (connector <= 0 or connector > this->configuration->getNumberOfConnectors()) {
         response.status = UnlockStatus::NotSupported;
     } else {
         // this message is not intended to remotely stop a transaction, but if a transaction is still ongoing it is
@@ -2330,7 +2342,7 @@ void ChargePointImpl::handleGetCompositeScheduleRequest(ocpp::Call<GetCompositeS
     const auto connector_id = call.msg.connectorId;
     const auto allowed_charging_rate_units = this->configuration->getChargingScheduleAllowedChargingRateUnitVector();
 
-    if ((size_t)connector_id >= this->connectors.size() or connector_id < 0) {
+    if (connector_id > this->configuration->getNumberOfConnectors() or connector_id < 0) {
         response.status = GetCompositeScheduleStatus::Rejected;
     } else if (call.msg.chargingRateUnit and
                std::find(allowed_charging_rate_units.begin(), allowed_charging_rate_units.end(),

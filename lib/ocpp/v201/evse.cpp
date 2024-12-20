@@ -86,7 +86,7 @@ uint32_t Evse::get_number_of_connectors() const {
     return static_cast<uint32_t>(this->id_connector_map.size());
 }
 
-bool Evse::does_connector_exist(const ConnectorEnum connector_type) {
+bool Evse::does_connector_exist(const ConnectorEnum connector_type) const {
     const uint32_t number_of_connectors = this->get_number_of_connectors();
     if (number_of_connectors == 0) {
         return false;
@@ -110,7 +110,7 @@ bool Evse::does_connector_exist(const ConnectorEnum connector_type) {
             continue;
         }
 
-        ConnectorEnum type = this->get_evse_connector_type(i).value_or(ConnectorEnum::Unknown);
+        const ConnectorEnum type = this->get_evse_connector_type(i).value_or(ConnectorEnum::Unknown);
         if (type == ConnectorEnum::Unknown || type == connector_type) {
             return true;
         }
@@ -205,7 +205,7 @@ void Evse::delete_database_transaction() {
     }
 }
 
-std::optional<ConnectorEnum> Evse::get_evse_connector_type(const uint32_t connector_id) {
+std::optional<ConnectorEnum> Evse::get_evse_connector_type(const uint32_t connector_id) const {
 
     auto connector = this->get_connector(static_cast<int32_t>(connector_id));
     if (connector == nullptr) {
@@ -645,7 +645,8 @@ void Evse::send_meter_value_on_pricing_trigger(const MeterValue& meter_value) {
         // Send metervalue anyway since we have no previous metervalue stored and don't know if we should send any
         if (!meter_value_sent) {
             // Only send metervalue if it is not sent yet, otherwise only the last triggered metervalue is set.
-            this->send_metervalue_function({meter_value});
+            const MeterValue mv = utils::set_meter_value_reading_context(meter_value, ReadingContextEnum::Other);
+            this->send_metervalue_function({mv});
         }
         this->last_triggered_metervalue_power_kw = active_power_meter_value.value() / 1000;
     }
@@ -667,7 +668,7 @@ OperationalStatusEnum Evse::get_effective_operational_status() {
     return this->component_state_manager->get_evse_effective_operational_status(this->evse_id);
 }
 
-Connector* Evse::get_connector(int32_t connector_id) {
+Connector* Evse::get_connector(int32_t connector_id) const {
     if (connector_id <= 0 or connector_id > this->get_number_of_connectors()) {
         std::stringstream err_msg;
         err_msg << "ConnectorID " << connector_id << " out of bounds for EVSE " << this->evse_id;

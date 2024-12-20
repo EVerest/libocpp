@@ -22,9 +22,9 @@ Websocket::Websocket(const WebsocketConnectionOptions& connection_options, std::
 Websocket::~Websocket() {
 }
 
-bool Websocket::connect() {
+bool Websocket::start_connecting() {
     this->logging->sys("Connecting");
-    return this->websocket->connect();
+    return this->websocket->start_connecting();
 }
 
 void Websocket::set_connection_options(const WebsocketConnectionOptions& connection_options) {
@@ -45,12 +45,12 @@ bool Websocket::is_connected() {
     return this->websocket->is_connected();
 }
 
-void Websocket::register_connected_callback(const std::function<void(const int security_profile)>& callback) {
+void Websocket::register_connected_callback(const std::function<void(OcppProtocolVersion protocol)>& callback) {
     this->connected_callback = callback;
 
-    this->websocket->register_connected_callback([this](const int security_profile) {
+    this->websocket->register_connected_callback([this](OcppProtocolVersion protocol) {
         this->logging->sys("Connected");
-        this->connected_callback(security_profile);
+        this->connected_callback(protocol);
     });
 }
 
@@ -63,10 +63,11 @@ void Websocket::register_disconnected_callback(const std::function<void()>& call
     });
 }
 
-void Websocket::register_closed_callback(const std::function<void(const WebsocketCloseReason reason)>& callback) {
-    this->closed_callback = callback;
-    this->websocket->register_closed_callback(
-        [this](const WebsocketCloseReason reason) { this->closed_callback(reason); });
+void Websocket::register_stopped_connecting_callback(
+    const std::function<void(const WebsocketCloseReason reason)>& callback) {
+    this->stopped_connecting_callback = callback;
+    this->websocket->register_stopped_connecting_callback(
+        [this](const WebsocketCloseReason reason) { this->stopped_connecting_callback(reason); });
 }
 
 void Websocket::register_message_callback(const std::function<void(const std::string& message)>& callback) {

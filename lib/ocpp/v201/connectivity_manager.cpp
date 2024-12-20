@@ -28,7 +28,8 @@ ConnectivityManager::ConnectivityManager(DeviceModel& device_model, std::shared_
     message_callback{message_callback},
     wants_to_be_connected{false},
     active_network_configuration_priority{0},
-    last_known_security_level{0} {
+    last_known_security_level{0},
+    connected_ocpp_version{OcppProtocolVersion::Unknown} {
     cache_network_connection_profiles();
 }
 
@@ -75,11 +76,13 @@ ConnectivityManager::get_network_connection_profile(const int32_t configuration_
 
     for (const auto& network_profile : this->cached_network_connection_profiles) {
         if (network_profile.configurationSlot == configuration_slot) {
-            if (network_profile.connectionData.securityProfile ==
-                security::OCPP_1_6_ONLY_UNSECURED_TRANSPORT_WITHOUT_BASIC_AUTHENTICATION) {
-                throw std::invalid_argument(
-                    "security_profile = " + std::to_string(network_profile.connectionData.securityProfile) +
-                    " not officially allowed in OCPP 2.0.1");
+            if (!this->device_model
+                     .get_optional_value<bool>(ControllerComponentVariables::AllowSecurityLevelZeroConnections)
+                     .value_or(false) &&
+                network_profile.connectionData.securityProfile ==
+                    security::OCPP_1_6_ONLY_UNSECURED_TRANSPORT_WITHOUT_BASIC_AUTHENTICATION) {
+                EVLOG_error << "security_profile 0 not officially allowed in OCPP 2.0.1, skipping profile";
+                return std::nullopt;
             }
 
             return network_profile.connectionData;
@@ -173,12 +176,13 @@ void ConnectivityManager::try_connect_websocket() {
 
     const int configuration_slot_to_set =
         this->pending_configuration_slot.value_or(this->get_active_network_configuration_slot());
+    const std::optional<int> priority_to_set = this->get_priority_from_configuration_slot(configuration_slot_to_set);
     const auto network_connection_profile = this->get_network_connection_profile(configuration_slot_to_set);
     // Not const as the iface member can be set by the configure network connection profile callback
     auto connection_options = this->get_ws_connection_options(configuration_slot_to_set);
     bool can_use_connection_profile = true;
 
-    if (!network_connection_profile.has_value()) {
+    if (!network_connection_profile.has_value() || !priority_to_set.has_value()) {
         EVLOG_warning << "No network connection profile configured for " << configuration_slot_to_set;
         can_use_connection_profile = false;
     } else if (!connection_options.has_value()) {
@@ -208,8 +212,12 @@ void ConnectivityManager::try_connect_websocket() {
     }
 
     this->pending_configuration_slot.reset();
-    this->active_network_configuration_priority =
-        get_priority_from_configuration_slot(configuration_slot_to_set).value();
+    this->active_network_configuration_priority = priority_to_set.value();
+
+    if (connection_options->security_profile ==
+        security::OCPP_1_6_ONLY_UNSECURED_TRANSPORT_WITHOUT_BASIC_AUTHENTICATION) {
+        EVLOG_warning << "Using insecure security profile 0 without authentication";
+    }
 
     EVLOG_info << "Open websocket with NetworkConfigurationPriority: "
                << this->active_network_configuration_priority + 1 << " which is configurationSlot "
@@ -226,11 +234,11 @@ void ConnectivityManager::try_connect_websocket() {
         this->websocket = std::make_unique<Websocket>(connection_options.value(), this->evse_security, this->logging);
 
         this->websocket->register_connected_callback(
-            std::bind(&ConnectivityManager::on_websocket_connected, this, std::placeholders::_1));
+            [this](OcppProtocolVersion protocol) { this->on_websocket_connected(protocol); });
         this->websocket->register_disconnected_callback(
             std::bind(&ConnectivityManager::on_websocket_disconnected, this));
-        this->websocket->register_closed_callback(
-            std::bind(&ConnectivityManager::on_websocket_closed, this, std::placeholders::_1));
+        this->websocket->register_stopped_connecting_callback(
+            std::bind(&ConnectivityManager::on_websocket_stopped_connecting, this, std::placeholders::_1));
     } else {
         this->websocket->set_connection_options(connection_options.value());
     }
@@ -242,7 +250,7 @@ void ConnectivityManager::try_connect_websocket() {
 
     this->websocket->register_message_callback([this](const std::string& message) { this->message_callback(message); });
 
-    this->websocket->connect();
+    this->websocket->start_connecting();
 }
 
 std::optional<ConfigNetworkResult>
@@ -330,7 +338,7 @@ ConnectivityManager::get_ws_connection_options(const int32_t configuration_slot)
             network_connection_profile.securityProfile);
 
         WebsocketConnectionOptions connection_options{
-            OcppProtocolVersion::v201,
+            {OcppProtocolVersion::v201},
             uri,
             network_connection_profile.securityProfile,
             this->device_model.get_optional_value<std::string>(ControllerComponentVariables::BasicAuthPassword),
@@ -367,13 +375,15 @@ ConnectivityManager::get_ws_connection_options(const int32_t configuration_slot)
     return std::nullopt;
 }
 
-void ConnectivityManager::on_websocket_connected([[maybe_unused]] int security_profile) {
+void ConnectivityManager::on_websocket_connected(OcppProtocolVersion protocol) {
+    this->connected_ocpp_version = protocol;
     const int actual_configuration_slot = get_active_network_configuration_slot();
     std::optional<NetworkConnectionProfile> network_connection_profile =
         this->get_network_connection_profile(actual_configuration_slot);
 
     if (this->websocket_connected_callback.has_value() and network_connection_profile.has_value()) {
-        this->websocket_connected_callback.value()(actual_configuration_slot, network_connection_profile.value());
+        this->websocket_connected_callback.value()(actual_configuration_slot, network_connection_profile.value(),
+                                                   this->connected_ocpp_version);
     }
 }
 
@@ -383,11 +393,11 @@ void ConnectivityManager::on_websocket_disconnected() {
 
     if (this->websocket_disconnected_callback.has_value() and network_connection_profile.has_value()) {
         this->websocket_disconnected_callback.value()(this->get_active_network_configuration_slot(),
-                                                      network_connection_profile.value());
+                                                      network_connection_profile.value(), this->connected_ocpp_version);
     }
 }
 
-void ConnectivityManager::on_websocket_closed(ocpp::WebsocketCloseReason reason) {
+void ConnectivityManager::on_websocket_stopped_connecting(ocpp::WebsocketCloseReason reason) {
     EVLOG_warning << "Closed websocket of NetworkConfigurationPriority: "
                   << this->active_network_configuration_priority + 1 << " which is configurationSlot "
                   << this->get_active_network_configuration_slot();
@@ -409,6 +419,17 @@ void ConnectivityManager::cache_network_connection_profiles() {
     // get all the network connection profiles from the device model and cache them
     this->cached_network_connection_profiles =
         json::parse(this->device_model.get_value<std::string>(ControllerComponentVariables::NetworkConnectionProfiles));
+
+    if (!this->device_model.get_optional_value<bool>(ControllerComponentVariables::AllowSecurityLevelZeroConnections)
+             .value_or(false) &&
+        std::none_of(this->cached_network_connection_profiles.begin(), this->cached_network_connection_profiles.end(),
+                     [](const SetNetworkProfileRequest& profile) {
+                         return profile.connectionData.securityProfile !=
+                                security::OCPP_1_6_ONLY_UNSECURED_TRANSPORT_WITHOUT_BASIC_AUTHENTICATION;
+                     })) {
+        throw std::invalid_argument(
+            "All profiles configured have security_profile 0 which is not officially allowed in OCPP 2.0.1");
+    }
 
     for (const std::string& str : ocpp::split_string(
              this->device_model.get_value<std::string>(ControllerComponentVariables::NetworkConfigurationPriority),
