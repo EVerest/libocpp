@@ -26,11 +26,15 @@ using std::nullopt;
 using std::chrono::minutes;
 using std::chrono::seconds;
 
+// it was required to introduce this default because the `limit` property became optional in the 2.1 message
+auto FIXME_DEFAULT_LIMIT = 0;
+
 period_entry_t gen_pe(ocpp::DateTime start, ocpp::DateTime end, ChargingProfile profile, int period_at) {
     period_entry_t period_entry;
     period_entry.start = start;
     period_entry.end = end;
-    period_entry.limit = profile.chargingSchedule.front().chargingSchedulePeriod[period_at].limit;
+    period_entry.limit =
+        profile.chargingSchedule.front().chargingSchedulePeriod[period_at].limit.value_or(FIXME_DEFAULT_LIMIT);
     period_entry.stack_level = profile.stackLevel;
     period_entry.charging_rate_unit = profile.chargingSchedule.front().chargingRateUnit;
     return period_entry;
@@ -249,7 +253,8 @@ TEST_P(CalculateProfileEntryType_Param_Test, CalculateProfileEntry_Positive) {
     period_entry_t expected_entry;
     expected_entry.start = expected_start;
     expected_entry.end = expected_end;
-    expected_entry.limit = profile.chargingSchedule.front().chargingSchedulePeriod[period_index].limit;
+    expected_entry.limit =
+        profile.chargingSchedule.front().chargingSchedulePeriod[period_index].limit.value_or(FIXME_DEFAULT_LIMIT);
     expected_entry.stack_level = profile.stackLevel;
     expected_entry.charging_rate_unit = profile.chargingSchedule.front().chargingRateUnit;
 
@@ -267,7 +272,8 @@ TEST_P(CalculateProfileEntryType_Param_Test, CalculateProfileEntry_Positive) {
         period_entry_t expected_second_entry;
         expected_second_entry.start = expected_2nd_entry_start.value();
         expected_second_entry.end = expected_2nd_entry_end.value();
-        expected_second_entry.limit = profile.chargingSchedule.front().chargingSchedulePeriod[period_index].limit;
+        expected_second_entry.limit =
+            profile.chargingSchedule.front().chargingSchedulePeriod[period_index].limit.value_or(FIXME_DEFAULT_LIMIT);
         expected_second_entry.stack_level = profile.stackLevel;
         expected_second_entry.charging_rate_unit = profile.chargingSchedule.front().chargingRateUnit;
 
@@ -344,7 +350,8 @@ TEST(OCPPTypesTest, PeriodEntry_Equality) {
     period_entry_t actual_entry;
     actual_entry.start = dt("2T08:45");
     actual_entry.end = dt("3T08:00");
-    actual_entry.limit = absolute_profile.chargingSchedule.front().chargingSchedulePeriod[0].limit;
+    actual_entry.limit =
+        absolute_profile.chargingSchedule.front().chargingSchedulePeriod[0].limit.value_or(FIXME_DEFAULT_LIMIT);
     actual_entry.stack_level = absolute_profile.stackLevel;
     actual_entry.charging_rate_unit = absolute_profile.chargingSchedule.front().chargingRateUnit;
     period_entry_t same_entry = actual_entry;
@@ -352,7 +359,8 @@ TEST(OCPPTypesTest, PeriodEntry_Equality) {
     period_entry_t different_entry;
     different_entry.start = dt("3T08:00");
     different_entry.end = dt("3T08:00");
-    different_entry.limit = absolute_profile.chargingSchedule.front().chargingSchedulePeriod[0].limit;
+    different_entry.limit =
+        absolute_profile.chargingSchedule.front().chargingSchedulePeriod[0].limit.value_or(FIXME_DEFAULT_LIMIT);
     different_entry.stack_level = absolute_profile.stackLevel;
     different_entry.charging_rate_unit = absolute_profile.chargingSchedule.front().chargingRateUnit;
 
@@ -569,11 +577,11 @@ TEST(OCPPTypesTest, CalculateProfile_RelativeLimited) {
 TEST(OCPPTypesTest, ChargingSchedulePeriod_Equality) {
     ChargingSchedulePeriod period1;
     period1.startPeriod = 0;
-    period1.limit = NO_LIMIT_SPECIFIED;
+    period1.limit = std::nullopt;
 
     ChargingSchedulePeriod period2;
     period2.startPeriod = 0;
-    period2.limit = NO_LIMIT_SPECIFIED;
+    period2.limit = std::nullopt;
 
     ASSERT_EQ(period1, period1);
     ASSERT_EQ(period1, period2);
@@ -681,7 +689,7 @@ TEST(OCPPTypesTest, CalculateChargingSchedule_Empty) {
     std::vector<period_entry_t> combined_schedules{};
     ChargingSchedulePeriod period;
     period.startPeriod = 0;
-    period.limit = NO_LIMIT_SPECIFIED;
+    period.limit = std::nullopt;
     CompositeSchedule expected;
     expected.chargingSchedulePeriod = {period};
     expected.evseId = EVSEID_NOT_SET;
@@ -730,7 +738,7 @@ TEST(OCPPTypesTest, CalculateChargingSchedule_ShortExact) {
     period1.numberPhases = 3;
     ChargingSchedulePeriod period2;
     period2.startPeriod = 599;
-    period2.limit = NO_LIMIT_SPECIFIED;
+    period2.limit = std::nullopt;
     CompositeSchedule expected;
     expected.chargingSchedulePeriod = {period1, period2};
     expected.evseId = EVSEID_NOT_SET;
@@ -777,14 +785,14 @@ TEST(OCPPTypesTest, CalculateChargingSchedule_AlmostExact) {
 
     ChargingSchedulePeriod period1;
     period1.startPeriod = 0;
-    period1.limit = NO_LIMIT_SPECIFIED;
+    period1.limit = std::nullopt;
     ChargingSchedulePeriod period2;
     period2.startPeriod = 1;
     period2.limit = 24.0;
     period2.numberPhases = 3;
     ChargingSchedulePeriod period3;
     period3.startPeriod = 599;
-    period3.limit = NO_LIMIT_SPECIFIED;
+    period3.limit = std::nullopt;
     CompositeSchedule expected;
     expected.chargingSchedulePeriod = {period1, period2, period3};
     expected.evseId = EVSEID_NOT_SET;
@@ -831,7 +839,7 @@ TEST(OCPPTypesTest, CalculateChargingSchedule_SingleShort) {
     period1.numberPhases = 3;
     ChargingSchedulePeriod period2;
     period2.startPeriod = 300;
-    period2.limit = NO_LIMIT_SPECIFIED;
+    period2.limit = std::nullopt;
     CompositeSchedule expected;
     expected.chargingSchedulePeriod = {period1, period2};
     expected.evseId = EVSEID_NOT_SET;
@@ -852,7 +860,7 @@ TEST(OCPPTypesTest, CalculateChargingSchedule_SingleDelayedStartLong) {
         {dt("12:02"), dt("12:30"), 24.0, 3, std::nullopt, 1, ChargingRateUnitEnum::A, std::nullopt}};
     ChargingSchedulePeriod period1;
     period1.startPeriod = 0;
-    period1.limit = NO_LIMIT_SPECIFIED;
+    period1.limit = std::nullopt;
     ChargingSchedulePeriod period2;
     period2.startPeriod = 120, period2.limit = 24.0, period2.numberPhases = 3;
     CompositeSchedule expected;
@@ -1097,7 +1105,7 @@ TEST(OCPPTypesTest, CalculateChargingSchedule_1SecondGap) {
     period1.numberPhases = 1;
     ChargingSchedulePeriod period2;
     period2.startPeriod = 299;
-    period2.limit = NO_LIMIT_SPECIFIED;
+    period2.limit = std::nullopt;
     ChargingSchedulePeriod period3;
     period3.startPeriod = 300;
     period3.limit = 24.0;
@@ -1128,7 +1136,7 @@ TEST(OCPPTypesTest, CalculateChargingSchedule_WithPhaseToUse) {
     period1.phaseToUse = 3;
     ChargingSchedulePeriod period2;
     period2.startPeriod = 299;
-    period2.limit = NO_LIMIT_SPECIFIED;
+    period2.limit = std::nullopt;
     ChargingSchedulePeriod period3;
     period3.startPeriod = 300;
     period3.limit = 24.0;
@@ -1247,13 +1255,13 @@ TEST(OCPPTypesTest, CalculateChargingScheduleCombined_CombinedOverlapTxAndTxDefa
 
     ChargingSchedulePeriod period3;
     period3.startPeriod = 0;
-    period3.limit = NO_LIMIT_SPECIFIED;
+    period3.limit = std::nullopt;
     ChargingSchedulePeriod period4;
     period4.startPeriod = 150;
     period4.limit = 32.0;
     ChargingSchedulePeriod period5;
     period5.startPeriod = 450;
-    period5.limit = NO_LIMIT_SPECIFIED;
+    period5.limit = std::nullopt;
     CompositeSchedule tx_schedule;
     tx_schedule.chargingSchedulePeriod = {period3, period4, period5};
     tx_schedule.evseId = EVSEID_NOT_SET;
@@ -1263,7 +1271,7 @@ TEST(OCPPTypesTest, CalculateChargingScheduleCombined_CombinedOverlapTxAndTxDefa
 
     ChargingSchedulePeriod period6;
     period6.startPeriod = 0;
-    period6.limit = NO_LIMIT_SPECIFIED;
+    period6.limit = std::nullopt;
     CompositeSchedule charging_station_max;
     charging_station_max.chargingSchedulePeriod = {period6};
     charging_station_max.evseId = EVSEID_NOT_SET;
@@ -1313,13 +1321,13 @@ TEST(OCPPTypesTest, CalculateChargingScheduleCombined_CombinedOverlapTxTxDefault
 
     ChargingSchedulePeriod period3;
     period3.startPeriod = 0;
-    period3.limit = NO_LIMIT_SPECIFIED;
+    period3.limit = std::nullopt;
     ChargingSchedulePeriod period4;
     period4.startPeriod = 150;
     period4.limit = 32.0;
     ChargingSchedulePeriod period5;
     period5.startPeriod = 450;
-    period5.limit = NO_LIMIT_SPECIFIED;
+    period5.limit = std::nullopt;
 
     CompositeSchedule tx_schedule;
     tx_schedule.chargingSchedulePeriod = {period3, period4, period5};
@@ -1330,13 +1338,13 @@ TEST(OCPPTypesTest, CalculateChargingScheduleCombined_CombinedOverlapTxTxDefault
 
     ChargingSchedulePeriod period6;
     period6.startPeriod = 0;
-    period6.limit = NO_LIMIT_SPECIFIED;
+    period6.limit = std::nullopt;
     ChargingSchedulePeriod period7;
     period7.startPeriod = 500;
     period7.limit = 15.0;
     ChargingSchedulePeriod period8;
     period8.startPeriod = 550;
-    period8.limit = NO_LIMIT_SPECIFIED;
+    period8.limit = std::nullopt;
     CompositeSchedule charging_station_max;
     charging_station_max.chargingSchedulePeriod = {period6, period7, period8};
     charging_station_max.evseId = EVSEID_NOT_SET;

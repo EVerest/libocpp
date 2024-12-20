@@ -18,7 +18,7 @@ namespace v201 {
 /// \brief Contains a OCPP InstallCertificate message
 struct InstallCertificateRequest : public ocpp::Message {
     InstallCertificateUseEnum certificateType;
-    CiString<5500> certificate;
+    CiString<10000> certificate;
     std::optional<CustomData> customData;
 
     /// \brief Provides the type of this InstallCertificate message as a human readable string
@@ -39,8 +39,8 @@ std::ostream& operator<<(std::ostream& os, const InstallCertificateRequest& k);
 /// \brief Contains a OCPP InstallCertificateResponse message
 struct InstallCertificateResponse : public ocpp::Message {
     InstallCertificateStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this InstallCertificateResponse message as a human readable string
     /// \returns the message type as a human readable string

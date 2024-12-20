@@ -86,6 +86,8 @@ protected:
             start_schedule,
             duration,
             min_charging_rate,
+            std::nullopt,
+            std::nullopt,
             sales_tariff,
         };
     }
@@ -107,6 +109,8 @@ protected:
             start_schedule,
             duration,
             min_charging_rate,
+            std::nullopt,
+            std::nullopt,
             sales_tariff,
         };
     }
@@ -166,11 +170,11 @@ protected:
         return charging_profile;
     }
 
-    ChargingProfileCriterion create_charging_profile_criteria(
-        std::optional<std::vector<ocpp::v201::ChargingLimitSourceEnum>> sources = std::nullopt,
-        std::optional<std::vector<int32_t>> ids = std::nullopt,
-        std::optional<ChargingProfilePurposeEnum> purpose = std::nullopt,
-        std::optional<int32_t> stack_level = std::nullopt) {
+    ChargingProfileCriterion
+    create_charging_profile_criteria(std::optional<std::vector<ocpp::CiString<20>>> sources = std::nullopt,
+                                     std::optional<std::vector<int32_t>> ids = std::nullopt,
+                                     std::optional<ChargingProfilePurposeEnum> purpose = std::nullopt,
+                                     std::optional<int32_t> stack_level = std::nullopt) {
         ChargingProfileCriterion criteria;
         criteria.chargingLimitSource = sources;
         criteria.chargingProfileId = ids;
@@ -1271,7 +1275,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K04FR01_AddProfile_OnlyAddsToOneEVSE
 }
 
 TEST_F(SmartChargingHandlerTestFixtureV201, AddProfile_StoresChargingLimitSource) {
-    auto charging_limit_source = ChargingLimitSourceEnum::SO;
+    auto charging_limit_source = ChargingLimitSourceEnumStringType::SO;
 
     auto periods = create_charging_schedule_periods({0, 1, 2});
     auto profile = create_charging_profile(
@@ -1286,11 +1290,11 @@ TEST_F(SmartChargingHandlerTestFixtureV201, AddProfile_StoresChargingLimitSource
 
     auto profiles = this->database_handler->get_charging_profiles_matching_criteria(DEFAULT_EVSE_ID, criteria);
     const auto [e, p, sut] = profiles[0];
-    EXPECT_THAT(sut, ChargingLimitSourceEnum::SO);
+    EXPECT_THAT(sut, ChargingLimitSourceEnumStringType::SO);
 }
 
 TEST_F(SmartChargingHandlerTestFixtureV201, ValidateAndAddProfile_StoresChargingLimitSource) {
-    auto charging_limit_source = ChargingLimitSourceEnum::SO;
+    auto charging_limit_source = ChargingLimitSourceEnumStringType::SO;
 
     auto periods = create_charging_schedule_periods({0, 1, 2});
 
@@ -1309,7 +1313,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201, ValidateAndAddProfile_StoresCharging
     auto profiles = this->database_handler->get_charging_profiles_matching_criteria(DEFAULT_EVSE_ID, criteria);
     ASSERT_THAT(profiles.size(), testing::Ge(1));
     const auto [e, p, sut] = profiles[0];
-    EXPECT_THAT(sut, ChargingLimitSourceEnum::SO);
+    EXPECT_THAT(sut, ChargingLimitSourceEnumStringType::SO);
 }
 
 TEST_F(SmartChargingHandlerTestFixtureV201, K01_ValidateAndAdd_RejectsInvalidProfilesWithReasonCode) {
@@ -1466,8 +1470,8 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K09_GetChargingProfiles_EvseIdAndSou
     auto profiles = database_handler->get_all_charging_profiles();
     EXPECT_THAT(profiles, testing::SizeIs(1));
 
-    std::vector<ChargingLimitSourceEnum> requested_sources_cso{ChargingLimitSourceEnum::CSO};
-    std::vector<ChargingLimitSourceEnum> requested_sources_ems{ChargingLimitSourceEnum::EMS};
+    std::vector<CiString<20>> requested_sources_cso{ChargingLimitSourceEnumStringType::CSO};
+    std::vector<CiString<20>> requested_sources_ems{ChargingLimitSourceEnumStringType::EMS};
 
     auto reported_profiles = handler.get_reported_profiles(create_get_charging_profile_request(
         DEFAULT_REQUEST_ID, create_charging_profile_criteria(requested_sources_cso), DEFAULT_EVSE_ID));
@@ -1513,7 +1517,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K09_GetChargingProfiles_EvseIdAndPur
 }
 
 TEST_F(SmartChargingHandlerTestFixtureV201, K09_GetChargingProfiles_ReportsProfileWithSource) {
-    auto charging_limit_source = ChargingLimitSourceEnum::SO;
+    auto charging_limit_source = ChargingLimitSourceEnumStringType::SO;
 
     auto periods = create_charging_schedule_periods({0, 1, 2});
 
@@ -1531,7 +1535,7 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K09_GetChargingProfiles_ReportsProfi
 
     auto reported_profile = reported_profiles.at(0);
     EXPECT_THAT(profile, testing::Eq(reported_profile.profile));
-    EXPECT_THAT(reported_profile.source, ChargingLimitSourceEnum::SO);
+    EXPECT_THAT(reported_profile.source, ChargingLimitSourceEnumStringType::SO);
 }
 
 TEST_F(SmartChargingHandlerTestFixtureV201, K10_ClearChargingProfile_ClearsId) {

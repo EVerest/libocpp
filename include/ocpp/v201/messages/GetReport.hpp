@@ -18,9 +18,9 @@ namespace v201 {
 /// \brief Contains a OCPP GetReport message
 struct GetReportRequest : public ocpp::Message {
     int32_t requestId;
-    std::optional<CustomData> customData;
     std::optional<std::vector<ComponentVariable>> componentVariable;
     std::optional<std::vector<ComponentCriterionEnum>> componentCriteria;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this GetReport message as a human readable string
     /// \returns the message type as a human readable string
@@ -40,8 +40,8 @@ std::ostream& operator<<(std::ostream& os, const GetReportRequest& k);
 /// \brief Contains a OCPP GetReportResponse message
 struct GetReportResponse : public ocpp::Message {
     GenericDeviceModelStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this GetReportResponse message as a human readable string
     /// \returns the message type as a human readable string
