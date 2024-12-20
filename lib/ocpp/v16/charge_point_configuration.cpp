@@ -43,6 +43,16 @@ ChargePointConfiguration::ChargePointConfiguration(const std::string& config, co
     }
 
     try {
+        const auto internal_schema_path = schemas_path / "Internal.json";
+        std::ifstream ifs(internal_schema_path.c_str());
+        std::string internal_schema_file((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
+        this->internal_schema = json::parse(internal_schema_file);
+    } catch (const json::parse_error& e) {
+        EVLOG_error << "Error while parsing Internal.json file.";
+        EVLOG_AND_THROW(e);
+    }
+
+    try {
         auto patch = schemas.get_validator()->validate(this->config);
         if (patch.is_null()) {
             // no defaults substituted
@@ -541,7 +551,7 @@ KeyValue ChargePointConfiguration::getChargePointIdKeyValue() {
 KeyValue ChargePointConfiguration::getCentralSystemURIKeyValue() {
     KeyValue kv;
     kv.key = "CentralSystemURI";
-    kv.readonly = true;
+    kv.readonly = this->internal_schema["properties"][kv.key]["readOnly"];
     kv.value.emplace(this->getCentralSystemURI());
     return kv;
 }
@@ -934,6 +944,18 @@ bool ChargePointConfiguration::validate_measurands(const json& config) {
 
     for (const auto measurands : measurands_vector) {
         if (!this->measurands_supported(measurands)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool validate_connector_evse_ids(const std::string& value) {
+    // this fullfills parts of HUB-24-003 of Requirements EVSE Check PnC with ISO15118-2 v4
+    const auto evse_ids = split_string(value, ',');
+    for (const auto& evse_id : evse_ids) {
+        if (evse_id.size() < 7 or evse_id.size() > 37) {
+            EVLOG_warning << "Attempting to set ConnectorEvseIds to invalid value: " << evse_id;
             return false;
         }
     }
@@ -2502,7 +2524,7 @@ KeyValue ChargePointConfiguration::getCustomDisplayCostAndPriceEnabledKeyValue()
     const bool enabled = getCustomDisplayCostAndPriceEnabled();
     KeyValue kv;
     kv.key = "CustomDisplayCostAndPrice";
-    kv.value = std::to_string(enabled);
+    kv.value = ocpp::conversions::bool_to_string(enabled);
     kv.readonly = true;
     return kv;
 }
@@ -2820,7 +2842,7 @@ std::optional<KeyValue> ChargePointConfiguration::getCustomIdleFeeAfterStopKeyVa
     if (idle_fee.has_value()) {
         result = KeyValue();
         result->key = "CustomIdleFeeAfterStop";
-        result->value = std::to_string(idle_fee.value());
+        result->value = ocpp::conversions::bool_to_string(idle_fee.value());
         result->readonly = false;
     }
 
@@ -2842,7 +2864,7 @@ std::optional<KeyValue> ChargePointConfiguration::getCustomMultiLanguageMessages
     if (multi_language.has_value()) {
         result = KeyValue();
         result->key = "CustomMultiLanguageMessages";
-        result->value = std::to_string(multi_language.value());
+        result->value = ocpp::conversions::bool_to_string(multi_language.value());
         result->readonly = true;
     }
 
@@ -2941,9 +2963,9 @@ ConfigurationStatus ChargePointConfiguration::setCustomKey(CiString<50> key, CiS
 
         // validate the updated key against the schema
         Schemas schema(custom_schema);
-        json model;
-        model[key] = new_value;
-        schema.get_validator()->validate(model); // throws exception on error
+        json modelUnderTest = config["Custom"];
+        modelUnderTest[key] = new_value;
+        schema.get_validator()->validate(modelUnderTest); // throws exception on error
         config["Custom"][key] = new_value;
     } catch (const std::exception& e) {
         EVLOG_warning << "Could not set custom configuration key: " << e.what();
@@ -2952,6 +2974,12 @@ ConfigurationStatus ChargePointConfiguration::setCustomKey(CiString<50> key, CiS
 
     this->setInUserConfig("Custom", key, this->config["Custom"][key]);
     return ConfigurationStatus::Accepted;
+}
+
+void ChargePointConfiguration::setCentralSystemURI(std::string centralSystemUri) {
+    EVLOG_warning << "CentralSystemURI changed to: " << centralSystemUri;
+    this->config["Internal"]["CentralSystemURI"] = centralSystemUri;
+    this->setInUserConfig("Internal", "CentralSystemURI", centralSystemUri);
 }
 
 std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
@@ -3802,7 +3830,11 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
     }
     if (key == "ConnectorEvseIds") {
         if (this->getConnectorEvseIds().has_value()) {
-            this->setConnectorEvseIds(value.get());
+            if (validate_connector_evse_ids(value.get())) {
+                this->setConnectorEvseIds(value.get());
+            } else {
+                return ConfigurationStatus::Rejected;
+            }
         } else {
             return ConfigurationStatus::NotSupported;
         }
@@ -3856,6 +3888,11 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
 
     if (key == "Language") {
         this->setLanguage(value);
+    }
+
+    if (key == "CentralSystemURI") {
+        this->setCentralSystemURI(value.get());
+        return ConfigurationStatus::RebootRequired;
     }
 
     if (this->config.contains("Custom") and this->config["Custom"].contains(key.get())) {

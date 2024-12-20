@@ -323,7 +323,7 @@ void ChargePointImpl::init_websocket() {
             this->signal_set_charging_profiles_callback();
         }
     });
-    this->websocket->register_closed_callback([this](const WebsocketCloseReason reason) {
+    this->websocket->register_stopped_connecting_callback([this](const WebsocketCloseReason reason) {
         if (this->switch_security_profile_callback != nullptr) {
             this->switch_security_profile_callback();
         }
@@ -397,8 +397,7 @@ WebsocketConnectionOptions ChargePointImpl::get_ws_connection_options() {
 
 void ChargePointImpl::connect_websocket() {
     if (!this->websocket->is_connected()) {
-        this->init_websocket();
-        this->websocket->connect();
+        this->websocket->start_connecting();
     }
 }
 
@@ -890,16 +889,23 @@ std::optional<MeterValue> ChargePointImpl::get_latest_meter_value(int32_t connec
 
             case Measurand::Temperature: {
                 // temperature
-                const auto temperature = measurement.temperature_C;
-                if (temperature) {
+                for (const auto temperature : measurement.temperature_C) {
                     sample.unit.emplace(UnitOfMeasure::Celsius);
-                    if (temperature.value().location.has_value()) {
-                        sample.location.emplace(conversions::string_to_location(temperature.value().location.value()));
+                    if (temperature.location.has_value()) {
+                        try {
+                            sample.location.emplace(conversions::string_to_location(temperature.location.value()));
+                        } catch (const StringToEnumException& e) {
+                            EVLOG_debug << "Could not convert string: " << temperature.location.value()
+                                        << " to Location";
+                        }
                     } else {
-                        sample.location.emplace(Location::EV);
+                        sample.location = std::nullopt;
                     }
-                    sample.value = ocpp::conversions::double_to_string(temperature.value().value);
-                } else {
+                    sample.value = ocpp::conversions::double_to_string(temperature.value);
+                    filtered_meter_value.sampledValue.push_back(sample);
+                    sample.value.clear();
+                }
+                if (measurement.temperature_C.empty()) {
                     EVLOG_debug << "Measurement does not contain temperature_C configured measurand";
                 }
                 break;
@@ -1073,7 +1079,7 @@ bool ChargePointImpl::start(const std::map<int, ChargePointStatus>& connector_st
     this->bootreason = bootreason;
     this->init_state_machine(connector_status_map);
     this->init_websocket();
-    this->websocket->connect();
+    this->websocket->start_connecting();
     // push transaction messages including SecurityEventNotification.req onto the message queue
     this->message_queue->get_persisted_messages_from_db(this->configuration->getDisableSecurityEventNotifications());
     this->boot_notification();
@@ -1833,12 +1839,11 @@ void ChargePointImpl::switchSecurityProfile(int32_t new_security_profile, int32_
     // we need to reinitialize because it could be plain or tls websocket
     this->websocket_timer.timeout(
         [this, max_connection_attempts, new_security_profile]() {
-            this->init_websocket();
             auto connection_options = this->get_ws_connection_options();
             connection_options.security_profile = new_security_profile;
             connection_options.max_connection_attempts = max_connection_attempts;
             this->websocket->set_connection_options(connection_options);
-            this->websocket->connect();
+            this->websocket->start_connecting();
         },
         WEBSOCKET_INIT_DELAY);
 }
