@@ -420,6 +420,8 @@ private:
 
     // states
     std::atomic<RegistrationStatusEnum> registration_status;
+    std::atomic<OcppProtocolVersion> ocpp_version =
+        OcppProtocolVersion::Unknown; // version that is currently in use, selected by CSMS in websocket handshake
     FirmwareStatusEnum firmware_status;
     // The request ID in the last firmware update status received
     std::optional<int32_t> firmware_status_id;
@@ -477,7 +479,8 @@ private:
     void scheduled_check_client_certificate_expiration();
     void scheduled_check_v2g_certificate_expiration();
     void websocket_connected_callback(const int configuration_slot,
-                                      const NetworkConnectionProfile& network_connection_profile);
+                                      const NetworkConnectionProfile& network_connection_profile,
+                                      const OcppProtocolVersion ocpp_version);
     void websocket_disconnected_callback(const int configuration_slot,
                                          const NetworkConnectionProfile& network_connection_profile);
     void websocket_connection_failed(ConnectionFailedReason reason);
