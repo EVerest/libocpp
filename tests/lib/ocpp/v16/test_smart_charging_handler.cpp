@@ -313,8 +313,8 @@ TEST_F(ChargepointTestFixture, ValidateProfile__ConnectorIdGreaterThanConnectors
     // if we have connectors 0,1,2 this->connectors.size() == 3 and a connector_id of 3 is invalid
     connector_id = this->connectors.size();
     sut = handler->validate_profile(profile, connector_id, ignore_no_transaction, profile_max_stack_level,
-                                         max_charging_profiles_installed, charging_schedule_max_periods,
-                                         charging_schedule_allowed_charging_rate_units);
+                                    max_charging_profiles_installed, charging_schedule_max_periods,
+                                    charging_schedule_allowed_charging_rate_units);
     ASSERT_FALSE(sut);
 }
 
