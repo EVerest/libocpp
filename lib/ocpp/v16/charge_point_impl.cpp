@@ -2429,39 +2429,28 @@ void ChargePointImpl::handleTriggerMessageRequest(ocpp::Call<TriggerMessageReque
     }
 
     auto connector = call.msg.connectorId.value_or(0);
-    bool valid = true;
+    bool trigger_message = true;
     if (connector < 0 || connector > this->configuration->getNumberOfConnectors()) {
         response.status = TriggerMessageStatus::Rejected;
-        valid = false;
+        trigger_message = false;
     }
 
-    // We have to reject if there is no metervalue
-    if (MessageTrigger::MeterValues == call.msg.requestedMessage && valid) {
-        // the case if connectorId has value
-        std::vector<bool> thereIsMeterValueForRequest;
+    if (trigger_message and call.msg.requestedMessage == MessageTrigger::MeterValues) {
         if (call.msg.connectorId.has_value()) {
-            if (this->connectors.find(connector) != this->connectors.end() &&
-                this->connectors.at(connector)->measurement.has_value()) {
-                thereIsMeterValueForRequest.push_back(connector);
-            }
+            trigger_message = this->connectors.at(call.msg.connectorId.value())->measurement.has_value();
         } else {
-            for (int32_t c = 0; c <= this->configuration->getNumberOfConnectors(); c++) {
-                if (this->connectors.find(c) != this->connectors.end() &&
-                    this->connectors.at(c)->measurement.has_value()) {
-                    thereIsMeterValueForRequest.push_back(c);
-                }
-            }
+            trigger_message = std::any_of(this->connectors.begin(), this->connectors.end(),
+                                          [](const auto& connector) { return connector.second->measurement.has_value(); });
         }
-        if (thereIsMeterValueForRequest.size() == 0) {
+        if (not trigger_message) {
             response.status = TriggerMessageStatus::Rejected;
-            valid = false;
         }
     }
 
     ocpp::CallResult<TriggerMessageResponse> call_result(response, call.uniqueId);
     this->message_dispatcher->dispatch_call_result(call_result);
 
-    if (!valid) {
+    if (not trigger_message) {
         return;
     }
 
@@ -2479,30 +2468,24 @@ void ChargePointImpl::handleTriggerMessageRequest(ocpp::Call<TriggerMessageReque
         this->heartbeat(true);
         break;
     case MessageTrigger::MeterValues: {
-        for (int32_t c = 0; c <= this->configuration->getNumberOfConnectors(); c++) {
-            bool doExecute = false;
-            bool doBreak = false;
-            if (call.msg.connectorId.has_value()) {
-                if (call.msg.connectorId.value() == c) {
-                    doBreak = true;
-                    doExecute = true;
-                }
+        const auto send_meter_value_func = [this](const int32_t connector_id) {
+            auto meter_value = this->get_latest_meter_value(
+                connector_id, this->configuration->getMeterValuesSampledDataVector(), ReadingContext::Trigger);
+            if (meter_value.has_value()) {
+                this->send_meter_value(connector_id, meter_value.value(), true);
             } else {
-                doExecute = true;
-                doBreak = false;
+                EVLOG_warning << "Could not send triggered meter value for uninitialized measurement at connector#"
+                              << connector_id;
             }
-            if (doExecute) {
-                const auto meter_value = this->get_latest_meter_value(
-                    c, this->configuration->getMeterValuesSampledDataVector(), ReadingContext::Trigger);
-                if (meter_value.has_value()) {
-                    this->send_meter_value(c, meter_value.value(), true);
-                } else {
-                    EVLOG_warning << "Could not send triggered meter value for uninitialized measurement at connector#"
-                                  << c;
-                }
+        };
+
+        if (!call.msg.connectorId.has_value()) {
+            // send a MeterValue.req for every connector
+            for (int32_t c = 0; c <= this->configuration->getNumberOfConnectors(); c++) {
+                send_meter_value_func(c);
             }
-            if (doBreak)
-                break;
+        } else {
+            send_meter_value_func(call.msg.connectorId.value());
         }
         break;
     }
