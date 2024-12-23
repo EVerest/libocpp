@@ -2439,8 +2439,9 @@ void ChargePointImpl::handleTriggerMessageRequest(ocpp::Call<TriggerMessageReque
         if (call.msg.connectorId.has_value()) {
             trigger_message = this->connectors.at(call.msg.connectorId.value())->measurement.has_value();
         } else {
-            trigger_message = std::any_of(this->connectors.begin(), this->connectors.end(),
-                                          [](const auto& connector) { return connector.second->measurement.has_value(); });
+            trigger_message = std::any_of(this->connectors.begin(), this->connectors.end(), [](const auto& connector) {
+                return connector.second->measurement.has_value();
+            });
         }
         if (not trigger_message) {
             response.status = TriggerMessageStatus::Rejected;
