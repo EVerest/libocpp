@@ -338,7 +338,7 @@ ConnectivityManager::get_ws_connection_options(const int32_t configuration_slot)
             this->device_model.get_value<std::string>(ControllerComponentVariables::SecurityCtrlrIdentity),
             network_connection_profile.securityProfile);
 
-        std::vector<OcppProtocolVersion> ocpp_versions = utils::get_ocpp_protocol_versions(
+        const auto ocpp_versions = utils::get_ocpp_protocol_versions(
             this->device_model.get_value<std::string>(ControllerComponentVariables::SupportedOcppVersions));
 
         WebsocketConnectionOptions connection_options{
