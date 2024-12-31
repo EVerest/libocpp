@@ -5,7 +5,10 @@
 #include <gtest/gtest.h>
 
 #include <ocpp/v201/ctrlr_component_variables.hpp>
+
+#define private public  // Make everything in security.hpp public so we can trigger the timer.
 #include <ocpp/v201/functional_blocks/security.hpp>
+#undef private
 #include <ocpp/v201/messages/Reset.hpp>
 
 #include "connectivity_manager_mock.hpp"
@@ -58,6 +61,18 @@ protected: // Functions
         return enhanced_message;
     }
 
+    ocpp::EnhancedMessage<MessageType> create_example_sign_certificate_response(
+        const GenericStatusEnum status = GenericStatusEnum::Accepted) {
+        SignCertificateResponse response;
+        response.status = status;
+        ocpp::CallResult<SignCertificateResponse> call_result;
+        call_result.msg = response;
+        ocpp::EnhancedMessage<MessageType> enhanced_message;
+        enhanced_message.messageType = MessageType::SignCertificateResponse;
+        enhanced_message.message = call_result;
+        return enhanced_message;
+    }
+
     void set_update_certificate_symlinks_enabled(DeviceModel* device_model, const bool enabled) {
         const auto& update_certificate_symlinks = ControllerComponentVariables::UpdateCertificateSymlinks;
         EXPECT_EQ(device_model->set_value(update_certificate_symlinks.component,
@@ -68,9 +83,8 @@ protected: // Functions
 
     void set_security_profile(DeviceModel* device_model, const int profile) {
         const auto& security_profile = ControllerComponentVariables::SecurityProfile;
-        EXPECT_EQ(device_model->set_value(security_profile.component,
-                                          security_profile.variable.value(), AttributeEnum::Actual,
-                                          std::to_string(profile), "default", true),
+        EXPECT_EQ(device_model->set_value(security_profile.component, security_profile.variable.value(),
+                                          AttributeEnum::Actual, std::to_string(profile), "default", true),
                   SetVariableStatusEnum::Accepted);
     }
 };
@@ -175,15 +189,15 @@ TEST_F(SecurityTest, handle_message_certificate_signed_chargingstationcertificat
                 Call(CiString<50>("ReconfigurationOfSecurityParameters"),
                      std::optional<CiString<255>>("Changed charging station certificate")));
 
-    security.handle_message(
-        create_example_certificate_signed_request("", ocpp::v201::CertificateSigningUseEnum::ChargingStationCertificate));
+    security.handle_message(create_example_certificate_signed_request(
+        "", ocpp::v201::CertificateSigningUseEnum::ChargingStationCertificate));
 }
 
 TEST_F(SecurityTest, handle_message_certificate_signed_chargingstationcertificate_accepted_securityprofile_1) {
     set_update_certificate_symlinks_enabled(this->device_model, true);
     set_security_profile(this->device_model, 1);
 
-           // Leaf certificate should be updated.
+    // Leaf certificate should be updated.
     EXPECT_CALL(evse_security, update_leaf_certificate("", ocpp::CertificateSigningUseEnum::ChargingStationCertificate))
         .WillOnce(Return(ocpp::InstallCertificateResult::Accepted));
     // For Charging Station certificates, OCSP cache update should NOT be triggered.
@@ -198,9 +212,20 @@ TEST_F(SecurityTest, handle_message_certificate_signed_chargingstationcertificat
     // The connectivity manager should NOT be informed of the changed certificate (because of security profile < 3)
     EXPECT_CALL(connectivity_manager, on_charging_station_certificate_changed()).Times(0);
     // A security event notification should NOT be sent (because of security profile < 3)
-    EXPECT_CALL(security_event_callback_mock,
-                Call(_, _)).Times(0);
+    EXPECT_CALL(security_event_callback_mock, Call(_, _)).Times(0);
 
-    security.handle_message(
-        create_example_certificate_signed_request("", ocpp::v201::CertificateSigningUseEnum::ChargingStationCertificate));
+    // When no certificate type is given, charging station certificate type is used.
+    security.handle_message(create_example_certificate_signed_request(
+        "", std::nullopt));
+}
+
+TEST_F(SecurityTest, handle_sign_certificate_response_no_request) {
+    security.handle_message(create_example_sign_certificate_response());
+    timer_stub_stop_called_count = 0;
+    timer_stub_timeout_called_count = 0;
+    timer_stub_interval_called_count = 0;
+    timer_stub_at_called_count = 0;
+
+    EXPECT_EQ(timer_stub_stop_called_count, 0);
+    EXPECT_EQ(timer_stub_timeout_called_count, 0);
 }
