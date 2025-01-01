@@ -8,9 +8,6 @@ target_sources(libocpp_unit_tests PRIVATE
 
 
 
-
-add_executable(libocpp_unit_tests_functional_block_security)
-
 target_sources(libocpp_unit_tests_functional_block_security PRIVATE
         test_security.cpp)
 
@@ -42,8 +39,6 @@ target_compile_definitions(libocpp_unit_tests_functional_block_security
     DEVICE_MODEL_DB_LOCATION_V201="${DEVICE_MODEL_DB_LOCATION_V201}"
     TEST_PROFILES_LOCATION_V201="${TEST_PROFILES_LOCATION_V201}"
 )
-
-add_test(libocpp_unit_tests_functional_block_security libocpp_unit_tests_functional_block_security)
 
 target_link_libraries(libocpp_unit_tests_functional_block_security PRIVATE
         ocpp

@@ -20,6 +20,7 @@ set(TEST_PROFILES_LOCATION_V16 "${CMAKE_CURRENT_BINARY_DIR}/resources/profiles/v
 set(TEST_PROFILES_LOCATION_V201 "${CMAKE_CURRENT_BINARY_DIR}/resources/profiles/v201")
 
 add_executable(libocpp_unit_tests)
+add_executable(libocpp_unit_tests_functional_block_security)
 
 # For libocpp tests, there is one big executable, which links against the ocpp lib and all other libs.
 # When it is useful to link only to the tested cpp files, a separate executable can be created for each file.
@@ -181,6 +182,8 @@ endif()
 
 if(LIBOCPP_ENABLE_V201)
     add_subdirectory(lib/ocpp/v201)
+    add_test(libocpp_unit_tests_functional_block_security libocpp_unit_tests_functional_block_security
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 endif()
 
 setup_target_for_coverage_gcovr_html(
