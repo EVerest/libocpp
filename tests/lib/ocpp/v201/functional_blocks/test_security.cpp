@@ -6,10 +6,11 @@
 
 #include <ocpp/v201/ctrlr_component_variables.hpp>
 
-#define private public  // Make everything in security.hpp public so we can trigger the timer.
+#define private public // Make everything in security.hpp public so we can trigger the timer.
 #include <ocpp/v201/functional_blocks/security.hpp>
 #undef private
 #include <ocpp/v201/messages/Reset.hpp>
+#include <ocpp/v201/messages/SecurityEventNotification.hpp>
 
 #include "connectivity_manager_mock.hpp"
 #include "device_model_test_helper.hpp"
@@ -61,8 +62,8 @@ protected: // Functions
         return enhanced_message;
     }
 
-    ocpp::EnhancedMessage<MessageType> create_example_sign_certificate_response(
-        const GenericStatusEnum status = GenericStatusEnum::Accepted) {
+    ocpp::EnhancedMessage<MessageType>
+    create_example_sign_certificate_response(const GenericStatusEnum status = GenericStatusEnum::Accepted) {
         SignCertificateResponse response;
         response.status = status;
         ocpp::CallResult<SignCertificateResponse> call_result;
@@ -215,17 +216,552 @@ TEST_F(SecurityTest, handle_message_certificate_signed_chargingstationcertificat
     EXPECT_CALL(security_event_callback_mock, Call(_, _)).Times(0);
 
     // When no certificate type is given, charging station certificate type is used.
-    security.handle_message(create_example_certificate_signed_request(
-        "", std::nullopt));
+    security.handle_message(create_example_certificate_signed_request("", std::nullopt));
+}
+
+TEST_F(SecurityTest, sign_certificate_request_accepted) {
+    this->device_model->set_value(ControllerComponentVariables::ChargeBoxSerialNumber.component,
+                                  ControllerComponentVariables::ChargeBoxSerialNumber.variable.value(),
+                                  AttributeEnum::Actual, "testserialnumber", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::OrganizationName.component,
+                                  ControllerComponentVariables::OrganizationName.variable.value(),
+                                  AttributeEnum::Actual, "testOrganization", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::ISO15118CtrlrCountryName.component,
+                                  ControllerComponentVariables::ISO15118CtrlrCountryName.variable.value(),
+                                  AttributeEnum::Actual, "testCountry", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::UseTPM.component,
+                                  ControllerComponentVariables::UseTPM.variable.value(), AttributeEnum::Actual, "false",
+                                  "test", true);
+
+    // Let the request be accepted, with a CSR  in the result.
+    ocpp::GetCertificateSignRequestResult sign_request_result;
+    sign_request_result.status = GetCertificateSignRequestStatus::Accepted;
+    sign_request_result.csr = "csr";
+
+    EXPECT_CALL(this->evse_security,
+                generate_certificate_signing_request(ocpp::CertificateSigningUseEnum::ChargingStationCertificate,
+                                                     "testCountry", "testOrganization", "testserialnumber", false))
+        .WillOnce(Return(sign_request_result));
+
+    // This will send a 'sign certificate request' to the CSMS.
+    EXPECT_CALL(mock_dispatcher, dispatch_call(_, _)).WillOnce(Invoke([](const json& call, bool triggered) {
+        auto request = call[ocpp::CALL_PAYLOAD].get<SignCertificateRequest>();
+        ASSERT_TRUE(request.certificateType.has_value());
+        EXPECT_EQ(request.certificateType.value(), ocpp::v201::CertificateSigningUseEnum::ChargingStationCertificate);
+        EXPECT_EQ(request.csr, "csr");
+        EXPECT_FALSE(triggered);
+    }));
+
+    security.sign_certificate_req(ocpp::CertificateSigningUseEnum::ChargingStationCertificate, false);
+}
+
+TEST_F(SecurityTest, sign_certificate_request_twice) {
+    // When a sign certificate request is done twice and the first does not have a response yet, the second request is
+    // not handled.
+    this->device_model->set_value(ControllerComponentVariables::ChargeBoxSerialNumber.component,
+                                  ControllerComponentVariables::ChargeBoxSerialNumber.variable.value(),
+                                  AttributeEnum::Actual, "testserialnumber", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::OrganizationName.component,
+                                  ControllerComponentVariables::OrganizationName.variable.value(),
+                                  AttributeEnum::Actual, "testOrganization", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::ISO15118CtrlrCountryName.component,
+                                  ControllerComponentVariables::ISO15118CtrlrCountryName.variable.value(),
+                                  AttributeEnum::Actual, "testCountry", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::UseTPM.component,
+                                  ControllerComponentVariables::UseTPM.variable.value(), AttributeEnum::Actual, "false",
+                                  "test", true);
+
+    ocpp::GetCertificateSignRequestResult sign_request_result;
+    sign_request_result.status = GetCertificateSignRequestStatus::Accepted;
+    sign_request_result.csr = "csr";
+
+    EXPECT_CALL(this->evse_security,
+                generate_certificate_signing_request(ocpp::CertificateSigningUseEnum::ChargingStationCertificate,
+                                                     "testCountry", "testOrganization", "testserialnumber", false))
+        .WillOnce(Return(sign_request_result));
+
+    EXPECT_CALL(mock_dispatcher, dispatch_call(_, _)).WillOnce(Invoke([](const json& call, bool triggered) {
+        auto request = call[ocpp::CALL_PAYLOAD].get<SignCertificateRequest>();
+        ASSERT_TRUE(request.certificateType.has_value());
+        EXPECT_EQ(request.certificateType.value(), ocpp::v201::CertificateSigningUseEnum::ChargingStationCertificate);
+        EXPECT_EQ(request.csr, "csr");
+        EXPECT_FALSE(triggered);
+    }));
+
+    security.sign_certificate_req(ocpp::CertificateSigningUseEnum::ChargingStationCertificate, false);
+
+    // Now try a second time, which should fail because there is no answer yet.
+    EXPECT_CALL(mock_dispatcher, dispatch_call(_, _)).Times(0);
+
+    security.sign_certificate_req(ocpp::CertificateSigningUseEnum::ChargingStationCertificate, false);
+}
+
+TEST_F(SecurityTest, sign_certificate_request_accepted_no_csr) {
+    // Try to sign a certificate request, but the 'evse security' does not return a CSR.
+    this->device_model->set_value(ControllerComponentVariables::ChargeBoxSerialNumber.component,
+                                  ControllerComponentVariables::ChargeBoxSerialNumber.variable.value(),
+                                  AttributeEnum::Actual, "testserialnumber", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::OrganizationName.component,
+                                  ControllerComponentVariables::OrganizationName.variable.value(),
+                                  AttributeEnum::Actual, "testOrganization", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::ISO15118CtrlrCountryName.component,
+                                  ControllerComponentVariables::ISO15118CtrlrCountryName.variable.value(),
+                                  AttributeEnum::Actual, "testCountry", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::UseTPM.component,
+                                  ControllerComponentVariables::UseTPM.variable.value(), AttributeEnum::Actual, "false",
+                                  "test", true);
+
+    // An empty CSR is returned, although the status is 'Accepted'.
+    ocpp::GetCertificateSignRequestResult sign_request_result;
+    sign_request_result.status = GetCertificateSignRequestStatus::Accepted;
+    sign_request_result.csr = std::nullopt;
+
+    EXPECT_CALL(this->evse_security,
+                generate_certificate_signing_request(ocpp::CertificateSigningUseEnum::ChargingStationCertificate,
+                                                     "testCountry", "testOrganization", "testserialnumber", false))
+        .WillOnce(Return(sign_request_result));
+
+    // A security event notification will be sent to inform the CSMS that the generation of the CSR has failed.
+    EXPECT_CALL(mock_dispatcher, dispatch_call(_, _)).WillOnce(Invoke([](const json& call, bool triggered) {
+        auto request = call[ocpp::CALL_PAYLOAD].get<SecurityEventNotificationRequest>();
+        EXPECT_EQ(request.get_type(), "SecurityEventNotification");
+        EXPECT_EQ(request.type.get(), ocpp::security_events::CSRGENERATIONFAILED);
+        EXPECT_FALSE(triggered);
+    }));
+
+    // And a security event is sent as well.
+    EXPECT_CALL(security_event_callback_mock, Call(CiString<50>(ocpp::security_events::CSRGENERATIONFAILED), _));
+
+    security.sign_certificate_req(ocpp::CertificateSigningUseEnum::ChargingStationCertificate, false);
+}
+
+TEST_F(SecurityTest, sign_certificate_request_not_accepted) {
+    this->device_model->set_value(ControllerComponentVariables::ChargeBoxSerialNumber.component,
+                                  ControllerComponentVariables::ChargeBoxSerialNumber.variable.value(),
+                                  AttributeEnum::Actual, "testserialnumber", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::OrganizationName.component,
+                                  ControllerComponentVariables::OrganizationName.variable.value(),
+                                  AttributeEnum::Actual, "testOrganization", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::ISO15118CtrlrCountryName.component,
+                                  ControllerComponentVariables::ISO15118CtrlrCountryName.variable.value(),
+                                  AttributeEnum::Actual, "testCountry", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::UseTPM.component,
+                                  ControllerComponentVariables::UseTPM.variable.value(), AttributeEnum::Actual, "false",
+                                  "test", true);
+
+    // Try to send a certificate request, but the generation of the CSR fails.
+    ocpp::GetCertificateSignRequestResult sign_request_result;
+    sign_request_result.status = GetCertificateSignRequestStatus::GenerationError;
+    sign_request_result.csr = "csr";
+
+    EXPECT_CALL(this->evse_security,
+                generate_certificate_signing_request(ocpp::CertificateSigningUseEnum::ChargingStationCertificate,
+                                                     "testCountry", "testOrganization", "testserialnumber", false))
+        .WillOnce(Return(sign_request_result));
+
+    // A security event notification is sent to the CSMS to let it know that the CSR generation has failed.
+    EXPECT_CALL(mock_dispatcher, dispatch_call(_, _)).WillOnce(Invoke([](const json& call, bool triggered) {
+        auto request = call[ocpp::CALL_PAYLOAD].get<SecurityEventNotificationRequest>();
+        EXPECT_EQ(request.get_type(), "SecurityEventNotification");
+        EXPECT_EQ(request.type.get(), ocpp::security_events::CSRGENERATIONFAILED);
+        EXPECT_FALSE(triggered);
+    }));
+
+    // And a security event is sent.
+    EXPECT_CALL(security_event_callback_mock, Call(CiString<50>(ocpp::security_events::CSRGENERATIONFAILED), _));
+
+    security.sign_certificate_req(ocpp::CertificateSigningUseEnum::ChargingStationCertificate, false);
+}
+
+TEST_F(SecurityTest, sign_certificate_request_no_organization_name) {
+    // Try to sign certificate request, but the organization name is not given.
+    device_model_test_helper.remove_variable_from_db(
+        ControllerComponentVariables::OrganizationName.component.name.get(), std::nullopt, std::nullopt, std::nullopt,
+        ControllerComponentVariables::OrganizationName.variable->name.get(), std::nullopt);
+
+    device_model = device_model_test_helper.get_device_model();
+    Security s(mock_dispatcher, *device_model, logging, evse_security, connectivity_manager, ocsp_updater,
+               security_event_callback_mock.AsStdFunction());
+
+    this->device_model->set_value(ControllerComponentVariables::ChargeBoxSerialNumber.component,
+                                  ControllerComponentVariables::ChargeBoxSerialNumber.variable.value(),
+                                  AttributeEnum::Actual, "testserialnumber", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::ISO15118CtrlrCountryName.component,
+                                  ControllerComponentVariables::ISO15118CtrlrCountryName.variable.value(),
+                                  AttributeEnum::Actual, "testCountry", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::UseTPM.component,
+                                  ControllerComponentVariables::UseTPM.variable.value(), AttributeEnum::Actual, "false",
+                                  "test", true);
+
+    // So the request will not be sent at all.
+    EXPECT_CALL(mock_dispatcher, dispatch_call(_, _)).Times(0);
+
+    s.sign_certificate_req(ocpp::CertificateSigningUseEnum::ChargingStationCertificate, false);
+}
+
+TEST_F(SecurityTest, sign_certificate_request_no_serial_number) {
+    // Try to sign certificate request, but the serial number is not given.
+    device_model_test_helper.remove_variable_from_db(
+        ControllerComponentVariables::OrganizationName.component.name.get(), std::nullopt, std::nullopt, std::nullopt,
+        ControllerComponentVariables::OrganizationName.variable->name.get(), std::nullopt);
+
+    device_model = device_model_test_helper.get_device_model();
+    Security s(mock_dispatcher, *device_model, logging, evse_security, connectivity_manager, ocsp_updater,
+               security_event_callback_mock.AsStdFunction());
+
+    this->device_model->set_value(ControllerComponentVariables::OrganizationName.component,
+                                  ControllerComponentVariables::OrganizationName.variable.value(),
+                                  AttributeEnum::Actual, "testOrganization", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::ISO15118CtrlrCountryName.component,
+                                  ControllerComponentVariables::ISO15118CtrlrCountryName.variable.value(),
+                                  AttributeEnum::Actual, "testCountry", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::UseTPM.component,
+                                  ControllerComponentVariables::UseTPM.variable.value(), AttributeEnum::Actual, "false",
+                                  "test", true);
+
+    // So the request will not be sent at all.
+    EXPECT_CALL(mock_dispatcher, dispatch_call(_, _)).Times(0);
+
+    s.sign_certificate_req(ocpp::CertificateSigningUseEnum::ChargingStationCertificate, false);
+}
+
+TEST_F(SecurityTest, sign_certificate_request_no_country) {
+    // Try to sign certificate request, but the country is not given.
+    device_model_test_helper.remove_variable_from_db(
+        ControllerComponentVariables::OrganizationName.component.name.get(), std::nullopt, std::nullopt, std::nullopt,
+        ControllerComponentVariables::OrganizationName.variable->name.get(), std::nullopt);
+
+    device_model = device_model_test_helper.get_device_model();
+    Security s(mock_dispatcher, *device_model, logging, evse_security, connectivity_manager, ocsp_updater,
+               security_event_callback_mock.AsStdFunction());
+
+    this->device_model->set_value(ControllerComponentVariables::OrganizationName.component,
+                                  ControllerComponentVariables::OrganizationName.variable.value(),
+                                  AttributeEnum::Actual, "testOrganization", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::ChargeBoxSerialNumber.component,
+                                  ControllerComponentVariables::ChargeBoxSerialNumber.variable.value(),
+                                  AttributeEnum::Actual, "testserialnumber", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::UseTPM.component,
+                                  ControllerComponentVariables::UseTPM.variable.value(), AttributeEnum::Actual, "false",
+                                  "test", true);
+
+    // So the request will not be sent at all.
+    EXPECT_CALL(mock_dispatcher, dispatch_call(_, _)).Times(0);
+
+    s.sign_certificate_req(ocpp::CertificateSigningUseEnum::ChargingStationCertificate, false);
+}
+
+TEST_F(SecurityTest, sign_certificate_request_v2g_accepted) {
+    // Try to sign v2g certificate request.
+    this->device_model->set_value(ControllerComponentVariables::ISO15118CtrlrSeccId.component,
+                                  ControllerComponentVariables::ISO15118CtrlrSeccId.variable.value(),
+                                  AttributeEnum::Actual, "iso_testcommonname", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::ISO15118CtrlrOrganizationName.component,
+                                  ControllerComponentVariables::ISO15118CtrlrOrganizationName.variable.value(),
+                                  AttributeEnum::Actual, "iso_testOrganization", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::ISO15118CtrlrCountryName.component,
+                                  ControllerComponentVariables::ISO15118CtrlrCountryName.variable.value(),
+                                  AttributeEnum::Actual, "iso_testCountry", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::UseTPM.component,
+                                  ControllerComponentVariables::UseTPM.variable.value(), AttributeEnum::Actual, "true",
+                                  "test", true);
+
+    // Which is accepted by 'evse security'.
+    ocpp::GetCertificateSignRequestResult sign_request_result;
+    sign_request_result.status = GetCertificateSignRequestStatus::Accepted;
+    sign_request_result.csr = "csr";
+
+    EXPECT_CALL(this->evse_security,
+                generate_certificate_signing_request(ocpp::CertificateSigningUseEnum::V2GCertificate, "iso_testCountry",
+                                                     "iso_testOrganization", "iso_testcommonname", true))
+        .WillOnce(Return(sign_request_result));
+
+    // This will send a 'SignCertificateRequest' to the CSMS.
+    EXPECT_CALL(mock_dispatcher, dispatch_call(_, _)).WillOnce(Invoke([](const json& call, bool triggered) {
+        auto request = call[ocpp::CALL_PAYLOAD].get<SignCertificateRequest>();
+        ASSERT_TRUE(request.certificateType.has_value());
+        EXPECT_EQ(request.certificateType.value(), ocpp::v201::CertificateSigningUseEnum::V2GCertificate);
+        EXPECT_EQ(request.csr, "csr");
+        EXPECT_TRUE(triggered);
+    }));
+
+    security.sign_certificate_req(ocpp::CertificateSigningUseEnum::V2GCertificate, true);
+}
+
+TEST_F(SecurityTest, sign_certificate_request_manufacturer_cert_accepted) {
+    // Try to sign manufacturer certificate request.
+    this->device_model->set_value(ControllerComponentVariables::ISO15118CtrlrSeccId.component,
+                                  ControllerComponentVariables::ISO15118CtrlrSeccId.variable.value(),
+                                  AttributeEnum::Actual, "iso_testcommonname", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::ISO15118CtrlrOrganizationName.component,
+                                  ControllerComponentVariables::ISO15118CtrlrOrganizationName.variable.value(),
+                                  AttributeEnum::Actual, "iso_testOrganization", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::ISO15118CtrlrCountryName.component,
+                                  ControllerComponentVariables::ISO15118CtrlrCountryName.variable.value(),
+                                  AttributeEnum::Actual, "iso_testCountry", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::UseTPM.component,
+                                  ControllerComponentVariables::UseTPM.variable.value(), AttributeEnum::Actual, "true",
+                                  "test", true);
+
+    // Which is accepted by 'evse security'.
+    ocpp::GetCertificateSignRequestResult sign_request_result;
+    sign_request_result.status = GetCertificateSignRequestStatus::Accepted;
+    sign_request_result.csr = "csr";
+
+    EXPECT_CALL(this->evse_security, generate_certificate_signing_request(
+                                         ocpp::CertificateSigningUseEnum::ManufacturerCertificate, "iso_testCountry",
+                                         "iso_testOrganization", "iso_testcommonname", true))
+        .WillOnce(Return(sign_request_result));
+
+    // This will send a 'SignCertificateRequest' to the CSMS.
+    EXPECT_CALL(mock_dispatcher, dispatch_call(_, _)).WillOnce(Invoke([](const json& call, bool triggered) {
+        auto request = call[ocpp::CALL_PAYLOAD].get<SignCertificateRequest>();
+        ASSERT_TRUE(request.certificateType.has_value());
+        EXPECT_EQ(request.certificateType.value(), ocpp::v201::CertificateSigningUseEnum::V2GCertificate);
+        EXPECT_EQ(request.csr, "csr");
+        EXPECT_TRUE(triggered);
+    }));
+
+    security.sign_certificate_req(ocpp::CertificateSigningUseEnum::ManufacturerCertificate, true);
+}
+
+TEST_F(SecurityTest, sign_certificate_request_v2g_no_common_name) {
+    // Try to sign v2g certificate request, but the common name is not given.
+    device_model_test_helper.remove_variable_from_db(
+        ControllerComponentVariables::ISO15118CtrlrSeccId.component.name.get(), std::nullopt, std::nullopt,
+        std::nullopt, ControllerComponentVariables::ISO15118CtrlrSeccId.variable->name.get(), std::nullopt);
+
+    device_model = device_model_test_helper.get_device_model();
+    Security s(mock_dispatcher, *device_model, logging, evse_security, connectivity_manager, ocsp_updater,
+               security_event_callback_mock.AsStdFunction());
+
+    this->device_model->set_value(ControllerComponentVariables::ISO15118CtrlrOrganizationName.component,
+                                  ControllerComponentVariables::ISO15118CtrlrOrganizationName.variable.value(),
+                                  AttributeEnum::Actual, "iso_testOrganization", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::ISO15118CtrlrCountryName.component,
+                                  ControllerComponentVariables::ISO15118CtrlrCountryName.variable.value(),
+                                  AttributeEnum::Actual, "iso_testCountry", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::UseTPM.component,
+                                  ControllerComponentVariables::UseTPM.variable.value(), AttributeEnum::Actual, "false",
+                                  "test", true);
+
+    // So the request will not be sent at all.
+    EXPECT_CALL(mock_dispatcher, dispatch_call(_, _)).Times(0);
+
+    s.sign_certificate_req(ocpp::CertificateSigningUseEnum::V2GCertificate, false);
+}
+
+TEST_F(SecurityTest, sign_certificate_request_v2g_no_organization) {
+    // Try to sign v2g certificate request, but the organization is not given.
+    device_model_test_helper.remove_variable_from_db(
+        ControllerComponentVariables::ISO15118CtrlrOrganizationName.component.name.get(), std::nullopt, std::nullopt,
+        std::nullopt, ControllerComponentVariables::ISO15118CtrlrOrganizationName.variable->name.get(), std::nullopt);
+
+    device_model = device_model_test_helper.get_device_model();
+    Security s(mock_dispatcher, *device_model, logging, evse_security, connectivity_manager, ocsp_updater,
+               security_event_callback_mock.AsStdFunction());
+
+    this->device_model->set_value(ControllerComponentVariables::ISO15118CtrlrSeccId.component,
+                                  ControllerComponentVariables::ISO15118CtrlrSeccId.variable.value(),
+                                  AttributeEnum::Actual, "iso_testcommonname", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::ISO15118CtrlrCountryName.component,
+                                  ControllerComponentVariables::ISO15118CtrlrCountryName.variable.value(),
+                                  AttributeEnum::Actual, "iso_testCountry", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::UseTPM.component,
+                                  ControllerComponentVariables::UseTPM.variable.value(), AttributeEnum::Actual, "false",
+                                  "test", true);
+
+    // So the request will not be sent at all.
+    EXPECT_CALL(mock_dispatcher, dispatch_call(_, _)).Times(0);
+
+    s.sign_certificate_req(ocpp::CertificateSigningUseEnum::ManufacturerCertificate, false);
+}
+
+TEST_F(SecurityTest, sign_certificate_request_v2g_no_country) {
+    // Try to sign v2g certificate request, but the country is not given.
+    device_model_test_helper.remove_variable_from_db(
+        ControllerComponentVariables::ISO15118CtrlrCountryName.component.name.get(), std::nullopt, std::nullopt,
+        std::nullopt, ControllerComponentVariables::ISO15118CtrlrCountryName.variable->name.get(), std::nullopt);
+
+    device_model = device_model_test_helper.get_device_model();
+    Security s(mock_dispatcher, *device_model, logging, evse_security, connectivity_manager, ocsp_updater,
+               security_event_callback_mock.AsStdFunction());
+
+    this->device_model->set_value(ControllerComponentVariables::ISO15118CtrlrSeccId.component,
+                                  ControllerComponentVariables::ISO15118CtrlrSeccId.variable.value(),
+                                  AttributeEnum::Actual, "iso_testcommonname", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::ISO15118CtrlrOrganizationName.component,
+                                  ControllerComponentVariables::ISO15118CtrlrOrganizationName.variable.value(),
+                                  AttributeEnum::Actual, "iso_testOrganization", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::UseTPM.component,
+                                  ControllerComponentVariables::UseTPM.variable.value(), AttributeEnum::Actual, "false",
+                                  "test", true);
+
+    // So the request will not be sent at all.
+    EXPECT_CALL(mock_dispatcher, dispatch_call(_, _)).Times(0);
+
+    s.sign_certificate_req(ocpp::CertificateSigningUseEnum::V2GCertificate, false);
+}
+
+TEST_F(SecurityTest, security_event_notification_no_timestamp) {
+    // Send security event notification, without giving a timestamp.
+    // For testing purposes, store the current time.
+    const DateTime timestamp_test_start = DateTime();
+
+    // The security event notification request will be sent to the CSMS.
+    EXPECT_CALL(mock_dispatcher, dispatch_call(_, _))
+        .WillOnce(Invoke([&timestamp_test_start](const json& call, bool triggered) {
+            auto request = call[ocpp::CALL_PAYLOAD].get<SecurityEventNotificationRequest>();
+            EXPECT_EQ(request.get_type(), "SecurityEventNotification");
+            EXPECT_EQ(request.type.get(), "test");
+            EXPECT_EQ(request.techInfo->get(), "tech info!!");
+            // Datetime must be somewhere between the start of the test and 'now'.
+            DateTime now;
+            // With the conversion from and to rfc3339 (for conversion to / from json), precision is lost. So we do the
+            // same here, otherwise the test might fail.
+            now.from_rfc3339(DateTime().to_rfc3339());
+            EXPECT_LE(request.timestamp.to_time_point(), now.to_time_point());
+            // With the conversion from and to rfc3339 (for conversion to / from json), precision is lost. So we do the
+            // same here, otherwise the test might fail.
+            // TODO mz is losing precision a bug here?
+            DateTime start_time;
+            start_time.from_rfc3339(timestamp_test_start.to_rfc3339());
+            EXPECT_GE(request.timestamp.to_time_point(), start_time.to_time_point());
+            EXPECT_FALSE(triggered);
+        }));
+
+    // And the security event callback is called.
+    EXPECT_CALL(security_event_callback_mock, Call(CiString<50>("test"), _));
+
+    security.security_event_notification_req("test", "tech info!!", true, true, std::nullopt);
+}
+
+TEST_F(SecurityTest, security_event_notification_with_timestamp) {
+    // Send security event notification, with a given timestamp.
+    const auto timestamp = DateTime(date::utc_clock::now() - std::chrono::minutes(15));
+
+    // The security event notification request will be sent to the CSMS.
+    EXPECT_CALL(mock_dispatcher, dispatch_call(_, _)).WillOnce(Invoke([&timestamp](const json& call, bool triggered) {
+        auto request = call[ocpp::CALL_PAYLOAD].get<SecurityEventNotificationRequest>();
+        EXPECT_EQ(request.get_type(), "SecurityEventNotification");
+        EXPECT_EQ(request.type.get(), "test_with_given_timestamp");
+        // Timestamp must be the exact timestamp we have given.
+        EXPECT_EQ(request.timestamp.to_rfc3339(), timestamp.to_rfc3339());
+        EXPECT_FALSE(triggered);
+    }));
+
+    // And the security event callback is called.
+    EXPECT_CALL(security_event_callback_mock, Call(CiString<50>("test_with_given_timestamp"), _));
+
+    security.security_event_notification_req("test_with_given_timestamp", std::nullopt, true, true, timestamp);
+}
+
+TEST_F(SecurityTest, security_event_notification_not_critical) {
+    // Trigger a not critical security event notification
+    // Which will not send the security event to the CSMS.
+    EXPECT_CALL(mock_dispatcher, dispatch_call(_, _)).Times(0);
+
+    // But it will call the security event callback.
+    EXPECT_CALL(security_event_callback_mock, Call(CiString<50>("test"), _));
+
+    security.security_event_notification_req("test", std::nullopt, true, false, std::nullopt);
+}
+
+TEST_F(SecurityTest, security_event_notification_not_critital_not_triggered_internally) {
+    // Trigger a not critical security event that is not triggered internally.
+    // Which will not be sent to the CSMS.
+    EXPECT_CALL(mock_dispatcher, dispatch_call(_, _)).Times(0);
+
+    // And the callback is also not called.
+    EXPECT_CALL(security_event_callback_mock, Call(CiString<50>("test"), _)).Times(0);
+
+    security.security_event_notification_req("test", std::nullopt, false, false, std::nullopt);
+}
+
+TEST_F(SecurityTest, security_event_notification_not_triggered_internally) {
+    // Trigger a critical security event.
+    // Which will send a security event notification to the CSMS.
+    EXPECT_CALL(mock_dispatcher, dispatch_call(_, _)).WillOnce(Invoke([&](const json& call, bool triggered) {
+        auto request = call[ocpp::CALL_PAYLOAD].get<SecurityEventNotificationRequest>();
+        EXPECT_EQ(request.get_type(), "SecurityEventNotification");
+        EXPECT_EQ(request.type.get(), "not_triggered_internally");
+        EXPECT_FALSE(triggered);
+    }));
+
+    // But when not triggered internally, the callback is not called.
+    EXPECT_CALL(security_event_callback_mock, Call(_, _)).Times(0);
+
+    security.security_event_notification_req("not_triggered_internally", std::nullopt, false, true, std::nullopt);
+}
+
+TEST_F(SecurityTest, security_event_notification_no_callback) {
+    // Trigger a critical security event, but there is no callback to call.
+    Security s(mock_dispatcher, *device_model, logging, evse_security, connectivity_manager, ocsp_updater, nullptr);
+
+    // This will send a security event notification to the CSMS.
+    EXPECT_CALL(mock_dispatcher, dispatch_call(_, _)).WillOnce(Invoke([&](const json& call, bool triggered) {
+        auto request = call[ocpp::CALL_PAYLOAD].get<SecurityEventNotificationRequest>();
+        EXPECT_EQ(request.get_type(), "SecurityEventNotification");
+        EXPECT_EQ(request.type.get(), "no_callback");
+        EXPECT_FALSE(triggered);
+    }));
+
+    // But the mock is not called, since it is not given in the constructor.
+    EXPECT_CALL(security_event_callback_mock, Call(_, _)).Times(0);
+
+    s.security_event_notification_req("no_callback", std::nullopt, true, true, std::nullopt);
 }
 
 TEST_F(SecurityTest, handle_sign_certificate_response_no_request) {
+    // TODO mz what to test here?
     security.handle_message(create_example_sign_certificate_response());
-    timer_stub_stop_called_count = 0;
-    timer_stub_timeout_called_count = 0;
-    timer_stub_interval_called_count = 0;
-    timer_stub_at_called_count = 0;
+}
 
-    EXPECT_EQ(timer_stub_stop_called_count, 0);
-    EXPECT_EQ(timer_stub_timeout_called_count, 0);
+TEST_F(SecurityTest, handle_sign_certificate_response_successful) {
+    set_update_certificate_symlinks_enabled(this->device_model, true);
+    set_security_profile(this->device_model, 1);
+    this->device_model->set_value(ControllerComponentVariables::ChargeBoxSerialNumber.component,
+                                  ControllerComponentVariables::ChargeBoxSerialNumber.variable.value(),
+                                  AttributeEnum::Actual, "testserialnumber", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::OrganizationName.component,
+                                  ControllerComponentVariables::OrganizationName.variable.value(),
+                                  AttributeEnum::Actual, "testOrganization", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::ISO15118CtrlrCountryName.component,
+                                  ControllerComponentVariables::ISO15118CtrlrCountryName.variable.value(),
+                                  AttributeEnum::Actual, "testCountry", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::UseTPM.component,
+                                  ControllerComponentVariables::UseTPM.variable.value(), AttributeEnum::Actual, "false",
+                                  "test", true);
+    this->device_model->set_value(ControllerComponentVariables::CertSigningWaitMinimum.component,
+                                  ControllerComponentVariables::CertSigningWaitMinimum.variable.value(),
+                                  AttributeEnum::Actual, "1", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::CertSigningRepeatTimes.component,
+                                  ControllerComponentVariables::CertSigningRepeatTimes.variable.value(),
+                                  AttributeEnum::Actual, "2", "test", true);
+
+    // First do a request.
+    ocpp::GetCertificateSignRequestResult sign_request_result;
+    sign_request_result.status = GetCertificateSignRequestStatus::Accepted;
+    sign_request_result.csr = "csr";
+
+    EXPECT_CALL(this->evse_security,
+                generate_certificate_signing_request(ocpp::CertificateSigningUseEnum::ChargingStationCertificate,
+                                                     "testCountry", "testOrganization", "testserialnumber", false))
+        .WillOnce(Return(sign_request_result));
+
+    security.sign_certificate_req(ocpp::CertificateSigningUseEnum::ChargingStationCertificate, false);
+
+    // Then the response is processed.
+    const ocpp::EnhancedMessage<MessageType> response =
+        create_example_sign_certificate_response(GenericStatusEnum::Accepted);
+
+    security.handle_message(response);
+
+    // Leaf certificate should be updated.
+    ON_CALL(evse_security, update_leaf_certificate("", ocpp::CertificateSigningUseEnum::ChargingStationCertificate))
+        .WillByDefault(Return(ocpp::InstallCertificateResult::Accepted));
+
+    security.handle_message(create_example_certificate_signed_request("", std::nullopt));
+
+    // TODO mz want to test if the timer is called here, how to do that??
 }

@@ -1,5 +1,4 @@
 include(${CMAKE_CURRENT_SOURCE_DIR}/libocpp-unittests.cmake)
-
 # For libocpp tests, there is one big executable, which links against the ocpp lib and all other libs.
 # When it is useful to link only to the tested cpp files, a separate executable can be created for each file.
 # The source files can be added to this variable, which is a list. For example:
@@ -54,6 +53,8 @@ endif()
 
 if(LIBOCPP_ENABLE_V201)
     add_subdirectory(lib/ocpp/v201)
+    add_test(libocpp_unit_tests_functional_block_security libocpp_unit_tests_functional_block_security
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 endif()
 
 add_custom_command(TARGET libocpp_unit_tests POST_BUILD
