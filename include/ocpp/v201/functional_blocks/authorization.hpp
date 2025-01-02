@@ -33,7 +33,7 @@ class Authorization : public AuthorizationInterface {
 private: // Members
     MessageDispatcherInterface<MessageType>& message_dispatcher;
     DeviceModel& device_model;
-    ConnectivityManager& connectivity_manager;
+    ConnectivityManagerInterface& connectivity_manager;
     std::shared_ptr<DatabaseHandler> database_handler;
 
     // threads and synchronization
@@ -45,7 +45,7 @@ private: // Members
 
 public:
     Authorization(MessageDispatcherInterface<MessageType>& message_dispatcher, DeviceModel& device_model,
-                  ConnectivityManager& connectivity_manager, std::shared_ptr<DatabaseHandler> database_handler);
+                  ConnectivityManagerInterface &connectivity_manager, std::shared_ptr<DatabaseHandler> database_handler);
     ~Authorization();
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
     AuthorizeResponse authorize_req(const IdToken id_token, const std::optional<ocpp::CiString<5500>>& certificate,

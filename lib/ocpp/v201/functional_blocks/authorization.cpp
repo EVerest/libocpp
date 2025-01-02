@@ -6,7 +6,7 @@
 #include <ocpp/v201/functional_blocks/authorization.hpp>
 
 ocpp::v201::Authorization::Authorization(MessageDispatcherInterface<MessageType>& message_dispatcher,
-                                         DeviceModel& device_model, ConnectivityManager& connectivity_manager,
+                                         DeviceModel& device_model, ConnectivityManagerInterface& connectivity_manager,
                                          std::shared_ptr<DatabaseHandler> database_handler) :
     message_dispatcher(message_dispatcher),
     device_model(device_model),
@@ -107,18 +107,16 @@ void ocpp::v201::Authorization::authorization_cache_insert_entry(const std::stri
     this->database_handler->authorization_cache_insert_entry(id_token_hash, id_token_info);
 }
 
-std::optional<ocpp::v201::AuthorizationCacheEntry> ocpp::v201::Authorization::authorization_cache_get_entry(const std::string &id_token_hash)
-{
+std::optional<ocpp::v201::AuthorizationCacheEntry>
+ocpp::v201::Authorization::authorization_cache_get_entry(const std::string& id_token_hash) {
     return this->database_handler->authorization_cache_get_entry(id_token_hash);
 }
 
-void ocpp::v201::Authorization::authorization_cache_delete_entry(const std::string &id_token_hash)
-{
+void ocpp::v201::Authorization::authorization_cache_delete_entry(const std::string& id_token_hash) {
     this->database_handler->authorization_cache_delete_entry(id_token_hash);
 }
 
-void ocpp::v201::Authorization::authorization_cache_update_last_used(const std::string &id_token_hash)
-{
+void ocpp::v201::Authorization::authorization_cache_update_last_used(const std::string& id_token_hash) {
     this->database_handler->authorization_cache_update_last_used(id_token_hash);
 }
 
