@@ -7,7 +7,7 @@
 
 ocpp::v201::Authorization::Authorization(MessageDispatcherInterface<MessageType>& message_dispatcher,
                                          DeviceModel& device_model, ConnectivityManagerInterface& connectivity_manager,
-                                         std::shared_ptr<DatabaseHandler> database_handler) :
+                                         std::shared_ptr<DatabaseHandlerInterface> database_handler) :
     message_dispatcher(message_dispatcher),
     device_model(device_model),
     connectivity_manager(connectivity_manager),
@@ -56,7 +56,13 @@ ocpp::v201::Authorization::authorize_req(const IdToken id_token, const std::opti
         return response;
     }
 
-    const auto enhanced_message = future.get();
+    EnhancedMessage<MessageType> enhanced_message;
+    try {
+        enhanced_message = future.get();
+    } catch (const EnumConversionException& e) {
+        EVLOG_error << "EnumConversionException during handling of message: " << e.what();
+        return response;
+    }
 
     if (enhanced_message.messageType != MessageType::AuthorizeResponse) {
         return response;
@@ -66,6 +72,7 @@ ocpp::v201::Authorization::authorize_req(const IdToken id_token, const std::opti
         ocpp::CallResult<AuthorizeResponse> call_result = enhanced_message.message;
         return call_result.msg;
     } catch (const EnumConversionException& e) {
+        // TODO mz we don't get here normally, remove the code?? Because the future.get() already throws
         EVLOG_error << "EnumConversionException during handling of message: " << e.what();
         auto call_error = CallError(enhanced_message.uniqueId, "FormationViolation", e.what(), json({}));
         this->message_dispatcher.dispatch_call_error(call_error);
@@ -124,8 +131,7 @@ void ocpp::v201::Authorization::handle_clear_cache_req(Call<ClearCacheRequest> c
     ClearCacheResponse response;
     response.status = ClearCacheStatusEnum::Rejected;
 
-    if (this->device_model.get_optional_value<bool>(ControllerComponentVariables::AuthCacheCtrlrEnabled)
-            .value_or(true)) {
+    if (this->is_auth_cache_ctrlr_enabled()) {
         try {
             this->database_handler->authorization_cache_clear();
             this->update_authorization_cache_size();
