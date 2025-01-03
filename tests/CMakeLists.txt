@@ -181,6 +181,8 @@ endif()
 
 if(LIBOCPP_ENABLE_V201)
     add_subdirectory(lib/ocpp/v201)
+    add_test(libocpp_unit_tests_functional_block_authorization libocpp_unit_tests_functional_block_authorization
+             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 endif()
 
 setup_target_for_coverage_gcovr_html(

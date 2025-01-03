@@ -34,7 +34,7 @@ private: // Members
     MessageDispatcherInterface<MessageType>& message_dispatcher;
     DeviceModel& device_model;
     ConnectivityManagerInterface& connectivity_manager;
-    std::shared_ptr<DatabaseHandler> database_handler;
+    std::shared_ptr<ocpp::v201::DatabaseHandlerInterface> database_handler;
 
     // threads and synchronization
     bool auth_cache_cleanup_required;
@@ -45,7 +45,8 @@ private: // Members
 
 public:
     Authorization(MessageDispatcherInterface<MessageType>& message_dispatcher, DeviceModel& device_model,
-                  ConnectivityManagerInterface &connectivity_manager, std::shared_ptr<DatabaseHandler> database_handler);
+                  ConnectivityManagerInterface& connectivity_manager,
+                  std::shared_ptr<DatabaseHandlerInterface> database_handler);
     ~Authorization();
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
     AuthorizeResponse authorize_req(const IdToken id_token, const std::optional<ocpp::CiString<5500>>& certificate,
