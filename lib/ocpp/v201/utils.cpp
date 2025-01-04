@@ -210,6 +210,23 @@ std::set<ChargingProfilePurposeEnum> get_purposes_to_ignore(const std::string& c
     return purposes_to_ignore;
 }
 
+std::vector<OcppProtocolVersion> get_ocpp_protocol_versions(const std::string& csl) {
+    if (csl.empty()) {
+        return {};
+    }
+
+    std::vector<OcppProtocolVersion> ocpp_versions;
+    const auto ocpp_versions_str = ocpp::split_string(csl, ',');
+    for (const auto ocpp_version_str : ocpp_versions_str) {
+        try {
+            ocpp_versions.push_back(ocpp::conversions::string_to_ocpp_protocol_version(ocpp_version_str));
+        } catch (std::out_of_range& e) {
+            EVLOG_warning << "Error while converting ocpp protocol version: " << ocpp_version_str;
+        }
+    }
+    return ocpp_versions;
+}
+
 } // namespace utils
 } // namespace v201
 } // namespace ocpp

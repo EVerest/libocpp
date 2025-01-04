@@ -145,7 +145,8 @@ struct Callbacks {
 
     /// \brief Callback function is called when the websocket connection status changes
     std::optional<std::function<void(const bool is_connected, const int configuration_slot,
-                                     const NetworkConnectionProfile& network_connection_profile)>>
+                                     const NetworkConnectionProfile& network_connection_profile,
+                                     const OcppProtocolVersion ocpp_version)>>
         connection_state_changed_callback;
 
     /// \brief Callback functions called for get / set / clear display messages
