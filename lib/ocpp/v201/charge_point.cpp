@@ -356,6 +356,10 @@ void ChargePoint::on_reservation_status(const int32_t reservation_id, const Rese
     }
 }
 
+void ChargePoint::on_ev_charging_needs(NotifyEVChargingNeedsRequest& request) {
+    this->notify_ev_charging_needs_req(request);
+}
+
 void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_structure,
                              const std::string& message_log_path) {
     this->device_model->check_integrity(evse_connector_structure);
@@ -777,6 +781,15 @@ void ChargePoint::message_callback(const std::string& message) {
 
 bool ChargePoint::is_offline() {
     return !this->connectivity_manager->is_websocket_connected();
+}
+
+void ChargePoint::notify_ev_charging_needs_req(NotifyEVChargingNeedsRequest& req) {
+    if (this->ocpp_version != OcppProtocolVersion::v21) {
+        req.timestamp = std::nullopt; // field is not present in OCPP2.0.1
+    }
+
+    ocpp::Call<NotifyEVChargingNeedsRequest> call(req);
+    this->message_dispatcher->dispatch_call(call);
 }
 
 std::optional<DataTransferResponse> ChargePoint::data_transfer_req(const CiString<255>& vendorId,

@@ -51,6 +51,7 @@
 #include <ocpp/v201/messages/GetReport.hpp>
 #include <ocpp/v201/messages/GetVariables.hpp>
 #include <ocpp/v201/messages/NotifyCustomerInformation.hpp>
+#include <ocpp/v201/messages/NotifyEVChargingNeeds.hpp>
 #include <ocpp/v201/messages/NotifyEvent.hpp>
 #include <ocpp/v201/messages/NotifyMonitoringReport.hpp>
 #include <ocpp/v201/messages/NotifyReport.hpp>
@@ -249,6 +250,10 @@ public:
     /// \param status           The status.
     virtual void on_reservation_status(const int32_t reservation_id, const ReservationUpdateStatusEnum status) = 0;
 
+    /// \brief Event handler that should be called when the charging station receives a ChargeParameterDiscoveryReq from
+    /// the CSMS \param request specifies the parameters sent from the EV to the charging station
+    virtual void on_ev_charging_needs(NotifyEVChargingNeedsRequest& request) = 0;
+
     /// @}  // End handlers group
 
     /// @}
@@ -436,7 +441,8 @@ private:
     void configure_message_logging_format(const std::string& message_log_path);
 
     /* OCPP message requests */
-
+    void notify_ev_charging_needs_req(NotifyEVChargingNeedsRequest& req);
+    
     /* OCPP message handlers */
 
     // Generates async sending callbacks
@@ -592,6 +598,8 @@ public:
     void on_variable_changed(const SetVariableData& set_variable_data) override;
 
     void on_reservation_status(const int32_t reservation_id, const ReservationUpdateStatusEnum status) override;
+
+    void on_ev_charging_needs(NotifyEVChargingNeedsRequest& request) override;
 
     std::optional<DataTransferResponse> data_transfer_req(const CiString<255>& vendorId,
                                                           const std::optional<CiString<50>>& messageId,
