@@ -518,7 +518,6 @@ void ChargePoint::configure_message_logging_format(const std::string& message_lo
     bool log_security = log_formats.find("security") != log_formats.npos;
     bool session_logging = log_formats.find("session_logging") != log_formats.npos;
     bool message_callback = log_formats.find("callback") != log_formats.npos;
-    std::function<std::string(const std::string& message)> sanitize_ocpp_messages_callback = nullptr;
     std::function<void(const std::string& message, MessageDirection direction)> logging_callback = nullptr;
     bool log_rotation =
         this->device_model->get_optional_value<bool>(ControllerComponentVariables::LogRotation).value_or(false);
