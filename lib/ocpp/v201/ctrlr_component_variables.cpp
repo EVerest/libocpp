@@ -380,6 +380,11 @@ const ComponentVariable AllowSecurityLevelZeroConnections = {
         "AllowSecurityLevelZeroConnections",
     }),
 };
+const RequiredComponentVariable SupportedOcppVersions = {
+    ControllerComponents::InternalCtrlr,
+    std::nullopt,
+    std::optional<Variable>({"SupportedOcppVersions"}),
+};
 const ComponentVariable AlignedDataCtrlrEnabled = {
     ControllerComponents::AlignedDataCtrlr,
     std::nullopt,

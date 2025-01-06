@@ -87,6 +87,7 @@ extern const ComponentVariable MessageQueueSizeThreshold;
 extern const ComponentVariable MaxMessageSize;
 extern const ComponentVariable ResumeTransactionsOnBoot;
 extern const ComponentVariable AllowSecurityLevelZeroConnections;
+extern const RequiredComponentVariable SupportedOcppVersions;
 extern const ComponentVariable AlignedDataCtrlrEnabled;
 extern const ComponentVariable AlignedDataCtrlrAvailable;
 extern const RequiredComponentVariable AlignedDataInterval;

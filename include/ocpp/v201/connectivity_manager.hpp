@@ -15,8 +15,9 @@ namespace v201 {
 
 class DeviceModel;
 
-using WebsocketConnectionCallback = std::function<void(
-    int configuration_slot, const NetworkConnectionProfile& network_connection_profile, OcppProtocolVersion version)>;
+using WebsocketConnectionCallback =
+    std::function<void(int configuration_slot, const NetworkConnectionProfile& network_connection_profile,
+                       const OcppProtocolVersion version)>;
 using WebsocketConnectionFailedCallback = std::function<void(ConnectionFailedReason reason)>;
 using ConfigureNetworkConnectionProfileCallback = std::function<std::future<ConfigNetworkResult>(
     const int32_t configuration_slot, const NetworkConnectionProfile& network_connection_profile)>;

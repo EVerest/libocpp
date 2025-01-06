@@ -776,7 +776,7 @@ std::optional<std::string> ChargePoint::get_evse_transaction_id(int32_t evse_id)
     return evse.get_transaction()->transactionId.get();
 }
 
-AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std::optional<CiString<5500>>& certificate,
+AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std::optional<CiString<10000>>& certificate,
                                               const std::optional<std::vector<OCSPRequestData>>& ocsp_request_data) {
     // TODO(piet): C01.FR.14
     // TODO(piet): C01.FR.15
@@ -788,14 +788,14 @@ AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std:
     AuthorizeResponse response;
 
     // C03.FR.01 && C05.FR.01: We SHALL NOT send an authorize reqeust for IdTokenType Central
-    if (id_token.type == IdTokenEnum::Central or
+    if (id_token.type == IdTokenEnumStringType::Central or
         !this->device_model->get_optional_value<bool>(ControllerComponentVariables::AuthCtrlrEnabled).value_or(true)) {
         response.idTokenInfo.status = AuthorizationStatusEnum::Accepted;
         return response;
     }
 
     // C07: Authorization using contract certificates
-    if (id_token.type == IdTokenEnum::eMAID) {
+    if (id_token.type == IdTokenEnumStringType::eMAID) {
         // Temporary variable that is set to true to avoid immediate response to allow the local auth list
         // or auth cache to be tried
         bool try_local_auth_list_or_cache = false;
@@ -1137,8 +1137,9 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
                                               std::bind(&ChargePoint::message_callback, this, std::placeholders::_1));
 
     this->connectivity_manager->set_websocket_connected_callback(
-        [this](int configuration_slot, const NetworkConnectionProfile& network_connection_profile, auto) {
-            this->websocket_connected_callback(configuration_slot, network_connection_profile);
+        [this](int configuration_slot, const NetworkConnectionProfile& network_connection_profile,
+               const OcppProtocolVersion ocpp_version) {
+            this->websocket_connected_callback(configuration_slot, network_connection_profile, ocpp_version);
         });
     this->connectivity_manager->set_websocket_disconnected_callback(
         [this](int configuration_slot, const NetworkConnectionProfile& network_connection_profile, auto) {
@@ -1981,7 +1982,7 @@ void ChargePoint::set_evse_connectors_unavailable(EvseInterface& evse, bool pers
     }
 }
 
-bool ChargePoint::is_connector_available(const uint32_t evse_id, std::optional<ConnectorEnum> connector_type) {
+bool ChargePoint::is_connector_available(const uint32_t evse_id, std::optional<CiString<20>> connector_type) {
     EvseInterface* evse;
     try {
         evse = &evse_manager->get_evse(static_cast<int32_t>(evse_id));
@@ -1991,7 +1992,7 @@ bool ChargePoint::is_connector_available(const uint32_t evse_id, std::optional<C
     }
 
     std::optional<ConnectorStatusEnum> status =
-        evse->get_connector_status(connector_type.value_or(ConnectorEnum::Unknown));
+        evse->get_connector_status(connector_type.value_or(ConnectorEnumStringType::Unknown));
     if (!status.has_value()) {
         return false;
     }
@@ -1999,7 +2000,7 @@ bool ChargePoint::is_connector_available(const uint32_t evse_id, std::optional<C
     return status.value() == ConnectorStatusEnum::Available;
 }
 
-bool ChargePoint::does_connector_exist(const uint32_t evse_id, std::optional<ConnectorEnum> connector_type) {
+bool ChargePoint::does_connector_exist(const uint32_t evse_id, std::optional<CiString<20>> connector_type) {
     EvseInterface* evse;
     try {
         evse = &evse_manager->get_evse(static_cast<int32_t>(evse_id));
@@ -2008,7 +2009,7 @@ bool ChargePoint::does_connector_exist(const uint32_t evse_id, std::optional<Con
         return false;
     }
 
-    return evse->does_connector_exist(connector_type.value_or(ConnectorEnum::Unknown));
+    return evse->does_connector_exist(connector_type.value_or(ConnectorEnumStringType::Unknown));
 }
 
 bool ChargePoint::is_offline() {
@@ -2154,7 +2155,7 @@ void ChargePoint::notify_report_req(const int request_id, const std::vector<Repo
     }
 }
 
-AuthorizeResponse ChargePoint::authorize_req(const IdToken id_token, const std::optional<CiString<5500>>& certificate,
+AuthorizeResponse ChargePoint::authorize_req(const IdToken id_token, const std::optional<CiString<10000>>& certificate,
                                              const std::optional<std::vector<OCSPRequestData>>& ocsp_request_data) {
     AuthorizeRequest req;
     req.idToken = id_token;
@@ -2284,8 +2285,8 @@ void ChargePoint::meter_values_req(const int32_t evse_id, const std::vector<Mete
 }
 
 void ChargePoint::report_charging_profile_req(const int32_t request_id, const int32_t evse_id,
-                                              const ChargingLimitSourceEnum source,
-                                              const std::vector<ChargingProfile>& profiles, const bool tbc) {
+                                              const CiString<20> source, const std::vector<ChargingProfile>& profiles,
+                                              const bool tbc) {
     ReportChargingProfilesRequest req;
     req.requestId = request_id;
     req.evseId = evse_id;
@@ -2843,7 +2844,7 @@ void ChargePoint::handle_transaction_event_response(const EnhancedMessage<v201::
 
     // C03.FR.0x and C05.FR.01: We SHALL NOT store central information in the Authorization Cache
     // C10.FR.05
-    if (id_token.type != IdTokenEnum::Central and
+    if (id_token.type != IdTokenEnumStringType::Central and
         this->device_model->get_optional_value<bool>(ControllerComponentVariables::AuthCacheCtrlrEnabled)
             .value_or(true)) {
         try {
@@ -3190,7 +3191,7 @@ void ChargePoint::handle_remote_start_transaction_request(Call<RequestStartTrans
                 if (charging_profile.chargingProfilePurpose == ChargingProfilePurposeEnum::TxProfile) {
 
                     const auto add_profile_response = this->smart_charging_handler->conform_validate_and_add_profile(
-                        msg.chargingProfile.value(), evse_id, ChargingLimitSourceEnum::CSO,
+                        msg.chargingProfile.value(), evse_id, ChargingLimitSourceEnumStringType::CSO,
                         AddChargingProfileSource::RequestStartTransactionRequest);
                     if (add_profile_response.status == ChargingProfileStatusEnum::Accepted) {
                         EVLOG_debug << "Accepting SetChargingProfileRequest";
@@ -3491,11 +3492,11 @@ void ChargePoint::handle_get_charging_profiles_req(Call<GetChargingProfilesReque
 
     // There are profiles to report.
     // Prepare ReportChargingProfileRequest(s). The message defines the properties evseId and
-    // chargingLimitSource as required, so we can not report all profiles in a single
-    // ReportChargingProfilesRequest. We need to prepare a single ReportChargingProfilesRequest for each
-    // combination of evseId and chargingLimitSource
-    std::set<int32_t> evse_ids;                // will contain all evse_ids of the profiles
-    std::set<ChargingLimitSourceEnum> sources; // will contain all sources of the profiles
+    // ChargingLimitSourceEnumStringType as required, so we can not report all profiles in a single
+    // ReportChargingProfilesRequest. We need to prepare a single ReportChargingProfilesRequest for each combination of
+    // evseId and ChargingLimitSourceEnumStringType
+    std::set<int32_t> evse_ids;     // will contain all evse_ids of the profiles
+    std::set<CiString<20>> sources; // will contain all sources of the profiles
 
     // fill evse_ids and sources sets
     for (const auto& profile : profiles_to_report) {
@@ -4180,9 +4181,10 @@ void ChargePoint::scheduled_check_v2g_certificate_expiration() {
 }
 
 void ChargePoint::websocket_connected_callback(const int configuration_slot,
-                                               const NetworkConnectionProfile& network_connection_profile) {
+                                               const NetworkConnectionProfile& network_connection_profile,
+                                               const OcppProtocolVersion ocpp_version) {
     this->message_queue->resume(this->message_queue_resume_delay);
-
+    this->ocpp_version = ocpp_version;
     if (this->registration_status == RegistrationStatusEnum::Accepted) {
         this->connectivity_manager->confirm_successful_connection();
 
@@ -4213,7 +4215,8 @@ void ChargePoint::websocket_connected_callback(const int configuration_slot,
     this->skip_invalid_csms_certificate_notifications = false;
 
     if (this->callbacks.connection_state_changed_callback.has_value()) {
-        this->callbacks.connection_state_changed_callback.value()(true, configuration_slot, network_connection_profile);
+        this->callbacks.connection_state_changed_callback.value()(true, configuration_slot, network_connection_profile,
+                                                                  ocpp_version);
     }
 }
 
@@ -4230,8 +4233,8 @@ void ChargePoint::websocket_disconnected_callback(const int configuration_slot,
     this->client_certificate_expiration_check_timer.stop();
     this->v2g_certificate_expiration_check_timer.stop();
     if (this->callbacks.connection_state_changed_callback.has_value()) {
-        this->callbacks.connection_state_changed_callback.value()(false, configuration_slot,
-                                                                  network_connection_profile);
+        this->callbacks.connection_state_changed_callback.value()(false, configuration_slot, network_connection_profile,
+                                                                  this->ocpp_version);
     }
 }
 

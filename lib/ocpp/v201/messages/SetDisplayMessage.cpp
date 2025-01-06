@@ -55,11 +55,11 @@ void to_json(json& j, const SetDisplayMessageResponse& k) {
         {"status", conversions::display_message_status_enum_to_string(k.status)},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.statusInfo) {
         j["statusInfo"] = k.statusInfo.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -68,11 +68,11 @@ void from_json(const json& j, SetDisplayMessageResponse& k) {
     k.status = conversions::string_to_display_message_status_enum(j.at("status"));
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("statusInfo")) {
         k.statusInfo.emplace(j.at("statusInfo"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
