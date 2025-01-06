@@ -20,8 +20,6 @@ bool Callbacks::all_callbacks_valid(std::shared_ptr<DeviceModel> device_model) c
          this->configure_network_connection_profile_callback.value() != nullptr) and
         (!this->time_sync_callback.has_value() or this->time_sync_callback.value() != nullptr) and
         (!this->boot_notification_callback.has_value() or this->boot_notification_callback.value() != nullptr) and
-        (!this->sanitize_ocpp_messages_callback.has_value() or
-         this->sanitize_ocpp_messages_callback.value() != nullptr) and
         (!this->ocpp_messages_callback.has_value() or this->ocpp_messages_callback.value() != nullptr) and
         (!this->cs_effective_operative_status_changed_callback.has_value() or
          this->cs_effective_operative_status_changed_callback.value() != nullptr) and

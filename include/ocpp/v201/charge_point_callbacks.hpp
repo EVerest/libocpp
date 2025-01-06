@@ -97,10 +97,6 @@ struct Callbacks {
     std::optional<ConfigureNetworkConnectionProfileCallback> configure_network_connection_profile_callback;
     std::optional<std::function<void(const ocpp::DateTime& currentTime)>> time_sync_callback;
 
-    /// \brief callback to be called to censor or sanitize any logging (to prevent secrets begin logged in plain-text
-    /// for example) before ocpp_messages_callback is invoked
-    std::optional<std::function<std::string(const std::string& message)>> sanitize_ocpp_messages_callback;
-
     /// \brief callback to be called to configure ocpp message logging
     std::optional<std::function<void(const std::string& message, MessageDirection direction)>> ocpp_messages_callback;
 

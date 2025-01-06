@@ -17,7 +17,6 @@ namespace ocpp {
 MessageLogging::MessageLogging(
     bool log_messages, const std::string& message_log_path, const std::string& output_file_name, bool log_to_console,
     bool detailed_log_to_console, bool log_to_file, bool log_to_html, bool log_security, bool session_logging,
-    std::function<std::string(const std::string& message)> sanitize_message_callback,
     std::function<void(const std::string& message, MessageDirection direction)> message_callback) :
     log_messages(log_messages),
     message_log_path(message_log_path),
@@ -28,7 +27,6 @@ MessageLogging::MessageLogging(
     log_to_html(log_to_html),
     log_security(log_security),
     session_logging(session_logging),
-    sanitize_message_callback(sanitize_message_callback),
     message_callback(message_callback),
     rotate_logs(false),
     date_suffix(false),
@@ -40,7 +38,6 @@ MessageLogging::MessageLogging(
 MessageLogging::MessageLogging(
     bool log_messages, const std::string& message_log_path, const std::string& output_file_name, bool log_to_console,
     bool detailed_log_to_console, bool log_to_file, bool log_to_html, bool log_security, bool session_logging,
-    std::function<std::string(const std::string& message)> sanitize_message_callback,
     std::function<void(const std::string& message, MessageDirection direction)> message_callback,
     LogRotationConfig log_rotation_config, std::function<void(LogRotationStatus status)> status_callback) :
     log_messages(log_messages),
@@ -52,7 +49,6 @@ MessageLogging::MessageLogging(
     log_to_html(log_to_html),
     log_security(log_security),
     session_logging(session_logging),
-    sanitize_message_callback(sanitize_message_callback),
     message_callback(message_callback),
     rotate_logs(true),
     date_suffix(log_rotation_config.date_suffix),
@@ -69,9 +65,6 @@ void MessageLogging::initialize() {
         }
         if (this->log_to_console) {
             EVLOG_info << "Logging OCPP messages to console";
-        }
-        if (this->sanitize_message_callback != nullptr) {
-            EVLOG_info << "Sanitizing OCPP messages before passing them to the logging callback";
         }
         if (this->message_callback != nullptr) {
             EVLOG_info << "Logging OCPP messages to callback";
@@ -281,33 +274,29 @@ MessageLogging::~MessageLogging() {
 }
 
 void MessageLogging::charge_point(const std::string& message_type, const std::string& json_str) {
-    const std::string& effective_json_str =
-        (this->sanitize_message_callback != nullptr) ? this->sanitize_message_callback(json_str) : json_str;
     if (this->message_callback != nullptr) {
-        this->message_callback(effective_json_str, MessageDirection::ChargingStationToCSMS);
+        this->message_callback(json_str, MessageDirection::ChargingStationToCSMS);
     }
-    auto formatted = format_message(message_type, effective_json_str);
+    auto formatted = format_message(message_type, json_str);
     log_output(0, formatted.message_type, formatted.message);
     if (this->session_logging) {
         std::scoped_lock lock(this->session_id_logging_mutex);
         for (auto const& [session_id, logging] : this->session_id_logging) {
-            logging->charge_point(message_type, effective_json_str);
+            logging->charge_point(message_type, json_str);
         }
     }
 }
 
 void MessageLogging::central_system(const std::string& message_type, const std::string& json_str) {
-    const std::string& effective_json_str =
-        (this->sanitize_message_callback != nullptr) ? this->sanitize_message_callback(json_str) : json_str;
     if (this->message_callback != nullptr) {
-        this->message_callback(effective_json_str, MessageDirection::ChargingStationToCSMS);
+        this->message_callback(json_str, MessageDirection::CSMSToChargingStation);
     }
-    auto formatted = format_message(message_type, effective_json_str);
+    auto formatted = format_message(message_type, json_str);
     log_output(1, formatted.message_type, formatted.message);
     if (this->session_logging) {
         std::scoped_lock lock(this->session_id_logging_mutex);
         for (auto const& [session_id, logging] : this->session_id_logging) {
-            logging->central_system(message_type, effective_json_str);
+            logging->central_system(message_type, json_str);
         }
     }
 }
@@ -418,7 +407,7 @@ FormattedMessageWithType MessageLogging::format_message(const std::string& messa
 void MessageLogging::start_session_logging(const std::string& session_id, const std::string& log_path) {
     std::scoped_lock lock(this->session_id_logging_mutex);
     this->session_id_logging[session_id] = std::make_shared<ocpp::MessageLogging>(
-        true, log_path, "incomplete-ocpp", false, false, false, true, false, false, nullptr, nullptr);
+        true, log_path, "incomplete-ocpp", false, false, false, true, false, false, nullptr);
 }
 
 void MessageLogging::stop_session_logging(const std::string& session_id) {
