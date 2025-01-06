@@ -496,6 +496,8 @@ private:
 
     void message_callback(const std::string& message);
     void update_aligned_data_interval();
+    void notify_event_req_connector_status_update(const int32_t evse_id, const int32_t connector_id,
+                                                  const ConnectorStatusEnum status);
 
     /// \brief Helper function to determine if there is any active transaction for the given \p evse
     /// \param evse if optional is not set, this function will check if there is any transaction active f or the whole

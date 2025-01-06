@@ -2,6 +2,7 @@
 // Copyright Pionix GmbH and Contributors to EVerest
 
 #include <ocpp/common/constants.hpp>
+#include <ocpp/common/incremental_counter.hpp>
 #include <ocpp/common/types.hpp>
 #include <ocpp/v201/charge_point.hpp>
 #include <ocpp/v201/ctrlr_component_variables.hpp>
@@ -1065,6 +1066,21 @@ void ChargePoint::on_reservation_status(const int32_t reservation_id, const Rese
     }
 }
 
+void ChargePoint::notify_event_req_connector_status_update(const int32_t evse_id, const int32_t connector_id,
+                                                           const ConnectorStatusEnum status) {
+    ocpp::v201::EventData event_data;
+    const auto cv = ConnectorComponentVariables::get_component_variable(evse_id, connector_id,
+                                                                        ConnectorComponentVariables::AvailabilityState);
+    event_data.eventId = ocpp::IncrementalCounter::get();
+    event_data.actualValue = conversions::connector_status_enum_to_string(status);
+    event_data.trigger = EventTriggerEnum::Delta;
+    event_data.variable = cv.variable.value();
+    event_data.component = cv.component;
+    event_data.timestamp = ocpp::DateTime();
+    event_data.eventNotificationType = EventNotificationEnum::HardWiredNotification;
+    this->notify_event_req({event_data});
+}
+
 void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_structure,
                              const std::string& message_log_path) {
     this->device_model->check_integrity(evse_connector_structure);
@@ -1077,7 +1093,13 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
                 this->registration_status != RegistrationStatusEnum::Accepted) {
                 return false;
             } else {
-                this->status_notification_req(evse_id, connector_id, status, initiated_by_trigger_message);
+                if (this->ocpp_version == OcppProtocolVersion::v201) {
+                    // OCPP2.0.1: B01.FR.05
+                    this->status_notification_req(evse_id, connector_id, status, initiated_by_trigger_message);
+                } else {
+                    // OCPP2.1: B01.FR.05
+                    this->notify_event_req_connector_status_update(evse_id, connector_id, status);
+                }
                 return true;
             }
         });
