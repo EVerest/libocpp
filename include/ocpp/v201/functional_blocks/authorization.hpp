@@ -3,8 +3,10 @@
 
 #pragma once
 
-#include "ocpp/v201/messages/ClearCache.hpp"
 #include <ocpp/v201/messages/Authorize.hpp>
+#include <ocpp/v201/messages/ClearCache.hpp>
+#include <ocpp/v201/messages/GetLocalListVersion.hpp>
+#include <ocpp/v201/messages/SendLocalList.hpp>
 
 #include <ocpp/v201/database_handler.hpp>
 #include <ocpp/v201/message_dispatcher.hpp>
@@ -15,6 +17,7 @@ class AuthorizationInterface : public MessageHandlerInterface {
 public:
     virtual ~AuthorizationInterface() {};
 
+    virtual void start() = 0;
     virtual AuthorizeResponse authorize_req(const IdToken id_token, const std::optional<CiString<5500>>& certificate,
                                             const std::optional<std::vector<OCSPRequestData>>& ocsp_request_data) = 0;
     virtual void trigger_authorization_cache_cleanup() = 0;
@@ -26,7 +29,14 @@ public:
                                                   const IdTokenInfo& id_token_info) = 0;
     virtual std::optional<AuthorizationCacheEntry> authorization_cache_get_entry(const std::string& id_token_hash) = 0;
     virtual void authorization_cache_delete_entry(const std::string& id_token_hash) = 0;
-    virtual void authorization_cache_update_last_used(const std::string& id_token_hash) = 0;
+
+    /// \brief Validates provided \p id_token \p certificate and \p ocsp_request_data using CSMS, AuthCache or AuthList
+    /// \param id_token
+    /// \param certificate
+    /// \param ocsp_request_data
+    /// \return AuthorizeResponse containing the result of the validation
+    virtual AuthorizeResponse validate_token(const IdToken id_token, const std::optional<CiString<5500>>& certificate,
+                                             const std::optional<std::vector<OCSPRequestData>>& ocsp_request_data) = 0;
 };
 
 class Authorization : public AuthorizationInterface {
@@ -35,19 +45,23 @@ private: // Members
     DeviceModel& device_model;
     ConnectivityManagerInterface& connectivity_manager;
     std::shared_ptr<ocpp::v201::DatabaseHandlerInterface> database_handler;
+    std::shared_ptr<EvseSecurity> evse_security;
 
     // threads and synchronization
     bool auth_cache_cleanup_required;
     std::condition_variable auth_cache_cleanup_cv;
     std::mutex auth_cache_cleanup_mutex;
     std::thread auth_cache_cleanup_thread;
-    std::atomic_bool stop_auth_cache_cleanup_handler;
+    std::atomic_bool auth_cache_cleanup_handler_running;
+    bool running;
 
 public:
     Authorization(MessageDispatcherInterface<MessageType>& message_dispatcher, DeviceModel& device_model,
                   ConnectivityManagerInterface& connectivity_manager,
-                  std::shared_ptr<DatabaseHandlerInterface> database_handler);
+                  std::shared_ptr<DatabaseHandlerInterface> database_handler,
+                  const std::shared_ptr<EvseSecurity> evse_security);
     ~Authorization();
+    void start() override;
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
     AuthorizeResponse authorize_req(const IdToken id_token, const std::optional<ocpp::CiString<5500>>& certificate,
                                     const std::optional<std::vector<OCSPRequestData>>& ocsp_request_data) override;
@@ -57,10 +71,30 @@ public:
     void authorization_cache_insert_entry(const std::string& id_token_hash, const IdTokenInfo& id_token_info) override;
     std::optional<AuthorizationCacheEntry> authorization_cache_get_entry(const std::string& id_token_hash) override;
     void authorization_cache_delete_entry(const std::string& id_token_hash) override;
-    void authorization_cache_update_last_used(const std::string& id_token_hash) override;
+
+    /// \brief Validates provided \p id_token \p certificate and \p ocsp_request_data using CSMS, AuthCache or AuthList
+    /// \param id_token
+    /// \param certificate
+    /// \param ocsp_request_data
+    /// \return AuthorizeResponse containing the result of the validation
+    AuthorizeResponse validate_token(const IdToken id_token, const std::optional<CiString<5500>>& certificate,
+                                     const std::optional<std::vector<OCSPRequestData>>& ocsp_request_data) override;
 
 private: // Functions
+    void stop();
+
+    // Functional Block C: Authorization
     void handle_clear_cache_req(Call<ClearCacheRequest> call);
     void cache_cleanup_handler();
+
+    // Functional Block D: Local authorization list management
+    void handle_send_local_authorization_list_req(Call<SendLocalListRequest> call);
+    void handle_get_local_authorization_list_version_req(Call<GetLocalListVersionRequest> call);
+
+    ///\brief Apply a local list request to the database if allowed
+    ///
+    ///\param request The local list request to apply
+    ///\retval Accepted if applied, otherwise will return either Failed or VersionMismatch
+    SendLocalListStatusEnum apply_local_authorization_list(const SendLocalListRequest& request);
 };
 } // namespace ocpp::v201
