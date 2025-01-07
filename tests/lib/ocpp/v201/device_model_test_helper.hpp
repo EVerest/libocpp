@@ -32,9 +32,9 @@ class DeviceModel;
 
 class DeviceModelTestHelper {
 public:
-    DeviceModelTestHelper(const std::string& database_path = DEVICE_MODEL_DB_IN_MEMORY_PATH,
-                          const std::string& migration_files_path = MIGRATION_FILES_PATH,
-                          const std::string& config_path = CONFIG_PATH);
+    explicit DeviceModelTestHelper(const std::string& database_path = DEVICE_MODEL_DB_IN_MEMORY_PATH,
+                                   const std::string& migration_files_path = MIGRATION_FILES_PATH,
+                                   const std::string& config_path = CONFIG_PATH);
     DeviceModel* get_device_model();
 
     ///
@@ -47,9 +47,10 @@ public:
     /// \param variable_instance    Variable instance (optional).
     /// \return True on success.
     ///
-    bool remove_variable_from_db(const std::string component_name, const std::optional<std::string> component_instance,
-                                 const std::optional<uint32_t> evse_id, const std::optional<uint32_t> connector_id,
-                                 const std::string variable_name, const std::optional<std::string> variable_instance);
+    bool remove_variable_from_db(const std::string& component_name,
+                                 const std::optional<std::string>& component_instance,
+                                 const std::optional<uint32_t>& evse_id, const std::optional<uint32_t>& connector_id,
+                                 const std::string& variable_name, const std::optional<std::string>& variable_instance);
 
 private:
     const std::string& database_path;

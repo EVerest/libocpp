@@ -26,12 +26,12 @@ DeviceModel* DeviceModelTestHelper::get_device_model() {
     return this->device_model.get();
 }
 
-bool DeviceModelTestHelper::remove_variable_from_db(const std::string component_name,
-                                                    const std::optional<std::string> component_instance,
-                                                    const std::optional<uint32_t> evse_id,
-                                                    const std::optional<uint32_t> connector_id,
-                                                    const std::string variable_name,
-                                                    const std::optional<std::string> variable_instance) {
+bool DeviceModelTestHelper::remove_variable_from_db(const std::string& component_name,
+                                                    const std::optional<std::string>& component_instance,
+                                                    const std::optional<uint32_t>& evse_id,
+                                                    const std::optional<uint32_t>& connector_id,
+                                                    const std::string& variable_name,
+                                                    const std::optional<std::string>& variable_instance) {
     const std::string delete_query = "DELETE FROM VARIABLE WHERE ID = "
                                      "(SELECT ID FROM VARIABLE WHERE COMPONENT_ID = "
                                      "(SELECT ID FROM COMPONENT WHERE NAME = ? AND INSTANCE IS ? AND "
