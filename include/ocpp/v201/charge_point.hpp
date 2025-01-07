@@ -46,7 +46,6 @@
 #include <ocpp/v201/messages/GetCompositeSchedule.hpp>
 #include <ocpp/v201/messages/GetDisplayMessages.hpp>
 #include <ocpp/v201/messages/GetInstalledCertificateIds.hpp>
-#include <ocpp/v201/messages/GetLocalListVersion.hpp>
 #include <ocpp/v201/messages/GetLog.hpp>
 #include <ocpp/v201/messages/GetMonitoringReport.hpp>
 #include <ocpp/v201/messages/GetReport.hpp>
@@ -64,7 +63,6 @@
 #include <ocpp/v201/messages/RequestStopTransaction.hpp>
 #include <ocpp/v201/messages/Reset.hpp>
 #include <ocpp/v201/messages/SecurityEventNotification.hpp>
-#include <ocpp/v201/messages/SendLocalList.hpp>
 #include <ocpp/v201/messages/SetChargingProfile.hpp>
 #include <ocpp/v201/messages/SetDisplayMessage.hpp>
 #include <ocpp/v201/messages/SetMonitoringBase.hpp>
@@ -523,12 +521,6 @@ private:
     /// \brief Restores all connectors to their persisted state
     void restore_all_connector_states();
 
-    ///\brief Apply a local list request to the database if allowed
-    ///
-    ///\param request The local list request to apply
-    ///\retval Accepted if applied, otherwise will return either Failed or VersionMismatch
-    SendLocalListStatusEnum apply_local_authorization_list(const SendLocalListRequest& request);
-
     ///
     /// \brief Get evseid for the given transaction id.
     /// \param transaction_id   The transactionid
@@ -651,7 +643,6 @@ private:
     void boot_notification_req(const BootReasonEnum& reason, const bool initiated_by_trigger_message = false);
     void notify_report_req(const int request_id, const std::vector<ReportData>& report_data);
 
-
     // Functional Block G: Availability
     void status_notification_req(const int32_t evse_id, const int32_t connector_id, const ConnectorStatusEnum status,
                                  const bool initiated_by_trigger_message = false);
@@ -698,10 +689,6 @@ private:
     void handle_get_report_req(const EnhancedMessage<v201::MessageType>& message);
     void handle_set_network_profile_req(Call<SetNetworkProfileRequest> call);
     void handle_reset_req(Call<ResetRequest> call);
-
-    // Functional Block D: Local authorization list management
-    void handle_send_local_authorization_list_req(Call<SendLocalListRequest> call);
-    void handle_get_local_authorization_list_version_req(Call<GetLocalListVersionRequest> call);
 
     // Functional Block E: Transaction
     void handle_transaction_event_response(const EnhancedMessage<v201::MessageType>& message);
