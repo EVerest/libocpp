@@ -1,7 +1,7 @@
 # Libocpp Code Generators
 In this directory a collection of code generators for various purposes are located.
 
-## C++ Code generator for v16 and v201
+## C++ Code generator for v16, v201 and v21
 The script [generate_cpp.py](common/generate_cpp.py) can be used to generate datatypes, enums, and messages for v16 and v201.
 
 ```bash
@@ -16,4 +16,22 @@ python3 generate_cpp.py --schemas ~/ocpp-schemas/v16/ --out ~/checkout/everest-w
 
 ```bash
 python3 generate_cpp.py --schemas ~/ocpp-schemas/v201/ --out ~/checkout/everest-workspace/libocpp --version v201 
+```
+
+```bash
+python3 generate_cpp.py --schemas ~/ocpp-schemas/v21/ --out ~/checkout/everest-workspace/libocpp --version v21 
+```
+
+## YAML code generator for EVerest types
+
+The script [generate_everest_types.py](common/generate_cpp.py) can be used to generate EVerest YAML type definitions using OCPP2.0.1 and OCPP2.1 JSON schemas.
+
+```bash
+python3 generate_everest_types.py --schemas ~/Downloads/ocpp21_part3_JSON/ocpp21_part3_JSON/ --out <outfile> --types <comma-seperated-list-of-ocpp-types>
+```
+
+e.g.
+
+```bash
+python3 generate_everest_types.py --schemas ~/ocpp-schemas/v21/ --out ocpp.yaml --types ChargingNeedsType,ChargingScheduleType
 ```
