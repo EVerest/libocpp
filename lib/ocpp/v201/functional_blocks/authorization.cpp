@@ -6,6 +6,14 @@
 #include <ocpp/v201/functional_blocks/authorization.hpp>
 #include <ocpp/v201/utils.hpp>
 
+///
+/// \brief Check if vector of authorization data has a duplicate id token.
+/// \param list List to check.
+/// \return True if there is a duplicate.
+///
+static bool has_duplicate_in_list(const std::vector<ocpp::v201::AuthorizationData>& list);
+static bool has_no_token_info(const ocpp::v201::AuthorizationData& item);
+
 ocpp::v201::Authorization::Authorization(MessageDispatcherInterface<MessageType>& message_dispatcher,
                                          DeviceModel& device_model, ConnectivityManagerInterface& connectivity_manager,
                                          std::shared_ptr<DatabaseHandlerInterface> database_handler,
@@ -493,7 +501,7 @@ void ocpp::v201::Authorization::handle_send_local_authorization_list_req(Call<Se
                                                            AttributeEnum::Actual, std::to_string(entries),
                                                            VARIABLE_ATTRIBUTE_VALUE_SOURCE_INTERNAL);
                 } catch (const DeviceModelError& e) {
-                    EVLOG_warning << "Could not get local list count from database:" << e.what();
+                    EVLOG_warning << "Could not set local list count to device model:" << e.what();
                 } catch (const common::DatabaseException& e) {
                     EVLOG_warning << "Could not get local list count from database: " << e.what();
                 } catch (const std::exception& e) {
@@ -535,18 +543,7 @@ ocpp::v201::SendLocalListStatusEnum
 ocpp::v201::Authorization::apply_local_authorization_list(const SendLocalListRequest& request) {
     auto status = SendLocalListStatusEnum::Failed;
 
-    auto has_duplicate_in_list = [](const std::vector<AuthorizationData>& list) {
-        for (auto it1 = list.begin(); it1 != list.end(); ++it1) {
-            for (auto it2 = it1 + 1; it2 != list.end(); ++it2) {
-                if (it1->idToken.idToken == it2->idToken.idToken and it1->idToken.type == it2->idToken.type) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    };
-
-    if (request.versionNumber == 0) {
+    if (request.versionNumber <= 0) {
         // D01.FR.18: Do nothing, not allowed, respond with failed
     } else if (request.updateType == UpdateEnum::Full) {
         if (!request.localAuthorizationList.has_value() or request.localAuthorizationList.value().empty()) {
@@ -559,8 +556,6 @@ ocpp::v201::Authorization::apply_local_authorization_list(const SendLocalListReq
             }
         } else {
             const auto& list = request.localAuthorizationList.value();
-
-            auto has_no_token_info = [](const AuthorizationData& item) { return !item.idTokenInfo.has_value(); };
 
             if (!has_duplicate_in_list(list) and
                 std::find_if(list.begin(), list.end(), has_no_token_info) == list.end()) {
@@ -597,3 +592,18 @@ ocpp::v201::Authorization::apply_local_authorization_list(const SendLocalListReq
     }
     return status;
 }
+
+static bool has_duplicate_in_list(const std::vector<ocpp::v201::AuthorizationData>& list) {
+    for (auto it1 = list.begin(); it1 != list.end(); ++it1) {
+        for (auto it2 = it1 + 1; it2 != list.end(); ++it2) {
+            if (it1->idToken.idToken == it2->idToken.idToken and it1->idToken.type == it2->idToken.type) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+static bool has_no_token_info(const ocpp::v201::AuthorizationData& item) {
+    return !item.idTokenInfo.has_value();
+};
