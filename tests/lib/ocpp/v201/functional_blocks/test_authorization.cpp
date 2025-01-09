@@ -16,6 +16,7 @@
 
 using namespace ocpp::v201;
 using ::testing::_;
+using ::testing::InSequence;
 using ::testing::Invoke;
 using ::testing::Return;
 using ::testing::Throw;
@@ -29,10 +30,6 @@ protected: // Members
     ::testing::NiceMock<ConnectivityManagerMock> connectivity_manager;
     ::testing::NiceMock<std::shared_ptr<ocpp::v201::DatabaseHandlerMock>> database_handler_mock;
     std::shared_ptr<ocpp::EvseSecurityMock> evse_security;
-
-    // Authorization is a unique ptr because we first need to create the database handler before making authorization,
-    // and the database handler is not created in the initializer list. So we have to be able to create Authorization
-    // later. // TODO mz this might be changed??
     std::unique_ptr<Authorization> authorization;
 
     std::atomic<uint32_t> delete_expired_entries_count = 0;
@@ -60,15 +57,15 @@ protected: // Functions
         return testing::Invoke([this, &variable]() {
             std::unique_lock<std::mutex> lock(this->call_mutex);
             variable++;
-            this->call_condition_variable.notify_one();
+            this->call_condition_variable.notify_all();
         });
     }
 
-    auto update_count_and_notify(const size_t& return_value, std::atomic<uint32_t>& variable) {
-        return testing::Invoke([this, &variable, &return_value]() -> size_t {
+    auto update_count_and_notify(const size_t return_value, std::atomic<uint32_t>& variable) {
+        return testing::Invoke([this, &variable, return_value]() -> size_t {
             std::unique_lock<std::mutex> lock(this->call_mutex);
             variable++;
-            this->call_condition_variable.notify_one();
+            this->call_condition_variable.notify_all();
             return return_value;
         });
     }
@@ -305,11 +302,22 @@ protected: // Functions
 };
 
 TEST_F(AuthorizationTest, is_auth_cache_ctrlr_enabled) {
+    // Set auth cache ctrlr enabled to 'false' in the device model.
     set_auth_cache_enabled(this->device_model, false);
     EXPECT_FALSE(authorization->is_auth_cache_ctrlr_enabled());
 
+    // Set auth cache ctrlr enabled to 'true' in the device model.
     set_auth_cache_enabled(this->device_model, true);
     EXPECT_TRUE(authorization->is_auth_cache_ctrlr_enabled());
+
+    // Remove auth cache ctrlr enabled variable from the device model.
+    EXPECT_TRUE(this->device_model_test_helper.remove_variable_from_db(
+        ControllerComponentVariables::AuthCacheCtrlrEnabled.component.name, std::nullopt, std::nullopt, std::nullopt,
+        ControllerComponentVariables::AuthCacheCtrlrEnabled.variable->name, std::nullopt));
+    this->device_model = this->device_model_test_helper.get_device_model();
+    this->authorization = std::make_unique<Authorization>(mock_dispatcher, *device_model, connectivity_manager,
+                                                          database_handler_mock, evse_security);
+    EXPECT_FALSE(authorization->is_auth_cache_ctrlr_enabled());
 }
 
 TEST_F(AuthorizationTest, authorize_req_websocket_disconnected) {
@@ -1699,10 +1707,131 @@ TEST_F(AuthorizationTest, cache_cleanup_handler) {
 }
 
 TEST_F(AuthorizationTest, cache_cleanup_handler_exceeds_max_storage) {
-    auto meta_data = this->device_model->get_variable_meta_data(
-        ControllerComponentVariables::AuthCacheStorage.component,
-        ControllerComponentVariables::AuthCacheStorage.variable.value());
-    EXPECT_GT(meta_data.value().characteristics.maxLimit.value(), 0);
-    std::cout << meta_data.value().characteristics.maxLimit.value() << std::endl;
+    auto component_variable = ControllerComponentVariables::AuthCacheStorage;
+
+    VariableCharacteristics characteristics;
+    characteristics.dataType = DataEnum::integer;
+    characteristics.maxLimit = 500.0f;
+    characteristics.supportsMonitoring = true;
+    EXPECT_TRUE(this->device_model_test_helper.update_variable_characteristics(
+        characteristics, component_variable.component.name, std::nullopt, std::nullopt, std::nullopt,
+        component_variable.variable->name, std::nullopt));
+    this->device_model = device_model_test_helper.get_device_model();
+    this->authorization = nullptr;
+
+    this->authorization = std::make_unique<Authorization>(mock_dispatcher, *device_model, connectivity_manager,
+                                                          database_handler_mock, evse_security);
+    auto meta_data =
+        this->device_model->get_variable_meta_data(component_variable.component, component_variable.variable.value());
+
+    ASSERT_TRUE(meta_data.has_value());
+    ASSERT_TRUE(meta_data.value().characteristics.maxLimit.has_value());
+    EXPECT_EQ(meta_data.value().characteristics.maxLimit.value(), characteristics.maxLimit);
+
+    {
+        InSequence seq;
+        EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size())
+            .WillOnce(update_count_and_notify(0, this->get_binary_size_count))
+            .RetiresOnSaturation();
+        EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size())
+            .WillOnce(update_count_and_notify(600, this->get_binary_size_count))
+            .RetiresOnSaturation();
+        EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size())
+            .WillOnce(update_count_and_notify(650, this->get_binary_size_count))
+            .RetiresOnSaturation();
+        EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size())
+            .WillOnce(update_count_and_notify(550, this->get_binary_size_count))
+            .RetiresOnSaturation();
+        EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size())
+            .WillOnce(update_count_and_notify(300, this->get_binary_size_count))
+            .RetiresOnSaturation();
+        EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size())
+            .WillRepeatedly(update_count_and_notify(0, this->get_binary_size_count));
+    }
+
+    EXPECT_CALL(*this->database_handler_mock, authorization_cache_delete_expired_entries(_))
+        .WillRepeatedly(update_count_and_notify(this->delete_expired_entries_count));
+    EXPECT_CALL(*this->database_handler_mock, authorization_cache_delete_nr_of_oldest_entries(1))
+        .WillRepeatedly(update_count_and_notify(this->delete_nr_of_oldest_entries_count));
+
+    this->authorization->start();
+
+    this->delete_expired_entries_count = 0;
+    this->delete_nr_of_oldest_entries_count = 0;
+    this->get_binary_size_count = 0;
+
+    this->authorization->trigger_authorization_cache_cleanup();
+    this->wait_for_calls(1, 6, 3);
 }
-// TODO mz test cleanup handler
+
+TEST_F(AuthorizationTest, cache_cleanup_handler_exceeds_max_storage_database_exception) {
+    auto component_variable = ControllerComponentVariables::AuthCacheStorage;
+
+    VariableCharacteristics characteristics;
+    characteristics.dataType = DataEnum::integer;
+    characteristics.maxLimit = 500.0f;
+    characteristics.supportsMonitoring = true;
+    EXPECT_TRUE(this->device_model_test_helper.update_variable_characteristics(
+        characteristics, component_variable.component.name, std::nullopt, std::nullopt, std::nullopt,
+        component_variable.variable->name, std::nullopt));
+    this->device_model = device_model_test_helper.get_device_model();
+    this->authorization = nullptr;
+
+    this->authorization = std::make_unique<Authorization>(mock_dispatcher, *device_model, connectivity_manager,
+                                                          database_handler_mock, evse_security);
+    auto meta_data =
+        this->device_model->get_variable_meta_data(component_variable.component, component_variable.variable.value());
+
+    ASSERT_TRUE(meta_data.has_value());
+    ASSERT_TRUE(meta_data.value().characteristics.maxLimit.has_value());
+    EXPECT_EQ(meta_data.value().characteristics.maxLimit.value(), characteristics.maxLimit);
+
+    {
+        InSequence seq;
+        EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size())
+            .WillOnce(update_count_and_notify(0, this->get_binary_size_count))
+            .RetiresOnSaturation();
+        EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size())
+            .WillOnce(update_count_and_notify(600, this->get_binary_size_count))
+            .RetiresOnSaturation();
+        EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size())
+            .WillOnce(Throw(ocpp::common::DatabaseException("Oops!")))
+            .RetiresOnSaturation();
+        EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size())
+            .WillOnce(update_count_and_notify(550, this->get_binary_size_count))
+            .RetiresOnSaturation();
+    }
+
+    EXPECT_CALL(*this->database_handler_mock, authorization_cache_delete_expired_entries(_))
+        .WillRepeatedly(update_count_and_notify(this->delete_expired_entries_count));
+    EXPECT_CALL(*this->database_handler_mock, authorization_cache_delete_nr_of_oldest_entries(1))
+        .WillRepeatedly(update_count_and_notify(this->delete_nr_of_oldest_entries_count));
+
+    this->delete_expired_entries_count = 0;
+    this->delete_nr_of_oldest_entries_count = 0;
+    this->get_binary_size_count = 0;
+
+    this->authorization->start();
+
+    this->authorization->trigger_authorization_cache_cleanup();
+    this->wait_for_calls(1, 3, 1);
+}
+
+TEST_F(AuthorizationTest, cache_cleanup_handler_database_exception) {
+    EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size())
+        .WillRepeatedly(update_count_and_notify(0, this->get_binary_size_count));
+
+    EXPECT_CALL(*this->database_handler_mock, authorization_cache_delete_expired_entries(_))
+        .WillRepeatedly(Throw(std::out_of_range("expired entries out of range! (?)")));
+    EXPECT_CALL(*this->database_handler_mock, authorization_cache_delete_nr_of_oldest_entries(1))
+        .WillRepeatedly(update_count_and_notify(this->delete_nr_of_oldest_entries_count));
+
+    this->delete_expired_entries_count = 0;
+    this->delete_nr_of_oldest_entries_count = 0;
+    this->get_binary_size_count = 0;
+
+    this->authorization->start();
+
+    this->authorization->trigger_authorization_cache_cleanup();
+    this->wait_for_calls(0, 2, 0);
+}
