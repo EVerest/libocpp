@@ -47,14 +47,43 @@ endforeach(ITEM)
 # child directories.
 add_subdirectory(lib/ocpp/common)
 
+# TODO mz move a bit up? So you don't have to search so much
+if(LIBOCPP_ENABLE_V201)
+    # Add all v201 tests you don't want to include in the default test executable here.
+    list(APPEND SEPARATE_UNIT_TESTS ${CMAKE_CURRENT_SOURCE_DIR}/lib/ocpp/v201/functional_blocks/test_security.cpp)
+endif()
+
+# TODO mz documentation
+foreach(ITEM ${SEPARATE_UNIT_TESTS})
+    set(TEST_ROOT_NAME)
+    cmake_path(GET ITEM STEM TEST_ROOT_NAME)
+    set(TEST_NAME "libocpp_${TEST_ROOT_NAME}")
+    add_executable(${TEST_NAME} ${ITEM})
+    add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME} WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    target_link_libraries(${TEST_NAME} PUBLIC ${GTEST_LIBRARIES})
+    list(APPEND GCOVR_DEPENDENCIES ${TEST_NAME})
+    target_compile_definitions(${TEST_NAME} PRIVATE ${TEST_COMPILE_DEFINITIONS})
+    target_compile_definitions(${TEST_NAME} PRIVATE
+        MIGRATION_FILE_VERSION_V16=${MIGRATION_FILE_VERSION_V16}
+        MIGRATION_FILE_VERSION_V201=${MIGRATION_FILE_VERSION_V201}
+        MIGRATION_DEVICE_MODEL_FILE_VERSION_V201=${MIGRATION_DEVICE_MODEL_FILE_VERSION_V201})
+    target_compile_options(${TEST_NAME} PRIVATE ${TEST_COMPILE_OPTIONS})
+    target_compile_features(${TEST_NAME} PUBLIC ${TEST_COMPILE_FEATURES})
+    target_include_directories(${TEST_NAME} PRIVATE ${TEST_INCLUDE_DIRECTORIES})
+    target_sources(${TEST_NAME} PRIVATE ${LIBOCPP_TEST_INCLUDE_COMMON_SOURCES})
+    target_link_libraries(libocpp_test_security PRIVATE ${LIBOCPP_TEST_DEFAULT_LINK_LIBRARIES})
+    if(LIBOCPP_ENABLE_V201)
+        target_sources(${TEST_NAME} PRIVATE ${LIBOCPP_TEST_INCLUDE_V201_SOURCES})
+    endif()
+    message("Add test ${TEST_NAME}")
+endforeach(ITEM)
+
 if(LIBOCPP_ENABLE_V16)
     add_subdirectory(lib/ocpp/v16)
 endif()
 
 if(LIBOCPP_ENABLE_V201)
     add_subdirectory(lib/ocpp/v201)
-    add_test(libocpp_unit_tests_functional_block_security libocpp_unit_tests_functional_block_security
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 endif()
 
 add_custom_command(TARGET libocpp_unit_tests POST_BUILD

@@ -8,36 +8,23 @@ target_sources(libocpp_unit_tests PRIVATE
 
 
 
-target_sources(libocpp_unit_tests_functional_block_security PRIVATE
-        test_security.cpp)
-
-target_include_directories(libocpp_unit_tests_functional_block_security PUBLIC
-        ${PROJECT_SOURCE_DIR}/include/ocpp/common
-        ../stubs
-        ../mocks
-        ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/..
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../common
-        )
-
-MESSAGE("current source dir: ${CMAKE_CURRENT_SOURCE_DIR}, current project dir: ${PROJECT_SOURCE_DIR}, current binary dir: ${CMAKE_CURRENT_BINARY_DIR}")
-
-target_sources(libocpp_unit_tests_functional_block_security PRIVATE
-        ../device_model_test_helper.cpp)
-
-target_compile_options(libocpp_unit_tests_functional_block_security
-    PRIVATE
-        -pedantic-errors
+set(TEST_SECURITY_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/../device_model_test_helper.cpp
+            ${LIBOCPP_LIB_PATH}/ocpp/v201/functional_blocks/security.cpp
+            ${LIBOCPP_LIB_PATH}/ocpp/v201/messages/SecurityEventNotification.cpp
+            ${LIBOCPP_LIB_PATH}/ocpp/v201/messages/CertificateSigned.cpp
+            ${LIBOCPP_LIB_PATH}/ocpp/v201/messages/SignCertificate.cpp
+            ${LIBOCPP_LIB_PATH}/ocpp/v201/messages/Reset.cpp
 )
 
-target_compile_features(libocpp_unit_tests_functional_block_security PUBLIC cxx_std_17)
+target_sources(libocpp_test_security PRIVATE
+        ${TEST_SECURITY_SOURCES})
 
-target_compile_definitions(libocpp_unit_tests_functional_block_security
-    PRIVATE
-    MIGRATION_FILES_LOCATION_V201="${MIGRATION_FILES_LOCATION_V201}"
-    MIGRATION_FILE_VERSION_V201=${MIGRATION_FILE_VERSION_V201}
-    DEVICE_MODEL_DB_LOCATION_V201="${DEVICE_MODEL_DB_LOCATION_V201}"
-    TEST_PROFILES_LOCATION_V201="${TEST_PROFILES_LOCATION_V201}"
+target_include_directories(libocpp_test_security PUBLIC
+        ${LIBOCPP_INCLUDE_PATH}
+        ${LIBOCPP_3RDPARTY_PATH}
+        ${CMAKE_CURRENT_SOURCE_DIR}/../stubs
+        ${CMAKE_CURRENT_SOURCE_DIR}/../mocks
+        ${LIBOCPP_TESTS_V201_ROOT_DIR}
 )
 
 target_link_libraries(libocpp_unit_tests_functional_block_security PRIVATE
