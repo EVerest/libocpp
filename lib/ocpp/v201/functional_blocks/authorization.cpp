@@ -94,7 +94,8 @@ ocpp::v201::Authorization::authorize_req(const IdToken id_token, const std::opti
         ocpp::CallResult<AuthorizeResponse> call_result = enhanced_message.message;
         return call_result.msg;
     } catch (const EnumConversionException& e) {
-        // TODO mz we don't get here normally, remove the code?? Because the future.get() already throws
+        // We don't get here normally, because the future.get() already throws. Code was not removed, because something
+        // might be overseen here.
         EVLOG_error << "EnumConversionException during handling of message: " << e.what();
         auto call_error = CallError(enhanced_message.uniqueId, "FormationViolation", e.what(), json({}));
         this->message_dispatcher.dispatch_call_error(call_error);
