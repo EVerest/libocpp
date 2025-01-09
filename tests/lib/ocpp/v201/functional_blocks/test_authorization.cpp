@@ -56,11 +56,20 @@ protected: // Functions
     ~AuthorizationTest() {
     }
 
-    auto update_count_and_notify(uint32_t* variable) {
-        return testing::Invoke([this, variable]() {
+    auto update_count_and_notify(std::atomic<uint32_t>& variable) {
+        return testing::Invoke([this, &variable]() {
             std::unique_lock<std::mutex> lock(this->call_mutex);
-            (*variable)++;
+            variable++;
             this->call_condition_variable.notify_one();
+        });
+    }
+
+    auto update_count_and_notify(const size_t& return_value, std::atomic<uint32_t>& variable) {
+        return testing::Invoke([this, &variable, &return_value]() -> size_t {
+            std::unique_lock<std::mutex> lock(this->call_mutex);
+            variable++;
+            this->call_condition_variable.notify_one();
+            return return_value;
         });
     }
 
@@ -1680,4 +1689,20 @@ TEST_F(AuthorizationTest, handle_get_local_authorization_list_version_exception)
     authorization->handle_message(request);
 }
 
+TEST_F(AuthorizationTest, cache_cleanup_handler) {
+    this->authorization->start();
+    this->delete_expired_entries_count = 0;
+    EXPECT_CALL(*this->database_handler_mock, authorization_cache_delete_expired_entries(_))
+        .WillRepeatedly(update_count_and_notify(this->delete_expired_entries_count));
+    this->authorization->trigger_authorization_cache_cleanup();
+    this->wait_for_calls(1, 0, 0);
+}
+
+TEST_F(AuthorizationTest, cache_cleanup_handler_exceeds_max_storage) {
+    auto meta_data = this->device_model->get_variable_meta_data(
+        ControllerComponentVariables::AuthCacheStorage.component,
+        ControllerComponentVariables::AuthCacheStorage.variable.value());
+    EXPECT_GT(meta_data.value().characteristics.maxLimit.value(), 0);
+    std::cout << meta_data.value().characteristics.maxLimit.value() << std::endl;
+}
 // TODO mz test cleanup handler
