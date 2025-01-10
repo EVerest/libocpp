@@ -146,12 +146,12 @@ protected:
 
     ChargingProfile
     create_charging_profile(int32_t charging_profile_id, ChargingProfilePurposeEnum charging_profile_purpose,
-                            ChargingSchedule charging_schedule, std::optional<std::string> transaction_id = {},
+                            std::vector<ChargingSchedule> charging_schedules,
+                            std::optional<std::string> transaction_id = {},
                             ChargingProfileKindEnum charging_profile_kind = ChargingProfileKindEnum::Absolute,
                             int stack_level = DEFAULT_STACK_LEVEL, std::optional<ocpp::DateTime> validFrom = {},
                             std::optional<ocpp::DateTime> validTo = {}) {
         auto recurrency_kind = RecurrencyKindEnum::Daily;
-        std::vector<ChargingSchedule> charging_schedules = {charging_schedule};
         ChargingProfile charging_profile;
         charging_profile.id = charging_profile_id;
         charging_profile.stackLevel = stack_level;
@@ -164,6 +164,17 @@ protected:
         charging_profile.validTo = validTo;
         charging_profile.transactionId = transaction_id;
         return charging_profile;
+    }
+
+    ChargingProfile
+    create_charging_profile(int32_t charging_profile_id, ChargingProfilePurposeEnum charging_profile_purpose,
+                            ChargingSchedule charging_schedule, std::optional<std::string> transaction_id = {},
+                            ChargingProfileKindEnum charging_profile_kind = ChargingProfileKindEnum::Absolute,
+                            int stack_level = DEFAULT_STACK_LEVEL, std::optional<ocpp::DateTime> validFrom = {},
+                            std::optional<ocpp::DateTime> validTo = {}) {
+        return create_charging_profile(charging_profile_id, charging_profile_purpose,
+                                       std::vector<ChargingSchedule>{charging_schedule}, transaction_id,
+                                       charging_profile_kind, stack_level, validFrom, validTo);
     }
 
     ChargingProfileCriterion create_charging_profile_criteria(
@@ -1745,6 +1756,14 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K01_ValidateTxProfile_AllowsExisting
     auto sut = handler.validate_tx_profile(profile, DEFAULT_EVSE_ID);
 
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::Valid));
+}
+
+TEST_F(SmartChargingHandlerTestFixtureV201, K01_ValidateTxProfile_EmptyChargingSchedule) {
+    auto profile = create_charging_profile(DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::ChargingStationMaxProfile,
+                                           std::vector<ChargingSchedule>{}, ocpp::DateTime("2024-01-17T17:00:00"));
+
+    auto sut = handler.conform_and_validate_profile(profile, DEFAULT_EVSE_ID);
+    ASSERT_THAT(sut, testing::Eq(ProfileValidationResultEnum::ChargingProfileEmptyChargingSchedules));
 }
 
 } // namespace ocpp::v201
