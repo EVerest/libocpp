@@ -15,10 +15,11 @@
 #include <mutex>
 #include <thread>
 
-static uint32_t timer_stub_stop_called_count;
-static uint32_t timer_stub_timeout_called_count;
-static uint32_t timer_stub_interval_called_count;
-static uint32_t timer_stub_at_called_count;
+extern uint32_t timer_stub_stop_called_count;
+extern uint32_t timer_stub_timeout_called_count;
+extern uint32_t timer_stub_interval_called_count;
+extern uint32_t timer_stub_at_called_count;
+extern std::function<void()> timer_stub_callback;
 
 namespace Everest {
 // template <typename TimerClock = date::steady_clock> class Timer {
@@ -37,7 +38,7 @@ private:
     std::mutex timer_thread_mutex;
     bool call_callback_now = false;
 
-    void run() {
+    void run(const bool once = true) {
         running = true;
         while (running) {
             std::unique_lock<std::mutex> lock(timer_thread_mutex);
@@ -45,6 +46,10 @@ private:
             if (this->call_callback_now && this->callback) {
                 this->callback();
                 this->call_callback_now = false;
+
+                if (once) {
+                    running = false;
+                }
             }
         }
     }
@@ -62,6 +67,7 @@ public:
     }
 
     explicit Timer(const std::function<void()>& callback) {
+        timer_stub_callback = callback;
         this->callback = callback;
     }
 
@@ -70,6 +76,7 @@ public:
 
     explicit Timer(boost::asio::io_context* /*io_context*/, const std::function<void()>& callback) {
         this->callback = callback;
+        timer_stub_callback = callback;
     }
 
     virtual ~Timer() {
@@ -89,6 +96,7 @@ public:
         timer_stub_at_called_count++;
         this->stop();
         this->callback = callback;
+        timer_stub_callback = callback;
         this->at(time_point);
     }
 
@@ -116,6 +124,7 @@ public:
         this->stop();
 
         this->callback = callback;
+        timer_stub_callback = callback;
 
         this->interval(interval);
     }
@@ -154,7 +163,8 @@ public:
             this->timer_thread->join();
         }
 
-        this->timer_thread = std::make_unique<std::thread>([this]() { this->run(); });
+        timer_stub_callback = callback;
+        // this->timer_thread = std::make_unique<std::thread>([this]() { this->run(); });
     }
 
     // Execute the given callback once after the given interval
@@ -170,9 +180,9 @@ public:
             this->timer_thread->join();
         }
 
-        this->timer_thread = std::make_unique<std::thread>([this]() {
-            this->run();
-        });
+        // this->timer_thread = std::make_unique<std::thread>([this]() {
+        //     this->run();
+        // });
     }
 
     /// Stop timer from excuting its callback
