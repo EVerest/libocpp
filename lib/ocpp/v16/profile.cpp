@@ -441,14 +441,15 @@ EnhancedChargingSchedule calculate_composite_schedule(std::vector<period_entry_t
         if (earliest > current) {
             // there is a gap to fill
             composite.chargingSchedulePeriod.push_back(
-                {elapsed_seconds(current, now), no_limit_specified, std::nullopt, 0});
+                {elapsed_seconds(current, now), no_limit_specified, std::nullopt, 0, false});
             current = earliest;
         } else {
             // there is a schedule to use
             const auto [limit, number_phases] =
                 convert_limit(chosen, selected_unit, default_number_phases, supply_voltage);
-            composite.chargingSchedulePeriod.push_back(
-                {elapsed_seconds(current, now), limit, number_phases, chosen->stack_level});
+            composite.chargingSchedulePeriod.push_back({elapsed_seconds(current, now), limit, number_phases,
+                                                        chosen->stack_level,
+                                                        selected_unit != chosen->charging_rate_unit ? true : false});
             if (chosen->end < next_earliest) {
                 current = chosen->end;
             } else {
@@ -493,20 +494,20 @@ EnhancedChargingSchedule calculate_composite_schedule(const EnhancedChargingSche
     int duration_tx_default{std::numeric_limits<int>::max()};
     int duration_tx{std::numeric_limits<int>::max()};
 
-    EnhancedChargingSchedulePeriod period_charge_point_max{-1, -1.0, std::nullopt};
-    EnhancedChargingSchedulePeriod period_tx_default{-1, -1.0, std::nullopt};
-    EnhancedChargingSchedulePeriod period_tx{-1, -1.0, std::nullopt};
+    EnhancedChargingSchedulePeriod period_charge_point_max{-1, -1.0, std::nullopt, false};
+    EnhancedChargingSchedulePeriod period_tx_default{-1, -1.0, std::nullopt, false};
+    EnhancedChargingSchedulePeriod period_tx{-1, -1.0, std::nullopt, false};
 
     update_itt(0, charge_point_max_itt, charge_point_max.chargingSchedulePeriod.end(), period_charge_point_max,
                duration_charge_point_max);
     update_itt(0, tx_default_itt, tx_default.chargingSchedulePeriod.end(), period_tx_default, duration_tx_default);
     update_itt(0, tx_itt, tx.chargingSchedulePeriod.end(), period_tx, duration_tx);
 
-    EnhancedChargingSchedulePeriod last{-1, no_limit_specified, default_limits.number_phases, 0};
+    EnhancedChargingSchedulePeriod last{-1, no_limit_specified, default_limits.number_phases, 0, false};
 
     while (current < end) {
         int duration = std::min(std::min(duration_charge_point_max, duration_tx_default), duration_tx);
-        EnhancedChargingSchedulePeriod period{-1, no_limit_specified, default_limits.number_phases, 0};
+        EnhancedChargingSchedulePeriod period{-1, no_limit_specified, default_limits.number_phases, 0, false};
 
         // use TxProfile when there is one
         if (period_tx.startPeriod != -1) {
@@ -585,7 +586,7 @@ EnhancedChargingSchedule calculate_composite_schedule(const EnhancedChargingSche
             current = duration;
             last = period;
         } else {
-            combined.chargingSchedulePeriod.push_back({current, default_limit, default_limits.number_phases, 0});
+            combined.chargingSchedulePeriod.push_back({current, default_limit, default_limits.number_phases, 0, false});
             current = end;
         }
     }
