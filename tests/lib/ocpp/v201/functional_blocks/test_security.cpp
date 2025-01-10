@@ -18,6 +18,12 @@
 #include "message_dispatcher_mock.hpp"
 #include "ocsp_updater_mock.hpp"
 
+uint32_t timer_stub_timeout_called_count = 0;
+uint32_t timer_stub_stop_called_count = 0;
+uint32_t timer_stub_interval_called_count = 0;
+uint32_t timer_stub_at_called_count = 0;
+std::function<void()> timer_stub_callback = nullptr;
+
 using namespace ocpp;
 using namespace ocpp::v201;
 using ::testing::_;
@@ -718,6 +724,7 @@ TEST_F(SecurityTest, handle_sign_certificate_response_no_request) {
 }
 
 TEST_F(SecurityTest, handle_sign_certificate_response_successful) {
+    timer_stub_timeout_called_count = 0;
     set_update_certificate_symlinks_enabled(this->device_model, true);
     set_security_profile(this->device_model, 1);
     this->device_model->set_value(ControllerComponentVariables::ChargeBoxSerialNumber.component,
@@ -756,12 +763,13 @@ TEST_F(SecurityTest, handle_sign_certificate_response_successful) {
         create_example_sign_certificate_response(GenericStatusEnum::Accepted);
 
     security.handle_message(response);
+    EXPECT_GE(timer_stub_timeout_called_count, 1);
 
     // Leaf certificate should be updated.
     ON_CALL(evse_security, update_leaf_certificate("", ocpp::CertificateSigningUseEnum::ChargingStationCertificate))
         .WillByDefault(Return(ocpp::InstallCertificateResult::Accepted));
 
     security.handle_message(create_example_certificate_signed_request("", std::nullopt));
-
-    // TODO mz want to test if the timer is called here, how to do that??
 }
+
+// TODO mz want to test if the timer is called here, how to do that??
