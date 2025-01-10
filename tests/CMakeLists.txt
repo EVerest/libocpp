@@ -1,4 +1,5 @@
 include(${CMAKE_CURRENT_SOURCE_DIR}/libocpp-unittests.cmake)
+
 # For libocpp tests, there is one big executable, which links against the ocpp lib and all other libs.
 # When it is useful to link only to the tested cpp files, a separate executable can be created for each file.
 # The source files can be added to this variable, which is a list. For example:
@@ -14,9 +15,8 @@ set(SEPARATE_UNIT_TESTS ${CMAKE_CURRENT_SOURCE_DIR}/lib/ocpp/common/utils_tests.
 # Add separate tests for V201 only.
 if(LIBOCPP_ENABLE_V201)
     # Add all v201 tests you don't want to include in the default test executable here.
-    # Example (remove if there are real tests added):
-    # list(APPEND SEPARATE_UNIT_TESTS ${CMAKE_CURRENT_SOURCE_DIR}/lib/ocpp/v201/functional_blocks/test_security.cpp)
     list(APPEND SEPARATE_UNIT_TESTS ${CMAKE_CURRENT_SOURCE_DIR}/lib/ocpp/v201/functional_blocks/test_authorization.cpp)
+    list(APPEND SEPARATE_UNIT_TESTS ${CMAKE_CURRENT_SOURCE_DIR}/lib/ocpp/v201/functional_blocks/test_security.cpp)
 endif()
 
 
@@ -46,14 +46,12 @@ endforeach(ITEM)
 # Subdirectories should be added only after adding the tests, because they have to exist for the CMakeLists.txt in the
 # child directories.
 add_subdirectory(lib/ocpp/common)
+set(GCOVR_DEPENDENCIES libocpp_unit_tests)
 
-# TODO mz move a bit up? So you don't have to search so much
-if(LIBOCPP_ENABLE_V201)
-    # Add all v201 tests you don't want to include in the default test executable here.
-    list(APPEND SEPARATE_UNIT_TESTS ${CMAKE_CURRENT_SOURCE_DIR}/lib/ocpp/v201/functional_blocks/test_security.cpp)
-endif()
-
-# TODO mz documentation
+# Add executables, link libraries etc for the unit tests that are separate and do not link against the ocpp lib.
+# This loops over all tests added to `SEPARATE_UNIT_TESTS` and does the necessary things to make it build.
+# For now, everything is added that seems to be needed in every test. If later some sources and link libraries should
+# not be added here, they can always be removed from this loop and added to the test targets that actually need them.
 foreach(ITEM ${SEPARATE_UNIT_TESTS})
     set(TEST_ROOT_NAME)
     cmake_path(GET ITEM STEM TEST_ROOT_NAME)
@@ -77,6 +75,10 @@ foreach(ITEM ${SEPARATE_UNIT_TESTS})
     endif()
     message("Add test ${TEST_NAME}")
 endforeach(ITEM)
+
+# Subdirectories should be added only after adding the tests, because they have to exist for the CMakeLists.txt in the
+# child directories.
+add_subdirectory(lib/ocpp/common)
 
 if(LIBOCPP_ENABLE_V16)
     add_subdirectory(lib/ocpp/v16)
