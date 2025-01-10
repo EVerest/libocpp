@@ -100,6 +100,7 @@ ChargingSchedule SmartChargingHandler::calculate_composite_schedule(
         period.startPeriod = enhanced_period.startPeriod;
         period.limit = enhanced_period.limit;
         period.numberPhases = enhanced_period.numberPhases;
+        period.periodTransformed = enhanced_period.periodTransformed;
         composite_schedule.chargingSchedulePeriod.push_back(period);
     }
     return composite_schedule;
