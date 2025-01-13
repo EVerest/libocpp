@@ -346,6 +346,14 @@ public:
     /// operation was successful
     virtual GetCompositeScheduleResponse get_composite_schedule(const GetCompositeScheduleRequest& request) = 0;
 
+    /// \brief Gets a composite schedule based on the given parameters.
+    /// \note This will ignore TxDefaultProfiles and TxProfiles if no transaction is active on \p evse_id
+    /// \param evse_id Evse to get the schedule for
+    /// \param duration How long the schedule should be
+    /// \param unit ChargingRateUnit to thet the schedule for
+    /// \return the composite schedule if the operation was successful, otherwise nullopt
+    virtual std::optional<CompositeSchedule> get_composite_schedule(int32_t evse_id, std::chrono::seconds duration, ChargingRateUnitEnum unit) = 0;
+
     /// \brief Gets composite schedules for all evse_ids (including 0) for the given \p duration and \p unit . If no
     /// valid profiles are given for an evse for the specified period, the composite schedule will be empty for this
     /// evse.
@@ -474,7 +482,7 @@ private:
 
     GetCompositeScheduleResponse
     get_composite_schedule_internal(const GetCompositeScheduleRequest& request,
-                                    const std::set<ChargingProfilePurposeEnum>& profiles_to_ignore = {});
+                                    bool simulate_transaction_active = true);
 
     void message_callback(const std::string& message);
     void update_aligned_data_interval();
@@ -752,7 +760,7 @@ private:
     bool should_allow_certificate_install(InstallCertificateUseEnum cert_type) const;
 
 protected:
-    std::shared_ptr<SmartChargingHandlerInterface> smart_charging_handler;
+    std::unique_ptr<SmartChargingHandlerInterface> smart_charging_handler;
 
     void handle_message(const EnhancedMessage<v201::MessageType>& message);
     void clear_invalid_charging_profiles();
@@ -915,6 +923,8 @@ public:
     set_variables(const std::vector<SetVariableData>& set_variable_data_vector, const std::string& source) override;
 
     GetCompositeScheduleResponse get_composite_schedule(const GetCompositeScheduleRequest& request) override;
+
+    std::optional<CompositeSchedule> get_composite_schedule(int32_t evse_id, std::chrono::seconds duration, ChargingRateUnitEnum unit) override;
 
     std::vector<CompositeSchedule> get_all_composite_schedules(const int32_t duration,
                                                                const ChargingRateUnitEnum& unit) override;
