@@ -9,6 +9,7 @@ target_sources(libocpp_unit_tests PRIVATE
 
 
 set(TEST_SECURITY_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/../device_model_test_helper.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/../stubs/timer/timer_stub.cpp
             ${LIBOCPP_LIB_PATH}/ocpp/v201/functional_blocks/security.cpp
             ${LIBOCPP_LIB_PATH}/ocpp/v201/messages/SecurityEventNotification.cpp
             ${LIBOCPP_LIB_PATH}/ocpp/v201/messages/CertificateSigned.cpp
@@ -22,7 +23,7 @@ target_sources(libocpp_test_security PRIVATE
 target_include_directories(libocpp_test_security PUBLIC
         ${LIBOCPP_INCLUDE_PATH}
         ${LIBOCPP_3RDPARTY_PATH}
-        ${CMAKE_CURRENT_SOURCE_DIR}/../stubs
+        ${CMAKE_CURRENT_SOURCE_DIR}/../stubs/timer
         ${CMAKE_CURRENT_SOURCE_DIR}/../mocks
         ${LIBOCPP_TESTS_V201_ROOT_DIR}
 )
