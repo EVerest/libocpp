@@ -2865,6 +2865,10 @@ void ChargePoint::handle_clear_charging_profile_req(Call<ClearChargingProfileReq
         response = this->smart_charging_handler->clear_profiles(msg);
     }
 
+    if (response.status == ClearChargingProfileStatusEnum::Accepted) {
+        this->callbacks.set_charging_profiles_callback();
+    }
+
     ocpp::CallResult<ClearChargingProfileResponse> call_result(response, call.uniqueId);
     this->message_dispatcher->dispatch_call_result(call_result);
 }
