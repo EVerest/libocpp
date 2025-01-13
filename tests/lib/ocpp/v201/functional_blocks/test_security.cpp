@@ -17,12 +17,7 @@
 #include "evse_security_mock.hpp"
 #include "message_dispatcher_mock.hpp"
 #include "ocsp_updater_mock.hpp"
-
-uint32_t timer_stub_timeout_called_count = 0;
-uint32_t timer_stub_stop_called_count = 0;
-uint32_t timer_stub_interval_called_count = 0;
-uint32_t timer_stub_at_called_count = 0;
-std::function<void()> timer_stub_callback = nullptr;
+#include "timer_stub.hpp"
 
 using namespace ocpp;
 using namespace ocpp::v201;
@@ -718,13 +713,8 @@ TEST_F(SecurityTest, security_event_notification_no_callback) {
     s.security_event_notification_req("no_callback", std::nullopt, true, true, std::nullopt);
 }
 
-TEST_F(SecurityTest, handle_sign_certificate_response_no_request) {
-    // TODO mz what to test here?
-    security.handle_message(create_example_sign_certificate_response());
-}
-
 TEST_F(SecurityTest, handle_sign_certificate_response_successful) {
-    timer_stub_timeout_called_count = 0;
+    timer_stub_reset_timeout_called_count();
     set_update_certificate_symlinks_enabled(this->device_model, true);
     set_security_profile(this->device_model, 1);
     this->device_model->set_value(ControllerComponentVariables::ChargeBoxSerialNumber.component,
@@ -746,6 +736,15 @@ TEST_F(SecurityTest, handle_sign_certificate_response_successful) {
                                   ControllerComponentVariables::CertSigningRepeatTimes.variable.value(),
                                   AttributeEnum::Actual, "2", "test", true);
 
+    // The 'sign_certificate_req' will send a 'sign certificate request' to the CSMS.
+    EXPECT_CALL(mock_dispatcher, dispatch_call(_, _)).WillOnce(Invoke([](const json& call, bool triggered) {
+        auto request = call[ocpp::CALL_PAYLOAD].get<SignCertificateRequest>();
+        ASSERT_TRUE(request.certificateType.has_value());
+        EXPECT_EQ(request.certificateType.value(), ocpp::v201::CertificateSigningUseEnum::ChargingStationCertificate);
+        EXPECT_EQ(request.csr, "csr");
+        EXPECT_FALSE(triggered);
+    }));
+
     // First do a request.
     ocpp::GetCertificateSignRequestResult sign_request_result;
     sign_request_result.status = GetCertificateSignRequestStatus::Accepted;
@@ -763,13 +762,78 @@ TEST_F(SecurityTest, handle_sign_certificate_response_successful) {
         create_example_sign_certificate_response(GenericStatusEnum::Accepted);
 
     security.handle_message(response);
-    EXPECT_GE(timer_stub_timeout_called_count, 1);
+    EXPECT_GE(timer_stub_get_timeout_called_count(), 1);
+
+    // Leaf certificate should be updated.
+    EXPECT_CALL(evse_security, update_leaf_certificate("", ocpp::CertificateSigningUseEnum::ChargingStationCertificate))
+        .WillOnce(Return(ocpp::InstallCertificateResult::Accepted));
+
+    EXPECT_CALL(mock_dispatcher, dispatch_call_result(_));
+
+    security.handle_message(create_example_certificate_signed_request("", std::nullopt));
+}
+
+TEST_F(SecurityTest, handle_sign_certificate_response_no_response) {
+    timer_stub_reset_timeout_called_count();
+    timer_stub_reset_callback();
+    set_update_certificate_symlinks_enabled(this->device_model, true);
+    set_security_profile(this->device_model, 1);
+    this->device_model->set_value(ControllerComponentVariables::ChargeBoxSerialNumber.component,
+                                  ControllerComponentVariables::ChargeBoxSerialNumber.variable.value(),
+                                  AttributeEnum::Actual, "testserialnumber", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::OrganizationName.component,
+                                  ControllerComponentVariables::OrganizationName.variable.value(),
+                                  AttributeEnum::Actual, "testOrganization", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::ISO15118CtrlrCountryName.component,
+                                  ControllerComponentVariables::ISO15118CtrlrCountryName.variable.value(),
+                                  AttributeEnum::Actual, "testCountry", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::UseTPM.component,
+                                  ControllerComponentVariables::UseTPM.variable.value(), AttributeEnum::Actual, "false",
+                                  "test", true);
+    this->device_model->set_value(ControllerComponentVariables::CertSigningWaitMinimum.component,
+                                  ControllerComponentVariables::CertSigningWaitMinimum.variable.value(),
+                                  AttributeEnum::Actual, "1", "test", true);
+    this->device_model->set_value(ControllerComponentVariables::CertSigningRepeatTimes.component,
+                                  ControllerComponentVariables::CertSigningRepeatTimes.variable.value(),
+                                  AttributeEnum::Actual, "2", "test", true);
+
+    // The 'sign_certificate_req' will send a 'sign certificate request' to the CSMS.
+    EXPECT_CALL(mock_dispatcher, dispatch_call(_, _)).WillRepeatedly(Invoke([](const json& call, bool triggered) {
+        auto request = call[ocpp::CALL_PAYLOAD].get<SignCertificateRequest>();
+        ASSERT_TRUE(request.certificateType.has_value());
+        EXPECT_EQ(request.certificateType.value(), ocpp::v201::CertificateSigningUseEnum::ChargingStationCertificate);
+        EXPECT_EQ(request.csr, "csr");
+        EXPECT_FALSE(triggered);
+    }));
+
+    // First do a request.
+    ocpp::GetCertificateSignRequestResult sign_request_result;
+    sign_request_result.status = GetCertificateSignRequestStatus::Accepted;
+    sign_request_result.csr = "csr";
+
+    EXPECT_CALL(this->evse_security,
+                generate_certificate_signing_request(ocpp::CertificateSigningUseEnum::ChargingStationCertificate,
+                                                     "testCountry", "testOrganization", "testserialnumber", false))
+        .WillOnce(Return(sign_request_result));
+
+    security.sign_certificate_req(ocpp::CertificateSigningUseEnum::ChargingStationCertificate, false);
+
+    // Then the response is processed.
+    const ocpp::EnhancedMessage<MessageType> response =
+        create_example_sign_certificate_response(GenericStatusEnum::Accepted);
+
+    security.handle_message(response);
+    EXPECT_GE(timer_stub_get_timeout_called_count(), 1);
 
     // Leaf certificate should be updated.
     ON_CALL(evse_security, update_leaf_certificate("", ocpp::CertificateSigningUseEnum::ChargingStationCertificate))
         .WillByDefault(Return(ocpp::InstallCertificateResult::Accepted));
 
-    security.handle_message(create_example_certificate_signed_request("", std::nullopt));
-}
+    EXPECT_CALL(this->evse_security,
+                generate_certificate_signing_request(ocpp::CertificateSigningUseEnum::ChargingStationCertificate,
+                                                     "testCountry", "testOrganization", "testserialnumber", false))
+        .WillOnce(Return(sign_request_result));
 
-// TODO mz want to test if the timer is called here, how to do that??
+    // Timeout is over, callback is called.
+    timer_stub_get_callback()();
+}
