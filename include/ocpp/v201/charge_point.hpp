@@ -10,6 +10,7 @@
 #include <ocpp/common/message_dispatcher.hpp>
 #include <ocpp/v201/functional_blocks/data_transfer.hpp>
 #include <ocpp/v201/functional_blocks/reservation.hpp>
+#include <ocpp/v201/functional_blocks/display_message.hpp>
 
 #include <ocpp/common/charging_station_base.hpp>
 
@@ -35,7 +36,6 @@
 #include <ocpp/v201/messages/ChangeAvailability.hpp>
 #include <ocpp/v201/messages/ClearCache.hpp>
 #include <ocpp/v201/messages/ClearChargingProfile.hpp>
-#include <ocpp/v201/messages/ClearDisplayMessage.hpp>
 #include <ocpp/v201/messages/ClearVariableMonitoring.hpp>
 #include <ocpp/v201/messages/CostUpdated.hpp>
 #include <ocpp/v201/messages/CustomerInformation.hpp>
@@ -44,7 +44,6 @@
 #include <ocpp/v201/messages/GetBaseReport.hpp>
 #include <ocpp/v201/messages/GetChargingProfiles.hpp>
 #include <ocpp/v201/messages/GetCompositeSchedule.hpp>
-#include <ocpp/v201/messages/GetDisplayMessages.hpp>
 #include <ocpp/v201/messages/GetInstalledCertificateIds.hpp>
 #include <ocpp/v201/messages/GetLocalListVersion.hpp>
 #include <ocpp/v201/messages/GetLog.hpp>
@@ -66,7 +65,6 @@
 #include <ocpp/v201/messages/SecurityEventNotification.hpp>
 #include <ocpp/v201/messages/SendLocalList.hpp>
 #include <ocpp/v201/messages/SetChargingProfile.hpp>
-#include <ocpp/v201/messages/SetDisplayMessage.hpp>
 #include <ocpp/v201/messages/SetMonitoringBase.hpp>
 #include <ocpp/v201/messages/SetMonitoringLevel.hpp>
 #include <ocpp/v201/messages/SetNetworkProfile.hpp>
@@ -390,6 +388,7 @@ private:
     std::unique_ptr<MessageDispatcherInterface<MessageType>> message_dispatcher;
     std::unique_ptr<DataTransferInterface> data_transfer;
     std::unique_ptr<ReservationInterface> reservation;
+    std::unique_ptr<DisplayMessageInterface> display_message;
 
     // utility
     std::shared_ptr<MessageQueue<v201::MessageType>> message_queue;
@@ -540,14 +539,6 @@ private:
     ///\param request The local list request to apply
     ///\retval Accepted if applied, otherwise will return either Failed or VersionMismatch
     SendLocalListStatusEnum apply_local_authorization_list(const SendLocalListRequest& request);
-
-    ///
-    /// \brief Get evseid for the given transaction id.
-    /// \param transaction_id   The transactionid
-    /// \return The evse id belonging the the transaction id. std::nullopt if there is no transaction with the given
-    ///         transaction id.
-    ///
-    std::optional<int32_t> get_transaction_evseid(const CiString<36>& transaction_id);
 
     ///
     /// \brief Check if EVSE connector is reserved for another than the given id token and / or group id token.
@@ -761,11 +752,6 @@ private:
     void handle_set_variable_monitoring_req(const EnhancedMessage<v201::MessageType>& message);
     void handle_get_monitoring_report_req(Call<GetMonitoringReportRequest> call);
     void handle_clear_variable_monitoring_req(Call<ClearVariableMonitoringRequest> call);
-
-    // Functional Block O: DisplayMessage
-    void handle_get_display_message(Call<GetDisplayMessagesRequest> call);
-    void handle_set_display_message(Call<SetDisplayMessageRequest> call);
-    void handle_clear_display_message(Call<ClearDisplayMessageRequest> call);
 
     // Generates async sending callbacks
     template <class RequestType, class ResponseType>
