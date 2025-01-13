@@ -17,7 +17,9 @@ public:
 
         // Add more wrappers here as needed
         ON_CALL(*this, open_connection).WillByDefault([this]() { handler.open_connection(); });
-        ON_CALL(*this, new_statement).WillByDefault([this](const std::string& sql) { return handler.new_statement(sql); });
+        ON_CALL(*this, new_statement).WillByDefault([this](const std::string& sql) {
+            return handler.new_statement(sql);
+        });
     }
 };
 } // namespace ocpp::v201
