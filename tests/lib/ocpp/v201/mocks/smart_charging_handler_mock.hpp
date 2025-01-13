@@ -25,7 +25,8 @@ public:
                 (const GetChargingProfilesRequest& request), (const, override));
     MOCK_METHOD(CompositeSchedule, calculate_composite_schedule,
                 (const ocpp::DateTime& start_time, const ocpp::DateTime& end_time, const int32_t evse_id,
-                 std::optional<ChargingRateUnitEnum> charging_rate_unit, bool is_offline, bool simulate_transaction_active),
+                 std::optional<ChargingRateUnitEnum> charging_rate_unit, bool is_offline,
+                 bool simulate_transaction_active),
                 (override));
 };
 } // namespace ocpp::v201
