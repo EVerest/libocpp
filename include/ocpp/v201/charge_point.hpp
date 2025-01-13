@@ -760,7 +760,7 @@ private:
     bool should_allow_certificate_install(InstallCertificateUseEnum cert_type) const;
 
 protected:
-    std::unique_ptr<SmartChargingHandlerInterface> smart_charging_handler;
+    std::shared_ptr<SmartChargingHandlerInterface> smart_charging_handler;
 
     void handle_message(const EnhancedMessage<v201::MessageType>& message);
     void clear_invalid_charging_profiles();
