@@ -15,6 +15,8 @@ set(TEST_SECURITY_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/../device_model_test_helpe
             ${LIBOCPP_LIB_PATH}/ocpp/v201/messages/CertificateSigned.cpp
             ${LIBOCPP_LIB_PATH}/ocpp/v201/messages/SignCertificate.cpp
             ${LIBOCPP_LIB_PATH}/ocpp/v201/messages/Reset.cpp
+            ${LIBOCPP_TEST_INCLUDE_COMMON_SOURCES}
+            ${LIBOCPP_TEST_INCLUDE_V201_SOURCES}
 )
 
 target_sources(libocpp_test_security PRIVATE
