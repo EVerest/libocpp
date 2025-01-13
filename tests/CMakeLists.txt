@@ -46,39 +46,6 @@ endforeach(ITEM)
 # Subdirectories should be added only after adding the tests, because they have to exist for the CMakeLists.txt in the
 # child directories.
 add_subdirectory(lib/ocpp/common)
-set(GCOVR_DEPENDENCIES libocpp_unit_tests)
-
-# Add executables, link libraries etc for the unit tests that are separate and do not link against the ocpp lib.
-# This loops over all tests added to `SEPARATE_UNIT_TESTS` and does the necessary things to make it build.
-# For now, everything is added that seems to be needed in every test. If later some sources and link libraries should
-# not be added here, they can always be removed from this loop and added to the test targets that actually need them.
-foreach(ITEM ${SEPARATE_UNIT_TESTS})
-    set(TEST_ROOT_NAME)
-    cmake_path(GET ITEM STEM TEST_ROOT_NAME)
-    set(TEST_NAME "libocpp_${TEST_ROOT_NAME}")
-    add_executable(${TEST_NAME} ${ITEM})
-    add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME} WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-    target_link_libraries(${TEST_NAME} PUBLIC ${GTEST_LIBRARIES})
-    list(APPEND GCOVR_DEPENDENCIES ${TEST_NAME})
-    target_compile_definitions(${TEST_NAME} PRIVATE ${TEST_COMPILE_DEFINITIONS})
-    target_compile_definitions(${TEST_NAME} PRIVATE
-        MIGRATION_FILE_VERSION_V16=${MIGRATION_FILE_VERSION_V16}
-        MIGRATION_FILE_VERSION_V201=${MIGRATION_FILE_VERSION_V201}
-        MIGRATION_DEVICE_MODEL_FILE_VERSION_V201=${MIGRATION_DEVICE_MODEL_FILE_VERSION_V201})
-    target_compile_options(${TEST_NAME} PRIVATE ${TEST_COMPILE_OPTIONS})
-    target_compile_features(${TEST_NAME} PUBLIC ${TEST_COMPILE_FEATURES})
-    target_include_directories(${TEST_NAME} PRIVATE ${TEST_INCLUDE_DIRECTORIES})
-    target_sources(${TEST_NAME} PRIVATE ${LIBOCPP_TEST_INCLUDE_COMMON_SOURCES})
-    target_link_libraries(libocpp_test_security PRIVATE ${LIBOCPP_TEST_DEFAULT_LINK_LIBRARIES})
-    if(LIBOCPP_ENABLE_V201)
-        target_sources(${TEST_NAME} PRIVATE ${LIBOCPP_TEST_INCLUDE_V201_SOURCES})
-    endif()
-    message("Add test ${TEST_NAME}")
-endforeach(ITEM)
-
-# Subdirectories should be added only after adding the tests, because they have to exist for the CMakeLists.txt in the
-# child directories.
-add_subdirectory(lib/ocpp/common)
 
 if(LIBOCPP_ENABLE_V16)
     add_subdirectory(lib/ocpp/v16)
