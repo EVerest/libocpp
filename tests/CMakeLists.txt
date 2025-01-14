@@ -36,8 +36,7 @@ set(SEPARATE_UNIT_TESTS ${CMAKE_CURRENT_SOURCE_DIR}/lib/ocpp/common/utils_tests.
 # Add separate tests for V201 only.
 if(LIBOCPP_ENABLE_V201)
     # Add all v201 tests you don't want to include in the default test executable here.
-    # Example (remove if there are real tests added):
-    # list(APPEND SEPARATE_UNIT_TESTS ${CMAKE_CURRENT_SOURCE_DIR}/lib/ocpp/v201/functional_blocks/test_security.cpp)
+    list(APPEND SEPARATE_UNIT_TESTS ${CMAKE_CURRENT_SOURCE_DIR}/lib/ocpp/v201/functional_blocks/test_security.cpp)
 endif()
 
 # Add variables that can be used for all tests if needed.
