@@ -302,6 +302,8 @@ protected: // Functions
 };
 
 TEST_F(AuthorizationTest, is_auth_cache_ctrlr_enabled) {
+    // Check if the auth cache ctrlr is enabled.
+
     // Set auth cache ctrlr enabled to 'false' in the device model.
     set_auth_cache_enabled(this->device_model, false);
     EXPECT_FALSE(authorization->is_auth_cache_ctrlr_enabled());
@@ -321,12 +323,15 @@ TEST_F(AuthorizationTest, is_auth_cache_ctrlr_enabled) {
 }
 
 TEST_F(AuthorizationTest, authorize_req_websocket_disconnected) {
+    // Try to do an authorize request when the websocket is disconnected.
     ON_CALL(this->connectivity_manager, is_websocket_connected()).WillByDefault(Return(false));
     const AuthorizeResponse response = authorization->authorize_req(get_id_token(), std::nullopt, std::nullopt);
     EXPECT_EQ(response.idTokenInfo.status, AuthorizationStatusEnum::Unknown);
 }
 
 TEST_F(AuthorizationTest, authorize_req_wrong_future_message_type) {
+    // Try to do an authorize request with the websocket connected. The dispatch_call_async returns
+    // a wrong message type.
     ON_CALL(this->connectivity_manager, is_websocket_connected()).WillByDefault(Return(true));
     ocpp::EnhancedMessage<MessageType> enhanced_message;
     enhanced_message.messageType = MessageType::GetDisplayMessages;
@@ -338,6 +343,7 @@ TEST_F(AuthorizationTest, authorize_req_wrong_future_message_type) {
 }
 
 TEST_F(AuthorizationTest, authorize_req_accepted) {
+    // Try to do an authorize request, which is accepted.
     ON_CALL(this->connectivity_manager, is_websocket_connected()).WillByDefault(Return(true));
     EXPECT_CALL(mock_dispatcher, dispatch_call_async(_, _)).WillOnce(Return(std::async(std::launch::deferred, [this]() {
         return create_example_authorize_response(AuthorizeCertificateStatusEnum::Accepted,
@@ -349,8 +355,10 @@ TEST_F(AuthorizationTest, authorize_req_accepted) {
 }
 
 TEST_F(AuthorizationTest, authorize_req_exception) {
+    // Try to do an authorize request, during which which an exception is thrown.
     ON_CALL(this->connectivity_manager, is_websocket_connected()).WillByDefault(Return(true));
     EXPECT_CALL(mock_dispatcher, dispatch_call_async(_, _)).WillOnce(Return(std::async(std::launch::deferred, [this]() {
+        // Create authorize response with a wrong enum value, which will throw.
         return create_example_authorize_response(AuthorizeCertificateStatusEnum::Accepted,
                                                  static_cast<AuthorizationStatusEnum>(INT32_MAX));
     })));
@@ -360,8 +368,11 @@ TEST_F(AuthorizationTest, authorize_req_exception) {
 }
 
 TEST_F(AuthorizationTest, authorize_req_exception2) {
+    // Try to do an authorization request, an exception is thrown for the authorize response.
     ON_CALL(this->connectivity_manager, is_websocket_connected()).WillByDefault(Return(true));
     EXPECT_CALL(mock_dispatcher, dispatch_call_async(_, _)).WillOnce(Return(std::async(std::launch::deferred, [this]() {
+        // Create authorize response with a from enum value for the authorize certificute status, which will
+        // cause an exception to be thrown.
         return create_example_authorize_response(static_cast<AuthorizeCertificateStatusEnum>(INT32_MAX),
                                                  AuthorizationStatusEnum::Accepted);
     })));
@@ -371,6 +382,7 @@ TEST_F(AuthorizationTest, authorize_req_exception2) {
 }
 
 TEST_F(AuthorizationTest, update_authorization_cache_size) {
+    // Test update authorization cache size and check in the device model if the cache size is indeed updated.
     auto& auth_cache_size = ControllerComponentVariables::AuthCacheStorage;
     this->device_model->set_read_only_value(auth_cache_size.component, auth_cache_size.variable.value(),
                                             AttributeEnum::Actual, "42", "test");
@@ -387,6 +399,8 @@ TEST_F(AuthorizationTest, update_authorization_cache_size) {
 }
 
 TEST_F(AuthorizationTest, update_authorization_cache_size_exception) {
+    // Test update authorization cache size. When requesting the size from the database handler, it throws a
+    // DatabaseException.
     auto& auth_cache_size = ControllerComponentVariables::AuthCacheStorage;
     this->device_model->set_read_only_value(auth_cache_size.component, auth_cache_size.variable.value(),
                                             AttributeEnum::Actual, "42", "test");
@@ -407,6 +421,8 @@ TEST_F(AuthorizationTest, update_authorization_cache_size_exception) {
 }
 
 TEST_F(AuthorizationTest, update_authorization_cache_size_exception2) {
+    // Test update authorization cache size. When requesting the size from the database handler, it throws (something
+    // else than DatabaseException).
     auto& auth_cache_size = ControllerComponentVariables::AuthCacheStorage;
     this->device_model->set_read_only_value(auth_cache_size.component, auth_cache_size.variable.value(),
                                             AttributeEnum::Actual, "42", "test");
@@ -427,6 +443,8 @@ TEST_F(AuthorizationTest, update_authorization_cache_size_exception2) {
 }
 
 TEST_F(AuthorizationTest, validate_token_accepted_central_token) {
+    // Validate token: central token. For a central token, an authorize request should not be sent.
+
     // Set AuthCtrlr::Enabled to true
     this->set_auth_ctrlr_enabled(this->device_model, true);
     IdToken id_token;
@@ -1306,6 +1324,7 @@ TEST_F(AuthorizationTest, handle_send_local_authorization_list_set_version_excep
 }
 
 TEST_F(AuthorizationTest, handle_send_local_authorization_list_disabled) {
+    // Local auth list ctrlrl is disabled, handle message fails.
     this->set_local_auth_list_ctrlr_enabled(this->device_model, false);
 
     const auto request = create_send_local_list_request(
@@ -1344,7 +1363,7 @@ TEST_F(AuthorizationTest, handle_send_local_authorization_list_version_number_ne
     const auto request = create_send_local_list_request(
         INT32_MIN, UpdateEnum::Differential, this->create_example_authorization_data_local_list(false, true));
 
-    // The version should not be 0, so this call fails.
+    // The version should not be < 0, so this call fails.
     EXPECT_CALL(mock_dispatcher, dispatch_call_result(_)).WillOnce(Invoke([](const json& call_result) {
         auto response = call_result[ocpp::CALLRESULT_PAYLOAD].get<SendLocalListResponse>();
         EXPECT_EQ(response.status, SendLocalListStatusEnum::Failed);
@@ -1662,6 +1681,7 @@ TEST_F(AuthorizationTest, handle_send_local_authorization_list_differential_inse
 }
 
 TEST_F(AuthorizationTest, handle_get_local_authorization_list_version) {
+    // Get local authorization list version happy flow.
     this->set_local_auth_list_ctrlr_enabled(this->device_model, true);
     const auto request = this->create_get_local_list_version_request();
     EXPECT_CALL(*this->database_handler_mock, get_local_authorization_list_version).WillOnce(Return(42));
@@ -1674,8 +1694,11 @@ TEST_F(AuthorizationTest, handle_get_local_authorization_list_version) {
 }
 
 TEST_F(AuthorizationTest, handle_get_local_authorization_list_version_disabled) {
+    // Get local authorization list version while the local auth list ctrlr is disabled.
     this->set_local_auth_list_ctrlr_enabled(this->device_model, false);
     const auto request = this->create_get_local_list_version_request();
+    // Because the local auth list is not enabled, the get_local_authorization_list_version of the database handler will
+    // not even get called.
     EXPECT_CALL(*this->database_handler_mock, get_local_authorization_list_version).Times(0);
     EXPECT_CALL(mock_dispatcher, dispatch_call_result(_)).WillOnce(Invoke([](const json& call_result) {
         auto response = call_result[ocpp::CALLRESULT_PAYLOAD].get<GetLocalListVersionResponse>();
@@ -1686,6 +1709,8 @@ TEST_F(AuthorizationTest, handle_get_local_authorization_list_version_disabled) 
 }
 
 TEST_F(AuthorizationTest, handle_get_local_authorization_list_version_exception) {
+    // Get local authorization list version. The database handler will throw when this is requested. This will dispatch
+    // a call error.
     this->set_local_auth_list_ctrlr_enabled(this->device_model, true);
     const auto request = this->create_get_local_list_version_request();
     EXPECT_CALL(*this->database_handler_mock, get_local_authorization_list_version)
@@ -1698,6 +1723,7 @@ TEST_F(AuthorizationTest, handle_get_local_authorization_list_version_exception)
 }
 
 TEST_F(AuthorizationTest, cache_cleanup_handler) {
+    // Test cache cleanup handler happy flow.
     this->authorization->start();
     this->delete_expired_entries_count = 0;
     EXPECT_CALL(*this->database_handler_mock, authorization_cache_delete_expired_entries(_))
@@ -1707,6 +1733,8 @@ TEST_F(AuthorizationTest, cache_cleanup_handler) {
 }
 
 TEST_F(AuthorizationTest, cache_cleanup_handler_exceeds_max_storage) {
+    // Test cleanup handler where the authorization cache exceeds the max storage for a few times. It will then
+    // cleanup, the binary size count will be increased by the test (otherwise it will spin forever).
     auto component_variable = ControllerComponentVariables::AuthCacheStorage;
 
     VariableCharacteristics characteristics;
@@ -1733,12 +1761,14 @@ TEST_F(AuthorizationTest, cache_cleanup_handler_exceeds_max_storage) {
         EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size())
             .WillOnce(update_count_and_notify(0, this->get_binary_size_count))
             .RetiresOnSaturation();
+        // Increase size once (which is strange but this is a test...)
         EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size())
             .WillOnce(update_count_and_notify(600, this->get_binary_size_count))
             .RetiresOnSaturation();
         EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size())
             .WillOnce(update_count_and_notify(650, this->get_binary_size_count))
             .RetiresOnSaturation();
+        // Decrease size from now on with every get binary size read.
         EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size())
             .WillOnce(update_count_and_notify(550, this->get_binary_size_count))
             .RetiresOnSaturation();
@@ -1765,6 +1795,7 @@ TEST_F(AuthorizationTest, cache_cleanup_handler_exceeds_max_storage) {
 }
 
 TEST_F(AuthorizationTest, cache_cleanup_handler_exceeds_max_storage_database_exception) {
+    // Test cleanup handler with an exception thrown when trying to get the binary size from the database handler.
     auto component_variable = ControllerComponentVariables::AuthCacheStorage;
 
     VariableCharacteristics characteristics;
@@ -1794,9 +1825,11 @@ TEST_F(AuthorizationTest, cache_cleanup_handler_exceeds_max_storage_database_exc
         EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size())
             .WillOnce(update_count_and_notify(600, this->get_binary_size_count))
             .RetiresOnSaturation();
+        // One of the calls will throw an exception.
         EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size())
             .WillOnce(Throw(ocpp::common::DatabaseException("Oops!")))
             .RetiresOnSaturation();
+        // After that, it is still called once at the end of the function (after catching the exception)
         EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size())
             .WillOnce(update_count_and_notify(550, this->get_binary_size_count))
             .RetiresOnSaturation();
@@ -1818,6 +1851,8 @@ TEST_F(AuthorizationTest, cache_cleanup_handler_exceeds_max_storage_database_exc
 }
 
 TEST_F(AuthorizationTest, cache_cleanup_handler_database_exception) {
+    // Cache cleanup handler, another exception is thrown at another place (when calling
+    // 'authorization_cache_delete_expired_entries')
     EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size())
         .WillRepeatedly(update_count_and_notify(0, this->get_binary_size_count));
 
