@@ -21,7 +21,41 @@ struct DBTransactionMessage {
     std::string unique_id;
 };
 
-class DatabaseHandlerCommon {
+class DatabaseHandlerCommonInterface {
+public:
+    virtual ~DatabaseHandlerCommonInterface() = default;
+
+    /// \brief Opens connection to database file and performs the initialization by calling init_sql()
+    virtual void open_connection() = 0;
+
+    /// \brief Closes the database connection.
+    virtual void close_connection() = 0;
+
+    /// \brief Get messages from messages queue table specified by \p queue_type
+    /// \param queue_type , defaults to QueueType::Transaction
+    /// \return The transaction messages.
+    virtual std::vector<DBTransactionMessage>
+    get_message_queue_messages(const QueueType queue_type = QueueType::Transaction) = 0;
+
+    /// \brief Insert a new message into messages queue table specified by \p queue_type
+    /// \param message  The message to be stored.
+    /// \param queue_type , defaults to QueueType::Transaction
+    virtual void insert_message_queue_message(const DBTransactionMessage& message,
+                                              const QueueType queue_type = QueueType::Transaction) = 0;
+
+    /// \brief Remove a message from the messages queue table specified by \p queue_type
+    /// \param unique_id    The unique id of the transaction message
+    /// \param queue_type , defaults to QueueType::Transaction
+    /// \return True on success.
+    virtual void remove_message_queue_message(const std::string& unique_id,
+                                              const QueueType queue_type = QueueType::Transaction) = 0;
+
+    /// \brief Deletes all entries from message queue table specified by \p queue_type
+    /// \param queue_type , defaults to QueueType::Transaction
+    virtual void clear_message_queue(const QueueType queue_type = QueueType::Transaction) = 0;
+};
+
+class DatabaseHandlerCommon : public virtual DatabaseHandlerCommonInterface {
 protected:
     std::unique_ptr<DatabaseConnectionInterface> database;
     const fs::path sql_migration_files_path;
@@ -42,34 +76,20 @@ public:
 
     ~DatabaseHandlerCommon() = default;
 
-    /// \brief Opens connection to database file and performs the initialization by calling init_sql()
-    void open_connection();
+    void open_connection() override;
 
-    /// \brief Closes the database connection.
-    void close_connection();
+    void close_connection() override;
 
-    /// \brief Get messages from messages queue table specified by \p queue_type
-    /// \param queue_type , defaults to QueueType::Transaction
-    /// \return The transaction messages.
-    virtual std::vector<DBTransactionMessage>
-    get_message_queue_messages(const QueueType queue_type = QueueType::Transaction);
+    std::vector<DBTransactionMessage>
+    get_message_queue_messages(const QueueType queue_type = QueueType::Transaction) override;
 
-    /// \brief Insert a new message into messages queue table specified by \p queue_type
-    /// \param message  The message to be stored.
-    /// \param queue_type , defaults to QueueType::Transaction
-    virtual void insert_message_queue_message(const DBTransactionMessage& message,
-                                              const QueueType queue_type = QueueType::Transaction);
+    void insert_message_queue_message(const DBTransactionMessage& message,
+                                      const QueueType queue_type = QueueType::Transaction) override;
 
-    /// \brief Remove a message from the messages queue table specified by \p queue_type
-    /// \param unique_id    The unique id of the transaction message
-    /// \param queue_type , defaults to QueueType::Transaction
-    /// \return True on success.
-    virtual void remove_message_queue_message(const std::string& unique_id,
-                                              const QueueType queue_type = QueueType::Transaction);
+    void remove_message_queue_message(const std::string& unique_id,
+                                      const QueueType queue_type = QueueType::Transaction) override;
 
-    /// \brief Deletes all entries from message queue table specified by \p queue_type
-    /// \param queue_type , defaults to QueueType::Transaction
-    virtual void clear_message_queue(const QueueType queue_type = QueueType::Transaction);
+    void clear_message_queue(const QueueType queue_type = QueueType::Transaction) override;
 };
 
 } // namespace ocpp::common
