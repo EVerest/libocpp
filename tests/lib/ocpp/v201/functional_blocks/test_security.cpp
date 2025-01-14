@@ -32,7 +32,6 @@ protected: // Members
     DeviceModelTestHelper device_model_test_helper;
     DeviceModel* device_model;
     MockMessageDispatcher mock_dispatcher;
-    // TODO mz mock logging???
     ocpp::MessageLogging logging;
     ocpp::EvseSecurityMock evse_security;
     ConnectivityManagerMock connectivity_manager;
@@ -624,7 +623,6 @@ TEST_F(SecurityTest, security_event_notification_no_timestamp) {
             EXPECT_LE(request.timestamp.to_time_point(), now.to_time_point());
             // With the conversion from and to rfc3339 (for conversion to / from json), precision is lost. So we do the
             // same here, otherwise the test might fail.
-            // TODO mz is losing precision a bug here?
             DateTime start_time;
             start_time.from_rfc3339(timestamp_test_start.to_rfc3339());
             EXPECT_GE(request.timestamp.to_time_point(), start_time.to_time_point());
@@ -714,6 +712,7 @@ TEST_F(SecurityTest, security_event_notification_no_callback) {
 }
 
 TEST_F(SecurityTest, handle_sign_certificate_response_successful) {
+    // Sign certificate and wait for certificate signed.
     timer_stub_reset_timeout_called_count();
     set_update_certificate_symlinks_enabled(this->device_model, true);
     set_security_profile(this->device_model, 1);
@@ -774,6 +773,8 @@ TEST_F(SecurityTest, handle_sign_certificate_response_successful) {
 }
 
 TEST_F(SecurityTest, handle_sign_certificate_response_no_response) {
+    // Sign certificate and wait for certificate signed, but call callback of timer instead (simulating that
+    // certificate signed request is never called).
     timer_stub_reset_timeout_called_count();
     timer_stub_reset_callback();
     set_update_certificate_symlinks_enabled(this->device_model, true);
