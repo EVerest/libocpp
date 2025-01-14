@@ -19,7 +19,8 @@ typedef std::function<void(const CiString<50>& event_type, const std::optional<C
 class SecurityInterface : public MessageHandlerInterface {
 
 public:
-    virtual ~SecurityInterface() {};
+    virtual ~SecurityInterface() override {
+    }
     virtual void security_event_notification_req(const CiString<50>& event_type,
                                                  const std::optional<CiString<255>>& tech_info,
                                                  const bool triggered_internally, const bool critical,

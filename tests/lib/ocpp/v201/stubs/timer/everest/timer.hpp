@@ -30,8 +30,6 @@ namespace Everest {
 template <typename TimerClock = date::utc_clock> class Timer {
 
 public:
-
-
     explicit Timer() {
     }
 
