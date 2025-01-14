@@ -15,7 +15,8 @@
 namespace ocpp::v201 {
 class AuthorizationInterface : public MessageHandlerInterface {
 public:
-    virtual ~AuthorizationInterface() {};
+    virtual ~AuthorizationInterface() {
+    }
 
     virtual void start() = 0;
     virtual AuthorizeResponse authorize_req(const IdToken id_token, const std::optional<CiString<5500>>& certificate,
