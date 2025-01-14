@@ -1885,6 +1885,7 @@ bool ChargePoint::validate_set_variable(const SetVariableData& set_variable_data
                     !this->evse_security->is_ca_certificate_installed(ocpp::CaCertificateType::CSMS)) {
                     EVLOG_warning << "SecurityProfile of configurationSlot: " << configuration_slot
                                   << " is >= 2 but no CSMS Root Certifciate is installed";
+                    check_installed_non_root_certificates();
                     return false;
                 }
             }
@@ -1899,6 +1900,21 @@ bool ChargePoint::validate_set_variable(const SetVariableData& set_variable_data
     }
     return true;
     // TODO(piet): other special validating of variables requested to change can be added here...
+}
+
+void ChargePoint::check_installed_non_root_certificates() {
+    bool any_installed = false;
+
+    for (const auto& [type, description] : non_root_ca_cert_types) {
+        if (this->evse_security->is_ca_certificate_installed(type)) {
+            EVLOG_info << description << " certificate is installed";
+            any_installed = true;
+        }
+    }
+
+    if (!any_installed) {
+        EVLOG_warning << "No non-root CA certificates are currently installed";
+    }
 }
 
 std::map<SetVariableData, SetVariableResult>
