@@ -448,6 +448,11 @@ private:
         }
     };
 
+    std::vector<std::pair<ocpp::CaCertificateType, std::string>> non_root_ca_cert_types = {
+        {ocpp::CaCertificateType::MF, "MF (Manufacturer)"},
+        {ocpp::CaCertificateType::MO, "MO (Mobility Operator)"},
+        {ocpp::CaCertificateType::V2G, "V2G (Vehicle-to-Grid)"}};
+
     std::chrono::time_point<std::chrono::steady_clock> time_disconnected;
     AverageMeterValues aligned_data_evse0; // represents evseId = 0 meter value
 
@@ -476,6 +481,7 @@ private:
     void init_certificate_expiration_check_timers();
     void scheduled_check_client_certificate_expiration();
     void scheduled_check_v2g_certificate_expiration();
+    void check_installed_non_root_certificates();
     void websocket_connected_callback(const int configuration_slot,
                                       const NetworkConnectionProfile& network_connection_profile);
     void websocket_disconnected_callback(const int configuration_slot,
