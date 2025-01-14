@@ -1,7 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2021 Pionix GmbH and Contributors to EVerest
 
-/// @warning Do not include this file unless it can not conflict with the library!!! // TODO mz
+///
+/// @file timer.hpp
+/// @brief Stub for the timer, without threads
+///
+/// This file is a stub for the timer. It just replaces the class, stores the callback and stores which methods are
+/// called. The callback is not called itself, since it is stored, it can be called in a test for example. This makes
+/// it easier to test classes that use the timer. Currently, with this implementation, only one timer per class under
+/// test is possible, or at least only one callback can be stored at a time. If there is more needed, the timer_stub
+/// file needs to be changed.
+/// The callback is stored in timer_stub and can be requested from there.
+///
+/// @warning Only include this file if it can not conflict with the library!!!
 
 #ifndef EVEREST_TIMER_HPP
 #define EVEREST_TIMER_HPP
@@ -38,44 +49,37 @@ public:
     virtual ~Timer() {
     }
 
-    /// Executes the given callback at the given timepoint
     template <class Clock, class Duration = typename Clock::duration>
     void at(const std::function<void()>& callback, const std::chrono::time_point<Clock, Duration>& time_point) {
         timer_stub_at_called(1);
         timer_stub_set_callback(callback);
     }
 
-    /// Executes the at the given timepoint
     template <class Clock, class Duration = typename Clock::duration>
     void at(const std::chrono::time_point<Clock, Duration>& time_point) {
         timer_stub_at_called(1);
     }
 
-    /// Execute the given callback peridically from now in the given interval
     template <class Rep, class Period>
     void interval(const std::function<void()>& callback, const std::chrono::duration<Rep, Period>& interval) {
         timer_stub_interval_called(1);
         timer_stub_set_callback(callback);
     }
 
-    /// Execute peridically from now in the given interval
     template <class Rep, class Period> void interval(const std::chrono::duration<Rep, Period>& interval) {
         timer_stub_interval_called(1);
     }
 
-    // Execute the given callback once after the given interval
     template <class Rep, class Period>
     void timeout(const std::function<void()>& callback, const std::chrono::duration<Rep, Period>& interval) {
         timer_stub_set_callback(callback);
         timer_stub_timeout_called(1);
     }
 
-    // Execute the given callback once after the given interval
     template <class Rep, class Period> void timeout(const std::chrono::duration<Rep, Period>& interval) {
         timer_stub_timeout_called(1);
     }
 
-    /// Stop timer from excuting its callback
     void stop() {
         timer_stub_stop_called(1);
     }
