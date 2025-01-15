@@ -52,7 +52,6 @@ struct ChargingSchedulePeriod {
     int32_t startPeriod;
     float limit;
     std::optional<int32_t> numberPhases;
-    bool periodTransformed; // indicates that a profile was transformed from chargingRateUnit
 };
 /// \brief Conversion from a given ChargingSchedulePeriod \p k to a given json object \p j
 void to_json(json& j, const ChargingSchedulePeriod& k);
