@@ -32,8 +32,6 @@ endif()
 if((${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME} OR ${PROJECT_NAME}_BUILD_TESTING) AND BUILD_TESTING)
     set(LIBOCPP_BUILD_TESTING ON)
     evc_include(CodeCoverage)
-
-    append_coverage_compiler_flags()
 endif()
 
 # dependencies
@@ -126,6 +124,8 @@ endif()
 
 if(LIBOCPP_BUILD_TESTING)
     include(CTest)
+    set(LIBOCPP_ROOT_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
+    set(LIBOCPP_ROOT_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
     add_subdirectory(tests)
 endif()
 
