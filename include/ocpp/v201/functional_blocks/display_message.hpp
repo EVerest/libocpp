@@ -40,7 +40,7 @@ typedef std::function<ClearDisplayMessageResponse(const ClearDisplayMessageReque
 
 class DisplayMessageInterface : public MessageHandlerInterface {
 public:
-    virtual ~DisplayMessageInterface() {};
+    virtual ~DisplayMessageInterface(){};
 };
 
 class DisplayMessageBlock : public DisplayMessageInterface {

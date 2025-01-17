@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright Pionix GmbH and Contributors to EVerest
 
+#include <ocpp/v201/ctrlr_component_variables.hpp>
 #include <ocpp/v201/functional_blocks/display_message.hpp>
 #include <ocpp/v201/messages/NotifyDisplayMessages.hpp>
-#include <ocpp/v201/ctrlr_component_variables.hpp>
 
 namespace ocpp::v201 {
 
 DisplayMessageBlock::DisplayMessageBlock(MessageDispatcherInterface<MessageType>& message_dispatcher,
-                                         DeviceModel& device_model,
-                                         EvseManagerInterface& evse_manager,
+                                         DeviceModel& device_model, EvseManagerInterface& evse_manager,
                                          GetDisplayMessageCallback get_display_message_callback,
                                          SetDisplayMessageCallback set_display_message_callback,
                                          ClearDisplayMessageCallback clear_display_message_callback) :
@@ -88,8 +87,9 @@ void DisplayMessageBlock::handle_set_display_message(const Call<SetDisplayMessag
 
     // Check if transaction is valid: this is the case if there is no transaction id, or if the transaction id
     // belongs to a running transaction.
-    const bool transaction_valid = (!call.msg.message.transactionId.has_value() or
-                                    this->evse_manager.get_transaction_evseid(call.msg.message.transactionId.value()) != std::nullopt);
+    const bool transaction_valid =
+        (!call.msg.message.transactionId.has_value() or
+         this->evse_manager.get_transaction_evseid(call.msg.message.transactionId.value()) != std::nullopt);
 
     // Check if display messages are available.
     if (!display_message_available.has_value() or !display_message_available.value()) {
@@ -145,8 +145,6 @@ void DisplayMessageBlock::handle_clear_display_message(const Call<ClearDisplayMe
     ocpp::CallResult<ClearDisplayMessageResponse> call_result(response, call.uniqueId);
     this->message_dispatcher.dispatch_call_result(call_result);
 }
-
-// Static functions
 
 ///
 /// \brief Convert message content from OCPP spec to DisplayMessageContent.

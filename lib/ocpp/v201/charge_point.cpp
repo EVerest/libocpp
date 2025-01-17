@@ -939,7 +939,7 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
                                                           *this->connectivity_manager.get(),
                                                           *this->database_handler.get(), *this->evse_security.get());
     this->authorization->start_auth_cache_cleanup_thread();
-    
+
     if (device_model->get_optional_value<bool>(ControllerComponentVariables::DisplayMessageCtrlrAvailable)
             .value_or(false)) {
         this->display_message = std::make_unique<DisplayMessageBlock>(
@@ -1097,13 +1097,13 @@ void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& messa
             this->handle_clear_variable_monitoring_req(json_message);
             break;
         case MessageType::GetDisplayMessages:
-            this->display_message->handle_message(message);
-            break;
         case MessageType::SetDisplayMessage:
-            this->display_message->handle_message(message);
-            break;
         case MessageType::ClearDisplayMessage:
-            this->display_message->handle_message(message);
+            if (this->display_message != nullptr) {
+                this->display_message->handle_message(message);
+            } else {
+                send_not_implemented_error(message.uniqueId, message.messageTypeId);
+            }
             break;
         case MessageType::CostUpdated:
             this->handle_costupdated_req(json_message);
