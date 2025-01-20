@@ -69,7 +69,7 @@ extern const ComponentVariable MaxCompositeScheduleDuration;
 extern const RequiredComponentVariable NumberOfConnectors;
 extern const ComponentVariable UseSslDefaultVerifyPaths;
 extern const ComponentVariable VerifyCsmsCommonName;
-extern const ComponentVariable UseTPMCsmsLeafCertificate;
+extern const ComponentVariable UseTPM;
 extern const ComponentVariable UseTPMSeccLeafCertificate;
 extern const ComponentVariable VerifyCsmsAllowWildcards;
 extern const ComponentVariable IFace;

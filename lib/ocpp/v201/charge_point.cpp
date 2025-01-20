@@ -2069,8 +2069,7 @@ void ChargePoint::sign_certificate_req(const ocpp::CertificateSigningUseEnum& ce
         country =
             this->device_model->get_optional_value<std::string>(ControllerComponentVariables::ISO15118CtrlrCountryName);
         should_use_tpm =
-            this->device_model->get_optional_value<bool>(ControllerComponentVariables::UseTPMCsmsLeafCertificate)
-                .value_or(false);
+            this->device_model->get_optional_value<bool>(ControllerComponentVariables::UseTPM).value_or(false);
     } else {
         req.certificateType = ocpp::v201::CertificateSigningUseEnum::V2GCertificate;
         common = this->device_model->get_optional_value<std::string>(ControllerComponentVariables::ISO15118CtrlrSeccId);

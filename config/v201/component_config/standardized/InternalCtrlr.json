@@ -430,9 +430,9 @@
         "default": true,
         "type": "boolean"
       },
-      "UseTPMCsmsLeafCertificate": {
+      "UseTPM": {
+        "description": "Indicates if TPM is used to generate and retrieve private keys for the CSMS leaf certificate",
         "variable_name": "UseTPM",
-        "instance": "csms",
         "characteristics": {
             "supportsMonitoring": false,
             "dataType": "boolean"
@@ -447,8 +447,8 @@
         "type": "boolean"
       },
       "UseTPMSeccLeafCertificate": {
-        "variable_name": "UseTPM",
-        "instance": "secc",
+        "description": "Indicates if TPM is used to generate and retrieve private keys for the SECC leaf certificate",
+        "variable_name": "UseTPMSeccLeafCertificate",
         "characteristics": {
             "supportsMonitoring": false,
             "dataType": "boolean"
