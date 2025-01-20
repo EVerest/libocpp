@@ -280,12 +280,14 @@ protected: // Functions
     ///                             will be two items in the list.
     /// \return The vector with authorization data with two or three items.
     ///
-    std::vector<AuthorizationData> create_example_authorization_data_local_list(const bool include_duplicate,
-                                                                                const bool has_token_info) {
+    std::vector<AuthorizationData> create_example_authorization_data_local_list(
+        const bool include_duplicate, const bool has_token_info,
+        AuthorizationStatusEnum authorization_status = AuthorizationStatusEnum::Accepted) {
         std::vector<AuthorizationData> list;
         AuthorizationData d;
         IdTokenInfo info;
         if (has_token_info) {
+            info.status = authorization_status;
             d.idTokenInfo = info;
         }
 
