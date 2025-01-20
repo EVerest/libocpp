@@ -91,7 +91,12 @@ function(add_libocpp_unittest)
     list(APPEND GCOVR_DEPENDENCIES ${arg_libocpp_unittest_NAME})
     target_link_libraries(${arg_libocpp_unittest_NAME} PUBLIC ${GTEST_LIBRARIES})
     target_link_libraries(${arg_libocpp_unittest_NAME} PRIVATE ${LIBOCPP_TEST_DEFAULT_LINK_LIBRARIES})
-    target_compile_definitions(${arg_libocpp_unittest_NAME} PRIVATE ${TEST_COMPILE_DEFINITIONS})
+    target_compile_definitions(${arg_libocpp_unittest_NAME}
+        PRIVATE
+            ${TEST_COMPILE_DEFINITIONS}
+            MIGRATION_FILE_VERSION_V16=${MIGRATION_FILE_VERSION_V16}
+            MIGRATION_FILE_VERSION_V201=${MIGRATION_FILE_VERSION_V201}
+            MIGRATION_DEVICE_MODEL_FILE_VERSION_V201=${MIGRATION_DEVICE_MODEL_FILE_VERSION_V201})
     target_compile_options(${arg_libocpp_unittest_NAME} PRIVATE ${TEST_COMPILE_OPTIONS})
     target_compile_features(${arg_libocpp_unittest_NAME} PUBLIC ${TEST_COMPILE_FEATURES})
     target_include_directories(${arg_libocpp_unittest_NAME} PRIVATE ${TEST_INCLUDE_DIRECTORIES})
