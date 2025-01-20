@@ -1,6 +1,6 @@
 #!/bin/sh
 
-ninja -C "$EXT_MOUNT/build" test
+CTEST_OUTPUT_ON_FAILURE=1 ninja -C "$EXT_MOUNT/build" test
 retVal=$?
 
 # Copy the LastTest.log file to the mounted directory in any case
