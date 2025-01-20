@@ -28,8 +28,8 @@ protected: // Members
     MockMessageDispatcher mock_dispatcher;
     DeviceModel* device_model;
     ::testing::NiceMock<ConnectivityManagerMock> connectivity_manager;
-    ::testing::NiceMock<std::shared_ptr<ocpp::v201::DatabaseHandlerMock>> database_handler_mock;
-    std::shared_ptr<ocpp::EvseSecurityMock> evse_security;
+    ::testing::NiceMock<ocpp::v201::DatabaseHandlerMock> database_handler_mock;
+    ocpp::EvseSecurityMock evse_security;
     std::unique_ptr<Authorization> authorization;
 
     std::atomic<uint32_t> delete_expired_entries_count = 0;
@@ -44,8 +44,8 @@ protected: // Functions
         mock_dispatcher(),
         device_model(device_model_test_helper.get_device_model()),
         connectivity_manager(),
-        database_handler_mock(std::make_shared<ocpp::v201::DatabaseHandlerMock>()),
-        evse_security(std::make_shared<ocpp::EvseSecurityMock>()),
+        database_handler_mock(),
+        evse_security(),
         authorization(std::make_unique<Authorization>(mock_dispatcher, *device_model, connectivity_manager,
                                                       database_handler_mock, evse_security)) {
     }
@@ -390,7 +390,7 @@ TEST_F(AuthorizationTest, update_authorization_cache_size) {
     ASSERT_TRUE(size.has_value());
     EXPECT_EQ(size.value(), 42);
 
-    EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size()).WillRepeatedly(Return(35));
+    EXPECT_CALL(this->database_handler_mock, authorization_cache_get_binary_size()).WillRepeatedly(Return(35));
     this->authorization->update_authorization_cache_size();
 
     size = device_model->get_optional_value<int>(auth_cache_size, AttributeEnum::Actual);
@@ -409,7 +409,7 @@ TEST_F(AuthorizationTest, update_authorization_cache_size_exception) {
     EXPECT_EQ(size.value(), 42);
 
     // Throw DatabaseException when requesting the binary size of the authorization cache. Application should not crash!
-    EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size())
+    EXPECT_CALL(this->database_handler_mock, authorization_cache_get_binary_size())
         .WillRepeatedly(Throw(ocpp::common::DatabaseException("Database exception thrown!!")));
 
     this->authorization->update_authorization_cache_size();
@@ -431,7 +431,7 @@ TEST_F(AuthorizationTest, update_authorization_cache_size_exception2) {
     EXPECT_EQ(size.value(), 42);
 
     // Throw other exception when requesting the binary size of the authorization cache. Application should not crash!
-    EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size())
+    EXPECT_CALL(this->database_handler_mock, authorization_cache_get_binary_size())
         .WillRepeatedly(Throw(std::out_of_range("out of range exception thrown!!")));
 
     this->authorization->update_authorization_cache_size();
@@ -495,7 +495,7 @@ TEST_F(AuthorizationTest, validate_token_local_auth_list_enabled_accepted) {
     IdTokenInfo id_token_info_result;
     id_token_info_result.status = AuthorizationStatusEnum::Accepted;
 
-    EXPECT_CALL(*this->database_handler_mock, get_local_authorization_list_entry(_))
+    EXPECT_CALL(this->database_handler_mock, get_local_authorization_list_entry(_))
         .WillRepeatedly(Return(id_token_info_result));
 
     IdToken id_token;
@@ -518,7 +518,7 @@ TEST_F(AuthorizationTest, validate_token_local_auth_list_enabled_unknown_no_remo
     IdTokenInfo id_token_info_result;
     id_token_info_result.status = AuthorizationStatusEnum::Invalid;
 
-    EXPECT_CALL(*this->database_handler_mock, get_local_authorization_list_entry(_))
+    EXPECT_CALL(this->database_handler_mock, get_local_authorization_list_entry(_))
         .WillRepeatedly(Return(id_token_info_result));
 
     IdToken id_token;
@@ -543,7 +543,7 @@ TEST_F(AuthorizationTest, validate_token_local_auth_list_enabled_unknown_websock
     IdTokenInfo id_token_info_result;
     id_token_info_result.status = AuthorizationStatusEnum::Invalid;
 
-    EXPECT_CALL(*this->database_handler_mock, get_local_authorization_list_entry(_))
+    EXPECT_CALL(this->database_handler_mock, get_local_authorization_list_entry(_))
         .WillRepeatedly(Return(id_token_info_result));
 
     IdToken id_token;
@@ -573,7 +573,7 @@ TEST_F(AuthorizationTest, validate_token_local_auth_list_enabled_connectivity_ma
     IdTokenInfo id_token_info_result;
     id_token_info_result.status = AuthorizationStatusEnum::Invalid;
 
-    EXPECT_CALL(*this->database_handler_mock, get_local_authorization_list_entry(_))
+    EXPECT_CALL(this->database_handler_mock, get_local_authorization_list_entry(_))
         .WillRepeatedly(Return(id_token_info_result));
 
     IdToken id_token;
@@ -612,7 +612,8 @@ TEST_F(AuthorizationTest, validate_token_emaid_offline_no_certificate_contract_v
     EXPECT_CALL(this->connectivity_manager, is_websocket_connected()).WillRepeatedly(Return(false));
     // And offline contract validation is not allowed.
     this->set_allow_contract_validation_offline(this->device_model, false);
-    ON_CALL(*evse_security, verify_certificate(_, _)).WillByDefault(Return(ocpp::CertificateValidationResult::Valid));
+    ON_CALL(this->evse_security, verify_certificate(_, _))
+        .WillByDefault(Return(ocpp::CertificateValidationResult::Valid));
 
     IdToken id_token;
     id_token.type = IdTokenEnum::eMAID;
@@ -632,7 +633,8 @@ TEST_F(
     // And offline contract validation is not allowed.
     this->set_allow_contract_validation_offline(this->device_model, true);
     this->set_local_authorize_offline(this->device_model, false);
-    ON_CALL(*evse_security, verify_certificate(_, _)).WillByDefault(Return(ocpp::CertificateValidationResult::Valid));
+    ON_CALL(this->evse_security, verify_certificate(_, _))
+        .WillByDefault(Return(ocpp::CertificateValidationResult::Valid));
 
     IdToken id_token;
     id_token.type = IdTokenEnum::eMAID;
@@ -654,12 +656,13 @@ TEST_F(
     this->set_allow_contract_validation_offline(this->device_model, true);
     this->set_local_authorize_offline(this->device_model, true);
     this->set_local_auth_list_ctrlr_enabled(this->device_model, true);
-    ON_CALL(*evse_security, verify_certificate(_, _)).WillByDefault(Return(ocpp::CertificateValidationResult::Valid));
+    ON_CALL(this->evse_security, verify_certificate(_, _))
+        .WillByDefault(Return(ocpp::CertificateValidationResult::Valid));
 
     IdTokenInfo id_token_info_result;
     id_token_info_result.status = AuthorizationStatusEnum::Accepted;
 
-    EXPECT_CALL(*this->database_handler_mock, get_local_authorization_list_entry(_))
+    EXPECT_CALL(this->database_handler_mock, get_local_authorization_list_entry(_))
         .WillRepeatedly(Return(id_token_info_result));
 
     IdToken id_token;
@@ -679,7 +682,8 @@ TEST_F(AuthorizationTest,
     // And offline contract validation is not allowed.
     this->set_allow_contract_validation_offline(this->device_model, true);
     this->set_local_authorize_offline(this->device_model, false);
-    ON_CALL(*evse_security, verify_certificate(_, _)).WillByDefault(Return(ocpp::CertificateValidationResult::Expired));
+    ON_CALL(this->evse_security, verify_certificate(_, _))
+        .WillByDefault(Return(ocpp::CertificateValidationResult::Expired));
 
     IdToken id_token;
     id_token.type = IdTokenEnum::eMAID;
@@ -701,7 +705,7 @@ TEST_F(AuthorizationTest,
     // Local authorize offline is not allowed.
     this->set_local_authorize_offline(this->device_model, false);
     // The certificate has an invalid signature.
-    ON_CALL(*evse_security, verify_certificate(_, _))
+    ON_CALL(this->evse_security, verify_certificate(_, _))
         .WillByDefault(Return(ocpp::CertificateValidationResult::InvalidSignature));
 
     IdToken id_token;
@@ -730,7 +734,8 @@ TEST_F(AuthorizationTest, validate_token_emaid_no_ocsp_websocket_connected) {
     // The websocket is connected.
     EXPECT_CALL(this->connectivity_manager, is_websocket_connected()).WillRepeatedly(Return(true));
     // Certificate is valid according to 'verify_certificate'.
-    ON_CALL(*evse_security, verify_certificate(_, _)).WillByDefault(Return(ocpp::CertificateValidationResult::Valid));
+    ON_CALL(this->evse_security, verify_certificate(_, _))
+        .WillByDefault(Return(ocpp::CertificateValidationResult::Valid));
     std::vector<ocpp::OCSPRequestData> ocsp_request_data;
     ocpp::OCSPRequestData d;
     d.hashAlgorithm = ocpp::HashAlgorithmEnumType::SHA256;
@@ -739,7 +744,7 @@ TEST_F(AuthorizationTest, validate_token_emaid_no_ocsp_websocket_connected) {
     d.responderUrl = "responderurl";
     d.serialNumber = "serialnumber";
     ocsp_request_data.push_back(d);
-    EXPECT_CALL(*evse_security, get_mo_ocsp_request_data(_)).WillOnce(Return(ocsp_request_data));
+    EXPECT_CALL(this->evse_security, get_mo_ocsp_request_data(_)).WillOnce(Return(ocsp_request_data));
     EXPECT_CALL(mock_dispatcher, dispatch_call_async(_, _)).WillOnce(Return(std::async(std::launch::deferred, [this]() {
         return create_example_authorize_response(AuthorizeCertificateStatusEnum::Accepted,
                                                  AuthorizationStatusEnum::Accepted);
@@ -759,9 +764,10 @@ TEST_F(AuthorizationTest,
     // Do not allow central contract validation.
     this->set_allow_central_contract_validation(this->device_model, false);
     // Certificate is valid according to 'verify_certificate'.
-    ON_CALL(*evse_security, verify_certificate(_, _)).WillByDefault(Return(ocpp::CertificateValidationResult::Valid));
+    ON_CALL(this->evse_security, verify_certificate(_, _))
+        .WillByDefault(Return(ocpp::CertificateValidationResult::Valid));
     std::vector<ocpp::OCSPRequestData> ocsp_request_data;
-    EXPECT_CALL(*evse_security, get_mo_ocsp_request_data(_)).WillOnce(Return(ocsp_request_data));
+    EXPECT_CALL(this->evse_security, get_mo_ocsp_request_data(_)).WillOnce(Return(ocsp_request_data));
 
     IdToken id_token;
     id_token.type = IdTokenEnum::eMAID;
@@ -777,9 +783,10 @@ TEST_F(AuthorizationTest,
     // Do not allow central contract validation.
     this->set_allow_central_contract_validation(this->device_model, true);
     // Certificate is valid according to 'verify_certificate'.
-    ON_CALL(*evse_security, verify_certificate(_, _)).WillByDefault(Return(ocpp::CertificateValidationResult::Valid));
+    ON_CALL(this->evse_security, verify_certificate(_, _))
+        .WillByDefault(Return(ocpp::CertificateValidationResult::Valid));
     std::vector<ocpp::OCSPRequestData> ocsp_request_data;
-    EXPECT_CALL(*evse_security, get_mo_ocsp_request_data(_)).WillOnce(Return(ocsp_request_data));
+    EXPECT_CALL(this->evse_security, get_mo_ocsp_request_data(_)).WillOnce(Return(ocsp_request_data));
     EXPECT_CALL(mock_dispatcher, dispatch_call_async(_, _)).WillOnce(Return(std::async(std::launch::deferred, [this]() {
         return create_example_authorize_response(AuthorizeCertificateStatusEnum::Accepted,
                                                  AuthorizationStatusEnum::Blocked);
@@ -797,7 +804,7 @@ TEST_F(AuthorizationTest,
     // The websocket is connected.
     EXPECT_CALL(this->connectivity_manager, is_websocket_connected()).WillRepeatedly(Return(true));
     // Certificate is valid according to 'verify_certificate'.
-    ON_CALL(*evse_security, verify_certificate(_, _))
+    ON_CALL(this->evse_security, verify_certificate(_, _))
         .WillByDefault(Return(ocpp::CertificateValidationResult::IssuerNotFound));
     // Do not allow central contract validation.
     set_allow_central_contract_validation(this->device_model, false);
@@ -814,7 +821,7 @@ TEST_F(AuthorizationTest,
     // The websocket is connected.
     EXPECT_CALL(this->connectivity_manager, is_websocket_connected()).WillRepeatedly(Return(true));
     // Certificate is valid according to 'verify_certificate'.
-    ON_CALL(*evse_security, verify_certificate(_, _))
+    ON_CALL(this->evse_security, verify_certificate(_, _))
         .WillByDefault(Return(ocpp::CertificateValidationResult::IssuerNotFound));
     // Allow central contract validation.
     set_allow_central_contract_validation(this->device_model, true);
@@ -843,7 +850,7 @@ TEST_F(AuthorizationTest, validate_token_auth_cache_accepted) {
     AuthorizationCacheEntry authorization_cache_entry =
         create_authorization_cache_entry(AuthorizationStatusEnum::Accepted, true, false, false, 5000);
 
-    EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_entry(_))
+    EXPECT_CALL(this->database_handler_mock, authorization_cache_get_entry(_))
         .WillOnce(Return(authorization_cache_entry));
 
     IdToken id_token;
@@ -869,7 +876,7 @@ TEST_F(AuthorizationTest, validate_token_auth_local_pre_authorize_disabled) {
     AuthorizationCacheEntry authorization_cache_entry =
         create_authorization_cache_entry(AuthorizationStatusEnum::Accepted, true, false, false, 5000);
 
-    EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_entry(_))
+    EXPECT_CALL(this->database_handler_mock, authorization_cache_get_entry(_))
         .WillOnce(Return(authorization_cache_entry));
 
     IdToken id_token;
@@ -895,7 +902,7 @@ TEST_F(AuthorizationTest, validate_token_auth_cache_blocked_post_authorize_disab
     AuthorizationCacheEntry authorization_cache_entry =
         create_authorization_cache_entry(AuthorizationStatusEnum::Blocked, true, false, false, 5000);
 
-    EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_entry(_))
+    EXPECT_CALL(this->database_handler_mock, authorization_cache_get_entry(_))
         .WillOnce(Return(authorization_cache_entry));
 
     IdToken id_token;
@@ -925,7 +932,7 @@ TEST_F(AuthorizationTest, validate_token_auth_cache_invalid_post_authorize_enabl
     AuthorizationCacheEntry authorization_cache_entry =
         create_authorization_cache_entry(AuthorizationStatusEnum::NotAtThisLocation, true, false, false, 5000);
 
-    EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_entry(_))
+    EXPECT_CALL(this->database_handler_mock, authorization_cache_get_entry(_))
         .WillOnce(Return(authorization_cache_entry));
 
     // Because the authorization status was not 'Accepted', an authorize request is performed.
@@ -935,7 +942,7 @@ TEST_F(AuthorizationTest, validate_token_auth_cache_invalid_post_authorize_enabl
     })));
 
     // Since the auth cache is enabled, after authorizing, the entry is added to the authorization cache.
-    EXPECT_CALL(*this->database_handler_mock, authorization_cache_insert_entry(_, _));
+    EXPECT_CALL(this->database_handler_mock, authorization_cache_insert_entry(_, _));
 
     IdToken id_token;
     id_token.type = IdTokenEnum::ISO14443;
@@ -960,13 +967,13 @@ TEST_F(AuthorizationTest, validate_token_auth_cache_cache_expired_and_status_inv
     EXPECT_CALL(this->connectivity_manager, is_websocket_connected()).WillRepeatedly(Return(true));
 
     // Since the cache is expired, it will delete the entry from the cache and update the cache size.
-    EXPECT_CALL(*this->database_handler_mock, authorization_cache_delete_entry(_)).Times(1);
-    EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size());
+    EXPECT_CALL(this->database_handler_mock, authorization_cache_delete_entry(_)).Times(1);
+    EXPECT_CALL(this->database_handler_mock, authorization_cache_get_binary_size());
 
     AuthorizationCacheEntry authorization_cache_entry =
         create_authorization_cache_entry(AuthorizationStatusEnum::Invalid, true, true, false, 5000);
 
-    EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_entry(_))
+    EXPECT_CALL(this->database_handler_mock, authorization_cache_get_entry(_))
         .WillOnce(Return(authorization_cache_entry));
 
     IdToken id_token = get_id_token("test_token", IdTokenEnum::ISO14443);
@@ -978,7 +985,7 @@ TEST_F(AuthorizationTest, validate_token_auth_cache_cache_expired_and_status_inv
     })));
 
     // Since the auth cache is enabled, after authorizing, the entry is added to the authorization cache.
-    EXPECT_CALL(*this->database_handler_mock, authorization_cache_insert_entry(_, _));
+    EXPECT_CALL(this->database_handler_mock, authorization_cache_insert_entry(_, _));
 
     EXPECT_EQ(authorization->validate_token(id_token, std::nullopt, std::nullopt).idTokenInfo.status,
               AuthorizationStatusEnum::NotAllowedTypeEVSE);
@@ -997,13 +1004,13 @@ TEST_F(AuthorizationTest, validate_token_auth_cache_lifetime_expired) {
     EXPECT_CALL(this->connectivity_manager, is_websocket_connected()).WillRepeatedly(Return(true));
 
     // Since the lifetime is expired, it will delete the entry from the cache and update the cache size.
-    EXPECT_CALL(*this->database_handler_mock, authorization_cache_delete_entry(_)).Times(1);
-    EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size());
+    EXPECT_CALL(this->database_handler_mock, authorization_cache_delete_entry(_)).Times(1);
+    EXPECT_CALL(this->database_handler_mock, authorization_cache_get_binary_size());
 
     AuthorizationCacheEntry authorization_cache_entry =
         create_authorization_cache_entry(AuthorizationStatusEnum::Accepted, true, false, true, 5000);
 
-    EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_entry(_))
+    EXPECT_CALL(this->database_handler_mock, authorization_cache_get_entry(_))
         .WillOnce(Return(authorization_cache_entry));
 
     IdToken id_token = get_id_token("test_token", IdTokenEnum::ISO14443);
@@ -1015,7 +1022,7 @@ TEST_F(AuthorizationTest, validate_token_auth_cache_lifetime_expired) {
     })));
 
     // Since the auth cache is enabled, after authorizing, the entry is added to the authorization cache.
-    EXPECT_CALL(*this->database_handler_mock, authorization_cache_insert_entry(_, _));
+    EXPECT_CALL(this->database_handler_mock, authorization_cache_insert_entry(_, _));
 
     EXPECT_EQ(authorization->validate_token(id_token, std::nullopt, std::nullopt).idTokenInfo.status,
               AuthorizationStatusEnum::ConcurrentTx);
@@ -1031,7 +1038,7 @@ TEST_F(AuthorizationTest, validate_token_auth_cache_exception) {
     // The websocket is connected.
     EXPECT_CALL(this->connectivity_manager, is_websocket_connected()).WillRepeatedly(Return(true));
     // Throw exception when trying to get the cache entry.
-    EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_entry(_))
+    EXPECT_CALL(this->database_handler_mock, authorization_cache_get_entry(_))
         .WillRepeatedly(Throw(ocpp::common::DatabaseException("Test exception for the database!")));
 
     // Because of the database exception, an authorize request is performed
@@ -1042,7 +1049,7 @@ TEST_F(AuthorizationTest, validate_token_auth_cache_exception) {
     })));
 
     // Since the auth cache is enabled, after authorizing, the entry is added to the authorization cache.
-    EXPECT_CALL(*this->database_handler_mock, authorization_cache_insert_entry(_, _));
+    EXPECT_CALL(this->database_handler_mock, authorization_cache_insert_entry(_, _));
 
     IdToken id_token = get_id_token("test_token", IdTokenEnum::ISO14443);
     EXPECT_EQ(authorization->validate_token(id_token, std::nullopt, std::nullopt).idTokenInfo.status,
@@ -1062,7 +1069,7 @@ TEST_F(AuthorizationTest,
     // The websocket is connected.
     EXPECT_CALL(this->connectivity_manager, is_websocket_connected()).WillRepeatedly(Return(false));
     // Throw exception when trying to get the cache entry.
-    EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_entry(_))
+    EXPECT_CALL(this->database_handler_mock, authorization_cache_get_entry(_))
         .WillRepeatedly(Throw(std::out_of_range("Test exception!")));
 
     // Because of the database exception, and the websocket disabled, and offline tx for unknown id enabled, it will
@@ -1085,13 +1092,13 @@ TEST_F(AuthorizationTest, validate_token_auth_cache_insert_entry_exception) {
     EXPECT_CALL(this->connectivity_manager, is_websocket_connected()).WillRepeatedly(Return(true));
 
     // The lifetime is expired, it will delete the entry from the cache and update the cache size.
-    EXPECT_CALL(*this->database_handler_mock, authorization_cache_delete_entry(_)).Times(1);
-    EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size());
+    EXPECT_CALL(this->database_handler_mock, authorization_cache_delete_entry(_)).Times(1);
+    EXPECT_CALL(this->database_handler_mock, authorization_cache_get_binary_size());
 
     AuthorizationCacheEntry authorization_cache_entry =
         create_authorization_cache_entry(AuthorizationStatusEnum::Accepted, true, false, true, 5000);
 
-    EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_entry(_))
+    EXPECT_CALL(this->database_handler_mock, authorization_cache_get_entry(_))
         .WillOnce(Return(authorization_cache_entry));
 
     IdToken id_token = get_id_token("test_token", IdTokenEnum::ISO14443);
@@ -1104,7 +1111,7 @@ TEST_F(AuthorizationTest, validate_token_auth_cache_insert_entry_exception) {
 
     // Since the auth cache is enabled, after authorizing, the entry is added to the authorization cache. But this will
     // throw an exception. This should not let the application crash but just return an 'Accepted'.
-    EXPECT_CALL(*this->database_handler_mock, authorization_cache_insert_entry(_, _))
+    EXPECT_CALL(this->database_handler_mock, authorization_cache_insert_entry(_, _))
         .WillOnce(Throw(ocpp::common::DatabaseException("Insert entry fails!")));
 
     EXPECT_EQ(authorization->validate_token(id_token, std::nullopt, std::nullopt).idTokenInfo.status,
@@ -1123,8 +1130,8 @@ TEST_F(AuthorizationTest, handle_message_clear_cache) {
     this->set_auth_cache_enabled(this->device_model, true);
 
     // Expect that the authorization cache is cleared and the cache size is updated.
-    EXPECT_CALL(*this->database_handler_mock, authorization_cache_clear());
-    EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size()).WillRepeatedly(Return(45));
+    EXPECT_CALL(this->database_handler_mock, authorization_cache_clear());
+    EXPECT_CALL(this->database_handler_mock, authorization_cache_get_binary_size()).WillRepeatedly(Return(45));
 
     // Clear cache is accepted, and the result is sent.
     EXPECT_CALL(mock_dispatcher, dispatch_call_result(_)).WillOnce(Invoke([](const json& call_result) {
@@ -1160,7 +1167,7 @@ TEST_F(AuthorizationTest, handle_message_clear_cache_exception) {
     const auto request = create_example_clear_cache_request();
 
     // The database handler clear cache function throws a database exception.
-    EXPECT_CALL(*this->database_handler_mock, authorization_cache_clear())
+    EXPECT_CALL(this->database_handler_mock, authorization_cache_clear())
         .WillRepeatedly(Throw(ocpp::common::DatabaseException("Test exception")));
 
     // Which will dispatch a call error.
@@ -1178,12 +1185,12 @@ TEST_F(AuthorizationTest, handle_send_local_authorization_list) {
 
     // Local authorization list is inserted, therefor the list is first cleared and then the new list is inserted. The
     // list version is also updated.
-    EXPECT_CALL(*this->database_handler_mock, clear_local_authorization_list);
-    EXPECT_CALL(*this->database_handler_mock, insert_or_update_local_authorization_list(_));
-    EXPECT_CALL(*this->database_handler_mock, insert_or_update_local_authorization_list_version(33));
+    EXPECT_CALL(this->database_handler_mock, clear_local_authorization_list);
+    EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list(_));
+    EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list_version(33));
 
     // The number of entries is requested from the database after storing the new list, and stored in the device model.
-    EXPECT_CALL(*this->database_handler_mock, get_local_authorization_list_number_of_entries())
+    EXPECT_CALL(this->database_handler_mock, get_local_authorization_list_number_of_entries())
         .WillRepeatedly(Return(2));
 
     // Local list is stored, everything is successful, 'Accepted' is sent.
@@ -1209,13 +1216,13 @@ TEST_F(AuthorizationTest, handle_send_local_authorization_list_get_entries_excep
 
     // Local authorization list is inserted, therefor the list is first cleared and then the new list is inserted. The
     // list version is also updated.
-    EXPECT_CALL(*this->database_handler_mock, clear_local_authorization_list);
-    EXPECT_CALL(*this->database_handler_mock, insert_or_update_local_authorization_list(_));
-    EXPECT_CALL(*this->database_handler_mock, insert_or_update_local_authorization_list_version(33));
+    EXPECT_CALL(this->database_handler_mock, clear_local_authorization_list);
+    EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list(_));
+    EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list_version(33));
 
     // The number of entries is requested from the database after storing the new list, and stored in the device model.
     // This will throw an exception.
-    EXPECT_CALL(*this->database_handler_mock, get_local_authorization_list_number_of_entries())
+    EXPECT_CALL(this->database_handler_mock, get_local_authorization_list_number_of_entries())
         .WillRepeatedly(Throw(ocpp::common::DatabaseException("Oops!")));
 
     // Local list is stored, only setting the number of entries is the device model failed, but the call is still
@@ -1242,13 +1249,13 @@ TEST_F(AuthorizationTest, handle_send_local_authorization_list_get_entries_excep
 
     // Local authorization list is inserted, therefor the list is first cleared and then the new list is inserted. The
     // list version is also updated.
-    EXPECT_CALL(*this->database_handler_mock, clear_local_authorization_list);
-    EXPECT_CALL(*this->database_handler_mock, insert_or_update_local_authorization_list(_));
-    EXPECT_CALL(*this->database_handler_mock, insert_or_update_local_authorization_list_version(33));
+    EXPECT_CALL(this->database_handler_mock, clear_local_authorization_list);
+    EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list(_));
+    EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list_version(33));
 
     // The number of entries is requested from the database after storing the new list, and stored in the device model.
     // This will throw an exception.
-    EXPECT_CALL(*this->database_handler_mock, get_local_authorization_list_number_of_entries())
+    EXPECT_CALL(this->database_handler_mock, get_local_authorization_list_number_of_entries())
         .WillRepeatedly(Throw(DeviceModelError("Oops! Could not write to device model!!")));
 
     // Local list is stored, only setting the number of entries is the device model failed, but the call is still
@@ -1275,13 +1282,13 @@ TEST_F(AuthorizationTest, handle_send_local_authorization_list_get_entries_excep
 
     // Local authorization list is inserted, therefor the list is first cleared and then the new list is inserted. The
     // list version is also updated.
-    EXPECT_CALL(*this->database_handler_mock, clear_local_authorization_list);
-    EXPECT_CALL(*this->database_handler_mock, insert_or_update_local_authorization_list(_));
-    EXPECT_CALL(*this->database_handler_mock, insert_or_update_local_authorization_list_version(33));
+    EXPECT_CALL(this->database_handler_mock, clear_local_authorization_list);
+    EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list(_));
+    EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list_version(33));
 
     // The number of entries is requested from the database after storing the new list, and stored in the device model.
     // This will throw an exception.
-    EXPECT_CALL(*this->database_handler_mock, get_local_authorization_list_number_of_entries())
+    EXPECT_CALL(this->database_handler_mock, get_local_authorization_list_number_of_entries())
         .WillRepeatedly(Throw(std::out_of_range("Oops! Something is out of range")));
 
     // Local list is stored, only setting the number of entries is the device model failed, but the call is still
@@ -1301,11 +1308,11 @@ TEST_F(AuthorizationTest, handle_send_local_authorization_list_set_version_excep
         33, UpdateEnum::Full, this->create_example_authorization_data_local_list(false, true));
 
     // Local authorization list is inserted, therefor the list is first cleared and then the new list is inserted.
-    EXPECT_CALL(*this->database_handler_mock, clear_local_authorization_list);
-    EXPECT_CALL(*this->database_handler_mock, insert_or_update_local_authorization_list(_));
+    EXPECT_CALL(this->database_handler_mock, clear_local_authorization_list);
+    EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list(_));
 
     // When trying to update the authorization list version, an exception is thrown.
-    EXPECT_CALL(*this->database_handler_mock, insert_or_update_local_authorization_list_version(33))
+    EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list_version(33))
         .WillRepeatedly(Throw(ocpp::common::DatabaseException("Oh no!")));
 
     // Local list is stored, but setting the list version throwd an exception. So the response is 'failed' in this case.
@@ -1380,12 +1387,12 @@ TEST_F(AuthorizationTest, handle_send_local_authorization_list_empty) {
 
     // Local authorization list is inserted, therefor the list is first cleared. Nothing is inserted because there is no
     // list. The list version is updated.
-    EXPECT_CALL(*this->database_handler_mock, clear_local_authorization_list);
-    EXPECT_CALL(*this->database_handler_mock, insert_or_update_local_authorization_list(_)).Times(0);
-    EXPECT_CALL(*this->database_handler_mock, insert_or_update_local_authorization_list_version(4));
+    EXPECT_CALL(this->database_handler_mock, clear_local_authorization_list);
+    EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list(_)).Times(0);
+    EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list_version(4));
 
     // The number of entries is requested from the database after storing the new list, and stored in the device model.
-    EXPECT_CALL(*this->database_handler_mock, get_local_authorization_list_number_of_entries())
+    EXPECT_CALL(this->database_handler_mock, get_local_authorization_list_number_of_entries())
         .WillRepeatedly(Return(42));
 
     // The authorization list should now be cleared and is accepted.
@@ -1411,12 +1418,12 @@ TEST_F(AuthorizationTest, handle_send_local_authorization_list_empty2) {
 
     // Local authorization list is inserted, therefor the list is first cleared. Nothing is inserted because there is no
     // list. The list version is updated.
-    EXPECT_CALL(*this->database_handler_mock, clear_local_authorization_list);
-    EXPECT_CALL(*this->database_handler_mock, insert_or_update_local_authorization_list(_)).Times(0);
-    EXPECT_CALL(*this->database_handler_mock, insert_or_update_local_authorization_list_version(1));
+    EXPECT_CALL(this->database_handler_mock, clear_local_authorization_list);
+    EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list(_)).Times(0);
+    EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list_version(1));
 
     // The number of entries is requested from the database after storing the new list, and stored in the device model.
-    EXPECT_CALL(*this->database_handler_mock, get_local_authorization_list_number_of_entries())
+    EXPECT_CALL(this->database_handler_mock, get_local_authorization_list_number_of_entries())
         .WillRepeatedly(Return(6));
 
     // The authorization list should now be cleared and is accepted.
@@ -1442,7 +1449,7 @@ TEST_F(AuthorizationTest, handle_send_local_authorization_list_duplicate) {
         create_send_local_list_request(1, UpdateEnum::Full, create_example_authorization_data_local_list(true, true));
 
     // There are duplicates in the list, so the request has failed. Nothing is inserted.
-    EXPECT_CALL(*this->database_handler_mock, insert_or_update_local_authorization_list(_)).Times(0);
+    EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list(_)).Times(0);
 
     // The authorization list should now be cleared and is accepted.
     EXPECT_CALL(mock_dispatcher, dispatch_call_result(_)).WillOnce(Invoke([](const json& call_result) {
@@ -1461,7 +1468,7 @@ TEST_F(AuthorizationTest, handle_send_local_authorization_list_no_token_info) {
         create_send_local_list_request(1, UpdateEnum::Full, create_example_authorization_data_local_list(false, false));
 
     // There is at least one token without id token info, so the request has failed. Nothing is inserted.
-    EXPECT_CALL(*this->database_handler_mock, insert_or_update_local_authorization_list(_)).Times(0);
+    EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list(_)).Times(0);
 
     // The authorization list should now be cleared and is accepted.
     EXPECT_CALL(mock_dispatcher, dispatch_call_result(_)).WillOnce(Invoke([](const json& call_result) {
@@ -1480,8 +1487,8 @@ TEST_F(AuthorizationTest, handle_send_local_authorization_list_clear_list_except
         create_send_local_list_request(1, UpdateEnum::Full, create_example_authorization_data_local_list(false, true));
 
     // Local authorization list must be inserted, but clearing it throws an exception.
-    EXPECT_CALL(*this->database_handler_mock, insert_or_update_local_authorization_list(_)).Times(0);
-    EXPECT_CALL(*this->database_handler_mock, clear_local_authorization_list)
+    EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list(_)).Times(0);
+    EXPECT_CALL(this->database_handler_mock, clear_local_authorization_list)
         .WillRepeatedly(Throw(ocpp::common::DatabaseException("exception :(")));
 
     // The authorization list should now be cleared and is accepted.
@@ -1500,7 +1507,7 @@ TEST_F(AuthorizationTest, handle_send_local_authorization_list_empty_clear_list_
     const auto request = create_send_local_list_request(1, UpdateEnum::Full, std::nullopt);
 
     // Clearing authorization list throws an exception.
-    EXPECT_CALL(*this->database_handler_mock, clear_local_authorization_list)
+    EXPECT_CALL(this->database_handler_mock, clear_local_authorization_list)
         .WillRepeatedly(Throw(ocpp::common::DatabaseException("exception :(")));
 
     // The authorization list should now be cleared and is accepted.
@@ -1518,16 +1525,16 @@ TEST_F(AuthorizationTest, handle_send_local_authorization_list_differential) {
         33, UpdateEnum::Differential, this->create_example_authorization_data_local_list(false, true));
 
     // Because this is a differential update, the version must be correct (smaller than the new version number);
-    EXPECT_CALL(*this->database_handler_mock, get_local_authorization_list_version()).WillOnce(Return(21));
+    EXPECT_CALL(this->database_handler_mock, get_local_authorization_list_version()).WillOnce(Return(21));
 
     // This is a differential update, so the list is only inserted, not cleared.
-    EXPECT_CALL(*this->database_handler_mock, clear_local_authorization_list).Times(0);
-    EXPECT_CALL(*this->database_handler_mock, insert_or_update_local_authorization_list(_));
+    EXPECT_CALL(this->database_handler_mock, clear_local_authorization_list).Times(0);
+    EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list(_));
     // And the new version is set.
-    EXPECT_CALL(*this->database_handler_mock, insert_or_update_local_authorization_list_version(33));
+    EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list_version(33));
 
     // The number of entries is requested from the database after storing the new list, and stored in the device model.
-    EXPECT_CALL(*this->database_handler_mock, get_local_authorization_list_number_of_entries())
+    EXPECT_CALL(this->database_handler_mock, get_local_authorization_list_number_of_entries())
         .WillRepeatedly(Return(7));
 
     // Local list is stored, everything is successful, 'Accepted' is sent.
@@ -1551,17 +1558,17 @@ TEST_F(AuthorizationTest, handle_send_local_authorization_list_differential_empt
     const auto request = create_send_local_list_request(22, UpdateEnum::Differential, std::nullopt);
 
     // Because this is a differential update, the version must be correct (smaller than the new version number);
-    EXPECT_CALL(*this->database_handler_mock, get_local_authorization_list_version()).WillOnce(Return(21));
+    EXPECT_CALL(this->database_handler_mock, get_local_authorization_list_version()).WillOnce(Return(21));
 
     // This is a differential update, so the list is only inserted, not cleared.
-    EXPECT_CALL(*this->database_handler_mock, clear_local_authorization_list).Times(0);
+    EXPECT_CALL(this->database_handler_mock, clear_local_authorization_list).Times(0);
     // Since there are no entries in the list, nothing is inserted.
-    EXPECT_CALL(*this->database_handler_mock, insert_or_update_local_authorization_list(_)).Times(0);
+    EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list(_)).Times(0);
     // And the new version is set.
-    EXPECT_CALL(*this->database_handler_mock, insert_or_update_local_authorization_list_version(22));
+    EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list_version(22));
 
     // The number of entries is requested from the database after storing the new list, and stored in the device model.
-    EXPECT_CALL(*this->database_handler_mock, get_local_authorization_list_number_of_entries())
+    EXPECT_CALL(this->database_handler_mock, get_local_authorization_list_number_of_entries())
         .WillRepeatedly(Return(7));
 
     // Local list is stored, everything is successful, 'Accepted' is sent.
@@ -1585,17 +1592,17 @@ TEST_F(AuthorizationTest, handle_send_local_authorization_list_differential_empt
     const auto request = create_send_local_list_request(22, UpdateEnum::Differential, {});
 
     // Because this is a differential update, the version must be correct (smaller than the new version number);
-    EXPECT_CALL(*this->database_handler_mock, get_local_authorization_list_version()).WillOnce(Return(12));
+    EXPECT_CALL(this->database_handler_mock, get_local_authorization_list_version()).WillOnce(Return(12));
 
     // This is a differential update, so the list is only inserted, not cleared.
-    EXPECT_CALL(*this->database_handler_mock, clear_local_authorization_list).Times(0);
+    EXPECT_CALL(this->database_handler_mock, clear_local_authorization_list).Times(0);
     // Since there are no entries in the list, nothing is inserted.
-    EXPECT_CALL(*this->database_handler_mock, insert_or_update_local_authorization_list(_)).Times(0);
+    EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list(_)).Times(0);
     // And the new version is set.
-    EXPECT_CALL(*this->database_handler_mock, insert_or_update_local_authorization_list_version(22));
+    EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list_version(22));
 
     // The number of entries is requested from the database after storing the new list, and stored in the device model.
-    EXPECT_CALL(*this->database_handler_mock, get_local_authorization_list_number_of_entries())
+    EXPECT_CALL(this->database_handler_mock, get_local_authorization_list_number_of_entries())
         .WillRepeatedly(Return(7));
 
     // Local list is stored, everything is successful, 'Accepted' is sent.
@@ -1614,13 +1621,13 @@ TEST_F(AuthorizationTest, handle_send_local_authorization_list_differential_vers
         2, UpdateEnum::Differential, this->create_example_authorization_data_local_list(false, true));
 
     // Because this is a differential update, the version must be correct (smaller than the new version number);
-    EXPECT_CALL(*this->database_handler_mock, get_local_authorization_list_version()).WillOnce(Return(21));
+    EXPECT_CALL(this->database_handler_mock, get_local_authorization_list_version()).WillOnce(Return(21));
 
     // There is a version mismatch, so nothing is inserted or cleared, and no version is set.
-    EXPECT_CALL(*this->database_handler_mock, clear_local_authorization_list).Times(0);
-    EXPECT_CALL(*this->database_handler_mock, insert_or_update_local_authorization_list(_)).Times(0);
-    EXPECT_CALL(*this->database_handler_mock, insert_or_update_local_authorization_list_version(_)).Times(0);
-    EXPECT_CALL(*this->database_handler_mock, get_local_authorization_list_number_of_entries()).Times(0);
+    EXPECT_CALL(this->database_handler_mock, clear_local_authorization_list).Times(0);
+    EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list(_)).Times(0);
+    EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list_version(_)).Times(0);
+    EXPECT_CALL(this->database_handler_mock, get_local_authorization_list_number_of_entries()).Times(0);
 
     // Local list is not stored, version mismatch.
     EXPECT_CALL(mock_dispatcher, dispatch_call_result(_)).WillOnce(Invoke([](const json& call_result) {
@@ -1637,13 +1644,13 @@ TEST_F(AuthorizationTest, handle_send_local_authorization_list_differential_dupl
                                                         this->create_example_authorization_data_local_list(true, true));
 
     // Because this is a differential update, the version must be correct (smaller than the new version number);
-    EXPECT_CALL(*this->database_handler_mock, get_local_authorization_list_version()).WillOnce(Return(3));
+    EXPECT_CALL(this->database_handler_mock, get_local_authorization_list_version()).WillOnce(Return(3));
 
     // There is a duplicate in the list, so nothing is inserted or cleared.
-    EXPECT_CALL(*this->database_handler_mock, clear_local_authorization_list).Times(0);
-    EXPECT_CALL(*this->database_handler_mock, insert_or_update_local_authorization_list(_)).Times(0);
-    EXPECT_CALL(*this->database_handler_mock, insert_or_update_local_authorization_list_version(_)).Times(0);
-    EXPECT_CALL(*this->database_handler_mock, get_local_authorization_list_number_of_entries()).Times(0);
+    EXPECT_CALL(this->database_handler_mock, clear_local_authorization_list).Times(0);
+    EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list(_)).Times(0);
+    EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list_version(_)).Times(0);
+    EXPECT_CALL(this->database_handler_mock, get_local_authorization_list_number_of_entries()).Times(0);
 
     // Local list is not stored because there is a duplicate, failed is sent..
     EXPECT_CALL(mock_dispatcher, dispatch_call_result(_)).WillOnce(Invoke([](const json& call_result) {
@@ -1660,16 +1667,16 @@ TEST_F(AuthorizationTest, handle_send_local_authorization_list_differential_inse
         33, UpdateEnum::Differential, this->create_example_authorization_data_local_list(false, true));
 
     // Because this is a differential update, the version must be correct (smaller than the new version number);
-    EXPECT_CALL(*this->database_handler_mock, get_local_authorization_list_version()).WillOnce(Return(21));
+    EXPECT_CALL(this->database_handler_mock, get_local_authorization_list_version()).WillOnce(Return(21));
 
     // This is a differential update, so the list is only inserted, not cleared.
-    EXPECT_CALL(*this->database_handler_mock, clear_local_authorization_list).Times(0);
+    EXPECT_CALL(this->database_handler_mock, clear_local_authorization_list).Times(0);
     // Inserting / updating causes an exception.
-    EXPECT_CALL(*this->database_handler_mock, insert_or_update_local_authorization_list(_))
+    EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list(_))
         .WillOnce(Throw(ocpp::common::DatabaseException("This is an exception")));
     // So the update is failed, no new version is set, number of entries is not requested.
-    EXPECT_CALL(*this->database_handler_mock, insert_or_update_local_authorization_list_version(_)).Times(0);
-    EXPECT_CALL(*this->database_handler_mock, get_local_authorization_list_number_of_entries()).Times(0);
+    EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list_version(_)).Times(0);
+    EXPECT_CALL(this->database_handler_mock, get_local_authorization_list_number_of_entries()).Times(0);
 
     // And 'Failed' is sent.
     EXPECT_CALL(mock_dispatcher, dispatch_call_result(_)).WillOnce(Invoke([](const json& call_result) {
@@ -1684,7 +1691,7 @@ TEST_F(AuthorizationTest, handle_get_local_authorization_list_version) {
     // Get local authorization list version happy flow.
     this->set_local_auth_list_ctrlr_enabled(this->device_model, true);
     const auto request = this->create_get_local_list_version_request();
-    EXPECT_CALL(*this->database_handler_mock, get_local_authorization_list_version).WillOnce(Return(42));
+    EXPECT_CALL(this->database_handler_mock, get_local_authorization_list_version).WillOnce(Return(42));
     EXPECT_CALL(mock_dispatcher, dispatch_call_result(_)).WillOnce(Invoke([](const json& call_result) {
         auto response = call_result[ocpp::CALLRESULT_PAYLOAD].get<GetLocalListVersionResponse>();
         EXPECT_EQ(response.versionNumber, 42);
@@ -1699,7 +1706,7 @@ TEST_F(AuthorizationTest, handle_get_local_authorization_list_version_disabled) 
     const auto request = this->create_get_local_list_version_request();
     // Because the local auth list is not enabled, the get_local_authorization_list_version of the database handler will
     // not even get called.
-    EXPECT_CALL(*this->database_handler_mock, get_local_authorization_list_version).Times(0);
+    EXPECT_CALL(this->database_handler_mock, get_local_authorization_list_version).Times(0);
     EXPECT_CALL(mock_dispatcher, dispatch_call_result(_)).WillOnce(Invoke([](const json& call_result) {
         auto response = call_result[ocpp::CALLRESULT_PAYLOAD].get<GetLocalListVersionResponse>();
         EXPECT_EQ(response.versionNumber, 0);
@@ -1713,7 +1720,7 @@ TEST_F(AuthorizationTest, handle_get_local_authorization_list_version_exception)
     // a call error.
     this->set_local_auth_list_ctrlr_enabled(this->device_model, true);
     const auto request = this->create_get_local_list_version_request();
-    EXPECT_CALL(*this->database_handler_mock, get_local_authorization_list_version)
+    EXPECT_CALL(this->database_handler_mock, get_local_authorization_list_version)
         .WillOnce(Throw(ocpp::common::DatabaseException("Oops!")));
     EXPECT_CALL(mock_dispatcher, dispatch_call_error(_)).WillOnce([](const ocpp::CallError& call_error) {
         EXPECT_EQ(call_error.errorCode, "InternalError");
@@ -1724,9 +1731,9 @@ TEST_F(AuthorizationTest, handle_get_local_authorization_list_version_exception)
 
 TEST_F(AuthorizationTest, cache_cleanup_handler) {
     // Test cache cleanup handler happy flow.
-    this->authorization->start();
+    this->authorization->start_auth_cache_cleanup_thread();
     this->delete_expired_entries_count = 0;
-    EXPECT_CALL(*this->database_handler_mock, authorization_cache_delete_expired_entries(_))
+    EXPECT_CALL(this->database_handler_mock, authorization_cache_delete_expired_entries(_))
         .WillRepeatedly(update_count_and_notify(this->delete_expired_entries_count));
     this->authorization->trigger_authorization_cache_cleanup();
     this->wait_for_calls(1, 0, 0);
@@ -1758,33 +1765,33 @@ TEST_F(AuthorizationTest, cache_cleanup_handler_exceeds_max_storage) {
 
     {
         InSequence seq;
-        EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size())
+        EXPECT_CALL(this->database_handler_mock, authorization_cache_get_binary_size())
             .WillOnce(update_count_and_notify(0, this->get_binary_size_count))
             .RetiresOnSaturation();
         // Increase size once (which is strange but this is a test...)
-        EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size())
+        EXPECT_CALL(this->database_handler_mock, authorization_cache_get_binary_size())
             .WillOnce(update_count_and_notify(600, this->get_binary_size_count))
             .RetiresOnSaturation();
-        EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size())
+        EXPECT_CALL(this->database_handler_mock, authorization_cache_get_binary_size())
             .WillOnce(update_count_and_notify(650, this->get_binary_size_count))
             .RetiresOnSaturation();
         // Decrease size from now on with every get binary size read.
-        EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size())
+        EXPECT_CALL(this->database_handler_mock, authorization_cache_get_binary_size())
             .WillOnce(update_count_and_notify(550, this->get_binary_size_count))
             .RetiresOnSaturation();
-        EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size())
+        EXPECT_CALL(this->database_handler_mock, authorization_cache_get_binary_size())
             .WillOnce(update_count_and_notify(300, this->get_binary_size_count))
             .RetiresOnSaturation();
-        EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size())
+        EXPECT_CALL(this->database_handler_mock, authorization_cache_get_binary_size())
             .WillRepeatedly(update_count_and_notify(0, this->get_binary_size_count));
     }
 
-    EXPECT_CALL(*this->database_handler_mock, authorization_cache_delete_expired_entries(_))
+    EXPECT_CALL(this->database_handler_mock, authorization_cache_delete_expired_entries(_))
         .WillRepeatedly(update_count_and_notify(this->delete_expired_entries_count));
-    EXPECT_CALL(*this->database_handler_mock, authorization_cache_delete_nr_of_oldest_entries(1))
+    EXPECT_CALL(this->database_handler_mock, authorization_cache_delete_nr_of_oldest_entries(1))
         .WillRepeatedly(update_count_and_notify(this->delete_nr_of_oldest_entries_count));
 
-    this->authorization->start();
+    this->authorization->start_auth_cache_cleanup_thread();
 
     this->delete_expired_entries_count = 0;
     this->delete_nr_of_oldest_entries_count = 0;
@@ -1819,32 +1826,32 @@ TEST_F(AuthorizationTest, cache_cleanup_handler_exceeds_max_storage_database_exc
 
     {
         InSequence seq;
-        EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size())
+        EXPECT_CALL(this->database_handler_mock, authorization_cache_get_binary_size())
             .WillOnce(update_count_and_notify(0, this->get_binary_size_count))
             .RetiresOnSaturation();
-        EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size())
+        EXPECT_CALL(this->database_handler_mock, authorization_cache_get_binary_size())
             .WillOnce(update_count_and_notify(600, this->get_binary_size_count))
             .RetiresOnSaturation();
         // One of the calls will throw an exception.
-        EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size())
+        EXPECT_CALL(this->database_handler_mock, authorization_cache_get_binary_size())
             .WillOnce(Throw(ocpp::common::DatabaseException("Oops!")))
             .RetiresOnSaturation();
         // After that, it is still called once at the end of the function (after catching the exception)
-        EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size())
+        EXPECT_CALL(this->database_handler_mock, authorization_cache_get_binary_size())
             .WillOnce(update_count_and_notify(550, this->get_binary_size_count))
             .RetiresOnSaturation();
     }
 
-    EXPECT_CALL(*this->database_handler_mock, authorization_cache_delete_expired_entries(_))
+    EXPECT_CALL(this->database_handler_mock, authorization_cache_delete_expired_entries(_))
         .WillRepeatedly(update_count_and_notify(this->delete_expired_entries_count));
-    EXPECT_CALL(*this->database_handler_mock, authorization_cache_delete_nr_of_oldest_entries(1))
+    EXPECT_CALL(this->database_handler_mock, authorization_cache_delete_nr_of_oldest_entries(1))
         .WillRepeatedly(update_count_and_notify(this->delete_nr_of_oldest_entries_count));
 
     this->delete_expired_entries_count = 0;
     this->delete_nr_of_oldest_entries_count = 0;
     this->get_binary_size_count = 0;
 
-    this->authorization->start();
+    this->authorization->start_auth_cache_cleanup_thread();
 
     this->authorization->trigger_authorization_cache_cleanup();
     this->wait_for_calls(1, 3, 1);
@@ -1853,19 +1860,19 @@ TEST_F(AuthorizationTest, cache_cleanup_handler_exceeds_max_storage_database_exc
 TEST_F(AuthorizationTest, cache_cleanup_handler_database_exception) {
     // Cache cleanup handler, another exception is thrown at another place (when calling
     // 'authorization_cache_delete_expired_entries')
-    EXPECT_CALL(*this->database_handler_mock, authorization_cache_get_binary_size())
+    EXPECT_CALL(this->database_handler_mock, authorization_cache_get_binary_size())
         .WillRepeatedly(update_count_and_notify(0, this->get_binary_size_count));
 
-    EXPECT_CALL(*this->database_handler_mock, authorization_cache_delete_expired_entries(_))
+    EXPECT_CALL(this->database_handler_mock, authorization_cache_delete_expired_entries(_))
         .WillRepeatedly(Throw(std::out_of_range("expired entries out of range! (?)")));
-    EXPECT_CALL(*this->database_handler_mock, authorization_cache_delete_nr_of_oldest_entries(1))
+    EXPECT_CALL(this->database_handler_mock, authorization_cache_delete_nr_of_oldest_entries(1))
         .WillRepeatedly(update_count_and_notify(this->delete_nr_of_oldest_entries_count));
 
     this->delete_expired_entries_count = 0;
     this->delete_nr_of_oldest_entries_count = 0;
     this->get_binary_size_count = 0;
 
-    this->authorization->start();
+    this->authorization->start_auth_cache_cleanup_thread();
 
     this->authorization->trigger_authorization_cache_cleanup();
     this->wait_for_calls(0, 2, 0);

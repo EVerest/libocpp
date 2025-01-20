@@ -18,7 +18,7 @@ public:
     virtual ~AuthorizationInterface() {
     }
 
-    virtual void start() = 0;
+    virtual void start_auth_cache_cleanup_thread() = 0;
     virtual AuthorizeResponse authorize_req(const IdToken id_token, const std::optional<CiString<5500>>& certificate,
                                             const std::optional<std::vector<OCSPRequestData>>& ocsp_request_data) = 0;
     virtual void trigger_authorization_cache_cleanup() = 0;
@@ -45,8 +45,8 @@ private: // Members
     MessageDispatcherInterface<MessageType>& message_dispatcher;
     DeviceModel& device_model;
     ConnectivityManagerInterface& connectivity_manager;
-    std::shared_ptr<ocpp::v201::DatabaseHandlerInterface> database_handler;
-    std::shared_ptr<EvseSecurity> evse_security;
+    ocpp::v201::DatabaseHandlerInterface& database_handler;
+    EvseSecurity& evse_security;
 
     // threads and synchronization
     bool auth_cache_cleanup_required;
@@ -58,11 +58,10 @@ private: // Members
 
 public:
     Authorization(MessageDispatcherInterface<MessageType>& message_dispatcher, DeviceModel& device_model,
-                  ConnectivityManagerInterface& connectivity_manager,
-                  std::shared_ptr<DatabaseHandlerInterface> database_handler,
-                  const std::shared_ptr<EvseSecurity> evse_security);
+                  ConnectivityManagerInterface& connectivity_manager, DatabaseHandlerInterface& database_handler,
+                  EvseSecurity& evse_security);
     ~Authorization();
-    void start() override;
+    void start_auth_cache_cleanup_thread() override;
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
     AuthorizeResponse authorize_req(const IdToken id_token, const std::optional<ocpp::CiString<5500>>& certificate,
                                     const std::optional<std::vector<OCSPRequestData>>& ocsp_request_data) override;
@@ -82,7 +81,7 @@ public:
                                      const std::optional<std::vector<OCSPRequestData>>& ocsp_request_data) override;
 
 private: // Functions
-    void stop();
+    void stop_auth_cache_cleanup_thread();
 
     // Functional Block C: Authorization
     void handle_clear_cache_req(Call<ClearCacheRequest> call);

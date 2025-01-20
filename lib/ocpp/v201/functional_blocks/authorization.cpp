@@ -16,8 +16,7 @@ static bool has_no_token_info(const ocpp::v201::AuthorizationData& item);
 
 ocpp::v201::Authorization::Authorization(MessageDispatcherInterface<MessageType>& message_dispatcher,
                                          DeviceModel& device_model, ConnectivityManagerInterface& connectivity_manager,
-                                         std::shared_ptr<DatabaseHandlerInterface> database_handler,
-                                         const std::shared_ptr<EvseSecurity> evse_security) :
+                                         DatabaseHandlerInterface& database_handler, EvseSecurity& evse_security) :
     message_dispatcher(message_dispatcher),
     device_model(device_model),
     connectivity_manager(connectivity_manager),
@@ -27,10 +26,10 @@ ocpp::v201::Authorization::Authorization(MessageDispatcherInterface<MessageType>
 }
 
 ocpp::v201::Authorization::~Authorization() {
-    stop();
+    stop_auth_cache_cleanup_thread();
 }
 
-void ocpp::v201::Authorization::start() {
+void ocpp::v201::Authorization::start_auth_cache_cleanup_thread() {
     if (!auth_cache_cleanup_handler_running) {
         auth_cache_cleanup_handler_running = true;
         this->auth_cache_cleanup_thread = std::thread(&Authorization::cache_cleanup_handler, this);
@@ -115,7 +114,7 @@ void ocpp::v201::Authorization::update_authorization_cache_size() {
     auto& auth_cache_size = ControllerComponentVariables::AuthCacheStorage;
     if (auth_cache_size.variable.has_value()) {
         try {
-            auto size = this->database_handler->authorization_cache_get_binary_size();
+            auto size = this->database_handler.authorization_cache_get_binary_size();
             this->device_model.set_read_only_value(auth_cache_size.component, auth_cache_size.variable.value(),
                                                    AttributeEnum::Actual, std::to_string(size),
                                                    VARIABLE_ATTRIBUTE_VALUE_SOURCE_INTERNAL);
@@ -134,16 +133,16 @@ bool ocpp::v201::Authorization::is_auth_cache_ctrlr_enabled() {
 
 void ocpp::v201::Authorization::authorization_cache_insert_entry(const std::string& id_token_hash,
                                                                  const IdTokenInfo& id_token_info) {
-    this->database_handler->authorization_cache_insert_entry(id_token_hash, id_token_info);
+    this->database_handler.authorization_cache_insert_entry(id_token_hash, id_token_info);
 }
 
 std::optional<ocpp::v201::AuthorizationCacheEntry>
 ocpp::v201::Authorization::authorization_cache_get_entry(const std::string& id_token_hash) {
-    return this->database_handler->authorization_cache_get_entry(id_token_hash);
+    return this->database_handler.authorization_cache_get_entry(id_token_hash);
 }
 
 void ocpp::v201::Authorization::authorization_cache_delete_entry(const std::string& id_token_hash) {
-    this->database_handler->authorization_cache_delete_entry(id_token_hash);
+    this->database_handler.authorization_cache_delete_entry(id_token_hash);
 }
 
 ocpp::v201::AuthorizeResponse
@@ -180,7 +179,7 @@ ocpp::v201::Authorization::validate_token(const IdToken id_token, const std::opt
         } else if (certificate.has_value()) {
             // First try to validate the contract certificate locally
             CertificateValidationResult local_verify_result =
-                this->evse_security->verify_certificate(certificate.value().get(), ocpp::LeafCertificateType::MO);
+                this->evse_security.verify_certificate(certificate.value().get(), ocpp::LeafCertificateType::MO);
             EVLOG_info << "Local contract validation result: " << local_verify_result;
 
             bool central_contract_validation_allowed =
@@ -212,7 +211,7 @@ ocpp::v201::Authorization::validate_token(const IdToken id_token, const std::opt
                 } else {
                     // Try to generate the OCSP data from the certificate chain and use that
                     const auto generated_ocsp_request_data_list = ocpp::evse_security_conversions::to_ocpp_v201(
-                        this->evse_security->get_mo_ocsp_request_data(certificate.value()));
+                        this->evse_security.get_mo_ocsp_request_data(certificate.value()));
                     if (generated_ocsp_request_data_list.size() > 0) {
                         EVLOG_info << "Online: Pass generated OCSP data to CSMS";
                         response = this->authorize_req(id_token, std::nullopt, generated_ocsp_request_data_list);
@@ -283,7 +282,7 @@ ocpp::v201::Authorization::validate_token(const IdToken id_token, const std::opt
             .value_or(false)) {
         std::optional<IdTokenInfo> id_token_info = std::nullopt;
         try {
-            id_token_info = this->database_handler->get_local_authorization_list_entry(id_token);
+            id_token_info = this->database_handler.get_local_authorization_list_entry(id_token);
         } catch (const common::DatabaseException& e) {
             EVLOG_warning << "Could not request local authorization list entry: " << e.what();
         } catch (const std::exception& e) {
@@ -341,7 +340,7 @@ ocpp::v201::Authorization::validate_token(const IdToken id_token, const std::opt
                 } else if (this->device_model.get_value<bool>(ControllerComponentVariables::LocalPreAuthorize) and
                            id_token_info.status == AuthorizationStatusEnum::Accepted) {
                     EVLOG_info << "Found valid entry in AuthCache";
-                    this->database_handler->authorization_cache_update_last_used(hashed_id_token);
+                    this->database_handler.authorization_cache_update_last_used(hashed_id_token);
                     response.idTokenInfo = id_token_info;
                     return response;
                 } else if (this->device_model
@@ -396,7 +395,7 @@ ocpp::v201::Authorization::validate_token(const IdToken id_token, const std::opt
     return response;
 }
 
-void ocpp::v201::Authorization::stop() {
+void ocpp::v201::Authorization::stop_auth_cache_cleanup_thread() {
     if (this->auth_cache_cleanup_handler_running) {
         {
             std::scoped_lock lk(this->auth_cache_cleanup_mutex);
@@ -416,7 +415,7 @@ void ocpp::v201::Authorization::handle_clear_cache_req(Call<ClearCacheRequest> c
 
     if (this->is_auth_cache_ctrlr_enabled()) {
         try {
-            this->database_handler->authorization_cache_clear();
+            this->database_handler.authorization_cache_clear();
             this->update_authorization_cache_size();
             response.status = ClearCacheStatusEnum::Accepted;
         } catch (common::DatabaseException& e) {
@@ -455,7 +454,7 @@ void ocpp::v201::Authorization::cache_cleanup_handler() {
 
         auto lifetime = this->device_model.get_optional_value<int>(ControllerComponentVariables::AuthCacheLifeTime);
         try {
-            this->database_handler->authorization_cache_delete_expired_entries(
+            this->database_handler.authorization_cache_delete_expired_entries(
                 lifetime.has_value() ? std::optional<std::chrono::seconds>(*lifetime) : std::nullopt);
 
             auto meta_data = this->device_model.get_variable_meta_data(
@@ -465,8 +464,8 @@ void ocpp::v201::Authorization::cache_cleanup_handler() {
             if (meta_data.has_value()) {
                 auto max_storage = meta_data->characteristics.maxLimit;
                 if (max_storage.has_value()) {
-                    while (this->database_handler->authorization_cache_get_binary_size() > max_storage.value()) {
-                        this->database_handler->authorization_cache_delete_nr_of_oldest_entries(1);
+                    while (this->database_handler.authorization_cache_get_binary_size() > max_storage.value()) {
+                        this->database_handler.authorization_cache_delete_nr_of_oldest_entries(1);
                     }
                 }
             }
@@ -493,11 +492,11 @@ void ocpp::v201::Authorization::handle_send_local_authorization_list_req(Call<Se
     // Set nr of entries in device_model
     if (response.status == SendLocalListStatusEnum::Accepted) {
         try {
-            this->database_handler->insert_or_update_local_authorization_list_version(call.msg.versionNumber);
+            this->database_handler.insert_or_update_local_authorization_list_version(call.msg.versionNumber);
             auto& local_entries = ControllerComponentVariables::LocalAuthListCtrlrEntries;
             if (local_entries.variable.has_value()) {
                 try {
-                    auto entries = this->database_handler->get_local_authorization_list_number_of_entries();
+                    auto entries = this->database_handler.get_local_authorization_list_number_of_entries();
                     this->device_model.set_read_only_value(local_entries.component, local_entries.variable.value(),
                                                            AttributeEnum::Actual, std::to_string(entries),
                                                            VARIABLE_ATTRIBUTE_VALUE_SOURCE_INTERNAL);
@@ -525,7 +524,7 @@ void ocpp::v201::Authorization::handle_get_local_authorization_list_version_req(
     if (this->device_model.get_optional_value<bool>(ControllerComponentVariables::LocalAuthListCtrlrEnabled)
             .value_or(false)) {
         try {
-            response.versionNumber = this->database_handler->get_local_authorization_list_version();
+            response.versionNumber = this->database_handler.get_local_authorization_list_version();
         } catch (const common::DatabaseException& e) {
             const auto call_error = CallError(call.uniqueId, "InternalError",
                                               "Unable to retrieve LocalListVersion from the database", json({}));
@@ -549,7 +548,7 @@ ocpp::v201::Authorization::apply_local_authorization_list(const SendLocalListReq
     } else if (request.updateType == UpdateEnum::Full) {
         if (!request.localAuthorizationList.has_value() or request.localAuthorizationList.value().empty()) {
             try {
-                this->database_handler->clear_local_authorization_list();
+                this->database_handler.clear_local_authorization_list();
                 status = SendLocalListStatusEnum::Accepted;
             } catch (const common::DatabaseException& e) {
                 status = SendLocalListStatusEnum::Failed;
@@ -561,8 +560,8 @@ ocpp::v201::Authorization::apply_local_authorization_list(const SendLocalListReq
             if (!has_duplicate_in_list(list) and
                 std::find_if(list.begin(), list.end(), has_no_token_info) == list.end()) {
                 try {
-                    this->database_handler->clear_local_authorization_list();
-                    this->database_handler->insert_or_update_local_authorization_list(list);
+                    this->database_handler.clear_local_authorization_list();
+                    this->database_handler.insert_or_update_local_authorization_list(list);
                     status = SendLocalListStatusEnum::Accepted;
                 } catch (const common::DatabaseException& e) {
                     status = SendLocalListStatusEnum::Failed;
@@ -572,7 +571,7 @@ ocpp::v201::Authorization::apply_local_authorization_list(const SendLocalListReq
             }
         }
     } else if (request.updateType == UpdateEnum::Differential) {
-        if (request.versionNumber <= this->database_handler->get_local_authorization_list_version()) {
+        if (request.versionNumber <= this->database_handler.get_local_authorization_list_version()) {
             // D01.FR.19: Do not allow version numbers smaller than current to update differentially
             status = SendLocalListStatusEnum::VersionMismatch;
         } else if (!request.localAuthorizationList.has_value() or request.localAuthorizationList.value().empty()) {
@@ -583,7 +582,7 @@ ocpp::v201::Authorization::apply_local_authorization_list(const SendLocalListReq
         } else {
             const auto& list = request.localAuthorizationList.value();
             try {
-                this->database_handler->insert_or_update_local_authorization_list(list);
+                this->database_handler.insert_or_update_local_authorization_list(list);
                 status = SendLocalListStatusEnum::Accepted;
             } catch (const common::DatabaseException& e) {
                 status = SendLocalListStatusEnum::Failed;

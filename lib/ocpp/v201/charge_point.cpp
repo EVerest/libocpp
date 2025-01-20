@@ -938,10 +938,10 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
             this->callbacks.is_reservation_for_token_callback);
     }
 
-    this->authorization =
-        std::make_unique<Authorization>(*this->message_dispatcher, *this->device_model,
-                                        *this->connectivity_manager.get(), this->database_handler, this->evse_security);
-    this->authorization->start();
+    this->authorization = std::make_unique<Authorization>(*this->message_dispatcher, *this->device_model,
+                                                          *this->connectivity_manager.get(),
+                                                          *this->database_handler.get(), *this->evse_security.get());
+    this->authorization->start_auth_cache_cleanup_thread();
 
     if (this->callbacks.configure_network_connection_profile_callback.has_value()) {
         this->connectivity_manager->set_configure_network_connection_profile_callback(
