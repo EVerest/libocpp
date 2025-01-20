@@ -202,5 +202,3 @@ endif()
 #             with gcc 10.x and C++11/14, so we need to publish the
 #             C++17 standard
 target_compile_features(ocpp PUBLIC cxx_std_17)
-append_coverage_compiler_flags_to_target(ocpp)
-

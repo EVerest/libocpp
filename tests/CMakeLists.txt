@@ -24,6 +24,7 @@ endif()
 
 set(TEST_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
 set(GCOVR_DEPENDENCIES)
+append_coverage_compiler_flags_to_target(ocpp)
 
 
 add_libocpp_unittest(NAME libocpp_unit_tests PATH "")
