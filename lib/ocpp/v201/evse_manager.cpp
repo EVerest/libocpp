@@ -75,5 +75,23 @@ std::optional<int32_t> EvseManager::get_transaction_evseid(const CiString<36>& t
     return std::nullopt;
 }
 
+bool EvseManager::any_transaction_active(const std::optional<EVSE>& evse) const {
+    if (!evse.has_value()) {
+        for (auto const& evse : this->evses) {
+            if (evse->has_active_transaction()) {
+                return true;
+            }
+        }
+        return false;
+    }
+    return this->get_evse(evse.value().id).has_active_transaction();
+}
+
+bool EvseManager::is_valid_evse(const EVSE& evse) const {
+    return this->does_evse_exist(evse.id) and
+           (!evse.connectorId.has_value() or
+            this->get_evse(evse.id).get_number_of_connectors() >= evse.connectorId.value());
+}
+
 } // namespace v201
 } // namespace ocpp

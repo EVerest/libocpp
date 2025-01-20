@@ -9,6 +9,7 @@
 
 #include <ocpp/common/message_dispatcher.hpp>
 #include <ocpp/v201/functional_blocks/authorization.hpp>
+#include <ocpp/v201/functional_blocks/availability.hpp>
 #include <ocpp/v201/functional_blocks/data_transfer.hpp>
 #include <ocpp/v201/functional_blocks/display_message.hpp>
 #include <ocpp/v201/functional_blocks/reservation.hpp>
@@ -35,7 +36,6 @@
 #include "ocpp/v201/messages/Get15118EVCertificate.hpp"
 #include <ocpp/v201/messages/Authorize.hpp>
 #include <ocpp/v201/messages/BootNotification.hpp>
-#include <ocpp/v201/messages/ChangeAvailability.hpp>
 #include <ocpp/v201/messages/ClearChargingProfile.hpp>
 #include <ocpp/v201/messages/ClearVariableMonitoring.hpp>
 #include <ocpp/v201/messages/CostUpdated.hpp>
@@ -51,7 +51,6 @@
 #include <ocpp/v201/messages/GetReport.hpp>
 #include <ocpp/v201/messages/GetTransactionStatus.hpp>
 #include <ocpp/v201/messages/GetVariables.hpp>
-#include <ocpp/v201/messages/Heartbeat.hpp>
 #include <ocpp/v201/messages/InstallCertificate.hpp>
 #include <ocpp/v201/messages/MeterValues.hpp>
 #include <ocpp/v201/messages/NotifyCustomerInformation.hpp>
@@ -81,12 +80,6 @@ namespace v201 {
 
 class UnexpectedMessageTypeFromCSMS : public std::runtime_error {
     using std::runtime_error::runtime_error;
-};
-
-/// \brief Combines ChangeAvailabilityRequest with persist flag for scheduled Availability changes
-struct AvailabilityChange {
-    ChangeAvailabilityRequest request;
-    bool persist;
 };
 
 /// \brief Interface class for OCPP2.0.1 Charging Station
@@ -394,6 +387,7 @@ private:
     std::unique_ptr<MessageDispatcherInterface<MessageType>> message_dispatcher;
     std::unique_ptr<DataTransferInterface> data_transfer;
     std::unique_ptr<ReservationInterface> reservation;
+    std::unique_ptr<AvailabilityInterface> availability;
     std::unique_ptr<AuthorizationInterface> authorization;
     std::unique_ptr<SecurityInterface> security;
     std::unique_ptr<DisplayMessageInterface> display_message;
@@ -401,8 +395,6 @@ private:
     // utility
     std::shared_ptr<MessageQueue<v201::MessageType>> message_queue;
     std::shared_ptr<DatabaseHandler> database_handler;
-
-    std::map<int32_t, AvailabilityChange> scheduled_change_availability_requests;
 
     std::map<int32_t, std::pair<IdToken, int32_t>> remote_start_id_per_evse;
 
@@ -412,9 +404,6 @@ private:
     Everest::SteadyTimer client_certificate_expiration_check_timer;
     Everest::SteadyTimer v2g_certificate_expiration_check_timer;
     ClockAlignedTimer aligned_meter_values_timer;
-
-    // time keeping
-    std::chrono::time_point<std::chrono::steady_clock> heartbeat_request_time;
 
     // states
     std::atomic<RegistrationStatusEnum> registration_status;
@@ -486,17 +475,8 @@ private:
     void message_callback(const std::string& message);
     void update_aligned_data_interval();
 
-    /// \brief Helper function to determine if there is any active transaction for the given \p evse
-    /// \param evse if optional is not set, this function will check if there is any transaction active f or the whole
-    /// charging station
-    /// \return
-    bool any_transaction_active(const std::optional<EVSE>& evse);
-
     /// \brief Helper function to determine if the requested change results in a state that the Connector(s) is/are
     /// already in \param request \return
-    bool is_already_in_state(const ChangeAvailabilityRequest& request);
-    bool is_valid_evse(const EVSE& evse);
-    void handle_scheduled_change_availability_requests(const int32_t evse_id);
     void handle_variable_changed(const SetVariableData& set_variable_data);
     void handle_variables_changed(const std::map<SetVariableData, SetVariableResult>& set_variable_results);
     bool validate_set_variable(const SetVariableData& set_variable_data);
@@ -630,11 +610,6 @@ private:
     void boot_notification_req(const BootReasonEnum& reason, const bool initiated_by_trigger_message = false);
     void notify_report_req(const int request_id, const std::vector<ReportData>& report_data);
 
-    // Functional Block G: Availability
-    void status_notification_req(const int32_t evse_id, const int32_t connector_id, const ConnectorStatusEnum status,
-                                 const bool initiated_by_trigger_message = false);
-    void heartbeat_req(const bool initiated_by_trigger_message = false);
-
     // Functional Block E: Transactions
     void transaction_event_req(const TransactionEventEnum& event_type, const DateTime& timestamp,
                                const ocpp::v201::Transaction& transaction,
@@ -683,10 +658,6 @@ private:
     void handle_remote_stop_transaction_request(Call<RequestStopTransactionRequest> call);
     void handle_trigger_message(Call<TriggerMessageRequest> call);
 
-    // Functional Block G: Availability
-    void handle_change_availability_req(Call<ChangeAvailabilityRequest> call);
-    void handle_heartbeat_response(CallResult<HeartbeatResponse> call);
-
     // Functional Block I: TariffAndCost
     void handle_costupdated_req(const Call<CostUpdatedRequest> call);
 
@@ -730,15 +701,6 @@ private:
             return call_result.msg;
         };
     }
-
-    /// \brief Checks if all connectors are effectively inoperative.
-    /// If this is the case, calls the all_connectors_unavailable_callback
-    /// This is used e.g. to allow firmware updates once all transactions have finished
-    bool are_all_connectors_effectively_inoperative();
-
-    /// \brief Immediately execute the given \param request to change the operational state of a component
-    /// If \param persist is set to true, the change will be persisted across a reboot
-    void execute_change_availability_request(ChangeAvailabilityRequest request, bool persist);
 
     /// \brief Helper function to determine if a certificate installation should be allowed
     /// \param cert_type is the certificate type to be checked
@@ -891,13 +853,6 @@ public:
                                                           const std::optional<json>& data) override;
 
     std::optional<DataTransferResponse> data_transfer_req(const DataTransferRequest& request) override;
-
-    void set_cs_operative_status(OperationalStatusEnum new_status, bool persist) override;
-
-    void set_evse_operative_status(int32_t evse_id, OperationalStatusEnum new_status, bool persist) override;
-
-    void set_connector_operative_status(int32_t evse_id, int32_t connector_id, OperationalStatusEnum new_status,
-                                        bool persist) override;
 
     void set_message_queue_resume_delay(std::chrono::seconds delay) override {
         this->message_queue_resume_delay = delay;
