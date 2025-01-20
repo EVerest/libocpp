@@ -154,6 +154,7 @@ void ChargePoint::stop() {
     this->v2g_certificate_expiration_check_timer.stop();
     this->monitoring_updater.stop_monitoring();
     this->message_queue->stop();
+    this->security->stop_certificate_signed_timer();
 }
 
 void ChargePoint::disconnect_websocket() {
@@ -1682,7 +1683,7 @@ void ChargePoint::security_event_notification_req(const CiString<50>& event_type
                                                   const bool triggered_internally, const bool critical,
                                                   const std::optional<DateTime>& timestamp) {
     if (this->security == nullptr) {
-        EVLOG_error << "Security function block not initialized";
+        EVLOG_error << "Security functional block not initialized";
     }
 
     this->security->security_event_notification_req(event_type, tech_info, triggered_internally, critical, timestamp);
@@ -1691,7 +1692,7 @@ void ChargePoint::security_event_notification_req(const CiString<50>& event_type
 void ChargePoint::sign_certificate_req(const ocpp::CertificateSigningUseEnum& certificate_signing_use,
                                        const bool initiated_by_trigger_message) {
     if (this->security == nullptr) {
-        EVLOG_error << "Security function block not initialized";
+        EVLOG_error << "Security functional block not initialized";
     }
 
     this->sign_certificate_req(certificate_signing_use, initiated_by_trigger_message);

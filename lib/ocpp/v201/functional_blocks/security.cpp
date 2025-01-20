@@ -26,7 +26,7 @@ Security::Security(MessageDispatcherInterface<MessageType>& message_dispatcher, 
 }
 
 Security::~Security() {
-    stop();
+    stop_certificate_signed_timer();
 }
 
 void Security::handle_message(const EnhancedMessage<MessageType>& message) {
@@ -43,7 +43,7 @@ void Security::handle_message(const EnhancedMessage<MessageType>& message) {
     }
 }
 
-void Security::stop() {
+void Security::stop_certificate_signed_timer() {
     this->certificate_signed_timer.stop();
 }
 

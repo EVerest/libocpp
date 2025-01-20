@@ -27,7 +27,7 @@ public:
                                                  const std::optional<DateTime>& timestamp = std::nullopt) = 0;
     virtual void sign_certificate_req(const ocpp::CertificateSigningUseEnum& certificate_signing_use,
                                       const bool initiated_by_trigger_message = false) = 0;
-    virtual void stop() = 0;
+    virtual void stop_certificate_signed_timer() = 0;
 };
 
 class Security : public SecurityInterface {
@@ -37,7 +37,7 @@ public:
              OcspUpdaterInterface& ocsp_updater, SecurityEventCallback security_event_callback);
     virtual ~Security();
     void handle_message(const EnhancedMessage<MessageType>& message) override;
-    virtual void stop() override;
+    virtual void stop_certificate_signed_timer() override;
 
 private: // Members
     MessageDispatcherInterface<MessageType>& message_dispatcher;
