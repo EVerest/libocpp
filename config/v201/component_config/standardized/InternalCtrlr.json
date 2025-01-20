@@ -430,8 +430,25 @@
         "default": true,
         "type": "boolean"
       },
-      "UseTPM": {
+      "UseTPMCsmsLeafCertificate": {
         "variable_name": "UseTPM",
+        "instance": "csms",
+        "characteristics": {
+            "supportsMonitoring": false,
+            "dataType": "boolean"
+        },
+        "attributes": [
+            {
+                "type": "Actual",
+                "mutability": "ReadOnly"
+            }
+        ],
+        "default": false,
+        "type": "boolean"
+      },
+      "UseTPMSeccLeafCertificate": {
+        "variable_name": "UseTPM",
+        "instance": "secc",
         "characteristics": {
             "supportsMonitoring": false,
             "dataType": "boolean"

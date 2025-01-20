@@ -359,7 +359,8 @@ ConnectivityManager::get_ws_connection_options(const int32_t configuration_slot)
             std::nullopt, // hostName
             this->device_model.get_optional_value<bool>(ControllerComponentVariables::VerifyCsmsCommonName)
                 .value_or(true),
-            this->device_model.get_optional_value<bool>(ControllerComponentVariables::UseTPM).value_or(false),
+            this->device_model.get_optional_value<bool>(ControllerComponentVariables::UseTPMCsmsLeafCertificate)
+                .value_or(false),
             this->device_model.get_optional_value<bool>(ControllerComponentVariables::VerifyCsmsAllowWildcards)
                 .value_or(false),
             this->device_model.get_optional_value<std::string>(ControllerComponentVariables::IFace),

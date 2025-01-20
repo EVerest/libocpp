@@ -240,12 +240,15 @@ const ComponentVariable VerifyCsmsCommonName = {
         "VerifyCsmsCommonName",
     }),
 };
-const ComponentVariable UseTPM = {
+const ComponentVariable UseTPMCsmsLeafCertificate = {
     ControllerComponents::InternalCtrlr,
     std::nullopt,
-    std::optional<Variable>({
-        "UseTPM",
-    }),
+    std::optional<Variable>({"UseTPM", std::nullopt, "csms"}),
+};
+const ComponentVariable UseTPMSeccLeafCertificate = {
+    ControllerComponents::InternalCtrlr,
+    std::nullopt,
+    std::optional<Variable>({"UseTPM", std::nullopt, "secc"}),
 };
 const ComponentVariable VerifyCsmsAllowWildcards = {
     ControllerComponents::InternalCtrlr,
