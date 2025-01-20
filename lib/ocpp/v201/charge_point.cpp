@@ -19,7 +19,6 @@
 using namespace std::chrono_literals;
 
 const auto DEFAULT_MAX_CUSTOMER_INFORMATION_DATA_LENGTH = 51200;
-const std::string VARIABLE_ATTRIBUTE_VALUE_SOURCE_CSMS = "csms";
 const auto DEFAULT_PRICE_NUMBER_OF_DECIMALS = 3;
 
 using DatabaseException = ocpp::common::DatabaseException;

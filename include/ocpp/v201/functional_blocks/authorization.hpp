@@ -54,7 +54,6 @@ private: // Members
     std::mutex auth_cache_cleanup_mutex;
     std::thread auth_cache_cleanup_thread;
     std::atomic_bool auth_cache_cleanup_handler_running;
-    bool running;
 
 public:
     Authorization(MessageDispatcherInterface<MessageType>& message_dispatcher, DeviceModel& device_model,
