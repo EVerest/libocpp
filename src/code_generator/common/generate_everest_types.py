@@ -343,7 +343,9 @@ if __name__ == "__main__":
 
     schema_dir = Path(args.schemas).resolve()
     out_file = Path(args.out).resolve()
-    types_to_generate = args.types.split(",")
+    types_to_generate = []
+    if args.types:
+        types_to_generate = args.types.split(",")
     types_to_generate = get_required_types(schema_dir, types_to_generate)
 
     generate_everest_types(schema_dir, out_file, types_to_generate)
