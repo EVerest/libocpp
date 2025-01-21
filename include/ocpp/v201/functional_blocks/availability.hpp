@@ -26,10 +26,22 @@ public:
 
     virtual void handle_message(const ocpp::EnhancedMessage<MessageType>& message) = 0;
 
-    // Functional Block G: Availability
+    // Functional Block G: Availability OCPP requests.
+    ///
+    /// \brief Send a StatusNotificationRequest to the CSMS.
+    /// \param evse_id                      Evse id.
+    /// \param connector_id                 Connector id.
+    /// \param status                       Status to send.
+    /// \param initiated_by_trigger_message True if sending of the request was triggered by a trigger message.
+    ///
     virtual void status_notification_req(const int32_t evse_id, const int32_t connector_id,
                                          const ConnectorStatusEnum status,
                                          const bool initiated_by_trigger_message = false) = 0;
+
+    ///
+    /// \brief Send a HeartbeatRequest to the CSMS.
+    /// \param initiated_by_trigger_message True if sending of the request was triggered by a trigger message.
+    ///
     virtual void heartbeat_req(const bool initiated_by_trigger_message = false) = 0;
 
     /// \brief Checks if all connectors are effectively inoperative.
@@ -37,8 +49,18 @@ public:
     /// This is used e.g. to allow firmware updates once all transactions have finished
     virtual bool are_all_connectors_effectively_inoperative() = 0;
 
+    ///
+    /// \brief Handle / send the scheduled change availability requests.
+    /// \param evse_id  The evse id of the change availability request.
+    ///
     virtual void handle_scheduled_change_availability_requests(const int32_t evse_id) = 0;
 
+    ///
+    /// \brief Set scheduled change availability requests, that should be sent later (for example because of a
+    ///        firmware update).
+    /// \param evse_id              The evse id.
+    /// \param availability_change  The availability change request.
+    ///
     virtual void set_scheduled_change_availability_requests(const int32_t evse_id,
                                                             AvailabilityChange availability_change) = 0;
 
@@ -49,7 +71,16 @@ public:
     ///                 connector if it was already set to true and if that is the case, it will be persisted anyway.
     ///
     virtual void set_evse_connectors_unavailable(EvseInterface& evse, bool persist) = 0;
+
+    ///
+    /// \brief Set the heartbeat timer interval.
+    /// \param interval The interval in seconds.
+    ///
     virtual void set_heartbeat_timer_interval(const std::chrono::seconds& interval) = 0;
+
+    ///
+    /// \brief Stop the heartbeat timer.
+    ///
     virtual void stop_heartbeat_timer() = 0;
 };
 
@@ -84,23 +115,30 @@ public:
                                  const bool initiated_by_trigger_message = false) override;
     void heartbeat_req(const bool initiated_by_trigger_message = false) override;
 
-    /// \brief Checks if all connectors are effectively inoperative.
-    /// If this is the case, calls the all_connectors_unavailable_callback
-    /// This is used e.g. to allow firmware updates once all transactions have finished
     bool are_all_connectors_effectively_inoperative() override;
-
     void handle_scheduled_change_availability_requests(const int32_t evse_id) override;
     void set_scheduled_change_availability_requests(const int32_t evse_id,
                                                     AvailabilityChange availability_change) override;
-
     void set_evse_connectors_unavailable(EvseInterface& evse, bool persist) override;
+
     void set_heartbeat_timer_interval(const std::chrono::seconds& interval) override;
     void stop_heartbeat_timer() override;
 
 private: // Functions
     // Functional Block G: Availability
+
+    ///
+    /// \brief Called on 'ChangeAvailability' request from the CSMS.
+    /// \param call The call from the CSMS.
+    ///
     void handle_change_availability_req(Call<ChangeAvailabilityRequest> call);
+
+    ///
+    /// \brief Called on 'HeartbeatResponse' request from the CSMS.
+    /// \param call The call from the CSMS.
+    ///
     void handle_heartbeat_response(CallResult<HeartbeatResponse> call);
+
 
     /// \brief Helper function to determine if the requested change results in a state that the Connector(s) is/are
     /// already in \param request \return
