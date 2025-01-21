@@ -462,9 +462,9 @@ TEST_F(SecurityTest, sign_certificate_request_v2g_accepted) {
     this->device_model->set_value(ControllerComponentVariables::ISO15118CtrlrCountryName.component,
                                   ControllerComponentVariables::ISO15118CtrlrCountryName.variable.value(),
                                   AttributeEnum::Actual, "iso_testCountry", "test", true);
-    this->device_model->set_value(ControllerComponentVariables::UseTPM.component,
-                                  ControllerComponentVariables::UseTPM.variable.value(), AttributeEnum::Actual, "true",
-                                  "test", true);
+    this->device_model->set_value(ControllerComponentVariables::UseTPMSeccLeafCertificate.component,
+                                  ControllerComponentVariables::UseTPMSeccLeafCertificate.variable.value(),
+                                  AttributeEnum::Actual, "true", "test", true);
 
     // Which is accepted by 'evse security'.
     ocpp::GetCertificateSignRequestResult sign_request_result;
@@ -499,9 +499,9 @@ TEST_F(SecurityTest, sign_certificate_request_manufacturer_cert_accepted) {
     this->device_model->set_value(ControllerComponentVariables::ISO15118CtrlrCountryName.component,
                                   ControllerComponentVariables::ISO15118CtrlrCountryName.variable.value(),
                                   AttributeEnum::Actual, "iso_testCountry", "test", true);
-    this->device_model->set_value(ControllerComponentVariables::UseTPM.component,
-                                  ControllerComponentVariables::UseTPM.variable.value(), AttributeEnum::Actual, "true",
-                                  "test", true);
+    this->device_model->set_value(ControllerComponentVariables::UseTPMSeccLeafCertificate.component,
+                                  ControllerComponentVariables::UseTPMSeccLeafCertificate.variable.value(),
+                                  AttributeEnum::Actual, "true", "test", true);
 
     // Which is accepted by 'evse security'.
     ocpp::GetCertificateSignRequestResult sign_request_result;
