@@ -6,17 +6,21 @@
 
 #include <ocpp/v201/messages/StatusNotification.hpp>
 
-ocpp::v201::Availability::Availability(MessageDispatcherInterface<MessageType>& message_dispatcher,
-                                       DeviceModel& device_model, EvseManagerInterface& evse_manager,
-                                       ComponentStateManagerInterface& component_state_manager,
-                                       std::optional<TimeSyncCallback> time_sync_callback,
-                                       std::optional<AllConnectorsUnavailableCallback> all_connectors_unavailable_callback) :
+ocpp::v201::Availability::Availability(
+    MessageDispatcherInterface<MessageType>& message_dispatcher, DeviceModel& device_model,
+    EvseManagerInterface& evse_manager, ComponentStateManagerInterface& component_state_manager,
+    std::optional<TimeSyncCallback> time_sync_callback,
+    std::optional<AllConnectorsUnavailableCallback> all_connectors_unavailable_callback) :
     message_dispatcher(message_dispatcher),
     device_model(device_model),
     evse_manager(evse_manager),
     component_state_manager(component_state_manager),
     time_sync_callback(time_sync_callback),
     all_connectors_unavailable_callback(all_connectors_unavailable_callback) {
+}
+
+ocpp::v201::Availability::~Availability() {
+    this->stop_heartbeat_timer();
 }
 
 void ocpp::v201::Availability::handle_message(const ocpp::EnhancedMessage<MessageType>& message) {
@@ -52,6 +56,61 @@ void ocpp::v201::Availability::heartbeat_req(const bool initiated_by_trigger_mes
     heartbeat_request_time = std::chrono::steady_clock::now();
     ocpp::Call<HeartbeatRequest> call(req);
     this->message_dispatcher.dispatch_call(call, initiated_by_trigger_message);
+}
+
+bool ocpp::v201::Availability::are_all_connectors_effectively_inoperative() {
+    // Check that all connectors on all EVSEs are inoperative
+    for (const auto& evse : this->evse_manager) {
+        for (int connector_id = 1; connector_id <= evse.get_number_of_connectors(); connector_id++) {
+            OperationalStatusEnum connector_status =
+                this->component_state_manager.get_connector_effective_operational_status(evse.get_id(), connector_id);
+            if (connector_status == OperationalStatusEnum::Operative) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+void ocpp::v201::Availability::handle_scheduled_change_availability_requests(const int32_t evse_id) {
+    if (this->scheduled_change_availability_requests.count(evse_id)) {
+        EVLOG_info << "Found scheduled ChangeAvailability.req for evse_id:" << evse_id;
+        const auto req = this->scheduled_change_availability_requests[evse_id].request;
+        const auto persist = this->scheduled_change_availability_requests[evse_id].persist;
+        if (!this->evse_manager.any_transaction_active(req.evse)) {
+            EVLOG_info << "Changing availability of evse:" << evse_id;
+            this->execute_change_availability_request(req, persist);
+            this->scheduled_change_availability_requests.erase(evse_id);
+            // Check succeeded, trigger the callback if needed
+            if (this->all_connectors_unavailable_callback.has_value() and
+                this->are_all_connectors_effectively_inoperative()) {
+                this->all_connectors_unavailable_callback.value()();
+            }
+        } else {
+            EVLOG_info << "Cannot change availability because transaction is still active";
+        }
+    }
+}
+
+void ocpp::v201::Availability::set_scheduled_change_availability_requests(const int32_t evse_id,
+                                                                          AvailabilityChange availability_change) {
+    this->scheduled_change_availability_requests[evse_id] = availability_change;
+}
+
+void ocpp::v201::Availability::set_evse_connectors_unavailable(EvseInterface& evse, bool persist) {
+    uint32_t number_of_connectors = evse.get_number_of_connectors();
+
+    for (uint32_t i = 1; i <= number_of_connectors; ++i) {
+        evse.set_connector_operative_status(static_cast<int32_t>(i), OperationalStatusEnum::Inoperative, persist);
+    }
+}
+
+void ocpp::v201::Availability::set_heartbeat_timer_interval(const std::chrono::seconds& interval) {
+    this->heartbeat_timer.interval([this]() { this->heartbeat_req(); }, interval);
+}
+
+void ocpp::v201::Availability::stop_heartbeat_timer() {
+    this->heartbeat_timer.stop();
 }
 
 void ocpp::v201::Availability::handle_change_availability_req(Call<ChangeAvailabilityRequest> call) {
@@ -153,40 +212,6 @@ bool ocpp::v201::Availability::is_already_in_state(const ChangeAvailabilityReque
     // A connector is being addressed
     return (this->component_state_manager.get_connector_individual_operational_status(
                 request.evse.value().id, request.evse.value().connectorId.value()) == request.operationalStatus);
-}
-
-void ocpp::v201::Availability::handle_scheduled_change_availability_requests(const int32_t evse_id) {
-    if (this->scheduled_change_availability_requests.count(evse_id)) {
-        EVLOG_info << "Found scheduled ChangeAvailability.req for evse_id:" << evse_id;
-        const auto req = this->scheduled_change_availability_requests[evse_id].request;
-        const auto persist = this->scheduled_change_availability_requests[evse_id].persist;
-        if (!this->evse_manager.any_transaction_active(req.evse)) {
-            EVLOG_info << "Changing availability of evse:" << evse_id;
-            this->execute_change_availability_request(req, persist);
-            this->scheduled_change_availability_requests.erase(evse_id);
-            // Check succeeded, trigger the callback if needed
-            if (this->all_connectors_unavailable_callback.has_value() and
-                this->are_all_connectors_effectively_inoperative()) {
-                this->all_connectors_unavailable_callback.value()();
-            }
-        } else {
-            EVLOG_info << "Cannot change availability because transaction is still active";
-        }
-    }
-}
-
-bool ocpp::v201::Availability::are_all_connectors_effectively_inoperative() {
-    // Check that all connectors on all EVSEs are inoperative
-    for (const auto& evse : this->evse_manager) {
-        for (int connector_id = 1; connector_id <= evse.get_number_of_connectors(); connector_id++) {
-            OperationalStatusEnum connector_status =
-                this->component_state_manager.get_connector_effective_operational_status(evse.get_id(), connector_id);
-            if (connector_status == OperationalStatusEnum::Operative) {
-                return false;
-            }
-        }
-    }
-    return true;
 }
 
 void ocpp::v201::Availability::execute_change_availability_request(ChangeAvailabilityRequest request, bool persist) {

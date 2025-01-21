@@ -293,25 +293,6 @@ public:
     /// because the message timed out or the charging station is offline, std::nullopt is returned
     virtual std::optional<DataTransferResponse> data_transfer_req(const DataTransferRequest& request) = 0;
 
-    /// \brief Switches the operative status of the CS
-    /// \param new_status: The new operative status to switch to
-    /// \param persist: True if the updated state should be persisted in the database
-    virtual void set_cs_operative_status(OperationalStatusEnum new_status, bool persist) = 0;
-
-    /// \brief Switches the operative status of an EVSE
-    /// \param evse_id: The ID of the EVSE, empty if the CS is addressed
-    /// \param new_status: The new operative status to switch to
-    /// \param persist: True if the updated state should be persisted in the database
-    virtual void set_evse_operative_status(int32_t evse_id, OperationalStatusEnum new_status, bool persist) = 0;
-
-    /// \brief Switches the operative status of the CS, an EVSE, or a connector, and recomputes effective statuses
-    /// \param evse_id: The ID of the EVSE, empty if the CS is addressed
-    /// \param connector_id: The ID of the connector, empty if an EVSE or the CS is addressed
-    /// \param new_status: The new operative status to switch to
-    /// \param persist: True if the updated state should be persisted in the database
-    virtual void set_connector_operative_status(int32_t evse_id, int32_t connector_id, OperationalStatusEnum new_status,
-                                                bool persist) = 0;
-
     /// \brief Delay draining the message queue after reconnecting, so the CSMS can perform post-reconnect checks first
     /// \param delay The delay period (seconds)
     virtual void set_message_queue_resume_delay(std::chrono::seconds delay) = 0;
@@ -399,7 +380,6 @@ private:
     std::map<int32_t, std::pair<IdToken, int32_t>> remote_start_id_per_evse;
 
     // timers
-    Everest::SteadyTimer heartbeat_timer;
     Everest::SteadyTimer boot_notification_timer;
     Everest::SteadyTimer client_certificate_expiration_check_timer;
     Everest::SteadyTimer v2g_certificate_expiration_check_timer;
@@ -520,22 +500,6 @@ private:
     /// \return True if at least one connector is not faulted or unavailable.
     ///
     bool is_evse_connector_available(EvseInterface& evse) const;
-
-    ///
-    /// \brief Set all connectors of a given evse to unavailable.
-    /// \param evse The evse.
-    /// \param persist  True if unavailability should persist. If it is set to false, there will be a check per
-    ///                 connector if it was already set to true and if that is the case, it will be persisted anyway.
-    ///
-    void set_evse_connectors_unavailable(EvseInterface& evse, bool persist);
-
-    ///
-    /// \brief Check if there is a connector available with the given connector type.
-    /// \param evse_id          The evse to check for.
-    /// \param connector_type   The connector type.
-    /// \return True when a connector is available and the evse id exists.
-    ///
-    bool is_connector_available(const uint32_t evse_id, std::optional<ConnectorEnum> connector_type);
 
     ///
     /// \brief Check if the connector exists on the given evse id.

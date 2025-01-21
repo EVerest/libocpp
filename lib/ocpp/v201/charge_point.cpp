@@ -142,7 +142,7 @@ void ChargePoint::start(BootReasonEnum bootreason, bool start_connecting) {
 
 void ChargePoint::stop() {
     this->ocsp_updater.stop();
-    this->heartbeat_timer.stop();
+    this->availability->stop_heartbeat_timer();
     this->boot_notification_timer.stop();
     this->connectivity_manager->disconnect();
     this->client_certificate_expiration_check_timer.stop();
@@ -374,7 +374,7 @@ void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime&
             }
 
             if (is_charging) {
-                this->set_evse_connectors_unavailable(evse_handle, false);
+                this->availability->set_evse_connectors_unavailable(evse_handle, false);
             } else {
                 send_reset = true;
             }
@@ -404,8 +404,8 @@ void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime&
         this->reset_scheduled_evseids.erase(evse_id);
     }
 
-    this->handle_scheduled_change_availability_requests(evse_id);
-    this->handle_scheduled_change_availability_requests(0);
+    this->availability->handle_scheduled_change_availability_requests(evse_id);
+    this->availability->handle_scheduled_change_availability_requests(0);
 }
 
 void ChargePoint::on_session_finished(const int32_t evse_id, const int32_t connector_id) {
@@ -1263,7 +1263,7 @@ void ChargePoint::change_all_connectors_to_unavailable_for_firmware_update() {
         // execute change availability if possible
         for (auto& evse : *this->evse_manager) {
             if (!evse.has_active_transaction()) {
-                this->set_evse_connectors_unavailable(evse, false);
+                this->availability->set_evse_connectors_unavailable(evse, false);
             }
         }
         // Check succeeded, trigger the callback if needed
@@ -1275,12 +1275,12 @@ void ChargePoint::change_all_connectors_to_unavailable_for_firmware_update() {
         // put all EVSEs to unavailable that do not have active transaction
         for (auto& evse : *this->evse_manager) {
             if (!evse.has_active_transaction()) {
-                this->set_evse_connectors_unavailable(evse, false);
+                this->availability->set_evse_connectors_unavailable(evse, false);
             } else {
                 EVSE e;
                 e.id = evse.get_id();
                 msg.evse = e;
-                this->scheduled_change_availability_requests[evse.get_id()] = {msg, false};
+                this->availability->set_scheduled_change_availability_requests(evse.get_id(), {msg, false});
             }
         }
     }
@@ -1395,8 +1395,8 @@ void ChargePoint::handle_variable_changed(const SetVariableData& set_variable_da
     if (component_variable == ControllerComponentVariables::HeartbeatInterval and
         this->registration_status == RegistrationStatusEnum::Accepted) {
         try {
-            this->heartbeat_timer.interval([this]() { this->heartbeat_req(); },
-                                           std::chrono::seconds(std::stoi(set_variable_data.attributeValue.get())));
+            this->availability->set_heartbeat_timer_interval(
+                std::chrono::seconds(std::stoi(set_variable_data.attributeValue.get())));
         } catch (const std::invalid_argument& e) {
             EVLOG_error << "Invalid argument exception while updating the heartbeat interval: " << e.what();
         } catch (const std::out_of_range& e) {
@@ -1579,32 +1579,6 @@ bool ChargePoint::is_evse_connector_available(EvseInterface& evse) const {
 
     // Connectors are faulted or unavailable.
     return false;
-}
-
-void ChargePoint::set_evse_connectors_unavailable(EvseInterface& evse, bool persist) {
-    uint32_t number_of_connectors = evse.get_number_of_connectors();
-
-    for (uint32_t i = 1; i <= number_of_connectors; ++i) {
-        evse.set_connector_operative_status(static_cast<int32_t>(i), OperationalStatusEnum::Inoperative, persist);
-    }
-}
-
-bool ChargePoint::is_connector_available(const uint32_t evse_id, std::optional<ConnectorEnum> connector_type) {
-    EvseInterface* evse;
-    try {
-        evse = &evse_manager->get_evse(static_cast<int32_t>(evse_id));
-    } catch (const EvseOutOfRangeException&) {
-        EVLOG_error << "Evse id " << evse_id << " is not a valid evse id.";
-        return false;
-    }
-
-    std::optional<ConnectorStatusEnum> status =
-        evse->get_connector_status(connector_type.value_or(ConnectorEnum::Unknown));
-    if (!status.has_value()) {
-        return false;
-    }
-
-    return status.value() == ConnectorStatusEnum::Available;
 }
 
 bool ChargePoint::does_connector_exist(const uint32_t evse_id, std::optional<ConnectorEnum> connector_type) {
@@ -1814,7 +1788,7 @@ void ChargePoint::handle_boot_notification_response(CallResult<BootNotificationR
 
         // set timers
         if (msg.interval > 0) {
-            this->heartbeat_timer.interval([this]() { this->heartbeat_req(); }, std::chrono::seconds(msg.interval));
+            this->availability->set_heartbeat_timer_interval(std::chrono::seconds(msg.interval));
         }
 
         // in case the BootNotification.req was triggered by a TriggerMessage.req the timer might still run
@@ -2123,7 +2097,7 @@ void ChargePoint::handle_reset_req(Call<ResetRequest> call) {
         } else if (msg.type == ResetEnum::OnIdle and !evse_no_transactions.empty()) {
             for (const int32_t evse_id : evse_no_transactions) {
                 auto& evse = this->evse_manager->get_evse(evse_id);
-                this->set_evse_connectors_unavailable(evse, false);
+                this->availability->set_evse_connectors_unavailable(evse, false);
             }
         }
     }
@@ -2410,7 +2384,7 @@ void ChargePoint::handle_trigger_message(Call<TriggerMessageRequest> call) {
         break;
 
     case MessageTriggerEnum::Heartbeat:
-        this->heartbeat_req(true);
+        this->availability->heartbeat_req(true);
         break;
 
     case MessageTriggerEnum::LogStatusNotification: {
