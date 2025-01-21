@@ -19,8 +19,8 @@ namespace v201 {
 // Formward declarations.
 class DeviceModel;
 class EvseManagerInterface;
-class Availability;
-class Security;
+class AvailabilityInterface;
+class SecurityInterface;
 
 // Typedef
 typedef std::function<UpdateFirmwareResponse(const UpdateFirmwareRequest& request)> UpdateFirmwareRequestCallback;
@@ -42,8 +42,8 @@ private: // Members
     DeviceModel& device_model;
     EvseManagerInterface& evse_manager;
     EvseSecurity& evse_security;
-    Availability& availability;
-    Security& security;
+    AvailabilityInterface& availability;
+    SecurityInterface& security;
 
     UpdateFirmwareRequestCallback update_firmware_request_callback;
     std::optional<AllConnectorsUnavailableCallback> all_connectors_unavailable_callback;
@@ -56,9 +56,11 @@ private: // Members
 
 public:
     FirmwareUpdate(MessageDispatcherInterface<MessageType>& message_dispatcher, DeviceModel& device_model,
-                   EvseManagerInterface& evse_manager, EvseSecurity& evse_security, Availability& availability,
-                   Security& security, UpdateFirmwareRequestCallback update_firmware_request_callback,
-                   AllConnectorsUnavailableCallback all_connectors_unavailable_callback);
+                   EvseManagerInterface& evse_manager, EvseSecurity& evse_security,
+                   ocpp::v201::AvailabilityInterface& availability, SecurityInterface& security,
+                   UpdateFirmwareRequestCallback update_firmware_request_callback,
+                   std::optional<AllConnectorsUnavailableCallback> all_connectors_unavailable_callback);
+    void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
     void on_firmware_update_status_notification(int32_t request_id,
                                                 const FirmwareStatusEnum& firmware_update_status) override;
     void on_firmware_status_notification_request() override;

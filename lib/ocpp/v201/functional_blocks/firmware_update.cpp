@@ -4,6 +4,7 @@
 #include <ocpp/v201/functional_blocks/firmware_update.hpp>
 
 #include <ocpp/v201/functional_blocks/availability.hpp>
+#include <ocpp/v201/functional_blocks/security.hpp>
 #include <ocpp/v201/messages/FirmwareStatusNotification.hpp>
 
 #include <ocpp/v201/ctrlr_component_variables.hpp>
@@ -13,9 +14,9 @@
 namespace ocpp::v201 {
 FirmwareUpdate::FirmwareUpdate(MessageDispatcherInterface<MessageType>& message_dispatcher, DeviceModel& device_model,
                                EvseManagerInterface& evse_manager, EvseSecurity& evse_security,
-                               Availability& availability, Security& security,
+                               AvailabilityInterface& availability, SecurityInterface& security,
                                UpdateFirmwareRequestCallback update_firmware_request_callback,
-                               AllConnectorsUnavailableCallback all_connectors_unavailable_callback) :
+                               std::optional<AllConnectorsUnavailableCallback> all_connectors_unavailable_callback) :
     message_dispatcher(message_dispatcher),
     device_model(device_model),
     evse_manager(evse_manager),
