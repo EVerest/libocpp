@@ -6,11 +6,11 @@
 
 #include <ocpp/v201/messages/StatusNotification.hpp>
 
-ocpp::v201::Availability::Availability(
-    MessageDispatcherInterface<MessageType>& message_dispatcher, DeviceModel& device_model,
-    EvseManagerInterface& evse_manager, ComponentStateManagerInterface& component_state_manager,
-    std::optional<TimeSyncCallback> time_sync_callback,
-    std::optional<AllConnectorsUnavailableCallback> all_connectors_unavailable_callback) :
+namespace ocpp::v201 {
+Availability::Availability(MessageDispatcherInterface<MessageType>& message_dispatcher, DeviceModel& device_model,
+                           EvseManagerInterface& evse_manager, ComponentStateManagerInterface& component_state_manager,
+                           std::optional<TimeSyncCallback> time_sync_callback,
+                           std::optional<AllConnectorsUnavailableCallback> all_connectors_unavailable_callback) :
     message_dispatcher(message_dispatcher),
     device_model(device_model),
     evse_manager(evse_manager),
@@ -19,11 +19,11 @@ ocpp::v201::Availability::Availability(
     all_connectors_unavailable_callback(all_connectors_unavailable_callback) {
 }
 
-ocpp::v201::Availability::~Availability() {
+Availability::~Availability() {
     this->stop_heartbeat_timer();
 }
 
-void ocpp::v201::Availability::handle_message(const ocpp::EnhancedMessage<MessageType>& message) {
+void Availability::handle_message(const ocpp::EnhancedMessage<MessageType>& message) {
     const auto& json_message = message.message;
     switch (message.messageType) {
     case MessageType::ChangeAvailability:
@@ -37,9 +37,8 @@ void ocpp::v201::Availability::handle_message(const ocpp::EnhancedMessage<Messag
     }
 }
 
-void ocpp::v201::Availability::status_notification_req(const int32_t evse_id, const int32_t connector_id,
-                                                       const ConnectorStatusEnum status,
-                                                       const bool initiated_by_trigger_message) {
+void Availability::status_notification_req(const int32_t evse_id, const int32_t connector_id,
+                                           const ConnectorStatusEnum status, const bool initiated_by_trigger_message) {
     StatusNotificationRequest req;
     req.connectorId = connector_id;
     req.evseId = evse_id;
@@ -50,7 +49,7 @@ void ocpp::v201::Availability::status_notification_req(const int32_t evse_id, co
     this->message_dispatcher.dispatch_call(call, initiated_by_trigger_message);
 }
 
-void ocpp::v201::Availability::heartbeat_req(const bool initiated_by_trigger_message) {
+void Availability::heartbeat_req(const bool initiated_by_trigger_message) {
     HeartbeatRequest req;
 
     heartbeat_request_time = std::chrono::steady_clock::now();
@@ -58,7 +57,7 @@ void ocpp::v201::Availability::heartbeat_req(const bool initiated_by_trigger_mes
     this->message_dispatcher.dispatch_call(call, initiated_by_trigger_message);
 }
 
-bool ocpp::v201::Availability::are_all_connectors_effectively_inoperative() {
+bool Availability::are_all_connectors_effectively_inoperative() {
     // Check that all connectors on all EVSEs are inoperative
     for (const auto& evse : this->evse_manager) {
         for (int connector_id = 1; connector_id <= evse.get_number_of_connectors(); connector_id++) {
@@ -72,7 +71,7 @@ bool ocpp::v201::Availability::are_all_connectors_effectively_inoperative() {
     return true;
 }
 
-void ocpp::v201::Availability::handle_scheduled_change_availability_requests(const int32_t evse_id) {
+void Availability::handle_scheduled_change_availability_requests(const int32_t evse_id) {
     if (this->scheduled_change_availability_requests.count(evse_id)) {
         EVLOG_info << "Found scheduled ChangeAvailability.req for evse_id:" << evse_id;
         const auto req = this->scheduled_change_availability_requests[evse_id].request;
@@ -92,20 +91,20 @@ void ocpp::v201::Availability::handle_scheduled_change_availability_requests(con
     }
 }
 
-void ocpp::v201::Availability::set_scheduled_change_availability_requests(const int32_t evse_id,
-                                                                          AvailabilityChange availability_change) {
+void Availability::set_scheduled_change_availability_requests(const int32_t evse_id,
+                                                              AvailabilityChange availability_change) {
     this->scheduled_change_availability_requests[evse_id] = availability_change;
 }
 
-void ocpp::v201::Availability::set_heartbeat_timer_interval(const std::chrono::seconds& interval) {
+void Availability::set_heartbeat_timer_interval(const std::chrono::seconds& interval) {
     this->heartbeat_timer.interval([this]() { this->heartbeat_req(); }, interval);
 }
 
-void ocpp::v201::Availability::stop_heartbeat_timer() {
+void Availability::stop_heartbeat_timer() {
     this->heartbeat_timer.stop();
 }
 
-void ocpp::v201::Availability::handle_change_availability_req(Call<ChangeAvailabilityRequest> call) {
+void Availability::handle_change_availability_req(Call<ChangeAvailabilityRequest> call) {
     const auto msg = call.msg;
     ChangeAvailabilityResponse response;
     response.status = ChangeAvailabilityStatusEnum::Scheduled;
@@ -178,7 +177,7 @@ void ocpp::v201::Availability::handle_change_availability_req(Call<ChangeAvailab
     }
 }
 
-void ocpp::v201::Availability::handle_heartbeat_response(CallResult<HeartbeatResponse> call) {
+void Availability::handle_heartbeat_response(CallResult<HeartbeatResponse> call) {
     if (this->time_sync_callback.has_value() and
         this->device_model.get_value<std::string>(ControllerComponentVariables::TimeSource).find("Heartbeat") !=
             std::string::npos) {
@@ -190,7 +189,7 @@ void ocpp::v201::Availability::handle_heartbeat_response(CallResult<HeartbeatRes
     }
 }
 
-bool ocpp::v201::Availability::is_already_in_state(const ChangeAvailabilityRequest& request) {
+bool Availability::is_already_in_state(const ChangeAvailabilityRequest& request) {
     // TODO: This checks against the individual status setting. What about effective/persisted status?
     if (!request.evse.has_value()) {
         // We're addressing the whole charging station
@@ -206,7 +205,7 @@ bool ocpp::v201::Availability::is_already_in_state(const ChangeAvailabilityReque
                 request.evse.value().id, request.evse.value().connectorId.value()) == request.operationalStatus);
 }
 
-void ocpp::v201::Availability::execute_change_availability_request(ChangeAvailabilityRequest request, bool persist) {
+void Availability::execute_change_availability_request(ChangeAvailabilityRequest request, bool persist) {
     if (request.evse.has_value()) {
         if (request.evse.value().connectorId.has_value()) {
             this->set_connector_operative_status(request.evse.value().id, request.evse.value().connectorId.value(),
@@ -219,16 +218,16 @@ void ocpp::v201::Availability::execute_change_availability_request(ChangeAvailab
     }
 }
 
-void ocpp::v201::Availability::set_cs_operative_status(OperationalStatusEnum new_status, bool persist) {
+void Availability::set_cs_operative_status(OperationalStatusEnum new_status, bool persist) {
     this->component_state_manager.set_cs_individual_operational_status(new_status, persist);
 }
 
-void ocpp::v201::Availability::set_evse_operative_status(int32_t evse_id, OperationalStatusEnum new_status,
-                                                         bool persist) {
+void Availability::set_evse_operative_status(int32_t evse_id, OperationalStatusEnum new_status, bool persist) {
     this->evse_manager.get_evse(evse_id).set_evse_operative_status(new_status, persist);
 }
 
-void ocpp::v201::Availability::set_connector_operative_status(int32_t evse_id, int32_t connector_id,
-                                                              OperationalStatusEnum new_status, bool persist) {
+void Availability::set_connector_operative_status(int32_t evse_id, int32_t connector_id,
+                                                  OperationalStatusEnum new_status, bool persist) {
     this->evse_manager.get_evse(evse_id).set_connector_operative_status(connector_id, new_status, persist);
 }
+} // namespace ocpp::v201
