@@ -7,7 +7,7 @@ types:
     type: string
     enum:
 {% for value in enum.values %}
-      - {{ value }}
+      - "{{ value }}"
 {% endfor %}
 {% endfor %}
 {% for type in types %}
