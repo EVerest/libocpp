@@ -139,7 +139,6 @@ private: // Functions
     ///
     void handle_heartbeat_response(CallResult<HeartbeatResponse> call);
 
-
     /// \brief Helper function to determine if the requested change results in a state that the Connector(s) is/are
     /// already in \param request \return
     bool is_already_in_state(const ChangeAvailabilityRequest& request);
