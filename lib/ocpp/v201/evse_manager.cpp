@@ -93,5 +93,15 @@ bool EvseManager::is_valid_evse(const EVSE& evse) const {
             this->get_evse(evse.id).get_number_of_connectors() >= evse.connectorId.value());
 }
 
+// Free functions
+
+void set_evse_connectors_unavailable(EvseInterface& evse, bool persist) {
+    uint32_t number_of_connectors = evse.get_number_of_connectors();
+
+    for (uint32_t i = 1; i <= number_of_connectors; ++i) {
+        evse.set_connector_operative_status(static_cast<int32_t>(i), OperationalStatusEnum::Inoperative, persist);
+    }
+}
+
 } // namespace v201
 } // namespace ocpp

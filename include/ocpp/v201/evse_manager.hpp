@@ -9,6 +9,14 @@
 namespace ocpp {
 namespace v201 {
 
+///
+/// \brief Set all connectors of a given evse to unavailable.
+/// \param evse The evse.
+/// \param persist  True if unavailability should persist. If it is set to false, there will be a check per
+///                 connector if it was already set to true and if that is the case, it will be persisted anyway.
+///
+void set_evse_connectors_unavailable(EvseInterface& evse, bool persist);
+
 /// \brief Class used to access the Evse instances
 class EvseManagerInterface {
 public:

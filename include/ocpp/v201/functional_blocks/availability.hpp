@@ -65,14 +65,6 @@ public:
                                                             AvailabilityChange availability_change) = 0;
 
     ///
-    /// \brief Set all connectors of a given evse to unavailable.
-    /// \param evse The evse.
-    /// \param persist  True if unavailability should persist. If it is set to false, there will be a check per
-    ///                 connector if it was already set to true and if that is the case, it will be persisted anyway.
-    ///
-    virtual void set_evse_connectors_unavailable(EvseInterface& evse, bool persist) = 0;
-
-    ///
     /// \brief Set the heartbeat timer interval.
     /// \param interval The interval in seconds.
     ///
@@ -119,7 +111,6 @@ public:
     void handle_scheduled_change_availability_requests(const int32_t evse_id) override;
     void set_scheduled_change_availability_requests(const int32_t evse_id,
                                                     AvailabilityChange availability_change) override;
-    void set_evse_connectors_unavailable(EvseInterface& evse, bool persist) override;
 
     void set_heartbeat_timer_interval(const std::chrono::seconds& interval) override;
     void stop_heartbeat_timer() override;

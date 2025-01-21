@@ -97,14 +97,6 @@ void ocpp::v201::Availability::set_scheduled_change_availability_requests(const 
     this->scheduled_change_availability_requests[evse_id] = availability_change;
 }
 
-void ocpp::v201::Availability::set_evse_connectors_unavailable(EvseInterface& evse, bool persist) {
-    uint32_t number_of_connectors = evse.get_number_of_connectors();
-
-    for (uint32_t i = 1; i <= number_of_connectors; ++i) {
-        evse.set_connector_operative_status(static_cast<int32_t>(i), OperationalStatusEnum::Inoperative, persist);
-    }
-}
-
 void ocpp::v201::Availability::set_heartbeat_timer_interval(const std::chrono::seconds& interval) {
     this->heartbeat_timer.interval([this]() { this->heartbeat_req(); }, interval);
 }
