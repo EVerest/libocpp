@@ -627,13 +627,6 @@ private:
 
     /* OCPP message requests */
 
-    // Functional Block A: Security
-    void security_event_notification_req(const CiString<50>& event_type, const std::optional<CiString<255>>& tech_info,
-                                         const bool triggered_internally, const bool critical,
-                                         const std::optional<DateTime>& timestamp = std::nullopt);
-    void sign_certificate_req(const ocpp::CertificateSigningUseEnum& certificate_signing_use,
-                              const bool initiated_by_trigger_message = false);
-
     // Functional Block B: Provisioning
     void boot_notification_req(const BootReasonEnum& reason, const bool initiated_by_trigger_message = false);
     void notify_report_req(const int request_id, const std::vector<ReportData>& report_data);

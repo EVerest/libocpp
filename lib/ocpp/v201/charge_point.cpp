@@ -122,26 +122,26 @@ void ChargePoint::start(BootReasonEnum bootreason, bool start_connecting) {
         this->device_model->get_value<std::string>(ControllerComponentVariables::FirmwareVersion);
 
     if (this->bootreason == BootReasonEnum::RemoteReset) {
-        this->security_event_notification_req(
+        this->security->security_event_notification_req(
             CiString<50>(ocpp::security_events::RESET_OR_REBOOT),
             std::optional<CiString<255>>("Charging Station rebooted due to requested remote reset!"), true, true);
     } else if (this->bootreason == BootReasonEnum::ScheduledReset) {
-        this->security_event_notification_req(
+        this->security->security_event_notification_req(
             CiString<50>(ocpp::security_events::RESET_OR_REBOOT),
             std::optional<CiString<255>>("Charging Station rebooted due to a scheduled reset!"), true, true);
     } else if (this->bootreason == BootReasonEnum::PowerUp) {
         std::string startup_message = "Charging Station powered up! Firmware version: " + firmware_version;
-        this->security_event_notification_req(CiString<50>(ocpp::security_events::STARTUP_OF_THE_DEVICE),
-                                              std::optional<CiString<255>>(startup_message), true, true);
+        this->security->security_event_notification_req(CiString<50>(ocpp::security_events::STARTUP_OF_THE_DEVICE),
+                                                        std::optional<CiString<255>>(startup_message), true, true);
     } else if (this->bootreason == BootReasonEnum::FirmwareUpdate) {
         std::string startup_message =
             "Charging station reboot after firmware update. Firmware version: " + firmware_version;
-        this->security_event_notification_req(CiString<50>(ocpp::security_events::FIRMWARE_UPDATED),
-                                              std::optional<CiString<255>>(startup_message), true, true);
+        this->security->security_event_notification_req(CiString<50>(ocpp::security_events::FIRMWARE_UPDATED),
+                                                        std::optional<CiString<255>>(startup_message), true, true);
     } else {
         std::string startup_message = "Charging station reset or reboot. Firmware version: " + firmware_version;
-        this->security_event_notification_req(CiString<50>(ocpp::security_events::RESET_OR_REBOOT),
-                                              std::optional<CiString<255>>(startup_message), true, true);
+        this->security->security_event_notification_req(CiString<50>(ocpp::security_events::RESET_OR_REBOOT),
+                                                        std::optional<CiString<255>>(startup_message), true, true);
     }
 }
 
@@ -195,11 +195,11 @@ void ChargePoint::on_firmware_update_status_notification(int32_t request_id,
         std::string firmwareVersionMessage = "New firmware succesfully installed! Version: ";
         firmwareVersionMessage.append(
             this->device_model->get_value<std::string>(ControllerComponentVariables::FirmwareVersion));
-        this->security_event_notification_req(CiString<50>(ocpp::security_events::FIRMWARE_UPDATED),
-                                              std::optional<CiString<255>>(firmwareVersionMessage), true,
-                                              true); // L01.FR.31
+        this->security->security_event_notification_req(CiString<50>(ocpp::security_events::FIRMWARE_UPDATED),
+                                                        std::optional<CiString<255>>(firmwareVersionMessage), true,
+                                                        true); // L01.FR.31
     } else if (req.status == FirmwareStatusEnum::InvalidSignature) {
-        this->security_event_notification_req(
+        this->security->security_event_notification_req(
             CiString<50>(ocpp::security_events::INVALIDFIRMWARESIGNATURE),
             std::optional<CiString<255>>("Signature of the provided firmware is not valid!"), true,
             true); // L01.FR.03 - critical because TC_L_06_CS requires this message to be sent
@@ -536,8 +536,9 @@ void ChargePoint::configure_message_logging_format(const std::string& message_lo
                 if (status == ocpp::LogRotationStatus::RotatedWithDeletion) {
                     const auto& security_event = ocpp::security_events::SECURITYLOGWASCLEARED;
                     std::string tech_info = "Security log was rotated and an old log was deleted in the process";
-                    this->security_event_notification_req(CiString<50>(security_event), CiString<255>(tech_info), true,
-                                                          utils::is_critical(security_event));
+                    this->security->security_event_notification_req(CiString<50>(security_event),
+                                                                    CiString<255>(tech_info), true,
+                                                                    utils::is_critical(security_event));
                 }
             });
     } else {
@@ -797,7 +798,7 @@ void ChargePoint::on_security_event(const CiString<50>& event_type, const std::o
     } else {
         critical_security_event = utils::is_critical(event_type);
     }
-    this->security_event_notification_req(event_type, tech_info, false, critical_security_event, timestamp);
+    this->security->security_event_notification_req(event_type, tech_info, false, critical_security_event, timestamp);
 }
 
 void ChargePoint::on_variable_changed(const SetVariableData& set_variable_data) {
@@ -1124,16 +1125,16 @@ void ChargePoint::message_callback(const std::string& message) {
         this->message_dispatcher->dispatch_call_error(
             CallError(MessageId("-1"), "RpcFrameworkError", e.what(), json({})));
         const auto& security_event = ocpp::security_events::INVALIDMESSAGES;
-        this->security_event_notification_req(CiString<50>(security_event), CiString<255>(message), true,
-                                              utils::is_critical(security_event));
+        this->security->security_event_notification_req(CiString<50>(security_event), CiString<255>(message), true,
+                                                        utils::is_critical(security_event));
         return;
     } catch (const EnumConversionException& e) {
         EVLOG_error << "EnumConversionException during handling of message: " << e.what();
         auto call_error = CallError(MessageId("-1"), "FormationViolation", e.what(), json({}));
         this->message_dispatcher->dispatch_call_error(call_error);
         const auto& security_event = ocpp::security_events::INVALIDMESSAGES;
-        this->security_event_notification_req(CiString<50>(security_event), CiString<255>(message), true,
-                                              utils::is_critical(security_event));
+        this->security->security_event_notification_req(CiString<50>(security_event), CiString<255>(message), true,
+                                                        utils::is_critical(security_event));
         return;
     }
 
@@ -1678,26 +1679,6 @@ bool ChargePoint::is_offline() {
     return !this->connectivity_manager->is_websocket_connected();
 }
 
-void ChargePoint::security_event_notification_req(const CiString<50>& event_type,
-                                                  const std::optional<CiString<255>>& tech_info,
-                                                  const bool triggered_internally, const bool critical,
-                                                  const std::optional<DateTime>& timestamp) {
-    if (this->security == nullptr) {
-        EVLOG_error << "Security functional block not initialized";
-    }
-
-    this->security->security_event_notification_req(event_type, tech_info, triggered_internally, critical, timestamp);
-}
-
-void ChargePoint::sign_certificate_req(const ocpp::CertificateSigningUseEnum& certificate_signing_use,
-                                       const bool initiated_by_trigger_message) {
-    if (this->security == nullptr) {
-        EVLOG_error << "Security functional block not initialized";
-    }
-
-    this->sign_certificate_req(certificate_signing_use, initiated_by_trigger_message);
-}
-
 void ChargePoint::boot_notification_req(const BootReasonEnum& reason, const bool initiated_by_trigger_message) {
     EVLOG_debug << "Sending BootNotification";
     BootNotificationRequest req;
@@ -2131,8 +2112,8 @@ void ChargePoint::handle_set_network_profile_req(Call<SetNetworkProfileRequest> 
     EVLOG_info << tech_info;
 
     const auto& security_event = ocpp::security_events::RECONFIGURATIONOFSECURITYPARAMETERS;
-    this->security_event_notification_req(CiString<50>(security_event), CiString<255>(tech_info), true,
-                                          utils::is_critical(security_event));
+    this->security->security_event_notification_req(CiString<50>(security_event), CiString<255>(tech_info), true,
+                                                    utils::is_critical(security_event));
 
     response.status = SetNetworkProfileStatusEnum::Accepted;
     ocpp::CallResult<SetNetworkProfileResponse> call_result(response, call.uniqueId);
@@ -2541,11 +2522,11 @@ void ChargePoint::handle_trigger_message(Call<TriggerMessageRequest> call) {
     } break;
 
     case MessageTriggerEnum::SignChargingStationCertificate: {
-        sign_certificate_req(ocpp::CertificateSigningUseEnum::ChargingStationCertificate, true);
+        this->security->sign_certificate_req(ocpp::CertificateSigningUseEnum::ChargingStationCertificate, true);
     } break;
 
     case MessageTriggerEnum::SignV2GCertificate: {
-        sign_certificate_req(ocpp::CertificateSigningUseEnum::V2GCertificate, true);
+        this->security->sign_certificate_req(ocpp::CertificateSigningUseEnum::V2GCertificate, true);
     } break;
 
     default:
@@ -2990,7 +2971,7 @@ void ChargePoint::handle_firmware_update_req(Call<UpdateFirmwareRequest> call) {
     if ((response.status == UpdateFirmwareStatusEnum::InvalidCertificate) or
         (response.status == UpdateFirmwareStatusEnum::RevokedCertificate)) {
         // L01.FR.02
-        this->security_event_notification_req(
+        this->security->security_event_notification_req(
             CiString<50>(ocpp::security_events::INVALIDFIRMWARESIGNINGCERTIFICATE),
             std::optional<CiString<255>>("Provided signing certificate is not valid!"), true,
             true); // critical because TC_L_05_CS requires this message to be sent
@@ -3076,8 +3057,8 @@ void ChargePoint::handle_install_certificate_req(Call<InstallCertificateRequest>
             const auto& security_event = ocpp::security_events::RECONFIGURATIONOFSECURITYPARAMETERS;
             std::string tech_info =
                 "Installed certificate: " + conversions::install_certificate_use_enum_to_string(msg.certificateType);
-            this->security_event_notification_req(CiString<50>(security_event), CiString<255>(tech_info), true,
-                                                  utils::is_critical(security_event));
+            this->security->security_event_notification_req(CiString<50>(security_event), CiString<255>(tech_info),
+                                                            true, utils::is_critical(security_event));
         }
     }
     ocpp::CallResult<InstallCertificateResponse> call_result(response, call.uniqueId);
@@ -3099,8 +3080,8 @@ void ChargePoint::handle_delete_certificate_req(Call<DeleteCertificateRequest> c
     if (response.status == DeleteCertificateStatusEnum::Accepted) {
         const auto& security_event = ocpp::security_events::RECONFIGURATIONOFSECURITYPARAMETERS;
         std::string tech_info = "Deleted certificate wit serial number: " + msg.certificateHashData.serialNumber.get();
-        this->security_event_notification_req(CiString<50>(security_event), CiString<255>(tech_info), true,
-                                              utils::is_critical(security_event));
+        this->security->security_event_notification_req(CiString<50>(security_event), CiString<255>(tech_info), true,
+                                                        utils::is_critical(security_event));
     }
 
     ocpp::CallResult<DeleteCertificateResponse> call_result(response, call.uniqueId);
@@ -3498,7 +3479,7 @@ void ChargePoint::scheduled_check_client_certificate_expiration() {
     if (expiry_days_count < 30) {
         EVLOG_info << "CSMS client certificate is invalid in " << expiry_days_count
                    << " days. Requesting new certificate with certificate signing request";
-        this->sign_certificate_req(ocpp::CertificateSigningUseEnum::ChargingStationCertificate);
+        this->security->sign_certificate_req(ocpp::CertificateSigningUseEnum::ChargingStationCertificate);
     } else {
         EVLOG_info << "CSMS client certificate is still valid.";
     }
@@ -3518,7 +3499,7 @@ void ChargePoint::scheduled_check_v2g_certificate_expiration() {
         if (expiry_days_count < 30) {
             EVLOG_info << "V2GCertificate is invalid in " << expiry_days_count
                        << " days. Requesting new certificate with certificate signing request";
-            this->sign_certificate_req(ocpp::CertificateSigningUseEnum::V2GCertificate);
+            this->security->sign_certificate_req(ocpp::CertificateSigningUseEnum::V2GCertificate);
         } else {
             EVLOG_info << "V2GCertificate is still valid.";
         }
@@ -3595,8 +3576,8 @@ void ChargePoint::websocket_connection_failed(ConnectionFailedReason reason) {
     switch (reason) {
     case ConnectionFailedReason::InvalidCSMSCertificate:
         if (!this->skip_invalid_csms_certificate_notifications) {
-            this->security_event_notification_req(CiString<50>(ocpp::security_events::INVALIDCSMSCERTIFICATE),
-                                                  std::nullopt, true, true);
+            this->security->security_event_notification_req(CiString<50>(ocpp::security_events::INVALIDCSMSCERTIFICATE),
+                                                            std::nullopt, true, true);
             this->skip_invalid_csms_certificate_notifications = true;
         } else {
             EVLOG_debug << "Skipping InvalidCsmsCertificate SecurityEvent since it has been sent already";
@@ -3604,8 +3585,8 @@ void ChargePoint::websocket_connection_failed(ConnectionFailedReason reason) {
         break;
     case ConnectionFailedReason::FailedToAuthenticateAtCsms:
         const auto& security_event = ocpp::security_events::FAILEDTOAUTHENTICATEATCSMS;
-        this->security_event_notification_req(CiString<50>(security_event), std::nullopt, true,
-                                              utils::is_critical(security_event));
+        this->security->security_event_notification_req(CiString<50>(security_event), std::nullopt, true,
+                                                        utils::is_critical(security_event));
         break;
     }
 }

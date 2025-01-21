@@ -30,14 +30,6 @@ target_include_directories(libocpp_test_security PUBLIC
         ${LIBOCPP_TESTS_V201_ROOT_DIR}
 )
 
-target_link_libraries(libocpp_unit_tests_functional_block_security PRIVATE
-        ocpp
-        GTest::gmock_main
-        GTest::gtest_main
-)
-
-set_target_properties(libocpp_unit_tests_functional_block_security PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${TEST_BINARY_DIR})
-
 
 set(TEST_AUTHORIZATION_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/../device_model_test_helper.cpp
             ${LIBOCPP_LIB_PATH}/ocpp/v201/functional_blocks/authorization.cpp
