@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include <ocpp/v201/device_model.hpp>
-#include <ocpp/v201/evse_manager.hpp>
 #include <ocpp/v201/message_dispatcher.hpp>
 #include <ocpp/v201/message_handler.hpp>
 
@@ -12,6 +10,10 @@
 #include <ocpp/v201/messages/Heartbeat.hpp>
 
 namespace ocpp::v201 {
+
+class DeviceModel;
+class EvseManagerInterface;
+class ComponentStateManagerInterface;
 
 /// \brief Combines ChangeAvailabilityRequest with persist flag for scheduled Availability changes
 struct AvailabilityChange {

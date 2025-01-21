@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright Pionix GmbH and Contributors to EVerest
 
-#include "ocpp/v201/ctrlr_component_variables.hpp"
 #include <ocpp/v201/functional_blocks/availability.hpp>
+
+#include <ocpp/v201/ctrlr_component_variables.hpp>
+#include <ocpp/v201/device_model.hpp>
+#include <ocpp/v201/evse_manager.hpp>
 
 #include <ocpp/v201/messages/StatusNotification.hpp>
 
