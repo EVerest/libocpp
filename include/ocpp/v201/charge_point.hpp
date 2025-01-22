@@ -32,7 +32,6 @@
 #include <ocpp/v201/ocpp_enums.hpp>
 #include <ocpp/v201/ocpp_types.hpp>
 #include <ocpp/v201/ocsp_updater.hpp>
-#include <ocpp/v201/smart_charging.hpp>
 #include <ocpp/v201/types.hpp>
 #include <ocpp/v201/utils.hpp>
 
@@ -539,8 +538,6 @@ private:
     }
 
 protected:
-    std::shared_ptr<SmartChargingHandlerInterface> smart_charging_handler;
-
     void handle_message(const EnhancedMessage<v201::MessageType>& message);
     void clear_invalid_charging_profiles();
 

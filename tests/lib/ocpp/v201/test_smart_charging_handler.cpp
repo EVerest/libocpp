@@ -18,6 +18,8 @@
 #include <memory>
 #include <sqlite3.h>
 
+#include <device_model_test_helper.hpp>
+
 #include <component_state_manager_mock.hpp>
 #include <device_model_storage_interface_mock.hpp>
 #include <evse_manager_fake.hpp>
@@ -209,17 +211,37 @@ protected:
         return clear_charging_profile;
     }
 
-    void create_device_model_db(const std::string& path) {
-        InitDeviceModelDb db(path, MIGRATION_FILES_PATH);
-        db.initialize_database(CONFIG_PATH, true);
-    }
+    // void create_device_model_db(const std::string& path) {
+    //     InitDeviceModelDb db(path, MIGRATION_FILES_PATH);
+    //     db.initialize_database(CONFIG_PATH, true);
+    // }
 
-    std::shared_ptr<DeviceModel>
-    create_device_model(const std::optional<std::string> ac_phase_switching_supported = "true") {
-        create_device_model_db(DEVICE_MODEL_DB_IN_MEMORY_PATH);
-        auto device_model_storage = std::make_unique<DeviceModelStorageSqlite>(DEVICE_MODEL_DB_IN_MEMORY_PATH);
-        auto device_model = std::make_shared<DeviceModel>(std::move(device_model_storage));
+    // std::shared_ptr<DeviceModel>
+    // create_device_model(const std::optional<std::string> ac_phase_switching_supported = "true") {
+    //     create_device_model_db(DEVICE_MODEL_DB_IN_MEMORY_PATH);
+    //     auto device_model_storage = std::make_unique<DeviceModelStorageSqlite>(DEVICE_MODEL_DB_IN_MEMORY_PATH);
+    //     auto device_model = std::make_shared<DeviceModel>(std::move(device_model_storage));
 
+    //     // Defaults
+    //     const auto& charging_rate_unit_cv = ControllerComponentVariables::ChargingScheduleChargingRateUnit;
+    //     device_model->set_value(charging_rate_unit_cv.component, charging_rate_unit_cv.variable.value(),
+    //                             AttributeEnum::Actual, "A,W", "test", true);
+
+    //     const auto& ac_phase_switching_cv = ControllerComponentVariables::ACPhaseSwitchingSupported;
+    //     device_model->set_value(ac_phase_switching_cv.component, ac_phase_switching_cv.variable.value(),
+    //                             AttributeEnum::Actual, ac_phase_switching_supported.value_or(""), "test", true);
+
+    //     return device_model;
+    // }
+
+    TestSmartChargingHandler
+    create_smart_charging_handler(const std::optional<std::string> ac_phase_switching_supported = "true") {
+        std::unique_ptr<common::DatabaseConnection> database_connection =
+            std::make_unique<common::DatabaseConnection>(fs::path("/tmp/ocpp201") / "cp.db");
+        database_handler =
+            std::make_shared<DatabaseHandler>(std::move(database_connection), MIGRATION_FILES_LOCATION_V201);
+        database_handler->open_connection();
+        device_model = device_model_test_helper.get_device_model();
         // Defaults
         const auto& charging_rate_unit_cv = ControllerComponentVariables::ChargingScheduleChargingRateUnit;
         device_model->set_value(charging_rate_unit_cv.component, charging_rate_unit_cv.variable.value(),
@@ -228,19 +250,8 @@ protected:
         const auto& ac_phase_switching_cv = ControllerComponentVariables::ACPhaseSwitchingSupported;
         device_model->set_value(ac_phase_switching_cv.component, ac_phase_switching_cv.variable.value(),
                                 AttributeEnum::Actual, ac_phase_switching_supported.value_or(""), "test", true);
-
-        return device_model;
+        return TestSmartChargingHandler(*this->evse_manager, *device_model, *database_handler);
     }
-
-    TestSmartChargingHandler create_smart_charging_handler() {
-        std::unique_ptr<common::DatabaseConnection> database_connection =
-            std::make_unique<common::DatabaseConnection>(fs::path("/tmp/ocpp201") / "cp.db");
-        database_handler =
-            std::make_shared<DatabaseHandler>(std::move(database_connection), MIGRATION_FILES_LOCATION_V201);
-        database_handler->open_connection();
-        return TestSmartChargingHandler(*this->evse_manager, device_model, *database_handler);
-    }
-
     std::string uuid() {
         std::stringstream s;
         s << uuid_generator();
@@ -270,13 +281,14 @@ protected:
     }
 
     // Default values used within the tests
+    DeviceModelTestHelper device_model_test_helper;
     std::unique_ptr<EvseManagerFake> evse_manager = std::make_unique<EvseManagerFake>(NR_OF_EVSES);
 
     sqlite3* db_handle;
     std::shared_ptr<DatabaseHandler> database_handler;
 
     bool ignore_no_transaction = true;
-    std::shared_ptr<DeviceModel> device_model = create_device_model();
+    DeviceModel* device_model;
     TestSmartChargingHandler handler = create_smart_charging_handler();
     boost::uuids::random_generator uuid_generator = boost::uuids::random_generator();
 };
@@ -347,16 +359,12 @@ TEST_F(SmartChargingHandlerTestFixtureV201, K01FR19AndFR48_NumberPhasesOtherThan
 
 TEST_F(SmartChargingHandlerTestFixtureV201,
        K01FR20AndFR48_IfPhaseToUseSetAndACPhaseSwitchingSupportedUndefined_ThenProfileIsInvalid) {
-    // As a device model with ac switching supported default set to 'true', we want to create a new database with the
-    // ac switching support not set. But this is an in memory database, which is kept open until all handles to it are
-    // closed. So we close all connections to the database.
-    database->close_connection();
-    device_model = nullptr;
-    // Re open the connection, to an empty in memory database.
-    database->open_connection();
-    // And recreate the device model.
-    auto device_model_without_ac_phase_switching = create_device_model({});
-    device_model = std::move(device_model_without_ac_phase_switching);
+    // As a device model with ac switching supported default set to 'true', we want to have the
+    // ac switching support not set.
+    const auto& ac_phase_switching_cv = ControllerComponentVariables::ACPhaseSwitchingSupported;
+    device_model_test_helper.set_variable_attribute_value_null(
+        ac_phase_switching_cv.component.name, std::nullopt, std::nullopt, std::nullopt,
+        ac_phase_switching_cv.variable->name, std::nullopt, AttributeEnum::Actual);
 
     auto periods = create_charging_schedule_periods_with_phases(0, 1, 1);
     auto profile = create_charging_profile(
@@ -372,16 +380,12 @@ TEST_F(SmartChargingHandlerTestFixtureV201,
 
 TEST_F(SmartChargingHandlerTestFixtureV201,
        K01FR20AndFR48_IfPhaseToUseSetAndACPhaseSwitchingSupportedFalse_ThenProfileIsInvalid) {
-    // As a device model with ac switching supported default set to 'true', we want to create a new database with the
-    // ac switching support not set. But this is an in memory database, which is kept open until all handles to it are
-    // closed. So we close all connections to the database.
-    database->close_connection();
-    device_model = nullptr;
-    // Re open the connection, to an empty in memory database.
-    database->open_connection();
-    // And recreate the device model setting ac phase switching to 'false'.
-    auto device_model_with_false_ac_phase_switching = create_device_model("false");
-    device_model = std::move(device_model_with_false_ac_phase_switching);
+    // As a device model with ac switching supported default set to 'true', we want to have the ac switching support not
+    // set.
+    const auto& ac_phase_switching_cv = ControllerComponentVariables::ACPhaseSwitchingSupported;
+    device_model_test_helper.set_variable_attribute_value_null(
+        ac_phase_switching_cv.component.name, std::nullopt, std::nullopt, std::nullopt,
+        ac_phase_switching_cv.variable->name, std::nullopt, AttributeEnum::Actual);
 
     auto periods = create_charging_schedule_periods_with_phases(0, 1, 1);
     auto profile = create_charging_profile(

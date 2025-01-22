@@ -15,13 +15,13 @@ namespace ocpp::v201 {
 SmartCharging::SmartCharging(DeviceModel& device_model, EvseManagerInterface& evse_manager,
                              ConnectivityManagerInterface& connectivity_manager,
                              MessageDispatcherInterface<MessageType>& message_dispatcher,
-                             SmartChargingHandlerInterface& smart_charging_handler,
+                             DatabaseHandlerInterface& database_handler,
                              std::function<void()> set_charging_profiles_callback) :
     device_model(device_model),
     evse_manager(evse_manager),
     connectivity_manager(connectivity_manager),
     message_dispatcher(message_dispatcher),
-    smart_charging_handler(smart_charging_handler),
+    smart_charging_handler(std::make_unique<SmartChargingHandler>(evse_manager, device_model, database_handler)),
     set_charging_profiles_callback(set_charging_profiles_callback) {
 }
 
@@ -72,6 +72,23 @@ std::vector<CompositeSchedule> SmartCharging::get_all_composite_schedules(const 
     }
 
     return composite_schedules;
+}
+
+void SmartCharging::delete_transaction_tx_profiles(const std::string& transaction_id) {
+    this->smart_charging_handler->delete_transaction_tx_profiles(transaction_id);
+}
+
+SetChargingProfileResponse
+SmartCharging::conform_validate_and_add_profile(ChargingProfile& profile, int32_t evse_id,
+                                                ChargingLimitSourceEnum charging_limit_source,
+                                                AddChargingProfileSource source_of_request) {
+    return this->smart_charging_handler->conform_validate_and_add_profile(profile, evse_id, charging_limit_source,
+                                                                          source_of_request);
+}
+
+ProfileValidationResultEnum SmartCharging::conform_and_validate_profile(ChargingProfile& profile, int32_t evse_id,
+                                                                        AddChargingProfileSource source_of_request) {
+    return this->smart_charging_handler->conform_and_validate_profile(profile, evse_id, source_of_request);
 }
 
 void SmartCharging::report_charging_profile_req(const int32_t request_id, const int32_t evse_id,
@@ -128,7 +145,7 @@ void SmartCharging::handle_set_charging_profile_req(Call<SetChargingProfileReque
         return;
     }
 
-    response = this->smart_charging_handler.conform_validate_and_add_profile(msg.chargingProfile, msg.evseId);
+    response = this->smart_charging_handler->conform_validate_and_add_profile(msg.chargingProfile, msg.evseId);
     if (response.status == ChargingProfileStatusEnum::Accepted) {
         EVLOG_debug << "Accepting SetChargingProfileRequest";
         this->set_charging_profiles_callback();
@@ -158,7 +175,7 @@ void SmartCharging::handle_clear_charging_profile_req(Call<ClearChargingProfileR
         EVLOG_debug << "Rejecting SetChargingProfileRequest:\n reasonCode: " << response.statusInfo->reasonCode.get()
                     << "\nadditionalInfo: " << response.statusInfo->additionalInfo->get();
     } else {
-        response = this->smart_charging_handler.clear_profiles(msg);
+        response = this->smart_charging_handler->clear_profiles(msg);
     }
 
     ocpp::CallResult<ClearChargingProfileResponse> call_result(response, call.uniqueId);
@@ -170,7 +187,7 @@ void SmartCharging::handle_get_charging_profiles_req(Call<GetChargingProfilesReq
     const auto msg = call.msg;
     GetChargingProfilesResponse response;
 
-    const auto profiles_to_report = this->smart_charging_handler.get_reported_profiles(msg);
+    const auto profiles_to_report = this->smart_charging_handler->get_reported_profiles(msg);
 
     response.status =
         profiles_to_report.empty() ? GetChargingProfileStatusEnum::NoProfiles : GetChargingProfileStatusEnum::Accepted;
@@ -273,9 +290,9 @@ SmartCharging::get_composite_schedule_internal(const GetCompositeScheduleRequest
         auto end_time = ocpp::DateTime(start_time.to_time_point() + std::chrono::seconds(request.duration));
 
         std::vector<ChargingProfile> valid_profiles =
-            this->smart_charging_handler.get_valid_profiles(request.evseId, profiles_to_ignore);
+            this->smart_charging_handler->get_valid_profiles(request.evseId, profiles_to_ignore);
 
-        auto schedule = this->smart_charging_handler.calculate_composite_schedule(
+        auto schedule = this->smart_charging_handler->calculate_composite_schedule(
             valid_profiles, start_time, end_time, request.evseId, charging_rate_unit.value());
 
         response.schedule = schedule;

@@ -12,6 +12,7 @@
 namespace ocpp::v201 {
 class SmartChargingHandlerMock : public SmartChargingHandlerInterface {
 public:
+    // Methods of the SmartChargingHandlerInterface.
     MOCK_METHOD(SetChargingProfileResponse, conform_validate_and_add_profile,
                 (ChargingProfile & profile, int32_t evse_id, ChargingLimitSourceEnum charging_limit_source,
                  AddChargingProfileSource source_of_request));

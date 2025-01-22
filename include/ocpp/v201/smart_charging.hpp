@@ -103,12 +103,12 @@ public:
 class SmartChargingHandler : public SmartChargingHandlerInterface {
 private:
     EvseManagerInterface& evse_manager;
-    std::shared_ptr<DeviceModel>& device_model;
+    DeviceModel& device_model;
 
     ocpp::v201::DatabaseHandlerInterface& database_handler;
 
 public:
-    SmartChargingHandler(EvseManagerInterface& evse_manager, std::shared_ptr<DeviceModel>& device_model,
+    SmartChargingHandler(EvseManagerInterface& evse_manager, DeviceModel& device_model,
                          ocpp::v201::DatabaseHandlerInterface& database_handler);
 
     ///

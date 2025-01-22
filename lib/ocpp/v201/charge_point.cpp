@@ -306,7 +306,7 @@ void ChargePoint::on_transaction_finished(const int32_t evse_id, const DateTime&
                                 transaction_id_token, meter_values, std::nullopt, this->is_offline(), std::nullopt);
 
     // K02.FR.05 The transaction is over, so delete the TxProfiles associated with the transaction.
-    smart_charging_handler->delete_transaction_tx_profiles(enhanced_transaction->get_transaction().transactionId);
+    smart_charging->delete_transaction_tx_profiles(enhanced_transaction->get_transaction().transactionId);
     evse_handle.release_transaction();
 
     bool send_reset = false;
@@ -599,10 +599,6 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
     this->evse_manager = std::make_unique<EvseManager>(
         evse_connector_structure, *this->device_model, this->database_handler, component_state_manager,
         transaction_meter_value_callback, this->callbacks.pause_charging_callback);
-
-    this->smart_charging_handler =
-        std::make_shared<SmartChargingHandler>(*this->evse_manager, this->device_model, *this->database_handler);
-
     this->configure_message_logging_format(message_log_path);
 
     this->connectivity_manager =
@@ -702,7 +698,7 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
 
     this->smart_charging = std::make_unique<SmartCharging>(
         *this->device_model, *this->evse_manager, *this->connectivity_manager, *this->message_dispatcher,
-        *this->smart_charging_handler, this->callbacks.set_charging_profiles_callback);
+        *this->database_handler, this->callbacks.set_charging_profiles_callback);
 
     this->tariff_and_cost = std::make_unique<TariffAndCost>(
         *this->message_dispatcher, *this->device_model, *this->evse_manager, *this->meter_values,
@@ -2052,7 +2048,7 @@ void ChargePoint::handle_remote_start_transaction_request(Call<RequestStartTrans
 
                 if (charging_profile.chargingProfilePurpose == ChargingProfilePurposeEnum::TxProfile) {
 
-                    const auto add_profile_response = this->smart_charging_handler->conform_validate_and_add_profile(
+                    const auto add_profile_response = this->smart_charging->conform_validate_and_add_profile(
                         msg.chargingProfile.value(), evse_id, ChargingLimitSourceEnum::CSO,
                         AddChargingProfileSource::RequestStartTransactionRequest);
                     if (add_profile_response.status == ChargingProfileStatusEnum::Accepted) {
@@ -2260,7 +2256,7 @@ void ChargePoint::clear_invalid_charging_profiles() {
         for (const auto& [evse_id, profiles] : evses) {
             for (auto profile : profiles) {
                 try {
-                    if (this->smart_charging_handler->conform_and_validate_profile(profile, evse_id) !=
+                    if (this->smart_charging->conform_and_validate_profile(profile, evse_id) !=
                         ProfileValidationResultEnum::Valid) {
                         this->database_handler->delete_charging_profile(profile.id);
                     }

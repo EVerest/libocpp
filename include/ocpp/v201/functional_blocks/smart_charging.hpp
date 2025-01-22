@@ -5,7 +5,9 @@
 
 #include <ocpp/v201/message_handler.hpp>
 
+#include <ocpp/v201/database_handler.hpp>
 #include <ocpp/v201/message_dispatcher.hpp>
+#include <ocpp/v201/smart_charging.hpp>
 
 #include <ocpp/v201/messages/ClearChargingProfile.hpp>
 #include <ocpp/v201/messages/GetChargingProfiles.hpp>
@@ -31,7 +33,30 @@ public:
     /// \param unit of the period entries of the composite schedules
     /// \return vector of composite schedules, one for each evse_id including 0.
     virtual std::vector<CompositeSchedule> get_all_composite_schedules(const int32_t duration,
-                                                               const ChargingRateUnitEnum& unit) = 0;
+                                                                       const ChargingRateUnitEnum& unit) = 0;
+
+    ///
+    /// \brief for the given \p transaction_id removes the associated charging profile.
+    ///
+    virtual void delete_transaction_tx_profiles(const std::string& transaction_id) = 0;
+
+    ///
+    /// \brief validates the given \p profile according to the specification,
+    /// adding it to our stored list of profiles if valid.
+    ///
+    virtual SetChargingProfileResponse conform_validate_and_add_profile(
+        ChargingProfile& profile, int32_t evse_id,
+        ChargingLimitSourceEnum charging_limit_source = ChargingLimitSourceEnum::CSO,
+        AddChargingProfileSource source_of_request = AddChargingProfileSource::SetChargingProfile) = 0;
+
+    ///
+    /// \brief validates the given \p profile according to the specification.
+    /// If a profile does not have validFrom or validTo set, we conform the values
+    /// to a representation that fits the spec.
+    ///
+    virtual ProfileValidationResultEnum conform_and_validate_profile(
+        ChargingProfile& profile, int32_t evse_id,
+        AddChargingProfileSource source_of_request = AddChargingProfileSource::SetChargingProfile) = 0;
 };
 
 class SmartCharging : public SmartChargingInterface {
@@ -40,17 +65,28 @@ private: // Members
     EvseManagerInterface& evse_manager;
     ConnectivityManagerInterface& connectivity_manager;
     MessageDispatcherInterface<MessageType>& message_dispatcher;
-    SmartChargingHandlerInterface& smart_charging_handler;
+    std::unique_ptr<SmartChargingHandlerInterface> smart_charging_handler;
 
     std::function<void()> set_charging_profiles_callback;
 
 public:
-    SmartCharging(DeviceModel& device_model, EvseManagerInterface& evse_manager, ConnectivityManagerInterface& connectivity_manager,
-                  MessageDispatcherInterface<MessageType>& message_dispatcher, SmartChargingHandlerInterface& smart_charging_handler,
-                  std::function<void()> set_charging_profiles_callback);
+    SmartCharging(DeviceModel& device_model, EvseManagerInterface& evse_manager,
+                  ConnectivityManagerInterface& connectivity_manager,
+                  MessageDispatcherInterface<MessageType>& message_dispatcher,
+                  DatabaseHandlerInterface& database_handler, std::function<void()> set_charging_profiles_callback);
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
     std::vector<CompositeSchedule> get_all_composite_schedules(const int32_t duration,
                                                                const ChargingRateUnitEnum& unit) override;
+
+    void delete_transaction_tx_profiles(const std::string& transaction_id) override;
+
+    SetChargingProfileResponse conform_validate_and_add_profile(
+        ChargingProfile& profile, int32_t evse_id,
+        ChargingLimitSourceEnum charging_limit_source = ChargingLimitSourceEnum::CSO,
+        AddChargingProfileSource source_of_request = AddChargingProfileSource::SetChargingProfile) override;
+    ProfileValidationResultEnum conform_and_validate_profile(
+        ChargingProfile& profile, int32_t evse_id,
+        AddChargingProfileSource source_of_request = AddChargingProfileSource::SetChargingProfile) override;
 
 private: // Functions
     /* OCPP message requests */

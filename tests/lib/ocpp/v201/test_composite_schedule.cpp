@@ -205,7 +205,7 @@ protected:
         this->database_handler =
             std::make_unique<DatabaseHandlerFake>(std::move(database_connection), MIGRATION_FILES_LOCATION_V201);
         database_handler->open_connection();
-        return TestSmartChargingHandler(*this->evse_manager, device_model, *database_handler);
+        return TestSmartChargingHandler(*this->evse_manager, *device_model, *database_handler);
     }
 
     // Default values used within the tests

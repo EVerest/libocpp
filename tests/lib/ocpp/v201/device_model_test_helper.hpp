@@ -77,6 +77,15 @@ public:
                                          const std::optional<uint32_t>& connector_id, const std::string& variable_name,
                                          const std::optional<std::string>& variable_instance);
 
+    // TODO mz add documentation
+    bool set_variable_attribute_value_null(const std::string& component_name,
+                                           const std::optional<std::string>& component_instance,
+                                           const std::optional<uint32_t>& evse_id,
+                                           const std::optional<uint32_t>& connector_id,
+                                           const std::string& variable_name,
+                                           const std::optional<std::string>& variable_instance,
+                                           const AttributeEnum& attribute_enum);
+
 private:
     const std::string& database_path;
     const std::string& migration_files_path;
