@@ -16,10 +16,13 @@ public:
         handler(std::move(database), sql_migration_files_path) {
 
         // Add more wrappers here as needed
-        ON_CALL(*this, open_connection).WillByDefault([this]() { handler.open_connection(); });
         ON_CALL(*this, new_statement).WillByDefault([this](const std::string& sql) {
             return handler.new_statement(sql);
         });
+    }
+
+    void open_connection() {
+        this->handler.open_connection();
     }
 };
 } // namespace ocpp::v201
