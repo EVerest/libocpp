@@ -70,49 +70,19 @@ protected:
     }
 
     ChargingSchedule create_charge_schedule(ChargingRateUnitEnum charging_rate_unit) {
-        int32_t id;
-        std::vector<ChargingSchedulePeriod> charging_schedule_period;
-        std::optional<CustomData> custom_data;
-        std::optional<ocpp::DateTime> start_schedule;
-        std::optional<int32_t> duration;
-        std::optional<float> min_charging_rate;
-        std::optional<SalesTariff> sales_tariff;
-
-        return ChargingSchedule{
-            id,
-            charging_rate_unit,
-            charging_schedule_period,
-            custom_data,
-            start_schedule,
-            duration,
-            min_charging_rate,
-            std::nullopt,
-            std::nullopt,
-            sales_tariff,
-        };
+        ChargingSchedule charging_schedule;
+        charging_schedule.chargingRateUnit = charging_rate_unit;
+        return charging_schedule;
     }
 
     ChargingSchedule create_charge_schedule(ChargingRateUnitEnum charging_rate_unit,
                                             std::vector<ChargingSchedulePeriod> charging_schedule_period,
                                             std::optional<ocpp::DateTime> start_schedule = std::nullopt) {
-        int32_t id;
-        std::optional<CustomData> custom_data;
-        std::optional<int32_t> duration;
-        std::optional<float> min_charging_rate;
-        std::optional<SalesTariff> sales_tariff;
-
-        return ChargingSchedule{
-            id,
-            charging_rate_unit,
-            charging_schedule_period,
-            custom_data,
-            start_schedule,
-            duration,
-            min_charging_rate,
-            std::nullopt,
-            std::nullopt,
-            sales_tariff,
-        };
+        ChargingSchedule charging_schedule;
+        charging_schedule.chargingRateUnit = charging_rate_unit;
+        charging_schedule.chargingSchedulePeriod = charging_schedule_period;
+        charging_schedule.startSchedule = start_schedule;
+        return charging_schedule;
     }
 
     std::vector<ChargingSchedulePeriod>

@@ -20,6 +20,7 @@ std::string NotifyAllowedEnergyTransferRequest::get_type() const {
 void to_json(json& j, const NotifyAllowedEnergyTransferRequest& k) {
     // the required parts of the message
     j = json{
+        {"transactionId", k.transactionId},
         {"allowedEnergyTransfer", k.allowedEnergyTransfer},
     };
     // the optional parts of the message
@@ -30,6 +31,7 @@ void to_json(json& j, const NotifyAllowedEnergyTransferRequest& k) {
 
 void from_json(const json& j, NotifyAllowedEnergyTransferRequest& k) {
     // the required parts of the message
+    k.transactionId = j.at("transactionId");
     for (auto val : j.at("allowedEnergyTransfer")) {
         k.allowedEnergyTransfer.push_back(val);
     }

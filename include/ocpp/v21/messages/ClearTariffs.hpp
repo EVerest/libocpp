@@ -19,7 +19,7 @@ namespace v21 {
 /// \brief Contains a OCPP ClearTariffs message
 struct ClearTariffsRequest : public ocpp::Message {
     std::optional<std::vector<CiString<60>>> tariffIds;
-    std::optional<TariffKindEnum> tariffKind;
+    std::optional<int32_t> evseId;
     std::optional<CustomData> customData;
 
     /// \brief Provides the type of this ClearTariffs message as a human readable string

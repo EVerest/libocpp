@@ -39,7 +39,7 @@ std::ostream& operator<<(std::ostream& os, const SetDefaultTariffRequest& k);
 
 /// \brief Contains a OCPP SetDefaultTariffResponse message
 struct SetDefaultTariffResponse : public ocpp::Message {
-    TariffStatusEnum status;
+    TariffSetStatusEnum status;
     std::optional<StatusInfo> statusInfo;
     std::optional<CustomData> customData;
 

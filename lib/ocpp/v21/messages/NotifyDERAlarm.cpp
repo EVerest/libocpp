@@ -22,7 +22,6 @@ void to_json(json& j, const NotifyDERAlarmRequest& k) {
     j = json{
         {"controlType", ocpp::v201::conversions::dercontrol_enum_to_string(k.controlType)},
         {"timestamp", k.timestamp.to_rfc3339()},
-        {"extraInfo", k.extraInfo},
     };
     // the optional parts of the message
     if (k.gridEventFault) {
@@ -30,6 +29,9 @@ void to_json(json& j, const NotifyDERAlarmRequest& k) {
     }
     if (k.alarmEnded) {
         j["alarmEnded"] = k.alarmEnded.value();
+    }
+    if (k.extraInfo) {
+        j["extraInfo"] = k.extraInfo.value();
     }
     if (k.customData) {
         j["customData"] = k.customData.value();
@@ -40,7 +42,6 @@ void from_json(const json& j, NotifyDERAlarmRequest& k) {
     // the required parts of the message
     k.controlType = ocpp::v201::conversions::string_to_dercontrol_enum(j.at("controlType"));
     k.timestamp = ocpp::DateTime(std::string(j.at("timestamp")));
-    k.extraInfo = j.at("extraInfo");
 
     // the optional parts of the message
     if (j.contains("gridEventFault")) {
@@ -48,6 +49,9 @@ void from_json(const json& j, NotifyDERAlarmRequest& k) {
     }
     if (j.contains("alarmEnded")) {
         k.alarmEnded.emplace(j.at("alarmEnded"));
+    }
+    if (j.contains("extraInfo")) {
+        k.extraInfo.emplace(j.at("extraInfo"));
     }
     if (j.contains("customData")) {
         k.customData.emplace(j.at("customData"));

@@ -23,6 +23,7 @@ void to_json(json& j, const NotifyPeriodicEventStream& k) {
         {"data", k.data},
         {"id", k.id},
         {"pending", k.pending},
+        {"basetime", k.basetime.to_rfc3339()},
     };
     // the optional parts of the message
     if (k.customData) {
@@ -37,6 +38,7 @@ void from_json(const json& j, NotifyPeriodicEventStream& k) {
     }
     k.id = j.at("id");
     k.pending = j.at("pending");
+    k.basetime = ocpp::DateTime(std::string(j.at("basetime")));
 
     // the optional parts of the message
     if (j.contains("customData")) {

@@ -18,7 +18,8 @@ namespace v21 {
 
 /// \brief Contains a OCPP GetDERControl message
 struct GetDERControlRequest : public ocpp::Message {
-    bool isDefault;
+    int32_t requestId;
+    std::optional<bool> isDefault;
     std::optional<DERControlEnum> controlType;
     std::optional<CiString<36>> controlId;
     std::optional<CustomData> customData;
@@ -41,14 +42,7 @@ std::ostream& operator<<(std::ostream& os, const GetDERControlRequest& k);
 /// \brief Contains a OCPP GetDERControlResponse message
 struct GetDERControlResponse : public ocpp::Message {
     DERControlStatusEnum status;
-    std::optional<std::vector<DERCurveGet>> curve;
-    std::optional<std::vector<EnterServiceGet>> enterService;
-    std::optional<std::vector<FixedPFGet>> fixedPFAbsorb;
-    std::optional<std::vector<FixedPFGet>> fixedPFInject;
-    std::optional<std::vector<FixedVarGet>> fixedVar;
-    std::optional<std::vector<FreqDroopGet>> freqDroop;
-    std::optional<std::vector<GradientGet>> gradient;
-    std::optional<std::vector<LimitMaxDischargeGet>> limitMaxDischarge;
+    std::optional<StatusInfo> statusInfo;
     std::optional<CustomData> customData;
 
     /// \brief Provides the type of this GetDERControlResponse message as a human readable string

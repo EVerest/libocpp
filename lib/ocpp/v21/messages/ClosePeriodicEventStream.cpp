@@ -51,28 +51,19 @@ std::string ClosePeriodicEventStreamResponse::get_type() const {
 
 void to_json(json& j, const ClosePeriodicEventStreamResponse& k) {
     // the required parts of the message
-    j = json{
-        {"status", ocpp::v201::conversions::generic_status_enum_to_string(k.status)},
-    };
+    j = json({}, true);
     // the optional parts of the message
     if (k.customData) {
         j["customData"] = k.customData.value();
-    }
-    if (k.statusInfo) {
-        j["statusInfo"] = k.statusInfo.value();
     }
 }
 
 void from_json(const json& j, ClosePeriodicEventStreamResponse& k) {
     // the required parts of the message
-    k.status = ocpp::v201::conversions::string_to_generic_status_enum(j.at("status"));
 
     // the optional parts of the message
     if (j.contains("customData")) {
         k.customData.emplace(j.at("customData"));
-    }
-    if (j.contains("statusInfo")) {
-        k.statusInfo.emplace(j.at("statusInfo"));
     }
 }
 

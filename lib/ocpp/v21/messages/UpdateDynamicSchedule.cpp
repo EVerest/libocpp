@@ -57,6 +57,9 @@ void to_json(json& j, const UpdateDynamicScheduleResponse& k) {
         {"status", ocpp::v201::conversions::charging_profile_status_enum_to_string(k.status)},
     };
     // the optional parts of the message
+    if (k.statusInfo) {
+        j["statusInfo"] = k.statusInfo.value();
+    }
     if (k.customData) {
         j["customData"] = k.customData.value();
     }
@@ -67,6 +70,9 @@ void from_json(const json& j, UpdateDynamicScheduleResponse& k) {
     k.status = ocpp::v201::conversions::string_to_charging_profile_status_enum(j.at("status"));
 
     // the optional parts of the message
+    if (j.contains("statusInfo")) {
+        k.statusInfo.emplace(j.at("statusInfo"));
+    }
     if (j.contains("customData")) {
         k.customData.emplace(j.at("customData"));
     }

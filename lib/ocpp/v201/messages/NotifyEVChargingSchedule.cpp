@@ -25,8 +25,8 @@ void to_json(json& j, const NotifyEVChargingScheduleRequest& k) {
         {"evseId", k.evseId},
     };
     // the optional parts of the message
-    if (k.selectedScheduleTupleId) {
-        j["selectedScheduleTupleId"] = k.selectedScheduleTupleId.value();
+    if (k.selectedChargingScheduleId) {
+        j["selectedChargingScheduleId"] = k.selectedChargingScheduleId.value();
     }
     if (k.powerToleranceAcceptance) {
         j["powerToleranceAcceptance"] = k.powerToleranceAcceptance.value();
@@ -43,8 +43,8 @@ void from_json(const json& j, NotifyEVChargingScheduleRequest& k) {
     k.evseId = j.at("evseId");
 
     // the optional parts of the message
-    if (j.contains("selectedScheduleTupleId")) {
-        k.selectedScheduleTupleId.emplace(j.at("selectedScheduleTupleId"));
+    if (j.contains("selectedChargingScheduleId")) {
+        k.selectedChargingScheduleId.emplace(j.at("selectedChargingScheduleId"));
     }
     if (j.contains("powerToleranceAcceptance")) {
         k.powerToleranceAcceptance.emplace(j.at("powerToleranceAcceptance"));

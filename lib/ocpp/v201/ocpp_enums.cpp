@@ -406,36 +406,6 @@ std::ostream& operator<<(std::ostream& os, const EvseKindEnum& evse_kind_enum) {
     return os;
 }
 
-// from: AuthorizeResponse
-namespace conversions {
-std::string tariff_kind_enum_to_string(TariffKindEnum e) {
-    switch (e) {
-    case TariffKindEnum::DefaultTariff:
-        return "DefaultTariff";
-    case TariffKindEnum::UserTariff:
-        return "UserTariff";
-    }
-
-    throw EnumToStringException{e, "TariffKindEnum"};
-}
-
-TariffKindEnum string_to_tariff_kind_enum(const std::string& s) {
-    if (s == "DefaultTariff") {
-        return TariffKindEnum::DefaultTariff;
-    }
-    if (s == "UserTariff") {
-        return TariffKindEnum::UserTariff;
-    }
-
-    throw StringToEnumException{s, "TariffKindEnum"};
-}
-} // namespace conversions
-
-std::ostream& operator<<(std::ostream& os, const TariffKindEnum& tariff_kind_enum) {
-    os << conversions::tariff_kind_enum_to_string(tariff_kind_enum);
-    return os;
-}
-
 // from: BatterySwapRequest
 namespace conversions {
 std::string battery_swap_event_enum_to_string(BatterySwapEventEnum e) {
@@ -444,6 +414,8 @@ std::string battery_swap_event_enum_to_string(BatterySwapEventEnum e) {
         return "BatteryIn";
     case BatterySwapEventEnum::BatteryOut:
         return "BatteryOut";
+    case BatterySwapEventEnum::BatteryOutTimeout:
+        return "BatteryOutTimeout";
     }
 
     throw EnumToStringException{e, "BatterySwapEventEnum"};
@@ -455,6 +427,9 @@ BatterySwapEventEnum string_to_battery_swap_event_enum(const std::string& s) {
     }
     if (s == "BatteryOut") {
         return BatterySwapEventEnum::BatteryOut;
+    }
+    if (s == "BatteryOutTimeout") {
+        return BatterySwapEventEnum::BatteryOutTimeout;
     }
 
     throw StringToEnumException{s, "BatterySwapEventEnum"};
@@ -604,6 +579,8 @@ std::string certificate_signing_use_enum_to_string(CertificateSigningUseEnum e) 
         return "ChargingStationCertificate";
     case CertificateSigningUseEnum::V2GCertificate:
         return "V2GCertificate";
+    case CertificateSigningUseEnum::V2G20Certificate:
+        return "V2G20Certificate";
     }
 
     throw EnumToStringException{e, "CertificateSigningUseEnum"};
@@ -615,6 +592,9 @@ CertificateSigningUseEnum string_to_certificate_signing_use_enum(const std::stri
     }
     if (s == "V2GCertificate") {
         return CertificateSigningUseEnum::V2GCertificate;
+    }
+    if (s == "V2G20Certificate") {
+        return CertificateSigningUseEnum::V2G20Certificate;
     }
 
     throw StringToEnumException{s, "CertificateSigningUseEnum"};
@@ -723,61 +703,51 @@ std::ostream& operator<<(std::ostream& os, const ChangeAvailabilityStatusEnum& c
 
 // from: ChangeTransactionTariffResponse
 namespace conversions {
-std::string tariff_status_enum_to_string(TariffStatusEnum e) {
+std::string tariff_change_status_enum_to_string(TariffChangeStatusEnum e) {
     switch (e) {
-    case TariffStatusEnum::Accepted:
+    case TariffChangeStatusEnum::Accepted:
         return "Accepted";
-    case TariffStatusEnum::Rejected:
+    case TariffChangeStatusEnum::Rejected:
         return "Rejected";
-    case TariffStatusEnum::TooManyElements:
+    case TariffChangeStatusEnum::TooManyElements:
         return "TooManyElements";
-    case TariffStatusEnum::ConditionNotSupported:
+    case TariffChangeStatusEnum::ConditionNotSupported:
         return "ConditionNotSupported";
-    case TariffStatusEnum::NoTariff:
-        return "NoTariff";
-    case TariffStatusEnum::TariffInUse:
-        return "TariffInUse";
-    case TariffStatusEnum::TxNotFound:
+    case TariffChangeStatusEnum::TxNotFound:
         return "TxNotFound";
-    case TariffStatusEnum::NoCurrencyChange:
+    case TariffChangeStatusEnum::NoCurrencyChange:
         return "NoCurrencyChange";
     }
 
-    throw EnumToStringException{e, "TariffStatusEnum"};
+    throw EnumToStringException{e, "TariffChangeStatusEnum"};
 }
 
-TariffStatusEnum string_to_tariff_status_enum(const std::string& s) {
+TariffChangeStatusEnum string_to_tariff_change_status_enum(const std::string& s) {
     if (s == "Accepted") {
-        return TariffStatusEnum::Accepted;
+        return TariffChangeStatusEnum::Accepted;
     }
     if (s == "Rejected") {
-        return TariffStatusEnum::Rejected;
+        return TariffChangeStatusEnum::Rejected;
     }
     if (s == "TooManyElements") {
-        return TariffStatusEnum::TooManyElements;
+        return TariffChangeStatusEnum::TooManyElements;
     }
     if (s == "ConditionNotSupported") {
-        return TariffStatusEnum::ConditionNotSupported;
-    }
-    if (s == "NoTariff") {
-        return TariffStatusEnum::NoTariff;
-    }
-    if (s == "TariffInUse") {
-        return TariffStatusEnum::TariffInUse;
+        return TariffChangeStatusEnum::ConditionNotSupported;
     }
     if (s == "TxNotFound") {
-        return TariffStatusEnum::TxNotFound;
+        return TariffChangeStatusEnum::TxNotFound;
     }
     if (s == "NoCurrencyChange") {
-        return TariffStatusEnum::NoCurrencyChange;
+        return TariffChangeStatusEnum::NoCurrencyChange;
     }
 
-    throw StringToEnumException{s, "TariffStatusEnum"};
+    throw StringToEnumException{s, "TariffChangeStatusEnum"};
 }
 } // namespace conversions
 
-std::ostream& operator<<(std::ostream& os, const TariffStatusEnum& tariff_status_enum) {
-    os << conversions::tariff_status_enum_to_string(tariff_status_enum);
+std::ostream& operator<<(std::ostream& os, const TariffChangeStatusEnum& tariff_change_status_enum) {
+    os << conversions::tariff_change_status_enum_to_string(tariff_change_status_enum);
     return os;
 }
 
@@ -1029,8 +999,8 @@ std::string dercontrol_status_enum_to_string(DERControlStatusEnum e) {
         return "Accepted";
     case DERControlStatusEnum::Rejected:
         return "Rejected";
-    case DERControlStatusEnum::Unsupported:
-        return "Unsupported";
+    case DERControlStatusEnum::NotSupported:
+        return "NotSupported";
     case DERControlStatusEnum::NotFound:
         return "NotFound";
     }
@@ -1045,8 +1015,8 @@ DERControlStatusEnum string_to_dercontrol_status_enum(const std::string& s) {
     if (s == "Rejected") {
         return DERControlStatusEnum::Rejected;
     }
-    if (s == "Unsupported") {
-        return DERControlStatusEnum::Unsupported;
+    if (s == "NotSupported") {
+        return DERControlStatusEnum::NotSupported;
     }
     if (s == "NotFound") {
         return DERControlStatusEnum::NotFound;
@@ -1093,6 +1063,41 @@ ClearMessageStatusEnum string_to_clear_message_status_enum(const std::string& s)
 
 std::ostream& operator<<(std::ostream& os, const ClearMessageStatusEnum& clear_message_status_enum) {
     os << conversions::clear_message_status_enum_to_string(clear_message_status_enum);
+    return os;
+}
+
+// from: ClearTariffsResponse
+namespace conversions {
+std::string tariff_clear_status_enum_to_string(TariffClearStatusEnum e) {
+    switch (e) {
+    case TariffClearStatusEnum::Accepted:
+        return "Accepted";
+    case TariffClearStatusEnum::Rejected:
+        return "Rejected";
+    case TariffClearStatusEnum::NoTariff:
+        return "NoTariff";
+    }
+
+    throw EnumToStringException{e, "TariffClearStatusEnum"};
+}
+
+TariffClearStatusEnum string_to_tariff_clear_status_enum(const std::string& s) {
+    if (s == "Accepted") {
+        return TariffClearStatusEnum::Accepted;
+    }
+    if (s == "Rejected") {
+        return TariffClearStatusEnum::Rejected;
+    }
+    if (s == "NoTariff") {
+        return TariffClearStatusEnum::NoTariff;
+    }
+
+    throw StringToEnumException{s, "TariffClearStatusEnum"};
+}
+} // namespace conversions
+
+std::ostream& operator<<(std::ostream& os, const TariffClearStatusEnum& tariff_clear_status_enum) {
+    os << conversions::tariff_clear_status_enum_to_string(tariff_clear_status_enum);
     return os;
 }
 
@@ -1466,6 +1471,76 @@ std::ostream& operator<<(std::ostream& os, const GenericDeviceModelStatusEnum& g
     return os;
 }
 
+// from: GetCertificateChainStatusRequest
+namespace conversions {
+std::string certificate_status_source_enum_to_string(CertificateStatusSourceEnum e) {
+    switch (e) {
+    case CertificateStatusSourceEnum::CRL:
+        return "CRL";
+    case CertificateStatusSourceEnum::OCSP:
+        return "OCSP";
+    }
+
+    throw EnumToStringException{e, "CertificateStatusSourceEnum"};
+}
+
+CertificateStatusSourceEnum string_to_certificate_status_source_enum(const std::string& s) {
+    if (s == "CRL") {
+        return CertificateStatusSourceEnum::CRL;
+    }
+    if (s == "OCSP") {
+        return CertificateStatusSourceEnum::OCSP;
+    }
+
+    throw StringToEnumException{s, "CertificateStatusSourceEnum"};
+}
+} // namespace conversions
+
+std::ostream& operator<<(std::ostream& os, const CertificateStatusSourceEnum& certificate_status_source_enum) {
+    os << conversions::certificate_status_source_enum_to_string(certificate_status_source_enum);
+    return os;
+}
+
+// from: GetCertificateChainStatusResponse
+namespace conversions {
+std::string certificate_status_enum_to_string(CertificateStatusEnum e) {
+    switch (e) {
+    case CertificateStatusEnum::Good:
+        return "Good";
+    case CertificateStatusEnum::Revoked:
+        return "Revoked";
+    case CertificateStatusEnum::Unknown:
+        return "Unknown";
+    case CertificateStatusEnum::Failed:
+        return "Failed";
+    }
+
+    throw EnumToStringException{e, "CertificateStatusEnum"};
+}
+
+CertificateStatusEnum string_to_certificate_status_enum(const std::string& s) {
+    if (s == "Good") {
+        return CertificateStatusEnum::Good;
+    }
+    if (s == "Revoked") {
+        return CertificateStatusEnum::Revoked;
+    }
+    if (s == "Unknown") {
+        return CertificateStatusEnum::Unknown;
+    }
+    if (s == "Failed") {
+        return CertificateStatusEnum::Failed;
+    }
+
+    throw StringToEnumException{s, "CertificateStatusEnum"};
+}
+} // namespace conversions
+
+std::ostream& operator<<(std::ostream& os, const CertificateStatusEnum& certificate_status_enum) {
+    os << conversions::certificate_status_enum_to_string(certificate_status_enum);
+    return os;
+}
+
 // from: GetCertificateStatusResponse
 namespace conversions {
 std::string get_certificate_status_enum_to_string(GetCertificateStatusEnum e) {
@@ -1616,86 +1691,6 @@ std::ostream& operator<<(std::ostream& os, const OperationModeEnum& operation_mo
     return os;
 }
 
-// from: GetDERControlResponse
-namespace conversions {
-std::string power_during_cessation_enum_to_string(PowerDuringCessationEnum e) {
-    switch (e) {
-    case PowerDuringCessationEnum::Active:
-        return "Active";
-    case PowerDuringCessationEnum::Reactive:
-        return "Reactive";
-    }
-
-    throw EnumToStringException{e, "PowerDuringCessationEnum"};
-}
-
-PowerDuringCessationEnum string_to_power_during_cessation_enum(const std::string& s) {
-    if (s == "Active") {
-        return PowerDuringCessationEnum::Active;
-    }
-    if (s == "Reactive") {
-        return PowerDuringCessationEnum::Reactive;
-    }
-
-    throw StringToEnumException{s, "PowerDuringCessationEnum"};
-}
-} // namespace conversions
-
-std::ostream& operator<<(std::ostream& os, const PowerDuringCessationEnum& power_during_cessation_enum) {
-    os << conversions::power_during_cessation_enum_to_string(power_during_cessation_enum);
-    return os;
-}
-
-// from: GetDERControlResponse
-namespace conversions {
-std::string derunit_enum_to_string(DERUnitEnum e) {
-    switch (e) {
-    case DERUnitEnum::Not_Applicable:
-        return "Not_Applicable";
-    case DERUnitEnum::PctMaxW:
-        return "PctMaxW";
-    case DERUnitEnum::PctMaxVar:
-        return "PctMaxVar";
-    case DERUnitEnum::PctWAvail:
-        return "PctWAvail";
-    case DERUnitEnum::PctVarAvail:
-        return "PctVarAvail";
-    case DERUnitEnum::PctEffectiveV:
-        return "PctEffectiveV";
-    }
-
-    throw EnumToStringException{e, "DERUnitEnum"};
-}
-
-DERUnitEnum string_to_derunit_enum(const std::string& s) {
-    if (s == "Not_Applicable") {
-        return DERUnitEnum::Not_Applicable;
-    }
-    if (s == "PctMaxW") {
-        return DERUnitEnum::PctMaxW;
-    }
-    if (s == "PctMaxVar") {
-        return DERUnitEnum::PctMaxVar;
-    }
-    if (s == "PctWAvail") {
-        return DERUnitEnum::PctWAvail;
-    }
-    if (s == "PctVarAvail") {
-        return DERUnitEnum::PctVarAvail;
-    }
-    if (s == "PctEffectiveV") {
-        return DERUnitEnum::PctEffectiveV;
-    }
-
-    throw StringToEnumException{s, "DERUnitEnum"};
-}
-} // namespace conversions
-
-std::ostream& operator<<(std::ostream& os, const DERUnitEnum& derunit_enum) {
-    os << conversions::derunit_enum_to_string(derunit_enum);
-    return os;
-}
-
 // from: GetDisplayMessagesRequest
 namespace conversions {
 std::string message_priority_enum_to_string(MessagePriorityEnum e) {
@@ -1743,8 +1738,8 @@ std::string message_state_enum_to_string(MessageStateEnum e) {
         return "Idle";
     case MessageStateEnum::Unavailable:
         return "Unavailable";
-    case MessageStateEnum::Suspending:
-        return "Suspending";
+    case MessageStateEnum::Suspended:
+        return "Suspended";
     case MessageStateEnum::Discharging:
         return "Discharging";
     }
@@ -1765,8 +1760,8 @@ MessageStateEnum string_to_message_state_enum(const std::string& s) {
     if (s == "Unavailable") {
         return MessageStateEnum::Unavailable;
     }
-    if (s == "Suspending") {
-        return MessageStateEnum::Suspending;
+    if (s == "Suspended") {
+        return MessageStateEnum::Suspended;
     }
     if (s == "Discharging") {
         return MessageStateEnum::Discharging;
@@ -2034,6 +2029,71 @@ ComponentCriterionEnum string_to_component_criterion_enum(const std::string& s) 
 
 std::ostream& operator<<(std::ostream& os, const ComponentCriterionEnum& component_criterion_enum) {
     os << conversions::component_criterion_enum_to_string(component_criterion_enum);
+    return os;
+}
+
+// from: GetTariffsResponse
+namespace conversions {
+std::string tariff_get_status_enum_to_string(TariffGetStatusEnum e) {
+    switch (e) {
+    case TariffGetStatusEnum::Accepted:
+        return "Accepted";
+    case TariffGetStatusEnum::Rejected:
+        return "Rejected";
+    case TariffGetStatusEnum::NoTariff:
+        return "NoTariff";
+    }
+
+    throw EnumToStringException{e, "TariffGetStatusEnum"};
+}
+
+TariffGetStatusEnum string_to_tariff_get_status_enum(const std::string& s) {
+    if (s == "Accepted") {
+        return TariffGetStatusEnum::Accepted;
+    }
+    if (s == "Rejected") {
+        return TariffGetStatusEnum::Rejected;
+    }
+    if (s == "NoTariff") {
+        return TariffGetStatusEnum::NoTariff;
+    }
+
+    throw StringToEnumException{s, "TariffGetStatusEnum"};
+}
+} // namespace conversions
+
+std::ostream& operator<<(std::ostream& os, const TariffGetStatusEnum& tariff_get_status_enum) {
+    os << conversions::tariff_get_status_enum_to_string(tariff_get_status_enum);
+    return os;
+}
+
+// from: GetTariffsResponse
+namespace conversions {
+std::string tariff_kind_enum_to_string(TariffKindEnum e) {
+    switch (e) {
+    case TariffKindEnum::DefaultTariff:
+        return "DefaultTariff";
+    case TariffKindEnum::DriverTariff:
+        return "DriverTariff";
+    }
+
+    throw EnumToStringException{e, "TariffKindEnum"};
+}
+
+TariffKindEnum string_to_tariff_kind_enum(const std::string& s) {
+    if (s == "DefaultTariff") {
+        return TariffKindEnum::DefaultTariff;
+    }
+    if (s == "DriverTariff") {
+        return TariffKindEnum::DriverTariff;
+    }
+
+    throw StringToEnumException{s, "TariffKindEnum"};
+}
+} // namespace conversions
+
+std::ostream& operator<<(std::ostream& os, const TariffKindEnum& tariff_kind_enum) {
+    os << conversions::tariff_kind_enum_to_string(tariff_kind_enum);
     return os;
 }
 
@@ -2770,36 +2830,6 @@ NotifyAllowedEnergyTransferStatusEnum string_to_notify_allowed_energy_transfer_s
 std::ostream& operator<<(std::ostream& os,
                          const NotifyAllowedEnergyTransferStatusEnum& notify_allowed_energy_transfer_status_enum) {
     os << conversions::notify_allowed_energy_transfer_status_enum_to_string(notify_allowed_energy_transfer_status_enum);
-    return os;
-}
-
-// from: NotifyCRLRequest
-namespace conversions {
-std::string notify_crlstatus_enum_to_string(NotifyCRLStatusEnum e) {
-    switch (e) {
-    case NotifyCRLStatusEnum::Available:
-        return "Available";
-    case NotifyCRLStatusEnum::Unavailable:
-        return "Unavailable";
-    }
-
-    throw EnumToStringException{e, "NotifyCRLStatusEnum"};
-}
-
-NotifyCRLStatusEnum string_to_notify_crlstatus_enum(const std::string& s) {
-    if (s == "Available") {
-        return NotifyCRLStatusEnum::Available;
-    }
-    if (s == "Unavailable") {
-        return NotifyCRLStatusEnum::Unavailable;
-    }
-
-    throw StringToEnumException{s, "NotifyCRLStatusEnum"};
-}
-} // namespace conversions
-
-std::ostream& operator<<(std::ostream& os, const NotifyCRLStatusEnum& notify_crlstatus_enum) {
-    os << conversions::notify_crlstatus_enum_to_string(notify_crlstatus_enum);
     return os;
 }
 
@@ -3543,6 +3573,86 @@ std::ostream& operator<<(std::ostream& os, const RecurrencyKindEnum& recurrency_
     return os;
 }
 
+// from: ReportDERControlRequest
+namespace conversions {
+std::string power_during_cessation_enum_to_string(PowerDuringCessationEnum e) {
+    switch (e) {
+    case PowerDuringCessationEnum::Active:
+        return "Active";
+    case PowerDuringCessationEnum::Reactive:
+        return "Reactive";
+    }
+
+    throw EnumToStringException{e, "PowerDuringCessationEnum"};
+}
+
+PowerDuringCessationEnum string_to_power_during_cessation_enum(const std::string& s) {
+    if (s == "Active") {
+        return PowerDuringCessationEnum::Active;
+    }
+    if (s == "Reactive") {
+        return PowerDuringCessationEnum::Reactive;
+    }
+
+    throw StringToEnumException{s, "PowerDuringCessationEnum"};
+}
+} // namespace conversions
+
+std::ostream& operator<<(std::ostream& os, const PowerDuringCessationEnum& power_during_cessation_enum) {
+    os << conversions::power_during_cessation_enum_to_string(power_during_cessation_enum);
+    return os;
+}
+
+// from: ReportDERControlRequest
+namespace conversions {
+std::string derunit_enum_to_string(DERUnitEnum e) {
+    switch (e) {
+    case DERUnitEnum::Not_Applicable:
+        return "Not_Applicable";
+    case DERUnitEnum::PctMaxW:
+        return "PctMaxW";
+    case DERUnitEnum::PctMaxVar:
+        return "PctMaxVar";
+    case DERUnitEnum::PctWAvail:
+        return "PctWAvail";
+    case DERUnitEnum::PctVarAvail:
+        return "PctVarAvail";
+    case DERUnitEnum::PctEffectiveV:
+        return "PctEffectiveV";
+    }
+
+    throw EnumToStringException{e, "DERUnitEnum"};
+}
+
+DERUnitEnum string_to_derunit_enum(const std::string& s) {
+    if (s == "Not_Applicable") {
+        return DERUnitEnum::Not_Applicable;
+    }
+    if (s == "PctMaxW") {
+        return DERUnitEnum::PctMaxW;
+    }
+    if (s == "PctMaxVar") {
+        return DERUnitEnum::PctMaxVar;
+    }
+    if (s == "PctWAvail") {
+        return DERUnitEnum::PctWAvail;
+    }
+    if (s == "PctVarAvail") {
+        return DERUnitEnum::PctVarAvail;
+    }
+    if (s == "PctEffectiveV") {
+        return DERUnitEnum::PctEffectiveV;
+    }
+
+    throw StringToEnumException{s, "DERUnitEnum"};
+}
+} // namespace conversions
+
+std::ostream& operator<<(std::ostream& os, const DERUnitEnum& derunit_enum) {
+    os << conversions::derunit_enum_to_string(derunit_enum);
+    return os;
+}
+
 // from: RequestStartTransactionResponse
 namespace conversions {
 std::string request_start_stop_status_enum_to_string(RequestStartStopStatusEnum e) {
@@ -3785,6 +3895,51 @@ SendLocalListStatusEnum string_to_send_local_list_status_enum(const std::string&
 
 std::ostream& operator<<(std::ostream& os, const SendLocalListStatusEnum& send_local_list_status_enum) {
     os << conversions::send_local_list_status_enum_to_string(send_local_list_status_enum);
+    return os;
+}
+
+// from: SetDefaultTariffResponse
+namespace conversions {
+std::string tariff_set_status_enum_to_string(TariffSetStatusEnum e) {
+    switch (e) {
+    case TariffSetStatusEnum::Accepted:
+        return "Accepted";
+    case TariffSetStatusEnum::Rejected:
+        return "Rejected";
+    case TariffSetStatusEnum::TooManyElements:
+        return "TooManyElements";
+    case TariffSetStatusEnum::ConditionNotSupported:
+        return "ConditionNotSupported";
+    case TariffSetStatusEnum::DuplicateTariffId:
+        return "DuplicateTariffId";
+    }
+
+    throw EnumToStringException{e, "TariffSetStatusEnum"};
+}
+
+TariffSetStatusEnum string_to_tariff_set_status_enum(const std::string& s) {
+    if (s == "Accepted") {
+        return TariffSetStatusEnum::Accepted;
+    }
+    if (s == "Rejected") {
+        return TariffSetStatusEnum::Rejected;
+    }
+    if (s == "TooManyElements") {
+        return TariffSetStatusEnum::TooManyElements;
+    }
+    if (s == "ConditionNotSupported") {
+        return TariffSetStatusEnum::ConditionNotSupported;
+    }
+    if (s == "DuplicateTariffId") {
+        return TariffSetStatusEnum::DuplicateTariffId;
+    }
+
+    throw StringToEnumException{s, "TariffSetStatusEnum"};
+}
+} // namespace conversions
+
+std::ostream& operator<<(std::ostream& os, const TariffSetStatusEnum& tariff_set_status_enum) {
+    os << conversions::tariff_set_status_enum_to_string(tariff_set_status_enum);
     return os;
 }
 
@@ -4340,6 +4495,41 @@ std::ostream& operator<<(std::ostream& os, const CostDimensionEnum& cost_dimensi
 
 // from: TransactionEventRequest
 namespace conversions {
+std::string tariff_cost_enum_to_string(TariffCostEnum e) {
+    switch (e) {
+    case TariffCostEnum::NormalCost:
+        return "NormalCost";
+    case TariffCostEnum::MinCost:
+        return "MinCost";
+    case TariffCostEnum::MaxCost:
+        return "MaxCost";
+    }
+
+    throw EnumToStringException{e, "TariffCostEnum"};
+}
+
+TariffCostEnum string_to_tariff_cost_enum(const std::string& s) {
+    if (s == "NormalCost") {
+        return TariffCostEnum::NormalCost;
+    }
+    if (s == "MinCost") {
+        return TariffCostEnum::MinCost;
+    }
+    if (s == "MaxCost") {
+        return TariffCostEnum::MaxCost;
+    }
+
+    throw StringToEnumException{s, "TariffCostEnum"};
+}
+} // namespace conversions
+
+std::ostream& operator<<(std::ostream& os, const TariffCostEnum& tariff_cost_enum) {
+    os << conversions::tariff_cost_enum_to_string(tariff_cost_enum);
+    return os;
+}
+
+// from: TransactionEventRequest
+namespace conversions {
 std::string transaction_event_enum_to_string(TransactionEventEnum e) {
     switch (e) {
     case TransactionEventEnum::Ended:
@@ -4401,8 +4591,8 @@ std::string trigger_reason_enum_to_string(TriggerReasonEnum e) {
         return "EVDeparted";
     case TriggerReasonEnum::EVDetected:
         return "EVDetected";
-    case TriggerReasonEnum::LimitChanged:
-        return "LimitChanged";
+    case TriggerReasonEnum::LimitSet:
+        return "LimitSet";
     case TriggerReasonEnum::MeterValueClock:
         return "MeterValueClock";
     case TriggerReasonEnum::MeterValuePeriodic:
@@ -4425,6 +4615,8 @@ std::string trigger_reason_enum_to_string(TriggerReasonEnum e) {
         return "StopAuthorized";
     case TriggerReasonEnum::TariffChanged:
         return "TariffChanged";
+    case TriggerReasonEnum::TariffNotAccepted:
+        return "TariffNotAccepted";
     case TriggerReasonEnum::TimeLimitReached:
         return "TimeLimitReached";
     case TriggerReasonEnum::Trigger:
@@ -4475,8 +4667,8 @@ TriggerReasonEnum string_to_trigger_reason_enum(const std::string& s) {
     if (s == "EVDetected") {
         return TriggerReasonEnum::EVDetected;
     }
-    if (s == "LimitChanged") {
-        return TriggerReasonEnum::LimitChanged;
+    if (s == "LimitSet") {
+        return TriggerReasonEnum::LimitSet;
     }
     if (s == "MeterValueClock") {
         return TriggerReasonEnum::MeterValueClock;
@@ -4510,6 +4702,9 @@ TriggerReasonEnum string_to_trigger_reason_enum(const std::string& s) {
     }
     if (s == "TariffChanged") {
         return TriggerReasonEnum::TariffChanged;
+    }
+    if (s == "TariffNotAccepted") {
+        return TriggerReasonEnum::TariffNotAccepted;
     }
     if (s == "TimeLimitReached") {
         return TriggerReasonEnum::TimeLimitReached;

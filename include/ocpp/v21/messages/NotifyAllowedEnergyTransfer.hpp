@@ -18,6 +18,7 @@ namespace v21 {
 
 /// \brief Contains a OCPP NotifyAllowedEnergyTransfer message
 struct NotifyAllowedEnergyTransferRequest : public ocpp::Message {
+    CiString<36> transactionId;
     std::vector<EnergyTransferModeEnum> allowedEnergyTransfer;
     std::optional<CustomData> customData;
 

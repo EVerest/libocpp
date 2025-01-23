@@ -8,17 +8,14 @@ target_sources(ocpp
         ClearDERControl.cpp
         ClearTariffs.cpp
         ClosePeriodicEventStream.cpp
-        GetCRL.cpp
         GetDERControl.cpp
         GetPeriodicEventStream.cpp
         GetTariffs.cpp
         NotifyAllowedEnergyTransfer.cpp
-        NotifyCRL.cpp
         NotifyDERAlarm.cpp
         NotifyDERStartStop.cpp
         NotifyPeriodicEventStream.cpp
         NotifyPriorityCharging.cpp
-        NotifyQRCodeScanned.cpp
         NotifySettlement.cpp
         OpenPeriodicEventStream.cpp
         PullDynamicScheduleUpdate.cpp

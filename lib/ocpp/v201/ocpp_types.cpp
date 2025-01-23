@@ -22,11 +22,11 @@ void to_json(json& j, const StatusInfo& k) {
         {"reasonCode", k.reasonCode},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.additionalInfo) {
         j["additionalInfo"] = k.additionalInfo.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -36,11 +36,11 @@ void from_json(const json& j, StatusInfo& k) {
     k.reasonCode = j.at("reasonCode");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("additionalInfo")) {
         k.additionalInfo.emplace(j.at("additionalInfo"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -56,14 +56,14 @@ void to_json(json& j, const PeriodicEventStreamParams& k) {
     // the required parts of the message
     j = json({}, true);
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.interval) {
         j["interval"] = k.interval.value();
     }
     if (k.values) {
         j["values"] = k.values.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -72,14 +72,14 @@ void from_json(const json& j, PeriodicEventStreamParams& k) {
     // the required parts of the message
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("interval")) {
         k.interval.emplace(j.at("interval"));
     }
     if (j.contains("values")) {
         k.values.emplace(j.at("values"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -130,14 +130,14 @@ void to_json(json& j, const IdToken& k) {
         {"type", k.type},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.additionalInfo) {
         j["additionalInfo"] = json::array();
         for (auto val : k.additionalInfo.value()) {
             j["additionalInfo"].push_back(val);
         }
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -148,9 +148,6 @@ void from_json(const json& j, IdToken& k) {
     k.type = j.at("type");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("additionalInfo")) {
         json arr = j.at("additionalInfo");
         std::vector<AdditionalInfo> vec;
@@ -158,6 +155,9 @@ void from_json(const json& j, IdToken& k) {
             vec.push_back(val);
         }
         k.additionalInfo.emplace(vec);
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -214,11 +214,11 @@ void to_json(json& j, const MessageContent& k) {
         {"content", k.content},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.language) {
         j["language"] = k.language.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -229,11 +229,11 @@ void from_json(const json& j, MessageContent& k) {
     k.content = j.at("content");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("language")) {
         k.language.emplace(j.at("language"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -251,9 +251,6 @@ void to_json(json& j, const IdTokenInfo& k) {
         {"status", conversions::authorization_status_enum_to_string(k.status)},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.cacheExpiryDateTime) {
         j["cacheExpiryDateTime"] = k.cacheExpiryDateTime.value().to_rfc3339();
     }
@@ -278,6 +275,9 @@ void to_json(json& j, const IdTokenInfo& k) {
     if (k.personalMessage) {
         j["personalMessage"] = k.personalMessage.value();
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 /// \brief Conversion from a given json object \p j to a given IdTokenInfo \p k
@@ -286,9 +286,6 @@ void from_json(const json& j, IdTokenInfo& k) {
     k.status = conversions::string_to_authorization_status_enum(j.at("status"));
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("cacheExpiryDateTime")) {
         k.cacheExpiryDateTime.emplace(j.at("cacheExpiryDateTime").get<std::string>());
     }
@@ -315,6 +312,9 @@ void from_json(const json& j, IdTokenInfo& k) {
     if (j.contains("personalMessage")) {
         k.personalMessage.emplace(j.at("personalMessage"));
     }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
 }
 
 // \brief Writes the string representation of the given IdTokenInfo \p k to the given output stream \p os
@@ -329,20 +329,30 @@ void to_json(json& j, const TariffConditions& k) {
     // the required parts of the message
     j = json({}, true);
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.startTimeOfDay) {
         j["startTimeOfDay"] = k.startTimeOfDay.value();
     }
     if (k.endTimeOfDay) {
         j["endTimeOfDay"] = k.endTimeOfDay.value();
     }
-    if (k.validFrom) {
-        j["validFrom"] = k.validFrom.value();
+    if (k.dayOfWeek) {
+        if (j.size() == 0) {
+            j = json{{"dayOfWeek", json::array()}};
+        } else {
+            j["dayOfWeek"] = json::array();
+        }
+        for (auto val : k.dayOfWeek.value()) {
+            j["dayOfWeek"].push_back(conversions::day_of_week_enum_to_string(val));
+        }
     }
-    if (k.validTo) {
-        j["validTo"] = k.validTo.value();
+    if (k.validFromDate) {
+        j["validFromDate"] = k.validFromDate.value();
+    }
+    if (k.validToDate) {
+        j["validToDate"] = k.validToDate.value();
+    }
+    if (k.evseKind) {
+        j["evseKind"] = conversions::evse_kind_enum_to_string(k.evseKind.value());
     }
     if (k.minEnergy) {
         j["minEnergy"] = k.minEnergy.value();
@@ -380,30 +390,8 @@ void to_json(json& j, const TariffConditions& k) {
     if (k.maxIdleTime) {
         j["maxIdleTime"] = k.maxIdleTime.value();
     }
-    if (k.dayOfWeek) {
-        if (j.size() == 0) {
-            j = json{{"dayOfWeek", json::array()}};
-        } else {
-            j["dayOfWeek"] = json::array();
-        }
-        for (auto val : k.dayOfWeek.value()) {
-            j["dayOfWeek"].push_back(conversions::day_of_week_enum_to_string(val));
-        }
-    }
-    if (k.evseKind) {
-        j["evseKind"] = conversions::evse_kind_enum_to_string(k.evseKind.value());
-    }
-    if (k.tariffKind) {
-        j["tariffKind"] = conversions::tariff_kind_enum_to_string(k.tariffKind.value());
-    }
-    if (k.paymentBrand) {
-        j["paymentBrand"] = k.paymentBrand.value();
-    }
-    if (k.paymentRecognition) {
-        j["paymentRecognition"] = k.paymentRecognition.value();
-    }
-    if (k.isReservation) {
-        j["isReservation"] = k.isReservation.value();
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -412,20 +400,28 @@ void from_json(const json& j, TariffConditions& k) {
     // the required parts of the message
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("startTimeOfDay")) {
         k.startTimeOfDay.emplace(j.at("startTimeOfDay"));
     }
     if (j.contains("endTimeOfDay")) {
         k.endTimeOfDay.emplace(j.at("endTimeOfDay"));
     }
-    if (j.contains("validFrom")) {
-        k.validFrom.emplace(j.at("validFrom"));
+    if (j.contains("dayOfWeek")) {
+        json arr = j.at("dayOfWeek");
+        std::vector<DayOfWeekEnum> vec;
+        for (auto val : arr) {
+            vec.push_back(conversions::string_to_day_of_week_enum(val));
+        }
+        k.dayOfWeek.emplace(vec);
     }
-    if (j.contains("validTo")) {
-        k.validTo.emplace(j.at("validTo"));
+    if (j.contains("validFromDate")) {
+        k.validFromDate.emplace(j.at("validFromDate"));
+    }
+    if (j.contains("validToDate")) {
+        k.validToDate.emplace(j.at("validToDate"));
+    }
+    if (j.contains("evseKind")) {
+        k.evseKind.emplace(conversions::string_to_evse_kind_enum(j.at("evseKind")));
     }
     if (j.contains("minEnergy")) {
         k.minEnergy.emplace(j.at("minEnergy"));
@@ -463,28 +459,8 @@ void from_json(const json& j, TariffConditions& k) {
     if (j.contains("maxIdleTime")) {
         k.maxIdleTime.emplace(j.at("maxIdleTime"));
     }
-    if (j.contains("dayOfWeek")) {
-        json arr = j.at("dayOfWeek");
-        std::vector<DayOfWeekEnum> vec;
-        for (auto val : arr) {
-            vec.push_back(conversions::string_to_day_of_week_enum(val));
-        }
-        k.dayOfWeek.emplace(vec);
-    }
-    if (j.contains("evseKind")) {
-        k.evseKind.emplace(conversions::string_to_evse_kind_enum(j.at("evseKind")));
-    }
-    if (j.contains("tariffKind")) {
-        k.tariffKind.emplace(conversions::string_to_tariff_kind_enum(j.at("tariffKind")));
-    }
-    if (j.contains("paymentBrand")) {
-        k.paymentBrand.emplace(j.at("paymentBrand"));
-    }
-    if (j.contains("paymentRecognition")) {
-        k.paymentRecognition.emplace(j.at("paymentRecognition"));
-    }
-    if (j.contains("isReservation")) {
-        k.isReservation.emplace(j.at("isReservation"));
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -495,44 +471,38 @@ std::ostream& operator<<(std::ostream& os, const TariffConditions& k) {
     return os;
 }
 
-/// \brief Conversion from a given TariffTimePrice \p k to a given json object \p j
-void to_json(json& j, const TariffTimePrice& k) {
+/// \brief Conversion from a given TariffEnergyPrice \p k to a given json object \p j
+void to_json(json& j, const TariffEnergyPrice& k) {
     // the required parts of the message
     j = json{
-        {"priceMinute", k.priceMinute},
+        {"priceKwh", k.priceKwh},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
-    if (k.stepSize) {
-        j["stepSize"] = k.stepSize.value();
-    }
     if (k.conditions) {
         j["conditions"] = k.conditions.value();
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
-/// \brief Conversion from a given json object \p j to a given TariffTimePrice \p k
-void from_json(const json& j, TariffTimePrice& k) {
+/// \brief Conversion from a given json object \p j to a given TariffEnergyPrice \p k
+void from_json(const json& j, TariffEnergyPrice& k) {
     // the required parts of the message
-    k.priceMinute = j.at("priceMinute");
+    k.priceKwh = j.at("priceKwh");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
-    if (j.contains("stepSize")) {
-        k.stepSize.emplace(j.at("stepSize"));
-    }
     if (j.contains("conditions")) {
         k.conditions.emplace(j.at("conditions"));
     }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
 }
 
-// \brief Writes the string representation of the given TariffTimePrice \p k to the given output stream \p os
-/// \returns an output stream with the TariffTimePrice written to
-std::ostream& operator<<(std::ostream& os, const TariffTimePrice& k) {
+// \brief Writes the string representation of the given TariffEnergyPrice \p k to the given output stream \p os
+/// \returns an output stream with the TariffEnergyPrice written to
+std::ostream& operator<<(std::ostream& os, const TariffEnergyPrice& k) {
     os << json(k).dump(4);
     return os;
 }
@@ -545,6 +515,9 @@ void to_json(json& j, const TaxRate& k) {
         {"tax", k.tax},
     };
     // the optional parts of the message
+    if (k.stack) {
+        j["stack"] = k.stack.value();
+    }
     if (k.customData) {
         j["customData"] = k.customData.value();
     }
@@ -557,6 +530,9 @@ void from_json(const json& j, TaxRate& k) {
     k.tax = j.at("tax");
 
     // the optional parts of the message
+    if (j.contains("stack")) {
+        k.stack.emplace(j.at("stack"));
+    }
     if (j.contains("customData")) {
         k.customData.emplace(j.at("customData"));
     }
@@ -569,94 +545,6 @@ std::ostream& operator<<(std::ostream& os, const TaxRate& k) {
     return os;
 }
 
-/// \brief Conversion from a given TariffTime \p k to a given json object \p j
-void to_json(json& j, const TariffTime& k) {
-    // the required parts of the message
-    j = json{
-        {"prices", k.prices},
-    };
-    // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
-    if (k.taxRates) {
-        j["taxRates"] = json::array();
-        for (auto val : k.taxRates.value()) {
-            j["taxRates"].push_back(val);
-        }
-    }
-}
-
-/// \brief Conversion from a given json object \p j to a given TariffTime \p k
-void from_json(const json& j, TariffTime& k) {
-    // the required parts of the message
-    for (auto val : j.at("prices")) {
-        k.prices.push_back(val);
-    }
-
-    // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
-    if (j.contains("taxRates")) {
-        json arr = j.at("taxRates");
-        std::vector<TaxRate> vec;
-        for (auto val : arr) {
-            vec.push_back(val);
-        }
-        k.taxRates.emplace(vec);
-    }
-}
-
-// \brief Writes the string representation of the given TariffTime \p k to the given output stream \p os
-/// \returns an output stream with the TariffTime written to
-std::ostream& operator<<(std::ostream& os, const TariffTime& k) {
-    os << json(k).dump(4);
-    return os;
-}
-
-/// \brief Conversion from a given TariffEnergyPrice \p k to a given json object \p j
-void to_json(json& j, const TariffEnergyPrice& k) {
-    // the required parts of the message
-    j = json{
-        {"priceKwh", k.priceKwh},
-    };
-    // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
-    if (k.stepSize) {
-        j["stepSize"] = k.stepSize.value();
-    }
-    if (k.conditions) {
-        j["conditions"] = k.conditions.value();
-    }
-}
-
-/// \brief Conversion from a given json object \p j to a given TariffEnergyPrice \p k
-void from_json(const json& j, TariffEnergyPrice& k) {
-    // the required parts of the message
-    k.priceKwh = j.at("priceKwh");
-
-    // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
-    if (j.contains("stepSize")) {
-        k.stepSize.emplace(j.at("stepSize"));
-    }
-    if (j.contains("conditions")) {
-        k.conditions.emplace(j.at("conditions"));
-    }
-}
-
-// \brief Writes the string representation of the given TariffEnergyPrice \p k to the given output stream \p os
-/// \returns an output stream with the TariffEnergyPrice written to
-std::ostream& operator<<(std::ostream& os, const TariffEnergyPrice& k) {
-    os << json(k).dump(4);
-    return os;
-}
-
 /// \brief Conversion from a given TariffEnergy \p k to a given json object \p j
 void to_json(json& j, const TariffEnergy& k) {
     // the required parts of the message
@@ -664,14 +552,14 @@ void to_json(json& j, const TariffEnergy& k) {
         {"prices", k.prices},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.taxRates) {
         j["taxRates"] = json::array();
         for (auto val : k.taxRates.value()) {
             j["taxRates"].push_back(val);
         }
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -683,9 +571,6 @@ void from_json(const json& j, TariffEnergy& k) {
     }
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("taxRates")) {
         json arr = j.at("taxRates");
         std::vector<TaxRate> vec;
@@ -694,11 +579,183 @@ void from_json(const json& j, TariffEnergy& k) {
         }
         k.taxRates.emplace(vec);
     }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
 }
 
 // \brief Writes the string representation of the given TariffEnergy \p k to the given output stream \p os
 /// \returns an output stream with the TariffEnergy written to
 std::ostream& operator<<(std::ostream& os, const TariffEnergy& k) {
+    os << json(k).dump(4);
+    return os;
+}
+
+/// \brief Conversion from a given TariffTimePrice \p k to a given json object \p j
+void to_json(json& j, const TariffTimePrice& k) {
+    // the required parts of the message
+    j = json{
+        {"priceMinute", k.priceMinute},
+    };
+    // the optional parts of the message
+    if (k.conditions) {
+        j["conditions"] = k.conditions.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
+}
+
+/// \brief Conversion from a given json object \p j to a given TariffTimePrice \p k
+void from_json(const json& j, TariffTimePrice& k) {
+    // the required parts of the message
+    k.priceMinute = j.at("priceMinute");
+
+    // the optional parts of the message
+    if (j.contains("conditions")) {
+        k.conditions.emplace(j.at("conditions"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
+}
+
+// \brief Writes the string representation of the given TariffTimePrice \p k to the given output stream \p os
+/// \returns an output stream with the TariffTimePrice written to
+std::ostream& operator<<(std::ostream& os, const TariffTimePrice& k) {
+    os << json(k).dump(4);
+    return os;
+}
+
+/// \brief Conversion from a given TariffTime \p k to a given json object \p j
+void to_json(json& j, const TariffTime& k) {
+    // the required parts of the message
+    j = json{
+        {"prices", k.prices},
+    };
+    // the optional parts of the message
+    if (k.taxRates) {
+        j["taxRates"] = json::array();
+        for (auto val : k.taxRates.value()) {
+            j["taxRates"].push_back(val);
+        }
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
+}
+
+/// \brief Conversion from a given json object \p j to a given TariffTime \p k
+void from_json(const json& j, TariffTime& k) {
+    // the required parts of the message
+    for (auto val : j.at("prices")) {
+        k.prices.push_back(val);
+    }
+
+    // the optional parts of the message
+    if (j.contains("taxRates")) {
+        json arr = j.at("taxRates");
+        std::vector<TaxRate> vec;
+        for (auto val : arr) {
+            vec.push_back(val);
+        }
+        k.taxRates.emplace(vec);
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
+}
+
+// \brief Writes the string representation of the given TariffTime \p k to the given output stream \p os
+/// \returns an output stream with the TariffTime written to
+std::ostream& operator<<(std::ostream& os, const TariffTime& k) {
+    os << json(k).dump(4);
+    return os;
+}
+
+/// \brief Conversion from a given TariffConditionsFixed \p k to a given json object \p j
+void to_json(json& j, const TariffConditionsFixed& k) {
+    // the required parts of the message
+    j = json({}, true);
+    // the optional parts of the message
+    if (k.startTimeOfDay) {
+        j["startTimeOfDay"] = k.startTimeOfDay.value();
+    }
+    if (k.endTimeOfDay) {
+        j["endTimeOfDay"] = k.endTimeOfDay.value();
+    }
+    if (k.dayOfWeek) {
+        if (j.size() == 0) {
+            j = json{{"dayOfWeek", json::array()}};
+        } else {
+            j["dayOfWeek"] = json::array();
+        }
+        for (auto val : k.dayOfWeek.value()) {
+            j["dayOfWeek"].push_back(conversions::day_of_week_enum_to_string(val));
+        }
+    }
+    if (k.validFromDate) {
+        j["validFromDate"] = k.validFromDate.value();
+    }
+    if (k.validToDate) {
+        j["validToDate"] = k.validToDate.value();
+    }
+    if (k.evseKind) {
+        j["evseKind"] = conversions::evse_kind_enum_to_string(k.evseKind.value());
+    }
+    if (k.paymentBrand) {
+        j["paymentBrand"] = k.paymentBrand.value();
+    }
+    if (k.paymentRecognition) {
+        j["paymentRecognition"] = k.paymentRecognition.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
+}
+
+/// \brief Conversion from a given json object \p j to a given TariffConditionsFixed \p k
+void from_json(const json& j, TariffConditionsFixed& k) {
+    // the required parts of the message
+
+    // the optional parts of the message
+    if (j.contains("startTimeOfDay")) {
+        k.startTimeOfDay.emplace(j.at("startTimeOfDay"));
+    }
+    if (j.contains("endTimeOfDay")) {
+        k.endTimeOfDay.emplace(j.at("endTimeOfDay"));
+    }
+    if (j.contains("dayOfWeek")) {
+        json arr = j.at("dayOfWeek");
+        std::vector<DayOfWeekEnum> vec;
+        for (auto val : arr) {
+            vec.push_back(conversions::string_to_day_of_week_enum(val));
+        }
+        k.dayOfWeek.emplace(vec);
+    }
+    if (j.contains("validFromDate")) {
+        k.validFromDate.emplace(j.at("validFromDate"));
+    }
+    if (j.contains("validToDate")) {
+        k.validToDate.emplace(j.at("validToDate"));
+    }
+    if (j.contains("evseKind")) {
+        k.evseKind.emplace(conversions::string_to_evse_kind_enum(j.at("evseKind")));
+    }
+    if (j.contains("paymentBrand")) {
+        k.paymentBrand.emplace(j.at("paymentBrand"));
+    }
+    if (j.contains("paymentRecognition")) {
+        k.paymentRecognition.emplace(j.at("paymentRecognition"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
+}
+
+// \brief Writes the string representation of the given TariffConditionsFixed \p k to the given output stream \p os
+/// \returns an output stream with the TariffConditionsFixed written to
+std::ostream& operator<<(std::ostream& os, const TariffConditionsFixed& k) {
     os << json(k).dump(4);
     return os;
 }
@@ -710,11 +767,11 @@ void to_json(json& j, const TariffFixedPrice& k) {
         {"priceFixed", k.priceFixed},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.conditions) {
         j["conditions"] = k.conditions.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -724,11 +781,11 @@ void from_json(const json& j, TariffFixedPrice& k) {
     k.priceFixed = j.at("priceFixed");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("conditions")) {
         k.conditions.emplace(j.at("conditions"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -743,31 +800,28 @@ std::ostream& operator<<(std::ostream& os, const TariffFixedPrice& k) {
 void to_json(json& j, const TariffFixed& k) {
     // the required parts of the message
     j = json{
-        {"fixedFee", k.fixedFee},
+        {"prices", k.prices},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.taxRates) {
         j["taxRates"] = json::array();
         for (auto val : k.taxRates.value()) {
             j["taxRates"].push_back(val);
         }
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 /// \brief Conversion from a given json object \p j to a given TariffFixed \p k
 void from_json(const json& j, TariffFixed& k) {
     // the required parts of the message
-    for (auto val : j.at("fixedFee")) {
-        k.fixedFee.push_back(val);
+    for (auto val : j.at("prices")) {
+        k.prices.push_back(val);
     }
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("taxRates")) {
         json arr = j.at("taxRates");
         std::vector<TaxRate> vec;
@@ -775,6 +829,9 @@ void from_json(const json& j, TariffFixed& k) {
             vec.push_back(val);
         }
         k.taxRates.emplace(vec);
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -790,9 +847,6 @@ void to_json(json& j, const Price& k) {
     // the required parts of the message
     j = json({}, true);
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.exclTax) {
         j["exclTax"] = k.exclTax.value();
     }
@@ -809,6 +863,9 @@ void to_json(json& j, const Price& k) {
             j["taxRates"].push_back(val);
         }
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 /// \brief Conversion from a given json object \p j to a given Price \p k
@@ -816,9 +873,6 @@ void from_json(const json& j, Price& k) {
     // the required parts of the message
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("exclTax")) {
         k.exclTax.emplace(j.at("exclTax"));
     }
@@ -832,6 +886,9 @@ void from_json(const json& j, Price& k) {
             vec.push_back(val);
         }
         k.taxRates.emplace(vec);
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -850,12 +907,6 @@ void to_json(json& j, const Tariff& k) {
         {"currency", k.currency},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
-    if (k.chargingTIme) {
-        j["chargingTIme"] = k.chargingTIme.value();
-    }
     if (k.description) {
         j["description"] = json::array();
         for (auto val : k.description.value()) {
@@ -865,17 +916,32 @@ void to_json(json& j, const Tariff& k) {
     if (k.energy) {
         j["energy"] = k.energy.value();
     }
+    if (k.validFrom) {
+        j["validFrom"] = k.validFrom.value().to_rfc3339();
+    }
+    if (k.chargingTime) {
+        j["chargingTime"] = k.chargingTime.value();
+    }
     if (k.idleTime) {
         j["idleTime"] = k.idleTime.value();
     }
     if (k.fixedFee) {
         j["fixedFee"] = k.fixedFee.value();
     }
-    if (k.maxPrice) {
-        j["maxPrice"] = k.maxPrice.value();
+    if (k.reservationTime) {
+        j["reservationTime"] = k.reservationTime.value();
     }
-    if (k.minPrice) {
-        j["minPrice"] = k.minPrice.value();
+    if (k.reservationFixed) {
+        j["reservationFixed"] = k.reservationFixed.value();
+    }
+    if (k.minCost) {
+        j["minCost"] = k.minCost.value();
+    }
+    if (k.maxCost) {
+        j["maxCost"] = k.maxCost.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -886,12 +952,6 @@ void from_json(const json& j, Tariff& k) {
     k.currency = j.at("currency");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
-    if (j.contains("chargingTIme")) {
-        k.chargingTIme.emplace(j.at("chargingTIme"));
-    }
     if (j.contains("description")) {
         json arr = j.at("description");
         std::vector<MessageContent> vec;
@@ -903,74 +963,38 @@ void from_json(const json& j, Tariff& k) {
     if (j.contains("energy")) {
         k.energy.emplace(j.at("energy"));
     }
+    if (j.contains("validFrom")) {
+        k.validFrom.emplace(j.at("validFrom").get<std::string>());
+    }
+    if (j.contains("chargingTime")) {
+        k.chargingTime.emplace(j.at("chargingTime"));
+    }
     if (j.contains("idleTime")) {
         k.idleTime.emplace(j.at("idleTime"));
     }
     if (j.contains("fixedFee")) {
         k.fixedFee.emplace(j.at("fixedFee"));
     }
-    if (j.contains("maxPrice")) {
-        k.maxPrice.emplace(j.at("maxPrice"));
+    if (j.contains("reservationTime")) {
+        k.reservationTime.emplace(j.at("reservationTime"));
     }
-    if (j.contains("minPrice")) {
-        k.minPrice.emplace(j.at("minPrice"));
+    if (j.contains("reservationFixed")) {
+        k.reservationFixed.emplace(j.at("reservationFixed"));
+    }
+    if (j.contains("minCost")) {
+        k.minCost.emplace(j.at("minCost"));
+    }
+    if (j.contains("maxCost")) {
+        k.maxCost.emplace(j.at("maxCost"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
 // \brief Writes the string representation of the given Tariff \p k to the given output stream \p os
 /// \returns an output stream with the Tariff written to
 std::ostream& operator<<(std::ostream& os, const Tariff& k) {
-    os << json(k).dump(4);
-    return os;
-}
-
-/// \brief Conversion from a given TransactionLimit \p k to a given json object \p j
-void to_json(json& j, const TransactionLimit& k) {
-    // the required parts of the message
-    j = json({}, true);
-    // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
-    if (k.maxCost) {
-        j["maxCost"] = k.maxCost.value();
-    }
-    if (k.maxEnergy) {
-        j["maxEnergy"] = k.maxEnergy.value();
-    }
-    if (k.maxTime) {
-        j["maxTime"] = k.maxTime.value();
-    }
-    if (k.maxSoC) {
-        j["maxSoC"] = k.maxSoC.value();
-    }
-}
-
-/// \brief Conversion from a given json object \p j to a given TransactionLimit \p k
-void from_json(const json& j, TransactionLimit& k) {
-    // the required parts of the message
-
-    // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
-    if (j.contains("maxCost")) {
-        k.maxCost.emplace(j.at("maxCost"));
-    }
-    if (j.contains("maxEnergy")) {
-        k.maxEnergy.emplace(j.at("maxEnergy"));
-    }
-    if (j.contains("maxTime")) {
-        k.maxTime.emplace(j.at("maxTime"));
-    }
-    if (j.contains("maxSoC")) {
-        k.maxSoC.emplace(j.at("maxSoC"));
-    }
-}
-
-// \brief Writes the string representation of the given TransactionLimit \p k to the given output stream \p os
-/// \returns an output stream with the TransactionLimit written to
-std::ostream& operator<<(std::ostream& os, const TransactionLimit& k) {
     os << json(k).dump(4);
     return os;
 }
@@ -985,14 +1009,14 @@ void to_json(json& j, const BatteryData& k) {
         {"soH", k.soH},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.productionDate) {
         j["productionDate"] = k.productionDate.value().to_rfc3339();
     }
     if (k.vendorInfo) {
         j["vendorInfo"] = k.vendorInfo.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -1005,14 +1029,14 @@ void from_json(const json& j, BatteryData& k) {
     k.soH = j.at("soH");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("productionDate")) {
         k.productionDate.emplace(j.at("productionDate").get<std::string>());
     }
     if (j.contains("vendorInfo")) {
         k.vendorInfo.emplace(j.at("vendorInfo"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -1028,14 +1052,14 @@ void to_json(json& j, const Modem& k) {
     // the required parts of the message
     j = json({}, true);
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.iccid) {
         j["iccid"] = k.iccid.value();
     }
     if (k.imsi) {
         j["imsi"] = k.imsi.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -1044,14 +1068,14 @@ void from_json(const json& j, Modem& k) {
     // the required parts of the message
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("iccid")) {
         k.iccid.emplace(j.at("iccid"));
     }
     if (j.contains("imsi")) {
         k.imsi.emplace(j.at("imsi"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -1070,9 +1094,6 @@ void to_json(json& j, const ChargingStation& k) {
         {"vendorName", k.vendorName},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.serialNumber) {
         j["serialNumber"] = k.serialNumber.value();
     }
@@ -1081,6 +1102,9 @@ void to_json(json& j, const ChargingStation& k) {
     }
     if (k.firmwareVersion) {
         j["firmwareVersion"] = k.firmwareVersion.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -1091,9 +1115,6 @@ void from_json(const json& j, ChargingStation& k) {
     k.vendorName = j.at("vendorName");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("serialNumber")) {
         k.serialNumber.emplace(j.at("serialNumber"));
     }
@@ -1102,6 +1123,9 @@ void from_json(const json& j, ChargingStation& k) {
     }
     if (j.contains("firmwareVersion")) {
         k.firmwareVersion.emplace(j.at("firmwareVersion"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -1119,11 +1143,11 @@ void to_json(json& j, const EVSE& k) {
         {"id", k.id},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.connectorId) {
         j["connectorId"] = k.connectorId.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -1133,11 +1157,11 @@ void from_json(const json& j, EVSE& k) {
     k.id = j.at("id");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("connectorId")) {
         k.connectorId.emplace(j.at("connectorId"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -1153,9 +1177,6 @@ void to_json(json& j, const ClearChargingProfile& k) {
     // the required parts of the message
     j = json({}, true);
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.evseId) {
         j["evseId"] = k.evseId.value();
     }
@@ -1166,6 +1187,9 @@ void to_json(json& j, const ClearChargingProfile& k) {
     if (k.stackLevel) {
         j["stackLevel"] = k.stackLevel.value();
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 /// \brief Conversion from a given json object \p j to a given ClearChargingProfile \p k
@@ -1173,9 +1197,6 @@ void from_json(const json& j, ClearChargingProfile& k) {
     // the required parts of the message
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("evseId")) {
         k.evseId.emplace(j.at("evseId"));
     }
@@ -1185,6 +1206,9 @@ void from_json(const json& j, ClearChargingProfile& k) {
     }
     if (j.contains("stackLevel")) {
         k.stackLevel.emplace(j.at("stackLevel"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -1199,34 +1223,34 @@ std::ostream& operator<<(std::ostream& os, const ClearChargingProfile& k) {
 void to_json(json& j, const ClearTariffsResult& k) {
     // the required parts of the message
     j = json{
-        {"status", conversions::tariff_status_enum_to_string(k.status)},
+        {"status", conversions::tariff_clear_status_enum_to_string(k.status)},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.statusInfo) {
         j["statusInfo"] = k.statusInfo.value();
     }
     if (k.tariffId) {
         j["tariffId"] = k.tariffId.value();
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 /// \brief Conversion from a given json object \p j to a given ClearTariffsResult \p k
 void from_json(const json& j, ClearTariffsResult& k) {
     // the required parts of the message
-    k.status = conversions::string_to_tariff_status_enum(j.at("status"));
+    k.status = conversions::string_to_tariff_clear_status_enum(j.at("status"));
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("statusInfo")) {
         k.statusInfo.emplace(j.at("statusInfo"));
     }
     if (j.contains("tariffId")) {
         k.tariffId.emplace(j.at("tariffId"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -1245,11 +1269,11 @@ void to_json(json& j, const ClearMonitoringResult& k) {
         {"id", k.id},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.statusInfo) {
         j["statusInfo"] = k.statusInfo.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -1260,11 +1284,11 @@ void from_json(const json& j, ClearMonitoringResult& k) {
     k.id = j.at("id");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("statusInfo")) {
         k.statusInfo.emplace(j.at("statusInfo"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -1311,14 +1335,84 @@ std::ostream& operator<<(std::ostream& os, const CertificateHashDataType& k) {
     return os;
 }
 
+/// \brief Conversion from a given CertificateStatusRequestInfo \p k to a given json object \p j
+void to_json(json& j, const CertificateStatusRequestInfo& k) {
+    // the required parts of the message
+    j = json{
+        {"certificateHashData", k.certificateHashData},
+        {"source", conversions::certificate_status_source_enum_to_string(k.source)},
+        {"urls", k.urls},
+    };
+    // the optional parts of the message
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
+}
+
+/// \brief Conversion from a given json object \p j to a given CertificateStatusRequestInfo \p k
+void from_json(const json& j, CertificateStatusRequestInfo& k) {
+    // the required parts of the message
+    k.certificateHashData = j.at("certificateHashData");
+    k.source = conversions::string_to_certificate_status_source_enum(j.at("source"));
+    for (auto val : j.at("urls")) {
+        k.urls.push_back(val);
+    }
+
+    // the optional parts of the message
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
+}
+
+// \brief Writes the string representation of the given CertificateStatusRequestInfo \p k to the given output stream \p
+// os
+/// \returns an output stream with the CertificateStatusRequestInfo written to
+std::ostream& operator<<(std::ostream& os, const CertificateStatusRequestInfo& k) {
+    os << json(k).dump(4);
+    return os;
+}
+
+/// \brief Conversion from a given CertificateStatus \p k to a given json object \p j
+void to_json(json& j, const CertificateStatus& k) {
+    // the required parts of the message
+    j = json{
+        {"certificateHashData", k.certificateHashData},
+        {"source", conversions::certificate_status_source_enum_to_string(k.source)},
+        {"status", conversions::certificate_status_enum_to_string(k.status)},
+        {"nextUpdate", k.nextUpdate.to_rfc3339()},
+    };
+    // the optional parts of the message
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
+}
+
+/// \brief Conversion from a given json object \p j to a given CertificateStatus \p k
+void from_json(const json& j, CertificateStatus& k) {
+    // the required parts of the message
+    k.certificateHashData = j.at("certificateHashData");
+    k.source = conversions::string_to_certificate_status_source_enum(j.at("source"));
+    k.status = conversions::string_to_certificate_status_enum(j.at("status"));
+    k.nextUpdate = ocpp::DateTime(std::string(j.at("nextUpdate")));
+
+    // the optional parts of the message
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
+}
+
+// \brief Writes the string representation of the given CertificateStatus \p k to the given output stream \p os
+/// \returns an output stream with the CertificateStatus written to
+std::ostream& operator<<(std::ostream& os, const CertificateStatus& k) {
+    os << json(k).dump(4);
+    return os;
+}
+
 /// \brief Conversion from a given ChargingProfileCriterion \p k to a given json object \p j
 void to_json(json& j, const ChargingProfileCriterion& k) {
     // the required parts of the message
     j = json({}, true);
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.chargingProfilePurpose) {
         j["chargingProfilePurpose"] =
             conversions::charging_profile_purpose_enum_to_string(k.chargingProfilePurpose.value());
@@ -1346,6 +1440,9 @@ void to_json(json& j, const ChargingProfileCriterion& k) {
             j["chargingLimitSource"].push_back(val);
         }
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 /// \brief Conversion from a given json object \p j to a given ChargingProfileCriterion \p k
@@ -1353,9 +1450,6 @@ void from_json(const json& j, ChargingProfileCriterion& k) {
     // the required parts of the message
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("chargingProfilePurpose")) {
         k.chargingProfilePurpose.emplace(
             conversions::string_to_charging_profile_purpose_enum(j.at("chargingProfilePurpose")));
@@ -1378,6 +1472,9 @@ void from_json(const json& j, ChargingProfileCriterion& k) {
             vec.push_back(val);
         }
         k.chargingLimitSource.emplace(vec);
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -1459,9 +1556,6 @@ void to_json(json& j, const ChargingSchedulePeriod& k) {
         {"startPeriod", k.startPeriod},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.limit) {
         j["limit"] = k.limit.value();
     }
@@ -1507,14 +1601,14 @@ void to_json(json& j, const ChargingSchedulePeriod& k) {
     if (k.preconditioningRequest) {
         j["preconditioningRequest"] = k.preconditioningRequest.value();
     }
-    if (k.operationMode) {
-        j["operationMode"] = conversions::operation_mode_enum_to_string(k.operationMode.value());
-    }
     if (k.evseSleep) {
         j["evseSleep"] = k.evseSleep.value();
     }
     if (k.v2xBaseline) {
         j["v2xBaseline"] = k.v2xBaseline.value();
+    }
+    if (k.operationMode) {
+        j["operationMode"] = conversions::operation_mode_enum_to_string(k.operationMode.value());
     }
     if (k.v2xFreqWattCurve) {
         j["v2xFreqWattCurve"] = json::array();
@@ -1528,6 +1622,9 @@ void to_json(json& j, const ChargingSchedulePeriod& k) {
             j["v2xSignalWattCurve"].push_back(val);
         }
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 /// \brief Conversion from a given json object \p j to a given ChargingSchedulePeriod \p k
@@ -1536,9 +1633,6 @@ void from_json(const json& j, ChargingSchedulePeriod& k) {
     k.startPeriod = j.at("startPeriod");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("limit")) {
         k.limit.emplace(j.at("limit"));
     }
@@ -1584,14 +1678,14 @@ void from_json(const json& j, ChargingSchedulePeriod& k) {
     if (j.contains("preconditioningRequest")) {
         k.preconditioningRequest.emplace(j.at("preconditioningRequest"));
     }
-    if (j.contains("operationMode")) {
-        k.operationMode.emplace(conversions::string_to_operation_mode_enum(j.at("operationMode")));
-    }
     if (j.contains("evseSleep")) {
         k.evseSleep.emplace(j.at("evseSleep"));
     }
     if (j.contains("v2xBaseline")) {
         k.v2xBaseline.emplace(j.at("v2xBaseline"));
+    }
+    if (j.contains("operationMode")) {
+        k.operationMode.emplace(conversions::string_to_operation_mode_enum(j.at("operationMode")));
     }
     if (j.contains("v2xFreqWattCurve")) {
         json arr = j.at("v2xFreqWattCurve");
@@ -1608,6 +1702,9 @@ void from_json(const json& j, ChargingSchedulePeriod& k) {
             vec.push_back(val);
         }
         k.v2xSignalWattCurve.emplace(vec);
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -1658,779 +1755,6 @@ std::ostream& operator<<(std::ostream& os, const CompositeSchedule& k) {
     return os;
 }
 
-/// \brief Conversion from a given DERCurvePoints \p k to a given json object \p j
-void to_json(json& j, const DERCurvePoints& k) {
-    // the required parts of the message
-    j = json{
-        {"x", k.x},
-        {"y", k.y},
-    };
-    // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
-}
-
-/// \brief Conversion from a given json object \p j to a given DERCurvePoints \p k
-void from_json(const json& j, DERCurvePoints& k) {
-    // the required parts of the message
-    k.x = j.at("x");
-    k.y = j.at("y");
-
-    // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
-}
-
-// \brief Writes the string representation of the given DERCurvePoints \p k to the given output stream \p os
-/// \returns an output stream with the DERCurvePoints written to
-std::ostream& operator<<(std::ostream& os, const DERCurvePoints& k) {
-    os << json(k).dump(4);
-    return os;
-}
-
-/// \brief Conversion from a given Hysteresis \p k to a given json object \p j
-void to_json(json& j, const Hysteresis& k) {
-    // the required parts of the message
-    j = json({}, true);
-    // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
-    if (k.hysteresisHigh) {
-        j["hysteresisHigh"] = k.hysteresisHigh.value();
-    }
-    if (k.hysteresisLow) {
-        j["hysteresisLow"] = k.hysteresisLow.value();
-    }
-    if (k.hysteresisDelay) {
-        j["hysteresisDelay"] = k.hysteresisDelay.value();
-    }
-    if (k.hysteresisGradient) {
-        j["hysteresisGradient"] = k.hysteresisGradient.value();
-    }
-}
-
-/// \brief Conversion from a given json object \p j to a given Hysteresis \p k
-void from_json(const json& j, Hysteresis& k) {
-    // the required parts of the message
-
-    // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
-    if (j.contains("hysteresisHigh")) {
-        k.hysteresisHigh.emplace(j.at("hysteresisHigh"));
-    }
-    if (j.contains("hysteresisLow")) {
-        k.hysteresisLow.emplace(j.at("hysteresisLow"));
-    }
-    if (j.contains("hysteresisDelay")) {
-        k.hysteresisDelay.emplace(j.at("hysteresisDelay"));
-    }
-    if (j.contains("hysteresisGradient")) {
-        k.hysteresisGradient.emplace(j.at("hysteresisGradient"));
-    }
-}
-
-// \brief Writes the string representation of the given Hysteresis \p k to the given output stream \p os
-/// \returns an output stream with the Hysteresis written to
-std::ostream& operator<<(std::ostream& os, const Hysteresis& k) {
-    os << json(k).dump(4);
-    return os;
-}
-
-/// \brief Conversion from a given ReactivePowerParams \p k to a given json object \p j
-void to_json(json& j, const ReactivePowerParams& k) {
-    // the required parts of the message
-    j = json({}, true);
-    // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
-    if (k.vRef) {
-        j["vRef"] = k.vRef.value();
-    }
-    if (k.autonomousVRefEnable) {
-        j["autonomousVRefEnable"] = k.autonomousVRefEnable.value();
-    }
-    if (k.autonomousVRefTimeConstant) {
-        j["autonomousVRefTimeConstant"] = k.autonomousVRefTimeConstant.value();
-    }
-}
-
-/// \brief Conversion from a given json object \p j to a given ReactivePowerParams \p k
-void from_json(const json& j, ReactivePowerParams& k) {
-    // the required parts of the message
-
-    // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
-    if (j.contains("vRef")) {
-        k.vRef.emplace(j.at("vRef"));
-    }
-    if (j.contains("autonomousVRefEnable")) {
-        k.autonomousVRefEnable.emplace(j.at("autonomousVRefEnable"));
-    }
-    if (j.contains("autonomousVRefTimeConstant")) {
-        k.autonomousVRefTimeConstant.emplace(j.at("autonomousVRefTimeConstant"));
-    }
-}
-
-// \brief Writes the string representation of the given ReactivePowerParams \p k to the given output stream \p os
-/// \returns an output stream with the ReactivePowerParams written to
-std::ostream& operator<<(std::ostream& os, const ReactivePowerParams& k) {
-    os << json(k).dump(4);
-    return os;
-}
-
-/// \brief Conversion from a given VoltageParams \p k to a given json object \p j
-void to_json(json& j, const VoltageParams& k) {
-    // the required parts of the message
-    j = json({}, true);
-    // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
-    if (k.hvMeanValue10Min) {
-        j["hvMeanValue10Min"] = k.hvMeanValue10Min.value();
-    }
-    if (k.hv10MinMeanTripDelay) {
-        j["hv10MinMeanTripDelay"] = k.hv10MinMeanTripDelay.value();
-    }
-    if (k.powerDuringCessation) {
-        j["powerDuringCessation"] = conversions::power_during_cessation_enum_to_string(k.powerDuringCessation.value());
-    }
-}
-
-/// \brief Conversion from a given json object \p j to a given VoltageParams \p k
-void from_json(const json& j, VoltageParams& k) {
-    // the required parts of the message
-
-    // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
-    if (j.contains("hvMeanValue10Min")) {
-        k.hvMeanValue10Min.emplace(j.at("hvMeanValue10Min"));
-    }
-    if (j.contains("hv10MinMeanTripDelay")) {
-        k.hv10MinMeanTripDelay.emplace(j.at("hv10MinMeanTripDelay"));
-    }
-    if (j.contains("powerDuringCessation")) {
-        k.powerDuringCessation.emplace(
-            conversions::string_to_power_during_cessation_enum(j.at("powerDuringCessation")));
-    }
-}
-
-// \brief Writes the string representation of the given VoltageParams \p k to the given output stream \p os
-/// \returns an output stream with the VoltageParams written to
-std::ostream& operator<<(std::ostream& os, const VoltageParams& k) {
-    os << json(k).dump(4);
-    return os;
-}
-
-/// \brief Conversion from a given DERCurve \p k to a given json object \p j
-void to_json(json& j, const DERCurve& k) {
-    // the required parts of the message
-    j = json{
-        {"curveData", k.curveData},
-        {"priority", k.priority},
-        {"yUnit", conversions::derunit_enum_to_string(k.yUnit)},
-    };
-    // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
-    if (k.hysteresis) {
-        j["hysteresis"] = k.hysteresis.value();
-    }
-    if (k.reactivePowerParams) {
-        j["reactivePowerParams"] = k.reactivePowerParams.value();
-    }
-    if (k.voltageParams) {
-        j["voltageParams"] = k.voltageParams.value();
-    }
-    if (k.responseTime) {
-        j["responseTime"] = k.responseTime.value();
-    }
-    if (k.startTime) {
-        j["startTime"] = k.startTime.value().to_rfc3339();
-    }
-    if (k.duration) {
-        j["duration"] = k.duration.value();
-    }
-}
-
-/// \brief Conversion from a given json object \p j to a given DERCurve \p k
-void from_json(const json& j, DERCurve& k) {
-    // the required parts of the message
-    for (auto val : j.at("curveData")) {
-        k.curveData.push_back(val);
-    }
-    k.priority = j.at("priority");
-    k.yUnit = conversions::string_to_derunit_enum(j.at("yUnit"));
-
-    // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
-    if (j.contains("hysteresis")) {
-        k.hysteresis.emplace(j.at("hysteresis"));
-    }
-    if (j.contains("reactivePowerParams")) {
-        k.reactivePowerParams.emplace(j.at("reactivePowerParams"));
-    }
-    if (j.contains("voltageParams")) {
-        k.voltageParams.emplace(j.at("voltageParams"));
-    }
-    if (j.contains("responseTime")) {
-        k.responseTime.emplace(j.at("responseTime"));
-    }
-    if (j.contains("startTime")) {
-        k.startTime.emplace(j.at("startTime").get<std::string>());
-    }
-    if (j.contains("duration")) {
-        k.duration.emplace(j.at("duration"));
-    }
-}
-
-// \brief Writes the string representation of the given DERCurve \p k to the given output stream \p os
-/// \returns an output stream with the DERCurve written to
-std::ostream& operator<<(std::ostream& os, const DERCurve& k) {
-    os << json(k).dump(4);
-    return os;
-}
-
-/// \brief Conversion from a given DERCurveGet \p k to a given json object \p j
-void to_json(json& j, const DERCurveGet& k) {
-    // the required parts of the message
-    j = json{
-        {"curve", k.curve},
-        {"id", k.id},
-        {"curveType", conversions::dercontrol_enum_to_string(k.curveType)},
-        {"isDefault", k.isDefault},
-        {"isSuperseded", k.isSuperseded},
-    };
-    // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
-}
-
-/// \brief Conversion from a given json object \p j to a given DERCurveGet \p k
-void from_json(const json& j, DERCurveGet& k) {
-    // the required parts of the message
-    k.curve = j.at("curve");
-    k.id = j.at("id");
-    k.curveType = conversions::string_to_dercontrol_enum(j.at("curveType"));
-    k.isDefault = j.at("isDefault");
-    k.isSuperseded = j.at("isSuperseded");
-
-    // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
-}
-
-// \brief Writes the string representation of the given DERCurveGet \p k to the given output stream \p os
-/// \returns an output stream with the DERCurveGet written to
-std::ostream& operator<<(std::ostream& os, const DERCurveGet& k) {
-    os << json(k).dump(4);
-    return os;
-}
-
-/// \brief Conversion from a given EnterService \p k to a given json object \p j
-void to_json(json& j, const EnterService& k) {
-    // the required parts of the message
-    j = json{
-        {"priority", k.priority}, {"highVoltage", k.highVoltage}, {"lowVoltage", k.lowVoltage},
-        {"highFreq", k.highFreq}, {"lowFreq", k.lowFreq},
-    };
-    // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
-    if (k.delay) {
-        j["delay"] = k.delay.value();
-    }
-    if (k.randomDelay) {
-        j["randomDelay"] = k.randomDelay.value();
-    }
-    if (k.rampRate) {
-        j["rampRate"] = k.rampRate.value();
-    }
-}
-
-/// \brief Conversion from a given json object \p j to a given EnterService \p k
-void from_json(const json& j, EnterService& k) {
-    // the required parts of the message
-    k.priority = j.at("priority");
-    k.highVoltage = j.at("highVoltage");
-    k.lowVoltage = j.at("lowVoltage");
-    k.highFreq = j.at("highFreq");
-    k.lowFreq = j.at("lowFreq");
-
-    // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
-    if (j.contains("delay")) {
-        k.delay.emplace(j.at("delay"));
-    }
-    if (j.contains("randomDelay")) {
-        k.randomDelay.emplace(j.at("randomDelay"));
-    }
-    if (j.contains("rampRate")) {
-        k.rampRate.emplace(j.at("rampRate"));
-    }
-}
-
-// \brief Writes the string representation of the given EnterService \p k to the given output stream \p os
-/// \returns an output stream with the EnterService written to
-std::ostream& operator<<(std::ostream& os, const EnterService& k) {
-    os << json(k).dump(4);
-    return os;
-}
-
-/// \brief Conversion from a given EnterServiceGet \p k to a given json object \p j
-void to_json(json& j, const EnterServiceGet& k) {
-    // the required parts of the message
-    j = json{
-        {"enterService", k.enterService},
-        {"id", k.id},
-    };
-    // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
-}
-
-/// \brief Conversion from a given json object \p j to a given EnterServiceGet \p k
-void from_json(const json& j, EnterServiceGet& k) {
-    // the required parts of the message
-    k.enterService = j.at("enterService");
-    k.id = j.at("id");
-
-    // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
-}
-
-// \brief Writes the string representation of the given EnterServiceGet \p k to the given output stream \p os
-/// \returns an output stream with the EnterServiceGet written to
-std::ostream& operator<<(std::ostream& os, const EnterServiceGet& k) {
-    os << json(k).dump(4);
-    return os;
-}
-
-/// \brief Conversion from a given FixedPF \p k to a given json object \p j
-void to_json(json& j, const FixedPF& k) {
-    // the required parts of the message
-    j = json{
-        {"priority", k.priority},
-        {"displacement", k.displacement},
-        {"excitation", k.excitation},
-    };
-    // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
-    if (k.startTime) {
-        j["startTime"] = k.startTime.value().to_rfc3339();
-    }
-    if (k.duration) {
-        j["duration"] = k.duration.value();
-    }
-}
-
-/// \brief Conversion from a given json object \p j to a given FixedPF \p k
-void from_json(const json& j, FixedPF& k) {
-    // the required parts of the message
-    k.priority = j.at("priority");
-    k.displacement = j.at("displacement");
-    k.excitation = j.at("excitation");
-
-    // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
-    if (j.contains("startTime")) {
-        k.startTime.emplace(j.at("startTime").get<std::string>());
-    }
-    if (j.contains("duration")) {
-        k.duration.emplace(j.at("duration"));
-    }
-}
-
-// \brief Writes the string representation of the given FixedPF \p k to the given output stream \p os
-/// \returns an output stream with the FixedPF written to
-std::ostream& operator<<(std::ostream& os, const FixedPF& k) {
-    os << json(k).dump(4);
-    return os;
-}
-
-/// \brief Conversion from a given FixedPFGet \p k to a given json object \p j
-void to_json(json& j, const FixedPFGet& k) {
-    // the required parts of the message
-    j = json{
-        {"fixedPF", k.fixedPF},
-        {"id", k.id},
-        {"isDefault", k.isDefault},
-        {"isSuperseded", k.isSuperseded},
-    };
-    // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
-}
-
-/// \brief Conversion from a given json object \p j to a given FixedPFGet \p k
-void from_json(const json& j, FixedPFGet& k) {
-    // the required parts of the message
-    k.fixedPF = j.at("fixedPF");
-    k.id = j.at("id");
-    k.isDefault = j.at("isDefault");
-    k.isSuperseded = j.at("isSuperseded");
-
-    // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
-}
-
-// \brief Writes the string representation of the given FixedPFGet \p k to the given output stream \p os
-/// \returns an output stream with the FixedPFGet written to
-std::ostream& operator<<(std::ostream& os, const FixedPFGet& k) {
-    os << json(k).dump(4);
-    return os;
-}
-
-/// \brief Conversion from a given FixedVar \p k to a given json object \p j
-void to_json(json& j, const FixedVar& k) {
-    // the required parts of the message
-    j = json{
-        {"priority", k.priority},
-        {"setpoint", k.setpoint},
-        {"unit", conversions::derunit_enum_to_string(k.unit)},
-    };
-    // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
-    if (k.startTime) {
-        j["startTime"] = k.startTime.value().to_rfc3339();
-    }
-    if (k.duration) {
-        j["duration"] = k.duration.value();
-    }
-}
-
-/// \brief Conversion from a given json object \p j to a given FixedVar \p k
-void from_json(const json& j, FixedVar& k) {
-    // the required parts of the message
-    k.priority = j.at("priority");
-    k.setpoint = j.at("setpoint");
-    k.unit = conversions::string_to_derunit_enum(j.at("unit"));
-
-    // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
-    if (j.contains("startTime")) {
-        k.startTime.emplace(j.at("startTime").get<std::string>());
-    }
-    if (j.contains("duration")) {
-        k.duration.emplace(j.at("duration"));
-    }
-}
-
-// \brief Writes the string representation of the given FixedVar \p k to the given output stream \p os
-/// \returns an output stream with the FixedVar written to
-std::ostream& operator<<(std::ostream& os, const FixedVar& k) {
-    os << json(k).dump(4);
-    return os;
-}
-
-/// \brief Conversion from a given FixedVarGet \p k to a given json object \p j
-void to_json(json& j, const FixedVarGet& k) {
-    // the required parts of the message
-    j = json{
-        {"fixedVar", k.fixedVar},
-        {"id", k.id},
-        {"isDefault", k.isDefault},
-        {"isSuperseded", k.isSuperseded},
-    };
-    // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
-}
-
-/// \brief Conversion from a given json object \p j to a given FixedVarGet \p k
-void from_json(const json& j, FixedVarGet& k) {
-    // the required parts of the message
-    k.fixedVar = j.at("fixedVar");
-    k.id = j.at("id");
-    k.isDefault = j.at("isDefault");
-    k.isSuperseded = j.at("isSuperseded");
-
-    // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
-}
-
-// \brief Writes the string representation of the given FixedVarGet \p k to the given output stream \p os
-/// \returns an output stream with the FixedVarGet written to
-std::ostream& operator<<(std::ostream& os, const FixedVarGet& k) {
-    os << json(k).dump(4);
-    return os;
-}
-
-/// \brief Conversion from a given FreqDroop \p k to a given json object \p j
-void to_json(json& j, const FreqDroop& k) {
-    // the required parts of the message
-    j = json{
-        {"priority", k.priority},   {"overFreq", k.overFreq},     {"underFreq", k.underFreq},
-        {"overDroop", k.overDroop}, {"underDroop", k.underDroop}, {"responseTime", k.responseTime},
-    };
-    // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
-    if (k.startTime) {
-        j["startTime"] = k.startTime.value().to_rfc3339();
-    }
-    if (k.duration) {
-        j["duration"] = k.duration.value();
-    }
-}
-
-/// \brief Conversion from a given json object \p j to a given FreqDroop \p k
-void from_json(const json& j, FreqDroop& k) {
-    // the required parts of the message
-    k.priority = j.at("priority");
-    k.overFreq = j.at("overFreq");
-    k.underFreq = j.at("underFreq");
-    k.overDroop = j.at("overDroop");
-    k.underDroop = j.at("underDroop");
-    k.responseTime = j.at("responseTime");
-
-    // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
-    if (j.contains("startTime")) {
-        k.startTime.emplace(j.at("startTime").get<std::string>());
-    }
-    if (j.contains("duration")) {
-        k.duration.emplace(j.at("duration"));
-    }
-}
-
-// \brief Writes the string representation of the given FreqDroop \p k to the given output stream \p os
-/// \returns an output stream with the FreqDroop written to
-std::ostream& operator<<(std::ostream& os, const FreqDroop& k) {
-    os << json(k).dump(4);
-    return os;
-}
-
-/// \brief Conversion from a given FreqDroopGet \p k to a given json object \p j
-void to_json(json& j, const FreqDroopGet& k) {
-    // the required parts of the message
-    j = json{
-        {"freqDroop", k.freqDroop},
-        {"id", k.id},
-        {"isDefault", k.isDefault},
-        {"isSuperseded", k.isSuperseded},
-    };
-    // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
-}
-
-/// \brief Conversion from a given json object \p j to a given FreqDroopGet \p k
-void from_json(const json& j, FreqDroopGet& k) {
-    // the required parts of the message
-    k.freqDroop = j.at("freqDroop");
-    k.id = j.at("id");
-    k.isDefault = j.at("isDefault");
-    k.isSuperseded = j.at("isSuperseded");
-
-    // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
-}
-
-// \brief Writes the string representation of the given FreqDroopGet \p k to the given output stream \p os
-/// \returns an output stream with the FreqDroopGet written to
-std::ostream& operator<<(std::ostream& os, const FreqDroopGet& k) {
-    os << json(k).dump(4);
-    return os;
-}
-
-/// \brief Conversion from a given Gradient \p k to a given json object \p j
-void to_json(json& j, const Gradient& k) {
-    // the required parts of the message
-    j = json{
-        {"priority", k.priority},
-        {"gradient", k.gradient},
-        {"softGradient", k.softGradient},
-    };
-    // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
-}
-
-/// \brief Conversion from a given json object \p j to a given Gradient \p k
-void from_json(const json& j, Gradient& k) {
-    // the required parts of the message
-    k.priority = j.at("priority");
-    k.gradient = j.at("gradient");
-    k.softGradient = j.at("softGradient");
-
-    // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
-}
-
-// \brief Writes the string representation of the given Gradient \p k to the given output stream \p os
-/// \returns an output stream with the Gradient written to
-std::ostream& operator<<(std::ostream& os, const Gradient& k) {
-    os << json(k).dump(4);
-    return os;
-}
-
-/// \brief Conversion from a given GradientGet \p k to a given json object \p j
-void to_json(json& j, const GradientGet& k) {
-    // the required parts of the message
-    j = json{
-        {"gradient", k.gradient},
-        {"id", k.id},
-    };
-    // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
-}
-
-/// \brief Conversion from a given json object \p j to a given GradientGet \p k
-void from_json(const json& j, GradientGet& k) {
-    // the required parts of the message
-    k.gradient = j.at("gradient");
-    k.id = j.at("id");
-
-    // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
-}
-
-// \brief Writes the string representation of the given GradientGet \p k to the given output stream \p os
-/// \returns an output stream with the GradientGet written to
-std::ostream& operator<<(std::ostream& os, const GradientGet& k) {
-    os << json(k).dump(4);
-    return os;
-}
-
-/// \brief Conversion from a given LimitMaxDischarge \p k to a given json object \p j
-void to_json(json& j, const LimitMaxDischarge& k) {
-    // the required parts of the message
-    j = json{
-        {"priority", k.priority},
-    };
-    // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
-    if (k.pctMaxDischargePower) {
-        j["pctMaxDischargePower"] = k.pctMaxDischargePower.value();
-    }
-    if (k.powerMonitoringMustTrip) {
-        j["powerMonitoringMustTrip"] = k.powerMonitoringMustTrip.value();
-    }
-    if (k.startTime) {
-        j["startTime"] = k.startTime.value().to_rfc3339();
-    }
-    if (k.duration) {
-        j["duration"] = k.duration.value();
-    }
-}
-
-/// \brief Conversion from a given json object \p j to a given LimitMaxDischarge \p k
-void from_json(const json& j, LimitMaxDischarge& k) {
-    // the required parts of the message
-    k.priority = j.at("priority");
-
-    // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
-    if (j.contains("pctMaxDischargePower")) {
-        k.pctMaxDischargePower.emplace(j.at("pctMaxDischargePower"));
-    }
-    if (j.contains("powerMonitoringMustTrip")) {
-        k.powerMonitoringMustTrip.emplace(j.at("powerMonitoringMustTrip"));
-    }
-    if (j.contains("startTime")) {
-        k.startTime.emplace(j.at("startTime").get<std::string>());
-    }
-    if (j.contains("duration")) {
-        k.duration.emplace(j.at("duration"));
-    }
-}
-
-// \brief Writes the string representation of the given LimitMaxDischarge \p k to the given output stream \p os
-/// \returns an output stream with the LimitMaxDischarge written to
-std::ostream& operator<<(std::ostream& os, const LimitMaxDischarge& k) {
-    os << json(k).dump(4);
-    return os;
-}
-
-/// \brief Conversion from a given LimitMaxDischargeGet \p k to a given json object \p j
-void to_json(json& j, const LimitMaxDischargeGet& k) {
-    // the required parts of the message
-    j = json{
-        {"id", k.id},
-        {"isDefault", k.isDefault},
-        {"isSuperseded", k.isSuperseded},
-        {"limitMaxDischarge", k.limitMaxDischarge},
-    };
-    // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
-}
-
-/// \brief Conversion from a given json object \p j to a given LimitMaxDischargeGet \p k
-void from_json(const json& j, LimitMaxDischargeGet& k) {
-    // the required parts of the message
-    k.id = j.at("id");
-    k.isDefault = j.at("isDefault");
-    k.isSuperseded = j.at("isSuperseded");
-    k.limitMaxDischarge = j.at("limitMaxDischarge");
-
-    // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
-}
-
-// \brief Writes the string representation of the given LimitMaxDischargeGet \p k to the given output stream \p os
-/// \returns an output stream with the LimitMaxDischargeGet written to
-std::ostream& operator<<(std::ostream& os, const LimitMaxDischargeGet& k) {
-    os << json(k).dump(4);
-    return os;
-}
-
 /// \brief Conversion from a given CertificateHashDataChain \p k to a given json object \p j
 void to_json(json& j, const CertificateHashDataChain& k) {
     // the required parts of the message
@@ -2439,14 +1763,14 @@ void to_json(json& j, const CertificateHashDataChain& k) {
         {"certificateType", conversions::get_certificate_id_use_enum_to_string(k.certificateType)},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.childCertificateHashData) {
         j["childCertificateHashData"] = json::array();
         for (auto val : k.childCertificateHashData.value()) {
             j["childCertificateHashData"].push_back(val);
         }
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -2457,9 +1781,6 @@ void from_json(const json& j, CertificateHashDataChain& k) {
     k.certificateType = conversions::string_to_get_certificate_id_use_enum(j.at("certificateType"));
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("childCertificateHashData")) {
         json arr = j.at("childCertificateHashData");
         std::vector<CertificateHashDataType> vec;
@@ -2467,6 +1788,9 @@ void from_json(const json& j, CertificateHashDataChain& k) {
             vec.push_back(val);
         }
         k.childCertificateHashData.emplace(vec);
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -2484,14 +1808,14 @@ void to_json(json& j, const LogParameters& k) {
         {"remoteLocation", k.remoteLocation},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.oldestTimestamp) {
         j["oldestTimestamp"] = k.oldestTimestamp.value().to_rfc3339();
     }
     if (k.latestTimestamp) {
         j["latestTimestamp"] = k.latestTimestamp.value().to_rfc3339();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -2501,14 +1825,14 @@ void from_json(const json& j, LogParameters& k) {
     k.remoteLocation = j.at("remoteLocation");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("oldestTimestamp")) {
         k.oldestTimestamp.emplace(j.at("oldestTimestamp").get<std::string>());
     }
     if (j.contains("latestTimestamp")) {
         k.latestTimestamp.emplace(j.at("latestTimestamp").get<std::string>());
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -2526,14 +1850,14 @@ void to_json(json& j, const Component& k) {
         {"name", k.name},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.evse) {
         j["evse"] = k.evse.value();
     }
     if (k.instance) {
         j["instance"] = k.instance.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -2543,14 +1867,14 @@ void from_json(const json& j, Component& k) {
     k.name = j.at("name");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("evse")) {
         k.evse.emplace(j.at("evse"));
     }
     if (j.contains("instance")) {
         k.instance.emplace(j.at("instance"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -2568,11 +1892,11 @@ void to_json(json& j, const Variable& k) {
         {"name", k.name},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.instance) {
         j["instance"] = k.instance.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -2582,11 +1906,11 @@ void from_json(const json& j, Variable& k) {
     k.name = j.at("name");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("instance")) {
         k.instance.emplace(j.at("instance"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -2604,11 +1928,11 @@ void to_json(json& j, const ComponentVariable& k) {
         {"component", k.component},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.variable) {
         j["variable"] = k.variable.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -2618,11 +1942,11 @@ void from_json(const json& j, ComponentVariable& k) {
     k.component = j.at("component");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("variable")) {
         k.variable.emplace(j.at("variable"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -2675,8 +1999,8 @@ void to_json(json& j, const TariffAssignment& k) {
         {"tariffKind", conversions::tariff_kind_enum_to_string(k.tariffKind)},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
+    if (k.validFrom) {
+        j["validFrom"] = k.validFrom.value().to_rfc3339();
     }
     if (k.evseIds) {
         j["evseIds"] = json::array();
@@ -2690,6 +2014,9 @@ void to_json(json& j, const TariffAssignment& k) {
             j["idTokens"].push_back(val);
         }
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 /// \brief Conversion from a given json object \p j to a given TariffAssignment \p k
@@ -2699,8 +2026,8 @@ void from_json(const json& j, TariffAssignment& k) {
     k.tariffKind = conversions::string_to_tariff_kind_enum(j.at("tariffKind"));
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
+    if (j.contains("validFrom")) {
+        k.validFrom.emplace(j.at("validFrom").get<std::string>());
     }
     if (j.contains("evseIds")) {
         json arr = j.at("evseIds");
@@ -2717,6 +2044,9 @@ void from_json(const json& j, TariffAssignment& k) {
             vec.push_back(val);
         }
         k.idTokens.emplace(vec);
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -2735,11 +2065,11 @@ void to_json(json& j, const GetVariableData& k) {
         {"variable", k.variable},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.attributeType) {
         j["attributeType"] = conversions::attribute_enum_to_string(k.attributeType.value());
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -2750,11 +2080,11 @@ void from_json(const json& j, GetVariableData& k) {
     k.variable = j.at("variable");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("attributeType")) {
         k.attributeType.emplace(conversions::string_to_attribute_enum(j.at("attributeType")));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -2774,9 +2104,6 @@ void to_json(json& j, const GetVariableResult& k) {
         {"variable", k.variable},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.attributeStatusInfo) {
         j["attributeStatusInfo"] = k.attributeStatusInfo.value();
     }
@@ -2785,6 +2112,9 @@ void to_json(json& j, const GetVariableResult& k) {
     }
     if (k.attributeValue) {
         j["attributeValue"] = k.attributeValue.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -2796,9 +2126,6 @@ void from_json(const json& j, GetVariableResult& k) {
     k.variable = j.at("variable");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("attributeStatusInfo")) {
         k.attributeStatusInfo.emplace(j.at("attributeStatusInfo"));
     }
@@ -2807,6 +2134,9 @@ void from_json(const json& j, GetVariableResult& k) {
     }
     if (j.contains("attributeValue")) {
         k.attributeValue.emplace(j.at("attributeValue"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -2825,14 +2155,14 @@ void to_json(json& j, const SignedMeterValue& k) {
         {"encodingMethod", k.encodingMethod},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.signingMethod) {
         j["signingMethod"] = k.signingMethod.value();
     }
     if (k.publicKey) {
         j["publicKey"] = k.publicKey.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -2843,14 +2173,14 @@ void from_json(const json& j, SignedMeterValue& k) {
     k.encodingMethod = j.at("encodingMethod");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("signingMethod")) {
         k.signingMethod.emplace(j.at("signingMethod"));
     }
     if (j.contains("publicKey")) {
         k.publicKey.emplace(j.at("publicKey"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -2866,14 +2196,14 @@ void to_json(json& j, const UnitOfMeasure& k) {
     // the required parts of the message
     j = json({}, true);
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.unit) {
         j["unit"] = k.unit.value();
     }
     if (k.multiplier) {
         j["multiplier"] = k.multiplier.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -2882,14 +2212,14 @@ void from_json(const json& j, UnitOfMeasure& k) {
     // the required parts of the message
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("unit")) {
         k.unit.emplace(j.at("unit"));
     }
     if (j.contains("multiplier")) {
         k.multiplier.emplace(j.at("multiplier"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -2907,9 +2237,6 @@ void to_json(json& j, const SampledValue& k) {
         {"value", k.value},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.measurand) {
         j["measurand"] = conversions::measurand_enum_to_string(k.measurand.value());
     }
@@ -2928,6 +2255,9 @@ void to_json(json& j, const SampledValue& k) {
     if (k.unitOfMeasure) {
         j["unitOfMeasure"] = k.unitOfMeasure.value();
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 /// \brief Conversion from a given json object \p j to a given SampledValue \p k
@@ -2936,9 +2266,6 @@ void from_json(const json& j, SampledValue& k) {
     k.value = j.at("value");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("measurand")) {
         k.measurand.emplace(conversions::string_to_measurand_enum(j.at("measurand")));
     }
@@ -2956,6 +2283,9 @@ void from_json(const json& j, SampledValue& k) {
     }
     if (j.contains("unitOfMeasure")) {
         k.unitOfMeasure.emplace(j.at("unitOfMeasure"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -3000,8 +2330,8 @@ std::ostream& operator<<(std::ostream& os, const MeterValue& k) {
     return os;
 }
 
-/// \brief Conversion from a given LimitBeyondSoC \p k to a given json object \p j
-void to_json(json& j, const LimitBeyondSoC& k) {
+/// \brief Conversion from a given LimitAtSoC \p k to a given json object \p j
+void to_json(json& j, const LimitAtSoC& k) {
     // the required parts of the message
     j = json{
         {"soc", k.soc},
@@ -3013,8 +2343,8 @@ void to_json(json& j, const LimitBeyondSoC& k) {
     }
 }
 
-/// \brief Conversion from a given json object \p j to a given LimitBeyondSoC \p k
-void from_json(const json& j, LimitBeyondSoC& k) {
+/// \brief Conversion from a given json object \p j to a given LimitAtSoC \p k
+void from_json(const json& j, LimitAtSoC& k) {
     // the required parts of the message
     k.soc = j.at("soc");
     k.limit = j.at("limit");
@@ -3025,9 +2355,9 @@ void from_json(const json& j, LimitBeyondSoC& k) {
     }
 }
 
-// \brief Writes the string representation of the given LimitBeyondSoC \p k to the given output stream \p os
-/// \returns an output stream with the LimitBeyondSoC written to
-std::ostream& operator<<(std::ostream& os, const LimitBeyondSoC& k) {
+// \brief Writes the string representation of the given LimitAtSoC \p k to the given output stream \p os
+/// \returns an output stream with the LimitAtSoC written to
+std::ostream& operator<<(std::ostream& os, const LimitAtSoC& k) {
     os << json(k).dump(4);
     return os;
 }
@@ -3039,11 +2369,11 @@ void to_json(json& j, const RelativeTimeInterval& k) {
         {"start", k.start},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.duration) {
         j["duration"] = k.duration.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -3053,11 +2383,11 @@ void from_json(const json& j, RelativeTimeInterval& k) {
     k.start = j.at("start");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("duration")) {
         k.duration.emplace(j.at("duration"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -3076,11 +2406,11 @@ void to_json(json& j, const Cost& k) {
         {"amount", k.amount},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.amountMultiplier) {
         j["amountMultiplier"] = k.amountMultiplier.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -3091,11 +2421,11 @@ void from_json(const json& j, Cost& k) {
     k.amount = j.at("amount");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("amountMultiplier")) {
         k.amountMultiplier.emplace(j.at("amountMultiplier"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -3147,9 +2477,6 @@ void to_json(json& j, const SalesTariffEntry& k) {
         {"relativeTimeInterval", k.relativeTimeInterval},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.ePriceLevel) {
         j["ePriceLevel"] = k.ePriceLevel.value();
     }
@@ -3159,6 +2486,9 @@ void to_json(json& j, const SalesTariffEntry& k) {
             j["consumptionCost"].push_back(val);
         }
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 /// \brief Conversion from a given json object \p j to a given SalesTariffEntry \p k
@@ -3167,9 +2497,6 @@ void from_json(const json& j, SalesTariffEntry& k) {
     k.relativeTimeInterval = j.at("relativeTimeInterval");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("ePriceLevel")) {
         k.ePriceLevel.emplace(j.at("ePriceLevel"));
     }
@@ -3180,6 +2507,9 @@ void from_json(const json& j, SalesTariffEntry& k) {
             vec.push_back(val);
         }
         k.consumptionCost.emplace(vec);
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -3198,14 +2528,14 @@ void to_json(json& j, const SalesTariff& k) {
         {"salesTariffEntry", k.salesTariffEntry},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.salesTariffDescription) {
         j["salesTariffDescription"] = k.salesTariffDescription.value();
     }
     if (k.numEPriceLevels) {
         j["numEPriceLevels"] = k.numEPriceLevels.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -3218,14 +2548,14 @@ void from_json(const json& j, SalesTariff& k) {
     }
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("salesTariffDescription")) {
         k.salesTariffDescription.emplace(j.at("salesTariffDescription"));
     }
     if (j.contains("numEPriceLevels")) {
         k.numEPriceLevels.emplace(j.at("numEPriceLevels"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -3276,9 +2606,6 @@ void to_json(json& j, const PriceRule& k) {
         {"powerRangeStart", k.powerRangeStart},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.parkingFeePeriod) {
         j["parkingFeePeriod"] = k.parkingFeePeriod.value();
     }
@@ -3291,6 +2618,9 @@ void to_json(json& j, const PriceRule& k) {
     if (k.parkingFee) {
         j["parkingFee"] = k.parkingFee.value();
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 /// \brief Conversion from a given json object \p j to a given PriceRule \p k
@@ -3300,9 +2630,6 @@ void from_json(const json& j, PriceRule& k) {
     k.powerRangeStart = j.at("powerRangeStart");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("parkingFeePeriod")) {
         k.parkingFeePeriod.emplace(j.at("parkingFeePeriod"));
     }
@@ -3314,6 +2641,9 @@ void from_json(const json& j, PriceRule& k) {
     }
     if (j.contains("parkingFee")) {
         k.parkingFee.emplace(j.at("parkingFee"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -3370,14 +2700,14 @@ void to_json(json& j, const TaxRule& k) {
         {"taxRate", k.taxRate},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.taxRuleName) {
         j["taxRuleName"] = k.taxRuleName.value();
     }
     if (k.taxIncludedInPrice) {
         j["taxIncludedInPrice"] = k.taxIncludedInPrice.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -3392,14 +2722,14 @@ void from_json(const json& j, TaxRule& k) {
     k.taxRate = j.at("taxRate");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("taxRuleName")) {
         k.taxRuleName.emplace(j.at("taxRuleName"));
     }
     if (j.contains("taxIncludedInPrice")) {
         k.taxIncludedInPrice.emplace(j.at("taxIncludedInPrice"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -3419,11 +2749,11 @@ void to_json(json& j, const OverstayRule& k) {
         {"overstayFeePeriod", k.overstayFeePeriod},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.overstayRuleDescription) {
         j["overstayRuleDescription"] = k.overstayRuleDescription.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -3435,11 +2765,11 @@ void from_json(const json& j, OverstayRule& k) {
     k.overstayFeePeriod = j.at("overstayFeePeriod");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("overstayRuleDescription")) {
         k.overstayRuleDescription.emplace(j.at("overstayRuleDescription"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -3457,14 +2787,14 @@ void to_json(json& j, const OverstayRuleList& k) {
         {"overstayRule", k.overstayRule},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.overstayPowerThreshold) {
         j["overstayPowerThreshold"] = k.overstayPowerThreshold.value();
     }
     if (k.overstayTimeThreshold) {
         j["overstayTimeThreshold"] = k.overstayTimeThreshold.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -3476,14 +2806,14 @@ void from_json(const json& j, OverstayRuleList& k) {
     }
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("overstayPowerThreshold")) {
         k.overstayPowerThreshold.emplace(j.at("overstayPowerThreshold"));
     }
     if (j.contains("overstayTimeThreshold")) {
         k.overstayTimeThreshold.emplace(j.at("overstayTimeThreshold"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -3538,9 +2868,6 @@ void to_json(json& j, const AbsolutePriceSchedule& k) {
         {"priceRuleStacks", k.priceRuleStacks},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.priceScheduleDescription) {
         j["priceScheduleDescription"] = k.priceScheduleDescription.value();
     }
@@ -3565,6 +2892,9 @@ void to_json(json& j, const AbsolutePriceSchedule& k) {
             j["additionalSelectedServices"].push_back(val);
         }
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 /// \brief Conversion from a given json object \p j to a given AbsolutePriceSchedule \p k
@@ -3580,9 +2910,6 @@ void from_json(const json& j, AbsolutePriceSchedule& k) {
     }
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("priceScheduleDescription")) {
         k.priceScheduleDescription.emplace(j.at("priceScheduleDescription"));
     }
@@ -3610,6 +2937,9 @@ void from_json(const json& j, AbsolutePriceSchedule& k) {
             vec.push_back(val);
         }
         k.additionalSelectedServices.emplace(vec);
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -3662,11 +2992,11 @@ void to_json(json& j, const PriceLevelSchedule& k) {
         {"numberOfPriceLevels", k.numberOfPriceLevels},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.priceScheduleDescription) {
         j["priceScheduleDescription"] = k.priceScheduleDescription.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -3681,11 +3011,11 @@ void from_json(const json& j, PriceLevelSchedule& k) {
     k.numberOfPriceLevels = j.at("numberOfPriceLevels");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("priceScheduleDescription")) {
         k.priceScheduleDescription.emplace(j.at("priceScheduleDescription"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -3705,8 +3035,8 @@ void to_json(json& j, const ChargingSchedule& k) {
         {"chargingSchedulePeriod", k.chargingSchedulePeriod},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
+    if (k.limitAtSoC) {
+        j["limitAtSoC"] = k.limitAtSoC.value();
     }
     if (k.startSchedule) {
         j["startSchedule"] = k.startSchedule.value().to_rfc3339();
@@ -3717,32 +3047,32 @@ void to_json(json& j, const ChargingSchedule& k) {
     if (k.minChargingRate) {
         j["minChargingRate"] = k.minChargingRate.value();
     }
-    if (k.limitBeyondSoc) {
-        j["limitBeyondSoc"] = k.limitBeyondSoc.value();
-    }
     if (k.powerTolerance) {
         j["powerTolerance"] = k.powerTolerance.value();
-    }
-    if (k.salesTariff) {
-        j["salesTariff"] = k.salesTariff.value();
     }
     if (k.signatureId) {
         j["signatureId"] = k.signatureId.value();
     }
-    if (k.absolutePriceSchedule) {
-        j["absolutePriceSchedule"] = k.absolutePriceSchedule.value();
-    }
     if (k.digestValue) {
         j["digestValue"] = k.digestValue.value();
-    }
-    if (k.priceLevelSchedule) {
-        j["priceLevelSchedule"] = k.priceLevelSchedule.value();
     }
     if (k.useLocalTime) {
         j["useLocalTime"] = k.useLocalTime.value();
     }
     if (k.randomizedDelay) {
         j["randomizedDelay"] = k.randomizedDelay.value();
+    }
+    if (k.salesTariff) {
+        j["salesTariff"] = k.salesTariff.value();
+    }
+    if (k.absolutePriceSchedule) {
+        j["absolutePriceSchedule"] = k.absolutePriceSchedule.value();
+    }
+    if (k.priceLevelSchedule) {
+        j["priceLevelSchedule"] = k.priceLevelSchedule.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -3756,8 +3086,8 @@ void from_json(const json& j, ChargingSchedule& k) {
     }
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
+    if (j.contains("limitAtSoC")) {
+        k.limitAtSoC.emplace(j.at("limitAtSoC"));
     }
     if (j.contains("startSchedule")) {
         k.startSchedule.emplace(j.at("startSchedule").get<std::string>());
@@ -3768,32 +3098,32 @@ void from_json(const json& j, ChargingSchedule& k) {
     if (j.contains("minChargingRate")) {
         k.minChargingRate.emplace(j.at("minChargingRate"));
     }
-    if (j.contains("limitBeyondSoc")) {
-        k.limitBeyondSoc.emplace(j.at("limitBeyondSoc"));
-    }
     if (j.contains("powerTolerance")) {
         k.powerTolerance.emplace(j.at("powerTolerance"));
-    }
-    if (j.contains("salesTariff")) {
-        k.salesTariff.emplace(j.at("salesTariff"));
     }
     if (j.contains("signatureId")) {
         k.signatureId.emplace(j.at("signatureId"));
     }
-    if (j.contains("absolutePriceSchedule")) {
-        k.absolutePriceSchedule.emplace(j.at("absolutePriceSchedule"));
-    }
     if (j.contains("digestValue")) {
         k.digestValue.emplace(j.at("digestValue"));
-    }
-    if (j.contains("priceLevelSchedule")) {
-        k.priceLevelSchedule.emplace(j.at("priceLevelSchedule"));
     }
     if (j.contains("useLocalTime")) {
         k.useLocalTime.emplace(j.at("useLocalTime"));
     }
     if (j.contains("randomizedDelay")) {
         k.randomizedDelay.emplace(j.at("randomizedDelay"));
+    }
+    if (j.contains("salesTariff")) {
+        k.salesTariff.emplace(j.at("salesTariff"));
+    }
+    if (j.contains("absolutePriceSchedule")) {
+        k.absolutePriceSchedule.emplace(j.at("absolutePriceSchedule"));
+    }
+    if (j.contains("priceLevelSchedule")) {
+        k.priceLevelSchedule.emplace(j.at("priceLevelSchedule"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -3811,14 +3141,14 @@ void to_json(json& j, const ChargingLimit& k) {
         {"chargingLimitSource", k.chargingLimitSource},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.isLocalGeneration) {
         j["isLocalGeneration"] = k.isLocalGeneration.value();
     }
     if (k.isGridCritical) {
         j["isGridCritical"] = k.isGridCritical.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -3828,14 +3158,14 @@ void from_json(const json& j, ChargingLimit& k) {
     k.chargingLimitSource = j.at("chargingLimitSource");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("isLocalGeneration")) {
         k.isLocalGeneration.emplace(j.at("isLocalGeneration"));
     }
     if (j.contains("isGridCritical")) {
         k.isGridCritical.emplace(j.at("isGridCritical"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -3855,9 +3185,6 @@ void to_json(json& j, const MessageInfo& k) {
         {"message", k.message},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.display) {
         j["display"] = k.display.value();
     }
@@ -3879,6 +3206,9 @@ void to_json(json& j, const MessageInfo& k) {
             j["messageExtra"].push_back(val);
         }
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 /// \brief Conversion from a given json object \p j to a given MessageInfo \p k
@@ -3889,9 +3219,6 @@ void from_json(const json& j, MessageInfo& k) {
     k.message = j.at("message");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("display")) {
         k.display.emplace(j.at("display"));
     }
@@ -3914,6 +3241,9 @@ void from_json(const json& j, MessageInfo& k) {
             vec.push_back(val);
         }
         k.messageExtra.emplace(vec);
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -3965,9 +3295,6 @@ void to_json(json& j, const DERChargingParameters& k) {
     // the required parts of the message
     j = json({}, true);
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.evSupportedDERControl) {
         if (j.size() == 0) {
             j = json{{"evSupportedDERControl", json::array()}};
@@ -4105,6 +3432,9 @@ void to_json(json& j, const DERChargingParameters& k) {
     if (k.evSessionTotalDischargeEnergyAvailable) {
         j["evSessionTotalDischargeEnergyAvailable"] = k.evSessionTotalDischargeEnergyAvailable.value();
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 /// \brief Conversion from a given json object \p j to a given DERChargingParameters \p k
@@ -4112,9 +3442,6 @@ void from_json(const json& j, DERChargingParameters& k) {
     // the required parts of the message
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("evSupportedDERControl")) {
         json arr = j.at("evSupportedDERControl");
         std::vector<DERControlEnum> vec;
@@ -4247,6 +3574,9 @@ void from_json(const json& j, DERChargingParameters& k) {
     }
     if (j.contains("evSessionTotalDischargeEnergyAvailable")) {
         k.evSessionTotalDischargeEnergyAvailable.emplace(j.at("evSessionTotalDischargeEnergyAvailable"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -4435,11 +3765,11 @@ void to_json(json& j, const EVEnergyOffer& k) {
         {"evPowerSchedule", k.evPowerSchedule},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.evAbsolutePriceSchedule) {
         j["evAbsolutePriceSchedule"] = k.evAbsolutePriceSchedule.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -4449,11 +3779,11 @@ void from_json(const json& j, EVEnergyOffer& k) {
     k.evPowerSchedule = j.at("evPowerSchedule");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("evAbsolutePriceSchedule")) {
         k.evAbsolutePriceSchedule.emplace(j.at("evAbsolutePriceSchedule"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -4472,9 +3802,6 @@ void to_json(json& j, const DCChargingParameters& k) {
         {"evMaxVoltage", k.evMaxVoltage},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.evMaxPower) {
         j["evMaxPower"] = k.evMaxPower.value();
     }
@@ -4493,6 +3820,9 @@ void to_json(json& j, const DCChargingParameters& k) {
     if (k.bulkSoC) {
         j["bulkSoC"] = k.bulkSoC.value();
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 /// \brief Conversion from a given json object \p j to a given DCChargingParameters \p k
@@ -4502,9 +3832,6 @@ void from_json(const json& j, DCChargingParameters& k) {
     k.evMaxVoltage = j.at("evMaxVoltage");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("evMaxPower")) {
         k.evMaxPower.emplace(j.at("evMaxPower"));
     }
@@ -4523,6 +3850,9 @@ void from_json(const json& j, DCChargingParameters& k) {
     if (j.contains("bulkSoC")) {
         k.bulkSoC.emplace(j.at("bulkSoC"));
     }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
 }
 
 // \brief Writes the string representation of the given DCChargingParameters \p k to the given output stream \p os
@@ -4537,9 +3867,6 @@ void to_json(json& j, const V2XChargingParameters& k) {
     // the required parts of the message
     j = json({}, true);
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.minChargePower) {
         j["minChargePower"] = k.minChargePower.value();
     }
@@ -4612,6 +3939,9 @@ void to_json(json& j, const V2XChargingParameters& k) {
     if (k.targetSoC) {
         j["targetSoC"] = k.targetSoC.value();
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 /// \brief Conversion from a given json object \p j to a given V2XChargingParameters \p k
@@ -4619,9 +3949,6 @@ void from_json(const json& j, V2XChargingParameters& k) {
     // the required parts of the message
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("minChargePower")) {
         k.minChargePower.emplace(j.at("minChargePower"));
     }
@@ -4694,6 +4021,9 @@ void from_json(const json& j, V2XChargingParameters& k) {
     if (j.contains("targetSoC")) {
         k.targetSoC.emplace(j.at("targetSoC"));
     }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
 }
 
 // \brief Writes the string representation of the given V2XChargingParameters \p k to the given output stream \p os
@@ -4710,9 +4040,6 @@ void to_json(json& j, const ChargingNeeds& k) {
         {"requestedEnergyTransfer", conversions::energy_transfer_mode_enum_to_string(k.requestedEnergyTransfer)},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.acChargingParameters) {
         j["acChargingParameters"] = k.acChargingParameters.value();
     }
@@ -4743,6 +4070,9 @@ void to_json(json& j, const ChargingNeeds& k) {
     if (k.departureTime) {
         j["departureTime"] = k.departureTime.value().to_rfc3339();
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 /// \brief Conversion from a given json object \p j to a given ChargingNeeds \p k
@@ -4751,9 +4081,6 @@ void from_json(const json& j, ChargingNeeds& k) {
     k.requestedEnergyTransfer = conversions::string_to_energy_transfer_mode_enum(j.at("requestedEnergyTransfer"));
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("acChargingParameters")) {
         k.acChargingParameters.emplace(j.at("acChargingParameters"));
     }
@@ -4786,6 +4113,9 @@ void from_json(const json& j, ChargingNeeds& k) {
     if (j.contains("departureTime")) {
         k.departureTime.emplace(j.at("departureTime").get<std::string>());
     }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
 }
 
 // \brief Writes the string representation of the given ChargingNeeds \p k to the given output stream \p os
@@ -4808,9 +4138,6 @@ void to_json(json& j, const EventData& k) {
         {"variable", k.variable},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.cause) {
         j["cause"] = k.cause.value();
     }
@@ -4832,6 +4159,9 @@ void to_json(json& j, const EventData& k) {
     if (k.severity) {
         j["severity"] = k.severity.value();
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 /// \brief Conversion from a given json object \p j to a given EventData \p k
@@ -4846,9 +4176,6 @@ void from_json(const json& j, EventData& k) {
     k.variable = j.at("variable");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("cause")) {
         k.cause.emplace(j.at("cause"));
     }
@@ -4870,6 +4197,9 @@ void from_json(const json& j, EventData& k) {
     if (j.contains("severity")) {
         k.severity.emplace(j.at("severity"));
     }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
 }
 
 // \brief Writes the string representation of the given EventData \p k to the given output stream \p os
@@ -4888,13 +4218,11 @@ void to_json(json& j, const VariableMonitoring& k) {
         {"value", k.value},
         {"type", conversions::monitor_enum_to_string(k.type)},
         {"severity", k.severity},
+        {"eventNotificationType", conversions::event_notification_enum_to_string(k.eventNotificationType)},
     };
     // the optional parts of the message
     if (k.customData) {
         j["customData"] = k.customData.value();
-    }
-    if (k.eventNotificationType) {
-        j["eventNotificationType"] = conversions::event_notification_enum_to_string(k.eventNotificationType.value());
     }
 }
 
@@ -4906,13 +4234,11 @@ void from_json(const json& j, VariableMonitoring& k) {
     k.value = j.at("value");
     k.type = conversions::string_to_monitor_enum(j.at("type"));
     k.severity = j.at("severity");
+    k.eventNotificationType = conversions::string_to_event_notification_enum(j.at("eventNotificationType"));
 
     // the optional parts of the message
     if (j.contains("customData")) {
         k.customData.emplace(j.at("customData"));
-    }
-    if (j.contains("eventNotificationType")) {
-        k.eventNotificationType.emplace(conversions::string_to_event_notification_enum(j.at("eventNotificationType")));
     }
 }
 
@@ -4963,7 +4289,7 @@ std::ostream& operator<<(std::ostream& os, const MonitoringData& k) {
 void to_json(json& j, const StreamDataElement& k) {
     // the required parts of the message
     j = json{
-        {"t", k.t.to_rfc3339()},
+        {"t", k.t},
         {"v", k.v},
     };
     // the optional parts of the message
@@ -4975,7 +4301,7 @@ void to_json(json& j, const StreamDataElement& k) {
 /// \brief Conversion from a given json object \p j to a given StreamDataElement \p k
 void from_json(const json& j, StreamDataElement& k) {
     // the required parts of the message
-    k.t = ocpp::DateTime(std::string(j.at("t")));
+    k.t = j.at("t");
     k.v = j.at("v");
 
     // the optional parts of the message
@@ -4991,14 +4317,49 @@ std::ostream& operator<<(std::ostream& os, const StreamDataElement& k) {
     return os;
 }
 
+/// \brief Conversion from a given NotifyPeriodicEventStream \p k to a given json object \p j
+void to_json(json& j, const NotifyPeriodicEventStream& k) {
+    // the required parts of the message
+    j = json{
+        {"data", k.data},
+        {"id", k.id},
+        {"pending", k.pending},
+        {"basetime", k.basetime.to_rfc3339()},
+    };
+    // the optional parts of the message
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
+}
+
+/// \brief Conversion from a given json object \p j to a given NotifyPeriodicEventStream \p k
+void from_json(const json& j, NotifyPeriodicEventStream& k) {
+    // the required parts of the message
+    for (auto val : j.at("data")) {
+        k.data.push_back(val);
+    }
+    k.id = j.at("id");
+    k.pending = j.at("pending");
+    k.basetime = ocpp::DateTime(std::string(j.at("basetime")));
+
+    // the optional parts of the message
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
+}
+
+// \brief Writes the string representation of the given NotifyPeriodicEventStream \p k to the given output stream \p os
+/// \returns an output stream with the NotifyPeriodicEventStream written to
+std::ostream& operator<<(std::ostream& os, const NotifyPeriodicEventStream& k) {
+    os << json(k).dump(4);
+    return os;
+}
+
 /// \brief Conversion from a given VariableAttribute \p k to a given json object \p j
 void to_json(json& j, const VariableAttribute& k) {
     // the required parts of the message
     j = json({}, true);
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.type) {
         j["type"] = conversions::attribute_enum_to_string(k.type.value());
     }
@@ -5014,6 +4375,9 @@ void to_json(json& j, const VariableAttribute& k) {
     if (k.constant) {
         j["constant"] = k.constant.value();
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 /// \brief Conversion from a given json object \p j to a given VariableAttribute \p k
@@ -5021,9 +4385,6 @@ void from_json(const json& j, VariableAttribute& k) {
     // the required parts of the message
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("type")) {
         k.type.emplace(conversions::string_to_attribute_enum(j.at("type")));
     }
@@ -5055,6 +4416,9 @@ void from_json(const json& j, VariableAttribute& k) {
     if (j.contains("constant")) {
         k.constant.emplace(j.at("constant"));
     }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
 }
 
 // \brief Writes the string representation of the given VariableAttribute \p k to the given output stream \p os
@@ -5072,9 +4436,6 @@ void to_json(json& j, const VariableCharacteristics& k) {
         {"supportsMonitoring", k.supportsMonitoring},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.unit) {
         j["unit"] = k.unit.value();
     }
@@ -5090,6 +4451,9 @@ void to_json(json& j, const VariableCharacteristics& k) {
     if (k.valuesList) {
         j["valuesList"] = k.valuesList.value();
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 /// \brief Conversion from a given json object \p j to a given VariableCharacteristics \p k
@@ -5099,9 +4463,6 @@ void from_json(const json& j, VariableCharacteristics& k) {
     k.supportsMonitoring = j.at("supportsMonitoring");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("unit")) {
         k.unit.emplace(j.at("unit"));
     }
@@ -5116,6 +4477,9 @@ void from_json(const json& j, VariableCharacteristics& k) {
     }
     if (j.contains("valuesList")) {
         k.valuesList.emplace(j.at("valuesList"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -5135,11 +4499,11 @@ void to_json(json& j, const ReportData& k) {
         {"variableAttribute", k.variableAttribute},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.variableCharacteristics) {
         j["variableCharacteristics"] = k.variableCharacteristics.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -5153,11 +4517,11 @@ void from_json(const json& j, ReportData& k) {
     }
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("variableCharacteristics")) {
         k.variableCharacteristics.emplace(j.at("variableCharacteristics"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -5172,10 +4536,18 @@ std::ostream& operator<<(std::ostream& os, const ReportData& k) {
 void to_json(json& j, const Address& k) {
     // the required parts of the message
     j = json{
-        {"name", k.name}, {"address1", k.address1},     {"address2", k.address2},
-        {"city", k.city}, {"postalCode", k.postalCode}, {"country", k.country},
+        {"name", k.name},
+        {"address1", k.address1},
+        {"city", k.city},
+        {"country", k.country},
     };
     // the optional parts of the message
+    if (k.address2) {
+        j["address2"] = k.address2.value();
+    }
+    if (k.postalCode) {
+        j["postalCode"] = k.postalCode.value();
+    }
     if (k.customData) {
         j["customData"] = k.customData.value();
     }
@@ -5186,12 +4558,16 @@ void from_json(const json& j, Address& k) {
     // the required parts of the message
     k.name = j.at("name");
     k.address1 = j.at("address1");
-    k.address2 = j.at("address2");
     k.city = j.at("city");
-    k.postalCode = j.at("postalCode");
     k.country = j.at("country");
 
     // the optional parts of the message
+    if (j.contains("address2")) {
+        k.address2.emplace(j.at("address2"));
+    }
+    if (j.contains("postalCode")) {
+        k.postalCode.emplace(j.at("postalCode"));
+    }
     if (j.contains("customData")) {
         k.customData.emplace(j.at("customData"));
     }
@@ -5209,9 +4585,6 @@ void to_json(json& j, const ChargingScheduleUpdate& k) {
     // the required parts of the message
     j = json({}, true);
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.limit) {
         j["limit"] = k.limit.value();
     }
@@ -5239,14 +4612,17 @@ void to_json(json& j, const ChargingScheduleUpdate& k) {
     if (k.setpoint_L3) {
         j["setpoint_L3"] = k.setpoint_L3.value();
     }
-    if (k.setPointReactive) {
-        j["setPointReactive"] = k.setPointReactive.value();
+    if (k.setpointReactive) {
+        j["setpointReactive"] = k.setpointReactive.value();
     }
-    if (k.setPointReactive_L2) {
-        j["setPointReactive_L2"] = k.setPointReactive_L2.value();
+    if (k.setpointReactive_L2) {
+        j["setpointReactive_L2"] = k.setpointReactive_L2.value();
     }
-    if (k.setPointReactive_L3) {
-        j["setPointReactive_L3"] = k.setPointReactive_L3.value();
+    if (k.setpointReactive_L3) {
+        j["setpointReactive_L3"] = k.setpointReactive_L3.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -5255,9 +4631,6 @@ void from_json(const json& j, ChargingScheduleUpdate& k) {
     // the required parts of the message
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("limit")) {
         k.limit.emplace(j.at("limit"));
     }
@@ -5285,14 +4658,17 @@ void from_json(const json& j, ChargingScheduleUpdate& k) {
     if (j.contains("setpoint_L3")) {
         k.setpoint_L3.emplace(j.at("setpoint_L3"));
     }
-    if (j.contains("setPointReactive")) {
-        k.setPointReactive.emplace(j.at("setPointReactive"));
+    if (j.contains("setpointReactive")) {
+        k.setpointReactive.emplace(j.at("setpointReactive"));
     }
-    if (j.contains("setPointReactive_L2")) {
-        k.setPointReactive_L2.emplace(j.at("setPointReactive_L2"));
+    if (j.contains("setpointReactive_L2")) {
+        k.setpointReactive_L2.emplace(j.at("setpointReactive_L2"));
     }
-    if (j.contains("setPointReactive_L3")) {
-        k.setPointReactive_L3.emplace(j.at("setPointReactive_L3"));
+    if (j.contains("setpointReactive_L3")) {
+        k.setpointReactive_L3.emplace(j.at("setpointReactive_L3"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -5314,9 +4690,6 @@ void to_json(json& j, const ChargingProfile& k) {
         {"chargingSchedule", k.chargingSchedule},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.recurrencyKind) {
         j["recurrencyKind"] = conversions::recurrency_kind_enum_to_string(k.recurrencyKind.value());
     }
@@ -5332,17 +4705,20 @@ void to_json(json& j, const ChargingProfile& k) {
     if (k.maxOfflineDuration) {
         j["maxOfflineDuration"] = k.maxOfflineDuration.value();
     }
-    if (k.stopAfterOffline) {
-        j["stopAfterOffline"] = k.stopAfterOffline.value();
+    if (k.invalidAfterOfflineDuration) {
+        j["invalidAfterOfflineDuration"] = k.invalidAfterOfflineDuration.value();
     }
-    if (k.updateInterval) {
-        j["updateInterval"] = k.updateInterval.value();
+    if (k.dynUpdateInterval) {
+        j["dynUpdateInterval"] = k.dynUpdateInterval.value();
     }
     if (k.dynUpdateTime) {
         j["dynUpdateTime"] = k.dynUpdateTime.value().to_rfc3339();
     }
     if (k.priceScheduleSignature) {
         j["priceScheduleSignature"] = k.priceScheduleSignature.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -5358,9 +4734,6 @@ void from_json(const json& j, ChargingProfile& k) {
     }
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("recurrencyKind")) {
         k.recurrencyKind.emplace(conversions::string_to_recurrency_kind_enum(j.at("recurrencyKind")));
     }
@@ -5376,11 +4749,11 @@ void from_json(const json& j, ChargingProfile& k) {
     if (j.contains("maxOfflineDuration")) {
         k.maxOfflineDuration.emplace(j.at("maxOfflineDuration"));
     }
-    if (j.contains("stopAfterOffline")) {
-        k.stopAfterOffline.emplace(j.at("stopAfterOffline"));
+    if (j.contains("invalidAfterOfflineDuration")) {
+        k.invalidAfterOfflineDuration.emplace(j.at("invalidAfterOfflineDuration"));
     }
-    if (j.contains("updateInterval")) {
-        k.updateInterval.emplace(j.at("updateInterval"));
+    if (j.contains("dynUpdateInterval")) {
+        k.dynUpdateInterval.emplace(j.at("dynUpdateInterval"));
     }
     if (j.contains("dynUpdateTime")) {
         k.dynUpdateTime.emplace(j.at("dynUpdateTime").get<std::string>());
@@ -5388,11 +4761,787 @@ void from_json(const json& j, ChargingProfile& k) {
     if (j.contains("priceScheduleSignature")) {
         k.priceScheduleSignature.emplace(j.at("priceScheduleSignature"));
     }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
 }
 
 // \brief Writes the string representation of the given ChargingProfile \p k to the given output stream \p os
 /// \returns an output stream with the ChargingProfile written to
 std::ostream& operator<<(std::ostream& os, const ChargingProfile& k) {
+    os << json(k).dump(4);
+    return os;
+}
+
+/// \brief Conversion from a given DERCurvePoints \p k to a given json object \p j
+void to_json(json& j, const DERCurvePoints& k) {
+    // the required parts of the message
+    j = json{
+        {"x", k.x},
+        {"y", k.y},
+    };
+    // the optional parts of the message
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
+}
+
+/// \brief Conversion from a given json object \p j to a given DERCurvePoints \p k
+void from_json(const json& j, DERCurvePoints& k) {
+    // the required parts of the message
+    k.x = j.at("x");
+    k.y = j.at("y");
+
+    // the optional parts of the message
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
+}
+
+// \brief Writes the string representation of the given DERCurvePoints \p k to the given output stream \p os
+/// \returns an output stream with the DERCurvePoints written to
+std::ostream& operator<<(std::ostream& os, const DERCurvePoints& k) {
+    os << json(k).dump(4);
+    return os;
+}
+
+/// \brief Conversion from a given Hysteresis \p k to a given json object \p j
+void to_json(json& j, const Hysteresis& k) {
+    // the required parts of the message
+    j = json({}, true);
+    // the optional parts of the message
+    if (k.hysteresisHigh) {
+        j["hysteresisHigh"] = k.hysteresisHigh.value();
+    }
+    if (k.hysteresisLow) {
+        j["hysteresisLow"] = k.hysteresisLow.value();
+    }
+    if (k.hysteresisDelay) {
+        j["hysteresisDelay"] = k.hysteresisDelay.value();
+    }
+    if (k.hysteresisGradient) {
+        j["hysteresisGradient"] = k.hysteresisGradient.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
+}
+
+/// \brief Conversion from a given json object \p j to a given Hysteresis \p k
+void from_json(const json& j, Hysteresis& k) {
+    // the required parts of the message
+
+    // the optional parts of the message
+    if (j.contains("hysteresisHigh")) {
+        k.hysteresisHigh.emplace(j.at("hysteresisHigh"));
+    }
+    if (j.contains("hysteresisLow")) {
+        k.hysteresisLow.emplace(j.at("hysteresisLow"));
+    }
+    if (j.contains("hysteresisDelay")) {
+        k.hysteresisDelay.emplace(j.at("hysteresisDelay"));
+    }
+    if (j.contains("hysteresisGradient")) {
+        k.hysteresisGradient.emplace(j.at("hysteresisGradient"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
+}
+
+// \brief Writes the string representation of the given Hysteresis \p k to the given output stream \p os
+/// \returns an output stream with the Hysteresis written to
+std::ostream& operator<<(std::ostream& os, const Hysteresis& k) {
+    os << json(k).dump(4);
+    return os;
+}
+
+/// \brief Conversion from a given ReactivePowerParams \p k to a given json object \p j
+void to_json(json& j, const ReactivePowerParams& k) {
+    // the required parts of the message
+    j = json({}, true);
+    // the optional parts of the message
+    if (k.vRef) {
+        j["vRef"] = k.vRef.value();
+    }
+    if (k.autonomousVRefEnable) {
+        j["autonomousVRefEnable"] = k.autonomousVRefEnable.value();
+    }
+    if (k.autonomousVRefTimeConstant) {
+        j["autonomousVRefTimeConstant"] = k.autonomousVRefTimeConstant.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
+}
+
+/// \brief Conversion from a given json object \p j to a given ReactivePowerParams \p k
+void from_json(const json& j, ReactivePowerParams& k) {
+    // the required parts of the message
+
+    // the optional parts of the message
+    if (j.contains("vRef")) {
+        k.vRef.emplace(j.at("vRef"));
+    }
+    if (j.contains("autonomousVRefEnable")) {
+        k.autonomousVRefEnable.emplace(j.at("autonomousVRefEnable"));
+    }
+    if (j.contains("autonomousVRefTimeConstant")) {
+        k.autonomousVRefTimeConstant.emplace(j.at("autonomousVRefTimeConstant"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
+}
+
+// \brief Writes the string representation of the given ReactivePowerParams \p k to the given output stream \p os
+/// \returns an output stream with the ReactivePowerParams written to
+std::ostream& operator<<(std::ostream& os, const ReactivePowerParams& k) {
+    os << json(k).dump(4);
+    return os;
+}
+
+/// \brief Conversion from a given VoltageParams \p k to a given json object \p j
+void to_json(json& j, const VoltageParams& k) {
+    // the required parts of the message
+    j = json({}, true);
+    // the optional parts of the message
+    if (k.hv10MinMeanValue) {
+        j["hv10MinMeanValue"] = k.hv10MinMeanValue.value();
+    }
+    if (k.hv10MinMeanTripDelay) {
+        j["hv10MinMeanTripDelay"] = k.hv10MinMeanTripDelay.value();
+    }
+    if (k.powerDuringCessation) {
+        j["powerDuringCessation"] = conversions::power_during_cessation_enum_to_string(k.powerDuringCessation.value());
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
+}
+
+/// \brief Conversion from a given json object \p j to a given VoltageParams \p k
+void from_json(const json& j, VoltageParams& k) {
+    // the required parts of the message
+
+    // the optional parts of the message
+    if (j.contains("hv10MinMeanValue")) {
+        k.hv10MinMeanValue.emplace(j.at("hv10MinMeanValue"));
+    }
+    if (j.contains("hv10MinMeanTripDelay")) {
+        k.hv10MinMeanTripDelay.emplace(j.at("hv10MinMeanTripDelay"));
+    }
+    if (j.contains("powerDuringCessation")) {
+        k.powerDuringCessation.emplace(
+            conversions::string_to_power_during_cessation_enum(j.at("powerDuringCessation")));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
+}
+
+// \brief Writes the string representation of the given VoltageParams \p k to the given output stream \p os
+/// \returns an output stream with the VoltageParams written to
+std::ostream& operator<<(std::ostream& os, const VoltageParams& k) {
+    os << json(k).dump(4);
+    return os;
+}
+
+/// \brief Conversion from a given DERCurve \p k to a given json object \p j
+void to_json(json& j, const DERCurve& k) {
+    // the required parts of the message
+    j = json{
+        {"curveData", k.curveData},
+        {"priority", k.priority},
+        {"yUnit", conversions::derunit_enum_to_string(k.yUnit)},
+    };
+    // the optional parts of the message
+    if (k.hysteresis) {
+        j["hysteresis"] = k.hysteresis.value();
+    }
+    if (k.reactivePowerParams) {
+        j["reactivePowerParams"] = k.reactivePowerParams.value();
+    }
+    if (k.voltageParams) {
+        j["voltageParams"] = k.voltageParams.value();
+    }
+    if (k.responseTime) {
+        j["responseTime"] = k.responseTime.value();
+    }
+    if (k.startTime) {
+        j["startTime"] = k.startTime.value().to_rfc3339();
+    }
+    if (k.duration) {
+        j["duration"] = k.duration.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
+}
+
+/// \brief Conversion from a given json object \p j to a given DERCurve \p k
+void from_json(const json& j, DERCurve& k) {
+    // the required parts of the message
+    for (auto val : j.at("curveData")) {
+        k.curveData.push_back(val);
+    }
+    k.priority = j.at("priority");
+    k.yUnit = conversions::string_to_derunit_enum(j.at("yUnit"));
+
+    // the optional parts of the message
+    if (j.contains("hysteresis")) {
+        k.hysteresis.emplace(j.at("hysteresis"));
+    }
+    if (j.contains("reactivePowerParams")) {
+        k.reactivePowerParams.emplace(j.at("reactivePowerParams"));
+    }
+    if (j.contains("voltageParams")) {
+        k.voltageParams.emplace(j.at("voltageParams"));
+    }
+    if (j.contains("responseTime")) {
+        k.responseTime.emplace(j.at("responseTime"));
+    }
+    if (j.contains("startTime")) {
+        k.startTime.emplace(j.at("startTime").get<std::string>());
+    }
+    if (j.contains("duration")) {
+        k.duration.emplace(j.at("duration"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
+}
+
+// \brief Writes the string representation of the given DERCurve \p k to the given output stream \p os
+/// \returns an output stream with the DERCurve written to
+std::ostream& operator<<(std::ostream& os, const DERCurve& k) {
+    os << json(k).dump(4);
+    return os;
+}
+
+/// \brief Conversion from a given DERCurveGet \p k to a given json object \p j
+void to_json(json& j, const DERCurveGet& k) {
+    // the required parts of the message
+    j = json{
+        {"curve", k.curve},
+        {"id", k.id},
+        {"curveType", conversions::dercontrol_enum_to_string(k.curveType)},
+        {"isDefault", k.isDefault},
+        {"isSuperseded", k.isSuperseded},
+    };
+    // the optional parts of the message
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
+}
+
+/// \brief Conversion from a given json object \p j to a given DERCurveGet \p k
+void from_json(const json& j, DERCurveGet& k) {
+    // the required parts of the message
+    k.curve = j.at("curve");
+    k.id = j.at("id");
+    k.curveType = conversions::string_to_dercontrol_enum(j.at("curveType"));
+    k.isDefault = j.at("isDefault");
+    k.isSuperseded = j.at("isSuperseded");
+
+    // the optional parts of the message
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
+}
+
+// \brief Writes the string representation of the given DERCurveGet \p k to the given output stream \p os
+/// \returns an output stream with the DERCurveGet written to
+std::ostream& operator<<(std::ostream& os, const DERCurveGet& k) {
+    os << json(k).dump(4);
+    return os;
+}
+
+/// \brief Conversion from a given EnterService \p k to a given json object \p j
+void to_json(json& j, const EnterService& k) {
+    // the required parts of the message
+    j = json{
+        {"priority", k.priority}, {"highVoltage", k.highVoltage}, {"lowVoltage", k.lowVoltage},
+        {"highFreq", k.highFreq}, {"lowFreq", k.lowFreq},
+    };
+    // the optional parts of the message
+    if (k.delay) {
+        j["delay"] = k.delay.value();
+    }
+    if (k.randomDelay) {
+        j["randomDelay"] = k.randomDelay.value();
+    }
+    if (k.rampRate) {
+        j["rampRate"] = k.rampRate.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
+}
+
+/// \brief Conversion from a given json object \p j to a given EnterService \p k
+void from_json(const json& j, EnterService& k) {
+    // the required parts of the message
+    k.priority = j.at("priority");
+    k.highVoltage = j.at("highVoltage");
+    k.lowVoltage = j.at("lowVoltage");
+    k.highFreq = j.at("highFreq");
+    k.lowFreq = j.at("lowFreq");
+
+    // the optional parts of the message
+    if (j.contains("delay")) {
+        k.delay.emplace(j.at("delay"));
+    }
+    if (j.contains("randomDelay")) {
+        k.randomDelay.emplace(j.at("randomDelay"));
+    }
+    if (j.contains("rampRate")) {
+        k.rampRate.emplace(j.at("rampRate"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
+}
+
+// \brief Writes the string representation of the given EnterService \p k to the given output stream \p os
+/// \returns an output stream with the EnterService written to
+std::ostream& operator<<(std::ostream& os, const EnterService& k) {
+    os << json(k).dump(4);
+    return os;
+}
+
+/// \brief Conversion from a given EnterServiceGet \p k to a given json object \p j
+void to_json(json& j, const EnterServiceGet& k) {
+    // the required parts of the message
+    j = json{
+        {"enterService", k.enterService},
+        {"id", k.id},
+    };
+    // the optional parts of the message
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
+}
+
+/// \brief Conversion from a given json object \p j to a given EnterServiceGet \p k
+void from_json(const json& j, EnterServiceGet& k) {
+    // the required parts of the message
+    k.enterService = j.at("enterService");
+    k.id = j.at("id");
+
+    // the optional parts of the message
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
+}
+
+// \brief Writes the string representation of the given EnterServiceGet \p k to the given output stream \p os
+/// \returns an output stream with the EnterServiceGet written to
+std::ostream& operator<<(std::ostream& os, const EnterServiceGet& k) {
+    os << json(k).dump(4);
+    return os;
+}
+
+/// \brief Conversion from a given FixedPF \p k to a given json object \p j
+void to_json(json& j, const FixedPF& k) {
+    // the required parts of the message
+    j = json{
+        {"priority", k.priority},
+        {"displacement", k.displacement},
+        {"excitation", k.excitation},
+    };
+    // the optional parts of the message
+    if (k.startTime) {
+        j["startTime"] = k.startTime.value().to_rfc3339();
+    }
+    if (k.duration) {
+        j["duration"] = k.duration.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
+}
+
+/// \brief Conversion from a given json object \p j to a given FixedPF \p k
+void from_json(const json& j, FixedPF& k) {
+    // the required parts of the message
+    k.priority = j.at("priority");
+    k.displacement = j.at("displacement");
+    k.excitation = j.at("excitation");
+
+    // the optional parts of the message
+    if (j.contains("startTime")) {
+        k.startTime.emplace(j.at("startTime").get<std::string>());
+    }
+    if (j.contains("duration")) {
+        k.duration.emplace(j.at("duration"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
+}
+
+// \brief Writes the string representation of the given FixedPF \p k to the given output stream \p os
+/// \returns an output stream with the FixedPF written to
+std::ostream& operator<<(std::ostream& os, const FixedPF& k) {
+    os << json(k).dump(4);
+    return os;
+}
+
+/// \brief Conversion from a given FixedPFGet \p k to a given json object \p j
+void to_json(json& j, const FixedPFGet& k) {
+    // the required parts of the message
+    j = json{
+        {"fixedPF", k.fixedPF},
+        {"id", k.id},
+        {"isDefault", k.isDefault},
+        {"isSuperseded", k.isSuperseded},
+    };
+    // the optional parts of the message
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
+}
+
+/// \brief Conversion from a given json object \p j to a given FixedPFGet \p k
+void from_json(const json& j, FixedPFGet& k) {
+    // the required parts of the message
+    k.fixedPF = j.at("fixedPF");
+    k.id = j.at("id");
+    k.isDefault = j.at("isDefault");
+    k.isSuperseded = j.at("isSuperseded");
+
+    // the optional parts of the message
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
+}
+
+// \brief Writes the string representation of the given FixedPFGet \p k to the given output stream \p os
+/// \returns an output stream with the FixedPFGet written to
+std::ostream& operator<<(std::ostream& os, const FixedPFGet& k) {
+    os << json(k).dump(4);
+    return os;
+}
+
+/// \brief Conversion from a given FixedVar \p k to a given json object \p j
+void to_json(json& j, const FixedVar& k) {
+    // the required parts of the message
+    j = json{
+        {"priority", k.priority},
+        {"setpoint", k.setpoint},
+        {"unit", conversions::derunit_enum_to_string(k.unit)},
+    };
+    // the optional parts of the message
+    if (k.startTime) {
+        j["startTime"] = k.startTime.value().to_rfc3339();
+    }
+    if (k.duration) {
+        j["duration"] = k.duration.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
+}
+
+/// \brief Conversion from a given json object \p j to a given FixedVar \p k
+void from_json(const json& j, FixedVar& k) {
+    // the required parts of the message
+    k.priority = j.at("priority");
+    k.setpoint = j.at("setpoint");
+    k.unit = conversions::string_to_derunit_enum(j.at("unit"));
+
+    // the optional parts of the message
+    if (j.contains("startTime")) {
+        k.startTime.emplace(j.at("startTime").get<std::string>());
+    }
+    if (j.contains("duration")) {
+        k.duration.emplace(j.at("duration"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
+}
+
+// \brief Writes the string representation of the given FixedVar \p k to the given output stream \p os
+/// \returns an output stream with the FixedVar written to
+std::ostream& operator<<(std::ostream& os, const FixedVar& k) {
+    os << json(k).dump(4);
+    return os;
+}
+
+/// \brief Conversion from a given FixedVarGet \p k to a given json object \p j
+void to_json(json& j, const FixedVarGet& k) {
+    // the required parts of the message
+    j = json{
+        {"fixedVar", k.fixedVar},
+        {"id", k.id},
+        {"isDefault", k.isDefault},
+        {"isSuperseded", k.isSuperseded},
+    };
+    // the optional parts of the message
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
+}
+
+/// \brief Conversion from a given json object \p j to a given FixedVarGet \p k
+void from_json(const json& j, FixedVarGet& k) {
+    // the required parts of the message
+    k.fixedVar = j.at("fixedVar");
+    k.id = j.at("id");
+    k.isDefault = j.at("isDefault");
+    k.isSuperseded = j.at("isSuperseded");
+
+    // the optional parts of the message
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
+}
+
+// \brief Writes the string representation of the given FixedVarGet \p k to the given output stream \p os
+/// \returns an output stream with the FixedVarGet written to
+std::ostream& operator<<(std::ostream& os, const FixedVarGet& k) {
+    os << json(k).dump(4);
+    return os;
+}
+
+/// \brief Conversion from a given FreqDroop \p k to a given json object \p j
+void to_json(json& j, const FreqDroop& k) {
+    // the required parts of the message
+    j = json{
+        {"priority", k.priority},   {"overFreq", k.overFreq},     {"underFreq", k.underFreq},
+        {"overDroop", k.overDroop}, {"underDroop", k.underDroop}, {"responseTime", k.responseTime},
+    };
+    // the optional parts of the message
+    if (k.startTime) {
+        j["startTime"] = k.startTime.value().to_rfc3339();
+    }
+    if (k.duration) {
+        j["duration"] = k.duration.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
+}
+
+/// \brief Conversion from a given json object \p j to a given FreqDroop \p k
+void from_json(const json& j, FreqDroop& k) {
+    // the required parts of the message
+    k.priority = j.at("priority");
+    k.overFreq = j.at("overFreq");
+    k.underFreq = j.at("underFreq");
+    k.overDroop = j.at("overDroop");
+    k.underDroop = j.at("underDroop");
+    k.responseTime = j.at("responseTime");
+
+    // the optional parts of the message
+    if (j.contains("startTime")) {
+        k.startTime.emplace(j.at("startTime").get<std::string>());
+    }
+    if (j.contains("duration")) {
+        k.duration.emplace(j.at("duration"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
+}
+
+// \brief Writes the string representation of the given FreqDroop \p k to the given output stream \p os
+/// \returns an output stream with the FreqDroop written to
+std::ostream& operator<<(std::ostream& os, const FreqDroop& k) {
+    os << json(k).dump(4);
+    return os;
+}
+
+/// \brief Conversion from a given FreqDroopGet \p k to a given json object \p j
+void to_json(json& j, const FreqDroopGet& k) {
+    // the required parts of the message
+    j = json{
+        {"freqDroop", k.freqDroop},
+        {"id", k.id},
+        {"isDefault", k.isDefault},
+        {"isSuperseded", k.isSuperseded},
+    };
+    // the optional parts of the message
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
+}
+
+/// \brief Conversion from a given json object \p j to a given FreqDroopGet \p k
+void from_json(const json& j, FreqDroopGet& k) {
+    // the required parts of the message
+    k.freqDroop = j.at("freqDroop");
+    k.id = j.at("id");
+    k.isDefault = j.at("isDefault");
+    k.isSuperseded = j.at("isSuperseded");
+
+    // the optional parts of the message
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
+}
+
+// \brief Writes the string representation of the given FreqDroopGet \p k to the given output stream \p os
+/// \returns an output stream with the FreqDroopGet written to
+std::ostream& operator<<(std::ostream& os, const FreqDroopGet& k) {
+    os << json(k).dump(4);
+    return os;
+}
+
+/// \brief Conversion from a given Gradient \p k to a given json object \p j
+void to_json(json& j, const Gradient& k) {
+    // the required parts of the message
+    j = json{
+        {"priority", k.priority},
+        {"gradient", k.gradient},
+        {"softGradient", k.softGradient},
+    };
+    // the optional parts of the message
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
+}
+
+/// \brief Conversion from a given json object \p j to a given Gradient \p k
+void from_json(const json& j, Gradient& k) {
+    // the required parts of the message
+    k.priority = j.at("priority");
+    k.gradient = j.at("gradient");
+    k.softGradient = j.at("softGradient");
+
+    // the optional parts of the message
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
+}
+
+// \brief Writes the string representation of the given Gradient \p k to the given output stream \p os
+/// \returns an output stream with the Gradient written to
+std::ostream& operator<<(std::ostream& os, const Gradient& k) {
+    os << json(k).dump(4);
+    return os;
+}
+
+/// \brief Conversion from a given GradientGet \p k to a given json object \p j
+void to_json(json& j, const GradientGet& k) {
+    // the required parts of the message
+    j = json{
+        {"gradient", k.gradient},
+        {"id", k.id},
+    };
+    // the optional parts of the message
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
+}
+
+/// \brief Conversion from a given json object \p j to a given GradientGet \p k
+void from_json(const json& j, GradientGet& k) {
+    // the required parts of the message
+    k.gradient = j.at("gradient");
+    k.id = j.at("id");
+
+    // the optional parts of the message
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
+}
+
+// \brief Writes the string representation of the given GradientGet \p k to the given output stream \p os
+/// \returns an output stream with the GradientGet written to
+std::ostream& operator<<(std::ostream& os, const GradientGet& k) {
+    os << json(k).dump(4);
+    return os;
+}
+
+/// \brief Conversion from a given LimitMaxDischarge \p k to a given json object \p j
+void to_json(json& j, const LimitMaxDischarge& k) {
+    // the required parts of the message
+    j = json{
+        {"priority", k.priority},
+    };
+    // the optional parts of the message
+    if (k.pctMaxDischargePower) {
+        j["pctMaxDischargePower"] = k.pctMaxDischargePower.value();
+    }
+    if (k.powerMonitoringMustTrip) {
+        j["powerMonitoringMustTrip"] = k.powerMonitoringMustTrip.value();
+    }
+    if (k.startTime) {
+        j["startTime"] = k.startTime.value().to_rfc3339();
+    }
+    if (k.duration) {
+        j["duration"] = k.duration.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
+}
+
+/// \brief Conversion from a given json object \p j to a given LimitMaxDischarge \p k
+void from_json(const json& j, LimitMaxDischarge& k) {
+    // the required parts of the message
+    k.priority = j.at("priority");
+
+    // the optional parts of the message
+    if (j.contains("pctMaxDischargePower")) {
+        k.pctMaxDischargePower.emplace(j.at("pctMaxDischargePower"));
+    }
+    if (j.contains("powerMonitoringMustTrip")) {
+        k.powerMonitoringMustTrip.emplace(j.at("powerMonitoringMustTrip"));
+    }
+    if (j.contains("startTime")) {
+        k.startTime.emplace(j.at("startTime").get<std::string>());
+    }
+    if (j.contains("duration")) {
+        k.duration.emplace(j.at("duration"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
+}
+
+// \brief Writes the string representation of the given LimitMaxDischarge \p k to the given output stream \p os
+/// \returns an output stream with the LimitMaxDischarge written to
+std::ostream& operator<<(std::ostream& os, const LimitMaxDischarge& k) {
+    os << json(k).dump(4);
+    return os;
+}
+
+/// \brief Conversion from a given LimitMaxDischargeGet \p k to a given json object \p j
+void to_json(json& j, const LimitMaxDischargeGet& k) {
+    // the required parts of the message
+    j = json{
+        {"id", k.id},
+        {"isDefault", k.isDefault},
+        {"isSuperseded", k.isSuperseded},
+        {"limitMaxDischarge", k.limitMaxDischarge},
+    };
+    // the optional parts of the message
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
+}
+
+/// \brief Conversion from a given json object \p j to a given LimitMaxDischargeGet \p k
+void from_json(const json& j, LimitMaxDischargeGet& k) {
+    // the required parts of the message
+    k.id = j.at("id");
+    k.isDefault = j.at("isDefault");
+    k.isSuperseded = j.at("isSuperseded");
+    k.limitMaxDischarge = j.at("limitMaxDischarge");
+
+    // the optional parts of the message
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
+}
+
+// \brief Writes the string representation of the given LimitMaxDischargeGet \p k to the given output stream \p os
+/// \returns an output stream with the LimitMaxDischargeGet written to
+std::ostream& operator<<(std::ostream& os, const LimitMaxDischargeGet& k) {
     os << json(k).dump(4);
     return os;
 }
@@ -5404,11 +5553,11 @@ void to_json(json& j, const AuthorizationData& k) {
         {"idToken", k.idToken},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.idTokenInfo) {
         j["idTokenInfo"] = k.idTokenInfo.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -5418,11 +5567,11 @@ void from_json(const json& j, AuthorizationData& k) {
     k.idToken = j.at("idToken");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("idTokenInfo")) {
         k.idTokenInfo.emplace(j.at("idTokenInfo"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -5441,9 +5590,6 @@ void to_json(json& j, const APN& k) {
         {"apnAuthentication", conversions::apnauthentication_enum_to_string(k.apnAuthentication)},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.apnUserName) {
         j["apnUserName"] = k.apnUserName.value();
     }
@@ -5459,6 +5605,9 @@ void to_json(json& j, const APN& k) {
     if (k.useOnlyPreferredNetwork) {
         j["useOnlyPreferredNetwork"] = k.useOnlyPreferredNetwork.value();
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 /// \brief Conversion from a given json object \p j to a given APN \p k
@@ -5468,9 +5617,6 @@ void from_json(const json& j, APN& k) {
     k.apnAuthentication = conversions::string_to_apnauthentication_enum(j.at("apnAuthentication"));
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("apnUserName")) {
         k.apnUserName.emplace(j.at("apnUserName"));
     }
@@ -5485,6 +5631,9 @@ void from_json(const json& j, APN& k) {
     }
     if (j.contains("useOnlyPreferredNetwork")) {
         k.useOnlyPreferredNetwork.emplace(j.at("useOnlyPreferredNetwork"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -5506,11 +5655,11 @@ void to_json(json& j, const VPN& k) {
         {"type", conversions::vpnenum_to_string(k.type)},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.group) {
         j["group"] = k.group.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -5524,11 +5673,11 @@ void from_json(const json& j, VPN& k) {
     k.type = conversions::string_to_vpnenum(j.at("type"));
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("group")) {
         k.group.emplace(j.at("group"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -5550,9 +5699,6 @@ void to_json(json& j, const NetworkConnectionProfile& k) {
         {"securityProfile", k.securityProfile},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.apn) {
         j["apn"] = k.apn.value();
     }
@@ -5568,6 +5714,9 @@ void to_json(json& j, const NetworkConnectionProfile& k) {
     if (k.vpn) {
         j["vpn"] = k.vpn.value();
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 /// \brief Conversion from a given json object \p j to a given NetworkConnectionProfile \p k
@@ -5580,9 +5729,6 @@ void from_json(const json& j, NetworkConnectionProfile& k) {
     k.securityProfile = j.at("securityProfile");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("apn")) {
         k.apn.emplace(j.at("apn"));
     }
@@ -5597,6 +5743,9 @@ void from_json(const json& j, NetworkConnectionProfile& k) {
     }
     if (j.contains("vpn")) {
         k.vpn.emplace(j.at("vpn"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -5616,9 +5765,6 @@ void to_json(json& j, const SetMonitoringData& k) {
         {"variable", k.variable},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.id) {
         j["id"] = k.id.value();
     }
@@ -5627,6 +5773,9 @@ void to_json(json& j, const SetMonitoringData& k) {
     }
     if (k.transaction) {
         j["transaction"] = k.transaction.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -5640,9 +5789,6 @@ void from_json(const json& j, SetMonitoringData& k) {
     k.variable = j.at("variable");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("id")) {
         k.id.emplace(j.at("id"));
     }
@@ -5651,6 +5797,9 @@ void from_json(const json& j, SetMonitoringData& k) {
     }
     if (j.contains("transaction")) {
         k.transaction.emplace(j.at("transaction"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -5672,14 +5821,14 @@ void to_json(json& j, const SetMonitoringResult& k) {
         {"severity", k.severity},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.id) {
         j["id"] = k.id.value();
     }
     if (k.statusInfo) {
         j["statusInfo"] = k.statusInfo.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -5693,14 +5842,14 @@ void from_json(const json& j, SetMonitoringResult& k) {
     k.severity = j.at("severity");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("id")) {
         k.id.emplace(j.at("id"));
     }
     if (j.contains("statusInfo")) {
         k.statusInfo.emplace(j.at("statusInfo"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -5720,11 +5869,11 @@ void to_json(json& j, const SetVariableData& k) {
         {"variable", k.variable},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.attributeType) {
         j["attributeType"] = conversions::attribute_enum_to_string(k.attributeType.value());
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -5736,11 +5885,11 @@ void from_json(const json& j, SetVariableData& k) {
     k.variable = j.at("variable");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("attributeType")) {
         k.attributeType.emplace(conversions::string_to_attribute_enum(j.at("attributeType")));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -5760,14 +5909,14 @@ void to_json(json& j, const SetVariableResult& k) {
         {"variable", k.variable},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.attributeType) {
         j["attributeType"] = conversions::attribute_enum_to_string(k.attributeType.value());
     }
     if (k.attributeStatusInfo) {
         j["attributeStatusInfo"] = k.attributeStatusInfo.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -5779,14 +5928,14 @@ void from_json(const json& j, SetVariableResult& k) {
     k.variable = j.at("variable");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("attributeType")) {
         k.attributeType.emplace(conversions::string_to_attribute_enum(j.at("attributeType")));
     }
     if (j.contains("attributeStatusInfo")) {
         k.attributeStatusInfo.emplace(j.at("attributeStatusInfo"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -5836,9 +5985,6 @@ void to_json(json& j, const ChargingPeriod& k) {
         {"startPeriod", k.startPeriod.to_rfc3339()},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.dimensions) {
         j["dimensions"] = json::array();
         for (auto val : k.dimensions.value()) {
@@ -5848,6 +5994,9 @@ void to_json(json& j, const ChargingPeriod& k) {
     if (k.tariffId) {
         j["tariffId"] = k.tariffId.value();
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 /// \brief Conversion from a given json object \p j to a given ChargingPeriod \p k
@@ -5856,9 +6005,6 @@ void from_json(const json& j, ChargingPeriod& k) {
     k.startPeriod = ocpp::DateTime(std::string(j.at("startPeriod")));
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("dimensions")) {
         json arr = j.at("dimensions");
         std::vector<CostDimension> vec;
@@ -5870,6 +6016,9 @@ void from_json(const json& j, ChargingPeriod& k) {
     if (j.contains("tariffId")) {
         k.tariffId.emplace(j.at("tariffId"));
     }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
 }
 
 // \brief Writes the string representation of the given ChargingPeriod \p k to the given output stream \p os
@@ -5879,30 +6028,74 @@ std::ostream& operator<<(std::ostream& os, const ChargingPeriod& k) {
     return os;
 }
 
+/// \brief Conversion from a given TotalPrice \p k to a given json object \p j
+void to_json(json& j, const TotalPrice& k) {
+    // the required parts of the message
+    j = json({}, true);
+    // the optional parts of the message
+    if (k.exclTax) {
+        j["exclTax"] = k.exclTax.value();
+    }
+    if (k.inclTax) {
+        j["inclTax"] = k.inclTax.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
+}
+
+/// \brief Conversion from a given json object \p j to a given TotalPrice \p k
+void from_json(const json& j, TotalPrice& k) {
+    // the required parts of the message
+
+    // the optional parts of the message
+    if (j.contains("exclTax")) {
+        k.exclTax.emplace(j.at("exclTax"));
+    }
+    if (j.contains("inclTax")) {
+        k.inclTax.emplace(j.at("inclTax"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
+}
+
+// \brief Writes the string representation of the given TotalPrice \p k to the given output stream \p os
+/// \returns an output stream with the TotalPrice written to
+std::ostream& operator<<(std::ostream& os, const TotalPrice& k) {
+    os << json(k).dump(4);
+    return os;
+}
+
 /// \brief Conversion from a given TotalCost \p k to a given json object \p j
 void to_json(json& j, const TotalCost& k) {
     // the required parts of the message
     j = json{
         {"currency", k.currency},
+        {"typeOfCost", conversions::tariff_cost_enum_to_string(k.typeOfCost)},
+        {"total", k.total},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
-    if (k.chargingTime) {
-        j["chargingTime"] = k.chargingTime.value();
+    if (k.fixed) {
+        j["fixed"] = k.fixed.value();
     }
     if (k.energy) {
         j["energy"] = k.energy.value();
     }
-    if (k.fixed) {
-        j["fixed"] = k.fixed.value();
+    if (k.chargingTime) {
+        j["chargingTime"] = k.chargingTime.value();
     }
     if (k.idleTime) {
         j["idleTime"] = k.idleTime.value();
     }
-    if (k.reservation) {
-        j["reservation"] = k.reservation.value();
+    if (k.reservationTime) {
+        j["reservationTime"] = k.reservationTime.value();
+    }
+    if (k.reservationFixed) {
+        j["reservationFixed"] = k.reservationFixed.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -5910,25 +6103,30 @@ void to_json(json& j, const TotalCost& k) {
 void from_json(const json& j, TotalCost& k) {
     // the required parts of the message
     k.currency = j.at("currency");
+    k.typeOfCost = conversions::string_to_tariff_cost_enum(j.at("typeOfCost"));
+    k.total = j.at("total");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
-    if (j.contains("chargingTime")) {
-        k.chargingTime.emplace(j.at("chargingTime"));
+    if (j.contains("fixed")) {
+        k.fixed.emplace(j.at("fixed"));
     }
     if (j.contains("energy")) {
         k.energy.emplace(j.at("energy"));
     }
-    if (j.contains("fixed")) {
-        k.fixed.emplace(j.at("fixed"));
+    if (j.contains("chargingTime")) {
+        k.chargingTime.emplace(j.at("chargingTime"));
     }
     if (j.contains("idleTime")) {
         k.idleTime.emplace(j.at("idleTime"));
     }
-    if (j.contains("reservation")) {
-        k.reservation.emplace(j.at("reservation"));
+    if (j.contains("reservationTime")) {
+        k.reservationTime.emplace(j.at("reservationTime"));
+    }
+    if (j.contains("reservationFixed")) {
+        k.reservationFixed.emplace(j.at("reservationFixed"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 
@@ -5948,6 +6146,9 @@ void to_json(json& j, const TotalUsage& k) {
         {"idleTime", k.idleTime},
     };
     // the optional parts of the message
+    if (k.reservationTime) {
+        j["reservationTime"] = k.reservationTime.value();
+    }
     if (k.customData) {
         j["customData"] = k.customData.value();
     }
@@ -5961,6 +6162,9 @@ void from_json(const json& j, TotalUsage& k) {
     k.idleTime = j.at("idleTime");
 
     // the optional parts of the message
+    if (j.contains("reservationTime")) {
+        k.reservationTime.emplace(j.at("reservationTime"));
+    }
     if (j.contains("customData")) {
         k.customData.emplace(j.at("customData"));
     }
@@ -5981,9 +6185,6 @@ void to_json(json& j, const CostDetails& k) {
         {"totalUsage", k.totalUsage},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.chargingPeriods) {
         j["chargingPeriods"] = json::array();
         for (auto val : k.chargingPeriods.value()) {
@@ -5996,6 +6197,9 @@ void to_json(json& j, const CostDetails& k) {
     if (k.failureReason) {
         j["failureReason"] = k.failureReason.value();
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 /// \brief Conversion from a given json object \p j to a given CostDetails \p k
@@ -6005,9 +6209,6 @@ void from_json(const json& j, CostDetails& k) {
     k.totalUsage = j.at("totalUsage");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("chargingPeriods")) {
         json arr = j.at("chargingPeriods");
         std::vector<ChargingPeriod> vec;
@@ -6022,11 +6223,65 @@ void from_json(const json& j, CostDetails& k) {
     if (j.contains("failureReason")) {
         k.failureReason.emplace(j.at("failureReason"));
     }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
 }
 
 // \brief Writes the string representation of the given CostDetails \p k to the given output stream \p os
 /// \returns an output stream with the CostDetails written to
 std::ostream& operator<<(std::ostream& os, const CostDetails& k) {
+    os << json(k).dump(4);
+    return os;
+}
+
+/// \brief Conversion from a given TransactionLimit \p k to a given json object \p j
+void to_json(json& j, const TransactionLimit& k) {
+    // the required parts of the message
+    j = json({}, true);
+    // the optional parts of the message
+    if (k.maxCost) {
+        j["maxCost"] = k.maxCost.value();
+    }
+    if (k.maxEnergy) {
+        j["maxEnergy"] = k.maxEnergy.value();
+    }
+    if (k.maxTime) {
+        j["maxTime"] = k.maxTime.value();
+    }
+    if (k.maxSoC) {
+        j["maxSoC"] = k.maxSoC.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
+}
+
+/// \brief Conversion from a given json object \p j to a given TransactionLimit \p k
+void from_json(const json& j, TransactionLimit& k) {
+    // the required parts of the message
+
+    // the optional parts of the message
+    if (j.contains("maxCost")) {
+        k.maxCost.emplace(j.at("maxCost"));
+    }
+    if (j.contains("maxEnergy")) {
+        k.maxEnergy.emplace(j.at("maxEnergy"));
+    }
+    if (j.contains("maxTime")) {
+        k.maxTime.emplace(j.at("maxTime"));
+    }
+    if (j.contains("maxSoC")) {
+        k.maxSoC.emplace(j.at("maxSoC"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
+}
+
+// \brief Writes the string representation of the given TransactionLimit \p k to the given output stream \p os
+/// \returns an output stream with the TransactionLimit written to
+std::ostream& operator<<(std::ostream& os, const TransactionLimit& k) {
     os << json(k).dump(4);
     return os;
 }
@@ -6038,9 +6293,6 @@ void to_json(json& j, const Transaction& k) {
         {"transactionId", k.transactionId},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.chargingState) {
         j["chargingState"] = conversions::charging_state_enum_to_string(k.chargingState.value());
     }
@@ -6062,6 +6314,9 @@ void to_json(json& j, const Transaction& k) {
     if (k.transactionLimit) {
         j["transactionLimit"] = k.transactionLimit.value();
     }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
+    }
 }
 
 /// \brief Conversion from a given json object \p j to a given Transaction \p k
@@ -6070,9 +6325,6 @@ void from_json(const json& j, Transaction& k) {
     k.transactionId = j.at("transactionId");
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("chargingState")) {
         k.chargingState.emplace(conversions::string_to_charging_state_enum(j.at("chargingState")));
     }
@@ -6094,6 +6346,9 @@ void from_json(const json& j, Transaction& k) {
     if (j.contains("transactionLimit")) {
         k.transactionLimit.emplace(j.at("transactionLimit"));
     }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
+    }
 }
 
 // \brief Writes the string representation of the given Transaction \p k to the given output stream \p os
@@ -6111,9 +6366,6 @@ void to_json(json& j, const Firmware& k) {
         {"retrieveDateTime", k.retrieveDateTime.to_rfc3339()},
     };
     // the optional parts of the message
-    if (k.customData) {
-        j["customData"] = k.customData.value();
-    }
     if (k.installDateTime) {
         j["installDateTime"] = k.installDateTime.value().to_rfc3339();
     }
@@ -6122,6 +6374,9 @@ void to_json(json& j, const Firmware& k) {
     }
     if (k.signature) {
         j["signature"] = k.signature.value();
+    }
+    if (k.customData) {
+        j["customData"] = k.customData.value();
     }
 }
 
@@ -6132,9 +6387,6 @@ void from_json(const json& j, Firmware& k) {
     k.retrieveDateTime = ocpp::DateTime(std::string(j.at("retrieveDateTime")));
 
     // the optional parts of the message
-    if (j.contains("customData")) {
-        k.customData.emplace(j.at("customData"));
-    }
     if (j.contains("installDateTime")) {
         k.installDateTime.emplace(j.at("installDateTime").get<std::string>());
     }
@@ -6143,6 +6395,9 @@ void from_json(const json& j, Firmware& k) {
     }
     if (j.contains("signature")) {
         k.signature.emplace(j.at("signature"));
+    }
+    if (j.contains("customData")) {
+        k.customData.emplace(j.at("customData"));
     }
 }
 

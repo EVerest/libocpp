@@ -40,6 +40,7 @@ std::ostream& operator<<(std::ostream& os, const UpdateDynamicScheduleRequest& k
 /// \brief Contains a OCPP UpdateDynamicScheduleResponse message
 struct UpdateDynamicScheduleResponse : public ocpp::Message {
     ChargingProfileStatusEnum status;
+    std::optional<StatusInfo> statusInfo;
     std::optional<CustomData> customData;
 
     /// \brief Provides the type of this UpdateDynamicScheduleResponse message as a human readable string

@@ -47,7 +47,7 @@ std::ostream& operator<<(std::ostream& os, const NotifySettlementRequest& k);
 
 /// \brief Contains a OCPP NotifySettlementResponse message
 struct NotifySettlementResponse : public ocpp::Message {
-    std::optional<CiString<2000>> receiptURL;
+    std::optional<CiString<2000>> receiptUrl;
     std::optional<CiString<50>> receiptId;
     std::optional<CustomData> customData;
 

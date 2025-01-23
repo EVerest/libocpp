@@ -19,6 +19,8 @@ namespace v201 {
 struct SignCertificateRequest : public ocpp::Message {
     CiString<5500> csr;
     std::optional<CertificateSigningUseEnum> certificateType;
+    std::optional<CertificateHashDataType> hashRootCertificate;
+    std::optional<int32_t> requestId;
     std::optional<CustomData> customData;
 
     /// \brief Provides the type of this SignCertificate message as a human readable string

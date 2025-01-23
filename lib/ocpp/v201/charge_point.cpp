@@ -1427,7 +1427,7 @@ static bool component_variable_change_requires_websocket_option_update_without_r
 
 void ChargePoint::handle_variable_changed(const SetVariableData& set_variable_data) {
 
-    ComponentVariable component_variable = {set_variable_data.component, std::nullopt, set_variable_data.variable};
+    ComponentVariable component_variable = {set_variable_data.component, set_variable_data.variable};
 
     if (set_variable_data.attributeType.has_value() and
         set_variable_data.attributeType.value() != AttributeEnum::Actual) {
@@ -1514,7 +1514,7 @@ void ChargePoint::handle_variables_changed(const std::map<SetVariableData, SetVa
 }
 
 bool ChargePoint::validate_set_variable(const SetVariableData& set_variable_data) {
-    ComponentVariable cv = {set_variable_data.component, std::nullopt, set_variable_data.variable};
+    ComponentVariable cv = {set_variable_data.component, set_variable_data.variable};
     if (cv == ControllerComponentVariables::NetworkConfigurationPriority) {
         const auto network_configuration_priorities = ocpp::split_string(set_variable_data.attributeValue.get(), ',');
         const auto active_security_profile =
@@ -2298,7 +2298,7 @@ void ChargePoint::handle_unlock_connector(Call<UnlockConnectorRequest> call) {
     const UnlockConnectorRequest& msg = call.msg;
     UnlockConnectorResponse unlock_response;
 
-    EVSE evse = {msg.evseId, std::nullopt, msg.connectorId};
+    EVSE evse = {msg.evseId, msg.connectorId};
 
     if (this->is_valid_evse(evse)) {
         if (!this->evse_manager->get_evse(msg.evseId).has_active_transaction()) {

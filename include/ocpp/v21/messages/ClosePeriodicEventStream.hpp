@@ -8,7 +8,6 @@
 #include <nlohmann/json_fwd.hpp>
 #include <optional>
 
-#include <ocpp/v201/ocpp_enums.hpp>
 #include <ocpp/v201/ocpp_types.hpp>
 using namespace ocpp::v201;
 #include <ocpp/common/types.hpp>
@@ -38,9 +37,7 @@ std::ostream& operator<<(std::ostream& os, const ClosePeriodicEventStreamRequest
 
 /// \brief Contains a OCPP ClosePeriodicEventStreamResponse message
 struct ClosePeriodicEventStreamResponse : public ocpp::Message {
-    GenericStatusEnum status;
     std::optional<CustomData> customData;
-    std::optional<StatusInfo> statusInfo;
 
     /// \brief Provides the type of this ClosePeriodicEventStreamResponse message as a human readable string
     /// \returns the message type as a human readable string

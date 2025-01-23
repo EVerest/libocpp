@@ -20,8 +20,8 @@ using CustomData = nlohmann::json;
 
 struct StatusInfo {
     CiString<20> reasonCode;
-    std::optional<CustomData> customData;
     std::optional<CiString<1024>> additionalInfo;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given StatusInfo \p k to a given json object \p j
 void to_json(json& j, const StatusInfo& k);
@@ -34,9 +34,9 @@ void from_json(const json& j, StatusInfo& k);
 std::ostream& operator<<(std::ostream& os, const StatusInfo& k);
 
 struct PeriodicEventStreamParams {
-    std::optional<CustomData> customData;
     std::optional<int32_t> interval;
     std::optional<int32_t> values;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given PeriodicEventStreamParams \p k to a given json object \p j
 void to_json(json& j, const PeriodicEventStreamParams& k);
@@ -66,8 +66,8 @@ std::ostream& operator<<(std::ostream& os, const AdditionalInfo& k);
 struct IdToken {
     CiString<255> idToken;
     CiString<20> type;
-    std::optional<CustomData> customData;
     std::optional<std::vector<AdditionalInfo>> additionalInfo;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given IdToken \p k to a given json object \p j
 void to_json(json& j, const IdToken& k);
@@ -100,8 +100,8 @@ std::ostream& operator<<(std::ostream& os, const OCSPRequestData& k);
 struct MessageContent {
     MessageFormatEnum format;
     CiString<1024> content;
-    std::optional<CustomData> customData;
     std::optional<CiString<8>> language;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given MessageContent \p k to a given json object \p j
 void to_json(json& j, const MessageContent& k);
@@ -115,7 +115,6 @@ std::ostream& operator<<(std::ostream& os, const MessageContent& k);
 
 struct IdTokenInfo {
     AuthorizationStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<ocpp::DateTime> cacheExpiryDateTime;
     std::optional<int32_t> chargingPriority;
     std::optional<IdToken> groupIdToken;
@@ -123,6 +122,7 @@ struct IdTokenInfo {
     std::optional<CiString<8>> language2;
     std::optional<std::vector<int32_t>> evseId;
     std::optional<MessageContent> personalMessage;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given IdTokenInfo \p k to a given json object \p j
 void to_json(json& j, const IdTokenInfo& k);
@@ -135,11 +135,12 @@ void from_json(const json& j, IdTokenInfo& k);
 std::ostream& operator<<(std::ostream& os, const IdTokenInfo& k);
 
 struct TariffConditions {
-    std::optional<CustomData> customData;
     std::optional<std::string> startTimeOfDay;
     std::optional<std::string> endTimeOfDay;
-    std::optional<std::string> validFrom;
-    std::optional<std::string> validTo;
+    std::optional<std::vector<DayOfWeekEnum>> dayOfWeek;
+    std::optional<std::string> validFromDate;
+    std::optional<std::string> validToDate;
+    std::optional<EvseKindEnum> evseKind;
     std::optional<float> minEnergy;
     std::optional<float> maxEnergy;
     std::optional<float> minCurrent;
@@ -152,12 +153,7 @@ struct TariffConditions {
     std::optional<int32_t> maxChargingTime;
     std::optional<int32_t> minIdleTime;
     std::optional<int32_t> maxIdleTime;
-    std::optional<std::vector<DayOfWeekEnum>> dayOfWeek;
-    std::optional<EvseKindEnum> evseKind;
-    std::optional<TariffKindEnum> tariffKind;
-    std::optional<CiString<20>> paymentBrand;
-    std::optional<CiString<20>> paymentRecognition;
-    std::optional<bool> isReservation;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given TariffConditions \p k to a given json object \p j
 void to_json(json& j, const TariffConditions& k);
@@ -169,25 +165,25 @@ void from_json(const json& j, TariffConditions& k);
 /// \returns an output stream with the TariffConditions written to
 std::ostream& operator<<(std::ostream& os, const TariffConditions& k);
 
-struct TariffTimePrice {
-    float priceMinute;
-    std::optional<CustomData> customData;
-    std::optional<int32_t> stepSize;
+struct TariffEnergyPrice {
+    float priceKwh;
     std::optional<TariffConditions> conditions;
+    std::optional<CustomData> customData;
 };
-/// \brief Conversion from a given TariffTimePrice \p k to a given json object \p j
-void to_json(json& j, const TariffTimePrice& k);
+/// \brief Conversion from a given TariffEnergyPrice \p k to a given json object \p j
+void to_json(json& j, const TariffEnergyPrice& k);
 
-/// \brief Conversion from a given json object \p j to a given TariffTimePrice \p k
-void from_json(const json& j, TariffTimePrice& k);
+/// \brief Conversion from a given json object \p j to a given TariffEnergyPrice \p k
+void from_json(const json& j, TariffEnergyPrice& k);
 
-// \brief Writes the string representation of the given TariffTimePrice \p k to the given output stream \p os
-/// \returns an output stream with the TariffTimePrice written to
-std::ostream& operator<<(std::ostream& os, const TariffTimePrice& k);
+// \brief Writes the string representation of the given TariffEnergyPrice \p k to the given output stream \p os
+/// \returns an output stream with the TariffEnergyPrice written to
+std::ostream& operator<<(std::ostream& os, const TariffEnergyPrice& k);
 
 struct TaxRate {
     CiString<20> type;
     float tax;
+    std::optional<int32_t> stack;
     std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given TaxRate \p k to a given json object \p j
@@ -200,41 +196,10 @@ void from_json(const json& j, TaxRate& k);
 /// \returns an output stream with the TaxRate written to
 std::ostream& operator<<(std::ostream& os, const TaxRate& k);
 
-struct TariffTime {
-    std::vector<TariffTimePrice> prices;
-    std::optional<CustomData> customData;
-    std::optional<std::vector<TaxRate>> taxRates;
-};
-/// \brief Conversion from a given TariffTime \p k to a given json object \p j
-void to_json(json& j, const TariffTime& k);
-
-/// \brief Conversion from a given json object \p j to a given TariffTime \p k
-void from_json(const json& j, TariffTime& k);
-
-// \brief Writes the string representation of the given TariffTime \p k to the given output stream \p os
-/// \returns an output stream with the TariffTime written to
-std::ostream& operator<<(std::ostream& os, const TariffTime& k);
-
-struct TariffEnergyPrice {
-    float priceKwh;
-    std::optional<CustomData> customData;
-    std::optional<int32_t> stepSize;
-    std::optional<TariffConditions> conditions;
-};
-/// \brief Conversion from a given TariffEnergyPrice \p k to a given json object \p j
-void to_json(json& j, const TariffEnergyPrice& k);
-
-/// \brief Conversion from a given json object \p j to a given TariffEnergyPrice \p k
-void from_json(const json& j, TariffEnergyPrice& k);
-
-// \brief Writes the string representation of the given TariffEnergyPrice \p k to the given output stream \p os
-/// \returns an output stream with the TariffEnergyPrice written to
-std::ostream& operator<<(std::ostream& os, const TariffEnergyPrice& k);
-
 struct TariffEnergy {
     std::vector<TariffEnergyPrice> prices;
-    std::optional<CustomData> customData;
     std::optional<std::vector<TaxRate>> taxRates;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given TariffEnergy \p k to a given json object \p j
 void to_json(json& j, const TariffEnergy& k);
@@ -246,10 +211,61 @@ void from_json(const json& j, TariffEnergy& k);
 /// \returns an output stream with the TariffEnergy written to
 std::ostream& operator<<(std::ostream& os, const TariffEnergy& k);
 
+struct TariffTimePrice {
+    float priceMinute;
+    std::optional<TariffConditions> conditions;
+    std::optional<CustomData> customData;
+};
+/// \brief Conversion from a given TariffTimePrice \p k to a given json object \p j
+void to_json(json& j, const TariffTimePrice& k);
+
+/// \brief Conversion from a given json object \p j to a given TariffTimePrice \p k
+void from_json(const json& j, TariffTimePrice& k);
+
+// \brief Writes the string representation of the given TariffTimePrice \p k to the given output stream \p os
+/// \returns an output stream with the TariffTimePrice written to
+std::ostream& operator<<(std::ostream& os, const TariffTimePrice& k);
+
+struct TariffTime {
+    std::vector<TariffTimePrice> prices;
+    std::optional<std::vector<TaxRate>> taxRates;
+    std::optional<CustomData> customData;
+};
+/// \brief Conversion from a given TariffTime \p k to a given json object \p j
+void to_json(json& j, const TariffTime& k);
+
+/// \brief Conversion from a given json object \p j to a given TariffTime \p k
+void from_json(const json& j, TariffTime& k);
+
+// \brief Writes the string representation of the given TariffTime \p k to the given output stream \p os
+/// \returns an output stream with the TariffTime written to
+std::ostream& operator<<(std::ostream& os, const TariffTime& k);
+
+struct TariffConditionsFixed {
+    std::optional<std::string> startTimeOfDay;
+    std::optional<std::string> endTimeOfDay;
+    std::optional<std::vector<DayOfWeekEnum>> dayOfWeek;
+    std::optional<std::string> validFromDate;
+    std::optional<std::string> validToDate;
+    std::optional<EvseKindEnum> evseKind;
+    std::optional<CiString<20>> paymentBrand;
+    std::optional<CiString<20>> paymentRecognition;
+    std::optional<CustomData> customData;
+};
+/// \brief Conversion from a given TariffConditionsFixed \p k to a given json object \p j
+void to_json(json& j, const TariffConditionsFixed& k);
+
+/// \brief Conversion from a given json object \p j to a given TariffConditionsFixed \p k
+void from_json(const json& j, TariffConditionsFixed& k);
+
+// \brief Writes the string representation of the given TariffConditionsFixed \p k to the given output stream \p os
+/// \returns an output stream with the TariffConditionsFixed written to
+std::ostream& operator<<(std::ostream& os, const TariffConditionsFixed& k);
+
 struct TariffFixedPrice {
     float priceFixed;
+    std::optional<TariffConditionsFixed> conditions;
     std::optional<CustomData> customData;
-    std::optional<TariffConditions> conditions;
 };
 /// \brief Conversion from a given TariffFixedPrice \p k to a given json object \p j
 void to_json(json& j, const TariffFixedPrice& k);
@@ -262,9 +278,9 @@ void from_json(const json& j, TariffFixedPrice& k);
 std::ostream& operator<<(std::ostream& os, const TariffFixedPrice& k);
 
 struct TariffFixed {
-    std::vector<TariffFixedPrice> fixedFee;
-    std::optional<CustomData> customData;
+    std::vector<TariffFixedPrice> prices;
     std::optional<std::vector<TaxRate>> taxRates;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given TariffFixed \p k to a given json object \p j
 void to_json(json& j, const TariffFixed& k);
@@ -277,10 +293,10 @@ void from_json(const json& j, TariffFixed& k);
 std::ostream& operator<<(std::ostream& os, const TariffFixed& k);
 
 struct Price {
-    std::optional<CustomData> customData;
     std::optional<float> exclTax;
     std::optional<float> inclTax;
     std::optional<std::vector<TaxRate>> taxRates;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given Price \p k to a given json object \p j
 void to_json(json& j, const Price& k);
@@ -295,14 +311,17 @@ std::ostream& operator<<(std::ostream& os, const Price& k);
 struct Tariff {
     CiString<60> tariffId;
     CiString<3> currency;
-    std::optional<CustomData> customData;
-    std::optional<TariffTime> chargingTIme;
     std::optional<std::vector<MessageContent>> description;
     std::optional<TariffEnergy> energy;
+    std::optional<ocpp::DateTime> validFrom;
+    std::optional<TariffTime> chargingTime;
     std::optional<TariffTime> idleTime;
     std::optional<TariffFixed> fixedFee;
-    std::optional<Price> maxPrice;
-    std::optional<Price> minPrice;
+    std::optional<TariffTime> reservationTime;
+    std::optional<TariffFixed> reservationFixed;
+    std::optional<Price> minCost;
+    std::optional<Price> maxCost;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given Tariff \p k to a given json object \p j
 void to_json(json& j, const Tariff& k);
@@ -314,31 +333,14 @@ void from_json(const json& j, Tariff& k);
 /// \returns an output stream with the Tariff written to
 std::ostream& operator<<(std::ostream& os, const Tariff& k);
 
-struct TransactionLimit {
-    std::optional<CustomData> customData;
-    std::optional<float> maxCost;
-    std::optional<float> maxEnergy;
-    std::optional<int32_t> maxTime;
-    std::optional<int32_t> maxSoC;
-};
-/// \brief Conversion from a given TransactionLimit \p k to a given json object \p j
-void to_json(json& j, const TransactionLimit& k);
-
-/// \brief Conversion from a given json object \p j to a given TransactionLimit \p k
-void from_json(const json& j, TransactionLimit& k);
-
-// \brief Writes the string representation of the given TransactionLimit \p k to the given output stream \p os
-/// \returns an output stream with the TransactionLimit written to
-std::ostream& operator<<(std::ostream& os, const TransactionLimit& k);
-
 struct BatteryData {
     int32_t evseId;
     CiString<50> serialNumber;
-    int32_t soC;
-    int32_t soH;
-    std::optional<CustomData> customData;
+    float soC;
+    float soH;
     std::optional<ocpp::DateTime> productionDate;
     std::optional<CiString<500>> vendorInfo;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given BatteryData \p k to a given json object \p j
 void to_json(json& j, const BatteryData& k);
@@ -351,9 +353,9 @@ void from_json(const json& j, BatteryData& k);
 std::ostream& operator<<(std::ostream& os, const BatteryData& k);
 
 struct Modem {
-    std::optional<CustomData> customData;
     std::optional<CiString<20>> iccid;
     std::optional<CiString<20>> imsi;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given Modem \p k to a given json object \p j
 void to_json(json& j, const Modem& k);
@@ -368,10 +370,10 @@ std::ostream& operator<<(std::ostream& os, const Modem& k);
 struct ChargingStation {
     CiString<20> model;
     CiString<50> vendorName;
-    std::optional<CustomData> customData;
     std::optional<CiString<25>> serialNumber;
     std::optional<Modem> modem;
     std::optional<CiString<50>> firmwareVersion;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given ChargingStation \p k to a given json object \p j
 void to_json(json& j, const ChargingStation& k);
@@ -385,8 +387,8 @@ std::ostream& operator<<(std::ostream& os, const ChargingStation& k);
 
 struct EVSE {
     int32_t id;
-    std::optional<CustomData> customData;
     std::optional<int32_t> connectorId;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given EVSE \p k to a given json object \p j
 void to_json(json& j, const EVSE& k);
@@ -399,10 +401,10 @@ void from_json(const json& j, EVSE& k);
 std::ostream& operator<<(std::ostream& os, const EVSE& k);
 
 struct ClearChargingProfile {
-    std::optional<CustomData> customData;
     std::optional<int32_t> evseId;
     std::optional<ChargingProfilePurposeEnum> chargingProfilePurpose;
     std::optional<int32_t> stackLevel;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given ClearChargingProfile \p k to a given json object \p j
 void to_json(json& j, const ClearChargingProfile& k);
@@ -415,10 +417,10 @@ void from_json(const json& j, ClearChargingProfile& k);
 std::ostream& operator<<(std::ostream& os, const ClearChargingProfile& k);
 
 struct ClearTariffsResult {
-    TariffStatusEnum status;
-    std::optional<CustomData> customData;
+    TariffClearStatusEnum status;
     std::optional<StatusInfo> statusInfo;
     std::optional<CiString<60>> tariffId;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given ClearTariffsResult \p k to a given json object \p j
 void to_json(json& j, const ClearTariffsResult& k);
@@ -433,8 +435,8 @@ std::ostream& operator<<(std::ostream& os, const ClearTariffsResult& k);
 struct ClearMonitoringResult {
     ClearMonitoringStatusEnum status;
     int32_t id;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given ClearMonitoringResult \p k to a given json object \p j
 void to_json(json& j, const ClearMonitoringResult& k);
@@ -463,12 +465,46 @@ void from_json(const json& j, CertificateHashDataType& k);
 /// \returns an output stream with the CertificateHashDataType written to
 std::ostream& operator<<(std::ostream& os, const CertificateHashDataType& k);
 
-struct ChargingProfileCriterion {
+struct CertificateStatusRequestInfo {
+    CertificateHashDataType certificateHashData;
+    CertificateStatusSourceEnum source;
+    std::vector<CiString<2000>> urls;
     std::optional<CustomData> customData;
+};
+/// \brief Conversion from a given CertificateStatusRequestInfo \p k to a given json object \p j
+void to_json(json& j, const CertificateStatusRequestInfo& k);
+
+/// \brief Conversion from a given json object \p j to a given CertificateStatusRequestInfo \p k
+void from_json(const json& j, CertificateStatusRequestInfo& k);
+
+// \brief Writes the string representation of the given CertificateStatusRequestInfo \p k to the given output stream \p
+// os
+/// \returns an output stream with the CertificateStatusRequestInfo written to
+std::ostream& operator<<(std::ostream& os, const CertificateStatusRequestInfo& k);
+
+struct CertificateStatus {
+    CertificateHashDataType certificateHashData;
+    CertificateStatusSourceEnum source;
+    CertificateStatusEnum status;
+    ocpp::DateTime nextUpdate;
+    std::optional<CustomData> customData;
+};
+/// \brief Conversion from a given CertificateStatus \p k to a given json object \p j
+void to_json(json& j, const CertificateStatus& k);
+
+/// \brief Conversion from a given json object \p j to a given CertificateStatus \p k
+void from_json(const json& j, CertificateStatus& k);
+
+// \brief Writes the string representation of the given CertificateStatus \p k to the given output stream \p os
+/// \returns an output stream with the CertificateStatus written to
+std::ostream& operator<<(std::ostream& os, const CertificateStatus& k);
+
+struct ChargingProfileCriterion {
     std::optional<ChargingProfilePurposeEnum> chargingProfilePurpose;
     std::optional<int32_t> stackLevel;
     std::optional<std::vector<int32_t>> chargingProfileId;
     std::optional<std::vector<CiString<20>>> chargingLimitSource;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given ChargingProfileCriterion \p k to a given json object \p j
 void to_json(json& j, const ChargingProfileCriterion& k);
@@ -512,7 +548,6 @@ std::ostream& operator<<(std::ostream& os, const V2XSignalWattPoint& k);
 
 struct ChargingSchedulePeriod {
     int32_t startPeriod;
-    std::optional<CustomData> customData;
     std::optional<float> limit;
     std::optional<float> limit_L2;
     std::optional<float> limit_L3;
@@ -528,11 +563,12 @@ struct ChargingSchedulePeriod {
     std::optional<float> setpointReactive_L2;
     std::optional<float> setpointReactive_L3;
     std::optional<bool> preconditioningRequest;
-    std::optional<OperationModeEnum> operationMode;
     std::optional<bool> evseSleep;
     std::optional<float> v2xBaseline;
+    std::optional<OperationModeEnum> operationMode;
     std::optional<std::vector<V2XFreqWattPoint>> v2xFreqWattCurve;
     std::optional<std::vector<V2XSignalWattPoint>> v2xSignalWattCurve;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given ChargingSchedulePeriod \p k to a given json object \p j
 void to_json(json& j, const ChargingSchedulePeriod& k);
@@ -562,325 +598,11 @@ void from_json(const json& j, CompositeSchedule& k);
 /// \returns an output stream with the CompositeSchedule written to
 std::ostream& operator<<(std::ostream& os, const CompositeSchedule& k);
 
-struct DERCurvePoints {
-    float x;
-    float y;
-    std::optional<CustomData> customData;
-};
-/// \brief Conversion from a given DERCurvePoints \p k to a given json object \p j
-void to_json(json& j, const DERCurvePoints& k);
-
-/// \brief Conversion from a given json object \p j to a given DERCurvePoints \p k
-void from_json(const json& j, DERCurvePoints& k);
-
-// \brief Writes the string representation of the given DERCurvePoints \p k to the given output stream \p os
-/// \returns an output stream with the DERCurvePoints written to
-std::ostream& operator<<(std::ostream& os, const DERCurvePoints& k);
-
-struct Hysteresis {
-    std::optional<CustomData> customData;
-    std::optional<float> hysteresisHigh;
-    std::optional<float> hysteresisLow;
-    std::optional<float> hysteresisDelay;
-    std::optional<float> hysteresisGradient;
-};
-/// \brief Conversion from a given Hysteresis \p k to a given json object \p j
-void to_json(json& j, const Hysteresis& k);
-
-/// \brief Conversion from a given json object \p j to a given Hysteresis \p k
-void from_json(const json& j, Hysteresis& k);
-
-// \brief Writes the string representation of the given Hysteresis \p k to the given output stream \p os
-/// \returns an output stream with the Hysteresis written to
-std::ostream& operator<<(std::ostream& os, const Hysteresis& k);
-
-struct ReactivePowerParams {
-    std::optional<CustomData> customData;
-    std::optional<float> vRef;
-    std::optional<bool> autonomousVRefEnable;
-    std::optional<float> autonomousVRefTimeConstant;
-};
-/// \brief Conversion from a given ReactivePowerParams \p k to a given json object \p j
-void to_json(json& j, const ReactivePowerParams& k);
-
-/// \brief Conversion from a given json object \p j to a given ReactivePowerParams \p k
-void from_json(const json& j, ReactivePowerParams& k);
-
-// \brief Writes the string representation of the given ReactivePowerParams \p k to the given output stream \p os
-/// \returns an output stream with the ReactivePowerParams written to
-std::ostream& operator<<(std::ostream& os, const ReactivePowerParams& k);
-
-struct VoltageParams {
-    std::optional<CustomData> customData;
-    std::optional<float> hvMeanValue10Min;
-    std::optional<float> hv10MinMeanTripDelay;
-    std::optional<PowerDuringCessationEnum> powerDuringCessation;
-};
-/// \brief Conversion from a given VoltageParams \p k to a given json object \p j
-void to_json(json& j, const VoltageParams& k);
-
-/// \brief Conversion from a given json object \p j to a given VoltageParams \p k
-void from_json(const json& j, VoltageParams& k);
-
-// \brief Writes the string representation of the given VoltageParams \p k to the given output stream \p os
-/// \returns an output stream with the VoltageParams written to
-std::ostream& operator<<(std::ostream& os, const VoltageParams& k);
-
-struct DERCurve {
-    std::vector<DERCurvePoints> curveData;
-    int32_t priority;
-    DERUnitEnum yUnit;
-    std::optional<CustomData> customData;
-    std::optional<Hysteresis> hysteresis;
-    std::optional<ReactivePowerParams> reactivePowerParams;
-    std::optional<VoltageParams> voltageParams;
-    std::optional<float> responseTime;
-    std::optional<ocpp::DateTime> startTime;
-    std::optional<float> duration;
-};
-/// \brief Conversion from a given DERCurve \p k to a given json object \p j
-void to_json(json& j, const DERCurve& k);
-
-/// \brief Conversion from a given json object \p j to a given DERCurve \p k
-void from_json(const json& j, DERCurve& k);
-
-// \brief Writes the string representation of the given DERCurve \p k to the given output stream \p os
-/// \returns an output stream with the DERCurve written to
-std::ostream& operator<<(std::ostream& os, const DERCurve& k);
-
-struct DERCurveGet {
-    DERCurve curve;
-    CiString<36> id;
-    DERControlEnum curveType;
-    bool isDefault;
-    bool isSuperseded;
-    std::optional<CustomData> customData;
-};
-/// \brief Conversion from a given DERCurveGet \p k to a given json object \p j
-void to_json(json& j, const DERCurveGet& k);
-
-/// \brief Conversion from a given json object \p j to a given DERCurveGet \p k
-void from_json(const json& j, DERCurveGet& k);
-
-// \brief Writes the string representation of the given DERCurveGet \p k to the given output stream \p os
-/// \returns an output stream with the DERCurveGet written to
-std::ostream& operator<<(std::ostream& os, const DERCurveGet& k);
-
-struct EnterService {
-    int32_t priority;
-    float highVoltage;
-    float lowVoltage;
-    float highFreq;
-    float lowFreq;
-    std::optional<CustomData> customData;
-    std::optional<float> delay;
-    std::optional<float> randomDelay;
-    std::optional<float> rampRate;
-};
-/// \brief Conversion from a given EnterService \p k to a given json object \p j
-void to_json(json& j, const EnterService& k);
-
-/// \brief Conversion from a given json object \p j to a given EnterService \p k
-void from_json(const json& j, EnterService& k);
-
-// \brief Writes the string representation of the given EnterService \p k to the given output stream \p os
-/// \returns an output stream with the EnterService written to
-std::ostream& operator<<(std::ostream& os, const EnterService& k);
-
-struct EnterServiceGet {
-    EnterService enterService;
-    CiString<36> id;
-    std::optional<CustomData> customData;
-};
-/// \brief Conversion from a given EnterServiceGet \p k to a given json object \p j
-void to_json(json& j, const EnterServiceGet& k);
-
-/// \brief Conversion from a given json object \p j to a given EnterServiceGet \p k
-void from_json(const json& j, EnterServiceGet& k);
-
-// \brief Writes the string representation of the given EnterServiceGet \p k to the given output stream \p os
-/// \returns an output stream with the EnterServiceGet written to
-std::ostream& operator<<(std::ostream& os, const EnterServiceGet& k);
-
-struct FixedPF {
-    int32_t priority;
-    float displacement;
-    bool excitation;
-    std::optional<CustomData> customData;
-    std::optional<ocpp::DateTime> startTime;
-    std::optional<float> duration;
-};
-/// \brief Conversion from a given FixedPF \p k to a given json object \p j
-void to_json(json& j, const FixedPF& k);
-
-/// \brief Conversion from a given json object \p j to a given FixedPF \p k
-void from_json(const json& j, FixedPF& k);
-
-// \brief Writes the string representation of the given FixedPF \p k to the given output stream \p os
-/// \returns an output stream with the FixedPF written to
-std::ostream& operator<<(std::ostream& os, const FixedPF& k);
-
-struct FixedPFGet {
-    FixedPF fixedPF;
-    CiString<36> id;
-    bool isDefault;
-    bool isSuperseded;
-    std::optional<CustomData> customData;
-};
-/// \brief Conversion from a given FixedPFGet \p k to a given json object \p j
-void to_json(json& j, const FixedPFGet& k);
-
-/// \brief Conversion from a given json object \p j to a given FixedPFGet \p k
-void from_json(const json& j, FixedPFGet& k);
-
-// \brief Writes the string representation of the given FixedPFGet \p k to the given output stream \p os
-/// \returns an output stream with the FixedPFGet written to
-std::ostream& operator<<(std::ostream& os, const FixedPFGet& k);
-
-struct FixedVar {
-    int32_t priority;
-    float setpoint;
-    DERUnitEnum unit;
-    std::optional<CustomData> customData;
-    std::optional<ocpp::DateTime> startTime;
-    std::optional<float> duration;
-};
-/// \brief Conversion from a given FixedVar \p k to a given json object \p j
-void to_json(json& j, const FixedVar& k);
-
-/// \brief Conversion from a given json object \p j to a given FixedVar \p k
-void from_json(const json& j, FixedVar& k);
-
-// \brief Writes the string representation of the given FixedVar \p k to the given output stream \p os
-/// \returns an output stream with the FixedVar written to
-std::ostream& operator<<(std::ostream& os, const FixedVar& k);
-
-struct FixedVarGet {
-    FixedVar fixedVar;
-    CiString<36> id;
-    bool isDefault;
-    bool isSuperseded;
-    std::optional<CustomData> customData;
-};
-/// \brief Conversion from a given FixedVarGet \p k to a given json object \p j
-void to_json(json& j, const FixedVarGet& k);
-
-/// \brief Conversion from a given json object \p j to a given FixedVarGet \p k
-void from_json(const json& j, FixedVarGet& k);
-
-// \brief Writes the string representation of the given FixedVarGet \p k to the given output stream \p os
-/// \returns an output stream with the FixedVarGet written to
-std::ostream& operator<<(std::ostream& os, const FixedVarGet& k);
-
-struct FreqDroop {
-    int32_t priority;
-    float overFreq;
-    float underFreq;
-    float overDroop;
-    float underDroop;
-    float responseTime;
-    std::optional<CustomData> customData;
-    std::optional<ocpp::DateTime> startTime;
-    std::optional<float> duration;
-};
-/// \brief Conversion from a given FreqDroop \p k to a given json object \p j
-void to_json(json& j, const FreqDroop& k);
-
-/// \brief Conversion from a given json object \p j to a given FreqDroop \p k
-void from_json(const json& j, FreqDroop& k);
-
-// \brief Writes the string representation of the given FreqDroop \p k to the given output stream \p os
-/// \returns an output stream with the FreqDroop written to
-std::ostream& operator<<(std::ostream& os, const FreqDroop& k);
-
-struct FreqDroopGet {
-    FreqDroop freqDroop;
-    CiString<36> id;
-    bool isDefault;
-    bool isSuperseded;
-    std::optional<CustomData> customData;
-};
-/// \brief Conversion from a given FreqDroopGet \p k to a given json object \p j
-void to_json(json& j, const FreqDroopGet& k);
-
-/// \brief Conversion from a given json object \p j to a given FreqDroopGet \p k
-void from_json(const json& j, FreqDroopGet& k);
-
-// \brief Writes the string representation of the given FreqDroopGet \p k to the given output stream \p os
-/// \returns an output stream with the FreqDroopGet written to
-std::ostream& operator<<(std::ostream& os, const FreqDroopGet& k);
-
-struct Gradient {
-    int32_t priority;
-    float gradient;
-    float softGradient;
-    std::optional<CustomData> customData;
-};
-/// \brief Conversion from a given Gradient \p k to a given json object \p j
-void to_json(json& j, const Gradient& k);
-
-/// \brief Conversion from a given json object \p j to a given Gradient \p k
-void from_json(const json& j, Gradient& k);
-
-// \brief Writes the string representation of the given Gradient \p k to the given output stream \p os
-/// \returns an output stream with the Gradient written to
-std::ostream& operator<<(std::ostream& os, const Gradient& k);
-
-struct GradientGet {
-    Gradient gradient;
-    CiString<36> id;
-    std::optional<CustomData> customData;
-};
-/// \brief Conversion from a given GradientGet \p k to a given json object \p j
-void to_json(json& j, const GradientGet& k);
-
-/// \brief Conversion from a given json object \p j to a given GradientGet \p k
-void from_json(const json& j, GradientGet& k);
-
-// \brief Writes the string representation of the given GradientGet \p k to the given output stream \p os
-/// \returns an output stream with the GradientGet written to
-std::ostream& operator<<(std::ostream& os, const GradientGet& k);
-
-struct LimitMaxDischarge {
-    int32_t priority;
-    std::optional<CustomData> customData;
-    std::optional<float> pctMaxDischargePower;
-    std::optional<DERCurve> powerMonitoringMustTrip;
-    std::optional<ocpp::DateTime> startTime;
-    std::optional<float> duration;
-};
-/// \brief Conversion from a given LimitMaxDischarge \p k to a given json object \p j
-void to_json(json& j, const LimitMaxDischarge& k);
-
-/// \brief Conversion from a given json object \p j to a given LimitMaxDischarge \p k
-void from_json(const json& j, LimitMaxDischarge& k);
-
-// \brief Writes the string representation of the given LimitMaxDischarge \p k to the given output stream \p os
-/// \returns an output stream with the LimitMaxDischarge written to
-std::ostream& operator<<(std::ostream& os, const LimitMaxDischarge& k);
-
-struct LimitMaxDischargeGet {
-    CiString<36> id;
-    bool isDefault;
-    bool isSuperseded;
-    LimitMaxDischarge limitMaxDischarge;
-    std::optional<CustomData> customData;
-};
-/// \brief Conversion from a given LimitMaxDischargeGet \p k to a given json object \p j
-void to_json(json& j, const LimitMaxDischargeGet& k);
-
-/// \brief Conversion from a given json object \p j to a given LimitMaxDischargeGet \p k
-void from_json(const json& j, LimitMaxDischargeGet& k);
-
-// \brief Writes the string representation of the given LimitMaxDischargeGet \p k to the given output stream \p os
-/// \returns an output stream with the LimitMaxDischargeGet written to
-std::ostream& operator<<(std::ostream& os, const LimitMaxDischargeGet& k);
-
 struct CertificateHashDataChain {
     CertificateHashDataType certificateHashData;
     GetCertificateIdUseEnum certificateType;
-    std::optional<CustomData> customData;
     std::optional<std::vector<CertificateHashDataType>> childCertificateHashData;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given CertificateHashDataChain \p k to a given json object \p j
 void to_json(json& j, const CertificateHashDataChain& k);
@@ -894,9 +616,9 @@ std::ostream& operator<<(std::ostream& os, const CertificateHashDataChain& k);
 
 struct LogParameters {
     CiString<2000> remoteLocation;
-    std::optional<CustomData> customData;
     std::optional<ocpp::DateTime> oldestTimestamp;
     std::optional<ocpp::DateTime> latestTimestamp;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given LogParameters \p k to a given json object \p j
 void to_json(json& j, const LogParameters& k);
@@ -910,9 +632,9 @@ std::ostream& operator<<(std::ostream& os, const LogParameters& k);
 
 struct Component {
     CiString<50> name;
-    std::optional<CustomData> customData;
     std::optional<EVSE> evse;
     std::optional<CiString<50>> instance;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given Component \p k to a given json object \p j
 void to_json(json& j, const Component& k);
@@ -926,8 +648,8 @@ std::ostream& operator<<(std::ostream& os, const Component& k);
 
 struct Variable {
     CiString<50> name;
-    std::optional<CustomData> customData;
     std::optional<CiString<50>> instance;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given Variable \p k to a given json object \p j
 void to_json(json& j, const Variable& k);
@@ -941,8 +663,8 @@ std::ostream& operator<<(std::ostream& os, const Variable& k);
 
 struct ComponentVariable {
     Component component;
-    std::optional<CustomData> customData;
     std::optional<Variable> variable;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given ComponentVariable \p k to a given json object \p j
 void to_json(json& j, const ComponentVariable& k);
@@ -973,9 +695,10 @@ std::ostream& operator<<(std::ostream& os, const ConstantStreamData& k);
 struct TariffAssignment {
     CiString<60> tariffId;
     TariffKindEnum tariffKind;
-    std::optional<CustomData> customData;
+    std::optional<ocpp::DateTime> validFrom;
     std::optional<std::vector<int32_t>> evseIds;
     std::optional<std::vector<CiString<255>>> idTokens;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given TariffAssignment \p k to a given json object \p j
 void to_json(json& j, const TariffAssignment& k);
@@ -990,8 +713,8 @@ std::ostream& operator<<(std::ostream& os, const TariffAssignment& k);
 struct GetVariableData {
     Component component;
     Variable variable;
-    std::optional<CustomData> customData;
     std::optional<AttributeEnum> attributeType;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given GetVariableData \p k to a given json object \p j
 void to_json(json& j, const GetVariableData& k);
@@ -1007,10 +730,10 @@ struct GetVariableResult {
     GetVariableStatusEnum attributeStatus;
     Component component;
     Variable variable;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> attributeStatusInfo;
     std::optional<AttributeEnum> attributeType;
     std::optional<CiString<2500>> attributeValue;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given GetVariableResult \p k to a given json object \p j
 void to_json(json& j, const GetVariableResult& k);
@@ -1023,11 +746,11 @@ void from_json(const json& j, GetVariableResult& k);
 std::ostream& operator<<(std::ostream& os, const GetVariableResult& k);
 
 struct SignedMeterValue {
-    CiString<2500> signedMeterData;
+    CiString<32768> signedMeterData;
     CiString<50> encodingMethod;
-    std::optional<CustomData> customData;
     std::optional<CiString<50>> signingMethod;
     std::optional<CiString<2500>> publicKey;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given SignedMeterValue \p k to a given json object \p j
 void to_json(json& j, const SignedMeterValue& k);
@@ -1040,9 +763,9 @@ void from_json(const json& j, SignedMeterValue& k);
 std::ostream& operator<<(std::ostream& os, const SignedMeterValue& k);
 
 struct UnitOfMeasure {
-    std::optional<CustomData> customData;
     std::optional<CiString<20>> unit;
     std::optional<int32_t> multiplier;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given UnitOfMeasure \p k to a given json object \p j
 void to_json(json& j, const UnitOfMeasure& k);
@@ -1056,13 +779,13 @@ std::ostream& operator<<(std::ostream& os, const UnitOfMeasure& k);
 
 struct SampledValue {
     float value;
-    std::optional<CustomData> customData;
     std::optional<MeasurandEnum> measurand;
     std::optional<ReadingContextEnum> context;
     std::optional<PhaseEnum> phase;
     std::optional<LocationEnum> location;
     std::optional<SignedMeterValue> signedMeterValue;
     std::optional<UnitOfMeasure> unitOfMeasure;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given SampledValue \p k to a given json object \p j
 void to_json(json& j, const SampledValue& k);
@@ -1089,25 +812,25 @@ void from_json(const json& j, MeterValue& k);
 /// \returns an output stream with the MeterValue written to
 std::ostream& operator<<(std::ostream& os, const MeterValue& k);
 
-struct LimitBeyondSoC {
+struct LimitAtSoC {
     int32_t soc;
     float limit;
     std::optional<CustomData> customData;
 };
-/// \brief Conversion from a given LimitBeyondSoC \p k to a given json object \p j
-void to_json(json& j, const LimitBeyondSoC& k);
+/// \brief Conversion from a given LimitAtSoC \p k to a given json object \p j
+void to_json(json& j, const LimitAtSoC& k);
 
-/// \brief Conversion from a given json object \p j to a given LimitBeyondSoC \p k
-void from_json(const json& j, LimitBeyondSoC& k);
+/// \brief Conversion from a given json object \p j to a given LimitAtSoC \p k
+void from_json(const json& j, LimitAtSoC& k);
 
-// \brief Writes the string representation of the given LimitBeyondSoC \p k to the given output stream \p os
-/// \returns an output stream with the LimitBeyondSoC written to
-std::ostream& operator<<(std::ostream& os, const LimitBeyondSoC& k);
+// \brief Writes the string representation of the given LimitAtSoC \p k to the given output stream \p os
+/// \returns an output stream with the LimitAtSoC written to
+std::ostream& operator<<(std::ostream& os, const LimitAtSoC& k);
 
 struct RelativeTimeInterval {
     int32_t start;
-    std::optional<CustomData> customData;
     std::optional<int32_t> duration;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given RelativeTimeInterval \p k to a given json object \p j
 void to_json(json& j, const RelativeTimeInterval& k);
@@ -1122,8 +845,8 @@ std::ostream& operator<<(std::ostream& os, const RelativeTimeInterval& k);
 struct Cost {
     CostKindEnum costKind;
     int32_t amount;
-    std::optional<CustomData> customData;
     std::optional<int32_t> amountMultiplier;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given Cost \p k to a given json object \p j
 void to_json(json& j, const Cost& k);
@@ -1152,9 +875,9 @@ std::ostream& operator<<(std::ostream& os, const ConsumptionCost& k);
 
 struct SalesTariffEntry {
     RelativeTimeInterval relativeTimeInterval;
-    std::optional<CustomData> customData;
     std::optional<int32_t> ePriceLevel;
     std::optional<std::vector<ConsumptionCost>> consumptionCost;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given SalesTariffEntry \p k to a given json object \p j
 void to_json(json& j, const SalesTariffEntry& k);
@@ -1169,9 +892,9 @@ std::ostream& operator<<(std::ostream& os, const SalesTariffEntry& k);
 struct SalesTariff {
     int32_t id;
     std::vector<SalesTariffEntry> salesTariffEntry;
-    std::optional<CustomData> customData;
     std::optional<CiString<32>> salesTariffDescription;
     std::optional<int32_t> numEPriceLevels;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given SalesTariff \p k to a given json object \p j
 void to_json(json& j, const SalesTariff& k);
@@ -1201,11 +924,11 @@ std::ostream& operator<<(std::ostream& os, const RationalNumber& k);
 struct PriceRule {
     RationalNumber energyFee;
     RationalNumber powerRangeStart;
-    std::optional<CustomData> customData;
     std::optional<int32_t> parkingFeePeriod;
     std::optional<int32_t> carbonDioxideEmission;
     std::optional<int32_t> renewableGenerationPercentage;
     std::optional<RationalNumber> parkingFee;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given PriceRule \p k to a given json object \p j
 void to_json(json& j, const PriceRule& k);
@@ -1239,9 +962,9 @@ struct TaxRule {
     bool appliesToOverstayFee;
     bool appliesToMinimumMaximumCost;
     RationalNumber taxRate;
-    std::optional<CustomData> customData;
     std::optional<CiString<100>> taxRuleName;
     std::optional<bool> taxIncludedInPrice;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given TaxRule \p k to a given json object \p j
 void to_json(json& j, const TaxRule& k);
@@ -1257,8 +980,8 @@ struct OverstayRule {
     RationalNumber overstayFee;
     int32_t startTime;
     int32_t overstayFeePeriod;
-    std::optional<CustomData> customData;
     std::optional<CiString<32>> overstayRuleDescription;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given OverstayRule \p k to a given json object \p j
 void to_json(json& j, const OverstayRule& k);
@@ -1272,9 +995,9 @@ std::ostream& operator<<(std::ostream& os, const OverstayRule& k);
 
 struct OverstayRuleList {
     std::vector<OverstayRule> overstayRule;
-    std::optional<CustomData> customData;
     std::optional<RationalNumber> overstayPowerThreshold;
     std::optional<int32_t> overstayTimeThreshold;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given OverstayRuleList \p k to a given json object \p j
 void to_json(json& j, const OverstayRuleList& k);
@@ -1308,13 +1031,13 @@ struct AbsolutePriceSchedule {
     CiString<8> language;
     CiString<2000> priceAlgorithm;
     std::vector<PriceRuleStack> priceRuleStacks;
-    std::optional<CustomData> customData;
     std::optional<CiString<160>> priceScheduleDescription;
     std::optional<RationalNumber> minimumCost;
     std::optional<RationalNumber> maximumCost;
     std::optional<std::vector<TaxRule>> taxRules;
     std::optional<OverstayRuleList> overstayRuleList;
     std::optional<std::vector<AdditionalSelectedServices>> additionalSelectedServices;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given AbsolutePriceSchedule \p k to a given json object \p j
 void to_json(json& j, const AbsolutePriceSchedule& k);
@@ -1346,8 +1069,8 @@ struct PriceLevelSchedule {
     ocpp::DateTime timeAnchor;
     int32_t priceScheduleId;
     int32_t numberOfPriceLevels;
-    std::optional<CustomData> customData;
     std::optional<CiString<32>> priceScheduleDescription;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given PriceLevelSchedule \p k to a given json object \p j
 void to_json(json& j, const PriceLevelSchedule& k);
@@ -1363,19 +1086,19 @@ struct ChargingSchedule {
     int32_t id;
     ChargingRateUnitEnum chargingRateUnit;
     std::vector<ChargingSchedulePeriod> chargingSchedulePeriod;
-    std::optional<CustomData> customData;
+    std::optional<LimitAtSoC> limitAtSoC;
     std::optional<ocpp::DateTime> startSchedule;
     std::optional<int32_t> duration;
     std::optional<float> minChargingRate;
-    std::optional<LimitBeyondSoC> limitBeyondSoc;
     std::optional<float> powerTolerance;
-    std::optional<SalesTariff> salesTariff;
     std::optional<int32_t> signatureId;
-    std::optional<AbsolutePriceSchedule> absolutePriceSchedule;
     std::optional<CiString<88>> digestValue;
-    std::optional<PriceLevelSchedule> priceLevelSchedule;
     std::optional<bool> useLocalTime;
     std::optional<int32_t> randomizedDelay;
+    std::optional<SalesTariff> salesTariff;
+    std::optional<AbsolutePriceSchedule> absolutePriceSchedule;
+    std::optional<PriceLevelSchedule> priceLevelSchedule;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given ChargingSchedule \p k to a given json object \p j
 void to_json(json& j, const ChargingSchedule& k);
@@ -1389,9 +1112,9 @@ std::ostream& operator<<(std::ostream& os, const ChargingSchedule& k);
 
 struct ChargingLimit {
     CiString<20> chargingLimitSource;
-    std::optional<CustomData> customData;
     std::optional<bool> isLocalGeneration;
     std::optional<bool> isGridCritical;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given ChargingLimit \p k to a given json object \p j
 void to_json(json& j, const ChargingLimit& k);
@@ -1407,13 +1130,13 @@ struct MessageInfo {
     int32_t id;
     MessagePriorityEnum priority;
     MessageContent message;
-    std::optional<CustomData> customData;
     std::optional<Component> display;
     std::optional<MessageStateEnum> state;
     std::optional<ocpp::DateTime> startDateTime;
     std::optional<ocpp::DateTime> endDateTime;
     std::optional<CiString<36>> transactionId;
     std::optional<std::vector<MessageContent>> messageExtra;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given MessageInfo \p k to a given json object \p j
 void to_json(json& j, const MessageInfo& k);
@@ -1443,7 +1166,6 @@ void from_json(const json& j, ACChargingParameters& k);
 std::ostream& operator<<(std::ostream& os, const ACChargingParameters& k);
 
 struct DERChargingParameters {
-    std::optional<CustomData> customData;
     std::optional<std::vector<DERControlEnum>> evSupportedDERControl;
     std::optional<float> evOverExcitedMaxDischargePower;
     std::optional<float> evOverExcitedPowerFactor;
@@ -1485,6 +1207,7 @@ struct DERChargingParameters {
     std::optional<float> evDurationLevel2DCInjection;
     std::optional<float> evReactiveSusceptance;
     std::optional<float> evSessionTotalDischargeEnergyAvailable;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given DERChargingParameters \p k to a given json object \p j
 void to_json(json& j, const DERChargingParameters& k);
@@ -1576,8 +1299,8 @@ std::ostream& operator<<(std::ostream& os, const EVPowerSchedule& k);
 
 struct EVEnergyOffer {
     EVPowerSchedule evPowerSchedule;
-    std::optional<CustomData> customData;
     std::optional<EVAbsolutePriceSchedule> evAbsolutePriceSchedule;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given EVEnergyOffer \p k to a given json object \p j
 void to_json(json& j, const EVEnergyOffer& k);
@@ -1592,13 +1315,13 @@ std::ostream& operator<<(std::ostream& os, const EVEnergyOffer& k);
 struct DCChargingParameters {
     float evMaxCurrent;
     float evMaxVoltage;
-    std::optional<CustomData> customData;
     std::optional<float> evMaxPower;
     std::optional<float> evEnergyCapacity;
     std::optional<float> energyAmount;
     std::optional<int32_t> stateOfCharge;
     std::optional<int32_t> fullSoC;
     std::optional<int32_t> bulkSoC;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given DCChargingParameters \p k to a given json object \p j
 void to_json(json& j, const DCChargingParameters& k);
@@ -1611,7 +1334,6 @@ void from_json(const json& j, DCChargingParameters& k);
 std::ostream& operator<<(std::ostream& os, const DCChargingParameters& k);
 
 struct V2XChargingParameters {
-    std::optional<CustomData> customData;
     std::optional<float> minChargePower;
     std::optional<float> minChargePower_L2;
     std::optional<float> minChargePower_L3;
@@ -1636,6 +1358,7 @@ struct V2XChargingParameters {
     std::optional<float> evMinV2XEnergyRequest;
     std::optional<float> evMaxV2XEnergyRequest;
     std::optional<int32_t> targetSoC;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given V2XChargingParameters \p k to a given json object \p j
 void to_json(json& j, const V2XChargingParameters& k);
@@ -1649,7 +1372,6 @@ std::ostream& operator<<(std::ostream& os, const V2XChargingParameters& k);
 
 struct ChargingNeeds {
     EnergyTransferModeEnum requestedEnergyTransfer;
-    std::optional<CustomData> customData;
     std::optional<ACChargingParameters> acChargingParameters;
     std::optional<DERChargingParameters> derChargingParameters;
     std::optional<EVEnergyOffer> evEnergyOffer;
@@ -1659,6 +1381,7 @@ struct ChargingNeeds {
     std::optional<ControlModeEnum> controlMode;
     std::optional<MobilityNeedsModeEnum> mobilityNeedsMode;
     std::optional<ocpp::DateTime> departureTime;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given ChargingNeeds \p k to a given json object \p j
 void to_json(json& j, const ChargingNeeds& k);
@@ -1678,7 +1401,6 @@ struct EventData {
     Component component;
     EventNotificationEnum eventNotificationType;
     Variable variable;
-    std::optional<CustomData> customData;
     std::optional<int32_t> cause;
     std::optional<CiString<50>> techCode;
     std::optional<CiString<500>> techInfo;
@@ -1686,6 +1408,7 @@ struct EventData {
     std::optional<CiString<36>> transactionId;
     std::optional<int32_t> variableMonitoringId;
     std::optional<int32_t> severity;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given EventData \p k to a given json object \p j
 void to_json(json& j, const EventData& k);
@@ -1703,8 +1426,8 @@ struct VariableMonitoring {
     float value;
     MonitorEnum type;
     int32_t severity;
+    EventNotificationEnum eventNotificationType;
     std::optional<CustomData> customData;
-    std::optional<EventNotificationEnum> eventNotificationType;
 };
 /// \brief Conversion from a given VariableMonitoring \p k to a given json object \p j
 void to_json(json& j, const VariableMonitoring& k);
@@ -1733,7 +1456,7 @@ void from_json(const json& j, MonitoringData& k);
 std::ostream& operator<<(std::ostream& os, const MonitoringData& k);
 
 struct StreamDataElement {
-    ocpp::DateTime t;
+    float t;
     CiString<2500> v;
     std::optional<CustomData> customData;
 };
@@ -1747,13 +1470,30 @@ void from_json(const json& j, StreamDataElement& k);
 /// \returns an output stream with the StreamDataElement written to
 std::ostream& operator<<(std::ostream& os, const StreamDataElement& k);
 
-struct VariableAttribute {
+struct NotifyPeriodicEventStream {
+    std::vector<StreamDataElement> data;
+    int32_t id;
+    int32_t pending;
+    ocpp::DateTime basetime;
     std::optional<CustomData> customData;
+};
+/// \brief Conversion from a given NotifyPeriodicEventStream \p k to a given json object \p j
+void to_json(json& j, const NotifyPeriodicEventStream& k);
+
+/// \brief Conversion from a given json object \p j to a given NotifyPeriodicEventStream \p k
+void from_json(const json& j, NotifyPeriodicEventStream& k);
+
+// \brief Writes the string representation of the given NotifyPeriodicEventStream \p k to the given output stream \p os
+/// \returns an output stream with the NotifyPeriodicEventStream written to
+std::ostream& operator<<(std::ostream& os, const NotifyPeriodicEventStream& k);
+
+struct VariableAttribute {
     std::optional<AttributeEnum> type;
     std::optional<CiString<2500>> value;
     std::optional<MutabilityEnum> mutability;
     std::optional<bool> persistent;
     std::optional<bool> constant;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given VariableAttribute \p k to a given json object \p j
 void to_json(json& j, const VariableAttribute& k);
@@ -1768,12 +1508,12 @@ std::ostream& operator<<(std::ostream& os, const VariableAttribute& k);
 struct VariableCharacteristics {
     DataEnum dataType;
     bool supportsMonitoring;
-    std::optional<CustomData> customData;
     std::optional<CiString<16>> unit;
     std::optional<float> minLimit;
     std::optional<float> maxLimit;
-    std::optional<float> maxElements;
+    std::optional<int32_t> maxElements;
     std::optional<CiString<1000>> valuesList;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given VariableCharacteristics \p k to a given json object \p j
 void to_json(json& j, const VariableCharacteristics& k);
@@ -1789,8 +1529,8 @@ struct ReportData {
     Component component;
     Variable variable;
     std::vector<VariableAttribute> variableAttribute;
-    std::optional<CustomData> customData;
     std::optional<VariableCharacteristics> variableCharacteristics;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given ReportData \p k to a given json object \p j
 void to_json(json& j, const ReportData& k);
@@ -1805,10 +1545,10 @@ std::ostream& operator<<(std::ostream& os, const ReportData& k);
 struct Address {
     CiString<50> name;
     CiString<100> address1;
-    CiString<100> address2;
-    CiString<50> city;
-    CiString<20> postalCode;
+    CiString<100> city;
     CiString<50> country;
+    std::optional<CiString<100>> address2;
+    std::optional<CiString<20>> postalCode;
     std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given Address \p k to a given json object \p j
@@ -1822,7 +1562,6 @@ void from_json(const json& j, Address& k);
 std::ostream& operator<<(std::ostream& os, const Address& k);
 
 struct ChargingScheduleUpdate {
-    std::optional<CustomData> customData;
     std::optional<float> limit;
     std::optional<float> limit_L2;
     std::optional<float> limit_L3;
@@ -1832,9 +1571,10 @@ struct ChargingScheduleUpdate {
     std::optional<float> setpoint;
     std::optional<float> setpoint_L2;
     std::optional<float> setpoint_L3;
-    std::optional<float> setPointReactive;
-    std::optional<float> setPointReactive_L2;
-    std::optional<float> setPointReactive_L3;
+    std::optional<float> setpointReactive;
+    std::optional<float> setpointReactive_L2;
+    std::optional<float> setpointReactive_L3;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given ChargingScheduleUpdate \p k to a given json object \p j
 void to_json(json& j, const ChargingScheduleUpdate& k);
@@ -1852,16 +1592,16 @@ struct ChargingProfile {
     ChargingProfilePurposeEnum chargingProfilePurpose;
     ChargingProfileKindEnum chargingProfileKind;
     std::vector<ChargingSchedule> chargingSchedule;
-    std::optional<CustomData> customData;
     std::optional<RecurrencyKindEnum> recurrencyKind;
     std::optional<ocpp::DateTime> validFrom;
     std::optional<ocpp::DateTime> validTo;
     std::optional<CiString<36>> transactionId;
     std::optional<int32_t> maxOfflineDuration;
-    std::optional<bool> stopAfterOffline;
-    std::optional<int32_t> updateInterval;
+    std::optional<bool> invalidAfterOfflineDuration;
+    std::optional<int32_t> dynUpdateInterval;
     std::optional<ocpp::DateTime> dynUpdateTime;
     std::optional<CiString<256>> priceScheduleSignature;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given ChargingProfile \p k to a given json object \p j
 void to_json(json& j, const ChargingProfile& k);
@@ -1873,10 +1613,324 @@ void from_json(const json& j, ChargingProfile& k);
 /// \returns an output stream with the ChargingProfile written to
 std::ostream& operator<<(std::ostream& os, const ChargingProfile& k);
 
+struct DERCurvePoints {
+    float x;
+    float y;
+    std::optional<CustomData> customData;
+};
+/// \brief Conversion from a given DERCurvePoints \p k to a given json object \p j
+void to_json(json& j, const DERCurvePoints& k);
+
+/// \brief Conversion from a given json object \p j to a given DERCurvePoints \p k
+void from_json(const json& j, DERCurvePoints& k);
+
+// \brief Writes the string representation of the given DERCurvePoints \p k to the given output stream \p os
+/// \returns an output stream with the DERCurvePoints written to
+std::ostream& operator<<(std::ostream& os, const DERCurvePoints& k);
+
+struct Hysteresis {
+    std::optional<float> hysteresisHigh;
+    std::optional<float> hysteresisLow;
+    std::optional<float> hysteresisDelay;
+    std::optional<float> hysteresisGradient;
+    std::optional<CustomData> customData;
+};
+/// \brief Conversion from a given Hysteresis \p k to a given json object \p j
+void to_json(json& j, const Hysteresis& k);
+
+/// \brief Conversion from a given json object \p j to a given Hysteresis \p k
+void from_json(const json& j, Hysteresis& k);
+
+// \brief Writes the string representation of the given Hysteresis \p k to the given output stream \p os
+/// \returns an output stream with the Hysteresis written to
+std::ostream& operator<<(std::ostream& os, const Hysteresis& k);
+
+struct ReactivePowerParams {
+    std::optional<float> vRef;
+    std::optional<bool> autonomousVRefEnable;
+    std::optional<float> autonomousVRefTimeConstant;
+    std::optional<CustomData> customData;
+};
+/// \brief Conversion from a given ReactivePowerParams \p k to a given json object \p j
+void to_json(json& j, const ReactivePowerParams& k);
+
+/// \brief Conversion from a given json object \p j to a given ReactivePowerParams \p k
+void from_json(const json& j, ReactivePowerParams& k);
+
+// \brief Writes the string representation of the given ReactivePowerParams \p k to the given output stream \p os
+/// \returns an output stream with the ReactivePowerParams written to
+std::ostream& operator<<(std::ostream& os, const ReactivePowerParams& k);
+
+struct VoltageParams {
+    std::optional<float> hv10MinMeanValue;
+    std::optional<float> hv10MinMeanTripDelay;
+    std::optional<PowerDuringCessationEnum> powerDuringCessation;
+    std::optional<CustomData> customData;
+};
+/// \brief Conversion from a given VoltageParams \p k to a given json object \p j
+void to_json(json& j, const VoltageParams& k);
+
+/// \brief Conversion from a given json object \p j to a given VoltageParams \p k
+void from_json(const json& j, VoltageParams& k);
+
+// \brief Writes the string representation of the given VoltageParams \p k to the given output stream \p os
+/// \returns an output stream with the VoltageParams written to
+std::ostream& operator<<(std::ostream& os, const VoltageParams& k);
+
+struct DERCurve {
+    std::vector<DERCurvePoints> curveData;
+    int32_t priority;
+    DERUnitEnum yUnit;
+    std::optional<Hysteresis> hysteresis;
+    std::optional<ReactivePowerParams> reactivePowerParams;
+    std::optional<VoltageParams> voltageParams;
+    std::optional<float> responseTime;
+    std::optional<ocpp::DateTime> startTime;
+    std::optional<float> duration;
+    std::optional<CustomData> customData;
+};
+/// \brief Conversion from a given DERCurve \p k to a given json object \p j
+void to_json(json& j, const DERCurve& k);
+
+/// \brief Conversion from a given json object \p j to a given DERCurve \p k
+void from_json(const json& j, DERCurve& k);
+
+// \brief Writes the string representation of the given DERCurve \p k to the given output stream \p os
+/// \returns an output stream with the DERCurve written to
+std::ostream& operator<<(std::ostream& os, const DERCurve& k);
+
+struct DERCurveGet {
+    DERCurve curve;
+    CiString<36> id;
+    DERControlEnum curveType;
+    bool isDefault;
+    bool isSuperseded;
+    std::optional<CustomData> customData;
+};
+/// \brief Conversion from a given DERCurveGet \p k to a given json object \p j
+void to_json(json& j, const DERCurveGet& k);
+
+/// \brief Conversion from a given json object \p j to a given DERCurveGet \p k
+void from_json(const json& j, DERCurveGet& k);
+
+// \brief Writes the string representation of the given DERCurveGet \p k to the given output stream \p os
+/// \returns an output stream with the DERCurveGet written to
+std::ostream& operator<<(std::ostream& os, const DERCurveGet& k);
+
+struct EnterService {
+    int32_t priority;
+    float highVoltage;
+    float lowVoltage;
+    float highFreq;
+    float lowFreq;
+    std::optional<float> delay;
+    std::optional<float> randomDelay;
+    std::optional<float> rampRate;
+    std::optional<CustomData> customData;
+};
+/// \brief Conversion from a given EnterService \p k to a given json object \p j
+void to_json(json& j, const EnterService& k);
+
+/// \brief Conversion from a given json object \p j to a given EnterService \p k
+void from_json(const json& j, EnterService& k);
+
+// \brief Writes the string representation of the given EnterService \p k to the given output stream \p os
+/// \returns an output stream with the EnterService written to
+std::ostream& operator<<(std::ostream& os, const EnterService& k);
+
+struct EnterServiceGet {
+    EnterService enterService;
+    CiString<36> id;
+    std::optional<CustomData> customData;
+};
+/// \brief Conversion from a given EnterServiceGet \p k to a given json object \p j
+void to_json(json& j, const EnterServiceGet& k);
+
+/// \brief Conversion from a given json object \p j to a given EnterServiceGet \p k
+void from_json(const json& j, EnterServiceGet& k);
+
+// \brief Writes the string representation of the given EnterServiceGet \p k to the given output stream \p os
+/// \returns an output stream with the EnterServiceGet written to
+std::ostream& operator<<(std::ostream& os, const EnterServiceGet& k);
+
+struct FixedPF {
+    int32_t priority;
+    float displacement;
+    bool excitation;
+    std::optional<ocpp::DateTime> startTime;
+    std::optional<float> duration;
+    std::optional<CustomData> customData;
+};
+/// \brief Conversion from a given FixedPF \p k to a given json object \p j
+void to_json(json& j, const FixedPF& k);
+
+/// \brief Conversion from a given json object \p j to a given FixedPF \p k
+void from_json(const json& j, FixedPF& k);
+
+// \brief Writes the string representation of the given FixedPF \p k to the given output stream \p os
+/// \returns an output stream with the FixedPF written to
+std::ostream& operator<<(std::ostream& os, const FixedPF& k);
+
+struct FixedPFGet {
+    FixedPF fixedPF;
+    CiString<36> id;
+    bool isDefault;
+    bool isSuperseded;
+    std::optional<CustomData> customData;
+};
+/// \brief Conversion from a given FixedPFGet \p k to a given json object \p j
+void to_json(json& j, const FixedPFGet& k);
+
+/// \brief Conversion from a given json object \p j to a given FixedPFGet \p k
+void from_json(const json& j, FixedPFGet& k);
+
+// \brief Writes the string representation of the given FixedPFGet \p k to the given output stream \p os
+/// \returns an output stream with the FixedPFGet written to
+std::ostream& operator<<(std::ostream& os, const FixedPFGet& k);
+
+struct FixedVar {
+    int32_t priority;
+    float setpoint;
+    DERUnitEnum unit;
+    std::optional<ocpp::DateTime> startTime;
+    std::optional<float> duration;
+    std::optional<CustomData> customData;
+};
+/// \brief Conversion from a given FixedVar \p k to a given json object \p j
+void to_json(json& j, const FixedVar& k);
+
+/// \brief Conversion from a given json object \p j to a given FixedVar \p k
+void from_json(const json& j, FixedVar& k);
+
+// \brief Writes the string representation of the given FixedVar \p k to the given output stream \p os
+/// \returns an output stream with the FixedVar written to
+std::ostream& operator<<(std::ostream& os, const FixedVar& k);
+
+struct FixedVarGet {
+    FixedVar fixedVar;
+    CiString<36> id;
+    bool isDefault;
+    bool isSuperseded;
+    std::optional<CustomData> customData;
+};
+/// \brief Conversion from a given FixedVarGet \p k to a given json object \p j
+void to_json(json& j, const FixedVarGet& k);
+
+/// \brief Conversion from a given json object \p j to a given FixedVarGet \p k
+void from_json(const json& j, FixedVarGet& k);
+
+// \brief Writes the string representation of the given FixedVarGet \p k to the given output stream \p os
+/// \returns an output stream with the FixedVarGet written to
+std::ostream& operator<<(std::ostream& os, const FixedVarGet& k);
+
+struct FreqDroop {
+    int32_t priority;
+    float overFreq;
+    float underFreq;
+    float overDroop;
+    float underDroop;
+    float responseTime;
+    std::optional<ocpp::DateTime> startTime;
+    std::optional<float> duration;
+    std::optional<CustomData> customData;
+};
+/// \brief Conversion from a given FreqDroop \p k to a given json object \p j
+void to_json(json& j, const FreqDroop& k);
+
+/// \brief Conversion from a given json object \p j to a given FreqDroop \p k
+void from_json(const json& j, FreqDroop& k);
+
+// \brief Writes the string representation of the given FreqDroop \p k to the given output stream \p os
+/// \returns an output stream with the FreqDroop written to
+std::ostream& operator<<(std::ostream& os, const FreqDroop& k);
+
+struct FreqDroopGet {
+    FreqDroop freqDroop;
+    CiString<36> id;
+    bool isDefault;
+    bool isSuperseded;
+    std::optional<CustomData> customData;
+};
+/// \brief Conversion from a given FreqDroopGet \p k to a given json object \p j
+void to_json(json& j, const FreqDroopGet& k);
+
+/// \brief Conversion from a given json object \p j to a given FreqDroopGet \p k
+void from_json(const json& j, FreqDroopGet& k);
+
+// \brief Writes the string representation of the given FreqDroopGet \p k to the given output stream \p os
+/// \returns an output stream with the FreqDroopGet written to
+std::ostream& operator<<(std::ostream& os, const FreqDroopGet& k);
+
+struct Gradient {
+    int32_t priority;
+    float gradient;
+    float softGradient;
+    std::optional<CustomData> customData;
+};
+/// \brief Conversion from a given Gradient \p k to a given json object \p j
+void to_json(json& j, const Gradient& k);
+
+/// \brief Conversion from a given json object \p j to a given Gradient \p k
+void from_json(const json& j, Gradient& k);
+
+// \brief Writes the string representation of the given Gradient \p k to the given output stream \p os
+/// \returns an output stream with the Gradient written to
+std::ostream& operator<<(std::ostream& os, const Gradient& k);
+
+struct GradientGet {
+    Gradient gradient;
+    CiString<36> id;
+    std::optional<CustomData> customData;
+};
+/// \brief Conversion from a given GradientGet \p k to a given json object \p j
+void to_json(json& j, const GradientGet& k);
+
+/// \brief Conversion from a given json object \p j to a given GradientGet \p k
+void from_json(const json& j, GradientGet& k);
+
+// \brief Writes the string representation of the given GradientGet \p k to the given output stream \p os
+/// \returns an output stream with the GradientGet written to
+std::ostream& operator<<(std::ostream& os, const GradientGet& k);
+
+struct LimitMaxDischarge {
+    int32_t priority;
+    std::optional<float> pctMaxDischargePower;
+    std::optional<DERCurve> powerMonitoringMustTrip;
+    std::optional<ocpp::DateTime> startTime;
+    std::optional<float> duration;
+    std::optional<CustomData> customData;
+};
+/// \brief Conversion from a given LimitMaxDischarge \p k to a given json object \p j
+void to_json(json& j, const LimitMaxDischarge& k);
+
+/// \brief Conversion from a given json object \p j to a given LimitMaxDischarge \p k
+void from_json(const json& j, LimitMaxDischarge& k);
+
+// \brief Writes the string representation of the given LimitMaxDischarge \p k to the given output stream \p os
+/// \returns an output stream with the LimitMaxDischarge written to
+std::ostream& operator<<(std::ostream& os, const LimitMaxDischarge& k);
+
+struct LimitMaxDischargeGet {
+    CiString<36> id;
+    bool isDefault;
+    bool isSuperseded;
+    LimitMaxDischarge limitMaxDischarge;
+    std::optional<CustomData> customData;
+};
+/// \brief Conversion from a given LimitMaxDischargeGet \p k to a given json object \p j
+void to_json(json& j, const LimitMaxDischargeGet& k);
+
+/// \brief Conversion from a given json object \p j to a given LimitMaxDischargeGet \p k
+void from_json(const json& j, LimitMaxDischargeGet& k);
+
+// \brief Writes the string representation of the given LimitMaxDischargeGet \p k to the given output stream \p os
+/// \returns an output stream with the LimitMaxDischargeGet written to
+std::ostream& operator<<(std::ostream& os, const LimitMaxDischargeGet& k);
+
 struct AuthorizationData {
     IdToken idToken;
-    std::optional<CustomData> customData;
     std::optional<IdTokenInfo> idTokenInfo;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given AuthorizationData \p k to a given json object \p j
 void to_json(json& j, const AuthorizationData& k);
@@ -1891,12 +1945,12 @@ std::ostream& operator<<(std::ostream& os, const AuthorizationData& k);
 struct APN {
     CiString<2000> apn;
     APNAuthenticationEnum apnAuthentication;
-    std::optional<CustomData> customData;
     std::optional<CiString<50>> apnUserName;
-    std::optional<CiString<40>> apnPassword;
+    std::optional<CiString<64>> apnPassword;
     std::optional<int32_t> simPin;
     std::optional<CiString<6>> preferredNetwork;
     std::optional<bool> useOnlyPreferredNetwork;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given APN \p k to a given json object \p j
 void to_json(json& j, const APN& k);
@@ -1911,11 +1965,11 @@ std::ostream& operator<<(std::ostream& os, const APN& k);
 struct VPN {
     CiString<2000> server;
     CiString<50> user;
-    CiString<40> password;
+    CiString<64> password;
     CiString<255> key;
     VPNEnum type;
-    std::optional<CustomData> customData;
     std::optional<CiString<50>> group;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given VPN \p k to a given json object \p j
 void to_json(json& j, const VPN& k);
@@ -1933,12 +1987,12 @@ struct NetworkConnectionProfile {
     int32_t messageTimeout;
     CiString<2000> ocppCsmsUrl;
     int32_t securityProfile;
-    std::optional<CustomData> customData;
     std::optional<APN> apn;
     std::optional<OCPPVersionEnum> ocppVersion;
     std::optional<CiString<48>> identity;
-    std::optional<CiString<40>> basicAuthPassword;
+    std::optional<CiString<64>> basicAuthPassword;
     std::optional<VPN> vpn;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given NetworkConnectionProfile \p k to a given json object \p j
 void to_json(json& j, const NetworkConnectionProfile& k);
@@ -1956,10 +2010,10 @@ struct SetMonitoringData {
     int32_t severity;
     Component component;
     Variable variable;
-    std::optional<CustomData> customData;
     std::optional<int32_t> id;
     std::optional<PeriodicEventStreamParams> periodicEventStream;
     std::optional<bool> transaction;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given SetMonitoringData \p k to a given json object \p j
 void to_json(json& j, const SetMonitoringData& k);
@@ -1977,9 +2031,9 @@ struct SetMonitoringResult {
     Component component;
     Variable variable;
     int32_t severity;
-    std::optional<CustomData> customData;
     std::optional<int32_t> id;
     std::optional<StatusInfo> statusInfo;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given SetMonitoringResult \p k to a given json object \p j
 void to_json(json& j, const SetMonitoringResult& k);
@@ -1991,18 +2045,12 @@ void from_json(const json& j, SetMonitoringResult& k);
 /// \returns an output stream with the SetMonitoringResult written to
 std::ostream& operator<<(std::ostream& os, const SetMonitoringResult& k);
 
-/// @brief The result of a configuration of a network profile.
-struct ConfigNetworkResult {
-    std::optional<std::string> interface_address; ///< ip address or interface string
-    bool success;                                 ///< true if the configuration was successful
-};
-
 struct SetVariableData {
     CiString<2500> attributeValue;
     Component component;
     Variable variable;
-    std::optional<CustomData> customData;
     std::optional<AttributeEnum> attributeType;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given SetVariableData \p k to a given json object \p j
 void to_json(json& j, const SetVariableData& k);
@@ -2018,9 +2066,9 @@ struct SetVariableResult {
     SetVariableStatusEnum attributeStatus;
     Component component;
     Variable variable;
-    std::optional<CustomData> customData;
     std::optional<AttributeEnum> attributeType;
     std::optional<StatusInfo> attributeStatusInfo;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given SetVariableResult \p k to a given json object \p j
 void to_json(json& j, const SetVariableResult& k);
@@ -2049,9 +2097,9 @@ std::ostream& operator<<(std::ostream& os, const CostDimension& k);
 
 struct ChargingPeriod {
     ocpp::DateTime startPeriod;
-    std::optional<CustomData> customData;
     std::optional<std::vector<CostDimension>> dimensions;
     std::optional<CiString<60>> tariffId;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given ChargingPeriod \p k to a given json object \p j
 void to_json(json& j, const ChargingPeriod& k);
@@ -2063,14 +2111,32 @@ void from_json(const json& j, ChargingPeriod& k);
 /// \returns an output stream with the ChargingPeriod written to
 std::ostream& operator<<(std::ostream& os, const ChargingPeriod& k);
 
+struct TotalPrice {
+    std::optional<float> exclTax;
+    std::optional<float> inclTax;
+    std::optional<CustomData> customData;
+};
+/// \brief Conversion from a given TotalPrice \p k to a given json object \p j
+void to_json(json& j, const TotalPrice& k);
+
+/// \brief Conversion from a given json object \p j to a given TotalPrice \p k
+void from_json(const json& j, TotalPrice& k);
+
+// \brief Writes the string representation of the given TotalPrice \p k to the given output stream \p os
+/// \returns an output stream with the TotalPrice written to
+std::ostream& operator<<(std::ostream& os, const TotalPrice& k);
+
 struct TotalCost {
     CiString<3> currency;
-    std::optional<CustomData> customData;
-    std::optional<Price> chargingTime;
-    std::optional<Price> energy;
+    TariffCostEnum typeOfCost;
+    TotalPrice total;
     std::optional<Price> fixed;
+    std::optional<Price> energy;
+    std::optional<Price> chargingTime;
     std::optional<Price> idleTime;
-    std::optional<Price> reservation;
+    std::optional<Price> reservationTime;
+    std::optional<Price> reservationFixed;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given TotalCost \p k to a given json object \p j
 void to_json(json& j, const TotalCost& k);
@@ -2086,6 +2152,7 @@ struct TotalUsage {
     float energy;
     int32_t chargingTime;
     int32_t idleTime;
+    std::optional<int32_t> reservationTime;
     std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given TotalUsage \p k to a given json object \p j
@@ -2101,10 +2168,10 @@ std::ostream& operator<<(std::ostream& os, const TotalUsage& k);
 struct CostDetails {
     TotalCost totalCost;
     TotalUsage totalUsage;
-    std::optional<CustomData> customData;
     std::optional<std::vector<ChargingPeriod>> chargingPeriods;
     std::optional<bool> failureToCalculate;
     std::optional<CiString<500>> failureReason;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given CostDetails \p k to a given json object \p j
 void to_json(json& j, const CostDetails& k);
@@ -2116,9 +2183,25 @@ void from_json(const json& j, CostDetails& k);
 /// \returns an output stream with the CostDetails written to
 std::ostream& operator<<(std::ostream& os, const CostDetails& k);
 
+struct TransactionLimit {
+    std::optional<float> maxCost;
+    std::optional<float> maxEnergy;
+    std::optional<int32_t> maxTime;
+    std::optional<int32_t> maxSoC;
+    std::optional<CustomData> customData;
+};
+/// \brief Conversion from a given TransactionLimit \p k to a given json object \p j
+void to_json(json& j, const TransactionLimit& k);
+
+/// \brief Conversion from a given json object \p j to a given TransactionLimit \p k
+void from_json(const json& j, TransactionLimit& k);
+
+// \brief Writes the string representation of the given TransactionLimit \p k to the given output stream \p os
+/// \returns an output stream with the TransactionLimit written to
+std::ostream& operator<<(std::ostream& os, const TransactionLimit& k);
+
 struct Transaction {
     CiString<36> transactionId;
-    std::optional<CustomData> customData;
     std::optional<ChargingStateEnum> chargingState;
     std::optional<int32_t> timeSpentCharging;
     std::optional<ReasonEnum> stoppedReason;
@@ -2126,6 +2209,7 @@ struct Transaction {
     std::optional<OperationModeEnum> operationMode;
     std::optional<CiString<60>> tariffId;
     std::optional<TransactionLimit> transactionLimit;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given Transaction \p k to a given json object \p j
 void to_json(json& j, const Transaction& k);
@@ -2140,10 +2224,10 @@ std::ostream& operator<<(std::ostream& os, const Transaction& k);
 struct Firmware {
     CiString<2000> location;
     ocpp::DateTime retrieveDateTime;
-    std::optional<CustomData> customData;
     std::optional<ocpp::DateTime> installDateTime;
     std::optional<CiString<5500>> signingCertificate;
     std::optional<CiString<800>> signature;
+    std::optional<CustomData> customData;
 };
 /// \brief Conversion from a given Firmware \p k to a given json object \p j
 void to_json(json& j, const Firmware& k);

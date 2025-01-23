@@ -203,30 +203,11 @@ EvseKindEnum string_to_evse_kind_enum(const std::string& s);
 /// \returns an output stream with the EvseKindEnum written to
 std::ostream& operator<<(std::ostream& os, const EvseKindEnum& evse_kind_enum);
 
-// from: AuthorizeResponse
-enum class TariffKindEnum {
-    DefaultTariff,
-    UserTariff,
-};
-
-namespace conversions {
-/// \brief Converts the given TariffKindEnum \p e to human readable string
-/// \returns a string representation of the TariffKindEnum
-std::string tariff_kind_enum_to_string(TariffKindEnum e);
-
-/// \brief Converts the given std::string \p s to TariffKindEnum
-/// \returns a TariffKindEnum from a string representation
-TariffKindEnum string_to_tariff_kind_enum(const std::string& s);
-} // namespace conversions
-
-/// \brief Writes the string representation of the given TariffKindEnum \p tariff_kind_enum to the given output stream
-/// \p os \returns an output stream with the TariffKindEnum written to
-std::ostream& operator<<(std::ostream& os, const TariffKindEnum& tariff_kind_enum);
-
 // from: BatterySwapRequest
 enum class BatterySwapEventEnum {
     BatteryIn,
     BatteryOut,
+    BatteryOutTimeout,
 };
 
 namespace conversions {
@@ -315,6 +296,7 @@ std::ostream& operator<<(std::ostream& os, const CancelReservationStatusEnum& ca
 enum class CertificateSigningUseEnum {
     ChargingStationCertificate,
     V2GCertificate,
+    V2G20Certificate,
 };
 
 namespace conversions {
@@ -393,30 +375,28 @@ ChangeAvailabilityStatusEnum string_to_change_availability_status_enum(const std
 std::ostream& operator<<(std::ostream& os, const ChangeAvailabilityStatusEnum& change_availability_status_enum);
 
 // from: ChangeTransactionTariffResponse
-enum class TariffStatusEnum {
+enum class TariffChangeStatusEnum {
     Accepted,
     Rejected,
     TooManyElements,
     ConditionNotSupported,
-    NoTariff,
-    TariffInUse,
     TxNotFound,
     NoCurrencyChange,
 };
 
 namespace conversions {
-/// \brief Converts the given TariffStatusEnum \p e to human readable string
-/// \returns a string representation of the TariffStatusEnum
-std::string tariff_status_enum_to_string(TariffStatusEnum e);
+/// \brief Converts the given TariffChangeStatusEnum \p e to human readable string
+/// \returns a string representation of the TariffChangeStatusEnum
+std::string tariff_change_status_enum_to_string(TariffChangeStatusEnum e);
 
-/// \brief Converts the given std::string \p s to TariffStatusEnum
-/// \returns a TariffStatusEnum from a string representation
-TariffStatusEnum string_to_tariff_status_enum(const std::string& s);
+/// \brief Converts the given std::string \p s to TariffChangeStatusEnum
+/// \returns a TariffChangeStatusEnum from a string representation
+TariffChangeStatusEnum string_to_tariff_change_status_enum(const std::string& s);
 } // namespace conversions
 
-/// \brief Writes the string representation of the given TariffStatusEnum \p tariff_status_enum to the given output
-/// stream \p os \returns an output stream with the TariffStatusEnum written to
-std::ostream& operator<<(std::ostream& os, const TariffStatusEnum& tariff_status_enum);
+/// \brief Writes the string representation of the given TariffChangeStatusEnum \p tariff_change_status_enum to the
+/// given output stream \p os \returns an output stream with the TariffChangeStatusEnum written to
+std::ostream& operator<<(std::ostream& os, const TariffChangeStatusEnum& tariff_change_status_enum);
 
 // from: ClearCacheResponse
 enum class ClearCacheStatusEnum {
@@ -527,7 +507,7 @@ std::ostream& operator<<(std::ostream& os, const DERControlEnum& dercontrol_enum
 enum class DERControlStatusEnum {
     Accepted,
     Rejected,
-    Unsupported,
+    NotSupported,
     NotFound,
 };
 
@@ -565,6 +545,27 @@ ClearMessageStatusEnum string_to_clear_message_status_enum(const std::string& s)
 /// \brief Writes the string representation of the given ClearMessageStatusEnum \p clear_message_status_enum to the
 /// given output stream \p os \returns an output stream with the ClearMessageStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const ClearMessageStatusEnum& clear_message_status_enum);
+
+// from: ClearTariffsResponse
+enum class TariffClearStatusEnum {
+    Accepted,
+    Rejected,
+    NoTariff,
+};
+
+namespace conversions {
+/// \brief Converts the given TariffClearStatusEnum \p e to human readable string
+/// \returns a string representation of the TariffClearStatusEnum
+std::string tariff_clear_status_enum_to_string(TariffClearStatusEnum e);
+
+/// \brief Converts the given std::string \p s to TariffClearStatusEnum
+/// \returns a TariffClearStatusEnum from a string representation
+TariffClearStatusEnum string_to_tariff_clear_status_enum(const std::string& s);
+} // namespace conversions
+
+/// \brief Writes the string representation of the given TariffClearStatusEnum \p tariff_clear_status_enum to the given
+/// output stream \p os \returns an output stream with the TariffClearStatusEnum written to
+std::ostream& operator<<(std::ostream& os, const TariffClearStatusEnum& tariff_clear_status_enum);
 
 // from: ClearVariableMonitoringResponse
 enum class ClearMonitoringStatusEnum {
@@ -769,6 +770,48 @@ GenericDeviceModelStatusEnum string_to_generic_device_model_status_enum(const st
 /// GenericDeviceModelStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const GenericDeviceModelStatusEnum& generic_device_model_status_enum);
 
+// from: GetCertificateChainStatusRequest
+enum class CertificateStatusSourceEnum {
+    CRL,
+    OCSP,
+};
+
+namespace conversions {
+/// \brief Converts the given CertificateStatusSourceEnum \p e to human readable string
+/// \returns a string representation of the CertificateStatusSourceEnum
+std::string certificate_status_source_enum_to_string(CertificateStatusSourceEnum e);
+
+/// \brief Converts the given std::string \p s to CertificateStatusSourceEnum
+/// \returns a CertificateStatusSourceEnum from a string representation
+CertificateStatusSourceEnum string_to_certificate_status_source_enum(const std::string& s);
+} // namespace conversions
+
+/// \brief Writes the string representation of the given CertificateStatusSourceEnum \p certificate_status_source_enum
+/// to the given output stream \p os \returns an output stream with the CertificateStatusSourceEnum written to
+std::ostream& operator<<(std::ostream& os, const CertificateStatusSourceEnum& certificate_status_source_enum);
+
+// from: GetCertificateChainStatusResponse
+enum class CertificateStatusEnum {
+    Good,
+    Revoked,
+    Unknown,
+    Failed,
+};
+
+namespace conversions {
+/// \brief Converts the given CertificateStatusEnum \p e to human readable string
+/// \returns a string representation of the CertificateStatusEnum
+std::string certificate_status_enum_to_string(CertificateStatusEnum e);
+
+/// \brief Converts the given std::string \p s to CertificateStatusEnum
+/// \returns a CertificateStatusEnum from a string representation
+CertificateStatusEnum string_to_certificate_status_enum(const std::string& s);
+} // namespace conversions
+
+/// \brief Writes the string representation of the given CertificateStatusEnum \p certificate_status_enum to the given
+/// output stream \p os \returns an output stream with the CertificateStatusEnum written to
+std::ostream& operator<<(std::ostream& os, const CertificateStatusEnum& certificate_status_enum);
+
 // from: GetCertificateStatusResponse
 enum class GetCertificateStatusEnum {
     Accepted,
@@ -856,50 +899,6 @@ OperationModeEnum string_to_operation_mode_enum(const std::string& s);
 /// stream \p os \returns an output stream with the OperationModeEnum written to
 std::ostream& operator<<(std::ostream& os, const OperationModeEnum& operation_mode_enum);
 
-// from: GetDERControlResponse
-enum class PowerDuringCessationEnum {
-    Active,
-    Reactive,
-};
-
-namespace conversions {
-/// \brief Converts the given PowerDuringCessationEnum \p e to human readable string
-/// \returns a string representation of the PowerDuringCessationEnum
-std::string power_during_cessation_enum_to_string(PowerDuringCessationEnum e);
-
-/// \brief Converts the given std::string \p s to PowerDuringCessationEnum
-/// \returns a PowerDuringCessationEnum from a string representation
-PowerDuringCessationEnum string_to_power_during_cessation_enum(const std::string& s);
-} // namespace conversions
-
-/// \brief Writes the string representation of the given PowerDuringCessationEnum \p power_during_cessation_enum to the
-/// given output stream \p os \returns an output stream with the PowerDuringCessationEnum written to
-std::ostream& operator<<(std::ostream& os, const PowerDuringCessationEnum& power_during_cessation_enum);
-
-// from: GetDERControlResponse
-enum class DERUnitEnum {
-    Not_Applicable,
-    PctMaxW,
-    PctMaxVar,
-    PctWAvail,
-    PctVarAvail,
-    PctEffectiveV,
-};
-
-namespace conversions {
-/// \brief Converts the given DERUnitEnum \p e to human readable string
-/// \returns a string representation of the DERUnitEnum
-std::string derunit_enum_to_string(DERUnitEnum e);
-
-/// \brief Converts the given std::string \p s to DERUnitEnum
-/// \returns a DERUnitEnum from a string representation
-DERUnitEnum string_to_derunit_enum(const std::string& s);
-} // namespace conversions
-
-/// \brief Writes the string representation of the given DERUnitEnum \p derunit_enum to the given output stream \p os
-/// \returns an output stream with the DERUnitEnum written to
-std::ostream& operator<<(std::ostream& os, const DERUnitEnum& derunit_enum);
-
 // from: GetDisplayMessagesRequest
 enum class MessagePriorityEnum {
     AlwaysFront,
@@ -927,7 +926,7 @@ enum class MessageStateEnum {
     Faulted,
     Idle,
     Unavailable,
-    Suspending,
+    Suspended,
     Discharging,
 };
 
@@ -1096,6 +1095,47 @@ ComponentCriterionEnum string_to_component_criterion_enum(const std::string& s);
 /// \brief Writes the string representation of the given ComponentCriterionEnum \p component_criterion_enum to the given
 /// output stream \p os \returns an output stream with the ComponentCriterionEnum written to
 std::ostream& operator<<(std::ostream& os, const ComponentCriterionEnum& component_criterion_enum);
+
+// from: GetTariffsResponse
+enum class TariffGetStatusEnum {
+    Accepted,
+    Rejected,
+    NoTariff,
+};
+
+namespace conversions {
+/// \brief Converts the given TariffGetStatusEnum \p e to human readable string
+/// \returns a string representation of the TariffGetStatusEnum
+std::string tariff_get_status_enum_to_string(TariffGetStatusEnum e);
+
+/// \brief Converts the given std::string \p s to TariffGetStatusEnum
+/// \returns a TariffGetStatusEnum from a string representation
+TariffGetStatusEnum string_to_tariff_get_status_enum(const std::string& s);
+} // namespace conversions
+
+/// \brief Writes the string representation of the given TariffGetStatusEnum \p tariff_get_status_enum to the given
+/// output stream \p os \returns an output stream with the TariffGetStatusEnum written to
+std::ostream& operator<<(std::ostream& os, const TariffGetStatusEnum& tariff_get_status_enum);
+
+// from: GetTariffsResponse
+enum class TariffKindEnum {
+    DefaultTariff,
+    DriverTariff,
+};
+
+namespace conversions {
+/// \brief Converts the given TariffKindEnum \p e to human readable string
+/// \returns a string representation of the TariffKindEnum
+std::string tariff_kind_enum_to_string(TariffKindEnum e);
+
+/// \brief Converts the given std::string \p s to TariffKindEnum
+/// \returns a TariffKindEnum from a string representation
+TariffKindEnum string_to_tariff_kind_enum(const std::string& s);
+} // namespace conversions
+
+/// \brief Writes the string representation of the given TariffKindEnum \p tariff_kind_enum to the given output stream
+/// \p os \returns an output stream with the TariffKindEnum written to
+std::ostream& operator<<(std::ostream& os, const TariffKindEnum& tariff_kind_enum);
 
 // from: GetVariablesRequest
 enum class AttributeEnum {
@@ -1385,26 +1425,6 @@ NotifyAllowedEnergyTransferStatusEnum string_to_notify_allowed_energy_transfer_s
 /// NotifyAllowedEnergyTransferStatusEnum written to
 std::ostream& operator<<(std::ostream& os,
                          const NotifyAllowedEnergyTransferStatusEnum& notify_allowed_energy_transfer_status_enum);
-
-// from: NotifyCRLRequest
-enum class NotifyCRLStatusEnum {
-    Available,
-    Unavailable,
-};
-
-namespace conversions {
-/// \brief Converts the given NotifyCRLStatusEnum \p e to human readable string
-/// \returns a string representation of the NotifyCRLStatusEnum
-std::string notify_crlstatus_enum_to_string(NotifyCRLStatusEnum e);
-
-/// \brief Converts the given std::string \p s to NotifyCRLStatusEnum
-/// \returns a NotifyCRLStatusEnum from a string representation
-NotifyCRLStatusEnum string_to_notify_crlstatus_enum(const std::string& s);
-} // namespace conversions
-
-/// \brief Writes the string representation of the given NotifyCRLStatusEnum \p notify_crlstatus_enum to the given
-/// output stream \p os \returns an output stream with the NotifyCRLStatusEnum written to
-std::ostream& operator<<(std::ostream& os, const NotifyCRLStatusEnum& notify_crlstatus_enum);
 
 // from: NotifyChargingLimitRequest
 enum class CostKindEnum {
@@ -1779,6 +1799,50 @@ RecurrencyKindEnum string_to_recurrency_kind_enum(const std::string& s);
 /// stream \p os \returns an output stream with the RecurrencyKindEnum written to
 std::ostream& operator<<(std::ostream& os, const RecurrencyKindEnum& recurrency_kind_enum);
 
+// from: ReportDERControlRequest
+enum class PowerDuringCessationEnum {
+    Active,
+    Reactive,
+};
+
+namespace conversions {
+/// \brief Converts the given PowerDuringCessationEnum \p e to human readable string
+/// \returns a string representation of the PowerDuringCessationEnum
+std::string power_during_cessation_enum_to_string(PowerDuringCessationEnum e);
+
+/// \brief Converts the given std::string \p s to PowerDuringCessationEnum
+/// \returns a PowerDuringCessationEnum from a string representation
+PowerDuringCessationEnum string_to_power_during_cessation_enum(const std::string& s);
+} // namespace conversions
+
+/// \brief Writes the string representation of the given PowerDuringCessationEnum \p power_during_cessation_enum to the
+/// given output stream \p os \returns an output stream with the PowerDuringCessationEnum written to
+std::ostream& operator<<(std::ostream& os, const PowerDuringCessationEnum& power_during_cessation_enum);
+
+// from: ReportDERControlRequest
+enum class DERUnitEnum {
+    Not_Applicable,
+    PctMaxW,
+    PctMaxVar,
+    PctWAvail,
+    PctVarAvail,
+    PctEffectiveV,
+};
+
+namespace conversions {
+/// \brief Converts the given DERUnitEnum \p e to human readable string
+/// \returns a string representation of the DERUnitEnum
+std::string derunit_enum_to_string(DERUnitEnum e);
+
+/// \brief Converts the given std::string \p s to DERUnitEnum
+/// \returns a DERUnitEnum from a string representation
+DERUnitEnum string_to_derunit_enum(const std::string& s);
+} // namespace conversions
+
+/// \brief Writes the string representation of the given DERUnitEnum \p derunit_enum to the given output stream \p os
+/// \returns an output stream with the DERUnitEnum written to
+std::ostream& operator<<(std::ostream& os, const DERUnitEnum& derunit_enum);
+
 // from: RequestStartTransactionResponse
 enum class RequestStartStopStatusEnum {
     Accepted,
@@ -1925,6 +1989,29 @@ SendLocalListStatusEnum string_to_send_local_list_status_enum(const std::string&
 /// \brief Writes the string representation of the given SendLocalListStatusEnum \p send_local_list_status_enum to the
 /// given output stream \p os \returns an output stream with the SendLocalListStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const SendLocalListStatusEnum& send_local_list_status_enum);
+
+// from: SetDefaultTariffResponse
+enum class TariffSetStatusEnum {
+    Accepted,
+    Rejected,
+    TooManyElements,
+    ConditionNotSupported,
+    DuplicateTariffId,
+};
+
+namespace conversions {
+/// \brief Converts the given TariffSetStatusEnum \p e to human readable string
+/// \returns a string representation of the TariffSetStatusEnum
+std::string tariff_set_status_enum_to_string(TariffSetStatusEnum e);
+
+/// \brief Converts the given std::string \p s to TariffSetStatusEnum
+/// \returns a TariffSetStatusEnum from a string representation
+TariffSetStatusEnum string_to_tariff_set_status_enum(const std::string& s);
+} // namespace conversions
+
+/// \brief Writes the string representation of the given TariffSetStatusEnum \p tariff_set_status_enum to the given
+/// output stream \p os \returns an output stream with the TariffSetStatusEnum written to
+std::ostream& operator<<(std::ostream& os, const TariffSetStatusEnum& tariff_set_status_enum);
 
 // from: SetDisplayMessageResponse
 enum class DisplayMessageStatusEnum {
@@ -2205,6 +2292,27 @@ CostDimensionEnum string_to_cost_dimension_enum(const std::string& s);
 std::ostream& operator<<(std::ostream& os, const CostDimensionEnum& cost_dimension_enum);
 
 // from: TransactionEventRequest
+enum class TariffCostEnum {
+    NormalCost,
+    MinCost,
+    MaxCost,
+};
+
+namespace conversions {
+/// \brief Converts the given TariffCostEnum \p e to human readable string
+/// \returns a string representation of the TariffCostEnum
+std::string tariff_cost_enum_to_string(TariffCostEnum e);
+
+/// \brief Converts the given std::string \p s to TariffCostEnum
+/// \returns a TariffCostEnum from a string representation
+TariffCostEnum string_to_tariff_cost_enum(const std::string& s);
+} // namespace conversions
+
+/// \brief Writes the string representation of the given TariffCostEnum \p tariff_cost_enum to the given output stream
+/// \p os \returns an output stream with the TariffCostEnum written to
+std::ostream& operator<<(std::ostream& os, const TariffCostEnum& tariff_cost_enum);
+
+// from: TransactionEventRequest
 enum class TransactionEventEnum {
     Ended,
     Started,
@@ -2239,7 +2347,7 @@ enum class TriggerReasonEnum {
     EVConnectTimeout,
     EVDeparted,
     EVDetected,
-    LimitChanged,
+    LimitSet,
     MeterValueClock,
     MeterValuePeriodic,
     OperationModeChanged,
@@ -2251,6 +2359,7 @@ enum class TriggerReasonEnum {
     SoCLimitReached,
     StopAuthorized,
     TariffChanged,
+    TariffNotAccepted,
     TimeLimitReached,
     Trigger,
     TxResumed,

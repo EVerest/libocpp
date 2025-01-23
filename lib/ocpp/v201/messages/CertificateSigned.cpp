@@ -26,6 +26,9 @@ void to_json(json& j, const CertificateSignedRequest& k) {
     if (k.certificateType) {
         j["certificateType"] = conversions::certificate_signing_use_enum_to_string(k.certificateType.value());
     }
+    if (k.requestId) {
+        j["requestId"] = k.requestId.value();
+    }
     if (k.customData) {
         j["customData"] = k.customData.value();
     }
@@ -38,6 +41,9 @@ void from_json(const json& j, CertificateSignedRequest& k) {
     // the optional parts of the message
     if (j.contains("certificateType")) {
         k.certificateType.emplace(conversions::string_to_certificate_signing_use_enum(j.at("certificateType")));
+    }
+    if (j.contains("requestId")) {
+        k.requestId.emplace(j.at("requestId"));
     }
     if (j.contains("customData")) {
         k.customData.emplace(j.at("customData"));

@@ -20,9 +20,12 @@ std::string GetDERControlRequest::get_type() const {
 void to_json(json& j, const GetDERControlRequest& k) {
     // the required parts of the message
     j = json{
-        {"isDefault", k.isDefault},
+        {"requestId", k.requestId},
     };
     // the optional parts of the message
+    if (k.isDefault) {
+        j["isDefault"] = k.isDefault.value();
+    }
     if (k.controlType) {
         j["controlType"] = ocpp::v201::conversions::dercontrol_enum_to_string(k.controlType.value());
     }
@@ -36,9 +39,12 @@ void to_json(json& j, const GetDERControlRequest& k) {
 
 void from_json(const json& j, GetDERControlRequest& k) {
     // the required parts of the message
-    k.isDefault = j.at("isDefault");
+    k.requestId = j.at("requestId");
 
     // the optional parts of the message
+    if (j.contains("isDefault")) {
+        k.isDefault.emplace(j.at("isDefault"));
+    }
     if (j.contains("controlType")) {
         k.controlType.emplace(ocpp::v201::conversions::string_to_dercontrol_enum(j.at("controlType")));
     }
@@ -67,53 +73,8 @@ void to_json(json& j, const GetDERControlResponse& k) {
         {"status", ocpp::v201::conversions::dercontrol_status_enum_to_string(k.status)},
     };
     // the optional parts of the message
-    if (k.curve) {
-        j["curve"] = json::array();
-        for (auto val : k.curve.value()) {
-            j["curve"].push_back(val);
-        }
-    }
-    if (k.enterService) {
-        j["enterService"] = json::array();
-        for (auto val : k.enterService.value()) {
-            j["enterService"].push_back(val);
-        }
-    }
-    if (k.fixedPFAbsorb) {
-        j["fixedPFAbsorb"] = json::array();
-        for (auto val : k.fixedPFAbsorb.value()) {
-            j["fixedPFAbsorb"].push_back(val);
-        }
-    }
-    if (k.fixedPFInject) {
-        j["fixedPFInject"] = json::array();
-        for (auto val : k.fixedPFInject.value()) {
-            j["fixedPFInject"].push_back(val);
-        }
-    }
-    if (k.fixedVar) {
-        j["fixedVar"] = json::array();
-        for (auto val : k.fixedVar.value()) {
-            j["fixedVar"].push_back(val);
-        }
-    }
-    if (k.freqDroop) {
-        j["freqDroop"] = json::array();
-        for (auto val : k.freqDroop.value()) {
-            j["freqDroop"].push_back(val);
-        }
-    }
-    if (k.gradient) {
-        j["gradient"] = json::array();
-        for (auto val : k.gradient.value()) {
-            j["gradient"].push_back(val);
-        }
-    }
-    if (k.limitMaxDischarge) {
-        j["limitMaxDischarge"] = json::array();
-        for (auto val : k.limitMaxDischarge.value()) {
-            j["limitMaxDischarge"].push_back(val);
-        }
+    if (k.statusInfo) {
+        j["statusInfo"] = k.statusInfo.value();
     }
     if (k.customData) {
         j["customData"] = k.customData.value();
@@ -125,69 +86,8 @@ void from_json(const json& j, GetDERControlResponse& k) {
     k.status = ocpp::v201::conversions::string_to_dercontrol_status_enum(j.at("status"));
 
     // the optional parts of the message
-    if (j.contains("curve")) {
-        json arr = j.at("curve");
-        std::vector<DERCurveGet> vec;
-        for (auto val : arr) {
-            vec.push_back(val);
-        }
-        k.curve.emplace(vec);
-    }
-    if (j.contains("enterService")) {
-        json arr = j.at("enterService");
-        std::vector<EnterServiceGet> vec;
-        for (auto val : arr) {
-            vec.push_back(val);
-        }
-        k.enterService.emplace(vec);
-    }
-    if (j.contains("fixedPFAbsorb")) {
-        json arr = j.at("fixedPFAbsorb");
-        std::vector<FixedPFGet> vec;
-        for (auto val : arr) {
-            vec.push_back(val);
-        }
-        k.fixedPFAbsorb.emplace(vec);
-    }
-    if (j.contains("fixedPFInject")) {
-        json arr = j.at("fixedPFInject");
-        std::vector<FixedPFGet> vec;
-        for (auto val : arr) {
-            vec.push_back(val);
-        }
-        k.fixedPFInject.emplace(vec);
-    }
-    if (j.contains("fixedVar")) {
-        json arr = j.at("fixedVar");
-        std::vector<FixedVarGet> vec;
-        for (auto val : arr) {
-            vec.push_back(val);
-        }
-        k.fixedVar.emplace(vec);
-    }
-    if (j.contains("freqDroop")) {
-        json arr = j.at("freqDroop");
-        std::vector<FreqDroopGet> vec;
-        for (auto val : arr) {
-            vec.push_back(val);
-        }
-        k.freqDroop.emplace(vec);
-    }
-    if (j.contains("gradient")) {
-        json arr = j.at("gradient");
-        std::vector<GradientGet> vec;
-        for (auto val : arr) {
-            vec.push_back(val);
-        }
-        k.gradient.emplace(vec);
-    }
-    if (j.contains("limitMaxDischarge")) {
-        json arr = j.at("limitMaxDischarge");
-        std::vector<LimitMaxDischargeGet> vec;
-        for (auto val : arr) {
-            vec.push_back(val);
-        }
-        k.limitMaxDischarge.emplace(vec);
+    if (j.contains("statusInfo")) {
+        k.statusInfo.emplace(j.at("statusInfo"));
     }
     if (j.contains("customData")) {
         k.customData.emplace(j.at("customData"));

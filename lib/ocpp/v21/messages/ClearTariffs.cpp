@@ -31,8 +31,8 @@ void to_json(json& j, const ClearTariffsRequest& k) {
             j["tariffIds"].push_back(val);
         }
     }
-    if (k.tariffKind) {
-        j["tariffKind"] = ocpp::v201::conversions::tariff_kind_enum_to_string(k.tariffKind.value());
+    if (k.evseId) {
+        j["evseId"] = k.evseId.value();
     }
     if (k.customData) {
         j["customData"] = k.customData.value();
@@ -51,8 +51,8 @@ void from_json(const json& j, ClearTariffsRequest& k) {
         }
         k.tariffIds.emplace(vec);
     }
-    if (j.contains("tariffKind")) {
-        k.tariffKind.emplace(ocpp::v201::conversions::string_to_tariff_kind_enum(j.at("tariffKind")));
+    if (j.contains("evseId")) {
+        k.evseId.emplace(j.at("evseId"));
     }
     if (j.contains("customData")) {
         k.customData.emplace(j.at("customData"));

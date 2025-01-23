@@ -23,7 +23,6 @@ struct RequestStartTransactionRequest : public ocpp::Message {
     std::optional<IdToken> groupIdToken;
     std::optional<ChargingProfile> chargingProfile;
     std::optional<CustomData> customData;
-    std::optional<TransactionLimit> transactionLimit;
 
     /// \brief Provides the type of this StartTransaction message as a human readable string
     /// \returns the message type as a human readable string

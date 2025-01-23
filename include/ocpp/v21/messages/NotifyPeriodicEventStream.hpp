@@ -20,6 +20,7 @@ struct NotifyPeriodicEventStream : public ocpp::Message {
     std::vector<StreamDataElement> data;
     int32_t id;
     int32_t pending;
+    ocpp::DateTime basetime;
     std::optional<CustomData> customData;
 
     /// \brief Provides the type of this NotifyPeriodicEventStream message as a human readable string

@@ -19,11 +19,10 @@ std::string GetTariffsRequest::get_type() const {
 
 void to_json(json& j, const GetTariffsRequest& k) {
     // the required parts of the message
-    j = json({}, true);
+    j = json{
+        {"evseId", k.evseId},
+    };
     // the optional parts of the message
-    if (k.evseId) {
-        j["evseId"] = k.evseId.value();
-    }
     if (k.customData) {
         j["customData"] = k.customData.value();
     }
@@ -31,11 +30,9 @@ void to_json(json& j, const GetTariffsRequest& k) {
 
 void from_json(const json& j, GetTariffsRequest& k) {
     // the required parts of the message
+    k.evseId = j.at("evseId");
 
     // the optional parts of the message
-    if (j.contains("evseId")) {
-        k.evseId.emplace(j.at("evseId"));
-    }
     if (j.contains("customData")) {
         k.customData.emplace(j.at("customData"));
     }
@@ -55,7 +52,7 @@ std::string GetTariffsResponse::get_type() const {
 void to_json(json& j, const GetTariffsResponse& k) {
     // the required parts of the message
     j = json{
-        {"status", ocpp::v201::conversions::tariff_status_enum_to_string(k.status)},
+        {"status", ocpp::v201::conversions::tariff_get_status_enum_to_string(k.status)},
     };
     // the optional parts of the message
     if (k.statusInfo) {
@@ -74,7 +71,7 @@ void to_json(json& j, const GetTariffsResponse& k) {
 
 void from_json(const json& j, GetTariffsResponse& k) {
     // the required parts of the message
-    k.status = ocpp::v201::conversions::string_to_tariff_status_enum(j.at("status"));
+    k.status = ocpp::v201::conversions::string_to_tariff_get_status_enum(j.at("status"));
 
     // the optional parts of the message
     if (j.contains("statusInfo")) {

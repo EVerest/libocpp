@@ -95,8 +95,8 @@ void to_json(json& j, const NotifySettlementResponse& k) {
     // the required parts of the message
     j = json({}, true);
     // the optional parts of the message
-    if (k.receiptURL) {
-        j["receiptURL"] = k.receiptURL.value();
+    if (k.receiptUrl) {
+        j["receiptUrl"] = k.receiptUrl.value();
     }
     if (k.receiptId) {
         j["receiptId"] = k.receiptId.value();
@@ -110,8 +110,8 @@ void from_json(const json& j, NotifySettlementResponse& k) {
     // the required parts of the message
 
     // the optional parts of the message
-    if (j.contains("receiptURL")) {
-        k.receiptURL.emplace(j.at("receiptURL"));
+    if (j.contains("receiptUrl")) {
+        k.receiptUrl.emplace(j.at("receiptUrl"));
     }
     if (j.contains("receiptId")) {
         k.receiptId.emplace(j.at("receiptId"));

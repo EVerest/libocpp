@@ -20,7 +20,7 @@ struct NotifyEVChargingScheduleRequest : public ocpp::Message {
     ocpp::DateTime timeBase;
     ChargingSchedule chargingSchedule;
     int32_t evseId;
-    std::optional<int32_t> selectedScheduleTupleId;
+    std::optional<int32_t> selectedChargingScheduleId;
     std::optional<bool> powerToleranceAcceptance;
     std::optional<CustomData> customData;
 

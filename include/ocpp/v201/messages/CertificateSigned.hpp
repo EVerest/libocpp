@@ -19,6 +19,7 @@ namespace v201 {
 struct CertificateSignedRequest : public ocpp::Message {
     CiString<10000> certificateChain;
     std::optional<CertificateSigningUseEnum> certificateType;
+    std::optional<int32_t> requestId;
     std::optional<CustomData> customData;
 
     /// \brief Provides the type of this CertificateSigned message as a human readable string

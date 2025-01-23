@@ -44,7 +44,6 @@ struct AuthorizeResponse : public ocpp::Message {
     std::optional<std::vector<EnergyTransferModeEnum>> allowedEnergyTransfer;
     std::optional<Tariff> tariff;
     std::optional<CustomData> customData;
-    std::optional<TransactionLimit> transactionLimit;
 
     /// \brief Provides the type of this AuthorizeResponse message as a human readable string
     /// \returns the message type as a human readable string

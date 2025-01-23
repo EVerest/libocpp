@@ -33,9 +33,6 @@ void to_json(json& j, const RequestStartTransactionRequest& k) {
     if (k.chargingProfile) {
         j["chargingProfile"] = k.chargingProfile.value();
     }
-    if (k.transactionLimit) {
-        j["transactionLimit"] = k.transactionLimit.value();
-    }
     if (k.customData) {
         j["customData"] = k.customData.value();
     }
@@ -55,9 +52,6 @@ void from_json(const json& j, RequestStartTransactionRequest& k) {
     }
     if (j.contains("chargingProfile")) {
         k.chargingProfile.emplace(j.at("chargingProfile"));
-    }
-    if (j.contains("transactionLimit")) {
-        k.transactionLimit.emplace(j.at("transactionLimit"));
     }
     if (j.contains("customData")) {
         k.customData.emplace(j.at("customData"));
