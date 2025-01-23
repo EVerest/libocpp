@@ -59,6 +59,19 @@ bool EvseManager::does_evse_exist(const int32_t id) const {
     return id >= 0 && static_cast<uint64_t>(id) <= this->evses.size();
 }
 
+bool EvseManager::are_all_connectors_effectively_inoperative() const {
+    // Check that all connectors on all EVSEs are inoperative
+    for (const auto& evse : this->evses) {
+        for (int connector_id = 1; connector_id <= evse->get_number_of_connectors(); connector_id++) {
+            OperationalStatusEnum connector_status = evse->get_connector_effective_operational_status(connector_id);
+            if (connector_status == OperationalStatusEnum::Operative) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 size_t EvseManager::get_number_of_evses() const {
     return this->evses.size();
 }

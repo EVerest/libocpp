@@ -818,10 +818,6 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
                 this->registration_status != RegistrationStatusEnum::Accepted) {
                 return false;
             } else {
-                if (availability == nullptr) {
-                    return false;
-                }
-
                 this->availability->status_notification_req(evse_id, connector_id, status,
                                                             initiated_by_trigger_message);
                 return true;
@@ -1268,7 +1264,7 @@ void ChargePoint::change_all_connectors_to_unavailable_for_firmware_update() {
         }
         // Check succeeded, trigger the callback if needed
         if (this->callbacks.all_connectors_unavailable_callback.has_value() and
-            this->availability->are_all_connectors_effectively_inoperative()) {
+            this->evse_manager->are_all_connectors_effectively_inoperative()) {
             this->callbacks.all_connectors_unavailable_callback.value()();
         }
     } else if (response.status == ChangeAvailabilityStatusEnum::Scheduled) {

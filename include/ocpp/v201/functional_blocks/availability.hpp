@@ -46,11 +46,6 @@ public:
     ///
     virtual void heartbeat_req(const bool initiated_by_trigger_message = false) = 0;
 
-    /// \brief Checks if all connectors are effectively inoperative.
-    /// If this is the case, calls the all_connectors_unavailable_callback
-    /// This is used e.g. to allow firmware updates once all transactions have finished
-    virtual bool are_all_connectors_effectively_inoperative() = 0;
-
     ///
     /// \brief Handle / send the scheduled change availability requests.
     /// \param evse_id  The evse id of the change availability request.
@@ -88,8 +83,8 @@ private: // Members
     EvseManagerInterface& evse_manager;
     ComponentStateManagerInterface& component_state_manager;
 
-    std::optional<std::function<void(const ocpp::DateTime& currentTime)>> time_sync_callback;
-    std::optional<std::function<void()>> all_connectors_unavailable_callback;
+    std::optional<TimeSyncCallback> time_sync_callback;
+    std::optional<AllConnectorsUnavailableCallback> all_connectors_unavailable_callback;
 
     std::chrono::time_point<std::chrono::steady_clock> heartbeat_request_time;
 
@@ -109,7 +104,6 @@ public:
                                  const bool initiated_by_trigger_message = false) override;
     void heartbeat_req(const bool initiated_by_trigger_message = false) override;
 
-    bool are_all_connectors_effectively_inoperative() override;
     void handle_scheduled_change_availability_requests(const int32_t evse_id) override;
     void set_scheduled_change_availability_requests(const int32_t evse_id,
                                                     AvailabilityChange availability_change) override;

@@ -60,20 +60,6 @@ void Availability::heartbeat_req(const bool initiated_by_trigger_message) {
     this->message_dispatcher.dispatch_call(call, initiated_by_trigger_message);
 }
 
-bool Availability::are_all_connectors_effectively_inoperative() {
-    // Check that all connectors on all EVSEs are inoperative
-    for (const auto& evse : this->evse_manager) {
-        for (int connector_id = 1; connector_id <= evse.get_number_of_connectors(); connector_id++) {
-            OperationalStatusEnum connector_status =
-                this->component_state_manager.get_connector_effective_operational_status(evse.get_id(), connector_id);
-            if (connector_status == OperationalStatusEnum::Operative) {
-                return false;
-            }
-        }
-    }
-    return true;
-}
-
 void Availability::handle_scheduled_change_availability_requests(const int32_t evse_id) {
     if (this->scheduled_change_availability_requests.count(evse_id)) {
         EVLOG_info << "Found scheduled ChangeAvailability.req for evse_id:" << evse_id;
@@ -85,7 +71,7 @@ void Availability::handle_scheduled_change_availability_requests(const int32_t e
             this->scheduled_change_availability_requests.erase(evse_id);
             // Check succeeded, trigger the callback if needed
             if (this->all_connectors_unavailable_callback.has_value() and
-                this->are_all_connectors_effectively_inoperative()) {
+                this->evse_manager.are_all_connectors_effectively_inoperative()) {
                 this->all_connectors_unavailable_callback.value()();
             }
         } else {

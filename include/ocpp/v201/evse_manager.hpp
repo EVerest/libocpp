@@ -42,6 +42,11 @@ public:
     /// \brief Check if an evse with \p id exists
     virtual bool does_evse_exist(int32_t id) const = 0;
 
+    /// \brief Checks if all connectors are effectively inoperative.
+    /// If this is the case, calls the all_connectors_unavailable_callback
+    /// This is used e.g. to allow firmware updates once all transactions have finished
+    virtual bool are_all_connectors_effectively_inoperative() const = 0;
+
     /// \brief Get the number of evses
     virtual size_t get_number_of_evses() const = 0;
 
@@ -53,7 +58,7 @@ public:
     virtual std::optional<int32_t> get_transaction_evseid(const CiString<36>& transaction_id) const = 0;
 
     /// \brief Helper function to determine if there is any active transaction for the given \p evse
-    /// \param evse if optional is not set, this function will check if there is any transaction active f or the whole
+    /// \param evse if optional is not set, this function will check if there is any transaction active for the whole
     /// charging station
     /// \return
     virtual bool any_transaction_active(const std::optional<EVSE>& evse) const = 0;
@@ -88,6 +93,8 @@ public:
 
     virtual bool does_connector_exist(const int32_t evse_id, const ConnectorEnum connector_type) const override;
     bool does_evse_exist(const int32_t id) const override;
+
+    bool are_all_connectors_effectively_inoperative() const override;
 
     size_t get_number_of_evses() const override;
 
