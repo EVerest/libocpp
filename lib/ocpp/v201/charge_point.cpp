@@ -798,7 +798,6 @@ void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& messa
         case MessageType::ClearChargingProfile:
         case MessageType::GetChargingProfiles:
         case MessageType::GetCompositeSchedule:
-            // TODO mz is smart charging always enabled???
             this->smart_charging->handle_message(message);
             break;
         case MessageType::GetDisplayMessages:

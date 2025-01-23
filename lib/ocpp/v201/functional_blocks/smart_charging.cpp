@@ -9,7 +9,6 @@
 #include <ocpp/v201/evse_manager.hpp>
 #include <ocpp/v201/profile.hpp>
 
-#include <date/tz.h> // TODO mz is this really necessary?
 #include <ocpp/v201/utils.hpp>
 
 #include <ocpp/common/constants.hpp>
