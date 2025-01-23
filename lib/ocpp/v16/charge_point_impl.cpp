@@ -2429,16 +2429,29 @@ void ChargePointImpl::handleTriggerMessageRequest(ocpp::Call<TriggerMessageReque
     }
 
     auto connector = call.msg.connectorId.value_or(0);
-    bool valid = true;
+    bool trigger_message = true;
     if (connector < 0 || connector > this->configuration->getNumberOfConnectors()) {
         response.status = TriggerMessageStatus::Rejected;
-        valid = false;
+        trigger_message = false;
+    }
+
+    if (trigger_message and call.msg.requestedMessage == MessageTrigger::MeterValues) {
+        if (call.msg.connectorId.has_value()) {
+            trigger_message = this->connectors.at(call.msg.connectorId.value())->measurement.has_value();
+        } else {
+            trigger_message = std::any_of(this->connectors.begin(), this->connectors.end(), [](const auto& connector) {
+                return connector.second->measurement.has_value();
+            });
+        }
+        if (not trigger_message) {
+            response.status = TriggerMessageStatus::Rejected;
+        }
     }
 
     ocpp::CallResult<TriggerMessageResponse> call_result(response, call.uniqueId);
     this->message_dispatcher->dispatch_call_result(call_result);
 
-    if (!valid) {
+    if (not trigger_message) {
         return;
     }
 
@@ -2456,13 +2469,24 @@ void ChargePointImpl::handleTriggerMessageRequest(ocpp::Call<TriggerMessageReque
         this->heartbeat(true);
         break;
     case MessageTrigger::MeterValues: {
-        const auto meter_value = this->get_latest_meter_value(
-            connector, this->configuration->getMeterValuesSampledDataVector(), ReadingContext::Trigger);
-        if (meter_value.has_value()) {
-            this->send_meter_value(connector, meter_value.value(), true);
+        const auto send_meter_value_func = [this](const int32_t connector_id) {
+            auto meter_value = this->get_latest_meter_value(
+                connector_id, this->configuration->getMeterValuesSampledDataVector(), ReadingContext::Trigger);
+            if (meter_value.has_value()) {
+                this->send_meter_value(connector_id, meter_value.value(), true);
+            } else {
+                EVLOG_warning << "Could not send triggered meter value for uninitialized measurement at connector#"
+                              << connector_id;
+            }
+        };
+
+        if (!call.msg.connectorId.has_value()) {
+            // send a MeterValue.req for every connector
+            for (int32_t c = 0; c <= this->configuration->getNumberOfConnectors(); c++) {
+                send_meter_value_func(c);
+            }
         } else {
-            EVLOG_warning << "Could not send triggered meter value for uninitialized measurement at connector#"
-                          << connector;
+            send_meter_value_func(call.msg.connectorId.value());
         }
         break;
     }
@@ -2609,16 +2633,23 @@ void ChargePointImpl::handleExtendedTriggerMessageRequest(ocpp::Call<ExtendedTri
 void ChargePointImpl::sign_certificate(const ocpp::CertificateSigningUseEnum& certificate_signing_use,
                                        bool initiated_by_trigger_message) {
 
-    EVLOG_info << "Create CSR (TPM=" << this->configuration->getUseTPM() << ")";
+    bool use_tpm = false;
+
+    if (certificate_signing_use == CertificateSigningUseEnum::ChargingStationCertificate) {
+        use_tpm = this->configuration->getUseTPM();
+    } else if (certificate_signing_use == CertificateSigningUseEnum::V2GCertificate) {
+        use_tpm = this->configuration->getUseTPMSeccLeafCertificate();
+    }
+
+    EVLOG_info << "Create CSR (TPM=" << use_tpm << ")";
     SignCertificateRequest req;
 
     const auto response = this->evse_security->generate_certificate_signing_request(
         certificate_signing_use, this->configuration->getSeccLeafSubjectCountry().value_or("DE"),
-        this->configuration->getCpoName().value(), this->configuration->getChargeBoxSerialNumber(),
-        this->configuration->getUseTPM());
+        this->configuration->getCpoName().value(), this->configuration->getChargeBoxSerialNumber(), use_tpm);
 
     if (response.status != GetCertificateSignRequestStatus::Accepted || !response.csr.has_value()) {
-        EVLOG_error << "Create CSR (TPM=" << this->configuration->getUseTPM() << ")"
+        EVLOG_error << "Create CSR (TPM=" << use_tpm << ")"
                     << " failed for:"
                     << ocpp::conversions::certificate_signing_use_enum_to_string(certificate_signing_use);
 
@@ -3574,7 +3605,7 @@ void ChargePointImpl::data_transfer_pnc_sign_certificate() {
         this->configuration->getSeccLeafSubjectCountry().value_or("DE"),
         this->configuration->getSeccLeafSubjectOrganization().value_or(this->configuration->getCpoName().value()),
         this->configuration->getSeccLeafSubjectCommonName().value_or(this->configuration->getChargeBoxSerialNumber()),
-        this->configuration->getUseTPM());
+        this->configuration->getUseTPMSeccLeafCertificate());
 
     if (result.status != GetCertificateSignRequestStatus::Accepted || !result.csr.has_value()) {
         EVLOG_error << "Could not request new V2GCertificate, because the CSR was not successful.";

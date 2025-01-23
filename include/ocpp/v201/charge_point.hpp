@@ -8,9 +8,13 @@
 #include <set>
 
 #include <ocpp/common/message_dispatcher.hpp>
+#include <ocpp/v201/functional_blocks/authorization.hpp>
 #include <ocpp/v201/functional_blocks/data_transfer.hpp>
+#include <ocpp/v201/functional_blocks/display_message.hpp>
 #include <ocpp/v201/functional_blocks/reservation.hpp>
+#include <ocpp/v201/functional_blocks/security.hpp>
 
+#include <ocpp/common/aligned_timer.hpp>
 #include <ocpp/common/charging_station_base.hpp>
 
 #include <ocpp/v201/average_meter_values.hpp>
@@ -31,11 +35,8 @@
 #include "ocpp/v201/messages/Get15118EVCertificate.hpp"
 #include <ocpp/v201/messages/Authorize.hpp>
 #include <ocpp/v201/messages/BootNotification.hpp>
-#include <ocpp/v201/messages/CertificateSigned.hpp>
 #include <ocpp/v201/messages/ChangeAvailability.hpp>
-#include <ocpp/v201/messages/ClearCache.hpp>
 #include <ocpp/v201/messages/ClearChargingProfile.hpp>
-#include <ocpp/v201/messages/ClearDisplayMessage.hpp>
 #include <ocpp/v201/messages/ClearVariableMonitoring.hpp>
 #include <ocpp/v201/messages/CostUpdated.hpp>
 #include <ocpp/v201/messages/CustomerInformation.hpp>
@@ -44,9 +45,7 @@
 #include <ocpp/v201/messages/GetBaseReport.hpp>
 #include <ocpp/v201/messages/GetChargingProfiles.hpp>
 #include <ocpp/v201/messages/GetCompositeSchedule.hpp>
-#include <ocpp/v201/messages/GetDisplayMessages.hpp>
 #include <ocpp/v201/messages/GetInstalledCertificateIds.hpp>
-#include <ocpp/v201/messages/GetLocalListVersion.hpp>
 #include <ocpp/v201/messages/GetLog.hpp>
 #include <ocpp/v201/messages/GetMonitoringReport.hpp>
 #include <ocpp/v201/messages/GetReport.hpp>
@@ -63,16 +62,12 @@
 #include <ocpp/v201/messages/RequestStartTransaction.hpp>
 #include <ocpp/v201/messages/RequestStopTransaction.hpp>
 #include <ocpp/v201/messages/Reset.hpp>
-#include <ocpp/v201/messages/SecurityEventNotification.hpp>
-#include <ocpp/v201/messages/SendLocalList.hpp>
 #include <ocpp/v201/messages/SetChargingProfile.hpp>
-#include <ocpp/v201/messages/SetDisplayMessage.hpp>
 #include <ocpp/v201/messages/SetMonitoringBase.hpp>
 #include <ocpp/v201/messages/SetMonitoringLevel.hpp>
 #include <ocpp/v201/messages/SetNetworkProfile.hpp>
 #include <ocpp/v201/messages/SetVariableMonitoring.hpp>
 #include <ocpp/v201/messages/SetVariables.hpp>
-#include <ocpp/v201/messages/SignCertificate.hpp>
 #include <ocpp/v201/messages/StatusNotification.hpp>
 #include <ocpp/v201/messages/TransactionEvent.hpp>
 #include <ocpp/v201/messages/TriggerMessage.hpp>
@@ -349,6 +344,15 @@ public:
     /// operation was successful
     virtual GetCompositeScheduleResponse get_composite_schedule(const GetCompositeScheduleRequest& request) = 0;
 
+    /// \brief Gets a composite schedule based on the given parameters.
+    /// \note This will ignore TxDefaultProfiles and TxProfiles if no transaction is active on \p evse_id
+    /// \param evse_id Evse to get the schedule for
+    /// \param duration How long the schedule should be
+    /// \param unit ChargingRateUnit to thet the schedule for
+    /// \return the composite schedule if the operation was successful, otherwise nullopt
+    virtual std::optional<CompositeSchedule> get_composite_schedule(int32_t evse_id, std::chrono::seconds duration,
+                                                                    ChargingRateUnitEnum unit) = 0;
+
     /// \brief Gets composite schedules for all evse_ids (including 0) for the given \p duration and \p unit . If no
     /// valid profiles are given for an evse for the specified period, the composite schedule will be empty for this
     /// evse.
@@ -390,6 +394,9 @@ private:
     std::unique_ptr<MessageDispatcherInterface<MessageType>> message_dispatcher;
     std::unique_ptr<DataTransferInterface> data_transfer;
     std::unique_ptr<ReservationInterface> reservation;
+    std::unique_ptr<AuthorizationInterface> authorization;
+    std::unique_ptr<SecurityInterface> security;
+    std::unique_ptr<DisplayMessageInterface> display_message;
 
     // utility
     std::shared_ptr<MessageQueue<v201::MessageType>> message_queue;
@@ -408,15 +415,6 @@ private:
 
     // time keeping
     std::chrono::time_point<std::chrono::steady_clock> heartbeat_request_time;
-
-    Everest::SteadyTimer certificate_signed_timer;
-
-    // threads and synchronization
-    bool auth_cache_cleanup_required;
-    std::condition_variable auth_cache_cleanup_cv;
-    std::mutex auth_cache_cleanup_mutex;
-    std::thread auth_cache_cleanup_thread;
-    std::atomic_bool stop_auth_cache_cleanup_handler;
 
     // states
     std::atomic<RegistrationStatusEnum> registration_status;
@@ -458,9 +456,6 @@ private:
     /// \brief If `reset_scheduled` is true and the reset is for a specific evse id, it will be stored in this member.
     std::set<int32_t> reset_scheduled_evseids;
 
-    int csr_attempt;
-    std::optional<ocpp::CertificateSigningUseEnum> awaited_certificate_signing_use_enum;
-
     // callback struct
     Callbacks callbacks;
 
@@ -488,11 +483,8 @@ private:
                                       const ConnectorStatusEnum status);
     void update_dm_evse_power(const int32_t evse_id, const MeterValue& meter_value);
 
-    void trigger_authorization_cache_cleanup();
-    void cache_cleanup_handler();
-    GetCompositeScheduleResponse
-    get_composite_schedule_internal(const GetCompositeScheduleRequest& request,
-                                    const std::set<ChargingProfilePurposeEnum>& profiles_to_ignore = {});
+    GetCompositeScheduleResponse get_composite_schedule_internal(const GetCompositeScheduleRequest& request,
+                                                                 bool simulate_transaction_active = true);
 
     void message_callback(const std::string& message);
     void update_aligned_data_interval();
@@ -533,24 +525,6 @@ private:
 
     /// \brief Restores all connectors to their persisted state
     void restore_all_connector_states();
-
-    ///\brief Calculate and update the authorization cache size in the device model
-    ///
-    void update_authorization_cache_size();
-
-    ///\brief Apply a local list request to the database if allowed
-    ///
-    ///\param request The local list request to apply
-    ///\retval Accepted if applied, otherwise will return either Failed or VersionMismatch
-    SendLocalListStatusEnum apply_local_authorization_list(const SendLocalListRequest& request);
-
-    ///
-    /// \brief Get evseid for the given transaction id.
-    /// \param transaction_id   The transactionid
-    /// \return The evse id belonging the the transaction id. std::nullopt if there is no transaction with the given
-    ///         transaction id.
-    ///
-    std::optional<int32_t> get_transaction_evseid(const CiString<36>& transaction_id);
 
     ///
     /// \brief Check if EVSE connector is reserved for another than the given id token and / or group id token.
@@ -655,20 +629,9 @@ private:
 
     /* OCPP message requests */
 
-    // Functional Block A: Security
-    void security_event_notification_req(const CiString<50>& event_type, const std::optional<CiString<255>>& tech_info,
-                                         const bool triggered_internally, const bool critical,
-                                         const std::optional<DateTime>& timestamp = std::nullopt);
-    void sign_certificate_req(const ocpp::CertificateSigningUseEnum& certificate_signing_use,
-                              const bool initiated_by_trigger_message = false);
-
     // Functional Block B: Provisioning
     void boot_notification_req(const BootReasonEnum& reason, const bool initiated_by_trigger_message = false);
     void notify_report_req(const int request_id, const std::vector<ReportData>& report_data);
-
-    // Functional Block C: Authorization
-    AuthorizeResponse authorize_req(const IdToken id_token, const std::optional<CiString<10000>>& certificate,
-                                    const std::optional<std::vector<OCSPRequestData>>& ocsp_request_data);
 
     // Functional Block G: Availability
     void status_notification_req(const int32_t evse_id, const int32_t connector_id, const ConnectorStatusEnum status,
@@ -703,10 +666,6 @@ private:
 
     /* OCPP message handlers */
 
-    // Functional Block A: Security
-    void handle_certificate_signed_req(Call<CertificateSignedRequest> call);
-    void handle_sign_certificate_response(CallResult<SignCertificateResponse> call_result);
-
     // Functional Block B: Provisioning
     void handle_boot_notification_response(CallResult<BootNotificationResponse> call_result);
     void handle_set_variables_req(Call<SetVariablesRequest> call);
@@ -715,13 +674,6 @@ private:
     void handle_get_report_req(const EnhancedMessage<v201::MessageType>& message);
     void handle_set_network_profile_req(Call<SetNetworkProfileRequest> call);
     void handle_reset_req(Call<ResetRequest> call);
-
-    // Functional Block C: Authorization
-    void handle_clear_cache_req(Call<ClearCacheRequest> call);
-
-    // Functional Block D: Local authorization list management
-    void handle_send_local_authorization_list_req(Call<SendLocalListRequest> call);
-    void handle_get_local_authorization_list_version_req(Call<GetLocalListVersionRequest> call);
 
     // Functional Block E: Transaction
     void handle_transaction_event_response(const EnhancedMessage<v201::MessageType>& message);
@@ -763,11 +715,6 @@ private:
     void handle_set_variable_monitoring_req(const EnhancedMessage<v201::MessageType>& message);
     void handle_get_monitoring_report_req(Call<GetMonitoringReportRequest> call);
     void handle_clear_variable_monitoring_req(Call<ClearVariableMonitoringRequest> call);
-
-    // Functional Block O: DisplayMessage
-    void handle_get_display_message(Call<GetDisplayMessagesRequest> call);
-    void handle_set_display_message(Call<SetDisplayMessageRequest> call);
-    void handle_clear_display_message(Call<ClearDisplayMessageRequest> call);
 
     // Generates async sending callbacks
     template <class RequestType, class ResponseType>
@@ -964,6 +911,9 @@ public:
     set_variables(const std::vector<SetVariableData>& set_variable_data_vector, const std::string& source) override;
 
     GetCompositeScheduleResponse get_composite_schedule(const GetCompositeScheduleRequest& request) override;
+
+    std::optional<CompositeSchedule> get_composite_schedule(int32_t evse_id, std::chrono::seconds duration,
+                                                            ChargingRateUnitEnum unit) override;
 
     std::vector<CompositeSchedule> get_all_composite_schedules(const int32_t duration,
                                                                const ChargingRateUnitEnum& unit) override;

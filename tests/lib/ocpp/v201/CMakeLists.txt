@@ -3,7 +3,7 @@ target_include_directories(libocpp_unit_tests PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_sources(libocpp_unit_tests PRIVATE
-	device_model_test_helper.cpp
+        device_model_test_helper.cpp
         test_charge_point.cpp
         test_database_handler.cpp
         test_database_migration_files.cpp
@@ -15,7 +15,6 @@ target_sources(libocpp_unit_tests PRIVATE
         test_device_model.cpp
         test_init_device_model_db.cpp
         test_smart_charging_handler.cpp
-        utils_tests.cpp
         comparators.cpp
         test_message_queue.cpp
         test_composite_schedule.cpp
@@ -24,5 +23,7 @@ target_sources(libocpp_unit_tests PRIVATE
 
 # Copy the json files used for testing to the destination directory
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/json DESTINATION ${TEST_PROFILES_LOCATION_V201})
+
+set(LIBOCPP_TESTS_V201_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_subdirectory(functional_blocks)
