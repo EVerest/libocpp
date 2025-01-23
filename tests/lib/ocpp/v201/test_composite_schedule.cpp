@@ -1,14 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
 
+#include "connectivity_manager_mock.hpp"
+#include "database_handler_mock.hpp"
 #include "date/tz.h"
+#include "device_model_test_helper.hpp"
 #include "everest/logging.hpp"
 #include "lib/ocpp/common/database_testing_utils.hpp"
+#include "message_dispatcher_mock.hpp"
 #include "ocpp/common/constants.hpp"
 #include "ocpp/common/types.hpp"
 #include "ocpp/v201/ctrlr_component_variables.hpp"
 #include "ocpp/v201/device_model.hpp"
 #include "ocpp/v201/device_model_storage_sqlite.hpp"
+#include "ocpp/v201/functional_blocks/smart_charging.hpp"
 #include "ocpp/v201/init_device_model_db.hpp"
 #include "ocpp/v201/ocpp_types.hpp"
 #include "ocpp/v201/utils.hpp"
@@ -30,7 +35,7 @@
 #include <evse_security_mock.hpp>
 #include <ocpp/common/call_types.hpp>
 #include <ocpp/v201/evse.hpp>
-#include <ocpp/v201/smart_charging.hpp>
+
 #include <optional>
 
 #include "mocks/database_handler_fake.hpp"
@@ -51,15 +56,18 @@ static const std::string MIGRATION_FILES_PATH = "./resources/v201/device_model_m
 static const std::string CONFIG_PATH = "./resources/example_config/v201/component_config";
 static const std::string DEVICE_MODEL_DB_IN_MEMORY_PATH = "file::memory:?cache=shared";
 
-class TestSmartChargingHandler : public SmartChargingHandler {
-public:
-    using SmartChargingHandler::validate_charging_station_max_profile;
-    using SmartChargingHandler::validate_evse_exists;
-    using SmartChargingHandler::validate_profile_schedules;
-    using SmartChargingHandler::validate_tx_default_profile;
-    using SmartChargingHandler::validate_tx_profile;
+using ::testing::MockFunction;
 
-    using SmartChargingHandler::SmartChargingHandler;
+class TestSmartCharging : public SmartCharging {
+public:
+    using SmartCharging::calculate_composite_schedule;
+    using SmartCharging::validate_charging_station_max_profile;
+    using SmartCharging::validate_evse_exists;
+    using SmartCharging::validate_profile_schedules;
+    using SmartCharging::validate_tx_default_profile;
+    using SmartCharging::validate_tx_profile;
+
+    using SmartCharging::SmartCharging;
 };
 
 class CompositeScheduleTestFixtureV201 : public DatabaseTestingUtils {
@@ -197,6 +205,17 @@ protected:
         return device_model;
     }
 
+    CompositeScheduleTestFixtureV201() :
+        evse_manager(NR_OF_EVSES),
+        device_model_test_helper(),
+        mock_dispatcher(),
+        device_model(device_model_test_helper.get_device_model()),
+        connectivity_manager(),
+        set_charging_profiles_callback_mock(),
+        handler(create_smart_charging_handler()),
+        uuid_generator(boost::uuids::random_generator()) {
+    }
+
     std::unique_ptr<DatabaseHandlerFake> database_handler{};
 
     TestSmartChargingHandler create_smart_charging_handler() {
@@ -204,18 +223,26 @@ protected:
             std::make_unique<common::DatabaseConnection>(fs::path("/tmp/ocpp201") / "cp.db");
         this->database_handler =
             std::make_unique<DatabaseHandlerFake>(std::move(database_connection), MIGRATION_FILES_LOCATION_V201);
+        database_handler =
+            std::make_unique<DatabaseHandler>(std::move(database_connection), MIGRATION_FILES_LOCATION_V201);
         database_handler->open_connection();
-        return TestSmartChargingHandler(*this->evse_manager, *device_model, *database_handler);
+        return TestSmartCharging(*device_model, this->evse_manager, connectivity_manager, mock_dispatcher,
+                                 *database_handler, set_charging_profiles_callback_mock.AsStdFunction());
     }
 
     // Default values used within the tests
-    std::unique_ptr<EvseManagerFake> evse_manager = std::make_unique<EvseManagerFake>(NR_OF_EVSES);
+    EvseManagerFake evse_manager;
 
     sqlite3* db_handle;
 
     bool ignore_no_transaction = true;
-    std::shared_ptr<DeviceModel> device_model = create_device_model();
-    TestSmartChargingHandler handler = create_smart_charging_handler();
+    DeviceModelTestHelper device_model_test_helper;
+    MockMessageDispatcher mock_dispatcher;
+    DeviceModel* device_model;
+    ::testing::NiceMock<ConnectivityManagerMock> connectivity_manager;
+    std::unique_ptr<DatabaseHandler> database_handler;
+    MockFunction<void()> set_charging_profiles_callback_mock;
+    TestSmartCharging handler;
     boost::uuids::random_generator uuid_generator = boost::uuids::random_generator();
 };
 
@@ -557,7 +584,6 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_Relative
 
     this->evse_manager->open_transaction(DEFAULT_EVSE_ID, DEFAULT_TX_ID);
     this->evse_manager->get_evse(DEFAULT_EVSE_ID).get_transaction()->start_time = start_time;
-
     ChargingSchedulePeriod period;
     period.startPeriod = 0;
     period.limit = 2000.0;

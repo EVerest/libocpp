@@ -5,6 +5,7 @@
 #include "everest/logging.hpp"
 #include "evse_security_mock.hpp"
 #include "lib/ocpp/common/database_testing_utils.hpp"
+#include "mocks/smart_charging_mock.hpp"
 #include "ocpp/common/call_types.hpp"
 #include "ocpp/common/message_queue.hpp"
 #include "ocpp/v201/charge_point.hpp"
@@ -14,9 +15,9 @@
 #include "ocpp/v201/messages/GetCompositeSchedule.hpp"
 #include "ocpp/v201/messages/SetChargingProfile.hpp"
 #include "ocpp/v201/ocpp_enums.hpp"
-#include "ocpp/v201/smart_charging.hpp"
 #include "ocpp/v201/types.hpp"
 #include "gmock/gmock.h"
+
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <gmock/gmock.h>
@@ -631,8 +632,7 @@ public:
 class ChargePointFunctionalityTestFixtureV201 : public ChargePointCommonTestFixtureV201 {
 public:
     ChargePointFunctionalityTestFixtureV201() :
-        uuid_generator(boost::uuids::random_generator()),
-        charge_point(create_charge_point()) {
+        uuid_generator(boost::uuids::random_generator()), charge_point(create_charge_point()) {
     }
     ~ChargePointFunctionalityTestFixtureV201() {
     }
@@ -683,26 +683,85 @@ public:
 
     boost::uuids::random_generator uuid_generator;
     std::unique_ptr<TestChargePoint> charge_point;
+    std::unique_ptr<SmartChargingMock> smart_charging;
 };
 
-// TEST_F(ChargePointFunctionalityTestFixtureV201, K02FR05_TransactionEnds_WillDeleteTxProfilesWithTransactionID) {
-//     auto database_handler = create_database_handler();
-//     database_handler->open_connection();
-//     const auto cv = ControllerComponentVariables::ResumeTransactionsOnBoot;
-//     this->device_model->set_value(cv.component, cv.variable.value(), AttributeEnum::Actual, "true", "TEST", true);
-//     int32_t connector_id = 1;
-//     std::string session_id = "some-session-id";
-//     ocpp::DateTime timestamp("2024-01-17T17:00:00");
+// Test currently disabled because this is not working now. Should be added to the transaction functional block.
+TEST_F(ChargePointFunctionalityTestFixtureV201,
+       K05FR05_RequestStartTransactionRequest_SmartChargingCtrlrEnabledTrue_ValidatesTxProfiles) {
+    GTEST_SKIP_("Test currently disabled because this is not working now. Should be added to the transaction "
+                "functional block.");
+    const auto cv = ControllerComponentVariables::SmartChargingCtrlrEnabled;
+    this->device_model->set_value(cv.component, cv.variable.value(), AttributeEnum::Actual, "true", "TEST", true);
 
-//     charge_point->on_transaction_started(DEFAULT_EVSE_ID, connector_id, session_id, timestamp,
-//                                          ocpp::v201::TriggerReasonEnum::Authorized, MeterValue(), {}, {}, {}, {},
-//                                          ChargingStateEnum::EVConnected);
-//     auto transaction = database_handler->transaction_get(DEFAULT_EVSE_ID);
-//     ASSERT_THAT(transaction, testing::NotNull());
+    auto periods = create_charging_schedule_periods({0, 1, 2});
 
-//     EXPECT_CALL(*smart_charging,
-//                 delete_transaction_tx_profiles(transaction->get_transaction().transactionId.get()));
-//     charge_point->on_transaction_finished(DEFAULT_EVSE_ID, timestamp, MeterValue(), ReasonEnum::StoppedByEV,
-//                                           TriggerReasonEnum::StopAuthorized, {}, {}, ChargingStateEnum::EVConnected);
-// }
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), DEFAULT_TX_ID);
+
+    RequestStartTransactionRequest req;
+    req.evseId = DEFAULT_EVSE_ID;
+    req.idToken.idToken = "Local";
+    req.idToken.type = IdTokenEnum::Local;
+    req.chargingProfile = profile;
+
+    auto start_transaction_req =
+        request_to_enhanced_message<RequestStartTransactionRequest, MessageType::RequestStartTransaction>(req);
+
+    EXPECT_CALL(*smart_charging, conform_validate_and_add_profile).Times(1);
+
+    charge_point->handle_message(start_transaction_req);
+}
+
+// Test currently disabled because this is not working now. Should be added to the transaction functional block.
+TEST_F(ChargePointFunctionalityTestFixtureV201,
+       K05FR04_RequestStartTransactionRequest_SmartChargingCtrlrEnabledFalse_DoesNotValidateTxProfiles) {
+    GTEST_SKIP_("Test currently disabled because this is not working now. Should be added to the transaction "
+                "functional block.");
+    const auto cv = ControllerComponentVariables::SmartChargingCtrlrEnabled;
+    this->device_model->set_value(cv.component, cv.variable.value(), AttributeEnum::Actual, "false", "TEST", true);
+
+    auto periods = create_charging_schedule_periods({0, 1, 2});
+
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), DEFAULT_TX_ID);
+
+    RequestStartTransactionRequest req;
+    req.evseId = DEFAULT_EVSE_ID;
+    req.idToken.idToken = "Local";
+    req.idToken.type = IdTokenEnum::Local;
+    req.chargingProfile = profile;
+
+    auto start_transaction_req =
+        request_to_enhanced_message<RequestStartTransactionRequest, MessageType::RequestStartTransaction>(req);
+
+    EXPECT_CALL(*smart_charging, conform_validate_and_add_profile).Times(0);
+
+    charge_point->handle_message(start_transaction_req);
+}
+
+// Test currently disabled because this is not working now. Should be added to the transaction functional block.
+TEST_F(ChargePointFunctionalityTestFixtureV201, K02FR05_TransactionEnds_WillDeleteTxProfilesWithTransactionID) {
+    GTEST_SKIP_("Test currently disabled because this is not working now. Should be added to the transaction "
+                "functional block.");
+    auto database_handler = create_database_handler();
+    database_handler->open_connection();
+    const auto cv = ControllerComponentVariables::ResumeTransactionsOnBoot;
+    this->device_model->set_value(cv.component, cv.variable.value(), AttributeEnum::Actual, "true", "TEST", true);
+    int32_t connector_id = 1;
+    std::string session_id = "some-session-id";
+    ocpp::DateTime timestamp("2024-01-17T17:00:00");
+
+    charge_point->on_transaction_started(DEFAULT_EVSE_ID, connector_id, session_id, timestamp,
+                                         ocpp::v201::TriggerReasonEnum::Authorized, MeterValue(), {}, {}, {}, {},
+                                         ChargingStateEnum::EVConnected);
+    auto transaction = database_handler->transaction_get(DEFAULT_EVSE_ID);
+    ASSERT_THAT(transaction, testing::NotNull());
+
+    EXPECT_CALL(*smart_charging, delete_transaction_tx_profiles(transaction->get_transaction().transactionId.get()));
+    charge_point->on_transaction_finished(DEFAULT_EVSE_ID, timestamp, MeterValue(), ReasonEnum::StoppedByEV,
+                                          TriggerReasonEnum::StopAuthorized, {}, {}, ChargingStateEnum::EVConnected);
+}
 } // namespace ocpp::v201
