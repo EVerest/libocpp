@@ -54,8 +54,7 @@ public:
                 (override));
     MOCK_METHOD(void, transaction_delete, (const std::string& transaction_id));
     MOCK_METHOD(void, insert_or_update_charging_profile,
-                (const int evse_id, const ChargingProfile& profile,
-                 const CiString<20> charging_limit_source),
+                (const int evse_id, const ChargingProfile& profile, const CiString<20> charging_limit_source),
                 (override));
     MOCK_METHOD(bool, delete_charging_profile, (const int profile_id));
     MOCK_METHOD(void, delete_charging_profile_by_transaction_id, (const std::string& transaction_id));

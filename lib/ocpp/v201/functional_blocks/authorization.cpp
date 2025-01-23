@@ -55,7 +55,8 @@ void ocpp::v201::Authorization::handle_message(const ocpp::EnhancedMessage<Messa
 }
 
 ocpp::v201::AuthorizeResponse
-ocpp::v201::Authorization::authorize_req(const IdToken id_token, const std::optional<ocpp::CiString<10000>>& certificate,
+ocpp::v201::Authorization::authorize_req(const IdToken id_token,
+                                         const std::optional<ocpp::CiString<10000>>& certificate,
                                          const std::optional<std::vector<OCSPRequestData>>& ocsp_request_data) {
     AuthorizeRequest req;
     req.idToken = id_token;
