@@ -167,7 +167,7 @@ void FirmwareUpdate::change_all_connectors_to_unavailable_for_firmware_update() 
         }
         // Check succeeded, trigger the callback if needed
         if (this->all_connectors_unavailable_callback.has_value() and
-            this->availability.are_all_connectors_effectively_inoperative()) {
+            this->evse_manager.are_all_connectors_effectively_inoperative()) {
             this->all_connectors_unavailable_callback.value()();
         }
     } else if (response.status == ChangeAvailabilityStatusEnum::Scheduled) {
