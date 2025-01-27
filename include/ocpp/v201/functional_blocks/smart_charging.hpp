@@ -140,10 +140,10 @@ protected:
     ///
     /// \brief Calculates the composite schedule for the given \p valid_profiles and the given \p connector_id
     ///
-    CompositeSchedule calculate_composite_schedule(std::vector<ChargingProfile>& valid_profiles,
-                                                   const ocpp::DateTime& start_time, const ocpp::DateTime& end_time,
-                                                   const int32_t evse_id,
-                                                   std::optional<ChargingRateUnitEnum> charging_rate_unit);
+    CompositeSchedule calculate_composite_schedule(const ocpp::DateTime& start_time,
+                                                   const ocpp::DateTime& end_time, const int32_t evse_id,
+                                                   std::optional<ChargingRateUnitEnum> charging_rate_unit,
+                                                   bool is_offline, bool simulate_transaction_active);
 
     ///
     /// \brief validates the existence of the given \p evse_id according to the specification
@@ -198,12 +198,14 @@ protected:
     ///
     std::vector<ReportedChargingProfile> get_reported_profiles(const GetChargingProfilesRequest& request) const;
 
+    // TODO mz move get_valid_profiles to private???
+
     /// \brief Retrieves all profiles that should be considered for calculating the composite schedule. Only profiles
     /// that belong to the given \p evse_id and that are not contained in \p purposes_to_ignore are included in the
     /// response.
     ///
     std::vector<ChargingProfile>
-    get_valid_profiles(int32_t evse_id, const std::set<ChargingProfilePurposeEnum>& purposes_to_ignore = {});
+    get_valid_profiles(int32_t evse_id, const std::vector<ChargingProfilePurposeEnum> &purposes_to_ignore = {});
 
 private: // Functions
     /* OCPP message requests */
@@ -223,9 +225,18 @@ private: // Functions
     /// \return GetCompositeScheduleResponse containing the status of the operation and the composite schedule if the
     /// operation was successful
     GetCompositeScheduleResponse get_composite_schedule(const GetCompositeScheduleRequest& request);
-    GetCompositeScheduleResponse
-    get_composite_schedule_internal(const GetCompositeScheduleRequest& request,
-                                    const std::set<ChargingProfilePurposeEnum>& profiles_to_ignore = {});
+
+    /// \brief Gets a composite schedule based on the given parameters.
+    /// \note This will ignore TxDefaultProfiles and TxProfiles if no transaction is active on \p evse_id
+    /// \param evse_id Evse to get the schedule for
+    /// \param duration How long the schedule should be
+    /// \param unit ChargingRateUnit to thet the schedule for
+    /// \return the composite schedule if the operation was successful, otherwise nullopt
+    std::optional<CompositeSchedule> get_composite_schedule(int32_t evse_id, std::chrono::seconds duration,
+                                                                    ChargingRateUnitEnum unit);
+
+    GetCompositeScheduleResponse get_composite_schedule_internal(const GetCompositeScheduleRequest& request,
+                                                                 bool simulate_transaction_active = true);
 
     /// \brief validates that the given \p profile from a RequestStartTransactionRequest is of the correct type
     /// TxProfile
@@ -240,7 +251,7 @@ private: // Functions
     std::vector<ChargingProfile> get_evse_specific_tx_default_profiles() const;
     std::vector<ChargingProfile> get_station_wide_tx_default_profiles() const;
     std::vector<ChargingProfile>
-    get_valid_profiles_for_evse(int32_t evse_id, const std::set<ChargingProfilePurposeEnum>& purposes_to_ignore = {});
+    get_valid_profiles_for_evse(int32_t evse_id, const std::vector<ChargingProfilePurposeEnum> &purposes_to_ignore = {});
     /// \brief sets attributes of the given \p charging_schedule_period according to the specification.
     /// 2.11. ChargingSchedulePeriodType if absent numberPhases set to 3
     void conform_schedule_number_phases(int32_t profile_id, ChargingSchedulePeriod& charging_schedule_period) const;
