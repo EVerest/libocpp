@@ -1708,7 +1708,7 @@ TEST_F(SmartChargingTest, K05FR02_RequestStartTransactionRequest_ChargingProfile
 
 TEST_F(SmartChargingTest, K01_ValidateChargingStationMaxProfile_AllowsExistingMatchingProfile) {
     auto profile =
-        SmartChargingTestUtils::get_charging_profile_from_file("max/ChargingStationMaxProfile_grid_hourly.json");
+        SmartChargingTestUtils::get_charging_profile_from_file("max/0/ChargingStationMaxProfile_grid_hourly.json");
     auto res = smart_charging.conform_validate_and_add_profile(profile, STATION_WIDE_ID);
     ASSERT_THAT(res.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
 

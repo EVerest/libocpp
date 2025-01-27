@@ -214,17 +214,21 @@ protected:
         set_charging_profiles_callback_mock(),
         handler(create_smart_charging_handler()),
         uuid_generator(boost::uuids::random_generator()) {
+
+        const auto& charging_rate_unit_cv = ControllerComponentVariables::ChargingScheduleChargingRateUnit;
+        device_model->set_value(charging_rate_unit_cv.component, charging_rate_unit_cv.variable.value(),
+                                AttributeEnum::Actual, "A,W", "test", true);
+
+        const auto& ac_phase_switching_cv = ControllerComponentVariables::ACPhaseSwitchingSupported;
+        device_model->set_value(ac_phase_switching_cv.component, ac_phase_switching_cv.variable.value(),
+                                AttributeEnum::Actual, "true", "test", true);
     }
 
-    std::unique_ptr<DatabaseHandlerFake> database_handler{};
-
-    TestSmartChargingHandler create_smart_charging_handler() {
+    TestSmartCharging create_smart_charging_handler() {
         std::unique_ptr<common::DatabaseConnection> database_connection =
             std::make_unique<common::DatabaseConnection>(fs::path("/tmp/ocpp201") / "cp.db");
         this->database_handler =
             std::make_unique<DatabaseHandlerFake>(std::move(database_connection), MIGRATION_FILES_LOCATION_V201);
-        database_handler =
-            std::make_unique<DatabaseHandler>(std::move(database_connection), MIGRATION_FILES_LOCATION_V201);
         database_handler->open_connection();
         return TestSmartCharging(*device_model, this->evse_manager, connectivity_manager, mock_dispatcher,
                                  *database_handler, set_charging_profiles_callback_mock.AsStdFunction());
@@ -240,7 +244,7 @@ protected:
     MockMessageDispatcher mock_dispatcher;
     DeviceModel* device_model;
     ::testing::NiceMock<ConnectivityManagerMock> connectivity_manager;
-    std::unique_ptr<DatabaseHandler> database_handler;
+    std::unique_ptr<DatabaseHandlerFake> database_handler{};
     MockFunction<void()> set_charging_profiles_callback_mock;
     TestSmartCharging handler;
     boost::uuids::random_generator uuid_generator = boost::uuids::random_generator();
@@ -249,7 +253,7 @@ protected:
 TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_FoundationTest_Grid) {
     this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/grid/", DEFAULT_EVSE_ID);
 
-    evse_manager->open_transaction(DEFAULT_EVSE_ID, DEFAULT_TX_ID);
+    evse_manager.open_transaction(DEFAULT_EVSE_ID, DEFAULT_TX_ID);
 
     const DateTime start_time = ocpp::DateTime("2024-01-17T00:00:00");
     const DateTime end_time = ocpp::DateTime("2024-01-18T00:00:00");
@@ -367,7 +371,7 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_Foundati
 TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_LayeredTest_SameStartTime) {
     this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/layered/", DEFAULT_EVSE_ID);
 
-    evse_manager->open_transaction(DEFAULT_EVSE_ID, DEFAULT_TX_ID);
+    evse_manager.open_transaction(DEFAULT_EVSE_ID, DEFAULT_TX_ID);
 
     // Time Window: START = Stack #1 start time || END = Stack #1 end time
     {
@@ -452,7 +456,7 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_LayeredT
 TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_LayeredRecurringTest_FutureStartTime) {
     this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/layered_recurring/", DEFAULT_EVSE_ID);
 
-    evse_manager->open_transaction(DEFAULT_EVSE_ID, DEFAULT_TX_ID);
+    evse_manager.open_transaction(DEFAULT_EVSE_ID, DEFAULT_TX_ID);
 
     const DateTime start_time = ocpp::DateTime("2024-02-17T18:04:00");
     const DateTime end_time = ocpp::DateTime("2024-02-17T18:05:00");
@@ -477,7 +481,7 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_LayeredR
 TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_LayeredTest_PreviousStartTime) {
     this->load_charging_profiles_for_evse("singles/TXProfile_Absolute_Start18-04.json", DEFAULT_EVSE_ID);
 
-    evse_manager->open_transaction(DEFAULT_EVSE_ID, DEFAULT_TX_ID);
+    evse_manager.open_transaction(DEFAULT_EVSE_ID, DEFAULT_TX_ID);
 
     const DateTime start_time = ocpp::DateTime("2024-01-17T18:00:00");
     const DateTime end_time = ocpp::DateTime("2024-01-17T18:05:00");
@@ -505,7 +509,7 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_LayeredT
 TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_LayeredRecurringTest_PreviousStartTime) {
     this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/layered_recurring/", DEFAULT_EVSE_ID);
 
-    evse_manager->open_transaction(DEFAULT_EVSE_ID, DEFAULT_TX_ID);
+    evse_manager.open_transaction(DEFAULT_EVSE_ID, DEFAULT_TX_ID);
 
     const DateTime start_time = ocpp::DateTime("2024-02-19T18:00:00");
     const DateTime end_time = ocpp::DateTime("2024-02-19T19:04:00");
@@ -549,7 +553,7 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_Validate
     ON_CALL(*database_handler, get_charging_profiles_for_evse(DEFAULT_EVSE_ID))
         .WillByDefault(testing::Return(profiles));
 
-    evse_manager->open_transaction(DEFAULT_EVSE_ID, DEFAULT_TX_ID);
+    evse_manager.open_transaction(DEFAULT_EVSE_ID, DEFAULT_TX_ID);
 
     ChargingSchedulePeriod period1;
     period1.startPeriod = 0;
@@ -582,8 +586,8 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_Relative
     const DateTime start_time = ocpp::DateTime("2024-05-17T05:00:00");
     const DateTime end_time = ocpp::DateTime("2024-05-17T06:00:00");
 
-    this->evse_manager->open_transaction(DEFAULT_EVSE_ID, DEFAULT_TX_ID);
-    this->evse_manager->get_evse(DEFAULT_EVSE_ID).get_transaction()->start_time = start_time;
+    this->evse_manager.open_transaction(DEFAULT_EVSE_ID, DEFAULT_TX_ID);
+    this->evse_manager.get_evse(DEFAULT_EVSE_ID).get_transaction()->start_time = start_time;
     ChargingSchedulePeriod period;
     period.startPeriod = 0;
     period.limit = 2000.0;
@@ -607,8 +611,8 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_Relative
 
     this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/relative/", DEFAULT_EVSE_ID);
 
-    this->evse_manager->open_transaction(DEFAULT_EVSE_ID, DEFAULT_TX_ID);
-    this->evse_manager->get_evse(DEFAULT_EVSE_ID).get_transaction()->start_time = start_time;
+    this->evse_manager.open_transaction(DEFAULT_EVSE_ID, DEFAULT_TX_ID);
+    this->evse_manager.get_evse(DEFAULT_EVSE_ID).get_transaction()->start_time = start_time;
 
     ChargingSchedulePeriod period1;
     period1.startPeriod = 0;
@@ -634,7 +638,7 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_Relative
 TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_DemoCaseOne_17th) {
     this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/case_one/", DEFAULT_EVSE_ID);
 
-    evse_manager->open_transaction(DEFAULT_EVSE_ID, DEFAULT_TX_ID);
+    evse_manager.open_transaction(DEFAULT_EVSE_ID, DEFAULT_TX_ID);
 
     const DateTime start_time = ocpp::DateTime("2024-01-17T18:00:00");
     const DateTime end_time = ocpp::DateTime("2024-01-18T06:00:00");
@@ -667,7 +671,7 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_DemoCase
 TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_DemoCaseOne_19th) {
     this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/case_one/", DEFAULT_EVSE_ID);
 
-    evse_manager->open_transaction(DEFAULT_EVSE_ID, DEFAULT_TX_ID);
+    evse_manager.open_transaction(DEFAULT_EVSE_ID, DEFAULT_TX_ID);
 
     const DateTime start_time = ocpp::DateTime("2024-01-19T18:00:00");
     const DateTime end_time = ocpp::DateTime("2024-01-20T06:00:00");
@@ -697,7 +701,7 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_MaxOverr
     this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/max/0/", STATION_WIDE_ID);
     this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/max/1/", DEFAULT_EVSE_ID);
 
-    evse_manager->open_transaction(DEFAULT_EVSE_ID, DEFAULT_TX_ID);
+    evse_manager.open_transaction(DEFAULT_EVSE_ID, DEFAULT_TX_ID);
 
     const DateTime start_time = ocpp::DateTime("2024-01-17T00:00:00");
     const DateTime end_time = ocpp::DateTime("2024-01-17T02:00:00");
@@ -726,7 +730,7 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_MaxOverr
     this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/max/0/", STATION_WIDE_ID);
     this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/max/1/", DEFAULT_EVSE_ID);
 
-    evse_manager->open_transaction(DEFAULT_EVSE_ID, DEFAULT_TX_ID);
+    evse_manager.open_transaction(DEFAULT_EVSE_ID, DEFAULT_TX_ID);
 
     const DateTime start_time = ocpp::DateTime("2024-01-17T22:00:00");
     const DateTime end_time = ocpp::DateTime("2024-01-18T00:00:00");
@@ -755,7 +759,7 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_External
     this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/external/0/", STATION_WIDE_ID);
     this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/external/1/", DEFAULT_EVSE_ID);
 
-    evse_manager->open_transaction(DEFAULT_EVSE_ID, DEFAULT_TX_ID);
+    evse_manager.open_transaction(DEFAULT_EVSE_ID, DEFAULT_TX_ID);
 
     const DateTime start_time = ocpp::DateTime("2024-01-17T00:00:00");
     const DateTime end_time = ocpp::DateTime("2024-01-17T02:00:00");
@@ -784,7 +788,7 @@ TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_External
     this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/external/0/", STATION_WIDE_ID);
     this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/external/1/", DEFAULT_EVSE_ID);
 
-    evse_manager->open_transaction(DEFAULT_EVSE_ID, DEFAULT_TX_ID);
+    evse_manager.open_transaction(DEFAULT_EVSE_ID, DEFAULT_TX_ID);
 
     const DateTime start_time = ocpp::DateTime("2024-01-17T22:00:00");
     const DateTime end_time = ocpp::DateTime("2024-01-18T00:00:00");
@@ -813,7 +817,7 @@ TEST_F(CompositeScheduleTestFixtureV201, OCTT_TC_K_41_CS) {
     this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/OCCT_TC_K_41_CS/0/", STATION_WIDE_ID);
     this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/OCCT_TC_K_41_CS/1/", DEFAULT_EVSE_ID);
 
-    evse_manager->open_transaction(DEFAULT_EVSE_ID, DEFAULT_TX_ID);
+    evse_manager.open_transaction(DEFAULT_EVSE_ID, DEFAULT_TX_ID);
 
     const DateTime start_time = ocpp::DateTime("2024-08-21T12:24:40");
     const DateTime end_time = ocpp::DateTime("2024-08-21T12:31:20");

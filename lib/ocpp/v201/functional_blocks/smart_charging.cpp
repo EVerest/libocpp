@@ -257,7 +257,8 @@ ProfileValidationResultEnum SmartCharging::conform_and_validate_profile(Charging
 
 CompositeSchedule SmartCharging::calculate_composite_schedule(const ocpp::DateTime& start_time,
                                                               const ocpp::DateTime& end_time, const int32_t evse_id,
-                                                              std::optional<ChargingRateUnitEnum> charging_rate_unit, bool is_offline, bool simulate_transaction_active) {
+                                                              std::optional<ChargingRateUnitEnum> charging_rate_unit,
+                                                              bool is_offline, bool simulate_transaction_active) {
     std::vector<ChargingProfilePurposeEnum> purposes_to_ignore = utils::get_purposes_to_ignore(
         this->device_model.get_optional_value<std::string>(ControllerComponentVariables::IgnoredProfilePurposesOffline)
             .value_or(""),
@@ -333,7 +334,7 @@ CompositeSchedule SmartCharging::calculate_composite_schedule(const ocpp::DateTi
         ocpp::v201::calculate_composite_schedule(charging_station_external_constraints, composite_charge_point_max,
                                                  composite_tx_default, composite_tx, default_limits, supply_voltage);
 
-           // Set the EVSE ID for the resulting CompositeSchedule
+    // Set the EVSE ID for the resulting CompositeSchedule
     composite_schedule.evseId = evse_id;
 
     return composite_schedule;
@@ -671,7 +672,6 @@ void SmartCharging::handle_clear_charging_profile_req(Call<ClearChargingProfileR
         response = this->clear_profiles(msg);
     }
 
-
     if (response.status == ClearChargingProfileStatusEnum::Accepted) {
         this->set_charging_profiles_callback();
     }
@@ -754,8 +754,8 @@ GetCompositeScheduleResponse SmartCharging::get_composite_schedule(const GetComp
     return this->get_composite_schedule_internal(request);
 }
 
-std::optional<CompositeSchedule> SmartCharging::get_composite_schedule(int32_t evse_id, std::chrono::seconds duration, ChargingRateUnitEnum unit)
-{
+std::optional<CompositeSchedule> SmartCharging::get_composite_schedule(int32_t evse_id, std::chrono::seconds duration,
+                                                                       ChargingRateUnitEnum unit) {
     GetCompositeScheduleRequest request;
     request.duration = duration.count();
     request.evseId = evse_id;
@@ -770,9 +770,8 @@ std::optional<CompositeSchedule> SmartCharging::get_composite_schedule(int32_t e
     }
 }
 
-GetCompositeScheduleResponse
-SmartCharging::get_composite_schedule_internal(const GetCompositeScheduleRequest& request,
-                                               bool simulate_transaction_active) {
+GetCompositeScheduleResponse SmartCharging::get_composite_schedule_internal(const GetCompositeScheduleRequest& request,
+                                                                            bool simulate_transaction_active) {
     GetCompositeScheduleResponse response;
     response.status = GenericStatusEnum::Rejected;
 
@@ -800,8 +799,8 @@ SmartCharging::get_composite_schedule_internal(const GetCompositeScheduleRequest
         auto end_time = ocpp::DateTime(start_time.to_time_point() + std::chrono::seconds(request.duration));
 
         auto schedule = this->calculate_composite_schedule(
-            start_time, end_time, request.evseId, charging_rate_unit.value(), !this->connectivity_manager.is_websocket_connected(),
-            simulate_transaction_active);
+            start_time, end_time, request.evseId, charging_rate_unit.value(),
+            !this->connectivity_manager.is_websocket_connected(), simulate_transaction_active);
 
         response.schedule = schedule;
         response.status = GenericStatusEnum::Accepted;
