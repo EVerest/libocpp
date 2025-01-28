@@ -120,38 +120,6 @@ protected:
         };
     }
 
-    std::vector<ChargingSchedulePeriod>
-    create_charging_schedule_periods(int32_t start_period, std::optional<int32_t> number_phases = std::nullopt,
-                                     std::optional<int32_t> phase_to_use = std::nullopt) {
-        ChargingSchedulePeriod charging_schedule_period;
-        charging_schedule_period.startPeriod = start_period;
-        charging_schedule_period.numberPhases = number_phases;
-        charging_schedule_period.phaseToUse = phase_to_use;
-
-        return {charging_schedule_period};
-    }
-
-    std::vector<ChargingSchedulePeriod> create_charging_schedule_periods(std::vector<int32_t> start_periods) {
-        auto charging_schedule_periods = std::vector<ChargingSchedulePeriod>();
-        for (auto start_period : start_periods) {
-            ChargingSchedulePeriod charging_schedule_period;
-            charging_schedule_period.startPeriod = start_period;
-            charging_schedule_periods.push_back(charging_schedule_period);
-        }
-
-        return charging_schedule_periods;
-    }
-
-    std::vector<ChargingSchedulePeriod>
-    create_charging_schedule_periods_with_phases(int32_t start_period, int32_t numberPhases, int32_t phaseToUse) {
-        ChargingSchedulePeriod charging_schedule_period;
-        charging_schedule_period.startPeriod = start_period;
-        charging_schedule_period.numberPhases = numberPhases;
-        charging_schedule_period.phaseToUse = phaseToUse;
-
-        return {charging_schedule_period};
-    }
-
     ChargingProfile
     create_charging_profile(int32_t charging_profile_id, ChargingProfilePurposeEnum charging_profile_purpose,
                             ChargingSchedule charging_schedule, std::optional<std::string> transaction_id = {},
@@ -180,29 +148,6 @@ protected:
                                                     : SmartChargingTestUtils::get_charging_profiles_from_file(path);
 
         ON_CALL(*database_handler, get_charging_profiles_for_evse(evse_id)).WillByDefault(testing::Return(profiles));
-    }
-
-    void create_device_model_db(const std::string& path) {
-        InitDeviceModelDb db(path, MIGRATION_FILES_PATH);
-        db.initialize_database(CONFIG_PATH, true);
-    }
-
-    std::shared_ptr<DeviceModel>
-    create_device_model(const std::optional<std::string> ac_phase_switching_supported = "true") {
-        create_device_model_db(DEVICE_MODEL_DB_IN_MEMORY_PATH);
-        auto device_model_storage = std::make_unique<DeviceModelStorageSqlite>(DEVICE_MODEL_DB_IN_MEMORY_PATH);
-        auto device_model = std::make_shared<DeviceModel>(std::move(device_model_storage));
-
-        // Defaults
-        const auto& charging_rate_unit_cv = ControllerComponentVariables::ChargingScheduleChargingRateUnit;
-        device_model->set_value(charging_rate_unit_cv.component, charging_rate_unit_cv.variable.value(),
-                                AttributeEnum::Actual, "A,W", "test", true);
-
-        const auto& ac_phase_switching_cv = ControllerComponentVariables::ACPhaseSwitchingSupported;
-        device_model->set_value(ac_phase_switching_cv.component, ac_phase_switching_cv.variable.value(),
-                                AttributeEnum::Actual, ac_phase_switching_supported.value_or(""), "test", true);
-
-        return device_model;
     }
 
     CompositeScheduleTestFixtureV201() :

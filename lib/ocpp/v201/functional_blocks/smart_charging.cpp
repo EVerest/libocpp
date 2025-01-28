@@ -14,7 +14,6 @@
 #include <ocpp/common/constants.hpp>
 
 const int32_t STATION_WIDE_ID = 0;
-const int DEFAULT_AND_MAX_NUMBER_PHASES = 3;
 
 namespace ocpp::v201 {
 namespace conversions {
