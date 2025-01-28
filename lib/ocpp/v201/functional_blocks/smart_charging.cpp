@@ -907,7 +907,7 @@ void SmartCharging::conform_schedule_number_phases(int32_t profile_id,
 
 void SmartCharging::conform_validity_periods(ChargingProfile& profile) const {
     if (!profile.validFrom.has_value()) {
-        auto validFrom = ocpp::DateTime();
+        auto validFrom = ocpp::DateTime("1970-01-01T00:00:00Z");
         EVLOG_debug << "Conforming profile: " << profile.id << " added validFrom as " << validFrom;
         profile.validFrom = validFrom;
     }
