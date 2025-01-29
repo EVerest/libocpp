@@ -11,6 +11,10 @@
 
 namespace ocpp {
 
+class StringConversionException : public std::runtime_error {
+    using std::runtime_error::runtime_error;
+};
+
 /// \brief Contains a String impementation with a maximum length
 template <size_t L> class String {
 private:
@@ -43,11 +47,11 @@ public:
             if (this->is_valid(data)) {
                 this->data = data;
             } else {
-                throw std::runtime_error("String has invalid format");
+                throw StringConversionException("String has invalid format");
             }
         } else {
-            throw std::runtime_error("String length (" + std::to_string(data.length()) +
-                                     ") exceeds permitted length (" + std::to_string(this->length) + ")");
+            throw StringConversionException("String length (" + std::to_string(data.length()) +
+                                            ") exceeds permitted length (" + std::to_string(this->length) + ")");
         }
     }
 

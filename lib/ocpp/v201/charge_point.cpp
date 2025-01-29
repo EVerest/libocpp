@@ -835,6 +835,15 @@ void ChargePoint::message_callback(const std::string& message) {
         this->security->security_event_notification_req(CiString<50>(security_event), CiString<255>(message), true,
                                                         utils::is_critical(security_event));
         return;
+    } catch (const StringConversionException& e) {
+        this->logging->central_system("Unknown", message);
+        EVLOG_error << "JSON exception during reception of message: " << e.what();
+        this->message_dispatcher->dispatch_call_error(
+            CallError(MessageId("-1"), "RpcFrameworkError", e.what(), json({})));
+        const auto& security_event = ocpp::security_events::INVALIDMESSAGES;
+        this->security_event_notification_req(CiString<50>(security_event), CiString<255>(message), true,
+                                              utils::is_critical(security_event));
+        return;
     } catch (const EnumConversionException& e) {
         EVLOG_error << "EnumConversionException during handling of message: " << e.what();
         auto call_error = CallError(MessageId("-1"), "FormationViolation", e.what(), json({}));
