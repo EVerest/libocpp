@@ -82,27 +82,7 @@ add_custom_command(TARGET libocpp_unit_tests POST_BUILD
 
 set(GCOVR_ADDITIONAL_ARGS "--gcov-ignore-parse-errors=negative_hits.warn")
 
-target_include_directories(libocpp_unit_tests PUBLIC 
-        ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/lib/ocpp/common
-)
-target_link_libraries(libocpp_unit_tests PRIVATE
-        ocpp
-        GTest::gmock_main
-        GTest::gtest_main
-)
-
 set(GCOVR_DEPENDENCIES libocpp_unit_tests)
-
-add_subdirectory(lib/ocpp/common)
-
-if(LIBOCPP_ENABLE_V16)
-    add_subdirectory(lib/ocpp/v16)
-endif()
-
-if(LIBOCPP_ENABLE_V201)
-    add_subdirectory(lib/ocpp/v201)
-endif()
 
 # If ev-coverage is installed, remove gcda files and orphaned object / gcno files.
 find_program(EV_COVERAGE ev-coverage)
@@ -111,14 +91,15 @@ if (NOT EV_COVERAGE)
     message("The \"ev-dev-tools\" Python3 package is not installed. You can install it going to
         `everest-utils/ev-dev-tools` and type `pip install .`")
 else()
-    add_custom_target(cleanup_coverage
-        COMMAND
-            ${EV_COVERAGE}
-                remove_files
-                --source-dirs=${LIBOCPP_ROOT_SRC_DIR}
-                --build-dir=${LIBOCPP_ROOT_BUILD_DIR})
-    list(APPEND GCOVR_DEPENDENCIES cleanup_coverage)
-endif()
+    if(LIBOCPP_ENABLE_COVERAGE_CLEANUP)
+        add_custom_target(cleanup_coverage
+            COMMAND
+                ${EV_COVERAGE}
+                    remove_files
+                    --build-dir=${LIBOCPP_ROOT_BUILD_DIR})
+        list(APPEND GCOVR_DEPENDENCIES cleanup_coverage)
+    endif() # LIBOCPP_ENABLE_COVERAGE_CLEANUP
+endif() # EV_COVERAGE
 
 # Run gcovr with the number of processors in this system
 ProcessorCount(number_of_procs)
