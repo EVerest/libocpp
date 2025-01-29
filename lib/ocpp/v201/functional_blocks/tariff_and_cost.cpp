@@ -11,12 +11,14 @@ const auto DEFAULT_PRICE_NUMBER_OF_DECIMALS = 3;
 
 namespace ocpp::v201 {
 TariffAndCost::TariffAndCost(MessageDispatcherInterface<MessageType>& message_dispatcher, DeviceModel& device_model,
-                             EvseManagerInterface& evse_manager,
+                             EvseManagerInterface& evse_manager, MeterValuesInterface& meter_values,
                              std::optional<SetDisplayMessageCallback>& set_display_message_callback,
-                             std::optional<SetRunningCostCallback>& set_running_cost_callback, , boost::asio::io_service& io_service) :
+                             std::optional<SetRunningCostCallback>& set_running_cost_callback,
+                             boost::asio::io_service& io_service) :
     message_dispatcher(message_dispatcher),
     device_model(device_model),
     evse_manager(evse_manager),
+    meter_values(meter_values),
     set_display_message_callback(set_display_message_callback),
     set_running_cost_callback(set_running_cost_callback),
     io_service(io_service) {
@@ -61,12 +63,11 @@ void TariffAndCost::handle_cost_and_tariff(const TransactionEventResponse& respo
     // Check if cost is available and enabled, and if there is a totalcost message.
     if (cost_enabled and response.totalCost.has_value() and this->set_running_cost_callback.has_value()) {
         RunningCost running_cost;
-        std::string total_cost;
         // We use the original string and convert it to a double ourselves, as the nlohmann library converts it to a
         // float first and then multiply by 10^5 for example (5 decimals) will give some rounding errors. With a initial
         // double instead of float, we have (a bit) more accuracy.
         if (original_transaction_event_response.contains("totalCost")) {
-            total_cost = original_transaction_event_response.at("totalCost").dump();
+            std::string total_cost = original_transaction_event_response.at("totalCost").dump();
             running_cost.cost = stod(total_cost);
         } else {
             running_cost.cost = static_cast<double>(response.totalCost.value());
@@ -242,7 +243,7 @@ void TariffAndCost::handle_costupdated_req(const Call<CostUpdatedRequest> call) 
     evse.set_meter_value_pricing_triggers(
         triggers.at_power_kw, triggers.at_energy_kwh, triggers.at_time,
         [this, evse_id](const std::vector<MeterValue>& meter_values) {
-            this->meter_values->meter_values_req(evse_id, meter_values, false);
+            this->meter_values.meter_values_req(evse_id, meter_values, false);
         },
         this->io_service);
 }

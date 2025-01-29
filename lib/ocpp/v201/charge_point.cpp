@@ -753,6 +753,10 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
             this->callbacks.configure_network_connection_profile_callback.value());
     }
 
+    this->tariff_and_cost = std::make_unique<TariffAndCost>(
+        *this->message_dispatcher, *this->device_model, *this->evse_manager, *this->meter_values,
+        this->callbacks.set_display_message_callback, this->callbacks.set_running_cost_callback, this->io_service);
+
     Component ocpp_comm_ctrlr = {"OCPPCommCtrlr"};
     Variable field_length = {"FieldLength"};
     field_length.instance = "Get15118EVCertificateResponse.exiResponse";
@@ -1796,7 +1800,7 @@ void ChargePoint::handle_transaction_event_response(const EnhancedMessage<v201::
         this->callbacks.transaction_event_response_callback.value()(original_msg, call_result.msg);
     }
 
-    this->handle_cost_and_tariff(call_result.msg, original_msg, message.message[CALLRESULT_PAYLOAD]);
+    this->tariff_and_cost->handle_cost_and_tariff(call_result.msg, original_msg, message.message[CALLRESULT_PAYLOAD]);
 
     if (original_msg.eventType == TransactionEventEnum::Ended) {
         // nothing to do for TransactionEventEnum::Ended

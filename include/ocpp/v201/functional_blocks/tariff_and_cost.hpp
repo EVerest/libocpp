@@ -7,6 +7,7 @@
 
 #include <ocpp/common/message_dispatcher.hpp>
 #include <ocpp/v201/functional_blocks/display_message.hpp>
+#include <ocpp/v201/functional_blocks/meter_values.hpp>
 
 #include <ocpp/v201/messages/CostUpdated.hpp>
 
@@ -36,7 +37,7 @@ public:
 class TariffAndCost : public TariffAndCostInterface {
 public:
     TariffAndCost(MessageDispatcherInterface<MessageType>& message_dispatcher, DeviceModel& device_model,
-                  EvseManagerInterface& evse_manager,
+                  EvseManagerInterface& evse_manager, MeterValuesInterface& meter_values,
                   std::optional<SetDisplayMessageCallback>& set_display_message_callback,
                   std::optional<SetRunningCostCallback>& set_running_cost_callback,
                   boost::asio::io_service& io_service);
@@ -50,6 +51,7 @@ private: // Members
     MessageDispatcherInterface<MessageType>& message_dispatcher;
     DeviceModel& device_model;
     EvseManagerInterface& evse_manager;
+    MeterValuesInterface& meter_values;
     std::optional<SetDisplayMessageCallback> set_display_message_callback;
     std::optional<SetRunningCostCallback> set_running_cost_callback;
     boost::asio::io_service& io_service;

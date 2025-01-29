@@ -65,9 +65,8 @@ bool Callbacks::all_callbacks_valid(std::shared_ptr<DeviceModel> device_model) c
                 .value_or(false)) {
             if (!this->set_display_message_callback.has_value() or
                 this->set_display_message_callback.value() == nullptr) {
-                EVLOG_error
-                    << "TariffAndCost controller 'Tariff' is set to 'Available'. In this case, the "
-                       "set_display_message_callback must be implemented to send the tariff, but it is not";
+                EVLOG_error << "TariffAndCost controller 'Tariff' is set to 'Available'. In this case, the "
+                               "set_display_message_callback must be implemented to send the tariff, but it is not";
                 valid = false;
             }
         }

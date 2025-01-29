@@ -15,6 +15,7 @@
 #include <ocpp/v201/functional_blocks/meter_values.hpp>
 #include <ocpp/v201/functional_blocks/reservation.hpp>
 #include <ocpp/v201/functional_blocks/security.hpp>
+#include <ocpp/v201/functional_blocks/tariff_and_cost.hpp>
 
 #include <ocpp/common/charging_station_base.hpp>
 
@@ -367,6 +368,7 @@ private:
     std::unique_ptr<SecurityInterface> security;
     std::unique_ptr<DisplayMessageInterface> display_message;
     std::unique_ptr<MeterValuesInterface> meter_values;
+    std::unique_ptr<TariffAndCostInterface> tariff_and_cost;
 
     // utility
     std::shared_ptr<MessageQueue<v201::MessageType>> message_queue;
