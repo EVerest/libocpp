@@ -6,6 +6,7 @@
 #include <ocpp/v201/ctrlr_component_variables.hpp>
 #include <ocpp/v201/device_model.hpp>
 #include <ocpp/v201/evse_manager.hpp>
+#include <ocpp/v201/functional_blocks/meter_values.hpp>
 
 const auto DEFAULT_PRICE_NUMBER_OF_DECIMALS = 3;
 

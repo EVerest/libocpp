@@ -7,13 +7,13 @@
 
 #include <ocpp/common/message_dispatcher.hpp>
 #include <ocpp/v201/functional_blocks/display_message.hpp>
-#include <ocpp/v201/functional_blocks/meter_values.hpp>
 
 #include <ocpp/v201/messages/CostUpdated.hpp>
 
 namespace ocpp::v201 {
 class DeviceModel;
 class EvseManagerInterface;
+class MeterValuesInterface;
 
 typedef std::function<void(const RunningCost& running_cost, const uint32_t number_of_decimals,
                            std::optional<std::string> currency_code)>
