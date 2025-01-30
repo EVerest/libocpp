@@ -21,6 +21,7 @@ class AvailabilityInterface;
 class SecurityInterface;
 class MeterValuesInterface;
 class DiagnosticsInterface;
+class TransactionInterface;
 
 struct BootNotificationResponse;
 struct SetVariablesRequest;
@@ -71,6 +72,22 @@ public:
 
 class Provisioning : public ProvisioningInterface {
 public:
+    Provisioning(DeviceModel& device_model, MessageDispatcherInterface<MessageType>& message_dispatcher,
+                 MessageQueue<v201::MessageType>& message_queue, ConnectivityManagerInterface& connectivity_manager,
+                 ComponentStateManagerInterface& component_state_manager, OcspUpdaterInterface& ocsp_updater,
+                 EvseManagerInterface& evse_manager, EvseSecurity& evse_security,
+
+                 AvailabilityInterface& availability, MeterValuesInterface& meter_values, SecurityInterface& security,
+                 DiagnosticsInterface& diagnostics, TransactionInterface& transaction,
+
+                 std::optional<TimeSyncCallback> time_sync_callback,
+                 std::optional<BootNotificationCallback> boot_notification_callback,
+                 std::optional<ValidateNetworkProfileCallback> validate_network_profile_callback,
+                 IsResetAllowedCallback is_reset_allowed_callback, ResetCallback reset_callback,
+                 StopTransactionCallback stop_transaction_callback,
+                 std::optional<VariableChangedCallback> variable_changed_callback,
+
+                 std::atomic<RegistrationStatusEnum>& registration_status);
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
     void boot_notification_req(const BootReasonEnum& reason, const bool initiated_by_trigger_message = false) override;
     void stop_bootnotification_timer() override;
@@ -93,6 +110,7 @@ private: // Members
     MeterValuesInterface& meter_values;
     SecurityInterface& security;
     DiagnosticsInterface& diagnostics;
+    TransactionInterface& transaction;
 
     std::optional<TimeSyncCallback> time_sync_callback;
     std::optional<BootNotificationCallback> boot_notification_callback;
@@ -101,6 +119,8 @@ private: // Members
     ResetCallback reset_callback;
     StopTransactionCallback stop_transaction_callback;
     std::optional<VariableChangedCallback> variable_changed_callback;
+
+    std::atomic<RegistrationStatusEnum>& registration_status;
 
     Everest::SteadyTimer boot_notification_timer;
 

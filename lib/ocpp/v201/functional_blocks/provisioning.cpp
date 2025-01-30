@@ -1,27 +1,28 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright Pionix GmbH and Contributors to EVerest
 
+#include "ocpp/v201/functional_blocks/transaction.hpp"
 #include <ocpp/v201/functional_blocks/provisioning.hpp>
 
 #include <ocpp/common/constants.hpp>
+#include <ocpp/common/evse_security.hpp>
 #include <ocpp/v201/component_state_manager.hpp>
 #include <ocpp/v201/ctrlr_component_variables.hpp>
 #include <ocpp/v201/evse_manager.hpp>
 #include <ocpp/v201/notify_report_requests_splitter.hpp>
-#include <ocpp/common/evse_security.hpp>
 
 #include <ocpp/v201/functional_blocks/availability.hpp>
 #include <ocpp/v201/functional_blocks/diagnostics.hpp>
 #include <ocpp/v201/functional_blocks/meter_values.hpp>
 #include <ocpp/v201/functional_blocks/security.hpp>
 
+#include <ocpp/v201/messages/BootNotification.hpp>
 #include <ocpp/v201/messages/GetBaseReport.hpp>
 #include <ocpp/v201/messages/GetReport.hpp>
 #include <ocpp/v201/messages/GetVariables.hpp>
 #include <ocpp/v201/messages/NotifyReport.hpp>
 #include <ocpp/v201/messages/Reset.hpp>
 #include <ocpp/v201/messages/SetVariables.hpp>
-#include <ocpp/v201/messages/BootNotification.hpp>
 
 const auto DEFAULT_MAX_MESSAGE_SIZE = 65000;
 const auto DEFAULT_BOOT_NOTIFICATION_RETRY_INTERVAL = std::chrono::seconds(30);
@@ -31,8 +32,69 @@ namespace ocpp::v201 {
 static bool component_variable_change_requires_websocket_option_update_without_reconnect(
     const ComponentVariable& component_variable);
 
+Provisioning::Provisioning(DeviceModel& device_model, MessageDispatcherInterface<MessageType>& message_dispatcher,
+                           MessageQueue<MessageType>& message_queue, ConnectivityManagerInterface& connectivity_manager,
+                           ComponentStateManagerInterface& component_state_manager, OcspUpdaterInterface& ocsp_updater,
+                           EvseManagerInterface& evse_manager, EvseSecurity& evse_security,
+                           AvailabilityInterface& availability, MeterValuesInterface& meter_values,
+                           SecurityInterface& security, DiagnosticsInterface& diagnostics,
+                           TransactionInterface& transaction, std::optional<TimeSyncCallback> time_sync_callback,
+                           std::optional<BootNotificationCallback> boot_notification_callback,
+                           std::optional<ValidateNetworkProfileCallback> validate_network_profile_callback,
+                           IsResetAllowedCallback is_reset_allowed_callback, ResetCallback reset_callback,
+                           StopTransactionCallback stop_transaction_callback,
+                           std::optional<VariableChangedCallback> variable_changed_callback,
+                           std::atomic<RegistrationStatusEnum>& registration_status) :
+    device_model(device_model),
+    message_dispatcher(message_dispatcher),
+    message_queue(message_queue),
+    connectivity_manager(connectivity_manager),
+    component_state_manager(component_state_manager),
+    ocsp_updater(ocsp_updater),
+    evse_manager(evse_manager),
+    evse_security(evse_security),
+    availability(availability),
+    meter_values(meter_values),
+    security(security),
+    diagnostics(diagnostics),
+    transaction(transaction),
+    time_sync_callback(time_sync_callback),
+    boot_notification_callback(boot_notification_callback),
+    validate_network_profile_callback(validate_network_profile_callback),
+    is_reset_allowed_callback(is_reset_allowed_callback),
+    reset_callback(reset_callback),
+    stop_transaction_callback(stop_transaction_callback),
+    variable_changed_callback(variable_changed_callback),
+    registration_status(registration_status) {
+}
+
 void Provisioning::handle_message(const ocpp::EnhancedMessage<MessageType>& message) {
-    // TODO mz
+    const auto& json_message = message.message;
+    switch (message.messageType) {
+    case MessageType::BootNotificationResponse:
+        this->handle_boot_notification_response(json_message);
+        break;
+    case MessageType::SetVariables:
+        this->handle_set_variables_req(json_message);
+        break;
+    case MessageType::GetVariables:
+        this->handle_get_variables_req(message);
+        break;
+    case MessageType::GetBaseReport:
+        this->handle_get_base_report_req(json_message);
+        break;
+    case MessageType::GetReport:
+        this->handle_get_report_req(message);
+        break;
+    case MessageType::Reset:
+        this->handle_reset_req(json_message);
+        break;
+    case MessageType::SetNetworkProfile:
+        this->handle_set_network_profile_req(json_message);
+        break;
+    default:
+        throw MessageTypeNotImplementedException(message.messageType);
+    }
 }
 
 void Provisioning::boot_notification_req(const BootReasonEnum& reason, const bool initiated_by_trigger_message) {
@@ -425,15 +487,15 @@ void Provisioning::handle_reset_req(Call<ResetRequest> call) {
     }
 
     if (response.status == ResetStatusEnum::Accepted and transaction_active and msg.type == ResetEnum::OnIdle) {
-        // TODO mz this comes from the transaction functional block (rebase on that one!!)
+        std::optional<int32_t> reset_scheduled_evseid = std::nullopt;
         if (msg.evseId.has_value()) {
             // B12.FR.07
-            this->reset_scheduled_evseids.insert(msg.evseId.value());
+            reset_scheduled_evseid = msg.evseId.value();
         }
 
         // B12.FR.01: We have to wait until transactions have ended.
         // B12.FR.07
-        this->reset_scheduled = true;
+        this->transaction.schedule_reset(reset_scheduled_evseid);
         response.status = ResetStatusEnum::Scheduled;
     }
 

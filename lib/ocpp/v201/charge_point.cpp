@@ -542,29 +542,17 @@ void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& messa
     try {
         switch (message.messageType) {
         case MessageType::BootNotificationResponse:
-            this->handle_boot_notification_response(json_message);
-            break;
         case MessageType::SetVariables:
-            this->handle_set_variables_req(json_message);
-            break;
         case MessageType::GetVariables:
-            this->handle_get_variables_req(message);
-            break;
         case MessageType::GetBaseReport:
-            this->handle_get_base_report_req(json_message);
-            break;
         case MessageType::GetReport:
-            this->handle_get_report_req(message);
-            break;
         case MessageType::Reset:
-            this->handle_reset_req(json_message);
+        case MessageType::SetNetworkProfile:
+            this->provisioning->handle_message(message);
             break;
         case MessageType::ChangeAvailability:
         case MessageType::HeartbeatResponse:
             this->availability->handle_message(message);
-            break;
-        case MessageType::SetNetworkProfile:
-            this->handle_set_network_profile_req(json_message);
             break;
         case MessageType::TransactionEventResponse:
         case MessageType::GetTransactionStatus:
@@ -688,7 +676,7 @@ void ChargePoint::message_callback(const std::string& message) {
             this->handle_message(enhanced_message);
         } else if (this->registration_status == RegistrationStatusEnum::Pending) {
             if (enhanced_message.messageType == MessageType::BootNotificationResponse) {
-                this->handle_boot_notification_response(json_message);
+                this->provisioning->handle_boot_notification_response(json_message);
             } else {
                 // TODO(piet): Check what kind of messages we should accept in Pending state
                 if (enhanced_message.messageType == MessageType::GetVariables or
@@ -726,7 +714,7 @@ void ChargePoint::message_callback(const std::string& message) {
             }
         } else if (this->registration_status == RegistrationStatusEnum::Rejected) {
             if (enhanced_message.messageType == MessageType::BootNotificationResponse) {
-                this->handle_boot_notification_response(json_message);
+                this->provisioning->handle_boot_notification_response(json_message);
             } else if (enhanced_message.messageType == MessageType::TriggerMessage) {
                 Call<TriggerMessageRequest> call(json_message);
                 if (call.msg.requestedMessage == MessageTriggerEnum::BootNotification) {
