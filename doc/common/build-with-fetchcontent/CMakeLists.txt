@@ -85,6 +85,21 @@ macro(find_nlohmann_json_schema_validator)
     FetchContent_MakeAvailable(${EXTERNAL_JSON_SCHEMA_NAME})
 endmacro()
 
+macro(find_libwebsockets)
+    message(STATUS "Using FetchContent for libwebsockets library")
+    set(EXTERNAL_LIBWEBSOCKET_NAME libwebsockets)
+    set(EXTERNAL_LIBWEBSOCKET_URL https://github.com/warmcat/libwebsockets.git)
+    set(EXTERNAL_LIBWEBSOCKET_TAG v4.3.3)
+    
+    FetchContent_Declare(
+        ${EXTERNAL_LIBWEBSOCKET_NAME}
+        GIT_REPOSITORY ${EXTERNAL_LIBWEBSOCKET_URL}
+        GIT_TAG ${EXTERNAL_LIBWEBSOCKET_TAG}
+    )
+    
+    FetchContent_MakeAvailable(${EXTERNAL_LIBWEBSOCKET_NAME})
+endmacro()
+
 macro(find_websocketpp)
     message(STATUS "Using FetchContent for websocketpp library")
     set(EXTERNAL_WEBSOCKET_NAME websocketpp)
@@ -147,6 +162,22 @@ macro(find_everest_log)
     FetchContent_MakeAvailable(${EXTERNAL_EVEREST_LOG_NAME})
 endmacro()
 
+
+macro(find_everest_evse_security)
+    message(STATUS "Using FetchContent for everest-evse_security library")
+    set(EXTERNAL_EVEREST_SEC_NAME everest-evse_security)
+    set(EXTERNAL_EVEREST_SEC_URL https://github.com/EVerest/libevse-security.git)
+    set(EXTERNAL_EVEREST_SEC_TAG v0.9.2)
+
+    FetchContent_Declare(
+        ${EXTERNAL_EVEREST_SEC_NAME}
+        GIT_REPOSITORY ${EXTERNAL_EVEREST_SEC_URL}
+        GIT_TAG ${EXTERNAL_EVEREST_SEC_TAG}
+    )
+
+    FetchContent_MakeAvailable(${EXTERNAL_EVEREST_SEC_NAME})
+endmacro()
+
 macro(find_package PACKAGE_NAME)
     message(STATUS "FIND PACKAGE ${PACKAGE_NAME}")
 
@@ -158,6 +189,8 @@ macro(find_package PACKAGE_NAME)
         find_nlohmann_json()
     elseif("${PACKAGE_NAME}" STREQUAL "nlohmann_json_schema_validator")
         find_nlohmann_json_schema_validator()
+    elseif("${PACKAGE_NAME}" STREQUAL "libwebsockets")
+        find_libwebsockets()
     elseif("${PACKAGE_NAME}" STREQUAL "websocketpp")
         find_websocketpp()
     elseif("${PACKAGE_NAME}" STREQUAL "fsm")
@@ -166,6 +199,8 @@ macro(find_package PACKAGE_NAME)
         find_everest_timer()
     elseif("${PACKAGE_NAME}" STREQUAL "everest-log")
         find_everest_log()
+    elseif("${PACKAGE_NAME}" STREQUAL "everest-evse_security")
+        find_everest_evse_security()
     else()
         message(STATUS "Using regular findpackage for ${PACKAGE_NAME}")
         _find_package(${ARGV})
