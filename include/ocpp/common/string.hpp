@@ -15,25 +15,29 @@ class StringConversionException : public std::runtime_error {
     using std::runtime_error::runtime_error;
 };
 
+enum class StringToLarge {
+    Throw,
+    Truncate
+};
+
 /// \brief Contains a String impementation with a maximum length
 template <size_t L> class String {
 private:
     std::string data;
-    size_t length;
+    static constexpr size_t length = L;
 
 public:
     /// \brief Creates a string from the given \p data
-    String(const std::string& data) : length(L) {
-        this->set(data);
+    String(const std::string& data, StringToLarge to_large = StringToLarge::Throw) {
+        this->set(data, to_large);
     }
 
-    String(const char* data) : length(L) {
-        this->set(data);
+    String(const char* data, StringToLarge to_large = StringToLarge::Throw) {
+        this->set(data, to_large);
     }
 
     /// \brief Creates a string
-    String() : length(L) {
-    }
+    String() = default;
 
     /// \brief Provides a std::string representation of the string
     /// \returns a std::string
@@ -42,21 +46,26 @@ public:
     }
 
     /// \brief Sets the content of the string to the given \p data
-    void set(const std::string& data) {
-        if (data.length() <= this->length) {
-            if (this->is_valid(data)) {
-                this->data = data;
-            } else {
-                throw StringConversionException("String has invalid format");
+    void set(const std::string& data, StringToLarge to_large = StringToLarge::Throw) {
+        std::string_view view = data;
+        if (view.length() > this->length) {
+            if (to_large == StringToLarge::Throw) {
+                throw StringConversionException("String length (" + std::to_string(view.length()) +
+                                                ") exceeds permitted length (" + std::to_string(this->length) + ")");
             }
+            // Truncate
+            view = view.substr(0, length);
+        }
+
+        if (this->is_valid(view)) {
+            this->data = view;
         } else {
-            throw StringConversionException("String length (" + std::to_string(data.length()) +
-                                            ") exceeds permitted length (" + std::to_string(this->length) + ")");
+            throw StringConversionException("String has invalid format");
         }
     }
 
     /// \brief Override this to check for a specific format
-    bool is_valid(const std::string& data) {
+    bool is_valid(std::string_view data) {
         (void)data; // not needed here
         return true;
     }
