@@ -215,8 +215,6 @@ protected:
     ///
     std::vector<ReportedChargingProfile> get_reported_profiles(const GetChargingProfilesRequest& request) const;
 
-    // TODO mz move get_valid_profiles to private???
-
     /// \brief Retrieves all profiles that should be considered for calculating the composite schedule. Only profiles
     /// that belong to the given \p evse_id and that are not contained in \p purposes_to_ignore are included in the
     /// response.
