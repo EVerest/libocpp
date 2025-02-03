@@ -2297,6 +2297,16 @@ ChargePoint::set_variables(const std::vector<SetVariableData>& set_variable_data
     this->handle_variables_changed(response);
     return response;
 }
+
+GetCompositeScheduleResponse ChargePoint::get_composite_schedule(const GetCompositeScheduleRequest& request) {
+    return this->smart_charging->get_composite_schedule(request);
+}
+
+std::optional<CompositeSchedule> ChargePoint::get_composite_schedule(int32_t evse_id, std::chrono::seconds duration,
+                                                                     ChargingRateUnitEnum unit) {
+    return this->smart_charging->get_composite_schedule(evse_id, duration, unit);
+}
+
 std::vector<CompositeSchedule> ChargePoint::get_all_composite_schedules(const int32_t duration_s,
                                                                         const ChargingRateUnitEnum& unit) {
     return this->smart_charging->get_all_composite_schedules(duration_s, unit);

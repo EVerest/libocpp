@@ -151,6 +151,26 @@ void SmartCharging::handle_message(const ocpp::EnhancedMessage<MessageType>& mes
     }
 }
 
+GetCompositeScheduleResponse SmartCharging::get_composite_schedule(const GetCompositeScheduleRequest& request) {
+    return this->get_composite_schedule_internal(request);
+}
+
+std::optional<CompositeSchedule> SmartCharging::get_composite_schedule(int32_t evse_id, std::chrono::seconds duration,
+                                                                       ChargingRateUnitEnum unit) {
+    GetCompositeScheduleRequest request;
+    request.duration = duration.count();
+    request.evseId = evse_id;
+    request.chargingRateUnit = unit;
+
+    auto composite_schedule_response = this->get_composite_schedule_internal(request, false);
+    if (composite_schedule_response.status == GenericStatusEnum::Accepted and
+        composite_schedule_response.schedule.has_value()) {
+        return composite_schedule_response.schedule.value();
+    } else {
+        return std::nullopt;
+    }
+}
+
 std::vector<CompositeSchedule> SmartCharging::get_all_composite_schedules(const int32_t duration_s,
                                                                           const ChargingRateUnitEnum& unit) {
     std::vector<CompositeSchedule> composite_schedules;
@@ -747,26 +767,6 @@ void SmartCharging::handle_get_composite_schedule_req(Call<GetCompositeScheduleR
 
     ocpp::CallResult<GetCompositeScheduleResponse> call_result(response, call.uniqueId);
     this->message_dispatcher.dispatch_call_result(call_result);
-}
-
-GetCompositeScheduleResponse SmartCharging::get_composite_schedule(const GetCompositeScheduleRequest& request) {
-    return this->get_composite_schedule_internal(request);
-}
-
-std::optional<CompositeSchedule> SmartCharging::get_composite_schedule(int32_t evse_id, std::chrono::seconds duration,
-                                                                       ChargingRateUnitEnum unit) {
-    GetCompositeScheduleRequest request;
-    request.duration = duration.count();
-    request.evseId = evse_id;
-    request.chargingRateUnit = unit;
-
-    auto composite_schedule_response = this->get_composite_schedule_internal(request, false);
-    if (composite_schedule_response.status == GenericStatusEnum::Accepted and
-        composite_schedule_response.schedule.has_value()) {
-        return composite_schedule_response.schedule.value();
-    } else {
-        return std::nullopt;
-    }
 }
 
 GetCompositeScheduleResponse SmartCharging::get_composite_schedule_internal(const GetCompositeScheduleRequest& request,

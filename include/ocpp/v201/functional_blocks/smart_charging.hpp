@@ -104,6 +104,21 @@ public:
     virtual ProfileValidationResultEnum conform_and_validate_profile(
         ChargingProfile& profile, int32_t evse_id,
         AddChargingProfileSource source_of_request = AddChargingProfileSource::SetChargingProfile) = 0;
+
+    /// \brief Gets a composite schedule based on the given \p request
+    /// \param request specifies different options for the request
+    /// \return GetCompositeScheduleResponse containing the status of the operation and the composite schedule if the
+    /// operation was successful
+    virtual GetCompositeScheduleResponse get_composite_schedule(const GetCompositeScheduleRequest& request) = 0;
+
+    /// \brief Gets a composite schedule based on the given parameters.
+    /// \note This will ignore TxDefaultProfiles and TxProfiles if no transaction is active on \p evse_id
+    /// \param evse_id Evse to get the schedule for
+    /// \param duration How long the schedule should be
+    /// \param unit ChargingRateUnit to thet the schedule for
+    /// \return the composite schedule if the operation was successful, otherwise nullopt
+    virtual std::optional<CompositeSchedule> get_composite_schedule(int32_t evse_id, std::chrono::seconds duration,
+                                                                    ChargingRateUnitEnum unit) = 0;
 };
 
 class SmartCharging : public SmartChargingInterface {
@@ -122,6 +137,9 @@ public:
                   MessageDispatcherInterface<MessageType>& message_dispatcher,
                   DatabaseHandlerInterface& database_handler, std::function<void()> set_charging_profiles_callback);
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
+    GetCompositeScheduleResponse get_composite_schedule(const GetCompositeScheduleRequest& request) override;
+    std::optional<CompositeSchedule> get_composite_schedule(int32_t evse_id, std::chrono::seconds duration,
+                                                            ChargingRateUnitEnum unit) override;
     std::vector<CompositeSchedule> get_all_composite_schedules(const int32_t duration,
                                                                const ChargingRateUnitEnum& unit) override;
 
@@ -218,21 +236,6 @@ private: // Functions
     void handle_clear_charging_profile_req(Call<ClearChargingProfileRequest> call);
     void handle_get_charging_profiles_req(Call<GetChargingProfilesRequest> call);
     void handle_get_composite_schedule_req(Call<GetCompositeScheduleRequest> call);
-
-    /// \brief Gets a composite schedule based on the given \p request
-    /// \param request specifies different options for the request
-    /// \return GetCompositeScheduleResponse containing the status of the operation and the composite schedule if the
-    /// operation was successful
-    GetCompositeScheduleResponse get_composite_schedule(const GetCompositeScheduleRequest& request);
-
-    /// \brief Gets a composite schedule based on the given parameters.
-    /// \note This will ignore TxDefaultProfiles and TxProfiles if no transaction is active on \p evse_id
-    /// \param evse_id Evse to get the schedule for
-    /// \param duration How long the schedule should be
-    /// \param unit ChargingRateUnit to thet the schedule for
-    /// \return the composite schedule if the operation was successful, otherwise nullopt
-    std::optional<CompositeSchedule> get_composite_schedule(int32_t evse_id, std::chrono::seconds duration,
-                                                            ChargingRateUnitEnum unit);
 
     GetCompositeScheduleResponse get_composite_schedule_internal(const GetCompositeScheduleRequest& request,
                                                                  bool simulate_transaction_active = true);
