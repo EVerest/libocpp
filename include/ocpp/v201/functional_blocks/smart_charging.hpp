@@ -71,8 +71,7 @@ std::ostream& operator<<(std::ostream& os, const ProfileValidationResultEnum val
 
 class SmartChargingInterface : public MessageHandlerInterface {
 public:
-    virtual ~SmartChargingInterface() {
-    }
+    virtual ~SmartChargingInterface() = default;
 
     /// \brief Gets composite schedules for all evse_ids (including 0) for the given \p duration and \p unit . If no
     /// valid profiles are given for an evse for the specified period, the composite schedule will be empty for this
