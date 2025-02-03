@@ -21,6 +21,7 @@ class AvailabilityInterface;
 class FirmwareUpdateInterface;
 class SecurityInterface;
 class ReservationInterface;
+class ProvisioningInterface;
 
 struct UnlockConnectorRequest;
 struct RequestStartTransactionRequest;
@@ -45,14 +46,17 @@ class RemoteTransactionControl : public RemoteTransactionControlInterface {
 public:
     RemoteTransactionControl(MessageDispatcherInterface<MessageType>& message_dispatcher, DeviceModel& device_model,
                              ConnectivityManagerInterface& connectivity_manager, EvseManagerInterface& evse_manager,
-                             ComponentStateManagerInterface& component_state_manager,
-                             TransactionInterface& transaction, SmartChargingInterface& smart_charging,
-                             MeterValuesInterface& meter_values, AvailabilityInterface& availability,
-                             FirmwareUpdateInterface& firmware_update, SecurityInterface& security,
-                             ReservationInterface* reservation,
+                             ComponentStateManagerInterface& component_state_manager, TransactionInterface& transaction,
+                             SmartChargingInterface& smart_charging, MeterValuesInterface& meter_values,
+                             AvailabilityInterface& availability, FirmwareUpdateInterface& firmware_update,
+                             SecurityInterface& security, ReservationInterface* reservation,
+                             ProvisioningInterface& provisioning,
                              UnlockConnectorCallback unlock_connector_callback,
                              RemoteStartTransactionCallback remote_start_transaction_callback,
-                             StopTransactionCallback stop_transaction_callback);
+                             StopTransactionCallback stop_transaction_callback,
+                             std::atomic<RegistrationStatusEnum>& registration_status,
+                             std::atomic<UploadLogStatusEnum> &upload_log_status,
+                             std::atomic<int32_t> &upload_log_status_id);
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
 
 private: // Members
@@ -69,10 +73,15 @@ private: // Members
     FirmwareUpdateInterface& firmware_update;
     SecurityInterface& security;
     ReservationInterface* reservation;
+    ProvisioningInterface& provisioning;
 
     UnlockConnectorCallback unlock_connector_callback;
     RemoteStartTransactionCallback remote_start_transaction_callback;
     StopTransactionCallback stop_transaction_callback;
+
+    std::atomic<RegistrationStatusEnum>& registration_status;
+    std::atomic<UploadLogStatusEnum>& upload_log_status;
+    std::atomic<int32_t>& upload_log_status_id;
 
 private: // Functions
     /* OCPP message handlers */

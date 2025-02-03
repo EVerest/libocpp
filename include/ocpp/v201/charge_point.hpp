@@ -16,6 +16,7 @@
 #include <ocpp/v201/functional_blocks/firmware_update.hpp>
 #include <ocpp/v201/functional_blocks/meter_values.hpp>
 #include <ocpp/v201/functional_blocks/provisioning.hpp>
+#include <ocpp/v201/functional_blocks/remote_transaction_control.hpp>
 #include <ocpp/v201/functional_blocks/reservation.hpp>
 #include <ocpp/v201/functional_blocks/security.hpp>
 #include <ocpp/v201/functional_blocks/smart_charging.hpp>
@@ -361,6 +362,7 @@ private:
     std::unique_ptr<TariffAndCostInterface> tariff_and_cost;
     std::unique_ptr<TransactionInterface> transaction;
     std::unique_ptr<ProvisioningInterface> provisioning;
+    std::unique_ptr<RemoteTransactionControl> remote_transaction_control;
 
     // utility
     std::shared_ptr<MessageQueue<v201::MessageType>> message_queue;
@@ -368,8 +370,8 @@ private:
 
     // states
     std::atomic<RegistrationStatusEnum> registration_status;
-    UploadLogStatusEnum upload_log_status;
-    int32_t upload_log_status_id;
+    std::atomic<UploadLogStatusEnum> upload_log_status;
+    std::atomic<int32_t> upload_log_status_id;
     BootReasonEnum bootreason;
     bool skip_invalid_csms_certificate_notifications;
 

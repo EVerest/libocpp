@@ -11,6 +11,7 @@
 #include <ocpp/v201/functional_blocks/availability.hpp>
 #include <ocpp/v201/functional_blocks/firmware_update.hpp>
 #include <ocpp/v201/functional_blocks/meter_values.hpp>
+#include <ocpp/v201/functional_blocks/provisioning.hpp>
 #include <ocpp/v201/functional_blocks/reservation.hpp>
 #include <ocpp/v201/functional_blocks/security.hpp>
 #include <ocpp/v201/functional_blocks/smart_charging.hpp>
@@ -30,8 +31,11 @@ RemoteTransactionControl::RemoteTransactionControl(
     ComponentStateManagerInterface& component_state_manager, TransactionInterface& transaction,
     SmartChargingInterface& smart_charging, MeterValuesInterface& meter_values, AvailabilityInterface& availability,
     FirmwareUpdateInterface& firmware_update, SecurityInterface& security, ReservationInterface* reservation,
+    ProvisioningInterface& provisioning,
     UnlockConnectorCallback unlock_connector_callback, RemoteStartTransactionCallback remote_start_transaction_callback,
-    StopTransactionCallback stop_transaction_callback) :
+    StopTransactionCallback stop_transaction_callback, std::atomic<RegistrationStatusEnum>& registration_status,
+    std::atomic<UploadLogStatusEnum>& upload_log_status,
+    std::atomic<int32_t>& upload_log_status_id) :
     message_dispatcher(message_dispatcher),
     device_model(device_model),
     connectivity_manager(connectivity_manager),
@@ -44,9 +48,13 @@ RemoteTransactionControl::RemoteTransactionControl(
     firmware_update(firmware_update),
     security(security),
     reservation(reservation),
+    provisioning(provisioning),
     unlock_connector_callback(unlock_connector_callback),
     remote_start_transaction_callback(remote_start_transaction_callback),
-    stop_transaction_callback(stop_transaction_callback) {
+    stop_transaction_callback(stop_transaction_callback),
+    registration_status(registration_status),
+    upload_log_status(upload_log_status),
+    upload_log_status_id(upload_log_status_id) {
 }
 
 void RemoteTransactionControl::handle_message(const ocpp::EnhancedMessage<MessageType>& message) {
@@ -309,14 +317,14 @@ void RemoteTransactionControl::handle_trigger_message(Call<TriggerMessageRequest
 
     switch (msg.requestedMessage) {
     case MessageTriggerEnum::BootNotification:
-        boot_notification_req(BootReasonEnum::Triggered);
+        this->provisioning.boot_notification_req(BootReasonEnum::Triggered);
         break;
 
     case MessageTriggerEnum::MeterValues: {
         auto send_meter_value = [&](int32_t evse_id, EvseInterface& evse) {
-            const auto meter_value = this->meter_values.get_latest_meter_value_filtered(
-                evse.get_meter_value(), ReadingContextEnum::Trigger,
-                ControllerComponentVariables::AlignedDataMeasurands);
+            const auto meter_value =
+                this->meter_values.get_latest_meter_value_filtered(evse.get_meter_value(), ReadingContextEnum::Trigger,
+                                                                   ControllerComponentVariables::AlignedDataMeasurands);
 
             if (!meter_value.sampledValue.empty()) {
                 this->meter_values.meter_values_req(evse_id, std::vector<ocpp::v201::MeterValue>(1, meter_value), true);
