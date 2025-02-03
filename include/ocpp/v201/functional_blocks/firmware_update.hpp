@@ -3,10 +3,8 @@
 
 #pragma once
 
-#include <ocpp/v201/message_handler.hpp>
-
 #include <ocpp/common/message_dispatcher.hpp>
-
+#include <ocpp/v201/message_handler.hpp>
 #include <ocpp/v201/messages/UpdateFirmware.hpp>
 
 namespace ocpp {
