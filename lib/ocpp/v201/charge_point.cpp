@@ -129,7 +129,7 @@ void ChargePoint::start(BootReasonEnum bootreason, bool start_connecting) {
 void ChargePoint::stop() {
     this->ocsp_updater.stop();
     this->availability->stop_heartbeat_timer();
-    this->provisioning->stop_boot_notification_timer();
+    this->provisioning->stop_bootnotification_timer();
     this->connectivity_manager->disconnect();
     this->security->stop_certificate_expiration_check_timers();
     this->diagnostics->stop_monitoring();
@@ -529,6 +529,15 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
         this->callbacks.transaction_event_callback, this->callbacks.transaction_event_response_callback,
         this->callbacks.reset_callback);
 
+    this->provisioning = std::make_unique<Provisioning>(
+        *this->device_model, *this->message_dispatcher, *this->message_queue, *this->connectivity_manager,
+        *this->component_state_manager, this->ocsp_updater, *this->evse_manager, *this->evse_security,
+        *this->availability, *this->meter_values, *this->security, *this->diagnostics, *this->transaction,
+        this->callbacks.time_sync_callback, this->callbacks.boot_notification_callback,
+        this->callbacks.validate_network_profile_callback, this->callbacks.is_reset_allowed_callback,
+        this->callbacks.reset_callback, this->callbacks.stop_transaction_callback,
+        this->callbacks.variable_changed_callback, this->registration_status);
+
     Component ocpp_comm_ctrlr = {"OCPPCommCtrlr"};
     Variable field_length = {"FieldLength"};
     field_length.instance = "Get15118EVCertificateResponse.exiResponse";
@@ -676,7 +685,7 @@ void ChargePoint::message_callback(const std::string& message) {
             this->handle_message(enhanced_message);
         } else if (this->registration_status == RegistrationStatusEnum::Pending) {
             if (enhanced_message.messageType == MessageType::BootNotificationResponse) {
-                this->provisioning->handle_boot_notification_response(json_message);
+                this->provisioning->handle_message(enhanced_message);
             } else {
                 // TODO(piet): Check what kind of messages we should accept in Pending state
                 if (enhanced_message.messageType == MessageType::GetVariables or
@@ -714,7 +723,7 @@ void ChargePoint::message_callback(const std::string& message) {
             }
         } else if (this->registration_status == RegistrationStatusEnum::Rejected) {
             if (enhanced_message.messageType == MessageType::BootNotificationResponse) {
-                this->provisioning->handle_boot_notification_response(json_message);
+                this->provisioning->handle_message(enhanced_message);
             } else if (enhanced_message.messageType == MessageType::TriggerMessage) {
                 Call<TriggerMessageRequest> call(json_message);
                 if (call.msg.requestedMessage == MessageTriggerEnum::BootNotification) {
@@ -945,7 +954,7 @@ void ChargePoint::handle_trigger_message(Call<TriggerMessageRequest> call) {
 
     switch (msg.requestedMessage) {
     case MessageTriggerEnum::BootNotification:
-        boot_notification_req(BootReasonEnum::Triggered);
+        this->provisioning->boot_notification_req(BootReasonEnum::Triggered);
         break;
 
     case MessageTriggerEnum::MeterValues: {
@@ -1269,7 +1278,7 @@ ChargePoint::get_variables(const std::vector<GetVariableData>& get_variable_data
 std::map<SetVariableData, SetVariableResult>
 ChargePoint::set_variables(const std::vector<SetVariableData>& set_variable_data_vector, const std::string& source) {
     // set variables and allow setting of ReadOnly variables
-    return this->provisioning->set_variables(set_variable_data_vactor, source);
+    return this->provisioning->set_variables(set_variable_data_vector, source);
 }
 
 GetCompositeScheduleResponse ChargePoint::get_composite_schedule(const GetCompositeScheduleRequest& request) {
