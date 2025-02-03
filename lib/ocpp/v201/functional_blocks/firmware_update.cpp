@@ -3,6 +3,8 @@
 
 #include <ocpp/v201/functional_blocks/firmware_update.hpp>
 
+#include <array>
+
 #include <ocpp/v201/functional_blocks/availability.hpp>
 #include <ocpp/v201/functional_blocks/security.hpp>
 #include <ocpp/v201/messages/FirmwareStatusNotification.hpp>
@@ -12,6 +14,12 @@
 #include <ocpp/v201/evse_manager.hpp>
 
 namespace ocpp::v201 {
+
+// Firmware update end states.
+const static std::array<FirmwareStatusEnum, 5> firmware_status_end_states = {
+    FirmwareStatusEnum::DownloadFailed, FirmwareStatusEnum::InstallationFailed, FirmwareStatusEnum::Installed,
+    FirmwareStatusEnum::InstallVerificationFailed, FirmwareStatusEnum::InvalidSignature};
+
 FirmwareUpdate::FirmwareUpdate(MessageDispatcherInterface<MessageType>& message_dispatcher, DeviceModel& device_model,
                                EvseManagerInterface& evse_manager, EvseSecurity& evse_security,
                                AvailabilityInterface& availability, SecurityInterface& security,
@@ -70,8 +78,11 @@ void FirmwareUpdate::on_firmware_update_status_notification(int32_t request_id,
             CiString<50>(ocpp::security_events::INVALIDFIRMWARESIGNATURE),
             std::optional<CiString<255>>("Signature of the provided firmware is not valid!"), true,
             true); // L01.FR.03 - critical because TC_L_06_CS requires this message to be sent
-    } else if (req.status == FirmwareStatusEnum::InstallVerificationFailed or
-               req.status == FirmwareStatusEnum::InstallationFailed) {
+    }
+
+    if (std::find(firmware_status_end_states.begin(), firmware_status_end_states.end(), req.status) !=
+        firmware_status_end_states.end()) {
+        // One of the end states is reached. Restore all connector states.
         this->restore_all_connector_states();
     }
 
