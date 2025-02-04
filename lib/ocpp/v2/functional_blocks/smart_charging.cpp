@@ -13,6 +13,13 @@
 #include <ocpp/v2/utils.hpp>
 
 #include <ocpp/common/constants.hpp>
+#include <ocpp/v201/smart_charging.hpp>
+#include <ocpp/v21/ctrlr_component_variables.hpp>
+#include <optional>
+
+/* TODO mz:
+ * - Check K01.FR.42, it was recommended in 2.0.1 and now mandatory.
+ */
 
 #include <ocpp/v2/messages/ClearChargingProfile.hpp>
 #include <ocpp/v2/messages/GetChargingProfiles.hpp>
@@ -22,6 +29,8 @@
 #include <ocpp/v2/messages/SetChargingProfile.hpp>
 
 const int32_t STATION_WIDE_ID = 0;
+
+using namespace std::chrono;
 
 namespace ocpp::v2 {
 namespace conversions {
@@ -206,7 +215,16 @@ SetChargingProfileResponse SmartCharging::conform_validate_and_add_profile(Charg
 
     auto result = this->conform_and_validate_profile(profile, evse_id, source_of_request);
     if (result == ProfileValidationResultEnum::Valid) {
-        response = this->add_profile(profile, evse_id, charging_limit_source);
+        // TODO mz  If profile is valid AND OCPP 2.1 AND chargingProfilePurpose = ChargingStationMaxProfile,
+        //          TxDefaultProfile or PriorityCharging THEN add profile. K01.FR.27
+        const std::array<ChargingProfilePurposeEnum, 3> profiles_to_store = {
+            ChargingProfilePurposeEnum::ChargingStationMaxProfile, ChargingProfilePurposeEnum::TxDefaultProfile,
+            ChargingProfilePurposeEnum::PriorityCharging};
+        if (std::find(profiles_to_store.begin(), profiles_to_store.end(), profile.chargingProfilePurpose) !=
+            profiles_to_store.end()) {
+            // TODO mz check for OCPP version: this is only the case for OCPP 2.1
+            response = this->add_profile(profile, evse_id, charging_limit_source);
+        }
     } else {
         response.statusInfo = StatusInfo();
         response.statusInfo->reasonCode = conversions::profile_validation_result_to_reason_code(result);
@@ -575,7 +593,18 @@ ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingPr
             // of silently acccepting them.
             if (phase_type == CurrentPhaseType::DC && (charging_schedule_period.numberPhases.has_value() ||
                                                        charging_schedule_period.phaseToUse.has_value())) {
-                return ProfileValidationResultEnum::ChargingSchedulePeriodExtraneousPhaseValues;
+                // TODO mz if 2.1 and DCInputPhaseControl is false or does not exist, then send rejected with reason
+                // code noPhaseForDC
+                // TODO mz evse_opt is optional, what if it is not there? which id to use?
+                ComponentVariable evse_variable =
+                    EvseComponentVariables::get_component_variable(evse_opt.value()->get_id(), ocpp::v21::EvseComponentVariables::DCInputPhaseControl);
+                if (this->device_model
+                        ->get_optional_value<bool>(evse_variable).value_or(false)) {
+                    // TODO mz for 2.1 reason code should be NoPhaseForDC
+                    return ProfileValidationResultEnum::ChargingSchedulePeriodExtraneousPhaseValues;
+                }
+
+                // return ProfileValidationResultEnum::ChargingSchedulePeriodExtraneousPhaseValues;
             }
 
             if (phase_type == CurrentPhaseType::AC) {
