@@ -541,14 +541,13 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
         this->callbacks.reset_callback, this->callbacks.stop_transaction_callback,
         this->callbacks.variable_changed_callback, this->registration_status);
 
-    this->remote_transaction_control = std::make_unique<RemoteTransactionControl>(*this->message_dispatcher,*this->device_model,
-                                                                                  *this->connectivity_manager,*this->evse_manager,
-                                                                                  *this->component_state_manager, *this->transaction,
-                                                                                  *this->smart_charging, *this->meter_values, *this->availability,
-                                                                                  *this->firmware_update, *this->security, this->reservation.get(), *this->provisioning,
-                                                                                  this->callbacks.unlock_connector_callback, this->callbacks.remote_start_transaction_callback,
-                                                                                  this->callbacks.stop_transaction_callback, this->registration_status, this->upload_log_status,
-                                                                                  this->upload_log_status_id);
+    this->remote_transaction_control = std::make_unique<RemoteTransactionControl>(
+        *this->message_dispatcher, *this->device_model, *this->connectivity_manager, *this->evse_manager,
+        *this->component_state_manager, *this->transaction, *this->smart_charging, *this->meter_values,
+        *this->availability, *this->firmware_update, *this->security, this->reservation.get(), *this->provisioning,
+        this->callbacks.unlock_connector_callback, this->callbacks.remote_start_transaction_callback,
+        this->callbacks.stop_transaction_callback, this->registration_status, this->upload_log_status,
+        this->upload_log_status_id);
 
     Component ocpp_comm_ctrlr = {"OCPPCommCtrlr"};
     Variable field_length = {"FieldLength"};

@@ -50,13 +50,12 @@ public:
                              SmartChargingInterface& smart_charging, MeterValuesInterface& meter_values,
                              AvailabilityInterface& availability, FirmwareUpdateInterface& firmware_update,
                              SecurityInterface& security, ReservationInterface* reservation,
-                             ProvisioningInterface& provisioning,
-                             UnlockConnectorCallback unlock_connector_callback,
+                             ProvisioningInterface& provisioning, UnlockConnectorCallback unlock_connector_callback,
                              RemoteStartTransactionCallback remote_start_transaction_callback,
                              StopTransactionCallback stop_transaction_callback,
                              std::atomic<RegistrationStatusEnum>& registration_status,
-                             std::atomic<UploadLogStatusEnum> &upload_log_status,
-                             std::atomic<int32_t> &upload_log_status_id);
+                             std::atomic<UploadLogStatusEnum>& upload_log_status,
+                             std::atomic<int32_t>& upload_log_status_id);
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
 
 private: // Members

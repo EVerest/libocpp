@@ -31,10 +31,9 @@ RemoteTransactionControl::RemoteTransactionControl(
     ComponentStateManagerInterface& component_state_manager, TransactionInterface& transaction,
     SmartChargingInterface& smart_charging, MeterValuesInterface& meter_values, AvailabilityInterface& availability,
     FirmwareUpdateInterface& firmware_update, SecurityInterface& security, ReservationInterface* reservation,
-    ProvisioningInterface& provisioning,
-    UnlockConnectorCallback unlock_connector_callback, RemoteStartTransactionCallback remote_start_transaction_callback,
-    StopTransactionCallback stop_transaction_callback, std::atomic<RegistrationStatusEnum>& registration_status,
-    std::atomic<UploadLogStatusEnum>& upload_log_status,
+    ProvisioningInterface& provisioning, UnlockConnectorCallback unlock_connector_callback,
+    RemoteStartTransactionCallback remote_start_transaction_callback, StopTransactionCallback stop_transaction_callback,
+    std::atomic<RegistrationStatusEnum>& registration_status, std::atomic<UploadLogStatusEnum>& upload_log_status,
     std::atomic<int32_t>& upload_log_status_id) :
     message_dispatcher(message_dispatcher),
     device_model(device_model),
