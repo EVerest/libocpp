@@ -775,18 +775,6 @@ void ChargePoint::message_callback(const std::string& message) {
     }
 }
 
-bool ChargePoint::does_connector_exist(const uint32_t evse_id, std::optional<ConnectorEnum> connector_type) {
-    EvseInterface* evse;
-    try {
-        evse = &evse_manager->get_evse(static_cast<int32_t>(evse_id));
-    } catch (const EvseOutOfRangeException&) {
-        EVLOG_error << "Evse id " << evse_id << " is not a valid evse id.";
-        return false;
-    }
-
-    return evse->does_connector_exist(connector_type.value_or(ConnectorEnum::Unknown));
-}
-
 bool ChargePoint::is_offline() {
     return !this->connectivity_manager->is_websocket_connected();
 }
