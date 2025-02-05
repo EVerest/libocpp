@@ -150,7 +150,8 @@ protected:
             std::make_unique<DatabaseHandlerFake>(std::move(database_connection), MIGRATION_FILES_LOCATION_V201);
         database_handler->open_connection();
         return TestSmartCharging(*device_model, this->evse_manager, connectivity_manager, mock_dispatcher,
-                                 *database_handler, set_charging_profiles_callback_mock.AsStdFunction());
+                                 *database_handler, set_charging_profiles_callback_mock.AsStdFunction(),
+                                 ocpp_version);
     }
 
     // Default values used within the tests
@@ -167,6 +168,7 @@ protected:
     MockFunction<void()> set_charging_profiles_callback_mock;
     TestSmartCharging handler;
     boost::uuids::random_generator uuid_generator = boost::uuids::random_generator();
+    std::atomic<OcppProtocolVersion> ocpp_version = OcppProtocolVersion::v201;
 };
 
 TEST_F(CompositeScheduleTestFixtureV201, K08_CalculateCompositeSchedule_FoundationTest_Grid) {
