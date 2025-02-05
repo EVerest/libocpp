@@ -35,12 +35,18 @@ enum class ProfileValidationResultEnum {
     ChargingProfileFirstStartScheduleIsNotZero,
     ChargingProfileMissingRequiredStartSchedule,
     ChargingProfileExtraneousStartSchedule,
+    ChargingProfileRateLimitExceeded,
+    ChargingProfileIdSmallerThanMaxExternalConstraintsId,
     ChargingScheduleChargingRateUnitUnsupported,
+    ChargingSchedulePriorityExtranousDuration,
+    ChargingScheduleRandomizedDelay,
     ChargingSchedulePeriodsOutOfOrder,
     ChargingSchedulePeriodInvalidPhaseToUse,
     ChargingSchedulePeriodUnsupportedNumberPhases,
     ChargingSchedulePeriodExtraneousPhaseValues,
     ChargingSchedulePeriodPhaseToUseACPhaseSwitchingUnsupported,
+    ChargingSchedulePeriodPriorityChargingNotChargingOnly,
+    ChargingSchedulePeriodNoPhaseForDC,
     ChargingStationMaxProfileCannotBeRelative,
     ChargingStationMaxProfileEvseIdGreaterThanZero,
     DuplicateTxDefaultProfileFound,
@@ -128,10 +134,13 @@ class SmartCharging : public SmartChargingInterface {
 private: // Members
     const FunctionalBlockContext& context;
     std::function<void()> set_charging_profiles_callback;
+    std::atomic<OcppProtocolVersion>& ocpp_version;
+    std::map<ChargingProfilePurposeEnum, DateTime> last_charging_profile_update;
 
 public:
     SmartCharging(const FunctionalBlockContext& functional_block_context,
-                  std::function<void()> set_charging_profiles_callback);
+                  std::function<void()> set_charging_profiles_callback,
+                  std::atomic<OcppProtocolVersion>& ocpp_version);
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
     GetCompositeScheduleResponse get_composite_schedule(const GetCompositeScheduleRequest& request) override;
     std::optional<CompositeSchedule> get_composite_schedule(int32_t evse_id, std::chrono::seconds duration,
@@ -181,6 +190,13 @@ protected:
     ProfileValidationResultEnum validate_tx_profile(
         const ChargingProfile& profile, int32_t evse_id,
         AddChargingProfileSource source_of_request = AddChargingProfileSource::SetChargingProfile) const;
+
+    ///
+    /// \brief Validates the given profile according to the specification.
+    /// \param profile  Profile to validate.
+    /// \return ProfileValidationResultEnum::Valid if valid.
+    ///
+    ProfileValidationResultEnum validate_priority_charging_profile(const ChargingProfile& profile) const;
 
     /// \brief validates that the given \p profile has valid charging schedules.
     /// If a profiles charging schedule period does not have a valid numberPhases,
@@ -257,5 +273,19 @@ private: // Functions
     ///
     void conform_validity_periods(ChargingProfile& profile) const;
     CurrentPhaseType get_current_phase_type(const std::optional<EvseInterface*> evse_opt) const;
+
+    ///
+    /// \brief Verify rate limit, only for OCPP 2.1
+    ///
+    /// When Charging Station receives a SetChargingProfileRequest for a ChargingProfileType with a
+    /// chargingProfilePurpose that is to be stored persistently AND the previous SetChargingProfileRequest for this
+    /// chargingProfilePurpose was less than ChargingProfileUpdate RateLimit seconds ago, Charging Station MAY respond
+    /// with SetChargingProfileResponse with status = Rejected and reasonCode = "RateLimitExceeded" (K01.FR.56).
+    ///
+    /// \param profile  Charging profile
+    /// \return ProfileValidationResultEnum::Valid when rate limit was not exceeded, or OCPP 2.0.1.
+    ///         ProfileValidationResultEnum::ChargingProfileRateLimitExceeded when rate limit was exceeded.
+    ///
+    ProfileValidationResultEnum verify_rate_limit(const ChargingProfile& profile);
 };
 } // namespace ocpp::v2
