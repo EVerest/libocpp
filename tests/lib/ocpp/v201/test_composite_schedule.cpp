@@ -32,7 +32,6 @@
 
 namespace ocpp::v201 {
 static const std::string TX_ID = "f1522902-1170-416f-8e43-9e3bce28fde7";
-
 TEST_F(CompositeScheduleTestFixtureV201, NoSchedulesPresent) {
     const DateTime start_time = ocpp::DateTime("2024-01-02T00:00:00");
     const DateTime end_time = ocpp::DateTime("2024-01-02T01:00:00");
