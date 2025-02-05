@@ -98,9 +98,9 @@ protected:
         const auto& ac_phase_switching_cv = ControllerComponentVariables::ACPhaseSwitchingSupported;
         device_model->set_value(ac_phase_switching_cv.component, ac_phase_switching_cv.variable.value(),
                                 AttributeEnum::Actual, ac_phase_switching_supported.value_or(""), "test", true);
-        return TestSmartCharging(*functional_block_context, set_charging_profiles_callback_mock.AsStdFunction());
+        return TestSmartCharging(*functional_block_context, set_charging_profiles_callback_mock.AsStdFunction(),
+                                 ocpp_version);
     }
-
     std::string uuid() {
         std::stringstream s;
         s << uuid_generator();
@@ -146,6 +146,7 @@ protected:
     std::unique_ptr<FunctionalBlockContext> functional_block_context;
     TestSmartCharging smart_charging = create_smart_charging();
     boost::uuids::random_generator uuid_generator = boost::uuids::random_generator();
+    std::atomic<OcppProtocolVersion> ocpp_version = OcppProtocolVersion::v21;
 };
 
 TEST_F(SmartChargingTest, K01FR03_IfTxProfileIsMissingTransactionId_ThenProfileIsInvalid) {
