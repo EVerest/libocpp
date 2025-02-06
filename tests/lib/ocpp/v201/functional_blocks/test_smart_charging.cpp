@@ -97,8 +97,7 @@ protected:
         device_model->set_value(ac_phase_switching_cv.component, ac_phase_switching_cv.variable.value(),
                                 AttributeEnum::Actual, ac_phase_switching_supported.value_or(""), "test", true);
         return TestSmartCharging(*device_model, *this->evse_manager, connectivity_manager, mock_dispatcher,
-                                 *database_handler, set_charging_profiles_callback_mock.AsStdFunction(),
-                                 ocpp_version);
+                                 *database_handler, set_charging_profiles_callback_mock.AsStdFunction(), ocpp_version);
     }
     std::string uuid() {
         std::stringstream s;
