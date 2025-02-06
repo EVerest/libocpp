@@ -553,8 +553,11 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
             this->callbacks.configure_network_connection_profile_callback.value());
     }
 
-    this->smart_charging = std::make_unique<SmartCharging>(*this->functional_block_context,
-                                                           this->callbacks.set_charging_profiles_callback);
+    if (device_model->get_optional_value<bool>(ControllerComponentVariables::SmartChargingCtrlrAvailable)
+            .value_or(false)) {
+        this->smart_charging = std::make_unique<SmartCharging>(
+            *this->functional_block_context, this->callbacks.set_charging_profiles_callback, ocpp_version);
+    }
 
     this->tariff_and_cost = std::make_unique<TariffAndCost>(
         *functional_block_context, *this->meter_values, this->callbacks.set_display_message_callback,
