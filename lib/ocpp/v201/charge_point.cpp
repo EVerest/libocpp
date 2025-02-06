@@ -699,7 +699,7 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
 
     this->smart_charging = std::make_unique<SmartCharging>(
         *this->device_model, *this->evse_manager, *this->connectivity_manager, *this->message_dispatcher,
-        *this->database_handler, this->callbacks.set_charging_profiles_callback);
+        *this->database_handler, this->callbacks.set_charging_profiles_callback, ocpp_version);
 
     this->tariff_and_cost = std::make_unique<TariffAndCost>(
         *this->message_dispatcher, *this->device_model, *this->evse_manager, *this->meter_values,
