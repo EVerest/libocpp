@@ -11,11 +11,14 @@
 #include <ocpp/v201/functional_blocks/authorization.hpp>
 #include <ocpp/v201/functional_blocks/availability.hpp>
 #include <ocpp/v201/functional_blocks/data_transfer.hpp>
+#include <ocpp/v201/functional_blocks/diagnostics.hpp>
 #include <ocpp/v201/functional_blocks/display_message.hpp>
+#include <ocpp/v201/functional_blocks/meter_values.hpp>
 #include <ocpp/v201/functional_blocks/reservation.hpp>
 #include <ocpp/v201/functional_blocks/security.hpp>
+#include <ocpp/v201/functional_blocks/smart_charging.hpp>
+#include <ocpp/v201/functional_blocks/tariff_and_cost.hpp>
 
-#include <ocpp/common/aligned_timer.hpp>
 #include <ocpp/common/charging_station_base.hpp>
 
 #include <ocpp/v201/average_meter_values.hpp>
@@ -29,39 +32,28 @@
 #include <ocpp/v201/ocpp_enums.hpp>
 #include <ocpp/v201/ocpp_types.hpp>
 #include <ocpp/v201/ocsp_updater.hpp>
-#include <ocpp/v201/smart_charging.hpp>
 #include <ocpp/v201/types.hpp>
 #include <ocpp/v201/utils.hpp>
 
-#include "ocpp/v201/messages/Get15118EVCertificate.hpp"
 #include <ocpp/v201/messages/Authorize.hpp>
 #include <ocpp/v201/messages/BootNotification.hpp>
-#include <ocpp/v201/messages/ClearChargingProfile.hpp>
 #include <ocpp/v201/messages/ClearVariableMonitoring.hpp>
-#include <ocpp/v201/messages/CostUpdated.hpp>
 #include <ocpp/v201/messages/CustomerInformation.hpp>
 #include <ocpp/v201/messages/DataTransfer.hpp>
-#include <ocpp/v201/messages/DeleteCertificate.hpp>
+#include <ocpp/v201/messages/Get15118EVCertificate.hpp>
 #include <ocpp/v201/messages/GetBaseReport.hpp>
-#include <ocpp/v201/messages/GetChargingProfiles.hpp>
-#include <ocpp/v201/messages/GetCompositeSchedule.hpp>
-#include <ocpp/v201/messages/GetInstalledCertificateIds.hpp>
 #include <ocpp/v201/messages/GetLog.hpp>
 #include <ocpp/v201/messages/GetMonitoringReport.hpp>
 #include <ocpp/v201/messages/GetReport.hpp>
 #include <ocpp/v201/messages/GetTransactionStatus.hpp>
 #include <ocpp/v201/messages/GetVariables.hpp>
-#include <ocpp/v201/messages/InstallCertificate.hpp>
-#include <ocpp/v201/messages/MeterValues.hpp>
 #include <ocpp/v201/messages/NotifyCustomerInformation.hpp>
 #include <ocpp/v201/messages/NotifyEvent.hpp>
 #include <ocpp/v201/messages/NotifyMonitoringReport.hpp>
 #include <ocpp/v201/messages/NotifyReport.hpp>
-#include <ocpp/v201/messages/ReportChargingProfiles.hpp>
 #include <ocpp/v201/messages/RequestStartTransaction.hpp>
 #include <ocpp/v201/messages/RequestStopTransaction.hpp>
 #include <ocpp/v201/messages/Reset.hpp>
-#include <ocpp/v201/messages/SetChargingProfile.hpp>
 #include <ocpp/v201/messages/SetMonitoringBase.hpp>
 #include <ocpp/v201/messages/SetMonitoringLevel.hpp>
 #include <ocpp/v201/messages/SetNetworkProfile.hpp>
@@ -369,8 +361,12 @@ private:
     std::unique_ptr<ReservationInterface> reservation;
     std::unique_ptr<AvailabilityInterface> availability;
     std::unique_ptr<AuthorizationInterface> authorization;
+    std::unique_ptr<DiagnosticsInterface> diagnostics;
     std::unique_ptr<SecurityInterface> security;
     std::unique_ptr<DisplayMessageInterface> display_message;
+    std::unique_ptr<MeterValuesInterface> meter_values;
+    std::unique_ptr<SmartCharging> smart_charging;
+    std::unique_ptr<TariffAndCostInterface> tariff_and_cost;
 
     // utility
     std::shared_ptr<MessageQueue<v201::MessageType>> message_queue;
@@ -380,9 +376,6 @@ private:
 
     // timers
     Everest::SteadyTimer boot_notification_timer;
-    Everest::SteadyTimer client_certificate_expiration_check_timer;
-    Everest::SteadyTimer v2g_certificate_expiration_check_timer;
-    ClockAlignedTimer aligned_meter_values_timer;
 
     // states
     std::atomic<RegistrationStatusEnum> registration_status;
@@ -417,7 +410,6 @@ private:
     };
 
     std::chrono::time_point<std::chrono::steady_clock> time_disconnected;
-    AverageMeterValues aligned_data_evse0; // represents evseId = 0 meter value
 
     /// \brief Used when an 'OnIdle' reset is requested, to perform the reset after the charging has stopped.
     bool reset_scheduled;
@@ -430,17 +422,11 @@ private:
     /// \brief Handler for automatic or explicit OCSP cache updates
     OcspUpdater ocsp_updater;
 
-    /// \brief Updater for triggered monitors
-    MonitoringUpdater monitoring_updater;
-
     /// \brief optional delay to resumption of message queue after reconnecting to the CSMS
     std::chrono::seconds message_queue_resume_delay = std::chrono::seconds(0);
 
     // internal helper functions
     void initialize(const std::map<int32_t, int32_t>& evse_connector_structure, const std::string& message_log_path);
-    void init_certificate_expiration_check_timers();
-    void scheduled_check_client_certificate_expiration();
-    void scheduled_check_v2g_certificate_expiration();
     void websocket_connected_callback(const int configuration_slot,
                                       const NetworkConnectionProfile& network_connection_profile,
                                       const OcppProtocolVersion ocpp_version);
@@ -449,13 +435,8 @@ private:
     void websocket_connection_failed(ConnectionFailedReason reason);
     void update_dm_availability_state(const int32_t evse_id, const int32_t connector_id,
                                       const ConnectorStatusEnum status);
-    void update_dm_evse_power(const int32_t evse_id, const MeterValue& meter_value);
-
-    GetCompositeScheduleResponse get_composite_schedule_internal(const GetCompositeScheduleRequest& request,
-                                                                 bool simulate_transaction_active = true);
 
     void message_callback(const std::string& message);
-    void update_aligned_data_interval();
 
     /// \brief Helper function to determine if the requested change results in a state that the Connector(s) is/are
     /// already in \param request \return
@@ -472,9 +453,6 @@ private:
     std::map<SetVariableData, SetVariableResult>
     set_variables_internal(const std::vector<SetVariableData>& set_variable_data_vector, const std::string& source,
                            const bool allow_read_only);
-
-    MeterValue get_latest_meter_value_filtered(const MeterValue& meter_value, ReadingContextEnum context,
-                                               const RequiredComponentVariable& component_variable);
 
     /// \brief Changes all unoccupied connectors to unavailable. If a transaction is running schedule an availabilty
     /// change
@@ -514,60 +492,9 @@ private:
     /// \return true if the charge point is offline. std::nullopt if it is online;
     bool is_offline();
 
-    /// \brief Returns customer information based on the given arguments. This function also executes the
-    /// get_customer_information_callback in case it is present
-    /// \param customer_certificate Certificate of the customer this request refers to
-    /// \param id_token IdToken of the customer this request refers to
-    /// \param customer_identifier A (e.g. vendor specific) identifier of the customer this request refers to. This
-    /// field contains a custom identifier other than IdToken and Certificate
-    /// \return customer information
-    std::string get_customer_information(const std::optional<CertificateHashDataType> customer_certificate,
-                                         const std::optional<IdToken> id_token,
-                                         const std::optional<CiString<64>> customer_identifier);
-
-    /// \brief Clears customer information based on the given arguments. This function also executes the
-    /// clear_customer_information_callback in case it is present
-    /// \param customer_certificate Certificate of the customer this request refers to
-    /// \param id_token IdToken of the customer this request refers to
-    /// \param customer_identifier A (e.g. vendor specific) identifier of the customer this request refers to. This
-    /// field contains a custom identifier other than IdToken and Certificate
-    void clear_customer_information(const std::optional<CertificateHashDataType> customer_certificate,
-                                    const std::optional<IdToken> id_token,
-                                    const std::optional<CiString<64>> customer_identifier);
-
     /// @brief Configure the message logging callback with device model parameters
     /// @param message_log_path path to file logging
     void configure_message_logging_format(const std::string& message_log_path);
-
-    ///
-    /// \brief Create cost and / or tariff message and call the callbacks to send it, if tariff and / or cost is
-    /// enabled.
-    /// \param response             The TransactionEventResponse where the tariff and cost information is added to.
-    /// \param original_message     The original TransactionEventRequest, which contains some information we need as
-    ///                             well.
-    /// \param original_transaction_event_response  The original json from the response.
-    ///
-    void handle_cost_and_tariff(const TransactionEventResponse& response,
-                                const TransactionEventRequest& original_message,
-                                const json& original_transaction_event_response);
-
-    ///
-    /// \brief Check if multilanguage setting (variable) is enabled.
-    /// \return True if enabled.
-    ///
-    bool is_multilanguage_enabled() const;
-
-    ///
-    /// \brief Check if tariff setting (variable) is enabled.
-    /// \return True if enabled.
-    ///
-    bool is_tariff_enabled() const;
-
-    ///
-    /// \brief Check if cost setting (variable) is enabled.
-    /// \return True if enabled.
-    ///
-    bool is_cost_enabled() const;
 
     /* OCPP message requests */
 
@@ -586,20 +513,6 @@ private:
                                const std::optional<int32_t>& number_of_phases_used, const bool offline,
                                const std::optional<int32_t>& reservation_id,
                                const bool initiated_by_trigger_message = false);
-
-    // Functional Block J: MeterValues
-    void meter_values_req(const int32_t evse_id, const std::vector<MeterValue>& meter_values,
-                          const bool initiated_by_trigger_message = false);
-
-    // Functional Block K: Smart Charging
-    void report_charging_profile_req(const int32_t request_id, const int32_t evse_id, const CiString<20> source,
-                                     const std::vector<ChargingProfile>& profiles, const bool tbc);
-    void report_charging_profile_req(const ReportChargingProfilesRequest& req);
-
-    // Functional Block N: Diagnostics
-    void notify_event_req(const std::vector<EventData>& events);
-    void notify_customer_information_req(const std::string& data, const int32_t request_id);
-    void notify_monitoring_report_req(const int request_id, const std::vector<MonitoringData>& montoring_data);
 
     /* OCPP message handlers */
 
@@ -622,32 +535,8 @@ private:
     void handle_remote_stop_transaction_request(Call<RequestStopTransactionRequest> call);
     void handle_trigger_message(Call<TriggerMessageRequest> call);
 
-    // Functional Block I: TariffAndCost
-    void handle_costupdated_req(const Call<CostUpdatedRequest> call);
-
-    // Functional Block K: Smart Charging
-    void handle_set_charging_profile_req(Call<SetChargingProfileRequest> call);
-    void handle_clear_charging_profile_req(Call<ClearChargingProfileRequest> call);
-    void handle_get_charging_profiles_req(Call<GetChargingProfilesRequest> call);
-    void handle_get_composite_schedule_req(Call<GetCompositeScheduleRequest> call);
-
     // Functional Block L: Firmware management
     void handle_firmware_update_req(Call<UpdateFirmwareRequest> call);
-
-    // Functional Block M: ISO 15118 Certificate Management
-    void handle_get_installed_certificate_ids_req(Call<GetInstalledCertificateIdsRequest> call);
-    void handle_install_certificate_req(Call<InstallCertificateRequest> call);
-    void handle_delete_certificate_req(Call<DeleteCertificateRequest> call);
-
-    // Functional Block N: Diagnostics
-    void handle_get_log_req(Call<GetLogRequest> call);
-    void handle_customer_information_req(Call<CustomerInformationRequest> call);
-
-    void handle_set_monitoring_base_req(Call<SetMonitoringBaseRequest> call);
-    void handle_set_monitoring_level_req(Call<SetMonitoringLevelRequest> call);
-    void handle_set_variable_monitoring_req(const EnhancedMessage<v201::MessageType>& message);
-    void handle_get_monitoring_report_req(Call<GetMonitoringReportRequest> call);
-    void handle_clear_variable_monitoring_req(Call<ClearVariableMonitoringRequest> call);
 
     // Generates async sending callbacks
     template <class RequestType, class ResponseType>
@@ -666,14 +555,7 @@ private:
         };
     }
 
-    /// \brief Helper function to determine if a certificate installation should be allowed
-    /// \param cert_type is the certificate type to be checked
-    /// \return true if it should be allowed
-    bool should_allow_certificate_install(InstallCertificateUseEnum cert_type) const;
-
 protected:
-    std::shared_ptr<SmartChargingHandlerInterface> smart_charging_handler;
-
     void handle_message(const EnhancedMessage<v201::MessageType>& message);
     void clear_invalid_charging_profiles();
 
@@ -826,12 +708,9 @@ public:
 
     std::map<SetVariableData, SetVariableResult>
     set_variables(const std::vector<SetVariableData>& set_variable_data_vector, const std::string& source) override;
-
     GetCompositeScheduleResponse get_composite_schedule(const GetCompositeScheduleRequest& request) override;
-
     std::optional<CompositeSchedule> get_composite_schedule(int32_t evse_id, std::chrono::seconds duration,
                                                             ChargingRateUnitEnum unit) override;
-
     std::vector<CompositeSchedule> get_all_composite_schedules(const int32_t duration,
                                                                const ChargingRateUnitEnum& unit) override;
 
