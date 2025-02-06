@@ -63,14 +63,28 @@ std::string profile_validation_result_to_string(ProfileValidationResultEnum e) {
         return "ChargingProfileExtraneousStartSchedule";
     case ProfileValidationResultEnum::ChargingProfileRateLimitExceeded:
         return "ChargingProfileRateLimitExceeded";
-    case ocpp::v201::ProfileValidationResultEnum::ChargingProfileIdSmallerThanMaxExternalConstraintsId:
+    case ProfileValidationResultEnum::ChargingProfileIdSmallerThanMaxExternalConstraintsId:
         return "ChargingProfileIdSmallerThanMaxExternalConstraintsId";
+    case ProfileValidationResultEnum::ChargingProfileUnsupportedPurpose:
+        return "ChargingProfileUnsupportedPurpose";
+    case ProfileValidationResultEnum::ChargingProfileUnsupportedKind:
+        return "ChargingProfileUnsupportedKind";
+    case ProfileValidationResultEnum::ChargingProfileNotDynamic:
+        return "ChargingProfileNotDynamic";
     case ProfileValidationResultEnum::ChargingScheduleChargingRateUnitUnsupported:
         return "ChargingScheduleChargingRateUnitUnsupported";
     case ProfileValidationResultEnum::ChargingSchedulePriorityExtranousDuration:
         return "ChargingSchedulePriorityExtranousDuration";
     case ProfileValidationResultEnum::ChargingScheduleRandomizedDelay:
         return "ChargingScheduleRandomizedDelay";
+    case ProfileValidationResultEnum::ChargingScheduleUnsupportedLocalTime:
+        return "ChargingScheduleUnsupportedLocalTime";
+    case ProfileValidationResultEnum::ChargingScheduleUnsupportedRandomizedDelay:
+        return "ChargingScheduleUnsupportedRandomizedDelay";
+    case ProfileValidationResultEnum::ChargingScheduleUnsupportedLimitAtSoC:
+        return "ChargingScheduleUnsupportedLimitAtSoC";
+    case ProfileValidationResultEnum::ChargingScheduleUnsupportedEvseSleep:
+        return "ChargingScheduleUnsupportedEvseSleep";
     case ProfileValidationResultEnum::ChargingSchedulePeriodsOutOfOrder:
         return "ChargingSchedulePeriodsOutOfOrder";
     case ProfileValidationResultEnum::ChargingSchedulePeriodInvalidPhaseToUse:
@@ -121,6 +135,12 @@ std::string profile_validation_result_to_reason_code(ProfileValidationResultEnum
         return "RateLimitExceeded";
     case ProfileValidationResultEnum::ChargingProfileIdSmallerThanMaxExternalConstraintsId:
         return "InvalidProfileId";
+    case ProfileValidationResultEnum::ChargingProfileUnsupportedPurpose:
+        return "UnsupportedPurpose";
+    case ProfileValidationResultEnum::ChargingProfileUnsupportedKind:
+        return "UnsupportedKind";
+    case ProfileValidationResultEnum::ChargingProfileNotDynamic:
+        return "InvalidProfile";
     case ProfileValidationResultEnum::ChargingProfileNoChargingSchedulePeriods:
     case ProfileValidationResultEnum::ChargingProfileFirstStartScheduleIsNotZero:
     case ProfileValidationResultEnum::ChargingProfileMissingRequiredStartSchedule:
@@ -128,6 +148,10 @@ std::string profile_validation_result_to_reason_code(ProfileValidationResultEnum
     case ProfileValidationResultEnum::ChargingProfileEmptyChargingSchedules:
     case ProfileValidationResultEnum::ChargingSchedulePriorityExtranousDuration:
     case ProfileValidationResultEnum::ChargingScheduleRandomizedDelay:
+    case ProfileValidationResultEnum::ChargingScheduleUnsupportedLocalTime:
+    case ProfileValidationResultEnum::ChargingScheduleUnsupportedRandomizedDelay:
+    case ProfileValidationResultEnum::ChargingScheduleUnsupportedLimitAtSoC:
+    case ProfileValidationResultEnum::ChargingScheduleUnsupportedEvseSleep:
     case ProfileValidationResultEnum::ChargingSchedulePeriodsOutOfOrder:
     case ProfileValidationResultEnum::ChargingSchedulePeriodInvalidPhaseToUse:
     case ProfileValidationResultEnum::ChargingSchedulePeriodUnsupportedNumberPhases:
@@ -625,51 +649,50 @@ ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingPr
             }
 
             // K01.FR.120: Priority charging or local generation is not supported.
-            const auto supported_additional_purposes = utils::get_purposes_to_ignore(
+            const auto supported_additional_purposes = utils::get_charging_profile_purposes(
                 device_model
                     .get_optional_value<std::string>(v21::ControllerComponentVariables::SupportedAdditionalPurposes)
-                    .value_or(""),
-                false); // TODO mz change function get_purposes_to_ignore
+                    .value_or(""));
             auto it = std::find(supported_additional_purposes.begin(), supported_additional_purposes.end(),
                                 profile.chargingProfilePurpose);
             if ((profile.chargingProfilePurpose == ChargingProfilePurposeEnum::PriorityCharging ||
                  profile.chargingProfilePurpose == ChargingProfilePurposeEnum::LocalGeneration) &&
                 it == supported_additional_purposes.end()) {
-                // TODO mz
+                return ProfileValidationResultEnum::ChargingProfileUnsupportedPurpose;
             }
 
             // K01.FR.121: Charging profile kind is dynamic, but dynamic profiles are not supported.
             if (profile.chargingProfileKind == ChargingProfileKindEnum::Dynamic &&
                 !device_model.get_optional_value<bool>(v21::ControllerComponentVariables::SupportsDynamicProfiles)
                      .value_or(false)) {
-                // TODO mz
+                return ProfileValidationResultEnum::ChargingProfileUnsupportedKind;
             }
 
             // K01.FR.122: Can not set dynamic update interval or time if charging profile kind is not dynamic.
             if ((profile.dynUpdateInterval.has_value() || profile.dynUpdateTime.has_value()) &&
                 profile.chargingProfileKind != ChargingProfileKindEnum::Dynamic) {
-                // TODO mz
+                return ProfileValidationResultEnum::ChargingProfileNotDynamic;
             }
 
             // K01.FR.123 Local time is not supported
             if (schedule.useLocalTime.value_or(false) &&
                 device_model.get_optional_value<bool>(v21::ControllerComponentVariables::SupportsUseLocalTime)
                     .value_or(false)) {
-                // TODO mz
+                return ProfileValidationResultEnum::ChargingScheduleUnsupportedLocalTime;
             }
 
             // K01.FR.124: Randomized delay is not supported
             if (schedule.randomizedDelay.has_value() &&
                 device_model.get_optional_value<bool>(v21::ControllerComponentVariables::SupportsRandomizedDelay)
                     .value_or(false)) {
-                // TODO mz
+                return ProfileValidationResultEnum::ChargingScheduleUnsupportedRandomizedDelay;
             }
 
             // K01.FR.125: Limit at soc is not supported
             if (schedule.limitAtSoC.has_value() &&
                 device_model.get_optional_value<bool>(v21::ControllerComponentVariables::SupportsLimitAtSoC)
                     .value_or(false)) {
-                // TODO mz
+                return ProfileValidationResultEnum::ChargingScheduleUnsupportedLimitAtSoC;
             }
         }
 
@@ -743,7 +766,7 @@ ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingPr
                 if (charging_schedule_period.evseSleep.value_or(true) &&
                     !this->device_model.get_optional_value<bool>(v21::ControllerComponentVariables::SupportsEvseSleep)
                          .value_or(false)) {
-                    // TODO mz
+                    return ProfileValidationResultEnum::ChargingScheduleUnsupportedEvseSleep;
                 }
             }
         }
