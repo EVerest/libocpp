@@ -122,13 +122,13 @@ SmartCharging::SmartCharging(DeviceModel& device_model, EvseManagerInterface& ev
                              ConnectivityManagerInterface& connectivity_manager,
                              MessageDispatcherInterface<MessageType>& message_dispatcher,
                              DatabaseHandlerInterface& database_handler,
-                             std::function<void()> set_charging_profiles_callback) :
+                             std::function<void()> charging_profiles_updated_callback) :
     device_model(device_model),
     evse_manager(evse_manager),
     connectivity_manager(connectivity_manager),
     message_dispatcher(message_dispatcher),
     database_handler(database_handler),
-    set_charging_profiles_callback(set_charging_profiles_callback) {
+    charging_profiles_updated_callback(charging_profiles_updated_callback) {
 }
 
 void SmartCharging::handle_message(const ocpp::EnhancedMessage<MessageType>& message) {
@@ -661,7 +661,7 @@ void SmartCharging::handle_set_charging_profile_req(Call<SetChargingProfileReque
     response = this->conform_validate_and_add_profile(msg.chargingProfile, msg.evseId);
     if (response.status == ChargingProfileStatusEnum::Accepted) {
         EVLOG_debug << "Accepting SetChargingProfileRequest";
-        this->set_charging_profiles_callback();
+        this->charging_profiles_updated_callback();
     } else {
         EVLOG_debug << "Rejecting SetChargingProfileRequest:\n reasonCode: " << response.statusInfo->reasonCode.get()
                     << "\nadditionalInfo: " << response.statusInfo->additionalInfo->get();
@@ -692,7 +692,7 @@ void SmartCharging::handle_clear_charging_profile_req(Call<ClearChargingProfileR
     }
 
     if (response.status == ClearChargingProfileStatusEnum::Accepted) {
-        this->set_charging_profiles_callback();
+        this->charging_profiles_updated_callback();
     }
 
     ocpp::CallResult<ClearChargingProfileResponse> call_result(response, call.uniqueId);

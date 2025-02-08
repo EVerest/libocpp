@@ -162,7 +162,7 @@ private:
     std::function<void(const ResetType& reset_type)> reset_callback;
     std::function<void(const std::string& system_time)> set_system_time_callback;
     std::function<void(const BootNotificationResponse& boot_notification_response)> boot_notification_response_callback;
-    std::function<void()> signal_set_charging_profiles_callback;
+    std::function<void()> charging_profiles_updated_callback;
     std::function<void(bool is_connected)> connection_state_changed_callback;
 
     std::function<GetLogResponse(const GetDiagnosticsRequest& request)> upload_diagnostics_callback;
@@ -805,7 +805,7 @@ public:
     /// and was accepted. The registered callback could make use of the get_all_composite_charging_schedules in order to
     /// retrieve the ChargingProfiles that have been set by the CSMS.
     /// \param callback
-    void register_signal_set_charging_profiles_callback(const std::function<void()>& callback);
+    void register_charging_profiles_updated_callback(const std::function<void()>& callback);
 
     /// \brief registers a \p callback function that can be used when the connection state to CSMS changes. The
     /// connection_state_changed_callback is called when chargepoint has connected to or disconnected from the CSMS.
