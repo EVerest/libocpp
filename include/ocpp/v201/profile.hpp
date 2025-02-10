@@ -83,6 +83,14 @@ std::vector<period_entry_t> calculate_profile(const DateTime& now, const DateTim
                                               const std::optional<DateTime>& session_start,
                                               const ChargingProfile& profile);
 
+/// \brief generate an ordered list of valid schedule periods for the profiles
+/// \param now the current date and time
+/// \param end ignore entries beyond this date and time (i.e. that start after end)
+/// \param session_start optional when the charging session started
+/// \param profiles A vector of charging profiles
+/// \param purpose The purpose to generate the list for. Only profiles with this purpose are included.
+/// \return a list of profile periods with calculated date & time start and end times
+/// \note it is valid for there to be gaps (for recurring profiles)
 std::vector<period_entry_t> calculate_all_profiles(const DateTime& now, const DateTime& end,
                                                    const std::optional<DateTime>& session_start,
                                                    const std::vector<ChargingProfile>& profiles,

@@ -251,12 +251,14 @@ std::vector<period_entry_t> calculate_profile_entry(const DateTime& in_now, cons
     return entries;
 }
 
-std::vector<period_entry_t> calculate_profile(const DateTime& now, const DateTime& end,
-                                              const std::optional<DateTime>& session_start,
-                                              const ChargingProfile& profile) {
+namespace {
+std::vector<period_entry_t> calculate_profile_unsorted(const DateTime& now, const DateTime& end,
+                                                       const std::optional<DateTime>& session_start,
+                                                       const ChargingProfile& profile) {
     std::vector<period_entry_t> entries;
 
-    for (std::uint8_t i = 0; i < profile.chargingSchedule.front().chargingSchedulePeriod.size(); i++) {
+    const auto nr_of_entries = profile.chargingSchedule.front().chargingSchedulePeriod.size();
+    for (uint8_t i = 0; i < nr_of_entries; i++) {
         const auto results = calculate_profile_entry(now, end, session_start, profile, i);
         for (const auto& entry : results) {
             if (entry.start <= end) {
@@ -265,6 +267,10 @@ std::vector<period_entry_t> calculate_profile(const DateTime& now, const DateTim
         }
     }
 
+    return entries;
+}
+
+void sort_periods_into_date_order(std::vector<period_entry_t>& periods) {
     // sort into date order
     struct {
         bool operator()(const period_entry_t& a, const period_entry_t& b) const {
@@ -272,7 +278,16 @@ std::vector<period_entry_t> calculate_profile(const DateTime& now, const DateTim
             return a.start < b.start;
         }
     } less_than;
-    std::sort(entries.begin(), entries.end(), less_than);
+    std::sort(periods.begin(), periods.end(), less_than);
+}
+} // namespace
+
+std::vector<period_entry_t> calculate_profile(const DateTime& now, const DateTime& end,
+                                              const std::optional<DateTime>& session_start,
+                                              const ChargingProfile& profile) {
+    std::vector<period_entry_t> entries = calculate_profile_unsorted(now, end, session_start, profile);
+
+    sort_periods_into_date_order(entries);
     return entries;
 }
 
@@ -283,10 +298,12 @@ std::vector<period_entry_t> calculate_all_profiles(const DateTime& now, const Da
     std::vector<period_entry_t> output;
     for (const auto& profile : profiles) {
         if (profile.chargingProfilePurpose == purpose) {
-            std::vector<period_entry_t> periods = ocpp::v201::calculate_profile(now, end, session_start, profile);
+            std::vector<period_entry_t> periods = calculate_profile_unsorted(now, end, session_start, profile);
             output.insert(output.end(), periods.begin(), periods.end());
         }
     }
+
+    sort_periods_into_date_order(output);
     return output;
 }
 
