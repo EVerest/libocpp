@@ -24,6 +24,8 @@ protected:
     const std::string CONFIGS_PATH_REQUIRED_NO_VALUE =
         "./resources/config/v201/wrong/component_config_required_no_value";
     const std::string CONFIGS_PATH_WRONG_VALUE_TYPE = "./resources/config/v201/wrong/component_config_wrong_value_type";
+    const std::string CONFIGS_PATH_WRONG_OCPP_PROTOCOL_TYPE =
+        "./resources/config/v201/wrong/component_config_wrong_ocpp_protocol_type";
 
 public:
     InitDeviceModelDbTest() {
@@ -83,12 +85,14 @@ public:
     /// \param component_connector_id   Connector id of the component (optional)
     /// \param variable_name            Variable name
     /// \param variable_instance        Instance of the variable (optional)
+    /// \param ocpp_version             The ocpp version (optional)
     /// \return True if the variable exists.
     ///
     bool variable_exists(const std::string& component_name, const std::optional<std::string>& component_instance,
                          const std::optional<int>& component_evse_id, const std::optional<int>& component_connector_id,
                          const std::string& variable_name, const std::optional<std::string>& variable_instance,
-                         const std::optional<std::string> source = std::nullopt);
+                         const std::optional<std::string> source = std::nullopt,
+                         const std::optional<OcppProtocolVersion>& ocpp_version = std::nullopt);
 
     ///
     /// \brief Check if variable characteristics exists in the database.
@@ -245,8 +249,10 @@ TEST_F(InitDeviceModelDbTest, init_db) {
                                        DataEnum::boolean, std::nullopt, std::nullopt, true, std::nullopt,
                                        std::nullopt));
     EXPECT_TRUE(variable_exists("UnitTestCtrlr", std::nullopt, 2, 3, "UnitTestPropertyAName", std::nullopt, "OCPP"));
-    EXPECT_TRUE(variable_exists("UnitTestCtrlr", std::nullopt, 2, 3, "UnitTestPropertyBName", std::nullopt));
-    EXPECT_TRUE(variable_exists("UnitTestCtrlr", std::nullopt, 2, 3, "UnitTestPropertyCName", std::nullopt));
+    EXPECT_TRUE(variable_exists("UnitTestCtrlr", std::nullopt, 2, 3, "UnitTestPropertyBName", std::nullopt,
+                                std::nullopt, OcppProtocolVersion::v201));
+    EXPECT_TRUE(variable_exists("UnitTestCtrlr", std::nullopt, 2, 3, "UnitTestPropertyCName", std::nullopt,
+                                std::nullopt, OcppProtocolVersion::v21));
 
     // Test some values.
     EXPECT_TRUE(attribute_has_value("UnitTestCtrlr", std::nullopt, 2, 3, "UnitTestPropertyBName", std::nullopt,
@@ -469,6 +475,14 @@ TEST_F(InitDeviceModelDbTest, wrong_type) {
     }
 }
 
+TEST_F(InitDeviceModelDbTest, wrong_ocpp_protocol_type) {
+    // Test if initializing fails when there is a missing required value.
+    InitDeviceModelDb db(DATABASE_PATH, MIGRATION_FILES_PATH);
+    EXPECT_NO_THROW(db.initialize_database(CONFIGS_PATH_WRONG_OCPP_PROTOCOL_TYPE, true));
+    EXPECT_TRUE(variable_exists("UnitTestCtrlr", std::nullopt, 2, 3, "UnitTestPropertyBName", std::nullopt,
+                                std::nullopt, std::nullopt));
+}
+
 // Helper functions
 
 bool InitDeviceModelDbTest::check_all_tables_exist(const std::vector<std::string>& tables, const bool exist) {
@@ -585,13 +599,11 @@ bool InitDeviceModelDbTest::attribute_exists(
     return statement->get_number_of_rows() == 1;
 }
 
-bool InitDeviceModelDbTest::variable_exists(const std::string& component_name,
-                                            const std::optional<std::string>& component_instance,
-                                            const std::optional<int>& component_evse_id,
-                                            const std::optional<int>& component_connector_id,
-                                            const std::string& variable_name,
-                                            const std::optional<std::string>& variable_instance,
-                                            const std::optional<std::string> source) {
+bool InitDeviceModelDbTest::variable_exists(
+    const std::string& component_name, const std::optional<std::string>& component_instance,
+    const std::optional<int>& component_evse_id, const std::optional<int>& component_connector_id,
+    const std::string& variable_name, const std::optional<std::string>& variable_instance,
+    const std::optional<std::string> source, const std::optional<OcppProtocolVersion>& ocpp_version) {
     static const std::string select_variable_statement = "SELECT ID "
                                                          "FROM VARIABLE v "
                                                          "WHERE v.COMPONENT_ID=("
@@ -603,7 +615,8 @@ bool InitDeviceModelDbTest::variable_exists(const std::string& component_name,
                                                          "AND c.CONNECTOR_ID IS @connector_id) "
                                                          "AND v.NAME=@variable_name "
                                                          "AND v.INSTANCE IS @variable_instance "
-                                                         "AND v.source IS @variable_source";
+                                                         "AND v.source IS @variable_source "
+                                                         "AND v.ocpp_version IS @ocpp_version";
 
     std::unique_ptr<common::SQLiteStatementInterface> statement =
         this->database->new_statement(select_variable_statement);
@@ -639,6 +652,14 @@ bool InitDeviceModelDbTest::variable_exists(const std::string& component_name,
         statement->bind_text("@variable_source", source.value(), ocpp::common::SQLiteString::Transient);
     } else {
         statement->bind_null("@variable_source");
+    }
+
+    if (ocpp_version.has_value()) {
+        statement->bind_text("@ocpp_version",
+                             ::ocpp::conversions::ocpp_protocol_version_to_string(ocpp_version.value()),
+                             ocpp::common::SQLiteString::Transient);
+    } else {
+        statement->bind_null("@ocpp_version");
     }
 
     if (statement->step() == SQLITE_ERROR) {

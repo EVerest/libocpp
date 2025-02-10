@@ -43,3 +43,16 @@ addition of a new one.
 Note: OCPP requires EVSE and Connector numbering starting from 1 counting upwards.
 
 Note: There should be no duplicate components or variables in the component config files.
+
+
+## OCPP 2.0.1 / OCPP 2.1 only variables
+
+OCPP 2.1 has some extra variables compared to OCPP 2.0.1. To make sure a specific variable is only used for a 
+specific OCPP version, add `"ocpp_version": "<version>"` to the component config, where `version` is one of:
+- `ocpp1.6`
+- `ocpp2.0.1`
+- `ocpp2.1`
+
+See also `conversions::ocpp_protocol_version_to_string(OcppProtocolVersion e)` for the valid strings.
+
+If now OCPP version information is added here, it is assumed that the variable is valid for all OCPP versions.

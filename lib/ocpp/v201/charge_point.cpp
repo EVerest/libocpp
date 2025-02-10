@@ -1438,7 +1438,7 @@ void ChargePoint::handle_get_base_report_req(Call<GetBaseReportRequest> call) {
     this->message_dispatcher->dispatch_call_result(call_result);
 
     if (response.status == GenericDeviceModelStatusEnum::Accepted) {
-        const auto report_data = this->device_model->get_base_report_data(msg.reportBase);
+        const auto report_data = this->device_model->get_base_report_data(msg.reportBase, ocpp_version);
         this->notify_report_req(msg.requestId, report_data);
     }
 }
@@ -1489,7 +1489,8 @@ void ChargePoint::handle_get_report_req(const EnhancedMessage<v201::MessageType>
 
         // TODO(piet): Propably split this up into several NotifyReport.req depending on ItemsPerMessage /
         // BytesPerMessage
-        report_data = this->device_model->get_custom_report_data(msg.componentVariable, msg.componentCriteria);
+        report_data =
+            this->device_model->get_custom_report_data(msg.componentVariable, msg.componentCriteria, ocpp_version);
         if (report_data.empty()) {
             response.status = GenericDeviceModelStatusEnum::EmptyResultSet;
         } else {
@@ -2280,7 +2281,7 @@ ChargePoint::get_variables(const std::vector<GetVariableData>& get_variable_data
         get_variable_result.attributeType = get_variable_data.attributeType.value_or(AttributeEnum::Actual);
         const auto request_value_response = this->device_model->request_value<std::string>(
             get_variable_data.component, get_variable_data.variable,
-            get_variable_data.attributeType.value_or(AttributeEnum::Actual));
+            get_variable_data.attributeType.value_or(AttributeEnum::Actual), ocpp_version);
         if (request_value_response.status == GetVariableStatusEnum::Accepted and
             request_value_response.value.has_value()) {
             get_variable_result.attributeValue = request_value_response.value.value();

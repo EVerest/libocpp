@@ -34,6 +34,7 @@ struct VariableMetaData {
     VariableCharacteristics characteristics;
     std::unordered_map<int64_t, VariableMonitoringMeta> monitors;
     std::optional<std::string> source;
+    std::optional<OcppProtocolVersion> ocpp_version;
 };
 
 using VariableMap = std::map<Variable, VariableMetaData>;

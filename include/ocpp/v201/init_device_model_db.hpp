@@ -95,6 +95,8 @@ struct DeviceModelVariable {
     std::vector<VariableMonitoringMeta> monitors;
     /// \brief Source of the variable.
     std::optional<std::string> source;
+    /// \brief OCPP version. If not given, variable is valid for 2.0.1 and 2.1.
+    std::optional<OcppProtocolVersion> ocpp_version;
 };
 
 /// \brief Convert from json to a ComponentKey struct.

@@ -221,7 +221,8 @@ bool include_in_summary_inventory(const ComponentVariable& cv, const VariableAtt
 
 GetVariableStatusEnum DeviceModel::request_value_internal(const Component& component_id, const Variable& variable_id,
                                                           const AttributeEnum& attribute_enum, std::string& value,
-                                                          bool allow_write_only) const {
+                                                          bool allow_write_only,
+                                                          const OcppProtocolVersion& ocpp_version) const {
     const auto component_it = this->device_model_map.find(component_id);
     if (component_it == this->device_model_map.end()) {
         EVLOG_debug << "unknown component in " << component_id.name << "." << variable_id.name;
@@ -234,6 +235,15 @@ GetVariableStatusEnum DeviceModel::request_value_internal(const Component& compo
     if (variable_it == component.end()) {
         EVLOG_debug << "unknown variable in " << component_id.name << "." << variable_id.name;
         return GetVariableStatusEnum::UnknownVariable;
+    }
+
+    if (variable_it->second.ocpp_version.has_value() && variable_it->second.ocpp_version.value() != ocpp_version) {
+        EVLOG_warning << "Trying to get device model value " << variable_id.name.get()
+                      << ", but this variable is not "
+                         "for this ocpp version, but for ocpp version "
+                      << ::ocpp::conversions::ocpp_protocol_version_to_string(variable_it->second.ocpp_version.value());
+        // Variable is not meant for this ocpp version.
+        return GetVariableStatusEnum::Rejected;
     }
 
     const auto attribute_opt = this->device_model->get_variable_attribute(component_id, variable_id, attribute_enum);
@@ -348,11 +358,17 @@ std::optional<VariableMetaData> DeviceModel::get_variable_meta_data(const Compon
     }
 }
 
-std::vector<ReportData> DeviceModel::get_base_report_data(const ReportBaseEnum& report_base) {
+std::vector<ReportData> DeviceModel::get_base_report_data(const ReportBaseEnum& report_base,
+                                                          const OcppProtocolVersion ocpp_version) {
     std::vector<ReportData> report_data_vec;
 
     for (auto const& [component, variable_map] : this->device_model_map) {
         for (auto const& [variable, variable_meta_data] : variable_map) {
+            if (variable_meta_data.ocpp_version.has_value() and
+                ocpp_version != (variable_meta_data.ocpp_version.value())) {
+                // This variable is not for this ocpp version. So skip it and go to the next one.
+                continue;
+            }
 
             ReportData report_data;
             report_data.component = component;
@@ -393,13 +409,20 @@ std::vector<ReportData> DeviceModel::get_base_report_data(const ReportBaseEnum& 
 
 std::vector<ReportData>
 DeviceModel::get_custom_report_data(const std::optional<std::vector<ComponentVariable>>& component_variables,
-                                    const std::optional<std::vector<ComponentCriterionEnum>>& component_criteria) {
+                                    const std::optional<std::vector<ComponentCriterionEnum>>& component_criteria,
+                                    const OcppProtocolVersion ocpp_version) {
     std::vector<ReportData> report_data_vec;
 
     for (auto const& [component, variable_map] : this->device_model_map) {
         if (!component_criteria.has_value() or component_criteria_match(component, component_criteria.value())) {
 
             for (auto const& [variable, variable_meta_data] : variable_map) {
+                if (variable_meta_data.ocpp_version.has_value() and
+                    ocpp_version != (variable_meta_data.ocpp_version.value())) {
+                    // This variable is not for this ocpp version. So skip it and go to the next one.
+                    continue;
+                }
+
                 if (!component_variables.has_value() or
                     component_variables_match(component_variables.value(), component, variable)) {
                     ReportData report_data;

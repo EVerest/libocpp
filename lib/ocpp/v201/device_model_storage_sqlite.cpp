@@ -96,7 +96,7 @@ DeviceModelMap DeviceModelStorageSqlite::get_device_model() {
 
     std::string select_query =
         "SELECT c.NAME, c.EVSE_ID, c.CONNECTOR_ID, c.INSTANCE, v.NAME, v.INSTANCE, vc.DATATYPE_ID, "
-        "vc.SUPPORTS_MONITORING, vc.UNIT, vc.MIN_LIMIT, vc.MAX_LIMIT, vc.VALUES_LIST, v.SOURCE "
+        "vc.SUPPORTS_MONITORING, vc.UNIT, vc.MIN_LIMIT, vc.MAX_LIMIT, vc.VALUES_LIST, v.SOURCE, v.OCPP_VERSION "
         "FROM COMPONENT c "
         "JOIN VARIABLE v ON c.ID = v.COMPONENT_ID "
         "JOIN VARIABLE_CHARACTERISTICS vc ON vc.VARIABLE_ID = v.ID";
@@ -151,6 +151,22 @@ DeviceModelMap DeviceModelStorageSqlite::get_device_model() {
 
         if (select_stmt->column_type(12) != SQLITE_NULL) {
             meta_data.source = select_stmt->column_text(12);
+        }
+
+        if (select_stmt->column_type(13) != SQLITE_NULL) {
+            const std::optional<std::string> ocpp_version = select_stmt->column_text_nullable(13);
+            if (ocpp_version.has_value()) {
+                try {
+                    meta_data.ocpp_version = ::ocpp::conversions::string_to_ocpp_protocol_version(ocpp_version.value());
+                } catch (const StringToEnumException& e) {
+                    const std::string protocol_versions =
+                        ocpp::conversions::ocpp_protocol_version_to_string(OcppProtocolVersion::v16) + ", " +
+                        ocpp::conversions::ocpp_protocol_version_to_string(OcppProtocolVersion::v201) + " or " +
+                        ocpp::conversions::ocpp_protocol_version_to_string(OcppProtocolVersion::v21);
+                    EVLOG_warning << "Wrong ocpp version string in the database (" << ocpp_version.value()
+                                  << "), must be one of " << protocol_versions;
+                }
+            }
         }
 
         meta_data.characteristics = characteristics;

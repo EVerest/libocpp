@@ -8,7 +8,6 @@
   "properties": {
     "UnitTestPropertyA": {
       "variable_name": "UnitTestPropertyAName",
-      "source": "OCPP",
       "characteristics": {
         "supportsMonitoring": true,
         "dataType": "boolean"
@@ -19,7 +18,6 @@
           "mutability": "ReadWrite"
         }
       ],
-      "default": true,
       "type": "boolean"
     },
     "UnitTestPropertyB": {
@@ -36,10 +34,25 @@
         }
       ],
       "type": "string",
-      "ocpp_version": "ocpp2.0.1"
+      "ocpp_version": "test_version"
     },
     "UnitTestPropertyC": {
       "variable_name": "UnitTestPropertyCName",
+      "characteristics": {
+        "supportsMonitoring": false,
+        "dataType": "integer"
+      },
+      "attributes": [
+        {
+          "type": "Target",
+          "mutability": "ReadOnly"
+        }
+      ],
+      "type": "integer",
+      "default": 42
+    },
+    "UnitTestPropertyD": {
+      "variable_name": "UnitTestPropertyDName",
       "characteristics": {
         "supportsMonitoring": false,
         "dataType": "integer"
@@ -51,10 +64,9 @@
         }
       ],
       "type": "integer",
-      "ocpp_version": "ocpp2.1"
+      "default": 42
     }
   },
   "required": [
-    "UnitTestPropertyA"
   ]
 }

@@ -362,8 +362,8 @@ void InitDeviceModelDb::update_variable_characteristics(const VariableCharacteri
 
 void InitDeviceModelDb::insert_variable(const DeviceModelVariable& variable, const uint64_t& component_id) {
     static const std::string statement =
-        "INSERT OR REPLACE INTO VARIABLE (NAME, INSTANCE, COMPONENT_ID, REQUIRED, SOURCE) VALUES "
-        "(@name, @instance, @component_id, @required, @source)";
+        "INSERT OR REPLACE INTO VARIABLE (NAME, INSTANCE, COMPONENT_ID, REQUIRED, SOURCE, OCPP_VERSION) VALUES "
+        "(@name, @instance, @component_id, @required, @source, @ocpp_version)";
 
     std::unique_ptr<common::SQLiteStatementInterface> insert_variable_statement;
     try {
@@ -386,9 +386,17 @@ void InitDeviceModelDb::insert_variable(const DeviceModelVariable& variable, con
     insert_variable_statement->bind_int("@required", required_int);
 
     if (variable.source.has_value()) {
-        insert_variable_statement->bind_text("@source", variable.source.value());
+        insert_variable_statement->bind_text("@source", variable.source.value(), common::SQLiteString::Transient);
     } else {
         insert_variable_statement->bind_null("@source");
+    }
+
+    if (variable.ocpp_version.has_value()) {
+        insert_variable_statement->bind_text(
+            "@ocpp_version", ::ocpp::conversions::ocpp_protocol_version_to_string(variable.ocpp_version.value()),
+            common::SQLiteString::Transient);
+    } else {
+        insert_variable_statement->bind_null("@ocpp_version");
     }
 
     if (insert_variable_statement->step() != SQLITE_DONE) {
@@ -412,7 +420,7 @@ void InitDeviceModelDb::update_variable(const DeviceModelVariable& variable, con
 
     static const std::string update_variable_statement =
         "UPDATE VARIABLE SET NAME=@name, INSTANCE=@instance, COMPONENT_ID=@component_id, REQUIRED=@required, "
-        "SOURCE=@source WHERE ID=@variable_id";
+        "SOURCE=@source, OCPP_VERSION=@ocpp_version WHERE ID=@variable_id";
 
     std::unique_ptr<common::SQLiteStatementInterface> update_statement;
     try {
@@ -438,6 +446,14 @@ void InitDeviceModelDb::update_variable(const DeviceModelVariable& variable, con
         update_statement->bind_text("@source", variable.source.value(), ocpp::common::SQLiteString::Transient);
     } else {
         update_statement->bind_null("@source");
+    }
+
+    if (variable.ocpp_version.has_value()) {
+        update_statement->bind_text("@ocpp_version",
+                                    ::ocpp::conversions::ocpp_protocol_version_to_string(variable.ocpp_version.value()),
+                                    ocpp::common::SQLiteString::Transient);
+    } else {
+        update_statement->bind_null("@ocpp_version");
     }
 
     if (update_statement->step() != SQLITE_DONE) {
@@ -817,7 +833,7 @@ std::map<ComponentKey, std::vector<DeviceModelVariable>> InitDeviceModelDb::get_
             "v.ID, v.NAME, v.INSTANCE, v.REQUIRED, "
             "vc.ID, vc.DATATYPE_ID, vc.MAX_LIMIT, vc.MIN_LIMIT, vc.SUPPORTS_MONITORING, vc.UNIT, vc.VALUES_LIST, "
             "va.ID, va.MUTABILITY_ID, va.PERSISTENT, va.CONSTANT, va.TYPE_ID, va.VALUE, va.VALUE_SOURCE,"
-            "v.SOURCE "
+            "v.SOURCE, v.OCPP_VERSION "
         "FROM "
             "COMPONENT c "
             "JOIN VARIABLE v ON v.COMPONENT_ID = c.ID "
@@ -913,6 +929,22 @@ std::map<ComponentKey, std::vector<DeviceModelVariable>> InitDeviceModelDb::get_
                 variable->source = select_statement->column_text(23);
             } catch (const std::out_of_range& e) {
                 EVLOG_error << e.what() << ": Variable Source will not be set (so default will be used)";
+            }
+        }
+
+        if (select_statement->column_type(24) != SQLITE_NULL) {
+            const std::optional<std::string> ocpp_version = select_statement->column_text_nullable(24);
+            if (ocpp_version.has_value()) {
+                try {
+                    variable->ocpp_version = ::ocpp::conversions::string_to_ocpp_protocol_version(ocpp_version.value());
+                } catch (const StringToEnumException& e) {
+                    const std::string protocol_versions =
+                        ocpp::conversions::ocpp_protocol_version_to_string(OcppProtocolVersion::v16) + ", " +
+                        ocpp::conversions::ocpp_protocol_version_to_string(OcppProtocolVersion::v201) + " or " +
+                        ocpp::conversions::ocpp_protocol_version_to_string(OcppProtocolVersion::v21);
+                    EVLOG_warning << "Wrong ocpp version string in the database (" << ocpp_version.value()
+                                  << "), must be one of " << protocol_versions;
+                }
             }
         }
 
@@ -1232,6 +1264,21 @@ void from_json(const json& j, DeviceModelVariable& c) {
 
     if (j.contains("source")) {
         c.source = j.at("source");
+    }
+
+    if (j.contains("ocpp_version")) {
+        const std::string ocpp_version = j.at("ocpp_version");
+
+        try {
+            c.ocpp_version = ::ocpp::conversions::string_to_ocpp_protocol_version(ocpp_version);
+        } catch (const StringToEnumException& e) {
+            const std::string protocol_versions =
+                ocpp::conversions::ocpp_protocol_version_to_string(OcppProtocolVersion::v16) + ", " +
+                ocpp::conversions::ocpp_protocol_version_to_string(OcppProtocolVersion::v201) + " or " +
+                ocpp::conversions::ocpp_protocol_version_to_string(OcppProtocolVersion::v21);
+            EVLOG_warning << "Wrong ocpp version string in the database (" << ocpp_version << "), must be one of "
+                          << protocol_versions;
+        }
     }
 
     if (j.contains("monitors")) {

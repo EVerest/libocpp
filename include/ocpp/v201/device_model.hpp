@@ -112,10 +112,11 @@ private:
     /// \param attribute_enum
     /// \param value string reference to value: will be set to requested value if value is present
     /// \param allow_write_only true to allow a writeOnly value to be read.
+    /// \param ocpp_version     Current connected OCPP version
     /// \return GetVariableStatusEnum that indicates the result of the request
     GetVariableStatusEnum request_value_internal(const Component& component_id, const Variable& variable_id,
                                                  const AttributeEnum& attribute_enum, std::string& value,
-                                                 bool allow_write_only) const;
+                                                 bool allow_write_only, const OcppProtocolVersion& ocpp_version) const;
 
     /// \brief Iterates over the given \p component_criteria and converts this to the variable names
     /// (Active,Available,Enabled,Problem). If any of the variables can not be found as part of a component this
@@ -146,15 +147,17 @@ public:
     /// \tparam T datatype of the value that is requested
     /// \param component_variable Combination of Component and Variable that identifies the Variable
     /// \param attribute_enum defaults to AttributeEnum::Actual
+    /// \param ocpp_version     The current connected ocpp version (default 2.0.1)
     /// \return the requested value from the device model interface
     template <typename T>
     T get_value(const RequiredComponentVariable& component_variable,
-                const AttributeEnum& attribute_enum = AttributeEnum::Actual) const {
+                const AttributeEnum& attribute_enum = AttributeEnum::Actual,
+                const OcppProtocolVersion ocpp_version = OcppProtocolVersion::v201) const {
         std::string value;
         auto response = GetVariableStatusEnum::UnknownVariable;
         if (component_variable.variable.has_value()) {
             response = this->request_value_internal(component_variable.component, component_variable.variable.value(),
-                                                    attribute_enum, value, true);
+                                                    attribute_enum, value, true, ocpp_version);
         }
         if (response == GetVariableStatusEnum::Accepted) {
             return to_specific_type<T>(value);
@@ -170,16 +173,18 @@ public:
     /// \tparam T Type of the value that is requested
     /// \param component_variable Combination of Component and Variable that identifies the Variable
     /// \param attribute_enum
+    /// \param ocpp_version     The current connected ocpp version (default 2.0.1)
     /// \return std::optional<T> if the combination of \p component_variable and \p attribute_enum could successfully
     /// requested from the storage and a value is present for this combination, else std::nullopt .
     template <typename T>
     std::optional<T> get_optional_value(const ComponentVariable& component_variable,
-                                        const AttributeEnum& attribute_enum = AttributeEnum::Actual) const {
+                                        const AttributeEnum& attribute_enum = AttributeEnum::Actual,
+                                        const OcppProtocolVersion ocpp_version = OcppProtocolVersion::v201) const {
         std::string value;
         auto response = GetVariableStatusEnum::UnknownVariable;
         if (component_variable.variable.has_value()) {
             response = this->request_value_internal(component_variable.component, component_variable.variable.value(),
-                                                    attribute_enum, value, true);
+                                                    attribute_enum, value, true, ocpp_version);
         }
         if (response == GetVariableStatusEnum::Accepted) {
             return to_specific_type<T>(value);
@@ -194,13 +199,16 @@ public:
     /// \param component_id
     /// \param variable_id
     /// \param attribute_enum
+    /// \param ocpp_version     The current connected ocpp version (default 2.0.1)
     /// \return Response to request that contains status of the request and the requested value as std::optional<T> .
     /// The value is present if the status is GetVariableStatusEnum::Accepted
     template <typename T>
     RequestDeviceModelResponse<T> request_value(const Component& component_id, const Variable& variable_id,
-                                                const AttributeEnum& attribute_enum) {
+                                                const AttributeEnum& attribute_enum,
+                                                const OcppProtocolVersion ocpp_version = OcppProtocolVersion::v201) {
         std::string value;
-        const auto req_status = this->request_value_internal(component_id, variable_id, attribute_enum, value, false);
+        const auto req_status =
+            this->request_value_internal(component_id, variable_id, attribute_enum, value, false, ocpp_version);
 
         if (req_status == GetVariableStatusEnum::Accepted) {
             return {GetVariableStatusEnum::Accepted, to_specific_type<T>(value)};
@@ -251,20 +259,22 @@ public:
     /// \brief Gets the ReportData for the specifed filter \p report_base \p component_variables and \p
     /// component_criteria
     /// \param report_base
-    /// \param component_variables
-    /// \param component_criteria
+    /// \param ocpp_version         The ocpp version.
     /// \return
-    std::vector<ReportData> get_base_report_data(const ReportBaseEnum& report_base);
+    std::vector<ReportData> get_base_report_data(const ReportBaseEnum& report_base,
+                                                 const OcppProtocolVersion ocpp_version);
 
     /// \brief Gets the ReportData for the specifed filter \p component_variables and \p
     /// component_criteria
     /// \param report_base
     /// \param component_variables
     /// \param component_criteria
+    /// \param ocpp_version         The ocpp version.
     /// \return
     std::vector<ReportData>
     get_custom_report_data(const std::optional<std::vector<ComponentVariable>>& component_variables = std::nullopt,
-                           const std::optional<std::vector<ComponentCriterionEnum>>& component_criteria = std::nullopt);
+                           const std::optional<std::vector<ComponentCriterionEnum>>& component_criteria = std::nullopt,
+                           const OcppProtocolVersion ocpp_version = OcppProtocolVersion::v201);
 
     void register_variable_listener(on_variable_changed&& listener) {
         variable_listener = std::move(listener);
