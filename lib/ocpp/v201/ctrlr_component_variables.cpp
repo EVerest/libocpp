@@ -37,6 +37,84 @@ const Variable Fallback = {"Fallback"};
 
 namespace ControllerComponentVariables {
 
+std::vector<std::pair<ComponentVariable, std::vector<RequiredComponentVariable>>>
+    required_component_available_variables{
+        {AlignedDataCtrlrAvailable,
+         {AlignedDataInterval, AlignedDataMeasurands, AlignedDataTxEndedInterval, AlignedDataTxEndedMeasurands}},
+        {LocalAuthListCtrlrAvailable,
+         {LocalAuthListCtrlrEntries, ItemsPerMessageSendLocalList, BytesPerMessageSendLocalList}},
+        {SampledDataCtrlrAvailable,
+         {SampledDataTxEndedMeasurands, SampledDataTxEndedInterval, SampledDataTxStartedMeasurands,
+          SampledDataTxUpdatedMeasurands, SampledDataTxUpdatedInterval}},
+        {SmartChargingCtrlrAvailable,
+         {ChargingProfileMaxStackLevel, ChargingScheduleChargingRateUnit, PeriodsPerSchedule, EntriesChargingProfiles,
+          LimitChangeSignificance, CompositeScheduleDefaultLimitAmps, CompositeScheduleDefaultLimitWatts,
+          CompositeScheduleDefaultNumberPhases, SupplyVoltage}},
+        {TariffCostCtrlrAvailableTariff, {TariffFallbackMessage}},
+        {TariffCostCtrlrAvailableCost, {TotalCostFallbackMessage, TariffCostCtrlrCurrency}},
+        {MonitoringCtrlrAvailable, {ItemsPerMessageSetVariableMonitoring, BytesPerMessageSetVariableMonitoring}},
+        {DisplayMessageCtrlrAvailable,
+         {NumberOfDisplayMessages, DisplayMessageSupportedFormats, DisplayMessageSupportedPriorities}}};
+
+std::vector<RequiredComponentVariable> required_variables{ChargePointId,
+                                                          NetworkConnectionProfiles,
+                                                          ChargeBoxSerialNumber,
+                                                          ChargePointModel,
+                                                          ChargePointVendor,
+                                                          FirmwareVersion,
+                                                          SupportedCiphers12,
+                                                          SupportedCiphers13,
+                                                          LogMessagesFormat,
+                                                          NumberOfConnectors,
+                                                          SupportedOcppVersions,
+                                                          AuthorizeRemoteStart,
+                                                          LocalAuthorizeOffline,
+                                                          LocalPreAuthorize,
+                                                          ChargingStationAvailabilityState,
+                                                          ChargingStationAvailable,
+                                                          ChargingStationSupplyPhases,
+                                                          ClockCtrlrDateTime,
+                                                          TimeSource,
+                                                          BytesPerMessageGetReport,
+                                                          BytesPerMessageGetVariables,
+                                                          BytesPerMessageSetVariables,
+                                                          ItemsPerMessageGetReport,
+                                                          ItemsPerMessageGetVariables,
+                                                          ItemsPerMessageSetVariables,
+                                                          ContractValidationOffline,
+                                                          FileTransferProtocols,
+                                                          MessageTimeout,
+                                                          MessageAttemptInterval,
+                                                          MessageAttempts,
+                                                          NetworkConfigurationPriority,
+                                                          NetworkProfileConnectionAttempts,
+                                                          OfflineThreshold,
+                                                          ResetRetries,
+                                                          RetryBackOffRandomRange,
+                                                          RetryBackOffRepeatTimes,
+                                                          RetryBackOffWaitMinimum,
+                                                          UnlockOnEVSideDisconnect,
+                                                          WebSocketPingInterval,
+                                                          CertificateEntries,
+                                                          SecurityCtrlrIdentity,
+                                                          OrganizationName,
+                                                          SecurityProfile,
+                                                          EVConnectionTimeOut,
+                                                          StopTxOnEVSideDisconnect,
+                                                          StopTxOnInvalidId,
+                                                          TxStartPoint,
+                                                          TxStopPoint,
+                                                          TxStartPoint,
+                                                          TxStopPoint};
+
+// Note: Power is also required, but the value is not required but the maxLimit. So that is why it is not added here.
+std::vector<Variable> required_evse_variables{
+    EvseComponentVariables::Available, EvseComponentVariables::AvailabilityState, EvseComponentVariables::SupplyPhases};
+
+std::vector<Variable> required_connector_variables{
+    ConnectorComponentVariables::Available, ConnectorComponentVariables::AvailabilityState,
+    ConnectorComponentVariables::SupplyPhases, ConnectorComponentVariables::Type};
+
 const ComponentVariable InternalCtrlrEnabled = {
     ControllerComponents::InternalCtrlr,
     std::optional<Variable>({
@@ -1079,12 +1157,6 @@ const ComponentVariable IgnoredProfilePurposesOffline = {
 const ComponentVariable TariffCostCtrlrAvailableTariff = {
     ControllerComponents::TariffCostCtrlr,
     std::optional<Variable>({"Available", "Tariff"}),
-};
-const ComponentVariable EvseSleep = {
-    ControllerComponents::SmartChargingCtrlr,
-    std::nullopt,
-    std::optional<Variable>({"EvseSleep", std::nullopt}),
-    {OcppProtocolVersion::v21}
 };
 const ComponentVariable TariffCostCtrlrAvailableCost = {
     ControllerComponents::TariffCostCtrlr,
