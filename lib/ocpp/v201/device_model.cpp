@@ -429,6 +429,8 @@ void DeviceModel::check_integrity(const std::map<int32_t, int32_t>& evse_connect
     try {
         this->device_model->check_integrity();
 
+        // TODO: add required variable check here.
+
         int32_t nr_evse_components = 0;
         std::map<int32_t, int32_t> evse_id_nr_connector_components;
 
