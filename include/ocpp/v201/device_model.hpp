@@ -136,6 +136,36 @@ private:
                                    const ocpp::v201::Component& component_,
                                    const struct ocpp::v201::Variable& variable_);
 
+    ///
+    /// \brief Helper function to check if a variable has a value.
+    /// \param component_variable   Component variable to check.
+    /// \param attribute            Attribute to check.
+    ///
+    /// \throws DeviceModelError if variable has no value or value is an empty string.
+    ///
+    void check_variable_has_value(const ComponentVariable& component_variable,
+                                  const AttributeEnum attribute = AttributeEnum::Actual);
+
+    ///
+    /// \brief Helper function to check if a required variable has a value.
+    /// \param required_variable    Required component variable to check.
+    /// \param supported_versions   The current supported ocpp versions.
+    /// \throws DeviceModelError if variable has no value or value is an empty string.
+    ///
+    void check_required_variable(const RequiredComponentVariable& required_variable,
+                                 const std::vector<OcppProtocolVersion>& supported_versions);
+
+    ///
+    /// \brief Loop over all required variables to check if they have a value.
+    ///
+    /// This will check for all required variables from `ctrlr_component_variables.cpp` `required_variables`.
+    /// It will also check for specific required variables that belong to a specific controller. If a controller is not
+    /// available, the 'required' variables of that component are not required at this point.
+    ///
+    /// \throws DeviceModelError if one of the variables does not have a value or value is an empty string.
+    ///
+    void check_required_variables();
+
 public:
     /// \brief Constructor for the device model
     /// \param device_model_storage_interface pointer to a device model interface class
