@@ -9,6 +9,8 @@
 namespace ocpp {
 namespace v201 {
 
+std::vector<RequiredComponentVariable> required_variables;
+
 namespace ControllerComponents {
 extern const Component InternalCtrlr;
 extern const Component AlignedDataCtrlr;

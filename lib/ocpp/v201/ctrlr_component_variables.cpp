@@ -1082,6 +1082,12 @@ const ComponentVariable TariffCostCtrlrAvailableTariff = {
     ControllerComponents::TariffCostCtrlr,
     std::optional<Variable>({"Available", "Tariff"}),
 };
+const ComponentVariable EvseSleep = {
+    ControllerComponents::SmartChargingCtrlr,
+    std::nullopt,
+    std::optional<Variable>({"EvseSleep", std::nullopt}),
+    {OcppProtocolVersion::v21}
+};
 const ComponentVariable TariffCostCtrlrAvailableCost = {
     ControllerComponents::TariffCostCtrlr,
     std::optional<Variable>({"Available", "Cost"}),

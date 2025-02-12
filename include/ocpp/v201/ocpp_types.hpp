@@ -5,6 +5,7 @@
 #ifndef OCPP_V201_OCPP_TYPES_HPP
 #define OCPP_V201_OCPP_TYPES_HPP
 
+#include <set>
 #include <string>
 
 #include <nlohmann/json_fwd.hpp>
@@ -2239,7 +2240,19 @@ void from_json(const json& j, Firmware& k);
 /// \returns an output stream with the Firmware written to
 std::ostream& operator<<(std::ostream& os, const Firmware& k);
 
-struct RequiredComponentVariable : ComponentVariable {};
+struct RequiredComponentVariable : ComponentVariable {
+    RequiredComponentVariable() : required_for({OcppProtocolVersion::v201, OcppProtocolVersion::v21}) {};
+    RequiredComponentVariable(const Component component, const std::optional<CustomData> custom_data,
+                              const std::optional<Variable> variable,
+                              const std::set<OcppProtocolVersion> required_for = {OcppProtocolVersion::v201,
+                                                                                  OcppProtocolVersion::v21}) :
+        ComponentVariable(), required_for(required_for) {
+        this->component = component;
+        this->variable = variable;
+        this->customData = custom_data;
+    };
+    std::set<OcppProtocolVersion> required_for;
+};
 } // namespace v201
 } // namespace ocpp
 
