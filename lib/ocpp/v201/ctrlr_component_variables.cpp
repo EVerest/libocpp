@@ -35,104 +35,6 @@ const Variable Overload = {"Overload"};
 const Variable Fallback = {"Fallback"};
 }; // namespace StandardizedVariables
 
-const std::vector<std::pair<ComponentVariable, std::vector<RequiredComponentVariable>>>
-    required_component_available_variables{
-        {ControllerComponentVariables::AlignedDataCtrlrAvailable,
-         {ControllerComponentVariables::AlignedDataInterval, ControllerComponentVariables::AlignedDataMeasurands,
-          ControllerComponentVariables::AlignedDataTxEndedInterval,
-          ControllerComponentVariables::AlignedDataTxEndedMeasurands}},
-        {ControllerComponentVariables::LocalAuthListCtrlrAvailable,
-         {ControllerComponentVariables::LocalAuthListCtrlrEntries,
-          ControllerComponentVariables::ItemsPerMessageSendLocalList,
-          ControllerComponentVariables::BytesPerMessageSendLocalList}},
-        {ControllerComponentVariables::SampledDataCtrlrAvailable,
-         {ControllerComponentVariables::SampledDataTxEndedMeasurands,
-          ControllerComponentVariables::SampledDataTxEndedInterval,
-          ControllerComponentVariables::SampledDataTxStartedMeasurands,
-          ControllerComponentVariables::SampledDataTxUpdatedMeasurands,
-          ControllerComponentVariables::SampledDataTxUpdatedInterval}},
-        {ControllerComponentVariables::SmartChargingCtrlrAvailable,
-         {ControllerComponentVariables::ChargingProfileMaxStackLevel,
-          ControllerComponentVariables::ChargingScheduleChargingRateUnit,
-          ControllerComponentVariables::PeriodsPerSchedule, ControllerComponentVariables::EntriesChargingProfiles,
-          ControllerComponentVariables::LimitChangeSignificance,
-          ControllerComponentVariables::CompositeScheduleDefaultLimitAmps,
-          ControllerComponentVariables::CompositeScheduleDefaultLimitWatts,
-          ControllerComponentVariables::CompositeScheduleDefaultNumberPhases,
-          ControllerComponentVariables::SupplyVoltage}},
-        {ControllerComponentVariables::TariffCostCtrlrAvailableTariff,
-         {ControllerComponentVariables::TariffFallbackMessage}},
-        {ControllerComponentVariables::TariffCostCtrlrAvailableCost,
-         {ControllerComponentVariables::TotalCostFallbackMessage,
-          ControllerComponentVariables::TariffCostCtrlrCurrency}},
-        {ControllerComponentVariables::MonitoringCtrlrAvailable,
-         {ControllerComponentVariables::ItemsPerMessageSetVariableMonitoring,
-          ControllerComponentVariables::BytesPerMessageSetVariableMonitoring}},
-        {ControllerComponentVariables::DisplayMessageCtrlrAvailable,
-         {ControllerComponentVariables::NumberOfDisplayMessages,
-          ControllerComponentVariables::DisplayMessageSupportedFormats,
-          ControllerComponentVariables::DisplayMessageSupportedPriorities}}};
-
-const std::vector<RequiredComponentVariable> required_variables{
-    ControllerComponentVariables::ChargePointId,
-    ControllerComponentVariables::NetworkConnectionProfiles,
-    ControllerComponentVariables::ChargeBoxSerialNumber,
-    ControllerComponentVariables::ChargePointModel,
-    ControllerComponentVariables::ChargePointVendor,
-    ControllerComponentVariables::FirmwareVersion,
-    ControllerComponentVariables::SupportedCiphers12,
-    ControllerComponentVariables::SupportedCiphers13,
-    ControllerComponentVariables::LogMessagesFormat,
-    ControllerComponentVariables::NumberOfConnectors,
-    ControllerComponentVariables::SupportedOcppVersions,
-    ControllerComponentVariables::AuthorizeRemoteStart,
-    ControllerComponentVariables::LocalAuthorizeOffline,
-    ControllerComponentVariables::LocalPreAuthorize,
-    ControllerComponentVariables::ChargingStationAvailabilityState,
-    ControllerComponentVariables::ChargingStationAvailable,
-    ControllerComponentVariables::ChargingStationSupplyPhases,
-    ControllerComponentVariables::ClockCtrlrDateTime,
-    ControllerComponentVariables::TimeSource,
-    ControllerComponentVariables::BytesPerMessageGetReport,
-    ControllerComponentVariables::BytesPerMessageGetVariables,
-    ControllerComponentVariables::BytesPerMessageSetVariables,
-    ControllerComponentVariables::ItemsPerMessageGetReport,
-    ControllerComponentVariables::ItemsPerMessageGetVariables,
-    ControllerComponentVariables::ItemsPerMessageSetVariables,
-    ControllerComponentVariables::ContractValidationOffline,
-    ControllerComponentVariables::FileTransferProtocols,
-    ControllerComponentVariables::MessageTimeout,
-    ControllerComponentVariables::MessageAttemptInterval,
-    ControllerComponentVariables::MessageAttempts,
-    ControllerComponentVariables::NetworkConfigurationPriority,
-    ControllerComponentVariables::NetworkProfileConnectionAttempts,
-    ControllerComponentVariables::OfflineThreshold,
-    ControllerComponentVariables::ResetRetries,
-    ControllerComponentVariables::RetryBackOffRandomRange,
-    ControllerComponentVariables::RetryBackOffRepeatTimes,
-    ControllerComponentVariables::RetryBackOffWaitMinimum,
-    ControllerComponentVariables::UnlockOnEVSideDisconnect,
-    ControllerComponentVariables::WebSocketPingInterval,
-    ControllerComponentVariables::CertificateEntries,
-    ControllerComponentVariables::SecurityCtrlrIdentity,
-    ControllerComponentVariables::OrganizationName,
-    ControllerComponentVariables::SecurityProfile,
-    ControllerComponentVariables::EVConnectionTimeOut,
-    ControllerComponentVariables::StopTxOnEVSideDisconnect,
-    ControllerComponentVariables::StopTxOnInvalidId,
-    ControllerComponentVariables::TxStartPoint,
-    ControllerComponentVariables::TxStopPoint,
-    ControllerComponentVariables::TxStartPoint,
-    ControllerComponentVariables::TxStopPoint};
-
-// Note: Power is also required, but the value is not required but the maxLimit. So that is why it is not added here.
-const std::vector<Variable> required_evse_variables{
-    EvseComponentVariables::Available, EvseComponentVariables::AvailabilityState, EvseComponentVariables::SupplyPhases};
-
-const std::vector<Variable> required_connector_variables{
-    ConnectorComponentVariables::Available, ConnectorComponentVariables::AvailabilityState,
-    ConnectorComponentVariables::SupplyPhases, ConnectorComponentVariables::Type};
-
 namespace ControllerComponentVariables {
 const ComponentVariable InternalCtrlrEnabled = {
     ControllerComponents::InternalCtrlr,
@@ -1278,7 +1180,7 @@ namespace ConnectorComponentVariables {
 
 const Variable Available = {"Available"};
 const Variable AvailabilityState = {"AvailabilityState"};
-const Variable Type = {"Type"};
+const Variable Type = {"ConnectorType"};
 const Variable SupplyPhases = {"SupplyPhases"};
 
 ComponentVariable get_component_variable(const int32_t evse_id, const int32_t connector_id, const Variable& variable) {
@@ -1290,6 +1192,104 @@ ComponentVariable get_component_variable(const int32_t evse_id, const int32_t co
     return component_variable;
 }
 } // namespace ConnectorComponentVariables
+
+const std::vector<std::pair<ComponentVariable, std::vector<RequiredComponentVariable>>>
+    required_component_available_variables{
+        {ControllerComponentVariables::AlignedDataCtrlrAvailable,
+         {ControllerComponentVariables::AlignedDataInterval, ControllerComponentVariables::AlignedDataMeasurands,
+          ControllerComponentVariables::AlignedDataTxEndedInterval,
+          ControllerComponentVariables::AlignedDataTxEndedMeasurands}},
+        {ControllerComponentVariables::LocalAuthListCtrlrAvailable,
+         {ControllerComponentVariables::LocalAuthListCtrlrEntries,
+          ControllerComponentVariables::ItemsPerMessageSendLocalList,
+          ControllerComponentVariables::BytesPerMessageSendLocalList}},
+        {ControllerComponentVariables::SampledDataCtrlrAvailable,
+         {ControllerComponentVariables::SampledDataTxEndedMeasurands,
+          ControllerComponentVariables::SampledDataTxEndedInterval,
+          ControllerComponentVariables::SampledDataTxStartedMeasurands,
+          ControllerComponentVariables::SampledDataTxUpdatedMeasurands,
+          ControllerComponentVariables::SampledDataTxUpdatedInterval}},
+        {ControllerComponentVariables::SmartChargingCtrlrAvailable,
+         {ControllerComponentVariables::ChargingProfileMaxStackLevel,
+          ControllerComponentVariables::ChargingScheduleChargingRateUnit,
+          ControllerComponentVariables::PeriodsPerSchedule, ControllerComponentVariables::EntriesChargingProfiles,
+          ControllerComponentVariables::LimitChangeSignificance,
+          ControllerComponentVariables::CompositeScheduleDefaultLimitAmps,
+          ControllerComponentVariables::CompositeScheduleDefaultLimitWatts,
+          ControllerComponentVariables::CompositeScheduleDefaultNumberPhases,
+          ControllerComponentVariables::SupplyVoltage}},
+        {ControllerComponentVariables::TariffCostCtrlrAvailableTariff,
+         {ControllerComponentVariables::TariffFallbackMessage}},
+        {ControllerComponentVariables::TariffCostCtrlrAvailableCost,
+         {ControllerComponentVariables::TotalCostFallbackMessage,
+          ControllerComponentVariables::TariffCostCtrlrCurrency}},
+        {ControllerComponentVariables::MonitoringCtrlrAvailable,
+         {ControllerComponentVariables::ItemsPerMessageSetVariableMonitoring,
+          ControllerComponentVariables::BytesPerMessageSetVariableMonitoring}},
+        {ControllerComponentVariables::DisplayMessageCtrlrAvailable,
+         {ControllerComponentVariables::NumberOfDisplayMessages,
+          ControllerComponentVariables::DisplayMessageSupportedFormats,
+          ControllerComponentVariables::DisplayMessageSupportedPriorities}}};
+
+const std::vector<RequiredComponentVariable> required_variables{
+    ControllerComponentVariables::ChargePointId,
+    ControllerComponentVariables::NetworkConnectionProfiles,
+    ControllerComponentVariables::ChargeBoxSerialNumber,
+    ControllerComponentVariables::ChargePointModel,
+    ControllerComponentVariables::ChargePointVendor,
+    ControllerComponentVariables::FirmwareVersion,
+    ControllerComponentVariables::SupportedCiphers12,
+    ControllerComponentVariables::SupportedCiphers13,
+    ControllerComponentVariables::LogMessagesFormat,
+    ControllerComponentVariables::NumberOfConnectors,
+    ControllerComponentVariables::SupportedOcppVersions,
+    ControllerComponentVariables::AuthorizeRemoteStart,
+    ControllerComponentVariables::LocalAuthorizeOffline,
+    ControllerComponentVariables::LocalPreAuthorize,
+    ControllerComponentVariables::ChargingStationAvailabilityState,
+    ControllerComponentVariables::ChargingStationAvailable,
+    ControllerComponentVariables::ChargingStationSupplyPhases,
+    ControllerComponentVariables::ClockCtrlrDateTime,
+    ControllerComponentVariables::TimeSource,
+    ControllerComponentVariables::BytesPerMessageGetReport,
+    ControllerComponentVariables::BytesPerMessageGetVariables,
+    ControllerComponentVariables::BytesPerMessageSetVariables,
+    ControllerComponentVariables::ItemsPerMessageGetReport,
+    ControllerComponentVariables::ItemsPerMessageGetVariables,
+    ControllerComponentVariables::ItemsPerMessageSetVariables,
+    ControllerComponentVariables::ContractValidationOffline,
+    ControllerComponentVariables::FileTransferProtocols,
+    ControllerComponentVariables::MessageTimeout,
+    ControllerComponentVariables::MessageAttemptInterval,
+    ControllerComponentVariables::MessageAttempts,
+    ControllerComponentVariables::NetworkConfigurationPriority,
+    ControllerComponentVariables::NetworkProfileConnectionAttempts,
+    ControllerComponentVariables::OfflineThreshold,
+    ControllerComponentVariables::ResetRetries,
+    ControllerComponentVariables::RetryBackOffRandomRange,
+    ControllerComponentVariables::RetryBackOffRepeatTimes,
+    ControllerComponentVariables::RetryBackOffWaitMinimum,
+    ControllerComponentVariables::UnlockOnEVSideDisconnect,
+    ControllerComponentVariables::WebSocketPingInterval,
+    ControllerComponentVariables::CertificateEntries,
+    ControllerComponentVariables::SecurityCtrlrIdentity,
+    ControllerComponentVariables::OrganizationName,
+    ControllerComponentVariables::SecurityProfile,
+    ControllerComponentVariables::EVConnectionTimeOut,
+    ControllerComponentVariables::StopTxOnEVSideDisconnect,
+    ControllerComponentVariables::StopTxOnInvalidId,
+    ControllerComponentVariables::TxStartPoint,
+    ControllerComponentVariables::TxStopPoint,
+    ControllerComponentVariables::TxStartPoint,
+    ControllerComponentVariables::TxStopPoint};
+
+// Note: Power is also required, but the value is not required but the maxLimit. So that is why it is not added here.
+const std::vector<Variable> required_evse_variables{
+    EvseComponentVariables::Available, EvseComponentVariables::AvailabilityState, EvseComponentVariables::SupplyPhases};
+
+const std::vector<Variable> required_connector_variables{
+    ConnectorComponentVariables::Available, ConnectorComponentVariables::AvailabilityState,
+    ConnectorComponentVariables::SupplyPhases, ConnectorComponentVariables::Type};
 
 } // namespace v201
 } // namespace ocpp
