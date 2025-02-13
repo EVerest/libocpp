@@ -15,23 +15,23 @@ namespace v201 {
 /// First value is the 'available' variable from the specific component. Second value is a set of required variables.
 /// This makes it possible to check only for the required variables if a component is available.
 ///
-extern std::vector<std::pair<ComponentVariable, std::vector<RequiredComponentVariable>>>
+extern const std::vector<std::pair<ComponentVariable, std::vector<RequiredComponentVariable>>>
     required_component_available_variables;
 
 ///
 /// \brief Required variables that should always exist, regardless of any available or not available controller.
 ///
-extern std::vector<RequiredComponentVariable> required_variables;
+extern const std::vector<RequiredComponentVariable> required_variables;
 
 ///
 /// \brief Required variables of an EVSE.
 ///
-extern std::vector<Variable> required_evse_variables;
+extern const std::vector<Variable> required_evse_variables;
 
 ///
 /// \brief Required variables of a connector.
 ///
-extern std::vector<Variable> required_connector_variables;
+extern const std::vector<Variable> required_connector_variables;
 
 namespace ControllerComponents {
 extern const Component InternalCtrlr;
