@@ -129,9 +129,9 @@ void DeviceModel::check_variable_has_value(const ComponentVariable& component_va
     const auto response = this->request_value_internal(component_variable.component,
                                                        component_variable.variable.value(), attribute, value, true);
 
-    if (response != GetVariableStatusEnum::Accepted || value.empty()) {
-        throw DeviceModelError("Required variable " + component_variable.variable->name.get() +
-                               " does not have a value in the device model");
+    if (response != GetVariableStatusEnum::Accepted) {
+        throw DeviceModelError("Required variable " + component_variable.variable->name.get() + " of component " +
+                               component_variable.component.name.get() + " does not have a value in the device model");
     }
 }
 
@@ -563,7 +563,7 @@ void DeviceModel::check_integrity(const std::map<int32_t, int32_t>& evse_connect
             }
         }
     } catch (const DeviceModelError& e) {
-        EVLOG_error << "Integrity check in Device Model failed:" << e.what();
+        EVLOG_error << "Integrity check in Device Model failed: " << e.what();
         throw e;
     }
 }

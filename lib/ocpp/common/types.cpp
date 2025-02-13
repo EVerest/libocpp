@@ -1061,11 +1061,11 @@ namespace conversions {
 std::string ocpp_protocol_version_to_string(OcppProtocolVersion e) {
     switch (e) {
     case OcppProtocolVersion::v16:
-        return "ocpp1.6";
+        return "1.6";
     case OcppProtocolVersion::v201:
-        return "ocpp2.0.1";
+        return "2.0.1";
     case OcppProtocolVersion::v21:
-        return "ocpp2.1";
+        return "2.1";
     case OcppProtocolVersion::Unknown:
         return "unknown";
     }
@@ -1074,13 +1074,13 @@ std::string ocpp_protocol_version_to_string(OcppProtocolVersion e) {
 }
 
 OcppProtocolVersion string_to_ocpp_protocol_version(const std::string& s) {
-    if (s == "ocpp1.6") {
+    if (s == "1.6") {
         return OcppProtocolVersion::v16;
     }
-    if (s == "ocpp2.0.1") {
+    if (s == "2.0.1") {
         return OcppProtocolVersion::v201;
     }
-    if (s == "ocpp2.1") {
+    if (s == "2.1") {
         return OcppProtocolVersion::v21;
     }
     if (s == "unknown") {
