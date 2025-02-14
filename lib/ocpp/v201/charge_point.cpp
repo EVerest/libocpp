@@ -832,8 +832,8 @@ void ChargePoint::message_callback(const std::string& message) {
         this->message_dispatcher->dispatch_call_error(
             CallError(MessageId("-1"), "RpcFrameworkError", e.what(), json({})));
         const auto& security_event = ocpp::security_events::INVALIDMESSAGES;
-        this->security->security_event_notification_req(CiString<50>(security_event, StringToLarge::Truncate),
-                                                        CiString<255>(message, StringToLarge::Truncate), true,
+        this->security->security_event_notification_req(CiString<50>(security_event, StringTooLarge::Truncate),
+                                                        CiString<255>(message, StringTooLarge::Truncate), true,
                                                         utils::is_critical(security_event));
         return;
     } catch (const StringConversionException& e) {
@@ -842,8 +842,8 @@ void ChargePoint::message_callback(const std::string& message) {
         this->message_dispatcher->dispatch_call_error(
             CallError(MessageId("-1"), "RpcFrameworkError", e.what(), json({})));
         const auto& security_event = ocpp::security_events::INVALIDMESSAGES;
-        this->security->security_event_notification_req(CiString<50>(security_event, StringToLarge::Truncate),
-                                                        CiString<255>(message, StringToLarge::Truncate), true,
+        this->security->security_event_notification_req(CiString<50>(security_event, StringTooLarge::Truncate),
+                                                        CiString<255>(message, StringTooLarge::Truncate), true,
                                                         utils::is_critical(security_event));
         return;
     } catch (const EnumConversionException& e) {
@@ -851,8 +851,8 @@ void ChargePoint::message_callback(const std::string& message) {
         auto call_error = CallError(MessageId("-1"), "FormationViolation", e.what(), json({}));
         this->message_dispatcher->dispatch_call_error(call_error);
         const auto& security_event = ocpp::security_events::INVALIDMESSAGES;
-        this->security->security_event_notification_req(CiString<50>(security_event, StringToLarge::Truncate),
-                                                        CiString<255>(message, StringToLarge::Truncate), true,
+        this->security->security_event_notification_req(CiString<50>(security_event, StringTooLarge::Truncate),
+                                                        CiString<255>(message, StringTooLarge::Truncate), true,
                                                         utils::is_critical(security_event));
         return;
     }

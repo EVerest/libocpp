@@ -17,10 +17,10 @@ template <size_t L> class CiString : public String<L> {
 
 public:
     /// \brief Creates a string from the given \p data
-    CiString(const std::string& data, StringToLarge to_large = StringToLarge::Throw) : String<L>(data, to_large) {
+    CiString(const std::string& data, StringTooLarge to_large = StringTooLarge::Throw) : String<L>(data, to_large) {
     }
 
-    CiString(const char* data, StringToLarge to_large = StringToLarge::Throw) : String<L>(data, to_large) {
+    CiString(const char* data, StringTooLarge to_large = StringTooLarge::Throw) : String<L>(data, to_large) {
     }
 
     CiString(const CiString<L>& data) : String<L>(data.get()) {

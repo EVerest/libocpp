@@ -15,7 +15,7 @@ class StringConversionException : public std::runtime_error {
     using std::runtime_error::runtime_error;
 };
 
-enum class StringToLarge {
+enum class StringTooLarge {
     Throw,
     Truncate
 };
@@ -28,11 +28,11 @@ private:
 
 public:
     /// \brief Creates a string from the given \p data
-    String(const std::string& data, StringToLarge to_large = StringToLarge::Throw) {
+    explicit String(const std::string& data, StringTooLarge to_large = StringTooLarge::Throw) {
         this->set(data, to_large);
     }
 
-    String(const char* data, StringToLarge to_large = StringToLarge::Throw) {
+    explicit String(const char* data, StringTooLarge to_large = StringTooLarge::Throw) {
         this->set(data, to_large);
     }
 
@@ -46,10 +46,10 @@ public:
     }
 
     /// \brief Sets the content of the string to the given \p data
-    void set(const std::string& data, StringToLarge to_large = StringToLarge::Throw) {
+    void set(const std::string& data, StringTooLarge to_large = StringTooLarge::Throw) {
         std::string_view view = data;
         if (view.length() > this->length) {
-            if (to_large == StringToLarge::Throw) {
+            if (to_large == StringTooLarge::Throw) {
                 throw StringConversionException("String length (" + std::to_string(view.length()) +
                                                 ") exceeds permitted length (" + std::to_string(this->length) + ")");
             }
