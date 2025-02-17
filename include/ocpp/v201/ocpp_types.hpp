@@ -2236,12 +2236,24 @@ void to_json(json& j, const Firmware& k);
 /// \brief Conversion from a given json object \p j to a given Firmware \p k
 void from_json(const json& j, Firmware& k);
 
-// \brief Writes the string representation of the given Firmware \p k to the given output stream \p os
+/// \brief Writes the string representation of the given Firmware \p k to the given output stream \p os
 /// \returns an output stream with the Firmware written to
 std::ostream& operator<<(std::ostream& os, const Firmware& k);
 
+///
+/// \brief Required ComponentVariable.
+///
 struct RequiredComponentVariable : ComponentVariable {
+    /// \brief Constructor
     RequiredComponentVariable() : required_for({OcppProtocolVersion::v201, OcppProtocolVersion::v21}) {};
+
+    ///
+    /// \brief RequiredComponentVariable
+    /// \param component    Component
+    /// \param variable     Variable
+    /// \param custom_data  Custom data (default nullopt)
+    /// \param required_for Required for which version. Multiple versions can be given.
+    ///
     RequiredComponentVariable(const Component component, const std::optional<Variable> variable,
                               const std::optional<CustomData> custom_data = std::nullopt,
                               const std::set<OcppProtocolVersion> required_for = {OcppProtocolVersion::v201,
@@ -2251,6 +2263,8 @@ struct RequiredComponentVariable : ComponentVariable {
         this->variable = variable;
         this->customData = custom_data;
     };
+
+    /// \brief For which ocpp protocol version(s) this component variable is required.
     std::set<OcppProtocolVersion> required_for;
 };
 } // namespace v201
