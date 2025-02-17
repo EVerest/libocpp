@@ -455,8 +455,7 @@ TEST_F(DeviceModelTest, test_check_integrity_missing_required_evse_power) {
     EXPECT_THROW(dm->check_integrity(evse_connector_structure), DeviceModelError);
 
     // Now remove the complete variable.
-    device_model_test_helper.remove_variable_from_db("EVSE", std::nullopt, 1, std::nullopt, "Power",
-                                                     std::nullopt);
+    device_model_test_helper.remove_variable_from_db("EVSE", std::nullopt, 1, std::nullopt, "Power", std::nullopt);
     dm = device_model_test_helper.get_device_model();
     // This should also throw an exception.
     EXPECT_THROW(dm->check_integrity(evse_connector_structure), DeviceModelError);
