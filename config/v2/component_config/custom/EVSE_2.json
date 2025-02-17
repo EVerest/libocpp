@@ -138,8 +138,7 @@
         }
       ],
       "description": "When DCInputPhaseControl is true, then the values of numberPhases and PhaseToUse in a ChargingSchedulePeriodType will select the input phases from the grid to be used by the DC EVSE.",
-      "type": "boolean",
-      "ocpp_version": "2.1"
+      "type": "boolean"
     }
   },
   "required": [

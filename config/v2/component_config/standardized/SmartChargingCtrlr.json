@@ -285,8 +285,7 @@
       }
     ],
     "description": "If defined and true, Charging profile with chargingProfilePurpose TxProfile is stored in the database (which is the current behaviour, so don't change this)",
-    "type": "boolean",
-    "ocpp_version": "2.1"
+    "type": "boolean"
   },
   "ChargingProfilePersistenceChargingStationExternalConstraints": {
     "variable_name": "ChargingProfilePersistence",
@@ -303,8 +302,7 @@
       }
     ],
     "description": "If defined and true, Charging profile with chargingProfilePurpose ChargingStationExternalConstraints is stored in the database (which is the current behaviour, so don't change this)",
-    "type": "boolean",
-    "ocpp_version": "2.1"
+    "type": "boolean"
   },
   "ChargingProfilePersistenceLocalGeneration": {
     "variable_name": "ChargingProfilePersistenceLocalGeneration",
@@ -321,8 +319,7 @@
       }
     ],
     "description": "If defined and true, Charging profile with chargingProfilePurpose LocalGeneration is stored in the database (which is the current behaviour, so don't change this)",
-    "type": "boolean",
-    "ocpp_version": "2.1"
+    "type": "boolean"
   },
   "ChargingProfileUpdateRateLimit": {
     "variable_name": "UpdateRateLimit",
@@ -337,8 +334,7 @@
       }
     ],
     "type": "integer",
-    "description": "This configuration key limits how often a persistent charging profile can be updated. It is the minimum duration in seconds between updates of charging profiles of the same chargingProfilePurpose. A Charging Station may reject SetChargingProfileRequests that occur too frequently.",
-    "ocpp_version": "2.1"
+    "description": "This configuration key limits how often a persistent charging profile can be updated. It is the minimum duration in seconds between updates of charging profiles of the same chargingProfilePurpose. A Charging Station may reject SetChargingProfileRequests that occur too frequently."
   },
   "MaxExternalConstraintsId": {
     "variable_name": "MaxExternalConstraintsId",
@@ -353,8 +349,7 @@
       }
     ],
     "type": "integer",
-    "description": "Defines the highest value that a charging profile id of a ChargingStationExternalConstraints profile in the Charging Station can have. CSMS will use charging profile id’s above this value to avoid conflicts with  ChargingStationExternalConstraints profiles created by the Charging Station.",
-    "ocpp_version": "2.1"
+    "description": "Defines the highest value that a charging profile id of a ChargingStationExternalConstraints profile in the Charging Station can have. CSMS will use charging profile id’s above this value to avoid conflicts with  ChargingStationExternalConstraints profiles created by the Charging Station."
   },
   "SupportedAdditionalPurposes": {
     "variable_name": "SupportedAdditionalPurposes",
@@ -371,8 +366,7 @@
       }
     ],
     "description": "This configuration variable lists the additional ChargingProfilePurposeEnumType, that have been introduced in OCPP 2.1, that are supported by the Charging Station. When this variable is absent or an empty list, then the purposes PriorityCharging and LocalGeneration are not supported.",
-    "type": "string",
-    "ocpp_version": "2.1"
+    "type": "string"
   },
   "SupportsDynamicProfiles": {
     "variable_name": "SupportsFeature",
@@ -389,8 +383,7 @@
       }
     ],
     "description": "When this variable has value True, then the Charging Station supports charging profiles of ChargingProfileKindEnumType Dynamic. This implies that the fields dynUpdateInterval and dynUpdateTime in ChargingProfileType are supported. When this variable is absent or false, dynamic charging profiles are not supported.",
-    "type": "boolean",
-    "ocpp_version": "2.1"
+    "type": "boolean"
   },
   "SupportsUseLocalTime": {
     "variable_name": "SupportsFeature",
@@ -407,8 +400,7 @@
       }
     ],
     "description": "When this variable has value True, then the Charging Station supports the field useLocalTime in ChargingScheduleType. If useLocalTime = true in a charging schedule, then the startSchedule is treated as unqualified local time of the Charging Station. When this variable is absent or false, the useLocalTime is not supported.",
-    "type": "boolean",
-    "ocpp_version": "2.1"
+    "type": "boolean"
   },
   "SupportsRandomizedDelay": {
     "variable_name": "SupportsFeature",
@@ -425,8 +417,7 @@
       }
     ],
     "description": "When this variable has value True, then the Charging Station supports the field randomizedDelay in ChargingScheduleType, which will delay the start of each charging schedule period by a random number between 0 and randomizedDelay. When this variable is absent or false, then randomizedDelay is not supported.",
-    "type": "boolean",
-    "ocpp_version": "2.1"
+    "type": "boolean"
   },
   "SupportsLimitAtSoC": {
     "variable_name": "SupportsFeature",
@@ -443,8 +434,7 @@
       }
     ],
     "description": "When this variable has value True, then the Charging Station supports the field limitAtSoC in ChargingScheduleType, which will cap the limit or setpoint in the ChargingSchedulePeriodType by the value of limitAtSoC.limit. When this variable is absent or false, then limitAtSoC is not supported.",
-    "type": "boolean",
-    "ocpp_version": "2.1"
+    "type": "boolean"
   },
   "SupportsEvseSleep": {
     "variable_name": "SupportsFeature",
@@ -461,8 +451,7 @@
       }
     ],
     "description": "When reported as true the Charging Station supports the evseSleep flag in a ChargingSchedulePeriodType, which requests the EVSE electronics to go to sleep during operationMode = 'Idle'. When absent or false this option is not supported.",
-    "type": "boolean",
-    "ocpp_version": "2.1"
+    "type": "boolean"
   },
   "required": [
     "ChargingProfileMaxStackLevel",
