@@ -178,11 +178,6 @@ void Provisioning::notify_report_req(const int request_id, const std::vector<Rep
 }
 
 void Provisioning::handle_boot_notification_response(CallResult<BootNotificationResponse> call_result) {
-    // TODO(piet): B01.FR.06
-    // TODO(piet): B01.FR.07
-    // TODO(piet): B01.FR.08
-    // TODO(piet): B01.FR.09
-    // TODO(piet): B01.FR.13
     EVLOG_info << "Received BootNotificationResponse: " << call_result.msg
                << "\nwith messageId: " << call_result.uniqueId;
 
@@ -434,10 +429,6 @@ void Provisioning::handle_set_network_profile_req(Call<SetNetworkProfileRequest>
 }
 
 void Provisioning::handle_reset_req(Call<ResetRequest> call) {
-    // TODO(piet): B11.FR.05
-
-    // TODO(piet): B12.FR.05
-    // TODO(piet): B12.FR.06
     EVLOG_debug << "Received ResetRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
     const auto msg = call.msg;
 
