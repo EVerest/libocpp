@@ -13,11 +13,15 @@
 #include <ocpp/v201/functional_blocks/data_transfer.hpp>
 #include <ocpp/v201/functional_blocks/diagnostics.hpp>
 #include <ocpp/v201/functional_blocks/display_message.hpp>
+#include <ocpp/v201/functional_blocks/firmware_update.hpp>
 #include <ocpp/v201/functional_blocks/meter_values.hpp>
+#include <ocpp/v201/functional_blocks/provisioning.hpp>
+#include <ocpp/v201/functional_blocks/remote_transaction_control.hpp>
 #include <ocpp/v201/functional_blocks/reservation.hpp>
 #include <ocpp/v201/functional_blocks/security.hpp>
 #include <ocpp/v201/functional_blocks/smart_charging.hpp>
 #include <ocpp/v201/functional_blocks/tariff_and_cost.hpp>
+#include <ocpp/v201/functional_blocks/transaction.hpp>
 
 #include <ocpp/common/charging_station_base.hpp>
 
@@ -45,24 +49,17 @@
 #include <ocpp/v201/messages/GetLog.hpp>
 #include <ocpp/v201/messages/GetMonitoringReport.hpp>
 #include <ocpp/v201/messages/GetReport.hpp>
-#include <ocpp/v201/messages/GetTransactionStatus.hpp>
 #include <ocpp/v201/messages/GetVariables.hpp>
 #include <ocpp/v201/messages/NotifyCustomerInformation.hpp>
 #include <ocpp/v201/messages/NotifyEvent.hpp>
 #include <ocpp/v201/messages/NotifyMonitoringReport.hpp>
 #include <ocpp/v201/messages/NotifyReport.hpp>
-#include <ocpp/v201/messages/RequestStartTransaction.hpp>
-#include <ocpp/v201/messages/RequestStopTransaction.hpp>
 #include <ocpp/v201/messages/Reset.hpp>
 #include <ocpp/v201/messages/SetMonitoringBase.hpp>
 #include <ocpp/v201/messages/SetMonitoringLevel.hpp>
 #include <ocpp/v201/messages/SetNetworkProfile.hpp>
 #include <ocpp/v201/messages/SetVariableMonitoring.hpp>
 #include <ocpp/v201/messages/SetVariables.hpp>
-#include <ocpp/v201/messages/TransactionEvent.hpp>
-#include <ocpp/v201/messages/TriggerMessage.hpp>
-#include <ocpp/v201/messages/UnlockConnector.hpp>
-#include <ocpp/v201/messages/UpdateFirmware.hpp>
 
 #include "component_state_manager.hpp"
 
@@ -256,11 +253,6 @@ public:
 
     /// @}
 
-    /// \brief Gets the transaction id for a certain \p evse_id if there is an active transaction
-    /// \param evse_id The evse to tet the transaction for
-    /// \return The transaction id if a transaction is active, otherwise nullopt
-    virtual std::optional<std::string> get_evse_transaction_id(int32_t evse_id) = 0;
-
     /// \brief Validates provided \p id_token \p certificate and \p ocsp_request_data using CSMS, AuthCache or AuthList
     /// \param id_token
     /// \param certificate
@@ -364,30 +356,24 @@ private:
     std::unique_ptr<DiagnosticsInterface> diagnostics;
     std::unique_ptr<SecurityInterface> security;
     std::unique_ptr<DisplayMessageInterface> display_message;
+    std::unique_ptr<FirmwareUpdateInterface> firmware_update;
     std::unique_ptr<MeterValuesInterface> meter_values;
     std::unique_ptr<SmartCharging> smart_charging;
     std::unique_ptr<TariffAndCostInterface> tariff_and_cost;
+    std::unique_ptr<TransactionInterface> transaction;
+    std::unique_ptr<ProvisioningInterface> provisioning;
+    std::unique_ptr<RemoteTransactionControl> remote_transaction_control;
 
     // utility
     std::shared_ptr<MessageQueue<v201::MessageType>> message_queue;
     std::shared_ptr<DatabaseHandler> database_handler;
 
-    std::map<int32_t, std::pair<IdToken, int32_t>> remote_start_id_per_evse;
-
-    // timers
-    Everest::SteadyTimer boot_notification_timer;
-
     // states
     std::atomic<RegistrationStatusEnum> registration_status;
     std::atomic<OcppProtocolVersion> ocpp_version =
         OcppProtocolVersion::Unknown; // version that is currently in use, selected by CSMS in websocket handshake
-    FirmwareStatusEnum firmware_status;
-    // The request ID in the last firmware update status received
-    std::optional<int32_t> firmware_status_id;
-    // The last firmware status which will be posted before the firmware is installed.
-    FirmwareStatusEnum firmware_status_before_installing = FirmwareStatusEnum::SignatureVerified;
-    UploadLogStatusEnum upload_log_status;
-    int32_t upload_log_status_id;
+    std::atomic<UploadLogStatusEnum> upload_log_status;
+    std::atomic<int32_t> upload_log_status_id;
     BootReasonEnum bootreason;
     bool skip_invalid_csms_certificate_notifications;
 
@@ -411,11 +397,6 @@ private:
 
     std::chrono::time_point<std::chrono::steady_clock> time_disconnected;
 
-    /// \brief Used when an 'OnIdle' reset is requested, to perform the reset after the charging has stopped.
-    bool reset_scheduled;
-    /// \brief If `reset_scheduled` is true and the reset is for a specific evse id, it will be stored in this member.
-    std::set<int32_t> reset_scheduled_evseids;
-
     // callback struct
     Callbacks callbacks;
 
@@ -438,49 +419,7 @@ private:
 
     void message_callback(const std::string& message);
 
-    /// \brief Helper function to determine if the requested change results in a state that the Connector(s) is/are
-    /// already in \param request \return
-    void handle_variable_changed(const SetVariableData& set_variable_data);
-    void handle_variables_changed(const std::map<SetVariableData, SetVariableResult>& set_variable_results);
-    bool validate_set_variable(const SetVariableData& set_variable_data);
-
-    /// \brief Sets variables specified within \p set_variable_data_vector in the device model and returns the result.
-    /// \param set_variable_data_vector contains data of the variables to set
-    /// \param source   value source (who sets the value, for example 'csms' or 'libocpp')
-    /// \param allow_read_only if true, setting VariableAttribute values with mutability ReadOnly is allowed
-    /// \return Map containing the SetVariableData as a key and the  SetVariableResult as a value for each requested
-    /// change
-    std::map<SetVariableData, SetVariableResult>
-    set_variables_internal(const std::vector<SetVariableData>& set_variable_data_vector, const std::string& source,
-                           const bool allow_read_only);
-
-    /// \brief Changes all unoccupied connectors to unavailable. If a transaction is running schedule an availabilty
-    /// change
-    /// If all connectors are unavailable signal to the firmware updater that installation of the firmware update can
-    /// proceed
-    void change_all_connectors_to_unavailable_for_firmware_update();
-
-    /// \brief Restores all connectors to their persisted state
-    void restore_all_connector_states();
-
     ///
-    /// \brief Check if EVSE connector is reserved for another than the given id token and / or group id token.
-    /// \param evse             The evse id that must be checked. Reservation will be checked for all connectors.
-    /// \param id_token         The id token to check if it is reserved for that token.
-    /// \param group_id_token   The group id token to check if it is reserved for that group id.
-    /// \return The status of the reservation for this evse, id token and group id token.
-    ///
-    ReservationCheckStatus is_evse_reserved_for_other(EvseInterface& evse, const IdToken& id_token,
-                                                      const std::optional<IdToken>& group_id_token) const;
-
-    ///
-    /// \brief Check if one of the connectors of the evse is available (both connectors faulted or unavailable or on of
-    ///        the connectors occupied).
-    /// \param evse Evse to check.
-    /// \return True if at least one connector is not faulted or unavailable.
-    ///
-    bool is_evse_connector_available(EvseInterface& evse) const;
-
     /// \brief Check if the connector exists on the given evse id.
     /// \param evse_id          The evse id to check for.
     /// \param connector_type   The connector type.
@@ -498,45 +437,7 @@ private:
 
     /* OCPP message requests */
 
-    // Functional Block B: Provisioning
-    void boot_notification_req(const BootReasonEnum& reason, const bool initiated_by_trigger_message = false);
-    void notify_report_req(const int request_id, const std::vector<ReportData>& report_data);
-
-    // Functional Block E: Transactions
-    void transaction_event_req(const TransactionEventEnum& event_type, const DateTime& timestamp,
-                               const ocpp::v201::Transaction& transaction,
-                               const ocpp::v201::TriggerReasonEnum& trigger_reason, const int32_t seq_no,
-                               const std::optional<int32_t>& cable_max_current,
-                               const std::optional<ocpp::v201::EVSE>& evse,
-                               const std::optional<ocpp::v201::IdToken>& id_token,
-                               const std::optional<std::vector<ocpp::v201::MeterValue>>& meter_value,
-                               const std::optional<int32_t>& number_of_phases_used, const bool offline,
-                               const std::optional<int32_t>& reservation_id,
-                               const bool initiated_by_trigger_message = false);
-
     /* OCPP message handlers */
-
-    // Functional Block B: Provisioning
-    void handle_boot_notification_response(CallResult<BootNotificationResponse> call_result);
-    void handle_set_variables_req(Call<SetVariablesRequest> call);
-    void handle_get_variables_req(const EnhancedMessage<v201::MessageType>& message);
-    void handle_get_base_report_req(Call<GetBaseReportRequest> call);
-    void handle_get_report_req(const EnhancedMessage<v201::MessageType>& message);
-    void handle_set_network_profile_req(Call<SetNetworkProfileRequest> call);
-    void handle_reset_req(Call<ResetRequest> call);
-
-    // Functional Block E: Transaction
-    void handle_transaction_event_response(const EnhancedMessage<v201::MessageType>& message);
-    void handle_get_transaction_status(const Call<GetTransactionStatusRequest> call);
-
-    // Function Block F: Remote transaction control
-    void handle_unlock_connector(Call<UnlockConnectorRequest> call);
-    void handle_remote_start_transaction_request(Call<RequestStartTransactionRequest> call);
-    void handle_remote_stop_transaction_request(Call<RequestStopTransactionRequest> call);
-    void handle_trigger_message(Call<TriggerMessageRequest> call);
-
-    // Functional Block L: Firmware management
-    void handle_firmware_update_req(Call<UpdateFirmwareRequest> call);
 
     // Generates async sending callbacks
     template <class RequestType, class ResponseType>
@@ -676,8 +577,6 @@ public:
     bool on_charging_state_changed(
         const uint32_t evse_id, const ChargingStateEnum charging_state,
         const TriggerReasonEnum trigger_reason = TriggerReasonEnum::ChargingStateChanged) override;
-
-    std::optional<std::string> get_evse_transaction_id(int32_t evse_id) override;
 
     AuthorizeResponse validate_token(const IdToken id_token, const std::optional<CiString<10000>>& certificate,
                                      const std::optional<std::vector<OCSPRequestData>>& ocsp_request_data) override;
