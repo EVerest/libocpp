@@ -108,8 +108,6 @@ if(LIBOCPP_ENABLE_V2)
             ocpp/v2/functional_blocks/remote_transaction_control.cpp
             ocpp/v2/functional_blocks/tariff_and_cost.cpp
             ocpp/v2/functional_blocks/transaction.cpp
-
-            ocpp/v21/ctrlr_component_variables.cpp
     )
     add_subdirectory(ocpp/v2/messages)
     add_subdirectory(ocpp/v21/messages)
