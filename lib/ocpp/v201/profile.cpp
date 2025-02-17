@@ -575,14 +575,14 @@ convert_intermediate_into_schedule(const IntermediateProfile& profile, ChargingR
                     period_out.limit = period.current_limit;
                 }
                 if (period.power_limit != NO_LIMIT_SPECIFIED) {
-                    period_out.limit = std::min(period_out.limit, period.power_limit / transform_value);
+                    period_out.limit = std::min(period_out.limit.value(), period.power_limit / transform_value);
                 }
             } else {
                 if (period.power_limit != NO_LIMIT_SPECIFIED) {
                     period_out.limit = period.power_limit;
                 }
                 if (period.current_limit != NO_LIMIT_SPECIFIED) {
-                    period_out.limit = std::min(period_out.limit, period.current_limit * transform_value);
+                    period_out.limit = std::min(period_out.limit.value(), period.current_limit * transform_value);
                 }
             }
         }
