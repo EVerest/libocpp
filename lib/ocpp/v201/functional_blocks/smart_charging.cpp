@@ -522,7 +522,7 @@ ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingPr
     if (profile.chargingSchedule.empty()) {
         return ProfileValidationResultEnum::ChargingProfileEmptyChargingSchedules;
     }
-    
+
     auto charging_station_supply_phases =
         this->device_model.get_value<int32_t>(ControllerComponentVariables::ChargingStationSupplyPhases);
 
