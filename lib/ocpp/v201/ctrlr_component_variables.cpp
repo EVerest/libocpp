@@ -621,13 +621,11 @@ const RequiredComponentVariable DisplayMessageSupportedPriorities = {
         "SupportedPriorities",
     }),
 };
-const ComponentVariable DisplayMessageSupportedStates = {
-    ControllerComponents::DisplayMessageCtrlr, std::nullopt,
-    std::optional<Variable>({"SupportedStates"})};
+const ComponentVariable DisplayMessageSupportedStates = {ControllerComponents::DisplayMessageCtrlr, std::nullopt,
+                                                         std::optional<Variable>({"SupportedStates"})};
 
-const ComponentVariable DisplayMessageQRCodeDisplayCapable = {
-    ControllerComponents::DisplayMessageCtrlr, std::nullopt,
-    std::optional<Variable>({"QRCodeDisplayCapable"})};
+const ComponentVariable DisplayMessageQRCodeDisplayCapable = {ControllerComponents::DisplayMessageCtrlr, std::nullopt,
+                                                              std::optional<Variable>({"QRCodeDisplayCapable"})};
 
 const ComponentVariable DisplayMessageLanguage = {ControllerComponents::DisplayMessageCtrlr,
                                                   std::optional<Variable>({"Language"})};
@@ -1078,6 +1076,51 @@ const ComponentVariable IgnoredProfilePurposesOffline = {
         "IgnoredProfilePurposesOffline",
     }),
 };
+const ComponentVariable ChargingProfilePersistenceTxProfile = {
+    ControllerComponents::SmartChargingCtrlr,
+    std::optional<Variable>({"ChargingProfilePersistence", "TxProfile", std::nullopt}), std::nullopt};
+
+const ComponentVariable ChargingProfilePersistenceChargingStationExternalConstraints = {
+    ControllerComponents::SmartChargingCtrlr,
+    std::optional<Variable>({"ChargingProfilePersistence", "ChargingStationExternalConstraints", std::nullopt}),
+    std::nullopt};
+
+const ComponentVariable ChargingProfilePersistenceLocalGeneration = {
+    ControllerComponents::SmartChargingCtrlr,
+    std::optional<Variable>({"ChargingProfilePersistence", "LocalGeneration", std::nullopt}), std::nullopt};
+
+const ComponentVariable ChargingProfileUpdateRateLimit = {
+    ControllerComponents::SmartChargingCtrlr, std::optional<Variable>({"UpdateRateLimit", std::nullopt, std::nullopt}),
+    std::nullopt};
+
+const ComponentVariable MaxExternalConstraintsId = {
+    ControllerComponents::SmartChargingCtrlr,
+    std::optional<Variable>({"MaxExternalConstraintsId", std::nullopt, std::nullopt}), std::nullopt};
+
+const ComponentVariable SupportedAdditionalPurposes = {
+    ControllerComponents::SmartChargingCtrlr,
+    std::optional<Variable>({"SupportedAdditionalPurposes", std::nullopt, std::nullopt}), std::nullopt};
+
+const ComponentVariable SupportsDynamicProfiles = {
+    ControllerComponents::SmartChargingCtrlr,
+    std::optional<Variable>({"SupportsFeature", "DynamicProfiles", std::nullopt}), std::nullopt};
+
+const ComponentVariable SupportsUseLocalTime = {
+    ControllerComponents::SmartChargingCtrlr,
+    std::optional<Variable>({"SupportsFeature", "UseLocalTime", std::nullopt}), std::nullopt};
+
+const ComponentVariable SupportsRandomizedDelay = {
+    ControllerComponents::SmartChargingCtrlr,
+    std::optional<Variable>({"SupportsFeature", "RandomizedDelay", std::nullopt}), std::nullopt};
+
+const ComponentVariable SupportsLimitAtSoC = {ControllerComponents::SmartChargingCtrlr,
+                                              std::optional<Variable>({"SupportsFeature", "LimitAtSoC", std::nullopt}),
+                                              std::nullopt};
+
+const ComponentVariable SupportsEvseSleep = {ControllerComponents::SmartChargingCtrlr,
+                                             std::optional<Variable>({"SupportsFeature", "EvseSleep", std::nullopt}),
+                                             std::nullopt};
+
 const ComponentVariable TariffCostCtrlrAvailableTariff = {
     ControllerComponents::TariffCostCtrlr,
     std::optional<Variable>({"Available", "Tariff"}),
@@ -1113,9 +1156,8 @@ const RequiredComponentVariable TotalCostFallbackMessage = {
     }),
 };
 
-const ComponentVariable NumberOfDecimalsForCostValues = {
-    ControllerComponents::TariffCostCtrlr, std::nullopt,
-    std::optional<Variable>({"NumberOfDecimalsForCostValues"})};
+const ComponentVariable NumberOfDecimalsForCostValues = {ControllerComponents::TariffCostCtrlr, std::nullopt,
+                                                         std::optional<Variable>({"NumberOfDecimalsForCostValues"})};
 
 const RequiredComponentVariable EVConnectionTimeOut = {
     ControllerComponents::TxCtrlr,
@@ -1169,6 +1211,7 @@ const Variable AvailabilityState = {"AvailabilityState"};
 const Variable SupplyPhases = {"SupplyPhases"};
 const Variable AllowReset = {"AllowReset"};
 const Variable Power = {"Power"};
+const Variable DCInputPhaseControl = {"DCInputPhaseControl", std::nullopt, std::nullopt};
 
 ComponentVariable get_component_variable(const int32_t evse_id, const Variable& variable) {
     EVSE evse = {evse_id};
@@ -1186,6 +1229,7 @@ const Variable Available = {"Available"};
 const Variable AvailabilityState = {"AvailabilityState"};
 const Variable Type = {"Type"};
 const Variable SupplyPhases = {"SupplyPhases"};
+
 
 ComponentVariable get_component_variable(const int32_t evse_id, const int32_t connector_id, const Variable& variable) {
     EVSE evse = {evse_id, connector_id};

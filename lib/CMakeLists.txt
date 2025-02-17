@@ -103,8 +103,6 @@ if(LIBOCPP_ENABLE_V201)
             ocpp/v201/functional_blocks/display_message.cpp            
             ocpp/v201/functional_blocks/meter_values.cpp
             ocpp/v201/functional_blocks/tariff_and_cost.cpp
-
-            ocpp/v21/ctrlr_component_variables.cpp
     )
     add_subdirectory(ocpp/v201/messages)
     add_subdirectory(ocpp/v21/messages)

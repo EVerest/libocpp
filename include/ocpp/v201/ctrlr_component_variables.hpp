@@ -223,6 +223,17 @@ extern const ComponentVariable Phases3to1;
 extern const RequiredComponentVariable ChargingProfileMaxStackLevel;
 extern const RequiredComponentVariable ChargingScheduleChargingRateUnit;
 extern const ComponentVariable IgnoredProfilePurposesOffline;
+extern const ComponentVariable ChargingProfilePersistenceTxProfile;
+extern const ComponentVariable ChargingProfilePersistenceChargingStationExternalConstraints;
+extern const ComponentVariable ChargingProfilePersistenceLocalGeneration;
+extern const ComponentVariable ChargingProfileUpdateRateLimit;
+extern const ComponentVariable MaxExternalConstraintsId;
+extern const ComponentVariable SupportedAdditionalPurposes;
+extern const ComponentVariable SupportsDynamicProfiles;
+extern const ComponentVariable SupportsUseLocalTime;
+extern const ComponentVariable SupportsRandomizedDelay;
+extern const ComponentVariable SupportsLimitAtSoC;
+extern const ComponentVariable SupportsEvseSleep;
 extern const ComponentVariable TariffCostCtrlrAvailableTariff;
 extern const ComponentVariable TariffCostCtrlrAvailableCost;
 extern const RequiredComponentVariable TariffCostCtrlrCurrency;
@@ -246,6 +257,7 @@ extern const Variable AvailabilityState;
 extern const Variable SupplyPhases;
 extern const Variable AllowReset;
 extern const Variable Power;
+extern const Variable DCInputPhaseControl;
 ComponentVariable get_component_variable(const int32_t evse_id, const Variable& variable);
 } // namespace EvseComponentVariables
 
