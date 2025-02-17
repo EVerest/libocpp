@@ -11,12 +11,6 @@ using std::chrono::seconds;
 
 namespace {
 
-struct PeriodLimits {
-    std::optional<float> l1;
-    std::optional<float> l2;
-    std::optional<float> l3;
-};
-
 /// \brief update the iterator when the current period has elapsed
 /// \param[in] schedule_duration the time in seconds from the start of the composite schedule
 /// \param[inout] itt the iterator for the periods in the schedule
@@ -444,76 +438,6 @@ CompositeSchedule calculate_composite_schedule(std::vector<period_entry_t>& in_c
     return composite;
 }
 
-///
-/// \brief Get minimum value of two values, cap to 'cap'.
-/// \param value1   Value 1
-/// \param value2   Value 2
-/// \param cap      Cap value, so if value1 or value2 is larger than 'cap', the value of 'cap' is returned.
-/// \return The minimum value. If value1 and value2 do not have a value, std::nullopt is returned.
-///
-std::optional<float> get_minimum_value(const std::optional<float> value1, const std::optional<float> value2, const std::optional<float> cap) {
-    float result;
-    if (!value1.has_value() && !value2.has_value()) {
-        return std::nullopt;
-    }
-
-    if (value1.has_value() && !value2.has_value()) {
-        result = value1.value();
-    } else if (!value1.has_value() && value2.has_value()) {
-        result = value2.value();
-    } else {
-        // value 1 and 2 have a value.
-        result = std::min(value1.value(), value2.value());
-    }
-
-    if (cap.has_value()) {
-        result = std::min(result, cap.value());
-    }
-
-    return result;
-}
-
-///
-/// \brief Calculate minimum value / limits.
-/// \param current                          Current limits.
-/// \param candidate                        Candidate that is being compared to current limits
-/// \param number_phases                    Number of phases
-/// \param current_charging_rate_unit_enum  Detauls of the current composite schedule charging_rate_unit for conversion
-/// \param cap_pos                          Positive limits should be capped to this value(s)
-/// \param cap_min                          Negative limits should be capped to this value(s)
-/// \return The new calculated limits.
-///
-PeriodLimits calculate_min_limit(const PeriodLimits& current, const PeriodLimits& candidate,
-                                 const std::optional<int32_t> number_phases,
-                                 const ChargingRateUnitEnum current_charging_rate_unit_enum,
-                                 const PeriodLimits& cap_pos, const PeriodLimits& cap_min) {
-    // TODO mz negative limits???
-    PeriodLimits adjusted_limits = current;
-
-    if (!current.l1.has_value() && candidate.l1.has_value()) {
-        adjusted_limits = candidate;
-        return adjusted_limits;
-    }
-
-    if (current.l1.has_value() && current.l2.has_value() && current.l3.has_value()) {
-        if (candidate.l1.has_value() && candidate.l2.has_value() && candidate.l3.has_value()) {
-            adjusted_limits.l1 = get_minimum_value(candidate.l1, current.l1, cap_pos.l1);
-            adjusted_limits.l2 = get_minimum_value(candidate.l2, current.l2, cap_pos.l2);
-            adjusted_limits.l3 = get_minimum_value(candidate.l3, current.l3, cap_pos.l3);
-
-            return adjusted_limits;
-        } else if (candidate.l1.has_value()) {
-            // TODO mz current has three values and candidate has one value.
-        }
-        else {
-            return adjusted_limits;
-            // TODO mz only current has a value.
-        }
-    }
-
-    return adjusted_limits;
-}
-
 /// \brief update the period based on the power limit
 /// \param[in] current the current startPeriod based on duration
 /// \param[inout] prevailing_period the details of the current period in the schedule.
@@ -525,8 +449,6 @@ ChargingSchedulePeriod minimize_charging_schedule_period_by_limit(
     const int current, const ChargingSchedulePeriod& prevailing_period, const ChargingSchedulePeriod& candidate_period,
     const ChargingRateUnitEnum current_charging_rate_unit_enum, const int32_t default_number_phases) {
 
-    // TODO mz take setpoint into account and discharge_limit and limit_L2 and limit_L3 and setpoint_L2 and setpoint_L3
-    // etc
     auto adjusted_period = prevailing_period;
 
     if (candidate_period.startPeriod == NO_START_PERIOD) {
@@ -541,34 +463,18 @@ ChargingSchedulePeriod minimize_charging_schedule_period_by_limit(
         const auto period_max_phases = prevailing_period.numberPhases.value_or(default_number_phases);
         adjusted_period.numberPhases = std::min(charge_point_max_phases, period_max_phases);
 
-        // TODO mz this if does not cover everything at all!!!
-        if (!candidate_period.limit_L2.has_value() && !candidate_period.limit_L3.has_value()) {
-            if (current_charging_rate_unit_enum == ChargingRateUnitEnum::A) {
-                if (candidate_period.limit.value() < prevailing_period.limit.value_or(0)) {
-                    adjusted_period.limit = candidate_period.limit.value();
-                }
-            } else {
-                const auto charge_point_limit_per_phase = candidate_period.limit.value() / charge_point_max_phases;
-                const auto period_limit_per_phase =
-                    prevailing_period.limit.value_or(DEFAULT_LIMIT_WATTS) / period_max_phases;
-
-                adjusted_period.limit = std::floor(std::min(charge_point_limit_per_phase, period_limit_per_phase) *
-                                                   adjusted_period.numberPhases.value());
+        if (current_charging_rate_unit_enum == ChargingRateUnitEnum::A) {
+            if (candidate_period.limit.value() < prevailing_period.limit.value_or(0)) {
+                adjusted_period.limit = candidate_period.limit.value();
             }
         } else {
-            calculate_min_limit({prevailing_period.limit, prevailing_period.limit_L2, prevailing_period.limit_L3},
-                                {candidate_period.limit, candidate_period.limit_L2, candidate_period.limit_L3},
-                                adjusted_period.numberPhases, current_charging_rate_unit_enum,
-                                {std::nullopt, std::nullopt, std::nullopt},
-                                {std::nullopt, std::nullopt, std::nullopt});
-        }
+            const auto charge_point_limit_per_phase = candidate_period.limit.value() / charge_point_max_phases;
+            const auto period_limit_per_phase =
+                prevailing_period.limit.value_or(DEFAULT_LIMIT_WATTS) / period_max_phases;
 
-        // TODO mz is this correct??
-        calculate_min_limit({prevailing_period.setpoint, prevailing_period.setpoint_L2, prevailing_period.setpoint_L3},
-                            {candidate_period.setpoint, candidate_period.setpoint_L2, candidate_period.setpoint_L3},
-                            adjusted_period.numberPhases, current_charging_rate_unit_enum,
-                            {adjusted_period.limit, adjusted_period.limit_L2, adjusted_period.limit_L3},
-                            {std::nullopt, std::nullopt, std::nullopt});
+            adjusted_period.limit = std::floor(std::min(charge_point_limit_per_phase, period_limit_per_phase) *
+                                               adjusted_period.numberPhases.value());
+        }
     }
 
     return adjusted_period;
