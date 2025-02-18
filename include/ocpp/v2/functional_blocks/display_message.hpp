@@ -3,13 +3,12 @@
 
 #pragma once
 
-#include <ocpp/v2/message_dispatcher.hpp>
 #include <ocpp/v2/message_handler.hpp>
 
 #include <ocpp/v2/messages/SetDisplayMessage.hpp>
 
 namespace ocpp::v2 {
-class EvseManagerInterface;
+struct BlockContext;
 struct GetDisplayMessagesRequest;
 struct ClearDisplayMessageResponse;
 struct ClearDisplayMessageRequest;
@@ -48,16 +47,13 @@ public:
 class DisplayMessageBlock : public DisplayMessageInterface {
 
 public:
-    DisplayMessageBlock(MessageDispatcherInterface<MessageType>& message_dispatcher, DeviceModel& device_model,
-                        EvseManagerInterface& evse_manager, GetDisplayMessageCallback get_display_message_callback,
+    DisplayMessageBlock(const BlockContext& block_context, GetDisplayMessageCallback get_display_message_callback,
                         SetDisplayMessageCallback set_display_message_callback,
                         ClearDisplayMessageCallback clear_display_message_callback);
     virtual void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
 
 private:
-    MessageDispatcherInterface<MessageType>& message_dispatcher;
-    DeviceModel& device_model;
-    EvseManagerInterface& evse_manager;
+    const BlockContext& context;
 
     GetDisplayMessageCallback get_display_message_callback;
     SetDisplayMessageCallback set_display_message_callback;

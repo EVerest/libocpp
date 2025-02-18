@@ -3,18 +3,18 @@
 
 #pragma once
 
-#include <ocpp/v2/message_dispatcher.hpp>
 #include <ocpp/v2/message_handler.hpp>
 
 namespace ocpp {
 namespace v2 {
+struct BlockContext;
 struct DataTransferRequest;
 struct DataTransferResponse;
 
 class DataTransferInterface : public MessageHandlerInterface {
 
 public:
-    virtual ~DataTransferInterface(){};
+    virtual ~DataTransferInterface() = default;
 
     /// \brief Sends a DataTransfer.req message to the CSMS using the given parameters
     /// \param vendorId
@@ -35,18 +35,16 @@ public:
 class DataTransfer : public DataTransferInterface {
 
 private:
-    MessageDispatcherInterface<MessageType>& message_dispatcher;
+    const BlockContext& context;
     std::optional<std::function<DataTransferResponse(const DataTransferRequest& request)>> data_transfer_callback;
     std::chrono::seconds response_timeout;
 
 public:
-    DataTransfer(MessageDispatcherInterface<MessageType>& message_dispatcher,
+    DataTransfer(const BlockContext& block_context,
                  const std::optional<std::function<DataTransferResponse(const DataTransferRequest& request)>>&
                      data_transfer_callback,
                  const std::chrono::seconds response_timeout) :
-        message_dispatcher(message_dispatcher),
-        data_transfer_callback(data_transfer_callback),
-        response_timeout(response_timeout){};
+        context(block_context), data_transfer_callback(data_transfer_callback), response_timeout(response_timeout){};
 
     void handle_message(const EnhancedMessage<MessageType>& message) override;
 
