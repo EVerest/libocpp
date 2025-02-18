@@ -298,7 +298,10 @@ bool ConnectivityManager::send_to_websocket(const std::string& message) {
 }
 
 void ConnectivityManager::on_network_disconnected(OCPPInterfaceEnum ocpp_interface) {
-
+    if (this->network_connection_slots.empty()) {
+        EVLOG_warning << "Network disconnected. No network connection profiles configured.";
+        return;
+    }
     const int actual_configuration_slot = get_active_network_configuration_slot();
     std::optional<NetworkConnectionProfile> network_connection_profile =
         this->get_network_connection_profile(actual_configuration_slot);
