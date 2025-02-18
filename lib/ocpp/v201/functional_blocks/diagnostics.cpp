@@ -4,6 +4,8 @@
 #include <ocpp/v201/functional_blocks/diagnostics.hpp>
 
 #include <ocpp/common/constants.hpp>
+#include <ocpp/common/incremental_counter.hpp>
+
 #include <ocpp/v201/connectivity_manager.hpp>
 #include <ocpp/v201/ctrlr_component_variables.hpp>
 #include <ocpp/v201/device_model.hpp>
@@ -79,6 +81,21 @@ void Diagnostics::notify_event_req(const std::vector<EventData>& events) {
 
     ocpp::Call<NotifyEventRequest> call(req);
     this->message_dispatcher.dispatch_call(call);
+}
+
+void Diagnostics::notify_event_req_connector_status_update(const int32_t evse_id, const int32_t connector_id,
+                                                           const ConnectorStatusEnum status) {
+    ocpp::v201::EventData event_data;
+    const auto cv = ConnectorComponentVariables::get_component_variable(evse_id, connector_id,
+                                                                        ConnectorComponentVariables::AvailabilityState);
+    event_data.eventId = ocpp::IncrementalCounter::get();
+    event_data.actualValue = conversions::connector_status_enum_to_string(status);
+    event_data.trigger = EventTriggerEnum::Delta;
+    event_data.variable = cv.variable.value();
+    event_data.component = cv.component;
+    event_data.timestamp = ocpp::DateTime();
+    event_data.eventNotificationType = EventNotificationEnum::HardWiredNotification;
+    this->notify_event_req({event_data});
 }
 
 void Diagnostics::stop_monitoring() {

@@ -37,6 +37,8 @@ public:
 
     /* OCPP message requests */
     virtual void notify_event_req(const std::vector<EventData>& events) = 0;
+    virtual void notify_event_req_connector_status_update(const int32_t evse_id, const int32_t connector_id,
+                                                          const ConnectorStatusEnum status) = 0;
 
     /* Monitoring */
     virtual void stop_monitoring() = 0;
@@ -53,6 +55,8 @@ public:
                 std::optional<ClearCustomerInformationCallback> clear_customer_information_callback);
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
     void notify_event_req(const std::vector<EventData>& events) override;
+    void notify_event_req_connector_status_update(const int32_t evse_id, const int32_t connector_id,
+                                                  const ConnectorStatusEnum status) override;
     void stop_monitoring() override;
     void start_monitoring() override;
     void process_triggered_monitors() override;
