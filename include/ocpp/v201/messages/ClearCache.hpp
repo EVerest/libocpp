@@ -37,8 +37,8 @@ std::ostream& operator<<(std::ostream& os, const ClearCacheRequest& k);
 /// \brief Contains a OCPP ClearCacheResponse message
 struct ClearCacheResponse : public ocpp::Message {
     ClearCacheStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this ClearCacheResponse message as a human readable string
     /// \returns the message type as a human readable string

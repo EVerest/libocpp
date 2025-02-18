@@ -333,7 +333,7 @@ bool ChargePoint::on_charging_state_changed(const uint32_t evse_id, const Chargi
     return true;
 }
 
-AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std::optional<CiString<5500>>& certificate,
+AuthorizeResponse ChargePoint::validate_token(const IdToken id_token, const std::optional<CiString<10000>>& certificate,
                                               const std::optional<std::vector<OCSPRequestData>>& ocsp_request_data) {
     return this->authorization->validate_token(id_token, certificate, ocsp_request_data);
 }
@@ -442,8 +442,9 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
                                               std::bind(&ChargePoint::message_callback, this, std::placeholders::_1));
 
     this->connectivity_manager->set_websocket_connected_callback(
-        [this](int configuration_slot, const NetworkConnectionProfile& network_connection_profile, auto) {
-            this->websocket_connected_callback(configuration_slot, network_connection_profile);
+        [this](int configuration_slot, const NetworkConnectionProfile& network_connection_profile,
+               const OcppProtocolVersion ocpp_version) {
+            this->websocket_connected_callback(configuration_slot, network_connection_profile, ocpp_version);
         });
     this->connectivity_manager->set_websocket_disconnected_callback(
         [this](int configuration_slot, const NetworkConnectionProfile& network_connection_profile, auto) {
@@ -809,9 +810,10 @@ std::optional<DataTransferResponse> ChargePoint::data_transfer_req(const DataTra
 }
 
 void ChargePoint::websocket_connected_callback(const int configuration_slot,
-                                               const NetworkConnectionProfile& network_connection_profile) {
+                                               const NetworkConnectionProfile& network_connection_profile,
+                                               const OcppProtocolVersion ocpp_version) {
     this->message_queue->resume(this->message_queue_resume_delay);
-
+    this->ocpp_version = ocpp_version;
     if (this->registration_status == RegistrationStatusEnum::Accepted) {
         this->connectivity_manager->confirm_successful_connection();
 
@@ -842,7 +844,8 @@ void ChargePoint::websocket_connected_callback(const int configuration_slot,
     this->skip_invalid_csms_certificate_notifications = false;
 
     if (this->callbacks.connection_state_changed_callback.has_value()) {
-        this->callbacks.connection_state_changed_callback.value()(true, configuration_slot, network_connection_profile);
+        this->callbacks.connection_state_changed_callback.value()(true, configuration_slot, network_connection_profile,
+                                                                  ocpp_version);
     }
 }
 
@@ -858,8 +861,8 @@ void ChargePoint::websocket_disconnected_callback(const int configuration_slot,
 
     this->security->stop_certificate_expiration_check_timers();
     if (this->callbacks.connection_state_changed_callback.has_value()) {
-        this->callbacks.connection_state_changed_callback.value()(false, configuration_slot,
-                                                                  network_connection_profile);
+        this->callbacks.connection_state_changed_callback.value()(false, configuration_slot, network_connection_profile,
+                                                                  this->ocpp_version);
     }
 }
 

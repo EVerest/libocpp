@@ -18,6 +18,7 @@ target_sources(ocpp
         FirmwareStatusNotification.cpp
         Get15118EVCertificate.cpp
         GetBaseReport.cpp
+        GetCertificateChainStatus.cpp
         GetCertificateStatus.cpp
         GetChargingProfiles.cpp
         GetCompositeSchedule.cpp
@@ -41,9 +42,11 @@ target_sources(ocpp
         NotifyEvent.cpp
         NotifyMonitoringReport.cpp
         NotifyReport.cpp
+        NotifyWebPaymentStarted.cpp
         PublishFirmware.cpp
         PublishFirmwareStatusNotification.cpp
         ReportChargingProfiles.cpp
+        ReportDERControl.cpp
         RequestStartTransaction.cpp
         RequestStopTransaction.cpp
         ReservationStatusUpdate.cpp

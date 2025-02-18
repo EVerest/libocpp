@@ -241,7 +241,7 @@ public:
     /// \param certificate
     /// \param ocsp_request_data
     /// \return AuthorizeResponse containing the result of the validation
-    virtual AuthorizeResponse validate_token(const IdToken id_token, const std::optional<CiString<5500>>& certificate,
+    virtual AuthorizeResponse validate_token(const IdToken id_token, const std::optional<CiString<10000>>& certificate,
                                              const std::optional<std::vector<OCSPRequestData>>& ocsp_request_data) = 0;
 
     /// \brief Data transfer mechanism initiated by charger
@@ -353,6 +353,8 @@ private:
 
     // states
     std::atomic<RegistrationStatusEnum> registration_status;
+    std::atomic<OcppProtocolVersion> ocpp_version =
+        OcppProtocolVersion::Unknown; // version that is currently in use, selected by CSMS in websocket handshake
     std::atomic<UploadLogStatusEnum> upload_log_status;
     std::atomic<int32_t> upload_log_status_id;
     BootReasonEnum bootreason;
@@ -390,7 +392,8 @@ private:
     // internal helper functions
     void initialize(const std::map<int32_t, int32_t>& evse_connector_structure, const std::string& message_log_path);
     void websocket_connected_callback(const int configuration_slot,
-                                      const NetworkConnectionProfile& network_connection_profile);
+                                      const NetworkConnectionProfile& network_connection_profile,
+                                      const OcppProtocolVersion ocpp_version);
     void websocket_disconnected_callback(const int configuration_slot,
                                          const NetworkConnectionProfile& network_connection_profile);
     void websocket_connection_failed(ConnectionFailedReason reason);
@@ -405,7 +408,7 @@ private:
     /// \param connector_type   The connector type.
     /// \return False if evse id does not exist or evse does not have the given connector type.
     ///
-    bool does_connector_exist(const uint32_t evse_id, std::optional<ConnectorEnum> connector_type);
+    bool does_connector_exist(const uint32_t evse_id, std::optional<CiString<20>> connector_type);
 
     /// \brief Get the value optional offline flag
     /// \return true if the charge point is offline. std::nullopt if it is online;
@@ -558,7 +561,7 @@ public:
         const uint32_t evse_id, const ChargingStateEnum charging_state,
         const TriggerReasonEnum trigger_reason = TriggerReasonEnum::ChargingStateChanged) override;
 
-    AuthorizeResponse validate_token(const IdToken id_token, const std::optional<CiString<5500>>& certificate,
+    AuthorizeResponse validate_token(const IdToken id_token, const std::optional<CiString<10000>>& certificate,
                                      const std::optional<std::vector<OCSPRequestData>>& ocsp_request_data) override;
 
     void on_event(const std::vector<EventData>& events) override;

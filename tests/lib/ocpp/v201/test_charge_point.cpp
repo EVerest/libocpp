@@ -87,22 +87,11 @@ public:
     ChargingSchedule create_charge_schedule(ChargingRateUnitEnum charging_rate_unit,
                                             std::vector<ChargingSchedulePeriod> charging_schedule_period,
                                             std::optional<ocpp::DateTime> start_schedule = std::nullopt) {
-        int32_t id;
-        std::optional<CustomData> custom_data;
-        std::optional<int32_t> duration;
-        std::optional<float> min_charging_rate;
-        std::optional<SalesTariff> sales_tariff;
-
-        return ChargingSchedule{
-            id,
-            charging_rate_unit,
-            charging_schedule_period,
-            custom_data,
-            start_schedule,
-            duration,
-            min_charging_rate,
-            sales_tariff,
-        };
+        ChargingSchedule charging_schedule;
+        charging_schedule.chargingRateUnit = charging_rate_unit;
+        charging_schedule.chargingSchedulePeriod = charging_schedule_period;
+        charging_schedule.startSchedule = start_schedule;
+        return charging_schedule;
     }
 
     ChargingProfile
@@ -185,8 +174,8 @@ public:
     testing::MockFunction<RequestStartStopStatusEnum(const RequestStartTransactionRequest& request,
                                                      const bool authorize_remote_start)>
         remote_start_transaction_callback_mock;
-    testing::MockFunction<ocpp::ReservationCheckStatus(const int32_t evse_id, const CiString<36> idToken,
-                                                       const std::optional<CiString<36>> groupIdToken)>
+    testing::MockFunction<ocpp::ReservationCheckStatus(const int32_t evse_id, const CiString<255> idToken,
+                                                       const std::optional<CiString<255>> groupIdToken)>
         is_reservation_for_token_callback_mock;
     testing::MockFunction<UpdateFirmwareResponse(const UpdateFirmwareRequest& request)>
         update_firmware_request_callback_mock;
@@ -703,7 +692,7 @@ TEST_F(ChargePointFunctionalityTestFixtureV201,
     RequestStartTransactionRequest req;
     req.evseId = DEFAULT_EVSE_ID;
     req.idToken.idToken = "Local";
-    req.idToken.type = IdTokenEnum::Local;
+    req.idToken.type = IdTokenEnumStringType::Local;
     req.chargingProfile = profile;
 
     auto start_transaction_req =
@@ -731,7 +720,7 @@ TEST_F(ChargePointFunctionalityTestFixtureV201,
     RequestStartTransactionRequest req;
     req.evseId = DEFAULT_EVSE_ID;
     req.idToken.idToken = "Local";
-    req.idToken.type = IdTokenEnum::Local;
+    req.idToken.type = IdTokenEnumStringType::Local;
     req.chargingProfile = profile;
 
     auto start_transaction_req =

@@ -102,8 +102,8 @@ TEST_F(DeviceModelTest, test_set_monitors) {
     variable_comp2.name = "Interval";
 
     std::vector<ComponentVariable> components = {
-        {component1, std::nullopt, variable_comp1},
-        {component2, std::nullopt, variable_comp2},
+        {component1, variable_comp1},
+        {component2, variable_comp2},
     };
 
     // Clear all existing monitors for a clean test state
@@ -164,8 +164,8 @@ TEST_F(DeviceModelTest, test_get_monitors) {
     variable_comp2.name = "Interval";
 
     std::vector<ComponentVariable> components = {
-        {component1, std::nullopt, variable_comp1},
-        {component2, std::nullopt, variable_comp2},
+        {component1, variable_comp1},
+        {component2, variable_comp2},
     };
 
     auto results = dm->get_monitors(criteria, components);
@@ -209,8 +209,8 @@ TEST_F(DeviceModelTest, test_clear_monitors) {
     variable_comp2.name = "Interval";
 
     std::vector<ComponentVariable> components = {
-        {component1, std::nullopt, variable_comp1},
-        {component2, std::nullopt, variable_comp2},
+        {component1, variable_comp1},
+        {component2, variable_comp2},
     };
 
     // Insert some monitors that are hard-wired

@@ -15,7 +15,9 @@ using DatabaseException = ocpp::common::DatabaseException;
 
 /// \brief For AlignedDataInterval, SampledDataTxUpdatedInterval and SampledDataTxEndedInterval, zero is allowed
 static bool allow_zero(const Component& component, const Variable& variable) {
-    ComponentVariable component_variable = {component, std::nullopt, variable};
+    ComponentVariable component_variable;
+    component_variable.component = component;
+    component_variable.variable = variable;
     return component_variable == ControllerComponentVariables::AlignedDataInterval or
            component_variable == ControllerComponentVariables::SampledDataTxUpdatedInterval or
            component_variable == ControllerComponentVariables::SampledDataTxEndedInterval;
@@ -88,7 +90,8 @@ bool DeviceModel::component_criteria_match(const Component& component,
         return false;
     }
     for (const auto& criteria : component_criteria) {
-        const Variable variable = {conversions::component_criterion_enum_to_string(criteria)};
+        Variable variable;
+        variable.name = conversions::component_criterion_enum_to_string(criteria);
 
         const auto response = this->request_value<bool>(component, variable, AttributeEnum::Actual);
         auto value = response.value;
@@ -355,7 +358,9 @@ std::vector<ReportData> DeviceModel::get_base_report_data(const ReportBaseEnum& 
             report_data.component = component;
             report_data.variable = variable;
 
-            ComponentVariable cv = {component, std::nullopt, variable};
+            ComponentVariable cv;
+            cv.component = component;
+            cv.variable = variable;
 
             // request the variable attribute from the device model
             const auto variable_attributes = this->device_model->get_variable_attributes(component, variable);
@@ -453,8 +458,11 @@ void DeviceModel::check_integrity(const std::map<int32_t, int32_t>& evse_connect
             }
 
             // check if all relevant EVSE and Connector components can be found
-            EVSE evse = {evse_id};
-            Component evse_component = {"EVSE", std::nullopt, evse};
+            EVSE evse;
+            evse.id = evse_id;
+            Component evse_component;
+            evse_component.name = "EVSE";
+            evse_component.evse = evse;
             if (!this->device_model_map.count(evse_component)) {
                 throw DeviceModelError("Could not find required EVSE component in device model");
             }
