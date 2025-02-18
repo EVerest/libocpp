@@ -368,8 +368,14 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
                 this->registration_status != RegistrationStatusEnum::Accepted) {
                 return false;
             } else {
-                this->availability->status_notification_req(evse_id, connector_id, status,
-                                                            initiated_by_trigger_message);
+                if (this->ocpp_version == OcppProtocolVersion::v201) {
+                    // OCPP2.0.1: B01.FR.05
+                    this->availability->status_notification_req(evse_id, connector_id, status,
+                                                                initiated_by_trigger_message);
+                } else {
+                    // OCPP2.1: B01.FR.05
+                    this->diagnostics->notify_event_req_connector_status_update(evse_id, connector_id, status);
+                }
                 return true;
             }
         });
