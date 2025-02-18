@@ -9,6 +9,30 @@
 namespace ocpp {
 namespace v201 {
 
+///
+/// \brief Required variables per component.
+///
+/// First value is the 'available' variable from the specific component. Second value is a set of required variables.
+/// This makes it possible to check only for the required variables if a component is available.
+///
+extern const std::vector<std::pair<ComponentVariable, std::vector<RequiredComponentVariable>>>
+    required_component_available_variables;
+
+///
+/// \brief Required variables that should always exist, regardless of any available or not available controller.
+///
+extern const std::vector<RequiredComponentVariable> required_variables;
+
+///
+/// \brief Required variables of an EVSE.
+///
+extern const std::vector<Variable> required_evse_variables;
+
+///
+/// \brief Required variables of a connector.
+///
+extern const std::vector<Variable> required_connector_variables;
+
 namespace ControllerComponents {
 extern const Component InternalCtrlr;
 extern const Component AlignedDataCtrlr;
