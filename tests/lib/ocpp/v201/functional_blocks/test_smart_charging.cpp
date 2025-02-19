@@ -141,7 +141,7 @@ protected:
     MockFunction<void()> set_charging_profiles_callback_mock;
     TestSmartCharging smart_charging = create_smart_charging();
     boost::uuids::random_generator uuid_generator = boost::uuids::random_generator();
-    std::atomic<OcppProtocolVersion> ocpp_version = OcppProtocolVersion::v21;
+    std::atomic<OcppProtocolVersion> ocpp_version = OcppProtocolVersion::v201;
 };
 
 TEST_F(SmartChargingTest, K01FR03_IfTxProfileIsMissingTransactionId_ThenProfileIsInvalid) {
