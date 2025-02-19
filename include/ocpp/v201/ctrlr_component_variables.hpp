@@ -8,6 +8,33 @@
 
 namespace ocpp {
 namespace v201 {
+///
+/// \brief Required ComponentVariable.
+///
+struct RequiredComponentVariable : ComponentVariable {
+    /// \brief Constructor
+    RequiredComponentVariable() : required_for({OcppProtocolVersion::v201, OcppProtocolVersion::v21}) {};
+
+           ///
+           /// \brief RequiredComponentVariable
+           /// \param component    Component
+           /// \param variable     Variable
+           /// \param custom_data  Custom data (default nullopt)
+           /// \param required_for Required for which version. Multiple versions can be given.
+           ///
+    RequiredComponentVariable(const Component component, const std::optional<Variable> variable,
+                              const std::optional<CustomData> custom_data = std::nullopt,
+                              const std::set<OcppProtocolVersion> required_for = {OcppProtocolVersion::v201,
+                                                                                  OcppProtocolVersion::v21}) :
+        ComponentVariable(), required_for(required_for) {
+        this->component = component;
+        this->variable = variable;
+        this->customData = custom_data;
+    };
+
+           /// \brief For which ocpp protocol version(s) this component variable is required.
+    std::set<OcppProtocolVersion> required_for;
+};
 
 ///
 /// \brief Required variables per component.

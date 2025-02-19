@@ -23,7 +23,8 @@ protected:
     }
 };
 
-TEST_F(DeviceModelTest, test_allow_zero2) {
+/// \brief Test if value can be changed. And test if setting a value of 0 is allowed for a value that is allowed to be 0.
+TEST_F(DeviceModelTest, test_set_value_and_allow_zero) {
     // default value is 900
     auto r = dm->get_value<int>(cv, ocpp::v201::AttributeEnum::Actual);
     ASSERT_EQ(r, 900);
@@ -42,7 +43,7 @@ TEST_F(DeviceModelTest, test_allow_zero2) {
 
 /// \brief Test if value of 0 is allowed for ControllerComponentVariables::AlignedDataInterval although the minLimit is
 /// set to 5
-TEST_F(DeviceModelTest, test_allow_zero) {
+TEST_F(DeviceModelTest, test_min_limit_and_allow_zero) {
     // Set a min limit to 'Interval' of 'AlignedDataCtrlr'.
     VariableCharacteristics c;
     c.minLimit = 10;

@@ -8,6 +8,7 @@
 
 #include <everest/logging.hpp>
 
+#include <ocpp/v201/ctrlr_component_variables.hpp>
 #include <ocpp/v201/device_model_storage_interface.hpp>
 
 namespace ocpp {

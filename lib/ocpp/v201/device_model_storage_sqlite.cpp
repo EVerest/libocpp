@@ -456,6 +456,7 @@ int32_t DeviceModelStorageSqlite::clear_custom_variable_monitors() {
 }
 
 void DeviceModelStorageSqlite::check_integrity() {
+    // Function is now empty because checks are already done elsewhere (for example the check for 'required' variables).
 }
 
 } // namespace v201
