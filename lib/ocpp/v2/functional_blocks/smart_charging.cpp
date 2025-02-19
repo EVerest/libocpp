@@ -762,7 +762,7 @@ ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingPr
                 }
 
                 // K01.FR.126: EvseSleep is not supported.
-                if (charging_schedule_period.evseSleep.value_or(true) &&
+                if (charging_schedule_period.evseSleep.value_or(false) &&
                     !this->device_model.get_optional_value<bool>(ControllerComponentVariables::SupportsEvseSleep)
                          .value_or(false)) {
                     return ProfileValidationResultEnum::ChargingScheduleUnsupportedEvseSleep;
