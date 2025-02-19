@@ -29,7 +29,7 @@ public:
 class MeterValues : public MeterValuesInterface {
 public:
     virtual ~MeterValues() override = default;
-    MeterValues(const BlockContext& block_context);
+    explicit MeterValues(const BlockContext& block_context);
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
     void update_aligned_data_interval() override;
     void on_meter_value(const int32_t evse_id, const MeterValue& meter_value) override;

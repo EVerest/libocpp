@@ -2,14 +2,13 @@
 // Copyright Pionix GmbH and Contributors to EVerest
 
 #include <ocpp/v2/functional_blocks/diagnostics.hpp>
-
-#include <ocpp/v2/functional_blocks/block_context.hpp>
 #include <ocpp/common/constants.hpp>
 #include <ocpp/v2/connectivity_manager.hpp>
 #include <ocpp/v2/ctrlr_component_variables.hpp>
 #include <ocpp/v2/database_handler.hpp>
 #include <ocpp/v2/device_model.hpp>
 #include <ocpp/v2/functional_blocks/authorization.hpp>
+#include <ocpp/v2/functional_blocks/block_context.hpp>
 #include <ocpp/v2/utils.hpp>
 
 #include <ocpp/v2/messages/ClearVariableMonitoring.hpp>
@@ -27,7 +26,7 @@ const auto DEFAULT_MAX_CUSTOMER_INFORMATION_DATA_LENGTH = 51200;
 
 namespace ocpp::v2 {
 
-Diagnostics::Diagnostics(const BlockContext &context, AuthorizationInterface& authorization,
+Diagnostics::Diagnostics(const BlockContext& context, AuthorizationInterface& authorization,
                          GetLogRequestCallback get_log_request_callback,
                          std::optional<GetCustomerInformationCallback> get_customer_information_callback,
                          std::optional<ClearCustomerInformationCallback> clear_customer_information_callback) :
@@ -196,7 +195,8 @@ void Diagnostics::handle_customer_information_req(Call<CustomerInformationReques
         }
 
         const auto max_customer_information_data_length =
-            this->context.device_model.get_optional_value<int>(ControllerComponentVariables::MaxCustomerInformationDataLength)
+            this->context.device_model
+                .get_optional_value<int>(ControllerComponentVariables::MaxCustomerInformationDataLength)
                 .value_or(DEFAULT_MAX_CUSTOMER_INFORMATION_DATA_LENGTH);
         if (data.length() > max_customer_information_data_length) {
             EVLOG_warning << "NotifyCustomerInformation.req data field is too large. Cropping it down to: "
@@ -246,10 +246,10 @@ void Diagnostics::handle_set_monitoring_level_req(Call<SetMonitoringLevelRequest
     if (msg.severity < MonitoringLevelSeverity::MIN or msg.severity > MonitoringLevelSeverity::MAX) {
         response.status = GenericStatusEnum::Rejected;
     } else {
-        auto result = this->context.device_model.set_value(ControllerComponentVariables::ActiveMonitoringLevel.component,
-                                                   ControllerComponentVariables::ActiveMonitoringLevel.variable.value(),
-                                                   AttributeEnum::Actual, std::to_string(msg.severity),
-                                                   VARIABLE_ATTRIBUTE_VALUE_SOURCE_CSMS, true);
+        auto result = this->context.device_model.set_value(
+            ControllerComponentVariables::ActiveMonitoringLevel.component,
+            ControllerComponentVariables::ActiveMonitoringLevel.variable.value(), AttributeEnum::Actual,
+            std::to_string(msg.severity), VARIABLE_ATTRIBUTE_VALUE_SOURCE_CSMS, true);
 
         if (result != SetVariableStatusEnum::Accepted) {
             EVLOG_warning << "Could not persist in device model new monitoring level: " << msg.severity;

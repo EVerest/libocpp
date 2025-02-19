@@ -3,10 +3,10 @@
 
 #include <ocpp/v2/functional_blocks/tariff_and_cost.hpp>
 
-#include <ocpp/v2/functional_blocks/block_context.hpp>
 #include <ocpp/v2/ctrlr_component_variables.hpp>
 #include <ocpp/v2/device_model.hpp>
 #include <ocpp/v2/evse_manager.hpp>
+#include <ocpp/v2/functional_blocks/block_context.hpp>
 #include <ocpp/v2/functional_blocks/meter_values.hpp>
 
 #include <ocpp/v2/messages/CostUpdated.hpp>
@@ -14,7 +14,7 @@
 const auto DEFAULT_PRICE_NUMBER_OF_DECIMALS = 3;
 
 namespace ocpp::v2 {
-TariffAndCost::TariffAndCost(const BlockContext &block_context, MeterValuesInterface& meter_values,
+TariffAndCost::TariffAndCost(const BlockContext& block_context, MeterValuesInterface& meter_values,
                              std::optional<SetDisplayMessageCallback>& set_display_message_callback,
                              std::optional<SetRunningCostCallback>& set_running_cost_callback,
                              boost::asio::io_service& io_service) :
@@ -111,7 +111,8 @@ void TariffAndCost::handle_cost_and_tariff(const TransactionEventResponse& respo
             if (/*custom_data.contains("vendorId") and
                 (custom_data.at("vendorId").get<std::string>() == "org.openchargealliance.org.qrcode") and */
                 custom_data.contains("qrCodeText") and
-                this->context.device_model.get_optional_value<bool>(ControllerComponentVariables::DisplayMessageQRCodeDisplayCapable)
+                this->context.device_model
+                    .get_optional_value<bool>(ControllerComponentVariables::DisplayMessageQRCodeDisplayCapable)
                     .value_or(false)) {
                 running_cost.qr_code_text = custom_data.at("qrCodeText");
             }
@@ -166,7 +167,8 @@ void TariffAndCost::handle_cost_and_tariff(const TransactionEventResponse& respo
         }
 
         const int number_of_decimals =
-            this->context.device_model.get_optional_value<int>(ControllerComponentVariables::NumberOfDecimalsForCostValues)
+            this->context.device_model
+                .get_optional_value<int>(ControllerComponentVariables::NumberOfDecimalsForCostValues)
                 .value_or(DEFAULT_PRICE_NUMBER_OF_DECIMALS);
         uint32_t decimals =
             (number_of_decimals < 0 ? DEFAULT_PRICE_NUMBER_OF_DECIMALS : static_cast<uint32_t>(number_of_decimals));
@@ -209,7 +211,8 @@ void TariffAndCost::handle_costupdated_req(const Call<CostUpdatedRequest> call) 
     running_cost.cost = static_cast<double>(call.msg.totalCost);
     running_cost.transaction_id = call.msg.transactionId;
 
-    std::optional<int32_t> transaction_evse_id = this->context.evse_manager.get_transaction_evseid(running_cost.transaction_id);
+    std::optional<int32_t> transaction_evse_id =
+        this->context.evse_manager.get_transaction_evseid(running_cost.transaction_id);
     if (!transaction_evse_id.has_value()) {
         // We just put an error in the log as the spec does not define what to do here. It is not possible to return
         // a 'Rejected' or something in that manner.
@@ -232,7 +235,8 @@ void TariffAndCost::handle_costupdated_req(const Call<CostUpdatedRequest> call) 
         return;
     }
 
-    const std::optional<int32_t> evse_id_opt = this->context.evse_manager.get_transaction_evseid(running_cost.transaction_id);
+    const std::optional<int32_t> evse_id_opt =
+        this->context.evse_manager.get_transaction_evseid(running_cost.transaction_id);
     if (!evse_id_opt.has_value()) {
         EVLOG_warning << "Can not set running cost triggers as there is no evse id found with the transaction id from "
                          "the incoming CostUpdatedRequest";
@@ -256,14 +260,17 @@ bool TariffAndCost::is_multilanguage_enabled() const {
 }
 
 bool TariffAndCost::is_tariff_enabled() const {
-    return this->context.device_model.get_optional_value<bool>(ControllerComponentVariables::TariffCostCtrlrAvailableTariff)
+    return this->context.device_model
+               .get_optional_value<bool>(ControllerComponentVariables::TariffCostCtrlrAvailableTariff)
                .value_or(false) and
-           this->context.device_model.get_optional_value<bool>(ControllerComponentVariables::TariffCostCtrlrEnabledTariff)
+           this->context.device_model
+               .get_optional_value<bool>(ControllerComponentVariables::TariffCostCtrlrEnabledTariff)
                .value_or(false);
 }
 
 bool TariffAndCost::is_cost_enabled() const {
-    return this->context.device_model.get_optional_value<bool>(ControllerComponentVariables::TariffCostCtrlrAvailableCost)
+    return this->context.device_model
+               .get_optional_value<bool>(ControllerComponentVariables::TariffCostCtrlrAvailableCost)
                .value_or(false) and
            this->context.device_model.get_optional_value<bool>(ControllerComponentVariables::TariffCostCtrlrEnabledCost)
                .value_or(false);

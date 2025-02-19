@@ -86,8 +86,7 @@ private: // Members
     Everest::SteadyTimer heartbeat_timer;
 
 public:
-    Availability(const BlockContext& block_context,
-                 std::optional<TimeSyncCallback> time_sync_callback,
+    Availability(const BlockContext& block_context, std::optional<TimeSyncCallback> time_sync_callback,
                  std::optional<AllConnectorsUnavailableCallback> all_connectors_unavailable_callback);
     ~Availability();
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;

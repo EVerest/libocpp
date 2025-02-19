@@ -34,7 +34,7 @@ public:
 
 class TariffAndCost : public TariffAndCostInterface {
 public:
-    TariffAndCost(const BlockContext& block_context, MeterValuesInterface &meter_values,
+    TariffAndCost(const BlockContext& block_context, MeterValuesInterface& meter_values,
                   std::optional<SetDisplayMessageCallback>& set_display_message_callback,
                   std::optional<SetRunningCostCallback>& set_running_cost_callback,
                   boost::asio::io_service& io_service);

@@ -54,7 +54,7 @@ private: // Members
     std::atomic_bool auth_cache_cleanup_handler_running;
 
 public:
-    Authorization(const BlockContext& context);
+    explicit Authorization(const BlockContext& context);
     ~Authorization();
     void start_auth_cache_cleanup_thread() override;
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
