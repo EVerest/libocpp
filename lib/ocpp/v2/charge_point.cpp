@@ -861,10 +861,7 @@ void ChargePoint::websocket_disconnected_callback(const int configuration_slot,
         this->time_disconnected = std::chrono::steady_clock::now();
     }
 
-    if (this->security != nullptr) {
-        // TODO mz why????
-        this->security->stop_certificate_expiration_check_timers();
-    }
+    this->security->stop_certificate_expiration_check_timers();
     if (this->callbacks.connection_state_changed_callback.has_value()) {
         this->callbacks.connection_state_changed_callback.value()(false, configuration_slot,
                                                                   network_connection_profile);
