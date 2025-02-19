@@ -1195,20 +1195,10 @@ ComponentVariable get_component_variable(const int32_t evse_id, const int32_t co
 
 const std::vector<std::pair<ComponentVariable, std::vector<RequiredComponentVariable>>>
     required_component_available_variables{
-        {ControllerComponentVariables::AlignedDataCtrlrAvailable,
-         {ControllerComponentVariables::AlignedDataInterval, ControllerComponentVariables::AlignedDataMeasurands,
-          ControllerComponentVariables::AlignedDataTxEndedInterval,
-          ControllerComponentVariables::AlignedDataTxEndedMeasurands}},
         {ControllerComponentVariables::LocalAuthListCtrlrAvailable,
          {ControllerComponentVariables::LocalAuthListCtrlrEntries,
           ControllerComponentVariables::ItemsPerMessageSendLocalList,
           ControllerComponentVariables::BytesPerMessageSendLocalList}},
-        {ControllerComponentVariables::SampledDataCtrlrAvailable,
-         {ControllerComponentVariables::SampledDataTxEndedMeasurands,
-          ControllerComponentVariables::SampledDataTxEndedInterval,
-          ControllerComponentVariables::SampledDataTxStartedMeasurands,
-          ControllerComponentVariables::SampledDataTxUpdatedMeasurands,
-          ControllerComponentVariables::SampledDataTxUpdatedInterval}},
         {ControllerComponentVariables::SmartChargingCtrlrAvailable,
          {ControllerComponentVariables::ChargingProfileMaxStackLevel,
           ControllerComponentVariables::ChargingScheduleChargingRateUnit,
@@ -1232,6 +1222,15 @@ const std::vector<std::pair<ComponentVariable, std::vector<RequiredComponentVari
           ControllerComponentVariables::DisplayMessageSupportedPriorities}}};
 
 const std::vector<RequiredComponentVariable> required_variables{
+    ControllerComponentVariables::AlignedDataInterval,
+    ControllerComponentVariables::AlignedDataMeasurands,
+    ControllerComponentVariables::AlignedDataTxEndedInterval,
+    ControllerComponentVariables::AlignedDataTxEndedMeasurands,
+    ControllerComponentVariables::SampledDataTxEndedMeasurands,
+    ControllerComponentVariables::SampledDataTxEndedInterval,
+    ControllerComponentVariables::SampledDataTxStartedMeasurands,
+    ControllerComponentVariables::SampledDataTxUpdatedMeasurands,
+    ControllerComponentVariables::SampledDataTxUpdatedInterval,
     ControllerComponentVariables::ChargePointId,
     ControllerComponentVariables::NetworkConnectionProfiles,
     ControllerComponentVariables::ChargeBoxSerialNumber,

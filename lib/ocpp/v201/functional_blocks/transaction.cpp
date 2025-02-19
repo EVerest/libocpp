@@ -22,7 +22,7 @@ TransactionBlock::TransactionBlock(
     MessageDispatcherInterface<MessageType>& message_dispatcher, DeviceModel& device_model,
     ConnectivityManagerInterface& connectivity_manager, EvseManagerInterface& evse_manager,
     MessageQueue<v201::MessageType>& message_queue, DatabaseHandlerInterface& database_handler,
-    AuthorizationInterface& authorization, AvailabilityInterface& availability, SmartChargingInterface& smart_charging,
+    AuthorizationInterface& authorization, AvailabilityInterface& availability, SmartChargingInterface* smart_charging,
     TariffAndCostInterface& tariff_and_cost, StopTransactionCallback stop_transaction_callback,
     PauseChargingCallback pause_charging_callback, std::optional<TransactionEventCallback> transaction_event_callback,
     std::optional<TransactionEventResponseCallback> transaction_event_response_callback, ResetCallback reset_callback) :
@@ -144,7 +144,9 @@ void TransactionBlock::on_transaction_finished(const int32_t evse_id, const Date
                                 !this->connectivity_manager.is_websocket_connected(), std::nullopt);
 
     // K02.FR.05 The transaction is over, so delete the TxProfiles associated with the transaction.
-    smart_charging.delete_transaction_tx_profiles(enhanced_transaction->get_transaction().transactionId);
+    if (smart_charging != nullptr) {
+        smart_charging->delete_transaction_tx_profiles(enhanced_transaction->get_transaction().transactionId);
+    }
     evse_handle.release_transaction();
 
     bool send_reset = false;

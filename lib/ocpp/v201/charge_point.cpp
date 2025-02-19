@@ -117,7 +117,10 @@ void ChargePoint::start(BootReasonEnum bootreason, bool start_connecting) {
     this->message_queue->get_persisted_messages_from_db();
     this->provisioning->boot_notification_req(bootreason);
     // call clear_invalid_charging_profiles when system boots
-    this->clear_invalid_charging_profiles();
+    if (this->smart_charging != nullptr) {
+        this->clear_invalid_charging_profiles();
+    }
+
     if (start_connecting) {
         this->connectivity_manager->connect();
     }
@@ -533,9 +536,12 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
             this->callbacks.configure_network_connection_profile_callback.value());
     }
 
-    this->smart_charging = std::make_unique<SmartCharging>(
-        *this->device_model, *this->evse_manager, *this->connectivity_manager, *this->message_dispatcher,
-        *this->database_handler, this->callbacks.set_charging_profiles_callback);
+    if (device_model->get_optional_value<bool>(ControllerComponentVariables::SmartChargingCtrlrAvailable)
+            .value_or(false)) {
+        this->smart_charging = std::make_unique<SmartCharging>(
+            *this->device_model, *this->evse_manager, *this->connectivity_manager, *this->message_dispatcher,
+            *this->database_handler, this->callbacks.set_charging_profiles_callback);
+    }
 
     this->tariff_and_cost = std::make_unique<TariffAndCost>(
         *this->message_dispatcher, *this->device_model, *this->evse_manager, *this->meter_values,
@@ -548,10 +554,10 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
 
     this->transaction = std::make_unique<TransactionBlock>(
         *this->message_dispatcher, *this->device_model, *this->connectivity_manager, *this->evse_manager,
-        *this->message_queue, *this->database_handler, *this->authorization, *this->availability, *this->smart_charging,
-        *this->tariff_and_cost, this->callbacks.stop_transaction_callback, this->callbacks.pause_charging_callback,
-        this->callbacks.transaction_event_callback, this->callbacks.transaction_event_response_callback,
-        this->callbacks.reset_callback);
+        *this->message_queue, *this->database_handler, *this->authorization, *this->availability,
+        this->smart_charging.get(), *this->tariff_and_cost, this->callbacks.stop_transaction_callback,
+        this->callbacks.pause_charging_callback, this->callbacks.transaction_event_callback,
+        this->callbacks.transaction_event_response_callback, this->callbacks.reset_callback);
 
     this->provisioning = std::make_unique<Provisioning>(
         *this->device_model, *this->message_dispatcher, *this->message_queue, *this->connectivity_manager,
@@ -564,7 +570,7 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
 
     this->remote_transaction_control = std::make_unique<RemoteTransactionControl>(
         *this->message_dispatcher, *this->device_model, *this->connectivity_manager, *this->evse_manager,
-        *this->component_state_manager, *this->transaction, *this->smart_charging, *this->meter_values,
+        *this->component_state_manager, *this->transaction, this->smart_charging.get(), *this->meter_values,
         *this->availability, *this->firmware_update, *this->security, this->reservation.get(), *this->provisioning,
         this->callbacks.unlock_connector_callback, this->callbacks.remote_start_transaction_callback,
         this->callbacks.stop_transaction_callback, this->registration_status, this->upload_log_status,
@@ -644,7 +650,11 @@ void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& messa
         case MessageType::ClearChargingProfile:
         case MessageType::GetChargingProfiles:
         case MessageType::GetCompositeSchedule:
-            this->smart_charging->handle_message(message);
+            if (this->smart_charging != nullptr) {
+                this->smart_charging->handle_message(message);
+            } else {
+                send_not_implemented_error(message.uniqueId, message.messageTypeId);
+            }
             break;
         case MessageType::GetDisplayMessages:
         case MessageType::SetDisplayMessage:
@@ -798,7 +808,6 @@ void ChargePoint::message_callback(const std::string& message) {
 bool ChargePoint::is_offline() {
     return !this->connectivity_manager->is_websocket_connected();
 }
-
 std::optional<DataTransferResponse> ChargePoint::data_transfer_req(const CiString<255>& vendorId,
                                                                    const std::optional<CiString<50>>& messageId,
                                                                    const std::optional<json>& data) {
@@ -917,8 +926,9 @@ void ChargePoint::clear_invalid_charging_profiles() {
         for (const auto& [evse_id, profiles] : evses) {
             for (auto profile : profiles) {
                 try {
-                    if (this->smart_charging->conform_and_validate_profile(profile, evse_id) !=
-                        ProfileValidationResultEnum::Valid) {
+                    if (this->smart_charging != nullptr &&
+                        this->smart_charging->conform_and_validate_profile(profile, evse_id) !=
+                            ProfileValidationResultEnum::Valid) {
                         this->database_handler->delete_charging_profile(profile.id);
                     }
                 } catch (const QueryExecutionException& e) {
@@ -943,16 +953,27 @@ ChargePoint::set_variables(const std::vector<SetVariableData>& set_variable_data
 }
 
 GetCompositeScheduleResponse ChargePoint::get_composite_schedule(const GetCompositeScheduleRequest& request) {
+    if (this->smart_charging == nullptr) {
+        GetCompositeScheduleResponse response;
+        response.status = GenericStatusEnum::Rejected;
+        return response;
+    }
     return this->smart_charging->get_composite_schedule(request);
 }
 
 std::optional<CompositeSchedule> ChargePoint::get_composite_schedule(int32_t evse_id, std::chrono::seconds duration,
                                                                      ChargingRateUnitEnum unit) {
+    if (this->smart_charging == nullptr) {
+        return std::nullopt;
+    }
     return this->smart_charging->get_composite_schedule(evse_id, duration, unit);
 }
 
 std::vector<CompositeSchedule> ChargePoint::get_all_composite_schedules(const int32_t duration_s,
                                                                         const ChargingRateUnitEnum& unit) {
+    if (this->smart_charging == nullptr) {
+        return {};
+    }
     return this->smart_charging->get_all_composite_schedules(duration_s, unit);
 }
 
