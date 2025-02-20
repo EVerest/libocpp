@@ -404,14 +404,6 @@ private:
 
     void message_callback(const std::string& message);
 
-    ///
-    /// \brief Check if the connector exists on the given evse id.
-    /// \param evse_id          The evse id to check for.
-    /// \param connector_type   The connector type.
-    /// \return False if evse id does not exist or evse does not have the given connector type.
-    ///
-    bool does_connector_exist(const uint32_t evse_id, std::optional<ConnectorEnum> connector_type);
-
     /// \brief Get the value optional offline flag
     /// \return true if the charge point is offline. std::nullopt if it is online;
     bool is_offline();
