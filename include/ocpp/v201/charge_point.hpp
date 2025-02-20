@@ -555,7 +555,6 @@ public:
         const uint32_t evse_id, const ChargingStateEnum charging_state,
         const TriggerReasonEnum trigger_reason = TriggerReasonEnum::ChargingStateChanged) override;
 
-
     std::optional<std::string> get_evse_transaction_id(int32_t evse_id) override;
 
     AuthorizeResponse validate_token(const IdToken id_token, const std::optional<CiString<5500>>& certificate,

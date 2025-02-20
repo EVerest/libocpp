@@ -334,7 +334,7 @@ bool ChargePoint::on_charging_state_changed(const uint32_t evse_id, const Chargi
 }
 
 std::optional<std::string> ChargePoint::get_evse_transaction_id(int32_t evse_id) {
-    const auto &tx = this->evse_manager->get_evse(evse_id).get_transaction();
+    const auto& tx = this->evse_manager->get_evse(evse_id).get_transaction();
 
     if (tx != nullptr) {
         return tx->transactionId.get();
