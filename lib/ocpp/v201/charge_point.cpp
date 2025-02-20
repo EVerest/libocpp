@@ -543,9 +543,14 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
             *this->database_handler, this->callbacks.set_charging_profiles_callback);
     }
 
-    this->tariff_and_cost = std::make_unique<TariffAndCost>(
-        *this->message_dispatcher, *this->device_model, *this->evse_manager, *this->meter_values,
-        this->callbacks.set_display_message_callback, this->callbacks.set_running_cost_callback, this->io_service);
+    if (device_model->get_optional_value<bool>(ControllerComponentVariables::TariffCostCtrlrAvailableCost)
+            .value_or(false) ||
+        device_model->get_optional_value<bool>(ControllerComponentVariables::TariffCostCtrlrAvailableTariff)
+            .value_or(false)) {
+        this->tariff_and_cost = std::make_unique<TariffAndCost>(
+            *this->message_dispatcher, *this->device_model, *this->evse_manager, *this->meter_values,
+            this->callbacks.set_display_message_callback, this->callbacks.set_running_cost_callback, this->io_service);
+    }
 
     this->firmware_update = std::make_unique<FirmwareUpdate>(
         *this->message_dispatcher, *this->device_model, *this->evse_manager, *this->evse_security, *this->availability,
@@ -555,7 +560,7 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
     this->transaction = std::make_unique<TransactionBlock>(
         *this->message_dispatcher, *this->device_model, *this->connectivity_manager, *this->evse_manager,
         *this->message_queue, *this->database_handler, *this->authorization, *this->availability,
-        this->smart_charging.get(), *this->tariff_and_cost, this->callbacks.stop_transaction_callback,
+        this->smart_charging.get(), this->tariff_and_cost.get(), this->callbacks.stop_transaction_callback,
         this->callbacks.pause_charging_callback, this->callbacks.transaction_event_callback,
         this->callbacks.transaction_event_response_callback, this->callbacks.reset_callback);
 
@@ -666,7 +671,12 @@ void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& messa
             }
             break;
         case MessageType::CostUpdated:
-            this->tariff_and_cost->handle_message(message);
+            if (this->tariff_and_cost != nullptr) {
+                this->tariff_and_cost->handle_message(message);
+            } else {
+                send_not_implemented_error(message.uniqueId, message.messageTypeId);
+            }
+
             break;
         default:
             send_not_implemented_error(message.uniqueId, message.messageTypeId);

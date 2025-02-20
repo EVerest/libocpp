@@ -23,7 +23,7 @@ TransactionBlock::TransactionBlock(
     ConnectivityManagerInterface& connectivity_manager, EvseManagerInterface& evse_manager,
     MessageQueue<v201::MessageType>& message_queue, DatabaseHandlerInterface& database_handler,
     AuthorizationInterface& authorization, AvailabilityInterface& availability, SmartChargingInterface* smart_charging,
-    TariffAndCostInterface& tariff_and_cost, StopTransactionCallback stop_transaction_callback,
+    TariffAndCostInterface* tariff_and_cost, StopTransactionCallback stop_transaction_callback,
     PauseChargingCallback pause_charging_callback, std::optional<TransactionEventCallback> transaction_event_callback,
     std::optional<TransactionEventResponseCallback> transaction_event_response_callback, ResetCallback reset_callback) :
     message_dispatcher(message_dispatcher),
@@ -283,7 +283,9 @@ void TransactionBlock::handle_transaction_event_response(const EnhancedMessage<M
         this->transaction_event_response_callback.value()(original_msg, call_result.msg);
     }
 
-    this->tariff_and_cost.handle_cost_and_tariff(call_result.msg, original_msg, message.message[CALLRESULT_PAYLOAD]);
+    if (tariff_and_cost != nullptr) {
+        this->tariff_and_cost->handle_cost_and_tariff(call_result.msg, original_msg, message.message[CALLRESULT_PAYLOAD]);
+    }
 
     if (original_msg.eventType == TransactionEventEnum::Ended) {
         // nothing to do for TransactionEventEnum::Ended

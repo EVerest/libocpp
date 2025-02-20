@@ -489,7 +489,9 @@ void ocpp::v201::Authorization::cache_cleanup_handler() {
 void ocpp::v201::Authorization::handle_send_local_authorization_list_req(Call<SendLocalListRequest> call) {
     SendLocalListResponse response;
 
-    if (this->device_model.get_optional_value<bool>(ControllerComponentVariables::LocalAuthListCtrlrEnabled)
+    if (this->device_model.get_optional_value<bool>(ControllerComponentVariables::LocalAuthListCtrlrAvailable)
+            .value_or(false) &&
+        this->device_model.get_optional_value<bool>(ControllerComponentVariables::LocalAuthListCtrlrEnabled)
             .value_or(false)) {
         response.status = apply_local_authorization_list(call.msg);
     } else {
@@ -528,7 +530,9 @@ void ocpp::v201::Authorization::handle_send_local_authorization_list_req(Call<Se
 void ocpp::v201::Authorization::handle_get_local_authorization_list_version_req(Call<GetLocalListVersionRequest> call) {
     GetLocalListVersionResponse response;
 
-    if (this->device_model.get_optional_value<bool>(ControllerComponentVariables::LocalAuthListCtrlrEnabled)
+    if (this->device_model.get_optional_value<bool>(ControllerComponentVariables::LocalAuthListCtrlrAvailable)
+            .value_or(false) &&
+        this->device_model.get_optional_value<bool>(ControllerComponentVariables::LocalAuthListCtrlrEnabled)
             .value_or(false)) {
         try {
             response.versionNumber = this->database_handler.get_local_authorization_list_version();

@@ -39,7 +39,10 @@ Diagnostics::Diagnostics(MessageDispatcherInterface<MessageType>& message_dispat
         [this]() { return !this->connectivity_manager.is_websocket_connected(); }),
     get_log_request_callback(get_log_request_callback),
     get_customer_information_callback(get_customer_information_callback),
-    clear_customer_information_callback(clear_customer_information_callback) {
+    clear_customer_information_callback(clear_customer_information_callback),
+    is_monitoring_available(
+        this->device_model.get_optional_value<bool>(ControllerComponentVariables::MonitoringCtrlrAvailable)
+            .value_or(false)) {
 }
 
 void Diagnostics::handle_message(const ocpp::EnhancedMessage<MessageType>& message) {
@@ -52,18 +55,23 @@ void Diagnostics::handle_message(const ocpp::EnhancedMessage<MessageType>& messa
         this->handle_customer_information_req(json_message);
         break;
     case MessageType::SetMonitoringBase:
+        this->throw_when_monitoring_not_available(message.messageType);
         this->handle_set_monitoring_base_req(json_message);
         break;
     case MessageType::SetMonitoringLevel:
+        this->throw_when_monitoring_not_available(message.messageType);
         this->handle_set_monitoring_level_req(json_message);
         break;
     case MessageType::SetVariableMonitoring:
+        this->throw_when_monitoring_not_available(message.messageType);
         this->handle_set_variable_monitoring_req(message);
         break;
     case MessageType::GetMonitoringReport:
+        this->throw_when_monitoring_not_available(message.messageType);
         this->handle_get_monitoring_report_req(json_message);
         break;
     case MessageType::ClearVariableMonitoring:
+        this->throw_when_monitoring_not_available(message.messageType);
         this->handle_clear_variable_monitoring_req(json_message);
         break;
     default:
@@ -399,6 +407,12 @@ void Diagnostics::clear_customer_information(const std::optional<CertificateHash
             EVLOG_error << "Exception while deleting from auth cache table: " << e.what();
         }
         this->authorization.update_authorization_cache_size();
+    }
+}
+
+void Diagnostics::throw_when_monitoring_not_available(const MessageType type) {
+    if (!is_monitoring_available) {
+        throw MessageTypeNotImplementedException(type);
     }
 }
 
