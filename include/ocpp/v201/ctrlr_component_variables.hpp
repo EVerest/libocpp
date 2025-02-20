@@ -4,6 +4,8 @@
 #ifndef OCPP_V201_CTRLR_COMPONENT_VARIABLES
 #define OCPP_V201_CTRLR_COMPONENT_VARIABLES
 
+#include <set>
+
 #include <ocpp/v201/ocpp_types.hpp>
 
 namespace ocpp {

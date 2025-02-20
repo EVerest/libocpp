@@ -5,7 +5,6 @@
 #ifndef OCPP_V201_OCPP_TYPES_HPP
 #define OCPP_V201_OCPP_TYPES_HPP
 
-#include <set>
 #include <string>
 
 #include <nlohmann/json_fwd.hpp>
