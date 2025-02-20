@@ -355,7 +355,7 @@ TEST_F(DeviceModelTest, test_check_integrity_valid) {
 TEST_F(DeviceModelTest, test_check_integrity_invalid_missing_required_variable) {
     // Remove a required variable from the databsae.
     device_model_test_helper.remove_variable_from_db("DisplayMessageCtrlr", std::nullopt, std::nullopt, std::nullopt,
-                                                     "NumberOfDisplayMessages", std::nullopt);
+                                                     "DisplayMessages", std::nullopt);
     dm = device_model_test_helper.get_device_model();
     // Set the display message ctrlr to available.
     dm->set_value(ControllerComponentVariables::DisplayMessageCtrlrAvailable.component,

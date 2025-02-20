@@ -841,17 +841,17 @@
           "characteristics": {
               "supportsMonitoring": true,
               "dataType": "SequenceList",
-              "valuesList": "2.0.1,2.1"
+              "valuesList": "ocpp2.0.1,ocpp2.1"
           },
           "attributes": [
               {
                   "type": "Actual",
                   "mutability": "ReadOnly",
-                  "value": "2.1,2.0.1"
+                  "value": "ocpp2.1,ocpp2.0.1"
               }
           ],
           "description": "List of supported OCPP versions in order of preference",
-          "default": "2.1,2.0.1",
+          "default": "ocpp2.1,ocpp2.0.1",
           "type": "string"
       }
   },

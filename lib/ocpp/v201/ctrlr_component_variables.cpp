@@ -605,7 +605,7 @@ const ComponentVariable DisplayMessageCtrlrAvailable = {
 const RequiredComponentVariable NumberOfDisplayMessages = {
     ControllerComponents::DisplayMessageCtrlr,
     std::optional<Variable>({
-        "NumberOfDisplayMessages",
+        "DisplayMessages",
     }),
 };
 const RequiredComponentVariable DisplayMessageSupportedFormats = {
@@ -620,10 +620,10 @@ const RequiredComponentVariable DisplayMessageSupportedPriorities = {
         "SupportedPriorities",
     }),
 };
-const ComponentVariable DisplayMessageSupportedStates = {ControllerComponents::DisplayMessageCtrlr, std::nullopt,
+const ComponentVariable DisplayMessageSupportedStates = {ControllerComponents::DisplayMessageCtrlr,
                                                          std::optional<Variable>({"SupportedStates"})};
 
-const ComponentVariable DisplayMessageQRCodeDisplayCapable = {ControllerComponents::DisplayMessageCtrlr, std::nullopt,
+const ComponentVariable DisplayMessageQRCodeDisplayCapable = {ControllerComponents::DisplayMessageCtrlr,
                                                               std::optional<Variable>({"QRCodeDisplayCapable"})};
 
 const ComponentVariable DisplayMessageLanguage = {ControllerComponents::DisplayMessageCtrlr,
@@ -1110,7 +1110,7 @@ const RequiredComponentVariable TotalCostFallbackMessage = {
     }),
 };
 
-const ComponentVariable NumberOfDecimalsForCostValues = {ControllerComponents::TariffCostCtrlr, std::nullopt,
+const ComponentVariable NumberOfDecimalsForCostValues = {ControllerComponents::TariffCostCtrlr,
                                                          std::optional<Variable>({"NumberOfDecimalsForCostValues"})};
 
 const RequiredComponentVariable EVConnectionTimeOut = {
