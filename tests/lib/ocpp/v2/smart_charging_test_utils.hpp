@@ -42,7 +42,8 @@
 using ::testing::MockFunction;
 namespace ocpp::v2 {
 
-static const std::string BASE_JSON_PATH = std::string(TEST_PROFILES_LOCATION_V2) + "/json";
+static const std::string BASE_JSON_PATH_V201 = std::string(TEST_PROFILES_LOCATION_V2) + "/json";
+static const std::string BASE_JSON_PATH_V21 = std::string(TEST_PROFILES_LOCATION_V21) + "/json";
 
 constexpr int NR_OF_EVSES = 1;
 constexpr int NR_OF_TWO_EVSES = 2;

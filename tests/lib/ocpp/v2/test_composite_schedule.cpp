@@ -80,8 +80,8 @@ TEST_F(CompositeScheduleTestFixtureV2, ExtraSeconds) {
     // clang-format on
 }
 
-TEST_F(CompositeScheduleTestFixtureV2, FoundationTest_Grid) {
-    this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/grid/", DEFAULT_EVSE_ID);
+TEST_F(CompositeScheduleTestFixtureV201, FoundationTest_Grid) {
+    this->load_charging_profiles_for_evse(BASE_JSON_PATH_V201 + "/grid/", DEFAULT_EVSE_ID);
 
     evse_manager->open_transaction(DEFAULT_EVSE_ID, TX_ID);
 
@@ -198,8 +198,8 @@ TEST_F(CompositeScheduleTestFixtureV2, FoundationTest_Grid) {
     ASSERT_EQ(actual, expected);
 }
 
-TEST_F(CompositeScheduleTestFixtureV2, LayeredTest_SameStartTime) {
-    this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/layered/", DEFAULT_EVSE_ID);
+TEST_F(CompositeScheduleTestFixtureV201, LayeredTest_SameStartTime) {
+    this->load_charging_profiles_for_evse(BASE_JSON_PATH_V201 + "/layered/", DEFAULT_EVSE_ID);
 
     evse_manager->open_transaction(DEFAULT_EVSE_ID, TX_ID);
 
@@ -283,8 +283,8 @@ TEST_F(CompositeScheduleTestFixtureV2, LayeredTest_SameStartTime) {
     }
 }
 
-TEST_F(CompositeScheduleTestFixtureV2, LayeredRecurringTest_FutureStartTime) {
-    this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/layered_recurring/", DEFAULT_EVSE_ID);
+TEST_F(CompositeScheduleTestFixtureV201, LayeredRecurringTest_FutureStartTime) {
+    this->load_charging_profiles_for_evse(BASE_JSON_PATH_V201 + "/layered_recurring/", DEFAULT_EVSE_ID);
 
     evse_manager->open_transaction(DEFAULT_EVSE_ID, TX_ID);
 
@@ -335,8 +335,8 @@ TEST_F(CompositeScheduleTestFixtureV2, LayeredTest_PreviousStartTime) {
     ASSERT_EQ(actual, expected);
 }
 
-TEST_F(CompositeScheduleTestFixtureV2, LayeredRecurringTest_PreviousStartTime) {
-    this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/layered_recurring/", DEFAULT_EVSE_ID);
+TEST_F(CompositeScheduleTestFixtureV201, LayeredRecurringTest_PreviousStartTime) {
+    this->load_charging_profiles_for_evse(BASE_JSON_PATH_V201 + "/layered_recurring/", DEFAULT_EVSE_ID);
 
     evse_manager->open_transaction(DEFAULT_EVSE_ID, TX_ID);
 
@@ -409,8 +409,8 @@ TEST_F(CompositeScheduleTestFixtureV2, ValidateBaselineProfileVector) {
     ASSERT_EQ(actual, expected);
 }
 
-TEST_F(CompositeScheduleTestFixtureV2, RelativeProfile_minutia) {
-    this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/relative/", DEFAULT_EVSE_ID);
+TEST_F(CompositeScheduleTestFixtureV201, RelativeProfile_minutia) {
+    this->load_charging_profiles_for_evse(BASE_JSON_PATH_V201 + "/relative/", DEFAULT_EVSE_ID);
 
     const DateTime start_time = ocpp::DateTime("2024-05-17T05:00:00");
     const DateTime end_time = ocpp::DateTime("2024-05-17T06:00:00");
@@ -439,7 +439,7 @@ TEST_F(CompositeScheduleTestFixtureV2, RelativeProfile_e2e) {
     const DateTime start_time = ocpp::DateTime("2024-05-17T05:00:00");
     const DateTime end_time = ocpp::DateTime("2024-05-17T06:01:00");
 
-    this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/relative/", DEFAULT_EVSE_ID);
+    this->load_charging_profiles_for_evse(BASE_JSON_PATH_V201 + "/relative/", DEFAULT_EVSE_ID);
 
     this->evse_manager->open_transaction(DEFAULT_EVSE_ID, TX_ID);
     this->evse_manager->get_evse(DEFAULT_EVSE_ID).get_transaction()->start_time = start_time;
@@ -465,8 +465,8 @@ TEST_F(CompositeScheduleTestFixtureV2, RelativeProfile_e2e) {
     ASSERT_EQ(actual, expected);
 }
 
-TEST_F(CompositeScheduleTestFixtureV2, DemoCaseOne_17th) {
-    this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/case_one/", DEFAULT_EVSE_ID);
+TEST_F(CompositeScheduleTestFixtureV201, DemoCaseOne_17th) {
+    this->load_charging_profiles_for_evse(BASE_JSON_PATH_V201 + "/case_one/", DEFAULT_EVSE_ID);
 
     evse_manager->open_transaction(DEFAULT_EVSE_ID, TX_ID);
 
@@ -498,8 +498,8 @@ TEST_F(CompositeScheduleTestFixtureV2, DemoCaseOne_17th) {
     ASSERT_EQ(actual, expected);
 }
 
-TEST_F(CompositeScheduleTestFixtureV2, DemoCaseOne_19th) {
-    this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/case_one/", DEFAULT_EVSE_ID);
+TEST_F(CompositeScheduleTestFixtureV201, DemoCaseOne_19th) {
+    this->load_charging_profiles_for_evse(BASE_JSON_PATH_V201 + "/case_one/", DEFAULT_EVSE_ID);
 
     evse_manager->open_transaction(DEFAULT_EVSE_ID, TX_ID);
 
@@ -527,9 +527,9 @@ TEST_F(CompositeScheduleTestFixtureV2, DemoCaseOne_19th) {
     ASSERT_EQ(actual, expected);
 }
 
-TEST_F(CompositeScheduleTestFixtureV2, MaxOverridesHigherLimits) {
-    this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/max/0/", STATION_WIDE_ID);
-    this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/max/1/", DEFAULT_EVSE_ID);
+TEST_F(CompositeScheduleTestFixtureV201, MaxOverridesHigherLimits) {
+    this->load_charging_profiles_for_evse(BASE_JSON_PATH_V201 + "/max/0/", STATION_WIDE_ID);
+    this->load_charging_profiles_for_evse(BASE_JSON_PATH_V201 + "/max/1/", DEFAULT_EVSE_ID);
 
     evse_manager->open_transaction(DEFAULT_EVSE_ID, TX_ID);
 
@@ -556,9 +556,9 @@ TEST_F(CompositeScheduleTestFixtureV2, MaxOverridesHigherLimits) {
     ASSERT_EQ(actual, expected);
 }
 
-TEST_F(CompositeScheduleTestFixtureV2, MaxOverridenByLowerLimits) {
-    this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/max/0/", STATION_WIDE_ID);
-    this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/max/1/", DEFAULT_EVSE_ID);
+TEST_F(CompositeScheduleTestFixtureV201, MaxOverridenByLowerLimits) {
+    this->load_charging_profiles_for_evse(BASE_JSON_PATH_V201 + "/max/0/", STATION_WIDE_ID);
+    this->load_charging_profiles_for_evse(BASE_JSON_PATH_V201 + "/max/1/", DEFAULT_EVSE_ID);
 
     evse_manager->open_transaction(DEFAULT_EVSE_ID, TX_ID);
 
@@ -585,9 +585,9 @@ TEST_F(CompositeScheduleTestFixtureV2, MaxOverridenByLowerLimits) {
     ASSERT_EQ(actual, expected);
 }
 
-TEST_F(CompositeScheduleTestFixtureV2, ExternalOverridesHigherLimits) {
-    this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/external/0/", STATION_WIDE_ID);
-    this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/external/1/", DEFAULT_EVSE_ID);
+TEST_F(CompositeScheduleTestFixtureV201, ExternalOverridesHigherLimits) {
+    this->load_charging_profiles_for_evse(BASE_JSON_PATH_V201 + "/external/0/", STATION_WIDE_ID);
+    this->load_charging_profiles_for_evse(BASE_JSON_PATH_V201 + "/external/1/", DEFAULT_EVSE_ID);
 
     evse_manager->open_transaction(DEFAULT_EVSE_ID, TX_ID);
 
@@ -614,9 +614,9 @@ TEST_F(CompositeScheduleTestFixtureV2, ExternalOverridesHigherLimits) {
     ASSERT_EQ(actual, expected);
 }
 
-TEST_F(CompositeScheduleTestFixtureV2, ExternalOverridenByLowerLimits) {
-    this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/external/0/", STATION_WIDE_ID);
-    this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/external/1/", DEFAULT_EVSE_ID);
+TEST_F(CompositeScheduleTestFixtureV201, ExternalOverridenByLowerLimits) {
+    this->load_charging_profiles_for_evse(BASE_JSON_PATH_V201 + "/external/0/", STATION_WIDE_ID);
+    this->load_charging_profiles_for_evse(BASE_JSON_PATH_V201 + "/external/1/", DEFAULT_EVSE_ID);
 
     evse_manager->open_transaction(DEFAULT_EVSE_ID, TX_ID);
 
@@ -643,9 +643,9 @@ TEST_F(CompositeScheduleTestFixtureV2, ExternalOverridenByLowerLimits) {
     ASSERT_EQ(actual, expected);
 }
 
-TEST_F(CompositeScheduleTestFixtureV2, OCTT_TC_K_41_CS) {
-    this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/OCCT_TC_K_41_CS/0/", STATION_WIDE_ID);
-    this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/OCCT_TC_K_41_CS/1/", DEFAULT_EVSE_ID);
+TEST_F(CompositeScheduleTestFixtureV201, OCTT_TC_K_41_CS) {
+    this->load_charging_profiles_for_evse(BASE_JSON_PATH_V201 + "/OCCT_TC_K_41_CS/0/", STATION_WIDE_ID);
+    this->load_charging_profiles_for_evse(BASE_JSON_PATH_V201 + "/OCCT_TC_K_41_CS/1/", DEFAULT_EVSE_ID);
 
     evse_manager->open_transaction(DEFAULT_EVSE_ID, TX_ID);
 
@@ -1096,8 +1096,8 @@ TEST_F(CompositeScheduleTestFixtureV2, MixingNumberOfPhasesOnSingleEvse) {
     // clang-format on
 }
 
-TEST_F(CompositeScheduleTestFixtureV2, NoGapsWithSequentialProfiles) {
-    this->load_charging_profiles_for_evse(BASE_JSON_PATH + "/no_gap/", STATION_WIDE_ID);
+TEST_F(CompositeScheduleTestFixtureV201, NoGapsWithSequentialProfiles) {
+    this->load_charging_profiles_for_evse(BASE_JSON_PATH_V201 + "/no_gap/", STATION_WIDE_ID);
 
     const DateTime start_time = ocpp::DateTime("2024-01-02T08:00:00");
     const DateTime end_time = ocpp::DateTime("2024-01-02T08:20:00");
