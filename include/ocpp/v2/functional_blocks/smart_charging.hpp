@@ -11,6 +11,8 @@ namespace ocpp::v2 {
 struct FunctionalBlockContext;
 class SmartChargingHandlerInterface;
 
+struct LimitsSetpointsForOperationMode;
+
 struct GetChargingProfilesRequest;
 struct SetChargingProfileRequest;
 struct SetChargingProfileResponse;
@@ -53,7 +55,10 @@ enum class ProfileValidationResultEnum {
     ChargingSchedulePeriodExtraneousPhaseValues,
     ChargingSchedulePeriodPhaseToUseACPhaseSwitchingUnsupported,
     ChargingSchedulePeriodPriorityChargingNotChargingOnly,
+    ChargingSchedulePeriodUnsupportedOperationMode,
+    ChargingSchedulePeriodUnsupportedLimitSetpoint,
     ChargingSchedulePeriodNoPhaseForDC,
+    ChargingSchedulePeriodNoFreqWattCurve,
     ChargingStationMaxProfileCannotBeRelative,
     ChargingStationMaxProfileEvseIdGreaterThanZero,
     DuplicateTxDefaultProfileFound,
@@ -203,7 +208,8 @@ protected:
     /// \param profile  Profile to validate.
     /// \return ProfileValidationResultEnum::Valid if valid.
     ///
-    ProfileValidationResultEnum validate_priority_charging_profile(const ChargingProfile& profile) const;
+    ProfileValidationResultEnum validate_priority_charging_profile(const ChargingProfile& profile,
+                                                                   int32_t evse_id) const;
 
     /// \brief validates that the given \p profile has valid charging schedules.
     /// If a profiles charging schedule period does not have a valid numberPhases,
@@ -295,4 +301,32 @@ private: // Functions
     ///
     ProfileValidationResultEnum verify_rate_limit(const ChargingProfile& profile);
 };
+
+///
+/// \brief Check if limits and checkpoints of an operation mode are correct.
+///
+/// Check if all required limits and setpoints are set and if there are limits and / or setpoints that should not be
+/// there.
+///
+/// \param limits_setpoints The information about required and optional limits and setpoints.
+/// \param limit        Limit or setpoint (for phase 1 if L2 and L3 are set, otherwise for all phases).
+/// \param limit_L2     Limit or setpoint phase 2.
+/// \param limit_L3     Limit or setpoint phase 3.
+/// \return True if all limits and setpoints are set / not set according to limits_setpoints struct.
+///
+bool are_limits_and_setpoints_of_operation_mode_correct(const LimitsSetpointsForOperationMode& limits_setpoints,
+                                                        const std::optional<float>& limit,
+                                                        const std::optional<float>& limit_L2,
+                                                        const std::optional<float>& limit_L3);
+
+///
+/// \brief Check if limits and checkpoints of an operation mode are correct.
+///
+/// Check if all required limits and setpoints are set and if there are limits and / or setpoints that should not be
+/// there.
+///
+/// \param charging_schedule_period The charging schedule period.
+/// \return True when all limits and limits are set / not set according to the spec.
+///
+bool check_limits_and_setpoints(const ChargingSchedulePeriod& charging_schedule_period);
 } // namespace ocpp::v2
