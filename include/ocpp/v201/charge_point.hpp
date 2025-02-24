@@ -196,7 +196,7 @@ public:
                               const TriggerReasonEnum trigger_reason = TriggerReasonEnum::ChargingStateChanged) = 0;
 
     /// \brief Gets the transaction id for a certain \p evse_id if there is an active transaction
-    /// \param evse_id The evse to tet the transaction for
+    /// \param evse_id The evse to get the transaction for
     /// \return The transaction id if a transaction is active, otherwise nullopt
     virtual std::optional<std::string> get_evse_transaction_id(int32_t evse_id) = 0;
 
