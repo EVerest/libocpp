@@ -20,6 +20,26 @@ ocpp::DateTime floor_seconds(const ocpp::DateTime& dt) {
     return ocpp::DateTime(std::chrono::floor<seconds>(dt.to_time_point()));
 }
 
+IntermediatePeriod default_intermediate_period() {
+    IntermediatePeriod empty;
+    empty.startPeriod = 0;
+    empty.current_limit = NO_LIMIT_SPECIFIED;
+    empty.power_limit = NO_LIMIT_SPECIFIED;
+    empty.current_discharge_limit = NO_DISCHARGE_LIMIT_SPECIFIED;
+    empty.power_discharge_limit = NO_DISCHARGE_LIMIT_SPECIFIED;
+    empty.current_setpoint = NO_SETPOINT_SPECIFIED;
+    empty.power_setpoint = NO_SETPOINT_SPECIFIED;
+    empty.numberPhases = std::nullopt;
+    empty.phaseToUse = std::nullopt;
+    return empty;
+}
+
+IntermediatePeriod default_intermediate_period(const int32_t start_period) {
+    IntermediatePeriod empty = default_intermediate_period();
+    empty.startPeriod = start_period;
+    return empty;
+}
+
 /// \brief populate a schedule period
 /// \param in_start the start time of the profile
 /// \param in_duration the time in seconds from the start of the profile to the end of this period
@@ -39,6 +59,8 @@ void period_entry_t::init(const DateTime& in_start, int in_duration, const Charg
     } else {
         limit = in_period.limit.value_or(DEFAULT_LIMIT_WATTS);
     }
+    discharge_limit = in_period.dischargeLimit.value_or(NO_DISCHARGE_LIMIT_SPECIFIED);
+    setpoint = in_period.setpoint.value_or(NO_SETPOINT_SPECIFIED); // FIXME
     min_charging_rate = in_profile.chargingSchedule.front().minChargingRate;
 }
 
@@ -316,7 +338,7 @@ IntermediateProfile generate_profile_from_periods(std::vector<period_entry_t>& p
     const auto end = floor_seconds(in_end);
 
     if (periods.empty()) {
-        return {{0, NO_LIMIT_SPECIFIED, NO_LIMIT_SPECIFIED, std::nullopt, std::nullopt}};
+        return {default_intermediate_period()};
     }
 
     // sort the combined_schedules in stack priority order
@@ -353,22 +375,37 @@ IntermediateProfile generate_profile_from_periods(std::vector<period_entry_t>& p
 
         if (earliest > current) {
             // there is a gap to fill
-            combined.push_back(
-                {elapsed_seconds(current, now), NO_LIMIT_SPECIFIED, NO_LIMIT_SPECIFIED, std::nullopt, std::nullopt});
+            combined.push_back({default_intermediate_period(elapsed_seconds(current, now))});
             current = earliest;
         } else {
             // there is a schedule to use
             float current_limit = NO_LIMIT_SPECIFIED;
             float power_limit = NO_LIMIT_SPECIFIED;
+            float current_discharge_limit = NO_DISCHARGE_LIMIT_SPECIFIED;
+            float power_discharge_limit = NO_DISCHARGE_LIMIT_SPECIFIED;
+            float current_setpoint = NO_SETPOINT_SPECIFIED;
+            float power_setpoint = NO_SETPOINT_SPECIFIED;
 
             if (chosen->charging_rate_unit == ChargingRateUnitEnum::A) {
                 current_limit = chosen->limit;
+                current_setpoint = chosen->setpoint;
+                current_discharge_limit = chosen->discharge_limit;
             } else {
                 power_limit = chosen->limit;
+                power_setpoint = chosen->setpoint;
+                power_discharge_limit = chosen->discharge_limit;
             }
 
-            IntermediatePeriod charging_schedule_period{elapsed_seconds(current, now), current_limit, power_limit,
-                                                        chosen->number_phases, std::nullopt};
+            IntermediatePeriod charging_schedule_period;
+            charging_schedule_period.startPeriod = elapsed_seconds(current, now);
+            charging_schedule_period.current_limit = current_limit;
+            charging_schedule_period.power_limit = power_limit;
+            charging_schedule_period.current_setpoint = current_setpoint;
+            charging_schedule_period.power_setpoint = power_setpoint,
+            charging_schedule_period.current_discharge_limit = current_discharge_limit;
+            charging_schedule_period.power_discharge_limit = power_discharge_limit;
+            charging_schedule_period.numberPhases = chosen->number_phases;
+            charging_schedule_period.phaseToUse = std::nullopt;
 
             // If the new ChargingSchedulePeriod.phaseToUse field is set, pass it on
             // Profile validation has already ensured that the values have been properly set.
@@ -407,7 +444,7 @@ IntermediateProfile combine_list_of_profiles(const std::vector<IntermediateProfi
     if (profiles.empty()) {
         // We should never get here as there are always profiles, otherwise there is a mistake in the calling function
         // Return an empty profile to be safe
-        return {{0, NO_LIMIT_SPECIFIED, NO_LIMIT_SPECIFIED, std::nullopt, std::nullopt}};
+        return {default_intermediate_period()};
     }
 
     IntermediateProfile combined{};
@@ -429,6 +466,10 @@ IntermediateProfile combine_list_of_profiles(const std::vector<IntermediateProfi
 
         if (combined.empty() || (period.current_limit != combined.back().current_limit) ||
             (period.power_limit != combined.back().power_limit) ||
+            (period.current_discharge_limit != combined.back().current_discharge_limit) ||
+            (period.power_discharge_limit != combined.back().power_discharge_limit) ||
+            (period.current_setpoint != combined.back().current_setpoint) ||
+            (period.power_setpoint != combined.back().power_setpoint) ||
             (period.numberPhases != combined.back().numberPhases)) {
             combined.push_back(period);
         }
@@ -459,7 +500,7 @@ IntermediateProfile combine_list_of_profiles(const std::vector<IntermediateProfi
     }
 
     if (combined.empty()) {
-        combined.push_back({0, NO_LIMIT_SPECIFIED, NO_LIMIT_SPECIFIED, std::nullopt, std::nullopt});
+        combined.push_back(default_intermediate_period());
     }
 
     return combined;
@@ -474,11 +515,22 @@ IntermediateProfile merge_tx_profile_with_tx_default_profile(const IntermediateP
         IntermediatePeriod period{};
         period.current_limit = NO_LIMIT_SPECIFIED;
         period.power_limit = NO_LIMIT_SPECIFIED;
+        period.current_discharge_limit = NO_DISCHARGE_LIMIT_SPECIFIED;
+        period.power_discharge_limit = NO_DISCHARGE_LIMIT_SPECIFIED;
+        period.current_setpoint = NO_SETPOINT_SPECIFIED;
+        period.power_setpoint = NO_SETPOINT_SPECIFIED;
 
         for (const auto& [it, end] : periods) {
-            if (it->current_limit != NO_LIMIT_SPECIFIED || it->power_limit != NO_LIMIT_SPECIFIED) {
+            if (it->current_limit != NO_LIMIT_SPECIFIED || it->power_limit != NO_LIMIT_SPECIFIED ||
+                it->current_discharge_limit != NO_DISCHARGE_LIMIT_SPECIFIED ||
+                it->power_discharge_limit != NO_DISCHARGE_LIMIT_SPECIFIED ||
+                it->current_setpoint != NO_SETPOINT_SPECIFIED || it->power_setpoint != NO_SETPOINT_SPECIFIED) {
                 period.current_limit = it->current_limit;
                 period.power_limit = it->power_limit;
+                period.current_discharge_limit = it->current_discharge_limit;
+                period.power_discharge_limit = it->power_discharge_limit;
+                period.current_setpoint = it->current_setpoint;
+                period.power_setpoint = it->power_setpoint;
                 period.numberPhases = it->numberPhases;
                 break;
             }
@@ -495,33 +547,67 @@ IntermediateProfile merge_tx_profile_with_tx_default_profile(const IntermediateP
 
 IntermediateProfile merge_profiles_by_lowest_limit(const std::vector<IntermediateProfile>& profiles) {
     auto combinator = [](const period_pair_vector& periods) {
-        IntermediatePeriod period{};
+        IntermediatePeriod period;
         period.current_limit = std::numeric_limits<float>::max();
         period.power_limit = std::numeric_limits<float>::max();
+        period.current_discharge_limit = NO_DISCHARGE_LIMIT_SPECIFIED;
+        period.power_discharge_limit = NO_DISCHARGE_LIMIT_SPECIFIED;
+        period.current_setpoint = std::numeric_limits<float>::max();
+        period.power_setpoint = std::numeric_limits<float>::max();
 
         for (const auto& [it, end] : periods) {
-            if (it->current_limit >= 0.0F && it->current_limit < period.current_limit) {
-                period.current_limit = it->current_limit;
+            period.current_limit =
+                (it->current_limit >= 0.0F) ? std::min(period.current_limit, it->current_limit) : period.current_limit;
+            period.power_limit =
+                (it->power_limit >= 0.0F) ? std::min(period.power_limit, it->power_limit) : period.power_limit;
+            period.current_discharge_limit = (it->current_discharge_limit <= 0.0F)
+                                                 ? std::max(period.current_discharge_limit, it->current_discharge_limit)
+                                                 : period.current_discharge_limit;
+            period.power_discharge_limit = (it->power_discharge_limit <= 0.0F)
+                                               ? std::max(period.power_discharge_limit, it->power_discharge_limit)
+                                               : period.power_discharge_limit;
+
+            if (it->current_setpoint != NO_SETPOINT_SPECIFIED or period.current_setpoint != NO_SETPOINT_SPECIFIED) {
+                period.current_setpoint = std::min(period.current_setpoint, it->current_setpoint);
+                period.current_setpoint =
+                    (period.current_setpoint < 0.0F && period.current_discharge_limit != NO_DISCHARGE_LIMIT_SPECIFIED)
+                        ?
+                        // V2X.04
+                        std::max(period.current_setpoint, period.current_discharge_limit)
+                        :
+                        // V2X.03
+                        std::min(period.current_setpoint, period.current_limit);
             }
-            if (it->power_limit >= 0.0F && it->power_limit < period.power_limit) {
-                period.power_limit = it->power_limit;
+            if (it->power_setpoint != NO_SETPOINT_SPECIFIED or period.power_setpoint != NO_SETPOINT_SPECIFIED) {
+                period.power_setpoint = std::min(period.power_setpoint, it->power_setpoint);
+                period.power_setpoint =
+                    (period.power_setpoint < 0.0F && period.power_discharge_limit != NO_DISCHARGE_LIMIT_SPECIFIED)
+                        ?
+                        // V2X.04
+                        std::max(period.power_setpoint, period.power_discharge_limit)
+                        :
+                        // V2X.03
+                        std::min(period.power_setpoint, period.power_limit);
             }
 
-            // Copy number of phases if lower
-            if (!period.numberPhases.has_value()) {
-                // Don't care if this copies a nullopt, thats what it was already
-                period.numberPhases = it->numberPhases;
-            } else if (it->numberPhases.has_value() && it->numberPhases.value() < period.numberPhases.value()) {
+            if (!period.numberPhases || (it->numberPhases && it->numberPhases.value() < period.numberPhases.value())) {
                 period.numberPhases = it->numberPhases;
             }
         }
 
-        if (period.current_limit == std::numeric_limits<float>::max()) {
-            period.current_limit = NO_LIMIT_SPECIFIED;
-        }
-        if (period.power_limit == std::numeric_limits<float>::max()) {
-            period.power_limit = NO_LIMIT_SPECIFIED;
-        }
+        auto replace_max_with_no_limit = [](float& value, float max_value, float replacement) {
+            if (value == max_value)
+                value = replacement;
+        };
+
+        replace_max_with_no_limit(period.current_limit, std::numeric_limits<float>::max(), NO_LIMIT_SPECIFIED);
+        replace_max_with_no_limit(period.power_limit, std::numeric_limits<float>::max(), NO_LIMIT_SPECIFIED);
+        replace_max_with_no_limit(period.current_setpoint, std::numeric_limits<float>::max(), NO_SETPOINT_SPECIFIED);
+        replace_max_with_no_limit(period.power_setpoint, std::numeric_limits<float>::max(), NO_SETPOINT_SPECIFIED);
+        replace_max_with_no_limit(period.current_discharge_limit, NO_DISCHARGE_LIMIT_SPECIFIED,
+                                  NO_DISCHARGE_LIMIT_SPECIFIED);
+        replace_max_with_no_limit(period.power_discharge_limit, NO_DISCHARGE_LIMIT_SPECIFIED,
+                                  NO_DISCHARGE_LIMIT_SPECIFIED);
 
         return period;
     };
@@ -574,6 +660,20 @@ convert_intermediate_into_schedule(const IntermediateProfile& profile, ChargingR
                 if (period.power_limit != NO_LIMIT_SPECIFIED) {
                     period_out.limit = std::min(period_out.limit.value(), period.power_limit / transform_value);
                 }
+                if (period.current_discharge_limit != NO_DISCHARGE_LIMIT_SPECIFIED) {
+                    period_out.dischargeLimit = period.current_discharge_limit;
+                }
+                if (period.power_discharge_limit != NO_DISCHARGE_LIMIT_SPECIFIED) {
+                    period_out.dischargeLimit =
+                        std::max(period_out.limit.value(), period.power_limit / transform_value);
+                }
+                if (period.current_setpoint != NO_SETPOINT_SPECIFIED) {
+                    period_out.setpoint = period.current_setpoint;
+                }
+                if (period.power_setpoint != NO_SETPOINT_SPECIFIED) {
+                    period_out.setpoint =
+                        std::min(period_out.setpoint.value(), period.power_setpoint / transform_value);
+                }
             } else {
                 if (period.power_limit != NO_LIMIT_SPECIFIED) {
                     period_out.limit = period.power_limit;
@@ -581,11 +681,26 @@ convert_intermediate_into_schedule(const IntermediateProfile& profile, ChargingR
                 if (period.current_limit != NO_LIMIT_SPECIFIED) {
                     period_out.limit = std::min(period_out.limit.value(), period.current_limit * transform_value);
                 }
+                if (period.power_discharge_limit != NO_DISCHARGE_LIMIT_SPECIFIED) {
+                    period_out.dischargeLimit = period.power_discharge_limit;
+                }
+                if (period.current_discharge_limit != NO_DISCHARGE_LIMIT_SPECIFIED) {
+                    period_out.dischargeLimit =
+                        std::min(period_out.dischargeLimit.value(), period.current_discharge_limit * transform_value);
+                }
+                if (period.power_setpoint != NO_SETPOINT_SPECIFIED) {
+                    period_out.setpoint = period.power_setpoint;
+                }
+                if (period.current_setpoint != NO_SETPOINT_SPECIFIED) {
+                    period_out.setpoint =
+                        std::min(period_out.setpoint.value(), period.current_setpoint * transform_value);
+                }
             }
         }
 
         if (output.empty() || (period_out.limit != output.back().limit) ||
-            (period_out.numberPhases != output.back().numberPhases)) {
+            (period_out.numberPhases != output.back().numberPhases) || period_out.setpoint != output.back().setpoint ||
+            period_out.dischargeLimit != output.back().dischargeLimit) {
             output.push_back(period_out);
         }
     }
