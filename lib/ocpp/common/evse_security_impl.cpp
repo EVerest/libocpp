@@ -170,7 +170,6 @@ CaCertificateType to_ocpp(evse_security::CaCertificateType other) {
     case evse_security::CaCertificateType::MF:
         return CaCertificateType::MF;
     }
-
     throw EnumConversionException("Could not convert evse_security::CaCertificateType to CaCertificateType");
 }
 

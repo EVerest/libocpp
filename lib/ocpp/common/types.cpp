@@ -1246,7 +1246,6 @@ v16::FirmwareStatus firmware_status_notification_to_firmware_status(const Firmwa
         throw EnumConversionException(
             "Could not convert FirmwareStatusNotification to v16::FirmwareStatus. Missing type");
     }
-
     throw EnumConversionException("Could not convert to v16::FirmwareStatus");
 }
 
