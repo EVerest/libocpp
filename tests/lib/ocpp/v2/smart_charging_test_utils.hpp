@@ -141,7 +141,8 @@ protected:
     void SetUp() override;
     void TearDown() override;
     void load_charging_profiles_for_evse(const std::filesystem::path& path, int32_t evse_id);
-    std::unique_ptr<TestSmartCharging> create_smart_charging_handler();
+    std::unique_ptr<TestSmartCharging>
+    create_smart_charging_handler(const OcppProtocolVersion ocpp_version = OcppProtocolVersion::v201);
 
 public:
     CompositeScheduleTestFixtureV2();
@@ -159,6 +160,7 @@ public:
     MockFunction<void()> set_charging_profiles_callback_mock;
     std::unique_ptr<TestSmartCharging> handler;
     boost::uuids::random_generator uuid_generator;
+    std::atomic<OcppProtocolVersion> ocpp_version = OcppProtocolVersion::v201;
 };
 
 } // namespace ocpp::v2

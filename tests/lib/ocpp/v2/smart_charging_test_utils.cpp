@@ -427,7 +427,9 @@ CompositeScheduleTestFixtureV2::CompositeScheduleTestFixtureV2() :
                             AttributeEnum::Actual, std::to_string(DEFAULT_NR_PHASES), "test", true);
 }
 
-std::unique_ptr<TestSmartCharging> CompositeScheduleTestFixtureV2::create_smart_charging_handler() {
+std::unique_ptr<TestSmartCharging>
+CompositeScheduleTestFixtureV2::create_smart_charging_handler(const OcppProtocolVersion ocpp_version) {
+    this->ocpp_version = ocpp_version;
     std::unique_ptr<common::DatabaseConnection> database_connection =
         std::make_unique<common::DatabaseConnection>(fs::path("/tmp/ocpp201") / "cp.db");
     this->database_handler =
@@ -437,7 +439,7 @@ std::unique_ptr<TestSmartCharging> CompositeScheduleTestFixtureV2::create_smart_
         this->mock_dispatcher, *this->device_model, this->connectivity_manager, *this->evse_manager,
         *this->database_handler, this->evse_security, this->component_state_manager);
     return std::make_unique<TestSmartCharging>(*functional_block_context,
-                                               set_charging_profiles_callback_mock.AsStdFunction());
+                                               set_charging_profiles_callback_mock.AsStdFunction(), this->ocpp_version);
 }
 
 void CompositeScheduleTestFixtureV2::reconfigure_for_nr_of_evses(int32_t nr_of_evses) {
@@ -446,7 +448,7 @@ void CompositeScheduleTestFixtureV2::reconfigure_for_nr_of_evses(int32_t nr_of_e
         this->mock_dispatcher, *this->device_model, this->connectivity_manager, *this->evse_manager,
         *this->database_handler, this->evse_security, this->component_state_manager);
     this->handler = std::make_unique<TestSmartCharging>(*functional_block_context,
-                                                        set_charging_profiles_callback_mock.AsStdFunction());
+                                                        set_charging_profiles_callback_mock.AsStdFunction(), ocpp_version);
 }
 
 } // namespace ocpp::v2
