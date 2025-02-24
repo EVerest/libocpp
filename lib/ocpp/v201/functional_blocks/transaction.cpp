@@ -284,7 +284,8 @@ void TransactionBlock::handle_transaction_event_response(const EnhancedMessage<M
     }
 
     if (tariff_and_cost != nullptr) {
-        this->tariff_and_cost->handle_cost_and_tariff(call_result.msg, original_msg, message.message[CALLRESULT_PAYLOAD]);
+        this->tariff_and_cost->handle_cost_and_tariff(call_result.msg, original_msg,
+                                                      message.message[CALLRESULT_PAYLOAD]);
     }
 
     if (original_msg.eventType == TransactionEventEnum::Ended) {

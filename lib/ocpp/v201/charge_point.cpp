@@ -806,6 +806,10 @@ void ChargePoint::message_callback(const std::string& message) {
         EVLOG_error << "Exception during handling of message: " << e.what();
         auto call_error = CallError(enhanced_message.uniqueId, "FormationViolation", e.what(), json({}));
         this->message_dispatcher->dispatch_call_error(call_error);
+    } catch (const DeviceModelError& e) {
+        EVLOG_error << "DeviceModelError during handling of message: " << e.what();
+        auto call_error = CallError(enhanced_message.uniqueId, "GenericError", e.what(), json({}));
+        this->message_dispatcher->dispatch_call_error(call_error);
     } catch (json::exception& e) {
         EVLOG_error << "JSON exception during handling of message: " << e.what();
         if (json_message.is_array() and json_message.size() > MESSAGE_ID) {

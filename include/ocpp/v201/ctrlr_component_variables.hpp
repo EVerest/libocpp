@@ -15,7 +15,7 @@ namespace v201 {
 ///
 struct RequiredComponentVariable : ComponentVariable {
     /// \brief Constructor
-    RequiredComponentVariable() : required_for({OcppProtocolVersion::v201, OcppProtocolVersion::v21}) {};
+    RequiredComponentVariable() : required_for({OcppProtocolVersion::v201, OcppProtocolVersion::v21}){};
 
     ///
     /// \brief RequiredComponentVariable
@@ -27,7 +27,7 @@ struct RequiredComponentVariable : ComponentVariable {
     RequiredComponentVariable(const Component component, const std::optional<Variable> variable,
                               const std::optional<CustomData> custom_data = std::nullopt,
                               const std::set<OcppProtocolVersion>& required_for = {OcppProtocolVersion::v201,
-                                                                                  OcppProtocolVersion::v21}) :
+                                                                                   OcppProtocolVersion::v21}) :
         ComponentVariable(), required_for(required_for) {
         this->component = component;
         this->variable = variable;

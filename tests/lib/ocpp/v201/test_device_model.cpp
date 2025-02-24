@@ -23,7 +23,8 @@ protected:
     }
 };
 
-/// \brief Test if value can be changed. And test if setting a value of 0 is allowed for a value that is allowed to be 0.
+/// \brief Test if value can be changed. And test if setting a value of 0 is allowed for a value that is allowed to be
+/// 0.
 TEST_F(DeviceModelTest, test_set_value_and_allow_zero) {
     // default value is 900
     auto r = dm->get_value<int>(cv, ocpp::v201::AttributeEnum::Actual);
