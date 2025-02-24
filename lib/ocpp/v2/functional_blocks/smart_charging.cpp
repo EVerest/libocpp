@@ -95,8 +95,14 @@ std::string profile_validation_result_to_string(ProfileValidationResultEnum e) {
         return "ChargingSchedulePeriodPhaseToUseACPhaseSwitchingUnsupported";
     case ProfileValidationResultEnum::ChargingSchedulePeriodPriorityChargingNotChargingOnly:
         return "ChargingSchedulePeriodPriorityChargingNotChargingOnly";
+    case ProfileValidationResultEnum::ChargingSchedulePeriodUnsupportedOperationMode:
+        return "ChargingSchedulePeriodUnsupportedOperationMode";
+    case ProfileValidationResultEnum::ChargingSchedulePeriodUnsupportedLimitSetpoint:
+        return "ChargingSchedulePeriodUnsupportedLimitSetpoint";
     case ProfileValidationResultEnum::ChargingSchedulePeriodNoPhaseForDC:
         return "ChargingSchedulePeriodNoPhaseForDC";
+    case ProfileValidationResultEnum::ChargingSchedulePeriodNoFreqWattCurve:
+        return "ChargingSchedulePeriodNoFreqWattCurve";
     case ProfileValidationResultEnum::ChargingStationMaxProfileCannotBeRelative:
         return "ChargingStationMaxProfileCannotBeRelative";
     case ProfileValidationResultEnum::ChargingStationMaxProfileEvseIdGreaterThanZero:
@@ -154,11 +160,15 @@ std::string profile_validation_result_to_reason_code(ProfileValidationResultEnum
     case ProfileValidationResultEnum::ChargingSchedulePeriodInvalidPhaseToUse:
     case ProfileValidationResultEnum::ChargingSchedulePeriodUnsupportedNumberPhases:
     case ProfileValidationResultEnum::ChargingSchedulePeriodExtraneousPhaseValues:
-    case ProfileValidationResultEnum::ChargingSchedulePeriodPhaseToUseACPhaseSwitchingUnsupported: 
+    case ProfileValidationResultEnum::ChargingSchedulePeriodPhaseToUseACPhaseSwitchingUnsupported:
     case ProfileValidationResultEnum::ChargingSchedulePeriodPriorityChargingNotChargingOnly:
+    case ProfileValidationResultEnum::ChargingSchedulePeriodUnsupportedOperationMode:
+    case ProfileValidationResultEnum::ChargingSchedulePeriodUnsupportedLimitSetpoint:
         return "InvalidSchedule";
     case ProfileValidationResultEnum::ChargingSchedulePeriodNoPhaseForDC:
         return "NoPhaseForDC";
+    case ProfileValidationResultEnum::ChargingSchedulePeriodNoFreqWattCurve:
+        return "NoFreqWattCurve";
     case ProfileValidationResultEnum::TxProfileMissingTransactionId:
         return "MissingParam";
     case ProfileValidationResultEnum::EvseDoesNotExist:
@@ -179,6 +189,49 @@ std::ostream& operator<<(std::ostream& os, const ProfileValidationResultEnum val
     os << conversions::profile_validation_result_to_string(validation_result);
     return os;
 }
+
+/// \brief Table 95 from OCPP 2.1 spec (part 2 specification): operationMode for various ChargingProfilePurposes
+/// Those operation modes are allowed for the given charging profile purposes.
+const std::map<ChargingProfilePurposeEnum, std::set<OperationModeEnum>> operation_modes_for_charging_profile_purposes{
+    {ChargingProfilePurposeEnum::TxDefaultProfile,
+     {OperationModeEnum::ChargingOnly, OperationModeEnum::CentralSetpoint, OperationModeEnum::ExternalSetpoint,
+      OperationModeEnum::ExternalLimits, OperationModeEnum::CentralFrequency, OperationModeEnum::LocalLoadBalancing,
+      OperationModeEnum::Idle}},
+    {ChargingProfilePurposeEnum::PriorityCharging, {OperationModeEnum::ChargingOnly}},
+    {ChargingProfilePurposeEnum::ChargingStationMaxProfile, {OperationModeEnum::ChargingOnly}},
+    {ChargingProfilePurposeEnum::ChargingStationExternalConstraints,
+     {OperationModeEnum::ChargingOnly, OperationModeEnum::ExternalLimits, OperationModeEnum::ExternalSetpoint}},
+    {ChargingProfilePurposeEnum::LocalGeneration,
+     {OperationModeEnum::ChargingOnly, OperationModeEnum::ExternalLimits}}};
+
+/// \brief Different types of limits and setpoints, used in the limits_setpoints_per_operation_mode map.
+enum LimitSetpointType {
+    Limit,
+    DischargeLimit,
+    Setpoint,
+    SetpointReactive
+};
+
+/// \brief Struct to define required and optional limits / setpoints (for an operation mode).
+struct LimitsSetpointsForOperationMode {
+    std::set<LimitSetpointType> required;
+    std::set<LimitSetpointType> optional;
+};
+
+/// \brief Map with required and optional limits and setpoints per operation mode, see table
+///        'Limits and setpoints per operation mode' in the 2.1 spec.
+const std::map<OperationModeEnum, LimitsSetpointsForOperationMode> limits_setpoints_per_operation_mode = {
+    {OperationModeEnum::ChargingOnly, {{LimitSetpointType::Limit}, {}}},
+    {OperationModeEnum::CentralSetpoint,
+     {{LimitSetpointType::Setpoint},
+      {LimitSetpointType::Limit, LimitSetpointType::DischargeLimit, LimitSetpointType::SetpointReactive}}},
+    {OperationModeEnum::CentralFrequency,
+     {{LimitSetpointType::Setpoint}, {LimitSetpointType::Limit, LimitSetpointType::DischargeLimit}}},
+    {OperationModeEnum::LocalFrequency, {{}, {}}},
+    {OperationModeEnum::ExternalSetpoint, {{}, {LimitSetpointType::Limit, LimitSetpointType::DischargeLimit}}},
+    {OperationModeEnum::ExternalLimits, {{}, {}}},
+    {OperationModeEnum::LocalLoadBalancing, {{}, {}}},
+    {OperationModeEnum::Idle, {{}, {}}}};
 
 SmartCharging::SmartCharging(const FunctionalBlockContext& functional_block_context,
                              std::function<void()> set_charging_profiles_callback,
@@ -350,7 +403,7 @@ ProfileValidationResultEnum SmartCharging::conform_and_validate_profile(Charging
         result = ProfileValidationResultEnum::Valid;
         break;
     case ocpp::v201::ChargingProfilePurposeEnum::PriorityCharging:
-        result = this->validate_priority_charging_profile(profile);
+        result = this->validate_priority_charging_profile(profile, evse_id);
         break;
     case ChargingProfilePurposeEnum::LocalGeneration:
         // FIXME: handle missing cases
@@ -595,8 +648,29 @@ ProfileValidationResultEnum SmartCharging::validate_tx_profile(const ChargingPro
     return ProfileValidationResultEnum::Valid;
 }
 
-ProfileValidationResultEnum SmartCharging::validate_priority_charging_profile(const ChargingProfile& profile) const {
-    // TODO mz implement
+ProfileValidationResultEnum SmartCharging::validate_priority_charging_profile(const ChargingProfile& profile,
+                                                                              int32_t evse_id) const {
+    // Charging profile purpose PriorityCharging:
+    // A charging profile with purpose PriorityCharging is used to overrule the currently active TxProfile or
+    // TxDefaultProfile charging restrictions with a charging profile that provides the maximum possible power under the
+    // circumstances, and avoids discharging operations. It has charging schedule periods with operationMode =
+    // ChargingOnly and the charging schedule has no duration, since it remains valid until end of the transaction.
+    if (profile.chargingProfilePurpose != ChargingProfilePurposeEnum::PriorityCharging) {
+        return ProfileValidationResultEnum::InvalidProfileType;
+    }
+
+    if (is_overlapping_validity_period(profile, evse_id)) {
+        return ProfileValidationResultEnum::DuplicateProfileValidityPeriod;
+    }
+
+    // K01.FR.70 Priority charging should not have value for duration.
+    for (const auto& schedule : profile.chargingSchedule) {
+        if (schedule.duration.has_value()) {
+            // Priority charging should not have a duration.
+            return ProfileValidationResultEnum::ChargingSchedulePriorityExtranousDuration;
+        }
+    }
+
     return ProfileValidationResultEnum::Valid;
 }
 
@@ -633,12 +707,6 @@ ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingPr
         }
 
         if (ocpp_version == OcppProtocolVersion::v21) {
-            // K01.FR.70 Priority charging should not have value for duration.
-            if (profile.chargingProfilePurpose == ChargingProfilePurposeEnum::PriorityCharging &&
-                schedule.duration.has_value()) {
-                return ProfileValidationResultEnum::ChargingSchedulePriorityExtranousDuration;
-            }
-
             // K01.FR.95 Other profiles than TxProfle or TxDefaultProfile can not have a randomized delay.
             if (profile.chargingProfilePurpose != ChargingProfilePurposeEnum::TxProfile &&
                 profile.chargingProfilePurpose != ChargingProfilePurposeEnum::TxDefaultProfile &&
@@ -648,8 +716,7 @@ ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingPr
 
             // K01.FR.120: Priority charging or local generation is not supported.
             const auto supported_additional_purposes = utils::get_charging_profile_purposes(
-                device_model
-                    .get_optional_value<std::string>(ControllerComponentVariables::SupportedAdditionalPurposes)
+                device_model.get_optional_value<std::string>(ControllerComponentVariables::SupportedAdditionalPurposes)
                     .value_or(""));
             auto it = std::find(supported_additional_purposes.begin(), supported_additional_purposes.end(),
                                 profile.chargingProfilePurpose);
@@ -727,7 +794,6 @@ ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingPr
             if (phase_type == CurrentPhaseType::DC && (charging_schedule_period.numberPhases.has_value() ||
                                                        charging_schedule_period.phaseToUse.has_value())) {
                 const int32_t evse_id = evse_opt.has_value() ? evse_opt.value()->get_id() : 0;
-                // TODO mz dc input phase control can also not be there????
                 const ComponentVariable evse_variable = EvseComponentVariables::get_component_variable(
                     evse_id, EvseComponentVariables::DCInputPhaseControl);
                 if (this->ocpp_version == OcppProtocolVersion::v201) {
@@ -755,10 +821,32 @@ ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingPr
             }
 
             if (ocpp_version == OcppProtocolVersion::v21) {
+                const OperationModeEnum operation_mode =
+                    charging_schedule_period.operationMode.value_or(OperationModeEnum::ChargingOnly);
+
                 // K01.FR.71: Priority charging should not have operation mode that is different than 'ChargingOnly'
                 if (profile.chargingProfilePurpose == ChargingProfilePurposeEnum::PriorityCharging &&
                     charging_schedule_period.operationMode != OperationModeEnum::ChargingOnly) {
                     return ProfileValidationResultEnum::ChargingSchedulePeriodPriorityChargingNotChargingOnly;
+                }
+
+                // Check all other operation modes.
+                try {
+                    if (operation_modes_for_charging_profile_purposes.at(profile.chargingProfilePurpose)
+                            .count(operation_mode) == 0) {
+                        return ProfileValidationResultEnum::ChargingSchedulePeriodUnsupportedOperationMode;
+                    }
+                } catch (const std::out_of_range& e) {
+                    EVLOG_warning << "Charging profile purpose "
+                                  << conversions::charging_profile_purpose_enum_to_string(
+                                         profile.chargingProfilePurpose)
+                                  << " not in list of valid operation modes: can not check if operation mode is valid.";
+                }
+
+                // Q08.FR.05: LocalFrequency should have chargingRateUnit `W`.
+                if (operation_mode == OperationModeEnum::LocalFrequency &&
+                    schedule.chargingRateUnit == ChargingRateUnitEnum::A) {
+                    return ProfileValidationResultEnum::ChargingScheduleChargingRateUnitUnsupported;
                 }
 
                 // K01.FR.126: EvseSleep is not supported.
@@ -766,6 +854,20 @@ ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingPr
                     !this->device_model.get_optional_value<bool>(ControllerComponentVariables::SupportsEvseSleep)
                          .value_or(false)) {
                     return ProfileValidationResultEnum::ChargingScheduleUnsupportedEvseSleep;
+                }
+
+                // Check limits and setpoints per operation mode (see table 'limits and setpoints per operation mode'
+                // in the 2.1 spec).
+                if (!check_limits_and_setpoints(charging_schedule_period)) {
+                    return ProfileValidationResultEnum::ChargingSchedulePeriodUnsupportedLimitSetpoint;
+                }
+
+                // Q08.FR.02: v2xBaseline and v2xFreqWattCurve must be set when operation mode is LocalFrequency.
+                if (operation_mode == OperationModeEnum::LocalFrequency &&
+                    (!charging_schedule_period.v2xFreqWattCurve.has_value() ||
+                     charging_schedule_period.v2xFreqWattCurve.value().size() < 2 ||
+                     !charging_schedule_period.v2xBaseline.has_value())) {
+                    return ProfileValidationResultEnum::ChargingSchedulePeriodNoFreqWattCurve;
                 }
             }
         }
@@ -785,8 +887,8 @@ ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingPr
 
 ProfileValidationResultEnum
 SmartCharging::verify_no_conflicting_external_constraints_id(const ChargingProfile& profile) const {
-    // K01.FR.81: OCPP 2.1: When MaxExternalConstraintsId is set and the chargingProfile id is less or equal then this
-    // value, return 'Rejected'.
+    // K01.FR.81: OCPP 2.1: When MaxExternalConstraintsId is set and the chargingProfile id is less or equal than
+    // this value, return 'Rejected'.
     if (ocpp_version == OcppProtocolVersion::v21) {
         auto max_external_constraints_id =
             this->device_model.get_optional_value<int>(ControllerComponentVariables::MaxExternalConstraintsId);
@@ -815,8 +917,9 @@ SetChargingProfileResponse SmartCharging::add_profile(ChargingProfile& profile, 
 
     try {
         // K01.FR05 - replace non-ChargingStationExternalConstraints profiles if id exists.
-        // K01.FR27 - add profiles to database when valid. Currently we store all profiles. For 2.1 it is allowed to only store
-        // ChargingStationMaxProfile, TxDefaultProfile and PriorityCharging, but currently we store everything here.
+        // K01.FR27 - add profiles to database when valid. Currently we store all profiles. For 2.1 it is allowed to
+        // only store ChargingStationMaxProfile, TxDefaultProfile and PriorityCharging, but currently we store
+        // everything here.
         this->context.database_handler.insert_or_update_charging_profile(evse_id, profile, charging_limit_source);
     } catch (const QueryExecutionException& e) {
         EVLOG_error << "Could not store ChargingProfile in the database: " << e.what();
@@ -983,8 +1086,8 @@ void SmartCharging::handle_get_charging_profiles_req(Call<GetChargingProfilesReq
     // There are profiles to report.
     // Prepare ReportChargingProfileRequest(s). The message defines the properties evseId and
     // ChargingLimitSourceEnumStringType as required, so we can not report all profiles in a single
-    // ReportChargingProfilesRequest. We need to prepare a single ReportChargingProfilesRequest for each combination of
-    // evseId and ChargingLimitSourceEnumStringType
+    // ReportChargingProfilesRequest. We need to prepare a single ReportChargingProfilesRequest for each combination
+    // of evseId and ChargingLimitSourceEnumStringType
     std::set<int32_t> evse_ids;     // will contain all evse_ids of the profiles
     std::set<CiString<20>> sources; // will contain all sources of the profiles
 
@@ -1199,5 +1302,47 @@ CurrentPhaseType SmartCharging::get_current_phase_type(const std::optional<EvseI
     }
 
     return CurrentPhaseType::Unknown;
+}
+
+bool are_limits_and_setpoints_of_operation_mode_correct(const LimitsSetpointsForOperationMode& limits_setpoints,
+                                                        const std::optional<float>& limit,
+                                                        const std::optional<float>& limit_L2,
+                                                        const std::optional<float>& limit_L3) {
+    if ((limits_setpoints.required.count(LimitSetpointType::Limit) > 0 && !limit.has_value()) ||
+        ((limit.has_value() || limit_L2.has_value() || limit_L3.has_value()) &&
+         limits_setpoints.required.count(LimitSetpointType::Limit) == 0 &&
+         limits_setpoints.optional.count(LimitSetpointType::Limit) == 0)) {
+        return false;
+    }
+
+    return true;
+}
+
+bool check_limits_and_setpoints(const ChargingSchedulePeriod& charging_schedule_period) {
+    // Q08.FR.04, Q10.FR.01, Q10.FR.02 (among others?)
+    const OperationModeEnum operation_mode =
+        charging_schedule_period.operationMode.value_or(OperationModeEnum::ChargingOnly);
+    try {
+        const LimitsSetpointsForOperationMode limits_setpoints = limits_setpoints_per_operation_mode.at(operation_mode);
+        return are_limits_and_setpoints_of_operation_mode_correct(limits_setpoints, charging_schedule_period.limit,
+                                                                  charging_schedule_period.limit_L2,
+                                                                  charging_schedule_period.limit_L3) &&
+               are_limits_and_setpoints_of_operation_mode_correct(
+                   limits_setpoints, charging_schedule_period.dischargeLimit,
+                   charging_schedule_period.dischargeLimit_L2, charging_schedule_period.dischargeLimit_L3) &&
+               are_limits_and_setpoints_of_operation_mode_correct(limits_setpoints, charging_schedule_period.setpoint,
+                                                                  charging_schedule_period.setpoint_L2,
+                                                                  charging_schedule_period.setpoint_L3) &&
+               are_limits_and_setpoints_of_operation_mode_correct(
+                   limits_setpoints, charging_schedule_period.setpointReactive,
+                   charging_schedule_period.setpointReactive_L2, charging_schedule_period.setpointReactive_L3);
+    } catch (const std::out_of_range& e) {
+        EVLOG_warning << "Operation mode "
+                      << conversions::operation_mode_enum_to_string(charging_schedule_period.operationMode.value())
+                      << " not in list of valid limits and setpoints: can not check if limits and "
+                         "setpoints are valid";
+    }
+
+    return true;
 }
 } // namespace ocpp::v2
