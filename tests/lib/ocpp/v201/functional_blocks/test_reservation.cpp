@@ -7,6 +7,7 @@
 #include <evse_manager_fake.hpp>
 #include <message_dispatcher_mock.hpp>
 
+#include <device_model_test_helper.hpp>
 #include <ocpp/v201/functional_blocks/reservation.hpp>
 
 #include <ocpp/v201/ctrlr_component_variables.hpp>
@@ -18,9 +19,6 @@
 #include <ocpp/v201/messages/ReserveNow.hpp>
 #include <ocpp/v201/messages/Reset.hpp>
 
-const static std::string MIGRATION_FILES_PATH = "./resources/v201/device_model_migration_files";
-const static std::string CONFIG_PATH = "./resources/example_config/v201/component_config";
-const static std::string DEVICE_MODEL_DB_IN_MEMORY_PATH = "file::memory:?cache=shared";
 const static uint32_t NR_OF_EVSES = 2;
 
 using namespace ocpp::v201;

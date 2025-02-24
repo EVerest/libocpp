@@ -2,6 +2,7 @@
 // Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
 
 #include "comparators.hpp"
+#include "device_model_test_helper.hpp"
 #include "everest/logging.hpp"
 #include "evse_security_mock.hpp"
 #include "lib/ocpp/common/database_testing_utils.hpp"
@@ -12,28 +13,20 @@
 #include "ocpp/v201/ctrlr_component_variables.hpp"
 #include "ocpp/v201/device_model_storage_sqlite.hpp"
 #include "ocpp/v201/init_device_model_db.hpp"
-#include "ocpp/v201/messages/GetCompositeSchedule.hpp"
-#include "ocpp/v201/messages/SetChargingProfile.hpp"
 #include "ocpp/v201/ocpp_enums.hpp"
 #include "ocpp/v201/types.hpp"
-#include "gmock/gmock.h"
+#include "smart_charging_test_utils.hpp"
 
+#include "gmock/gmock.h"
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <memory>
 
-static const int DEFAULT_EVSE_ID = 1;
-static const int DEFAULT_PROFILE_ID = 1;
-static const int DEFAULT_STACK_LEVEL = 1;
 static const ocpp::v201::AddChargingProfileSource DEFAULT_REQUEST_TO_ADD_PROFILE_SOURCE =
     ocpp::v201::AddChargingProfileSource::SetChargingProfile;
 static const std::string TEMP_OUTPUT_PATH = "/tmp/ocpp201";
-const static std::string MIGRATION_FILES_PATH = "./resources/v201/device_model_migration_files";
-const static std::string CONFIG_PATH = "./resources/example_config/v201/component_config";
-const static std::string DEVICE_MODEL_DB_IN_MEMORY_PATH = "file::memory:?cache=shared";
-static const std::string DEFAULT_TX_ID = "10c75ff7-74f5-44f5-9d01-f649f3ac7b78";
 
 namespace ocpp::v201 {
 
@@ -82,38 +75,6 @@ public:
         }
 
         return charging_schedule_periods;
-    }
-
-    ChargingSchedule create_charge_schedule(ChargingRateUnitEnum charging_rate_unit,
-                                            std::vector<ChargingSchedulePeriod> charging_schedule_period,
-                                            std::optional<ocpp::DateTime> start_schedule = std::nullopt) {
-        ChargingSchedule charging_schedule;
-        charging_schedule.chargingRateUnit = charging_rate_unit;
-        charging_schedule.chargingSchedulePeriod = charging_schedule_period;
-        charging_schedule.startSchedule = start_schedule;
-        return charging_schedule;
-    }
-
-    ChargingProfile
-    create_charging_profile(int32_t charging_profile_id, ChargingProfilePurposeEnum charging_profile_purpose,
-                            ChargingSchedule charging_schedule, std::optional<std::string> transaction_id = {},
-                            ChargingProfileKindEnum charging_profile_kind = ChargingProfileKindEnum::Absolute,
-                            int stack_level = DEFAULT_STACK_LEVEL, std::optional<ocpp::DateTime> validFrom = {},
-                            std::optional<ocpp::DateTime> validTo = {}) {
-        auto recurrency_kind = RecurrencyKindEnum::Daily;
-        std::vector<ChargingSchedule> charging_schedules = {charging_schedule};
-        ChargingProfile charging_profile;
-        charging_profile.id = charging_profile_id;
-        charging_profile.stackLevel = stack_level;
-        charging_profile.chargingProfilePurpose = charging_profile_purpose;
-        charging_profile.chargingProfileKind = charging_profile_kind;
-        charging_profile.chargingSchedule = charging_schedules;
-        charging_profile.customData = {};
-        charging_profile.recurrencyKind = recurrency_kind;
-        charging_profile.validFrom = validFrom;
-        charging_profile.validTo = validTo;
-        charging_profile.transactionId = transaction_id;
-        return charging_profile;
     }
 
     std::shared_ptr<DatabaseHandler> create_database_handler() {
