@@ -2235,11 +2235,9 @@ void to_json(json& j, const Firmware& k);
 /// \brief Conversion from a given json object \p j to a given Firmware \p k
 void from_json(const json& j, Firmware& k);
 
-// \brief Writes the string representation of the given Firmware \p k to the given output stream \p os
+/// \brief Writes the string representation of the given Firmware \p k to the given output stream \p os
 /// \returns an output stream with the Firmware written to
 std::ostream& operator<<(std::ostream& os, const Firmware& k);
-
-struct RequiredComponentVariable : ComponentVariable {};
 } // namespace v201
 } // namespace ocpp
 
