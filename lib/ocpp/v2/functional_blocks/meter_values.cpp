@@ -7,11 +7,12 @@
 #include <ocpp/v2/ctrlr_component_variables.hpp>
 #include <ocpp/v2/device_model.hpp>
 #include <ocpp/v2/evse_manager.hpp>
-#include <ocpp/v2/functional_blocks/block_context.hpp>
+#include <ocpp/v2/functional_blocks/functional_block_context.hpp>
 #include <ocpp/v2/message_dispatcher.hpp>
 #include <ocpp/v2/messages/MeterValues.hpp>
 
-ocpp::v2::MeterValues::MeterValues(const BlockContext& block_context) : context(block_context) {
+ocpp::v2::MeterValues::MeterValues(const FunctionalBlockContext& functional_block_context) :
+    context(functional_block_context) {
 }
 
 void ocpp::v2::MeterValues::handle_message(const ocpp::EnhancedMessage<MessageType>& message) {

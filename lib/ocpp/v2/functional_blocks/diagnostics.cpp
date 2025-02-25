@@ -2,13 +2,14 @@
 // Copyright Pionix GmbH and Contributors to EVerest
 
 #include <ocpp/v2/functional_blocks/diagnostics.hpp>
+
 #include <ocpp/common/constants.hpp>
 #include <ocpp/v2/connectivity_manager.hpp>
 #include <ocpp/v2/ctrlr_component_variables.hpp>
 #include <ocpp/v2/database_handler.hpp>
 #include <ocpp/v2/device_model.hpp>
 #include <ocpp/v2/functional_blocks/authorization.hpp>
-#include <ocpp/v2/functional_blocks/block_context.hpp>
+#include <ocpp/v2/functional_blocks/functional_block_context.hpp>
 #include <ocpp/v2/utils.hpp>
 
 #include <ocpp/v2/messages/ClearVariableMonitoring.hpp>
@@ -26,7 +27,7 @@ const auto DEFAULT_MAX_CUSTOMER_INFORMATION_DATA_LENGTH = 51200;
 
 namespace ocpp::v2 {
 
-Diagnostics::Diagnostics(const BlockContext& context, AuthorizationInterface& authorization,
+Diagnostics::Diagnostics(const FunctionalBlockContext& context, AuthorizationInterface& authorization,
                          GetLogRequestCallback get_log_request_callback,
                          std::optional<GetCustomerInformationCallback> get_customer_information_callback,
                          std::optional<ClearCustomerInformationCallback> clear_customer_information_callback) :

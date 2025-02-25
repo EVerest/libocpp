@@ -5,7 +5,7 @@
 
 #include <ocpp/v2/ctrlr_component_variables.hpp>
 #include <ocpp/v2/evse_manager.hpp>
-#include <ocpp/v2/functional_blocks/block_context.hpp>
+#include <ocpp/v2/functional_blocks/functional_block_context.hpp>
 
 #include <ocpp/v2/messages/ClearDisplayMessage.hpp>
 #include <ocpp/v2/messages/GetDisplayMessages.hpp>
@@ -13,11 +13,11 @@
 
 namespace ocpp::v2 {
 
-DisplayMessageBlock::DisplayMessageBlock(const BlockContext& block_context,
+DisplayMessageBlock::DisplayMessageBlock(const FunctionalBlockContext& functional_block_context,
                                          GetDisplayMessageCallback get_display_message_callback,
                                          SetDisplayMessageCallback set_display_message_callback,
                                          ClearDisplayMessageCallback clear_display_message_callback) :
-    context(block_context),
+    context(functional_block_context),
     get_display_message_callback(get_display_message_callback),
     set_display_message_callback(set_display_message_callback),
     clear_display_message_callback(clear_display_message_callback) {

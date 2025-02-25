@@ -4,7 +4,7 @@
 #include <ocpp/v2/functional_blocks/data_transfer.hpp>
 
 #include <ocpp/common/constants.hpp>
-#include <ocpp/v2/functional_blocks/block_context.hpp>
+#include <ocpp/v2/functional_blocks/functional_block_context.hpp>
 #include <ocpp/v2/messages/DataTransfer.hpp>
 
 namespace ocpp {

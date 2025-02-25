@@ -7,7 +7,7 @@
 #include <ocpp/v2/ctrlr_component_variables.hpp>
 #include <ocpp/v2/device_model.hpp>
 #include <ocpp/v2/evse_manager.hpp>
-#include <ocpp/v2/functional_blocks/block_context.hpp>
+#include <ocpp/v2/functional_blocks/functional_block_context.hpp>
 #include <ocpp/v2/utils.hpp>
 
 #include <ocpp/v2/functional_blocks/authorization.hpp>
@@ -19,15 +19,13 @@
 #include <ocpp/v2/messages/TransactionEvent.hpp>
 
 namespace ocpp::v2 {
-TransactionBlock::TransactionBlock(const BlockContext& block_context, MessageQueue<v2::MessageType>& message_queue,
-                                   AuthorizationInterface& authorization, AvailabilityInterface& availability,
-                                   SmartChargingInterface& smart_charging, TariffAndCostInterface& tariff_and_cost,
-                                   StopTransactionCallback stop_transaction_callback,
-                                   PauseChargingCallback pause_charging_callback,
-                                   std::optional<TransactionEventCallback> transaction_event_callback,
-                                   std::optional<TransactionEventResponseCallback> transaction_event_response_callback,
-                                   ResetCallback reset_callback) :
-    context(block_context),
+TransactionBlock::TransactionBlock(
+    const FunctionalBlockContext& functional_block_context, MessageQueue<v2::MessageType>& message_queue,
+    AuthorizationInterface& authorization, AvailabilityInterface& availability, SmartChargingInterface& smart_charging,
+    TariffAndCostInterface& tariff_and_cost, StopTransactionCallback stop_transaction_callback,
+    PauseChargingCallback pause_charging_callback, std::optional<TransactionEventCallback> transaction_event_callback,
+    std::optional<TransactionEventResponseCallback> transaction_event_response_callback, ResetCallback reset_callback) :
+    context(functional_block_context),
     message_queue(message_queue),
     authorization(authorization),
     availability(availability),

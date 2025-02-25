@@ -7,7 +7,7 @@
 
 namespace ocpp {
 namespace v2 {
-struct BlockContext;
+struct FunctionalBlockContext;
 struct DataTransferRequest;
 struct DataTransferResponse;
 
@@ -35,16 +35,18 @@ public:
 class DataTransfer : public DataTransferInterface {
 
 private:
-    const BlockContext& context;
+    const FunctionalBlockContext& context;
     std::optional<std::function<DataTransferResponse(const DataTransferRequest& request)>> data_transfer_callback;
     std::chrono::seconds response_timeout;
 
 public:
-    DataTransfer(const BlockContext& block_context,
+    DataTransfer(const FunctionalBlockContext& functional_block_context,
                  const std::optional<std::function<DataTransferResponse(const DataTransferRequest& request)>>&
                      data_transfer_callback,
                  const std::chrono::seconds response_timeout) :
-        context(block_context), data_transfer_callback(data_transfer_callback), response_timeout(response_timeout){};
+        context(functional_block_context),
+        data_transfer_callback(data_transfer_callback),
+        response_timeout(response_timeout){};
 
     void handle_message(const EnhancedMessage<MessageType>& message) override;
 

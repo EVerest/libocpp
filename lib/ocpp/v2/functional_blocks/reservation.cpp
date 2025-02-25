@@ -7,17 +7,17 @@
 #include <ocpp/v2/ctrlr_component_variables.hpp>
 #include <ocpp/v2/evse.hpp>
 #include <ocpp/v2/evse_manager.hpp>
-#include <ocpp/v2/functional_blocks/block_context.hpp>
+#include <ocpp/v2/functional_blocks/functional_block_context.hpp>
 
 #include <ocpp/v2/messages/CancelReservation.hpp>
 #include <ocpp/v2/messages/ReservationStatusUpdate.hpp>
 #include <ocpp/v2/messages/ReserveNow.hpp>
 
 namespace ocpp::v2 {
-Reservation::Reservation(const BlockContext& block_context, ReserveNowCallback reserve_now_callback,
-                         CancelReservationCallback cancel_reservation_callback,
+Reservation::Reservation(const FunctionalBlockContext& functional_block_context,
+                         ReserveNowCallback reserve_now_callback, CancelReservationCallback cancel_reservation_callback,
                          const IsReservationForTokenCallback is_reservation_for_token_callback) :
-    context(block_context),
+    context(functional_block_context),
     reserve_now_callback(reserve_now_callback),
     cancel_reservation_callback(cancel_reservation_callback),
     is_reservation_for_token_callback(is_reservation_for_token_callback) {

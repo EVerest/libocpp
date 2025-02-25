@@ -8,7 +8,7 @@
 #include <ocpp/v2/functional_blocks/display_message.hpp>
 
 namespace ocpp::v2 {
-struct BlockContext;
+struct FunctionalBlockContext;
 class MeterValuesInterface;
 
 struct CostUpdatedRequest;
@@ -34,7 +34,7 @@ public:
 
 class TariffAndCost : public TariffAndCostInterface {
 public:
-    TariffAndCost(const BlockContext& block_context, MeterValuesInterface& meter_values,
+    TariffAndCost(const FunctionalBlockContext& functional_block_context, MeterValuesInterface& meter_values,
                   std::optional<SetDisplayMessageCallback>& set_display_message_callback,
                   std::optional<SetRunningCostCallback>& set_running_cost_callback,
                   boost::asio::io_service& io_service);
@@ -45,7 +45,7 @@ public:
                                 const json& original_transaction_event_response) override;
 
 private: // Members
-    const BlockContext& context;
+    const FunctionalBlockContext& context;
     MeterValuesInterface& meter_values;
     std::optional<SetDisplayMessageCallback> set_display_message_callback;
     std::optional<SetRunningCostCallback> set_running_cost_callback;

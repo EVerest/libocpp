@@ -8,7 +8,7 @@
 #include <ocpp/v2/messages/SetDisplayMessage.hpp>
 
 namespace ocpp::v2 {
-struct BlockContext;
+struct FunctionalBlockContext;
 struct GetDisplayMessagesRequest;
 struct ClearDisplayMessageResponse;
 struct ClearDisplayMessageRequest;
@@ -41,19 +41,20 @@ typedef std::function<ClearDisplayMessageResponse(const ClearDisplayMessageReque
 
 class DisplayMessageInterface : public MessageHandlerInterface {
 public:
-    virtual ~DisplayMessageInterface(){};
+    virtual ~DisplayMessageInterface() = default;
 };
 
 class DisplayMessageBlock : public DisplayMessageInterface {
 
 public:
-    DisplayMessageBlock(const BlockContext& block_context, GetDisplayMessageCallback get_display_message_callback,
+    DisplayMessageBlock(const FunctionalBlockContext& functional_block_context,
+                        GetDisplayMessageCallback get_display_message_callback,
                         SetDisplayMessageCallback set_display_message_callback,
                         ClearDisplayMessageCallback clear_display_message_callback);
     virtual void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
 
 private:
-    const BlockContext& context;
+    const FunctionalBlockContext& context;
 
     GetDisplayMessageCallback get_display_message_callback;
     SetDisplayMessageCallback set_display_message_callback;

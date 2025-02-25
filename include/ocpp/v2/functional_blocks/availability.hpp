@@ -8,7 +8,7 @@
 #include <ocpp/v2/messages/ChangeAvailability.hpp>
 
 namespace ocpp::v2 {
-struct BlockContext;
+struct FunctionalBlockContext;
 
 struct HeartbeatResponse;
 
@@ -75,7 +75,7 @@ typedef std::function<void()> AllConnectorsUnavailableCallback;
 
 class Availability : public AvailabilityInterface {
 private: // Members
-    const BlockContext& context;
+    const FunctionalBlockContext& context;
 
     std::optional<TimeSyncCallback> time_sync_callback;
     std::optional<AllConnectorsUnavailableCallback> all_connectors_unavailable_callback;
@@ -86,7 +86,8 @@ private: // Members
     Everest::SteadyTimer heartbeat_timer;
 
 public:
-    Availability(const BlockContext& block_context, std::optional<TimeSyncCallback> time_sync_callback,
+    Availability(const FunctionalBlockContext& functional_block_context,
+                 std::optional<TimeSyncCallback> time_sync_callback,
                  std::optional<AllConnectorsUnavailableCallback> all_connectors_unavailable_callback);
     ~Availability();
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;

@@ -9,7 +9,7 @@
 #include <ocpp/v2/average_meter_values.hpp>
 
 namespace ocpp::v2 {
-struct BlockContext;
+struct FunctionalBlockContext;
 
 class MeterValuesInterface : public MessageHandlerInterface {
 public:
@@ -29,7 +29,7 @@ public:
 class MeterValues : public MeterValuesInterface {
 public:
     virtual ~MeterValues() override = default;
-    explicit MeterValues(const BlockContext& block_context);
+    explicit MeterValues(const FunctionalBlockContext& functional_block_context);
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
     void update_aligned_data_interval() override;
     void on_meter_value(const int32_t evse_id, const MeterValue& meter_value) override;
@@ -40,7 +40,7 @@ public:
                           const bool initiated_by_trigger_message = false) override;
 
 private: // Members
-    const BlockContext& context;
+    const FunctionalBlockContext& context;
 
     ClockAlignedTimer aligned_meter_values_timer;
     AverageMeterValues aligned_data_evse0; // represents evseId = 0 meter value

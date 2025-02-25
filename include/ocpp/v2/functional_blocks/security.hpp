@@ -12,7 +12,7 @@ namespace ocpp {
 class MessageLogging;
 
 namespace v2 {
-struct BlockContext;
+struct FunctionalBlockContext;
 
 struct CertificateSignedRequest;
 struct CertificateSignedResponse;
@@ -47,8 +47,8 @@ public:
 
 class Security : public SecurityInterface {
 public:
-    Security(const BlockContext& block_context, MessageLogging& logging, OcspUpdaterInterface& ocsp_updater,
-             SecurityEventCallback security_event_callback);
+    Security(const FunctionalBlockContext& functional_block_context, MessageLogging& logging,
+             OcspUpdaterInterface& ocsp_updater, SecurityEventCallback security_event_callback);
     virtual ~Security();
     void handle_message(const EnhancedMessage<MessageType>& message) override;
     virtual void stop_certificate_signed_timer() override;
@@ -66,7 +66,7 @@ public:
                                       const bool initiated_by_trigger_message = false) override;
 
 private: // Members
-    const BlockContext& context;
+    const FunctionalBlockContext& context;
     MessageLogging& logging;
     OcspUpdaterInterface& ocsp_updater;
 

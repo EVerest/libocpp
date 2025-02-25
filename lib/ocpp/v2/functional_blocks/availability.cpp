@@ -6,15 +6,16 @@
 #include <ocpp/v2/ctrlr_component_variables.hpp>
 #include <ocpp/v2/device_model.hpp>
 #include <ocpp/v2/evse_manager.hpp>
-#include <ocpp/v2/functional_blocks/block_context.hpp>
+#include <ocpp/v2/functional_blocks/functional_block_context.hpp>
 
 #include <ocpp/v2/messages/Heartbeat.hpp>
 #include <ocpp/v2/messages/StatusNotification.hpp>
 
 namespace ocpp::v2 {
-Availability::Availability(const BlockContext& block_context, std::optional<TimeSyncCallback> time_sync_callback,
+Availability::Availability(const FunctionalBlockContext& functional_block_context,
+                           std::optional<TimeSyncCallback> time_sync_callback,
                            std::optional<AllConnectorsUnavailableCallback> all_connectors_unavailable_callback) :
-    context(block_context),
+    context(functional_block_context),
     time_sync_callback(time_sync_callback),
     all_connectors_unavailable_callback(all_connectors_unavailable_callback) {
 }

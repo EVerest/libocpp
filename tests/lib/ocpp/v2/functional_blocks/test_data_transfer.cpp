@@ -14,8 +14,8 @@
 #include "mocks/database_handler_mock.hpp"
 #include <ocpp/common/constants.hpp>
 #include <ocpp/v2/device_model.hpp>
-#include <ocpp/v2/functional_blocks/block_context.hpp>
 #include <ocpp/v2/functional_blocks/data_transfer.hpp>
+#include <ocpp/v2/functional_blocks/functional_block_context.hpp>
 #include <ocpp/v2/messages/DataTransfer.hpp>
 
 using namespace ocpp::v2;
@@ -41,7 +41,7 @@ protected: // Members
     ocpp::EvseSecurityMock evse_security;
     EvseManagerFake evse_manager;
     ComponentStateManagerMock component_state_manager;
-    BlockContext block_context;
+    FunctionalBlockContext functional_block_context;
 
     DataTransferTest() :
         mock_dispatcher(),
@@ -51,14 +51,14 @@ protected: // Members
         evse_security(),
         evse_manager(1),
         component_state_manager(),
-        block_context{this->mock_dispatcher,        *this->device_model,         this->connectivity_manager,
-                      this->evse_manager,           this->database_handler_mock, this->evse_security,
-                      this->component_state_manager} {
+        functional_block_context{this->mock_dispatcher,        *this->device_model,         this->connectivity_manager,
+                                 this->evse_manager,           this->database_handler_mock, this->evse_security,
+                                 this->component_state_manager} {
     }
 };
 
 TEST_F(DataTransferTest, HandleDataTransferReq_NotImplemented) {
-    DataTransfer data_transfer(block_context, std::nullopt, ocpp::DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
+    DataTransfer data_transfer(functional_block_context, std::nullopt, ocpp::DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
 
     DataTransferRequest request = create_example_request();
     ocpp::Call<DataTransferRequest> call(request);
@@ -70,7 +70,7 @@ TEST_F(DataTransferTest, HandleDataTransferReq_NotImplemented) {
 }
 
 TEST_F(DataTransferTest, HandleDataTransferReq_NoCallback) {
-    DataTransfer data_transfer(block_context, std::nullopt, ocpp::DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
+    DataTransfer data_transfer(functional_block_context, std::nullopt, ocpp::DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
 
     DataTransferRequest request = create_example_request();
     ocpp::Call<DataTransferRequest> call(request);
@@ -93,7 +93,7 @@ TEST_F(DataTransferTest, HandleDataTransferReq_WithCallback) {
         return response;
     };
 
-    DataTransfer data_transfer(block_context, callback, ocpp::DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
+    DataTransfer data_transfer(functional_block_context, callback, ocpp::DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
 
     DataTransferRequest request = create_example_request();
     ocpp::Call<DataTransferRequest> call(request);
@@ -110,7 +110,7 @@ TEST_F(DataTransferTest, HandleDataTransferReq_WithCallback) {
 }
 
 TEST_F(DataTransferTest, DataTransferReq_Offline) {
-    DataTransfer data_transfer(block_context, std::nullopt, ocpp::DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
+    DataTransfer data_transfer(functional_block_context, std::nullopt, ocpp::DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
 
     DataTransferRequest request = create_example_request();
 
@@ -126,7 +126,7 @@ TEST_F(DataTransferTest, DataTransferReq_Offline) {
 }
 
 TEST_F(DataTransferTest, DataTransferReq_Timeout) {
-    DataTransfer data_transfer(block_context, std::nullopt, std::chrono::seconds(1));
+    DataTransfer data_transfer(functional_block_context, std::nullopt, std::chrono::seconds(1));
 
     DataTransferRequest request = create_example_request();
 
@@ -143,7 +143,7 @@ TEST_F(DataTransferTest, DataTransferReq_Timeout) {
 }
 
 TEST_F(DataTransferTest, DataTransferReq_Accepted) {
-    DataTransfer data_transfer(block_context, std::nullopt, ocpp::DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
+    DataTransfer data_transfer(functional_block_context, std::nullopt, ocpp::DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
 
     DataTransferRequest request = create_example_request();
 
@@ -166,7 +166,7 @@ TEST_F(DataTransferTest, DataTransferReq_Accepted) {
 }
 
 TEST_F(DataTransferTest, DataTransferReq_EnumConversionException) {
-    DataTransfer data_transfer(block_context, std::nullopt, ocpp::DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
+    DataTransfer data_transfer(functional_block_context, std::nullopt, ocpp::DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
 
     DataTransferRequest request = create_example_request();
 
@@ -192,7 +192,7 @@ TEST_F(DataTransferTest, DataTransferReq_EnumConversionException) {
 }
 
 TEST_F(DataTransferTest, DataTransferReq_JsonException) {
-    DataTransfer data_transfer(block_context, std::nullopt, ocpp::DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
+    DataTransfer data_transfer(functional_block_context, std::nullopt, ocpp::DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
 
     DataTransferRequest request = create_example_request();
 

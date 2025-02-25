@@ -7,7 +7,7 @@
 
 namespace ocpp::v2 {
 // Formward declarations.
-struct BlockContext;
+struct FunctionalBlockContext;
 class AvailabilityInterface;
 class SecurityInterface;
 
@@ -29,7 +29,7 @@ public:
 
 class FirmwareUpdate : public FirmwareUpdateInterface {
 private: // Members
-    const BlockContext& context;
+    const FunctionalBlockContext& context;
     AvailabilityInterface& availability;
     SecurityInterface& security;
 
@@ -43,8 +43,8 @@ private: // Members
     FirmwareStatusEnum firmware_status_before_installing = FirmwareStatusEnum::SignatureVerified;
 
 public:
-    FirmwareUpdate(const BlockContext& block_context, AvailabilityInterface& availability, SecurityInterface& security,
-                   UpdateFirmwareRequestCallback update_firmware_request_callback,
+    FirmwareUpdate(const FunctionalBlockContext& functional_block_context, AvailabilityInterface& availability,
+                   SecurityInterface& security, UpdateFirmwareRequestCallback update_firmware_request_callback,
                    std::optional<AllConnectorsUnavailableCallback> all_connectors_unavailable_callback);
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
     void on_firmware_update_status_notification(int32_t request_id,

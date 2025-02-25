@@ -6,7 +6,7 @@
 #pragma once
 
 namespace ocpp::v2 {
-struct BlockContext;
+struct FunctionalBlockContext;
 class EvseInterface;
 
 struct ReserveNowRequest;
@@ -31,7 +31,7 @@ public:
 
 class Reservation : public ReservationInterface {
 private: // Members
-    const BlockContext& context;
+    const FunctionalBlockContext& context;
 
     /// \brief Callback function is called when a reservation request is received from the CSMS
     ReserveNowCallback reserve_now_callback;
@@ -44,7 +44,7 @@ private: // Members
     IsReservationForTokenCallback is_reservation_for_token_callback;
 
 public:
-    Reservation(const BlockContext& block_context, ReserveNowCallback reserve_now_callback,
+    Reservation(const FunctionalBlockContext& functional_block_context, ReserveNowCallback reserve_now_callback,
                 CancelReservationCallback cancel_reservation_callback,
                 const IsReservationForTokenCallback is_reservation_for_token_callback);
     virtual void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;

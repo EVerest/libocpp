@@ -8,7 +8,7 @@
 #include <ocpp/v2/evse.hpp>
 
 namespace ocpp::v2 {
-struct BlockContext;
+struct FunctionalBlockContext;
 class SmartChargingHandlerInterface;
 
 struct GetChargingProfilesRequest;
@@ -121,11 +121,12 @@ public:
 
 class SmartCharging : public SmartChargingInterface {
 private: // Members
-    const BlockContext& context;
+    const FunctionalBlockContext& context;
     std::function<void()> set_charging_profiles_callback;
 
 public:
-    SmartCharging(const BlockContext& block_context, std::function<void()> set_charging_profiles_callback);
+    SmartCharging(const FunctionalBlockContext& functional_block_context,
+                  std::function<void()> set_charging_profiles_callback);
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
     GetCompositeScheduleResponse get_composite_schedule(const GetCompositeScheduleRequest& request) override;
     std::optional<CompositeSchedule> get_composite_schedule(int32_t evse_id, std::chrono::seconds duration,

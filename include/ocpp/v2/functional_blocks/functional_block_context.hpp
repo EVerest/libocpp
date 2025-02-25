@@ -16,7 +16,11 @@ class EvseManagerInterface;
 class DatabaseHandlerInterface;
 class ComponentStateManagerInterface;
 
-struct BlockContext {
+/// \brief Context / requirements for the functional blocks.
+///
+/// All functional blocks will get this context. The references and pointers in this struct are used by all or most
+/// functional blocks.
+struct FunctionalBlockContext {
     MessageDispatcherInterface<MessageType>& message_dispatcher;
     DeviceModel& device_model;
     ConnectivityManagerInterface& connectivity_manager;
@@ -25,10 +29,10 @@ struct BlockContext {
     EvseSecurity& evse_security;
     ComponentStateManagerInterface& component_state_manager;
 
-    BlockContext(MessageDispatcherInterface<MessageType>& message_dispatcher, DeviceModel& device_model,
-                 ConnectivityManagerInterface& connectivity_manager, EvseManagerInterface& evse_manager,
-                 DatabaseHandlerInterface& database_handler, EvseSecurity& evse_security,
-                 ComponentStateManagerInterface& component_state_manager) :
+    FunctionalBlockContext(MessageDispatcherInterface<MessageType>& message_dispatcher, DeviceModel& device_model,
+                           ConnectivityManagerInterface& connectivity_manager, EvseManagerInterface& evse_manager,
+                           DatabaseHandlerInterface& database_handler, EvseSecurity& evse_security,
+                           ComponentStateManagerInterface& component_state_manager) :
         message_dispatcher(message_dispatcher),
         device_model(device_model),
         connectivity_manager(connectivity_manager),

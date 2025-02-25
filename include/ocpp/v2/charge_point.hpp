@@ -49,7 +49,7 @@ class DeviceModel;
 class DeviceModelStorageInterface;
 class EvseManager;
 
-struct BlockContext;
+struct FunctionalBlockContext;
 
 class UnexpectedMessageTypeFromCSMS : public std::runtime_error {
     using std::runtime_error::runtime_error;
@@ -341,7 +341,7 @@ private:
     std::unique_ptr<MessageDispatcherInterface<MessageType>> message_dispatcher;
 
     // Functional blocks
-    std::unique_ptr<BlockContext> block_context;
+    std::unique_ptr<FunctionalBlockContext> functional_block_context;
     std::unique_ptr<DataTransferInterface> data_transfer;
     std::unique_ptr<ReservationInterface> reservation;
     std::unique_ptr<AvailabilityInterface> availability;

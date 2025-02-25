@@ -6,7 +6,7 @@
 #include <ocpp/v2/ctrlr_component_variables.hpp>
 #include <ocpp/v2/device_model.hpp>
 #include <ocpp/v2/evse_manager.hpp>
-#include <ocpp/v2/functional_blocks/block_context.hpp>
+#include <ocpp/v2/functional_blocks/functional_block_context.hpp>
 #include <ocpp/v2/functional_blocks/meter_values.hpp>
 
 #include <ocpp/v2/messages/CostUpdated.hpp>
@@ -14,11 +14,11 @@
 const auto DEFAULT_PRICE_NUMBER_OF_DECIMALS = 3;
 
 namespace ocpp::v2 {
-TariffAndCost::TariffAndCost(const BlockContext& block_context, MeterValuesInterface& meter_values,
+TariffAndCost::TariffAndCost(const FunctionalBlockContext& functional_block_context, MeterValuesInterface& meter_values,
                              std::optional<SetDisplayMessageCallback>& set_display_message_callback,
                              std::optional<SetRunningCostCallback>& set_running_cost_callback,
                              boost::asio::io_service& io_service) :
-    context(block_context),
+    context(functional_block_context),
     meter_values(meter_values),
     set_display_message_callback(set_display_message_callback),
     set_running_cost_callback(set_running_cost_callback),

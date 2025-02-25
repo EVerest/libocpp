@@ -9,7 +9,7 @@
 #include <ocpp/v2/connectivity_manager.hpp>
 #include <ocpp/v2/ctrlr_component_variables.hpp>
 #include <ocpp/v2/evse_manager.hpp>
-#include <ocpp/v2/functional_blocks/block_context.hpp>
+#include <ocpp/v2/functional_blocks/functional_block_context.hpp>
 #include <ocpp/v2/notify_report_requests_splitter.hpp>
 
 #include <ocpp/v2/functional_blocks/availability.hpp>
@@ -35,18 +35,18 @@ namespace ocpp::v2 {
 static bool component_variable_change_requires_websocket_option_update_without_reconnect(
     const ComponentVariable& component_variable);
 
-Provisioning::Provisioning(const BlockContext& block_context, MessageQueue<MessageType>& message_queue,
-                           OcspUpdaterInterface& ocsp_updater, AvailabilityInterface& availability,
-                           MeterValuesInterface& meter_values, SecurityInterface& security,
-                           DiagnosticsInterface& diagnostics, TransactionInterface& transaction,
-                           std::optional<TimeSyncCallback> time_sync_callback,
+Provisioning::Provisioning(const FunctionalBlockContext& functional_block_context,
+                           MessageQueue<MessageType>& message_queue, OcspUpdaterInterface& ocsp_updater,
+                           AvailabilityInterface& availability, MeterValuesInterface& meter_values,
+                           SecurityInterface& security, DiagnosticsInterface& diagnostics,
+                           TransactionInterface& transaction, std::optional<TimeSyncCallback> time_sync_callback,
                            std::optional<BootNotificationCallback> boot_notification_callback,
                            std::optional<ValidateNetworkProfileCallback> validate_network_profile_callback,
                            IsResetAllowedCallback is_reset_allowed_callback, ResetCallback reset_callback,
                            StopTransactionCallback stop_transaction_callback,
                            std::optional<VariableChangedCallback> variable_changed_callback,
                            std::atomic<RegistrationStatusEnum>& registration_status) :
-    context(block_context),
+    context(functional_block_context),
     message_queue(message_queue),
     ocsp_updater(ocsp_updater),
     availability(availability),

@@ -6,7 +6,7 @@
 #include <ocpp/v2/message_handler.hpp>
 
 namespace ocpp::v2 {
-struct BlockContext;
+struct FunctionalBlockContext;
 class OcspUpdaterInterface;
 
 class AvailabilityInterface;
@@ -64,7 +64,7 @@ public:
 
 class Provisioning : public ProvisioningInterface {
 public:
-    Provisioning(const BlockContext& block_context, MessageQueue<v2::MessageType>& message_queue,
+    Provisioning(const FunctionalBlockContext& functional_block_context, MessageQueue<v2::MessageType>& message_queue,
                  OcspUpdaterInterface& ocsp_updater, AvailabilityInterface& availability,
                  MeterValuesInterface& meter_values, SecurityInterface& security, DiagnosticsInterface& diagnostics,
                  TransactionInterface& transaction, std::optional<TimeSyncCallback> time_sync_callback,
@@ -84,7 +84,7 @@ public:
     set_variables(const std::vector<SetVariableData>& set_variable_data_vector, const std::string& source) override;
 
 private: // Members
-    const BlockContext& context;
+    const FunctionalBlockContext& context;
     MessageQueue<v2::MessageType>& message_queue;
     OcspUpdaterInterface& ocsp_updater;
 

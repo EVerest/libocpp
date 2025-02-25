@@ -2,12 +2,13 @@
 // Copyright Pionix GmbH and Contributors to EVerest
 
 #include <ocpp/v2/functional_blocks/security.hpp>
+
 #include <ocpp/common/constants.hpp>
 #include <ocpp/common/ocpp_logging.hpp>
 #include <ocpp/v2/connectivity_manager.hpp>
 #include <ocpp/v2/ctrlr_component_variables.hpp>
 #include <ocpp/v2/device_model.hpp>
-#include <ocpp/v2/functional_blocks/block_context.hpp>
+#include <ocpp/v2/functional_blocks/functional_block_context.hpp>
 #include <ocpp/v2/utils.hpp>
 
 #include <ocpp/v2/messages/CertificateSigned.hpp>
@@ -22,9 +23,9 @@ constexpr int32_t minimum_cert_signing_wait_time_seconds = 250;
 
 namespace ocpp::v2 {
 
-Security::Security(const BlockContext& block_context, MessageLogging& logging, OcspUpdaterInterface& ocsp_updater,
-                   SecurityEventCallback security_event_callback) :
-    context(block_context),
+Security::Security(const FunctionalBlockContext& functional_block_context, MessageLogging& logging,
+                   OcspUpdaterInterface& ocsp_updater, SecurityEventCallback security_event_callback) :
+    context(functional_block_context),
     logging(logging),
     ocsp_updater(ocsp_updater),
     security_event_callback(security_event_callback),
@@ -172,8 +173,8 @@ void Security::sign_certificate_req(const ocpp::CertificateSigningUseEnum& certi
 
     if (certificate_signing_use == ocpp::CertificateSigningUseEnum::ChargingStationCertificate) {
         req.certificateType = ocpp::v2::CertificateSigningUseEnum::ChargingStationCertificate;
-        common =
-            this->context.device_model.get_optional_value<std::string>(ControllerComponentVariables::ChargeBoxSerialNumber);
+        common = this->context.device_model.get_optional_value<std::string>(
+            ControllerComponentVariables::ChargeBoxSerialNumber);
         organization =
             this->context.device_model.get_optional_value<std::string>(ControllerComponentVariables::OrganizationName);
         country = this->context.device_model.get_optional_value<std::string>(
@@ -182,7 +183,8 @@ void Security::sign_certificate_req(const ocpp::CertificateSigningUseEnum& certi
             this->context.device_model.get_optional_value<bool>(ControllerComponentVariables::UseTPM).value_or(false);
     } else {
         req.certificateType = ocpp::v2::CertificateSigningUseEnum::V2GCertificate;
-        common = this->context.device_model.get_optional_value<std::string>(ControllerComponentVariables::ISO15118CtrlrSeccId);
+        common = this->context.device_model.get_optional_value<std::string>(
+            ControllerComponentVariables::ISO15118CtrlrSeccId);
         organization = this->context.device_model.get_optional_value<std::string>(
             ControllerComponentVariables::ISO15118CtrlrOrganizationName);
         country = this->context.device_model.get_optional_value<std::string>(

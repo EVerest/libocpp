@@ -6,7 +6,7 @@
 #include <ocpp/v2/message_handler.hpp>
 
 namespace ocpp::v2 {
-struct BlockContext;
+struct FunctionalBlockContext;
 class AuthorizationInterface;
 class AvailabilityInterface;
 class SmartChargingInterface;
@@ -79,10 +79,11 @@ public:
 
 class TransactionBlock : public TransactionInterface {
 public:
-    TransactionBlock(const BlockContext& block_context, MessageQueue<v2::MessageType>& message_queue,
-                     AuthorizationInterface& authorization, AvailabilityInterface& availability,
-                     SmartChargingInterface& smart_charging, TariffAndCostInterface& tariff_and_cost,
-                     StopTransactionCallback stop_transaction_callback, PauseChargingCallback pause_charging_callback,
+    TransactionBlock(const FunctionalBlockContext& functional_block_context,
+                     MessageQueue<v2::MessageType>& message_queue, AuthorizationInterface& authorization,
+                     AvailabilityInterface& availability, SmartChargingInterface& smart_charging,
+                     TariffAndCostInterface& tariff_and_cost, StopTransactionCallback stop_transaction_callback,
+                     PauseChargingCallback pause_charging_callback,
                      std::optional<TransactionEventCallback> transaction_event_callback,
                      std::optional<TransactionEventResponseCallback> transaction_event_response_callback,
                      ResetCallback reset_callback);
@@ -112,7 +113,7 @@ public:
     void schedule_reset(const std::optional<int32_t> reset_scheduled_evseid) override;
 
 private: // Members
-    const BlockContext& context;
+    const FunctionalBlockContext& context;
     MessageQueue<v2::MessageType>& message_queue;
     AuthorizationInterface& authorization;
     AvailabilityInterface& availability;

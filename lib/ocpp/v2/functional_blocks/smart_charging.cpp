@@ -7,7 +7,7 @@
 #include <ocpp/v2/ctrlr_component_variables.hpp>
 #include <ocpp/v2/device_model.hpp>
 #include <ocpp/v2/evse_manager.hpp>
-#include <ocpp/v2/functional_blocks/block_context.hpp>
+#include <ocpp/v2/functional_blocks/functional_block_context.hpp>
 #include <ocpp/v2/profile.hpp>
 
 #include <ocpp/v2/utils.hpp>
@@ -128,8 +128,9 @@ std::ostream& operator<<(std::ostream& os, const ProfileValidationResultEnum val
     return os;
 }
 
-SmartCharging::SmartCharging(const BlockContext& block_context, std::function<void()> set_charging_profiles_callback) :
-    context(block_context), set_charging_profiles_callback(set_charging_profiles_callback) {
+SmartCharging::SmartCharging(const FunctionalBlockContext& functional_block_context,
+                             std::function<void()> set_charging_profiles_callback) :
+    context(functional_block_context), set_charging_profiles_callback(set_charging_profiles_callback) {
 }
 
 void SmartCharging::handle_message(const ocpp::EnhancedMessage<MessageType>& message) {

@@ -6,7 +6,7 @@
 #include <ocpp/v2/message_handler.hpp>
 
 namespace ocpp::v2 {
-struct BlockContext;
+struct FunctionalBlockContext;
 class EvseInterface;
 
 class TransactionInterface;
@@ -39,7 +39,7 @@ public:
 
 class RemoteTransactionControl : public RemoteTransactionControlInterface {
 public:
-    RemoteTransactionControl(const BlockContext& block_context, TransactionInterface& transaction,
+    RemoteTransactionControl(const FunctionalBlockContext& functional_block_context, TransactionInterface& transaction,
                              SmartChargingInterface& smart_charging, MeterValuesInterface& meter_values,
                              AvailabilityInterface& availability, FirmwareUpdateInterface& firmware_update,
                              SecurityInterface& security, ReservationInterface* reservation,
@@ -52,7 +52,7 @@ public:
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
 
 private: // Members
-    const BlockContext& context;
+    const FunctionalBlockContext& context;
 
     TransactionInterface& transaction;
     SmartChargingInterface& smart_charging;

@@ -9,7 +9,7 @@
 
 namespace ocpp::v2 {
 class AuthorizationInterface;
-struct BlockContext;
+struct FunctionalBlockContext;
 
 struct GetLogRequest;
 struct GetLogResponse;
@@ -44,7 +44,7 @@ public:
 
 class Diagnostics : public DiagnosticsInterface {
 public:
-    Diagnostics(const BlockContext& context, AuthorizationInterface& authorization,
+    Diagnostics(const FunctionalBlockContext& context, AuthorizationInterface& authorization,
                 GetLogRequestCallback get_log_request_callback,
                 std::optional<GetCustomerInformationCallback> get_customer_information_callback,
                 std::optional<ClearCustomerInformationCallback> clear_customer_information_callback);
@@ -55,7 +55,7 @@ public:
     void process_triggered_monitors() override;
 
 private: // Members
-    const BlockContext& context;
+    const FunctionalBlockContext& context;
     AuthorizationInterface& authorization;
     /// \brief Updater for triggered monitors
     MonitoringUpdater monitoring_updater;

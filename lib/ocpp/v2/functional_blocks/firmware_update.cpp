@@ -6,7 +6,7 @@
 #include <array>
 
 #include <ocpp/v2/functional_blocks/availability.hpp>
-#include <ocpp/v2/functional_blocks/block_context.hpp>
+#include <ocpp/v2/functional_blocks/functional_block_context.hpp>
 #include <ocpp/v2/functional_blocks/security.hpp>
 #include <ocpp/v2/messages/FirmwareStatusNotification.hpp>
 #include <ocpp/v2/messages/UpdateFirmware.hpp>
@@ -22,11 +22,11 @@ const static std::array<FirmwareStatusEnum, 5> firmware_status_end_states = {
     FirmwareStatusEnum::DownloadFailed, FirmwareStatusEnum::InstallationFailed, FirmwareStatusEnum::Installed,
     FirmwareStatusEnum::InstallVerificationFailed, FirmwareStatusEnum::InvalidSignature};
 
-FirmwareUpdate::FirmwareUpdate(const BlockContext& block_context, AvailabilityInterface& availability,
-                               SecurityInterface& security,
+FirmwareUpdate::FirmwareUpdate(const FunctionalBlockContext& functional_block_context,
+                               AvailabilityInterface& availability, SecurityInterface& security,
                                UpdateFirmwareRequestCallback update_firmware_request_callback,
                                std::optional<AllConnectorsUnavailableCallback> all_connectors_unavailable_callback) :
-    context(block_context),
+    context(functional_block_context),
     availability(availability),
     security(security),
     update_firmware_request_callback(update_firmware_request_callback),

@@ -9,7 +9,7 @@
 #include <ocpp/v2/ctrlr_component_variables.hpp>
 #include <ocpp/v2/database_handler.hpp>
 #include <ocpp/v2/device_model.hpp>
-#include <ocpp/v2/functional_blocks/block_context.hpp>
+#include <ocpp/v2/functional_blocks/functional_block_context.hpp>
 #include <ocpp/v2/utils.hpp>
 
 #include <ocpp/v2/messages/Authorize.hpp>
@@ -25,7 +25,7 @@
 static bool has_duplicate_in_list(const std::vector<ocpp::v2::AuthorizationData>& list);
 static bool has_no_token_info(const ocpp::v2::AuthorizationData& item);
 
-ocpp::v2::Authorization::Authorization(const BlockContext& context) :
+ocpp::v2::Authorization::Authorization(const FunctionalBlockContext& context) :
     context(context), auth_cache_cleanup_handler_running(false) {
 }
 

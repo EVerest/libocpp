@@ -7,7 +7,7 @@
 #include <ocpp/v2/ctrlr_component_variables.hpp>
 #include <ocpp/v2/device_model.hpp>
 #include <ocpp/v2/evse_manager.hpp>
-#include <ocpp/v2/functional_blocks/block_context.hpp>
+#include <ocpp/v2/functional_blocks/functional_block_context.hpp>
 
 #include <ocpp/v2/functional_blocks/availability.hpp>
 #include <ocpp/v2/functional_blocks/firmware_update.hpp>
@@ -28,13 +28,14 @@
 namespace ocpp::v2 {
 
 RemoteTransactionControl::RemoteTransactionControl(
-    const BlockContext& block_context, TransactionInterface& transaction, SmartChargingInterface& smart_charging,
-    MeterValuesInterface& meter_values, AvailabilityInterface& availability, FirmwareUpdateInterface& firmware_update,
-    SecurityInterface& security, ReservationInterface* reservation, ProvisioningInterface& provisioning,
-    UnlockConnectorCallback unlock_connector_callback, RemoteStartTransactionCallback remote_start_transaction_callback,
-    StopTransactionCallback stop_transaction_callback, std::atomic<RegistrationStatusEnum>& registration_status,
-    std::atomic<UploadLogStatusEnum>& upload_log_status, std::atomic<int32_t>& upload_log_status_id) :
-    context(block_context),
+    const FunctionalBlockContext& functional_block_context, TransactionInterface& transaction,
+    SmartChargingInterface& smart_charging, MeterValuesInterface& meter_values, AvailabilityInterface& availability,
+    FirmwareUpdateInterface& firmware_update, SecurityInterface& security, ReservationInterface* reservation,
+    ProvisioningInterface& provisioning, UnlockConnectorCallback unlock_connector_callback,
+    RemoteStartTransactionCallback remote_start_transaction_callback, StopTransactionCallback stop_transaction_callback,
+    std::atomic<RegistrationStatusEnum>& registration_status, std::atomic<UploadLogStatusEnum>& upload_log_status,
+    std::atomic<int32_t>& upload_log_status_id) :
+    context(functional_block_context),
     transaction(transaction),
     smart_charging(smart_charging),
     meter_values(meter_values),
