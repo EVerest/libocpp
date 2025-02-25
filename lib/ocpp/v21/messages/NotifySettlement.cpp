@@ -21,7 +21,7 @@ void to_json(json& j, const NotifySettlementRequest& k) {
     // the required parts of the message
     j = json{
         {"pspRef", k.pspRef},
-        {"status", ocpp::v201::conversions::payment_status_enum_to_string(k.status)},
+        {"status", ocpp::v2::conversions::payment_status_enum_to_string(k.status)},
         {"settlementAmount", k.settlementAmount},
         {"settlementTime", k.settlementTime.to_rfc3339()},
     };
@@ -52,7 +52,7 @@ void to_json(json& j, const NotifySettlementRequest& k) {
 void from_json(const json& j, NotifySettlementRequest& k) {
     // the required parts of the message
     k.pspRef = j.at("pspRef");
-    k.status = ocpp::v201::conversions::string_to_payment_status_enum(j.at("status"));
+    k.status = ocpp::v2::conversions::string_to_payment_status_enum(j.at("status"));
     k.settlementAmount = j.at("settlementAmount");
     k.settlementTime = ocpp::DateTime(std::string(j.at("settlementTime")));
 

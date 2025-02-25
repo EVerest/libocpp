@@ -21,7 +21,7 @@ void to_json(json& j, const NotifyCRLRequest& k) {
     // the required parts of the message
     j = json{
         {"requestId", k.requestId},
-        {"status", ocpp::v201::conversions::notify_crlstatus_enum_to_string(k.status)},
+        {"status", ocpp::v2::conversions::notify_crlstatus_enum_to_string(k.status)},
     };
     // the optional parts of the message
     if (k.location) {
@@ -35,7 +35,7 @@ void to_json(json& j, const NotifyCRLRequest& k) {
 void from_json(const json& j, NotifyCRLRequest& k) {
     // the required parts of the message
     k.requestId = j.at("requestId");
-    k.status = ocpp::v201::conversions::string_to_notify_crlstatus_enum(j.at("status"));
+    k.status = ocpp::v2::conversions::string_to_notify_crlstatus_enum(j.at("status"));
 
     // the optional parts of the message
     if (j.contains("location")) {

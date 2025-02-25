@@ -56,7 +56,7 @@ std::string NotifyAllowedEnergyTransferResponse::get_type() const {
 void to_json(json& j, const NotifyAllowedEnergyTransferResponse& k) {
     // the required parts of the message
     j = json{
-        {"status", ocpp::v201::conversions::notify_allowed_energy_transfer_status_enum_to_string(k.status)},
+        {"status", ocpp::v2::conversions::notify_allowed_energy_transfer_status_enum_to_string(k.status)},
     };
     // the optional parts of the message
     if (k.statusInfo) {
@@ -69,7 +69,7 @@ void to_json(json& j, const NotifyAllowedEnergyTransferResponse& k) {
 
 void from_json(const json& j, NotifyAllowedEnergyTransferResponse& k) {
     // the required parts of the message
-    k.status = ocpp::v201::conversions::string_to_notify_allowed_energy_transfer_status_enum(j.at("status"));
+    k.status = ocpp::v2::conversions::string_to_notify_allowed_energy_transfer_status_enum(j.at("status"));
 
     // the optional parts of the message
     if (j.contains("statusInfo")) {

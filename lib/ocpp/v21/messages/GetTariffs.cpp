@@ -52,7 +52,7 @@ std::string GetTariffsResponse::get_type() const {
 void to_json(json& j, const GetTariffsResponse& k) {
     // the required parts of the message
     j = json{
-        {"status", ocpp::v201::conversions::tariff_get_status_enum_to_string(k.status)},
+        {"status", ocpp::v2::conversions::tariff_get_status_enum_to_string(k.status)},
     };
     // the optional parts of the message
     if (k.statusInfo) {
@@ -71,7 +71,7 @@ void to_json(json& j, const GetTariffsResponse& k) {
 
 void from_json(const json& j, GetTariffsResponse& k) {
     // the required parts of the message
-    k.status = ocpp::v201::conversions::string_to_tariff_get_status_enum(j.at("status"));
+    k.status = ocpp::v2::conversions::string_to_tariff_get_status_enum(j.at("status"));
 
     // the optional parts of the message
     if (j.contains("statusInfo")) {

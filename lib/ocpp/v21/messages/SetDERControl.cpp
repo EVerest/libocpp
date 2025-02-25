@@ -22,7 +22,7 @@ void to_json(json& j, const SetDERControlRequest& k) {
     j = json{
         {"isDefault", k.isDefault},
         {"controlId", k.controlId},
-        {"controlType", ocpp::v201::conversions::dercontrol_enum_to_string(k.controlType)},
+        {"controlType", ocpp::v2::conversions::dercontrol_enum_to_string(k.controlType)},
     };
     // the optional parts of the message
     if (k.curve) {
@@ -58,7 +58,7 @@ void from_json(const json& j, SetDERControlRequest& k) {
     // the required parts of the message
     k.isDefault = j.at("isDefault");
     k.controlId = j.at("controlId");
-    k.controlType = ocpp::v201::conversions::string_to_dercontrol_enum(j.at("controlType"));
+    k.controlType = ocpp::v2::conversions::string_to_dercontrol_enum(j.at("controlType"));
 
     // the optional parts of the message
     if (j.contains("curve")) {
@@ -104,7 +104,7 @@ std::string SetDERControlResponse::get_type() const {
 void to_json(json& j, const SetDERControlResponse& k) {
     // the required parts of the message
     j = json{
-        {"status", ocpp::v201::conversions::dercontrol_status_enum_to_string(k.status)},
+        {"status", ocpp::v2::conversions::dercontrol_status_enum_to_string(k.status)},
     };
     // the optional parts of the message
     if (k.statusInfo) {
@@ -123,7 +123,7 @@ void to_json(json& j, const SetDERControlResponse& k) {
 
 void from_json(const json& j, SetDERControlResponse& k) {
     // the required parts of the message
-    k.status = ocpp::v201::conversions::string_to_dercontrol_status_enum(j.at("status"));
+    k.status = ocpp::v2::conversions::string_to_dercontrol_status_enum(j.at("status"));
 
     // the optional parts of the message
     if (j.contains("statusInfo")) {

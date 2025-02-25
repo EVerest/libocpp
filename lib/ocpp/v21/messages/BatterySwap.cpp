@@ -21,7 +21,7 @@ void to_json(json& j, const BatterySwapRequest& k) {
     // the required parts of the message
     j = json{
         {"batteryData", k.batteryData},
-        {"eventType", ocpp::v201::conversions::battery_swap_event_enum_to_string(k.eventType)},
+        {"eventType", ocpp::v2::conversions::battery_swap_event_enum_to_string(k.eventType)},
         {"idToken", k.idToken},
         {"requestId", k.requestId},
     };
@@ -36,7 +36,7 @@ void from_json(const json& j, BatterySwapRequest& k) {
     for (auto val : j.at("batteryData")) {
         k.batteryData.push_back(val);
     }
-    k.eventType = ocpp::v201::conversions::string_to_battery_swap_event_enum(j.at("eventType"));
+    k.eventType = ocpp::v2::conversions::string_to_battery_swap_event_enum(j.at("eventType"));
     k.idToken = j.at("idToken");
     k.requestId = j.at("requestId");
 

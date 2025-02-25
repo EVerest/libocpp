@@ -8,9 +8,9 @@
 #include <nlohmann/json_fwd.hpp>
 #include <optional>
 
-#include <ocpp/v201/ocpp_enums.hpp>
-#include <ocpp/v201/ocpp_types.hpp>
-using namespace ocpp::v201;
+#include <ocpp/v2/ocpp_enums.hpp>
+#include <ocpp/v2/ocpp_types.hpp>
+using namespace ocpp::v2;
 #include <ocpp/common/types.hpp>
 
 namespace ocpp {

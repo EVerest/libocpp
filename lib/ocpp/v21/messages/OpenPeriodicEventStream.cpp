@@ -52,7 +52,7 @@ std::string OpenPeriodicEventStreamResponse::get_type() const {
 void to_json(json& j, const OpenPeriodicEventStreamResponse& k) {
     // the required parts of the message
     j = json{
-        {"status", ocpp::v201::conversions::generic_status_enum_to_string(k.status)},
+        {"status", ocpp::v2::conversions::generic_status_enum_to_string(k.status)},
     };
     // the optional parts of the message
     if (k.statusInfo) {
@@ -65,7 +65,7 @@ void to_json(json& j, const OpenPeriodicEventStreamResponse& k) {
 
 void from_json(const json& j, OpenPeriodicEventStreamResponse& k) {
     // the required parts of the message
-    k.status = ocpp::v201::conversions::string_to_generic_status_enum(j.at("status"));
+    k.status = ocpp::v2::conversions::string_to_generic_status_enum(j.at("status"));
 
     // the optional parts of the message
     if (j.contains("statusInfo")) {

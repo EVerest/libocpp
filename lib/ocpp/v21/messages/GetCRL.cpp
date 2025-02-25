@@ -55,7 +55,7 @@ void to_json(json& j, const GetCRLResponse& k) {
     // the required parts of the message
     j = json{
         {"requestId", k.requestId},
-        {"status", ocpp::v201::conversions::generic_status_enum_to_string(k.status)},
+        {"status", ocpp::v2::conversions::generic_status_enum_to_string(k.status)},
     };
     // the optional parts of the message
     if (k.statusInfo) {
@@ -69,7 +69,7 @@ void to_json(json& j, const GetCRLResponse& k) {
 void from_json(const json& j, GetCRLResponse& k) {
     // the required parts of the message
     k.requestId = j.at("requestId");
-    k.status = ocpp::v201::conversions::string_to_generic_status_enum(j.at("status"));
+    k.status = ocpp::v2::conversions::string_to_generic_status_enum(j.at("status"));
 
     // the optional parts of the message
     if (j.contains("statusInfo")) {

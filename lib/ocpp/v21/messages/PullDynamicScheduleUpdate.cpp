@@ -52,7 +52,7 @@ std::string PullDynamicScheduleUpdateResponse::get_type() const {
 void to_json(json& j, const PullDynamicScheduleUpdateResponse& k) {
     // the required parts of the message
     j = json{
-        {"status", ocpp::v201::conversions::charging_profile_status_enum_to_string(k.status)},
+        {"status", ocpp::v2::conversions::charging_profile_status_enum_to_string(k.status)},
     };
     // the optional parts of the message
     if (k.scheduleUpdate) {
@@ -68,7 +68,7 @@ void to_json(json& j, const PullDynamicScheduleUpdateResponse& k) {
 
 void from_json(const json& j, PullDynamicScheduleUpdateResponse& k) {
     // the required parts of the message
-    k.status = ocpp::v201::conversions::string_to_charging_profile_status_enum(j.at("status"));
+    k.status = ocpp::v2::conversions::string_to_charging_profile_status_enum(j.at("status"));
 
     // the optional parts of the message
     if (j.contains("scheduleUpdate")) {
