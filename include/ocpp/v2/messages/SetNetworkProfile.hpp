@@ -39,8 +39,8 @@ std::ostream& operator<<(std::ostream& os, const SetNetworkProfileRequest& k);
 /// \brief Contains a OCPP SetNetworkProfileResponse message
 struct SetNetworkProfileResponse : public ocpp::Message {
     SetNetworkProfileStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this SetNetworkProfileResponse message as a human readable string
     /// \returns the message type as a human readable string

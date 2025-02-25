@@ -39,8 +39,8 @@ std::ostream& operator<<(std::ostream& os, const SetChargingProfileRequest& k);
 /// \brief Contains a OCPP SetChargingProfileResponse message
 struct SetChargingProfileResponse : public ocpp::Message {
     ChargingProfileStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this SetChargingProfileResponse message as a human readable string
     /// \returns the message type as a human readable string

@@ -39,8 +39,8 @@ std::ostream& operator<<(std::ostream& os, const UnlockConnectorRequest& k);
 /// \brief Contains a OCPP UnlockConnectorResponse message
 struct UnlockConnectorResponse : public ocpp::Message {
     UnlockStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this UnlockConnectorResponse message as a human readable string
     /// \returns the message type as a human readable string

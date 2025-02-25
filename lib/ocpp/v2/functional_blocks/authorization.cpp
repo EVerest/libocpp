@@ -61,7 +61,8 @@ void ocpp::v2::Authorization::handle_message(const ocpp::EnhancedMessage<Message
 }
 
 ocpp::v2::AuthorizeResponse
-ocpp::v2::Authorization::authorize_req(const IdToken id_token, const std::optional<ocpp::CiString<5500>>& certificate,
+ocpp::v2::Authorization::authorize_req(const IdToken id_token,
+                                       const std::optional<ocpp::CiString<10000>>& certificate,
                                        const std::optional<std::vector<OCSPRequestData>>& ocsp_request_data) {
     AuthorizeRequest req;
     req.idToken = id_token;
@@ -152,8 +153,8 @@ void ocpp::v2::Authorization::authorization_cache_delete_entry(const std::string
 }
 
 ocpp::v2::AuthorizeResponse
-ocpp::v2::Authorization::validate_token(const IdToken id_token, const std::optional<CiString<5500>>& certificate,
-                                        const std::optional<std::vector<OCSPRequestData>>& ocsp_request_data) {
+ocpp::v2::Authorization::validate_token(const IdToken id_token, const std::optional<CiString<10000>>& certificate,
+                                       const std::optional<std::vector<OCSPRequestData>>& ocsp_request_data) {
     // TODO(piet): C01.FR.14
     // TODO(piet): C01.FR.15
     // TODO(piet): C01.FR.16
@@ -164,14 +165,14 @@ ocpp::v2::Authorization::validate_token(const IdToken id_token, const std::optio
     AuthorizeResponse response;
 
     // C03.FR.01 && C05.FR.01: We SHALL NOT send an authorize reqeust for IdTokenType Central
-    if (id_token.type == IdTokenEnum::Central or
+    if (id_token.type == IdTokenEnumStringType::Central or
         !this->device_model.get_optional_value<bool>(ControllerComponentVariables::AuthCtrlrEnabled).value_or(true)) {
         response.idTokenInfo.status = AuthorizationStatusEnum::Accepted;
         return response;
     }
 
     // C07: Authorization using contract certificates
-    if (id_token.type == IdTokenEnum::eMAID) {
+    if (id_token.type == IdTokenEnumStringType::eMAID) {
         // Temporary variable that is set to true to avoid immediate response to allow the local auth list
         // or auth cache to be tried
         bool try_local_auth_list_or_cache = false;
@@ -488,7 +489,9 @@ void ocpp::v2::Authorization::cache_cleanup_handler() {
 void ocpp::v2::Authorization::handle_send_local_authorization_list_req(Call<SendLocalListRequest> call) {
     SendLocalListResponse response;
 
-    if (this->device_model.get_optional_value<bool>(ControllerComponentVariables::LocalAuthListCtrlrEnabled)
+    if (this->device_model.get_optional_value<bool>(ControllerComponentVariables::LocalAuthListCtrlrAvailable)
+            .value_or(false) &&
+        this->device_model.get_optional_value<bool>(ControllerComponentVariables::LocalAuthListCtrlrEnabled)
             .value_or(false)) {
         response.status = apply_local_authorization_list(call.msg);
     } else {
@@ -527,7 +530,9 @@ void ocpp::v2::Authorization::handle_send_local_authorization_list_req(Call<Send
 void ocpp::v2::Authorization::handle_get_local_authorization_list_version_req(Call<GetLocalListVersionRequest> call) {
     GetLocalListVersionResponse response;
 
-    if (this->device_model.get_optional_value<bool>(ControllerComponentVariables::LocalAuthListCtrlrEnabled)
+    if (this->device_model.get_optional_value<bool>(ControllerComponentVariables::LocalAuthListCtrlrAvailable)
+            .value_or(false) &&
+        this->device_model.get_optional_value<bool>(ControllerComponentVariables::LocalAuthListCtrlrEnabled)
             .value_or(false)) {
         try {
             response.versionNumber = this->database_handler.get_local_authorization_list_version();

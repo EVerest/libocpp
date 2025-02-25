@@ -17,10 +17,11 @@ namespace v2 {
 
 /// \brief Contains a OCPP NotifyEVChargingNeeds message
 struct NotifyEVChargingNeedsRequest : public ocpp::Message {
-    ChargingNeeds chargingNeeds;
     int32_t evseId;
-    std::optional<CustomData> customData;
+    ChargingNeeds chargingNeeds;
     std::optional<int32_t> maxScheduleTuples;
+    std::optional<ocpp::DateTime> timestamp;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this NotifyEVChargingNeeds message as a human readable string
     /// \returns the message type as a human readable string
@@ -40,8 +41,8 @@ std::ostream& operator<<(std::ostream& os, const NotifyEVChargingNeedsRequest& k
 /// \brief Contains a OCPP NotifyEVChargingNeedsResponse message
 struct NotifyEVChargingNeedsResponse : public ocpp::Message {
     NotifyEVChargingNeedsStatusEnum status;
-    std::optional<CustomData> customData;
     std::optional<StatusInfo> statusInfo;
+    std::optional<CustomData> customData;
 
     /// \brief Provides the type of this NotifyEVChargingNeedsResponse message as a human readable string
     /// \returns the message type as a human readable string

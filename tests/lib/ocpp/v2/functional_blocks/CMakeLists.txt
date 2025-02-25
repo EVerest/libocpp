@@ -38,6 +38,7 @@ target_include_directories(libocpp_test_security PUBLIC
 
 set(TEST_AUTHORIZATION_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/../device_model_test_helper.cpp
             ${LIBOCPP_LIB_PATH}/ocpp/v2/functional_blocks/authorization.cpp
+            ${LIBOCPP_LIB_PATH}/ocpp/v2/ctrlr_component_variables.cpp
             ${LIBOCPP_LIB_PATH}/ocpp/v2/messages/Authorize.cpp
             ${LIBOCPP_LIB_PATH}/ocpp/v2/messages/ClearCache.cpp
             ${LIBOCPP_LIB_PATH}/ocpp/v2/messages/GetLocalListVersion.cpp
