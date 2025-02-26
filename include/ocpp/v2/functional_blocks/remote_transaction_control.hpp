@@ -47,7 +47,7 @@ public:
     RemoteTransactionControl(MessageDispatcherInterface<MessageType>& message_dispatcher, DeviceModel& device_model,
                              ConnectivityManagerInterface& connectivity_manager, EvseManagerInterface& evse_manager,
                              ComponentStateManagerInterface& component_state_manager, TransactionInterface& transaction,
-                             SmartChargingInterface& smart_charging, MeterValuesInterface& meter_values,
+                             SmartChargingInterface* smart_charging, MeterValuesInterface& meter_values,
                              AvailabilityInterface& availability, FirmwareUpdateInterface& firmware_update,
                              SecurityInterface& security, ReservationInterface* reservation,
                              ProvisioningInterface& provisioning, UnlockConnectorCallback unlock_connector_callback,
@@ -66,7 +66,7 @@ private: // Members
     ComponentStateManagerInterface& component_state_manager;
 
     TransactionInterface& transaction;
-    SmartChargingInterface& smart_charging;
+    SmartChargingInterface* smart_charging;
     MeterValuesInterface& meter_values;
     AvailabilityInterface& availability;
     FirmwareUpdateInterface& firmware_update;
