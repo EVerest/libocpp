@@ -386,7 +386,7 @@ void CompositeScheduleTestFixtureV2::TearDown() {
 }
 
 void CompositeScheduleTestFixtureV2::load_charging_profiles_for_evse(const std::filesystem::path& path,
-                                                                       int32_t evse_id) {
+                                                                     int32_t evse_id) {
     std::vector<ChargingProfile> profiles = std::filesystem::is_directory(path)
                                                 ? SmartChargingTestUtils::get_charging_profiles_from_directory(path)
                                                 : SmartChargingTestUtils::get_charging_profiles_from_file(path);
