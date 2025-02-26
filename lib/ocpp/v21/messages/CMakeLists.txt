@@ -8,6 +8,7 @@ target_sources(ocpp
         ClearDERControl.cpp
         ClearTariffs.cpp
         ClosePeriodicEventStream.cpp
+        GetCertificateChainStatus.cpp
         GetDERControl.cpp
         GetPeriodicEventStream.cpp
         GetTariffs.cpp
@@ -17,8 +18,10 @@ target_sources(ocpp
         NotifyPeriodicEventStream.cpp
         NotifyPriorityCharging.cpp
         NotifySettlement.cpp
+        NotifyWebPaymentStarted.cpp
         OpenPeriodicEventStream.cpp
         PullDynamicScheduleUpdate.cpp
+        ReportDERControl.cpp
         RequestBatterySwap.cpp
         SetDERControl.cpp
         SetDefaultTariff.cpp

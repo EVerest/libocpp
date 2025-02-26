@@ -1,18 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
+// Copyright 2020 - 2025 Pionix GmbH and Contributors to EVerest
 // This code is generated using the generator in 'src/code_generator/common`, please do not edit manually
 
-#ifndef OCPP_V201_NOTIFYWEBPAYMENTSTARTED_HPP
-#define OCPP_V201_NOTIFYWEBPAYMENTSTARTED_HPP
+#ifndef OCPP_V21_NOTIFYWEBPAYMENTSTARTED_HPP
+#define OCPP_V21_NOTIFYWEBPAYMENTSTARTED_HPP
 
 #include <nlohmann/json_fwd.hpp>
 #include <optional>
 
-#include <ocpp/common/types.hpp>
 #include <ocpp/v2/ocpp_types.hpp>
+using namespace ocpp::v2;
+#include <ocpp/common/types.hpp>
 
 namespace ocpp {
-namespace v2 {
+namespace v21 {
 
 /// \brief Contains a OCPP NotifyWebPaymentStarted message
 struct NotifyWebPaymentStartedRequest : public ocpp::Message {
@@ -54,7 +55,7 @@ void from_json(const json& j, NotifyWebPaymentStartedResponse& k);
 /// \p os \returns an output stream with the NotifyWebPaymentStartedResponse written to
 std::ostream& operator<<(std::ostream& os, const NotifyWebPaymentStartedResponse& k);
 
-} // namespace v2
+} // namespace v21
 } // namespace ocpp
 
-#endif // OCPP_V201_NOTIFYWEBPAYMENTSTARTED_HPP
+#endif // OCPP_V21_NOTIFYWEBPAYMENTSTARTED_HPP

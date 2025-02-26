@@ -170,6 +170,7 @@ v21_messages = ['AFRRSignal',
                 'ClearDERControl',
                 'ClearTariffs',
                 'ClosePeriodicEventStream',
+                'GetCertificateChainStatus',
                 'GetCRL',
                 'GetDERControl',
                 'GetPeriodicEventStream',
@@ -182,8 +183,10 @@ v21_messages = ['AFRRSignal',
                 'NotifyPriorityCharging',
                 'NotifyQRCodeScanned',
                 'NotifySettlement',
+                'NotifyWebPaymentStarted',
                 'OpenPeriodicEventStream',
                 'PullDynamicScheduleUpdate',
+                'ReportDERControl',
                 'RequestBatterySwap',
                 'SetDERControl',
                 'SetDefaultTariff',
@@ -403,7 +406,7 @@ def parse_schemas(version: str, schema_dir: Path = Path('schemas/json/'),
 
     generated_header_dir_v21 = generated_header_dir
     generated_source_dir_v21 = generated_source_dir
-    if version == 'v201':
+    if version == 'v2':
         generated_header_dir_v21 = generated_dir / 'include' / 'ocpp' / 'v21'
         generated_source_dir_v21 = generated_dir / 'lib' / 'ocpp' / 'v21'
 
@@ -539,7 +542,7 @@ def parse_schemas(version: str, schema_dir: Path = Path('schemas/json/'),
                 message_version = 'v21'
                 generated_class_hpp_fn = Path(messages_header_dir_v21, action + '.hpp')
                 generated_class_cpp_fn = Path(messages_source_dir_v21, action + '.cpp')
-                conversions_namespace_prefix = 'ocpp::v201::'
+                conversions_namespace_prefix = 'ocpp::v2::'
 
             with open(generated_class_hpp_fn, writemode[type_key]) as out:
                 out.write(message_hpp_template.render({
@@ -624,7 +627,7 @@ def parse_schemas(version: str, schema_dir: Path = Path('schemas/json/'),
                 }))
             first = False
 
-    if version == 'v201':
+    if version == 'v2':
         with open(messages_cmakelists_txt_fn_v21, 'w') as out:
             out.write(messages_cmakelists_txt_template.render({
                 'messages': sorted(message_files_v21)
@@ -686,7 +689,8 @@ if __name__ == "__main__":
 
     if version == '1.6' or version == '16' or version == 'v16':
         version_path = 'v16'
-    elif version == '2.0.1' or version == '201' or version == 'v201':
+    elif version == '2.0.1' or version == '2' or version == '2.1' or version == '21' or \
+        version == '201' or version == 'v201' or version == 'v2' or version == 'v21':
         version_path = 'v2'
     else:
         raise ValueError(f"Version {version} not a valid ocpp version")

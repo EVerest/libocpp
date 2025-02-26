@@ -51,6 +51,7 @@ struct {{type.name}} {
 {% endif %}
 {% endfor %}
 {%- endif %}
+{% if last %}
 } // namespace {{namespace}}
 } // namespace ocpp
 

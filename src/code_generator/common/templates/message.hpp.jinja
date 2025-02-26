@@ -16,14 +16,14 @@
 {% endif %}
 {% if needs_enums %}
 {% if namespace == 'v21' %}
-#include <ocpp/v201/ocpp_enums.hpp>
+#include <ocpp/v2/ocpp_enums.hpp>
 {% else %}
 #include <ocpp/{{namespace}}/ocpp_enums.hpp>
 {% endif %}
 {% endif %}
 {% if namespace == 'v21' %}
-#include <ocpp/v201/ocpp_types.hpp>
-using namespace ocpp::v201;
+#include <ocpp/v2/ocpp_types.hpp>
+using namespace ocpp::v2;
 {% else %}
 #include <ocpp/{{namespace}}/ocpp_types.hpp>
 {% endif %}

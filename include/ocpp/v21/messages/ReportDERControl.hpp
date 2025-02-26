@@ -1,19 +1,20 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
+// Copyright 2020 - 2025 Pionix GmbH and Contributors to EVerest
 // This code is generated using the generator in 'src/code_generator/common`, please do not edit manually
 
-#ifndef OCPP_V201_REPORTDERCONTROL_HPP
-#define OCPP_V201_REPORTDERCONTROL_HPP
+#ifndef OCPP_V21_REPORTDERCONTROL_HPP
+#define OCPP_V21_REPORTDERCONTROL_HPP
 
 #include <nlohmann/json_fwd.hpp>
 #include <optional>
 
-#include <ocpp/common/types.hpp>
 #include <ocpp/v2/ocpp_enums.hpp>
 #include <ocpp/v2/ocpp_types.hpp>
+using namespace ocpp::v2;
+#include <ocpp/common/types.hpp>
 
 namespace ocpp {
-namespace v2 {
+namespace v21 {
 
 /// \brief Contains a OCPP ReportDERControl message
 struct ReportDERControlRequest : public ocpp::Message {
@@ -63,7 +64,7 @@ void from_json(const json& j, ReportDERControlResponse& k);
 /// \returns an output stream with the ReportDERControlResponse written to
 std::ostream& operator<<(std::ostream& os, const ReportDERControlResponse& k);
 
-} // namespace v2
+} // namespace v21
 } // namespace ocpp
 
-#endif // OCPP_V201_REPORTDERCONTROL_HPP
+#endif // OCPP_V21_REPORTDERCONTROL_HPP

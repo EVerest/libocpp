@@ -1,19 +1,20 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
+// Copyright 2020 - 2025 Pionix GmbH and Contributors to EVerest
 // This code is generated using the generator in 'src/code_generator/common`, please do not edit manually
 
-#ifndef OCPP_V201_GETCERTIFICATECHAINSTATUS_HPP
-#define OCPP_V201_GETCERTIFICATECHAINSTATUS_HPP
+#ifndef OCPP_V21_GETCERTIFICATECHAINSTATUS_HPP
+#define OCPP_V21_GETCERTIFICATECHAINSTATUS_HPP
 
 #include <nlohmann/json_fwd.hpp>
 #include <optional>
 
-#include <ocpp/common/types.hpp>
 #include <ocpp/v2/ocpp_enums.hpp>
 #include <ocpp/v2/ocpp_types.hpp>
+using namespace ocpp::v2;
+#include <ocpp/common/types.hpp>
 
 namespace ocpp {
-namespace v2 {
+namespace v21 {
 
 /// \brief Contains a OCPP GetCertificateChainStatus message
 struct GetCertificateChainStatusRequest : public ocpp::Message {
@@ -55,7 +56,7 @@ void from_json(const json& j, GetCertificateChainStatusResponse& k);
 /// stream \p os \returns an output stream with the GetCertificateChainStatusResponse written to
 std::ostream& operator<<(std::ostream& os, const GetCertificateChainStatusResponse& k);
 
-} // namespace v2
+} // namespace v21
 } // namespace ocpp
 
-#endif // OCPP_V201_GETCERTIFICATECHAINSTATUS_HPP
+#endif // OCPP_V21_GETCERTIFICATECHAINSTATUS_HPP

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
+// Copyright 2020 - 2025 Pionix GmbH and Contributors to EVerest
 // This code is generated using the generator in 'src/code_generator/common`, please do not edit manually
 
-#include <ocpp/v2/messages/GetCertificateChainStatus.hpp>
+#include <ocpp/v21/messages/GetCertificateChainStatus.hpp>
 
 #include <optional>
 #include <ostream>
@@ -11,7 +11,7 @@
 using json = nlohmann::json;
 
 namespace ocpp {
-namespace v2 {
+namespace v21 {
 
 std::string GetCertificateChainStatusRequest::get_type() const {
     return "GetCertificateChainStatus";
@@ -81,5 +81,5 @@ std::ostream& operator<<(std::ostream& os, const GetCertificateChainStatusRespon
     return os;
 }
 
-} // namespace v2
+} // namespace v21
 } // namespace ocpp
