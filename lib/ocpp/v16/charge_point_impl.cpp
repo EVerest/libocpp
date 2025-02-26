@@ -4615,7 +4615,9 @@ void ChargePointImpl::on_reservation_start(int32_t connector) {
 }
 
 void ChargePointImpl::on_reservation_end(int32_t connector) {
-    this->status->submit_event(connector, FSMEvent::BecomeAvailable, ocpp::DateTime());
+    if (this->status->get_state(connector) == ChargePointStatus::Reserved) {
+        this->status->submit_event(connector, FSMEvent::BecomeAvailable, ocpp::DateTime());
+    }
 }
 
 void ChargePointImpl::on_enabled(int32_t connector) {
