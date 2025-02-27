@@ -371,6 +371,12 @@ enum class IdentifierType {
     TransactionId ///< \brief Identifier is the transaction id.
 };
 
+struct SessionCostMessage {
+    std::optional<std::string> identifier_id;
+    std::optional<IdentifierType> identifier_type;
+    std::vector<DisplayMessageContent> message;
+};
+
 struct DisplayMessage {
     std::optional<int32_t> id;
     std::optional<v2::MessagePriorityEnum> priority;
