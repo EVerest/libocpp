@@ -573,6 +573,12 @@ public:
         const std::function<DataTransferResponse(const RunningCost& session_cost, const uint32_t number_of_decimals)>&
             session_cost_callback);
 
+    /// \brief Registers a callback function for the session cost text message (California Pricing Requirements).
+    /// \param session_cost_message_callback    The callback
+    /// \ingroup ocpp16_callbacks
+    void register_session_cost_message_callback(
+        const std::function<DataTransferResponse(const SessionCostMessage& message)>& session_cost_message_callback);
+
     /// \brief Register a callback function for display messages (used in California Pricing Requirements)
     /// \param set_display_message_callback The callback.
     /// \ingroup ocpp16_callbacks

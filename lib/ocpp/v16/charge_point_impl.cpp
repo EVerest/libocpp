@@ -3159,9 +3159,8 @@ DataTransferResponse ChargePointImpl::handle_set_user_price(const std::optional<
         return response;
     }
 
-    // Find transaction with given id tag
-    std::vector<DisplayMessage> messages;
-    DisplayMessage message;
+    SessionCostMessage session_cost_message;
+    std::vector<DisplayMessageContent> messages;
     const auto t = this->transaction_handler->get_transaction_from_id_tag(id_token.value());
     std::string identifier_id;
     IdentifierType identifier_type;
@@ -3174,31 +3173,28 @@ DataTransferResponse ChargePointImpl::handle_set_user_price(const std::optional<
         identifier_type = IdentifierType::SessionId;
     }
 
-    message.identifier_id = identifier_id;
-    message.identifier_type = identifier_type;
+    session_cost_message.identifier_id = identifier_id;
+    session_cost_message.identifier_type = identifier_type;
 
     if (data.contains("priceText")) {
-        message.message.message = data.at("priceText");
+        DisplayMessageContent m;
+        m.message = data.at("priceText");
         if (this->configuration->getLanguage().has_value()) {
-            message.message.language = this->configuration->getLanguage().value();
+            m.language = this->configuration->getLanguage().value();
         }
+        messages.push_back(m);
     }
-
-    messages.push_back(message);
-
     if (this->configuration->getCustomMultiLanguageMessagesEnabled() && data.contains("priceTextExtra") &&
         data.at("priceTextExtra").is_array()) {
         for (const json& j : data.at("priceTextExtra")) {
-            DisplayMessage display_message;
-            display_message.identifier_id = identifier_id;
-            display_message.identifier_type = identifier_type;
-            display_message.message = j;
+            DisplayMessageContent message;
+            message.message = j;
 
-            messages.push_back(display_message);
+            messages.push_back(message);
         }
     }
 
-    response = this->set_display_message_callback(messages);
+    response = this->session_cost_message_callback(session_cost_message);
     return response;
 }
 
