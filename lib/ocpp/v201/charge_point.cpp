@@ -1111,7 +1111,93 @@ void ChargePoint::handle_message(const EnhancedMessage<v201::MessageType>& messa
         case MessageType::CostUpdated:
             this->handle_costupdated_req(json_message);
             break;
-        default:
+        case MessageType::Authorize:
+        case MessageType::AuthorizeResponse:
+        case MessageType::BootNotification:
+        case MessageType::CancelReservationResponse:
+        case MessageType::CertificateSignedResponse:
+        case MessageType::ChangeAvailabilityResponse:
+        case MessageType::ClearCacheResponse:
+        case MessageType::ClearChargingProfileResponse:
+        case MessageType::ClearDisplayMessageResponse:
+        case MessageType::ClearedChargingLimit:
+        case MessageType::ClearedChargingLimitResponse:
+        case MessageType::ClearVariableMonitoringResponse:
+        case MessageType::CostUpdatedResponse:
+        case MessageType::CustomerInformationResponse:
+        case MessageType::DataTransferResponse:
+        case MessageType::DeleteCertificateResponse:
+        case MessageType::FirmwareStatusNotification:
+        case MessageType::FirmwareStatusNotificationResponse:
+        case MessageType::Get15118EVCertificate:
+        case MessageType::Get15118EVCertificateResponse:
+        case MessageType::GetBaseReportResponse:
+        case MessageType::GetCertificateStatus:
+        case MessageType::GetCertificateStatusResponse:
+        case MessageType::GetChargingProfilesResponse:
+        case MessageType::GetCompositeScheduleResponse:
+        case MessageType::GetDisplayMessagesResponse:
+        case MessageType::GetInstalledCertificateIdsResponse:
+        case MessageType::GetLocalListVersionResponse:
+        case MessageType::GetLogResponse:
+        case MessageType::GetMonitoringReportResponse:
+        case MessageType::GetReportResponse:
+        case MessageType::GetTransactionStatusResponse:
+        case MessageType::GetVariablesResponse:
+        case MessageType::Heartbeat:
+        case MessageType::InstallCertificateResponse:
+        case MessageType::LogStatusNotification:
+        case MessageType::LogStatusNotificationResponse:
+        case MessageType::MeterValues:
+        case MessageType::MeterValuesResponse:
+        case MessageType::NotifyChargingLimit:
+        case MessageType::NotifyChargingLimitResponse:
+        case MessageType::NotifyCustomerInformation:
+        case MessageType::NotifyCustomerInformationResponse:
+        case MessageType::NotifyDisplayMessages:
+        case MessageType::NotifyDisplayMessagesResponse:
+        case MessageType::NotifyEVChargingNeeds:
+        case MessageType::NotifyEVChargingNeedsResponse:
+        case MessageType::NotifyEVChargingSchedule:
+        case MessageType::NotifyEVChargingScheduleResponse:
+        case MessageType::NotifyEvent:
+        case MessageType::NotifyEventResponse:
+        case MessageType::NotifyMonitoringReport:
+        case MessageType::NotifyMonitoringReportResponse:
+        case MessageType::NotifyReport:
+        case MessageType::NotifyReportResponse:
+        case MessageType::PublishFirmware:
+        case MessageType::PublishFirmwareResponse:
+        case MessageType::PublishFirmwareStatusNotification:
+        case MessageType::PublishFirmwareStatusNotificationResponse:
+        case MessageType::ReportChargingProfiles:
+        case MessageType::ReportChargingProfilesResponse:
+        case MessageType::RequestStartTransactionResponse:
+        case MessageType::RequestStopTransactionResponse:
+        case MessageType::ReservationStatusUpdate:
+        case MessageType::ReservationStatusUpdateResponse:
+        case MessageType::ReserveNowResponse:
+        case MessageType::ResetResponse:
+        case MessageType::SecurityEventNotification:
+        case MessageType::SecurityEventNotificationResponse:
+        case MessageType::SendLocalListResponse:
+        case MessageType::SetChargingProfileResponse:
+        case MessageType::SetDisplayMessageResponse:
+        case MessageType::SetMonitoringBaseResponse:
+        case MessageType::SetMonitoringLevelResponse:
+        case MessageType::SetNetworkProfileResponse:
+        case MessageType::SetVariableMonitoringResponse:
+        case MessageType::SetVariablesResponse:
+        case MessageType::SignCertificate:
+        case MessageType::StatusNotification:
+        case MessageType::StatusNotificationResponse:
+        case MessageType::TransactionEvent:
+        case MessageType::TriggerMessageResponse:
+        case MessageType::UnlockConnectorResponse:
+        case MessageType::UnpublishFirmware:
+        case MessageType::UnpublishFirmwareResponse:
+        case MessageType::UpdateFirmwareResponse:
+        case MessageType::InternalError:
             send_not_implemented_error(message.uniqueId, message.messageTypeId);
             break;
         }
@@ -2321,7 +2407,8 @@ void ChargePoint::handle_trigger_message(Call<TriggerMessageRequest> call) {
         // PublishFirmwareStatusNotification
         // SignCombinedCertificate
 
-    default:
+    case MessageTriggerEnum::PublishFirmwareStatusNotification:
+    case MessageTriggerEnum::SignCombinedCertificate:
         response.status = TriggerMessageStatusEnum::NotImplemented;
         break;
     }
@@ -2410,17 +2497,14 @@ void ChargePoint::handle_trigger_message(Call<TriggerMessageRequest> call) {
 
     case MessageTriggerEnum::FirmwareStatusNotification: {
         FirmwareStatusNotificationRequest request;
-        switch (this->firmware_status) {
-        case FirmwareStatusEnum::Idle:
-        case FirmwareStatusEnum::Installed: // L01.FR.25
-            request.status = FirmwareStatusEnum::Idle;
+        if (this->firmware_status == FirmwareStatusEnum::Idle or this->firmware_status == FirmwareStatusEnum::Installed) {
+            // L01.FR.25
             // do not set requestId when idle: L01.FR.20
-            break;
-
-        default: // So not Idle or Installed                   // L01.FR.26
+            request.status = FirmwareStatusEnum::Idle;
+        } else { // L01.FR.26
+            // So not Idle or Installed
             request.status = this->firmware_status;
             request.requestId = this->firmware_status_id;
-            break;
         }
 
         ocpp::Call<FirmwareStatusNotificationRequest> call(request);
@@ -2435,7 +2519,8 @@ void ChargePoint::handle_trigger_message(Call<TriggerMessageRequest> call) {
         this->security->sign_certificate_req(ocpp::CertificateSigningUseEnum::V2GCertificate, true);
     } break;
 
-    default:
+    case MessageTriggerEnum::PublishFirmwareStatusNotification:
+    case MessageTriggerEnum::SignCombinedCertificate:
         EVLOG_error << "Sent a TriggerMessageResponse::Accepted while not following up with a message";
         break;
     }
@@ -2859,7 +2944,8 @@ bool ChargePoint::should_allow_certificate_install(InstallCertificateUseEnum cer
         return this->device_model
             ->get_optional_value<bool>(ControllerComponentVariables::AllowMFRootCertInstallWithUnsecureConnection)
             .value_or(true);
-    default:
+    case InstallCertificateUseEnum::MORootCertificate:
+    case InstallCertificateUseEnum::V2GRootCertificate:
         return true;
     }
 }

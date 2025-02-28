@@ -178,7 +178,8 @@ bool validate_value(const VariableCharacteristics& characteristics, const std::s
         const auto values_list = ocpp::split_string(characteristics.valuesList.value().get(), ',');
         return std::find(values_list.begin(), values_list.end(), value) != values_list.end();
     }
-    default: // same validation for MemberList or SequenceList
+    case DataEnum::SequenceList:
+    case DataEnum::MemberList:
         // MemberList: The (Actual) Variable value may be an (unordered) (sub-)set of the reported (CSV) valid
         // values list. SequenceList: The (Actual) Variable value may be an ordered (priority, etc) (sub-)set of the
         // reported (CSV) valid values.
@@ -196,6 +197,7 @@ bool validate_value(const VariableCharacteristics& characteristics, const std::s
             return true;
         }
     }
+    return false;
 }
 
 bool include_in_summary_inventory(const ComponentVariable& cv, const VariableAttribute& attribute) {

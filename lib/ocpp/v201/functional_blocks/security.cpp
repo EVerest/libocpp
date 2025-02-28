@@ -31,14 +31,17 @@ Security::~Security() {
 
 void Security::handle_message(const EnhancedMessage<MessageType>& message) {
     const auto& json_message = message.message;
-    switch (message.messageType) {
-    case MessageType::CertificateSigned:
+    if (message.messageType == MessageType::CertificateSigned) {
         this->handle_certificate_signed_req(json_message);
-        break;
-    case MessageType::SignCertificateResponse:
+    } else if (message.messageType == MessageType::SignCertificateResponse) {
         this->handle_sign_certificate_response(json_message);
-        break;
-    default:
+    // } else if (message.messageType == MessageType::GetInstalledCertificateIds) {
+    //      this->handle_get_installed_certificate_ids_req(json_message);
+    // } else if (message.messageType == MessageType::InstallCertificate) {
+    //      this->handle_install_certificate_req(json_message);
+    // } else if (message.messageType == MessageType::DeleteCertificate) {
+    //      this->handle_delete_certificate_req(json_message);
+    } else {
         throw MessageTypeNotImplementedException(message.messageType);
     }
 }

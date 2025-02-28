@@ -926,7 +926,17 @@ std::optional<MeterValue> ChargePointImpl::get_latest_meter_value(int32_t connec
                 }
                 break;
             }
-            default:
+            case Measurand::Energy_Reactive_Export_Register:
+            case Measurand::Energy_Reactive_Import_Register:
+            case Measurand::Energy_Active_Export_Interval:
+            case Measurand::Energy_Active_Import_Interval:
+            case Measurand::Energy_Reactive_Export_Interval:
+            case Measurand::Energy_Reactive_Import_Interval:
+            case Measurand::Power_Active_Export:
+            case Measurand::Power_Reactive_Export:
+            case Measurand::Power_Reactive_Import:
+            case Measurand::Power_Factor:
+            case Measurand::Current_Export:
                 break;
             }
             // only add if value is set
@@ -1108,7 +1118,6 @@ bool ChargePointImpl::start(const std::map<int, ChargePointStatus>& connector_st
     case BootReasonEnum::Triggered:
     case BootReasonEnum::Unknown:
     case BootReasonEnum::Watchdog:
-    default:
         this->securityEventNotification(CiString<50>(ocpp::security_events::STARTUP_OF_THE_DEVICE),
                                         std::optional<CiString<255>>("The Charge Point has booted"), true);
         break;
@@ -1252,7 +1261,8 @@ void ChargePointImpl::connected_callback() {
         // in Pending state this can happen when we reconnected while the BootNotification had not been yet accepted
         break;
     }
-    default:
+    case ChargePointConnectionState::Rejected:
+    case ChargePointConnectionState::Connected:
         EVLOG_error << "Connected but not in state 'Disconnected' or 'Booted'. This can happen when the CSMS does not "
                        "respond to the initial BootNotification.req at all or with a CALLERROR";
         break;
@@ -1500,7 +1510,54 @@ void ChargePointImpl::handle_message(const EnhancedMessage<v16::MessageType>& me
         this->handleHeartbeatResponse(json_message);
         break;
 
-    default:
+    case MessageType::Authorize:
+    case MessageType::BootNotification:
+    case MessageType::BootNotificationResponse:
+    case MessageType::CancelReservationResponse:
+    case MessageType::CertificateSignedResponse:
+    case MessageType::ChangeAvailabilityResponse:
+    case MessageType::ChangeConfigurationResponse:
+    case MessageType::ClearCacheResponse:
+    case MessageType::ClearChargingProfileResponse:
+    case MessageType::DeleteCertificateResponse:
+    case MessageType::DiagnosticsStatusNotification:
+    case MessageType::DiagnosticsStatusNotificationResponse:
+    case MessageType::ExtendedTriggerMessageResponse:
+    case MessageType::FirmwareStatusNotification:
+    case MessageType::FirmwareStatusNotificationResponse:
+    case MessageType::GetCompositeScheduleResponse:
+    case MessageType::GetConfigurationResponse:
+    case MessageType::GetDiagnosticsResponse:
+    case MessageType::GetInstalledCertificateIdsResponse:
+    case MessageType::GetLocalListVersionResponse:
+    case MessageType::GetLogResponse:
+    case MessageType::Heartbeat:
+    case MessageType::InstallCertificateResponse:
+    case MessageType::LogStatusNotification:
+    case MessageType::LogStatusNotificationResponse:
+    case MessageType::MeterValues:
+    case MessageType::MeterValuesResponse:
+    case MessageType::RemoteStartTransactionResponse:
+    case MessageType::RemoteStopTransactionResponse:
+    case MessageType::ReserveNowResponse:
+    case MessageType::ResetResponse:
+    case MessageType::SecurityEventNotification:
+    case MessageType::SecurityEventNotificationResponse:
+    case MessageType::SendLocalListResponse:
+    case MessageType::SetChargingProfileResponse:
+    case MessageType::SignCertificate:
+    case MessageType::SignCertificateResponse:
+    case MessageType::SignedFirmwareStatusNotification:
+    case MessageType::SignedFirmwareStatusNotificationResponse:
+    case MessageType::SignedUpdateFirmwareResponse:
+    case MessageType::StartTransaction:
+    case MessageType::StatusNotification:
+    case MessageType::StatusNotificationResponse:
+    case MessageType::StopTransaction:
+    case MessageType::TriggerMessageResponse:
+    case MessageType::UnlockConnectorResponse:
+    case MessageType::UpdateFirmwareResponse:
+    case MessageType::InternalError:
         // TODO(kai): not implemented error?
         break;
     }
@@ -1522,8 +1579,7 @@ void ChargePointImpl::handleBootNotificationResponse(ocpp::CallResult<BootNotifi
         boot_notification_retry_interval = call_result.msg.interval;
     }
 
-    switch (call_result.msg.status) {
-    case RegistrationStatus::Accepted: {
+    if (call_result.msg.status == RegistrationStatus::Accepted) {
         this->connection_state = ChargePointConnectionState::Booted;
         this->message_queue->set_registration_status_accepted();
 
@@ -1558,14 +1614,11 @@ void ChargePointImpl::handleBootNotificationResponse(ocpp::CallResult<BootNotifi
             this->ocsp_request_timer->timeout(INITIAL_CERTIFICATE_REQUESTS_DELAY);
         }
 
-        break;
-    }
-    case RegistrationStatus::Pending:
+    } else if (call_result.msg.status == RegistrationStatus::Pending) {
         this->connection_state = ChargePointConnectionState::Pending;
         EVLOG_info << "BootNotification response is pending.";
         this->boot_notification_timer->timeout(std::chrono::seconds(boot_notification_retry_interval));
-        break;
-    default:
+    } else {
         this->connection_state = ChargePointConnectionState::Rejected;
         // In this state we are not allowed to send any messages to the central system, even when
         // requested. The first time we are allowed to send a message (a BootNotification) is
@@ -1574,8 +1627,6 @@ void ChargePointImpl::handleBootNotificationResponse(ocpp::CallResult<BootNotifi
                    << "s";
 
         this->boot_notification_timer->timeout(std::chrono::seconds(boot_notification_retry_interval));
-
-        break;
     }
 
     if (this->boot_notification_response_callback != nullptr) {
@@ -3519,7 +3570,11 @@ ocpp::v201::AuthorizeResponse ChargePointImpl::data_transfer_pnc_authorize(
                     authorize_response.certificateStatus =
                         ocpp::v201::AuthorizeCertificateStatusEnum::CertificateExpired;
                     break;
-                default:
+                case CertificateValidationResult::InvalidSignature:
+                case CertificateValidationResult::IssuerNotFound:
+                case CertificateValidationResult::InvalidLeafSignature:
+                case CertificateValidationResult::InvalidChain:
+                case CertificateValidationResult::Unknown:
                     authorize_response.idTokenInfo.status = ocpp::v201::AuthorizationStatusEnum::Unknown;
                     break;
                 }
