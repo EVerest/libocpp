@@ -158,7 +158,7 @@ ocpp::v2::Authorization::validate_token(const IdToken id_token, const std::optio
     AuthorizeResponse response;
 
     // C03.FR.01 && C05.FR.01: We SHALL NOT send an authorize reqeust for IdTokenType Central
-    if (id_token.type == IdTokenEnum::Central or
+    if (id_token.type == IdTokenEnumStringType::Central or
         !this->context.device_model.get_optional_value<bool>(ControllerComponentVariables::AuthCtrlrEnabled)
              .value_or(true)) {
         response.idTokenInfo.status = AuthorizationStatusEnum::Accepted;
@@ -491,7 +491,8 @@ void ocpp::v2::Authorization::handle_send_local_authorization_list_req(Call<Send
     SendLocalListResponse response;
 
     if (this->context.device_model.get_optional_value<bool>(ControllerComponentVariables::LocalAuthListCtrlrEnabled)
-            .value_or(false) && this->context.device_model.get_optional_value<bool>(ControllerComponentVariables::LocalAuthListCtrlrEnabled)) {
+            .value_or(false) &&
+        this->context.device_model.get_optional_value<bool>(ControllerComponentVariables::LocalAuthListCtrlrEnabled)) {
         response.status = apply_local_authorization_list(call.msg);
     } else {
         response.status = SendLocalListStatusEnum::Failed;

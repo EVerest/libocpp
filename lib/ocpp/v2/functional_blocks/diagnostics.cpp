@@ -40,7 +40,7 @@ Diagnostics::Diagnostics(const FunctionalBlockContext& context, AuthorizationInt
     get_customer_information_callback(get_customer_information_callback),
     clear_customer_information_callback(clear_customer_information_callback),
     is_monitoring_available(
-        this->device_model.get_optional_value<bool>(ControllerComponentVariables::MonitoringCtrlrAvailable)
+        this->context.device_model.get_optional_value<bool>(ControllerComponentVariables::MonitoringCtrlrAvailable)
             .value_or(false)) {
 }
 

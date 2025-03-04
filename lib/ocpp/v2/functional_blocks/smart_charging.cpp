@@ -266,6 +266,10 @@ ProfileValidationResultEnum SmartCharging::conform_and_validate_profile(Charging
         // invalid. K01.FR.05 is the only thing that seems relevant.
         result = ProfileValidationResultEnum::Valid;
         break;
+    case ChargingProfilePurposeEnum::PriorityCharging:
+    case ChargingProfilePurposeEnum::LocalGeneration:
+        result = ProfileValidationResultEnum::InvalidProfileType;
+        break;
     }
 
     return result;

@@ -156,6 +156,10 @@ std::vector<DateTime> calculate_start(const DateTime& in_now, const DateTime& in
         }
         start_times.push_back(start);
         break;
+    case ChargingProfileKindEnum::Dynamic:
+        // FIXME: check if other requirements for dynamic exist
+        start_times.push_back(floor_seconds(start));
+        break;
     }
     return start_times;
 }

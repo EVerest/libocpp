@@ -55,7 +55,7 @@ private: // Members
     const FunctionalBlockContext& context;
 
     TransactionInterface& transaction;
-    SmartChargingInterface* smart_charging;
+    SmartChargingInterface& smart_charging;
     MeterValuesInterface& meter_values;
     AvailabilityInterface& availability;
     FirmwareUpdateInterface& firmware_update;

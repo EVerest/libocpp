@@ -25,6 +25,7 @@
 #include <evse_mock.hpp>
 #include <evse_security_mock.hpp>
 #include <gmock/gmock.h>
+#include <ocpp/v2/functional_blocks/functional_block_context.hpp>
 
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -151,6 +152,9 @@ public:
     MockMessageDispatcher mock_dispatcher;
     DeviceModel* device_model;
     ::testing::NiceMock<ConnectivityManagerMock> connectivity_manager;
+    ocpp::EvseSecurityMock evse_security;
+    ComponentStateManagerMock component_state_manager;
+    std::unique_ptr<FunctionalBlockContext> functional_block_context;
     std::unique_ptr<DatabaseHandlerFake> database_handler;
     MockFunction<void()> set_charging_profiles_callback_mock;
     std::unique_ptr<TestSmartCharging> handler;

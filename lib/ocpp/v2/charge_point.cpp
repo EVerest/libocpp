@@ -761,6 +761,60 @@ void ChargePoint::handle_message(const EnhancedMessage<v2::MessageType>& message
         case MessageType::UnpublishFirmware:
         case MessageType::UnpublishFirmwareResponse:
         case MessageType::UpdateFirmwareResponse:
+        case MessageType::AdjustPeriodicEventStream:
+        case MessageType::AdjustPeriodicEventStreamResponse:
+        case MessageType::AFRRSignal:
+        case MessageType::AFRRSignalResponse:
+        case MessageType::BatterySwap:
+        case MessageType::BatterySwapResponse:
+        case MessageType::ChangeTransactionTariff:
+        case MessageType::ChangeTransactionTariffResponse:
+        case MessageType::ClearDERControl:
+        case MessageType::ClearDERControlResponse:
+        case MessageType::ClearTariffs:
+        case MessageType::ClearTariffsResponse:
+        case MessageType::ClosePeriodicEventStream:
+        case MessageType::ClosePeriodicEventStreamResponse:
+        case MessageType::GetCRL:
+        case MessageType::GetCRLResponse:
+        case MessageType::GetDERControl:
+        case MessageType::GetDERControlResponse:
+        case MessageType::GetPeriodicEventStream:
+        case MessageType::GetPeriodicEventStreamResponse:
+        case MessageType::GetTariffs:
+        case MessageType::GetTariffsResponse:
+        case MessageType::NotifyAllowedEnergyTransfer:
+        case MessageType::NotifyAllowedEnergyTransferResponse:
+        case MessageType::NotifyCRL:
+        case MessageType::NotifyCRLResponse:
+        case MessageType::NotifyDERAlarm:
+        case MessageType::NotifyDERAlarmResponse:
+        case MessageType::NotifyDERStartStop:
+        case MessageType::NotifyDERStartStopResponse:
+        case MessageType::NotifyPeriodicEventStream:
+        case MessageType::NotifyPeriodicEventStreamResponse:
+        case MessageType::NotifyPriorityCharging:
+        case MessageType::NotifyPriorityChargingResponse:
+        case MessageType::NotifyQRCodeScanned:
+        case MessageType::NotifyQRCodeScannedResponse:
+        case MessageType::NotifySettlement:
+        case MessageType::NotifySettlementResponse:
+        case MessageType::OpenPeriodicEventStream:
+        case MessageType::OpenPeriodicEventStreamResponse:
+        case MessageType::PullDynamicScheduleUpdate:
+        case MessageType::PullDynamicScheduleUpdateResponse:
+        case MessageType::RequestBatterySwap:
+        case MessageType::RequestBatterySwapResponse:
+        case MessageType::SetDefaultTariff:
+        case MessageType::SetDefaultTariffResponse:
+        case MessageType::SetDERControl:
+        case MessageType::SetDERControlResponse:
+        case MessageType::UpdateDynamicSchedule:
+        case MessageType::UpdateDynamicScheduleResponse:
+        case MessageType::UsePriorityCharging:
+        case MessageType::UsePriorityChargingResponse:
+        case MessageType::VatNumberValidation:
+        case MessageType::VatNumberValidationResponse:
         case MessageType::InternalError:
             send_not_implemented_error(message.uniqueId, message.messageTypeId);
             break;

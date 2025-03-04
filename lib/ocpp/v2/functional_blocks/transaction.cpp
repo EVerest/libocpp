@@ -137,9 +137,7 @@ void TransactionBlock::on_transaction_finished(const int32_t evse_id, const Date
                                 !this->context.connectivity_manager.is_websocket_connected(), std::nullopt);
 
     // K02.FR.05 The transaction is over, so delete the TxProfiles associated with the transaction.
-    if (smart_charging != nullptr) {
-        smart_charging->delete_transaction_tx_profiles(enhanced_transaction->get_transaction().transactionId);
-    }
+    smart_charging.delete_transaction_tx_profiles(enhanced_transaction->get_transaction().transactionId);
     evse_handle.release_transaction();
 
     bool send_reset = false;
@@ -276,10 +274,7 @@ void TransactionBlock::handle_transaction_event_response(const EnhancedMessage<M
         this->transaction_event_response_callback.value()(original_msg, call_result.msg);
     }
 
-    if (tariff_and_cost != nullptr) {
-        this->tariff_and_cost->handle_cost_and_tariff(call_result.msg, original_msg,
-                                                      message.message[CALLRESULT_PAYLOAD]);
-    }
+    this->tariff_and_cost.handle_cost_and_tariff(call_result.msg, original_msg, message.message[CALLRESULT_PAYLOAD]);
 
     if (original_msg.eventType == TransactionEventEnum::Ended) {
         // nothing to do for TransactionEventEnum::Ended

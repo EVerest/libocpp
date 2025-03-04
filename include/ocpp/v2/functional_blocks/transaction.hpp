@@ -117,8 +117,8 @@ private: // Members
     MessageQueue<v2::MessageType>& message_queue;
     AuthorizationInterface& authorization;
     AvailabilityInterface& availability;
-    SmartChargingInterface* smart_charging;
-    TariffAndCostInterface* tariff_and_cost;
+    SmartChargingInterface& smart_charging;
+    TariffAndCostInterface& tariff_and_cost;
     StopTransactionCallback stop_transaction_callback;
     PauseChargingCallback pause_charging_callback;
     std::optional<TransactionEventCallback> transaction_event_callback;
