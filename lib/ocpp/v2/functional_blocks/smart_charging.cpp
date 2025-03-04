@@ -268,6 +268,7 @@ ProfileValidationResultEnum SmartCharging::conform_and_validate_profile(Charging
         break;
     case ChargingProfilePurposeEnum::PriorityCharging:
     case ChargingProfilePurposeEnum::LocalGeneration:
+        // FIXME: handle missing cases
         result = ProfileValidationResultEnum::InvalidProfileType;
         break;
     }

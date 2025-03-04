@@ -44,7 +44,6 @@ Note: OCPP requires EVSE and Connector numbering starting from 1 counting upward
 
 Note: There should be no duplicate components or variables in the component config files.
 
-
 ## Required variables
 
 There are some required Variables, which can be found in the OCPP spec.  

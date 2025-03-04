@@ -491,8 +491,7 @@ void ocpp::v2::Authorization::handle_send_local_authorization_list_req(Call<Send
     SendLocalListResponse response;
 
     if (this->context.device_model.get_optional_value<bool>(ControllerComponentVariables::LocalAuthListCtrlrEnabled)
-            .value_or(false) &&
-        this->context.device_model.get_optional_value<bool>(ControllerComponentVariables::LocalAuthListCtrlrEnabled)) {
+            .value_or(false)) {
         response.status = apply_local_authorization_list(call.msg);
     } else {
         response.status = SendLocalListStatusEnum::Failed;
