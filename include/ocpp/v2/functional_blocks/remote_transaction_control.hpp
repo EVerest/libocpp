@@ -5,13 +5,8 @@
 
 #include <ocpp/v2/message_handler.hpp>
 
-#include <ocpp/v2/message_dispatcher.hpp>
-
 namespace ocpp::v2 {
-class ConnectivityManagerInterface;
-class DeviceModel;
-class EvseManagerInterface;
-class ComponentStateManagerInterface;
+struct FunctionalBlockContext;
 class EvseInterface;
 
 class TransactionInterface;
@@ -44,10 +39,8 @@ public:
 
 class RemoteTransactionControl : public RemoteTransactionControlInterface {
 public:
-    RemoteTransactionControl(MessageDispatcherInterface<MessageType>& message_dispatcher, DeviceModel& device_model,
-                             ConnectivityManagerInterface& connectivity_manager, EvseManagerInterface& evse_manager,
-                             ComponentStateManagerInterface& component_state_manager, TransactionInterface& transaction,
-                             SmartChargingInterface* smart_charging, MeterValuesInterface& meter_values,
+    RemoteTransactionControl(const FunctionalBlockContext& functional_block_context, TransactionInterface& transaction,
+                             SmartChargingInterface& smart_charging, MeterValuesInterface& meter_values,
                              AvailabilityInterface& availability, FirmwareUpdateInterface& firmware_update,
                              SecurityInterface& security, ReservationInterface* reservation,
                              ProvisioningInterface& provisioning, UnlockConnectorCallback unlock_connector_callback,
@@ -59,11 +52,7 @@ public:
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
 
 private: // Members
-    MessageDispatcherInterface<MessageType>& message_dispatcher;
-    DeviceModel& device_model;
-    ConnectivityManagerInterface& connectivity_manager;
-    EvseManagerInterface& evse_manager;
-    ComponentStateManagerInterface& component_state_manager;
+    const FunctionalBlockContext& context;
 
     TransactionInterface& transaction;
     SmartChargingInterface* smart_charging;

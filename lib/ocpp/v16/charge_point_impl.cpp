@@ -926,7 +926,17 @@ std::optional<MeterValue> ChargePointImpl::get_latest_meter_value(int32_t connec
                 }
                 break;
             }
-            default:
+            case Measurand::Energy_Reactive_Export_Register:
+            case Measurand::Energy_Reactive_Import_Register:
+            case Measurand::Energy_Active_Export_Interval:
+            case Measurand::Energy_Active_Import_Interval:
+            case Measurand::Energy_Reactive_Export_Interval:
+            case Measurand::Energy_Reactive_Import_Interval:
+            case Measurand::Power_Active_Export:
+            case Measurand::Power_Reactive_Export:
+            case Measurand::Power_Reactive_Import:
+            case Measurand::Power_Factor:
+            case Measurand::Current_Export:
                 break;
             }
             // only add if value is set
@@ -1108,7 +1118,6 @@ bool ChargePointImpl::start(const std::map<int, ChargePointStatus>& connector_st
     case BootReasonEnum::Triggered:
     case BootReasonEnum::Unknown:
     case BootReasonEnum::Watchdog:
-    default:
         this->securityEventNotification(CiString<50>(ocpp::security_events::STARTUP_OF_THE_DEVICE),
                                         std::optional<CiString<255>>("The Charge Point has booted"), true);
         break;
@@ -1252,7 +1261,8 @@ void ChargePointImpl::connected_callback() {
         // in Pending state this can happen when we reconnected while the BootNotification had not been yet accepted
         break;
     }
-    default:
+    case ChargePointConnectionState::Rejected:
+    case ChargePointConnectionState::Connected:
         EVLOG_error << "Connected but not in state 'Disconnected' or 'Booted'. This can happen when the CSMS does not "
                        "respond to the initial BootNotification.req at all or with a CALLERROR";
         break;
@@ -1356,18 +1366,24 @@ void ChargePointImpl::message_callback(const std::string& message) {
         }
     } catch (json::exception& e) {
         EVLOG_error << "JSON exception during handling of message: " << e.what();
+        this->securityEventNotification(ocpp::security_events::INVALIDMESSAGES, std::optional<CiString<255>>(message),
+                                        true);
+        if (enhanced_message.messageTypeId != MessageTypeId::CALL) {
+            return; // CALLERROR shall only follow on a CALL message
+        }
         if (json_message.is_array() && json_message.size() > MESSAGE_ID) {
             auto call_error = CallError(enhanced_message.uniqueId, "FormationViolation", e.what(), json({}, true));
             this->message_dispatcher->dispatch_call_error(call_error);
-            this->securityEventNotification(ocpp::security_events::INVALIDMESSAGES,
-                                            std::optional<CiString<255>>(message), true);
         }
     } catch (const EnumConversionException& e) {
         EVLOG_error << "EnumConversionException during handling of message: " << e.what();
-        auto call_error = CallError(enhanced_message.uniqueId, "FormationViolation", e.what(), json({}, true));
-        this->message_dispatcher->dispatch_call_error(call_error);
         this->securityEventNotification(ocpp::security_events::INVALIDMESSAGES, std::optional<CiString<255>>(message),
                                         true);
+        if (enhanced_message.messageTypeId != MessageTypeId::CALL) {
+            return; // CALLERROR shall only follow on a CALL message
+        }
+        auto call_error = CallError(enhanced_message.uniqueId, "FormationViolation", e.what(), json({}, true));
+        this->message_dispatcher->dispatch_call_error(call_error);
     }
 }
 
@@ -1500,7 +1516,54 @@ void ChargePointImpl::handle_message(const EnhancedMessage<v16::MessageType>& me
         this->handleHeartbeatResponse(json_message);
         break;
 
-    default:
+    case MessageType::Authorize:
+    case MessageType::BootNotification:
+    case MessageType::BootNotificationResponse:
+    case MessageType::CancelReservationResponse:
+    case MessageType::CertificateSignedResponse:
+    case MessageType::ChangeAvailabilityResponse:
+    case MessageType::ChangeConfigurationResponse:
+    case MessageType::ClearCacheResponse:
+    case MessageType::ClearChargingProfileResponse:
+    case MessageType::DeleteCertificateResponse:
+    case MessageType::DiagnosticsStatusNotification:
+    case MessageType::DiagnosticsStatusNotificationResponse:
+    case MessageType::ExtendedTriggerMessageResponse:
+    case MessageType::FirmwareStatusNotification:
+    case MessageType::FirmwareStatusNotificationResponse:
+    case MessageType::GetCompositeScheduleResponse:
+    case MessageType::GetConfigurationResponse:
+    case MessageType::GetDiagnosticsResponse:
+    case MessageType::GetInstalledCertificateIdsResponse:
+    case MessageType::GetLocalListVersionResponse:
+    case MessageType::GetLogResponse:
+    case MessageType::Heartbeat:
+    case MessageType::InstallCertificateResponse:
+    case MessageType::LogStatusNotification:
+    case MessageType::LogStatusNotificationResponse:
+    case MessageType::MeterValues:
+    case MessageType::MeterValuesResponse:
+    case MessageType::RemoteStartTransactionResponse:
+    case MessageType::RemoteStopTransactionResponse:
+    case MessageType::ReserveNowResponse:
+    case MessageType::ResetResponse:
+    case MessageType::SecurityEventNotification:
+    case MessageType::SecurityEventNotificationResponse:
+    case MessageType::SendLocalListResponse:
+    case MessageType::SetChargingProfileResponse:
+    case MessageType::SignCertificate:
+    case MessageType::SignCertificateResponse:
+    case MessageType::SignedFirmwareStatusNotification:
+    case MessageType::SignedFirmwareStatusNotificationResponse:
+    case MessageType::SignedUpdateFirmwareResponse:
+    case MessageType::StartTransaction:
+    case MessageType::StatusNotification:
+    case MessageType::StatusNotificationResponse:
+    case MessageType::StopTransaction:
+    case MessageType::TriggerMessageResponse:
+    case MessageType::UnlockConnectorResponse:
+    case MessageType::UpdateFirmwareResponse:
+    case MessageType::InternalError:
         // TODO(kai): not implemented error?
         break;
     }
@@ -1522,8 +1585,7 @@ void ChargePointImpl::handleBootNotificationResponse(ocpp::CallResult<BootNotifi
         boot_notification_retry_interval = call_result.msg.interval;
     }
 
-    switch (call_result.msg.status) {
-    case RegistrationStatus::Accepted: {
+    if (call_result.msg.status == RegistrationStatus::Accepted) {
         this->connection_state = ChargePointConnectionState::Booted;
         this->message_queue->set_registration_status_accepted();
 
@@ -1558,14 +1620,11 @@ void ChargePointImpl::handleBootNotificationResponse(ocpp::CallResult<BootNotifi
             this->ocsp_request_timer->timeout(INITIAL_CERTIFICATE_REQUESTS_DELAY);
         }
 
-        break;
-    }
-    case RegistrationStatus::Pending:
+    } else if (call_result.msg.status == RegistrationStatus::Pending) {
         this->connection_state = ChargePointConnectionState::Pending;
         EVLOG_info << "BootNotification response is pending.";
         this->boot_notification_timer->timeout(std::chrono::seconds(boot_notification_retry_interval));
-        break;
-    default:
+    } else {
         this->connection_state = ChargePointConnectionState::Rejected;
         // In this state we are not allowed to send any messages to the central system, even when
         // requested. The first time we are allowed to send a message (a BootNotification) is
@@ -1574,8 +1633,6 @@ void ChargePointImpl::handleBootNotificationResponse(ocpp::CallResult<BootNotifi
                    << "s";
 
         this->boot_notification_timer->timeout(std::chrono::seconds(boot_notification_retry_interval));
-
-        break;
     }
 
     if (this->boot_notification_response_callback != nullptr) {
@@ -1636,10 +1693,6 @@ void ChargePointImpl::preprocess_change_availability_request(
 void ChargePointImpl::execute_connectors_availability_change(const std::vector<int32_t>& changed_connectors,
                                                              const ocpp::v16::AvailabilityType availability,
                                                              bool persist) {
-
-    // if evse availability changes, status event is only emitted for evse
-    bool evse_changed = std::find(changed_connectors.begin(), changed_connectors.end(), 0) != changed_connectors.end();
-
     for (const auto& connector : changed_connectors) {
         if (persist) {
             try {
@@ -1650,7 +1703,7 @@ void ChargePointImpl::execute_connectors_availability_change(const std::vector<i
             }
         }
         if (availability == AvailabilityType::Operative) {
-            if (connector == 0 or !evse_changed) {
+            if (connector == 0) {
                 this->status->submit_event(connector, FSMEvent::BecomeAvailable, ocpp::DateTime());
             }
 
@@ -1658,7 +1711,7 @@ void ChargePointImpl::execute_connectors_availability_change(const std::vector<i
                 this->enable_evse_callback(connector);
             }
         } else {
-            if (connector == 0 or !evse_changed) {
+            if (connector == 0) {
                 this->status->submit_event(connector, FSMEvent::ChangeAvailabilityToUnavailable, ocpp::DateTime());
             }
             if (this->disable_evse_callback != nullptr) {
@@ -2929,6 +2982,8 @@ void ChargePointImpl::handleReserveNowRequest(ocpp::Call<ReserveNowRequest> call
 
     if (this->status->get_state(call.msg.connectorId) == ChargePointStatus::Faulted) {
         response.status = ReservationStatus::Faulted;
+    } else if (this->status->get_state(call.msg.connectorId) == ChargePointStatus::Preparing) {
+        response.status = ReservationStatus::Occupied;
     } else if (this->reserve_now_callback != nullptr &&
                this->configuration->getSupportedFeatureProfiles().find("Reservation") != std::string::npos) {
         if (call.msg.connectorId != 0 || this->configuration->getReserveConnectorZeroSupported().value_or(false)) {
@@ -3518,7 +3573,11 @@ ocpp::v2::AuthorizeResponse ChargePointImpl::data_transfer_pnc_authorize(
                     authorize_response.idTokenInfo.status = ocpp::v2::AuthorizationStatusEnum::Expired;
                     authorize_response.certificateStatus = ocpp::v2::AuthorizeCertificateStatusEnum::CertificateExpired;
                     break;
-                default:
+                case CertificateValidationResult::InvalidSignature:
+                case CertificateValidationResult::IssuerNotFound:
+                case CertificateValidationResult::InvalidLeafSignature:
+                case CertificateValidationResult::InvalidChain:
+                case CertificateValidationResult::Unknown:
                     authorize_response.idTokenInfo.status = ocpp::v2::AuthorizationStatusEnum::Unknown;
                     break;
                 }
@@ -4554,7 +4613,7 @@ void ChargePointImpl::on_reservation_start(int32_t connector) {
 }
 
 void ChargePointImpl::on_reservation_end(int32_t connector) {
-    this->status->submit_event(connector, FSMEvent::BecomeAvailable, ocpp::DateTime());
+    this->status->submit_event(connector, FSMEvent::ReservationEnd, ocpp::DateTime());
 }
 
 void ChargePointImpl::on_enabled(int32_t connector) {

@@ -5,6 +5,7 @@
 #include "ocpp/common/types.hpp"
 #include "ocpp/v2/device_model.hpp"
 #include "ocpp/v2/device_model_storage_sqlite.hpp"
+#include "ocpp/v2/functional_blocks/functional_block_context.hpp"
 #include "ocpp/v2/functional_blocks/smart_charging.hpp"
 #include "ocpp/v2/init_device_model_db.hpp"
 #include "ocpp/v2/ocpp_types.hpp"
