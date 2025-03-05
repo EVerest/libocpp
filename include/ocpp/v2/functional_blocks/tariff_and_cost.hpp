@@ -18,6 +18,7 @@ struct CostUpdatedRequest;
 typedef std::function<void(const RunningCost& running_cost, const uint32_t number_of_decimals,
                            std::optional<std::string> currency_code)>
     SetRunningCostCallback;
+typedef std::function<void(const SessionCostMessage& message)> SessionCostMessageCallback;
 
 class TariffAndCostInterface : public MessageHandlerInterface {
 public:
@@ -38,7 +39,7 @@ class TariffAndCost : public TariffAndCostInterface {
 public:
     TariffAndCost(MessageDispatcherInterface<MessageType>& message_dispatcher, DeviceModel& device_model,
                   EvseManagerInterface& evse_manager, MeterValuesInterface& meter_values,
-                  std::optional<SetDisplayMessageCallback>& set_display_message_callback,
+                  std::optional<SessionCostMessageCallback>& session_cost_message_callback,
                   std::optional<SetRunningCostCallback>& set_running_cost_callback,
                   boost::asio::io_service& io_service);
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
@@ -52,7 +53,7 @@ private: // Members
     DeviceModel& device_model;
     EvseManagerInterface& evse_manager;
     MeterValuesInterface& meter_values;
-    std::optional<SetDisplayMessageCallback> set_display_message_callback;
+    std::optional<SessionCostMessageCallback> session_cost_message_callback;
     std::optional<SetRunningCostCallback> set_running_cost_callback;
     boost::asio::io_service& io_service;
 
