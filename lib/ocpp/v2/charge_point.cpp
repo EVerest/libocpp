@@ -388,7 +388,7 @@ void ChargePoint::on_reservation_status(const int32_t reservation_id, const Rese
     }
 }
 
-void ChargePoint::on_ev_charging_needs(NotifyEVChargingNeedsRequest& request) {
+void ChargePoint::on_ev_charging_needs(const NotifyEVChargingNeedsRequest& request) {
     this->smart_charging->notify_ev_charging_needs_req(request);
 }
 

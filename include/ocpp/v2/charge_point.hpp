@@ -242,7 +242,7 @@ public:
 
     /// \brief Event handler that should be called when the charging station receives a ChargeParameterDiscoveryReq from
     /// the CSMS \param request specifies the parameters sent from the EV to the charging station
-    virtual void on_ev_charging_needs(NotifyEVChargingNeedsRequest& request) = 0;
+    virtual void on_ev_charging_needs(const NotifyEVChargingNeedsRequest& request) = 0;
 
     /// @}  // End handlers group
 
@@ -585,7 +585,7 @@ public:
 
     void on_reservation_status(const int32_t reservation_id, const ReservationUpdateStatusEnum status) override;
 
-    void on_ev_charging_needs(NotifyEVChargingNeedsRequest& request) override;
+    void on_ev_charging_needs(const NotifyEVChargingNeedsRequest& request) override;
 
     std::optional<DataTransferResponse> data_transfer_req(const CiString<255>& vendorId,
                                                           const std::optional<CiString<50>>& messageId,

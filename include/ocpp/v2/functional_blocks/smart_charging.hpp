@@ -121,7 +121,7 @@ public:
 
     /// \brief Initiates a NotifyEvChargingNeeds.req message to the CSMS
     /// \param req the request to send
-    virtual void notify_ev_charging_needs_req(NotifyEVChargingNeedsRequest& req) = 0;
+    virtual void notify_ev_charging_needs_req(const NotifyEVChargingNeedsRequest& req) = 0;
 };
 
 class SmartCharging : public SmartChargingInterface {
@@ -148,7 +148,7 @@ public:
     ProfileValidationResultEnum conform_and_validate_profile(
         ChargingProfile& profile, int32_t evse_id,
         AddChargingProfileSource source_of_request = AddChargingProfileSource::SetChargingProfile) override;
-    void notify_ev_charging_needs_req(NotifyEVChargingNeedsRequest& req) override;
+    void notify_ev_charging_needs_req(const NotifyEVChargingNeedsRequest& req) override;
 
 protected:
     ///

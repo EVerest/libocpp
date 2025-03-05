@@ -685,7 +685,7 @@ void SmartCharging::report_charging_profile_req(const ReportChargingProfilesRequ
     this->context.message_dispatcher.dispatch_call(call);
 }
 
-void SmartCharging::notify_ev_charging_needs_req(NotifyEVChargingNeedsRequest& req) {
+void SmartCharging::notify_ev_charging_needs_req(const NotifyEVChargingNeedsRequest& req) {
     // TODO: req.timestamp = std::nullopt; // timestamp will be added with OCPP2.1 messages
     // if (ocpp_version != OcppProtocolVersion::v21) {
     //     req.timestamp = std::nullopt; // field is not present in OCPP2.0.1
