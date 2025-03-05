@@ -162,6 +162,9 @@ struct Callbacks {
                                      std::optional<std::string> currency_code)>>
         set_running_cost_callback;
 
+    /// \brief Callback function is called when tariff message is set.
+    std::optional<std::function<void(const SessionCostMessage& message)>> session_cost_message_callback;
+
     /// \brief Callback function is called when a reservation request is received from the CSMS
     std::optional<std::function<ReserveNowStatusEnum(const ReserveNowRequest& request)>> reserve_now_callback;
     /// \brief Callback function is called when a cancel reservation request is received from the CSMS

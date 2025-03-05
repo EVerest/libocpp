@@ -3136,7 +3136,7 @@ DataTransferResponse ChargePointImpl::handle_set_user_price(const std::optional<
         return response;
     }
 
-    if (set_display_message_callback == nullptr) {
+    if (session_cost_message_callback == nullptr) {
         EVLOG_error << "Received data transfer for set user price, but no callback is registered.";
         return response;
     }
@@ -3192,6 +3192,10 @@ DataTransferResponse ChargePointImpl::handle_set_user_price(const std::optional<
 
             messages.push_back(message);
         }
+    }
+
+    if (!messages.empty()) {
+        session_cost_message.message = messages;
     }
 
     response = this->session_cost_message_callback(session_cost_message);
@@ -4628,6 +4632,11 @@ void ChargePointImpl::register_session_cost_callback(
     const std::function<DataTransferResponse(const RunningCost& running_cost, const uint32_t number_of_decimals)>&
         session_cost_callback) {
     this->session_cost_callback = session_cost_callback;
+}
+
+void ChargePointImpl::register_session_cost_message_callback(
+    const std::function<DataTransferResponse(const SessionCostMessage& message)>& session_cost_message_callback) {
+    this->session_cost_message_callback = session_cost_message_callback;
 }
 
 void ChargePointImpl::register_set_display_message_callback(

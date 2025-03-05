@@ -200,7 +200,7 @@ private:
         session_cost_callback;
     std::function<DataTransferResponse(const std::vector<DisplayMessage>& display_message)>
         set_display_message_callback;
-    const std::function<DataTransferResponse(const SessionCostMessage& message)> session_cost_message_callback;
+    std::function<DataTransferResponse(const SessionCostMessage& message)> session_cost_message_callback;
 
     /// \brief This function is called after a successful connection to the Websocket
     void connected_callback();
@@ -877,10 +877,10 @@ public:
     void register_session_cost_callback(
         const std::function<DataTransferResponse(const RunningCost& running_cost, const uint32_t number_of_decimals)>&
             session_cost_callback);
-    void register_set_display_message_callback(
-        const std::function<DataTransferResponse(const std::vector<DisplayMessage>&)> set_display_message_callback);
     void register_session_cost_message_callback(
         const std::function<DataTransferResponse(const SessionCostMessage& message)>& session_cost_message_callback);
+    void register_set_display_message_callback(
+        const std::function<DataTransferResponse(const std::vector<DisplayMessage>&)> set_display_message_callback);
 
     /// \brief Gets the configured configuration key requested in the given \p request
     /// \param request specifies the keys that should be returned. If empty or not set, all keys will be reported
