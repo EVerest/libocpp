@@ -3,6 +3,8 @@
 
 #pragma once
 
+#pragma once
+
 #include "everest/logging.hpp"
 #include "ocpp/v2/functional_blocks/smart_charging.hpp"
 #include "ocpp/v2/ocpp_types.hpp"
