@@ -3493,7 +3493,7 @@ ocpp::v2::AuthorizeResponse ChargePointImpl::data_transfer_pnc_authorize(
     ocpp::v2::AuthorizeRequest authorize_req;
     ocpp::v2::IdToken id_token;
 
-    id_token.type = ocpp::v2::IdTokenEnum::eMAID;
+    id_token.type = v2::IdTokenEnumStringType::eMAID;
     id_token.idToken = emaid;
     authorize_req.idToken = id_token;
 
