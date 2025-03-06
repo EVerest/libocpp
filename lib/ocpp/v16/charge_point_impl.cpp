@@ -3171,6 +3171,10 @@ DataTransferResponse ChargePointImpl::handle_set_user_price(const std::optional<
     } else {
         identifier_id = t->get_session_id();
         identifier_type = IdentifierType::SessionId;
+        const std::optional<int32_t> transaction_id = t->get_transaction_id();
+        if (transaction_id != std::nullopt) {
+            session_cost_message.ocpp_transaction_id = std::to_string(transaction_id.value());
+        }
     }
 
     session_cost_message.identifier_id = identifier_id;
@@ -3188,7 +3192,7 @@ DataTransferResponse ChargePointImpl::handle_set_user_price(const std::optional<
         data.at("priceTextExtra").is_array()) {
         for (const json& j : data.at("priceTextExtra")) {
             DisplayMessageContent message;
-            message.message = j;
+            message = j;
 
             messages.push_back(message);
         }

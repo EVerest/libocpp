@@ -55,6 +55,7 @@ void TariffAndCost::handle_cost_and_tariff(const TransactionEventResponse& respo
             this->session_cost_message_callback != nullptr) {
             SessionCostMessage session_cost_message;
             session_cost_message.message = cost_messages;
+            session_cost_message.ocpp_transaction_id = original_message.transactionInfo.transactionId;
             session_cost_message.identifier_id = original_message.transactionInfo.transactionId;
             session_cost_message.identifier_type = IdentifierType::TransactionId;
             this->session_cost_message_callback.value()({session_cost_message});
