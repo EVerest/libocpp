@@ -372,6 +372,7 @@ enum class IdentifierType {
 };
 
 struct SessionCostMessage {
+    std::optional<std::string> ocpp_transaction_id;
     std::optional<std::string> identifier_id;
     std::optional<IdentifierType> identifier_type;
     std::vector<DisplayMessageContent> message;
