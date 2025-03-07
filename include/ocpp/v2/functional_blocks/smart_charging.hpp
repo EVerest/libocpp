@@ -146,13 +146,11 @@ class SmartCharging : public SmartChargingInterface {
 private: // Members
     const FunctionalBlockContext& context;
     std::function<void()> set_charging_profiles_callback;
-    std::atomic<OcppProtocolVersion>& ocpp_version;
     std::map<ChargingProfilePurposeEnum, DateTime> last_charging_profile_update;
 
 public:
     SmartCharging(const FunctionalBlockContext& functional_block_context,
-                  std::function<void()> set_charging_profiles_callback,
-                  std::atomic<OcppProtocolVersion>& ocpp_version);
+                  std::function<void()> set_charging_profiles_callback);
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
     GetCompositeScheduleResponse get_composite_schedule(const GetCompositeScheduleRequest& request) override;
     std::optional<CompositeSchedule> get_composite_schedule(int32_t evse_id, std::chrono::seconds duration,
