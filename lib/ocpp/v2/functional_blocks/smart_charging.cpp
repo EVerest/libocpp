@@ -235,11 +235,9 @@ const std::map<OperationModeEnum, LimitsSetpointsForOperationMode> limits_setpoi
     {OperationModeEnum::Idle, {{}, {}}}};
 
 SmartCharging::SmartCharging(const FunctionalBlockContext& functional_block_context,
-                             std::function<void()> set_charging_profiles_callback,
-                             std::atomic<OcppProtocolVersion>& ocpp_version) : // TODO mz move ocpp_version to context
+                             std::function<void()> set_charging_profiles_callback) :
     context(functional_block_context),
-    set_charging_profiles_callback(set_charging_profiles_callback),
-    ocpp_version(ocpp_version) {
+    set_charging_profiles_callback(set_charging_profiles_callback) {
 }
 
 void SmartCharging::handle_message(const ocpp::EnhancedMessage<MessageType>& message) {
@@ -287,7 +285,7 @@ ProfileValidationResultEnum SmartCharging::verify_rate_limit(const ChargingProfi
     const ComponentVariable update_rate_limit = ControllerComponentVariables::ChargingProfileUpdateRateLimit;
     const std::optional<int> update_rate_limit_seconds =
         this->context.device_model.get_optional_value<int>(update_rate_limit);
-    if (ocpp_version == OcppProtocolVersion::v21 && update_rate_limit_seconds.has_value()) {
+    if (this->context.ocpp_version == OcppProtocolVersion::v21 && update_rate_limit_seconds.has_value()) {
         if (last_charging_profile_update.count(profile.chargingProfilePurpose) != 0) {
             const DateTime now = DateTime();
             const std::chrono::seconds seconds_since_previous_profile =
@@ -710,7 +708,7 @@ ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingPr
             return ProfileValidationResultEnum::ChargingProfileNoChargingSchedulePeriods;
         }
 
-        if (ocpp_version == OcppProtocolVersion::v21) {
+        if (this->context.ocpp_version == OcppProtocolVersion::v21) {
             // K01.FR.95 Other profiles than TxProfle or TxDefaultProfile can not have a randomized delay.
             if (profile.chargingProfilePurpose != ChargingProfilePurposeEnum::TxProfile &&
                 profile.chargingProfilePurpose != ChargingProfilePurposeEnum::TxDefaultProfile &&
@@ -803,9 +801,9 @@ ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingPr
                 const int32_t evse_id = evse_opt.has_value() ? evse_opt.value()->get_id() : 0;
                 const ComponentVariable evse_variable = EvseComponentVariables::get_component_variable(
                     evse_id, EvseComponentVariables::DCInputPhaseControl);
-                if (this->ocpp_version == OcppProtocolVersion::v201) {
+                if (this->context.ocpp_version == OcppProtocolVersion::v201) {
                     return ProfileValidationResultEnum::ChargingSchedulePeriodExtraneousPhaseValues;
-                } else if (this->ocpp_version == OcppProtocolVersion::v21) {
+                } else if (this->context.ocpp_version == OcppProtocolVersion::v21) {
                     if (this->context.device_model.get_optional_value<bool>(evse_variable).value_or(false)) {
                         // If 2.1 and DCInputPhaseControl is false or does not exist, then send rejected with reason
                         // code noPhaseForDC
@@ -827,7 +825,7 @@ ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingPr
                 conform_schedule_number_phases(profile.id, charging_schedule_period);
             }
 
-            if (ocpp_version == OcppProtocolVersion::v21) {
+            if (this->context.ocpp_version == OcppProtocolVersion::v21) {
                 const OperationModeEnum operation_mode =
                     charging_schedule_period.operationMode.value_or(OperationModeEnum::ChargingOnly);
 
@@ -897,7 +895,7 @@ ProfileValidationResultEnum
 SmartCharging::verify_no_conflicting_external_constraints_id(const ChargingProfile& profile) const {
     // K01.FR.81: OCPP 2.1: When MaxExternalConstraintsId is set and the chargingProfile id is less or equal than
     // this value, return 'Rejected'.
-    if (ocpp_version == OcppProtocolVersion::v21) {
+    if (this->context.ocpp_version == OcppProtocolVersion::v21) {
         auto max_external_constraints_id =
             this->context.device_model.get_optional_value<int>(ControllerComponentVariables::MaxExternalConstraintsId);
         if (max_external_constraints_id.has_value() && profile.id >= max_external_constraints_id.has_value()) {
