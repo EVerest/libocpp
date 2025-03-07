@@ -1,5 +1,8 @@
 #!/bin/sh
 
+echo "crash for testing"
+exit 5
+
 ninja -C "$EXT_MOUNT/build" test
 retVal=$?
 
@@ -10,6 +13,3 @@ if [ $retVal -ne 0 ]; then
     echo "Unit tests failed with return code $retVal"
     exit $retVal
 fi
-
-echo "crash for testing"
-exit 5

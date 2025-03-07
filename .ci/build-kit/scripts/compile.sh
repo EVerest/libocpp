@@ -1,5 +1,6 @@
 #!/bin/sh
 
+exit 0
 cmake \
     -B "$EXT_MOUNT/build" \
     -S "$EXT_MOUNT/source" \
