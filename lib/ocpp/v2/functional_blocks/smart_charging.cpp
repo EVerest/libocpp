@@ -11,6 +11,7 @@
 #include <ocpp/v2/ctrlr_component_variables.hpp>
 #include <ocpp/v2/device_model.hpp>
 #include <ocpp/v2/evse_manager.hpp>
+#include <ocpp/v2/functional_blocks/functional_block_context.hpp>
 #include <ocpp/v2/profile.hpp>
 #include <ocpp/v2/utils.hpp>
 
@@ -235,8 +236,10 @@ const std::map<OperationModeEnum, LimitsSetpointsForOperationMode> limits_setpoi
 
 SmartCharging::SmartCharging(const FunctionalBlockContext& functional_block_context,
                              std::function<void()> set_charging_profiles_callback,
-                             std::atomic<OcppProtocolVersion>& ocpp_version) :
-    context(functional_block_context), ocpp_version(ocpp_version) {
+                             std::atomic<OcppProtocolVersion>& ocpp_version) : // TODO mz move ocpp_version to context
+    context(functional_block_context),
+    set_charging_profiles_callback(set_charging_profiles_callback),
+    ocpp_version(ocpp_version) {
 }
 
 void SmartCharging::handle_message(const ocpp::EnhancedMessage<MessageType>& message) {
@@ -282,7 +285,8 @@ ProfileValidationResultEnum SmartCharging::verify_rate_limit(const ChargingProfi
     // Currently we store all charging profiles in the database. So here we will check if the previous charging profile
     // was stored long enough ago and if not, return 'RateLimitExceeded'.
     const ComponentVariable update_rate_limit = ControllerComponentVariables::ChargingProfileUpdateRateLimit;
-    const std::optional<int> update_rate_limit_seconds = this->device_model.get_optional_value<int>(update_rate_limit);
+    const std::optional<int> update_rate_limit_seconds =
+        this->context.device_model.get_optional_value<int>(update_rate_limit);
     if (ocpp_version == OcppProtocolVersion::v21 && update_rate_limit_seconds.has_value()) {
         if (last_charging_profile_update.count(profile.chargingProfilePurpose) != 0) {
             const DateTime now = DateTime();
@@ -402,7 +406,7 @@ ProfileValidationResultEnum SmartCharging::conform_and_validate_profile(Charging
         // invalid. K01.FR.05 is the only thing that seems relevant.
         result = ProfileValidationResultEnum::Valid;
         break;
-    case ocpp::v201::ChargingProfilePurposeEnum::PriorityCharging:
+    case ChargingProfilePurposeEnum::PriorityCharging:
         result = this->validate_priority_charging_profile(profile, evse_id);
         break;
     case ChargingProfilePurposeEnum::LocalGeneration:
@@ -716,7 +720,8 @@ ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingPr
 
             // K01.FR.120: Priority charging or local generation is not supported.
             const auto supported_additional_purposes = utils::get_charging_profile_purposes(
-                device_model.get_optional_value<std::string>(ControllerComponentVariables::SupportedAdditionalPurposes)
+                this->context.device_model
+                    .get_optional_value<std::string>(ControllerComponentVariables::SupportedAdditionalPurposes)
                     .value_or(""));
             auto it = std::find(supported_additional_purposes.begin(), supported_additional_purposes.end(),
                                 profile.chargingProfilePurpose);
@@ -728,7 +733,8 @@ ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingPr
 
             // K01.FR.121: Charging profile kind is dynamic, but dynamic profiles are not supported.
             if (profile.chargingProfileKind == ChargingProfileKindEnum::Dynamic &&
-                !device_model.get_optional_value<bool>(ControllerComponentVariables::SupportsDynamicProfiles)
+                !this->context.device_model
+                     .get_optional_value<bool>(ControllerComponentVariables::SupportsDynamicProfiles)
                      .value_or(false)) {
                 return ProfileValidationResultEnum::ChargingProfileUnsupportedKind;
             }
@@ -741,21 +747,22 @@ ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingPr
 
             // K01.FR.123 Local time is not supported
             if (schedule.useLocalTime.value_or(false) &&
-                device_model.get_optional_value<bool>(ControllerComponentVariables::SupportsUseLocalTime)
+                this->context.device_model.get_optional_value<bool>(ControllerComponentVariables::SupportsUseLocalTime)
                     .value_or(false)) {
                 return ProfileValidationResultEnum::ChargingScheduleUnsupportedLocalTime;
             }
 
             // K01.FR.124: Randomized delay is not supported
             if (schedule.randomizedDelay.has_value() &&
-                device_model.get_optional_value<bool>(ControllerComponentVariables::SupportsRandomizedDelay)
+                this->context.device_model
+                    .get_optional_value<bool>(ControllerComponentVariables::SupportsRandomizedDelay)
                     .value_or(false)) {
                 return ProfileValidationResultEnum::ChargingScheduleUnsupportedRandomizedDelay;
             }
 
             // K01.FR.125: Limit at soc is not supported
             if (schedule.limitAtSoC.has_value() &&
-                device_model.get_optional_value<bool>(ControllerComponentVariables::SupportsLimitAtSoC)
+                this->context.device_model.get_optional_value<bool>(ControllerComponentVariables::SupportsLimitAtSoC)
                     .value_or(false)) {
                 return ProfileValidationResultEnum::ChargingScheduleUnsupportedLimitAtSoC;
             }
@@ -799,7 +806,7 @@ ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingPr
                 if (this->ocpp_version == OcppProtocolVersion::v201) {
                     return ProfileValidationResultEnum::ChargingSchedulePeriodExtraneousPhaseValues;
                 } else if (this->ocpp_version == OcppProtocolVersion::v21) {
-                    if (this->device_model.get_optional_value<bool>(evse_variable).value_or(false)) {
+                    if (this->context.device_model.get_optional_value<bool>(evse_variable).value_or(false)) {
                         // If 2.1 and DCInputPhaseControl is false or does not exist, then send rejected with reason
                         // code noPhaseForDC
                         return ProfileValidationResultEnum::ChargingSchedulePeriodNoPhaseForDC;
@@ -851,7 +858,8 @@ ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingPr
 
                 // K01.FR.126: EvseSleep is not supported.
                 if (charging_schedule_period.evseSleep.value_or(false) &&
-                    !this->device_model.get_optional_value<bool>(ControllerComponentVariables::SupportsEvseSleep)
+                    !this->context.device_model
+                         .get_optional_value<bool>(ControllerComponentVariables::SupportsEvseSleep)
                          .value_or(false)) {
                     return ProfileValidationResultEnum::ChargingScheduleUnsupportedEvseSleep;
                 }
@@ -891,7 +899,7 @@ SmartCharging::verify_no_conflicting_external_constraints_id(const ChargingProfi
     // this value, return 'Rejected'.
     if (ocpp_version == OcppProtocolVersion::v21) {
         auto max_external_constraints_id =
-            this->device_model.get_optional_value<int>(ControllerComponentVariables::MaxExternalConstraintsId);
+            this->context.device_model.get_optional_value<int>(ControllerComponentVariables::MaxExternalConstraintsId);
         if (max_external_constraints_id.has_value() && profile.id >= max_external_constraints_id.has_value()) {
             return ProfileValidationResultEnum::ChargingProfileIdSmallerThanMaxExternalConstraintsId;
         }
