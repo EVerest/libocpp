@@ -733,7 +733,7 @@ public:
     void register_cancel_reservation_callback(const std::function<bool(int32_t reservation_id)>& callback);
 
     /// \brief registers a \p callback function that can be used to unlock the connector. In case a transaction is
-    // active at the specified connector, the \p callback shall stop the it before unlocking the connector. The
+    // active at the specified connector, the \p callback shall stop the transaction before unlocking the connector. The
     // unlock_connector_callback is called:
     /// - when receiving a UnlockConnector.req and
     /// - when a transaction has on_transaction_stopped is called and the configuration key
