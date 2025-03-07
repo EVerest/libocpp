@@ -85,7 +85,7 @@ jobs:
           name: doxygen-docs
           path: doxygen-docs
   deploy_docs:
-    # if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     name: Deploy Doxygen Documentation
     needs:
       - ci
