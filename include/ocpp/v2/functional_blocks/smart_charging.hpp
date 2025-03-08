@@ -271,6 +271,7 @@ private: // Functions
 
     std::vector<ChargingProfile> get_evse_specific_tx_default_profiles() const;
     std::vector<ChargingProfile> get_station_wide_tx_default_profiles() const;
+    std::vector<ChargingProfile> get_charging_station_max_profiles() const;
     std::vector<ChargingProfile>
     get_valid_profiles_for_evse(int32_t evse_id,
                                 const std::vector<ChargingProfilePurposeEnum>& purposes_to_ignore = {});

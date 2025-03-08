@@ -16,7 +16,9 @@
 #include <ocpp/v2/utils.hpp>
 
 /* TODO mz:
- * - Check K01.FR.42, it was recommended in 2.0.1 and now mandatory.
+ * - 3.8 Avoiding Phase Conflicts: phaseToUse checks
+ * - K01.FR.110 Charging Station SHALL send a TransactionEventRequest with triggerReason = OperationModeChanged and a
+ * transactionInfo element containing the new operationMode. ???
  */
 
 #include <ocpp/v2/messages/ClearChargingProfile.hpp>
@@ -236,8 +238,7 @@ const std::map<OperationModeEnum, LimitsSetpointsForOperationMode> limits_setpoi
 
 SmartCharging::SmartCharging(const FunctionalBlockContext& functional_block_context,
                              std::function<void()> set_charging_profiles_callback) :
-    context(functional_block_context),
-    set_charging_profiles_callback(set_charging_profiles_callback) {
+    context(functional_block_context), set_charging_profiles_callback(set_charging_profiles_callback) {
 }
 
 void SmartCharging::handle_message(const ocpp::EnhancedMessage<MessageType>& message) {
@@ -362,6 +363,7 @@ ProfileValidationResultEnum SmartCharging::conform_and_validate_profile(Charging
     conform_validity_periods(profile);
 
     if (evse_id != STATION_WIDE_ID) {
+        // K01.FR.28: The evse in the charging profile must exist
         result = this->validate_evse_exists(evse_id);
         if (result != ProfileValidationResultEnum::Valid) {
             return result;
@@ -573,6 +575,7 @@ ProfileValidationResultEnum SmartCharging::validate_charging_station_max_profile
         return ProfileValidationResultEnum::ChargingStationMaxProfileEvseIdGreaterThanZero;
     }
 
+    // K01.FR.38: For ChargingStationMaxProfile, chargingProfileKind shall not be Relative
     if (profile.chargingProfileKind == ChargingProfileKindEnum::Relative) {
         return ProfileValidationResultEnum::ChargingStationMaxProfileCannotBeRelative;
     }
@@ -588,6 +591,7 @@ ProfileValidationResultEnum SmartCharging::validate_tx_default_profile(const Cha
         return ProfileValidationResultEnum::DuplicateProfileValidityPeriod;
     }
 
+    // K01.FR.53
     for (auto candidate : profiles) {
         if (candidate.stackLevel == profile.stackLevel) {
             if (candidate.id != profile.id) {
@@ -601,6 +605,7 @@ ProfileValidationResultEnum SmartCharging::validate_tx_default_profile(const Cha
 
 ProfileValidationResultEnum SmartCharging::validate_tx_profile(const ChargingProfile& profile, int32_t evse_id,
                                                                AddChargingProfileSource source_of_request) const {
+    // K01.FR.16: TxProfile shall only be used with evseId > 0.
     if (evse_id <= 0) {
         return ProfileValidationResultEnum::TxProfileEvseIdNotGreaterThanZero;
     }
@@ -618,19 +623,24 @@ ProfileValidationResultEnum SmartCharging::validate_tx_profile(const ChargingPro
     }
 
     if (!profile.transactionId.has_value()) {
+        // K01.FR.03: TxProfile must have a transaction id.
         return ProfileValidationResultEnum::TxProfileMissingTransactionId;
     }
 
     auto& evse = this->context.evse_manager.get_evse(evse_id);
+    // K01.FR.09: There must be an active transaction when a TxProfile is received.
     if (!evse.has_active_transaction()) {
         return ProfileValidationResultEnum::TxProfileEvseHasNoActiveTransaction;
     }
 
     auto& transaction = evse.get_transaction();
+    // K01.FR.33: TxProfile and given transactionId is not known: reject.
     if (transaction->transactionId != profile.transactionId.value()) {
         return ProfileValidationResultEnum::TxProfileTransactionNotOnEvse;
     }
 
+    // K01.FR.39: There can not be a stackLevel - transactionId combination that already exists in another
+    // ChargingProfile with different id.
     auto conflicts_stmt =
         this->context.database_handler.new_statement("SELECT PROFILE FROM CHARGING_PROFILES WHERE TRANSACTION_ID = "
                                                      "@transaction_id AND STACK_LEVEL = @stack_level AND ID != @id");
@@ -645,6 +655,45 @@ ProfileValidationResultEnum SmartCharging::validate_tx_profile(const ChargingPro
 
     if (conflicts_stmt->step() == SQLITE_ROW) {
         return ProfileValidationResultEnum::TxProfileConflictingStackLevel;
+    }
+
+    // TODO mz this check must be done for validate_tx_default_profile as well
+    // See spec 3.8 Avoiding Phase Conflicts
+    const std::vector<ChargingProfile> max_profiles = this->get_charging_station_max_profiles();
+    if (!max_profiles.empty()) {
+        int32_t phase_to_use = 0;
+        // TODO mz check for validFrom and validTo
+        for (const auto& schedule : profile.chargingSchedule) {
+            for (const auto& period : schedule.chargingSchedulePeriod) {
+                if (period.phaseToUse.has_value()) {
+                    // Check if ChargingStationMaxProfile has the same 'phaseToUse'.
+                    phase_to_use = period.phaseToUse.value();
+                    for (const auto& max_profile : max_profiles) {
+                        for (const auto& max_schedule : max_profile.chargingSchedule) {
+                            for (const auto& max_period : max_schedule.chargingSchedulePeriod) {
+                                if (!max_period.phaseToUse.has_value()) {
+                                    continue;
+                                }
+
+                                if (max_period.startPeriod != period.startPeriod) {
+                                    continue;
+                                }
+
+                                if (phase_to_use != max_period.phaseToUse.value()) {
+                                    return ProfileValidationResultEnum::ChargingSchedulePeriodInvalidPhaseToUse;
+                                }
+
+                                // TODO mz start period can be earlier or later but still overlapping
+
+                                // TODO mz finish
+                            }
+                        }
+                    }
+
+                    // TODO mz also check for ChargingStationExternalConstraints
+                }
+            }
+        }
     }
 
     return ProfileValidationResultEnum::Valid;
@@ -680,6 +729,7 @@ ProfileValidationResultEnum SmartCharging::validate_priority_charging_profile(co
  * - K01.FR.34
  * - K01.FR.43
  * - K01.FR.48
+ * - K01.FR.90
  */
 
 ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingProfile& profile,
@@ -878,10 +928,12 @@ ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingPr
             }
         }
 
-        // K01.FR.40
-        if (profile.chargingProfileKind != ChargingProfileKindEnum::Relative && !schedule.startSchedule.has_value()) {
+        // K01.FR.40 For Absolute and Recurring chargingProfileKind, a startSchedule shall exist.
+        if ((profile.chargingProfileKind == ChargingProfileKindEnum::Absolute ||
+             profile.chargingProfileKind == ChargingProfileKindEnum::Recurring) &&
+            !schedule.startSchedule.has_value()) {
             return ProfileValidationResultEnum::ChargingProfileMissingRequiredStartSchedule;
-            // K01.FR.41
+            // K01.FR.41 For Relative chargingProfileKind, a startSchedule shall be absent.
         } else if (profile.chargingProfileKind == ChargingProfileKindEnum::Relative &&
                    schedule.startSchedule.has_value()) {
             return ProfileValidationResultEnum::ChargingProfileExtraneousStartSchedule;
@@ -922,8 +974,8 @@ SetChargingProfileResponse SmartCharging::add_profile(ChargingProfile& profile, 
     response.status = ChargingProfileStatusEnum::Accepted;
 
     try {
-        // K01.FR05 - replace non-ChargingStationExternalConstraints profiles if id exists.
-        // K01.FR27 - add profiles to database when valid. Currently we store all profiles. For 2.1 it is allowed to
+        // K01.FR.05 - replace non-ChargingStationExternalConstraints profiles if id exists.
+        // K01.FR.27 - add profiles to database when valid. Currently we store all profiles. For 2.1 it is allowed to
         // only store ChargingStationMaxProfile, TxDefaultProfile and PriorityCharging, but currently we store
         // everything here.
         this->context.database_handler.insert_or_update_charging_profile(evse_id, profile, charging_limit_source);
@@ -1253,6 +1305,19 @@ std::vector<ChargingProfile> SmartCharging::get_station_wide_tx_default_profiles
     return station_wide_tx_default_profiles;
 }
 
+std::vector<ChargingProfile> SmartCharging::get_charging_station_max_profiles() const {
+    std::vector<ChargingProfile> charging_station_max_profiles;
+    auto stmt =
+        this->context.database_handler.new_statement("SELECT PROFILE FROM CHARGING_PROFILES WHERE EVSE_ID = 0 AND "
+                                                     "CHARGING_PROFILE_PURPOSE = 'ChargingStationMaxProfile'");
+    while (stmt->step() != SQLITE_DONE) {
+        ChargingProfile profile = json::parse(stmt->column_text(0));
+        charging_station_max_profiles.push_back(profile);
+    }
+
+    return charging_station_max_profiles;
+}
+
 std::vector<ChargingProfile>
 SmartCharging::get_valid_profiles_for_evse(int32_t evse_id,
                                            const std::vector<ChargingProfilePurposeEnum>& purposes_to_ignore) {
@@ -1272,7 +1337,7 @@ SmartCharging::get_valid_profiles_for_evse(int32_t evse_id,
 
 void SmartCharging::conform_schedule_number_phases(int32_t profile_id,
                                                    ChargingSchedulePeriod& charging_schedule_period) const {
-    // K01.FR.49
+    // K01.FR.49 If no value for numberPhases received for AC, numberPhases is 3.
     if (!charging_schedule_period.numberPhases.has_value()) {
         EVLOG_debug << "Conforming profile: " << profile_id << " added number phase as "
                     << DEFAULT_AND_MAX_NUMBER_PHASES;
