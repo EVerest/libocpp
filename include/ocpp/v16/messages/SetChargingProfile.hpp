@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
+// Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
+// This code is generated using the generator in 'src/code_generator/common`, please do not edit manually
+
 #ifndef OCPP_V16_SETCHARGINGPROFILE_HPP
 #define OCPP_V16_SETCHARGINGPROFILE_HPP
 
 #include <nlohmann/json_fwd.hpp>
 #include <optional>
 
-#include <ocpp/v16/enums.hpp>
+#include <ocpp/v16/ocpp_enums.hpp>
 #include <ocpp/v16/ocpp_types.hpp>
 
 namespace ocpp {
@@ -19,7 +21,7 @@ struct SetChargingProfileRequest : public ocpp::Message {
 
     /// \brief Provides the type of this SetChargingProfile message as a human readable string
     /// \returns the message type as a human readable string
-    std::string get_type() const;
+    std::string get_type() const override;
 };
 
 /// \brief Conversion from a given SetChargingProfileRequest \p k to a given json object \p j
@@ -38,7 +40,7 @@ struct SetChargingProfileResponse : public ocpp::Message {
 
     /// \brief Provides the type of this SetChargingProfileResponse message as a human readable string
     /// \returns the message type as a human readable string
-    std::string get_type() const;
+    std::string get_type() const override;
 };
 
 /// \brief Conversion from a given SetChargingProfileResponse \p k to a given json object \p j

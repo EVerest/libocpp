@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
+// Copyright Pionix GmbH and Contributors to EVerest
+
 #ifndef OCPP_COMMON_TYPES_HPP
 #define OCPP_COMMON_TYPES_HPP
 
@@ -18,8 +19,8 @@
 
 #include <ocpp/common/cistring.hpp>
 #include <ocpp/common/support_older_cpp_versions.hpp>
-#include <ocpp/v16/enums.hpp>
-#include <ocpp/v201/enums.hpp>
+#include <ocpp/v16/ocpp_enums.hpp>
+#include <ocpp/v2/ocpp_enums.hpp>
 
 using json = nlohmann::json;
 
@@ -30,6 +31,21 @@ struct Message {
     /// \brief Provides the type of the message
     /// \returns the message type as a string
     virtual std::string get_type() const = 0;
+};
+
+/// \brief Exception used when DateTime class is initialized by invalid timepoint string.
+class TimePointParseException : public std::exception {
+public:
+    explicit TimePointParseException(const std::string& timepoint_str) :
+        msg{"Timepoint string parsing failed. Could not convert: \"" + timepoint_str + "\" into DateTime."} {
+    }
+
+    const char* what() const noexcept override {
+        return msg.c_str();
+    }
+
+private:
+    std::string msg;
 };
 
 /// \brief Contains a DateTime implementation that can parse and create RFC 3339 compatible strings
@@ -102,12 +118,37 @@ public:
 
     /// \brief Creates a new DateTime object from the given \p timepoint_str
     explicit DateTime(const std::string& timepoint_str);
+};
 
-    /// \brief Assignment operator= that converts a given string \p s into a DateTime
-    DateTime& operator=(const std::string& s);
+/// \brief Base exception for when a conversion from string to enum or vice versa fails
+class EnumConversionException : public std::out_of_range {
+public:
+    using std::out_of_range::out_of_range;
+};
 
-    /// \brief Assignment operator= that converts a given char* \p c into a DateTime
-    DateTime& operator=(const char* c);
+/// \brief Exception used when conversion from enum to string fails
+class EnumToStringException : public EnumConversionException {
+public:
+    /// \brief Creates a new StringToEnumException
+    /// \param enumValue value of enum that failed to convert
+    /// \param type name of the enum trying to convert from
+    template <typename T>
+    explicit EnumToStringException(T enumValue, std::string_view type) :
+        EnumConversionException{std::string{"No known conversion from value '"} +
+                                std::to_string(static_cast<int>(enumValue)) + "' to " + type.data()} {
+    }
+};
+
+/// \brief Exception used when conversion from string to enum fails
+class StringToEnumException : public EnumConversionException {
+public:
+    /// \brief Creates a new StringToEnumException
+    /// \param str input string that failed to convert
+    /// \param type name of the enum trying to convert to
+    StringToEnumException(std::string_view str, std::string_view type) :
+        EnumConversionException{std::string{"Provided string '"} + str.data() + "' could not be converted to " +
+                                type.data()} {
+    }
 };
 
 /// \brief Contains the different connection states of the charge point
@@ -298,7 +339,7 @@ struct RPM {
 struct Measurement {
     Powermeter power_meter;                   ///< Powermeter data
     std::optional<StateOfCharge> soc_Percent; ///< State of Charge in percent
-    std::optional<Temperature> temperature_C; ///< Temperature in degree Celsius
+    std::vector<Temperature> temperature_C;   ///< Temperature in degree Celsius
     std::optional<RPM> rpm;                   ///< RPM
 
     /// \brief Conversion from a given Measurement \p k to a given json object \p j
@@ -310,6 +351,91 @@ struct Measurement {
     // \brief Writes the string representation of the given Measurement \p k to the given output stream \p os
     /// \returns an output stream with the Measurement written to
     friend std::ostream& operator<<(std::ostream& os, const Measurement& k);
+};
+
+struct DisplayMessageContent {
+    std::string message;
+    std::optional<std::string> language;
+    std::optional<v2::MessageFormatEnum> message_format;
+
+    friend void from_json(const json& j, DisplayMessageContent& m);
+    friend void to_json(json& j, const DisplayMessageContent& m);
+};
+
+///
+/// \brief Type of an identifier string.
+///
+enum class IdentifierType {
+    SessionId,    ///< \brief Identifier is the session id.
+    IdToken,      ///< \brief Identifier is the id token.
+    TransactionId ///< \brief Identifier is the transaction id.
+};
+
+struct DisplayMessage {
+    std::optional<int32_t> id;
+    std::optional<v2::MessagePriorityEnum> priority;
+    std::optional<v2::MessageStateEnum> state;
+    std::optional<DateTime> timestamp_from;
+    std::optional<DateTime> timestamp_to;
+    std::optional<std::string> identifier_id;
+    std::optional<IdentifierType> identifier_type;
+    DisplayMessageContent message;
+    std::optional<std::string> qr_code;
+};
+
+struct RunningCostChargingPrice {
+    std::optional<double> kWh_price;
+    std::optional<double> hour_price;
+    std::optional<double> flat_fee;
+
+    friend void from_json(const json& j, RunningCostChargingPrice& c);
+    friend void to_json(json& j, const RunningCostChargingPrice& c);
+};
+
+struct RunningCostIdlePrice {
+    std::optional<uint32_t> idle_grace_minutes;
+    std::optional<double> idle_hour_price;
+
+    friend void from_json(const json& j, RunningCostIdlePrice& c);
+    friend void to_json(json& j, const RunningCostIdlePrice& c);
+};
+
+enum class RunningCostState {
+    Charging,
+    Idle,
+    Finished
+};
+
+namespace conversions {
+RunningCostState string_to_running_cost_state(const std::string& state);
+std::string running_cost_state_to_string(const RunningCostState& state);
+} // namespace conversions
+
+struct RunningCost {
+    std::string transaction_id;
+    std::optional<DateTime> timestamp;
+    std::optional<uint32_t> meter_value;
+    double cost;
+    // Running cost state: "Charging" or "Idle". When this is the final price, state will be "Finished".
+    RunningCostState state;
+    std::optional<RunningCostChargingPrice> charging_price;
+    std::optional<RunningCostIdlePrice> idle_price;
+    std::optional<DateTime> next_period_at_time;
+    std::optional<RunningCostChargingPrice> next_period_charging_price;
+    std::optional<RunningCostIdlePrice> next_period_idle_price;
+    std::optional<std::vector<DisplayMessageContent>> cost_messages;
+    std::optional<std::string> qr_code_text;
+
+    friend void from_json(const json& j, RunningCost& c);
+};
+
+struct TriggerMeterValue {
+    std::optional<DateTime> at_time;
+    std::optional<int> at_energy_kwh;
+    std::optional<int> at_power_kw;
+    std::vector<v16::ChargePointStatus> at_chargepoint_status;
+
+    friend void from_json(const json& j, TriggerMeterValue& t);
 };
 
 enum class CaCertificateType {
@@ -334,6 +460,31 @@ CaCertificateType string_to_ca_certificate_type(const std::string& s);
 /// \param os
 /// \returns an output stream with the CaCertificateType written to
 std::ostream& operator<<(std::ostream& os, const CaCertificateType& ca_certificate_type);
+
+enum class CertificateValidationResult {
+    Valid,
+    Expired,
+    InvalidSignature,
+    IssuerNotFound,
+    InvalidLeafSignature,
+    InvalidChain,
+    Unknown,
+};
+
+namespace conversions {
+/// \brief Converts the given InstallCertificateResult \p e to human readable string
+/// \returns a string representation of the InstallCertificateResult
+std::string certificate_validation_result_to_string(CertificateValidationResult e);
+
+/// \brief Converts the given std::string \p s to InstallCertificateResult
+/// \returns a InstallCertificateResult from a string representation
+CertificateValidationResult string_to_certificate_validation_result(const std::string& s);
+} // namespace conversions
+
+/// \brief Writes the string representation of the given InstallCertificateResult \p
+/// install_certificate_result to the given output stream \p os \returns an output stream with the
+/// InstallCertificateResult written to
+std::ostream& operator<<(std::ostream& os, const CertificateValidationResult& certificate_validation_result);
 
 enum class InstallCertificateResult {
     InvalidSignature,
@@ -459,7 +610,9 @@ std::ostream& operator<<(std::ostream& os, const CertificateHashDataChain& k);
 
 enum class OcppProtocolVersion {
     v16,
-    v201
+    v201,
+    v21,
+    Unknown,
 };
 
 namespace conversions {
@@ -506,11 +659,50 @@ struct OCSPRequestData {
     std::string responderUrl;
 };
 
-struct KeyPair {
-    fs::path certificate_path;           // path to the full certificate chain
-    fs::path certificate_single_path;    // path to the single leaf certificate
-    fs::path key_path;                   // path to private key of the leaf certificate
-    std::optional<std::string> password; // optional password for the private key
+enum class GetCertificateSignRequestStatus {
+    Accepted,
+    InvalidRequestedType, ///< Requested a CSR for non CSMS/V2G leafs
+    KeyGenError,          ///< The key could not be generated with the requested/default parameters
+    GenerationError,      ///< Any other error when creating the CSR
+};
+
+enum class GetCertificateInfoStatus {
+    Accepted,
+    Rejected,
+    NotFound,
+    NotFoundValid,
+    PrivateKeyNotFound,
+};
+
+struct GetCertificateSignRequestResult {
+    GetCertificateSignRequestStatus status;
+    std::optional<std::string> csr;
+};
+
+struct CertificateOCSP {
+    CertificateHashDataType hash;
+    std::optional<fs::path> ocsp_path;
+};
+
+struct CertificateInfo {
+    std::optional<fs::path> certificate_path;        // path to the full certificate chain
+    std::optional<fs::path> certificate_single_path; // path to the single leaf certificate
+    int certificate_count;                           // count of certs in the chain
+    fs::path key_path;                               // path to private key of the leaf certificate
+    std::optional<std::string> password;             // optional password for the private key
+    std::vector<CertificateOCSP> ocsp;               // OCSP data if requested
+};
+
+struct GetCertificateInfoResult {
+    GetCertificateInfoStatus status;
+    std::optional<CertificateInfo> info;
+};
+
+enum class LeafCertificateType {
+    CSMS, // Charging Station Management System
+    V2G,  // Vehicle to grid
+    MF,   // Manufacturer
+    MO    // Mobility Operator
 };
 
 namespace conversions {
@@ -549,6 +741,11 @@ enum class FirmwareStatusNotification {
 };
 
 namespace conversions {
+/// \brief Converts GetCertificateSignRequestStatus to string
+std::string generate_certificate_signing_request_status_to_string(const GetCertificateSignRequestStatus status);
+} // namespace conversions
+
+namespace conversions {
 
 /// \brief Converts ocpp::FirmwareStatusNotification to v16::FirmwareStatus
 v16::FirmwareStatus firmware_status_notification_to_firmware_status(const FirmwareStatusNotification status);
@@ -581,27 +778,71 @@ namespace security_events {
 inline const std::string FIRMWARE_UPDATED = "FirmwareUpdated"; // CRITICAL
 inline const std::string FAILEDTOAUTHENTICATEATCSMS = "FailedToAuthenticateAtCsms";
 inline const std::string CSMSFAILEDTOAUTHENTICATE = "CsmsFailedToAuthenticate";
+inline const std::string CSRGENERATIONFAILED = "CSRGenerationFailed";
 inline const std::string SETTINGSYSTEMTIME = "SettingSystemTime";         // CRITICAL
 inline const std::string RESET_OR_REBOOT = "ResetOrReboot";               // CRITICAL
 inline const std::string STARTUP_OF_THE_DEVICE = "StartupOfTheDevice";    // CRITICAL
 inline const std::string SECURITYLOGWASCLEARED = "SecurityLogWasCleared"; // CRITICAL
 inline const std::string RECONFIGURATIONOFSECURITYPARAMETERS = "ReconfigurationOfSecurityParameters";
-inline const std::string MEMORYEXHAUSTION = "MemoryExhaustion";           // CRITICAL
+inline const std::string MEMORYEXHAUSTION = "MemoryExhaustion"; // CRITICAL
 inline const std::string INVALIDMESSAGES = "InvalidMessages";
 inline const std::string ATTEMPTEDREPLAYATTACKS = "AttemptedReplayAttacks";
 inline const std::string TAMPERDETECTIONACTIVATED = "TamperDetectionActivated"; // CRITICAL
 inline const std::string INVALIDFIRMWARESIGNATURE = "InvalidFirmwareSignature";
 inline const std::string INVALIDFIRMWARESIGNINGCERTIFICATE = "InvalidFirmwareSigningCertificate";
 inline const std::string INVALIDCSMSCERTIFICATE = "InvalidCsmsCertificate";
+inline const std::string INVALIDCENTRALSYSTEMCERTIFICATE = "InvalidCentralSystemCertificate";
 inline const std::string INVALIDCHARGINGSTATIONCERTIFICATE = "InvalidChargingStationCertificate";
 inline const std::string INVALIDCHARGEPOINTCERTIFICATE = "InvalidChargePointCertificate"; // for OCPP1.6
 inline const std::string INVALIDTLSVERSION = "InvalidTLSVersion";
 inline const std::string INVALIDTLSCIPHERSUITE = "InvalidTLSCipherSuite";
+inline const std::string MAINTENANCELOGINACCEPTED = "MaintenanceLoginAccepted";
+inline const std::string MAINTENANCELOGINFAILED = "MaintenanceLoginFailed";
 } // namespace security_events
 
 enum class MessageDirection {
     CSMSToChargingStation,
     ChargingStationToCSMS
+};
+
+enum class ConnectionFailedReason {
+    InvalidCSMSCertificate = 0,
+    FailedToAuthenticateAtCsms
+};
+
+///
+/// \brief Reason why a websocket closes its connection
+///
+enum class WebsocketCloseReason : uint8_t {
+    /// Normal closure
+    Normal = 1,
+    ForceTcpDrop,
+    GoingAway,
+    AbnormalClose,
+    ServiceRestart
+};
+
+/// \brief This can be used to distinguish the different queue types
+enum class QueueType {
+    Normal,
+    Transaction,
+    None,
+};
+
+/// \brief Struct containing default limits for amps, watts and number of phases
+struct CompositeScheduleDefaultLimits {
+    int32_t amps;
+    int32_t watts;
+    int32_t number_phases;
+};
+
+/// \brief Status of a reservation check.
+enum class ReservationCheckStatus {
+    NotReserved,           ///< @brief No reservation of this evse and / or id token
+    ReservedForToken,      ///< @brief Reservation for this token.
+    ReservedForOtherToken, ///< @brief Reserved for other token and reservation has no parent token or parent token does
+                           ///< not match.
+    ReservedForOtherTokenAndHasParentToken, ///< @brief Reserved for other token but reservation has a parent token.
 };
 
 } // namespace ocpp

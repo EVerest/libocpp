@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
+// Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
+// This code is generated using the generator in 'src/code_generator/common`, please do not edit manually
+
+#include <ocpp/v16/ocpp_types.hpp>
+
+#include <optional>
 #include <string>
 
 #include <nlohmann/json.hpp>
-#include <optional>
 
 #include <ocpp/common/types.hpp>
-#include <ocpp/v16/enums.hpp>
-
-#include <ocpp/v16/ocpp_types.hpp>
+#include <ocpp/v16/ocpp_enums.hpp>
 
 namespace ocpp {
 namespace v16 {
@@ -299,7 +301,6 @@ void to_json(json& j, const MeterValue& k) {
 void from_json(const json& j, MeterValue& k) {
     // the required parts of the message
     k.timestamp = ocpp::DateTime(std::string(j.at("timestamp")));
-    ;
     for (auto val : j.at("sampledValue")) {
         k.sampledValue.push_back(val);
     }
@@ -420,7 +421,6 @@ void from_json(const json& j, FirmwareType& k) {
     // the required parts of the message
     k.location = j.at("location");
     k.retrieveDateTime = ocpp::DateTime(std::string(j.at("retrieveDateTime")));
-    ;
     k.signingCertificate = j.at("signingCertificate");
     k.signature = j.at("signature");
 
@@ -451,7 +451,6 @@ void to_json(json& j, const TransactionData& k) {
 void from_json(const json& j, TransactionData& k) {
     // the required parts of the message
     k.timestamp = ocpp::DateTime(std::string(j.at("timestamp")));
-    ;
     for (auto val : j.at("sampledValue")) {
         k.sampledValue.push_back(val);
     }

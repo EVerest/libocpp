@@ -5,7 +5,6 @@
 #include <ocpp/common/websocket/websocket_uri.hpp>
 
 #include <boost/algorithm/string/predicate.hpp>
-#include <websocketpp/uri.hpp>
 
 #include <stdexcept>
 #include <string>
@@ -50,7 +49,7 @@ Uri Uri::parse_and_validate(std::string uri, std::string chargepoint_id, int sec
         uri = "ws://" + uri;
     }
 
-    auto uri_temp = websocketpp::uri(uri);
+    auto uri_temp = ev_uri(uri);
     if (!uri_temp.get_valid()) {
         throw std::invalid_argument("given `uri` is invalid");
     }
@@ -61,16 +60,16 @@ Uri Uri::parse_and_validate(std::string uri, std::string chargepoint_id, int sec
         case security::SecurityProfile::UNSECURED_TRANSPORT_WITH_BASIC_AUTHENTICATION:
             if (uri_temp.get_secure()) {
                 throw std::invalid_argument(
-                    "secure schema 'ws://' in URI does not fit with insecure security-profile = " +
-                    std::to_string(security_profile));
+                    "secure schema '" + uri_temp.get_scheme() +
+                    "://' in URI does not fit with insecure security-profile = " + std::to_string(security_profile));
             }
             break;
         case security::SecurityProfile::TLS_WITH_BASIC_AUTHENTICATION:
         case security::SecurityProfile::TLS_WITH_CLIENT_SIDE_CERTIFICATES:
             if (!uri_temp.get_secure()) {
                 throw std::invalid_argument(
-                    "insecure schema 'ws://' in URI does not fit with secure security-profile = " +
-                    std::to_string(security_profile));
+                    "insecure schema '" + uri_temp.get_scheme() +
+                    "://' in URI does not fit with secure security-profile = " + std::to_string(security_profile));
             }
             break;
         default:
@@ -85,6 +84,10 @@ Uri Uri::parse_and_validate(std::string uri, std::string chargepoint_id, int sec
     const auto [path_without_base, base] = path_split_last_segment(path);
     if (base == chargepoint_id) {
         path = path_without_base;
+    }
+
+    if (path.back() != '/') {
+        path.push_back('/');
     }
 
     return Uri(uri_temp.get_secure(), uri_temp.get_host(), uri_temp.get_port(), path, chargepoint_id);

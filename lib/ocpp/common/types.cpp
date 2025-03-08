@@ -16,16 +16,6 @@ DateTime::DateTime(std::chrono::time_point<date::utc_clock> timepoint) : DateTim
 DateTime::DateTime(const std::string& timepoint_str) : DateTimeImpl(timepoint_str) {
 }
 
-DateTime& DateTime::operator=(const std::string& s) {
-    this->from_rfc3339(s);
-    return *this;
-}
-
-DateTime& DateTime::operator=(const char* c) {
-    this->from_rfc3339(std::string(c));
-    return *this;
-}
-
 DateTimeImpl::DateTimeImpl() {
     this->timepoint = date::utc_clock::now();
 }
@@ -53,8 +43,7 @@ void DateTimeImpl::from_rfc3339(const std::string& timepoint_str) {
             in.seekg(0);
             in >> date::parse("%FT%T", this->timepoint);
             if (in.fail()) {
-                EVLOG_error << "Timepoint string parsing failed. Could not convert: \"" << timepoint_str
-                            << "\" into DateTime.";
+                throw TimePointParseException(timepoint_str);
             }
         }
     }
@@ -136,7 +125,7 @@ std::string session_started_reason_to_string(SessionStartedReason e) {
     case SessionStartedReason::EVConnected:
         return "EVConnected";
     }
-    throw std::out_of_range("No known string conversion for provided enum of type SessionStartedReason");
+    throw EnumToStringException{e, "SessionStartedReason"};
 }
 
 SessionStartedReason string_to_session_started_reason(const std::string& s) {
@@ -146,7 +135,7 @@ SessionStartedReason string_to_session_started_reason(const std::string& s) {
     if (s == "EVConnected") {
         return SessionStartedReason::EVConnected;
     }
-    throw std::out_of_range("Provided string " + s + " could not be converted to enum of type SessionStartedReason");
+    throw StringToEnumException{s, "SessionStartedReason"};
 }
 } // namespace conversions
 
@@ -539,9 +528,7 @@ std::ostream& operator<<(std::ostream& os, const RPM& k) {
 
 void to_json(json& j, const Measurement& k) {
     to_json(j, k.power_meter);
-    if (k.temperature_C) {
-        j["temperature_C"] = k.temperature_C.value();
-    }
+    j["temperature_C"] = k.temperature_C;
     if (k.soc_Percent) {
         j["soc_Percent"] = k.soc_Percent.value();
     }
@@ -552,9 +539,7 @@ void to_json(json& j, const Measurement& k) {
 
 void from_json(const json& j, Measurement& k) {
     from_json(j, k.power_meter);
-    if (j.contains("temperature_C")) {
-        k.temperature_C.emplace(j.at("temperature_C"));
-    }
+    k.temperature_C = j.at("temperature_C");
     if (j.contains("soc_Percent")) {
         k.soc_Percent.emplace(j.at("soc_Percent"));
     }
@@ -566,6 +551,219 @@ void from_json(const json& j, Measurement& k) {
 std::ostream& operator<<(std::ostream& os, const Measurement& k) {
     os << json(k).dump(4);
     return os;
+}
+
+void from_json(const json& j, DisplayMessageContent& m) {
+    if (j.contains("content")) {
+        m.message = j.at("content");
+    }
+
+    if (j.contains("format")) {
+        m.message_format = v2::conversions::string_to_message_format_enum(j.at("format"));
+    }
+
+    if (j.contains("language")) {
+        m.language = j.at("language");
+    }
+}
+
+void to_json(json& j, const DisplayMessageContent& m) {
+    j["message"] = m.message;
+
+    if (m.message_format.has_value()) {
+        j["format"] = v2::conversions::message_format_enum_to_string(m.message_format.value());
+    }
+
+    if (m.language.has_value()) {
+        j["language"] = m.language.value();
+    }
+}
+
+void from_json(const json& j, RunningCostChargingPrice& c) {
+    if (j.contains("kWhPrice")) {
+        c.kWh_price = j.at("kWhPrice");
+    }
+
+    if (j.contains("hourPrice")) {
+        c.hour_price = j.at("hourPrice");
+    }
+
+    if (j.contains("flatFee")) {
+        c.flat_fee = j.at("flatFee");
+    }
+}
+
+void to_json(json& j, const RunningCostChargingPrice& c) {
+    if (c.kWh_price.has_value()) {
+        j["kWhPrice"] = c.kWh_price.value();
+    }
+
+    if (c.hour_price.has_value()) {
+        j["hourPrice"] = c.hour_price.value();
+    }
+
+    if (c.flat_fee.has_value()) {
+        j["flatFee"] = c.flat_fee.value();
+    }
+}
+
+void from_json(const json& j, RunningCostIdlePrice& c) {
+    if (j.contains("graceMinutes")) {
+        c.idle_grace_minutes = j.at("graceMinutes");
+    }
+
+    if (j.contains("hourPrice")) {
+        c.idle_hour_price = j.at("hourPrice");
+    }
+}
+
+void to_json(json& j, const RunningCostIdlePrice& c) {
+    if (c.idle_hour_price.has_value()) {
+        j["hourPrice"] = c.idle_hour_price.value();
+    }
+
+    if (c.idle_grace_minutes.has_value()) {
+        j["graceMinutes"] = c.idle_grace_minutes.value();
+    }
+}
+
+namespace conversions {
+RunningCostState string_to_running_cost_state(const std::string& state) {
+    if (state == "Charging") {
+        return RunningCostState::Charging;
+    } else if (state == "Idle") {
+        return RunningCostState::Idle;
+    } else if (state == "Finished") {
+        return RunningCostState::Finished;
+    }
+
+    throw StringToEnumException(state, "No known string conversion for provided enum of type RunningCostState");
+}
+
+std::string running_cost_state_to_string(const RunningCostState& state) {
+    switch (state) {
+    case RunningCostState::Charging:
+        return "Charging";
+    case RunningCostState::Idle:
+        return "Idle";
+    case RunningCostState::Finished:
+        return "Finished";
+    }
+    throw EnumToStringException(state, "No known enum value of type RunningCostState");
+}
+} // namespace conversions
+
+void from_json(const json& j, RunningCost& c) {
+    if (j.contains("transactionId")) {
+        if (j.at("transactionId").is_number()) {
+            uint32_t transaction_id = j.at("transactionId");
+            c.transaction_id = std::to_string(transaction_id);
+        } else if (j.at("transactionId").is_string()) {
+            c.transaction_id = j.at("transactionId");
+        } else {
+            j.dump(j.at("transactionId"));
+        }
+    }
+
+    if (j.contains("timestamp")) {
+        c.timestamp = ocpp::DateTime(std::string(j.at("timestamp")));
+    }
+
+    if (j.contains("meterValue")) {
+        c.meter_value = j.at("meterValue");
+    }
+
+    if (j.contains("cost")) {
+        c.cost = j.at("cost");
+    }
+
+    if (j.contains("state")) {
+        c.state = conversions::string_to_running_cost_state(j.at("state"));
+    }
+
+    if (j.contains("chargingPrice")) {
+        c.charging_price = j.at("chargingPrice");
+    }
+
+    if (j.contains("idlePrice")) {
+        c.idle_price = j.at("idlePrice");
+    }
+
+    if (j.contains("nextPeriod")) {
+        const json& nextPeriod = j.at("nextPeriod");
+        if (nextPeriod.is_object()) {
+            if (nextPeriod.contains("atTime")) {
+                c.next_period_at_time = ocpp::DateTime(std::string(nextPeriod.at("atTime")));
+            }
+
+            if (nextPeriod.contains("chargingPrice")) {
+                c.next_period_charging_price = nextPeriod.at("chargingPrice");
+            }
+
+            if (nextPeriod.contains("idlePrice")) {
+                c.next_period_idle_price = nextPeriod.at("idlePrice");
+            }
+        }
+    }
+
+    if (j.contains("priceText")) {
+        DisplayMessageContent display_message;
+        display_message.message = j.at("priceText");
+        c.cost_messages = std::vector<DisplayMessageContent>();
+        c.cost_messages->push_back(display_message);
+    }
+
+    if (j.contains("priceTextExtra")) {
+        const json& price_text = j.at("priceTextExtra");
+        if (!price_text.is_array()) {
+            EVLOG_warning << "priceTextExtra should be an array, but is not. Content: " << price_text;
+        } else {
+            if (!c.cost_messages.has_value()) {
+                c.cost_messages = std::vector<DisplayMessageContent>();
+            }
+            for (const json& p : price_text) {
+                DisplayMessageContent display_message = p;
+                c.cost_messages->push_back(display_message);
+            }
+        }
+    }
+
+    if (j.contains("qrCodeText")) {
+        c.qr_code_text = j.at("qrCodeText");
+    }
+}
+
+void from_json(const json& j, TriggerMeterValue& t) {
+    if (j.is_object()) {
+        if (j.contains("atTime")) {
+            t.at_time = ocpp::DateTime(std::string(j.at("atTime")));
+        }
+
+        if (j.contains("atEnergykWh")) {
+            t.at_energy_kwh = j.at("atEnergykWh");
+        }
+
+        if (j.contains("atPowerkW")) {
+            t.at_power_kw = j.at("atPowerkW");
+        }
+
+        if (j.contains("atCPStatus")) {
+            std::vector<v16::ChargePointStatus> trigger_cp_status;
+            json array;
+            for (const auto& cp_status : j.at("atCPStatus").items()) {
+                try {
+                    trigger_cp_status.push_back(
+                        v16::conversions::string_to_charge_point_status(cp_status.value().get<std::string>()));
+                } catch (const std::out_of_range& e) {
+                    EVLOG_error << "Could not trigger on CP status: status (" << cp_status.value().get<std::string>()
+                                << ") is not a valid chargepoint status: " << e.what();
+                }
+            }
+            if (trigger_cp_status.size() > 0) {
+                t.at_chargepoint_status = trigger_cp_status;
+            }
+        }
+    }
 }
 
 namespace conversions {
@@ -581,7 +779,7 @@ std::string ca_certificate_type_to_string(CaCertificateType e) {
         return "MF";
     }
 
-    throw std::out_of_range("No known string conversion for provided enum of type CaCertificateType");
+    throw EnumToStringException{e, "CaCertificateType"};
 }
 
 CaCertificateType string_to_ca_certificate_type(const std::string& s) {
@@ -594,7 +792,7 @@ CaCertificateType string_to_ca_certificate_type(const std::string& s) {
     } else if (s == "MF") {
         return CaCertificateType::MF;
     }
-    throw std::out_of_range("Provided string " + s + " could not be converted to enum of type CertificateType");
+    throw StringToEnumException{s, "CertificateType"};
 }
 } // namespace conversions
 
@@ -602,6 +800,60 @@ std::ostream& operator<<(std::ostream& os, const CaCertificateType& ca_certifica
     os << conversions::ca_certificate_type_to_string(ca_certificate_type);
     return os;
 }
+
+namespace conversions {
+std::string certificate_validation_result_to_string(CertificateValidationResult e) {
+    switch (e) {
+    case CertificateValidationResult::Valid:
+        return "Valid";
+    case CertificateValidationResult::Expired:
+        return "Expired";
+    case CertificateValidationResult::InvalidSignature:
+        return "InvalidSignature";
+    case CertificateValidationResult::IssuerNotFound:
+        return "IssuerNotFound";
+    case CertificateValidationResult::InvalidLeafSignature:
+        return "InvalidLeafSignature";
+    case CertificateValidationResult::InvalidChain:
+        return "InvalidChain";
+    case CertificateValidationResult::Unknown:
+        return "Unknown";
+    }
+
+    throw EnumToStringException{e, "CertificateValidationResult"};
+}
+
+CertificateValidationResult string_to_certificate_validation_result(const std::string& s) {
+    if (s == "Valid") {
+        return CertificateValidationResult::Valid;
+    }
+    if (s == "Expired") {
+        return CertificateValidationResult::Expired;
+    }
+    if (s == "InvalidSignature") {
+        return CertificateValidationResult::InvalidSignature;
+    }
+    if (s == "IssuerNotFound") {
+        return CertificateValidationResult::IssuerNotFound;
+    }
+    if (s == "InvalidLeafSignature") {
+        return CertificateValidationResult::InvalidLeafSignature;
+    }
+    if (s == "InvalidChain") {
+        return CertificateValidationResult::InvalidChain;
+    }
+    if (s == "Unknown") {
+        return CertificateValidationResult::Unknown;
+    }
+    throw StringToEnumException{s, "CertificateValidationResult"};
+}
+} // namespace conversions
+
+std::ostream& operator<<(std::ostream& os, const CertificateValidationResult& certificate_validation_result) {
+    os << conversions::certificate_validation_result_to_string(certificate_validation_result);
+    return os;
+}
+
 namespace conversions {
 std::string install_certificate_result_to_string(InstallCertificateResult e) {
     switch (e) {
@@ -625,7 +877,7 @@ std::string install_certificate_result_to_string(InstallCertificateResult e) {
         return "Accepted";
     }
 
-    throw std::out_of_range("No known string conversion for provided enum of type UpdateFirmwareStatusEnumType");
+    throw EnumToStringException{e, "UpdateFirmwareStatusEnumType"};
 }
 
 InstallCertificateResult string_to_install_certificate_result(const std::string& s) {
@@ -656,8 +908,7 @@ InstallCertificateResult string_to_install_certificate_result(const std::string&
     if (s == "Accepted") {
         return InstallCertificateResult::Accepted;
     }
-    throw std::out_of_range("Provided string " + s +
-                            " could not be converted to enum of type InstallCertificateResult");
+    throw StringToEnumException{s, "InstallCertificateResult"};
 }
 } // namespace conversions
 
@@ -677,7 +928,7 @@ std::string delete_certificate_result_to_string(DeleteCertificateResult e) {
         return "NotFound";
     }
 
-    throw std::out_of_range("No known string conversion for provided enum of type DeleteCertificateResult");
+    throw EnumToStringException{e, "DeleteCertificateResult"};
 }
 
 DeleteCertificateResult string_to_delete_certificate_result(const std::string& s) {
@@ -691,7 +942,7 @@ DeleteCertificateResult string_to_delete_certificate_result(const std::string& s
         return DeleteCertificateResult::NotFound;
     }
 
-    throw std::out_of_range("Provided string " + s + " could not be converted to enum of type DeleteCertificateResult");
+    throw StringToEnumException{s, "DeleteCertificateResult"};
 }
 } // namespace conversions
 
@@ -782,7 +1033,7 @@ std::string hash_algorithm_enum_type_to_string(HashAlgorithmEnumType e) {
         return "SHA512";
     }
 
-    throw std::out_of_range("No known string conversion for provided enum of type HashAlgorithmEnumType");
+    throw EnumToStringException{e, "HashAlgorithmEnumType"};
 }
 
 HashAlgorithmEnumType string_to_hash_algorithm_enum_type(const std::string& s) {
@@ -796,7 +1047,7 @@ HashAlgorithmEnumType string_to_hash_algorithm_enum_type(const std::string& s) {
         return HashAlgorithmEnumType::SHA512;
     }
 
-    throw std::out_of_range("Provided string " + s + " could not be converted to enum of type HashAlgorithmEnumType");
+    throw StringToEnumException{s, "HashAlgorithmEnumType"};
 }
 } // namespace conversions
 
@@ -812,9 +1063,13 @@ std::string ocpp_protocol_version_to_string(OcppProtocolVersion e) {
         return "ocpp1.6";
     case OcppProtocolVersion::v201:
         return "ocpp2.0.1";
+    case OcppProtocolVersion::v21:
+        return "ocpp2.1";
+    case OcppProtocolVersion::Unknown:
+        return "unknown";
     }
 
-    throw std::out_of_range("No known string conversion for provided enum of type OcppProtocolVersion");
+    throw EnumToStringException{e, "OcppProtocolVersion"};
 }
 
 OcppProtocolVersion string_to_ocpp_protocol_version(const std::string& s) {
@@ -824,7 +1079,13 @@ OcppProtocolVersion string_to_ocpp_protocol_version(const std::string& s) {
     if (s == "ocpp2.0.1") {
         return OcppProtocolVersion::v201;
     }
-    throw std::out_of_range("Provided string " + s + " could not be converted to enum of type OcppProtocolVersion");
+    if (s == "ocpp2.1") {
+        return OcppProtocolVersion::v21;
+    }
+    if (s == "unknown") {
+        return OcppProtocolVersion::Unknown;
+    }
+    throw StringToEnumException{s, "OcppProtocolVersion"};
 }
 } // namespace conversions
 
@@ -844,7 +1105,7 @@ std::string certificate_signing_use_enum_to_string(CertificateSigningUseEnum e) 
         return "ManufacturerCertificate";
     }
 
-    throw std::out_of_range("No known string conversion for provided enum of type CertificateSigningUseEnum");
+    throw EnumToStringException{e, "CertificateSigningUseEnum"};
 }
 
 CertificateSigningUseEnum string_to_certificate_signing_use_enum(const std::string& s) {
@@ -858,8 +1119,7 @@ CertificateSigningUseEnum string_to_certificate_signing_use_enum(const std::stri
         return CertificateSigningUseEnum::ManufacturerCertificate;
     }
 
-    throw std::out_of_range("Provided string " + s +
-                            " could not be converted to enum of type CertificateSigningUseEnum");
+    throw StringToEnumException{s, "CertificateSigningUseEnum"};
 }
 } // namespace conversions
 
@@ -883,7 +1143,7 @@ std::string certificate_type_to_string(CertificateType e) {
         return "MFRootCertificate";
     }
 
-    throw std::out_of_range("No known string conversion for provided enum of type CertificateType");
+    throw EnumToStringException{e, "CertificateType"};
 }
 
 CertificateType string_to_certificate_type(const std::string& s) {
@@ -903,7 +1163,7 @@ CertificateType string_to_certificate_type(const std::string& s) {
         return CertificateType::MFRootCertificate;
     }
 
-    throw std::out_of_range("Provided string " + s + " could not be converted to enum of type CertificateType");
+    throw StringToEnumException{s, "CertificateType"};
 }
 } // namespace conversions
 
@@ -922,7 +1182,9 @@ std::string bool_to_string(bool b) {
 }
 
 bool string_to_bool(const std::string& s) {
-    if (s == "true") {
+    std::string out = s;
+    std::transform(out.begin(), out.end(), out.begin(), ::tolower);
+    if (out == "true") {
         return true;
     }
     return false;
@@ -942,6 +1204,22 @@ std::string double_to_string(double d) {
 } // namespace conversions
 
 namespace conversions {
+std::string generate_certificate_signing_request_status_to_string(const GetCertificateSignRequestStatus status) {
+    switch (status) {
+    case GetCertificateSignRequestStatus::Accepted:
+        return "Accepted";
+    case GetCertificateSignRequestStatus::InvalidRequestedType:
+        return "InvalidRequestedType";
+    case GetCertificateSignRequestStatus::KeyGenError:
+        return "KeyGenError";
+    case GetCertificateSignRequestStatus::GenerationError:
+        return "GenerationError";
+    }
+    throw EnumToStringException(status, "GetCertificateSignRequestStatus");
+}
+} // namespace conversions
+
+namespace conversions {
 v16::FirmwareStatus firmware_status_notification_to_firmware_status(const FirmwareStatusNotification status) {
     switch (status) {
     case FirmwareStatusNotification::Downloaded:
@@ -958,9 +1236,18 @@ v16::FirmwareStatus firmware_status_notification_to_firmware_status(const Firmwa
         return v16::FirmwareStatus::Installing;
     case FirmwareStatusNotification::Installed:
         return v16::FirmwareStatus::Installed;
-    default:
-        throw std::out_of_range("Could not convert to v16::FirmwareStatus");
+    case FirmwareStatusNotification::DownloadScheduled:
+    case FirmwareStatusNotification::DownloadPaused:
+    case FirmwareStatusNotification::InstallRebooting:
+    case FirmwareStatusNotification::InstallScheduled:
+    case FirmwareStatusNotification::InstallVerificationFailed:
+    case FirmwareStatusNotification::InvalidSignature:
+    case FirmwareStatusNotification::SignatureVerified:
+        throw EnumConversionException(
+            "Could not convert FirmwareStatusNotification to v16::FirmwareStatus. Missing type");
     }
+
+    throw EnumConversionException("Could not convert to v16::FirmwareStatus");
 }
 
 v16::FirmwareStatusEnumType
@@ -994,9 +1281,8 @@ firmware_status_notification_to_firmware_status_enum_type(const FirmwareStatusNo
         return v16::FirmwareStatusEnumType::InvalidSignature;
     case FirmwareStatusNotification::SignatureVerified:
         return v16::FirmwareStatusEnumType::SignatureVerified;
-    default:
-        throw std::out_of_range("Could not convert to v16::FirmwareStatusEnumType");
     }
+    throw EnumConversionException("Could not convert to v16::FirmwareStatusEnumType");
 }
 
 } // namespace conversions

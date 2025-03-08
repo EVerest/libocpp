@@ -93,7 +93,7 @@ int main(int argc, char* argv[]) {
         fs.close();
     }
 
-    const fs::path sql_init_path = share_path / "init.sql";
+    const fs::path sql_init_path = share_path / "core_migrations";
 
     // create the cso_path
     const fs::path cso_path = "/tmp/client/cso";
@@ -195,7 +195,7 @@ int main(int argc, char* argv[]) {
     charge_point->register_unlock_connector_callback([](int32_t connector) {
         std::cout << "Callback: "
                   << "Unlock connector#" << connector;
-        return true;
+        return ocpp::v16::UnlockStatus::Unlocked;
     });
 
     charge_point->register_upload_diagnostics_callback([](const ocpp::v16::GetDiagnosticsRequest& request) {
@@ -247,10 +247,11 @@ int main(int argc, char* argv[]) {
                   << "Setting charging profiles" << std::endl;
     });
 
-    charge_point->register_transaction_started_callback([](int32_t connector, int32_t transaction_id) {
-        std::cout << "Callback: "
-                  << "Transaction started at connector#" << connector << " and transaction id: " << transaction_id
-                  << std::endl;
+    charge_point->register_transaction_updated_callback([](const int32_t connector, const std::string& session_id,
+                                                           const int32_t transaction_id,
+                                                           const ocpp::v16::IdTagInfo& id_tag_info) {
+        std::cout << "Callback: Transaction updated at connector# " << connector
+                  << " and transaction id: " << transaction_id << std::endl;
     });
 
     /************************************** STOP REGISTERING CALLBACKS **************************************/

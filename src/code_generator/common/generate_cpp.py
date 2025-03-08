@@ -95,8 +95,8 @@ message_hpp_template = env.get_template('message.hpp.jinja')
 message_cpp_template = env.get_template('message.cpp.jinja')
 messages_cmakelists_txt_template = env.get_template(
     'messages.cmakelists.txt.jinja')
-enums_hpp_template = env.get_template('enums.hpp.jinja')
-enums_cpp_template = env.get_template('enums.cpp.jinja')
+enums_hpp_template = env.get_template('ocpp_enums.hpp.jinja')
+enums_cpp_template = env.get_template('ocpp_enums.cpp.jinja')
 ocpp_types_hpp_template = env.get_template('ocpp_types.hpp.jinja')
 ocpp_types_cpp_template = env.get_template('ocpp_types.cpp.jinja')
 
@@ -190,8 +190,6 @@ enum_types['ExtendedTriggerMessageRequest'] = dict()
 enum_types['ExtendedTriggerMessageRequest']['requestedMessage'] = 'MessageTriggerEnumType'
 enum_types['ExtendedTriggerMessageResponse'] = dict()
 enum_types['ExtendedTriggerMessageResponse']['status'] = 'TriggerMessageStatusEnumType'
-enum_types['SecurityEventNotificationRequest'] = dict()
-enum_types['SecurityEventNotificationRequest']['type'] = 'SecurityEvent'
 
 
 def object_exists(name: str) -> bool:
@@ -235,7 +233,7 @@ def parse_property(prop_name: str, prop: Dict, depends_on: List[str], ob_name=No
     - number
     - boolean
     - array
-    - object (will be parsed recursivly)
+    - object (will be parsed recursively)
     """
 
     prop_type = None
@@ -251,7 +249,8 @@ def parse_property(prop_name: str, prop: Dict, depends_on: List[str], ob_name=No
             return parse_property(prop_type, def_prop, depends_on)
         else:
             # if not defined, propably any
-            return ('std::string', False)
+            print(f"{prop_name} has no type defined")
+            return ('json', False)
     if prop['type'] == 'string':
         if 'enum' in prop:
             prop_type = stringcase.capitalcase(prop_name)
@@ -265,6 +264,8 @@ def parse_property(prop_name: str, prop: Dict, depends_on: List[str], ob_name=No
         else:
             if 'maxLength' in prop:
                 prop_type = 'CiString<{}>'.format(prop['maxLength'])
+                if ob_name == 'Get15118EVCertificateResponse' and prop_name == 'exiResponse':
+                    prop_type = 'CiString<ISO15118_GET_EV_CERTIFICATE_EXI_RESPONSE_SIZE>'
             else:
                 if 'format' in prop:
                     if prop['format'] in format_types:
@@ -383,8 +384,8 @@ def parse_schemas(version: str, schema_dir: Path = Path('schemas/json/'),
     if not generated_source_dir.exists():
         generated_source_dir.mkdir(parents=True)
 
-    enums_hpp_fn = Path(generated_header_dir, 'enums.hpp')
-    enums_cpp_fn = Path(generated_source_dir, 'enums.cpp')
+    enums_hpp_fn = Path(generated_header_dir, 'ocpp_enums.hpp')
+    enums_cpp_fn = Path(generated_source_dir, 'ocpp_enums.cpp')
     ocpp_types_hpp_fn = Path(generated_header_dir, 'ocpp_types.hpp')
     ocpp_types_cpp_fn = Path(generated_source_dir, 'ocpp_types.cpp')
     messages_header_dir = generated_header_dir / 'messages'
@@ -405,6 +406,7 @@ def parse_schemas(version: str, schema_dir: Path = Path('schemas/json/'),
         message_uses_optional = False
         message_needs_enums = False
         message_needs_types = False
+        message_needs_constants = False
 
         for (type_name, type_key) in (('Request', 'req'), ('Response', 'res')):
             parsed_types.clear()
@@ -444,6 +446,8 @@ def parse_schemas(version: str, schema_dir: Path = Path('schemas/json/'),
                 message_needs_enums = needs_enums(sorted_types)
             if not message_needs_types:
                 message_needs_types = needs_types(sorted_types)
+            if action == 'Get15118EVCertificate':
+                message_needs_constants = True
 
         for (type_name, type_key) in (('Request', 'req'), ('Response', 'res')):
             parsed_types.clear()
@@ -483,6 +487,7 @@ def parse_schemas(version: str, schema_dir: Path = Path('schemas/json/'),
                     'uses_optional': message_uses_optional,
                     'needs_enums': message_needs_enums,
                     'needs_types': message_needs_types,
+                    'needs_constants': message_needs_constants,
                     'action': {
                         'name': action,
                         'class_name': action_class_name,
@@ -609,7 +614,7 @@ if __name__ == "__main__":
     if version == '1.6' or version == '16' or version == 'v16':
         version_path = 'v16'
     elif version == '2.0.1' or version == '201' or version == 'v201':
-        version_path = 'v201'
+        version_path = 'v2'
     else:
         raise ValueError(f"Version {version} not a valid ocpp version")
 

@@ -58,9 +58,14 @@
             "maxLength": 20
         },
         "HostName": {
-	     "type": "string",
-             "readOnly": true,
-             "minLength": 1
+            "type": "string",
+            "readOnly": true,
+            "minLength": 1
+        },
+        "IFace": {
+            "type": "string",
+            "readOnly": true,
+            "minLength": 1
         },
         "IMSI": {
             "type": "string",
@@ -105,6 +110,13 @@
             ]
         },
         "UseTPM": {
+            "$comment": "Indicates if TPM is used to generate and retrieve private keys for the CSMS leaf certificate",
+            "type": "boolean",
+            "readOnly": true,
+            "default": false
+        },
+        "UseTPMSeccLeafCertificate": {
+            "$comment": "Indicates if TPM is used to generate and retrieve private keys for the SECC leaf certificate",
             "type": "boolean",
             "readOnly": true,
             "default": false
@@ -153,6 +165,32 @@
                 "security"
             ]
         },
+        "LogRotation": {
+            "$comment": "Enable log rotation",
+            "type": "boolean",
+            "readOnly": true,
+            "default": false
+        },
+        "LogRotationDateSuffix": {
+            "$comment": "Use a datetime suffix in log rotation files instead of the traditional .0, .1",
+            "type": "boolean",
+            "readOnly": true,
+            "default": false
+        },
+        "LogRotationMaximumFileSize": {
+            "$comment": "Maximum file size in bytes for the log file after which it will be rotated. Setting this to 0 disables log rotation.",
+            "type": "integer",
+            "readOnly": true,
+            "default": 0,
+            "minimum": 0
+        },
+        "LogRotationMaximumFileCount": {
+            "$comment": "Maximum amount of files before rotated logs will be deleted. Setting this to 0 disables log rotation.",
+            "type": "integer",
+            "readOnly": true,
+            "default": 0,
+            "minimum": 0
+        },
         "SupportedChargingProfilePurposeTypes": {
             "$comment": "Indicates which ChargingProfilePurposeTypes are supported. SetChargingProfile.req for profiles not listed will be rejected.",
             "type": "array",
@@ -166,11 +204,45 @@
                 "TxProfile"
             ]
         },
+        "IgnoredProfilePurposesOffline": {
+            "$comment": "Allows configuration of comma seperated list of ChargingProfilePurposes that are ignored in the composite schedule caluclation when offline.",
+            "type": "string",
+            "readOnly": false
+        },
         "MaxCompositeScheduleDuration": {
             "$comment": "Maximum duration in seconds of GetCompositeSchedule.req. For GetCompositeSchedule.req with a greater duration the schedule for only the MaxCompositeScheduleDuration will be calculated",
             "type": "integer",
             "readOnly": true,
             "default": 31536000
+        },
+        "CompositeScheduleDefaultLimitAmps": {
+            "description": "Default amps limit applied when composite schedule is calculated and no limit was provided by the CSMS",
+            "type": "number",
+            "readOnly": false,
+            "default": 48,
+            "minimum": 0
+        },
+        "CompositeScheduleDefaultLimitWatts": {
+            "description": "Default watts limit applied when composite schedule is calculated and no limit was provided by the CSMS",
+            "type": "number",
+            "readOnly": false,
+            "default": 33120,
+            "minimum": 0
+        },
+        "CompositeScheduleDefaultNumberPhases": {
+            "description": "Default number of phases applied when composite schedule is calculated and no limit was provided by the CSMS",
+            "type": "number",
+            "readOnly": false,
+            "default": 3,
+            "minimum": 1,
+            "maximum": 3
+        },
+        "SupplyVoltage": {
+            "description": "Supply voltage of the grid. This value is only used in case a conversion between smart charging amp and watt limits is required",
+            "type": "number",
+            "readOnly": false,
+            "default": 230,
+            "minimum": 0
         },
         "WebsocketPingPayload": {
             "$comment": "The payload sent in a websocket ping.",
@@ -195,6 +267,12 @@
             "type": "boolean",
             "readOnly": true,
             "default": true
+        },
+        "VerifyCsmsAllowWildcards": {
+            "$comment": "Allow wildcards when verifying the CSMS commonName",
+            "type": "boolean",
+            "readOnly": false,
+            "default": false
         },
         "OcspRequestInterval": {
             "$comment": "Interval in seconds used to request OCSP revocation status information on the CSO Sub-CA certificates",
@@ -221,7 +299,9 @@
         "ConnectorEvseIds": {
             "$comment": "Comma separated EVSEIDs for OCPP connectors starting with connector 1 in one string.",
             "type": "string",
-            "readOnly": false
+            "readOnly": false,
+            "minLength": 7,
+            "maxLength": 1000
         },
         "AllowChargingProfileWithoutStartSchedule": {
             "$comment": "OCPP1.6 specifies that for certain ChargingProfiles the startSchedule field needs to be set. This flag ignores this requirement and will accept those profiles without startSchedule, assuming startSchedule is now.",
@@ -240,11 +320,41 @@
             "type": "boolean",
             "readOnly": true
         },
+        "MessageTypesDiscardForQueueing": {
+            "$comment": "Comma seperated list of message types that shall not be queued (when offline) even in case QueueAllMessages is true. If QueueAllMessages is false, the configuration of this paramater has no effect.",
+            "type": "string",
+            "readOnly": true   
+        },
         "MessageQueueSizeThreshold": {
             "$comment": "Threshold for the size of in-memory message queues used to buffer messages (and store e.g. while offline). If threshold is exceeded, messages  will be dropped according to OCPP specification to avoid memory issues.",
             "type": "integer",
             "readOnly": true,
             "minimum": 1
+        },
+        "SupportedMeasurands": {
+            "$comment": "Comma separated list of supported measurands of the powermeter",
+            "type": "string",
+            "readOnly": true,
+            "default": "Energy.Active.Import.Register,Energy.Active.Export.Register,Power.Active.Import,Voltage,Current.Import,Frequency,Current.Offered,Power.Offered,SoC,Temperature"
+        },
+        "MaxMessageSize": {
+            "$comment": "Maximum size in bytes for messages sent to the CSMS via websocket. If a message exceeds this size, data of the message may be dropped",
+            "type": "integer",
+            "readOnly": true,
+            "minimum": 32000,
+            "default": 65000
+        },
+        "TLSKeylogFile": {
+            "$comment": "The file to which the OCPP TLS keylog in SSLKEYLOGFILE format is written to.",
+            "type": "string",
+            "readOnly": true,
+            "default": "/tmp/ocpp_tls_keylog.txt"
+        },
+        "EnableTLSKeylog": {
+            "$comment": "If the TLS keylogging is enabled.",
+            "type": "boolean",
+            "readOnly": true,
+            "default": false
         }
     },
     "additionalProperties": false

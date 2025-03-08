@@ -5,10 +5,12 @@
 
 #include <string>
 #include <string_view>
-#include <websocketpp/uri.hpp>
+
+#include <websocketpp_utils/uri.hpp>
 
 namespace ocpp {
 
+typedef ocpp::uri ev_uri;
 class Uri {
 public:
     Uri(){};
@@ -53,10 +55,9 @@ public:
         return uri.str();
     }
 
-    websocketpp::uri get_websocketpp_uri() { // FIXME: wrap needed `websocketpp:uri` functionality inside `Uri`
-        return websocketpp::uri(this->secure, this->host, this->port,
-                                this->path_without_chargepoint_id /* is normalized with ending slash */ +
-                                    this->chargepoint_id);
+    ev_uri get_websocketpp_uri() { // FIXME: wrap needed `websocketpp:uri` functionality inside `Uri`
+        return ev_uri(this->secure, this->host, this->port,
+                      this->path_without_chargepoint_id /* is normalized with ending slash */ + this->chargepoint_id);
     }
 
 private:

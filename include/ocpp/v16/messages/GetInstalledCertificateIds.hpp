@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
+// Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
+// This code is generated using the generator in 'src/code_generator/common`, please do not edit manually
+
 #ifndef OCPP_V16_GETINSTALLEDCERTIFICATEIDS_HPP
 #define OCPP_V16_GETINSTALLEDCERTIFICATEIDS_HPP
 
 #include <nlohmann/json_fwd.hpp>
 #include <optional>
 
-#include <ocpp/v16/enums.hpp>
+#include <ocpp/v16/ocpp_enums.hpp>
 #include <ocpp/v16/ocpp_types.hpp>
 
 namespace ocpp {
@@ -18,7 +20,7 @@ struct GetInstalledCertificateIdsRequest : public ocpp::Message {
 
     /// \brief Provides the type of this GetInstalledCertificateIds message as a human readable string
     /// \returns the message type as a human readable string
-    std::string get_type() const;
+    std::string get_type() const override;
 };
 
 /// \brief Conversion from a given GetInstalledCertificateIdsRequest \p k to a given json object \p j
@@ -38,7 +40,7 @@ struct GetInstalledCertificateIdsResponse : public ocpp::Message {
 
     /// \brief Provides the type of this GetInstalledCertificateIdsResponse message as a human readable string
     /// \returns the message type as a human readable string
-    std::string get_type() const;
+    std::string get_type() const override;
 };
 
 /// \brief Conversion from a given GetInstalledCertificateIdsResponse \p k to a given json object \p j

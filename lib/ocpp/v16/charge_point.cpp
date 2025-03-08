@@ -21,8 +21,9 @@ ChargePoint::ChargePoint(const std::string& config, const fs::path& share_path, 
 
 ChargePoint::~ChargePoint() = default;
 
-bool ChargePoint::start(const std::map<int, ChargePointStatus>& connector_status_map, BootReasonEnum bootreason) {
-    return this->charge_point->start(connector_status_map, bootreason);
+bool ChargePoint::start(const std::map<int, ChargePointStatus>& connector_status_map, BootReasonEnum bootreason,
+                        const std::set<std::string>& resuming_session_ids) {
+    return this->charge_point->start(connector_status_map, bootreason, resuming_session_ids);
 }
 
 bool ChargePoint::restart(const std::map<int, ChargePointStatus>& connector_status_map, BootReasonEnum bootreason) {
@@ -49,34 +50,35 @@ IdTagInfo ChargePoint::authorize_id_token(CiString<20> id_token) {
     return this->charge_point->authorize_id_token(id_token);
 }
 
-ocpp::v201::AuthorizeResponse ChargePoint::data_transfer_pnc_authorize(
+ocpp::v2::AuthorizeResponse ChargePoint::data_transfer_pnc_authorize(
 
     const std::string& emaid, const std::optional<std::string>& certificate,
-    const std::optional<std::vector<ocpp::v201::OCSPRequestData>>& iso15118_certificate_hash_data) {
+    const std::optional<std::vector<ocpp::v2::OCSPRequestData>>& iso15118_certificate_hash_data) {
     return this->charge_point->data_transfer_pnc_authorize(emaid, certificate, iso15118_certificate_hash_data);
 }
 
 void ChargePoint::data_transfer_pnc_get_15118_ev_certificate(
     const int32_t connector_id, const std::string& exi_request, const std::string& iso15118_schema_version,
-    const ocpp::v201::CertificateActionEnum& certificate_action) {
+    const ocpp::v2::CertificateActionEnum& certificate_action) {
 
     this->charge_point->data_transfer_pnc_get_15118_ev_certificate(connector_id, exi_request, iso15118_schema_version,
                                                                    certificate_action);
 }
 
-DataTransferResponse ChargePoint::data_transfer(const CiString<255>& vendorId,
-                                                const std::optional<CiString<50>>& messageId,
-                                                const std::optional<std::string>& data) {
+std::optional<DataTransferResponse> ChargePoint::data_transfer(const CiString<255>& vendorId,
+                                                               const std::optional<CiString<50>>& messageId,
+                                                               const std::optional<std::string>& data) {
     return this->charge_point->data_transfer(vendorId, messageId, data);
 }
 
-std::map<int32_t, ChargingSchedule> ChargePoint::get_all_composite_charging_schedules(const int32_t duration_s) {
-    return this->charge_point->get_all_composite_charging_schedules(duration_s);
+std::map<int32_t, ChargingSchedule> ChargePoint::get_all_composite_charging_schedules(const int32_t duration_s,
+                                                                                      const ChargingRateUnit unit) {
+    return this->charge_point->get_all_composite_charging_schedules(duration_s, unit);
 }
 
 std::map<int32_t, EnhancedChargingSchedule>
-ChargePoint::get_all_enhanced_composite_charging_schedules(const int32_t duration_s) {
-    return this->charge_point->get_all_enhanced_composite_charging_schedules(duration_s);
+ChargePoint::get_all_enhanced_composite_charging_schedules(const int32_t duration_s, const ChargingRateUnit unit) {
+    return this->charge_point->get_all_enhanced_composite_charging_schedules(duration_s, unit);
 }
 
 void ChargePoint::on_meter_values(int32_t connector, const Measurement& measurement) {
@@ -103,7 +105,7 @@ void ChargePoint::on_session_stopped(const int32_t connector, const std::string&
 }
 
 void ChargePoint::on_transaction_started(const int32_t& connector, const std::string& session_id,
-                                         const std::string& id_token, const int32_t& meter_start,
+                                         const std::string& id_token, const double meter_start,
                                          std::optional<int32_t> reservation_id, const ocpp::DateTime& timestamp,
                                          std::optional<std::string> signed_meter_value) {
     this->charge_point->on_transaction_started(connector, session_id, id_token, meter_start, reservation_id, timestamp,
@@ -118,28 +120,28 @@ void ChargePoint::on_transaction_stopped(const int32_t connector, const std::str
                                                signed_meter_value);
 }
 
-void ChargePoint::on_suspend_charging_ev(int32_t connector) {
-    this->charge_point->on_suspend_charging_ev(connector);
+void ChargePoint::on_suspend_charging_ev(int32_t connector, const std::optional<CiString<50>> info) {
+    this->charge_point->on_suspend_charging_ev(connector, info);
 }
 
-void ChargePoint::on_suspend_charging_evse(int32_t connector) {
-    this->charge_point->on_suspend_charging_evse(connector);
+void ChargePoint::on_suspend_charging_evse(int32_t connector, const std::optional<CiString<50>> info) {
+    this->charge_point->on_suspend_charging_evse(connector, info);
 }
 
 void ChargePoint::on_resume_charging(int32_t connector) {
     this->charge_point->on_resume_charging(connector);
 }
 
-void ChargePoint::on_error(int32_t connector, const ChargePointErrorCode& error_code,
-                           const std::optional<CiString<50>>& info, const std::optional<CiString<255>>& vendor_id,
-                           const std::optional<CiString<50>>& vendor_error_code) {
-    this->charge_point->on_error(connector, error_code, info, vendor_id, vendor_error_code);
+void ChargePoint::on_error(int32_t connector, const ErrorInfo& error_info) {
+    this->charge_point->on_error(connector, error_info);
 }
 
-void ChargePoint::on_fault(int32_t connector, const ChargePointErrorCode& error_code,
-                           const std::optional<CiString<50>>& info, const std::optional<CiString<255>>& vendor_id,
-                           const std::optional<CiString<50>>& vendor_error_code) {
-    this->charge_point->on_fault(connector, error_code, info, vendor_id, vendor_error_code);
+void ChargePoint::on_error_cleared(int32_t connector, const std::string uuid) {
+    this->charge_point->on_error_cleared(connector, uuid);
+}
+
+void ChargePoint::on_all_errors_cleared(int32_t connector) {
+    this->charge_point->on_all_errors_cleared(connector);
 }
 
 void ChargePoint::on_log_status_notification(int32_t request_id, std::string log_status) {
@@ -171,8 +173,9 @@ void ChargePoint::on_plugin_timeout(int32_t connector) {
     this->charge_point->on_plugin_timeout(connector);
 }
 
-void ChargePoint::on_security_event(const std::string& type, const std::string& tech_info) {
-    this->charge_point->on_security_event(type, tech_info);
+void ChargePoint::on_security_event(const CiString<50>& event_type, const std::optional<CiString<255>>& tech_info,
+                                    const std::optional<bool>& critical, const std::optional<DateTime>& timestamp) {
+    this->charge_point->on_security_event(event_type, tech_info, critical, timestamp);
 }
 
 ChangeAvailabilityResponse ChargePoint::on_change_availability(const ChangeAvailabilityRequest& request) {
@@ -227,7 +230,7 @@ void ChargePoint::register_cancel_reservation_callback(const std::function<bool(
     this->charge_point->register_cancel_reservation_callback(callback);
 }
 
-void ChargePoint::register_unlock_connector_callback(const std::function<bool(int32_t connector)>& callback) {
+void ChargePoint::register_unlock_connector_callback(const std::function<UnlockStatus(int32_t connector)>& callback) {
     this->charge_point->register_unlock_connector_callback(callback);
 }
 
@@ -272,6 +275,11 @@ void ChargePoint::register_set_system_time_callback(
     this->charge_point->register_set_system_time_callback(callback);
 }
 
+void ChargePoint::register_boot_notification_response_callback(
+    const std::function<void(const BootNotificationResponse& boot_notification_response)>& callback) {
+    this->charge_point->register_boot_notification_response_callback(callback);
+}
+
 void ChargePoint::register_signal_set_charging_profiles_callback(const std::function<void()>& callback) {
     this->charge_point->register_signal_set_charging_profiles_callback(callback);
 }
@@ -282,14 +290,26 @@ void ChargePoint::register_connection_state_changed_callback(const std::function
 
 void ChargePoint::register_get_15118_ev_certificate_response_callback(
     const std::function<void(const int32_t connector,
-                             const ocpp::v201::Get15118EVCertificateResponse& certificate_response,
-                             const ocpp::v201::CertificateActionEnum& certificate_action)>& callback) {
+                             const ocpp::v2::Get15118EVCertificateResponse& certificate_response,
+                             const ocpp::v2::CertificateActionEnum& certificate_action)>& callback) {
     this->charge_point->register_get_15118_ev_certificate_response_callback(callback);
 }
 
 void ChargePoint::register_transaction_started_callback(
-    const std::function<void(const int32_t connector, const int32_t transaction_id)>& callback) {
+    const std::function<void(const int32_t connector, const std::string& session_id)>& callback) {
     this->charge_point->register_transaction_started_callback(callback);
+}
+
+void ChargePoint::register_transaction_stopped_callback(
+    const std::function<void(const int32_t connector, const std::string& session_id, const int32_t transaction_id)>&
+        callback) {
+    this->charge_point->register_transaction_stopped_callback(callback);
+}
+
+void ChargePoint::register_transaction_updated_callback(
+    const std::function<void(const int32_t connector, const std::string& session_id, const int32_t transaction_id,
+                             const IdTagInfo& id_tag_info)>& callback) {
+    this->charge_point->register_transaction_updated_callback(callback);
 }
 
 void ChargePoint::register_configuration_key_changed_callback(
@@ -297,9 +317,30 @@ void ChargePoint::register_configuration_key_changed_callback(
     this->charge_point->register_configuration_key_changed_callback(key, callback);
 }
 
+void ChargePoint::register_generic_configuration_key_changed_callback(
+    const std::function<void(const KeyValue& key_value)>& callback) {
+    this->charge_point->register_generic_configuration_key_changed_callback(callback);
+}
+
 void ChargePoint::register_security_event_callback(
     const std::function<void(const std::string& type, const std::string& tech_info)>& callback) {
     this->charge_point->register_security_event_callback(callback);
+}
+
+void ChargePoint::register_is_token_reserved_for_connector_callback(
+    const std::function<ocpp::ReservationCheckStatus(const int32_t connector, const std::string& id_token)>& callback) {
+    this->charge_point->register_is_token_reserved_for_connector_callback(callback);
+}
+
+void ChargePoint::register_session_cost_callback(
+    const std::function<DataTransferResponse(const RunningCost& running_cost, const uint32_t number_of_decimals)>&
+        session_cost_callback) {
+    this->charge_point->register_session_cost_callback(session_cost_callback);
+}
+
+void ChargePoint::register_set_display_message_callback(
+    const std::function<DataTransferResponse(const std::vector<DisplayMessage>&)> set_display_message_callback) {
+    this->charge_point->register_set_display_message_callback(set_display_message_callback);
 }
 
 GetConfigurationResponse ChargePoint::get_configuration_key(const GetConfigurationRequest& request) {
@@ -308,11 +349,6 @@ GetConfigurationResponse ChargePoint::get_configuration_key(const GetConfigurati
 
 ConfigurationStatus ChargePoint::set_custom_configuration_key(CiString<50> key, CiString<500> value) {
     return this->charge_point->set_custom_configuration_key(key, value);
-}
-
-void ChargePoint::register_is_token_reserved_for_connector_callback(
-    const std::function<bool(const int32_t connector, const std::string& id_token)>& callback) {
-    this->charge_point->register_is_token_reserved_for_connector_callback(callback);
 }
 
 void ChargePoint::set_message_queue_resume_delay(std::chrono::seconds delay) {

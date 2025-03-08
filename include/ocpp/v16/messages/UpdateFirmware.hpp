@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
+// Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
+// This code is generated using the generator in 'src/code_generator/common`, please do not edit manually
+
 #ifndef OCPP_V16_UPDATEFIRMWARE_HPP
 #define OCPP_V16_UPDATEFIRMWARE_HPP
 
@@ -20,7 +22,7 @@ struct UpdateFirmwareRequest : public ocpp::Message {
 
     /// \brief Provides the type of this UpdateFirmware message as a human readable string
     /// \returns the message type as a human readable string
-    std::string get_type() const;
+    std::string get_type() const override;
 };
 
 /// \brief Conversion from a given UpdateFirmwareRequest \p k to a given json object \p j
@@ -38,7 +40,7 @@ struct UpdateFirmwareResponse : public ocpp::Message {
 
     /// \brief Provides the type of this UpdateFirmwareResponse message as a human readable string
     /// \returns the message type as a human readable string
-    std::string get_type() const;
+    std::string get_type() const override;
 };
 
 /// \brief Conversion from a given UpdateFirmwareResponse \p k to a given json object \p j

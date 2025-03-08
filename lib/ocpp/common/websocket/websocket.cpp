@@ -5,9 +5,7 @@
 #include <ocpp/common/websocket/websocket.hpp>
 #include <ocpp/v16/types.hpp>
 
-#ifdef LIBOCPP_ENABLE_LIBWEBSOCKETS
-#include <ocpp/common/websocket/websocket_tls_tpm.hpp>
-#endif
+#include <ocpp/common/websocket/websocket_libwebsockets.hpp>
 
 #include <boost/algorithm/string.hpp>
 
@@ -18,50 +16,41 @@ namespace ocpp {
 Websocket::Websocket(const WebsocketConnectionOptions& connection_options, std::shared_ptr<EvseSecurity> evse_security,
                      std::shared_ptr<MessageLogging> logging) :
     logging(logging) {
-
-#ifdef LIBOCPP_ENABLE_LIBWEBSOCKETS
-    this->websocket = std::make_unique<WebsocketTlsTPM>(connection_options, evse_security);
-#else
-    if (connection_options.security_profile <= 1) {
-        this->websocket = std::make_unique<WebsocketPlain>(connection_options);
-    } else if (connection_options.security_profile >= 2) {
-        this->websocket = std::make_unique<WebsocketTLS>(connection_options, evse_security);
-    }
-#endif
+    this->websocket = std::make_unique<WebsocketLibwebsockets>(connection_options, evse_security);
 }
 
 Websocket::~Websocket() {
 }
 
-bool Websocket::connect() {
+bool Websocket::start_connecting() {
     this->logging->sys("Connecting");
-    return this->websocket->connect();
+    return this->websocket->start_connecting();
 }
 
 void Websocket::set_connection_options(const WebsocketConnectionOptions& connection_options) {
     this->websocket->set_connection_options(connection_options);
 }
 
-void Websocket::disconnect(websocketpp::close::status::value code) {
+void Websocket::disconnect(const WebsocketCloseReason code) {
     this->logging->sys("Disconnecting");
     this->websocket->disconnect(code);
 }
 
-void Websocket::reconnect(std::error_code reason, long delay) {
+void Websocket::reconnect(long delay) {
     this->logging->sys("Reconnecting");
-    this->websocket->reconnect(reason, delay);
+    this->websocket->reconnect(delay);
 }
 
 bool Websocket::is_connected() {
     return this->websocket->is_connected();
 }
 
-void Websocket::register_connected_callback(const std::function<void(const int security_profile)>& callback) {
+void Websocket::register_connected_callback(const std::function<void(OcppProtocolVersion protocol)>& callback) {
     this->connected_callback = callback;
 
-    this->websocket->register_connected_callback([this](const int security_profile) {
+    this->websocket->register_connected_callback([this](OcppProtocolVersion protocol) {
         this->logging->sys("Connected");
-        this->connected_callback(security_profile);
+        this->connected_callback(protocol);
     });
 }
 
@@ -74,11 +63,11 @@ void Websocket::register_disconnected_callback(const std::function<void()>& call
     });
 }
 
-void Websocket::register_closed_callback(
-    const std::function<void(const websocketpp::close::status::value reason)>& callback) {
-    this->closed_callback = callback;
-    this->websocket->register_closed_callback(
-        [this](const websocketpp::close::status::value reason) { this->closed_callback(reason); });
+void Websocket::register_stopped_connecting_callback(
+    const std::function<void(const WebsocketCloseReason reason)>& callback) {
+    this->stopped_connecting_callback = callback;
+    this->websocket->register_stopped_connecting_callback(
+        [this](const WebsocketCloseReason reason) { this->stopped_connecting_callback(reason); });
 }
 
 void Websocket::register_message_callback(const std::function<void(const std::string& message)>& callback) {

@@ -7,10 +7,12 @@
 #include <ocpp/common/evse_security.hpp>
 #include <ocpp/common/evse_security_impl.hpp>
 #include <ocpp/common/support_older_cpp_versions.hpp>
+#include <ocpp/v16/charge_point_state_machine.hpp>
 #include <ocpp/v16/ocpp_types.hpp>
 #include <ocpp/v16/smart_charging.hpp>
 #include <ocpp/v16/types.hpp>
 
+#include <ocpp/v16/messages/BootNotification.hpp>
 #include <ocpp/v16/messages/DataTransfer.hpp>
 #include <ocpp/v16/messages/GetConfiguration.hpp>
 #include <ocpp/v16/messages/GetDiagnostics.hpp>
@@ -20,15 +22,15 @@
 
 // for OCPP1.6 PnC
 #include "ocpp/v16/messages/ChangeAvailability.hpp"
-#include <ocpp/v201/messages/Authorize.hpp>
-#include <ocpp/v201/messages/CertificateSigned.hpp>
-#include <ocpp/v201/messages/DeleteCertificate.hpp>
-#include <ocpp/v201/messages/Get15118EVCertificate.hpp>
-#include <ocpp/v201/messages/GetCertificateStatus.hpp>
-#include <ocpp/v201/messages/GetInstalledCertificateIds.hpp>
-#include <ocpp/v201/messages/InstallCertificate.hpp>
-#include <ocpp/v201/messages/SignCertificate.hpp>
-#include <ocpp/v201/messages/TriggerMessage.hpp>
+#include <ocpp/v2/messages/Authorize.hpp>
+#include <ocpp/v2/messages/CertificateSigned.hpp>
+#include <ocpp/v2/messages/DeleteCertificate.hpp>
+#include <ocpp/v2/messages/Get15118EVCertificate.hpp>
+#include <ocpp/v2/messages/GetCertificateStatus.hpp>
+#include <ocpp/v2/messages/GetInstalledCertificateIds.hpp>
+#include <ocpp/v2/messages/InstallCertificate.hpp>
+#include <ocpp/v2/messages/SignCertificate.hpp>
+#include <ocpp/v2/messages/TriggerMessage.hpp>
 
 namespace ocpp {
 namespace v16 {
@@ -38,6 +40,13 @@ class ChargePointImpl;
 class ChargePoint {
 private:
     std::unique_ptr<ChargePointImpl> charge_point;
+
+    /// \addtogroup chargepoint_constructors Chargepoint constructors
+    /// Constructors for chargepoint, 1.6 and 2.0.1
+    /// @{
+
+    /// @name Constructors for 1.6
+    /// @{
 
 public:
     /// \brief The main entrypoint for libOCPP for OCPP 1.6
@@ -69,15 +78,24 @@ public:
 
     ~ChargePoint();
 
+    /// @}  // End constructors 1.6 group
+    /// @}  // End chargepoint constructors topic
+
     /// \brief Starts the ChargePoint, initializes and connects to the Websocket endpoint and initializes a
     /// BootNotification.req
     /// \param connector_status_map initial state of connectors including connector 0 with reduced set of states
     /// (Available, Unavailable, Faulted). connector_status_map is empty, last availability states from the persistant
     /// storage will be used
     /// \param bootreason reason for calling the start function
-    /// \return
+    /// \param resuming_session_ids can optionally contain active session ids from previous executions. If empty and
+    /// libocpp has transactions in its internal database that have not been stopped yet, calling this function will
+    /// initiate a StopTransaction.req for those transactions. If this vector contains session_ids this function will
+    /// not stop transactions with this session_id even in case it has an internal database entry for this session and
+    /// it hasnt been stopped yet. Its ignored if this vector contains session_ids that are unknown to libocpp.
+    ///  \return
     bool start(const std::map<int, ChargePointStatus>& connector_status_map = {},
-               BootReasonEnum bootreason = BootReasonEnum::PowerUp);
+               BootReasonEnum bootreason = BootReasonEnum::PowerUp,
+               const std::set<std::string>& resuming_session_ids = {});
 
     /// \brief Restarts the ChargePoint if it has been stopped before. The ChargePoint is reinitialized, connects to the
     /// websocket and starts to communicate OCPP messages again
@@ -124,9 +142,9 @@ public:
     /// \param certificate contract certificate that the EVCC provides
     /// \param iso15118_certificate_hash_data
     /// \return
-    ocpp::v201::AuthorizeResponse data_transfer_pnc_authorize(
+    ocpp::v2::AuthorizeResponse data_transfer_pnc_authorize(
         const std::string& emaid, const std::optional<std::string>& certificate,
-        const std::optional<std::vector<ocpp::v201::OCSPRequestData>>& iso15118_certificate_hash_data);
+        const std::optional<std::vector<ocpp::v2::OCSPRequestData>>& iso15118_certificate_hash_data);
 
     /// \brief  Uses data transfer mechanism to get 15118 ev certificate from CSMS. This function can be called when the
     /// EVCC requests the update or installation of a contract certificate as part of the ISO15118
@@ -137,29 +155,44 @@ public:
     /// \param certificate_action Install or Update
     void data_transfer_pnc_get_15118_ev_certificate(const int32_t connector_id, const std::string& exi_request,
                                                     const std::string& iso15118_schema_version,
-                                                    const ocpp::v201::CertificateActionEnum& certificate_action);
+                                                    const ocpp::v2::CertificateActionEnum& certificate_action);
 
     /// \brief Allows the exchange of arbitrary \p data identified by a \p vendorId and \p messageId with a central
     /// system \returns the DataTransferResponse
     /// \param vendorId
     /// \param messageId
     /// \param data
-    /// \return
-    DataTransferResponse data_transfer(const CiString<255>& vendorId, const std::optional<CiString<50>>& messageId,
-                                       const std::optional<std::string>& data);
+    /// \return the DataTransferResponse from the CSMS. In case no response is received from the CSMS because the
+    /// message timed out or the charging station is offline, std::nullopt is returned
+    std::optional<DataTransferResponse> data_transfer(const CiString<255>& vendorId,
+                                                      const std::optional<CiString<50>>& messageId,
+                                                      const std::optional<std::string>& data);
 
     /// \brief Calculates ChargingProfiles configured by the CSMS of all connectors from now until now + given \p
-    /// duration_s
+    /// duration_s and the given \p unit
     /// \param duration_s
+    /// \param unit defaults to A
     /// \return ChargingSchedules of all connectors
-    std::map<int32_t, ChargingSchedule> get_all_composite_charging_schedules(const int32_t duration_s);
+    std::map<int32_t, ChargingSchedule>
+    get_all_composite_charging_schedules(const int32_t duration_s, const ChargingRateUnit unit = ChargingRateUnit::A);
 
     /// \brief Calculates EnhancedChargingSchedule(s) configured by the CSMS of all connectors from now until now +
-    /// given \p duration_s . EnhancedChargingSchedules contain EnhancedChargingSchedulePeriod(s) that are enhanced by
-    /// the stackLevel that was provided for the ChargingProfile
+    /// given \p duration_s and the given \p unit . EnhancedChargingSchedules contain EnhancedChargingSchedulePeriod(s)
+    /// that are enhanced by the stackLevel that was provided for the ChargingProfile
     /// \param duration_s
+    /// \param unit defaults to A
     /// \return ChargingSchedules of all connectors
-    std::map<int32_t, EnhancedChargingSchedule> get_all_enhanced_composite_charging_schedules(const int32_t duration_s);
+    std::map<int32_t, EnhancedChargingSchedule>
+    get_all_enhanced_composite_charging_schedules(const int32_t duration_s,
+                                                  const ChargingRateUnit unit = ChargingRateUnit::A);
+
+    /// \addtogroup ocpp16_handlers OCPP 1.6 handlers
+    /// Handlers that can be called from the implementing class.
+    /// @{
+
+    /// @name Handlers
+    /// The handlers
+    /// @{
 
     /// \brief Stores the given \p powermeter values for the given \p connector . This function can be called when a new
     /// meter value is present.
@@ -209,7 +242,7 @@ public:
     /// \param timestamp of the start of transaction
     /// \param signed_meter_value e.g. in OCMF format
     void on_transaction_started(const int32_t& connector, const std::string& session_id, const std::string& id_token,
-                                const int32_t& meter_start, std::optional<int32_t> reservation_id,
+                                const double meter_start, std::optional<int32_t> reservation_id,
                                 const ocpp::DateTime& timestamp, std::optional<std::string> signed_meter_value);
 
     /// \brief Notifies chargepoint that the transaction on the given \p connector with the given \p reason has been
@@ -229,38 +262,40 @@ public:
 
     /// \brief This function should be called when EV indicates that it suspends charging on the given \p connector
     /// \param connector
-    void on_suspend_charging_ev(int32_t connector);
+    /// \param reason
+    void on_suspend_charging_ev(int32_t connector, const std::optional<CiString<50>> info = std::nullopt);
 
     /// \brief This function should be called when EVSE indicates that it suspends charging on the given \p connector
     /// \param connector
-    void on_suspend_charging_evse(int32_t connector);
+    /// \param reason
+    void on_suspend_charging_evse(int32_t connector, const std::optional<CiString<50>> info = std::nullopt);
 
     /// \brief This function should be called when charging resumes on the given \p connector
     /// \param connector
     void on_resume_charging(int32_t connector);
 
-    /// \brief This function should be called if an error with the given \p error_code is present. This function will
-    /// trigger a StatusNotification.req containing the given \p error_code . It will not change the present state of
-    /// the state machine.
+    /// \brief This function should be called if an error with the given \p error_info is present. This function will
+    /// trigger a StatusNotification.req containing the given \p error_info . It will change the present state of
+    /// the state machine to faulted, in case the corresponding flag is set in the given \p error_info. This function
+    /// can be called multiple times for different errors. Errors reported using this function stay active as long as
+    /// they are cleared by \ref on_error_cleared().
     /// \param connector
-    /// \param error_code
-    /// \param info Additional free format information related to the error
-    /// \param vendor_id This identifies the vendor-specific implementation
-    /// \param vendor_error_code This contains the vendor-specific error code
-    void on_error(int32_t connector, const ChargePointErrorCode& error_code,
-                  const std::optional<CiString<50>>& info = std::nullopt,
-                  const std::optional<CiString<255>>& vendor_id = std::nullopt,
-                  const std::optional<CiString<50>>& vendor_error_code = std::nullopt);
+    /// \param error_info Additional information related to
+    /// the error
+    void on_error(int32_t connector, const ErrorInfo& error_info);
 
-    /// \brief This function should be called if a fault is detected that prevents further charging operations. The \p
-    /// error_code indicates the reason for the fault.
-    /// \param info Additional free format information related to the error
-    /// \param vendor_id This identifies the vendor-specific implementation
-    /// \param vendor_error_code This contains the vendor-specific error code
-    void on_fault(int32_t connector, const ChargePointErrorCode& error_code,
-                  const std::optional<CiString<50>>& info = std::nullopt,
-                  const std::optional<CiString<255>>& vendor_id = std::nullopt,
-                  const std::optional<CiString<50>>& vendor_error_code = std::nullopt);
+    /// \brief This function should be called if an error with the given \p uuid has been cleared. If this leads to the
+    /// fact that no other error is active anymore, this function will initiate a StatusNotification.req that reports
+    /// the current state and no error
+    ///  \param connector
+    /// \param uuid of a previously reported error. If uuid is not
+    /// known, the event will be ignored
+    void on_error_cleared(int32_t connector, const std::string uuid);
+
+    /// \brief Clears all previously reported errors at the same time for the given \p connector . This will
+    /// clear a previously reported "Faulted" state if present
+    ///  \param connector
+    void on_all_errors_cleared(int32_t connector);
 
     /// \brief Chargepoint notifies about new log status \p log_status . This function should be called during a
     /// Diagnostics / Log upload to indicate the current \p log_status .
@@ -301,15 +336,33 @@ public:
     /// be called when an EV is plugged in but the authorization is present within the specified ConnectionTimeout
     void on_plugin_timeout(int32_t connector);
 
-    // \brief Notifies chargepoint that a SecurityEvent occurs. This will send a SecurityEventNotification.req to the
+    /// \brief Notifies chargepoint that a SecurityEvent occurs. This will send a SecurityEventNotification.req to the
     /// CSMS
-    /// \param type type of the security event
+    /// \param event_type type of the security event
     /// \param tech_info additional info of the security event
-    void on_security_event(const std::string& type, const std::string& tech_info);
+    /// \param critical if set this overwrites the default criticality recommended in the OCPP 1.6 security whitepaper.
+    /// A critical security event is transmitted as a message to the CSMS, a non-critical one is just written to the
+    /// security log
+    /// \param timestamp when this security event occured, if absent the current datetime is assumed
+    void on_security_event(const CiString<50>& event_type, const std::optional<CiString<255>>& tech_info,
+                           const std::optional<bool>& critical = std::nullopt,
+                           const std::optional<DateTime>& timestamp = std::nullopt);
 
     /// \brief Handles an internal ChangeAvailabilityRequest (in the same way as if it was emitted by the CSMS).
     /// \param request
     ChangeAvailabilityResponse on_change_availability(const ChangeAvailabilityRequest& request);
+
+    /// @}  // End handlers group
+
+    /// @}
+
+    /// @addtogroup ocpp16_callbacks OCPP 1.6 callbacks
+    /// Callbacks will call be called when necessary and must be implemented by the calling class.
+    /// @{
+
+    /// @name Callbacks
+    /// Callbacks
+    /// @{
 
     /// registers a \p callback function that can be used to receive a arbitrary data transfer for the given \p
     /// vendorId and \p messageId
@@ -375,13 +428,14 @@ public:
     /// \param callback
     void register_cancel_reservation_callback(const std::function<bool(int32_t reservation_id)>& callback);
 
-    /// \brief registers a \p callback function that can be used to unlock the connector. The unlock_connector_callback
-    /// is called:
+    /// \brief registers a \p callback function that can be used to unlock the connector. In case a transaction is
+    // active at the specified connector, the \p callback shall stop the transaction before unlocking the connector. The
+    // unlock_connector_callback is called:
     /// - when receiving a UnlockConnector.req and
     /// - when a transaction has on_transaction_stopped is called and the configuration key
     /// UnlockConnectorOnEVSideDisconnect is true
     /// \param callback
-    void register_unlock_connector_callback(const std::function<bool(int32_t connector)>& callback);
+    void register_unlock_connector_callback(const std::function<UnlockStatus(int32_t connector)>& callback);
 
     /// \brief registers a \p callback function that can be used to trigger an upload of diagnostics. This callback
     /// should trigger a process of a diagnostics upload using the given parameters of the request. This process should
@@ -438,6 +492,11 @@ public:
     /// \param callback
     void register_set_system_time_callback(const std::function<void(const std::string& system_time)>& callback);
 
+    /// \brief registers a \p callback function that can be used receive the BootNotificationResponse
+    /// \param callback
+    void register_boot_notification_response_callback(
+        const std::function<void(const BootNotificationResponse& boot_notification_response)>& callback);
+
     /// \brief registers a \p callback function that can be used to signal that the chargepoint received a
     /// SetChargingProfile.req . The set_charging_profiles_callback is called when a SetChargingProfile.req is received
     /// and was accepted. The registered callback could make use of the get_all_composite_charging_schedules in order to
@@ -456,13 +515,28 @@ public:
     /// \param callback
     void register_get_15118_ev_certificate_response_callback(
         const std::function<void(const int32_t connector,
-                                 const ocpp::v201::Get15118EVCertificateResponse& certificate_response,
-                                 const ocpp::v201::CertificateActionEnum& certificate_action)>& callback);
+                                 const ocpp::v2::Get15118EVCertificateResponse& certificate_response,
+                                 const ocpp::v2::CertificateActionEnum& certificate_action)>& callback);
 
-    /// \brief registers a \p callback function that can be used to publish the response when transaction starts
+    /// \brief registers a \p callback function that is called when a StartTransaction.req message is sent by the
+    /// chargepoint
     /// \param callback
     void register_transaction_started_callback(
-        const std::function<void(const int32_t connector, const int32_t transaction_id)>& callback);
+        const std::function<void(const int32_t connector, const std::string& session_id)>& callback);
+
+    /// \brief registers a \p callback function that is called when a StopTransaction.req message is sent by the
+    /// chargepoint
+    /// \param callback
+    void register_transaction_stopped_callback(
+        const std::function<void(const int32_t connector, const std::string& session_id, const int32_t transaction_id)>&
+            callback);
+
+    /// \brief registers a \p callback function that is called when a StartTransaction.conf message is received by the
+    /// CSMS. This includes the transactionId.
+    /// \param callback
+    void register_transaction_updated_callback(
+        const std::function<void(const int32_t connector, const std::string& session_id, const int32_t transaction_id,
+                                 const IdTagInfo& id_tag_info)>& callback);
 
     /// \brief registers a \p callback function that can be used to react on changed configuration keys. This
     /// callback is called when a configuration key has been successfully changed by the CSMS or internally using the
@@ -472,10 +546,42 @@ public:
     void register_configuration_key_changed_callback(const CiString<50>& key,
                                                      const std::function<void(const KeyValue& key_value)>& callback);
 
+    /// \brief registers a \p callback function that can be used to react on changed configuration key and value. This
+    /// callback is called when a configuration key has been changed by the CSMS, where no key based callback is
+    /// assigned
+    /// \param callback executed when this configuration key and its value changed
+    void
+    register_generic_configuration_key_changed_callback(const std::function<void(const KeyValue& key_value)>& callback);
+
     /// \brief registers a \p callback function that can be used to react to a security event callback. This callback is
     /// called only if the SecurityEvent occured internally within libocpp
     void register_security_event_callback(
         const std::function<void(const std::string& type, const std::string& tech_info)>& callback);
+
+    /// \brief registers a \p callback function that can be used to check, if the \p connector is reserved for the given
+    /// \p id_token. The is_token_reserved_for_connector_callback is called when a RemoteStartTransaction.req is
+    /// received.
+    /// \param callback
+    /// \ingroup ocpp16_callbacks
+    void register_is_token_reserved_for_connector_callback(
+        const std::function<ReservationCheckStatus(const int32_t connector, const std::string& id_token)>& callback);
+
+    /// \brief Registers a callback function for the session cost datatransfer message (California Pricing Requirements)
+    /// \param session_cost_callback    The callback.
+    /// \ingroup ocpp16_callbacks
+    void register_session_cost_callback(
+        const std::function<DataTransferResponse(const RunningCost& session_cost, const uint32_t number_of_decimals)>&
+            session_cost_callback);
+
+    /// \brief Register a callback function for display messages (used in California Pricing Requirements)
+    /// \param set_display_message_callback The callback.
+    /// \ingroup ocpp16_callbacks
+    void register_set_display_message_callback(
+        const std::function<DataTransferResponse(const std::vector<DisplayMessage>&)> set_display_message_callback);
+
+    /// @} // End ocpp 16 callbacks group / topic
+
+    /// @} // End group
 
     /// \brief Gets the configured configuration key requested in the given \p request
     /// \param request specifies the keys that should be returned. If empty or not set, all keys will be reported
@@ -487,13 +593,6 @@ public:
     /// \param value
     /// \return Indicates the result of the operation
     ConfigurationStatus set_custom_configuration_key(CiString<50> key, CiString<500> value);
-
-    /// \brief registers a \p callback function that can be used to check, if the \p connector is reserved for the given
-    /// \p id_token. The is_token_reserved_for_connector_callback is called when a RemoteStartTransaction.req is
-    /// received.
-    /// \param callback
-    void register_is_token_reserved_for_connector_callback(
-        const std::function<bool(const int32_t connector, const std::string& id_token)>& callback);
 
     /// \brief Delay draining the message queue after reconnecting, so the CSMS can perform post-reconnect checks first
     /// \param delay The delay period (seconds)

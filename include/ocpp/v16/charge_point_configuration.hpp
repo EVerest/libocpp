@@ -18,6 +18,7 @@ class ChargePointConfiguration {
 private:
     json config;
     json custom_schema;
+    json internal_schema;
     fs::path user_config_path;
 
     std::set<SupportedFeatureProfiles> supported_feature_profiles;
@@ -33,8 +34,11 @@ private:
     bool measurands_supported(std::string csv);
     json get_user_config();
     void setInUserConfig(std::string profile, std::string key, json value);
+    void init_supported_measurands();
 
     bool isConnectorPhaseRotationValid(std::string str);
+
+    bool checkTimeOffset(const std::string& offset);
 
 public:
     ChargePointConfiguration(const std::string& config, const fs::path& ocpp_main_path,
@@ -44,6 +48,7 @@ public:
     std::string getChargePointId();
     KeyValue getChargePointIdKeyValue();
     std::string getCentralSystemURI();
+    void setCentralSystemURI(std::string ocpp_uri);
     KeyValue getCentralSystemURIKeyValue();
     std::string getChargeBoxSerialNumber();
     KeyValue getChargeBoxSerialNumberKeyValue();
@@ -71,10 +76,33 @@ public:
     KeyValue getLogMessagesKeyValue();
     std::vector<std::string> getLogMessagesFormat();
     KeyValue getLogMessagesFormatKeyValue();
+    bool getLogRotation();
+    KeyValue getLogRotationKeyValue();
+    bool getLogRotationDateSuffix();
+    KeyValue getLogRotationDateSuffixKeyValue();
+    uint64_t getLogRotationMaximumFileSize();
+    KeyValue getLogRotationMaximumFileSizeKeyValue();
+    uint64_t getLogRotationMaximumFileCount();
+    KeyValue getLogRotationMaximumFileCountKeyValue();
     std::vector<ChargingProfilePurposeType> getSupportedChargingProfilePurposeTypes();
     KeyValue getSupportedChargingProfilePurposeTypesKeyValue();
+    std::vector<ChargingProfilePurposeType> getIgnoredProfilePurposesOffline();
+    std::optional<KeyValue> getIgnoredProfilePurposesOfflineKeyValue();
+    bool setIgnoredProfilePurposesOffline(const std::string& ignored_profile_purposes_offline);
     int32_t getMaxCompositeScheduleDuration();
     KeyValue getMaxCompositeScheduleDurationKeyValue();
+    std::optional<int32_t> getCompositeScheduleDefaultLimitAmps();
+    std::optional<KeyValue> getCompositeScheduleDefaultLimitAmpsKeyValue();
+    void setCompositeScheduleDefaultLimitAmps(int32_t limit_amps);
+    std::optional<int32_t> getCompositeScheduleDefaultLimitWatts();
+    std::optional<KeyValue> getCompositeScheduleDefaultLimitWattsKeyValue();
+    void setCompositeScheduleDefaultLimitWatts(int32_t limit_watts);
+    std::optional<int32_t> getCompositeScheduleDefaultNumberPhases();
+    std::optional<KeyValue> getCompositeScheduleDefaultNumberPhasesKeyValue();
+    void setCompositeScheduleDefaultNumberPhases(int32_t number_phases);
+    std::optional<int32_t> getSupplyVoltage();
+    std::optional<KeyValue> getSupplyVoltageKeyValue();
+    void setSupplyVoltage(int32_t supply_voltage);
     std::string getSupportedCiphers12();
     KeyValue getSupportedCiphers12KeyValue();
     std::string getSupportedCiphers13();
@@ -83,7 +111,18 @@ public:
     KeyValue getUseSslDefaultVerifyPathsKeyValue();
     bool getVerifyCsmsCommonName();
     KeyValue getVerifyCsmsCommonNameKeyValue();
+    bool getVerifyCsmsAllowWildcards();
+    void setVerifyCsmsAllowWildcards(bool verify_csms_allow_wildcards);
+    KeyValue getVerifyCsmsAllowWildcardsKeyValue();
     bool getUseTPM();
+    bool getUseTPMSeccLeafCertificate();
+    std::string getSupportedMeasurands();
+    KeyValue getSupportedMeasurandsKeyValue();
+    int getMaxMessageSize();
+    KeyValue getMaxMessageSizeKeyValue();
+
+    bool getEnableTLSKeylog();
+    std::string getTLSKeylogFile();
 
     int32_t getRetryBackoffRandomRange();
     void setRetryBackoffRandomRange(int32_t retry_backoff_random_range);
@@ -109,8 +148,17 @@ public:
     std::optional<std::string> getHostName();
     std::optional<KeyValue> getHostNameKeyValue();
 
+    std::optional<std::string> getIFace();
+    std::optional<KeyValue> getIFaceKeyValue();
+
     std::optional<bool> getQueueAllMessages();
+    std::optional<KeyValue> getQueueAllMessagesKeyValue();
+
+    std::optional<std::string> getMessageTypesDiscardForQueueing();
+    std::optional<KeyValue> getMessageTypesDiscardForQueueingKeyValue();
+
     std::optional<int> getMessageQueueSizeThreshold();
+    std::optional<KeyValue> getMessageQueueSizeThresholdKeyValue();
 
     // Core Profile - optional
     std::optional<bool> getAllowOfflineTxForUnknownId();
@@ -398,6 +446,48 @@ public:
     int32_t getWaitForStopTransactionsOnResetTimeout();
     void setWaitForStopTransactionsOnResetTimeout(const int32_t wait_for_stop_transactions_on_reset_timeout);
     KeyValue getWaitForStopTransactionsOnResetTimeoutKeyValue();
+
+    // California Pricing Requirements
+    bool getCustomDisplayCostAndPriceEnabled();
+    KeyValue getCustomDisplayCostAndPriceEnabledKeyValue();
+
+    std::optional<uint32_t> getPriceNumberOfDecimalsForCostValues();
+    std::optional<KeyValue> getPriceNumberOfDecimalsForCostValuesKeyValue();
+
+    std::optional<std::string> getDefaultPriceText(const std::string& language);
+    ConfigurationStatus setDefaultPriceText(const CiString<50>& key, const CiString<500>& value);
+    KeyValue getDefaultPriceTextKeyValue(const std::string& language);
+    std::optional<std::vector<KeyValue>> getAllDefaultPriceTextKeyValues();
+
+    std::optional<std::string> getDefaultPrice();
+    ConfigurationStatus setDefaultPrice(const std::string& value);
+    std::optional<KeyValue> getDefaultPriceKeyValue();
+
+    std::optional<std::string> getDisplayTimeOffset();
+    ConfigurationStatus setDisplayTimeOffset(const std::string& offset);
+    std::optional<KeyValue> getDisplayTimeOffsetKeyValue();
+
+    std::optional<std::string> getNextTimeOffsetTransitionDateTime();
+    ConfigurationStatus setNextTimeOffsetTransitionDateTime(const std::string& date_time);
+    std::optional<KeyValue> getNextTimeOffsetTransitionDateTimeKeyValue();
+
+    std::optional<std::string> getTimeOffsetNextTransition();
+    ConfigurationStatus setTimeOffsetNextTransition(const std::string& offset);
+    std::optional<KeyValue> getTimeOffsetNextTransitionKeyValue();
+
+    std::optional<bool> getCustomIdleFeeAfterStop();
+    void setCustomIdleFeeAfterStop(const bool& value);
+    std::optional<KeyValue> getCustomIdleFeeAfterStopKeyValue();
+
+    std::optional<bool> getCustomMultiLanguageMessagesEnabled();
+    std::optional<KeyValue> getCustomMultiLanguageMessagesEnabledKeyValue();
+
+    std::optional<std::string> getMultiLanguageSupportedLanguages();
+    std::optional<KeyValue> getMultiLanguageSupportedLanguagesKeyValue();
+
+    std::optional<std::string> getLanguage();
+    void setLanguage(const std::string& language);
+    std::optional<KeyValue> getLanguageKeyValue();
 
     // custom
     std::optional<KeyValue> getCustomKeyValue(CiString<50> key);

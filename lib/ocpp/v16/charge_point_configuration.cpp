@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
+// Copyright Pionix GmbH and Contributors to EVerest
 #include <fstream>
 #include <future>
 #include <mutex>
@@ -9,6 +9,7 @@
 #include <boost/algorithm/string/split.hpp>
 
 #include <ocpp/common/schemas.hpp>
+#include <ocpp/common/utils.hpp>
 #include <ocpp/v16/charge_point_configuration.hpp>
 #include <ocpp/v16/types.hpp>
 
@@ -42,6 +43,16 @@ ChargePointConfiguration::ChargePointConfiguration(const std::string& config, co
     }
 
     try {
+        const auto internal_schema_path = schemas_path / "Internal.json";
+        std::ifstream ifs(internal_schema_path.c_str());
+        std::string internal_schema_file((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
+        this->internal_schema = json::parse(internal_schema_file);
+    } catch (const json::parse_error& e) {
+        EVLOG_error << "Error while parsing Internal.json file.";
+        EVLOG_AND_THROW(e);
+    }
+
+    try {
         auto patch = schemas.get_validator()->validate(this->config);
         if (patch.is_null()) {
             // no defaults substituted
@@ -70,7 +81,7 @@ ChargePointConfiguration::ChargePointConfiguration(const std::string& config, co
                 try {
                     this->supported_feature_profiles.insert(
                         conversions::string_to_supported_feature_profiles(component));
-                } catch (const std::out_of_range& e) {
+                } catch (const StringToEnumException& e) {
                     EVLOG_error << "Feature profile: \"" << component << "\" not recognized";
                     throw std::runtime_error("Unknown component in SupportedFeatureProfiles config option.");
                 }
@@ -86,6 +97,12 @@ ChargePointConfiguration::ChargePointConfiguration(const std::string& config, co
                 this->supported_feature_profiles.insert(conversions::string_to_supported_feature_profiles("PnC"));
             }
 
+            if (this->config.contains("CostAndPrice")) {
+                // Add California Pricing Requirements behind the scenes as supported feature profile
+                this->supported_feature_profiles.insert(
+                    conversions::string_to_supported_feature_profiles("CostAndPrice"));
+            }
+
             if (this->config.contains("Custom")) {
                 // add Custom behind the scenes as supported feature profile
                 this->supported_feature_profiles.insert(conversions::string_to_supported_feature_profiles("Custom"));
@@ -96,17 +113,12 @@ ChargePointConfiguration::ChargePointConfiguration(const std::string& config, co
         throw std::runtime_error("Core profile not listed in SupportedFeatureProfiles. This is required.");
     }
 
-    // TODO(kai): get this from config
-    this->supported_measurands = {{Measurand::Energy_Active_Import_Register, {Phase::L1, Phase::L2, Phase::L3}}, // Wh
-                                  {Measurand::Energy_Active_Export_Register, {Phase::L1, Phase::L2, Phase::L3}}, // Wh
-                                  {Measurand::Power_Active_Import, {Phase::L1, Phase::L2, Phase::L3}},           // W
-                                  {Measurand::Voltage, {Phase::L1, Phase::L2, Phase::L3}},                       // V
-                                  {Measurand::Current_Import, {Phase::L1, Phase::L2, Phase::L3, Phase::N}},      // A
-                                  {Measurand::Frequency, {Phase::L1, Phase::L2, Phase::L3}},                     // Hz
-                                  {Measurand::Current_Offered, {}}};                                             // A
+    this->init_supported_measurands();
 
     if (!this->validate_measurands(this->config)) {
-        EVLOG_AND_THROW(std::runtime_error("Given Measurands are invalid"));
+        EVLOG_AND_THROW(std::runtime_error("Given Measurands of either MeterValuesAlignedData, MeterValuesSampledData, "
+                                           "StopTxnAlignedData or StopTxnSampledData are invalid or do not match the "
+                                           "Measurands configured in SupportedMeasurands"));
     }
 
     this->supported_message_types_from_charge_point = {
@@ -207,6 +219,49 @@ std::string to_csl(const std::vector<std::string>& vec) {
     return csl;
 }
 
+void ChargePointConfiguration::init_supported_measurands() {
+    const auto _supported_measurands = ocpp::split_string(this->config["Internal"]["SupportedMeasurands"], ',');
+    for (const auto& measurand : _supported_measurands) {
+        try {
+            const auto _measurand = conversions::string_to_measurand(measurand);
+            switch (_measurand) {
+            case Measurand::Energy_Active_Export_Register:
+            case Measurand::Energy_Active_Import_Register:
+            case Measurand::Energy_Reactive_Export_Register:
+            case Measurand::Energy_Reactive_Import_Register:
+            case Measurand::Energy_Active_Export_Interval:
+            case Measurand::Energy_Active_Import_Interval:
+            case Measurand::Energy_Reactive_Export_Interval:
+            case Measurand::Energy_Reactive_Import_Interval:
+            case Measurand::Power_Active_Export:
+            case Measurand::Power_Active_Import:
+            case Measurand::Voltage:
+            case Measurand::Frequency:
+            case Measurand::Power_Reactive_Export:
+            case Measurand::Power_Reactive_Import:
+                this->supported_measurands[_measurand] = {Phase::L1, Phase::L2, Phase::L3};
+                break;
+            case Measurand::Current_Import:
+            case Measurand::Current_Export:
+                this->supported_measurands[_measurand] = {Phase::L1, Phase::L2, Phase::L3, Phase::N};
+                break;
+            case Measurand::Power_Factor:
+            case Measurand::Current_Offered:
+            case Measurand::Power_Offered:
+            case Measurand::Temperature:
+            case Measurand::SoC:
+            case Measurand::RPM:
+                this->supported_measurands[_measurand] = {};
+                break;
+            default:
+                EVLOG_AND_THROW(std::runtime_error("Given SupportedMeasurands are invalid"));
+            }
+        } catch (const StringToEnumException& o) {
+            EVLOG_AND_THROW(std::runtime_error("Given SupportedMeasurands are invalid"));
+        }
+    }
+}
+
 // Internal config options
 std::string ChargePointConfiguration::getChargePointId() {
     return this->config["Internal"]["ChargePointId"];
@@ -276,27 +331,186 @@ std::vector<std::string> ChargePointConfiguration::getLogMessagesFormat() {
     return this->config["Internal"]["LogMessagesFormat"];
 }
 
+bool ChargePointConfiguration::getLogRotation() {
+    return this->config["Internal"]["LogRotation"];
+}
+
+bool ChargePointConfiguration::getLogRotationDateSuffix() {
+    return this->config["Internal"]["LogRotationDateSuffix"];
+}
+
+uint64_t ChargePointConfiguration::getLogRotationMaximumFileSize() {
+    return this->config["Internal"]["LogRotationMaximumFileSize"];
+}
+
+uint64_t ChargePointConfiguration::getLogRotationMaximumFileCount() {
+    return this->config["Internal"]["LogRotationMaximumFileCount"];
+}
+
 std::vector<ChargingProfilePurposeType> ChargePointConfiguration::getSupportedChargingProfilePurposeTypes() {
     std::vector<ChargingProfilePurposeType> supported_purpose_types;
     const auto str_list = this->config["Internal"]["SupportedChargingProfilePurposeTypes"];
     for (const auto& str : str_list) {
-        supported_purpose_types.push_back(conversions::string_to_charging_profile_purpose_type(str));
+        try {
+            supported_purpose_types.push_back(conversions::string_to_charging_profile_purpose_type(str));
+        } catch (const StringToEnumException& e) {
+            EVLOG_warning << "Could not convert element of SupportedChargingProfilePurposeTypes: " << str;
+        }
     }
     return supported_purpose_types;
+}
+
+std::vector<ChargingProfilePurposeType> ChargePointConfiguration::getIgnoredProfilePurposesOffline() {
+    if (not this->config["Internal"].contains("IgnoredProfilePurposesOffline")) {
+        return {};
+    }
+
+    std::vector<ChargingProfilePurposeType> purpose_types;
+    const auto str_list = split_string(this->config["Internal"]["IgnoredProfilePurposesOffline"], ',');
+    for (const auto& str : str_list) {
+        try {
+            purpose_types.push_back(conversions::string_to_charging_profile_purpose_type(str));
+        } catch (const StringToEnumException& e) {
+            EVLOG_warning << "Could not convert element of IgnoredProfilePurposesOffline: " << str;
+        }
+    }
+    return purpose_types;
+}
+
+bool ChargePointConfiguration::setIgnoredProfilePurposesOffline(const std::string& ignored_profile_purposes_offline) {
+    if (this->getIgnoredProfilePurposesOfflineKeyValue() == std::nullopt) {
+        return false;
+    }
+
+    const auto profile_purposes = split_string(ignored_profile_purposes_offline, ',');
+    for (const auto purpose : profile_purposes) {
+        try {
+            conversions::string_to_charging_profile_purpose_type(purpose);
+        } catch (const StringToEnumException& e) {
+            EVLOG_warning << "Could not convert element of IgnoredProfilePurposesOffline: " << purpose;
+            return false;
+        }
+    }
+
+    this->config["Internal"]["IgnoredProfilePurposesOffline"] = ignored_profile_purposes_offline;
+    this->setInUserConfig("Internal", "IgnoredProfilePurposesOffline", ignored_profile_purposes_offline);
+    return true;
 }
 
 int32_t ChargePointConfiguration::getMaxCompositeScheduleDuration() {
     return this->config["Internal"]["MaxCompositeScheduleDuration"];
 }
 
-std::string ChargePointConfiguration::getSupportedCiphers12() {
+std::optional<int32_t> ChargePointConfiguration::getCompositeScheduleDefaultLimitAmps() {
+    if (this->config["Internal"].contains("CompositeScheduleDefaultLimitAmps")) {
+        return this->config["Internal"]["CompositeScheduleDefaultLimitAmps"];
+    }
+    return std::nullopt;
+}
 
+std::optional<KeyValue> ChargePointConfiguration::getCompositeScheduleDefaultLimitAmpsKeyValue() {
+    const auto opt_value = this->getCompositeScheduleDefaultLimitAmps();
+    if (opt_value.has_value()) {
+        KeyValue kv;
+        kv.key = "CompositeScheduleDefaultLimitAmps";
+        kv.readonly = false;
+        kv.value = std::to_string(opt_value.value());
+        return kv;
+    }
+    return std::nullopt;
+}
+
+void ChargePointConfiguration::setCompositeScheduleDefaultLimitAmps(int32_t limit_amps) {
+    if (this->getCompositeScheduleDefaultLimitAmps() != std::nullopt) {
+        this->config["Internal"]["CompositeScheduleDefaultLimitAmps"] = limit_amps;
+        this->setInUserConfig("Internal", "CompositeScheduleDefaultLimitAmps", limit_amps);
+    }
+}
+
+std::optional<int32_t> ChargePointConfiguration::getCompositeScheduleDefaultLimitWatts() {
+    if (this->config["Internal"].contains("CompositeScheduleDefaultLimitWatts")) {
+        return this->config["Internal"]["CompositeScheduleDefaultLimitWatts"];
+    }
+    return std::nullopt;
+}
+
+std::optional<KeyValue> ChargePointConfiguration::getCompositeScheduleDefaultLimitWattsKeyValue() {
+    const auto opt_value = this->getCompositeScheduleDefaultLimitWatts();
+    if (opt_value.has_value()) {
+        KeyValue kv;
+        kv.key = "CompositeScheduleDefaultLimitWatts";
+        kv.readonly = false;
+        kv.value = std::to_string(opt_value.value());
+        return kv;
+    }
+    return std::nullopt;
+}
+
+void ChargePointConfiguration::setCompositeScheduleDefaultLimitWatts(int32_t limit_watts) {
+    if (this->getCompositeScheduleDefaultLimitWatts() != std::nullopt) {
+        this->config["Internal"]["CompositeScheduleDefaultLimitWatts"] = limit_watts;
+        this->setInUserConfig("Internal", "CompositeScheduleDefaultLimitWatts", limit_watts);
+    }
+}
+
+std::optional<int32_t> ChargePointConfiguration::getCompositeScheduleDefaultNumberPhases() {
+    if (this->config["Internal"].contains("CompositeScheduleDefaultNumberPhases")) {
+        return this->config["Internal"]["CompositeScheduleDefaultNumberPhases"];
+    }
+    return std::nullopt;
+}
+
+std::optional<KeyValue> ChargePointConfiguration::getCompositeScheduleDefaultNumberPhasesKeyValue() {
+    const auto opt_value = this->getCompositeScheduleDefaultNumberPhases();
+    if (opt_value.has_value()) {
+        KeyValue kv;
+        kv.key = "CompositeScheduleDefaultNumberPhases";
+        kv.readonly = false;
+        kv.value = std::to_string(opt_value.value());
+        return kv;
+    }
+    return std::nullopt;
+}
+
+void ChargePointConfiguration::setCompositeScheduleDefaultNumberPhases(int32_t number_phases) {
+    if (this->getCompositeScheduleDefaultNumberPhases() != std::nullopt) {
+        this->config["Internal"]["CompositeScheduleDefaultNumberPhases"] = number_phases;
+        this->setInUserConfig("Internal", "CompositeScheduleDefaultNumberPhases", number_phases);
+    }
+}
+
+std::optional<int32_t> ChargePointConfiguration::getSupplyVoltage() {
+    if (this->config["Internal"].contains("SupplyVoltage")) {
+        return this->config["Internal"]["SupplyVoltage"];
+    }
+    return std::nullopt;
+}
+
+std::optional<KeyValue> ChargePointConfiguration::getSupplyVoltageKeyValue() {
+    const auto opt_value = this->getSupplyVoltage();
+    if (opt_value.has_value()) {
+        KeyValue kv;
+        kv.key = "SupplyVoltage";
+        kv.readonly = false;
+        kv.value = std::to_string(opt_value.value());
+        return kv;
+    }
+    return std::nullopt;
+}
+
+void ChargePointConfiguration::setSupplyVoltage(int32_t supply_voltage) {
+    if (this->getSupplyVoltage().has_value()) {
+        this->config["Internal"]["SupplyVoltage"] = supply_voltage;
+        this->setInUserConfig("Internal", "SupplyVoltage", supply_voltage);
+    }
+}
+
+std::string ChargePointConfiguration::getSupportedCiphers12() {
     std::vector<std::string> supported_ciphers = this->config["Internal"]["SupportedCiphers12"];
     return boost::algorithm::join(supported_ciphers, ":");
 }
 
 std::string ChargePointConfiguration::getSupportedCiphers13() {
-
     std::vector<std::string> supported_ciphers = this->config["Internal"]["SupportedCiphers13"];
     return boost::algorithm::join(supported_ciphers, ":");
 }
@@ -313,6 +527,23 @@ bool ChargePointConfiguration::getUseTPM() {
     return this->config["Internal"]["UseTPM"];
 }
 
+bool ChargePointConfiguration::getUseTPMSeccLeafCertificate() {
+    return this->config["Internal"]["UseTPMSeccLeafCertificate"];
+}
+
+bool ChargePointConfiguration::getVerifyCsmsAllowWildcards() {
+    return this->config["Internal"]["VerifyCsmsAllowWildcards"];
+}
+
+void ChargePointConfiguration::setVerifyCsmsAllowWildcards(bool verify_csms_allow_wildcards) {
+    this->config["Internal"]["VerifyCsmsAllowWildcards"] = verify_csms_allow_wildcards;
+    this->setInUserConfig("Internal", "VerifyCsmsAllowWildcards", verify_csms_allow_wildcards);
+}
+
+std::string ChargePointConfiguration::getSupportedMeasurands() {
+    return this->config["Internal"]["SupportedMeasurands"];
+}
+
 KeyValue ChargePointConfiguration::getChargePointIdKeyValue() {
     KeyValue kv;
     kv.key = "ChargePointId";
@@ -324,7 +555,7 @@ KeyValue ChargePointConfiguration::getChargePointIdKeyValue() {
 KeyValue ChargePointConfiguration::getCentralSystemURIKeyValue() {
     KeyValue kv;
     kv.key = "CentralSystemURI";
-    kv.readonly = true;
+    kv.readonly = this->internal_schema["properties"][kv.key]["readOnly"];
     kv.value.emplace(this->getCentralSystemURI());
     return kv;
 }
@@ -450,13 +681,69 @@ KeyValue ChargePointConfiguration::getLogMessagesFormatKeyValue() {
     return kv;
 }
 
+KeyValue ChargePointConfiguration::getLogRotationKeyValue() {
+    KeyValue kv;
+    kv.key = "LogRotation";
+    kv.readonly = true;
+    kv.value.emplace(ocpp::conversions::bool_to_string(this->getLogRotation()));
+    return kv;
+}
+
+KeyValue ChargePointConfiguration::getLogRotationDateSuffixKeyValue() {
+    KeyValue kv;
+    kv.key = "LogRotationDateSuffix";
+    kv.readonly = true;
+    kv.value.emplace(ocpp::conversions::bool_to_string(this->getLogRotationDateSuffix()));
+    return kv;
+}
+
+KeyValue ChargePointConfiguration::getLogRotationMaximumFileSizeKeyValue() {
+    KeyValue kv;
+    kv.key = "LogRotationMaximumFileSize";
+    kv.readonly = true;
+    kv.value.emplace(std::to_string(this->getLogRotationMaximumFileSize()));
+    return kv;
+}
+
+KeyValue ChargePointConfiguration::getLogRotationMaximumFileCountKeyValue() {
+    KeyValue kv;
+    kv.key = "LogRotationMaximumFileCount";
+    kv.readonly = true;
+    kv.value.emplace(std::to_string(this->getLogRotationMaximumFileCount()));
+    return kv;
+}
+
 KeyValue ChargePointConfiguration::getSupportedChargingProfilePurposeTypesKeyValue() {
     KeyValue kv;
     kv.key = "SupportedChargingProfilePurposeTypes";
     kv.readonly = true;
     std::vector<std::string> purpose_types;
     for (const auto& entry : this->getSupportedChargingProfilePurposeTypes()) {
-        purpose_types.push_back(conversions::charging_profile_purpose_type_to_string(entry));
+        try {
+            purpose_types.push_back(conversions::charging_profile_purpose_type_to_string(entry));
+        } catch (const EnumToStringException& e) {
+            EVLOG_warning << "Could not convert element of SupportedChargingProfilePurposeTypes to string";
+        }
+    }
+    kv.value.emplace(to_csl(purpose_types));
+    return kv;
+}
+
+std::optional<KeyValue> ChargePointConfiguration::getIgnoredProfilePurposesOfflineKeyValue() {
+    if (not this->config["Internal"].contains("IgnoredProfilePurposesOffline")) {
+        return std::nullopt;
+    }
+
+    KeyValue kv;
+    kv.key = "IgnoredProfilePurposesOffline";
+    kv.readonly = false;
+    std::vector<std::string> purpose_types;
+    for (const auto& entry : this->getIgnoredProfilePurposesOffline()) {
+        try {
+            purpose_types.push_back(conversions::charging_profile_purpose_type_to_string(entry));
+        } catch (const EnumToStringException& e) {
+            EVLOG_warning << "Could not convert element of IgnoredProfilePurposesOffline to string";
+        }
     }
     kv.value.emplace(to_csl(purpose_types));
     return kv;
@@ -500,6 +787,42 @@ KeyValue ChargePointConfiguration::getVerifyCsmsCommonNameKeyValue() {
     kv.readonly = true;
     kv.value.emplace(ocpp::conversions::bool_to_string(this->getVerifyCsmsCommonName()));
     return kv;
+}
+
+KeyValue ChargePointConfiguration::getVerifyCsmsAllowWildcardsKeyValue() {
+    KeyValue kv;
+    kv.key = "VerifyCsmsAllowWildcards";
+    kv.readonly = true;
+    kv.value.emplace(ocpp::conversions::bool_to_string(this->getVerifyCsmsAllowWildcards()));
+    return kv;
+}
+
+KeyValue ChargePointConfiguration::getSupportedMeasurandsKeyValue() {
+    KeyValue kv;
+    kv.key = "SupportedMeasurands";
+    kv.readonly = true;
+    kv.value.emplace(this->getSupportedMeasurands());
+    return kv;
+}
+
+int ChargePointConfiguration::getMaxMessageSize() {
+    return this->config["Internal"]["MaxMessageSize"];
+}
+
+KeyValue ChargePointConfiguration::getMaxMessageSizeKeyValue() {
+    KeyValue kv;
+    kv.key = "MaxMessageSize";
+    kv.readonly = true;
+    kv.value.emplace(std::to_string(this->getMaxMessageSize()));
+    return kv;
+}
+
+bool ChargePointConfiguration::getEnableTLSKeylog() {
+    return this->config["Internal"]["EnableTLSKeylog"];
+}
+
+std::string ChargePointConfiguration::getTLSKeylogFile() {
+    return this->config["Internal"]["TLSKeylogFile"];
 }
 
 KeyValue ChargePointConfiguration::getWebsocketPingPayloadKeyValue() {
@@ -581,7 +904,7 @@ std::vector<MeasurandWithPhase> ChargePointConfiguration::csv_to_measurand_with_
         MeasurandWithPhase measurand_with_phase;
         Measurand measurand = conversions::string_to_measurand(component);
         // check if this measurand can be provided on multiple phases
-        if (this->supported_measurands[measurand].size() > 0) {
+        if (this->supported_measurands.count(measurand) and this->supported_measurands.at(measurand).size() > 0) {
             // multiple phases are available
             // also add the measurand without a phase as a total value
             measurand_with_phase.measurand = measurand;
@@ -623,8 +946,20 @@ bool ChargePointConfiguration::validate_measurands(const json& config) {
     measurands_vector.push_back(config["Core"]["StopTxnAlignedData"]);
     measurands_vector.push_back(config["Core"]["StopTxnSampledData"]);
 
-    for (const auto& measurands : measurands_vector) {
+    for (const auto measurands : measurands_vector) {
         if (!this->measurands_supported(measurands)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool validate_connector_evse_ids(const std::string& value) {
+    // this fullfills parts of HUB-24-003 of Requirements EVSE Check PnC with ISO15118-2 v4
+    const auto evse_ids = split_string(value, ',');
+    for (const auto& evse_id : evse_ids) {
+        if (evse_id.size() < 7 or evse_id.size() > 37) {
+            EVLOG_warning << "Attempting to set ConnectorEvseIds to invalid value: " << evse_id;
             return false;
         }
     }
@@ -643,7 +978,7 @@ bool ChargePointConfiguration::measurands_supported(std::string csv) {
     for (auto component : components) {
         try {
             conversions::string_to_measurand(component);
-        } catch (std::out_of_range& o) {
+        } catch (const StringToEnumException& o) {
             EVLOG_warning << "Measurand: " << component << " is not supported!";
             return false;
         }
@@ -693,6 +1028,14 @@ std::optional<std::string> ChargePointConfiguration::getHostName() {
     return hostName_key;
 }
 
+std::optional<std::string> ChargePointConfiguration::getIFace() {
+    std::optional<std::string> iFace_key = std::nullopt;
+    if (this->config["Internal"].contains("IFace")) {
+        iFace_key.emplace(this->config["Internal"]["IFace"]);
+    }
+    return iFace_key;
+}
+
 std::optional<bool> ChargePointConfiguration::getQueueAllMessages() {
     std::optional<bool> queue_all_messages = std::nullopt;
     if (this->config["Internal"].contains("QueueAllMessages")) {
@@ -701,12 +1044,58 @@ std::optional<bool> ChargePointConfiguration::getQueueAllMessages() {
     return queue_all_messages;
 }
 
+std::optional<KeyValue> ChargePointConfiguration::getQueueAllMessagesKeyValue() {
+    std::optional<KeyValue> queue_all_messages_kv = std::nullopt;
+    auto queue_all_messages = this->getQueueAllMessages();
+    if (queue_all_messages.has_value()) {
+        KeyValue kv;
+        kv.key = "QueueAllMessages";
+        kv.readonly = true;
+        kv.value.emplace(ocpp::conversions::bool_to_string(queue_all_messages.value()));
+        queue_all_messages_kv.emplace(kv);
+    }
+    return queue_all_messages_kv;
+}
+
+std::optional<std::string> ChargePointConfiguration::getMessageTypesDiscardForQueueing() {
+    if (this->config["Internal"].contains("MessageTypesDiscardForQueueing")) {
+        return this->config["Internal"]["MessageTypesDiscardForQueueing"];
+    }
+    return std::nullopt;
+}
+
+std::optional<KeyValue> ChargePointConfiguration::getMessageTypesDiscardForQueueingKeyValue() {
+    std::optional<KeyValue> message_types_discard_for_queueing_kv = std::nullopt;
+    auto message_types_discard_for_queueing = this->getMessageTypesDiscardForQueueing();
+    if (message_types_discard_for_queueing.has_value()) {
+        KeyValue kv;
+        kv.key = "MessageTypesDiscardForQueueing";
+        kv.readonly = true;
+        kv.value.emplace(message_types_discard_for_queueing.value());
+        message_types_discard_for_queueing_kv.emplace(kv);
+    }
+    return message_types_discard_for_queueing_kv;
+}
+
 std::optional<int> ChargePointConfiguration::getMessageQueueSizeThreshold() {
     std::optional<int> message_queue_size_threshold = std::nullopt;
     if (this->config["Internal"].contains("MessageQueueSizeThreshold")) {
         message_queue_size_threshold.emplace(this->config["Internal"]["MessageQueueSizeThreshold"]);
     }
     return message_queue_size_threshold;
+}
+
+std::optional<KeyValue> ChargePointConfiguration::getMessageQueueSizeThresholdKeyValue() {
+    std::optional<KeyValue> message_queue_size_threshold_kv = std::nullopt;
+    auto message_queue_size_threshold = this->getMessageQueueSizeThreshold();
+    if (message_queue_size_threshold.has_value()) {
+        KeyValue kv;
+        kv.key = "MessageQueueSizeThreshold";
+        kv.readonly = true;
+        kv.value.emplace(std::to_string(message_queue_size_threshold.value()));
+        message_queue_size_threshold_kv.emplace(kv);
+    }
+    return message_queue_size_threshold_kv;
 }
 
 // Core Profile - optional
@@ -1135,7 +1524,8 @@ KeyValue ChargePointConfiguration::getNumberOfConnectorsKeyValue() {
 // Reservation Profile
 std::optional<bool> ChargePointConfiguration::getReserveConnectorZeroSupported() {
     std::optional<bool> reserve_connector_zero_supported = std::nullopt;
-    if (this->config.contains("Reservation") && this->config["Reservation"].contains("ReserveConnectorZeroSupported")) {
+    if (this->config.contains("Reservation") and
+        this->config["Reservation"].contains("ReserveConnectorZeroSupported")) {
         reserve_connector_zero_supported.emplace(this->config["Reservation"]["ReserveConnectorZeroSupported"]);
     }
     return reserve_connector_zero_supported;
@@ -1148,7 +1538,7 @@ std::optional<KeyValue> ChargePointConfiguration::getReserveConnectorZeroSupport
         KeyValue kv;
         kv.key = "ReserveConnectorZeroSupported";
         kv.readonly = true;
-        kv.value.emplace(std::to_string(reserve_connector_zero_supported.value()));
+        kv.value.emplace(ocpp::conversions::bool_to_string(reserve_connector_zero_supported.value()));
         reserve_connector_zero_supported_kv.emplace(kv);
     }
     return reserve_connector_zero_supported_kv;
@@ -1409,6 +1799,19 @@ std::optional<KeyValue> ChargePointConfiguration::getHostNameKeyValue() {
     return host_name_kv;
 }
 
+std::optional<KeyValue> ChargePointConfiguration::getIFaceKeyValue() {
+    std::optional<KeyValue> iface_name_kv = std::nullopt;
+    auto iface = this->getIFace();
+    if (iface != std::nullopt) {
+        KeyValue kv;
+        kv.key = "IFace";
+        kv.readonly = true;
+        kv.value.emplace(iface.value());
+        iface_name_kv.emplace(kv);
+    }
+    return iface_name_kv;
+}
+
 // Core Profile end
 
 int32_t ChargePointConfiguration::getChargeProfileMaxStackLevel() {
@@ -1534,14 +1937,14 @@ std::string hexToString(std::string const& s) {
 }
 
 bool isHexNotation(std::string const& s) {
-    bool is_hex = s.size() > 2 && s.find_first_not_of("0123456789abcdefABCDEF", 2) == std::string::npos;
+    bool is_hex = s.size() > 2 and s.find_first_not_of("0123456789abcdefABCDEF", 2) == std::string::npos;
 
     if (is_hex) {
         // check if every char is printable
         for (size_t i = 0; i < s.length(); i += 2) {
             std::string byte = s.substr(i, 2);
             char chr = (char)(int)strtol(byte.c_str(), NULL, 16);
-            if ((chr < 0x20 || chr > 0x7e) && chr != 0xa) {
+            if ((chr < 0x20 or chr > 0x7e) and chr != 0xa) {
                 return false;
             }
         }
@@ -1579,11 +1982,11 @@ bool ChargePointConfiguration::isConnectorPhaseRotationValid(std::string str) {
         std::string myNotDefined = std::to_string(connector_id) + ".Unknown";
         elements.erase(std::remove(elements.begin(), elements.end(), myNotApplicable), elements.end());
         elements.erase(std::remove(elements.begin(), elements.end(), myNotDefined), elements.end());
-    };
+    }
     // if all elemens are hit, accept it, else check the remaining
     if (elements.size() == 0) {
         return true;
-    };
+    }
 
     for (const std::string& e : elements) {
         if (e.size() != 5) {
@@ -1591,15 +1994,51 @@ bool ChargePointConfiguration::isConnectorPhaseRotationValid(std::string str) {
         }
         try {
             auto connector = std::stoi(e.substr(0, 1));
-            if (connector < 0 || connector > this->getNumberOfConnectors()) {
+            if (connector < 0 or connector > this->getNumberOfConnectors()) {
                 return false;
             }
-        } catch (const std::invalid_argument& e) {
+        } catch (const std::invalid_argument&) {
             return false;
         }
         std::string phase_rotation = e.substr(2, 5);
-        if (phase_rotation != "RST" && phase_rotation != "RTS" && phase_rotation != "SRT" && phase_rotation != "STR" &&
-            phase_rotation != "TRS" && phase_rotation != "TSR") {
+        if (phase_rotation != "RST" and phase_rotation != "RTS" and phase_rotation != "SRT" and
+            phase_rotation != "STR" and phase_rotation != "TRS" and phase_rotation != "TSR") {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool ChargePointConfiguration::checkTimeOffset(const std::string& offset) {
+    const std::vector<std::string> times = split_string(offset, ':');
+    if (times.size() != 2) {
+        EVLOG_error << "Could not set display time offset: format not correct (should be something like "
+                       "\"-05:00\", but is "
+                    << offset << ")";
+        return false;
+    } else {
+        try {
+            // Check if strings are numbers.
+            const int32_t hours = std::stoi(times.at(0));
+            const int32_t minutes = std::stoi(times.at(1));
+
+            // And check if numbers are valid.
+            if (hours < -24 or hours > 24) {
+                EVLOG_error << "Could not set display time offset: hours should be between -24 and +24, but is "
+                            << times.at(0);
+                return false;
+            }
+
+            if (minutes < 0 or minutes > 59) {
+                EVLOG_error << "Could not set display time offset: minutes should be between 0 and 59, but is "
+                            << times.at(1);
+                return false;
+            }
+
+        } catch (const std::exception& e) {
+            EVLOG_error << "Could not set display time offset: format not correct (should be something "
+                           "like \"-19:15\", but is "
+                        << offset << "): " << e.what();
             return false;
         }
     }
@@ -1607,7 +2046,9 @@ bool ChargePointConfiguration::isConnectorPhaseRotationValid(std::string str) {
 }
 
 bool isBool(const std::string& str) {
-    return str == "true" || str == "false";
+    std::string out = str;
+    std::transform(out.begin(), out.end(), out.begin(), ::tolower);
+    return out == "true" || out == "false";
 }
 
 std::optional<KeyValue> ChargePointConfiguration::getAuthorizationKeyKeyValue() {
@@ -2073,6 +2514,415 @@ KeyValue ChargePointConfiguration::getWaitForStopTransactionsOnResetTimeoutKeyVa
     return kv;
 }
 
+// California Pricing Requirements
+bool ChargePointConfiguration::getCustomDisplayCostAndPriceEnabled() {
+    if (this->config.contains("CostAndPrice") and
+        this->config.at("CostAndPrice").contains("CustomDisplayCostAndPrice")) {
+        return this->config["CostAndPrice"]["CustomDisplayCostAndPrice"];
+    }
+
+    return false;
+}
+
+KeyValue ChargePointConfiguration::getCustomDisplayCostAndPriceEnabledKeyValue() {
+    const bool enabled = getCustomDisplayCostAndPriceEnabled();
+    KeyValue kv;
+    kv.key = "CustomDisplayCostAndPrice";
+    kv.value = ocpp::conversions::bool_to_string(enabled);
+    kv.readonly = true;
+    return kv;
+}
+
+std::optional<uint32_t> ChargePointConfiguration::getPriceNumberOfDecimalsForCostValues() {
+    if (this->config.contains("CostAndPrice") and
+        this->config.at("CostAndPrice").contains("NumberOfDecimalsForCostValues")) {
+        return this->config["CostAndPrice"]["NumberOfDecimalsForCostValues"];
+    }
+
+    return std::nullopt;
+}
+
+std::optional<KeyValue> ChargePointConfiguration::getPriceNumberOfDecimalsForCostValuesKeyValue() {
+    std::optional<KeyValue> kv_opt = std::nullopt;
+    const std::optional<uint32_t> number_of_decimals = getPriceNumberOfDecimalsForCostValues();
+    if (number_of_decimals.has_value()) {
+        kv_opt = KeyValue();
+        kv_opt->key = "NumberOfDecimalsForCostValues";
+        kv_opt->value = std::to_string(number_of_decimals.value());
+        kv_opt->readonly = true;
+    }
+
+    return kv_opt;
+}
+
+std::optional<std::string> ChargePointConfiguration::getDefaultPriceText(const std::string& language) {
+    if (this->config.contains("CostAndPrice") and this->config.at("CostAndPrice").contains("DefaultPriceText")) {
+        bool found = false;
+        json result = json::object();
+        json& default_price = this->config["CostAndPrice"]["DefaultPriceText"];
+
+        if (!default_price.contains("priceTexts")) {
+            return std::nullopt;
+        }
+
+        for (auto& price_text : default_price.at("priceTexts").items()) {
+            if (language == price_text.value().at("language")) {
+                // Language found.
+                result["priceText"] = price_text.value().at("priceText");
+                if (price_text.value().contains("priceTextOffline")) {
+                    result["priceTextOffline"] = price_text.value().at("priceTextOffline");
+                }
+                found = true;
+                break;
+            }
+        }
+
+        if (found) {
+            return result.dump(2);
+        }
+    }
+
+    return std::nullopt;
+}
+
+ConfigurationStatus ChargePointConfiguration::setDefaultPriceText(const CiString<50>& key, const CiString<500>& value) {
+    std::string language;
+    const std::vector<std::string> default_prices = split_string(key.get(), ',');
+    if (default_prices.size() > 1) {
+        // Second value is language.
+        language = default_prices.at(1);
+        // Check if language is allowed. It should be in the list of config item multi language supported languages
+        const auto supported_languages = getMultiLanguageSupportedLanguages();
+        if (!supported_languages.has_value()) {
+            EVLOG_error << "Can not set a default price text for language '" << language
+                        << "', because the config item for multi language support is not set in the config.";
+            return ConfigurationStatus::Rejected;
+        }
+
+        const std::vector<std::string> languages = split_string(supported_languages.value(), ',');
+        const auto& found_it =
+            std::find_if(languages.begin(), languages.end(), [&language](const std::string& supported_language) {
+                return trim_string(supported_language) == trim_string(language);
+            });
+        if (found_it == languages.end()) {
+            EVLOG_error
+                << "Can not set default price text for language '" << language
+                << "', because the language is currently not supported in this charging station. Supported languages: "
+                << supported_languages.value();
+            return ConfigurationStatus::Rejected;
+        }
+    } else {
+        EVLOG_error << "Configuration DefaultPriceText is set, but does not contain a language (Configuration should "
+                       "be something like 'DefaultPriceText,en', but is "
+                    << value << ").";
+        return ConfigurationStatus::Rejected;
+    }
+
+    json default_price = json::object();
+    if (this->config.contains("CostAndPrice") and this->config.at("CostAndPrice").contains("DefaultPriceText")) {
+        json result = json::object();
+        default_price = this->config["CostAndPrice"]["DefaultPriceText"];
+    }
+
+    // priceText is mandatory
+    json j = json::parse(value.get());
+    if (!j.contains("priceText")) {
+        EVLOG_error << "Configuration DefaultPriceText is set, but does not contain 'priceText'";
+        return ConfigurationStatus::Rejected;
+    }
+
+    j["language"] = language;
+
+    if (!default_price.contains("priceTexts")) {
+        default_price["priceTexts"] = json::array();
+    }
+
+    default_price["priceTexts"].push_back(j);
+
+    this->config["CostAndPrice"]["DefaultPriceText"] = default_price;
+    this->setInUserConfig("CostAndPrice", "DefaultPriceText", default_price);
+
+    return ConfigurationStatus::Accepted;
+}
+
+KeyValue ChargePointConfiguration::getDefaultPriceTextKeyValue(const std::string& language) {
+    KeyValue result;
+    result.key = "DefaultPriceText," + language;
+    result.readonly = false;
+    std::optional<std::string> default_price = getDefaultPriceText(language);
+    if (default_price.has_value()) {
+        result.value = default_price.value();
+    } else {
+        // It's a bit odd to return an empty string here, but it must be possible to set a default price text for a
+        // new language. But since the 'set' function for configurations first performs a 'get' and does not continue
+        // if it receives a nullopt, we can better just return an empty string so the 'set' function can continue.
+        // Resolving it differently required more complexer code, this was the easiest way to do it.
+        result.value = "";
+    }
+
+    return result;
+}
+
+std::optional<std::vector<KeyValue>> ChargePointConfiguration::getAllDefaultPriceTextKeyValues() {
+    if (this->config.contains("CostAndPrice") and this->config.at("CostAndPrice").contains("DefaultPriceText")) {
+        std::vector<KeyValue> key_values;
+        const json& default_price = this->config["CostAndPrice"]["DefaultPriceText"];
+        if (!default_price.contains("priceTexts")) {
+            return std::nullopt;
+        }
+
+        for (auto& price_text : default_price.at("priceTexts").items()) {
+            json result = json::object();
+            const std::string language = price_text.value().at("language");
+            result["priceText"] = price_text.value().at("priceText");
+            if (price_text.value().contains("priceTextOffline")) {
+                result["priceTextOffline"] = price_text.value().at("priceTextOffline");
+            }
+
+            KeyValue kv;
+            kv.value = result.dump(2);
+            kv.readonly = false;
+            kv.key = "DefaultPriceText," + language;
+            key_values.push_back(kv);
+        }
+
+        if (key_values.empty()) {
+            return std::nullopt;
+        }
+
+        return key_values;
+    }
+
+    return std::nullopt;
+}
+
+std::optional<std::string> ChargePointConfiguration::getDefaultPrice() {
+    if (this->config.contains("CostAndPrice") and this->config.at("CostAndPrice").contains("DefaultPrice")) {
+        return this->config["CostAndPrice"]["DefaultPrice"].dump(2);
+    }
+
+    return std::nullopt;
+}
+
+ConfigurationStatus ChargePointConfiguration::setDefaultPrice(const std::string& value) {
+
+    json default_price = json::object();
+    try {
+        default_price = json::parse(value);
+    } catch (const std::exception& e) {
+        EVLOG_error << "Default price json not correct, can not store default price : " << e.what();
+        return ConfigurationStatus::Rejected;
+    }
+
+    this->config["CostAndPrice"]["DefaultPrice"] = default_price;
+    this->setInUserConfig("CostAndPrice", "DefaultPrice", default_price);
+
+    return ConfigurationStatus::Accepted;
+}
+
+std::optional<KeyValue> ChargePointConfiguration::getDefaultPriceKeyValue() {
+    std::optional<KeyValue> result = std::nullopt;
+    std::optional<std::string> default_price = getDefaultPrice();
+    if (default_price.has_value()) {
+        result = KeyValue();
+        result->key = "DefaultPrice";
+        result->value = default_price.value();
+        result->readonly = false;
+    }
+
+    return result;
+}
+
+std::optional<std::string> ChargePointConfiguration::getDisplayTimeOffset() {
+    if (this->config.contains("CostAndPrice") and this->config["CostAndPrice"].contains("TimeOffset")) {
+        return this->config["CostAndPrice"]["TimeOffset"];
+    }
+
+    return std::nullopt;
+}
+
+ConfigurationStatus ChargePointConfiguration::setDisplayTimeOffset(const std::string& offset) {
+    if (!checkTimeOffset(offset)) {
+        return ConfigurationStatus::Rejected;
+    }
+    this->config["CostAndPrice"]["TimeOffset"] = offset;
+    this->setInUserConfig("CostAndPrice", "TimeOffset", offset);
+    return ConfigurationStatus::Accepted;
+}
+
+std::optional<KeyValue> ChargePointConfiguration::getDisplayTimeOffsetKeyValue() {
+    std::optional<KeyValue> result = std::nullopt;
+    std::optional<std::string> time_offset = getDisplayTimeOffset();
+    if (time_offset.has_value()) {
+        result = KeyValue();
+        result->key = "TimeOffset";
+        result->value = time_offset.value();
+        result->readonly = false;
+    }
+
+    return result;
+}
+
+std::optional<std::string> ChargePointConfiguration::getNextTimeOffsetTransitionDateTime() {
+    if (this->config.contains("CostAndPrice") and
+        this->config["CostAndPrice"].contains("NextTimeOffsetTransitionDateTime")) {
+        return this->config["CostAndPrice"]["NextTimeOffsetTransitionDateTime"];
+    }
+
+    return std::nullopt;
+}
+
+ConfigurationStatus ChargePointConfiguration::setNextTimeOffsetTransitionDateTime(const std::string& date_time) {
+    DateTime d(date_time);
+    if (d.to_time_point() > date::utc_clock::now()) {
+        this->config["CostAndPrice"]["NextTimeOffsetTransitionDateTime"] = date_time;
+        this->setInUserConfig("CostAndPrice", "NextTimeOffsetTransitionDateTime", date_time);
+        return ConfigurationStatus::Accepted;
+    }
+
+    EVLOG_error << "Set next time offset transition date time: date time format not correct: " << date_time;
+    return ConfigurationStatus::Rejected;
+}
+
+std::optional<KeyValue> ChargePointConfiguration::getNextTimeOffsetTransitionDateTimeKeyValue() {
+    std::optional<KeyValue> result = std::nullopt;
+    std::optional<std::string> offset = getNextTimeOffsetTransitionDateTime();
+    if (offset.has_value()) {
+        result = KeyValue();
+        result->key = "NextTimeOffsetTransitionDateTime";
+        result->value = offset.value();
+        result->readonly = false;
+    }
+
+    return result;
+}
+
+std::optional<std::string> ChargePointConfiguration::getTimeOffsetNextTransition() {
+    if (this->config.contains("CostAndPrice") and this->config["CostAndPrice"].contains("TimeOffsetNextTransition")) {
+        return this->config["CostAndPrice"]["TimeOffsetNextTransition"];
+    }
+
+    return std::nullopt;
+}
+
+ConfigurationStatus ChargePointConfiguration::setTimeOffsetNextTransition(const std::string& offset) {
+    if (!checkTimeOffset(offset)) {
+        return ConfigurationStatus::Rejected;
+    }
+    this->config["CostAndPrice"]["TimeOffsetNextTransition"] = offset;
+    this->setInUserConfig("CostAndPrice", "TimeOffsetNextTransition", offset);
+    return ConfigurationStatus::Accepted;
+}
+
+std::optional<KeyValue> ChargePointConfiguration::getTimeOffsetNextTransitionKeyValue() {
+    std::optional<KeyValue> result = std::nullopt;
+    std::optional<std::string> offset = getTimeOffsetNextTransition();
+    if (offset.has_value()) {
+        result = KeyValue();
+        result->key = "TimeOffsetNextTransition";
+        result->value = offset.value();
+        result->readonly = false;
+    }
+
+    return result;
+}
+
+std::optional<bool> ChargePointConfiguration::getCustomIdleFeeAfterStop() {
+    if (this->config.contains("CostAndPrice") and this->config["CostAndPrice"].contains("CustomIdleFeeAfterStop")) {
+        return this->config["CostAndPrice"]["CustomIdleFeeAfterStop"];
+    }
+
+    return std::nullopt;
+}
+
+void ChargePointConfiguration::setCustomIdleFeeAfterStop(const bool& value) {
+    this->config["CostAndPrice"]["CustomIdleFeeAfterStop"] = value;
+    this->setInUserConfig("CostAndPrice", "CustomIdleFeeAfterStop", value);
+}
+
+std::optional<KeyValue> ChargePointConfiguration::getCustomIdleFeeAfterStopKeyValue() {
+    std::optional<KeyValue> result = std::nullopt;
+    std::optional<bool> idle_fee = getCustomIdleFeeAfterStop();
+    if (idle_fee.has_value()) {
+        result = KeyValue();
+        result->key = "CustomIdleFeeAfterStop";
+        result->value = ocpp::conversions::bool_to_string(idle_fee.value());
+        result->readonly = false;
+    }
+
+    return result;
+}
+
+std::optional<bool> ChargePointConfiguration::getCustomMultiLanguageMessagesEnabled() {
+    if (this->config.contains("CostAndPrice") and
+        this->config["CostAndPrice"].contains("CustomMultiLanguageMessages")) {
+        return this->config["CostAndPrice"]["CustomMultiLanguageMessages"];
+    }
+
+    return std::nullopt;
+}
+
+std::optional<KeyValue> ChargePointConfiguration::getCustomMultiLanguageMessagesEnabledKeyValue() {
+    std::optional<KeyValue> result = std::nullopt;
+    std::optional<bool> multi_language = getCustomMultiLanguageMessagesEnabled();
+    if (multi_language.has_value()) {
+        result = KeyValue();
+        result->key = "CustomMultiLanguageMessages";
+        result->value = ocpp::conversions::bool_to_string(multi_language.value());
+        result->readonly = true;
+    }
+
+    return result;
+}
+
+std::optional<std::string> ChargePointConfiguration::getMultiLanguageSupportedLanguages() {
+    if (this->config.contains("CostAndPrice") and this->config["CostAndPrice"].contains("SupportedLanguages")) {
+        return this->config["CostAndPrice"]["SupportedLanguages"];
+    }
+
+    return std::nullopt;
+}
+
+std::optional<KeyValue> ChargePointConfiguration::getMultiLanguageSupportedLanguagesKeyValue() {
+    std::optional<KeyValue> result = std::nullopt;
+    std::optional<std::string> languages = getMultiLanguageSupportedLanguages();
+    if (languages.has_value()) {
+        result = KeyValue();
+        result->key = "SupportedLanguages";
+        result->value = languages.value();
+        result->readonly = true;
+    }
+
+    return result;
+}
+
+std::optional<std::string> ChargePointConfiguration::getLanguage() {
+    if (this->config.contains("CostAndPrice") and this->config["CostAndPrice"].contains("Language")) {
+        return this->config["CostAndPrice"]["Language"];
+    }
+
+    return std::nullopt;
+}
+
+void ChargePointConfiguration::setLanguage(const std::string& language) {
+    this->config["CostAndPrice"]["Language"] = language;
+    this->setInUserConfig("CostAndPrice", "Language", language);
+}
+
+std::optional<KeyValue> ChargePointConfiguration::getLanguageKeyValue() {
+    std::optional<KeyValue> result = std::nullopt;
+    std::optional<std::string> language = getLanguage();
+    if (language.has_value()) {
+        result = KeyValue();
+        result->key = "Language";
+        result->value = language.value();
+        result->readonly = true;
+    }
+
+    return result;
+}
+
+// Custom
 std::optional<KeyValue> ChargePointConfiguration::getCustomKeyValue(CiString<50> key) {
     std::lock_guard<std::recursive_mutex> lock(this->configuration_mutex);
     if (!this->config["Custom"].contains(key.get())) {
@@ -2101,25 +2951,39 @@ ConfigurationStatus ChargePointConfiguration::setCustomKey(CiString<50> key, CiS
     }
     std::lock_guard<std::recursive_mutex> lock(this->configuration_mutex);
     try {
-        const auto type = this->custom_schema["properties"][key]["type"];
+        const auto type = custom_schema["properties"][key]["type"];
+        json new_value;
         if (type == "integer") {
-            this->config["Custom"][key] = std::stoi(value.get());
+            new_value = std::stoi(value.get());
         } else if (type == "number") {
-            this->config["Custom"][key] = std::stof(value.get());
+            new_value = std::stof(value.get());
         } else if (type == "string" or type == "array") {
-            this->config["Custom"][key] = value.get();
+            new_value = value.get();
         } else if (type == "boolean") {
-            this->config["Custom"][key] = ocpp::conversions::string_to_bool(value.get());
+            new_value = ocpp::conversions::string_to_bool(value.get());
         } else {
             return ConfigurationStatus::Rejected;
         }
+
+        // validate the updated key against the schema
+        Schemas schema(custom_schema);
+        json modelUnderTest = config["Custom"];
+        modelUnderTest[key] = new_value;
+        schema.get_validator()->validate(modelUnderTest); // throws exception on error
+        config["Custom"][key] = new_value;
     } catch (const std::exception& e) {
-        EVLOG_warning << "Could not set custom configuration key";
+        EVLOG_warning << "Could not set custom configuration key: " << e.what();
         return ConfigurationStatus::Rejected;
     }
 
     this->setInUserConfig("Custom", key, this->config["Custom"][key]);
     return ConfigurationStatus::Accepted;
+}
+
+void ChargePointConfiguration::setCentralSystemURI(std::string centralSystemUri) {
+    EVLOG_warning << "CentralSystemURI changed to: " << centralSystemUri;
+    this->config["Internal"]["CentralSystemURI"] = centralSystemUri;
+    this->setInUserConfig("Internal", "CentralSystemURI", centralSystemUri);
 }
 
 std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
@@ -2185,8 +3049,23 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
     if (key == "SupportedChargingProfilePurposeTypes") {
         return this->getSupportedChargingProfilePurposeTypesKeyValue();
     }
+    if (key == "IgnoredProfilePurposesOffline") {
+        return this->getIgnoredProfilePurposesOfflineKeyValue();
+    }
     if (key == "MaxCompositeScheduleDuration") {
         return this->getMaxCompositeScheduleDurationKeyValue();
+    }
+    if (key == "CompositeScheduleDefaultLimitAmps") {
+        return this->getCompositeScheduleDefaultLimitAmpsKeyValue();
+    }
+    if (key == "CompositeScheduleDefaultLimitWatts") {
+        return this->getCompositeScheduleDefaultLimitWattsKeyValue();
+    }
+    if (key == "CompositeScheduleDefaultNumberPhases") {
+        return this->getCompositeScheduleDefaultNumberPhasesKeyValue();
+    }
+    if (key == "SupplyVoltage") {
+        return this->getSupplyVoltageKeyValue();
     }
     if (key == "WebsocketPingPayload") {
         return this->getWebsocketPingPayloadKeyValue();
@@ -2199,6 +3078,9 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
     }
     if (key == "VerifyCsmsCommonName") {
         return this->getVerifyCsmsCommonNameKeyValue();
+    }
+    if (key == "VerifyCsmsAllowWildcards") {
+        return this->getVerifyCsmsAllowWildcardsKeyValue();
     }
     if (key == "OcspRequestInterval") {
         return this->getOcspRequestIntervalKeyValue();
@@ -2223,6 +3105,21 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
     }
     if (key == "HostName") {
         return this->getHostNameKeyValue();
+    }
+    if (key == "SupportedMeasurands") {
+        return this->getSupportedMeasurandsKeyValue();
+    }
+    if (key == "MaxMessageSize") {
+        return this->getMaxMessageSizeKeyValue();
+    }
+    if (key == "QueueAllMessages") {
+        return this->getQueueAllMessagesKeyValue();
+    }
+    if (key == "MessageTypesDiscardForQueueing") {
+        return this->getMessageTypesDiscardForQueueingKeyValue();
+    }
+    if (key == "MessageQueueSizeThreshold") {
+        return this->getMessageQueueSizeThresholdKeyValue();
     }
 
     // Core Profile
@@ -2396,6 +3293,48 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
         }
     }
 
+    if (this->supported_feature_profiles.count(SupportedFeatureProfiles::CostAndPrice)) {
+        // California Pricing
+        if (key == "CustomDisplayCostAndPrice") {
+            return this->getCustomDisplayCostAndPriceEnabledKeyValue();
+        }
+
+        if (key == "NumberOfDecimalsForCostValues") {
+            return this->getPriceNumberOfDecimalsForCostValuesKeyValue();
+        }
+        if (key == "DefaultPrice") {
+            return this->getDefaultPriceKeyValue();
+        }
+        if (key.get().find("DefaultPriceText") == 0 and this->getCustomMultiLanguageMessagesEnabled().has_value() and
+            this->getCustomMultiLanguageMessagesEnabled().value()) {
+            const std::vector<std::string> message_language = split_string(key, ',');
+            if (message_language.size() > 1) {
+                return this->getDefaultPriceTextKeyValue(message_language.at(1));
+            }
+        }
+        if (key == "TimeOffset") {
+            return this->getDisplayTimeOffsetKeyValue();
+        }
+        if (key == "NextTimeOffsetTransitionDateTime") {
+            return this->getNextTimeOffsetTransitionDateTimeKeyValue();
+        }
+        if (key == "TimeOffsetNextTransition") {
+            return this->getTimeOffsetNextTransitionKeyValue();
+        }
+        if (key == "CustomIdleFeeAfterStop") {
+            return this->getCustomIdleFeeAfterStopKeyValue();
+        }
+        if (key == "SupportedLanguages") {
+            return this->getMultiLanguageSupportedLanguagesKeyValue();
+        }
+        if (key == "CustomMultiLanguageMessages") {
+            return this->getCustomMultiLanguageMessagesEnabledKeyValue();
+        }
+        if (key == "Language") {
+            return this->getLanguageKeyValue();
+        }
+    }
+
     if (this->supported_feature_profiles.count(SupportedFeatureProfiles::Custom)) {
         return this->getCustomKeyValue(key);
     }
@@ -2410,10 +3349,21 @@ std::vector<KeyValue> ChargePointConfiguration::get_all_key_value() {
         if (this->config.contains(feature_profile_string)) {
             auto& feature_config = this->config[feature_profile_string];
             for (auto& feature_config_entry : feature_config.items()) {
-                auto config_key = CiString<50>(feature_config_entry.key());
-                auto config_value = this->get(config_key);
-                if (config_value != std::nullopt) {
-                    all.push_back(config_value.value());
+                const auto config_key = CiString<50>(feature_config_entry.key());
+                // DefaultPriceText is a special here, as it has multiple possible languages which are all separate
+                // key value pairs.
+                if (config_key.get().find("DefaultPriceText") == 0) {
+                    const auto price_text_key_values = getAllDefaultPriceTextKeyValues();
+                    if (price_text_key_values.has_value()) {
+                        for (const auto& kv : price_text_key_values.value()) {
+                            all.push_back(kv);
+                        }
+                    }
+                } else {
+                    auto config_value = this->get(config_key);
+                    if (config_value != std::nullopt) {
+                        all.push_back(config_value.value());
+                    }
                 }
             }
         }
@@ -2423,6 +3373,11 @@ std::vector<KeyValue> ChargePointConfiguration::get_all_key_value() {
 
 ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500> value) {
     std::lock_guard<std::recursive_mutex> lock(this->configuration_mutex);
+    if (key == "IgnoredProfilePurposesOffline") {
+        if (this->setIgnoredProfilePurposesOffline(value) == false) {
+            return ConfigurationStatus::Rejected;
+        }
+    }
     if (key == "AllowOfflineTxForUnknownId") {
         if (this->getAllowOfflineTxForUnknownId() == std::nullopt) {
             return ConfigurationStatus::NotSupported;
@@ -2782,6 +3737,79 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         }
     }
 
+    if (key == "CompositeScheduleDefaultLimitAmps") {
+        if (not this->getCompositeScheduleDefaultLimitAmps().has_value()) {
+            return ConfigurationStatus::NotSupported;
+        }
+        try {
+            auto [valid, _value] = is_positive_integer(value.get());
+            if (not valid) {
+                return ConfigurationStatus::Rejected;
+            }
+            this->setCompositeScheduleDefaultLimitAmps(_value);
+        } catch (const std::invalid_argument& e) {
+            return ConfigurationStatus::Rejected;
+        } catch (const std::out_of_range& e) {
+            return ConfigurationStatus::Rejected;
+        }
+    }
+    if (key == "CompositeScheduleDefaultLimitWatts") {
+        if (not this->getCompositeScheduleDefaultLimitWatts().has_value()) {
+            return ConfigurationStatus::NotSupported;
+        }
+        try {
+            auto [valid, _value] = is_positive_integer(value.get());
+            if (not valid) {
+                return ConfigurationStatus::Rejected;
+            }
+            this->setCompositeScheduleDefaultLimitWatts(_value);
+        } catch (const std::invalid_argument& e) {
+            return ConfigurationStatus::Rejected;
+        } catch (const std::out_of_range& e) {
+            return ConfigurationStatus::Rejected;
+        }
+    }
+    if (key == "CompositeScheduleDefaultNumberPhases") {
+        if (not this->getCompositeScheduleDefaultNumberPhases().has_value()) {
+            return ConfigurationStatus::NotSupported;
+        }
+        try {
+            const auto _value = std::stoi(value.get());
+            if (_value <= 0 or _value > 3) {
+                return ConfigurationStatus::Rejected;
+            }
+            this->setCompositeScheduleDefaultNumberPhases(_value);
+        } catch (const std::invalid_argument& e) {
+            return ConfigurationStatus::Rejected;
+        } catch (const std::out_of_range& e) {
+            return ConfigurationStatus::Rejected;
+        }
+    }
+    if (key == "SupplyVoltage") {
+        if (not this->getSupplyVoltage().has_value()) {
+            return ConfigurationStatus::NotSupported;
+        }
+        try {
+            const auto [valid, _value] = is_positive_integer(value.get());
+            if (not valid) {
+                return ConfigurationStatus::Rejected;
+            }
+            this->setSupplyVoltage(_value);
+        } catch (const std::invalid_argument& e) {
+            return ConfigurationStatus::Rejected;
+        } catch (const std::out_of_range& e) {
+            return ConfigurationStatus::Rejected;
+        }
+    }
+
+    if (key == "VerifyCsmsAllowWildcards") {
+        if (isBool(value.get())) {
+            this->setVerifyCsmsAllowWildcards(ocpp::conversions::string_to_bool(value.get()));
+        } else {
+            return ConfigurationStatus::Rejected;
+        }
+    }
+
     // Hubject PnC Extension keys
     if (key == "SeccLeafSubjectCommonName") {
         if (this->getSeccLeafSubjectCommonName().has_value()) {
@@ -2806,7 +3834,11 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
     }
     if (key == "ConnectorEvseIds") {
         if (this->getConnectorEvseIds().has_value()) {
-            this->setConnectorEvseIds(value.get());
+            if (validate_connector_evse_ids(value.get())) {
+                this->setConnectorEvseIds(value.get());
+            } else {
+                return ConfigurationStatus::Rejected;
+            }
         } else {
             return ConfigurationStatus::NotSupported;
         }
@@ -2817,6 +3849,54 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         } else {
             return ConfigurationStatus::NotSupported;
         }
+    }
+
+    if (key.get().find("DefaultPriceText") == 0) {
+        const ConfigurationStatus result = this->setDefaultPriceText(key, value);
+        if (result != ConfigurationStatus::Accepted) {
+            return result;
+        }
+    }
+
+    if (key == "DefaultPrice") {
+        const ConfigurationStatus result = this->setDefaultPrice(value);
+        if (result != ConfigurationStatus::Accepted) {
+            return result;
+        }
+    }
+
+    if (key == "TimeOffset") {
+        const ConfigurationStatus result = this->setDisplayTimeOffset(value);
+        if (result != ConfigurationStatus::Accepted) {
+            return result;
+        }
+    }
+
+    if (key == "NextTimeOffsetTransitionDateTime") {
+        const ConfigurationStatus result = this->setNextTimeOffsetTransitionDateTime(value);
+        if (result != ConfigurationStatus::Accepted) {
+            return result;
+        }
+    }
+
+    if (key == "TimeOffsetNextTransition") {
+        const ConfigurationStatus result = this->setTimeOffsetNextTransition(value);
+        if (result != ConfigurationStatus::Accepted) {
+            return result;
+        }
+    }
+
+    if (key == "CustomIdleFeeAfterStop") {
+        this->setCustomIdleFeeAfterStop(ocpp::conversions::string_to_bool(value));
+    }
+
+    if (key == "Language") {
+        this->setLanguage(value);
+    }
+
+    if (key == "CentralSystemURI") {
+        this->setCentralSystemURI(value.get());
+        return ConfigurationStatus::RebootRequired;
     }
 
     if (this->config.contains("Custom") and this->config["Custom"].contains(key.get())) {

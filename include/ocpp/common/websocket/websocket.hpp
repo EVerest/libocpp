@@ -5,8 +5,8 @@
 
 #include <ocpp/common/evse_security.hpp>
 #include <ocpp/common/ocpp_logging.hpp>
-#include <ocpp/common/websocket/websocket_plain.hpp>
-#include <ocpp/common/websocket/websocket_tls.hpp>
+
+#include <ocpp/common/websocket/websocket_base.hpp>
 
 namespace ocpp {
 ///
@@ -16,9 +16,9 @@ class Websocket {
 private:
     // unique_ptr holds address of base - requires WebSocketBase to have a virtual destructor
     std::unique_ptr<WebsocketBase> websocket;
-    std::function<void(const int security_profile)> connected_callback;
+    std::function<void(OcppProtocolVersion protocol)> connected_callback;
     std::function<void()> disconnected_callback;
-    std::function<void(const websocketpp::close::status::value reason)> closed_callback;
+    std::function<void(const WebsocketCloseReason reason)> stopped_connecting_callback;
     std::function<void(const std::string& message)> message_callback;
     std::shared_ptr<MessageLogging> logging;
 
@@ -28,29 +28,31 @@ public:
                        std::shared_ptr<EvseSecurity> evse_security, std::shared_ptr<MessageLogging> logging);
     ~Websocket();
 
-    /// \brief connect to a websocket (TLS or non-TLS depending on the central system uri in the configuration).
-    bool connect();
+    /// \brief Starts the connection attempts. It will init the websocket processing thread
+    /// \returns true if the websocket is successfully initialized, false otherwise. Does
+    ///          not wait for a successful connection
+    bool start_connecting();
 
     void set_connection_options(const WebsocketConnectionOptions& connection_options);
 
     /// \brief disconnect the websocket
-    void disconnect(websocketpp::close::status::value code);
+    void disconnect(const WebsocketCloseReason code);
 
     // \brief reconnects the websocket after the delay
-    void reconnect(std::error_code reason, long delay);
+    void reconnect(long delay);
 
     /// \brief indicates if the websocket is connected
     bool is_connected();
 
     /// \brief register a \p callback that is called when the websocket is connected successfully
-    void register_connected_callback(const std::function<void(const int security_profile)>& callback);
+    void register_connected_callback(const std::function<void(OcppProtocolVersion protocol)>& callback);
 
     /// \brief register a \p callback that is called when the websocket connection is disconnected
     void register_disconnected_callback(const std::function<void()>& callback);
 
-    /// \brief register a \p callback that is called when the websocket connection has been closed and will not attempt
+    /// \brief register a \p callback that is called when the websocket connection has been stopped and will not attempt
     /// to reconnect
-    void register_closed_callback(const std::function<void(const websocketpp::close::status::value reason)>& callback);
+    void register_stopped_connecting_callback(const std::function<void(const WebsocketCloseReason)>& callback);
 
     /// \brief register a \p callback that is called when the websocket receives a message
     void register_message_callback(const std::function<void(const std::string& message)>& callback);

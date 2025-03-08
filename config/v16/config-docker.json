@@ -20,7 +20,7 @@
         "LocalAuthorizeOffline": false,
         "LocalPreAuthorize": false,
         "MeterValuesAlignedData": "Energy.Active.Import.Register",
-        "MeterValuesSampledData": "Energy.Active.Import.Register",
+        "MeterValuesSampledData": "Energy.Active.Import.Register,SoC",
         "MeterValueSampleInterval": 60,
         "NumberOfConnectors": 1,
         "ResetRetries": 1,
@@ -32,7 +32,7 @@
         "TransactionMessageAttempts": 1,
         "TransactionMessageRetryInterval": 10,
         "UnlockConnectorOnEVSideDisconnect": true,
-        "WebsocketPingInterval": 0
+        "WebsocketPingInterval": 10
     },
     "FirmwareManagement": {
         "SupportedFileTransferProtocols": "FTP"
@@ -56,6 +56,9 @@
     "PnC": {
         "ISO15118PnCEnabled": true,
         "ContractValidationOffline": true
+    },
+    "CostAndPrice": {
+        "CustomDisplayCostAndPrice": false
     },
     "Custom": {
         "ExampleConfigurationKey": "example"

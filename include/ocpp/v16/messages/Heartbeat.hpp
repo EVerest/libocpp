@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
+// Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
+// This code is generated using the generator in 'src/code_generator/common`, please do not edit manually
+
 #ifndef OCPP_V16_HEARTBEAT_HPP
 #define OCPP_V16_HEARTBEAT_HPP
 
@@ -15,7 +17,7 @@ struct HeartbeatRequest : public ocpp::Message {
 
     /// \brief Provides the type of this Heartbeat message as a human readable string
     /// \returns the message type as a human readable string
-    std::string get_type() const;
+    std::string get_type() const override;
 };
 
 /// \brief Conversion from a given HeartbeatRequest \p k to a given json object \p j
@@ -34,7 +36,7 @@ struct HeartbeatResponse : public ocpp::Message {
 
     /// \brief Provides the type of this HeartbeatResponse message as a human readable string
     /// \returns the message type as a human readable string
-    std::string get_type() const;
+    std::string get_type() const override;
 };
 
 /// \brief Conversion from a given HeartbeatResponse \p k to a given json object \p j

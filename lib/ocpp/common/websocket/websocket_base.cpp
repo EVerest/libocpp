@@ -4,15 +4,16 @@
 
 #include <everest/logging.hpp>
 #include <ocpp/common/websocket/websocket_base.hpp>
+#include <websocketpp_utils/base64.hpp>
 namespace ocpp {
 
 WebsocketBase::WebsocketBase() :
     m_is_connected(false),
     connected_callback(nullptr),
-    closed_callback(nullptr),
+    stopped_connecting_callback(nullptr),
     message_callback(nullptr),
     reconnect_timer(nullptr),
-    connection_attempts(0),
+    connection_attempts(1),
     reconnect_backoff_ms(0),
     shutting_down(false),
     reconnecting(false) {
@@ -35,7 +36,7 @@ void WebsocketBase::set_connection_options_base(const WebsocketConnectionOptions
     this->connection_options = connection_options;
 }
 
-void WebsocketBase::register_connected_callback(const std::function<void(const int security_profile)>& callback) {
+void WebsocketBase::register_connected_callback(const std::function<void(OcppProtocolVersion protocol)>& callback) {
     this->connected_callback = callback;
 }
 
@@ -43,9 +44,9 @@ void WebsocketBase::register_disconnected_callback(const std::function<void()>& 
     this->disconnected_callback = callback;
 }
 
-void WebsocketBase::register_closed_callback(
-    const std::function<void(const websocketpp::close::status::value reason)>& callback) {
-    this->closed_callback = callback;
+void WebsocketBase::register_stopped_connecting_callback(
+    const std::function<void(const WebsocketCloseReason reason)>& callback) {
+    this->stopped_connecting_callback = callback;
 }
 
 void WebsocketBase::register_message_callback(const std::function<void(const std::string& message)>& callback) {
@@ -61,7 +62,7 @@ bool WebsocketBase::initialized() {
         EVLOG_error << "Not properly initialized: please register connected callback.";
         return false;
     }
-    if (this->closed_callback == nullptr) {
+    if (this->stopped_connecting_callback == nullptr) {
         EVLOG_error << "Not properly initialized: please closed_callback.";
         return false;
     }
@@ -73,7 +74,7 @@ bool WebsocketBase::initialized() {
     return true;
 }
 
-void WebsocketBase::disconnect(websocketpp::close::status::value code) {
+void WebsocketBase::disconnect(const WebsocketCloseReason code) {
     if (!this->initialized()) {
         EVLOG_error << "Cannot disconnect a websocket that was not initialized";
         return;
@@ -81,7 +82,7 @@ void WebsocketBase::disconnect(websocketpp::close::status::value code) {
 
     {
         std::lock_guard<std::mutex> lk(this->reconnect_mutex);
-        if (code == websocketpp::close::status::normal) {
+        if (code == WebsocketCloseReason::Normal) {
             this->shutting_down = true;
         }
 
@@ -109,7 +110,10 @@ std::optional<std::string> WebsocketBase::getAuthorizationHeader() {
         EVLOG_debug << "AuthorizationKey present, encoding authentication header";
         std::string plain_auth_header =
             this->connection_options.csms_uri.get_chargepoint_id() + ":" + authorization_key.value();
-        auth_header.emplace(std::string("Basic ") + websocketpp::base64_encode(plain_auth_header));
+
+        // TODO (ioan): replace with libevse-security usage
+        auth_header.emplace(std::string("Basic ") + ocpp::base64_encode(plain_auth_header));
+
         EVLOG_debug << "Basic Auth header: " << auth_header.value();
     }
 
@@ -169,11 +173,11 @@ void WebsocketBase::set_authorization_key(const std::string& authorization_key) 
     this->connection_options.authorization_key = authorization_key;
 }
 
-void WebsocketBase::on_pong_timeout(websocketpp::connection_hdl hdl, std::string msg) {
+void WebsocketBase::on_pong_timeout(std::string msg) {
     if (!this->reconnecting) {
         EVLOG_info << "Reconnecting because of a pong timeout after " << this->connection_options.pong_timeout_s << "s";
         this->reconnecting = true;
-        this->close(websocketpp::close::status::going_away, "Pong timeout");
+        this->close(WebsocketCloseReason::GoingAway, "Pong timeout");
     }
 }
 

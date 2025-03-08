@@ -4,14 +4,11 @@
 #define OCPP_V16_TRANSACTION_HPP
 
 #include <memory>
+#include <random>
 
 #include <everest/timer.hpp>
 #include <ocpp/v16/ocpp_types.hpp>
 #include <ocpp/v16/types.hpp>
-
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_generators.hpp>
-#include <boost/uuid/uuid_io.hpp>
 
 namespace ocpp {
 namespace v16 {
@@ -30,7 +27,8 @@ struct StampedEnergyWh {
 /// \brief Contains all transaction related data, such as the ID and power meter values
 class Transaction {
 private:
-    int32_t transaction_id;
+    std::optional<int32_t> transaction_id;
+    int32_t internal_transaction_id;
     int32_t connector;
     std::string session_id;
     CiString<20> id_token;
@@ -49,9 +47,9 @@ private:
 public:
     /// \brief Creates a new Transaction object, taking ownership of the provided \p meter_values_sample_timer
     /// on the provided \p connector
-    Transaction(const int32_t& connector, const std::string& session_id, const CiString<20>& id_token,
-                const int32_t& meter_start, std::optional<int32_t> reservation_id, const ocpp::DateTime& timestamp,
-                std::unique_ptr<Everest::SteadyTimer> meter_values_sample_timer);
+    Transaction(const int32_t transaction_id, const int32_t& connector, const std::string& session_id,
+                const CiString<20>& id_token, const double meter_start, std::optional<int32_t> reservation_id,
+                const ocpp::DateTime& timestamp, std::unique_ptr<Everest::SteadyTimer> meter_values_sample_timer);
 
     /// \brief Provides the energy in Wh at the start of the transaction
     /// \returns the energy in Wh combined with a timestamp
@@ -93,7 +91,10 @@ public:
 
     /// \brief Provides the id of this transaction
     /// \returns the transaction id
-    int32_t get_transaction_id();
+    std::optional<int32_t> get_transaction_id();
+
+    /// \brief Returns the internal transaction id
+    int32_t get_internal_transaction_id();
 
     /// \brief Provides the id of this session
     /// \returns the session_id
@@ -153,9 +154,15 @@ private:
     // size does not depend on the number of connectors
     std::vector<std::shared_ptr<Transaction>> stopped_transactions;
 
+    std::mt19937 gen;
+    std::uniform_int_distribution<int32_t> distr;
+
 public:
     /// \brief Creates and manages transactions for the provided \p number_of_connectors
     explicit TransactionHandler(int32_t number_of_connectors);
+
+    /// \brief Returns a negative random transaction_id
+    int32_t get_negative_random_transaction_id();
 
     /// \brief Adds the given \p transaction the vector of transactions
     void add_transaction(std::shared_ptr<Transaction> transaction);
@@ -178,6 +185,13 @@ public:
     /// \p start_transaction_message_id
     /// \returns The associated transaction if available or nullptr if not
     std::shared_ptr<Transaction> get_transaction(const std::string& start_transaction_message_id);
+
+    ///
+    /// \brief Returns the transaction associated with the given id tag.
+    /// \param id_tag   The id tag.
+    /// \return The associated transaction if available.
+    ///
+    std::shared_ptr<Transaction> get_transaction_from_id_tag(const std::string& id_tag);
 
     /// \brief Provides the connector on which a transaction with the given \p transaction_id is running
     /// \returns The connector or -1 if the transaction_id is unknown

@@ -11,7 +11,7 @@
 #include <everest/logging.hpp>
 
 #include <ocpp/common/types.hpp>
-#include <ocpp/v16/enums.hpp>
+#include <ocpp/v16/ocpp_enums.hpp>
 
 using json = nlohmann::json;
 
@@ -119,6 +119,7 @@ std::ostream& operator<<(std::ostream& os, const MessageType& message_type);
 enum SupportedFeatureProfiles {
     Internal,
     Core,
+    CostAndPrice,
     FirmwareManagement,
     LocalAuthListManagement,
     Reservation,
@@ -205,6 +206,7 @@ struct EnhancedChargingSchedulePeriod {
     float limit;
     std::optional<int32_t> numberPhases;
     int32_t stackLevel;
+    bool periodTransformed = false; // indicates that a period was transformed from chargingRateUnit
 };
 
 /// \brief Conversion from a given EnhancedChargingSchedulePeriod \p k to a given json object \p j
