@@ -3,7 +3,7 @@
 
 #include "smart_charging_test_utils.hpp"
 
-TEST_F(CompositeScheduleTestFixtureV201, setpoint_tx_profile) {
+TEST_F(CompositeScheduleTestFixtureV2, setpoint_tx_profile) {
     this->load_charging_profiles_for_evse(BASE_JSON_PATH_V21 + "/setpoints/", DEFAULT_EVSE_ID); 
 
     evse_manager->open_transaction(DEFAULT_EVSE_ID, "f1522902-1170-416f-8e43-9e3bce28fde7");
@@ -47,7 +47,7 @@ TEST_F(CompositeScheduleTestFixtureV201, setpoint_tx_profile) {
     ASSERT_EQ(actual, expected);
 }
 
-TEST_F(CompositeScheduleTestFixtureV201, V2MaxOverridesHigherLimits) {
+TEST_F(CompositeScheduleTestFixtureV2, V2MaxOverridesHigherLimits) {
     this->load_charging_profiles_for_evse(BASE_JSON_PATH_V21 + "/max/0/", STATION_WIDE_ID);
     this->load_charging_profiles_for_evse(BASE_JSON_PATH_V21 + "/max/1/", DEFAULT_EVSE_ID);
 

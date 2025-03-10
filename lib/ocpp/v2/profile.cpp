@@ -671,29 +671,45 @@ convert_intermediate_into_schedule(const IntermediateProfile& profile, ChargingR
                     period_out.setpoint = period.current_setpoint;
                 }
                 if (period.power_setpoint != NO_SETPOINT_SPECIFIED) {
-                    period_out.setpoint =
-                        std::min(period_out.setpoint.value(), period.power_setpoint / transform_value);
+                    if (period_out.setpoint.has_value()) {
+                        period_out.setpoint =
+                            std::min(period_out.setpoint.value(), period.power_setpoint / transform_value);
+                    } else {
+                        period_out.setpoint = period.power_setpoint / transform_value;
+                    }
                 }
             } else {
                 if (period.power_limit != NO_LIMIT_SPECIFIED) {
                     period_out.limit = period.power_limit;
                 }
                 if (period.current_limit != NO_LIMIT_SPECIFIED) {
-                    period_out.limit = std::min(period_out.limit.value(), period.current_limit * transform_value);
+                    if (period_out.limit.has_value()) {
+                        period_out.limit = std::min(period_out.limit.value(), period.power_limit / transform_value);
+                    } else {
+                        period_out.limit = period.power_limit / transform_value;
+                    }
                 }
                 if (period.power_discharge_limit != NO_DISCHARGE_LIMIT_SPECIFIED) {
                     period_out.dischargeLimit = period.power_discharge_limit;
                 }
                 if (period.current_discharge_limit != NO_DISCHARGE_LIMIT_SPECIFIED) {
-                    period_out.dischargeLimit =
-                        std::min(period_out.dischargeLimit.value(), period.current_discharge_limit * transform_value);
+                    if (period_out.dischargeLimit.has_value()) {
+                        period_out.dischargeLimit =
+                            std::max(period_out.dischargeLimit.value(), period.power_limit / transform_value);
+                    } else {
+                        period_out.dischargeLimit = period.power_limit / transform_value;
+                    }
                 }
                 if (period.power_setpoint != NO_SETPOINT_SPECIFIED) {
                     period_out.setpoint = period.power_setpoint;
                 }
                 if (period.current_setpoint != NO_SETPOINT_SPECIFIED) {
-                    period_out.setpoint =
-                        std::min(period_out.setpoint.value(), period.current_setpoint * transform_value);
+                    if (period_out.setpoint.has_value()) {
+                        period_out.setpoint =
+                            std::min(period_out.setpoint.value(), period.current_setpoint * transform_value);
+                    } else {
+                        period_out.setpoint = period.current_setpoint * transform_value;
+                    }
                 }
             }
         }
