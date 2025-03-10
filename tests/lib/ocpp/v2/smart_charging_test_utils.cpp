@@ -335,7 +335,7 @@ ChargingProfile get_charging_profile_from_path(const std::string& path) {
 }
 
 ChargingProfile get_charging_profile_from_file(const std::string& filename) {
-    const std::string full_path = BASE_JSON_PATH_V201 + "/" + filename;
+    const std::string full_path = BASE_JSON_PATH_V2 + "/" + filename;
 
     return get_charging_profile_from_path(full_path);
 }
@@ -349,7 +349,7 @@ std::vector<ChargingProfile> get_charging_profiles_from_file(const std::string& 
 /// \brief Returns a vector of ChargingProfiles to be used as a baseline for testing core functionality
 /// of generating an EnhancedChargingSchedule.
 std::vector<ChargingProfile> get_baseline_profile_vector() {
-    return get_charging_profiles_from_directory(BASE_JSON_PATH_V201 + "/" + "baseline/");
+    return get_charging_profiles_from_directory(BASE_JSON_PATH_V2 + "/" + "baseline/");
 }
 
 std::string to_string(std::vector<ChargingProfile>& profiles) {
