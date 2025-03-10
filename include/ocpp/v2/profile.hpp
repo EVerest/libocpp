@@ -7,14 +7,22 @@
 namespace ocpp {
 namespace v2 {
 
+struct PeriodLimit {
+    float limit;
+    float limit_L2;
+    float limit_L3;
+    bool operator==(const PeriodLimit& other) const;
+    bool operator!=(const PeriodLimit& other) const;
+};
+
 struct IntermediatePeriod {
     int32_t startPeriod;
-    float current_limit;
-    float power_limit;
-    float current_discharge_limit;
-    float power_discharge_limit;
-    float current_setpoint;
-    float power_setpoint;
+    PeriodLimit current_limit;
+    PeriodLimit power_limit;
+    PeriodLimit current_discharge_limit;
+    PeriodLimit power_discharge_limit;
+    PeriodLimit current_setpoint;
+    PeriodLimit power_setpoint;
     std::optional<int32_t> numberPhases;
     std::optional<int32_t> phaseToUse;
 };
@@ -36,9 +44,9 @@ struct period_entry_t {
 
     ocpp::DateTime start;
     ocpp::DateTime end;
-    float limit;
-    float discharge_limit;
-    float setpoint;
+    PeriodLimit limit;
+    PeriodLimit discharge_limit;
+    PeriodLimit setpoint;
     std::optional<std::int32_t> number_phases;
     std::optional<std::int32_t> phase_to_use;
     std::int32_t stack_level;
