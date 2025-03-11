@@ -27,7 +27,7 @@ python3 generate_cpp.py --schemas ~/ocpp-schemas/v21/ --out ~/checkout/everest-w
 The script [generate_everest_types.py](common/generate_cpp.py) can be used to generate EVerest YAML type definitions using OCPP2.0.1 and OCPP2.1 JSON schemas.
 
 ```bash
-python3 generate_everest_types.py --schemas ~/Downloads/ocpp21_part3_JSON/ocpp21_part3_JSON/ --out <outfile> --types <comma-seperated-list-of-ocpp-types>
+python3 generate_everest_types.py --schemas <json-schema-dir> --out <outfile> --types <comma-seperated-list-of-ocpp-types>
 ```
 
 e.g.
