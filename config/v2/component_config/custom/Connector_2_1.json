@@ -20,7 +20,7 @@
       ],
       "description": "This variable reports current availability state for the Connector. Optional, because already reported in StatusNotification.",
       "type": "string",
-      "default": ""
+      "default": "Available"
     },
     "ConnectorAvailable": {
       "variable_name": "Available",
