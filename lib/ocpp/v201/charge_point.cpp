@@ -2948,6 +2948,7 @@ bool ChargePoint::should_allow_certificate_install(InstallCertificateUseEnum cer
     case InstallCertificateUseEnum::V2GRootCertificate:
         return true;
     }
+    return false;
 }
 
 void ChargePoint::handle_install_certificate_req(Call<InstallCertificateRequest> call) {
