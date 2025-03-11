@@ -877,6 +877,8 @@ convert_intermediate_into_schedule(const IntermediateProfile& profile, ChargingR
         if (is_equal(period.current_limit.limit, NO_LIMIT_SPECIFIED) &&
             is_equal(period.power_limit.limit, NO_LIMIT_SPECIFIED)) {
             period_out.limit = default_limit;
+        } else {
+            period_out.limit = std::numeric_limits<float>::max();
         }
 
         float transform_value =
