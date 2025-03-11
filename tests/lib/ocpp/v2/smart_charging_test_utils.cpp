@@ -136,7 +136,7 @@ std::string to_string(const period_entry_t& entry) {
     std::string result = "Period Entry: {";
     result += "Start: " + entry.start.to_rfc3339() + ", ";
     result += "End: " + entry.end.to_rfc3339() + ", ";
-    result += "Limit: " + std::to_string(entry.limit) + ", ";
+    result += "Limit: " + std::to_string(entry.limit.limit) + ", ";
     if (entry.number_phases.has_value()) {
         result += "Number of Phases: " + std::to_string(entry.number_phases.value()) + ", ";
     }
