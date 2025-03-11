@@ -33,7 +33,7 @@ period_entry_t gen_pe(ocpp::DateTime start, ocpp::DateTime end, ChargingProfile 
     period_entry_t period_entry;
     period_entry.start = start;
     period_entry.end = end;
-    period_entry.limit =
+    period_entry.limit.limit =
         profile.chargingSchedule.front().chargingSchedulePeriod[period_at].limit.value_or(FIXME_DEFAULT_LIMIT);
     period_entry.stack_level = profile.stackLevel;
     period_entry.charging_rate_unit = profile.chargingSchedule.front().chargingRateUnit;
@@ -253,7 +253,7 @@ TEST_P(CalculateProfileEntryType_Param_Test, CalculateProfileEntry_Positive) {
     period_entry_t expected_entry;
     expected_entry.start = expected_start;
     expected_entry.end = expected_end;
-    expected_entry.limit =
+    expected_entry.limit.limit =
         profile.chargingSchedule.front().chargingSchedulePeriod[period_index].limit.value_or(FIXME_DEFAULT_LIMIT);
     expected_entry.stack_level = profile.stackLevel;
     expected_entry.charging_rate_unit = profile.chargingSchedule.front().chargingRateUnit;
@@ -272,7 +272,7 @@ TEST_P(CalculateProfileEntryType_Param_Test, CalculateProfileEntry_Positive) {
         period_entry_t expected_second_entry;
         expected_second_entry.start = expected_2nd_entry_start.value();
         expected_second_entry.end = expected_2nd_entry_end.value();
-        expected_second_entry.limit =
+        expected_second_entry.limit.limit =
             profile.chargingSchedule.front().chargingSchedulePeriod[period_index].limit.value_or(FIXME_DEFAULT_LIMIT);
         expected_second_entry.stack_level = profile.stackLevel;
         expected_second_entry.charging_rate_unit = profile.chargingSchedule.front().chargingRateUnit;
@@ -299,7 +299,7 @@ TEST(ChargingProfileTypeTest, CalculateProfileEntry_RecurringWeeklyNoDuration) {
 
     EXPECT_EQ(entry->start, DateTime("2024-01-03T16:45:00Z"));
     EXPECT_EQ(entry->end, DateTime("2024-01-10T16:00:00Z"));
-    EXPECT_EQ(entry->limit, weekly_profile_no_duration.chargingSchedule.front().chargingSchedulePeriod[2].limit);
+    EXPECT_EQ(entry->limit.limit, weekly_profile_no_duration.chargingSchedule.front().chargingSchedulePeriod[2].limit);
     EXPECT_FALSE(entry->number_phases);
     EXPECT_EQ(entry->stack_level, weekly_profile_no_duration.stackLevel);
 
@@ -307,7 +307,7 @@ TEST(ChargingProfileTypeTest, CalculateProfileEntry_RecurringWeeklyNoDuration) {
 
     EXPECT_EQ(entry->start, DateTime("2024-01-10T16:45:00Z"));
     EXPECT_EQ(entry->end, DateTime("2024-01-17T16:00:00Z"));
-    EXPECT_EQ(entry->limit, weekly_profile_no_duration.chargingSchedule.front().chargingSchedulePeriod[2].limit);
+    EXPECT_EQ(entry->limit.limit, weekly_profile_no_duration.chargingSchedule.front().chargingSchedulePeriod[2].limit);
     EXPECT_FALSE(entry->number_phases);
     EXPECT_EQ(entry->stack_level, weekly_profile_no_duration.stackLevel);
 }
@@ -350,7 +350,7 @@ TEST(OCPPTypesTest, PeriodEntry_Equality) {
     period_entry_t actual_entry;
     actual_entry.start = dt("2T08:45");
     actual_entry.end = dt("3T08:00");
-    actual_entry.limit =
+    actual_entry.limit.limit =
         absolute_profile.chargingSchedule.front().chargingSchedulePeriod[0].limit.value_or(FIXME_DEFAULT_LIMIT);
     actual_entry.stack_level = absolute_profile.stackLevel;
     actual_entry.charging_rate_unit = absolute_profile.chargingSchedule.front().chargingRateUnit;
@@ -359,7 +359,7 @@ TEST(OCPPTypesTest, PeriodEntry_Equality) {
     period_entry_t different_entry;
     different_entry.start = dt("3T08:00");
     different_entry.end = dt("3T08:00");
-    different_entry.limit =
+    different_entry.limit.limit =
         absolute_profile.chargingSchedule.front().chargingSchedulePeriod[0].limit.value_or(FIXME_DEFAULT_LIMIT);
     different_entry.stack_level = absolute_profile.stackLevel;
     different_entry.charging_rate_unit = absolute_profile.chargingSchedule.front().chargingRateUnit;
