@@ -17,7 +17,8 @@ ChargingStationBase::ChargingStationBase(const std::shared_ptr<EvseSecurity> evs
         }
         this->evse_security = std::make_shared<EvseSecurityImpl>(security_configuration.value());
     }
-    this->work = boost::make_shared<boost::asio::executor_work_guard<boost::asio::io_context::executor_type>>(boost::asio::make_work_guard(this->io_context));
+    this->work = boost::make_shared<boost::asio::executor_work_guard<boost::asio::io_context::executor_type>>(
+        boost::asio::make_work_guard(this->io_context));
     this->io_context_thread = std::thread([this]() { this->io_context.run(); });
 }
 
