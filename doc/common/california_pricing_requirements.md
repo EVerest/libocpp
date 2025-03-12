@@ -57,7 +57,7 @@ For California Pricing to work, the following callbacks must be enabled:
 
 ## OCPP 2.0.1
 
-OCPP 2.0.1 uses different mechanisms to send pricing information. The messages are converted to internally used structs as descripbed above. For California Pricing Requirements to work, TariffAndCost must be implemented as well.
+OCPP 2.0.1 uses different mechanisms to send pricing information. The messages are converted to internally used structs as described above. For California Pricing Requirements to work, TariffAndCost must be implemented as well.
 
 ### Device Model Variables
 
@@ -92,7 +92,7 @@ For California Pricing to work, the following callbacks must be enabled:
 - `set_running_cost_callback`
 - `session_cost_message_callback`
 
-For the tariff information (the personal messages), the `session_cost_message_callback` is used. 
+For the tariff information (the personal messages), the `session_cost_message_callback` is used.
 
 Driver specific tariffs / pricing information can be returned by the CSMS in the `AuthorizeResponse` message. In
 libocpp, the whole message is just forwared (pricing information is not extracted from it), because the pricing
