@@ -3125,7 +3125,6 @@ DataTransferResponse ChargePointImpl::handle_set_user_price(const std::optional<
     }
 
     SessionCostMessage session_cost_message;
-    std::vector<DisplayMessageContent> messages;
     const auto t = this->transaction_handler->get_transaction_from_id_tag(id_token.value());
     std::string identifier_id;
     IdentifierType identifier_type;
@@ -3151,7 +3150,7 @@ DataTransferResponse ChargePointImpl::handle_set_user_price(const std::optional<
         if (this->configuration->getLanguage().has_value()) {
             m.language = this->configuration->getLanguage().value();
         }
-        messages.push_back(m);
+        session_cost_message.message.push_back(m);
     }
     if (this->configuration->getCustomMultiLanguageMessagesEnabled() && data.contains("priceTextExtra") &&
         data.at("priceTextExtra").is_array()) {
@@ -3159,12 +3158,8 @@ DataTransferResponse ChargePointImpl::handle_set_user_price(const std::optional<
             DisplayMessageContent message;
             message = j;
 
-            messages.push_back(message);
+            session_cost_message.message.push_back(message);
         }
-    }
-
-    if (!messages.empty()) {
-        session_cost_message.message = messages;
     }
 
     response = this->session_cost_message_callback(session_cost_message);
