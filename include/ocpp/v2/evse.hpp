@@ -156,7 +156,7 @@ public:
     /// \param trigger_metervalue_on_energy_kwh Send metervalues when this kwh is reached.
     /// \param trigger_metervalue_at_time       Send metervalues at a specific time.
     /// \param send_metervalue_function         Function used to send the metervalues.
-    /// \param io_context                       io service for the timers.
+    /// \param io_context                       io context for the timers.
     ///
     virtual void set_meter_value_pricing_triggers(
         std::optional<double> trigger_metervalue_on_power_kw, std::optional<double> trigger_metervalue_on_energy_kwh,
