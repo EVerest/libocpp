@@ -41,7 +41,7 @@ public:
     /// \param connector_type   The connector type to check.
     /// \return True if connector type is unknown or this evse has the given connector type.
     ///
-    virtual bool does_connector_exist(ConnectorEnum connector_type) const = 0;
+    virtual bool does_connector_exist(CiString<20> connector_type) const = 0;
 
     ///
     /// \brief Get connector status.
@@ -54,7 +54,7 @@ public:
     /// \param connector_type   The connector type to filter on (optional).
     /// \return Connector status. If connector type is given and does not exist, std::nullopt.
     ///
-    virtual std::optional<ConnectorStatusEnum> get_connector_status(std::optional<ConnectorEnum> connector_type) = 0;
+    virtual std::optional<ConnectorStatusEnum> get_connector_status(std::optional<CiString<20>> connector_type) = 0;
 
     /// \brief Opens a new transaction
     /// \param transaction_id id of the transaction
@@ -156,13 +156,13 @@ public:
     /// \param trigger_metervalue_on_energy_kwh Send metervalues when this kwh is reached.
     /// \param trigger_metervalue_at_time       Send metervalues at a specific time.
     /// \param send_metervalue_function         Function used to send the metervalues.
-    /// \param io_service                       io service for the timers.
+    /// \param io_context                       io context for the timers.
     ///
     virtual void set_meter_value_pricing_triggers(
         std::optional<double> trigger_metervalue_on_power_kw, std::optional<double> trigger_metervalue_on_energy_kwh,
         std::optional<DateTime> trigger_metervalue_at_time,
         std::function<void(const std::vector<MeterValue>& meter_values)> send_metervalue_function,
-        boost::asio::io_service& io_service) = 0;
+        boost::asio::io_context& io_context) = 0;
 };
 
 /// \brief Represents an EVSE. An EVSE can contain multiple Connector objects, but can only supply energy to one of
@@ -186,7 +186,7 @@ private:
     std::unique_ptr<Everest::SystemTimer> trigger_metervalue_at_time_timer;
     std::optional<double> last_triggered_metervalue_power_kw;
     std::function<void(const std::vector<MeterValue>& meter_values)> send_metervalue_function;
-    boost::asio::io_service io_service;
+    boost::asio::io_context io_context;
 
     /// \brief gets the active import energy meter value from meter_value, normalized to Wh.
     std::optional<float> get_active_import_register_meter_value();
@@ -228,7 +228,7 @@ private:
     /// \param connector_id     Connector id
     /// \return The connector type. If evse or connector id is not correct: std::nullopt.
     ///
-    std::optional<ConnectorEnum> get_evse_connector_type(const uint32_t connector_id) const;
+    std::optional<CiString<20>> get_evse_connector_type(const uint32_t connector_id) const;
 
 public:
     /// \brief Construct a new Evse object
@@ -252,8 +252,8 @@ public:
     int32_t get_id() const;
 
     uint32_t get_number_of_connectors() const;
-    bool does_connector_exist(const ConnectorEnum connector_type) const override;
-    std::optional<ConnectorStatusEnum> get_connector_status(std::optional<ConnectorEnum> connector_type) override;
+    bool does_connector_exist(const CiString<20> connector_type) const override;
+    std::optional<ConnectorStatusEnum> get_connector_status(std::optional<CiString<20>> connector_type) override;
 
     void open_transaction(const std::string& transaction_id, const int32_t connector_id, const DateTime& timestamp,
                           const MeterValue& meter_start, const std::optional<IdToken>& id_token,
@@ -294,13 +294,13 @@ public:
     /// \param trigger_metervalue_on_energy_kwh Trigger when amount of kwh is reached
     /// \param trigger_metervalue_at_time       Trigger for a specific time
     /// \param send_metervalue_function         Function to send metervalues when trigger 'fires'
-    /// \param io_service                       Io service needed for the timer
+    /// \param io_context                       Io service needed for the timer
     ///
     void set_meter_value_pricing_triggers(
         std::optional<double> trigger_metervalue_on_power_kw, std::optional<double> trigger_metervalue_on_energy_kwh,
         std::optional<DateTime> trigger_metervalue_at_time,
         std::function<void(const std::vector<MeterValue>& meter_values)> send_metervalue_function,
-        boost::asio::io_service& io_service);
+        boost::asio::io_context& io_context);
 };
 
 } // namespace v2

@@ -12,9 +12,8 @@ class EvseMock : public EvseInterface {
 public:
     MOCK_METHOD(int32_t, get_id, (), (const));
     MOCK_METHOD(uint32_t, get_number_of_connectors, (), (const));
-    MOCK_METHOD(bool, does_connector_exist, (ConnectorEnum connector_type), (const));
-    MOCK_METHOD(std::optional<ConnectorStatusEnum>, get_connector_status,
-                (std::optional<ConnectorEnum> connector_type));
+    MOCK_METHOD(bool, does_connector_exist, (CiString<20> connector_type), (const));
+    MOCK_METHOD(std::optional<ConnectorStatusEnum>, get_connector_status, (std::optional<CiString<20>> connector_type));
     MOCK_METHOD(void, open_transaction,
                 (const std::string& transaction_id, const int32_t connector_id, const DateTime& timestamp,
                  const MeterValue& meter_start, const std::optional<IdToken>& id_token,
@@ -45,6 +44,6 @@ public:
                  std::optional<double> trigger_metervalue_on_energy_kwh,
                  std::optional<DateTime> trigger_metervalue_at_time,
                  std::function<void(const std::vector<MeterValue>& meter_values)> send_metervalue_function,
-                 boost::asio::io_service& io_service));
+                 boost::asio::io_context& io_context));
 };
 } // namespace ocpp::v2
