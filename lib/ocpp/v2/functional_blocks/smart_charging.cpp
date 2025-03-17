@@ -15,12 +15,6 @@
 #include <ocpp/v2/profile.hpp>
 #include <ocpp/v2/utils.hpp>
 
-/* TODO mz:
- * - 3.8 Avoiding Phase Conflicts: phaseToUse checks
- * - K01.FR.110 Charging Station SHALL send a TransactionEventRequest with triggerReason = OperationModeChanged and a
- * transactionInfo element containing the new operationMode. ???
- */
-
 #include <ocpp/v2/messages/ClearChargingProfile.hpp>
 #include <ocpp/v2/messages/GetChargingProfiles.hpp>
 #include <ocpp/v2/messages/GetCompositeSchedule.hpp>
@@ -603,6 +597,7 @@ ProfileValidationResultEnum SmartCharging::validate_tx_default_profile(const Cha
     return ProfileValidationResultEnum::Valid;
 }
 
+// FIXME: See OCPP2.1 spec: 3.8 Avoiding Phase Conflicts
 ProfileValidationResultEnum SmartCharging::validate_tx_profile(const ChargingProfile& profile, int32_t evse_id,
                                                                AddChargingProfileSource source_of_request) const {
     // K01.FR.16: TxProfile shall only be used with evseId > 0.
@@ -655,45 +650,6 @@ ProfileValidationResultEnum SmartCharging::validate_tx_profile(const ChargingPro
 
     if (conflicts_stmt->step() == SQLITE_ROW) {
         return ProfileValidationResultEnum::TxProfileConflictingStackLevel;
-    }
-
-    // TODO mz this check must be done for validate_tx_default_profile as well
-    // See spec 3.8 Avoiding Phase Conflicts
-    const std::vector<ChargingProfile> max_profiles = this->get_charging_station_max_profiles();
-    if (!max_profiles.empty()) {
-        int32_t phase_to_use = 0;
-        // TODO mz check for validFrom and validTo
-        for (const auto& schedule : profile.chargingSchedule) {
-            for (const auto& period : schedule.chargingSchedulePeriod) {
-                if (period.phaseToUse.has_value()) {
-                    // Check if ChargingStationMaxProfile has the same 'phaseToUse'.
-                    phase_to_use = period.phaseToUse.value();
-                    for (const auto& max_profile : max_profiles) {
-                        for (const auto& max_schedule : max_profile.chargingSchedule) {
-                            for (const auto& max_period : max_schedule.chargingSchedulePeriod) {
-                                if (!max_period.phaseToUse.has_value()) {
-                                    continue;
-                                }
-
-                                if (max_period.startPeriod != period.startPeriod) {
-                                    continue;
-                                }
-
-                                if (phase_to_use != max_period.phaseToUse.value()) {
-                                    return ProfileValidationResultEnum::ChargingSchedulePeriodInvalidPhaseToUse;
-                                }
-
-                                // TODO mz start period can be earlier or later but still overlapping
-
-                                // TODO mz finish
-                            }
-                        }
-                    }
-
-                    // TODO mz also check for ChargingStationExternalConstraints
-                }
-            }
-        }
     }
 
     return ProfileValidationResultEnum::Valid;
@@ -860,7 +816,6 @@ ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingPr
                         return ProfileValidationResultEnum::ChargingSchedulePeriodNoPhaseForDC;
                     } else {
                         // K01.FR.54
-                        // TODO mz I think there is nothing to do here??
                     }
                 }
             }
