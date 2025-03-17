@@ -883,7 +883,6 @@ convert_intermediate_into_schedule(const IntermediateProfile& profile, ChargingR
 
         float transform_value =
             supply_voltage * static_cast<float>(period_out.numberPhases.value_or(default_number_phases));
-        period_out.limit = std::numeric_limits<float>::max();
         if (charging_rate_unit == ChargingRateUnitEnum::A) {
             store_limit_to_phase_limits(period.current_limit, NO_LIMIT_SPECIFIED, period_out.limit, period_out.limit_L2,
                                         period_out.limit_L3);
