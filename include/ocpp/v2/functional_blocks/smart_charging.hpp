@@ -204,6 +204,7 @@ protected:
     ///
     /// \brief Validates the given profile according to the specification.
     /// \param profile  Profile to validate.
+    /// \param evse_id  Evse id this charging profile belongs to.
     /// \return ProfileValidationResultEnum::Valid if valid.
     ///
     ProfileValidationResultEnum validate_priority_charging_profile(const ChargingProfile& profile,
