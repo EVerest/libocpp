@@ -201,14 +201,6 @@ const std::map<ChargingProfilePurposeEnum, std::set<OperationModeEnum>> operatio
     {ChargingProfilePurposeEnum::LocalGeneration,
      {OperationModeEnum::ChargingOnly, OperationModeEnum::ExternalLimits}}};
 
-/// \brief Different types of limits and setpoints, used in the limits_setpoints_per_operation_mode map.
-enum LimitSetpointType {
-    Limit,
-    DischargeLimit,
-    Setpoint,
-    SetpointReactive
-};
-
 /// \brief Struct to define required and optional limits / setpoints (for an operation mode).
 struct LimitsSetpointsForOperationMode {
     std::set<LimitSetpointType> required;
@@ -332,6 +324,11 @@ SetChargingProfileResponse SmartCharging::conform_validate_and_add_profile(Charg
     response.status = ChargingProfileStatusEnum::Rejected;
 
     auto result = this->conform_and_validate_profile(profile, evse_id, source_of_request);
+
+    if (result == ProfileValidationResultEnum::Valid) {
+        result = verify_rate_limit(profile);
+    }
+
     if (result == ProfileValidationResultEnum::Valid) {
         response = this->add_profile(profile, evse_id, charging_limit_source);
     } else {
@@ -362,11 +359,6 @@ ProfileValidationResultEnum SmartCharging::conform_and_validate_profile(Charging
         if (result != ProfileValidationResultEnum::Valid) {
             return result;
         }
-    }
-
-    result = verify_rate_limit(profile);
-    if (result != ProfileValidationResultEnum::Valid) {
-        return result;
     }
 
     result = verify_no_conflicting_external_constraints_id(profile);
@@ -1331,10 +1323,11 @@ CurrentPhaseType SmartCharging::get_current_phase_type(const std::optional<EvseI
 }
 
 bool are_limits_and_setpoints_of_operation_mode_correct(const LimitsSetpointsForOperationMode& limits_setpoints,
+                                                        const LimitSetpointType& type,
                                                         const std::optional<float>& limit,
                                                         const std::optional<float>& limit_L2,
                                                         const std::optional<float>& limit_L3) {
-    if ((limits_setpoints.required.count(LimitSetpointType::Limit) > 0 && !limit.has_value()) ||
+    if ((limits_setpoints.required.count(type) > 0 && !limit.has_value()) ||
         ((limit.has_value() || limit_L2.has_value() || limit_L3.has_value()) &&
          limits_setpoints.required.count(LimitSetpointType::Limit) == 0 &&
          limits_setpoints.optional.count(LimitSetpointType::Limit) == 0)) {
@@ -1350,17 +1343,17 @@ bool check_limits_and_setpoints(const ChargingSchedulePeriod& charging_schedule_
         charging_schedule_period.operationMode.value_or(OperationModeEnum::ChargingOnly);
     try {
         const LimitsSetpointsForOperationMode limits_setpoints = limits_setpoints_per_operation_mode.at(operation_mode);
-        return are_limits_and_setpoints_of_operation_mode_correct(limits_setpoints, charging_schedule_period.limit,
-                                                                  charging_schedule_period.limit_L2,
-                                                                  charging_schedule_period.limit_L3) &&
+        return are_limits_and_setpoints_of_operation_mode_correct(
+                   limits_setpoints, LimitSetpointType::Limit, charging_schedule_period.limit,
+                   charging_schedule_period.limit_L2, charging_schedule_period.limit_L3) &&
                are_limits_and_setpoints_of_operation_mode_correct(
-                   limits_setpoints, charging_schedule_period.dischargeLimit,
+                   limits_setpoints, LimitSetpointType::DischargeLimit, charging_schedule_period.dischargeLimit,
                    charging_schedule_period.dischargeLimit_L2, charging_schedule_period.dischargeLimit_L3) &&
-               are_limits_and_setpoints_of_operation_mode_correct(limits_setpoints, charging_schedule_period.setpoint,
-                                                                  charging_schedule_period.setpoint_L2,
-                                                                  charging_schedule_period.setpoint_L3) &&
                are_limits_and_setpoints_of_operation_mode_correct(
-                   limits_setpoints, charging_schedule_period.setpointReactive,
+                   limits_setpoints, LimitSetpointType::Setpoint, charging_schedule_period.setpoint,
+                   charging_schedule_period.setpoint_L2, charging_schedule_period.setpoint_L3) &&
+               are_limits_and_setpoints_of_operation_mode_correct(
+                   limits_setpoints, LimitSetpointType::SetpointReactive, charging_schedule_period.setpointReactive,
                    charging_schedule_period.setpointReactive_L2, charging_schedule_period.setpointReactive_L3);
     } catch (const std::out_of_range& e) {
         EVLOG_warning << "Operation mode "

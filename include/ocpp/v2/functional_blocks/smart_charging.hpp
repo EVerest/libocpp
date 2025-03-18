@@ -23,6 +23,14 @@ struct ClearChargingProfileRequest;
 struct ReportChargingProfilesRequest;
 struct NotifyEVChargingNeedsRequest;
 
+/// \brief Different types of limits and setpoints, used in the limits_setpoints_per_operation_mode map.
+enum LimitSetpointType {
+    Limit,
+    DischargeLimit,
+    Setpoint,
+    SetpointReactive
+};
+
 enum class ProfileValidationResultEnum {
     Valid,
     EvseDoesNotExist,
@@ -315,6 +323,7 @@ private: // Functions
 /// \return True if all limits and setpoints are set / not set according to limits_setpoints struct.
 ///
 bool are_limits_and_setpoints_of_operation_mode_correct(const LimitsSetpointsForOperationMode& limits_setpoints,
+                                                        const ocpp::v2::LimitSetpointType& type,
                                                         const std::optional<float>& limit,
                                                         const std::optional<float>& limit_L2,
                                                         const std::optional<float>& limit_L3);

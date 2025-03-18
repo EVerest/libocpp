@@ -615,6 +615,89 @@ TEST_F(SmartChargingTest, K01FR44_IfPhaseToUseProvidedForDCChargingStation_ThenP
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::ChargingSchedulePeriodExtraneousPhaseValues));
 }
 
+TEST_F(SmartChargingTest,
+       K01FR44_V21_IfPhaseToUseProvidedForDCChargingStationAndDCInputPhaseControlFalse_ThenProfileIsInvalid) {
+    this->functional_block_context->ocpp_version = OcppProtocolVersion::v21;
+    auto mock_evse = testing::NiceMock<EvseMock>();
+    ON_CALL(mock_evse, get_current_phase_type).WillByDefault(testing::Return(CurrentPhaseType::DC));
+    ON_CALL(mock_evse, get_id).WillByDefault(testing::Return(1));
+    ComponentVariable c =
+        EvseComponentVariables::get_component_variable(1, EvseComponentVariables::DCInputPhaseControl);
+    device_model->set_value(c.component, c.variable.value(), AttributeEnum::Actual, "false", "test", true);
+
+    auto periods = create_charging_schedule_periods(0, 1, 1, 5.0f);
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), DEFAULT_TX_ID);
+
+    auto sut = smart_charging.validate_profile_schedules(profile, &mock_evse);
+
+    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::ChargingSchedulePeriodNoPhaseForDC));
+}
+
+TEST_F(SmartChargingTest,
+       K01FR44_V21_IfPhaseToUseProvidedForDCChargingStationAndDCInputPhaseControlTrue_ThenProfileIsValid) {
+    this->functional_block_context->ocpp_version = OcppProtocolVersion::v21;
+    auto mock_evse = testing::NiceMock<EvseMock>();
+    ON_CALL(mock_evse, get_current_phase_type).WillByDefault(testing::Return(CurrentPhaseType::DC));
+    ON_CALL(mock_evse, get_id).WillByDefault(testing::Return(1));
+    ComponentVariable c =
+        EvseComponentVariables::get_component_variable(1, EvseComponentVariables::DCInputPhaseControl);
+    device_model->set_value(c.component, c.variable.value(), AttributeEnum::Actual, "true", "test", true);
+
+    auto periods = create_charging_schedule_periods(0, 1, 1, 5.0f);
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), DEFAULT_TX_ID);
+
+    auto sut = smart_charging.validate_profile_schedules(profile, &mock_evse);
+
+    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::Valid));
+}
+
+TEST_F(SmartChargingTest, K01FR55_V21_AllChargingProfilesAreStored) {
+    // In the default device model, all charging profiles must be set to persistent true, because we don't have a local
+    // storage or in-memory storage for the charging profiles (everything is currently stored in the database).
+    EXPECT_TRUE(device_model
+                    ->get_optional_value<bool>(
+                        ControllerComponentVariables::ChargingProfilePersistenceChargingStationExternalConstraints)
+                    .value_or(false));
+    EXPECT_TRUE(
+        device_model->get_optional_value<bool>(ControllerComponentVariables::ChargingProfilePersistenceLocalGeneration)
+            .value_or(false));
+    EXPECT_TRUE(
+        device_model->get_optional_value<bool>(ControllerComponentVariables::ChargingProfilePersistenceTxProfile)
+            .value_or(false));
+}
+
+TEST_F(SmartChargingTest, K01FR56_V21_NewChargingProfileStoredTooQuicklyAfterThePrevious) {
+    auto mock_evse = testing::NiceMock<EvseMock>();
+    this->functional_block_context->ocpp_version = OcppProtocolVersion::v21;
+    const ComponentVariable update_rate_limit = ControllerComponentVariables::ChargingProfileUpdateRateLimit;
+    device_model->set_value(update_rate_limit.component, update_rate_limit.variable.value(), AttributeEnum::Actual,
+                            "5000", "test", true);
+
+    auto periods = create_charging_schedule_periods(0, 1, 1, 0.5f);
+    auto existing_profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxDefaultProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), {},
+        ChargingProfileKindEnum::Absolute, DEFAULT_STACK_LEVEL, ocpp::DateTime("2024-01-01T13:00:00"),
+        ocpp::DateTime("2024-02-01T13:00:00"));
+
+    auto response = smart_charging.conform_validate_and_add_profile(existing_profile, DEFAULT_EVSE_ID);
+    EXPECT_THAT(response.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
+
+    response = smart_charging.conform_validate_and_add_profile(existing_profile, DEFAULT_EVSE_ID);
+    EXPECT_THAT(response.status, testing::Eq(ChargingProfileStatusEnum::Rejected));
+    EXPECT_EQ(response.statusInfo.value().additionalInfo, "ChargingProfileRateLimitExceeded");
+
+    device_model->set_value(update_rate_limit.component, update_rate_limit.variable.value(), AttributeEnum::Actual, "0",
+                            "test", true);
+
+    response = smart_charging.conform_validate_and_add_profile(existing_profile, DEFAULT_EVSE_ID);
+    EXPECT_THAT(response.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
+}
+
 TEST_F(SmartChargingTest, K01FR45_IfNumberPhasesGreaterThanChargingStationSupplyPhasesForACEVSE_ThenProfileIsInvalid) {
     device_model->set_value(ControllerComponentVariables::ChargingStationSupplyPhases.component,
                             ControllerComponentVariables::ChargingStationSupplyPhases.variable.value(),

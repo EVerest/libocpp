@@ -194,11 +194,13 @@ ChargingSchedule create_charge_schedule(ChargingRateUnitEnum charging_rate_unit,
 
 std::vector<ChargingSchedulePeriod> create_charging_schedule_periods(int32_t start_period,
                                                                      std::optional<int32_t> number_phases,
-                                                                     std::optional<int32_t> phase_to_use) {
+                                                                     std::optional<int32_t> phase_to_use,
+                                                                     std::optional<float> limit) {
     ChargingSchedulePeriod charging_schedule_period;
     charging_schedule_period.startPeriod = start_period;
     charging_schedule_period.numberPhases = number_phases;
     charging_schedule_period.phaseToUse = phase_to_use;
+    charging_schedule_period.limit = limit;
 
     return {charging_schedule_period};
 }
