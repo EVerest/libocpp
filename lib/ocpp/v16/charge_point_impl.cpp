@@ -3136,7 +3136,7 @@ DataTransferResponse ChargePointImpl::handle_set_user_price(const std::optional<
         return response;
     }
 
-    if (session_cost_message_callback == nullptr) {
+    if (tariff_message_callback == nullptr) {
         EVLOG_error << "Received data transfer for set user price, but no callback is registered.";
         return response;
     }
@@ -3159,7 +3159,7 @@ DataTransferResponse ChargePointImpl::handle_set_user_price(const std::optional<
         return response;
     }
 
-    SessionCostMessage session_cost_message;
+    TariffMessage tariff_message;
     const auto t = this->transaction_handler->get_transaction_from_id_tag(id_token.value());
     std::string identifier_id;
     IdentifierType identifier_type;
@@ -3172,12 +3172,12 @@ DataTransferResponse ChargePointImpl::handle_set_user_price(const std::optional<
         identifier_type = IdentifierType::SessionId;
         const std::optional<int32_t> transaction_id = t->get_transaction_id();
         if (transaction_id != std::nullopt) {
-            session_cost_message.ocpp_transaction_id = std::to_string(transaction_id.value());
+            tariff_message.ocpp_transaction_id = std::to_string(transaction_id.value());
         }
     }
 
-    session_cost_message.identifier_id = identifier_id;
-    session_cost_message.identifier_type = identifier_type;
+    tariff_message.identifier_id = identifier_id;
+    tariff_message.identifier_type = identifier_type;
 
     if (data.contains("priceText")) {
         DisplayMessageContent m;
@@ -3185,7 +3185,7 @@ DataTransferResponse ChargePointImpl::handle_set_user_price(const std::optional<
         if (this->configuration->getLanguage().has_value()) {
             m.language = this->configuration->getLanguage().value();
         }
-        session_cost_message.message.push_back(m);
+        tariff_message.message.push_back(m);
     }
     if (this->configuration->getCustomMultiLanguageMessagesEnabled() && data.contains("priceTextExtra") &&
         data.at("priceTextExtra").is_array()) {
@@ -3193,11 +3193,11 @@ DataTransferResponse ChargePointImpl::handle_set_user_price(const std::optional<
             DisplayMessageContent message;
             message = j;
 
-            session_cost_message.message.push_back(message);
+            tariff_message.message.push_back(message);
         }
     }
 
-    response = this->session_cost_message_callback(session_cost_message);
+    response = this->tariff_message_callback(tariff_message);
     return response;
 }
 
@@ -4633,9 +4633,9 @@ void ChargePointImpl::register_session_cost_callback(
     this->session_cost_callback = session_cost_callback;
 }
 
-void ChargePointImpl::register_session_cost_message_callback(
-    const std::function<DataTransferResponse(const SessionCostMessage& message)>& session_cost_message_callback) {
-    this->session_cost_message_callback = session_cost_message_callback;
+void ChargePointImpl::register_tariff_message_callback(
+    const std::function<DataTransferResponse(const TariffMessage& message)>& tariff_message_callback) {
+    this->tariff_message_callback = tariff_message_callback;
 }
 
 void ChargePointImpl::register_set_display_message_callback(

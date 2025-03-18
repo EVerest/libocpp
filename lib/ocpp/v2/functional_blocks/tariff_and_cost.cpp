@@ -15,12 +15,12 @@ const auto DEFAULT_PRICE_NUMBER_OF_DECIMALS = 3;
 
 namespace ocpp::v2 {
 TariffAndCost::TariffAndCost(const FunctionalBlockContext& functional_block_context, MeterValuesInterface& meter_values,
-                             std::optional<SessionCostMessageCallback>& session_cost_message_callback,
+                             std::optional<TariffMessageCallback>& tariff_message_callback,
                              std::optional<SetRunningCostCallback>& set_running_cost_callback,
                              boost::asio::io_context& io_context) :
     context(functional_block_context),
     meter_values(meter_values),
-    session_cost_message_callback(session_cost_message_callback),
+    tariff_message_callback(tariff_message_callback),
     set_running_cost_callback(set_running_cost_callback),
     io_context(io_context) {
 }
@@ -51,14 +51,13 @@ void TariffAndCost::handle_cost_and_tariff(const TransactionEventResponse& respo
 
         // If cost is enabled, the message will be sent to the running cost callback. But if it is not enabled, the
         // tariff message will be sent using the session cost message callback.
-        if (!cost_enabled and this->session_cost_message_callback.has_value() and
-            this->session_cost_message_callback != nullptr) {
-            SessionCostMessage session_cost_message;
-            session_cost_message.message = cost_messages;
-            session_cost_message.ocpp_transaction_id = original_message.transactionInfo.transactionId;
-            session_cost_message.identifier_id = original_message.transactionInfo.transactionId;
-            session_cost_message.identifier_type = IdentifierType::TransactionId;
-            this->session_cost_message_callback.value()({session_cost_message});
+        if (!cost_enabled and this->tariff_message_callback.has_value() and this->tariff_message_callback != nullptr) {
+            TariffMessage tariff_message;
+            tariff_message.message = cost_messages;
+            tariff_message.ocpp_transaction_id = original_message.transactionInfo.transactionId;
+            tariff_message.identifier_id = original_message.transactionInfo.transactionId;
+            tariff_message.identifier_type = IdentifierType::TransactionId;
+            this->tariff_message_callback.value()({tariff_message});
         }
     }
 
