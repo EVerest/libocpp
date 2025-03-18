@@ -573,13 +573,13 @@ public:
         const std::function<DataTransferResponse(const RunningCost& session_cost, const uint32_t number_of_decimals)>&
             session_cost_callback);
 
-    /// \brief Registers a callback function for the session cost text message (California Pricing Requirements). The
+    /// \brief Registers a callback function for the tariff text message (California Pricing Requirements). The
     /// callback is executed when the CSMS sends a DataTransfer.req(SetUserPrice). The callback should return a
     /// DataTransferResponse with the response to the CSMS.
-    /// \param session_cost_message_callback    The callback
+    /// \param tariff_message_callback    The callback
     /// \ingroup ocpp16_callbacks
-    void register_session_cost_message_callback(
-        const std::function<DataTransferResponse(const SessionCostMessage& message)>& session_cost_message_callback);
+    void register_tariff_message_callback(
+        const std::function<DataTransferResponse(const TariffMessage& message)>& tariff_message_callback);
 
     /// \brief Register a callback function for display messages (used in California Pricing Requirements)
     /// \param set_display_message_callback The callback.

@@ -164,7 +164,7 @@ struct Callbacks {
 
     /// \brief Callback function is called when a TransactionEventResponse message is from the CSMS is received that
     /// contains tariff and cost information.
-    std::optional<std::function<void(const SessionCostMessage& message)>> session_cost_message_callback;
+    std::optional<std::function<void(const TariffMessage& message)>> tariff_message_callback;
 
     /// \brief Callback function is called when a reservation request is received from the CSMS
     std::optional<std::function<ReserveNowStatusEnum(const ReserveNowRequest& request)>> reserve_now_callback;
