@@ -192,12 +192,12 @@ std::ostream& operator<<(std::ostream& os, const ProfileValidationResultEnum val
 const std::map<ChargingProfilePurposeEnum, std::set<OperationModeEnum>> operation_modes_for_charging_profile_purposes{
     {ChargingProfilePurposeEnum::TxProfile,
      {OperationModeEnum::ChargingOnly, OperationModeEnum::CentralSetpoint, OperationModeEnum::ExternalSetpoint,
-      OperationModeEnum::ExternalLimits, OperationModeEnum::CentralFrequency, OperationModeEnum::LocalLoadBalancing,
-      OperationModeEnum::Idle}},
+      OperationModeEnum::ExternalLimits, OperationModeEnum::CentralFrequency, OperationModeEnum::LocalFrequency,
+      OperationModeEnum::LocalLoadBalancing, OperationModeEnum::Idle}},
     {ChargingProfilePurposeEnum::TxDefaultProfile,
      {OperationModeEnum::ChargingOnly, OperationModeEnum::CentralSetpoint, OperationModeEnum::ExternalSetpoint,
-      OperationModeEnum::ExternalLimits, OperationModeEnum::CentralFrequency, OperationModeEnum::LocalLoadBalancing,
-      OperationModeEnum::Idle}},
+      OperationModeEnum::ExternalLimits, OperationModeEnum::CentralFrequency, OperationModeEnum::LocalFrequency,
+      OperationModeEnum::LocalLoadBalancing, OperationModeEnum::Idle}},
     {ChargingProfilePurposeEnum::PriorityCharging, {OperationModeEnum::ChargingOnly}},
     {ChargingProfilePurposeEnum::ChargingStationMaxProfile, {OperationModeEnum::ChargingOnly}},
     {ChargingProfilePurposeEnum::ChargingStationExternalConstraints,
@@ -990,12 +990,12 @@ void SmartCharging::report_charging_profile_req(const ReportChargingProfilesRequ
 }
 
 void SmartCharging::notify_ev_charging_needs_req(const NotifyEVChargingNeedsRequest& req) {
-    // TODO: req.timestamp = std::nullopt; // timestamp will be added with OCPP2.1 messages
-    // if (ocpp_version != OcppProtocolVersion::v21) {
-    //     req.timestamp = std::nullopt; // field is not present in OCPP2.0.1
-    // }
+    NotifyEVChargingNeedsRequest request = req;
+    if (this->context.ocpp_version != OcppProtocolVersion::v21) {
+        request.timestamp = std::nullopt; // field is not present in OCPP2.0.1
+    }
 
-    ocpp::Call<NotifyEVChargingNeedsRequest> call(req);
+    ocpp::Call<NotifyEVChargingNeedsRequest> call(request);
     this->context.message_dispatcher.dispatch_call(call);
 }
 
@@ -1333,8 +1333,7 @@ bool are_limits_and_setpoints_of_operation_mode_correct(const LimitsSetpointsFor
                                                         const std::optional<float>& limit_L3) {
     if ((limits_setpoints.required.count(type) > 0 && !limit.has_value()) ||
         ((limit.has_value() || limit_L2.has_value() || limit_L3.has_value()) &&
-         limits_setpoints.required.count(LimitSetpointType::Limit) == 0 &&
-         limits_setpoints.optional.count(LimitSetpointType::Limit) == 0)) {
+         limits_setpoints.required.count(type) == 0 && limits_setpoints.optional.count(type) == 0)) {
         return false;
     }
 

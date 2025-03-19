@@ -45,6 +45,13 @@ namespace ocpp::v2 {
 class SmartChargingTestV21 : public DatabaseTestingUtils {
 protected:
     void SetUp() override {
+        const auto& charging_rate_unit_cv = ControllerComponentVariables::ChargingScheduleChargingRateUnit;
+        device_model->set_value(charging_rate_unit_cv.component, charging_rate_unit_cv.variable.value(),
+                                AttributeEnum::Actual, "A,W", "test", true);
+
+        const auto& ac_phase_switching_cv = ControllerComponentVariables::ACPhaseSwitchingSupported;
+        device_model->set_value(ac_phase_switching_cv.component, ac_phase_switching_cv.variable.value(),
+                                AttributeEnum::Actual, "true", "test", true);
     }
 
     void TearDown() override {
@@ -388,5 +395,278 @@ TEST_F(SmartChargingTestV21, K01FR126_EvseSleepNotSupported) {
     EXPECT_THAT(response.status, testing::Eq(ChargingProfileStatusEnum::Rejected));
     EXPECT_EQ(response.statusInfo.value().reasonCode, "InvalidSchedule");
     EXPECT_EQ(response.statusInfo.value().additionalInfo, "ChargingScheduleUnsupportedEvseSleep");
+}
+
+// Test for Table 95. operationMode for various ChargingProfilePurposes
+class OperationModesForChargingProfileV21_Param_Test
+    : public ::testing::WithParamInterface<std::tuple<ChargingProfilePurposeEnum, OperationModeEnum, bool>>,
+      public SmartChargingTestV21 {};
+
+INSTANTIATE_TEST_SUITE_P(
+    OperationModesForChargingProfile_Instantiate, OperationModesForChargingProfileV21_Param_Test,
+    testing::Values(
+        std::make_tuple(ChargingProfilePurposeEnum::TxProfile, OperationModeEnum::ChargingOnly, true),
+        std::make_tuple(ChargingProfilePurposeEnum::TxProfile, OperationModeEnum::ExternalSetpoint, true),
+        std::make_tuple(ChargingProfilePurposeEnum::TxProfile, OperationModeEnum::ExternalLimits, true),
+        std::make_tuple(ChargingProfilePurposeEnum::TxProfile, OperationModeEnum::CentralFrequency, true),
+        std::make_tuple(ChargingProfilePurposeEnum::TxProfile, OperationModeEnum::LocalFrequency, true),
+        std::make_tuple(ChargingProfilePurposeEnum::TxProfile, OperationModeEnum::LocalLoadBalancing, true),
+        std::make_tuple(ChargingProfilePurposeEnum::TxProfile, OperationModeEnum::Idle, true),
+        std::make_tuple(ChargingProfilePurposeEnum::TxDefaultProfile, OperationModeEnum::ChargingOnly, true),
+        std::make_tuple(ChargingProfilePurposeEnum::TxDefaultProfile, OperationModeEnum::ExternalSetpoint, true),
+        std::make_tuple(ChargingProfilePurposeEnum::TxDefaultProfile, OperationModeEnum::ExternalLimits, true),
+        std::make_tuple(ChargingProfilePurposeEnum::TxDefaultProfile, OperationModeEnum::CentralFrequency, true),
+        std::make_tuple(ChargingProfilePurposeEnum::TxDefaultProfile, OperationModeEnum::LocalFrequency, true),
+        std::make_tuple(ChargingProfilePurposeEnum::TxDefaultProfile, OperationModeEnum::LocalLoadBalancing, true),
+        std::make_tuple(ChargingProfilePurposeEnum::TxDefaultProfile, OperationModeEnum::Idle, true),
+        std::make_tuple(ChargingProfilePurposeEnum::PriorityCharging, OperationModeEnum::ChargingOnly, true),
+        std::make_tuple(ChargingProfilePurposeEnum::PriorityCharging, OperationModeEnum::ExternalSetpoint, false),
+        std::make_tuple(ChargingProfilePurposeEnum::PriorityCharging, OperationModeEnum::ExternalLimits, false),
+        std::make_tuple(ChargingProfilePurposeEnum::PriorityCharging, OperationModeEnum::CentralFrequency, false),
+        std::make_tuple(ChargingProfilePurposeEnum::PriorityCharging, OperationModeEnum::LocalFrequency, false),
+        std::make_tuple(ChargingProfilePurposeEnum::PriorityCharging, OperationModeEnum::LocalLoadBalancing, false),
+        std::make_tuple(ChargingProfilePurposeEnum::PriorityCharging, OperationModeEnum::Idle, false),
+        std::make_tuple(ChargingProfilePurposeEnum::ChargingStationMaxProfile, OperationModeEnum::ChargingOnly, true),
+        std::make_tuple(ChargingProfilePurposeEnum::ChargingStationMaxProfile, OperationModeEnum::ExternalSetpoint,
+                        false),
+        std::make_tuple(ChargingProfilePurposeEnum::ChargingStationMaxProfile, OperationModeEnum::ExternalLimits,
+                        false),
+        std::make_tuple(ChargingProfilePurposeEnum::ChargingStationMaxProfile, OperationModeEnum::CentralFrequency,
+                        false),
+        std::make_tuple(ChargingProfilePurposeEnum::ChargingStationMaxProfile, OperationModeEnum::LocalFrequency,
+                        false),
+        std::make_tuple(ChargingProfilePurposeEnum::ChargingStationMaxProfile, OperationModeEnum::LocalLoadBalancing,
+                        false),
+        std::make_tuple(ChargingProfilePurposeEnum::ChargingStationMaxProfile, OperationModeEnum::Idle, false),
+        std::make_tuple(ChargingProfilePurposeEnum::ChargingStationExternalConstraints, OperationModeEnum::ChargingOnly,
+                        true),
+        std::make_tuple(ChargingProfilePurposeEnum::ChargingStationExternalConstraints,
+                        OperationModeEnum::ExternalSetpoint, true),
+        std::make_tuple(ChargingProfilePurposeEnum::ChargingStationExternalConstraints,
+                        OperationModeEnum::ExternalLimits, true),
+        std::make_tuple(ChargingProfilePurposeEnum::ChargingStationExternalConstraints,
+                        OperationModeEnum::CentralFrequency, false),
+        std::make_tuple(ChargingProfilePurposeEnum::ChargingStationExternalConstraints,
+                        OperationModeEnum::LocalFrequency, false),
+        std::make_tuple(ChargingProfilePurposeEnum::ChargingStationExternalConstraints,
+                        OperationModeEnum::LocalLoadBalancing, false),
+        std::make_tuple(ChargingProfilePurposeEnum::ChargingStationExternalConstraints, OperationModeEnum::Idle, false),
+        std::make_tuple(ChargingProfilePurposeEnum::LocalGeneration, OperationModeEnum::ChargingOnly, true),
+        std::make_tuple(ChargingProfilePurposeEnum::LocalGeneration, OperationModeEnum::ExternalSetpoint, false),
+        std::make_tuple(ChargingProfilePurposeEnum::LocalGeneration, OperationModeEnum::ExternalLimits, true),
+        std::make_tuple(ChargingProfilePurposeEnum::LocalGeneration, OperationModeEnum::CentralFrequency, false),
+        std::make_tuple(ChargingProfilePurposeEnum::LocalGeneration, OperationModeEnum::LocalFrequency, false),
+        std::make_tuple(ChargingProfilePurposeEnum::LocalGeneration, OperationModeEnum::LocalLoadBalancing, false),
+        std::make_tuple(ChargingProfilePurposeEnum::LocalGeneration, OperationModeEnum::Idle, false)));
+
+TEST_P(OperationModesForChargingProfileV21_Param_Test, SupportedOperationModesForChargingProfile) {
+    auto mock_evse = testing::NiceMock<EvseMock>();
+    const ComponentVariable supported_additional_purpose = ControllerComponentVariables::SupportedAdditionalPurposes;
+    device_model->set_value(supported_additional_purpose.component, supported_additional_purpose.variable.value(),
+                            AttributeEnum::Actual, "PriorityCharging,LocalGeneration", "test", true);
+    ON_CALL(mock_evse, get_id).WillByDefault(testing::Return(1));
+
+    auto periods = create_charging_schedule_periods(0, 1, 1, 0.5f);
+    ASSERT_GE(periods.size(), 1);
+    periods.at(0).operationMode = std::get<1>(GetParam());
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, std::get<0>(GetParam()),
+        create_charge_schedule(ChargingRateUnitEnum::W, periods, ocpp::DateTime("2024-01-17T17:00:00")),
+        (std::get<0>(GetParam()) == ChargingProfilePurposeEnum::TxProfile ? std::optional<std::string>{DEFAULT_TX_ID}
+                                                                          : std::nullopt));
+
+    auto sut = smart_charging.validate_profile_schedules(profile, &mock_evse);
+
+    if (std::get<2>(GetParam())) {
+        // We can not make a valid profile for each of the purposes and operation modes, so we only check if the
+        // validation result is something else than an unsupported operation mode.
+        EXPECT_NE(sut, ProfileValidationResultEnum::ChargingSchedulePeriodUnsupportedOperationMode);
+    } else {
+        if (std::get<0>(GetParam()) == ChargingProfilePurposeEnum::PriorityCharging) {
+            EXPECT_EQ(sut, ProfileValidationResultEnum::ChargingSchedulePeriodPriorityChargingNotChargingOnly);
+        } else {
+            EXPECT_EQ(sut, ProfileValidationResultEnum::ChargingSchedulePeriodUnsupportedOperationMode);
+        }
+    }
+}
+
+struct LimitAndSetpointsForOperatonModeV21 {
+    OperationModeEnum operation_mode;
+    bool set_limit;
+    bool set_discharge_limit;
+    bool set_setpoint;
+    bool set_setpoint_reactive;
+    bool valid;
+};
+
+// Test for Table 95. operationMode for various ChargingProfilePurposes
+class LimitsAndSetpointsForOperationModeV21_Param_Test
+    : public ::testing::WithParamInterface<std::tuple<OperationModeEnum, bool, bool, bool, bool, bool>>,
+      public SmartChargingTestV21 {};
+
+INSTANTIATE_TEST_SUITE_P(
+    LimitsAndSetpointsForOperationModeV21_Instantiate, LimitsAndSetpointsForOperationModeV21_Param_Test,
+    testing::Values(std::make_tuple(OperationModeEnum::ChargingOnly, true, true, true, true, false),
+                    std::make_tuple(OperationModeEnum::ChargingOnly, true, false, false, false, true),
+                    std::make_tuple(OperationModeEnum::ChargingOnly, true, false, true, false, false),
+                    std::make_tuple(OperationModeEnum::ChargingOnly, false, false, false, false, false),
+                    std::make_tuple(OperationModeEnum::CentralSetpoint, true, true, true, true, true),
+                    std::make_tuple(OperationModeEnum::CentralSetpoint, true, false, false, false, false),
+                    std::make_tuple(OperationModeEnum::CentralSetpoint, true, false, true, false, true),
+                    std::make_tuple(OperationModeEnum::CentralSetpoint, false, false, false, false, false),
+                    std::make_tuple(OperationModeEnum::CentralSetpoint, false, false, true, false, true),
+                    std::make_tuple(OperationModeEnum::CentralFrequency, true, true, true, true, false),
+                    std::make_tuple(OperationModeEnum::CentralFrequency, true, false, false, false, false),
+                    std::make_tuple(OperationModeEnum::CentralFrequency, true, false, true, false, true),
+                    std::make_tuple(OperationModeEnum::CentralFrequency, false, false, false, false, false),
+                    std::make_tuple(OperationModeEnum::CentralFrequency, false, false, true, false, true),
+                    std::make_tuple(OperationModeEnum::LocalFrequency, true, true, true, true, false),
+                    std::make_tuple(OperationModeEnum::LocalFrequency, true, false, false, false, false),
+                    std::make_tuple(OperationModeEnum::LocalFrequency, true, false, true, false, false),
+                    std::make_tuple(OperationModeEnum::LocalFrequency, false, false, false, false, true),
+                    std::make_tuple(OperationModeEnum::LocalFrequency, false, false, true, false, false),
+                    std::make_tuple(OperationModeEnum::ExternalSetpoint, true, true, true, true, false),
+                    std::make_tuple(OperationModeEnum::ExternalSetpoint, true, false, false, false, true),
+                    std::make_tuple(OperationModeEnum::ExternalSetpoint, true, false, true, false, false),
+                    std::make_tuple(OperationModeEnum::ExternalSetpoint, false, false, false, false, true),
+                    std::make_tuple(OperationModeEnum::ExternalSetpoint, false, false, true, false, false),
+                    std::make_tuple(OperationModeEnum::ExternalLimits, true, true, true, true, false),
+                    std::make_tuple(OperationModeEnum::ExternalLimits, true, false, false, false, false),
+                    std::make_tuple(OperationModeEnum::ExternalLimits, true, false, true, false, false),
+                    std::make_tuple(OperationModeEnum::ExternalLimits, false, false, false, false, true),
+                    std::make_tuple(OperationModeEnum::ExternalLimits, false, false, true, false, false),
+                    std::make_tuple(OperationModeEnum::LocalLoadBalancing, true, true, true, true, false),
+                    std::make_tuple(OperationModeEnum::LocalLoadBalancing, true, false, false, false, false),
+                    std::make_tuple(OperationModeEnum::LocalLoadBalancing, true, false, true, false, false),
+                    std::make_tuple(OperationModeEnum::LocalLoadBalancing, false, false, false, false, true),
+                    std::make_tuple(OperationModeEnum::LocalLoadBalancing, false, false, true, false, false)));
+
+TEST_P(LimitsAndSetpointsForOperationModeV21_Param_Test, Q08FR04_LimitsAndSetpoints) {
+    LimitAndSetpointsForOperatonModeV21 test_data = {std::get<0>(GetParam()), std::get<1>(GetParam()),
+                                                     std::get<2>(GetParam()), std::get<3>(GetParam()),
+                                                     std::get<4>(GetParam()), std::get<5>(GetParam())};
+    const ComponentVariable supported_additional_purpose = ControllerComponentVariables::SupportedAdditionalPurposes;
+    device_model->set_value(supported_additional_purpose.component, supported_additional_purpose.variable.value(),
+                            AttributeEnum::Actual, "PriorityCharging,LocalGeneration", "test", true);
+    auto mock_evse = testing::NiceMock<EvseMock>();
+    ON_CALL(mock_evse, get_id).WillByDefault(testing::Return(1));
+    auto periods = create_charging_schedule_periods(0, 1, 1);
+    ASSERT_GE(periods.size(), 1);
+    auto& period = periods.at(0);
+    period.operationMode = test_data.operation_mode;
+
+    if (test_data.set_limit) {
+        period.limit = 0.6f;
+    }
+
+    if (test_data.set_discharge_limit) {
+        period.dischargeLimit = -3.3f;
+    }
+
+    if (test_data.set_setpoint) {
+        period.setpoint = 4.2f;
+    }
+
+    if (test_data.set_setpoint_reactive) {
+        period.setpointReactive = 2.2f;
+    }
+
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxDefaultProfile,
+        create_charge_schedule(ChargingRateUnitEnum::W, periods, ocpp::DateTime("2024-01-17T17:00:00")), {});
+
+    auto sut = smart_charging.validate_profile_schedules(profile, &mock_evse);
+
+    if (test_data.valid) {
+        EXPECT_NE(sut, ProfileValidationResultEnum::ChargingSchedulePeriodUnsupportedLimitSetpoint);
+    } else {
+        EXPECT_EQ(sut, ProfileValidationResultEnum::ChargingSchedulePeriodUnsupportedLimitSetpoint);
+    }
+}
+
+TEST_F(SmartChargingTestV21, Q08FR02_LocalFrequency_ChargingRateUnitW_NoFreqWattCurve) {
+    auto mock_evse = testing::NiceMock<EvseMock>();
+    ON_CALL(mock_evse, get_id).WillByDefault(testing::Return(1));
+
+    auto periods = create_charging_schedule_periods(0, 1, 1);
+    ASSERT_GE(periods.size(), 1);
+    periods.at(0).operationMode = OperationModeEnum::LocalFrequency;
+    periods.at(0).v2xBaseline = 6.6f;
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::W, periods, ocpp::DateTime("2024-01-17T17:00:00")), DEFAULT_TX_ID);
+
+    auto sut = smart_charging.validate_profile_schedules(profile, &mock_evse);
+
+    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::ChargingSchedulePeriodNoFreqWattCurve));
+}
+
+TEST_F(SmartChargingTestV21, Q08FR02_LocalFrequency_ChargingRateUnitW_TooSmallFreqWattCurve) {
+    auto mock_evse = testing::NiceMock<EvseMock>();
+    ON_CALL(mock_evse, get_id).WillByDefault(testing::Return(1));
+
+    auto periods = create_charging_schedule_periods(0, 1, 1);
+    ASSERT_GE(periods.size(), 1);
+    periods.at(0).operationMode = OperationModeEnum::LocalFrequency;
+    periods.at(0).v2xFreqWattCurve = {{0.2f, 1.0f, std::nullopt}};
+    periods.at(0).v2xBaseline = 6.6f;
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::W, periods, ocpp::DateTime("2024-01-17T17:00:00")), DEFAULT_TX_ID);
+
+    auto sut = smart_charging.validate_profile_schedules(profile, &mock_evse);
+
+    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::ChargingSchedulePeriodNoFreqWattCurve));
+}
+
+TEST_F(SmartChargingTestV21, Q08FR02_LocalFrequency_ChargingRateUnitW_NoV2xBaseLine) {
+    auto mock_evse = testing::NiceMock<EvseMock>();
+    ON_CALL(mock_evse, get_id).WillByDefault(testing::Return(1));
+
+    auto periods = create_charging_schedule_periods(0, 1, 1);
+    ASSERT_GE(periods.size(), 1);
+    periods.at(0).operationMode = OperationModeEnum::LocalFrequency;
+    periods.at(0).v2xFreqWattCurve = {{0.2f, 1.0f, std::nullopt}, {3.4f, 4.2f, std::nullopt}};
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::W, periods, ocpp::DateTime("2024-01-17T17:00:00")), DEFAULT_TX_ID);
+
+    auto sut = smart_charging.validate_profile_schedules(profile, &mock_evse);
+
+    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::ChargingSchedulePeriodNoFreqWattCurve));
+}
+
+TEST_F(SmartChargingTestV21, Q08FR05_LocalFrequency_ChargingRateUnitA_Invalid) {
+    auto mock_evse = testing::NiceMock<EvseMock>();
+    ON_CALL(mock_evse, get_id).WillByDefault(testing::Return(1));
+
+    auto periods = create_charging_schedule_periods(0, 1, 1, 5.0f);
+    ASSERT_GE(periods.size(), 1);
+    periods.at(0).operationMode = OperationModeEnum::LocalFrequency;
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::A, periods, ocpp::DateTime("2024-01-17T17:00:00")), DEFAULT_TX_ID);
+
+    auto sut = smart_charging.validate_profile_schedules(profile, &mock_evse);
+
+    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::ChargingScheduleChargingRateUnitUnsupported));
+}
+
+TEST_F(SmartChargingTestV21, Q08FR05_LocalFrequency_ChargingRateUnitW_Valid) {
+    auto mock_evse = testing::NiceMock<EvseMock>();
+    ON_CALL(mock_evse, get_id).WillByDefault(testing::Return(1));
+
+    auto periods = create_charging_schedule_periods(0, 1, 1);
+    ASSERT_GE(periods.size(), 1);
+    periods.at(0).operationMode = OperationModeEnum::LocalFrequency;
+    periods.at(0).v2xFreqWattCurve = {{0.2f, 1.0f, std::nullopt}, {3.4f, 4.2f, std::nullopt}};
+    periods.at(0).v2xBaseline = 6.6f;
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::W, periods, ocpp::DateTime("2024-01-17T17:00:00")), DEFAULT_TX_ID);
+
+    auto sut = smart_charging.validate_profile_schedules(profile, &mock_evse);
+
+    EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::Valid));
 }
 } // namespace ocpp::v2

@@ -1229,7 +1229,6 @@ const Variable AvailabilityState = {"AvailabilityState"};
 const Variable Type = {"ConnectorType"};
 const Variable SupplyPhases = {"SupplyPhases"};
 
-
 ComponentVariable get_component_variable(const int32_t evse_id, const int32_t connector_id, const Variable& variable) {
     EVSE evse = {evse_id, connector_id};
     Component component = {"Connector", evse};

@@ -192,9 +192,7 @@ bool is_critical(const std::string& security_event) {
     return false;
 }
 
-
-std::vector<ChargingProfilePurposeEnum> get_charging_profile_purposes(const std::string &csl)
-{
+std::vector<ChargingProfilePurposeEnum> get_charging_profile_purposes(const std::string& csl) {
     std::vector<ChargingProfilePurposeEnum> purposes;
     const auto purposes_vec = split_string(csl, ',');
 
