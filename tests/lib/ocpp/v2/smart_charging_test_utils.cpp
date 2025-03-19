@@ -184,11 +184,12 @@ ChargingSchedule create_charge_schedule(ChargingRateUnitEnum charging_rate_unit)
 
 ChargingSchedule create_charge_schedule(ChargingRateUnitEnum charging_rate_unit,
                                         const std::vector<ChargingSchedulePeriod>& charging_schedule_period,
-                                        std::optional<ocpp::DateTime> start_schedule) {
+                                        std::optional<ocpp::DateTime> start_schedule, std::optional<int32_t> duration) {
     ChargingSchedule charging_schedule;
     charging_schedule.chargingRateUnit = charging_rate_unit;
     charging_schedule.chargingSchedulePeriod = charging_schedule_period;
     charging_schedule.startSchedule = start_schedule;
+    charging_schedule.duration = duration;
     return charging_schedule;
 }
 

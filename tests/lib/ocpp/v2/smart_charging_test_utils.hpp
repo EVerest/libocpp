@@ -90,7 +90,8 @@ create_charging_profile(int32_t charging_profile_id, ChargingProfilePurposeEnum 
 ChargingSchedule create_charge_schedule(ChargingRateUnitEnum charging_rate_unit);
 ChargingSchedule create_charge_schedule(ChargingRateUnitEnum charging_rate_unit,
                                         const std::vector<ChargingSchedulePeriod>& charging_schedule_period,
-                                        std::optional<ocpp::DateTime> start_schedule = std::nullopt);
+                                        std::optional<ocpp::DateTime> start_schedule = std::nullopt,
+                                        std::optional<int32_t> duration = std::nullopt);
 std::vector<ChargingSchedulePeriod>
 create_charging_schedule_periods(int32_t start_period, std::optional<int32_t> number_phases = std::nullopt,
                                  std::optional<int32_t> phase_to_use = std::nullopt,
