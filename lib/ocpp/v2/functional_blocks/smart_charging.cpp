@@ -190,6 +190,10 @@ std::ostream& operator<<(std::ostream& os, const ProfileValidationResultEnum val
 /// \brief Table 95 from OCPP 2.1 spec (part 2 specification): operationMode for various ChargingProfilePurposes
 /// Those operation modes are allowed for the given charging profile purposes.
 const std::map<ChargingProfilePurposeEnum, std::set<OperationModeEnum>> operation_modes_for_charging_profile_purposes{
+    {ChargingProfilePurposeEnum::TxProfile,
+     {OperationModeEnum::ChargingOnly, OperationModeEnum::CentralSetpoint, OperationModeEnum::ExternalSetpoint,
+      OperationModeEnum::ExternalLimits, OperationModeEnum::CentralFrequency, OperationModeEnum::LocalLoadBalancing,
+      OperationModeEnum::Idle}},
     {ChargingProfilePurposeEnum::TxDefaultProfile,
      {OperationModeEnum::ChargingOnly, OperationModeEnum::CentralSetpoint, OperationModeEnum::ExternalSetpoint,
       OperationModeEnum::ExternalLimits, OperationModeEnum::CentralFrequency, OperationModeEnum::LocalLoadBalancing,
@@ -743,23 +747,23 @@ ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingPr
 
             // K01.FR.123 Local time is not supported
             if (schedule.useLocalTime.value_or(false) &&
-                this->context.device_model.get_optional_value<bool>(ControllerComponentVariables::SupportsUseLocalTime)
-                    .value_or(false)) {
+                !this->context.device_model.get_optional_value<bool>(ControllerComponentVariables::SupportsUseLocalTime)
+                     .value_or(false)) {
                 return ProfileValidationResultEnum::ChargingScheduleUnsupportedLocalTime;
             }
 
             // K01.FR.124: Randomized delay is not supported
             if (schedule.randomizedDelay.has_value() &&
-                this->context.device_model
-                    .get_optional_value<bool>(ControllerComponentVariables::SupportsRandomizedDelay)
-                    .value_or(false)) {
+                !this->context.device_model
+                     .get_optional_value<bool>(ControllerComponentVariables::SupportsRandomizedDelay)
+                     .value_or(false)) {
                 return ProfileValidationResultEnum::ChargingScheduleUnsupportedRandomizedDelay;
             }
 
             // K01.FR.125: Limit at soc is not supported
             if (schedule.limitAtSoC.has_value() &&
-                this->context.device_model.get_optional_value<bool>(ControllerComponentVariables::SupportsLimitAtSoC)
-                    .value_or(false)) {
+                !this->context.device_model.get_optional_value<bool>(ControllerComponentVariables::SupportsLimitAtSoC)
+                     .value_or(false)) {
                 return ProfileValidationResultEnum::ChargingScheduleUnsupportedLimitAtSoC;
             }
         }
@@ -802,7 +806,7 @@ ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingPr
                 if (this->context.ocpp_version == OcppProtocolVersion::v201) {
                     return ProfileValidationResultEnum::ChargingSchedulePeriodExtraneousPhaseValues;
                 } else if (this->context.ocpp_version == OcppProtocolVersion::v21) {
-                    if (this->context.device_model.get_optional_value<bool>(evse_variable).value_or(false)) {
+                    if (!this->context.device_model.get_optional_value<bool>(evse_variable).value_or(false)) {
                         // If 2.1 and DCInputPhaseControl is false or does not exist, then send rejected with reason
                         // code noPhaseForDC
                         return ProfileValidationResultEnum::ChargingSchedulePeriodNoPhaseForDC;
@@ -828,7 +832,7 @@ ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingPr
 
                 // K01.FR.71: Priority charging should not have operation mode that is different than 'ChargingOnly'
                 if (profile.chargingProfilePurpose == ChargingProfilePurposeEnum::PriorityCharging &&
-                    charging_schedule_period.operationMode != OperationModeEnum::ChargingOnly) {
+                    operation_mode != OperationModeEnum::ChargingOnly) {
                     return ProfileValidationResultEnum::ChargingSchedulePeriodPriorityChargingNotChargingOnly;
                 }
 
@@ -897,7 +901,7 @@ SmartCharging::verify_no_conflicting_external_constraints_id(const ChargingProfi
     if (this->context.ocpp_version == OcppProtocolVersion::v21) {
         auto max_external_constraints_id =
             this->context.device_model.get_optional_value<int>(ControllerComponentVariables::MaxExternalConstraintsId);
-        if (max_external_constraints_id.has_value() && profile.id >= max_external_constraints_id.has_value()) {
+        if (max_external_constraints_id.has_value() && profile.id <= max_external_constraints_id.has_value()) {
             return ProfileValidationResultEnum::ChargingProfileIdSmallerThanMaxExternalConstraintsId;
         }
     }
