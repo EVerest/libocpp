@@ -3656,8 +3656,8 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         }
     }
     if (key == "StopTransactionOnEVSideDisconnect") {
-        if (isBool(value.get())) {
-            this->setStopTransactionOnEVSideDisconnect(ocpp::conversions::string_to_bool(value.get()));
+        if (this->getStopTransactionOnEVSideDisconnect() == std::nullopt) {
+            return ConfigurationStatus::NotSupported;
         } else {
             return ConfigurationStatus::Rejected;
         }
