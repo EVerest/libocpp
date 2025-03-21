@@ -16,7 +16,6 @@
         "MeterValueSampleInterval",
         "NumberOfConnectors",
         "ResetRetries",
-        "StopTransactionOnEVSideDisconnect",
         "StopTransactionOnInvalidId",
         "StopTxnAlignedData",
         "StopTxnSampledData",
