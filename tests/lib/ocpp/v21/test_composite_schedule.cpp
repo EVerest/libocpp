@@ -89,3 +89,107 @@ TEST_F(CompositeScheduleTestFixtureV2, V2MaxOverridesHigherLimits) {
                                                                      ChargingRateUnitEnum::A, false, false);
     ASSERT_EQ(actual, expected);
 }
+
+TEST_F(CompositeScheduleTestFixtureV2, V2StackLevel_Recurring_Period_TimeOfDay) {
+    this->load_charging_profiles_for_evse(BASE_JSON_PATH_V21 + "/stack/", DEFAULT_EVSE_ID);
+    evse_manager->open_transaction(DEFAULT_EVSE_ID, "f1522902-1170-416f-8e43-9e3bce28fde7");
+
+    const DateTime start_time_monday("2025-03-24T16:00:00");
+    const DateTime end_time_monday("2025-03-24T21:00:00");
+
+    ChargingSchedulePeriod period1;
+    period1.startPeriod = 0;
+    period1.limit = DEFAULT_LIMIT_WATT;
+    ChargingSchedulePeriod period2;
+    period2.startPeriod = 3600;
+    period2.limit = 2000;
+    period2.numberPhases = 3;
+    ChargingSchedulePeriod period3;
+    period3.startPeriod = 14400;
+    period3.limit = DEFAULT_LIMIT_WATT;
+    CompositeSchedule expected;
+    expected.chargingSchedulePeriod = {period1, period2, period3};
+    expected.evseId = DEFAULT_EVSE_ID;
+    expected.duration = 18000;
+    expected.scheduleStart = start_time_monday;
+    expected.chargingRateUnit = ChargingRateUnitEnum::W;
+
+    CompositeSchedule actual = handler->calculate_composite_schedule(
+        start_time_monday, end_time_monday, DEFAULT_EVSE_ID, ChargingRateUnitEnum::W, false, false);
+    ASSERT_EQ(actual, expected);
+}
+
+TEST_F(CompositeScheduleTestFixtureV2, V2StackLevel_Recurring_Period_TimeOfDay_Excluded_Weekly) {
+    this->load_charging_profiles_for_evse(BASE_JSON_PATH_V21 + "/stack/", DEFAULT_EVSE_ID);
+    evse_manager->open_transaction(DEFAULT_EVSE_ID, "f1522902-1170-416f-8e43-9e3bce28fde7");
+
+    const DateTime start_time_sunday("2025-03-23T16:00:00");
+    const DateTime end_time_sunday("2025-03-23T21:00:00");
+
+    ChargingSchedulePeriod period1;
+    period1.startPeriod = 0;
+    period1.limit = 999999;
+    period1.numberPhases = 3;
+    CompositeSchedule expected;
+    expected.chargingSchedulePeriod = {period1};
+    expected.evseId = DEFAULT_EVSE_ID;
+    expected.duration = 18000;
+    expected.scheduleStart = start_time_sunday;
+    expected.chargingRateUnit = ChargingRateUnitEnum::W;
+
+    CompositeSchedule actual = handler->calculate_composite_schedule(
+        start_time_sunday, end_time_sunday, DEFAULT_EVSE_ID, ChargingRateUnitEnum::W, false, false);
+    ASSERT_EQ(actual, expected);
+}
+
+TEST_F(CompositeScheduleTestFixtureV2, V2StackLevel_Recurring_Period_TimeOfDay_NotExcluded_ChristmasOtherYear) {
+    this->load_charging_profiles_for_evse(BASE_JSON_PATH_V21 + "/stack/", DEFAULT_EVSE_ID);
+    evse_manager->open_transaction(DEFAULT_EVSE_ID, "f1522902-1170-416f-8e43-9e3bce28fde7");
+
+    const DateTime start_time_christmas("2025-12-25T16:00:00");
+    const DateTime end_time_christmas("2025-12-25T21:00:00");
+
+    ChargingSchedulePeriod period1;
+    period1.startPeriod = 0;
+    period1.limit = DEFAULT_LIMIT_WATT;
+    ChargingSchedulePeriod period2;
+    period2.startPeriod = 3600;
+    period2.limit = 2000;
+    period2.numberPhases = 3;
+    ChargingSchedulePeriod period3;
+    period3.startPeriod = 14400;
+    period3.limit = DEFAULT_LIMIT_WATT;
+    CompositeSchedule expected;
+    expected.chargingSchedulePeriod = {period1, period2, period3};
+    expected.evseId = DEFAULT_EVSE_ID;
+    expected.duration = 18000;
+    expected.scheduleStart = start_time_christmas;
+    expected.chargingRateUnit = ChargingRateUnitEnum::W;
+
+    CompositeSchedule actual = handler->calculate_composite_schedule(
+        start_time_christmas, end_time_christmas, DEFAULT_EVSE_ID, ChargingRateUnitEnum::W, false, false);
+    ASSERT_EQ(actual, expected);
+}
+
+TEST_F(CompositeScheduleTestFixtureV2, V2StackLevel_Recurring_Period_TimeOfDay_Excluded_Christmas) {
+    this->load_charging_profiles_for_evse(BASE_JSON_PATH_V21 + "/stack/", DEFAULT_EVSE_ID);
+    evse_manager->open_transaction(DEFAULT_EVSE_ID, "f1522902-1170-416f-8e43-9e3bce28fde7");
+
+    const DateTime start_time_christmas("2020-12-25T16:00:00");
+    const DateTime end_time_christmas("2020-12-25T21:00:00");
+
+    ChargingSchedulePeriod period1;
+    period1.startPeriod = 0;
+    period1.limit = 999999;
+    period1.numberPhases = 3;
+    CompositeSchedule expected;
+    expected.chargingSchedulePeriod = {period1};
+    expected.evseId = DEFAULT_EVSE_ID;
+    expected.duration = 18000;
+    expected.scheduleStart = start_time_christmas;
+    expected.chargingRateUnit = ChargingRateUnitEnum::W;
+
+    CompositeSchedule actual = handler->calculate_composite_schedule(
+        start_time_christmas, end_time_christmas, DEFAULT_EVSE_ID, ChargingRateUnitEnum::W, false, false);
+    ASSERT_EQ(actual, expected);
+}

@@ -35,6 +35,24 @@ period_entry_t gen_pe(ocpp::DateTime start, ocpp::DateTime end, ChargingProfile 
     period_entry.end = end;
     period_entry.limit.limit =
         profile.chargingSchedule.front().chargingSchedulePeriod[period_at].limit.value_or(FIXME_DEFAULT_LIMIT);
+    period_entry.limit.limit_L2 =
+        profile.chargingSchedule.front().chargingSchedulePeriod[period_at].limit_L2.value_or(NO_LIMIT_SPECIFIED);
+    period_entry.limit.limit_L3 =
+        profile.chargingSchedule.front().chargingSchedulePeriod[period_at].limit_L3.value_or(NO_LIMIT_SPECIFIED);
+    period_entry.discharge_limit.limit =
+        profile.chargingSchedule.front().chargingSchedulePeriod[period_at].limit.value_or(NO_DISCHARGE_LIMIT_SPECIFIED);
+    period_entry.discharge_limit.limit_L2 =
+        profile.chargingSchedule.front().chargingSchedulePeriod[period_at].limit_L2.value_or(
+            NO_DISCHARGE_LIMIT_SPECIFIED);
+    period_entry.discharge_limit.limit_L3 =
+        profile.chargingSchedule.front().chargingSchedulePeriod[period_at].limit_L3.value_or(
+            NO_DISCHARGE_LIMIT_SPECIFIED);
+    period_entry.setpoint.limit =
+        profile.chargingSchedule.front().chargingSchedulePeriod[period_at].limit.value_or(NO_SETPOINT_SPECIFIED);
+    period_entry.setpoint.limit_L2 =
+        profile.chargingSchedule.front().chargingSchedulePeriod[period_at].limit_L2.value_or(NO_SETPOINT_SPECIFIED);
+    period_entry.setpoint.limit_L3 =
+        profile.chargingSchedule.front().chargingSchedulePeriod[period_at].limit_L3.value_or(NO_SETPOINT_SPECIFIED);
     period_entry.stack_level = profile.stackLevel;
     period_entry.charging_rate_unit = profile.chargingSchedule.front().chargingRateUnit;
     return period_entry;
@@ -255,6 +273,25 @@ TEST_P(CalculateProfileEntryType_Param_Test, CalculateProfileEntry_Positive) {
     expected_entry.end = expected_end;
     expected_entry.limit.limit =
         profile.chargingSchedule.front().chargingSchedulePeriod[period_index].limit.value_or(FIXME_DEFAULT_LIMIT);
+    expected_entry.limit.limit_L2 =
+        profile.chargingSchedule.front().chargingSchedulePeriod[period_index].limit_L2.value_or(NO_LIMIT_SPECIFIED);
+    expected_entry.limit.limit_L3 =
+        profile.chargingSchedule.front().chargingSchedulePeriod[period_index].limit_L3.value_or(NO_LIMIT_SPECIFIED);
+    expected_entry.discharge_limit.limit =
+        profile.chargingSchedule.front().chargingSchedulePeriod[period_index].limit.value_or(
+            NO_DISCHARGE_LIMIT_SPECIFIED);
+    expected_entry.discharge_limit.limit_L2 =
+        profile.chargingSchedule.front().chargingSchedulePeriod[period_index].limit_L2.value_or(
+            NO_DISCHARGE_LIMIT_SPECIFIED);
+    expected_entry.discharge_limit.limit_L3 =
+        profile.chargingSchedule.front().chargingSchedulePeriod[period_index].limit_L3.value_or(
+            NO_DISCHARGE_LIMIT_SPECIFIED);
+    expected_entry.setpoint.limit =
+        profile.chargingSchedule.front().chargingSchedulePeriod[period_index].limit.value_or(NO_SETPOINT_SPECIFIED);
+    expected_entry.setpoint.limit_L2 =
+        profile.chargingSchedule.front().chargingSchedulePeriod[period_index].limit_L2.value_or(NO_SETPOINT_SPECIFIED);
+    expected_entry.setpoint.limit_L3 =
+        profile.chargingSchedule.front().chargingSchedulePeriod[period_index].limit_L3.value_or(NO_SETPOINT_SPECIFIED);
     expected_entry.stack_level = profile.stackLevel;
     expected_entry.charging_rate_unit = profile.chargingSchedule.front().chargingRateUnit;
 
@@ -453,6 +490,7 @@ TEST(OCPPTypesTest, CalculateProfile_AbsoluteLimited) {
 
     ASSERT_EQ(1, period_entries_just_before_start.size());
     EXPECT_TRUE(SmartChargingTestUtils::validate_profile_result(period_entries_just_before_start));
+    auto bla = gen_pe(dt("12:02"), dt("12:32"), absolute_profile, 0);
     ASSERT_EQ(gen_pe(dt("12:02"), dt("12:32"), absolute_profile, 0), period_entries_just_before_start.front());
 
     // During start expecting 2 periods
