@@ -133,7 +133,7 @@
         },
         "StopTransactionOnEVSideDisconnect": {
             "type": "boolean",
-            "readOnly": false
+            "readOnly": true
         },
         "StopTransactionOnInvalidId": {
             "type": "boolean",
