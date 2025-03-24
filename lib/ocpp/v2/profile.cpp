@@ -858,9 +858,6 @@ void convert_and_transform_limit_to_period_schedule(const PeriodLimit& input_lim
 // TODO mz Setpoint for evse id 0 is not working that well.
 // It defaults to 0 when you ask for a specific evse id
 
-// Setpoint is applied for evse 0, this should not be allowed
-// ChargingStationMaxProfile setpoint is allowed for evse 0, the others are not.
-
 // TODO mz no limit specified: for discharge limit, drop it. For limit, we should not drop it.
 
 std::vector<ChargingSchedulePeriod>
