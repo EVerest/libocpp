@@ -1560,7 +1560,7 @@ KeyValue ChargePointConfiguration::getResetRetriesKeyValue() {
     return kv;
 }
 
-// Core Profile
+// Core Profile - optional
 std::optional<bool> ChargePointConfiguration::getStopTransactionOnEVSideDisconnect() {
     std::optional<bool> stop_transaction_on_ev_side_disconnect = std::nullopt;
     if (this->config["Core"].contains("StopTransactionOnEVSideDisconnect")) {
@@ -1570,7 +1570,7 @@ std::optional<bool> ChargePointConfiguration::getStopTransactionOnEVSideDisconne
 }
 std::optional<KeyValue> ChargePointConfiguration::getStopTransactionOnEVSideDisconnectKeyValue() {
     std::optional<KeyValue> stop_transaction_on_ev_side_disconnect_kv = std::nullopt;
-    auto stop_transaction_on_ev_side_disconnect = this->getSupportedFeatureProfilesMaxLength();
+    auto stop_transaction_on_ev_side_disconnect = this->getStopTransactionOnEVSideDisconnect();
     if (stop_transaction_on_ev_side_disconnect != std::nullopt) {
         KeyValue kv;
         kv.key = "StopTransactionOnEVSideDisconnect";
@@ -3652,13 +3652,6 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         } catch (const std::invalid_argument& e) {
             return ConfigurationStatus::Rejected;
         } catch (const std::out_of_range& e) {
-            return ConfigurationStatus::Rejected;
-        }
-    }
-    if (key == "StopTransactionOnEVSideDisconnect") {
-        if (this->getStopTransactionOnEVSideDisconnect() == std::nullopt) {
-            return ConfigurationStatus::NotSupported;
-        } else {
             return ConfigurationStatus::Rejected;
         }
     }
