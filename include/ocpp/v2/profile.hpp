@@ -127,15 +127,15 @@ IntermediateProfile generate_profile_from_periods(std::vector<period_entry_t>& p
 /// The tx_profile will be preferred over the tx_default_profile whenever it has a value
 /// \return A combined profile
 IntermediateProfile merge_tx_profile_with_tx_default_profile(const IntermediateProfile& tx_profile,
-                                                             const IntermediateProfile& tx_default_profile);
+                                                             const IntermediateProfile& tx_default_profile, const OcppProtocolVersion ocpp_version);
 
 /// \brief Generates a new profile by taking the lowest limit of all the provided \param profiles
-IntermediateProfile merge_profiles_by_lowest_limit(const std::vector<IntermediateProfile>& profiles);
+IntermediateProfile merge_profiles_by_lowest_limit(const std::vector<IntermediateProfile>& profiles, const OcppProtocolVersion ocpp_version);
 
 /// \brief Generates a new profile by summing the limits of all the provided \param profiles, filling in defaults
 /// wherever a profile has no limit
 IntermediateProfile merge_profiles_by_summing_limits(const std::vector<IntermediateProfile>& profiles,
-                                                     float current_default, float power_default);
+                                                     float current_default, float power_default, const OcppProtocolVersion ocpp_version);
 
 /// \brief Fills all the periods without a limit or a number of phases with the defaults provided
 void fill_gaps_with_defaults(IntermediateProfile& schedule, float default_limit, int32_t default_number_phases);
