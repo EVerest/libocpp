@@ -16,13 +16,15 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 
 ## General - General
 
-| ID    | Status | Remark |
-| ----- | ------ | ------ |
-| FR.01 | ✅     |        |
-| FR.02 | ✅     |        |
-| FR.03 | ✅     |        |
-| FR.04 | ❎     |        |
-| FR.05 | ✅     |        |
+| ID               | Status | Remark |
+| ---------------- | ------ | ------ |
+| FR.01            | ✅     |        |
+| FR.02            | ✅     |        |
+| FR.03            | ✅     |        |
+| FR.04            | ❎     |        |
+| FR.05            | ✅     |        |
+| FR.06 <br> (2.1) |        |        |
+| FR.07 <br> (2.1) |        |        |
 
 ## Security - Generic Security Profile requirements
 
@@ -77,38 +79,38 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 
 ## Security - TLS with Client Side Certificates Profile
 
-| ID         | Status | Remark |
-| ---------- | ------ | ------ |
-| A00.FR.401 | ✅     |        |
-| A00.FR.402 | ✅     |        |
-| A00.FR.403 | ❎     |        |
-| A00.FR.404 | ❎     |        |
-| A00.FR.405 | ❎     |        |
-| A00.FR.406 | ❎     |        |
-| A00.FR.407 | ❎     |        |
-| A00.FR.408 | ❎     |        |
-| A00.FR.409 | ❎     |        |
-| A00.FR.410 | ❎     |        |
-| A00.FR.411 | ✅     |        |
-| A00.FR.412 | ✅     |        |
-| A00.FR.413 |        |        |
-| A00.FR.414 | ✅     |        |
-| A00.FR.415 | ✅     |        |
-| A00.FR.416 | ✅     |        |
-| A00.FR.417 | ✅     |        |
-| A00.FR.418 | ❎     |        |
-| A00.FR.419 |        |        |
-| A00.FR.420 | ✅     |        |
-| A00.FR.421 | ❎     |        |
-| A00.FR.422 | ✅     |        |
-| A00.FR.423 | ✅     |        |
-| A00.FR.424 | ✅     |        |
-| A00.FR.425 | ❎     |        |
-| A00.FR.426 |        |        |
-| A00.FR.427 | ❎     |        |
-| A00.FR.428 | ❎     |        |
-| A00.FR.429 | ❎     |        |
-| A00.FR.430 |        |        |
+| ID                    | Status | Remark |
+| --------------------- | ------ | ------ |
+| A00.FR.401            | ✅     |        |
+| A00.FR.402            | ✅     |        |
+| A00.FR.403            | ❎     |        |
+| A00.FR.404            | ❎     |        |
+| A00.FR.405            | ❎     |        |
+| A00.FR.406            | ❎     |        |
+| A00.FR.407            | ❎     |        |
+| A00.FR.408            | ❎     |        |
+| A00.FR.409            | ❎     |        |
+| A00.FR.410            | ❎     |        |
+| A00.FR.411            | ✅     |        |
+| A00.FR.412            | ✅     |        |
+| A00.FR.413            |        |        |
+| A00.FR.414            | ✅     |        |
+| A00.FR.415            | ✅     |        |
+| A00.FR.416            | ✅     |        |
+| A00.FR.417            | ✅     |        |
+| A00.FR.418            | ❎     |        |
+| A00.FR.419            |        |        |
+| A00.FR.420            | ✅     |        |
+| A00.FR.421            | ❎     |        |
+| A00.FR.422            | ✅     |        |
+| A00.FR.423            | ✅     |        |
+| A00.FR.424            | ✅     |        |
+| A00.FR.425            | ❎     |        |
+| A00.FR.426            |        |        |
+| A00.FR.427            | ❎     |        |
+| A00.FR.428            | ❎     |        |
+| A00.FR.429            | ❎     |        |
+| A00.FR.430 <br> (2.1) |        |        |
 
 ## Security - Certificate Properties
 
@@ -205,14 +207,14 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | A02.FR.20            | ✅     |                                                                  |
 | A02.FR.20 <br> (2.1) |        |                                                                  |
 | A02.FR.21            |        |                                                                  |
-| A02.FR.22            |        |                                                                  |
-| A02.FR.23            |        |                                                                  |
-| A02.FR.24            |        |                                                                  |
-| A02.FR.25            |        |                                                                  |
-| A02.FR.26            |        |                                                                  |
-| A02.FR.27            |        |                                                                  |
-| A02.FR.28            |        |                                                                  |
-| A02.FR.29            |        |                                                                  |
+| A02.FR.22 <br> (2.1) |        |                                                                  |
+| A02.FR.23 <br> (2.1) |        |                                                                  |
+| A02.FR.24 <br> (2.1) |        |                                                                  |
+| A02.FR.25 <br> (2.1) |        |                                                                  |
+| A02.FR.26 <br> (2.1) |        |                                                                  |
+| A02.FR.27 <br> (2.1) |        |                                                                  |
+| A02.FR.28 <br> (2.1) |        |                                                                  |
+| A02.FR.29 <br> (2.1) |        |                                                                  |
 
 ## Security - Update Charging Station Certificate initiated by the Charging Station
 
@@ -242,8 +244,8 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | A03.FR.21 <br> (2.1) |        |        |
 | A03.FR.22 <br> (2.1) |        |        |
 | A03.FR.23 <br> (2.1) |        |        |
-| A03.FR.24            |        |        |
-| A03.FR.25            |        |        |
+| A03.FR.24 <br> (2.1) |        |        |
+| A03.FR.25 <br> (2.1) |        |        |
 
 ## Security - Security Event Notification
 
@@ -256,17 +258,17 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 
 ## Security - Upgrade Charging Station Security Profile
 
-| ID        | Status | Remark |
-| --------- | ------ | ------ |
-| A05.FR.02 | ✅     |        |
-| A05.FR.03 | ✅     |        |
-| A05.FR.04 | ✅     |        |
-| A05.FR.05 | ✅     |        |
-| A05.FR.06 |        |        |
-| A05.FR.07 | ❎     |        |
-| A05.FR.08 |        |        |
-| A05.FR.09 |        |        |
-| A05.FR.10 |        |        |
+| ID                   | Status | Remark |
+| -------------------- | ------ | ------ |
+| A05.FR.02            | ✅     |        |
+| A05.FR.03            | ✅     |        |
+| A05.FR.04            | ✅     |        |
+| A05.FR.05            | ✅     |        |
+| A05.FR.06            |        |        |
+| A05.FR.07            | ❎     |        |
+| A05.FR.08 <br> (2.1) |        |        |
+| A05.FR.09 <br> (2.1) |        |        |
+| A05.FR.10 <br> (2.1) |        |        |
 
 ## Provisioning - Cold Boot Charging Station
 
@@ -2414,56 +2416,56 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 
 ## Diagnostics - Set Frequent Periodic Variable Monitoring
 
-| ID        | Status | Remark |
-| --------- | ------ | ------ |
-| N11.FR.01 |        |        |
-| N11.FR.02 |        |        |
-| N11.FR.03 |        |        |
-| N11.FR.04 |        |        |
-| N11.FR.05 |        |        |
-| N11.FR.06 |        |        |
-| N11.FR.07 |        |        |
-| N11.FR.08 |        |        |
-| N11.FR.09 |        |        |
+| ID                   | Status | Remark |
+| -------------------- | ------ | ------ |
+| N11.FR.01 <br> (2.1) |        |        |
+| N11.FR.02 <br> (2.1) |        |        |
+| N11.FR.03 <br> (2.1) |        |        |
+| N11.FR.04 <br> (2.1) |        |        |
+| N11.FR.05 <br> (2.1) |        |        |
+| N11.FR.06 <br> (2.1) |        |        |
+| N11.FR.07 <br> (2.1) |        |        |
+| N11.FR.08 <br> (2.1) |        |        |
+| N11.FR.09 <br> (2.1) |        |        |
 
 ## Diagnostics - Get Periodic Event Streams
 
-| ID        | Status | Remark |
-| --------- | ------ | ------ |
-| N12.FR.01 |        |        |
+| ID                   | Status | Remark |
+| -------------------- | ------ | ------ |
+| N12.FR.01 <br> (2.1) |        |        |
 
 ## Diagnostics - Close Periodic Event Streams
 
-| ID        | Status | Remark |
-| --------- | ------ | ------ |
-| N13.FR.01 |        |        |
-| N13.FR.02 |        |        |
-| N13.FR.03 |        |        |
-| N13.FR.04 |        |        |
-| N13.FR.05 |        |        |
-| N13.FR.06 |        |        |
+| ID                   | Status | Remark |
+| -------------------- | ------ | ------ |
+| N13.FR.01 <br> (2.1) |        |        |
+| N13.FR.02 <br> (2.1) |        |        |
+| N13.FR.03 <br> (2.1) |        |        |
+| N13.FR.04 <br> (2.1) |        |        |
+| N13.FR.05 <br> (2.1) |        |        |
+| N13.FR.06 <br> (2.1) |        |        |
 
 ## Diagnostics - Adjust Periodic Event Streams
 
-| ID        | Status | Remark |
-| --------- | ------ | ------ |
-| N14.FR.01 |        |        |
-| N14.FR.02 |        |        |
-| N14.FR.03 |        |        |
+| ID                   | Status | Remark |
+| -------------------- | ------ | ------ |
+| N14.FR.01 <br> (2.1) |        |        |
+| N14.FR.02 <br> (2.1) |        |        |
+| N14.FR.03 <br> (2.1) |        |        |
 
 ## Diagnostics - Periodic Event Stream
 
-| ID        | Status | Remark |
-| --------- | ------ | ------ |
-| N15.FR.01 |        |        |
-| N15.FR.02 |        |        |
-| N15.FR.03 |        |        |
-| N15.FR.04 |        |        |
-| N15.FR.05 |        |        |
-| N15.FR.06 |        |        |
-| N15.FR.07 |        |        |
-| N15.FR.08 |        |        |
-| N15.FR.09 |        |        |
+| ID                   | Status | Remark |
+| -------------------- | ------ | ------ |
+| N15.FR.01 <br> (2.1) |        |        |
+| N15.FR.02 <br> (2.1) |        |        |
+| N15.FR.03 <br> (2.1) |        |        |
+| N15.FR.04 <br> (2.1) |        |        |
+| N15.FR.05 <br> (2.1) |        |        |
+| N15.FR.06 <br> (2.1) |        |        |
+| N15.FR.07 <br> (2.1) |        |        |
+| N15.FR.08 <br> (2.1) |        |        |
+| N15.FR.09 <br> (2.1) |        |        |
 
 ## DisplayMessage - Set DisplayMessage
 
@@ -2487,6 +2489,7 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | O01.FR.16            | ⛽️      |        |
 | O01.FR.17            | ⛽️ / 🌐 |        |
 | O01.FR.18 <br> (2.1) |          |        |
+| O01.FR.19 <br> (2.1) |          |        |
 
 ## DisplayMessage - Set DisplayMessage for Transaction
 
@@ -2572,233 +2575,248 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | P02.FR.07 | ❎     |        |
 | P02.FR.08 | ❎     |        |
 
+## Bidirectional Power Transfer - Generic smart charging rules for V2X
+
+| ID                | Status | Remark |
+| ----------------- | ------ | ------ |
+| V2X.01 <br> (2.1) |        |        |
+| V2X.02 <br> (2.1) |        |        |
+| V2X.03 <br> (2.1) |        |        |
+| V2X.04 <br> (2.1) |        |        |
+| V2X.05 <br> (2.1) |        |        |
+
 ## Bidirectional Power Transfer - V2X Authorization
 
-| ID        | Status                                          | Remark |
-| --------- | ----------------------------------------------- | ------ |
-|           | AllowedEnergyTransfer / RequestedEnergyTransfer |        |
-| Q01.FR.01 |                                                 |        |
-| Q01.FR.02 |                                                 |        |
-| Q01.FR.03 |                                                 |        |
-| Q01.FR.04 |                                                 |        |
-| Q01.FR.05 |                                                 |        |
-| Q01.FR.06 |                                                 |        |
-| Q01.FR.07 |                                                 |        |
-| Q01.FR.08 |                                                 |        |
-| Q01.FR.09 |                                                 |        |
-|           | Device model                                    |        |
-| Q01.FR.30 |                                                 |        |
-| Q01.FR.31 |                                                 |        |
-| Q01.FR.32 |                                                 |        |
-| Q01.FR.33 |                                                 |        |
-| Q01.FR.34 |                                                 |        |
-| Q01.FR.35 |                                                 |        |
-| Q01.FR.36 |                                                 |        |
+| ID                   | Status                                          | Remark |
+| -------------------- | ----------------------------------------------- | ------ |
+|                      | AllowedEnergyTransfer / RequestedEnergyTransfer |        |
+| Q01.FR.01 <br> (2.1) |                                                 |        |
+| Q01.FR.02 <br> (2.1) |                                                 |        |
+| Q01.FR.03 <br> (2.1) |                                                 |        |
+| Q01.FR.04 <br> (2.1) |                                                 |        |
+| Q01.FR.05 <br> (2.1) |                                                 |        |
+| Q01.FR.06 <br> (2.1) |                                                 |        |
+| Q01.FR.07 <br> (2.1) |                                                 |        |
+| Q01.FR.08 <br> (2.1) |                                                 |        |
+| Q01.FR.09 <br> (2.1) |                                                 |        |
+|                      | Device model                                    |        |
+| Q01.FR.30 <br> (2.1) |                                                 |        |
+| Q01.FR.31 <br> (2.1) |                                                 |        |
+| Q01.FR.32 <br> (2.1) |                                                 |        |
+| Q01.FR.33 <br> (2.1) |                                                 |        |
+| Q01.FR.34 <br> (2.1) |                                                 |        |
+| Q01.FR.35 <br> (2.1) |                                                 |        |
+| Q01.FR.36 <br> (2.1) |                                                 |        |
 
 ## Bidirectional Power Transfer - Charging only (V2X control) before starting V2X
 
-| ID        | Status | Remark |
-| --------- | ------ | ------ |
-| Q02.FR.01 |        |        |
-| Q02.FR.02 |        |        |
-| Q02.FR.03 |        |        |
-| Q02.FR.04 |        |        |
-| Q02.FR.05 |        |        |
-| Q02.FR.06 |        |        |
-| Q02.FR.07 |        |        |
+| ID                   | Status | Remark |
+| -------------------- | ------ | ------ |
+| Q02.FR.01 <br> (2.1) |        |        |
+| Q02.FR.02 <br> (2.1) |        |        |
+| Q02.FR.03 <br> (2.1) |        |        |
+| Q02.FR.04 <br> (2.1) |        |        |
+| Q02.FR.05 <br> (2.1) |        |        |
+| Q02.FR.06 <br> (2.1) |        |        |
+| Q02.FR.07 <br> (2.1) |        |        |
 
 ## Bidirectional Power Transfer - Charging only (V2X control) before starting V2X
 
-| ID        | Status                        | Remark |
-| --------- | ----------------------------- | ------ |
-|           | OperationMode CentralSetpoint |        |
-| Q03.FR.01 |                               |        |
-| Q03.FR.02 |                               |        |
+| ID                   | Status                        | Remark |
+| -------------------- | ----------------------------- | ------ |
+|                      | OperationMode CentralSetpoint |        |
+| Q03.FR.01 <br> (2.1) |                               |        |
+| Q03.FR.02 <br> (2.1) |                               |        |
 
 ## Bidirectional Power Transfer - External V2X setpoint control with a charging profile from CSMS
 
-| ID        | Status | Remark |
-| --------- | ------ | ------ |
-| Q05.FR.01 |        |        |
-| Q05.FR.02 |        |        |
-| Q05.FR.03 |        |        |
-| Q05.FR.04 |        |        |
-| Q05.FR.05 |        |        |
-| Q05.FR.06 |        |        |
-| Q05.FR.07 |        |        |
+| ID                   | Status | Remark |
+| -------------------- | ------ | ------ |
+| Q05.FR.01 <br> (2.1) |        |        |
+| Q05.FR.02 <br> (2.1) |        |        |
+| Q05.FR.03 <br> (2.1) |        |        |
+| Q05.FR.04 <br> (2.1) |        |        |
+| Q05.FR.05 <br> (2.1) |        |        |
+| Q05.FR.06 <br> (2.1) |        |        |
+| Q05.FR.07 <br> (2.1) |        |        |
 
 ## Bidirectional Power Transfer - External V2X control with a charging profile from an External System
 
-| ID        | Status              | Remark |
-| --------- | ------------------- | ------ |
-| Q06.FR.01 |                     |        |
-| Q06.FR.02 |                     |        |
-| Q06.FR.03 |                     |        |
-| Q06.FR.04 |                     |        |
-| Q06.FR.05 |                     |        |
-| Q06.FR.06 |                     |        |
-| Q06.FR.07 |                     |        |
-| Q06.FR.08 |                     |        |
-|           | NotifyChargingLimit |        |
-| Q06.FR.10 |                     |        |
-| Q06.FR.11 |                     |        |
-| Q06.FR.12 |                     |        |
-|           | SetpointPriority    |        |
-| Q06.FR.20 |                     |        |
-| Q06.FR.21 |                     |        |
-| Q06.FR.22 |                     |        |
-|           | evseId = 0          |        |
-| Q06.FR.30 |                     |        |
-| Q06.FR.31 |                     |        |
+| ID                   | Status              | Remark |
+| -------------------- | ------------------- | ------ |
+| Q06.FR.01 <br> (2.1) |                     |        |
+| Q06.FR.02 <br> (2.1) |                     |        |
+| Q06.FR.03 <br> (2.1) |                     |        |
+| Q06.FR.04 <br> (2.1) |                     |        |
+| Q06.FR.05 <br> (2.1) |                     |        |
+| Q06.FR.06 <br> (2.1) |                     |        |
+| Q06.FR.07 <br> (2.1) |                     |        |
+| Q06.FR.08 <br> (2.1) |                     |        |
+|                      | NotifyChargingLimit |        |
+| Q06.FR.10 <br> (2.1) |                     |        |
+| Q06.FR.11 <br> (2.1) |                     |        |
+| Q06.FR.12 <br> (2.1) |                     |        |
+|                      | SetpointPriority    |        |
+| Q06.FR.20 <br> (2.1) |                     |        |
+| Q06.FR.21 <br> (2.1) |                     |        |
+| Q06.FR.22 <br> (2.1) |                     |        |
+|                      | evseId = 0          |        |
+| Q06.FR.30 <br> (2.1) |                     |        |
+| Q06.FR.31 <br> (2.1) |                     |        |
+
+## Bidirectional Power Transfer - Central V2X control for frequency support
+
+This use case adheres to requirements related to CentralSetpoint from Q04 - Central V2X control with dynamic
+CSMS setpoint and Dynamic charging profiles from K01. There are no specific requirements for this use case.
 
 ## Bidirectional Power Transfer - Local V2X control for frequency support
 
-| ID        | Status | Remark |
-| --------- | ------ | ------ |
-|           | FCR    |        |
-| Q08.FR.01 |        |        |
-| Q08.FR.02 |        |        |
-| Q08.FR.03 |        |        |
-| Q08.FR.04 |        |        |
-| Q08.FR.05 |        |        |
-| Q08.FR.06 |        |        |
-| Q08.FR.07 |        |        |
-|           | aFRR   |        |
-| Q08.FR.10 |        |        |
-| Q08.FR.11 |        |        |
+| ID                   | Status | Remark |
+| -------------------- | ------ | ------ |
+|                      | FCR    |        |
+| Q08.FR.01 <br> (2.1) |        |        |
+| Q08.FR.02 <br> (2.1) |        |        |
+| Q08.FR.03 <br> (2.1) |        |        |
+| Q08.FR.04 <br> (2.1) |        |        |
+| Q08.FR.05 <br> (2.1) |        |        |
+| Q08.FR.06 <br> (2.1) |        |        |
+| Q08.FR.07 <br> (2.1) |        |        |
+|                      | aFRR   |        |
+| Q08.FR.10 <br> (2.1) |        |        |
+| Q08.FR.11 <br> (2.1) |        |        |
 
 ## Bidirectional Power Transfer - Local V2X control for load balancing
 
-| ID        | Status | Remark |
-| --------- | ------ | ------ |
-| Q09.FR.01 |        |        |
-| Q09.FR.02 |        |        |
-| Q09.FR.03 |        |        |
-| Q09.FR.04 |        |        |
-| Q09.FR.05 |        |        |
+| ID                   | Status | Remark |
+| -------------------- | ------ | ------ |
+| Q09.FR.01 <br> (2.1) |        |        |
+| Q09.FR.02 <br> (2.1) |        |        |
+| Q09.FR.03 <br> (2.1) |        |        |
+| Q09.FR.04 <br> (2.1) |        |        |
+| Q09.FR.05 <br> (2.1) |        |        |
 
 ## Bidirectional Power Transfer - Idle, minimizing energy consumption
 
-| ID        | Status | Remark |
-| --------- | ------ | ------ |
-| Q10.FR.01 |        |        |
-| Q10.FR.02 |        |        |
-| Q10.FR.03 |        |        |
-| Q10.FR.04 |        |        |
-| Q10.FR.05 |        |        |
+| ID                   | Status | Remark |
+| -------------------- | ------ | ------ |
+| Q10.FR.01 <br> (2.1) |        |        |
+| Q10.FR.02 <br> (2.1) |        |        |
+| Q10.FR.03 <br> (2.1) |        |        |
+| Q10.FR.04 <br> (2.1) |        |        |
+| Q10.FR.05 <br> (2.1) |        |        |
 
 ## DER Control - Starting a V2X session with DER control in EVSE
 
-| ID        | Status | Remark |
-| --------- | ------ | ------ |
-| R01.FR.01 |        |        |
-| R01.FR.02 |        |        |
-| R01.FR.03 |        |        |
+| ID                   | Status | Remark |
+| -------------------- | ------ | ------ |
+| R01.FR.01 <br> (2.1) |        |        |
+| R01.FR.02 <br> (2.1) |        |        |
+| R01.FR.03 <br> (2.1) |        |        |
 
 ## DER Control - Starting a V2X session with DER control in EV
 
-| ID        | Status | Remark |
-| --------- | ------ | ------ |
-| R02.FR.01 |        |        |
-| R02.FR.02 |        |        |
-| R02.FR.03 |        |        |
+| ID                   | Status | Remark |
+| -------------------- | ------ | ------ |
+| R02.FR.01 <br> (2.1) |        |        |
+| R02.FR.02 <br> (2.1) |        |        |
+| R02.FR.03 <br> (2.1) |        |        |
 
 ## DER Control - Starting a V2X session with hybrid DER control in both EV and EVSE
 
-| ID        | Status | Remark |
-| --------- | ------ | ------ |
-| R03.FR.01 |        |        |
-| R03.FR.02 |        |        |
-| R03.FR.03 |        |        |
-| R03.FR.04 |        |        |
-| R03.FR.05 |        |        |
-| R03.FR.06 |        |        |
+| ID                   | Status | Remark |
+| -------------------- | ------ | ------ |
+| R03.FR.01 <br> (2.1) |        |        |
+| R03.FR.02 <br> (2.1) |        |        |
+| R03.FR.03 <br> (2.1) |        |        |
+| R03.FR.04 <br> (2.1) |        |        |
+| R03.FR.05 <br> (2.1) |        |        |
+| R03.FR.06 <br> (2.1) |        |        |
 
 ## DER Control - Configure DER control settings at Charging Station
 
-| ID        | Status             | Remark |
-| --------- | ------------------ | ------ |
-|           | SetDERControl      |        |
-| R04.FR.01 |                    |        |
-| R04.FR.02 |                    |        |
-| R04.FR.03 |                    |        |
-| R04.FR.04 |                    |        |
-| R04.FR.05 |                    |        |
-| R04.FR.06 |                    |        |
-| R04.FR.07 |                    |        |
-| R04.FR.08 |                    |        |
-| R04.FR.09 |                    |        |
-| R04.FR.10 |                    |        |
-| R04.FR.11 |                    |        |
-|           | NotifyDERStartStop |        |
-| R04.FR.20 |                    |        |
-| R04.FR.21 |                    |        |
-| R04.FR.23 |                    |        |
-|           | GetDERControl      |        |
-| R04.FR.30 |                    |        |
-| R04.FR.31 |                    |        |
-| R04.FR.32 |                    |        |
-| R04.FR.33 |                    |        |
-| R04.FR.34 |                    |        |
-| R04.FR.35 |                    |        |
-| R04.FR.36 |                    |        |
-|           | ClearDERControl    |        |
-| R04.FR.40 |                    |        |
-| R04.FR.41 |                    |        |
-| R04.FR.42 |                    |        |
-| R04.FR.43 |                    |        |
-| R04.FR.44 |                    |        |
-| R04.FR.45 |                    |        |
+| ID                   | Status             | Remark |
+| -------------------- | ------------------ | ------ |
+|                      | SetDERControl      |        |
+| R04.FR.01 <br> (2.1) |                    |        |
+| R04.FR.02 <br> (2.1) |                    |        |
+| R04.FR.03 <br> (2.1) |                    |        |
+| R04.FR.04 <br> (2.1) |                    |        |
+| R04.FR.05 <br> (2.1) |                    |        |
+| R04.FR.06 <br> (2.1) |                    |        |
+| R04.FR.07 <br> (2.1) |                    |        |
+| R04.FR.08 <br> (2.1) |                    |        |
+| R04.FR.09 <br> (2.1) |                    |        |
+| R04.FR.10 <br> (2.1) |                    |        |
+| R04.FR.11 <br> (2.1) |                    |        |
+|                      | NotifyDERStartStop |        |
+| R04.FR.20 <br> (2.1) |                    |        |
+| R04.FR.21 <br> (2.1) |                    |        |
+| R04.FR.23 <br> (2.1) |                    |        |
+|                      | GetDERControl      |        |
+| R04.FR.30 <br> (2.1) |                    |        |
+| R04.FR.31 <br> (2.1) |                    |        |
+| R04.FR.32 <br> (2.1) |                    |        |
+| R04.FR.33 <br> (2.1) |                    |        |
+| R04.FR.34 <br> (2.1) |                    |        |
+| R04.FR.35 <br> (2.1) |                    |        |
+| R04.FR.36 <br> (2.1) |                    |        |
+|                      | ClearDERControl    |        |
+| R04.FR.40 <br> (2.1) |                    |        |
+| R04.FR.41 <br> (2.1) |                    |        |
+| R04.FR.42 <br> (2.1) |                    |        |
+| R04.FR.43 <br> (2.1) |                    |        |
+| R04.FR.44 <br> (2.1) |                    |        |
+| R04.FR.45 <br> (2.1) |                    |        |
 
 ## DER Control - Charging station reporting a DER event
 
-| ID        | Status | Remark |
-| --------- | ------ | ------ |
-| R05.FR.01 |        |        |
-| R05.FR.02 |        |        |
-| R05.FR.03 |        |        |
-| R05.FR.04 |        |        |
+| ID                   | Status | Remark |
+| -------------------- | ------ | ------ |
+| R05.FR.01 <br> (2.1) |        |        |
+| R05.FR.02 <br> (2.1) |        |        |
+| R05.FR.03 <br> (2.1) |        |        |
+| R05.FR.04 <br> (2.1) |        |        |
 
 ## Battery Swapping - Battery Swap Local Authorization
 
-| ID        | Status | Remark |
-| --------- | ------ | ------ |
-| S01.FR.01 |        |        |
-| S01.FR.02 |        |        |
+| ID                   | Status | Remark |
+| -------------------- | ------ | ------ |
+| S01.FR.01 <br> (2.1) |        |        |
+| S01.FR.02 <br> (2.1) |        |        |
 
 ## Battery Swapping - Battery Remote Start
 
-| ID        | Status | Remark |
-| --------- | ------ | ------ |
-| S02.FR.01 |        |        |
-| S02.FR.02 |        |        |
-| S02.FR.03 |        |        |
-| S02.FR.04 |        |        |
-| S02.FR.05 |        |        |
+| ID                   | Status | Remark |
+| -------------------- | ------ | ------ |
+| S02.FR.01 <br> (2.1) |        |        |
+| S02.FR.02 <br> (2.1) |        |        |
+| S02.FR.03 <br> (2.1) |        |        |
+| S02.FR.04 <br> (2.1) |        |        |
+| S02.FR.05 <br> (2.1) |        |        |
 
 ## Battery Swapping - Battery Swap In/Out
 
-| ID        | Status | Remark |
-| --------- | ------ | ------ |
-| S03.FR.01 |        |        |
-| S03.FR.02 |        |        |
-| S03.FR.03 |        |        |
-| S03.FR.04 |        |        |
-| S03.FR.05 |        |        |
-| S03.FR.06 |        |        |
+| ID                   | Status | Remark |
+| -------------------- | ------ | ------ |
+| S03.FR.01 <br> (2.1) |        |        |
+| S03.FR.02 <br> (2.1) |        |        |
+| S03.FR.03 <br> (2.1) |        |        |
+| S03.FR.04 <br> (2.1) |        |        |
+| S03.FR.05 <br> (2.1) |        |        |
+| S03.FR.06 <br> (2.1) |        |        |
 
 ## Battery Swapping - Battery Swap Charging
 
-| ID        | Status | Remark |
-| --------- | ------ | ------ |
-| S04.FR.01 |        |        |
-| S04.FR.02 |        |        |
-| S04.FR.03 |        |        |
-| S04.FR.04 |        |        |
-| S04.FR.05 |        |        |
-| S04.FR.06 |        |        |
-| S04.FR.07 |        |        |
-| S04.FR.08 |        |        |
-| S04.FR.09 |        |        |
-| S04.FR.10 |        |        |
-| S04.FR.11 |        |        |
+| ID                   | Status | Remark |
+| -------------------- | ------ | ------ |
+| S04.FR.01 <br> (2.1) |        |        |
+| S04.FR.02 <br> (2.1) |        |        |
+| S04.FR.03 <br> (2.1) |        |        |
+| S04.FR.04 <br> (2.1) |        |        |
+| S04.FR.05 <br> (2.1) |        |        |
+| S04.FR.06 <br> (2.1) |        |        |
+| S04.FR.07 <br> (2.1) |        |        |
+| S04.FR.08 <br> (2.1) |        |        |
+| S04.FR.09 <br> (2.1) |        |        |
+| S04.FR.10 <br> (2.1) |        |        |
+| S04.FR.11 <br> (2.1) |        |        |
