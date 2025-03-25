@@ -464,31 +464,32 @@ inline std::vector<IntermediateProfileRef> convert_to_ref_vector(const std::vect
     return references;
 }
 
-void set_setpoint_limit_phase_values(PeriodLimit& current_limit, PeriodLimit& power_limit, const int32_t number_phases,
+void set_setpoint_limit_phase_values(PeriodLimit& current_limit, PeriodLimit& power_limit,
+                                     const float& no_limit_specified, const int32_t number_phases,
                                      const OcppProtocolVersion ocpp_version) {
     // Set the values of the phases so both `PeriodLimit`s have the same values for number of phases, which is used
     // later when combining the two.
     // This can't be done for all limits and setpoints, because OCPP 2.0.1 does not support setpoints for L2 and L3.
     if (number_phases > 1 && ocpp_version == OcppProtocolVersion::v21) {
-        // if (!is_equal(current_limit.limit, NO_LIMIT_SPECIFIED) && !is_equal(power_limit.limit, NO_LIMIT_SPECIFIED) &&
-        //     (((!is_equal(power_limit.limit_L2, NO_LIMIT_SPECIFIED) &&
-        //        is_equal(current_limit.limit_L2, NO_LIMIT_SPECIFIED)) ||
-        //       (!is_equal(current_limit.limit_L2, NO_LIMIT_SPECIFIED) &&
-        //        is_equal(power_limit.limit_L2, NO_LIMIT_SPECIFIED))) ||
-        //      ((!is_equal(power_limit.limit_L3, NO_LIMIT_SPECIFIED) &&
-        //        is_equal(current_limit.limit_L3, NO_LIMIT_SPECIFIED)) ||
-        //       (!is_equal(current_limit.limit_L3, NO_LIMIT_SPECIFIED) &&
-        //        is_equal(power_limit.limit_L3, NO_LIMIT_SPECIFIED))))) {
+        // if (!is_equal(current_limit.limit, no_limit_specified) && !is_equal(power_limit.limit, no_limit_specified) &&
+        //     (((!is_equal(power_limit.limit_L2, no_limit_specified) &&
+        //        is_equal(current_limit.limit_L2, no_limit_specified)) ||
+        //       (!is_equal(current_limit.limit_L2, no_limit_specified) &&
+        //        is_equal(power_limit.limit_L2, no_limit_specified))) ||
+        //      ((!is_equal(power_limit.limit_L3, no_limit_specified) &&
+        //        is_equal(current_limit.limit_L3, no_limit_specified)) ||
+        //       (!is_equal(current_limit.limit_L3, no_limit_specified) &&
+        //        is_equal(power_limit.limit_L3, no_limit_specified))))) {
         //     // One of this group has one phase specified and the other three, so let's specify the same number of
         //     // phases for each.
-        if (is_equal(current_limit.limit_L2, NO_LIMIT_SPECIFIED) ||
-            is_equal(current_limit.limit_L3, NO_LIMIT_SPECIFIED)) {
+        if (is_equal(current_limit.limit_L2, no_limit_specified) ||
+            is_equal(current_limit.limit_L3, no_limit_specified)) {
             current_limit.limit_L2 = current_limit.limit;
             current_limit.limit_L3 = current_limit.limit;
         }
 
-        if (is_equal(power_limit.limit_L2, NO_LIMIT_SPECIFIED) ||
-            is_equal(current_limit.limit_L3, NO_LIMIT_SPECIFIED)) {
+        if (is_equal(power_limit.limit_L2, no_limit_specified) ||
+            is_equal(current_limit.limit_L3, no_limit_specified)) {
             power_limit.limit_L2 = power_limit.limit / static_cast<float>(number_phases);
             power_limit.limit_L3 = power_limit.limit / static_cast<float>(number_phases);
         }
@@ -524,10 +525,12 @@ IntermediateProfile combine_list_of_profiles(const std::vector<IntermediateProfi
 
         const int32_t number_phases = period.numberPhases.value_or(DEFAULT_AND_MAX_NUMBER_PHASES);
         // TODO mz also incorporate setpoints here???
-        set_setpoint_limit_phase_values(period.current_limit, period.power_limit, number_phases, ocpp_version);
-        set_setpoint_limit_phase_values(period.current_discharge_limit, period.power_discharge_limit, number_phases,
+        set_setpoint_limit_phase_values(period.current_limit, period.power_limit, NO_LIMIT_SPECIFIED, number_phases,
                                         ocpp_version);
-        set_setpoint_limit_phase_values(period.current_setpoint, period.power_setpoint, number_phases, ocpp_version);
+        set_setpoint_limit_phase_values(period.current_discharge_limit, period.power_discharge_limit,
+                                        NO_DISCHARGE_LIMIT_SPECIFIED, number_phases, ocpp_version);
+        set_setpoint_limit_phase_values(period.current_setpoint, period.power_setpoint, NO_SETPOINT_SPECIFIED,
+                                        number_phases, ocpp_version);
 
         if (combined.empty() || (period.current_limit != combined.back().current_limit) ||
             (period.power_limit != combined.back().power_limit) ||
