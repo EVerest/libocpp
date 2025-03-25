@@ -229,6 +229,7 @@ bool ChargePointFSM::handle_error(const ErrorInfo& error_info) {
 bool ChargePointFSM::handle_error_cleared(const std::string uuid) {
     // dont do anything if the error is unknown
     if (this->active_errors.find(uuid) == this->active_errors.end()) {
+        EVLOG_warning << "Attempt to clear error with unknown id: " << uuid;
         return false;
     }
 
