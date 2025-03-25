@@ -4,7 +4,7 @@
 #include "smart_charging_test_utils.hpp"
 
 TEST_F(CompositeScheduleTestFixtureV2, setpoint_tx_profile) {
-    this->load_charging_profiles_for_evse(BASE_JSON_PATH_V21 + "/setpoints/", DEFAULT_EVSE_ID); 
+    this->load_charging_profiles_for_evse(BASE_JSON_PATH_V21 + "/setpoints/", DEFAULT_EVSE_ID);
 
     evse_manager->open_transaction(DEFAULT_EVSE_ID, "f1522902-1170-416f-8e43-9e3bce28fde7");
 
@@ -192,4 +192,17 @@ TEST_F(CompositeScheduleTestFixtureV2, V2StackLevel_Recurring_Period_TimeOfDay_E
     CompositeSchedule actual = handler->calculate_composite_schedule(
         start_time_christmas, end_time_christmas, DEFAULT_EVSE_ID, ChargingRateUnitEnum::W, false, false);
     ASSERT_EQ(actual, expected);
+}
+
+TEST_F(CompositeScheduleTestFixtureV2, V2ChargingRateUnitCombine) {
+    this->load_charging_profiles_for_evse(BASE_JSON_PATH_V21 + "/charging_rate_unit_combine/0/", STATION_WIDE_ID);
+    this->load_charging_profiles_for_evse(BASE_JSON_PATH_V21 + "/charging_rate_unit_combine/1/", DEFAULT_EVSE_ID);
+
+    const DateTime start_time("2024-01-17T18:00:00.000Z");
+    const DateTime end_time("2024-01-17T21:00:00.000Z");
+
+    evse_manager->open_transaction(DEFAULT_EVSE_ID, "f1522902-1170-416f-8e43-9e3bce28fde7");
+    CompositeSchedule actual = handler->calculate_composite_schedule(start_time, end_time, DEFAULT_EVSE_ID,
+                                                                     ChargingRateUnitEnum::W, false, false);
+    int i = 1;
 }

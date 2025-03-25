@@ -464,11 +464,44 @@ inline std::vector<IntermediateProfileRef> convert_to_ref_vector(const std::vect
     return references;
 }
 
+void set_setpoint_limit_phase_values(PeriodLimit& current_limit, PeriodLimit& power_limit, const int32_t number_phases,
+                                     const OcppProtocolVersion ocpp_version) {
+    // Set the values of the phases so both `PeriodLimit`s have the same values for number of phases, which is used
+    // later when combining the two.
+    // This can't be done for all limits and setpoints, because OCPP 2.0.1 does not support setpoints for L2 and L3.
+    if (number_phases > 1 && ocpp_version == OcppProtocolVersion::v21) {
+        // if (!is_equal(current_limit.limit, NO_LIMIT_SPECIFIED) && !is_equal(power_limit.limit, NO_LIMIT_SPECIFIED) &&
+        //     (((!is_equal(power_limit.limit_L2, NO_LIMIT_SPECIFIED) &&
+        //        is_equal(current_limit.limit_L2, NO_LIMIT_SPECIFIED)) ||
+        //       (!is_equal(current_limit.limit_L2, NO_LIMIT_SPECIFIED) &&
+        //        is_equal(power_limit.limit_L2, NO_LIMIT_SPECIFIED))) ||
+        //      ((!is_equal(power_limit.limit_L3, NO_LIMIT_SPECIFIED) &&
+        //        is_equal(current_limit.limit_L3, NO_LIMIT_SPECIFIED)) ||
+        //       (!is_equal(current_limit.limit_L3, NO_LIMIT_SPECIFIED) &&
+        //        is_equal(power_limit.limit_L3, NO_LIMIT_SPECIFIED))))) {
+        //     // One of this group has one phase specified and the other three, so let's specify the same number of
+        //     // phases for each.
+        if (is_equal(current_limit.limit_L2, NO_LIMIT_SPECIFIED) ||
+            is_equal(current_limit.limit_L3, NO_LIMIT_SPECIFIED)) {
+            current_limit.limit_L2 = current_limit.limit;
+            current_limit.limit_L3 = current_limit.limit;
+        }
+
+        if (is_equal(power_limit.limit_L2, NO_LIMIT_SPECIFIED) ||
+            is_equal(current_limit.limit_L3, NO_LIMIT_SPECIFIED)) {
+            power_limit.limit_L2 = power_limit.limit / static_cast<float>(number_phases);
+            power_limit.limit_L3 = power_limit.limit / static_cast<float>(number_phases);
+        }
+    }
+    // }
+}
+
 IntermediateProfile combine_list_of_profiles(const std::vector<IntermediateProfileRef>& profiles,
-                                             std::function<IntermediatePeriod(const period_pair_vector&)> combinator) {
+                                             std::function<IntermediatePeriod(const period_pair_vector&)> combinator,
+                                             const OcppProtocolVersion ocpp_version) {
     if (profiles.empty()) {
-        // We should never get here as there are always profiles, otherwise there is a mistake in the calling function
-        // Return an empty profile to be safe
+        // We should never get here as there are always profiles, otherwise there is a mistake in the calling
+        // function Return an empty profile to be safe
         return {default_intermediate_period()};
     }
 
@@ -488,6 +521,13 @@ IntermediateProfile combine_list_of_profiles(const std::vector<IntermediateProfi
 
         IntermediatePeriod period = combinator(profile_iterators);
         period.startPeriod = current_period;
+
+        const int32_t number_phases = period.numberPhases.value_or(DEFAULT_AND_MAX_NUMBER_PHASES);
+        // TODO mz also incorporate setpoints here???
+        set_setpoint_limit_phase_values(period.current_limit, period.power_limit, number_phases, ocpp_version);
+        set_setpoint_limit_phase_values(period.current_discharge_limit, period.power_discharge_limit, number_phases,
+                                        ocpp_version);
+        set_setpoint_limit_phase_values(period.current_setpoint, period.power_setpoint, number_phases, ocpp_version);
 
         if (combined.empty() || (period.current_limit != combined.back().current_limit) ||
             (period.power_limit != combined.back().power_limit) ||
@@ -534,7 +574,8 @@ IntermediateProfile combine_list_of_profiles(const std::vector<IntermediateProfi
 } // namespace
 
 IntermediateProfile merge_tx_profile_with_tx_default_profile(const IntermediateProfile& tx_profile,
-                                                             const IntermediateProfile& tx_default_profile) {
+                                                             const IntermediateProfile& tx_default_profile,
+                                                             const OcppProtocolVersion ocpp_version) {
     auto combinator = [](const period_pair_vector& periods) {
         const IntermediatePeriod default_period = default_intermediate_period();
         IntermediatePeriod period{};
@@ -570,7 +611,7 @@ IntermediateProfile merge_tx_profile_with_tx_default_profile(const IntermediateP
     // This ordering together with the combinator will prefer the tx_profile above the default profile
     std::vector<IntermediateProfileRef> profiles{tx_profile, tx_default_profile};
 
-    return combine_list_of_profiles(profiles, combinator);
+    return combine_list_of_profiles(profiles, combinator, ocpp_version);
 }
 
 ///
@@ -683,7 +724,8 @@ void get_set_setpoint_limit(PeriodLimit& setpoint1, const PeriodLimit& setpoint2
     }
 }
 
-IntermediateProfile merge_profiles_by_lowest_limit(const std::vector<IntermediateProfile>& profiles) {
+IntermediateProfile merge_profiles_by_lowest_limit(const std::vector<IntermediateProfile>& profiles,
+                                                   const OcppProtocolVersion ocpp_version) {
     auto combinator = [](const period_pair_vector& periods) {
         IntermediatePeriod period;
         period.current_limit = {std::numeric_limits<float>::max(), std::numeric_limits<float>::max(),
@@ -740,11 +782,12 @@ IntermediateProfile merge_profiles_by_lowest_limit(const std::vector<Intermediat
         return period;
     };
 
-    return combine_list_of_profiles(convert_to_ref_vector(profiles), combinator);
+    return combine_list_of_profiles(convert_to_ref_vector(profiles), combinator, ocpp_version);
 }
 
 IntermediateProfile merge_profiles_by_summing_limits(const std::vector<IntermediateProfile>& profiles,
-                                                     float current_default, float power_default) {
+                                                     float current_default, float power_default,
+                                                     const OcppProtocolVersion ocpp_version) {
     auto combinator = [current_default, power_default](const period_pair_vector& periods) {
         IntermediatePeriod period{};
         for (const auto& [it, end] : periods) {
@@ -768,7 +811,7 @@ IntermediateProfile merge_profiles_by_summing_limits(const std::vector<Intermedi
         return period;
     };
 
-    return combine_list_of_profiles(convert_to_ref_vector(profiles), combinator);
+    return combine_list_of_profiles(convert_to_ref_vector(profiles), combinator, ocpp_version);
 }
 
 ///
@@ -848,7 +891,17 @@ void convert_and_transform_limit_to_period_schedule(const PeriodLimit& input_lim
                                                     const float& transform_value, std::optional<float>& value,
                                                     std::optional<float>& value_L2, std::optional<float>& value_L3,
                                                     const bool use_min, const bool use_divide) {
+    // // TODO mz when W and 3 phases, divide by 3???
+    // if (!is_equal(input_limit.limit_L2, not_specified) && !value_L2.has_value() && value.has_value()) {
+    //     value_L2 = value;
+    // }
+
+    // if (!is_equal(input_limit.limit_L3, not_specified) && !value_L3.has_value() && value.has_value()) {
+    //     value_L3 = value;
+    // }
+
     convert_and_transform_limit_value(input_limit.limit, not_specified, transform_value, value, use_min, use_divide);
+
     convert_and_transform_limit_value(input_limit.limit_L2, not_specified, transform_value, value_L2, use_min,
                                       use_divide);
     convert_and_transform_limit_value(input_limit.limit_L3, not_specified, transform_value, value_L3, use_min,
