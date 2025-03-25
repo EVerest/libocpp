@@ -166,4 +166,9 @@ public:
     std::atomic<OcppProtocolVersion> ocpp_version = OcppProtocolVersion::v201;
 };
 
+class CompositeScheduleTestFixtureV21 : public CompositeScheduleTestFixtureV2 {
+public:
+    CompositeScheduleTestFixtureV21();
+};
+
 } // namespace ocpp::v2

@@ -430,6 +430,10 @@ CompositeScheduleTestFixtureV2::CompositeScheduleTestFixtureV2() :
                             AttributeEnum::Actual, std::to_string(DEFAULT_NR_PHASES), "test", true);
 }
 
+CompositeScheduleTestFixtureV21::CompositeScheduleTestFixtureV21() : CompositeScheduleTestFixtureV2() {
+    handler = create_smart_charging_handler(OcppProtocolVersion::v21);
+}
+
 std::unique_ptr<TestSmartCharging>
 CompositeScheduleTestFixtureV2::create_smart_charging_handler(const OcppProtocolVersion ocpp_version) {
     this->ocpp_version = ocpp_version;
