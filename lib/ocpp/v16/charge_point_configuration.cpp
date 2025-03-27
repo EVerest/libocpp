@@ -825,6 +825,23 @@ std::string ChargePointConfiguration::getTLSKeylogFile() {
     return this->config["Internal"]["TLSKeylogFile"];
 }
 
+bool ChargePointConfiguration::getStopTransactionIfUnlockNotSupported() {
+    return this->config["Internal"]["StopTransactionIfUnlockNotSupported"];
+}
+
+void ChargePointConfiguration::setStopTransactionIfUnlockNotSupported(bool stop_transaction_if_unlock_not_supported) {
+    this->config["Internal"]["StopTransactionIfUnlockNotSupported"] = stop_transaction_if_unlock_not_supported;
+    this->setInUserConfig("Internal", "StopTransactionIfUnlockNotSupported", stop_transaction_if_unlock_not_supported);
+}
+
+KeyValue ChargePointConfiguration::getStopTransactionIfUnlockNotSupportedKeyValue() {
+    KeyValue kv;
+    kv.key = "StopTransactionIfUnlockNotSupported";
+    kv.readonly = false;
+    kv.value.emplace(ocpp::conversions::bool_to_string(this->getStopTransactionIfUnlockNotSupported()));
+    return kv;
+}
+
 KeyValue ChargePointConfiguration::getWebsocketPingPayloadKeyValue() {
     KeyValue kv;
     kv.key = "WebsocketPingPayload";
@@ -1560,20 +1577,25 @@ KeyValue ChargePointConfiguration::getResetRetriesKeyValue() {
     return kv;
 }
 
-// Core Profile
-bool ChargePointConfiguration::getStopTransactionOnEVSideDisconnect() {
-    return this->config["Core"]["StopTransactionOnEVSideDisconnect"];
+// Core Profile - optional
+std::optional<bool> ChargePointConfiguration::getStopTransactionOnEVSideDisconnect() {
+    std::optional<bool> stop_transaction_on_ev_side_disconnect = std::nullopt;
+    if (this->config["Core"].contains("StopTransactionOnEVSideDisconnect")) {
+        stop_transaction_on_ev_side_disconnect.emplace(this->config["Core"]["StopTransactionOnEVSideDisconnect"]);
+    }
+    return stop_transaction_on_ev_side_disconnect;
 }
-void ChargePointConfiguration::setStopTransactionOnEVSideDisconnect(bool stop_transaction_on_ev_side_disconnect) {
-    this->config["Core"]["StopTransactionOnEVSideDisconnect"] = stop_transaction_on_ev_side_disconnect;
-    this->setInUserConfig("Core", "StopTransactionOnEVSideDisconnect", stop_transaction_on_ev_side_disconnect);
-}
-KeyValue ChargePointConfiguration::getStopTransactionOnEVSideDisconnectKeyValue() {
-    KeyValue kv;
-    kv.key = "StopTransactionOnEVSideDisconnect";
-    kv.readonly = false;
-    kv.value.emplace(ocpp::conversions::bool_to_string(this->getStopTransactionOnEVSideDisconnect()));
-    return kv;
+std::optional<KeyValue> ChargePointConfiguration::getStopTransactionOnEVSideDisconnectKeyValue() {
+    std::optional<KeyValue> stop_transaction_on_ev_side_disconnect_kv = std::nullopt;
+    auto stop_transaction_on_ev_side_disconnect = this->getStopTransactionOnEVSideDisconnect();
+    if (stop_transaction_on_ev_side_disconnect != std::nullopt) {
+        KeyValue kv;
+        kv.key = "StopTransactionOnEVSideDisconnect";
+        kv.readonly = true;
+        kv.value.emplace(ocpp::conversions::bool_to_string(stop_transaction_on_ev_side_disconnect.value()));
+        stop_transaction_on_ev_side_disconnect_kv.emplace(kv);
+    }
+    return stop_transaction_on_ev_side_disconnect_kv;
 }
 
 // Core Profile
@@ -3121,6 +3143,9 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
     if (key == "MessageQueueSizeThreshold") {
         return this->getMessageQueueSizeThresholdKeyValue();
     }
+    if (key == "StopTransactionIfUnlockNotSupported") {
+        return this->getStopTransactionIfUnlockNotSupportedKeyValue();
+    }
 
     // Core Profile
     if (key == "AllowOfflineTxForUnknownId") {
@@ -3650,13 +3675,6 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
             return ConfigurationStatus::Rejected;
         }
     }
-    if (key == "StopTransactionOnEVSideDisconnect") {
-        if (isBool(value.get())) {
-            this->setStopTransactionOnEVSideDisconnect(ocpp::conversions::string_to_bool(value.get()));
-        } else {
-            return ConfigurationStatus::Rejected;
-        }
-    }
     if (key == "StopTransactionOnInvalidId") {
         if (isBool(value.get())) {
             this->setStopTransactionOnInvalidId(ocpp::conversions::string_to_bool(value.get()));
@@ -3720,6 +3738,13 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         } catch (const std::invalid_argument& e) {
             return ConfigurationStatus::Rejected;
         } catch (const std::out_of_range& e) {
+            return ConfigurationStatus::Rejected;
+        }
+    }
+    if (key == "StopTransactionIfUnlockNotSupported") {
+        if (isBool(value.get())) {
+            this->setStopTransactionIfUnlockNotSupported(ocpp::conversions::string_to_bool(value.get()));
+        } else {
             return ConfigurationStatus::Rejected;
         }
     }
