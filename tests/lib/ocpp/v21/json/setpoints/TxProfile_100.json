@@ -10,6 +10,7 @@
             "chargingRateUnit": "W",
             "chargingSchedulePeriod": [
                 {
+                    "operationMode": "CentralSetpoint",
                     "limit": 11000.0,
                     "dischargeLimit": -10000.0,
                     "numberPhases": 1,
@@ -17,6 +18,7 @@
                     "setpoint": -8000.0
                 },
                 {
+                    "operationMode": "CentralSetpoint",
                     "limit": 6000.0,
                     "dischargeLimit": -5000.0,
                     "numberPhases": 1,
@@ -24,6 +26,7 @@
                     "setpoint": -6000.0
                 },
                 {
+                    "operationMode": "CentralSetpoint",
                     "limit": 15000.0,
                     "setpoint": -4000.0,
                     "numberPhases": 1,
