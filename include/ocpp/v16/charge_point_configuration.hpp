@@ -124,6 +124,10 @@ public:
     bool getEnableTLSKeylog();
     std::string getTLSKeylogFile();
 
+    bool getStopTransactionIfUnlockNotSupported();
+    void setStopTransactionIfUnlockNotSupported(bool stop_transaction_if_unlock_not_supported);
+    KeyValue getStopTransactionIfUnlockNotSupportedKeyValue();
+
     int32_t getRetryBackoffRandomRange();
     void setRetryBackoffRandomRange(int32_t retry_backoff_random_range);
     KeyValue getRetryBackoffRandomRangeKeyValue();
@@ -271,10 +275,9 @@ public:
     void setResetRetries(int32_t retries);
     KeyValue getResetRetriesKeyValue();
 
-    // Core Profile
-    bool getStopTransactionOnEVSideDisconnect();
-    void setStopTransactionOnEVSideDisconnect(bool stop_transaction_on_ev_side_disconnect);
-    KeyValue getStopTransactionOnEVSideDisconnectKeyValue();
+    // Core Profile - optional
+    std::optional<bool> getStopTransactionOnEVSideDisconnect();
+    std::optional<KeyValue> getStopTransactionOnEVSideDisconnectKeyValue();
 
     // Core Profile
     bool getStopTransactionOnInvalidId();

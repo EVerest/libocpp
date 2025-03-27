@@ -1892,6 +1892,7 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | K15.FR.20 <br> (2.1) |        |        |
 | K15.FR.21 <br> (2.1) |        |        |
 
+
 ## SmartCharging - Renegotiation initiated by CSMS
 
 | ID                   | Status | Remark |
