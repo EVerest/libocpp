@@ -43,7 +43,9 @@ private:
 public:
     ChargePointConfiguration(const std::string& config, const fs::path& ocpp_main_path,
                              const fs::path& user_config_path);
-
+    void setChargepointInformation(const std::string& chargePointVendor, const std::string& chargePointModel,
+                                   const std::string& chargePointSerialNumber,
+                                   const std::optional<std::string>& FirmwareVersion);
     // Internal config options
     std::string getChargePointId();
     KeyValue getChargePointIdKeyValue();

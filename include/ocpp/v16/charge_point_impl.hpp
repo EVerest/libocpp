@@ -418,6 +418,11 @@ public:
     ~ChargePointImpl() {
     }
 
+    /// \brief Allow to update the ChargePoint information which will be sent in BootNotification.req
+    void update_chargepoint_information(const std::string& chargepoint_vendor, const std::string& chargepoint_model,
+                                        const std::string& chargepoint_serialnumber,
+                                        const std::optional<std::string>& firmware_version);
+
     /// \brief Initializes the ChargePoint and all of it's connectors, the state machine and message queue. This method
     /// should be called if a more granular start of the process is necessary. Notably if it is necessary for the state
     /// machine and the connectors (and their statuses) need to be updated prior to initiating connection with the CSMS.
