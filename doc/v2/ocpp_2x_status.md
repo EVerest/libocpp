@@ -366,53 +366,53 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 
 ## Provisioning - Get Base Report
 
-| ID        | Status | Remark                    |
-| --------- | ------ | ------------------------- |
-| B07.FR.01 | ✅     |                           |
-| B07.FR.02 | ✅     |                           |
-| B07.FR.03 | ✅     |                           |
-| B07.FR.04 | ✅     |                           |
-| B07.FR.05 | ✅     |                           |
-| B07.FR.06 | ✅     |                           |
-| B07.FR.07 | ✅     |                           |
-| B07.FR.08 | ✅     |                           |
-| B07.FR.09 | ✅     |                           |
-| B07.FR.10 | ✅     |                           |
-| B07.FR.11 | ✅     |                           |
-| B07.FR.12 | ✅     |                           |
-| B07.FR.13 | ❎     | tbd if this is applicable |
-| B07.FR.14 | ❎     |                           |
-| B07.FR.15 |        |                           |
+| ID                   | Status | Remark                    |
+| -------------------- | ------ | ------------------------- |
+| B07.FR.01            | ✅     |                           |
+| B07.FR.02            | ✅     |                           |
+| B07.FR.03            | ✅     |                           |
+| B07.FR.04            | ✅     |                           |
+| B07.FR.05            | ✅     |                           |
+| B07.FR.06            | ✅     |                           |
+| B07.FR.07            | ✅     |                           |
+| B07.FR.08            | ✅     |                           |
+| B07.FR.09            | ✅     |                           |
+| B07.FR.10            | ✅     |                           |
+| B07.FR.11            | ✅     |                           |
+| B07.FR.12            | ✅     |                           |
+| B07.FR.13            | ❎     | tbd if this is applicable |
+| B07.FR.14            | ❎     |                           |
+| B07.FR.15 <br> (2.1) |        |                           |
 
 ## Provisioning - Get Custom Report
 
-| ID        | Status | Remark |
-| --------- | ------ | ------ |
-| B08.FR.01 | ✅     |        |
-| B08.FR.02 | ✅     |        |
-| B08.FR.03 | ✅     |        |
-| B08.FR.04 | ✅     |        |
-| B08.FR.05 | ✅     |        |
-| B08.FR.06 | ❎     |        |
-| B08.FR.07 | ✅     |        |
-| B08.FR.08 | ✅     |        |
-| B08.FR.09 | ✅     |        |
-| B08.FR.10 | ✅     |        |
-| B08.FR.11 | ✅     |        |
-| B08.FR.12 | ✅     |        |
-| B08.FR.13 | ✅     |        |
-| B08.FR.14 | ✅     |        |
-| B08.FR.15 | ✅     |        |
-| B08.FR.16 | ✅     |        |
-| B08.FR.17 | ✅     |        |
-| B08.FR.18 | ✅     |        |
-| B08.FR.19 |        |        |
-| B08.FR.20 |        |        |
-| B08.FR.21 |        |        |
-| B08.FR.22 |        |        |
-| B08.FR.23 |        |        |
-| B08.FR.24 |        |        |
-| B08.FR.25 |        |        |
+| ID                   | Status | Remark |
+| -------------------- | ------ | ------ |
+| B08.FR.01            | ✅     |        |
+| B08.FR.02            | ✅     |        |
+| B08.FR.03            | ✅     |        |
+| B08.FR.04            | ✅     |        |
+| B08.FR.05            | ✅     |        |
+| B08.FR.06            | ❎     |        |
+| B08.FR.07            | ✅     |        |
+| B08.FR.08            | ✅     |        |
+| B08.FR.09            | ✅     |        |
+| B08.FR.10            | ✅     |        |
+| B08.FR.11            | ✅     |        |
+| B08.FR.12            | ✅     |        |
+| B08.FR.13            | ✅     |        |
+| B08.FR.14            | ✅     |        |
+| B08.FR.15            | ✅     |        |
+| B08.FR.16            | ✅     |        |
+| B08.FR.17            | ✅     |        |
+| B08.FR.18            | ✅     |        |
+| B08.FR.19            |        |        |
+| B08.FR.20            |        |        |
+| B08.FR.21            |        |        |
+| B08.FR.22 <br> (2.1) |        |        |
+| B08.FR.23 <br> (2.1) |        |        |
+| B08.FR.24 <br> (2.1) |        |        |
+| B08.FR.25 <br> (2.1) |        |        |
 
 ## Provisioning - Setting a new NetworkConnectionProfile
 
@@ -453,17 +453,17 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 
 ## Provisioning - Migrate to new CSMS
 
-| ID        | Status | Remark                                                      |
-| --------- | ------ | ----------------------------------------------------------- |
-| B10.FR.01 | ✅     |                                                             |
-| B10.FR.02 | ✅     |                                                             |
-| B10.FR.03 | ✅     |                                                             |
-| B10.FR.04 | ✅     |                                                             |
-| B10.FR.05 |        |                                                             |
-| B10.FR.06 | ✅     |                                                             |
-| B10.FR.07 | ✅     | tbd. we're looping over priorities and attempt to reconnect |
-| B10.FR.08 |        |                                                             |
-| B10.FR.09 |        |                                                             |
+| ID                   | Status | Remark                                                      |
+| -------------------- | ------ | ----------------------------------------------------------- |
+| B10.FR.01            | ✅     |                                                             |
+| B10.FR.02            | ✅     |                                                             |
+| B10.FR.03            | ✅     |                                                             |
+| B10.FR.04            | ✅     |                                                             |
+| B10.FR.05            |        |                                                             |
+| B10.FR.06            | ✅     |                                                             |
+| B10.FR.07            | ✅     | tbd. we're looping over priorities and attempt to reconnect |
+| B10.FR.08 <br> (2.1) |        |                                                             |
+| B10.FR.09 <br> (2.1) |        |                                                             |
 
 ## Provisioning - Reset - Without Ongoing Transaction
 
@@ -495,7 +495,7 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | B12.FR.09 | ⛽️    | Charging Station should respond with a "rejected" on `is_reset_allowed_callback` |
 | B12.FR.10 |        |                                                                                  |
 
-## Provisioning - Reset - With Ongoing Transaction - Without Termination
+## Provisioning - Reset - With Ongoing Transaction - Without Termination (New in OCPP 2.1)
 
 | ID        | Status                    | Remark |
 | --------- | ------------------------- | ------ |
@@ -526,31 +526,31 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 
 ## Authorization - EV Driver Authorization using RFID
 
-| ID        | Status | Remark                                           |
-| --------- | ------ | ------------------------------------------------ |
-| C01.FR.01 | ✅     |                                                  |
-| C01.FR.02 | ✅     |                                                  |
-| C01.FR.03 | ✅     |                                                  |
-| C01.FR.04 | ✅     |                                                  |
-| C01.FR.05 | ✅     |                                                  |
-| C01.FR.06 | ✅     |                                                  |
-| C01.FR.07 | ✅     |                                                  |
-| C01.FR.08 |        | This to FR.17 are all language related usecases. |
-| C01.FR.09 |        |                                                  |
-| C01.FR.10 |        |                                                  |
-| C01.FR.11 |        |                                                  |
-| C01.FR.12 |        |                                                  |
-| C01.FR.13 |        |                                                  |
-| C01.FR.17 |        |                                                  |
-| C01.FR.18 | ✅     |                                                  |
-| C01.FR.19 | ✅     |                                                  |
-| C01.FR.20 | ✅     |                                                  |
-| C01.FR.21 | ✅     | Auth mechanism is responsible.                   |
-| C01.FR.22 | ✅     |                                                  |
-| C01.FR.23 | ✅     |                                                  |
-| C01.FR.24 | ✅     |                                                  |
-| C01.FR.25 |        |                                                  |
-| C01.FR.26 |        |                                                  |
+| ID                   | Status | Remark                                           |
+| -------------------- | ------ | ------------------------------------------------ |
+| C01.FR.01            | ✅     |                                                  |
+| C01.FR.02            | ✅     |                                                  |
+| C01.FR.03            | ✅     |                                                  |
+| C01.FR.04            | ✅     |                                                  |
+| C01.FR.05            | ✅     |                                                  |
+| C01.FR.06            | ✅     |                                                  |
+| C01.FR.07            | ✅     |                                                  |
+| C01.FR.08            |        | This to FR.17 are all language related usecases. |
+| C01.FR.09            |        |                                                  |
+| C01.FR.10            |        |                                                  |
+| C01.FR.11            |        |                                                  |
+| C01.FR.12            |        |                                                  |
+| C01.FR.13            |        |                                                  |
+| C01.FR.17            |        |                                                  |
+| C01.FR.18            | ✅     |                                                  |
+| C01.FR.19            | ✅     |                                                  |
+| C01.FR.20            | ✅     |                                                  |
+| C01.FR.21            | ✅     | Auth mechanism is responsible.                   |
+| C01.FR.22            | ✅     |                                                  |
+| C01.FR.23            | ✅     |                                                  |
+| C01.FR.24            | ✅     |                                                  |
+| C01.FR.25 <br> (2.1) |        |                                                  |
+| C01.FR.26 <br> (2.1) |        |                                                  |
 
 ## Authorization - Authorization using a start button
 
@@ -599,24 +599,24 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 
 ## Authorization - Authorization using Contract Certificates
 
-| ID        | Status | Remark |
-| --------- | ------ | ------ |
-| C07.FR.01 | ✅     |        |
-| C07.FR.02 | ✅     |        |
-| C07.FR.04 | ❎     |        |
-| C07.FR.05 | ❎     |        |
-| C07.FR.06 | ✅     |        |
-| C07.FR.07 | ✅     |        |
-| C07.FR.08 | ✅     |        |
-| C07.FR.09 | ✅     |        |
-| C07.FR.10 | ✅     |        |
-| C07.FR.11 | ✅     |        |
-| C07.FR.12 | ✅     |        |
-| C07.FR.13 |        |        |
-| C07.FR.14 |        |        |
-| C07.FR.15 |        |        |
-| C07.FR.16 |        |        |
-| C07.FR.17 |        |        |
+| ID                   | Status | Remark |
+| -------------------- | ------ | ------ |
+| C07.FR.01            | ✅     |        |
+| C07.FR.02            | ✅     |        |
+| C07.FR.04            | ❎     |        |
+| C07.FR.05            | ❎     |        |
+| C07.FR.06            | ✅     |        |
+| C07.FR.07            | ✅     |        |
+| C07.FR.08            | ✅     |        |
+| C07.FR.09            | ✅     |        |
+| C07.FR.10            | ✅     |        |
+| C07.FR.11            | ✅     |        |
+| C07.FR.12            | ✅     |        |
+| C07.FR.13 <br> (2.1) |        |        |
+| C07.FR.14 <br> (2.1) |        |        |
+| C07.FR.15 <br> (2.1) |        |        |
+| C07.FR.16 <br> (2.1) |        |        |
+| C07.FR.17 <br> (2.1) |        |        |
 
 ## Authorization - Authorization at EVSE using ISO 15118 External Identification Means (EIM)
 
@@ -627,18 +627,18 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 
 ## Authorization - Authorization by GroupId
 
-| ID        | Status | Remark |
-| --------- | ------ | ------ |
-| C09.FR.02 | ❎     |        |
-| C09.FR.03 | ✅     |        |
-| C09.FR.04 | ✅     |        |
-| C09.FR.05 | ✅     |        |
-| C09.FR.07 | ✅     |        |
-| C09.FR.09 | ❎     |        |
-| C09.FR.10 | ❎     |        |
-| C09.FR.11 | ✅     |        |
-| C09.FR.12 | ❎     |        |
-| C09.FR.13 |        |        |
+| ID                   | Status | Remark |
+| -------------------- | ------ | ------ |
+| C09.FR.02            | ❎     |        |
+| C09.FR.03            | ✅     |        |
+| C09.FR.04            | ✅     |        |
+| C09.FR.05            | ✅     |        |
+| C09.FR.07            | ✅     |        |
+| C09.FR.09            | ❎     |        |
+| C09.FR.10            | ❎     |        |
+| C09.FR.11            | ✅     |        |
+| C09.FR.12            | ❎     |        |
+| C09.FR.13 <br> (2.1) |        |        |
 
 ## Authorization - Store Authorization Data in the Authorization Cache
 
@@ -656,8 +656,8 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | C10.FR.10            | ✅     |             |
 | C10.FR.11            | ✅     |             |
 | C10.FR.12            | ✅     |             |
-| C10.FR.13            | ✅     |             |
-| C10.FR.14 <br> (2.1) | ✅     |             |
+| C10.FR.13            |        |             |
+| C10.FR.14 <br> (2.1) |        |             |
 
 ## Authorization - Clear Authorization Data in Authorization Cache
 
@@ -716,18 +716,18 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 
 ## Authorization - Stop Transaction with a Master Pass
 
-| ID        | Status | Remark        |
-| --------- | ------ | ------------- |
-| C16.FR.01 |        |               |
-| C16.FR.02 | ⛽️    | Core changes? |
-| C16.FR.03 | ⛽️    | Core changes  |
-| C16.FR.04 |        |               |
-| C16.FR.05 |        |               |
-| C16.FR.06 |        |               |
-| C16.FR.07 |        |               |
-| C16.FR.08 |        |               |
+| ID                   | Status | Remark        |
+| -------------------- | ------ | ------------- |
+| C16.FR.01            |        |               |
+| C16.FR.02            | ⛽️    | Core changes? |
+| C16.FR.03            | ⛽️    | Core changes  |
+| C16.FR.04            |        |               |
+| C16.FR.05            |        |               |
+| C16.FR.06 <br> (2.1) |        |               |
+| C16.FR.07 <br> (2.1) |        |               |
+| C16.FR.08 <br> (2.1) |        |               |
 
-## Authorization - EV Driver Authorization using prepaid card
+## Authorization - EV Driver Authorization using prepaid card (New in OCPP 2.1)
 
 | ID        | Status | Remark |
 | --------- | ------ | ------ |
@@ -737,7 +737,7 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | C17.FR.04 |        |        |
 | C17.FR.05 |        |        |
 
-## Authorization - Authorization using locally connected payment terminal
+## Authorization - Authorization using locally connected payment terminal (New in OCPP 2.1)
 
 | ID        | Status | Remark |
 | --------- | ------ | ------ |
@@ -752,14 +752,14 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | C18.FR.09 |        |        |
 | C18.FR.10 |        |        |
 
-## Authorization - Cancelation prior to transaction
+## Authorization - Cancelation prior to transaction (New in OCPP 2.1)
 
 | ID        | Status | Remark |
 | --------- | ------ | ------ |
 | C19.FR.01 |        |        |
 | C19.FR.02 |        |        |
 
-## Authorization - Cancelation after start of transaction
+## Authorization - Cancelation after start of transaction (New in OCPP 2.1)
 
 | ID        | Status | Remark |
 | --------- | ------ | ------ |
@@ -769,7 +769,7 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | C20.FR.04 |        |        |
 | C20.FR.05 |        |        |
 
-## Authorization - Settlement at end of transaction
+## Authorization - Settlement at end of transaction (New in OCPP 2.1)
 
 | ID        | Status | Remark |
 | --------- | ------ | ------ |
@@ -781,21 +781,21 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | C21.FR.06 |        |        |
 | C21.FR.07 |        |        |
 
-## Authorization - Settlement is rejected or fails
+## Authorization - Settlement is rejected or fails (New in OCPP 2.1)
 
 | ID        | Status | Remark |
 | --------- | ------ | ------ |
 | C22.FR.01 |        |        |
 | C22.FR.02 |        |        |
 
-## Authorization - Incremental authorization
+## Authorization - Incremental authorization (New in OCPP 2.1)
 
 | ID        | Status | Remark |
 | --------- | ------ | ------ |
 | C23.FR.01 |        |        |
 | C23.FR.02 |        |        |
 
-## Authorization - Ad hoc payment via stand-alone payment terminal
+## Authorization - Ad hoc payment via stand-alone payment terminal (New in OCPP 2.1)
 
 | ID        | Status     | Remark |
 | --------- | ---------- | ------ |
@@ -807,7 +807,7 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | C24.FR.10 |            |        |
 | C24.FR.11 |            |        |
 
-## Authorization - Ad hoc payment via static or dynamic QR code
+## Authorization - Ad hoc payment via static or dynamic QR code (New in OCPP 2.1)
 
 | ID        | Status                               | Remark |
 | --------- | ------------------------------------ | ------ |
@@ -1028,16 +1028,16 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 
 ## Transactions - When cable disconnected on EV-side: Stop Transaction
 
-| ID        | Status | Remark                                                         |
-| --------- | ------ | -------------------------------------------------------------- |
-| E09.FR.01 | ✅     | `StopTxOnEVSideDisconnect` is RO for our implementation so far |
-| E09.FR.02 |        |                                                                |
-| E09.FR.03 |        |                                                                |
-| E09.FR.04 | ✅     |                                                                |
-| E09.FR.05 | ✅     |                                                                |
-| E09.FR.06 | ✅     |                                                                |
-| E09.FR.07 | ✅     |                                                                |
-| E09.FR.08 |        |                                                                |
+| ID                   | Status | Remark                                                         |
+| -------------------- | ------ | -------------------------------------------------------------- |
+| E09.FR.01            | ✅     | `StopTxOnEVSideDisconnect` is RO for our implementation so far |
+| E09.FR.02            |        |                                                                |
+| E09.FR.03            |        |                                                                |
+| E09.FR.04            | ✅     |                                                                |
+| E09.FR.05            | ✅     |                                                                |
+| E09.FR.06            | ✅     |                                                                |
+| E09.FR.07            | ✅     |                                                                |
+| E09.FR.08 <br> (2.1) |        |                                                                |
 
 ## Transactions - When cable disconnected on EV-side: Suspend Transaction
 
@@ -1103,15 +1103,15 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 
 ## Transactions - End of charging process
 
-| ID        | Status | Remark |
-| --------- | ------ | ------ |
-| E15.FR.01 | ✅     |        |
-| E15.FR.02 | ❎     | tbd    |
-| E15.FR.03 | ❎     | tbd    |
-| E15.FR.04 | ✅     |        |
-| E15.FR.05 |        |        |
+| ID                   | Status | Remark |
+| -------------------- | ------ | ------ |
+| E15.FR.01            | ✅     |        |
+| E15.FR.02            | ❎     | tbd    |
+| E15.FR.03            | ❎     | tbd    |
+| E15.FR.04            | ✅     |        |
+| E15.FR.05 <br> (2.1) |        |        |
 
-## Transactions - Transactions with fixed cost, energy, SoC or time
+## Transactions - Transactions with fixed cost, energy, SoC or time (New in OCPP 2.1)
 
 | ID        | Status | Remark |
 | --------- | ------ | ------ |
@@ -1136,7 +1136,7 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | E16.FR.19 |        |        |
 | E16.FR.20 |        |        |
 
-## Transactions - Resuming transaction after interruption
+## Transactions - Resuming transaction after interruption (New in OCPP 2.1)
 
 | ID        | Status         | Remark |
 | --------- | -------------- | ------ |
@@ -1278,9 +1278,9 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | F06.FR.16             | ✅     |        |
 | F06.FR.17             | ✅     |        |
 | F06.FR.18 <br> (2.1 ) |        |        |
-| F06.FR.19 <br> (2.1 ) | ✅     |
+| F06.FR.19 <br> (2.1 ) |        |        |
 
-## RemoteControl - Remote start transactions with fixed cost, energy or time
+## RemoteControl - Remote start transactions with fixed cost, energy or time (New in OCPP 2.1)
 
 | ID        | Status | Remark |
 | --------- | ------ | ------ |
@@ -1291,17 +1291,17 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 
 ## Availability - Status Notification
 
-| ID        | Status | Remark |
-| --------- | ------ | ------ |
-| G01.FR.01 | ✅     |        |
-| G01.FR.02 | ⛽️❓  |        |
-| G01.FR.03 | ✅     |        |
-| G01.FR.04 | ✅     |        |
-| G01.FR.05 | ✅     |        |
-| G01.FR.06 |        |        |
-| G01.FR.07 | ✅     |        |
-| G01.FR.08 | ⛽️❓  |        |
-| G01.FR.09 |        |        |
+| ID                   | Status | Remark |
+| -------------------- | ------ | ------ |
+| G01.FR.01            | ✅     |        |
+| G01.FR.02            | ⛽️❓  |        |
+| G01.FR.03            | ✅     |        |
+| G01.FR.04            | ✅     |        |
+| G01.FR.05            | ✅     |        |
+| G01.FR.06            |        |        |
+| G01.FR.07            | ✅     |        |
+| G01.FR.08            | ⛽️❓  |        |
+| G01.FR.09 <br> (2.1) |        |        |
 
 ## Availability - Heartbeat
 
@@ -1454,7 +1454,7 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | I06.FR.02 | 🌐     |        |
 | I06.FR.03 | ⛽️    |        |
 
-## TariffAndCost - Set Default Tariff
+## TariffAndCost - Set Default Tariff (New in OCPP 2.1)
 
 | ID        | Status            | Remark |
 | --------- | ----------------- | ------ |
@@ -1482,7 +1482,7 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | I07.FR.31 |                   |        |
 | I07.FR.32 |                   |        |
 
-## TariffAndCost - Receive Driver Tariff
+## TariffAndCost - Receive Driver Tariff (New in OCPP 2.1)
 
 | ID        | Status                                    | Remark |
 | --------- | ----------------------------------------- | ------ |
@@ -1508,7 +1508,7 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | I08.FR.35 |                                           |        |
 | I08.FR.36 |                                           |        |
 
-## TariffAndCost - Get Tariffs
+## TariffAndCost - Get Tariffs (New in OCPP 2.1)
 
 | ID        | Status | Remark |
 | --------- | ------ | ------ |
@@ -1520,7 +1520,7 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | I09.FR.06 |        |        |
 | I09.FR.07 |        |        |
 
-## TariffAndCost - Clear Tariffs
+## TariffAndCost - Clear Tariffs (New in OCPP 2.1)
 
 | ID        | Status | Remark |
 | --------- | ------ | ------ |
@@ -1531,7 +1531,7 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | I10.FR.06 |        |        |
 | I10.FR.07 |        |        |
 
-## TariffAndCost - Change Transaction Tarrif
+## TariffAndCost - Change Transaction Tarrif (New in OCPP 2.1)
 
 | ID        | Status | Remark |
 | --------- | ------ | ------ |
@@ -1544,7 +1544,7 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | I11.FR.07 |        |        |
 | I11.FR.08 |        |        |
 
-## TariffAndCost - Cost Details of Transaction
+## TariffAndCost - Cost Details of Transaction (New in OCPP 2.1)
 
 | ID        | Status            | Remark |
 | --------- | ----------------- | ------ |
@@ -1586,28 +1586,28 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 
 ## MeterValues - Sending Meter Values not related to a transaction
 
-| ID        | Status | Remark                                       |
-| --------- | ------ | -------------------------------------------- |
-| J01.FR.01 | ✅     |                                              |
-| J01.FR.02 | ✅     |                                              |
-| J01.FR.03 | ✅     |                                              |
-| J01.FR.04 | ✅     |                                              |
-| J01.FR.05 | ✅     |                                              |
-| J01.FR.06 | ✅     |                                              |
-| J01.FR.07 | ✅     |                                              |
-| J01.FR.08 | ✅     |                                              |
-| J01.FR.09 | ❎     | Location is provided by `libocpp` user.      |
-| J01.FR.10 | ✅     |                                              |
-| J01.FR.11 | ✅     |                                              |
-| J01.FR.13 |        | Added phase rotation configuration variable. |
-| J01.FR.14 | ✅     |                                              |
-| J01.FR.15 | ❎     | tbd                                          |
-| J01.FR.17 | ✅     |                                              |
-| J01.FR.18 | ✅     |                                              |
-| J01.FR.19 | ✅     |                                              |
-| J01.FR.20 | ✅     |                                              |
-| J01.FR.21 | ❎     | not valid                                    |
-| J01.FR.22 |        |                                              |
+| ID                   | Status | Remark                                       |
+| -------------------- | ------ | -------------------------------------------- |
+| J01.FR.01            | ✅     |                                              |
+| J01.FR.02            | ✅     |                                              |
+| J01.FR.03            | ✅     |                                              |
+| J01.FR.04            | ✅     |                                              |
+| J01.FR.05            | ✅     |                                              |
+| J01.FR.06            | ✅     |                                              |
+| J01.FR.07            | ✅     |                                              |
+| J01.FR.08            | ✅     |                                              |
+| J01.FR.09            | ❎     | Location is provided by `libocpp` user.      |
+| J01.FR.10            | ✅     |                                              |
+| J01.FR.11            | ✅     |                                              |
+| J01.FR.13            |        | Added phase rotation configuration variable. |
+| J01.FR.14            | ✅     |                                              |
+| J01.FR.15            | ❎     | tbd                                          |
+| J01.FR.17            | ✅     |                                              |
+| J01.FR.18            | ✅     |                                              |
+| J01.FR.19            | ✅     |                                              |
+| J01.FR.20            | ✅     |                                              |
+| J01.FR.21            | ❎     | not valid                                    |
+| J01.FR.22 <br> (2.1) |        |                                              |
 
 ## MeterValues - Sending transaction related Meter Values
 
@@ -1632,7 +1632,7 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | J02.FR.19            | ✅     |                                              |
 | J02.FR.20            | ✅     |                                              |
 | J02.FR.21            | ❎     | Signed meter values are not yet applicable.  |
-| J02.FR.22            |        |                                              |
+| J02.FR.22 <br> (2.1) |        |                                              |
 | J02.FR.23 <br> (2.1) |        |                                              |
 | J02.FR.24 <br> (2.1) |        |                                              |
 
@@ -1818,12 +1818,12 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | K10.FR.01            | ✅     |        |
 | K10.FR.02            | 🌐     |        |
 | K10.FR.03            | ✅     |        |
-| K10.FR.04 <br> (2.1) | ✅     |        |
+| K10.FR.04 <br> (2.1) |        |        |
 | K10.FR.05            | ⛽️    |        |
 | K10.FR.06 <br> (2.1) | 🌐     |        |
 | K10.FR.07            | ⛽️    |        |
-| K10.FR.08 <br> (2.1) | ✅     |        |
-| K10.FR.09 <br> (2.1) | ✅     |        |
+| K10.FR.08 <br> (2.1) |        |        |
+| K10.FR.09 <br> (2.1) |        |        |
 
 ## SmartCharging - Set / Update External Charging Limit With Ongoing Transaction
 
@@ -1889,7 +1889,7 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | K15.FR.17            |        |        |
 | K15.FR.18            |        |        |
 | K15.FR.19            |        |        |
-| K15.FR.20            |        |        |
+| K15.FR.20 <br> (2.1) |        |        |
 | K15.FR.21 <br> (2.1) |        |        |
 
 ## SmartCharging - Renegotiation initiated by CSMS
@@ -1935,7 +1935,7 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | K17.FR.18 <br> (2.1) |        |        |
 | K17.FR.19 <br> (2.1) |        |        |
 
-## SmartCharging - ISO 15118-20 Scheduled Control Mode
+## SmartCharging - ISO 15118-20 Scheduled Control Mode (New in OCPP 2.1)
 
 | ID        | Status | Remark |
 | --------- | ------ | ------ |
@@ -1963,7 +1963,7 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | K18.FR.22 |        |        |
 | K18.FR.23 |        |        |
 
-## SmartCharging - ISO 15118-20 Dynamic Control Mode
+## SmartCharging - ISO 15118-20 Dynamic Control Mode (New in OCPP 2.1)
 
 | ID        | Status | Remark |
 | --------- | ------ | ------ |
@@ -1984,7 +1984,7 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | K19.FR.15 |        |        |
 | K19.FR.16 |        |        |
 
-## SmartCharging - ISO 15118-20 Adjusting charging schedule when energy needs change
+## SmartCharging - ISO 15118-20 Adjusting charging schedule when energy needs change (New in OCPP 2.1)
 
 | ID        | Status | Remark |
 | --------- | ------ | ------ |
@@ -1994,7 +1994,7 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | K20.FR.04 |        |        |
 | K20.FR.05 |        |        |
 
-## SmartCharging - Requesting priority charging remotely
+## SmartCharging - Requesting priority charging remotely (New in OCPP 2.1)
 
 | ID        | Status | Remark |
 | --------- | ------ | ------ |
@@ -2008,7 +2008,7 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | K21.FR.08 |        |        |
 | K21.FR.09 |        |        |
 
-## SmartCharging - Requesting priority charging locally
+## SmartCharging - Requesting priority charging locally (New in OCPP 2.1)
 
 | ID        | Status | Remark |
 | --------- | ------ | ------ |
@@ -2019,7 +2019,7 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | K22.FR.05 |        |        |
 | K22.FR.06 |        |        |
 
-## SmartCharging - Smart Charging with EMS and LocalGeneration
+## SmartCharging - Smart Charging with EMS and LocalGeneration (New in OCPP 2.1)
 
 | ID        | Status | Remark |
 | --------- | ------ | ------ |
@@ -2029,7 +2029,7 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | K27.FR.04 |        |        |
 | K27.FR.05 |        |        |
 
-## SmartCharging - Dynamic charging profiles from CSMS
+## SmartCharging - Dynamic charging profiles from CSMS (New in OCPP 2.1)
 
 | ID        | Status | Remark |
 | --------- | ------ | ------ |
@@ -2046,7 +2046,7 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | K28.FR.11 |        |        |
 | K28.FR.12 |        |        |
 
-## SmartCharging - Dynamic charging profiles by external system
+## SmartCharging - Dynamic charging profiles by external system (New in OCPP 2.1)
 
 | ID        | Status | Remark |
 | --------- | ------ | ------ |
@@ -2091,32 +2091,32 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | L01.FR.31            | ✅     |                                             |
 | L01.FR.32            | ❎     | Optional requirement                        |
 | L01.FR.33 <br> (2.1) |        |                                             |
-| L01.FR.34            |        |                                             |
+| L01.FR.34 <br> (2.1) |        |                                             |
 
 ## FirmwareManagement - Non-Secure Firmware Update
 
-| ID        | Status | Remark |
-| --------- | ------ | ------ |
-| L02.FR.01 | ⛽️    |        |
-| L02.FR.02 | ⛽️    |        |
-| L02.FR.03 | ⛽️    |        |
-| L02.FR.04 | ⛽️    |        |
-| L02.FR.05 | ⛽️    |        |
-| L02.FR.06 | ⛽️    |        |
-| L02.FR.07 | ⛽️    |        |
-| L02.FR.08 | ⛽️    |        |
-| L02.FR.09 | ⛽️    |        |
-| L02.FR.10 | ⛽️    |        |
-| L02.FR.14 | ⛽️    |        |
-| L02.FR.15 | ⛽️    |        |
-| L02.FR.16 | ✅     |        |
-| L02.FR.17 | ✅     |        |
-| L02.FR.18 | ⛽️    |        |
-| L02.FR.19 | ⛽️    |        |
-| L02.FR.20 | ⛽️    |        |
-| L02.FR.21 | ⛽️    |        |
-| L02.FR.22 |        |        |
-| L02.FR.23 |        |        |
+| ID                   | Status | Remark |
+| -------------------- | ------ | ------ |
+| L02.FR.01            | ⛽️    |        |
+| L02.FR.02            | ⛽️    |        |
+| L02.FR.03            | ⛽️    |        |
+| L02.FR.04            | ⛽️    |        |
+| L02.FR.05            | ⛽️    |        |
+| L02.FR.06            | ⛽️    |        |
+| L02.FR.07            | ⛽️    |        |
+| L02.FR.08            | ⛽️    |        |
+| L02.FR.09            | ⛽️    |        |
+| L02.FR.10            | ⛽️    |        |
+| L02.FR.14            | ⛽️    |        |
+| L02.FR.15            | ⛽️    |        |
+| L02.FR.16            | ✅     |        |
+| L02.FR.17            | ✅     |        |
+| L02.FR.18            | ⛽️    |        |
+| L02.FR.19            | ⛽️    |        |
+| L02.FR.20            | ⛽️    |        |
+| L02.FR.21            | ⛽️    |        |
+| L02.FR.22 <br> (2.1) |        |        |
+| L02.FR.23 <br> (2.1) |        |        |
 
 ## FirmwareManagement - Publish Firmware file on Local Controller
 
@@ -2159,7 +2159,7 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 
 | ID                   | Status | Remark |
 | -------------------- | ------ | ------ |
-| M02.FR.01 <br> (2.1) | ✅     |        |
+| M02.FR.01 <br> (2.1) |        |        |
 | M02.FR.02 <br> (2.1) |        |        |
 
 ## ISO 15118 CertificateManagement - Retrieve list of available certificates from a Charging Station
@@ -2218,7 +2218,7 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | M06.FR.09 | ❎     |        |
 | M06.FR.10 | ✅     |        |
 
-## ISO 15118 CertificateManagement - Get Vehicle Certificate Chain Revocation Status
+## ISO 15118 CertificateManagement - Get Vehicle Certificate Chain Revocation Status (New in OCPP 2.1)
 
 | ID        | Status | Remark |
 | --------- | ------ | ------ |
@@ -2257,14 +2257,14 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | N01.FR.18            | ⛽️    |        |
 | N01.FR.19            | ⛽️    |        |
 | N01.FR.20            | ⛽️    |        |
-| N01.FR.21            | ⛽️    |        |
-| N01.FR.22            | ⛽️    |        |
-| N01.FR.23            | ⛽️    |        |
+| N01.FR.21 <br> (2.1) | ⛽️    |        |
+| N01.FR.22 <br> (2.1) | ⛽️    |        |
+| N01.FR.23 <br> (2.1) | ⛽️    |        |
 | N01.FR.24 <br> (2.1) | ⛽️    |        |
 | N01.FR.25 <br> (2.1) | ⛽️    |        |
-| N01.FR.26 <br> (2.1) | ⛽️    |        |
-| N01.FR.27 <br> (2.1) | ⛽️    |        |
-| N01.FR.28 <br> (2.1) | ⛽️    |        |
+| N01.FR.26 <br> (2.1) | 🌐     |        |
+| N01.FR.27 <br> (2.1) | 🌐     |        |
+| N01.FR.28 <br> (2.1) | 🌐     |        |
 | N01.FR.29 <br> (2.1) | ⛽️    |        |
 | N01.FR.30 <br> (2.1) | ⛽️    |        |
 
@@ -2414,58 +2414,58 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | N10.FR.08 | ❎     |        |
 | N10.FR.09 | ❎     |        |
 
-## Diagnostics - Set Frequent Periodic Variable Monitoring
+## Diagnostics - Set Frequent Periodic Variable Monitoring (New in OCPP 2.1)
 
-| ID                   | Status | Remark |
-| -------------------- | ------ | ------ |
-| N11.FR.01 <br> (2.1) |        |        |
-| N11.FR.02 <br> (2.1) |        |        |
-| N11.FR.03 <br> (2.1) |        |        |
-| N11.FR.04 <br> (2.1) |        |        |
-| N11.FR.05 <br> (2.1) |        |        |
-| N11.FR.06 <br> (2.1) |        |        |
-| N11.FR.07 <br> (2.1) |        |        |
-| N11.FR.08 <br> (2.1) |        |        |
-| N11.FR.09 <br> (2.1) |        |        |
+| ID        | Status | Remark |
+| --------- | ------ | ------ |
+| N11.FR.01 |        |        |
+| N11.FR.02 |        |        |
+| N11.FR.03 |        |        |
+| N11.FR.04 |        |        |
+| N11.FR.05 |        |        |
+| N11.FR.06 |        |        |
+| N11.FR.07 |        |        |
+| N11.FR.08 |        |        |
+| N11.FR.09 |        |        |
 
-## Diagnostics - Get Periodic Event Streams
+## Diagnostics - Get Periodic Event Streams (New in OCPP 2.1)
 
-| ID                   | Status | Remark |
-| -------------------- | ------ | ------ |
-| N12.FR.01 <br> (2.1) |        |        |
+| ID        | Status | Remark |
+| --------- | ------ | ------ |
+| N12.FR.01 |        |        |
 
-## Diagnostics - Close Periodic Event Streams
+## Diagnostics - Close Periodic Event Streams (New in OCPP 2.1)
 
-| ID                   | Status | Remark |
-| -------------------- | ------ | ------ |
-| N13.FR.01 <br> (2.1) |        |        |
-| N13.FR.02 <br> (2.1) |        |        |
-| N13.FR.03 <br> (2.1) |        |        |
-| N13.FR.04 <br> (2.1) |        |        |
-| N13.FR.05 <br> (2.1) |        |        |
-| N13.FR.06 <br> (2.1) |        |        |
+| ID        | Status | Remark |
+| --------- | ------ | ------ |
+| N13.FR.01 |        |        |
+| N13.FR.02 |        |        |
+| N13.FR.03 |        |        |
+| N13.FR.04 |        |        |
+| N13.FR.05 |        |        |
+| N13.FR.06 |        |        |
 
-## Diagnostics - Adjust Periodic Event Streams
+## Diagnostics - Adjust Periodic Event Streams (New in OCPP 2.1)
 
-| ID                   | Status | Remark |
-| -------------------- | ------ | ------ |
-| N14.FR.01 <br> (2.1) |        |        |
-| N14.FR.02 <br> (2.1) |        |        |
-| N14.FR.03 <br> (2.1) |        |        |
+| ID        | Status | Remark |
+| --------- | ------ | ------ |
+| N14.FR.01 |        |        |
+| N14.FR.02 |        |        |
+| N14.FR.03 |        |        |
 
-## Diagnostics - Periodic Event Stream
+## Diagnostics - Periodic Event Stream (New in OCPP 2.1)
 
-| ID                   | Status | Remark |
-| -------------------- | ------ | ------ |
-| N15.FR.01 <br> (2.1) |        |        |
-| N15.FR.02 <br> (2.1) |        |        |
-| N15.FR.03 <br> (2.1) |        |        |
-| N15.FR.04 <br> (2.1) |        |        |
-| N15.FR.05 <br> (2.1) |        |        |
-| N15.FR.06 <br> (2.1) |        |        |
-| N15.FR.07 <br> (2.1) |        |        |
-| N15.FR.08 <br> (2.1) |        |        |
-| N15.FR.09 <br> (2.1) |        |        |
+| ID        | Status | Remark |
+| --------- | ------ | ------ |
+| N15.FR.01 |        |        |
+| N15.FR.02 |        |        |
+| N15.FR.03 |        |        |
+| N15.FR.04 |        |        |
+| N15.FR.05 |        |        |
+| N15.FR.06 |        |        |
+| N15.FR.07 |        |        |
+| N15.FR.08 |        |        |
+| N15.FR.09 |        |        |
 
 ## DisplayMessage - Set DisplayMessage
 
@@ -2575,248 +2575,248 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | P02.FR.07 | ❎     |        |
 | P02.FR.08 | ❎     |        |
 
-## Bidirectional Power Transfer - Generic smart charging rules for V2X
+## Bidirectional Power Transfer - Generic smart charging rules for V2X (New in OCPP 2.1)
 
-| ID                | Status | Remark |
-| ----------------- | ------ | ------ |
-| V2X.01 <br> (2.1) |        |        |
-| V2X.02 <br> (2.1) |        |        |
-| V2X.03 <br> (2.1) |        |        |
-| V2X.04 <br> (2.1) |        |        |
-| V2X.05 <br> (2.1) |        |        |
+| ID     | Status | Remark |
+| ------ | ------ | ------ |
+| V2X.01 |        |        |
+| V2X.02 |        |        |
+| V2X.03 |        |        |
+| V2X.04 |        |        |
+| V2X.05 |        |        |
 
-## Bidirectional Power Transfer - V2X Authorization
+## Bidirectional Power Transfer - V2X Authorization (New in OCPP 2.1)
 
-| ID                   | Status                                          | Remark |
-| -------------------- | ----------------------------------------------- | ------ |
-|                      | AllowedEnergyTransfer / RequestedEnergyTransfer |        |
-| Q01.FR.01 <br> (2.1) |                                                 |        |
-| Q01.FR.02 <br> (2.1) |                                                 |        |
-| Q01.FR.03 <br> (2.1) |                                                 |        |
-| Q01.FR.04 <br> (2.1) |                                                 |        |
-| Q01.FR.05 <br> (2.1) |                                                 |        |
-| Q01.FR.06 <br> (2.1) |                                                 |        |
-| Q01.FR.07 <br> (2.1) |                                                 |        |
-| Q01.FR.08 <br> (2.1) |                                                 |        |
-| Q01.FR.09 <br> (2.1) |                                                 |        |
-|                      | Device model                                    |        |
-| Q01.FR.30 <br> (2.1) |                                                 |        |
-| Q01.FR.31 <br> (2.1) |                                                 |        |
-| Q01.FR.32 <br> (2.1) |                                                 |        |
-| Q01.FR.33 <br> (2.1) |                                                 |        |
-| Q01.FR.34 <br> (2.1) |                                                 |        |
-| Q01.FR.35 <br> (2.1) |                                                 |        |
-| Q01.FR.36 <br> (2.1) |                                                 |        |
+| ID        | Status                                          | Remark |
+| --------- | ----------------------------------------------- | ------ |
+|           | AllowedEnergyTransfer / RequestedEnergyTransfer |        |
+| Q01.FR.01 |                                                 |        |
+| Q01.FR.02 |                                                 |        |
+| Q01.FR.03 |                                                 |        |
+| Q01.FR.04 |                                                 |        |
+| Q01.FR.05 |                                                 |        |
+| Q01.FR.06 |                                                 |        |
+| Q01.FR.07 |                                                 |        |
+| Q01.FR.08 |                                                 |        |
+| Q01.FR.09 |                                                 |        |
+|           | Device model                                    |        |
+| Q01.FR.30 |                                                 |        |
+| Q01.FR.31 |                                                 |        |
+| Q01.FR.32 |                                                 |        |
+| Q01.FR.33 |                                                 |        |
+| Q01.FR.34 |                                                 |        |
+| Q01.FR.35 |                                                 |        |
+| Q01.FR.36 |                                                 |        |
 
-## Bidirectional Power Transfer - Charging only (V2X control) before starting V2X
+## Bidirectional Power Transfer - Charging only (V2X control) before starting V2X (New in OCPP 2.1)
 
-| ID                   | Status | Remark |
-| -------------------- | ------ | ------ |
-| Q02.FR.01 <br> (2.1) |        |        |
-| Q02.FR.02 <br> (2.1) |        |        |
-| Q02.FR.03 <br> (2.1) |        |        |
-| Q02.FR.04 <br> (2.1) |        |        |
-| Q02.FR.05 <br> (2.1) |        |        |
-| Q02.FR.06 <br> (2.1) |        |        |
-| Q02.FR.07 <br> (2.1) |        |        |
+| ID        | Status | Remark |
+| --------- | ------ | ------ |
+| Q02.FR.01 |        |        |
+| Q02.FR.02 |        |        |
+| Q02.FR.03 |        |        |
+| Q02.FR.04 |        |        |
+| Q02.FR.05 |        |        |
+| Q02.FR.06 |        |        |
+| Q02.FR.07 |        |        |
 
-## Bidirectional Power Transfer - Charging only (V2X control) before starting V2X
+## Bidirectional Power Transfer - Charging only (V2X control) before starting V2X (New in OCPP 2.1)
 
-| ID                   | Status                        | Remark |
-| -------------------- | ----------------------------- | ------ |
-|                      | OperationMode CentralSetpoint |        |
-| Q03.FR.01 <br> (2.1) |                               |        |
-| Q03.FR.02 <br> (2.1) |                               |        |
+| ID        | Status                        | Remark |
+| --------- | ----------------------------- | ------ |
+|           | OperationMode CentralSetpoint |        |
+| Q03.FR.01 |                               |        |
+| Q03.FR.02 |                               |        |
 
-## Bidirectional Power Transfer - External V2X setpoint control with a charging profile from CSMS
+## Bidirectional Power Transfer - External V2X setpoint control with a charging profile from CSMS (New in OCPP 2.1)
 
-| ID                   | Status | Remark |
-| -------------------- | ------ | ------ |
-| Q05.FR.01 <br> (2.1) |        |        |
-| Q05.FR.02 <br> (2.1) |        |        |
-| Q05.FR.03 <br> (2.1) |        |        |
-| Q05.FR.04 <br> (2.1) |        |        |
-| Q05.FR.05 <br> (2.1) |        |        |
-| Q05.FR.06 <br> (2.1) |        |        |
-| Q05.FR.07 <br> (2.1) |        |        |
+| ID        | Status | Remark |
+| --------- | ------ | ------ |
+| Q05.FR.01 |        |        |
+| Q05.FR.02 |        |        |
+| Q05.FR.03 |        |        |
+| Q05.FR.04 |        |        |
+| Q05.FR.05 |        |        |
+| Q05.FR.06 |        |        |
+| Q05.FR.07 |        |        |
 
-## Bidirectional Power Transfer - External V2X control with a charging profile from an External System
+## Bidirectional Power Transfer - External V2X control with a charging profile from an External System (New in OCPP 2.1)
 
-| ID                   | Status              | Remark |
-| -------------------- | ------------------- | ------ |
-| Q06.FR.01 <br> (2.1) |                     |        |
-| Q06.FR.02 <br> (2.1) |                     |        |
-| Q06.FR.03 <br> (2.1) |                     |        |
-| Q06.FR.04 <br> (2.1) |                     |        |
-| Q06.FR.05 <br> (2.1) |                     |        |
-| Q06.FR.06 <br> (2.1) |                     |        |
-| Q06.FR.07 <br> (2.1) |                     |        |
-| Q06.FR.08 <br> (2.1) |                     |        |
-|                      | NotifyChargingLimit |        |
-| Q06.FR.10 <br> (2.1) |                     |        |
-| Q06.FR.11 <br> (2.1) |                     |        |
-| Q06.FR.12 <br> (2.1) |                     |        |
-|                      | SetpointPriority    |        |
-| Q06.FR.20 <br> (2.1) |                     |        |
-| Q06.FR.21 <br> (2.1) |                     |        |
-| Q06.FR.22 <br> (2.1) |                     |        |
-|                      | evseId = 0          |        |
-| Q06.FR.30 <br> (2.1) |                     |        |
-| Q06.FR.31 <br> (2.1) |                     |        |
+| ID        | Status              | Remark |
+| --------- | ------------------- | ------ |
+| Q06.FR.01 |                     |        |
+| Q06.FR.02 |                     |        |
+| Q06.FR.03 |                     |        |
+| Q06.FR.04 |                     |        |
+| Q06.FR.05 |                     |        |
+| Q06.FR.06 |                     |        |
+| Q06.FR.07 |                     |        |
+| Q06.FR.08 |                     |        |
+|           | NotifyChargingLimit |        |
+| Q06.FR.10 |                     |        |
+| Q06.FR.11 |                     |        |
+| Q06.FR.12 |                     |        |
+|           | SetpointPriority    |        |
+| Q06.FR.20 |                     |        |
+| Q06.FR.21 |                     |        |
+| Q06.FR.22 |                     |        |
+|           | evseId = 0          |        |
+| Q06.FR.30 |                     |        |
+| Q06.FR.31 |                     |        |
 
-## Bidirectional Power Transfer - Central V2X control for frequency support
+## Bidirectional Power Transfer - Central V2X control for frequency support (New in OCPP 2.1)
 
 This use case adheres to requirements related to CentralSetpoint from Q04 - Central V2X control with dynamic
 CSMS setpoint and Dynamic charging profiles from K01. There are no specific requirements for this use case.
 
-## Bidirectional Power Transfer - Local V2X control for frequency support
+## Bidirectional Power Transfer - Local V2X control for frequency support (New in OCPP 2.1)
 
-| ID                   | Status | Remark |
-| -------------------- | ------ | ------ |
-|                      | FCR    |        |
-| Q08.FR.01 <br> (2.1) |        |        |
-| Q08.FR.02 <br> (2.1) |        |        |
-| Q08.FR.03 <br> (2.1) |        |        |
-| Q08.FR.04 <br> (2.1) |        |        |
-| Q08.FR.05 <br> (2.1) |        |        |
-| Q08.FR.06 <br> (2.1) |        |        |
-| Q08.FR.07 <br> (2.1) |        |        |
-|                      | aFRR   |        |
-| Q08.FR.10 <br> (2.1) |        |        |
-| Q08.FR.11 <br> (2.1) |        |        |
+| ID        | Status | Remark |
+| --------- | ------ | ------ |
+|           | FCR    |        |
+| Q08.FR.01 |        |        |
+| Q08.FR.02 |        |        |
+| Q08.FR.03 |        |        |
+| Q08.FR.04 |        |        |
+| Q08.FR.05 |        |        |
+| Q08.FR.06 |        |        |
+| Q08.FR.07 |        |        |
+|           | aFRR   |        |
+| Q08.FR.10 |        |        |
+| Q08.FR.11 |        |        |
 
-## Bidirectional Power Transfer - Local V2X control for load balancing
+## Bidirectional Power Transfer - Local V2X control for load balancing (New in OCPP 2.1)
 
-| ID                   | Status | Remark |
-| -------------------- | ------ | ------ |
-| Q09.FR.01 <br> (2.1) |        |        |
-| Q09.FR.02 <br> (2.1) |        |        |
-| Q09.FR.03 <br> (2.1) |        |        |
-| Q09.FR.04 <br> (2.1) |        |        |
-| Q09.FR.05 <br> (2.1) |        |        |
+| ID        | Status | Remark |
+| --------- | ------ | ------ |
+| Q09.FR.01 |        |        |
+| Q09.FR.02 |        |        |
+| Q09.FR.03 |        |        |
+| Q09.FR.04 |        |        |
+| Q09.FR.05 |        |        |
 
-## Bidirectional Power Transfer - Idle, minimizing energy consumption
+## Bidirectional Power Transfer - Idle, minimizing energy consumption (New in OCPP 2.1)
 
-| ID                   | Status | Remark |
-| -------------------- | ------ | ------ |
-| Q10.FR.01 <br> (2.1) |        |        |
-| Q10.FR.02 <br> (2.1) |        |        |
-| Q10.FR.03 <br> (2.1) |        |        |
-| Q10.FR.04 <br> (2.1) |        |        |
-| Q10.FR.05 <br> (2.1) |        |        |
+| ID        | Status | Remark |
+| --------- | ------ | ------ |
+| Q10.FR.01 |        |        |
+| Q10.FR.02 |        |        |
+| Q10.FR.03 |        |        |
+| Q10.FR.04 |        |        |
+| Q10.FR.05 |        |        |
 
-## DER Control - Starting a V2X session with DER control in EVSE
+## DER Control - Starting a V2X session with DER control in EVSE (New in OCPP 2.1)
 
-| ID                   | Status | Remark |
-| -------------------- | ------ | ------ |
-| R01.FR.01 <br> (2.1) |        |        |
-| R01.FR.02 <br> (2.1) |        |        |
-| R01.FR.03 <br> (2.1) |        |        |
+| ID        | Status | Remark |
+| --------- | ------ | ------ |
+| R01.FR.01 |        |        |
+| R01.FR.02 |        |        |
+| R01.FR.03 |        |        |
 
-## DER Control - Starting a V2X session with DER control in EV
+## DER Control - Starting a V2X session with DER control in EV (New in OCPP 2.1)
 
-| ID                   | Status | Remark |
-| -------------------- | ------ | ------ |
-| R02.FR.01 <br> (2.1) |        |        |
-| R02.FR.02 <br> (2.1) |        |        |
-| R02.FR.03 <br> (2.1) |        |        |
+| ID        | Status | Remark |
+| --------- | ------ | ------ |
+| R02.FR.01 |        |        |
+| R02.FR.02 |        |        |
+| R02.FR.03 |        |        |
 
-## DER Control - Starting a V2X session with hybrid DER control in both EV and EVSE
+## DER Control - Starting a V2X session with hybrid DER control in both EV and EVSE (New in OCPP 2.1)
 
-| ID                   | Status | Remark |
-| -------------------- | ------ | ------ |
-| R03.FR.01 <br> (2.1) |        |        |
-| R03.FR.02 <br> (2.1) |        |        |
-| R03.FR.03 <br> (2.1) |        |        |
-| R03.FR.04 <br> (2.1) |        |        |
-| R03.FR.05 <br> (2.1) |        |        |
-| R03.FR.06 <br> (2.1) |        |        |
+| ID        | Status | Remark |
+| --------- | ------ | ------ |
+| R03.FR.01 |        |        |
+| R03.FR.02 |        |        |
+| R03.FR.03 |        |        |
+| R03.FR.04 |        |        |
+| R03.FR.05 |        |        |
+| R03.FR.06 |        |        |
 
-## DER Control - Configure DER control settings at Charging Station
+## DER Control - Configure DER control settings at Charging Station (New in OCPP 2.1)
 
-| ID                   | Status             | Remark |
-| -------------------- | ------------------ | ------ |
-|                      | SetDERControl      |        |
-| R04.FR.01 <br> (2.1) |                    |        |
-| R04.FR.02 <br> (2.1) |                    |        |
-| R04.FR.03 <br> (2.1) |                    |        |
-| R04.FR.04 <br> (2.1) |                    |        |
-| R04.FR.05 <br> (2.1) |                    |        |
-| R04.FR.06 <br> (2.1) |                    |        |
-| R04.FR.07 <br> (2.1) |                    |        |
-| R04.FR.08 <br> (2.1) |                    |        |
-| R04.FR.09 <br> (2.1) |                    |        |
-| R04.FR.10 <br> (2.1) |                    |        |
-| R04.FR.11 <br> (2.1) |                    |        |
-|                      | NotifyDERStartStop |        |
-| R04.FR.20 <br> (2.1) |                    |        |
-| R04.FR.21 <br> (2.1) |                    |        |
-| R04.FR.23 <br> (2.1) |                    |        |
-|                      | GetDERControl      |        |
-| R04.FR.30 <br> (2.1) |                    |        |
-| R04.FR.31 <br> (2.1) |                    |        |
-| R04.FR.32 <br> (2.1) |                    |        |
-| R04.FR.33 <br> (2.1) |                    |        |
-| R04.FR.34 <br> (2.1) |                    |        |
-| R04.FR.35 <br> (2.1) |                    |        |
-| R04.FR.36 <br> (2.1) |                    |        |
-|                      | ClearDERControl    |        |
-| R04.FR.40 <br> (2.1) |                    |        |
-| R04.FR.41 <br> (2.1) |                    |        |
-| R04.FR.42 <br> (2.1) |                    |        |
-| R04.FR.43 <br> (2.1) |                    |        |
-| R04.FR.44 <br> (2.1) |                    |        |
-| R04.FR.45 <br> (2.1) |                    |        |
+| ID        | Status             | Remark |
+| --------- | ------------------ | ------ |
+|           | SetDERControl      |        |
+| R04.FR.01 |                    |        |
+| R04.FR.02 |                    |        |
+| R04.FR.03 |                    |        |
+| R04.FR.04 |                    |        |
+| R04.FR.05 |                    |        |
+| R04.FR.06 |                    |        |
+| R04.FR.07 |                    |        |
+| R04.FR.08 |                    |        |
+| R04.FR.09 |                    |        |
+| R04.FR.10 |                    |        |
+| R04.FR.11 |                    |        |
+|           | NotifyDERStartStop |        |
+| R04.FR.20 |                    |        |
+| R04.FR.21 |                    |        |
+| R04.FR.23 |                    |        |
+|           | GetDERControl      |        |
+| R04.FR.30 |                    |        |
+| R04.FR.31 |                    |        |
+| R04.FR.32 |                    |        |
+| R04.FR.33 |                    |        |
+| R04.FR.34 |                    |        |
+| R04.FR.35 |                    |        |
+| R04.FR.36 |                    |        |
+|           | ClearDERControl    |        |
+| R04.FR.40 |                    |        |
+| R04.FR.41 |                    |        |
+| R04.FR.42 |                    |        |
+| R04.FR.43 |                    |        |
+| R04.FR.44 |                    |        |
+| R04.FR.45 |                    |        |
 
-## DER Control - Charging station reporting a DER event
+## DER Control - Charging station reporting a DER event (New in OCPP 2.1)
 
-| ID                   | Status | Remark |
-| -------------------- | ------ | ------ |
-| R05.FR.01 <br> (2.1) |        |        |
-| R05.FR.02 <br> (2.1) |        |        |
-| R05.FR.03 <br> (2.1) |        |        |
-| R05.FR.04 <br> (2.1) |        |        |
+| ID        | Status | Remark |
+| --------- | ------ | ------ |
+| R05.FR.01 |        |        |
+| R05.FR.02 |        |        |
+| R05.FR.03 |        |        |
+| R05.FR.04 |        |        |
 
-## Battery Swapping - Battery Swap Local Authorization
+## Battery Swapping - Battery Swap Local Authorization (New in OCPP 2.1)
 
-| ID                   | Status | Remark |
-| -------------------- | ------ | ------ |
-| S01.FR.01 <br> (2.1) |        |        |
-| S01.FR.02 <br> (2.1) |        |        |
+| ID        | Status | Remark |
+| --------- | ------ | ------ |
+| S01.FR.01 |        |        |
+| S01.FR.02 |        |        |
 
-## Battery Swapping - Battery Remote Start
+## Battery Swapping - Battery Remote Start (New in OCPP 2.1)
 
-| ID                   | Status | Remark |
-| -------------------- | ------ | ------ |
-| S02.FR.01 <br> (2.1) |        |        |
-| S02.FR.02 <br> (2.1) |        |        |
-| S02.FR.03 <br> (2.1) |        |        |
-| S02.FR.04 <br> (2.1) |        |        |
-| S02.FR.05 <br> (2.1) |        |        |
+| ID        | Status | Remark |
+| --------- | ------ | ------ |
+| S02.FR.01 |        |        |
+| S02.FR.02 |        |        |
+| S02.FR.03 |        |        |
+| S02.FR.04 |        |        |
+| S02.FR.05 |        |        |
 
-## Battery Swapping - Battery Swap In/Out
+## Battery Swapping - Battery Swap In/Out (New in OCPP 2.1)
 
-| ID                   | Status | Remark |
-| -------------------- | ------ | ------ |
-| S03.FR.01 <br> (2.1) |        |        |
-| S03.FR.02 <br> (2.1) |        |        |
-| S03.FR.03 <br> (2.1) |        |        |
-| S03.FR.04 <br> (2.1) |        |        |
-| S03.FR.05 <br> (2.1) |        |        |
-| S03.FR.06 <br> (2.1) |        |        |
+| ID        | Status | Remark |
+| --------- | ------ | ------ |
+| S03.FR.01 |        |        |
+| S03.FR.02 |        |        |
+| S03.FR.03 |        |        |
+| S03.FR.04 |        |        |
+| S03.FR.05 |        |        |
+| S03.FR.06 |        |        |
 
-## Battery Swapping - Battery Swap Charging
+## Battery Swapping - Battery Swap Charging (New in OCPP 2.1)
 
-| ID                   | Status | Remark |
-| -------------------- | ------ | ------ |
-| S04.FR.01 <br> (2.1) |        |        |
-| S04.FR.02 <br> (2.1) |        |        |
-| S04.FR.03 <br> (2.1) |        |        |
-| S04.FR.04 <br> (2.1) |        |        |
-| S04.FR.05 <br> (2.1) |        |        |
-| S04.FR.06 <br> (2.1) |        |        |
-| S04.FR.07 <br> (2.1) |        |        |
-| S04.FR.08 <br> (2.1) |        |        |
-| S04.FR.09 <br> (2.1) |        |        |
-| S04.FR.10 <br> (2.1) |        |        |
-| S04.FR.11 <br> (2.1) |        |        |
+| ID        | Status | Remark |
+| --------- | ------ | ------ |
+| S04.FR.01 |        |        |
+| S04.FR.02 |        |        |
+| S04.FR.03 |        |        |
+| S04.FR.04 |        |        |
+| S04.FR.05 |        |        |
+| S04.FR.06 |        |        |
+| S04.FR.07 |        |        |
+| S04.FR.08 |        |        |
+| S04.FR.09 |        |        |
+| S04.FR.10 |        |        |
+| S04.FR.11 |        |        |
