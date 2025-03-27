@@ -599,24 +599,24 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 
 ## Authorization - Authorization using Contract Certificates
 
-| ID                   | Status | Remark |
-| -------------------- | ------ | ------ |
-| C07.FR.01            | ✅     |        |
-| C07.FR.02            | ✅     |        |
-| C07.FR.04            | ❎     |        |
-| C07.FR.05            | ❎     |        |
-| C07.FR.06            | ✅     |        |
-| C07.FR.07            | ✅     |        |
-| C07.FR.08            | ✅     |        |
-| C07.FR.09            | ✅     |        |
-| C07.FR.10            | ✅     |        |
-| C07.FR.11            | ✅     |        |
-| C07.FR.12            | ✅     |        |
-| C07.FR.13 <br> (2.1) |        |        |
-| C07.FR.14 <br> (2.1) |        |        |
-| C07.FR.15 <br> (2.1) |        |        |
-| C07.FR.16 <br> (2.1) |        |        |
-| C07.FR.17 <br> (2.1) |        |        |
+| ID        | Status | Remark |
+| --------- | ------ | ------ |
+| C07.FR.01 | ✅     |        |
+| C07.FR.02 | ✅     |        |
+| C07.FR.04 | ❎     |        |
+| C07.FR.05 | ❎     |        |
+| C07.FR.06 | ✅     |        |
+| C07.FR.07 | ✅     |        |
+| C07.FR.08 | ✅     |        |
+| C07.FR.09 | ✅     |        |
+| C07.FR.10 | ✅     |        |
+| C07.FR.11 | ✅     |        |
+| C07.FR.12 | ✅     |        |
+| C07.FR.13 | 🌐     |        |
+| C07.FR.14 | 🌐     |        |
+| C07.FR.15 | 🌐     |        |
+| C07.FR.16 | 🌐     |        |
+| C07.FR.17 | 🌐     |        |
 
 ## Authorization - Authorization at EVSE using ISO 15118 External Identification Means (EIM)
 
@@ -634,11 +634,11 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | C09.FR.04            | ✅     |        |
 | C09.FR.05            | ✅     |        |
 | C09.FR.07            | ✅     |        |
-| C09.FR.09            | ❎     |        |
-| C09.FR.10            | ❎     |        |
+| C09.FR.09            | 🌐     |        |
+| C09.FR.10            | 🌐     |        |
 | C09.FR.11            | ✅     |        |
-| C09.FR.12            | ❎     |        |
-| C09.FR.13 <br> (2.1) |        |        |
+| C09.FR.12            | 🌐     |        |
+| C09.FR.13 <br> (2.1) | 🌐     |        |
 
 ## Authorization - Store Authorization Data in the Authorization Cache
 
@@ -723,7 +723,6 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | C16.FR.03            | ⛽️    | Core changes  |
 | C16.FR.04            |        |               |
 | C16.FR.05            |        |               |
-| C16.FR.06 <br> (2.1) |        |               |
 | C16.FR.07 <br> (2.1) |        |               |
 | C16.FR.08 <br> (2.1) |        |               |
 
