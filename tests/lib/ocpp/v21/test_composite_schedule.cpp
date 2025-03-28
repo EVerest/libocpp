@@ -270,10 +270,10 @@ TEST_F(CompositeScheduleTestFixtureV21, V2Different_Number_Phases) {
 
     ChargingSchedulePeriod period1; // TxProfile
     period1.startPeriod = 0;
-    period1.limit = 180.0;
+    period1.limit = 160.0;
     period1.numberPhases = 1;
     period1.dischargeLimit = -900.0;
-    period1.setpoint = 180.0;
+    period1.setpoint = 160.0;
     ChargingSchedulePeriod period2; // Charging station max profile
     period2.startPeriod = 3000;
     period2.limit = 190.0;
