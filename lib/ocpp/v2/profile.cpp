@@ -67,7 +67,7 @@ void period_entry_t::init(const DateTime& in_start, int in_duration, const Charg
     limit.limit = in_period.limit.value_or(NO_LIMIT_SPECIFIED);
     limit.limit_L2 = in_period.limit_L2.value_or(NO_LIMIT_SPECIFIED);
     limit.limit_L3 = in_period.limit_L3.value_or(NO_LIMIT_SPECIFIED);
-    if (in_period.limit == std::nullopt && in_period.limit_L2 == std::nullopt && in_period.limit_L3 == std::nullopt &&
+    if (in_period.limit == std::nullopt &&
         (!in_period.operationMode.has_value() || in_period.operationMode.value() == OperationModeEnum::ChargingOnly)) {
         if (charging_rate_unit == ChargingRateUnitEnum::A) {
             limit.limit = DEFAULT_LIMIT_AMPS;
@@ -464,27 +464,71 @@ inline std::vector<IntermediateProfileRef> convert_to_ref_vector(const std::vect
     return references;
 }
 
+///
+/// \brief Set the values of the phases so both `PeriodLimit`s have the same values for number of phases, which is used
+///        later when combining the two.
+///
+/// This is only done for OCPP version 2.1.
+///
+/// If number of phases is two or three, and `limit` has a value and `limit_L2` or `limit_L3` do not have values:
+/// In case of `current_limit`: the `current_limit.limit` value is copied to `current_limit.limit_L2` and
+/// `current_limit.limit_L3`.
+/// In case of `power_limit`: The `power_limit.limit` value is divided by 3 and that value is
+/// copied to `power_limit.limit_L2` and `power_limit.limit_L3`.
+///
+/// If number of phases is one, the minimum of `limit`, `limit_L2` and `limit_L3` is copied to `limit` and `limit_L2`
+/// and `limit_L3` are set to `no_limit_specified`.
+///
+/// \param current_limit        A PeriodLimit for `current` (possible containing limits for three phases).
+/// \param power_limit          A PeriodLimit for `power` (possible containing limits for three phases).
+/// \param no_limit_specified   The value when there is no limit specified.
+/// \param number_phases        The number of phases used.
+/// \param ocpp_version         The ocpp version.
+///
 void set_setpoint_limit_phase_values(PeriodLimit& current_limit, PeriodLimit& power_limit,
                                      const float& no_limit_specified, const std::optional<int32_t> number_phases,
                                      const OcppProtocolVersion ocpp_version) {
-    // TODO mz limits are -1 / 3 now, fix!!! See test V2ChargingRateUnitCombine.
+    // This can't be done for all limits and setpoints, because OCPP 2.0.1 does not support setpoints for L2 and L3.
+    if (ocpp_version == OcppProtocolVersion::v21) {
+        return;
+    }
+
     // Set the values of the phases so both `PeriodLimit`s have the same values for number of phases, which is used
     // later when combining the two.
-    // This can't be done for all limits and setpoints, because OCPP 2.0.1 does not support setpoints for L2 and L3.
-    if (number_phases.has_value() && number_phases.value() == 1 && ocpp_version == OcppProtocolVersion::v21) {
-        current_limit.limit_L2 = no_limit_specified;
-        current_limit.limit_L3 = no_limit_specified;
-        // TODO mz something with multiply by number of phases?
-        power_limit.limit_L2 = no_limit_specified;
-        power_limit.limit_L3 = no_limit_specified;
+    if (number_phases.has_value() && number_phases.value() == 1) {
+        // When you have a single phase, but next to limit the limit_L2 and limit_L3 are also defined, then the limit
+        // will be the lowest of the three.
+        if (!is_equal(current_limit.limit, no_limit_specified)) {
+            if (!is_equal(current_limit.limit_L2, no_limit_specified)) {
+                current_limit.limit = std::min(current_limit.limit, current_limit.limit_L2);
+                current_limit.limit_L2 = no_limit_specified;
+            }
+
+            if (!is_equal(current_limit.limit_L3, no_limit_specified)) {
+                current_limit.limit = std::min(current_limit.limit, current_limit.limit_L3);
+                current_limit.limit_L3 = no_limit_specified;
+            }
+        }
+
+        if (!is_equal(power_limit.limit, no_limit_specified)) {
+            if (!is_equal(power_limit.limit_L2, no_limit_specified)) {
+                power_limit.limit = std::min(power_limit.limit, power_limit.limit_L2);
+                power_limit.limit_L2 = no_limit_specified;
+            }
+
+            if (!is_equal(power_limit.limit_L3, no_limit_specified)) {
+                power_limit.limit = std::min(power_limit.limit, power_limit.limit_L3);
+                power_limit.limit_L3 = no_limit_specified;
+            }
+        }
         return;
     }
 
-    if (!number_phases.has_value() || number_phases.value() < 1 || ocpp_version != OcppProtocolVersion::v21) {
+    if (!number_phases.has_value() || number_phases.value() < 1) {
         return;
     }
 
-    // One of this group has one phase specified and the other three, so let's specify the same number of
+    // Three phases: One of this group has one phase specified and the other three, so let's specify the same number of
     // phases for each.
     if (!is_equal(current_limit.limit, no_limit_specified) && (is_equal(current_limit.limit_L2, no_limit_specified) ||
                                                                is_equal(current_limit.limit_L3, no_limit_specified))) {
@@ -611,6 +655,8 @@ IntermediateProfile merge_tx_profile_with_tx_default_profile(const IntermediateP
     return combine_list_of_profiles(profiles, combinator, ocpp_version);
 }
 
+// TODO mz copy free function specificiation to header file
+
 ///
 /// \brief Get max limit of two floats. Capped on cap_max.
 /// \param limit1
@@ -691,6 +737,13 @@ PeriodLimit get_min_limit(const PeriodLimit& limit1, const PeriodLimit& limit2,
 
 ///
 /// \brief Get setpoint limit and set to the output variable.
+///
+/// This will set the limit of a setpoint to the lowest or highest of the two. With a minimum of cap_limit or maximum
+/// of cap_discharge_limit.
+///
+/// If min or max is used depends on the value of setpoint1.limit. If it is > 0, the minimum is used (charging),
+/// otherwise the maximum (discharging).
+///
 /// \param[in/out] setpoint1        First setpoint to set the limits for. Limits will be stored in this setpoint.
 /// \param[in] setpoint2            Second setpoint with limits.
 /// \param[in] cap_limit            Setpoints are capped to this limit in case they are positive.
@@ -698,7 +751,7 @@ PeriodLimit get_min_limit(const PeriodLimit& limit1, const PeriodLimit& limit2,
 ///
 void get_set_setpoint_limit(PeriodLimit& setpoint1, const PeriodLimit& setpoint2, const PeriodLimit& cap_limit,
                             const PeriodLimit& cap_discharge_limit) {
-    // TODO mz if one limit has three phases and the other one phase, do some transforming magic
+    // TODO mz if one limit has three phases and the other one phase, do some transforming magic??
     // TODO mz shouldn't we do this for all phases???
     PeriodLimit result;
     // Only check value of first phase, as this one should be set as first.
@@ -708,11 +761,11 @@ void get_set_setpoint_limit(PeriodLimit& setpoint1, const PeriodLimit& setpoint2
         if (!is_equal(setpoint2.limit, NO_SETPOINT_SPECIFIED) && !is_equal(setpoint1.limit, NO_SETPOINT_SPECIFIED)) {
             // Both limits are set, get the min of both in case of charging and the max in case if discharging.
             if (setpoint1.limit < 0.0F) {
-                // setpoint1.limit = std::max(setpoint1.limit, setpoint2.limit);
-                result.limit = std::max(setpoint1.limit, setpoint2.limit);
+                setpoint1.limit = std::max(setpoint1.limit, setpoint2.limit);
+                // result.limit = std::max(setpoint1.limit, setpoint2.limit);
             } else {
-                // setpoint1.limit = std::min(setpoint1.limit, setpoint2.limit);
-                result.limit = std::min(setpoint1.limit, setpoint2.limit);
+                setpoint1.limit = std::min(setpoint1.limit, setpoint2.limit);
+                // result.limit = std::min(setpoint1.limit, setpoint2.limit);
             }
         }
         // ... check if only setpoint2 limit is set, if so, store setpoint2 limit to setpoint1 limit. We always want a
@@ -735,8 +788,12 @@ void get_set_setpoint_limit(PeriodLimit& setpoint1, const PeriodLimit& setpoint2
     }
 }
 
+///
+/// \brief Check if this period uses the second and third phase limit or setpoint values.
+/// \param period   The period to check.
+/// \return True if at least one L2 or L3 limit is specified.
+///
 bool uses_three_phase_values(const IntermediatePeriod& period) {
-    // TODO should this be float max or NO_LIMIT_SPECIFIED etc???
     return !is_equal(period.current_limit.limit_L2, NO_LIMIT_SPECIFIED) ||
            !is_equal(period.current_limit.limit_L3, NO_LIMIT_SPECIFIED) ||
            !is_equal(period.power_limit.limit_L2, NO_LIMIT_SPECIFIED) ||
@@ -753,6 +810,7 @@ bool uses_three_phase_values(const IntermediatePeriod& period) {
 
 IntermediateProfile merge_profiles_by_lowest_limit(const std::vector<IntermediateProfile>& profiles,
                                                    const OcppProtocolVersion ocpp_version) {
+    // TODO mz is it also possible to merge two profiles with different operation modes? If yes, which one to use?
     auto combinator = [ocpp_version](const period_pair_vector& periods) {
         IntermediatePeriod period;
         period.current_limit = {std::numeric_limits<float>::max(), std::numeric_limits<float>::max(),
@@ -775,9 +833,7 @@ IntermediateProfile merge_profiles_by_lowest_limit(const std::vector<Intermediat
                 period.numberPhases = it->numberPhases;
             }
 
-            if (ocpp_version == OcppProtocolVersion::v21 &&
-                (!period.numberPhases.has_value() || period.numberPhases.value() > 1) &&
-                (uses_three_phase_values(*it))) {
+            if (ocpp_version == OcppProtocolVersion::v21 && uses_three_phase_values(*it)) {
                 three_phases_used = true;
             }
         }
@@ -793,7 +849,6 @@ IntermediateProfile merge_profiles_by_lowest_limit(const std::vector<Intermediat
                                                 NO_SETPOINT_SPECIFIED, period.numberPhases, ocpp_version);
             }
 
-            // TODO mz remove limits and setpoints for L2 and L3 when number phases = 1???
             period.current_limit = get_min_limit(period.current_limit, new_period.current_limit);
             period.power_limit = get_min_limit(period.power_limit, new_period.power_limit);
             period.current_discharge_limit =
@@ -801,21 +856,11 @@ IntermediateProfile merge_profiles_by_lowest_limit(const std::vector<Intermediat
             period.power_discharge_limit =
                 get_max_limit(period.power_discharge_limit, new_period.power_discharge_limit);
 
-            // TODO mz this will go wrong if it has 1 phase and period has 3 phases, see spec: The lowest value for a
-            // schedule period of all applicable profiles is used for the composite schedule period. If
-            // ChargingStationMaxProfile has numberPhases = 2 or 3 and TxProfile has numberPhases = 1, then the value 1
-            // is used. The same applies to the reverse situation
-
             // Only check value of first phase, as this one should be set as first.
             get_set_setpoint_limit(period.current_setpoint, new_period.current_setpoint, period.current_limit,
                                    period.current_discharge_limit);
             get_set_setpoint_limit(period.power_setpoint, new_period.power_setpoint, period.power_limit,
                                    period.power_discharge_limit);
-
-            // if (!period.numberPhases || (it->numberPhases && it->numberPhases.value() < period.numberPhases.value()))
-            // {
-            //     period.numberPhases = it->numberPhases;
-            // }
         }
 
         auto replace_max_with_no_limit = [](PeriodLimit& value, float max_value, float replacement) {
@@ -859,9 +904,7 @@ IntermediateProfile merge_profiles_by_summing_limits(const std::vector<Intermedi
                 period.numberPhases = it->numberPhases;
             }
 
-            if (ocpp_version == OcppProtocolVersion::v21 &&
-                (!period.numberPhases.has_value() || period.numberPhases.value() > 1) &&
-                (uses_three_phase_values(*it))) {
+            if (ocpp_version == OcppProtocolVersion::v21 && uses_three_phase_values(*it)) {
                 three_phases_used = true;
             }
         }
@@ -895,14 +938,6 @@ IntermediateProfile merge_profiles_by_summing_limits(const std::vector<Intermedi
                 period.power_limit.limit_L3 +=
                     new_period.power_limit.limit_L3 >= 0.0F ? new_period.power_limit.limit_L3 : power_default;
             }
-
-            // // Copy number of phases if higher
-            // if (!period.numberPhases.has_value()) {
-            //     // Don't care if this copies a nullopt, thats what it was already
-            //     period.numberPhases = it->numberPhases;
-            // } else if (it->numberPhases.has_value() && it->numberPhases.value() > period.numberPhases.value()) {
-            //     period.numberPhases = it->numberPhases;
-            // }
         }
         return period;
     };
@@ -935,7 +970,8 @@ void store_limit_to_phase_limits(const PeriodLimit& input_limit, const float& no
 }
 
 ///
-/// \brief If input value is specified, transform the value and get min or max of transformed value.
+/// \brief If input value is specified, transform the value by 'transform_value' and get min or max of transformed
+///        value.
 /// \param[in] input                Input value.
 /// \param[in] not_specified        If input value has this value, it is not specified, output value 'value' is not
 ///                                 changed in that case.
@@ -970,11 +1006,16 @@ void convert_and_transform_limit_value(const float& input, const float& not_spec
 }
 
 ///
-/// \brief If input_limit is specified, transform the value and get min or max of transformed value.
+/// \brief If input_limit is specified, transform the value by `transform_value` (eventually multiplied by
+///        `number_phases`) and get min or max of transformed value.
+///
+/// Transform value is multiplied by number_phases if limit_L2 or limit_L3 is not set.
+///
 /// \param[in] input_limit          Input value.
 /// \param[in] not_specified        If limits of `input_limit` has this value, it is not specified, output value 'value'
 ///                                 is not changed in that case.
 /// \param[in] transform_value      The value for transformation of the input value.
+/// \param[in] number_phases        The number of phases of this period.
 /// \param[in/out] value            Value to compare with 'transformed_value', min or max (depending on use_min) of
 ///                                 `transform_value` and `value` is stored in this variable.
 /// \param[in/out] value_L2         Same as `value`, but for phase 2.
@@ -988,15 +1029,6 @@ void convert_and_transform_limit_to_period_schedule(const PeriodLimit& input_lim
                                                     std::optional<float>& value, std::optional<float>& value_L2,
                                                     std::optional<float>& value_L3, const bool use_min,
                                                     const bool use_divide) {
-    // // TODO mz when W and 3 phases, divide by 3???
-    // if (!is_equal(input_limit.limit_L2, not_specified) && !value_L2.has_value() && value.has_value()) {
-    //     value_L2 = value;
-    // }
-
-    // if (!is_equal(input_limit.limit_L3, not_specified) && !value_L3.has_value() && value.has_value()) {
-    //     value_L3 = value;
-    // }
-
     float t = transform_value;
 
     if (is_equal(input_limit.limit_L2, not_specified) || is_equal(input_limit.limit_L3, not_specified)) {
@@ -1008,9 +1040,6 @@ void convert_and_transform_limit_to_period_schedule(const PeriodLimit& input_lim
     convert_and_transform_limit_value(input_limit.limit_L2, not_specified, t, value_L2, use_min, use_divide);
     convert_and_transform_limit_value(input_limit.limit_L3, not_specified, t, value_L3, use_min, use_divide);
 }
-
-// TODO mz Setpoint for evse id 0 is not working that well.
-// It defaults to 0 when you ask for a specific evse id
 
 // TODO mz no limit specified: for discharge limit, drop it. For limit, we should not drop it.
 
