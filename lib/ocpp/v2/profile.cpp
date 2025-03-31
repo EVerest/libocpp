@@ -489,7 +489,7 @@ void set_setpoint_limit_phase_values(PeriodLimit& current_limit, PeriodLimit& po
                                      const float& no_limit_specified, const std::optional<int32_t> number_phases,
                                      const OcppProtocolVersion ocpp_version) {
     // This can't be done for all limits and setpoints, because OCPP 2.0.1 does not support setpoints for L2 and L3.
-    if (ocpp_version == OcppProtocolVersion::v21) {
+    if (ocpp_version != OcppProtocolVersion::v21) {
         return;
     }
 
