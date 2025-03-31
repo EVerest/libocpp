@@ -100,6 +100,8 @@ std::string profile_validation_result_to_string(ProfileValidationResultEnum e) {
         return "ChargingSchedulePeriodNoPhaseForDC";
     case ProfileValidationResultEnum::ChargingSchedulePeriodNoFreqWattCurve:
         return "ChargingSchedulePeriodNoFreqWattCurve";
+    case ocpp::v2::ProfileValidationResultEnum::ChargingSchedulePeriodSignDifference:
+        return "ChargingSchedulePeriodSignDifference";
     case ProfileValidationResultEnum::ChargingStationMaxProfileCannotBeRelative:
         return "ChargingStationMaxProfileCannotBeRelative";
     case ProfileValidationResultEnum::ChargingStationMaxProfileEvseIdGreaterThanZero:
@@ -161,6 +163,7 @@ std::string profile_validation_result_to_reason_code(ProfileValidationResultEnum
     case ProfileValidationResultEnum::ChargingSchedulePeriodPriorityChargingNotChargingOnly:
     case ProfileValidationResultEnum::ChargingSchedulePeriodUnsupportedOperationMode:
     case ProfileValidationResultEnum::ChargingSchedulePeriodUnsupportedLimitSetpoint:
+    case ProfileValidationResultEnum::ChargingSchedulePeriodSignDifference:
         return "InvalidSchedule";
     case ProfileValidationResultEnum::ChargingSchedulePeriodNoPhaseForDC:
         return "NoPhaseForDC";
@@ -883,6 +886,11 @@ ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingPr
                      !charging_schedule_period.v2xBaseline.has_value())) {
                     return ProfileValidationResultEnum::ChargingSchedulePeriodNoFreqWattCurve;
                 }
+
+                if (!all_setpoints_signs_equal(charging_schedule_period)) {
+                    // A different setpoint sign (negative / positive per phase) is (currently) not supported.
+                    return ProfileValidationResultEnum::ChargingSchedulePeriodSignDifference;
+                }
             }
         }
 
@@ -1370,6 +1378,25 @@ bool check_limits_and_setpoints(const ChargingSchedulePeriod& charging_schedule_
                       << conversions::operation_mode_enum_to_string(charging_schedule_period.operationMode.value())
                       << " not in list of valid limits and setpoints: can not check if limits and "
                          "setpoints are valid";
+        return false;
+    }
+}
+
+bool all_setpoints_signs_equal(const ChargingSchedulePeriod& charging_schedule_period) {
+    if (charging_schedule_period.setpoint != std::nullopt && (charging_schedule_period.setpoint_L2 != std::nullopt ||
+                                                              (charging_schedule_period.setpoint_L3 != std::nullopt))) {
+        if ((charging_schedule_period.setpoint.value() > 0.0f &&
+             ((charging_schedule_period.setpoint_L2.has_value() &&
+               charging_schedule_period.setpoint_L2.value() < 0.0F) ||
+              (charging_schedule_period.setpoint_L3.has_value() &&
+               charging_schedule_period.setpoint_L3.value() < 0.0F))) ||
+            (charging_schedule_period.setpoint.value() < 0.0f &&
+             ((charging_schedule_period.setpoint_L2.has_value() &&
+               charging_schedule_period.setpoint_L2.value() > 0.0F) ||
+              (charging_schedule_period.setpoint_L3.has_value() &&
+               charging_schedule_period.setpoint_L3.value() > 0.0F)))) {
+            return false;
+        }
     }
 
     return true;

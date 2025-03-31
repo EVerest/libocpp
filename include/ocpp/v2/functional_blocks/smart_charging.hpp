@@ -67,6 +67,7 @@ enum class ProfileValidationResultEnum {
     ChargingSchedulePeriodUnsupportedLimitSetpoint,
     ChargingSchedulePeriodNoPhaseForDC,
     ChargingSchedulePeriodNoFreqWattCurve,
+    ChargingSchedulePeriodSignDifference,
     ChargingStationMaxProfileCannotBeRelative,
     ChargingStationMaxProfileEvseIdGreaterThanZero,
     DuplicateTxDefaultProfileFound,
@@ -367,4 +368,14 @@ bool check_operation_modes_for_charging_profile_purposes(const OperationModeEnum
 /// \return True when all limits and limits are set / not set according to the spec.
 ///
 bool check_limits_and_setpoints(const ChargingSchedulePeriod& charging_schedule_period);
+
+///
+/// \brief Check if all setpoint signs are equal (for all phases positive or for all phases negative).
+///
+/// This check assumes that if setpoint is not set, setpoint_L2 and setpoint_L3 are not set as well.
+///
+/// \param charging_schedule_period The schedule period to check the setpoints for.
+/// \return true if all signs are equal.
+///
+bool all_setpoints_signs_equal(const ChargingSchedulePeriod& charging_schedule_period);
 } // namespace ocpp::v2

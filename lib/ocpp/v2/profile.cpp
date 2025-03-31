@@ -751,9 +751,6 @@ PeriodLimit get_min_limit(const PeriodLimit& limit1, const PeriodLimit& limit2,
 ///
 void get_set_setpoint_limit(PeriodLimit& setpoint1, const PeriodLimit& setpoint2, const PeriodLimit& cap_limit,
                             const PeriodLimit& cap_discharge_limit) {
-    // TODO mz if one limit has three phases and the other one phase, do some transforming magic??
-    // TODO mz shouldn't we do this for all phases???
-    PeriodLimit result;
     // Only check value of first phase, as this one should be set as first.
     // If the limit of setpoint1 or setpoint2 is set...
     if (!is_equal(setpoint2.limit, NO_SETPOINT_SPECIFIED) or !is_equal(setpoint1.limit, NO_SETPOINT_SPECIFIED)) {
@@ -762,10 +759,8 @@ void get_set_setpoint_limit(PeriodLimit& setpoint1, const PeriodLimit& setpoint2
             // Both limits are set, get the min of both in case of charging and the max in case if discharging.
             if (setpoint1.limit < 0.0F) {
                 setpoint1.limit = std::max(setpoint1.limit, setpoint2.limit);
-                // result.limit = std::max(setpoint1.limit, setpoint2.limit);
             } else {
                 setpoint1.limit = std::min(setpoint1.limit, setpoint2.limit);
-                // result.limit = std::min(setpoint1.limit, setpoint2.limit);
             }
         }
         // ... check if only setpoint2 limit is set, if so, store setpoint2 limit to setpoint1 limit. We always want a
@@ -774,7 +769,6 @@ void get_set_setpoint_limit(PeriodLimit& setpoint1, const PeriodLimit& setpoint2
             setpoint1.limit = setpoint2.limit;
         }
 
-        // TODO mz should I also check if one is positive and the other negative for example?
         // If limit is negative, that means discharging, get max limit and cap on discharge limit.
         if (setpoint1.limit < 0.0F) {
             // V2X.04
