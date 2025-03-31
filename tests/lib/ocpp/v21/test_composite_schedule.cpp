@@ -270,7 +270,7 @@ TEST_F(CompositeScheduleTestFixtureV21, V2Different_Number_Phases) {
 
     ChargingSchedulePeriod period1; // TxProfile
     period1.startPeriod = 0;
-    period1.limit = 160.0;
+    period1.limit = 160.0; // The lowest limit of the three
     period1.numberPhases = 1;
     period1.dischargeLimit = -900.0;
     period1.setpoint = 160.0;
@@ -296,5 +296,44 @@ TEST_F(CompositeScheduleTestFixtureV21, V2Different_Number_Phases) {
     evse_manager->open_transaction(DEFAULT_EVSE_ID, "f1522902-1170-416f-8e43-9e3bce28fde7");
     CompositeSchedule actual = handler->calculate_composite_schedule(start_time, end_time, DEFAULT_EVSE_ID,
                                                                      ChargingRateUnitEnum::A, false, false);
+    EXPECT_EQ(actual, expected);
+}
+
+TEST_F(CompositeScheduleTestFixtureV21, V2Different_Number_Phases_W) {
+    // One has limits for L2 and L3 as well and the other has one limit for all three.
+    this->load_charging_profiles_for_evse(BASE_JSON_PATH_V21 + "/different_number_phases/0/", STATION_WIDE_ID);
+    this->load_charging_profiles_for_evse(BASE_JSON_PATH_V21 + "/different_number_phases/1/", DEFAULT_EVSE_ID);
+
+    const DateTime start_time("2024-01-17T18:00:00.000Z");
+    const DateTime end_time("2024-01-17T21:00:00.000Z");
+
+    ChargingSchedulePeriod period1; // TxProfile
+    period1.startPeriod = 0;
+    period1.limit = 160.0 * 230;
+    period1.numberPhases = 1;
+    period1.dischargeLimit = -900.0 * 230;
+    period1.setpoint = 160.0 * 230;
+    ChargingSchedulePeriod period2; // Charging station max profile
+    period2.startPeriod = 3000;
+    period2.limit = 190.0 * 230;
+    period2.numberPhases = 1;
+    ChargingSchedulePeriod period3; // Charging station max profile
+    period3.startPeriod = 3600;
+    period3.limit = 200.0 * 230;
+    period3.numberPhases = 1;
+    ChargingSchedulePeriod period4; // Charging station max profile
+    period4.startPeriod = 7200;
+    period4.limit = 210.0 * 230;
+    period4.numberPhases = 1;
+    CompositeSchedule expected;
+    expected.chargingSchedulePeriod = {period1, period2, period3, period4};
+    expected.evseId = DEFAULT_EVSE_ID;
+    expected.duration = 10800;
+    expected.scheduleStart = start_time;
+    expected.chargingRateUnit = ChargingRateUnitEnum::W;
+
+    evse_manager->open_transaction(DEFAULT_EVSE_ID, "f1522902-1170-416f-8e43-9e3bce28fde7");
+    CompositeSchedule actual = handler->calculate_composite_schedule(start_time, end_time, DEFAULT_EVSE_ID,
+                                                                     ChargingRateUnitEnum::W, false, false);
     EXPECT_EQ(actual, expected);
 }
