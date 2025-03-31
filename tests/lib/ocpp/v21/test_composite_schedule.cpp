@@ -259,7 +259,6 @@ TEST_F(CompositeScheduleTestFixtureV21, V2ChargingRateUnitCombine) {
     EXPECT_EQ(actual, expected);
 }
 
-// TODO mz same test but W. -> what to do with limit? question at oca causeway
 TEST_F(CompositeScheduleTestFixtureV21, V2Different_Number_Phases) {
     // One has limits for L2 and L3 as well and the other has one limit for all three.
     this->load_charging_profiles_for_evse(BASE_JSON_PATH_V21 + "/different_number_phases/0/", STATION_WIDE_ID);
