@@ -359,3 +359,62 @@ TEST_F(CompositeScheduleTestFixtureV21, V21NoLimitSpecified) {
                                                                      ChargingRateUnitEnum::A, false, false);
     EXPECT_EQ(actual, expected);
 }
+
+TEST_F(CompositeScheduleTestFixtureV21, V21DifferentNumberPhases_StationWide) {
+    this->load_charging_profiles_for_evse(BASE_JSON_PATH_V21 + "/station_wide_three_phases/", STATION_WIDE_ID);
+    const DateTime start_time("2024-01-17T18:00:00.000Z");
+    const DateTime end_time("2024-01-17T21:00:00.000Z");
+
+    ChargingSchedulePeriod period1;
+    period1.startPeriod = 0;
+    period1.limit = 12420.0f;
+    period1.limit_L2 = 12430.0f;
+    period1.limit_L3 = 12440.0f;
+    period1.numberPhases = 3;
+    ChargingSchedulePeriod period2;
+    period2.startPeriod = 300;
+    period2.limit = 8280.0f;
+    period2.limit_L2 = 8290.0f;
+    period2.limit_L3 = 8300.0f;
+    period2.numberPhases = 3;
+    ChargingSchedulePeriod period3;
+    period3.startPeriod = 600;
+    period3.limit = 2070.0f;
+    period3.limit_L2 = 2070.0f;
+    period3.limit_L3 = 2070.0f;
+    period3.numberPhases = 3;
+    ChargingSchedulePeriod period4;
+    period4.startPeriod = 900;
+    period4.limit = 1380.0f;
+    period4.limit_L2 = 1380.0f;
+    period4.limit_L3 = 1380.0f;
+    period4.numberPhases = 3;
+    ChargingSchedulePeriod period5;
+    period5.startPeriod = 1200;
+    period5.limit = 690.0f;
+    period5.limit_L2 = 690.0f;
+    period5.limit_L3 = 690.0f;
+    period5.numberPhases = 3;
+    ChargingSchedulePeriod period6;
+    period6.startPeriod = 3600;
+    period6.limit = 200000.0f;
+    period6.limit_L2 = 400000.0f;
+    period6.limit_L3 = 600000.0f;
+    period6.numberPhases = 3;
+    ChargingSchedulePeriod period7;
+    period7.startPeriod = 7200;
+    period7.limit = 210000.0f;
+    period7.limit_L2 = 420000.0f;
+    period7.limit_L3 = 630000.0f;
+    period7.numberPhases = 3;
+    CompositeSchedule expected;
+    expected.chargingSchedulePeriod = {period1, period2, period3, period4, period5, period6, period7};
+    expected.evseId = DEFAULT_EVSE_ID;
+    expected.duration = 10800;
+    expected.scheduleStart = start_time;
+    expected.chargingRateUnit = ChargingRateUnitEnum::W;
+
+    CompositeSchedule actual = handler->calculate_composite_schedule(start_time, end_time, DEFAULT_EVSE_ID,
+                                                                     ChargingRateUnitEnum::W, false, true);
+    EXPECT_EQ(actual, expected);
+}
