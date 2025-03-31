@@ -273,6 +273,10 @@ void ChargePoint::on_transaction_started(const int32_t evse_id, const int32_t co
                                          const std::optional<int32_t>& remote_start_id,
                                          const ChargingStateEnum charging_state) {
 
+    // This allows us to move from "Reserved" to "Occupied". We dont need to check if a reservation was placed since if
+    // a transaction starts, it is always consumed and just sets the reserved flag to false and triggers a
+    // StatusNotifcation. It does not trigger a StatusNotification when already in "Occupied"
+    this->on_reservation_cleared(evse_id, connector_id);
     auto& evse_handle = this->evse_manager->get_evse(evse_id);
     evse_handle.open_transaction(session_id, connector_id, timestamp, meter_start, id_token, group_id_token,
                                  reservation_id, charging_state);
@@ -2497,7 +2501,8 @@ void ChargePoint::handle_trigger_message(Call<TriggerMessageRequest> call) {
 
     case MessageTriggerEnum::FirmwareStatusNotification: {
         FirmwareStatusNotificationRequest request;
-        if (this->firmware_status == FirmwareStatusEnum::Idle or this->firmware_status == FirmwareStatusEnum::Installed) {
+        if (this->firmware_status == FirmwareStatusEnum::Idle or
+            this->firmware_status == FirmwareStatusEnum::Installed) {
             // L01.FR.25
             // do not set requestId when idle: L01.FR.20
             request.status = FirmwareStatusEnum::Idle;
