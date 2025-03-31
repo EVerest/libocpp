@@ -336,3 +336,26 @@ TEST_F(CompositeScheduleTestFixtureV21, V2Different_Number_Phases_W) {
                                                                      ChargingRateUnitEnum::W, false, false);
     EXPECT_EQ(actual, expected);
 }
+
+TEST_F(CompositeScheduleTestFixtureV21, V21NoLimitSpecified) {
+    this->load_charging_profiles_for_evse(BASE_JSON_PATH_V21 + "/no_limit_specified/", DEFAULT_EVSE_ID);
+
+    const DateTime start_time("2024-01-17T18:00:00.000Z");
+    const DateTime end_time("2024-01-17T21:00:00.000Z");
+
+    // Period was not valid because there was no limit specified. So the charging station default is used.
+    ChargingSchedulePeriod period1;
+    period1.startPeriod = 0;
+    period1.limit = DEFAULT_LIMIT_AMPERE;
+    CompositeSchedule expected;
+    expected.chargingSchedulePeriod = {period1};
+    expected.evseId = DEFAULT_EVSE_ID;
+    expected.duration = 10800;
+    expected.scheduleStart = start_time;
+    expected.chargingRateUnit = ChargingRateUnitEnum::A;
+
+    evse_manager->open_transaction(DEFAULT_EVSE_ID, "f1522902-1170-416f-8e43-9e3bce28fde7");
+    CompositeSchedule actual = handler->calculate_composite_schedule(start_time, end_time, DEFAULT_EVSE_ID,
+                                                                     ChargingRateUnitEnum::A, false, false);
+    EXPECT_EQ(actual, expected);
+}
