@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
-#include <ocpp/common/database/database_exceptions.hpp>
+#include <database/database_exceptions.hpp>
 #include <ocpp/common/utils.hpp>
 #include <ocpp/v2/ctrlr_component_variables.hpp>
 #include <ocpp/v2/device_model.hpp>
@@ -11,8 +11,6 @@
 namespace ocpp {
 
 namespace v2 {
-
-using DatabaseException = ocpp::common::DatabaseException;
 
 /// \brief For AlignedDataInterval, SampledDataTxUpdatedInterval and SampledDataTxEndedInterval, zero is allowed
 static bool allow_zero(const Component& component, const Variable& variable) {

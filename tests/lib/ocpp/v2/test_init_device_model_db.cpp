@@ -472,12 +472,11 @@ bool InitDeviceModelDbTest::component_exists(const std::string& component_name,
                                                           "AND INSTANCE IS @component_instance "
                                                           "AND EVSE_ID IS @evse_id "
                                                           "AND CONNECTOR_ID IS @connector_id";
-    std::unique_ptr<common::SQLiteStatementInterface> statement =
-        this->database->new_statement(select_component_statement);
+    std::unique_ptr<SQLiteStatementInterface> statement = this->database->new_statement(select_component_statement);
 
-    statement->bind_text("@component_name", component_name, ocpp::common::SQLiteString::Transient);
+    statement->bind_text("@component_name", component_name, SQLiteString::Transient);
     if (component_instance.has_value()) {
-        statement->bind_text("@component_instance", component_instance.value(), ocpp::common::SQLiteString::Transient);
+        statement->bind_text("@component_instance", component_instance.value(), SQLiteString::Transient);
     } else {
         statement->bind_null("@component_instance");
     }
@@ -520,12 +519,11 @@ bool InitDeviceModelDbTest::attribute_exists(
                                                           "AND v.INSTANCE IS @variable_instance) "
                                                           "AND va.TYPE_ID=@type_id "
                                                           "AND va.MUTABILITY_ID IS @mutability_id";
-    std::unique_ptr<common::SQLiteStatementInterface> statement =
-        this->database->new_statement(select_attribute_statement);
+    std::unique_ptr<SQLiteStatementInterface> statement = this->database->new_statement(select_attribute_statement);
 
-    statement->bind_text("@component_name", component_name, ocpp::common::SQLiteString::Transient);
+    statement->bind_text("@component_name", component_name, SQLiteString::Transient);
     if (component_instance.has_value()) {
-        statement->bind_text("@component_instance", component_instance.value(), ocpp::common::SQLiteString::Transient);
+        statement->bind_text("@component_instance", component_instance.value(), SQLiteString::Transient);
     } else {
         statement->bind_null("@component_instance");
     }
@@ -542,10 +540,10 @@ bool InitDeviceModelDbTest::attribute_exists(
         statement->bind_null("@connector_id");
     }
 
-    statement->bind_text("@variable_name", variable_name, ocpp::common::SQLiteString::Transient);
+    statement->bind_text("@variable_name", variable_name, SQLiteString::Transient);
 
     if (variable_instance.has_value()) {
-        statement->bind_text("@variable_instance", variable_instance.value(), ocpp::common::SQLiteString::Transient);
+        statement->bind_text("@variable_instance", variable_instance.value(), SQLiteString::Transient);
     } else {
         statement->bind_null("@variable_instance");
     }
@@ -585,12 +583,11 @@ bool InitDeviceModelDbTest::variable_exists(const std::string& component_name,
                                                          "AND v.INSTANCE IS @variable_instance "
                                                          "AND v.source IS @variable_source";
 
-    std::unique_ptr<common::SQLiteStatementInterface> statement =
-        this->database->new_statement(select_variable_statement);
+    std::unique_ptr<SQLiteStatementInterface> statement = this->database->new_statement(select_variable_statement);
 
-    statement->bind_text("@component_name", component_name, ocpp::common::SQLiteString::Transient);
+    statement->bind_text("@component_name", component_name, SQLiteString::Transient);
     if (component_instance.has_value()) {
-        statement->bind_text("@component_instance", component_instance.value(), ocpp::common::SQLiteString::Transient);
+        statement->bind_text("@component_instance", component_instance.value(), SQLiteString::Transient);
     } else {
         statement->bind_null("@component_instance");
     }
@@ -607,16 +604,16 @@ bool InitDeviceModelDbTest::variable_exists(const std::string& component_name,
         statement->bind_null("@connector_id");
     }
 
-    statement->bind_text("@variable_name", variable_name, ocpp::common::SQLiteString::Transient);
+    statement->bind_text("@variable_name", variable_name, SQLiteString::Transient);
 
     if (variable_instance.has_value()) {
-        statement->bind_text("@variable_instance", variable_instance.value(), ocpp::common::SQLiteString::Transient);
+        statement->bind_text("@variable_instance", variable_instance.value(), SQLiteString::Transient);
     } else {
         statement->bind_null("@variable_instance");
     }
 
     if (source.has_value()) {
-        statement->bind_text("@variable_source", source.value(), ocpp::common::SQLiteString::Transient);
+        statement->bind_text("@variable_source", source.value(), SQLiteString::Transient);
     } else {
         statement->bind_null("@variable_source");
     }
@@ -652,12 +649,12 @@ bool InitDeviceModelDbTest::characteristics_exists(
                                                                 "AND vc.SUPPORTS_MONITORING IS @supports_monitoring "
                                                                 "AND vc.UNIT IS @unit "
                                                                 "AND vc.VALUES_LIST IS @values_list";
-    std::unique_ptr<common::SQLiteStatementInterface> statement =
+    std::unique_ptr<SQLiteStatementInterface> statement =
         this->database->new_statement(select_characteristics_statement);
 
-    statement->bind_text("@component_name", component_name, ocpp::common::SQLiteString::Transient);
+    statement->bind_text("@component_name", component_name, SQLiteString::Transient);
     if (component_instance.has_value()) {
-        statement->bind_text("@component_instance", component_instance.value(), ocpp::common::SQLiteString::Transient);
+        statement->bind_text("@component_instance", component_instance.value(), SQLiteString::Transient);
     } else {
         statement->bind_null("@component_instance");
     }
@@ -674,10 +671,10 @@ bool InitDeviceModelDbTest::characteristics_exists(
         statement->bind_null("@connector_id");
     }
 
-    statement->bind_text("@variable_name", variable_name, ocpp::common::SQLiteString::Transient);
+    statement->bind_text("@variable_name", variable_name, SQLiteString::Transient);
 
     if (variable_instance.has_value()) {
-        statement->bind_text("@variable_instance", variable_instance.value(), ocpp::common::SQLiteString::Transient);
+        statement->bind_text("@variable_instance", variable_instance.value(), SQLiteString::Transient);
     } else {
         statement->bind_null("@variable_instance");
     }
@@ -737,12 +734,11 @@ bool InitDeviceModelDbTest::attribute_has_value(const std::string& component_nam
                                                    "AND v.NAME=@variable_name "
                                                    "AND v.INSTANCE IS @variable_instance) "
                                                    "AND va.TYPE_ID=@type_id";
-    std::unique_ptr<common::SQLiteStatementInterface> statement =
-        this->database->new_statement(select_attribute_statement);
+    std::unique_ptr<SQLiteStatementInterface> statement = this->database->new_statement(select_attribute_statement);
 
-    statement->bind_text("@component_name", component_name, ocpp::common::SQLiteString::Transient);
+    statement->bind_text("@component_name", component_name, SQLiteString::Transient);
     if (component_instance.has_value()) {
-        statement->bind_text("@component_instance", component_instance.value(), ocpp::common::SQLiteString::Transient);
+        statement->bind_text("@component_instance", component_instance.value(), SQLiteString::Transient);
     } else {
         statement->bind_null("@component_instance");
     }
@@ -759,10 +755,10 @@ bool InitDeviceModelDbTest::attribute_has_value(const std::string& component_nam
         statement->bind_null("@connector_id");
     }
 
-    statement->bind_text("@variable_name", variable_name, ocpp::common::SQLiteString::Transient);
+    statement->bind_text("@variable_name", variable_name, SQLiteString::Transient);
 
     if (variable_instance.has_value()) {
-        statement->bind_text("@variable_instance", variable_instance.value(), ocpp::common::SQLiteString::Transient);
+        statement->bind_text("@variable_instance", variable_instance.value(), SQLiteString::Transient);
     } else {
         statement->bind_null("@variable_instance");
     }
@@ -802,15 +798,14 @@ void InitDeviceModelDbTest::set_attribute_source(const std::string& component_na
                                          "AND VARIABLE.INSTANCE IS @variable_instance) "
                                          "AND TYPE_ID = @type_id";
 
-    std::unique_ptr<common::SQLiteStatementInterface> insert_variable_attribute_statement =
+    std::unique_ptr<SQLiteStatementInterface> insert_variable_attribute_statement =
         this->database->new_statement(statement);
 
     insert_variable_attribute_statement->bind_text("@source", source, SQLiteString::Transient);
-    insert_variable_attribute_statement->bind_text("@component_name", component_name,
-                                                   ocpp::common::SQLiteString::Transient);
+    insert_variable_attribute_statement->bind_text("@component_name", component_name, SQLiteString::Transient);
     if (component_instance.has_value()) {
         insert_variable_attribute_statement->bind_text("@component_instance", component_instance.value(),
-                                                       ocpp::common::SQLiteString::Transient);
+                                                       SQLiteString::Transient);
     } else {
         insert_variable_attribute_statement->bind_null("@component_instance");
     }
@@ -827,12 +822,11 @@ void InitDeviceModelDbTest::set_attribute_source(const std::string& component_na
         insert_variable_attribute_statement->bind_null("@connector_id");
     }
 
-    insert_variable_attribute_statement->bind_text("@variable_name", variable_name,
-                                                   ocpp::common::SQLiteString::Transient);
+    insert_variable_attribute_statement->bind_text("@variable_name", variable_name, SQLiteString::Transient);
 
     if (variable_instance.has_value()) {
         insert_variable_attribute_statement->bind_text("@variable_instance", variable_instance.value(),
-                                                       ocpp::common::SQLiteString::Transient);
+                                                       SQLiteString::Transient);
     } else {
         insert_variable_attribute_statement->bind_null("@variable_instance");
     }

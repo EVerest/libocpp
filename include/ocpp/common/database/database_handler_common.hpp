@@ -7,8 +7,8 @@
 #include <string>
 #include <vector>
 
-#include <ocpp/common/database/database_connection.hpp>
-#include <ocpp/common/database/database_exceptions.hpp>
+#include <database/database_exceptions.hpp>
+#include <database/sqlite/sqlite_connection.hpp>
 #include <ocpp/common/types.hpp>
 
 namespace ocpp::common {

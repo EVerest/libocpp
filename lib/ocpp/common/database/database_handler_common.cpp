@@ -3,8 +3,8 @@
 
 #include <ocpp/common/database/database_handler_common.hpp>
 
+#include <database/sqlite/sqlite_schema_updater.hpp>
 #include <everest/logging.hpp>
-#include <ocpp/common/database/database_schema_updater.hpp>
 
 namespace ocpp::common {
 

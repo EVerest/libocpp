@@ -9,8 +9,6 @@
 
 using namespace std::chrono;
 
-using QueryExecutionException = ocpp::common::QueryExecutionException;
-
 namespace ocpp {
 namespace v16 {
 

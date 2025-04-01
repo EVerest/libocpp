@@ -498,8 +498,7 @@ ProfileValidationResultEnum SmartCharging::validate_tx_profile(const ChargingPro
     conflicts_stmt->bind_int("@stack_level", profile.stackLevel);
     conflicts_stmt->bind_int("@id", profile.id);
     if (profile.transactionId.has_value()) {
-        conflicts_stmt->bind_text("@transaction_id", profile.transactionId.value().get(),
-                                  common::SQLiteString::Transient);
+        conflicts_stmt->bind_text("@transaction_id", profile.transactionId.value().get(), SQLiteString::Transient);
     } else {
         conflicts_stmt->bind_null("@transaction_id");
     }
@@ -913,7 +912,7 @@ bool SmartCharging::is_overlapping_validity_period(const ChargingProfile& candid
     overlap_stmt->bind_int("@stack_level", candidate_profile.stackLevel);
     overlap_stmt->bind_text(
         "@purpose", conversions::charging_profile_purpose_enum_to_string(candidate_profile.chargingProfilePurpose),
-        common::SQLiteString::Transient);
+        SQLiteString::Transient);
     while (overlap_stmt->step() != SQLITE_DONE) {
         ChargingProfile existing_profile = json::parse(overlap_stmt->column_text(0));
         if (candidate_profile.validFrom <= existing_profile.validTo &&

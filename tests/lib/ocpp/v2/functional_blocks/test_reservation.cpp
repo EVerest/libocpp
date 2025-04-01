@@ -34,8 +34,7 @@ using ::testing::Return;
 class ReservationTest : public ::testing::Test {
 public:
 protected: // Functions
-    ReservationTest() :
-        database_connection(std::make_unique<ocpp::common::DatabaseConnection>(DEVICE_MODEL_DB_IN_MEMORY_PATH)) {
+    ReservationTest() : database_connection(std::make_unique<DatabaseConnection>(DEVICE_MODEL_DB_IN_MEMORY_PATH)) {
         database_connection->open_connection();
         this->device_model = create_device_model();
         this->functional_block_context = std::make_unique<FunctionalBlockContext>(
@@ -171,7 +170,7 @@ protected: // Members
     ComponentStateManagerMock component_state_manager;
     // DatabaseConnection as member so the database keeps open and is not destroyed (because this is an in memory
     // database).
-    std::unique_ptr<ocpp::common::DatabaseConnection> database_connection;
+    std::unique_ptr<DatabaseConnection> database_connection;
     MockMessageDispatcher mock_dispatcher;
     EvseManagerFake evse_manager{NR_OF_EVSES};
     // Device model is a unique ptr here because of the database: it is stored in memory so as soon as the handle to

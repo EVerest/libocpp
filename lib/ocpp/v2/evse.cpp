@@ -5,13 +5,12 @@
 #include <optional>
 #include <utility>
 
+#include <database/database_exceptions.hpp>
 #include <everest/logging.hpp>
-#include <ocpp/common/database/database_exceptions.hpp>
 #include <ocpp/v2/ctrlr_component_variables.hpp>
 #include <ocpp/v2/evse.hpp>
 
 using namespace std::chrono_literals;
-using QueryExecutionException = ocpp::common::QueryExecutionException;
 
 namespace ocpp {
 namespace v2 {
@@ -326,7 +325,7 @@ void Evse::release_transaction() {
     try {
         this->database_handler->transaction_metervalues_clear(this->transaction->transactionId);
         this->database_handler->transaction_delete(this->transaction->transactionId);
-    } catch (const ocpp::common::DatabaseException& e) {
+    } catch (const DatabaseException& e) {
         EVLOG_error << "Could not clear transaction meter values: " << e.what();
     }
     this->transaction = nullptr;

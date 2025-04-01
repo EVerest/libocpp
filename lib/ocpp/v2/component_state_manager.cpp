@@ -4,8 +4,6 @@
 #include <ocpp/v2/component_state_manager.hpp>
 #include <utility>
 
-using QueryExecutionException = ocpp::common::QueryExecutionException;
-
 namespace ocpp::v2 {
 
 ComponentStateManagerInterface::~ComponentStateManagerInterface() {
