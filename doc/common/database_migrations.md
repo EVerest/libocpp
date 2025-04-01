@@ -1,3 +1,3 @@
 # Database migrations
 
-The migrations support has been moved to [libsqlite](https://github.com/EVerest/libsqlite). Please see its [documentation for the migration support](FIXME)
+The migrations support has been moved to [everest-sqlite](https://github.com/EVerest/everest-sqlite). Please see its [documentation for the migration support](FIXME)

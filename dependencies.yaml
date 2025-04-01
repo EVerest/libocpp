@@ -57,6 +57,6 @@ gtest:
   git: https://github.com/google/googletest.git
   git_tag: release-1.12.1
   cmake_condition: "LIBOCPP_BUILD_TESTING"
-libsqlite:
-  git: git@github.com:EVerest/libsqlite.git # Fix once public
+everest-sqlite:
+  git: git@github.com:EVerest/everest-sqlite.git # Fix once public
   git_tag: feature/initial

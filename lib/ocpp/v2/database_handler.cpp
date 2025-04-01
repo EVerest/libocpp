@@ -6,7 +6,7 @@
 #include "ocpp/v2/ocpp_types.hpp"
 #include <boost/algorithm/string/join.hpp>
 #include <boost/range/adaptor/transformed.hpp>
-#include <database/sqlite/sqlite_statement.hpp>
+#include <database/sqlite/statement.hpp>
 #include <numeric>
 #include <ocpp/common/message_queue.hpp>
 #include <ocpp/v2/database_handler.hpp>
@@ -14,6 +14,9 @@
 #include <ocpp/v2/utils.hpp>
 #include <string>
 #include <vector>
+
+using namespace everest::db;
+using namespace everest::db::sqlite;
 
 namespace ocpp {
 
@@ -29,7 +32,7 @@ DateTime from_unix_milliseconds(int64_t ms_since_epoch) {
 
 namespace v2 {
 
-DatabaseHandler::DatabaseHandler(std::unique_ptr<DatabaseConnectionInterface> database,
+DatabaseHandler::DatabaseHandler(std::unique_ptr<ConnectionInterface> database,
                                  const fs::path& sql_migration_files_path) :
     DatabaseHandlerCommon(std::move(database), sql_migration_files_path, MIGRATION_FILE_VERSION_V2) {
 }
@@ -253,7 +256,7 @@ OperationalStatusEnum DatabaseHandler::get_availability(int32_t evse_id, int32_t
     int status = select_stmt->step();
 
     if (status == SQLITE_DONE) {
-        throw RequiredEntryNotFoundException("Could not find operational status for connector");
+        throw everest::db::RequiredEntryNotFoundException("Could not find operational status for connector");
     }
 
     if (status != SQLITE_ROW) {
@@ -1018,7 +1021,7 @@ CiString<20> DatabaseHandler::get_charging_limit_source_for_profile(const int pr
     return res;
 }
 
-std::unique_ptr<SQLiteStatementInterface> DatabaseHandler::new_statement(const std::string& sql) {
+std::unique_ptr<StatementInterface> DatabaseHandler::new_statement(const std::string& sql) {
     return this->database->new_statement(sql);
 }
 

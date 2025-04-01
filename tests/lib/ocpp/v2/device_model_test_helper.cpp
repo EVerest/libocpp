@@ -3,9 +3,12 @@
 
 #include "device_model_test_helper.hpp"
 
-#include <database/sqlite/sqlite_connection.hpp>
+#include <database/sqlite/connection.hpp>
 #include <ocpp/v2/device_model.hpp>
 #include <ocpp/v2/device_model_storage_sqlite.hpp>
+
+using namespace everest::db;
+using namespace everest::db::sqlite;
 
 namespace ocpp::v2 {
 DeviceModelTestHelper::DeviceModelTestHelper(const std::string& database_path, const std::string& migration_files_path,
@@ -13,7 +16,7 @@ DeviceModelTestHelper::DeviceModelTestHelper(const std::string& database_path, c
     database_path(database_path),
     migration_files_path(migration_files_path),
     config_path(config_path),
-    database_connection(std::make_unique<DatabaseConnection>(database_path)) {
+    database_connection(std::make_unique<everest::db::sqlite::Connection>(database_path)) {
     this->database_connection->open_connection();
     this->device_model = create_device_model();
 }
@@ -88,7 +91,7 @@ bool DeviceModelTestHelper::update_variable_characteristics(const VariableCharac
         "EVSE_ID IS @evse_id AND CONNECTOR_ID IS @connector_id) "
         "AND NAME = @variable_name AND INSTANCE IS @variable_instance)";
 
-    std::unique_ptr<SQLiteStatementInterface> update_statement;
+    std::unique_ptr<StatementInterface> update_statement;
     try {
         update_statement = this->database_connection->new_statement(update_query);
     } catch (const QueryExecutionException&) {

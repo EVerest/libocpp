@@ -9,7 +9,6 @@
 #include "profile_tests_common.hpp"
 #include <algorithm>
 #include <chrono>
-#include <database/sqlite/sqlite_statement.hpp>
 #include <filesystem>
 #include <gtest/gtest.h>
 #include <memory>
