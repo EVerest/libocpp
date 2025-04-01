@@ -4,8 +4,6 @@
 #include <ocpp/v2/database_handler.hpp>
 #include <ocpp/v2/transaction.hpp>
 
-using QueryExecutionException = ocpp::common::QueryExecutionException;
-
 namespace ocpp {
 
 namespace v2 {

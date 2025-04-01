@@ -17,7 +17,6 @@ using namespace ocpp;
 namespace fs = std::filesystem;
 using json = nlohmann::json;
 using namespace std::chrono;
-using ocpp::common::SQLiteString;
 
 // ----------------------------------------------------------------------------
 // provide access to the SQLite database handle
@@ -25,7 +24,7 @@ struct DatabaseHandlerTest : public DatabaseHandler {
     using DatabaseHandler::DatabaseHandler;
 };
 
-struct SQLiteStatementTest : public ocpp::common::SQLiteStatementInterface {
+struct SQLiteStatementTest : public SQLiteStatementInterface {
     virtual int changes() {
         return 0;
     }
@@ -48,10 +47,10 @@ struct SQLiteStatementTest : public ocpp::common::SQLiteStatementInterface {
     virtual int bind_int(const std::string& param, const int val) {
         return 0;
     }
-    virtual int bind_datetime(const int idx, const ocpp::DateTime val) {
+    virtual int bind_int64(const int idx, const int64_t val) {
         return 0;
     }
-    virtual int bind_datetime(const std::string& param, const ocpp::DateTime val) {
+    virtual int bind_int64(const std::string& param, const int64_t val) {
         return 0;
     }
     virtual int bind_double(const int idx, const double val) {
@@ -81,23 +80,23 @@ struct SQLiteStatementTest : public ocpp::common::SQLiteStatementInterface {
     virtual int column_int(const int idx) {
         return 0;
     }
-    virtual ocpp::DateTime column_datetime(const int idx) {
-        return ocpp::DateTime();
+    virtual int64_t column_int64(const int64_t idx) {
+        return 0;
     }
     virtual double column_double(const int idx) {
         return 0.0;
     }
 };
 
-struct DatabaseConnectionTest : public common::DatabaseConnectionInterface {
+struct DatabaseConnectionTest : public DatabaseConnectionInterface {
     virtual bool open_connection() {
         return true;
     }
     virtual bool close_connection() {
         return true;
     }
-    virtual std::unique_ptr<ocpp::common::DatabaseTransactionInterface> begin_transaction() {
-        return std::unique_ptr<ocpp::common::DatabaseTransactionInterface>{};
+    virtual std::unique_ptr<DatabaseTransactionInterface> begin_transaction() {
+        return std::unique_ptr<DatabaseTransactionInterface>{};
     }
     virtual bool commit_transaction() {
         return true;
@@ -108,7 +107,7 @@ struct DatabaseConnectionTest : public common::DatabaseConnectionInterface {
     virtual bool execute_statement(const std::string& statement) {
         return true;
     }
-    virtual std::unique_ptr<ocpp::common::SQLiteStatementInterface> new_statement(const std::string& sql) {
+    virtual std::unique_ptr<SQLiteStatementInterface> new_statement(const std::string& sql) {
         return std::make_unique<SQLiteStatementTest>();
     }
     virtual const char* get_error_message() {
@@ -136,7 +135,7 @@ protected:
 
     std::map<int32_t, std::shared_ptr<Connector>> connectors;
     std::shared_ptr<stubs::DatabaseHandlerTest> database_handler;
-    std::unique_ptr<ocpp::common::DatabaseConnectionInterface> database_interface;
+    std::unique_ptr<DatabaseConnectionInterface> database_interface;
     std::unique_ptr<ChargePointConfiguration> configuration;
 
     void add_connectors(unsigned int n) {

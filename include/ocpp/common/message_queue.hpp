@@ -24,8 +24,6 @@
 
 namespace ocpp {
 
-using QueryExecutionException = common::QueryExecutionException;
-
 template <typename M> struct MessageQueueConfig {
     int transaction_message_attempts;
     int transaction_message_retry_interval; // seconds

@@ -27,10 +27,7 @@ target_sources(ocpp
         ocpp/common/utils.cpp
         ocpp/common/evse_security_impl.cpp
         ocpp/common/evse_security.cpp
-        ocpp/common/database/database_connection.cpp
         ocpp/common/database/database_handler_common.cpp
-        ocpp/common/database/database_schema_updater.cpp
-        ocpp/common/database/sqlite_statement.cpp
 )
 
 if(LIBOCPP_ENABLE_V16)
@@ -183,7 +180,7 @@ target_link_libraries(ocpp
         OpenSSL::Crypto
         SQLite::SQLite3
         Threads::Threads
-
+        everest::sqlite
         nlohmann_json::nlohmann_json
         date::date-tz
 )
