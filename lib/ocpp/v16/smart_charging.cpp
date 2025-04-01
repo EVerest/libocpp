@@ -9,6 +9,8 @@
 
 using namespace std::chrono;
 
+using QueryExecutionException = everest::db::QueryExecutionException;
+
 namespace ocpp {
 namespace v16 {
 

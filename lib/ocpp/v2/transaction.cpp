@@ -4,6 +4,8 @@
 #include <ocpp/v2/database_handler.hpp>
 #include <ocpp/v2/transaction.hpp>
 
+using QueryExecutionException = everest::db::QueryExecutionException;
+
 namespace ocpp {
 
 namespace v2 {

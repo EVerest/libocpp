@@ -29,6 +29,7 @@ using ::testing::InSequence;
 using ::testing::Invoke;
 using ::testing::Return;
 using ::testing::Throw;
+using namespace everest::db;
 
 const ocpp::LeafCertificateType DEFAULT_LEAF_CERT_TYPE = ocpp::LeafCertificateType::MO;
 
@@ -423,7 +424,7 @@ TEST_F(AuthorizationTest, update_authorization_cache_size) {
 
 TEST_F(AuthorizationTest, update_authorization_cache_size_exception) {
     // Test update authorization cache size. When requesting the size from the database handler, it throws a
-    // DatabaseException.
+    // Exception.
     auto& auth_cache_size = ControllerComponentVariables::AuthCacheStorage;
     this->device_model->set_read_only_value(auth_cache_size.component, auth_cache_size.variable.value(),
                                             AttributeEnum::Actual, "42", "test");
@@ -431,9 +432,9 @@ TEST_F(AuthorizationTest, update_authorization_cache_size_exception) {
     ASSERT_TRUE(size.has_value());
     EXPECT_EQ(size.value(), 42);
 
-    // Throw DatabaseException when requesting the binary size of the authorization cache. Application should not crash!
+    // Throw Exception when requesting the binary size of the authorization cache. Application should not crash!
     EXPECT_CALL(this->database_handler_mock, authorization_cache_get_binary_size())
-        .WillRepeatedly(Throw(DatabaseException("Database exception thrown!!")));
+        .WillRepeatedly(Throw(Exception("Database exception thrown!!")));
 
     this->authorization->update_authorization_cache_size();
 
@@ -445,7 +446,7 @@ TEST_F(AuthorizationTest, update_authorization_cache_size_exception) {
 
 TEST_F(AuthorizationTest, update_authorization_cache_size_exception2) {
     // Test update authorization cache size. When requesting the size from the database handler, it throws (something
-    // else than DatabaseException).
+    // else than Exception).
     auto& auth_cache_size = ControllerComponentVariables::AuthCacheStorage;
     this->device_model->set_read_only_value(auth_cache_size.component, auth_cache_size.variable.value(),
                                             AttributeEnum::Actual, "42", "test");
@@ -1062,7 +1063,7 @@ TEST_F(AuthorizationTest, validate_token_auth_cache_exception) {
     EXPECT_CALL(this->connectivity_manager, is_websocket_connected()).WillRepeatedly(Return(true));
     // Throw exception when trying to get the cache entry.
     EXPECT_CALL(this->database_handler_mock, authorization_cache_get_entry(_))
-        .WillRepeatedly(Throw(DatabaseException("Test exception for the database!")));
+        .WillRepeatedly(Throw(Exception("Test exception for the database!")));
 
     // Because of the database exception, an authorize request is performed
     // Because the cache is expired, an authorize request is performed.
@@ -1135,7 +1136,7 @@ TEST_F(AuthorizationTest, validate_token_auth_cache_insert_entry_exception) {
     // Since the auth cache is enabled, after authorizing, the entry is added to the authorization cache. But this will
     // throw an exception. This should not let the application crash but just return an 'Accepted'.
     EXPECT_CALL(this->database_handler_mock, authorization_cache_insert_entry(_, _))
-        .WillOnce(Throw(DatabaseException("Insert entry fails!")));
+        .WillOnce(Throw(Exception("Insert entry fails!")));
 
     EXPECT_EQ(authorization->validate_token(id_token, std::nullopt, std::nullopt).idTokenInfo.status,
               AuthorizationStatusEnum::Accepted);
@@ -1191,7 +1192,7 @@ TEST_F(AuthorizationTest, handle_message_clear_cache_exception) {
 
     // The database handler clear cache function throws a database exception.
     EXPECT_CALL(this->database_handler_mock, authorization_cache_clear())
-        .WillRepeatedly(Throw(DatabaseException("Test exception")));
+        .WillRepeatedly(Throw(Exception("Test exception")));
 
     // Which will dispatch a call error.
     EXPECT_CALL(mock_dispatcher, dispatch_call_error(_)).WillOnce([](const ocpp::CallError& call_error) {
@@ -1246,7 +1247,7 @@ TEST_F(AuthorizationTest, handle_send_local_authorization_list_get_entries_excep
     // The number of entries is requested from the database after storing the new list, and stored in the device model.
     // This will throw an exception.
     EXPECT_CALL(this->database_handler_mock, get_local_authorization_list_number_of_entries())
-        .WillRepeatedly(Throw(DatabaseException("Oops!")));
+        .WillRepeatedly(Throw(Exception("Oops!")));
 
     // Local list is stored, only setting the number of entries is the device model failed, but the call is still
     // 'Accepted'.
@@ -1336,7 +1337,7 @@ TEST_F(AuthorizationTest, handle_send_local_authorization_list_set_version_excep
 
     // When trying to update the authorization list version, an exception is thrown.
     EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list_version(33))
-        .WillRepeatedly(Throw(DatabaseException("Oh no!")));
+        .WillRepeatedly(Throw(Exception("Oh no!")));
 
     // Local list is stored, but setting the list version throwd an exception. So the response is 'failed' in this case.
     EXPECT_CALL(mock_dispatcher, dispatch_call_result(_)).WillOnce(Invoke([](const json& call_result) {
@@ -1512,7 +1513,7 @@ TEST_F(AuthorizationTest, handle_send_local_authorization_list_clear_list_except
     // Local authorization list must be inserted, but clearing it throws an exception.
     EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list(_)).Times(0);
     EXPECT_CALL(this->database_handler_mock, clear_local_authorization_list)
-        .WillRepeatedly(Throw(DatabaseException("exception :(")));
+        .WillRepeatedly(Throw(Exception("exception :(")));
 
     // The authorization list should now be cleared and is accepted.
     EXPECT_CALL(mock_dispatcher, dispatch_call_result(_)).WillOnce(Invoke([](const json& call_result) {
@@ -1531,7 +1532,7 @@ TEST_F(AuthorizationTest, handle_send_local_authorization_list_empty_clear_list_
 
     // Clearing authorization list throws an exception.
     EXPECT_CALL(this->database_handler_mock, clear_local_authorization_list)
-        .WillRepeatedly(Throw(DatabaseException("exception :(")));
+        .WillRepeatedly(Throw(Exception("exception :(")));
 
     // The authorization list should now be cleared and is accepted.
     EXPECT_CALL(mock_dispatcher, dispatch_call_result(_)).WillOnce(Invoke([](const json& call_result) {
@@ -1696,7 +1697,7 @@ TEST_F(AuthorizationTest, handle_send_local_authorization_list_differential_inse
     EXPECT_CALL(this->database_handler_mock, clear_local_authorization_list).Times(0);
     // Inserting / updating causes an exception.
     EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list(_))
-        .WillOnce(Throw(DatabaseException("This is an exception")));
+        .WillOnce(Throw(Exception("This is an exception")));
     // So the update is failed, no new version is set, number of entries is not requested.
     EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list_version(_)).Times(0);
     EXPECT_CALL(this->database_handler_mock, get_local_authorization_list_number_of_entries()).Times(0);
@@ -1744,7 +1745,7 @@ TEST_F(AuthorizationTest, handle_get_local_authorization_list_version_exception)
     this->set_local_auth_list_ctrlr_enabled(this->device_model, true);
     const auto request = this->create_get_local_list_version_request();
     EXPECT_CALL(this->database_handler_mock, get_local_authorization_list_version)
-        .WillOnce(Throw(DatabaseException("Oops!")));
+        .WillOnce(Throw(Exception("Oops!")));
     EXPECT_CALL(mock_dispatcher, dispatch_call_error(_)).WillOnce([](const ocpp::CallError& call_error) {
         EXPECT_EQ(call_error.errorCode, "InternalError");
     });
@@ -1861,7 +1862,7 @@ TEST_F(AuthorizationTest, cache_cleanup_handler_exceeds_max_storage_database_exc
             .RetiresOnSaturation();
         // One of the calls will throw an exception.
         EXPECT_CALL(this->database_handler_mock, authorization_cache_get_binary_size())
-            .WillOnce(Throw(DatabaseException("Oops!")))
+            .WillOnce(Throw(Exception("Oops!")))
             .RetiresOnSaturation();
         // After that, it is still called once at the end of the function (after catching the exception)
         EXPECT_CALL(this->database_handler_mock, authorization_cache_get_binary_size())

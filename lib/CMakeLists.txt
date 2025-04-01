@@ -175,12 +175,12 @@ target_link_libraries(ocpp
         nlohmann_json_schema_validator
         everest::evse_security
         websockets_shared
+        everest::sqlite
     PRIVATE
         OpenSSL::SSL
         OpenSSL::Crypto
         SQLite::SQLite3
         Threads::Threads
-        everest::sqlite
         nlohmann_json::nlohmann_json
         date::date-tz
 )

@@ -14,6 +14,9 @@
 const static std::string STANDARDIZED_COMPONENT_CONFIG_DIR = "standardized";
 const static std::string CUSTOM_COMPONENT_CONFIG_DIR = "custom";
 
+using namespace everest::db;
+using namespace everest::db::sqlite;
+
 namespace ocpp::v2 {
 
 // Forward declarations.
@@ -41,7 +44,7 @@ static std::string get_variable_name_for_logging(const DeviceModelVariable& vari
 
 InitDeviceModelDb::InitDeviceModelDb(const std::filesystem::path& database_path,
                                      const std::filesystem::path& migration_files_path) :
-    common::DatabaseHandlerCommon(std::make_unique<DatabaseConnection>(database_path), migration_files_path,
+    common::DatabaseHandlerCommon(std::make_unique<Connection>(database_path), migration_files_path,
                                   MIGRATION_DEVICE_MODEL_FILE_VERSION_V2),
     database_path(database_path),
     database_exists(std::filesystem::exists(database_path)) {
@@ -74,7 +77,7 @@ void InitDeviceModelDb::initialize_database(const std::filesystem::path& config_
 
     // Starting a transaction makes this a lot faster (inserting all components takes a few seconds without it and a
     // few milliseconds if it is done inside a transaction).
-    std::unique_ptr<DatabaseTransactionInterface> transaction = database->begin_transaction();
+    std::unique_ptr<TransactionInterface> transaction = database->begin_transaction();
     insert_components(component_configs, existing_components);
     transaction->commit();
 }
@@ -164,7 +167,7 @@ void InitDeviceModelDb::insert_component(const ComponentKey& component_key,
     static const std::string statement = "INSERT OR REPLACE INTO COMPONENT (NAME, INSTANCE, EVSE_ID, CONNECTOR_ID) "
                                          "VALUES (@name, @instance, @evse_id, @connector_id)";
 
-    std::unique_ptr<SQLiteStatementInterface> insert_component_statement;
+    std::unique_ptr<StatementInterface> insert_component_statement;
     try {
         insert_component_statement = this->database->new_statement(statement);
     } catch (const QueryExecutionException&) {
@@ -250,7 +253,7 @@ void InitDeviceModelDb::insert_variable_characteristics(const VariableCharacteri
                                          "UNIT, VALUES_LIST) VALUES (@datatype_id, @variable_id, @max_limit, "
                                          "@min_limit, @supports_monitoring, @unit, @values_list)";
 
-    std::unique_ptr<SQLiteStatementInterface> insert_characteristics_statement;
+    std::unique_ptr<StatementInterface> insert_characteristics_statement;
     try {
         insert_characteristics_statement = this->database->new_statement(statement);
     } catch (const QueryExecutionException&) {
@@ -303,7 +306,7 @@ void InitDeviceModelDb::update_variable_characteristics(const VariableCharacteri
         "MIN_LIMIT=@min_limit, SUPPORTS_MONITORING=@supports_monitoring, UNIT=@unit, VALUES_LIST=@values_list WHERE "
         "ID=@characteristics_id";
 
-    std::unique_ptr<SQLiteStatementInterface> update_statement;
+    std::unique_ptr<StatementInterface> update_statement;
     try {
         update_statement = this->database->new_statement(update_characteristics_statement);
     } catch (const QueryExecutionException&) {
@@ -353,7 +356,7 @@ void InitDeviceModelDb::insert_variable(const DeviceModelVariable& variable, con
         "INSERT OR REPLACE INTO VARIABLE (NAME, INSTANCE, COMPONENT_ID, SOURCE) VALUES "
         "(@name, @instance, @component_id, @source)";
 
-    std::unique_ptr<SQLiteStatementInterface> insert_variable_statement;
+    std::unique_ptr<StatementInterface> insert_variable_statement;
     try {
         insert_variable_statement = this->database->new_statement(statement);
     } catch (const QueryExecutionException& e) {
@@ -398,7 +401,7 @@ void InitDeviceModelDb::update_variable(const DeviceModelVariable& variable, con
         "UPDATE VARIABLE SET NAME=@name, INSTANCE=@instance, COMPONENT_ID=@component_id, "
         "SOURCE=@source WHERE ID=@variable_id";
 
-    std::unique_ptr<SQLiteStatementInterface> update_statement;
+    std::unique_ptr<StatementInterface> update_statement;
     try {
         update_statement = this->database->new_statement(update_variable_statement);
     } catch (const QueryExecutionException&) {
@@ -451,7 +454,7 @@ void InitDeviceModelDb::delete_variable(const DeviceModelVariable& variable) {
 
     static const std::string delete_variable_statement = "DELETE FROM VARIABLE WHERE ID=@variable_id";
 
-    std::unique_ptr<SQLiteStatementInterface> delete_statement;
+    std::unique_ptr<StatementInterface> delete_statement;
     try {
         delete_statement = this->database->new_statement(delete_variable_statement);
     } catch (const QueryExecutionException&) {
@@ -474,7 +477,7 @@ void InitDeviceModelDb::insert_attribute(const VariableAttribute& attribute, con
         "INSERT OR REPLACE INTO VARIABLE_ATTRIBUTE (VARIABLE_ID, MUTABILITY_ID, PERSISTENT, CONSTANT, TYPE_ID) "
         "VALUES(@variable_id, @mutability_id, @persistent, @constant, @type_id)";
 
-    std::unique_ptr<SQLiteStatementInterface> insert_attributes_statement;
+    std::unique_ptr<StatementInterface> insert_attributes_statement;
     try {
         insert_attributes_statement = this->database->new_statement(statement);
     } catch (const QueryExecutionException&) {
@@ -561,7 +564,7 @@ void InitDeviceModelDb::update_attribute(const VariableAttribute& attribute, con
         "UPDATE VARIABLE_ATTRIBUTE SET MUTABILITY_ID=@mutability_id, PERSISTENT=@persistent, CONSTANT=@constant, "
         "TYPE_ID=@type_id WHERE ID=@id";
 
-    std::unique_ptr<SQLiteStatementInterface> update_statement;
+    std::unique_ptr<StatementInterface> update_statement;
     try {
         update_statement = this->database->new_statement(update_attribute_statement);
     } catch (const QueryExecutionException&) {
@@ -623,7 +626,7 @@ void InitDeviceModelDb::delete_attribute(const DbVariableAttribute& attribute) {
 
     static const std::string delete_attribute_statement = "DELETE FROM VARIABLE_ATTRIBUTE WHERE ID=@attribute_id";
 
-    std::unique_ptr<SQLiteStatementInterface> delete_statement;
+    std::unique_ptr<StatementInterface> delete_statement;
     try {
         delete_statement = this->database->new_statement(delete_attribute_statement);
     } catch (const QueryExecutionException&) {
@@ -649,7 +652,7 @@ bool InitDeviceModelDb::insert_variable_attribute_value(const int64_t& variable_
                                          "WHERE ID = @variable_attribute_id "
                                          "AND (VALUE_SOURCE = 'default' OR VALUE_SOURCE = '' OR VALUE_SOURCE IS NULL)";
 
-    std::unique_ptr<SQLiteStatementInterface> insert_variable_attribute_statement;
+    std::unique_ptr<StatementInterface> insert_variable_attribute_statement;
     try {
         insert_variable_attribute_statement = this->database->new_statement(statement);
     } catch (const QueryExecutionException&) {
@@ -805,7 +808,7 @@ std::map<ComponentKey, std::vector<DeviceModelVariable>> InitDeviceModelDb::get_
             "JOIN VARIABLE_ATTRIBUTE va ON va.VARIABLE_ID = v.ID";
     /* clang-format on */
 
-    std::unique_ptr<SQLiteStatementInterface> select_statement;
+    std::unique_ptr<StatementInterface> select_statement;
     try {
         select_statement = this->database->new_statement(statement);
     } catch (const QueryExecutionException&) {
@@ -961,7 +964,7 @@ void InitDeviceModelDb::remove_not_existing_components_from_db(
 bool InitDeviceModelDb::remove_component_from_db(const ComponentKey& component) {
     const std::string& delete_component_statement = "DELETE FROM COMPONENT WHERE ID = @component_id";
 
-    std::unique_ptr<SQLiteStatementInterface> delete_statement;
+    std::unique_ptr<StatementInterface> delete_statement;
     try {
         delete_statement = this->database->new_statement(delete_component_statement);
     } catch (const QueryExecutionException&) {
@@ -1030,7 +1033,7 @@ std::vector<DbVariableAttribute> InitDeviceModelDb::get_variable_attributes_from
     static const std::string get_attributes_statement = "SELECT ID, MUTABILITY_ID, PERSISTENT, CONSTANT, TYPE_ID FROM "
                                                         "VARIABLE_ATTRIBUTE WHERE VARIABLE_ID=(@variable_id)";
 
-    std::unique_ptr<SQLiteStatementInterface> select_statement;
+    std::unique_ptr<StatementInterface> select_statement;
     try {
         select_statement = this->database->new_statement(get_attributes_statement);
     } catch (const QueryExecutionException&) {
@@ -1121,7 +1124,7 @@ std::vector<VariableMonitoringMeta> InitDeviceModelDb::get_variable_monitors_fro
 void InitDeviceModelDb::init_sql() {
     static const std::string foreign_keys_on_statement = "PRAGMA foreign_keys = ON;";
 
-    std::unique_ptr<SQLiteStatementInterface> statement;
+    std::unique_ptr<StatementInterface> statement;
     try {
         statement = this->database->new_statement(foreign_keys_on_statement);
     } catch (const QueryExecutionException&) {

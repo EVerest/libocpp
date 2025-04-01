@@ -82,7 +82,7 @@ void Connector::restore_connector_operative_status() {
             this->evse_id, this->connector_id);
         this->component_state_manager->set_connector_individual_operational_status(this->evse_id, this->connector_id,
                                                                                    persisted_status, false);
-    } catch (const QueryExecutionException& e) {
+    } catch (const everest::db::QueryExecutionException& e) {
         EVLOG_error << "QueryExecutionException while restoring connector status of evse_id: " << this->evse_id
                     << "; connector_id: " << this->connector_id << ": " << e.what();
     } catch (const std::exception& e) {
