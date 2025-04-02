@@ -498,7 +498,8 @@ ProfileValidationResultEnum SmartCharging::validate_tx_profile(const ChargingPro
     conflicts_stmt->bind_int("@stack_level", profile.stackLevel);
     conflicts_stmt->bind_int("@id", profile.id);
     if (profile.transactionId.has_value()) {
-        conflicts_stmt->bind_text("@transaction_id", profile.transactionId.value().get(), everest::db::sqlite::SQLiteString::Transient);
+        conflicts_stmt->bind_text("@transaction_id", profile.transactionId.value().get(),
+                                  everest::db::sqlite::SQLiteString::Transient);
     } else {
         conflicts_stmt->bind_null("@transaction_id");
     }

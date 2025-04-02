@@ -218,7 +218,8 @@ private:
     OperationalStatusEnum get_availability(int32_t evse_id, int32_t connector_id);
 
 public:
-    DatabaseHandler(std::unique_ptr<everest::db::sqlite::ConnectionInterface> database, const fs::path& sql_migration_files_path);
+    DatabaseHandler(std::unique_ptr<everest::db::sqlite::ConnectionInterface> database,
+                    const fs::path& sql_migration_files_path);
 
     // Authorization cache management
     void authorization_cache_insert_entry(const std::string& id_token_hash, const IdTokenInfo& id_token_info) override;

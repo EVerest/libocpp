@@ -33,8 +33,10 @@ public:
     bool DoesTableExist(std::string_view table) {
         const std::string statement = "SELECT name FROM sqlite_master WHERE type='table' AND name=@table_name";
 
-        std::unique_ptr<everest::db::sqlite::StatementInterface> table_exists_statement = this->database->new_statement(statement);
-        table_exists_statement->bind_text("@table_name", std::string(table), everest::db::sqlite::SQLiteString::Transient);
+        std::unique_ptr<everest::db::sqlite::StatementInterface> table_exists_statement =
+            this->database->new_statement(statement);
+        table_exists_statement->bind_text("@table_name", std::string(table),
+                                          everest::db::sqlite::SQLiteString::Transient);
         const int status = table_exists_statement->step();
         const int number_of_rows = table_exists_statement->get_number_of_rows();
         return status != SQLITE_ERROR && number_of_rows == 1;
