@@ -7,7 +7,7 @@
 #include <filesystem>
 #include <sqlite3.h>
 
-#include <everest_sqlite/database/sqlite/connection.hpp>
+#include <everest/database/sqlite/connection.hpp>
 #include <everest/logging.hpp>
 #include <ocpp/v2/device_model_storage_interface.hpp>
 

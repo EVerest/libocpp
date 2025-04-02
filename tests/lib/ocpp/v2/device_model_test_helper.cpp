@@ -3,7 +3,7 @@
 
 #include "device_model_test_helper.hpp"
 
-#include <everest_sqlite/database/sqlite/connection.hpp>
+#include <everest/database/sqlite/connection.hpp>
 #include <ocpp/v2/device_model.hpp>
 #include <ocpp/v2/device_model_storage_sqlite.hpp>
 

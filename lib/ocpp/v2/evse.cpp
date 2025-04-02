@@ -5,7 +5,7 @@
 #include <optional>
 #include <utility>
 
-#include <everest_sqlite/database/exceptions.hpp>
+#include <everest/database/exceptions.hpp>
 #include <everest/logging.hpp>
 #include <ocpp/v2/ctrlr_component_variables.hpp>
 #include <ocpp/v2/evse.hpp>

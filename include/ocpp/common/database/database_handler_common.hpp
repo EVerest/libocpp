@@ -7,8 +7,8 @@
 #include <string>
 #include <vector>
 
-#include <everest_sqlite/database/exceptions.hpp>
-#include <everest_sqlite/database/sqlite/connection.hpp>
+#include <everest/database/exceptions.hpp>
+#include <everest/database/sqlite/connection.hpp>
 #include <ocpp/common/types.hpp>
 
 namespace ocpp::common {
