@@ -55,6 +55,7 @@ else()
     find_package(everest-timer REQUIRED)
     find_package(everest-log REQUIRED)
     find_package(everest-evse_security REQUIRED)
+    find_package(everest-sqlite REQUIRED)
 endif()
 
 # config and auxillary files
@@ -91,6 +92,7 @@ if (OCPP_INSTALL)
             "find_dependency(libwebsockets)"
             "find_dependency(everest-timer)"
             "find_dependency(everest-evse_security)"
+            "find_dependency(everest-sqlite)"
     )
 endif()
 
