@@ -6,7 +6,7 @@
 #include "ocpp/v2/ocpp_types.hpp"
 #include <boost/algorithm/string/join.hpp>
 #include <boost/range/adaptor/transformed.hpp>
-#include <database/sqlite/statement.hpp>
+#include <everest_sqlite/database/sqlite/statement.hpp>
 #include <numeric>
 #include <ocpp/common/message_queue.hpp>
 #include <ocpp/v2/database_handler.hpp>

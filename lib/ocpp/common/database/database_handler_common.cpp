@@ -3,7 +3,7 @@
 
 #include <ocpp/common/database/database_handler_common.hpp>
 
-#include <database/sqlite/schema_updater.hpp>
+#include <everest_sqlite/database/sqlite/schema_updater.hpp>
 #include <everest/logging.hpp>
 
 using namespace everest::db;

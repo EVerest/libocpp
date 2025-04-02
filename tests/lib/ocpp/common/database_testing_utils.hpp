@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <database/sqlite/connection.hpp>
+#include <everest_sqlite/database/sqlite/connection.hpp>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
