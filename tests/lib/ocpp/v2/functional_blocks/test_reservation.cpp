@@ -34,7 +34,8 @@ using ::testing::Return;
 class ReservationTest : public ::testing::Test {
 public:
 protected: // Functions
-    ReservationTest() : database_connection(std::make_unique<everest::db::sqlite::Connection>(DEVICE_MODEL_DB_IN_MEMORY_PATH)) {
+    ReservationTest() :
+        database_connection(std::make_unique<everest::db::sqlite::Connection>(DEVICE_MODEL_DB_IN_MEMORY_PATH)) {
         database_connection->open_connection();
         this->device_model = create_device_model();
         this->functional_block_context = std::make_unique<FunctionalBlockContext>(

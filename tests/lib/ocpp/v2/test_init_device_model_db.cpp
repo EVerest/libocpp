@@ -652,8 +652,7 @@ bool InitDeviceModelDbTest::characteristics_exists(
                                                                 "AND vc.SUPPORTS_MONITORING IS @supports_monitoring "
                                                                 "AND vc.UNIT IS @unit "
                                                                 "AND vc.VALUES_LIST IS @values_list";
-    std::unique_ptr<StatementInterface> statement =
-        this->database->new_statement(select_characteristics_statement);
+    std::unique_ptr<StatementInterface> statement = this->database->new_statement(select_characteristics_statement);
 
     statement->bind_text("@component_name", component_name, SQLiteString::Transient);
     if (component_instance.has_value()) {
@@ -801,8 +800,7 @@ void InitDeviceModelDbTest::set_attribute_source(const std::string& component_na
                                          "AND VARIABLE.INSTANCE IS @variable_instance) "
                                          "AND TYPE_ID = @type_id";
 
-    std::unique_ptr<StatementInterface> insert_variable_attribute_statement =
-        this->database->new_statement(statement);
+    std::unique_ptr<StatementInterface> insert_variable_attribute_statement = this->database->new_statement(statement);
 
     insert_variable_attribute_statement->bind_text("@source", source, SQLiteString::Transient);
     insert_variable_attribute_statement->bind_text("@component_name", component_name, SQLiteString::Transient);

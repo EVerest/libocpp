@@ -1744,8 +1744,7 @@ TEST_F(AuthorizationTest, handle_get_local_authorization_list_version_exception)
     // a call error.
     this->set_local_auth_list_ctrlr_enabled(this->device_model, true);
     const auto request = this->create_get_local_list_version_request();
-    EXPECT_CALL(this->database_handler_mock, get_local_authorization_list_version)
-        .WillOnce(Throw(Exception("Oops!")));
+    EXPECT_CALL(this->database_handler_mock, get_local_authorization_list_version).WillOnce(Throw(Exception("Oops!")));
     EXPECT_CALL(mock_dispatcher, dispatch_call_error(_)).WillOnce([](const ocpp::CallError& call_error) {
         EXPECT_EQ(call_error.errorCode, "InternalError");
     });
