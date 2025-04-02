@@ -8,7 +8,7 @@
 #include <memory>
 #include <ocpp/common/support_older_cpp_versions.hpp>
 
-#include <everest_sqlite/database/sqlite/connection.hpp>
+#include <everest/database/sqlite/connection.hpp>
 #include <ocpp/common/database/database_handler_common.hpp>
 #include <ocpp/v2/ocpp_types.hpp>
 #include <ocpp/v2/transaction.hpp>
