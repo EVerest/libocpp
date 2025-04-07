@@ -20,8 +20,7 @@ bool is_decimal_number(const std::string& value);
 bool is_rfc3339_datetime(const std::string& value);
 bool is_boolean(const std::string& value);
 
-bool is_equal(const float& value1, const float& value2,
-              const double& epsilon = std::numeric_limits<double>::epsilon());
+bool is_equal(const float& value1, const float& value2, const double& epsilon = std::numeric_limits<double>::epsilon());
 bool is_equal(const double& value1, const double& value2,
               const double& epsilon = std::numeric_limits<double>::epsilon());
 
