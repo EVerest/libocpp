@@ -106,7 +106,12 @@ public:
         return dynamic_cast<EvseMock&>(*evses.at(evse_id - 1).get());
     }
 
-    bool any_transaction_active(const std::optional<EVSE>& /*evse*/) const override {
+    bool any_transaction_active(const std::optional<EVSE>& evse) const override {
+        if (evse.has_value()) {
+            if (this->transactions.at(evse.value().id - 1) != nullptr) {
+                return true;
+            }
+        }
         return false;
     }
 
