@@ -563,14 +563,14 @@ void ChargePoint::handle_cost_and_tariff(const TransactionEventResponse& respons
         cost_messages.push_back(message);
 
         // If cost is enabled, the message will be sent to the running cost callback. But if it is not enabled, the
-        // tariff message will be sent using the display message callback.
-        if (!cost_enabled and this->callbacks.set_display_message_callback.has_value() and
-            this->callbacks.set_display_message_callback != nullptr) {
-            DisplayMessage display_message;
-            display_message.message = message;
-            display_message.identifier_id = original_message.transactionInfo.transactionId;
-            display_message.identifier_type = IdentifierType::TransactionId;
-            this->callbacks.set_display_message_callback.value()({display_message});
+        // tariff message will be sent using the session cost message callback.
+        if (!cost_enabled and this->callbacks.tariff_message_callback.has_value() and this->callbacks.tariff_message_callback != nullptr) {
+            TariffMessage tariff_message;
+            tariff_message.message = cost_messages;
+            tariff_message.ocpp_transaction_id = original_message.transactionInfo.transactionId;
+            tariff_message.identifier_id = original_message.transactionInfo.transactionId;
+            tariff_message.identifier_type = IdentifierType::TransactionId;
+            this->callbacks.tariff_message_callback.value()({tariff_message});
         }
     }
 

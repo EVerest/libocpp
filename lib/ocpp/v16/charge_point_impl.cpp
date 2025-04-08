@@ -3166,7 +3166,7 @@ DataTransferResponse ChargePointImpl::handle_set_user_price(const std::optional<
         return response;
     }
 
-    if (set_display_message_callback == nullptr) {
+    if (tariff_message_callback == nullptr) {
         EVLOG_error << "Received data transfer for set user price, but no callback is registered.";
         return response;
     }
@@ -3189,9 +3189,7 @@ DataTransferResponse ChargePointImpl::handle_set_user_price(const std::optional<
         return response;
     }
 
-    // Find transaction with given id tag
-    std::vector<DisplayMessage> messages;
-    DisplayMessage message;
+    TariffMessage tariff_message;
     const auto t = this->transaction_handler->get_transaction_from_id_tag(id_token.value());
     std::string identifier_id;
     IdentifierType identifier_type;
@@ -3202,33 +3200,34 @@ DataTransferResponse ChargePointImpl::handle_set_user_price(const std::optional<
     } else {
         identifier_id = t->get_session_id();
         identifier_type = IdentifierType::SessionId;
-    }
-
-    message.identifier_id = identifier_id;
-    message.identifier_type = identifier_type;
-
-    if (data.contains("priceText")) {
-        message.message.message = data.at("priceText");
-        if (this->configuration->getLanguage().has_value()) {
-            message.message.language = this->configuration->getLanguage().value();
+        const std::optional<int32_t> transaction_id = t->get_transaction_id();
+        if (transaction_id != std::nullopt) {
+            tariff_message.ocpp_transaction_id = std::to_string(transaction_id.value());
         }
     }
 
-    messages.push_back(message);
+    tariff_message.identifier_id = identifier_id;
+    tariff_message.identifier_type = identifier_type;
 
+    if (data.contains("priceText")) {
+        DisplayMessageContent m;
+        m.message = data.at("priceText");
+        if (this->configuration->getLanguage().has_value()) {
+            m.language = this->configuration->getLanguage().value();
+        }
+        tariff_message.message.push_back(m);
+    }
     if (this->configuration->getCustomMultiLanguageMessagesEnabled() && data.contains("priceTextExtra") &&
         data.at("priceTextExtra").is_array()) {
         for (const json& j : data.at("priceTextExtra")) {
-            DisplayMessage display_message;
-            display_message.identifier_id = identifier_id;
-            display_message.identifier_type = identifier_type;
-            display_message.message = j;
+            DisplayMessageContent message;
+            message = j;
 
-            messages.push_back(display_message);
+            tariff_message.message.push_back(message);
         }
     }
 
-    response = this->set_display_message_callback(messages);
+    response = this->tariff_message_callback(tariff_message);
     return response;
 }
 
@@ -4700,6 +4699,11 @@ void ChargePointImpl::register_session_cost_callback(
     const std::function<DataTransferResponse(const RunningCost& running_cost, const uint32_t number_of_decimals)>&
         session_cost_callback) {
     this->session_cost_callback = session_cost_callback;
+}
+
+void ChargePointImpl::register_tariff_message_callback(
+    const std::function<DataTransferResponse(const TariffMessage& message)>& tariff_message_callback) {
+    this->tariff_message_callback = tariff_message_callback;
 }
 
 void ChargePointImpl::register_set_display_message_callback(
