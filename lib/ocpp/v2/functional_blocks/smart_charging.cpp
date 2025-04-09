@@ -293,6 +293,28 @@ ProfileValidationResultEnum SmartCharging::verify_rate_limit(const ChargingProfi
     return result;
 }
 
+bool SmartCharging::has_dc_input_phase_control(const int32_t evse_id) const {
+    if (evse_id == 0) {
+        for (EvseManagerInterface::EvseIterator it = context.evse_manager.begin(); it != context.evse_manager.end();
+             ++it) {
+            const int32_t id = (*it).get_id();
+            if (!evse_has_dc_input_phase_control(id)) {
+                return false;
+            }
+        }
+
+        return true;
+    } else {
+        return evse_has_dc_input_phase_control(evse_id);
+    }
+}
+
+bool SmartCharging::evse_has_dc_input_phase_control(const int32_t evse_id) const {
+    const ComponentVariable evse_variable =
+        EvseComponentVariables::get_component_variable(evse_id, EvseComponentVariables::DCInputPhaseControl);
+    return this->context.device_model.get_optional_value<bool>(evse_variable).value_or(false);
+}
+
 std::vector<CompositeSchedule> SmartCharging::get_all_composite_schedules(const int32_t duration_s,
                                                                           const ChargingRateUnitEnum& unit) {
     std::vector<CompositeSchedule> composite_schedules;
@@ -376,6 +398,13 @@ ProfileValidationResultEnum SmartCharging::conform_and_validate_profile(Charging
     } else {
         result = this->validate_profile_schedules(profile);
     }
+
+    if (result == ProfileValidationResultEnum::Valid) {
+        if (is_overlapping_validity_period(profile, evse_id)) {
+            result = ProfileValidationResultEnum::DuplicateProfileValidityPeriod;
+        }
+    }
+
     if (result != ProfileValidationResultEnum::Valid) {
         return result;
     }
@@ -557,10 +586,6 @@ ProfileValidationResultEnum SmartCharging::validate_charging_station_max_profile
         return ProfileValidationResultEnum::InvalidProfileType;
     }
 
-    if (is_overlapping_validity_period(profile, evse_id)) {
-        return ProfileValidationResultEnum::DuplicateProfileValidityPeriod;
-    }
-
     if (evse_id > 0) {
         return ProfileValidationResultEnum::ChargingStationMaxProfileEvseIdGreaterThanZero;
     }
@@ -576,10 +601,6 @@ ProfileValidationResultEnum SmartCharging::validate_charging_station_max_profile
 ProfileValidationResultEnum SmartCharging::validate_tx_default_profile(const ChargingProfile& profile,
                                                                        int32_t evse_id) const {
     auto profiles = evse_id == 0 ? get_evse_specific_tx_default_profiles() : get_station_wide_tx_default_profiles();
-
-    if (is_overlapping_validity_period(profile, evse_id)) {
-        return ProfileValidationResultEnum::DuplicateProfileValidityPeriod;
-    }
 
     // K01.FR.53
     for (auto candidate : profiles) {
@@ -660,10 +681,6 @@ ProfileValidationResultEnum SmartCharging::validate_priority_charging_profile(co
     // ChargingOnly and the charging schedule has no duration, since it remains valid until end of the transaction.
     if (profile.chargingProfilePurpose != ChargingProfilePurposeEnum::PriorityCharging) {
         return ProfileValidationResultEnum::InvalidProfileType;
-    }
-
-    if (is_overlapping_validity_period(profile, evse_id)) {
-        return ProfileValidationResultEnum::DuplicateProfileValidityPeriod;
     }
 
     // K01.FR.70 Priority charging should not have value for duration.
@@ -800,13 +817,11 @@ ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingPr
             // of silently acccepting them.
             if (phase_type == CurrentPhaseType::DC && (charging_schedule_period.numberPhases.has_value() ||
                                                        charging_schedule_period.phaseToUse.has_value())) {
-                const int32_t evse_id = evse_opt.has_value() ? evse_opt.value()->get_id() : 0;
-                const ComponentVariable evse_variable = EvseComponentVariables::get_component_variable(
-                    evse_id, EvseComponentVariables::DCInputPhaseControl);
                 if (this->context.ocpp_version == OcppProtocolVersion::v201) {
                     return ProfileValidationResultEnum::ChargingSchedulePeriodExtraneousPhaseValues;
                 } else if (this->context.ocpp_version == OcppProtocolVersion::v21) {
-                    if (!this->context.device_model.get_optional_value<bool>(evse_variable).value_or(false)) {
+                    const int32_t evse_id = evse_opt.has_value() ? evse_opt.value()->get_id() : 0;
+                    if (!this->has_dc_input_phase_control(evse_id)) {
                         // If 2.1 and DCInputPhaseControl is false or does not exist, then send rejected with reason
                         // code noPhaseForDC
                         return ProfileValidationResultEnum::ChargingSchedulePeriodNoPhaseForDC;

@@ -308,6 +308,23 @@ private: // Functions
     ///         ProfileValidationResultEnum::ChargingProfileRateLimitExceeded when rate limit was exceeded.
     ///
     ProfileValidationResultEnum verify_rate_limit(const ChargingProfile& profile);
+
+    ///
+    /// \brief Check if DCInputPhaseControl is enabled for this evse id.
+    ///
+    /// \note This function can also be used for evse id 0, it will then check all existing evse's for this variable.
+    ///
+    /// \param evse_id  The evse id. Can also be 0.
+    /// \return True if evse has DCInputPhaseControl enabled.
+    ///
+    bool has_dc_input_phase_control(const int32_t evse_id) const;
+
+    ///
+    /// \brief Check if DCInputPhaseControl is enabled for this evse id.
+    /// \param evse_id  The evse id. Should not be 0.
+    /// \return True if evse has DCInputPhaseControl enabled.
+    ///
+    bool evse_has_dc_input_phase_control(const int32_t evse_id) const;
 };
 
 ///
