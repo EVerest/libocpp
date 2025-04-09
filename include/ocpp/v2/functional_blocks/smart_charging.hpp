@@ -329,6 +329,18 @@ bool are_limits_and_setpoints_of_operation_mode_correct(const LimitsSetpointsFor
                                                         const std::optional<float>& limit_L3);
 
 ///
+/// \brief Check if operation mode for the charging profile purpose is correct.
+///
+/// See 2.1 spec: Table 95. operationMode for various ChargingProfilePurposes
+///
+/// \param operation_mode   The operation mode.
+/// \param purpose          The charging profile purpose.
+/// \return True if this operation mode is allowed.
+///
+bool check_operation_modes_for_charging_profile_purposes(const OperationModeEnum& operation_mode,
+                                                         const ChargingProfilePurposeEnum& purpose);
+
+///
 /// \brief Check if limits and checkpoints of an operation mode are correct.
 ///
 /// Check if all required limits and setpoints are set and if there are limits and / or setpoints that should not be

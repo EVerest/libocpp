@@ -837,16 +837,9 @@ ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingPr
                 }
 
                 // Check all other operation modes.
-                try {
-                    if (operation_modes_for_charging_profile_purposes.at(profile.chargingProfilePurpose)
-                            .count(operation_mode) == 0) {
-                        return ProfileValidationResultEnum::ChargingSchedulePeriodUnsupportedOperationMode;
-                    }
-                } catch (const std::out_of_range& e) {
-                    EVLOG_warning << "Charging profile purpose "
-                                  << conversions::charging_profile_purpose_enum_to_string(
-                                         profile.chargingProfilePurpose)
-                                  << " not in list of valid operation modes: can not check if operation mode is valid.";
+                if (!check_operation_modes_for_charging_profile_purposes(operation_mode,
+                                                                         profile.chargingProfilePurpose)) {
+                    return ProfileValidationResultEnum::ChargingSchedulePeriodUnsupportedOperationMode;
                 }
 
                 // Q08.FR.05: LocalFrequency should have chargingRateUnit `W`.
@@ -901,7 +894,7 @@ SmartCharging::verify_no_conflicting_external_constraints_id(const ChargingProfi
     if (this->context.ocpp_version == OcppProtocolVersion::v21) {
         auto max_external_constraints_id =
             this->context.device_model.get_optional_value<int>(ControllerComponentVariables::MaxExternalConstraintsId);
-        if (max_external_constraints_id.has_value() && profile.id <= max_external_constraints_id.has_value()) {
+        if (max_external_constraints_id.has_value() && profile.id <= max_external_constraints_id.value()) {
             return ProfileValidationResultEnum::ChargingProfileIdSmallerThanMaxExternalConstraintsId;
         }
     }
@@ -1363,6 +1356,20 @@ bool check_limits_and_setpoints(const ChargingSchedulePeriod& charging_schedule_
                       << conversions::operation_mode_enum_to_string(charging_schedule_period.operationMode.value())
                       << " not in list of valid limits and setpoints: can not check if limits and "
                          "setpoints are valid";
+    }
+
+    return true;
+}
+
+bool check_operation_modes_for_charging_profile_purposes(const OperationModeEnum& operation_mode,
+                                                         const ChargingProfilePurposeEnum& purpose) {
+    try {
+        if (operation_modes_for_charging_profile_purposes.at(purpose).count(operation_mode) == 0) {
+            return false;
+        }
+    } catch (const std::out_of_range& e) {
+        EVLOG_warning << "Charging profile purpose " << conversions::charging_profile_purpose_enum_to_string(purpose)
+                      << " not in list of valid operation modes: can not check if operation mode is valid.";
     }
 
     return true;
