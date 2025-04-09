@@ -148,12 +148,7 @@ void ocpp::v2::Authorization::authorization_cache_delete_entry(const std::string
 ocpp::v2::AuthorizeResponse
 ocpp::v2::Authorization::validate_token(const IdToken id_token, const std::optional<CiString<10000>>& certificate,
                                         const std::optional<std::vector<OCSPRequestData>>& ocsp_request_data) {
-    // TODO(piet): C01.FR.14
-    // TODO(piet): C01.FR.15
-    // TODO(piet): C01.FR.16
     // TODO(piet): C01.FR.17
-
-    // TODO(piet): C10.FR.06
 
     AuthorizeResponse response;
 
