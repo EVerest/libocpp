@@ -153,9 +153,9 @@ ocpp::v2::Authorization::validate_token(const IdToken id_token, const std::optio
     AuthorizeResponse response;
 
     // C03.FR.01 && C05.FR.01: We SHALL NOT send an authorize reqeust for IdTokenType Central
-    if (id_token.type == IdTokenEnumStringType::Central or
+    if (id_token.type == IdTokenEnumStringType::Central or id_token.type == IdTokenEnumStringType::NoAuthorization or
         !this->context.device_model.get_optional_value<bool>(ControllerComponentVariables::AuthCtrlrEnabled)
-             .value_or(true)) {
+             .value_or(false)) {
         response.idTokenInfo.status = AuthorizationStatusEnum::Accepted;
         return response;
     }
