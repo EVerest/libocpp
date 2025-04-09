@@ -471,13 +471,12 @@ struct CompositeScheduleConfig {
     }
 };
 
-std::vector<IntermediateProfile>
-generate_evse_intermediates(std::vector<ChargingProfile>&& evse_profiles,
-                            const std::vector<ChargingProfile>& station_wide_profiles, const ocpp::DateTime& start_time,
-                            const ocpp::DateTime& end_time, std::optional<ocpp::DateTime> session_start,
-                            bool simulate_transaction_active, const OcppProtocolVersion ocpp_version
-
-) {
+std::vector<IntermediateProfile> generate_evse_intermediates(std::vector<ChargingProfile>&& evse_profiles,
+                                                             const std::vector<ChargingProfile>& station_wide_profiles,
+                                                             const ocpp::DateTime& start_time,
+                                                             const ocpp::DateTime& end_time,
+                                                             std::optional<ocpp::DateTime> session_start,
+                                                             bool simulate_transaction_active) {
 
     // Combine the profiles with those from the station
     evse_profiles.insert(evse_profiles.end(), station_wide_profiles.begin(), station_wide_profiles.end());
@@ -501,7 +500,7 @@ generate_evse_intermediates(std::vector<ChargingProfile>&& evse_profiles,
 
         // Merges the TxProfile with the TxDefaultProfile, for every period preferring a tx period over a tx_default
         // period
-        output.push_back(merge_tx_profile_with_tx_default_profile(tx, tx_default, ocpp_version));
+        output.push_back(merge_tx_profile_with_tx_default_profile(tx, tx_default));
     }
 
     return output;
@@ -534,7 +533,7 @@ CompositeSchedule SmartCharging::calculate_composite_schedule(const ocpp::DateTi
         for (int evse = 1; evse <= nr_of_evses; evse++) {
             auto intermediates = generate_evse_intermediates(
                 get_valid_profiles_for_evse(evse, config.purposes_to_ignore), station_wide_profiles, start_time,
-                end_time, session_start, simulate_transaction_active, this->context.ocpp_version);
+                end_time, session_start, simulate_transaction_active);
 
             // Determine the lowest limits per evse
             evse_schedules.push_back(merge_profiles_by_lowest_limit(intermediates, this->context.ocpp_version));
@@ -548,7 +547,7 @@ CompositeSchedule SmartCharging::calculate_composite_schedule(const ocpp::DateTi
     } else {
         combined_profiles = generate_evse_intermediates(get_valid_profiles_for_evse(evse_id, config.purposes_to_ignore),
                                                         station_wide_profiles, start_time, end_time, session_start,
-                                                        simulate_transaction_active, this->context.ocpp_version);
+                                                        simulate_transaction_active);
     }
 
     // ChargingStationMaxProfile is always station wide

@@ -127,8 +127,7 @@ IntermediateProfile generate_profile_from_periods(std::vector<period_entry_t>& p
 /// The tx_profile will be preferred over the tx_default_profile whenever it has a value
 /// \return A combined profile
 IntermediateProfile merge_tx_profile_with_tx_default_profile(const IntermediateProfile& tx_profile,
-                                                             const IntermediateProfile& tx_default_profile,
-                                                             const OcppProtocolVersion ocpp_version);
+                                                             const IntermediateProfile& tx_default_profile);
 
 /// \brief Generates a new profile by taking the lowest limit of all the provided \param profiles
 IntermediateProfile merge_profiles_by_lowest_limit(const std::vector<IntermediateProfile>& profiles,

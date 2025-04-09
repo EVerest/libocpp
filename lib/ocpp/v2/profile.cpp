@@ -489,8 +489,7 @@ inline std::vector<IntermediateProfileRef> convert_to_ref_vector(const std::vect
 }
 
 IntermediateProfile combine_list_of_profiles(const std::vector<IntermediateProfileRef>& profiles,
-                                             std::function<IntermediatePeriod(const period_pair_vector&)> combinator,
-                                             const OcppProtocolVersion ocpp_version) {
+                                             std::function<IntermediatePeriod(const period_pair_vector&)> combinator) {
     if (profiles.empty()) {
         // We should never get here as there are always profiles, otherwise there is a mistake in the calling
         // function Return an empty profile to be safe
@@ -559,8 +558,7 @@ IntermediateProfile combine_list_of_profiles(const std::vector<IntermediateProfi
 } // namespace
 
 IntermediateProfile merge_tx_profile_with_tx_default_profile(const IntermediateProfile& tx_profile,
-                                                             const IntermediateProfile& tx_default_profile,
-                                                             const OcppProtocolVersion ocpp_version) {
+                                                             const IntermediateProfile& tx_default_profile) {
     auto combinator = [](const period_pair_vector& periods) {
         const IntermediatePeriod default_period = default_intermediate_period();
         IntermediatePeriod period{};
@@ -596,7 +594,7 @@ IntermediateProfile merge_tx_profile_with_tx_default_profile(const IntermediateP
     // This ordering together with the combinator will prefer the tx_profile above the default profile
     std::vector<IntermediateProfileRef> profiles{tx_profile, tx_default_profile};
 
-    return combine_list_of_profiles(profiles, combinator, ocpp_version);
+    return combine_list_of_profiles(profiles, combinator);
 }
 
 IntermediateProfile merge_profiles_by_lowest_limit(const std::vector<IntermediateProfile>& profiles,
@@ -677,7 +675,7 @@ IntermediateProfile merge_profiles_by_lowest_limit(const std::vector<Intermediat
         return period;
     };
 
-    return combine_list_of_profiles(convert_to_ref_vector(profiles), combinator, ocpp_version);
+    return combine_list_of_profiles(convert_to_ref_vector(profiles), combinator);
 }
 
 IntermediateProfile merge_profiles_by_summing_limits(const std::vector<IntermediateProfile>& profiles,
@@ -732,7 +730,7 @@ IntermediateProfile merge_profiles_by_summing_limits(const std::vector<Intermedi
         return period;
     };
 
-    return combine_list_of_profiles(convert_to_ref_vector(profiles), combinator, ocpp_version);
+    return combine_list_of_profiles(convert_to_ref_vector(profiles), combinator);
 }
 
 std::vector<ChargingSchedulePeriod>
