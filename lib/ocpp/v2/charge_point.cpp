@@ -511,7 +511,7 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
     // Construct functional blocks.
     functional_block_context = std::make_unique<FunctionalBlockContext>(
         *this->message_dispatcher, *this->device_model, *this->connectivity_manager, *this->evse_manager,
-        *this->database_handler, *this->evse_security, *this->component_state_manager);
+        *this->database_handler, *this->evse_security, *this->component_state_manager, this->ocpp_version);
 
     this->data_transfer = std::make_unique<DataTransfer>(
         *this->functional_block_context, this->callbacks.data_transfer_callback, DEFAULT_WAIT_FOR_FUTURE_TIMEOUT);
@@ -551,8 +551,11 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
             this->callbacks.configure_network_connection_profile_callback.value());
     }
 
-    this->smart_charging = std::make_unique<SmartCharging>(*this->functional_block_context,
-                                                           this->callbacks.set_charging_profiles_callback);
+    if (device_model->get_optional_value<bool>(ControllerComponentVariables::SmartChargingCtrlrAvailable)
+            .value_or(false)) {
+        this->smart_charging = std::make_unique<SmartCharging>(*this->functional_block_context,
+                                                               this->callbacks.set_charging_profiles_callback);
+    }
 
     this->tariff_and_cost = std::make_unique<TariffAndCost>(
         *functional_block_context, *this->meter_values, this->callbacks.tariff_message_callback,
