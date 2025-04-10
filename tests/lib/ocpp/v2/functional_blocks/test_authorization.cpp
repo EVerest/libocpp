@@ -1959,3 +1959,16 @@ TEST_F(AuthorizationTest, offline_local_pre_authorize_cache) {
     EXPECT_EQ(authorization->validate_token(id_token, std::nullopt, std::nullopt).idTokenInfo.status,
               AuthorizationStatusEnum::Unknown);
 }
+
+TEST_F(AuthorizationTest, start_button_auth) {
+    ON_CALL(this->connectivity_manager, is_websocket_connected()).WillByDefault(Return(false));
+
+    this->set_auth_ctrlr_enabled(this->device_model, true);
+
+    IdToken id_token;
+    id_token.type = IdTokenEnumStringType::NoAuthorization;
+    id_token.idToken = "";
+
+    EXPECT_EQ(authorization->validate_token(id_token, std::nullopt, std::nullopt).idTokenInfo.status,
+              AuthorizationStatusEnum::Accepted);
+}
