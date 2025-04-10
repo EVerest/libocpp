@@ -229,7 +229,7 @@ TEST_F(AvailabilityTest, handle_scheduled_changed_availability_requests_no_trans
     this->availability->handle_scheduled_change_availability_requests(1);
 }
 
-TEST_F(AvailabilityTest, handle_scheduled_changed_availability_requests_negative_evseid) {
+TEST_F(AvailabilityTest, handle_scheduled_change_availability_requests_negative_evseid) {
     // Call handle_scheduled_change_availability_requests with a non existing (negative) evse id. This will not call any
     // callback.
     EXPECT_CALL(evse_manager, any_transaction_active(_)).Times(0);
@@ -289,6 +289,187 @@ TEST_F(AvailabilityTest, handle_message_change_availability_cs_inoperative_trans
         const auto message = call_result[ocpp::CALLRESULT_PAYLOAD].get<ChangeAvailabilityResponse>();
         EXPECT_EQ(message.status, ChangeAvailabilityStatusEnum::Scheduled);
     }));
+
+    this->availability->handle_message(request);
+}
+
+TEST_F(AvailabilityTest, handle_message_change_availability_cs_inoperative_transaction_not_active) {
+    ocpp::EnhancedMessage<MessageType> request =
+        create_example_change_availability_request(OperationalStatusEnum::Inoperative, std::nullopt, std::nullopt);
+
+    // No EVSE, but if it requests if it's valid, return true. There is no active transaction. Operational status is
+    // currently Operative.
+    ON_CALL(evse_manager, any_transaction_active(_)).WillByDefault(Return(false));
+    ON_CALL(component_state_manager, get_cs_individual_operational_status())
+        .WillByDefault(Return(OperationalStatusEnum::Operative));
+
+    // The CS will be scheduled to set to inoperative, but all evse's that do not have an active transaction will
+    // already be set to inoperative.
+    ON_CALL(evse_1, has_active_transaction()).WillByDefault(Return(false));
+    ON_CALL(evse_2, has_active_transaction()).WillByDefault(Return(false));
+
+    // CS has no active transaction, so it will be set to inoperative.
+    EXPECT_CALL(component_state_manager,
+                set_cs_individual_operational_status(OperationalStatusEnum::Inoperative, true));
+
+    // And since there is an active transaction, changing of the availability will be scheduled.
+    EXPECT_CALL(mock_dispatcher, dispatch_call_result(_)).WillOnce(Invoke([](const json& call_result) {
+        const auto message = call_result[ocpp::CALLRESULT_PAYLOAD].get<ChangeAvailabilityResponse>();
+        EXPECT_EQ(message.status, ChangeAvailabilityStatusEnum::Accepted);
+    }));
+
+    this->availability->handle_message(request);
+}
+
+TEST_F(AvailabilityTest, handle_message_change_availability_cs_operative_transaction_not_active) {
+    ocpp::EnhancedMessage<MessageType> request =
+        create_example_change_availability_request(OperationalStatusEnum::Operative, std::nullopt, std::nullopt);
+
+    // No EVSE, but if it requests if it's valid, return true. There is no active transaction. Operational status is
+    // currently Operative.
+    ON_CALL(evse_manager, any_transaction_active(_)).WillByDefault(Return(false));
+    ON_CALL(component_state_manager, get_cs_individual_operational_status())
+        .WillByDefault(Return(OperationalStatusEnum::Operative));
+
+    // The CS will be scheduled to set to inoperative, but all evse's that do not have an active transaction will
+    // already be set to inoperative.
+    ON_CALL(evse_1, has_active_transaction()).WillByDefault(Return(false));
+    ON_CALL(evse_2, has_active_transaction()).WillByDefault(Return(false));
+
+    // EVSE's have no active transaction, so they will be set to inoperative.
+    EXPECT_CALL(component_state_manager, set_cs_individual_operational_status(OperationalStatusEnum::Operative, true));
+
+    // And since the CS is already in the Operative state, the status is 'accepted'.
+    EXPECT_CALL(mock_dispatcher, dispatch_call_result(_)).WillOnce(Invoke([](const json& call_result) {
+        const auto message = call_result[ocpp::CALLRESULT_PAYLOAD].get<ChangeAvailabilityResponse>();
+        EXPECT_EQ(message.status, ChangeAvailabilityStatusEnum::Accepted);
+    }));
+
+    this->availability->handle_message(request);
+}
+
+TEST_F(AvailabilityTest, handle_message_change_availability_wrong_evse) {
+    ocpp::EnhancedMessage<MessageType> request =
+        create_example_change_availability_request(OperationalStatusEnum::Operative, 42, std::nullopt);
+
+    // Because the evse id does not exist, 'Rejected' is returned.
+    EXPECT_CALL(mock_dispatcher, dispatch_call_result(_)).WillOnce(Invoke([](const json& call_result) {
+        const auto message = call_result[ocpp::CALLRESULT_PAYLOAD].get<ChangeAvailabilityResponse>();
+        EXPECT_EQ(message.status, ChangeAvailabilityStatusEnum::Rejected);
+    }));
+
+    this->availability->handle_message(request);
+}
+
+TEST_F(AvailabilityTest, handle_message_change_availability_evse_operative_transaction_active) {
+    ocpp::EnhancedMessage<MessageType> request =
+        create_example_change_availability_request(OperationalStatusEnum::Operative, 2, std::nullopt);
+
+    // Change availability for an evse when there is an active transaction
+    ON_CALL(evse_manager, any_transaction_active(_)).WillByDefault(Return(true));
+    ON_CALL(evse_1, has_active_transaction()).WillByDefault(Return(true));
+    ON_CALL(evse_2, has_active_transaction()).WillByDefault(Return(true));
+    ON_CALL(component_state_manager, get_evse_individual_operational_status(_))
+        .WillByDefault(Return(OperationalStatusEnum::Operative));
+
+    // And since the EVSE is already in the Operative state, 'Accepted' is returned.
+    EXPECT_CALL(mock_dispatcher, dispatch_call_result(_)).WillOnce(Invoke([](const json& call_result) {
+        const auto message = call_result[ocpp::CALLRESULT_PAYLOAD].get<ChangeAvailabilityResponse>();
+        EXPECT_EQ(message.status, ChangeAvailabilityStatusEnum::Accepted);
+    }));
+
+    EXPECT_CALL(component_state_manager, set_cs_individual_operational_status(OperationalStatusEnum::Operative, _))
+        .Times(0);
+    EXPECT_CALL(evse_1, set_evse_operative_status(_, _)).Times(0);
+    EXPECT_CALL(evse_2, set_evse_operative_status(_, _)).Times(0);
+
+    this->availability->handle_message(request);
+}
+
+TEST_F(AvailabilityTest, handle_message_change_availability_connector_operative_transaction_inactive) {
+    ocpp::EnhancedMessage<MessageType> request =
+        create_example_change_availability_request(OperationalStatusEnum::Operative, 2, 1);
+
+    // Change availability for a connector when there is no active transaction and the connector is currently
+    // inoperative
+    ON_CALL(evse_manager, any_transaction_active(_)).WillByDefault(Return(false));
+    ON_CALL(evse_1, has_active_transaction()).WillByDefault(Return(false));
+    ON_CALL(evse_2, has_active_transaction()).WillByDefault(Return(false));
+    ON_CALL(component_state_manager, get_evse_individual_operational_status(_))
+        .WillByDefault(Return(OperationalStatusEnum::Inoperative));
+    ON_CALL(component_state_manager, get_connector_individual_operational_status(_, _))
+        .WillByDefault(Return(OperationalStatusEnum::Inoperative));
+
+    // And since the EVSE is already in the Operative state, 'Accepted' is returned.
+    EXPECT_CALL(mock_dispatcher, dispatch_call_result(_)).WillOnce(Invoke([](const json& call_result) {
+        const auto message = call_result[ocpp::CALLRESULT_PAYLOAD].get<ChangeAvailabilityResponse>();
+        EXPECT_EQ(message.status, ChangeAvailabilityStatusEnum::Accepted);
+    }));
+
+    EXPECT_CALL(component_state_manager, set_cs_individual_operational_status(OperationalStatusEnum::Operative, _))
+        .Times(0);
+    EXPECT_CALL(evse_1, set_connector_operative_status(1, OperationalStatusEnum::Operative, _)).Times(0);
+    EXPECT_CALL(evse_2, set_connector_operative_status(1, OperationalStatusEnum::Operative, _));
+
+    this->availability->handle_message(request);
+}
+
+TEST_F(AvailabilityTest, handle_message_change_availability_evse_inoperative_transaction_active) {
+    ocpp::EnhancedMessage<MessageType> request =
+        create_example_change_availability_request(OperationalStatusEnum::Inoperative, 1, std::nullopt);
+
+    // Change availability to inoperative for an evse when there is an active transaction and the connector is currently
+    // operative
+    ON_CALL(evse_manager, any_transaction_active(_)).WillByDefault(Return(true));
+    ON_CALL(evse_1, has_active_transaction()).WillByDefault(Return(true));
+    ON_CALL(evse_2, has_active_transaction()).WillByDefault(Return(true));
+    ON_CALL(component_state_manager, get_evse_individual_operational_status(_))
+        .WillByDefault(Return(OperationalStatusEnum::Operative));
+    ON_CALL(component_state_manager, get_connector_individual_operational_status(_, _))
+        .WillByDefault(Return(OperationalStatusEnum::Operative));
+
+    // And since the EVSE is already in the Operative state, 'Accepted' is returned.
+    EXPECT_CALL(mock_dispatcher, dispatch_call_result(_)).WillOnce(Invoke([](const json& call_result) {
+        const auto message = call_result[ocpp::CALLRESULT_PAYLOAD].get<ChangeAvailabilityResponse>();
+        EXPECT_EQ(message.status, ChangeAvailabilityStatusEnum::Scheduled);
+    }));
+
+    EXPECT_CALL(component_state_manager, set_cs_individual_operational_status(OperationalStatusEnum::Inoperative, _))
+        .Times(0);
+    EXPECT_CALL(evse_1, set_evse_operative_status(OperationalStatusEnum::Inoperative, _)).Times(0);
+    EXPECT_CALL(evse_2, set_evse_operative_status(OperationalStatusEnum::Inoperative, _)).Times(0);
+
+    this->availability->handle_message(request);
+}
+
+TEST_F(AvailabilityTest, handle_message_change_availability_evse_inoperative_transaction_active_2) {
+    ocpp::EnhancedMessage<MessageType> request =
+        create_example_change_availability_request(OperationalStatusEnum::Inoperative, 1, std::nullopt);
+
+    // Change availability to inoperative for an evse when there is an active transaction and the connector is currently
+    // operative
+    ON_CALL(evse_manager, any_transaction_active(_)).WillByDefault(Return(true));
+    ON_CALL(evse_1, has_active_transaction()).WillByDefault(Return(false));
+    ON_CALL(evse_2, has_active_transaction()).WillByDefault(Return(true));
+    ON_CALL(evse_1, get_number_of_connectors()).WillByDefault(Return(2));
+    ON_CALL(evse_2, get_number_of_connectors()).WillByDefault(Return(2));
+    ON_CALL(component_state_manager, get_evse_individual_operational_status(_))
+        .WillByDefault(Return(OperationalStatusEnum::Operative));
+    ON_CALL(component_state_manager, get_connector_individual_operational_status(_, _))
+        .WillByDefault(Return(OperationalStatusEnum::Operative));
+
+    // And since the EVSE is already in the Operative state, 'Accepted' is returned.
+    EXPECT_CALL(mock_dispatcher, dispatch_call_result(_)).WillOnce(Invoke([](const json& call_result) {
+        const auto message = call_result[ocpp::CALLRESULT_PAYLOAD].get<ChangeAvailabilityResponse>();
+        EXPECT_EQ(message.status, ChangeAvailabilityStatusEnum::Scheduled);
+    }));
+
+    // All connectors of the evse are set to inoperative.
+    EXPECT_CALL(component_state_manager, set_cs_individual_operational_status(OperationalStatusEnum::Inoperative, _))
+        .Times(0);
+    EXPECT_CALL(evse_1, set_connector_operative_status(1, OperationalStatusEnum::Inoperative, _));
+    EXPECT_CALL(evse_1, set_connector_operative_status(2, OperationalStatusEnum::Inoperative, _));
+    EXPECT_CALL(evse_2, set_connector_operative_status(1, OperationalStatusEnum::Inoperative, _)).Times(0);
 
     this->availability->handle_message(request);
 }
