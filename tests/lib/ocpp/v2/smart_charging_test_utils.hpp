@@ -42,7 +42,8 @@
 using ::testing::MockFunction;
 namespace ocpp::v2 {
 
-static const std::string BASE_JSON_PATH = std::string(TEST_PROFILES_LOCATION_V2) + "/json";
+static const std::string BASE_JSON_PATH_V2 = std::string(TEST_PROFILES_LOCATION_V2) + "/json";
+static const std::string BASE_JSON_PATH_V21 = std::string(TEST_PROFILES_LOCATION_V21) + "/json";
 
 constexpr int NR_OF_EVSES = 1;
 constexpr int NR_OF_TWO_EVSES = 2;
@@ -163,6 +164,11 @@ public:
     std::unique_ptr<TestSmartCharging> handler;
     boost::uuids::random_generator uuid_generator;
     std::atomic<OcppProtocolVersion> ocpp_version = OcppProtocolVersion::v201;
+};
+
+class CompositeScheduleTestFixtureV21 : public CompositeScheduleTestFixtureV2 {
+public:
+    CompositeScheduleTestFixtureV21();
 };
 
 } // namespace ocpp::v2
