@@ -1694,15 +1694,15 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | K01.FR.51             | ⛽️    | K08                                                                                                                    |
 | K01.FR.52             | ✅     |                                                                                                                        |
 | K01.FR.53             | ✅     |                                                                                                                        |
-| K01.FR.54 <br> (2.1)  |        |                                                                                                                        |
-| K01.FR.55 <br> (2.1)  |        |                                                                                                                        |
-| K01.FR.56 <br> (2.1)  |        |                                                                                                                        |
+| K01.FR.54 <br> (2.1)  | ✅     |                                                                                                                        |
+| K01.FR.55 <br> (2.1)  | ✅     |                                                                                                                        |
+| K01.FR.56 <br> (2.1)  | ✅      |                                                                                                                        |
 |                       |        | PriorityCharging                                                                                                       |
-| K01.FR.70 <br> (2.1)  |        |                                                                                                                        |
-| K01.FR.71 <br> (2.1)  |        |                                                                                                                        |
+| K01.FR.70 <br> (2.1)  | ✅      |                                                                                                                        |
+| K01.FR.71 <br> (2.1)  | ✅      |                                                                                                                        |
 |                       |        | Max External Constraints Id                                                                                            |
-| K01.FR.80 <br> (2.1)  |        |                                                                                                                        |
-| K01.FR.81 <br> (2.1)  |        |                                                                                                                        |
+| K01.FR.80 <br> (2.1)  | 🌐      |                                                                                                                        |
+| K01.FR.81 <br> (2.1)  | ✅      |                                                                                                                        |
 | K01.FR.82 <br> (2.1)  |        |                                                                                                                        |
 |                       |        | Use Local Time / Randomized Delay                                                                                      |
 | K01.FR.90 <br> (2.1)  |        |                                                                                                                        |
@@ -1710,7 +1710,7 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | K01.FR.92 <br> (2.1)  |        |                                                                                                                        |
 | K01.FR.93 <br> (2.1)  |        |                                                                                                                        |
 | K01.FR.94 <br> (2.1)  |        |                                                                                                                        |
-| K01.FR.95 <br> (2.1)  |        |                                                                                                                        |
+| K01.FR.95 <br> (2.1)  | ✅      |                                                                                                                        |
 |                       |        | Limit Beyond SoC / Offline validity                                                                                    |
 | K01.FR.100 <br> (2.1) |        |                                                                                                                        |
 | K01.FR.101 <br> (2.1) |        |                                                                                                                        |
@@ -1719,13 +1719,13 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 |                       |        | OperationMode                                                                                                          |
 | K01.FR.110 <br> (2.1) |        |                                                                                                                        |
 |                       |        | Checking optional support                                                                                              |
-| K01.FR.120 <br> (2.1) |        |                                                                                                                        |
-| K01.FR.121 <br> (2.1) |        |                                                                                                                        |
-| K01.FR.122 <br> (2.1) |        |                                                                                                                        |
-| K01.FR.123 <br> (2.1) |        |                                                                                                                        |
-| K01.FR.124 <br> (2.1) |        |                                                                                                                        |
-| K01.FR.125 <br> (2.1) |        |                                                                                                                        |
-| K01.FR.126 <br> (2.1) |        |                                                                                                                        |
+| K01.FR.120 <br> (2.1) | ✅      |                                                                                                                        |
+| K01.FR.121 <br> (2.1) | ✅      |                                                                                                                        |
+| K01.FR.122 <br> (2.1) | ✅      |                                                                                                                        |
+| K01.FR.123 <br> (2.1) | ✅      |                                                                                                                        |
+| K01.FR.124 <br> (2.1) | ✅      |                                                                                                                        |
+| K01.FR.125 <br> (2.1) | ✅      |                                                                                                                        |
+| K01.FR.126 <br> (2.1) | ✅      |                                                                                                                        |
 
 ## SmartCharging - Central Smart Charging
 
@@ -2675,10 +2675,10 @@ CSMS setpoint and Dynamic charging profiles from K01. There are no specific requ
 | --------- | ------ | ------ |
 |           | FCR    |        |
 | Q08.FR.01 |        |        |
-| Q08.FR.02 |        |        |
+| Q08.FR.02 | ✅      |        |
 | Q08.FR.03 |        |        |
-| Q08.FR.04 |        |        |
-| Q08.FR.05 |        |        |
+| Q08.FR.04 | ✅      |        |
+| Q08.FR.05 | ✅      |        |
 | Q08.FR.06 |        |        |
 | Q08.FR.07 |        |        |
 |           | aFRR   |        |
@@ -2699,8 +2699,8 @@ CSMS setpoint and Dynamic charging profiles from K01. There are no specific requ
 
 | ID        | Status | Remark |
 | --------- | ------ | ------ |
-| Q10.FR.01 |        |        |
-| Q10.FR.02 |        |        |
+| Q10.FR.01 | ✅      |        |
+| Q10.FR.02 | ✅      |        |
 | Q10.FR.03 |        |        |
 | Q10.FR.04 |        |        |
 | Q10.FR.05 |        |        |
