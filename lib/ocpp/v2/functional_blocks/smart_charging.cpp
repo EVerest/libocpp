@@ -100,6 +100,8 @@ std::string profile_validation_result_to_string(ProfileValidationResultEnum e) {
         return "ChargingSchedulePeriodNoPhaseForDC";
     case ProfileValidationResultEnum::ChargingSchedulePeriodNoFreqWattCurve:
         return "ChargingSchedulePeriodNoFreqWattCurve";
+    case ocpp::v2::ProfileValidationResultEnum::ChargingSchedulePeriodSignDifference:
+        return "ChargingSchedulePeriodSignDifference";
     case ProfileValidationResultEnum::ChargingStationMaxProfileCannotBeRelative:
         return "ChargingStationMaxProfileCannotBeRelative";
     case ProfileValidationResultEnum::ChargingStationMaxProfileEvseIdGreaterThanZero:
@@ -161,6 +163,7 @@ std::string profile_validation_result_to_reason_code(ProfileValidationResultEnum
     case ProfileValidationResultEnum::ChargingSchedulePeriodPriorityChargingNotChargingOnly:
     case ProfileValidationResultEnum::ChargingSchedulePeriodUnsupportedOperationMode:
     case ProfileValidationResultEnum::ChargingSchedulePeriodUnsupportedLimitSetpoint:
+    case ProfileValidationResultEnum::ChargingSchedulePeriodSignDifference:
         return "InvalidSchedule";
     case ProfileValidationResultEnum::ChargingSchedulePeriodNoPhaseForDC:
         return "NoPhaseForDC";
@@ -473,9 +476,7 @@ std::vector<IntermediateProfile> generate_evse_intermediates(std::vector<Chargin
                                                              const ocpp::DateTime& start_time,
                                                              const ocpp::DateTime& end_time,
                                                              std::optional<ocpp::DateTime> session_start,
-                                                             bool simulate_transaction_active
-
-) {
+                                                             bool simulate_transaction_active) {
 
     // Combine the profiles with those from the station
     evse_profiles.insert(evse_profiles.end(), station_wide_profiles.begin(), station_wide_profiles.end());
@@ -535,13 +536,13 @@ CompositeSchedule SmartCharging::calculate_composite_schedule(const ocpp::DateTi
                 end_time, session_start, simulate_transaction_active);
 
             // Determine the lowest limits per evse
-            evse_schedules.push_back(merge_profiles_by_lowest_limit(intermediates));
+            evse_schedules.push_back(merge_profiles_by_lowest_limit(intermediates, this->context.ocpp_version));
         }
 
         // Add all the limits of all the evse's together since that will be the max the whole charging station can
         // consume at any point in time
-        combined_profiles.push_back(
-            merge_profiles_by_summing_limits(evse_schedules, config.current_limit, config.power_limit));
+        combined_profiles.push_back(merge_profiles_by_summing_limits(evse_schedules, config.current_limit,
+                                                                     config.power_limit, this->context.ocpp_version));
 
     } else {
         combined_profiles = generate_evse_intermediates(get_valid_profiles_for_evse(evse_id, config.purposes_to_ignore),
@@ -558,7 +559,7 @@ CompositeSchedule SmartCharging::calculate_composite_schedule(const ocpp::DateTi
     combined_profiles.push_back(std::move(charge_point_max));
 
     // Calculate the final limit of all the combined profiles
-    auto retval = merge_profiles_by_lowest_limit(combined_profiles);
+    auto retval = merge_profiles_by_lowest_limit(combined_profiles, this->context.ocpp_version);
 
     CompositeSchedule composite{};
     composite.evseId = evse_id;
@@ -883,6 +884,11 @@ ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingPr
                      charging_schedule_period.v2xFreqWattCurve.value().size() < 2 ||
                      !charging_schedule_period.v2xBaseline.has_value())) {
                     return ProfileValidationResultEnum::ChargingSchedulePeriodNoFreqWattCurve;
+                }
+
+                if (!all_setpoints_signs_equal(charging_schedule_period)) {
+                    // A different setpoint sign (negative / positive per phase) is (currently) not supported.
+                    return ProfileValidationResultEnum::ChargingSchedulePeriodSignDifference;
                 }
             }
         }
@@ -1371,6 +1377,25 @@ bool check_limits_and_setpoints(const ChargingSchedulePeriod& charging_schedule_
                       << conversions::operation_mode_enum_to_string(charging_schedule_period.operationMode.value())
                       << " not in list of valid limits and setpoints: can not check if limits and "
                          "setpoints are valid";
+        return false;
+    }
+}
+
+bool all_setpoints_signs_equal(const ChargingSchedulePeriod& charging_schedule_period) {
+    if (charging_schedule_period.setpoint != std::nullopt && (charging_schedule_period.setpoint_L2 != std::nullopt ||
+                                                              (charging_schedule_period.setpoint_L3 != std::nullopt))) {
+        if ((charging_schedule_period.setpoint.value() > 0.0f &&
+             ((charging_schedule_period.setpoint_L2.has_value() &&
+               charging_schedule_period.setpoint_L2.value() < 0.0F) ||
+              (charging_schedule_period.setpoint_L3.has_value() &&
+               charging_schedule_period.setpoint_L3.value() < 0.0F))) ||
+            (charging_schedule_period.setpoint.value() < 0.0f &&
+             ((charging_schedule_period.setpoint_L2.has_value() &&
+               charging_schedule_period.setpoint_L2.value() > 0.0F) ||
+              (charging_schedule_period.setpoint_L3.has_value() &&
+               charging_schedule_period.setpoint_L3.value() > 0.0F)))) {
+            return false;
+        }
     }
 
     return true;

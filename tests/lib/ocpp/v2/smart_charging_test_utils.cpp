@@ -136,7 +136,7 @@ std::string to_string(const period_entry_t& entry) {
     std::string result = "Period Entry: {";
     result += "Start: " + entry.start.to_rfc3339() + ", ";
     result += "End: " + entry.end.to_rfc3339() + ", ";
-    result += "Limit: " + std::to_string(entry.limit) + ", ";
+    result += "Limit: " + std::to_string(entry.limit.limit) + ", ";
     if (entry.number_phases.has_value()) {
         result += "Number of Phases: " + std::to_string(entry.number_phases.value()) + ", ";
     }
@@ -335,7 +335,7 @@ ChargingProfile get_charging_profile_from_path(const std::string& path) {
 }
 
 ChargingProfile get_charging_profile_from_file(const std::string& filename) {
-    const std::string full_path = BASE_JSON_PATH + "/" + filename;
+    const std::string full_path = BASE_JSON_PATH_V2 + "/" + filename;
 
     return get_charging_profile_from_path(full_path);
 }
@@ -349,7 +349,7 @@ std::vector<ChargingProfile> get_charging_profiles_from_file(const std::string& 
 /// \brief Returns a vector of ChargingProfiles to be used as a baseline for testing core functionality
 /// of generating an EnhancedChargingSchedule.
 std::vector<ChargingProfile> get_baseline_profile_vector() {
-    return get_charging_profiles_from_directory(BASE_JSON_PATH + "/" + "baseline/");
+    return get_charging_profiles_from_directory(BASE_JSON_PATH_V2 + "/" + "baseline/");
 }
 
 std::string to_string(std::vector<ChargingProfile>& profiles) {
@@ -428,6 +428,10 @@ CompositeScheduleTestFixtureV2::CompositeScheduleTestFixtureV2() :
     const auto& default_limit_phases_cv = ControllerComponentVariables::CompositeScheduleDefaultNumberPhases;
     device_model->set_value(default_limit_phases_cv.component, default_limit_phases_cv.variable.value(),
                             AttributeEnum::Actual, std::to_string(DEFAULT_NR_PHASES), "test", true);
+}
+
+CompositeScheduleTestFixtureV21::CompositeScheduleTestFixtureV21() : CompositeScheduleTestFixtureV2() {
+    handler = create_smart_charging_handler(OcppProtocolVersion::v21);
 }
 
 std::unique_ptr<TestSmartCharging>
