@@ -16,7 +16,8 @@
 #include "component_state_manager_mock.hpp"
 #include "connectivity_manager_mock.hpp"
 #include "device_model_test_helper.hpp"
-#include "evse_manager_mock.hpp"
+#include "evse_manager_fake.hpp"
+// #include "evse_manager_mock.hpp"
 #include "evse_mock.hpp"
 #include "evse_security_mock.hpp"
 #include "message_dispatcher_mock.hpp"
@@ -29,6 +30,8 @@ using testing::MockFunction;
 using testing::Return;
 using testing::ReturnRef;
 
+using EvseIteratorImpl = ocpp::VectorOfUniquePtrIterator<EvseInterface>;
+
 class AvailabilityTest : public ::testing::Test {
 protected: // Members
     DeviceModelTestHelper device_model_test_helper;
@@ -37,13 +40,13 @@ protected: // Members
     ::testing::NiceMock<ConnectivityManagerMock> connectivity_manager;
     ::testing::NiceMock<ocpp::v2::DatabaseHandlerMock> database_handler_mock;
     ocpp::EvseSecurityMock evse_security;
-    EvseManagerMock evse_manager;
+    EvseManagerFake evse_manager;
     ComponentStateManagerMock component_state_manager;
     FunctionalBlockContext functional_block_context;
     MockFunction<void(const ocpp::DateTime& currentTime)> time_sync_callback;
     MockFunction<void()> all_connectors_unavailable_callback;
-    std::vector<std::unique_ptr<EvseInterface>> evses;
-
+    EvseMock& evse_1;
+    EvseMock& evse_2;
     std::unique_ptr<Availability> availability;
 
 protected: // Functions
@@ -54,29 +57,15 @@ protected: // Functions
         connectivity_manager(),
         database_handler_mock(),
         evse_security(),
-        evse_manager(),
+        evse_manager(2),
         component_state_manager(),
         functional_block_context{this->mock_dispatcher,        *this->device_model,         this->connectivity_manager,
                                  this->evse_manager,           this->database_handler_mock, this->evse_security,
                                  this->component_state_manager},
+        evse_1(evse_manager.get_mock(1)),
+        evse_2(evse_manager.get_mock(2)),
         availability(std::make_unique<Availability>(functional_block_context, time_sync_callback.AsStdFunction(),
                                                     all_connectors_unavailable_callback.AsStdFunction())) {
-
-        std::unique_ptr<EvseMock> evse_1;
-        std::unique_ptr<EvseMock> evse_2;
-        evses.push_back(std::move(evse_1));
-        evses.push_back(std::move(evse_2));
-
-        ON_CALL(evse_manager, get_evse(1)).WillByDefault(ReturnRef(*evses.at(0)));
-        ON_CALL(evse_manager, get_evse(2)).WillByDefault(ReturnRef(*evses.at(1)));
-
-        ON_CALL(evse_manager, begin())
-            .WillByDefault(Return(std::vector<std::unique_ptr<EvseInterface>>::iterator(evses.begin())));
-        ON_CALL(evse_manager, begin())
-            .WillByDefault(Return(std::vector<std::unique_ptr<EvseInterface>>::iterator(evses.end())));
-        ON_CALL(evse_manager, begin()).WillByDefault(Return(ocpp::v2::EvseManagerMock::EvseIterator(evses.begin())));
-        ON_CALL(evse_manager, begin())
-            .WillByDefault(Return(std::vector<std::unique_ptr<EvseInterface>>::iterator(evses.end())));
     }
 
     ocpp::EnhancedMessage<MessageType>
@@ -159,11 +148,13 @@ TEST_F(AvailabilityTest, handle_message_heartbeat_response_timesource_heartbeat)
     availability->handle_message(heartbeat_response);
 }
 
-// TODO mz test with evse id negative and 0
 TEST_F(AvailabilityTest, handle_scheduled_changed_availability_requests_nothing_scheduled) {
     // Call handle_scheduled_change_availability_requests without having any change availability requests scheduled.
     ON_CALL(evse_manager, any_transaction_active(_)).WillByDefault(Return(false));
-    ON_CALL(evse_manager, are_all_connectors_effectively_inoperative()).WillByDefault(Return(true));
+    ON_CALL(evse_1, get_connector_effective_operational_status(_))
+        .WillByDefault(Return(OperationalStatusEnum::Inoperative));
+    ON_CALL(evse_2, get_connector_effective_operational_status(_))
+        .WillByDefault(Return(OperationalStatusEnum::Inoperative));
     EXPECT_CALL(all_connectors_unavailable_callback, Call()).Times(0);
     this->availability->handle_scheduled_change_availability_requests(1);
 }
@@ -172,7 +163,10 @@ TEST_F(AvailabilityTest, handle_scheduled_changed_availability_requests_transact
     // Call handle_scheduled_change_availability_requests with a current active transaction. This will not call the
     // all_connectors_unavailable callback.
     ON_CALL(evse_manager, any_transaction_active(_)).WillByDefault(Return(true));
-    ON_CALL(evse_manager, are_all_connectors_effectively_inoperative()).WillByDefault(Return(true));
+    ON_CALL(evse_1, get_connector_effective_operational_status(_))
+        .WillByDefault(Return(OperationalStatusEnum::Inoperative));
+    ON_CALL(evse_2, get_connector_effective_operational_status(_))
+        .WillByDefault(Return(OperationalStatusEnum::Inoperative));
     EVSE evse;
     evse.id = 1;
     AvailabilityChange change;
@@ -189,7 +183,14 @@ TEST_F(AvailabilityTest, handle_scheduled_changed_availability_requests_no_trans
     // inoperative. This will not call the all_connectors_unavailable callback.
     // Only an evse will be set to inoperative.
     ON_CALL(evse_manager, any_transaction_active(_)).WillByDefault(Return(false));
-    ON_CALL(evse_manager, are_all_connectors_effectively_inoperative()).WillByDefault(Return(false));
+    ON_CALL(evse_1, get_connector_effective_operational_status(_))
+        .WillByDefault(Return(OperationalStatusEnum::Operative));
+    ON_CALL(evse_2, get_connector_effective_operational_status(_))
+        .WillByDefault(Return(OperationalStatusEnum::Operative));
+    ON_CALL(evse_1, get_number_of_connectors()).WillByDefault(Return(1));
+    ON_CALL(evse_2, get_number_of_connectors()).WillByDefault(Return(1));
+    ON_CALL(evse_1, has_active_transaction(_)).WillByDefault(Return(false));
+    ON_CALL(evse_2, has_active_transaction(_)).WillByDefault(Return(false));
     EXPECT_CALL(evse_1, set_evse_operative_status(OperationalStatusEnum::Inoperative, false));
     EVSE evse;
     evse.id = 1;
@@ -207,7 +208,14 @@ TEST_F(AvailabilityTest, handle_scheduled_changed_availability_requests_no_trans
     // inoperative. This will call the all_connectors_unavailable callback.
     // This time a connector is set to inoperative and persist is true.
     ON_CALL(evse_manager, any_transaction_active(_)).WillByDefault(Return(false));
-    ON_CALL(evse_manager, are_all_connectors_effectively_inoperative()).WillByDefault(Return(true));
+    ON_CALL(evse_1, get_connector_effective_operational_status(_))
+        .WillByDefault(Return(OperationalStatusEnum::Inoperative));
+    ON_CALL(evse_2, get_connector_effective_operational_status(_))
+        .WillByDefault(Return(OperationalStatusEnum::Inoperative));
+    ON_CALL(evse_1, get_number_of_connectors()).WillByDefault(Return(1));
+    ON_CALL(evse_2, get_number_of_connectors()).WillByDefault(Return(1));
+    ON_CALL(evse_1, has_active_transaction(_)).WillByDefault(Return(false));
+    ON_CALL(evse_2, has_active_transaction(_)).WillByDefault(Return(false));
     EXPECT_CALL(evse_1, set_connector_operative_status(2, OperationalStatusEnum::Inoperative, true));
     EVSE evse;
     evse.id = 1;
@@ -242,7 +250,6 @@ TEST_F(AvailabilityTest, handle_message_change_availability_cs_operative) {
         create_example_change_availability_request(OperationalStatusEnum::Operative, std::nullopt, std::nullopt);
 
     // No EVSE, but if it requests if it's valid, return true. No transaction active. Operational status is Operative.
-    ON_CALL(evse_manager, is_valid_evse(_)).WillByDefault(Return(true));
     ON_CALL(evse_manager, any_transaction_active(_)).WillByDefault(Return(false));
     ON_CALL(component_state_manager, get_cs_individual_operational_status())
         .WillByDefault(Return(OperationalStatusEnum::Operative));
@@ -262,7 +269,6 @@ TEST_F(AvailabilityTest, handle_message_change_availability_cs_inoperative_trans
 
     // No EVSE, but if it requests if it's valid, return true. There is an active transaction. Operational status is
     // currently Operative.
-    ON_CALL(evse_manager, is_valid_evse(_)).WillByDefault(Return(true));
     ON_CALL(evse_manager, any_transaction_active(_)).WillByDefault(Return(true));
     ON_CALL(component_state_manager, get_cs_individual_operational_status())
         .WillByDefault(Return(OperationalStatusEnum::Operative));
@@ -275,8 +281,8 @@ TEST_F(AvailabilityTest, handle_message_change_availability_cs_inoperative_trans
     ON_CALL(evse_2, has_active_transaction()).WillByDefault(Return(true));
 
     // EVSE 1 has no active transaction, EVSE 2 has, so EVSE 1 will be set to inoperative.
-    EXPECT_CALL(evse_1, set_evse_operative_status(OperationalStatusEnum::Inoperative, true));
-    EXPECT_CALL(evse_2, set_evse_operative_status(OperationalStatusEnum::Inoperative, true)).Times(0);
+    EXPECT_CALL(evse_1, set_evse_operative_status(OperationalStatusEnum::Inoperative, false));
+    EXPECT_CALL(evse_2, set_evse_operative_status(OperationalStatusEnum::Inoperative, false)).Times(0);
 
     // And since there is an active transaction, changing of the availability will be scheduled.
     EXPECT_CALL(mock_dispatcher, dispatch_call_result(_)).WillOnce(Invoke([](const json& call_result) {
