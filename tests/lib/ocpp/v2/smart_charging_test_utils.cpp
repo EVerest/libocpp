@@ -184,21 +184,24 @@ ChargingSchedule create_charge_schedule(ChargingRateUnitEnum charging_rate_unit)
 
 ChargingSchedule create_charge_schedule(ChargingRateUnitEnum charging_rate_unit,
                                         const std::vector<ChargingSchedulePeriod>& charging_schedule_period,
-                                        std::optional<ocpp::DateTime> start_schedule) {
+                                        std::optional<ocpp::DateTime> start_schedule, std::optional<int32_t> duration) {
     ChargingSchedule charging_schedule;
     charging_schedule.chargingRateUnit = charging_rate_unit;
     charging_schedule.chargingSchedulePeriod = charging_schedule_period;
     charging_schedule.startSchedule = start_schedule;
+    charging_schedule.duration = duration;
     return charging_schedule;
 }
 
 std::vector<ChargingSchedulePeriod> create_charging_schedule_periods(int32_t start_period,
                                                                      std::optional<int32_t> number_phases,
-                                                                     std::optional<int32_t> phase_to_use) {
+                                                                     std::optional<int32_t> phase_to_use,
+                                                                     std::optional<float> limit) {
     ChargingSchedulePeriod charging_schedule_period;
     charging_schedule_period.startPeriod = start_period;
     charging_schedule_period.numberPhases = number_phases;
     charging_schedule_period.phaseToUse = phase_to_use;
+    charging_schedule_period.limit = limit;
 
     return {charging_schedule_period};
 }
@@ -427,7 +430,9 @@ CompositeScheduleTestFixtureV2::CompositeScheduleTestFixtureV2() :
                             AttributeEnum::Actual, std::to_string(DEFAULT_NR_PHASES), "test", true);
 }
 
-std::unique_ptr<TestSmartCharging> CompositeScheduleTestFixtureV2::create_smart_charging_handler() {
+std::unique_ptr<TestSmartCharging>
+CompositeScheduleTestFixtureV2::create_smart_charging_handler(const OcppProtocolVersion ocpp_version) {
+    this->ocpp_version = ocpp_version;
     std::unique_ptr<common::DatabaseConnection> database_connection =
         std::make_unique<common::DatabaseConnection>(fs::path("/tmp/ocpp201") / "cp.db");
     this->database_handler =
@@ -435,7 +440,7 @@ std::unique_ptr<TestSmartCharging> CompositeScheduleTestFixtureV2::create_smart_
     database_handler->open_connection();
     this->functional_block_context = std::make_unique<FunctionalBlockContext>(
         this->mock_dispatcher, *this->device_model, this->connectivity_manager, *this->evse_manager,
-        *this->database_handler, this->evse_security, this->component_state_manager);
+        *this->database_handler, this->evse_security, this->component_state_manager, this->ocpp_version);
     return std::make_unique<TestSmartCharging>(*functional_block_context,
                                                set_charging_profiles_callback_mock.AsStdFunction());
 }
@@ -444,7 +449,7 @@ void CompositeScheduleTestFixtureV2::reconfigure_for_nr_of_evses(int32_t nr_of_e
     this->evse_manager = std::make_unique<EvseManagerFake>(nr_of_evses);
     this->functional_block_context = std::make_unique<FunctionalBlockContext>(
         this->mock_dispatcher, *this->device_model, this->connectivity_manager, *this->evse_manager,
-        *this->database_handler, this->evse_security, this->component_state_manager);
+        *this->database_handler, this->evse_security, this->component_state_manager, this->ocpp_version);
     this->handler = std::make_unique<TestSmartCharging>(*functional_block_context,
                                                         set_charging_profiles_callback_mock.AsStdFunction());
 }
