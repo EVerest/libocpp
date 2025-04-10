@@ -979,7 +979,7 @@ bool ChargePointConfiguration::validate_measurands(const json& config) {
 }
 
 bool validate_connector_evse_ids(const std::string& value) {
-    if (value.length() > 1000) {
+    if (value.length() > CONNECTOR_EVSE_IDS_MAX_LENGTH) {
         return false;
     }
 
