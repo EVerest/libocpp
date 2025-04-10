@@ -90,10 +90,12 @@ create_charging_profile(int32_t charging_profile_id, ChargingProfilePurposeEnum 
 ChargingSchedule create_charge_schedule(ChargingRateUnitEnum charging_rate_unit);
 ChargingSchedule create_charge_schedule(ChargingRateUnitEnum charging_rate_unit,
                                         const std::vector<ChargingSchedulePeriod>& charging_schedule_period,
-                                        std::optional<ocpp::DateTime> start_schedule = std::nullopt);
+                                        std::optional<ocpp::DateTime> start_schedule = std::nullopt,
+                                        std::optional<int32_t> duration = std::nullopt);
 std::vector<ChargingSchedulePeriod>
 create_charging_schedule_periods(int32_t start_period, std::optional<int32_t> number_phases = std::nullopt,
-                                 std::optional<int32_t> phase_to_use = std::nullopt);
+                                 std::optional<int32_t> phase_to_use = std::nullopt,
+                                 std::optional<float> limit = std::nullopt);
 std::vector<ChargingSchedulePeriod> create_charging_schedule_periods(const std::vector<int32_t>& start_periods);
 std::vector<ChargingSchedulePeriod>
 create_charging_schedule_periods_with_phases(int32_t start_period, int32_t numberPhases, int32_t phaseToUse);
@@ -141,7 +143,8 @@ protected:
     void SetUp() override;
     void TearDown() override;
     void load_charging_profiles_for_evse(const std::filesystem::path& path, int32_t evse_id);
-    std::unique_ptr<TestSmartCharging> create_smart_charging_handler();
+    std::unique_ptr<TestSmartCharging>
+    create_smart_charging_handler(const OcppProtocolVersion ocpp_version = OcppProtocolVersion::v201);
 
 public:
     CompositeScheduleTestFixtureV2();
@@ -159,6 +162,7 @@ public:
     MockFunction<void()> set_charging_profiles_callback_mock;
     std::unique_ptr<TestSmartCharging> handler;
     boost::uuids::random_generator uuid_generator;
+    std::atomic<OcppProtocolVersion> ocpp_version = OcppProtocolVersion::v201;
 };
 
 } // namespace ocpp::v2
