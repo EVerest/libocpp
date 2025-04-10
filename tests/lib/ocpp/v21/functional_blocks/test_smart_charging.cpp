@@ -669,4 +669,95 @@ TEST_F(SmartChargingTestV21, Q08FR05_LocalFrequency_ChargingRateUnitW_Valid) {
 
     EXPECT_THAT(sut, testing::Eq(ProfileValidationResultEnum::Valid));
 }
+
+TEST_F(SmartChargingTestV21, AllSetpointsSameSign) {
+    auto mock_evse = testing::NiceMock<EvseMock>();
+    ON_CALL(mock_evse, get_id).WillByDefault(testing::Return(1));
+
+    // First test with different combinations of charging schedule periods positive and negative.
+    auto periods = create_charging_schedule_periods(0, 1, 1, 42.0f);
+    periods.at(0).operationMode = OperationModeEnum::CentralSetpoint;
+    periods.at(0).setpoint = 5.5f;
+    periods.at(0).setpoint_L2 = -5.5f;
+
+    auto profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::W, periods, ocpp::DateTime("2024-01-17T17:00:00")), DEFAULT_TX_ID);
+
+    auto sut = smart_charging.validate_profile_schedules(profile, &mock_evse);
+
+    EXPECT_EQ(sut, ProfileValidationResultEnum::ChargingSchedulePeriodSignDifference);
+
+    periods.at(0).setpoint = 5.5f;
+    periods.at(0).setpoint_L2 = 5.5f;
+    periods.at(0).setpoint_L3 = -1.0f;
+
+    profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::W, periods, ocpp::DateTime("2024-01-17T17:00:00")), DEFAULT_TX_ID);
+
+    sut = smart_charging.validate_profile_schedules(profile, &mock_evse);
+
+    EXPECT_EQ(sut, ProfileValidationResultEnum::ChargingSchedulePeriodSignDifference);
+
+    periods.at(0).setpoint = 5.5f;
+    periods.at(0).setpoint_L2 = -5.5f;
+    periods.at(0).setpoint_L3 = -1.0f;
+
+    profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::W, periods, ocpp::DateTime("2024-01-17T17:00:00")), DEFAULT_TX_ID);
+
+    sut = smart_charging.validate_profile_schedules(profile, &mock_evse);
+
+    EXPECT_EQ(sut, ProfileValidationResultEnum::ChargingSchedulePeriodSignDifference);
+
+    periods.at(0).setpoint = -5.5f;
+    periods.at(0).setpoint_L2 = 5.5f;
+    periods.at(0).setpoint_L3 = -1.0f;
+
+    profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::W, periods, ocpp::DateTime("2024-01-17T17:00:00")), DEFAULT_TX_ID);
+
+    sut = smart_charging.validate_profile_schedules(profile, &mock_evse);
+
+    EXPECT_EQ(sut, ProfileValidationResultEnum::ChargingSchedulePeriodSignDifference);
+
+    periods.at(0).setpoint = -5.5f;
+    periods.at(0).setpoint_L3 = 5.5f;
+
+    profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::W, periods, ocpp::DateTime("2024-01-17T17:00:00")), DEFAULT_TX_ID);
+
+    sut = smart_charging.validate_profile_schedules(profile, &mock_evse);
+
+    EXPECT_EQ(sut, ProfileValidationResultEnum::ChargingSchedulePeriodSignDifference);
+
+    // Then test with all setpoints having the same sign.
+    periods.at(0).setpoint = -5.5f;
+    periods.at(0).setpoint_L2 = -5.5f;
+    periods.at(0).setpoint_L3 = -1.0f;
+
+    profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::W, periods, ocpp::DateTime("2024-01-17T17:00:00")), DEFAULT_TX_ID);
+
+    sut = smart_charging.validate_profile_schedules(profile, &mock_evse);
+
+    EXPECT_EQ(sut, ProfileValidationResultEnum::Valid);
+
+    periods.at(0).setpoint = 5.5f;
+    periods.at(0).setpoint_L2 = 5.5f;
+    periods.at(0).setpoint_L3 = 1.0f;
+
+    profile = create_charging_profile(
+        DEFAULT_PROFILE_ID, ChargingProfilePurposeEnum::TxProfile,
+        create_charge_schedule(ChargingRateUnitEnum::W, periods, ocpp::DateTime("2024-01-17T17:00:00")), DEFAULT_TX_ID);
+
+    sut = smart_charging.validate_profile_schedules(profile, &mock_evse);
+
+    EXPECT_EQ(sut, ProfileValidationResultEnum::Valid);
+}
 } // namespace ocpp::v2
