@@ -1083,6 +1083,14 @@ void ChargePointImpl::reset_pricing_triggers(const int32_t connector_number) {
     }
 }
 
+void ChargePointImpl::update_chargepoint_information(const std::string& chargepoint_vendor,
+                                                     const std::string& chargepoint_model,
+                                                     const std::string& chargepoint_serialnumber,
+                                                     const std::optional<std::string>& firmware_version) {
+    this->configuration->setChargepointInformation(chargepoint_vendor, chargepoint_model, chargepoint_serialnumber,
+                                                   firmware_version);
+}
+
 bool ChargePointImpl::start(const std::map<int, ChargePointStatus>& connector_status_map, BootReasonEnum bootreason,
                             const std::set<std::string>& resuming_session_ids) {
     this->message_queue->start();
