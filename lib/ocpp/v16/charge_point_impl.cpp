@@ -4042,7 +4042,7 @@ void ChargePointImpl::handle_data_transfer_pnc_get_installed_certificates(Call<D
                 std::vector<ocpp::v201::CertificateHashDataChain> certificate_hash_data_chain_v2;
                 for (const auto certificate_hash_data_chain_entry : certificate_hash_data_chains) {
                     certificate_hash_data_chain_v2.push_back(
-                        ocpp::evse_security_conversions::to_ocpp_v2(certificate_hash_data_chain_entry));
+                        ocpp::evse_security_conversions::to_ocpp_v201(certificate_hash_data_chain_entry));
                 }
                 certificate_hash_data_chain_v2_opt.emplace(certificate_hash_data_chain_v2);
                 get_certificate_ids_response.certificateHashDataChain = certificate_hash_data_chain_v2_opt;

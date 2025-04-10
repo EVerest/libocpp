@@ -19,6 +19,12 @@ namespace ocpp {
 namespace v16 {
 
 const int32_t MAX_WAIT_FOR_SET_USER_PRICE_TIMEOUT_MS = 30000;
+const size_t CONNECTOR_EVSE_IDS_MAX_LENGTH = 1000;
+const size_t SECC_LEAF_SUBJECT_ORGANIZATION_MAX_LENGTH = 64;
+const size_t SECC_LEAF_SUBJECT_COUNTRY_LENGTH = 2;
+const size_t SECC_LEAF_SUBJECT_COMMON_NAME_MIN_LENGTH = 7;
+const size_t SECC_LEAF_SUBJECT_COMMON_NAME_MAX_LENGTH = 64;
+const size_t AUTHORIZATION_KEY_MIN_LENGTH = 8;
 
 ChargePointConfiguration::ChargePointConfiguration(const std::string& config, const fs::path& ocpp_main_path,
                                                    const fs::path& user_config_path) {
@@ -1002,6 +1008,10 @@ bool ChargePointConfiguration::validate_measurands(const json& config) {
 }
 
 bool validate_connector_evse_ids(const std::string& value) {
+    if (value.length() > CONNECTOR_EVSE_IDS_MAX_LENGTH) {
+        return false;
+    }
+
     // this fullfills parts of HUB-24-003 of Requirements EVSE Check PnC with ISO15118-2 v4
     const auto evse_ids = split_string(value, ',');
     for (const auto& evse_id : evse_ids) {
@@ -3592,7 +3602,7 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
     }
     if (key == "AuthorizationKey") {
         std::string authorization_key = value.get();
-        if (authorization_key.length() >= 8) {
+        if (authorization_key.length() >= AUTHORIZATION_KEY_MIN_LENGTH) {
             this->setAuthorizationKey(value.get());
             return ConfigurationStatus::Accepted;
         } else {
@@ -4005,6 +4015,11 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
     // Hubject PnC Extension keys
     if (key == "SeccLeafSubjectCommonName") {
         if (this->getSeccLeafSubjectCommonName().has_value()) {
+            if (value.get().length() < SECC_LEAF_SUBJECT_COMMON_NAME_MIN_LENGTH or
+                value.get().length() > SECC_LEAF_SUBJECT_COMMON_NAME_MAX_LENGTH) {
+                EVLOG_warning << "Attempt to set SeccLeafSubjectCommonName with invalid number of characters";
+                return ConfigurationStatus::Rejected;
+            }
             this->setSeccLeafSubjectCommonName(value.get());
         } else {
             return ConfigurationStatus::NotSupported;
@@ -4012,6 +4027,10 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
     }
     if (key == "SeccLeafSubjectCountry") {
         if (this->getSeccLeafSubjectCountry().has_value()) {
+            if (value.get().length() != SECC_LEAF_SUBJECT_COUNTRY_LENGTH) {
+                EVLOG_warning << "Attempt to set SeccLeafSubjectCountry with invalid number of characters";
+                return ConfigurationStatus::Rejected;
+            }
             this->setSeccLeafSubjectCountry(value.get());
         } else {
             return ConfigurationStatus::NotSupported;
@@ -4019,6 +4038,10 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
     }
     if (key == "SeccLeafSubjectOrganization") {
         if (this->getSeccLeafSubjectOrganization().has_value()) {
+            if (value.get().length() > SECC_LEAF_SUBJECT_ORGANIZATION_MAX_LENGTH) {
+                EVLOG_warning << "Attempt to set SeccLeafSubjectOrganization with invalid number of characters";
+                return ConfigurationStatus::Rejected;
+            }
             this->setSeccLeafSubjectOrganization(value.get());
         } else {
             return ConfigurationStatus::NotSupported;
