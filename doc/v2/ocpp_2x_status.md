@@ -1797,7 +1797,7 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | K08.FR.05            | ✅     |        |
 | K08.FR.06 <br> (2.1) | ✅     |        |
 | K08.FR.07            | ✅     |        |
-| K08.FR.08 <br> (2.1) |        |        |
+| K08.FR.08 <br> (2.1) | ✅     |        |
 
 ## SmartCharging - Get Charging Profiles
 
