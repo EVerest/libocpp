@@ -102,7 +102,10 @@ protected: // Functions
 
 TEST_F(AvailabilityTest, heartbeat_req) {
     // When heartbeat request is called, a HeartBeatRequest should be sent to the message dispatcher.
-    EXPECT_CALL(mock_dispatcher, dispatch_call(_, _));
+    EXPECT_CALL(mock_dispatcher, dispatch_call(_, _)).WillOnce(Invoke([](const json& call, bool /*triggered*/) {
+        const auto message = call[ocpp::CALL_PAYLOAD].get<HeartbeatRequest>();
+        EXPECT_EQ(message.get_type(), "Heartbeat");
+    }));
     availability->heartbeat_req(false);
 }
 
@@ -472,4 +475,61 @@ TEST_F(AvailabilityTest, handle_message_change_availability_evse_inoperative_tra
     EXPECT_CALL(evse_2, set_connector_operative_status(1, OperationalStatusEnum::Inoperative, _)).Times(0);
 
     this->availability->handle_message(request);
+}
+
+TEST_F(AvailabilityTest,
+       handle_message_change_availability_evse_inoperative_transaction_active_connector_has_active_transaction) {
+    ocpp::EnhancedMessage<MessageType> request =
+        create_example_change_availability_request(OperationalStatusEnum::Inoperative, 2, std::nullopt);
+
+    // Change availability to inoperative for an evse when there is an active transaction and the connector is currently
+    // operative
+    ON_CALL(evse_manager, any_transaction_active(_)).WillByDefault(Return(true));
+    ON_CALL(evse_1, has_active_transaction()).WillByDefault(Return(false));
+    ON_CALL(evse_2, has_active_transaction()).WillByDefault(Return(true));
+    ON_CALL(evse_2, has_active_transaction(1)).WillByDefault(Return(false));
+    // Active transaction on connector 2, which will set connector 1 to inoperative and not touch connector 2.
+    ON_CALL(evse_2, has_active_transaction(2)).WillByDefault(Return(true));
+    ON_CALL(evse_1, get_number_of_connectors()).WillByDefault(Return(2));
+    ON_CALL(evse_2, get_number_of_connectors()).WillByDefault(Return(2));
+    ON_CALL(component_state_manager, get_evse_individual_operational_status(_))
+        .WillByDefault(Return(OperationalStatusEnum::Operative));
+    ON_CALL(component_state_manager, get_connector_individual_operational_status(_, _))
+        .WillByDefault(Return(OperationalStatusEnum::Operative));
+
+    // And since the EVSE is already in the Operative state, 'Accepted' is returned.
+    EXPECT_CALL(mock_dispatcher, dispatch_call_result(_)).WillOnce(Invoke([](const json& call_result) {
+        const auto message = call_result[ocpp::CALLRESULT_PAYLOAD].get<ChangeAvailabilityResponse>();
+        EXPECT_EQ(message.status, ChangeAvailabilityStatusEnum::Scheduled);
+    }));
+
+    // All connectors of the evse are set to inoperative.
+    EXPECT_CALL(component_state_manager, set_cs_individual_operational_status(OperationalStatusEnum::Inoperative, _))
+        .Times(0);
+    EXPECT_CALL(evse_1, set_connector_operative_status(1, OperationalStatusEnum::Inoperative, _)).Times(0);
+    EXPECT_CALL(evse_1, set_connector_operative_status(2, OperationalStatusEnum::Inoperative, _)).Times(0);
+    // Connector 1 of evse 2 is set to inoperative because it has no active transaction, connector 2 has an active
+    // transaction so the operational status is not changed.
+    EXPECT_CALL(evse_2, set_connector_operative_status(1, OperationalStatusEnum::Inoperative, _));
+    EXPECT_CALL(evse_2, set_connector_operative_status(2, OperationalStatusEnum::Inoperative, _)).Times(0);
+
+    this->availability->handle_message(request);
+
+    // There is now a scheduled change availability request. Let's stop the transaction and check if the evse will
+    // be set to Inoperative now.
+    ON_CALL(evse_manager, any_transaction_active(_)).WillByDefault(Return(false));
+    EXPECT_CALL(evse_2, set_evse_operative_status(OperationalStatusEnum::Inoperative, _));
+    this->availability->handle_scheduled_change_availability_requests(2);
+}
+
+TEST_F(AvailabilityTest, set_heartbeat_timer_interval) {
+    // When setting the heartbeat timer interval, a heartbeat request should be sent after the interval has ended.
+    EXPECT_CALL(mock_dispatcher, dispatch_call(_, _)).WillOnce(Invoke([](const json& call, bool /*triggered*/) {
+        const auto message = call[ocpp::CALL_PAYLOAD].get<HeartbeatRequest>();
+        EXPECT_EQ(message.get_type(), "Heartbeat");
+    }));
+
+    // std::chrono::milliseconds ms(100);
+    this->availability->set_heartbeat_timer_interval(std::chrono::seconds(1));
+    usleep(1200000);
 }
