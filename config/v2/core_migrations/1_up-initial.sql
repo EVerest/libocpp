@@ -1,5 +1,3 @@
-PRAGMA foreign_keys = ON;
-
 -- Authorization cache --
 CREATE TABLE AUTH_CACHE(
     ID_TOKEN_HASH TEXT PRIMARY KEY NOT NULL,
