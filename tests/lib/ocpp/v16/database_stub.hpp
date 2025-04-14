@@ -89,7 +89,7 @@ struct SQLiteStatementTest : public StatementInterface {
     }
     virtual SqliteVariant column_variant(const std::string& name) {
         return 0;
-    } 
+    }
 };
 
 struct DatabaseConnectionTest : public ConnectionInterface {
