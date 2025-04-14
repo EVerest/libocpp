@@ -87,6 +87,9 @@ struct SQLiteStatementTest : public StatementInterface {
     virtual double column_double(const int idx) {
         return 0.0;
     }
+    virtual SqliteVariant column_variant(const std::string& name) {
+        return 0;
+    } 
 };
 
 struct DatabaseConnectionTest : public ConnectionInterface {
