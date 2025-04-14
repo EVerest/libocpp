@@ -58,5 +58,5 @@ gtest:
   git_tag: release-1.12.1
   cmake_condition: "LIBOCPP_BUILD_TESTING"
 everest-sqlite:
-  git: git@github.com:EVerest/everest-sqlite.git # Fix once public
-  git_tag: feature/initial
+  git: https://github.com/EVerest/everest-sqlite.git
+  git_tag: 97e714e7bd872e03a9557cd30b4d0c927bdfbadc
