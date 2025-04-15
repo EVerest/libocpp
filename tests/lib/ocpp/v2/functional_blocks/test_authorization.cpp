@@ -1136,7 +1136,7 @@ TEST_F(AuthorizationTest, validate_token_auth_cache_insert_entry_exception) {
     // Since the auth cache is enabled, after authorizing, the entry is added to the authorization cache. But this will
     // throw an exception. This should not let the application crash but just return an 'Accepted'.
     EXPECT_CALL(this->database_handler_mock, authorization_cache_insert_entry(_, _))
-        .WillOnce(Throw(Exception("Insert entry fails!")));
+        .WillOnce(Throw(everest::db::Exception("Insert entry fails!")));
 
     EXPECT_EQ(authorization->validate_token(id_token, std::nullopt, std::nullopt).idTokenInfo.status,
               AuthorizationStatusEnum::Accepted);
@@ -1697,7 +1697,7 @@ TEST_F(AuthorizationTest, handle_send_local_authorization_list_differential_inse
     EXPECT_CALL(this->database_handler_mock, clear_local_authorization_list).Times(0);
     // Inserting / updating causes an exception.
     EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list(_))
-        .WillOnce(Throw(Exception("This is an exception")));
+        .WillOnce(Throw(everest::db::Exception("This is an exception")));
     // So the update is failed, no new version is set, number of entries is not requested.
     EXPECT_CALL(this->database_handler_mock, insert_or_update_local_authorization_list_version(_)).Times(0);
     EXPECT_CALL(this->database_handler_mock, get_local_authorization_list_number_of_entries()).Times(0);
@@ -1744,7 +1744,8 @@ TEST_F(AuthorizationTest, handle_get_local_authorization_list_version_exception)
     // a call error.
     this->set_local_auth_list_ctrlr_enabled(this->device_model, true);
     const auto request = this->create_get_local_list_version_request();
-    EXPECT_CALL(this->database_handler_mock, get_local_authorization_list_version).WillOnce(Throw(Exception("Oops!")));
+    EXPECT_CALL(this->database_handler_mock, get_local_authorization_list_version)
+        .WillOnce(Throw(everest::db::Exception("Oops!")));
     EXPECT_CALL(mock_dispatcher, dispatch_call_error(_)).WillOnce([](const ocpp::CallError& call_error) {
         EXPECT_EQ(call_error.errorCode, "InternalError");
     });
@@ -1861,7 +1862,7 @@ TEST_F(AuthorizationTest, cache_cleanup_handler_exceeds_max_storage_database_exc
             .RetiresOnSaturation();
         // One of the calls will throw an exception.
         EXPECT_CALL(this->database_handler_mock, authorization_cache_get_binary_size())
-            .WillOnce(Throw(Exception("Oops!")))
+            .WillOnce(Throw(everest::db::Exception("Oops!")))
             .RetiresOnSaturation();
         // After that, it is still called once at the end of the function (after catching the exception)
         EXPECT_CALL(this->database_handler_mock, authorization_cache_get_binary_size())
