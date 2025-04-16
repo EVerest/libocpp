@@ -286,9 +286,10 @@ ocpp::v2::Authorization::validate_token(const IdToken id_token, const std::optio
 
     const bool local_pre_authorize =
         this->context.device_model.get_value<bool>(ControllerComponentVariables::LocalPreAuthorize);
+    const bool can_locally_check = ((is_online and local_pre_authorize) or (!is_online and local_authorize_offline));
     if (this->context.device_model.get_optional_value<bool>(ControllerComponentVariables::LocalAuthListCtrlrEnabled)
             .value_or(false) and
-        ((is_online and local_pre_authorize) or (!is_online and local_authorize_offline))) {
+        can_locally_check) {
         std::optional<IdTokenInfo> id_token_info = std::nullopt;
         try {
             id_token_info = this->context.database_handler.get_local_authorization_list_entry(id_token);
@@ -323,7 +324,7 @@ ocpp::v2::Authorization::validate_token(const IdToken id_token, const std::optio
     const auto hashed_id_token = utils::generate_token_hash(id_token);
     const auto auth_cache_enabled = this->is_auth_cache_ctrlr_enabled();
 
-    if (auth_cache_enabled and (is_online and local_pre_authorize) or (!is_online and local_authorize_offline)) {
+    if (auth_cache_enabled and can_locally_check) {
         try {
             const auto cache_entry = this->authorization_cache_get_entry(hashed_id_token);
             if (cache_entry.has_value()) {
