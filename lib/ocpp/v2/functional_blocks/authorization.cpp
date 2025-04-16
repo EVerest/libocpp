@@ -17,8 +17,6 @@
 #include <ocpp/v2/messages/GetLocalListVersion.hpp>
 #include <ocpp/v2/messages/SendLocalList.hpp>
 
-using namespace everest::db;
-
 ///
 /// \brief Check if vector of authorization data has a duplicate id token.
 /// \param list List to check.
@@ -120,7 +118,7 @@ void ocpp::v2::Authorization::update_authorization_cache_size() {
             this->context.device_model.set_read_only_value(auth_cache_size.component, auth_cache_size.variable.value(),
                                                            AttributeEnum::Actual, std::to_string(size),
                                                            VARIABLE_ATTRIBUTE_VALUE_SOURCE_INTERNAL);
-        } catch (const Exception& e) {
+        } catch (const everest::db::Exception& e) {
             EVLOG_warning << "Could not get authorization cache binary size from database: " << e.what();
         } catch (const std::exception& e) {
             EVLOG_warning << "Could not get authorization cache binary size from database" << e.what();
@@ -291,7 +289,7 @@ ocpp::v2::Authorization::validate_token(const IdToken id_token, const std::optio
         std::optional<IdTokenInfo> id_token_info = std::nullopt;
         try {
             id_token_info = this->context.database_handler.get_local_authorization_list_entry(id_token);
-        } catch (const Exception& e) {
+        } catch (const everest::db::Exception& e) {
             EVLOG_warning << "Could not request local authorization list entry: " << e.what();
         } catch (const std::exception& e) {
             EVLOG_error << "Unknown Error while requesting IdTokenInfo: " << e.what();
@@ -363,7 +361,7 @@ ocpp::v2::Authorization::validate_token(const IdToken id_token, const std::optio
                     EVLOG_info << "Found invalid entry in AuthCache: Sending new request";
                 }
             }
-        } catch (const Exception& e) {
+        } catch (const everest::db::Exception& e) {
             EVLOG_error << "Database Error: " << e.what();
         } catch (const json::exception& e) {
             EVLOG_warning << "Could not parse data of IdTokenInfo: " << e.what();
@@ -389,7 +387,7 @@ ocpp::v2::Authorization::validate_token(const IdToken id_token, const std::optio
         if (auth_cache_enabled) {
             try {
                 this->authorization_cache_insert_entry(hashed_id_token, response.idTokenInfo);
-            } catch (const Exception& e) {
+            } catch (const everest::db::Exception& e) {
                 EVLOG_error << "Could not insert into authorization cache entry: " << e.what();
             }
             this->trigger_authorization_cache_cleanup();
@@ -427,7 +425,7 @@ void ocpp::v2::Authorization::handle_clear_cache_req(Call<ClearCacheRequest> cal
             this->context.database_handler.authorization_cache_clear();
             this->update_authorization_cache_size();
             response.status = ClearCacheStatusEnum::Accepted;
-        } catch (Exception& e) {
+        } catch (const everest::db::Exception& e) {
             auto call_error = CallError(call.uniqueId, "InternalError",
                                         "Database error while clearing authorization cache", json({}, true));
             this->context.message_dispatcher.dispatch_call_error(call_error);
@@ -479,7 +477,7 @@ void ocpp::v2::Authorization::cache_cleanup_handler() {
                     }
                 }
             }
-        } catch (const Exception& e) {
+        } catch (const everest::db::Exception& e) {
             EVLOG_warning << "Could not delete expired authorization cache entries from database: " << e.what();
         } catch (const std::exception& e) {
             EVLOG_warning << "Could not delete expired authorization cache entries from database: " << e.what();
@@ -512,13 +510,13 @@ void ocpp::v2::Authorization::handle_send_local_authorization_list_req(Call<Send
                         std::to_string(entries), VARIABLE_ATTRIBUTE_VALUE_SOURCE_INTERNAL);
                 } catch (const DeviceModelError& e) {
                     EVLOG_warning << "Could not set local list count to device model:" << e.what();
-                } catch (const Exception& e) {
+                } catch (const everest::db::Exception& e) {
                     EVLOG_warning << "Could not get local list count from database: " << e.what();
                 } catch (const std::exception& e) {
                     EVLOG_warning << "Could not get local list count from database: " << e.what();
                 }
             }
-        } catch (const Exception& e) {
+        } catch (const everest::db::Exception& e) {
             EVLOG_warning << "Could not update local authorization list in database: " << e.what();
             response.status = SendLocalListStatusEnum::Failed;
         }
@@ -535,7 +533,7 @@ void ocpp::v2::Authorization::handle_get_local_authorization_list_version_req(Ca
             .value_or(false)) {
         try {
             response.versionNumber = this->context.database_handler.get_local_authorization_list_version();
-        } catch (const Exception& e) {
+        } catch (const everest::db::Exception& e) {
             const auto call_error = CallError(call.uniqueId, "InternalError",
                                               "Unable to retrieve LocalListVersion from the database", json({}));
             this->context.message_dispatcher.dispatch_call_error(call_error);
@@ -560,7 +558,7 @@ ocpp::v2::Authorization::apply_local_authorization_list(const SendLocalListReque
             try {
                 this->context.database_handler.clear_local_authorization_list();
                 status = SendLocalListStatusEnum::Accepted;
-            } catch (const Exception& e) {
+            } catch (const everest::db::Exception& e) {
                 status = SendLocalListStatusEnum::Failed;
                 EVLOG_warning << "Clearing of local authorization list failed: " << e.what();
             }
@@ -573,7 +571,7 @@ ocpp::v2::Authorization::apply_local_authorization_list(const SendLocalListReque
                     this->context.database_handler.clear_local_authorization_list();
                     this->context.database_handler.insert_or_update_local_authorization_list(list);
                     status = SendLocalListStatusEnum::Accepted;
-                } catch (const Exception& e) {
+                } catch (const everest::db::Exception& e) {
                     status = SendLocalListStatusEnum::Failed;
                     EVLOG_warning << "Full update of local authorization list failed (at least partially): "
                                   << e.what();
@@ -594,7 +592,7 @@ ocpp::v2::Authorization::apply_local_authorization_list(const SendLocalListReque
             try {
                 this->context.database_handler.insert_or_update_local_authorization_list(list);
                 status = SendLocalListStatusEnum::Accepted;
-            } catch (const Exception& e) {
+            } catch (const everest::db::Exception& e) {
                 status = SendLocalListStatusEnum::Failed;
                 EVLOG_warning << "Differential update of authorization list failed (at least partially): " << e.what();
             }
