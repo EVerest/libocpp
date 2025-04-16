@@ -413,6 +413,11 @@ public:
     ~ChargePointImpl() {
     }
 
+    /// \brief Allow to update the ChargePoint information which will be sent in BootNotification.req
+    void update_chargepoint_information(const std::string& chargepoint_vendor, const std::string& chargepoint_model,
+                                        const std::string& chargepoint_serialnumber,
+                                        const std::optional<std::string>& firmware_version);
+
     /// \brief Starts the ChargePoint, initializes and connects to the Websocket endpoint and initializes a
     /// BootNotification.req
     /// \param connector_status_map initial state of connectors including connector 0 with reduced set of states

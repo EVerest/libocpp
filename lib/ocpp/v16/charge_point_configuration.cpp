@@ -269,6 +269,18 @@ void ChargePointConfiguration::init_supported_measurands() {
     }
 }
 
+void ChargePointConfiguration::setChargepointInformation(const std::string& chargePointVendor,
+                                                         const std::string& chargePointModel,
+                                                         const std::string& chargePointSerialNumber,
+                                                         const std::optional<std::string>& firmwareVersion) {
+    this->config["Internal"]["ChargePointVendor"] = chargePointVendor;
+    this->config["Internal"]["ChargePointModel"] = chargePointModel;
+    this->config["Internal"]["ChargePointSerialNumber"] = chargePointSerialNumber;
+    if (firmwareVersion.has_value()) {
+        this->config["Internal"]["FirmwareVersion"] = firmwareVersion.value();
+    }
+}
+
 // Internal config options
 std::string ChargePointConfiguration::getChargePointId() {
     return this->config["Internal"]["ChargePointId"];
