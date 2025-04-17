@@ -174,8 +174,8 @@ ocpp::v201::Authorization::validate_token(const IdToken id_token, const std::opt
             forwarded_to_csms = true;
         } else if (certificate.has_value()) {
             // First try to validate the contract certificate locally
-            CertificateValidationResult local_verify_result =
-                this->evse_security.verify_certificate(certificate.value().get(), ocpp::LeafCertificateType::MO);
+            CertificateValidationResult local_verify_result = this->evse_security.verify_certificate(
+                certificate.value().get(), {ocpp::LeafCertificateType::MO, ocpp::LeafCertificateType::V2G});
             EVLOG_info << "Local contract validation result: " << local_verify_result;
 
             bool central_contract_validation_allowed =
