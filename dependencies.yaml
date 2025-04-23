@@ -59,4 +59,4 @@ gtest:
   cmake_condition: "LIBOCPP_BUILD_TESTING"
 everest-sqlite:
   git: https://github.com/EVerest/everest-sqlite.git
-  git_tag: v0.1.0
+  git_tag: v0.1.1
