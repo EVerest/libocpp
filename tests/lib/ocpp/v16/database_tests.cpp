@@ -365,6 +365,10 @@ TEST_F(DatabaseTest, test_delete_profile) {
 
     profile2.chargingProfileId = 2;
 
+    // two profiles with same purpose and level are not allowed
+    // see OCPP 1.6 3.13.2. Stacking charging profiles
+    profile2.stackLevel++;
+
     this->db_handler->insert_or_update_charging_profile(1, profile1);
     this->db_handler->insert_or_update_charging_profile(2, profile2);
 
