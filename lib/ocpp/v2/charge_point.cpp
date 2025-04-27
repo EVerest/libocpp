@@ -874,6 +874,17 @@ void ChargePoint::message_callback(const std::string& message) {
         return;
     }
 
+    if (enhanced_message.messageTypeId == MessageTypeId::UNKNOWN) {
+        EVLOG_error << "Cannot handle message with an unknown message type";
+        auto call_error = CallError(MessageId("-1"), "MessageTypeNotSupported", "", json({}));
+        this->message_dispatcher->dispatch_call_error(call_error);
+        const auto& security_event = ocpp::security_events::INVALIDMESSAGES;
+        this->security->security_event_notification_req(CiString<50>(security_event, StringTooLarge::Truncate),
+                                                        CiString<255>(message, StringTooLarge::Truncate), true,
+                                                        utils::is_critical(security_event));
+        return;
+    }
+
     enhanced_message.message_size = message.size();
     auto json_message = enhanced_message.message;
     this->logging->central_system(conversions::messagetype_to_string(enhanced_message.messageType), message);
