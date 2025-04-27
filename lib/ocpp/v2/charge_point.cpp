@@ -863,6 +863,15 @@ void ChargePoint::message_callback(const std::string& message) {
                                                         CiString<255>(message, StringTooLarge::Truncate), true,
                                                         utils::is_critical(security_event));
         return;
+    } catch (const MalformedRpcMessage& e) {
+        EVLOG_error << "MalformedRpcMessage exception during handling of message: " << e.what();
+        auto call_error = CallError(MessageId("-1"), "RpcFrameworkError", e.what(), json({}));
+        this->message_dispatcher->dispatch_call_error(call_error);
+        const auto& security_event = ocpp::security_events::INVALIDMESSAGES;
+        this->security->security_event_notification_req(CiString<50>(security_event, StringTooLarge::Truncate),
+                                                        CiString<255>(message, StringTooLarge::Truncate), true,
+                                                        utils::is_critical(security_event));
+        return;
     }
 
     enhanced_message.message_size = message.size();
