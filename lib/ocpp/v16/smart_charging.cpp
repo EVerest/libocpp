@@ -4,6 +4,7 @@
 #include "ocpp/common/constants.hpp"
 #include "ocpp/common/types.hpp"
 #include "ocpp/v16/ocpp_enums.hpp"
+#include <chrono>
 #include <ocpp/v16/profile.hpp>
 #include <ocpp/v16/smart_charging.hpp>
 
@@ -20,15 +21,31 @@ namespace {
  */
 template <class PROFILES>
 void clear_expired_profiles(const date::utc_clock::time_point& now, ocpp::v16::DatabaseHandler& db, PROFILES& map) {
+    using ocpp::v16::ChargingProfileKindType;
 
     // check all profiles in the map
     for (auto it = map.cbegin(); it != map.cend();) {
         bool remove = false;
+        const auto& profile = it->second;
+        const auto& schedule = it->second.chargingSchedule;
 
-        // check if the profile has expired
-        if (it->second.validTo) {
-            const auto validTo = it->second.validTo.value().to_time_point();
-            remove = validTo < now;
+        // check if the profile has expired based on validTo
+        if (profile.validTo) {
+            const auto validTo = profile.validTo.value().to_time_point();
+            if (validTo < now) {
+                remove = true;
+            }
+        }
+
+        // check if the absolute profile has expired based on
+        // startTime + duration
+        if ((profile.chargingProfileKind == ChargingProfileKindType::Absolute) && schedule.startSchedule &&
+            schedule.duration) {
+            const auto duration = std::chrono::seconds(schedule.duration.value());
+            const auto validTo = schedule.startSchedule.value().to_time_point() + duration;
+            if (validTo < now) {
+                remove = true;
+            }
         }
 
         if (remove) {
