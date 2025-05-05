@@ -270,16 +270,76 @@ void ChargePointConfiguration::init_supported_measurands() {
     }
 }
 
+void ChargePointConfiguration::setChargepointInformationProperty(json& user_config, const std::string& key,
+                                                                 const NullOrOptionalString& value) {
+    // nullptr clears/deletes an existing value
+    if (std::holds_alternative<std::nullptr_t>(value)) {
+        if (this->config["Internal"].contains(key)) {
+            this->config["Internal"].erase(key);
+        }
+        if (user_config["Internal"].contains(key)) {
+            user_config["Internal"].erase(key);
+        }
+    } else if (std::holds_alternative<std::optional<std::string>>(value)) {
+        const auto& opt = std::get<std::optional<std::string>>(value);
+        if (opt.has_value()) {
+            this->config["Internal"][key] = *opt;
+            user_config["Internal"][key] = *opt;
+        }
+        // std::nullopt value leaves the current value untouched
+    }
+}
+
 void ChargePointConfiguration::setChargepointInformation(const std::string& chargePointVendor,
                                                          const std::string& chargePointModel,
-                                                         const std::string& chargePointSerialNumber,
-                                                         const std::optional<std::string>& firmwareVersion) {
+                                                         const NullOrOptionalString& chargePointSerialNumber,
+                                                         const NullOrOptionalString& chargeBoxSerialNumber,
+                                                         const NullOrOptionalString& firmwareVersion) {
+    // load current persistent configuration from disk
+    json user_config = this->get_user_config();
+
     this->config["Internal"]["ChargePointVendor"] = chargePointVendor;
+    user_config["Internal"]["ChargePointVendor"] = chargePointVendor;
+
     this->config["Internal"]["ChargePointModel"] = chargePointModel;
-    this->config["Internal"]["ChargePointSerialNumber"] = chargePointSerialNumber;
-    if (firmwareVersion.has_value()) {
-        this->config["Internal"]["FirmwareVersion"] = firmwareVersion.value();
-    }
+    user_config["Internal"]["ChargePointModel"] = chargePointModel;
+
+    setChargepointInformationProperty(user_config, "ChargePointSerialNumber", chargePointSerialNumber);
+    setChargepointInformationProperty(user_config, "ChargeBoxSerialNumber", chargeBoxSerialNumber);
+    setChargepointInformationProperty(user_config, "FirmwareVersion", firmwareVersion);
+
+    // save the changes back
+    std::ofstream ofs(this->user_config_path.c_str());
+    ofs << user_config << std::endl;
+    ofs.close();
+}
+
+void ChargePointConfiguration::setChargepointModemInformation(const NullOrOptionalString& ICCID,
+                                                              const NullOrOptionalString& IMSI) {
+    // load current persistent configuration from disk
+    json user_config = this->get_user_config();
+
+    setChargepointInformationProperty(user_config, "ICCID", ICCID);
+    setChargepointInformationProperty(user_config, "IMSI", IMSI);
+
+    // save the changes back
+    std::ofstream ofs(this->user_config_path.c_str());
+    ofs << user_config << std::endl;
+    ofs.close();
+}
+void ChargePointConfiguration::setChargepointMeterInformation(
+
+    const NullOrOptionalString& meterSerialNumber, const NullOrOptionalString& meterType) {
+    // load current persistent configuration from disk
+    json user_config = this->get_user_config();
+
+    setChargepointInformationProperty(user_config, "MeterSerialNumber", meterSerialNumber);
+    setChargepointInformationProperty(user_config, "MeterType", meterType);
+
+    // save the changes back
+    std::ofstream ofs(this->user_config_path.c_str());
+    ofs << user_config << std::endl;
+    ofs.close();
 }
 
 // Internal config options

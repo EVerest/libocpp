@@ -32,6 +32,11 @@
 #include <ocpp/v2/messages/SignCertificate.hpp>
 #include <ocpp/v2/messages/TriggerMessage.hpp>
 
+#include <optional>
+#include <variant>
+
+using NullOrOptionalString = std::variant<std::nullptr_t, std::optional<std::string>>;
+
 namespace ocpp {
 namespace v16 {
 class ChargePointImpl;
@@ -81,10 +86,25 @@ public:
     /// @}  // End constructors 1.6 group
     /// @}  // End chargepoint constructors topic
 
-    /// \brief Allow to update the ChargePoint information which will be sent in BootNotification.req
-    void update_chargepoint_information(const std::string& chargepoint_vendor, const std::string& chargepoint_model,
-                                        const std::string& chargepoint_serialnumber,
-                                        const std::optional<std::string>& firmware_version);
+    /// \brief Allow to update the ChargePoint core information which will be sent in BootNotification.req
+    /// While `vendor` and `model` strings are both required, all other values are optional. Passing `std::nullopt`
+    /// keeps the current existing value, i.e. does not touch the current value at all. Passing `nullptr`
+    /// clears any existing value, other strings replace the corresponding current value.
+    void update_chargepoint_information(const std::string& vendor, const std::string& model,
+                                        const NullOrOptionalString& serialnumber,
+                                        const NullOrOptionalString& chargebox_serialnumber,
+                                        const NullOrOptionalString& firmware_version);
+
+    /// \brief Allow to update the ChargePoint's modem information which will be sent in BootNotification.req
+    /// Passing `std::nullopt` keeps the current existing value, i.e. does not touch the current value at all.
+    /// Passing `nullptr` clears any existing value, other strings replace the corresponding current value.
+    void update_modem_information(const NullOrOptionalString& iccid, const NullOrOptionalString& imsi);
+
+    /// \brief Allow to update the ChargePoint's meter information which will be sent in BootNotification.req
+    /// Passing `std::nullopt` keeps the current existing value, i.e. does not touch the current value at all.
+    /// Passing `nullptr` clears any existing value, other strings replace the corresponding current value.
+    void update_meter_information(const NullOrOptionalString& meter_serialnumber,
+                                  const NullOrOptionalString& meter_type);
 
     /// \brief Initializes the ChargePoint and all of it's connectors, the state machine and message queue. This method
     /// should be called if a more granular start of the process is necessary. Notably if it is necessary for the state

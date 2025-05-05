@@ -4,11 +4,15 @@
 #define OCPP_V16_CHARGE_POINT_CONFIGURATION_HPP
 
 #include <mutex>
+#include <optional>
 #include <set>
+#include <variant>
 
 #include <ocpp/common/support_older_cpp_versions.hpp>
 #include <ocpp/v16/ocpp_types.hpp>
 #include <ocpp/v16/types.hpp>
+
+using NullOrOptionalString = std::variant<std::nullptr_t, std::optional<std::string>>;
 
 namespace ocpp {
 namespace v16 {
@@ -40,12 +44,19 @@ private:
 
     bool checkTimeOffset(const std::string& offset);
 
+    void setChargepointInformationProperty(json& user_config, const std::string& key,
+                                           const NullOrOptionalString& value);
+
 public:
     ChargePointConfiguration(const std::string& config, const fs::path& ocpp_main_path,
                              const fs::path& user_config_path);
     void setChargepointInformation(const std::string& chargePointVendor, const std::string& chargePointModel,
-                                   const std::string& chargePointSerialNumber,
-                                   const std::optional<std::string>& FirmwareVersion);
+                                   const NullOrOptionalString& chargePointSerialNumber,
+                                   const NullOrOptionalString& chargeBoxSerialNumber,
+                                   const NullOrOptionalString& firmwareVersion);
+    void setChargepointModemInformation(const NullOrOptionalString& ICCID, const NullOrOptionalString& IMSI);
+    void setChargepointMeterInformation(const NullOrOptionalString& meterSerialNumber,
+                                        const NullOrOptionalString& meterType);
     // Internal config options
     std::string getChargePointId();
     KeyValue getChargePointIdKeyValue();
