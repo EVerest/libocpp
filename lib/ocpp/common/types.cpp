@@ -881,7 +881,7 @@ std::string install_certificate_result_to_string(InstallCertificateResult e) {
         return "Accepted";
     }
 
-    throw EnumToStringException{e, "UpdateFirmwareStatusEnumType"};
+    throw EnumToStringException{e, "InstallCertificateResult"};
 }
 
 InstallCertificateResult string_to_install_certificate_result(const std::string& s) {
