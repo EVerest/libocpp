@@ -35,12 +35,12 @@ void Security::handle_message(const EnhancedMessage<MessageType>& message) {
         this->handle_certificate_signed_req(json_message);
     } else if (message.messageType == MessageType::SignCertificateResponse) {
         this->handle_sign_certificate_response(json_message);
-    // } else if (message.messageType == MessageType::GetInstalledCertificateIds) {
-    //      this->handle_get_installed_certificate_ids_req(json_message);
-    // } else if (message.messageType == MessageType::InstallCertificate) {
-    //      this->handle_install_certificate_req(json_message);
-    // } else if (message.messageType == MessageType::DeleteCertificate) {
-    //      this->handle_delete_certificate_req(json_message);
+        // } else if (message.messageType == MessageType::GetInstalledCertificateIds) {
+        //      this->handle_get_installed_certificate_ids_req(json_message);
+        // } else if (message.messageType == MessageType::InstallCertificate) {
+        //      this->handle_install_certificate_req(json_message);
+        // } else if (message.messageType == MessageType::DeleteCertificate) {
+        //      this->handle_delete_certificate_req(json_message);
     } else {
         throw MessageTypeNotImplementedException(message.messageType);
     }
