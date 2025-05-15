@@ -42,6 +42,7 @@ ChargePointImpl::ChargePointImpl(const std::string& config, const fs::path& shar
                                  const std::optional<SecurityConfiguration> security_configuration) :
     ocpp::ChargingStationBase(evse_security, security_configuration),
     bootreason(BootReasonEnum::PowerUp),
+    initialized(false),
     connection_state(ChargePointConnectionState::Disconnected),
     registration_status(RegistrationStatus::Pending),
     diagnostics_status(DiagnosticsStatus::Idle),
@@ -1083,11 +1084,26 @@ void ChargePointImpl::reset_pricing_triggers(const int32_t connector_number) {
     }
 }
 
+bool ChargePointImpl::init(const std::map<int, ChargePointStatus>& connector_status_map,
+                           const std::set<std::string>& resuming_session_ids) {
+    // push transaction messages including SecurityEventNotification.req onto the message queue
+    this->message_queue->get_persisted_messages_from_db(this->configuration->getDisableSecurityEventNotifications());
+    this->try_resume_transactions(
+        resuming_session_ids); // calling resume transactions before message_queue.start() ensures that
+                               // no message handlers (e.g. for StopTransaction.conf) are
+                               // yet received that could interfere with try_resume_transactions
+    this->message_queue->start();
+    this->init_state_machine(connector_status_map);
+    this->initialized = true;
+    return true;
+}
+
 bool ChargePointImpl::start(const std::map<int, ChargePointStatus>& connector_status_map, BootReasonEnum bootreason,
                             const std::set<std::string>& resuming_session_ids) {
-    this->message_queue->start();
+    if (!this->initialized) {
+        init(connector_status_map, resuming_session_ids);
+    }
     this->bootreason = bootreason;
-    this->init_state_machine(connector_status_map);
     this->init_websocket();
     this->websocket->start_connecting();
     // push transaction messages including SecurityEventNotification.req onto the message queue
@@ -1233,6 +1249,7 @@ bool ChargePointImpl::stop() {
         this->message_queue->stop();
 
         this->stopped = true;
+        this->initialized = false;
         EVLOG_info << "Terminating...";
         return true;
     } else {
