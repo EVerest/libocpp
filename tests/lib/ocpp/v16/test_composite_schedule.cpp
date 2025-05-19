@@ -210,16 +210,19 @@ TEST_F(CompositeScheduleTestFixture, CalculateEnhancedCompositeSchedule_Validate
     ASSERT_EQ(period_01.numberPhases, 1);
     ASSERT_EQ(period_01.stackLevel, 1);
     ASSERT_EQ(period_01.startPeriod, 0);
+    ASSERT_EQ(period_01.periodTransformed, false);
     auto& period_02 = composite_schedule.chargingSchedulePeriod.at(1);
     ASSERT_EQ(period_02.limit, 11000);
     ASSERT_EQ(period_02.numberPhases, 3);
     ASSERT_EQ(period_02.stackLevel, 0);
     ASSERT_EQ(period_02.startPeriod, 1020);
+    ASSERT_EQ(period_02.periodTransformed, false);
     auto& period_03 = composite_schedule.chargingSchedulePeriod.at(2);
     ASSERT_EQ(period_03.limit, 6000.0);
     ASSERT_EQ(period_03.numberPhases, 3);
     ASSERT_EQ(period_03.stackLevel, 0);
     ASSERT_EQ(period_03.startPeriod, 25140);
+    ASSERT_EQ(period_03.periodTransformed, false);
 }
 
 ///
