@@ -3,6 +3,8 @@
 
 #include "smart_charging_test_utils.hpp"
 
+using ocpp::DateTime;
+
 TEST_F(CompositeScheduleTestFixtureV21, setpoint_tx_profile) {
     this->load_charging_profiles_for_evse(BASE_JSON_PATH_V21 + "/setpoints/", DEFAULT_EVSE_ID);
 
