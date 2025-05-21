@@ -492,6 +492,10 @@ public:
     void setLanguage(const std::string& language);
     std::optional<KeyValue> getLanguageKeyValue();
 
+    std::optional<int32_t> getWaitForSetUserPriceTimeout();
+    void setWaitForSetUserPriceTimeout(const int32_t wait_for_set_user_price_timeout);
+    std::optional<KeyValue> getWaitForSetUserPriceTimeoutKeyValue();
+
     // custom
     std::optional<KeyValue> getCustomKeyValue(CiString<50> key);
     ConfigurationStatus setCustomKey(CiString<50> key, CiString<500> value, bool force);
