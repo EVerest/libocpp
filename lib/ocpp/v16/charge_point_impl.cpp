@@ -3423,8 +3423,10 @@ EnhancedIdTagInfo ChargePointImpl::authorize_id_token(CiString<20> idTag, const 
                     enhanced_id_tag_info.id_tag_info = auth_list_entry_opt.value();
                     return enhanced_id_tag_info;
                 }
+            } catch (const QueryExecutionException& e) {
+                EVLOG_warning << "Could not request local authorization list entry: " << e.what();
             } catch (const std::exception& e) {
-                EVLOG_warning << "Error while requesting local authorization list entry: " << e.what();
+                EVLOG_warning << "Unknown Error while requesting local authorization list entry: " << e.what();
             }
         }
 
