@@ -312,13 +312,13 @@ TEST_F(ProfileTestsB, validate_profileA) {
     EXPECT_EQ(tmp_profile, profileA);
     handler.add_tx_default_profile(tmp_profile, connector_id);
     auto valid_profiles = handler.get_valid_profiles(profileA_start_time, profileA_end_time, connector_id);
-    auto schedule = handler.calculate_composite_schedule(valid_profiles, profileA_start_time, profileA_end_time,
-                                                         connector_id, std::nullopt);
+    auto schedule = handler.calculate_composite_schedule(profileA_start_time, profileA_end_time, connector_id,
+                                                         ChargingRateUnit::A, false, true);
     // std::cout << "chargingSchedule:\n" << profileA << std::endl;
     // std::cout << "schedule:\n" << schedule << std::endl;
     EXPECT_EQ(profileA.chargingSchedule, schedule);
     auto enhanced_schedule = handler.calculate_enhanced_composite_schedule(
-        valid_profiles, profileA_start_time, profileA_end_time, connector_id, std::nullopt);
+        profileA_start_time, profileA_end_time, connector_id, ChargingRateUnit::A, false, true);
     // std::cout << "enhanced schedule:\n" << enhanced_schedule << std::endl;
     EXPECT_EQ(profileA.chargingSchedule, enhanced_schedule);
 }
@@ -341,11 +341,11 @@ TEST_F(ProfileTestsB, validate_profileB) {
     EXPECT_EQ(tmp_profile, profileB);
     handler.add_tx_default_profile(tmp_profile, connector_id);
     auto valid_profiles = handler.get_valid_profiles(profileB_start_time, profileB_end_time, connector_id);
-    auto schedule = handler.calculate_composite_schedule(valid_profiles, profileB_start_time, profileB_end_time,
-                                                         connector_id, std::nullopt);
+    auto schedule = handler.calculate_composite_schedule(profileB_start_time, profileB_end_time, connector_id,
+                                                         ChargingRateUnit::A, false, true);
     EXPECT_EQ(profileB.chargingSchedule, schedule);
     auto enhanced_schedule = handler.calculate_enhanced_composite_schedule(
-        valid_profiles, profileB_start_time, profileB_end_time, connector_id, std::nullopt);
+        profileB_start_time, profileB_end_time, connector_id, ChargingRateUnit::A, false, true);
     EXPECT_EQ(profileB.chargingSchedule, enhanced_schedule);
 }
 
@@ -386,8 +386,8 @@ TEST_F(ProfileTestsB, single_profile) {
     ASSERT_EQ(valid_profiles.size(), 1);
     EXPECT_EQ(profileA.chargingSchedule, valid_profiles[0].chargingSchedule);
 
-    auto schedule =
-        handler.calculate_composite_schedule(valid_profiles, profileA_start_time, profileA_end_time, 1, std::nullopt);
+    auto schedule = handler.calculate_composite_schedule(profileA_start_time, profileA_end_time, 1, ChargingRateUnit::A,
+                                                         false, true);
     // std::cout << schedule << std::endl;
     EXPECT_EQ(profileA.chargingSchedule, schedule);
 }
@@ -411,8 +411,8 @@ TEST_F(ProfileTestsB, startup_no_charge) {
     EXPECT_EQ(profileNoCharge.chargingSchedule, valid_profiles[0].chargingSchedule);
 
     // std::cout << "profileNoCharge: no transaction" << std::endl;
-    auto schedule = handler.calculate_enhanced_composite_schedule(valid_profiles, start_time, profileNoCharge_end_time,
-                                                                  1, std::nullopt);
+    auto schedule = handler.calculate_enhanced_composite_schedule(start_time, profileNoCharge_end_time, 1,
+                                                                  ChargingRateUnit::A, false, true);
     // std::cout << "chargingSchedule:" << profileNoCharge.chargingSchedule << std::endl;
     // std::cout << "schedule:" << schedule.chargingSchedulePeriod << std::endl;
     EXPECT_EQ(profileNoCharge.chargingSchedule, schedule);
@@ -425,8 +425,8 @@ TEST_F(ProfileTestsB, startup_no_charge) {
     EXPECT_EQ(profileNoCharge.chargingSchedule, valid_profiles[0].chargingSchedule);
 
     // std::cout << "profileNoCharge: with transaction" << std::endl;
-    schedule = handler.calculate_enhanced_composite_schedule(valid_profiles, start_time, profileNoCharge_end_time, 1,
-                                                             std::nullopt);
+    schedule = handler.calculate_enhanced_composite_schedule(start_time, profileNoCharge_end_time, 1,
+                                                             ChargingRateUnit::A, false, true);
     // std::cout << "chargingSchedule:" << profileNoCharge.chargingSchedule << std::endl;
     // std::cout << "schedule:" << schedule.chargingSchedulePeriod << std::endl;
     EXPECT_EQ(profileNoCharge.chargingSchedule, schedule);
@@ -439,8 +439,8 @@ TEST_F(ProfileTestsB, startup_no_charge) {
     ASSERT_EQ(valid_profiles.size(), 1);
     EXPECT_EQ(profileNoCharge.chargingSchedule, valid_profiles[0].chargingSchedule);
 
-    schedule = handler.calculate_enhanced_composite_schedule(valid_profiles, start_time, profileNoCharge_end_time, 1,
-                                                             std::nullopt);
+    schedule = handler.calculate_enhanced_composite_schedule(start_time, profileNoCharge_end_time, 1,
+                                                             ChargingRateUnit::A, false, true);
     // std::cout << "chargingSchedule:" << profileNoCharge.chargingSchedule << std::endl;
     // std::cout << "schedule:" << schedule.chargingSchedulePeriod << std::endl;
     EXPECT_EQ(profileNoCharge.chargingSchedule, schedule);
@@ -589,7 +589,7 @@ TEST_F(ProfileTestsB, single_absolute) {
     // std::cout << "profiles:" << valid_profiles << std::endl;
 
     auto enhanced_schedule =
-        handler.calculate_enhanced_composite_schedule(valid_profiles, start_time, end_time, 1, std::nullopt);
+        handler.calculate_enhanced_composite_schedule(start_time, end_time, 1, ChargingRateUnit::A, false, true);
     // std::cout << "schedule:                  " << enhanced_schedule << std::endl;
     // std::cout << "absoluteA.chargingSchedule:" << absoluteA.chargingSchedule << std::endl;
     EXPECT_EQ(enhanced_schedule.duration.value_or(-1), 600);
@@ -625,13 +625,13 @@ TEST_F(ProfileTestsB, stack_absolute) {
     EXPECT_EQ(profileStackB, valid_profiles[1]);
     EXPECT_EQ(profileStackC, valid_profiles[2]);
 
-    auto schedule = handler.calculate_composite_schedule(valid_profiles, start_time, end_time, 1, std::nullopt);
+    auto schedule = handler.calculate_composite_schedule(start_time, end_time, 1, ChargingRateUnit::A, false, true);
     ASSERT_EQ(schedule.chargingSchedulePeriod.size(), 1);
     EXPECT_EQ(schedule.chargingSchedulePeriod[0].startPeriod, 0);
     EXPECT_EQ(schedule.chargingSchedulePeriod[0].limit, profileStackB.chargingSchedule.chargingSchedulePeriod[0].limit);
 
     auto enhanced_schedule =
-        handler.calculate_enhanced_composite_schedule(valid_profiles, start_time, end_time, 1, std::nullopt);
+        handler.calculate_enhanced_composite_schedule(start_time, end_time, 1, ChargingRateUnit::A, false, true);
     // std::cout << "chargingSchedule:" << profileNoCharge.chargingSchedule << std::endl;
     // std::cout << "schedule:" << schedule.chargingSchedulePeriod << std::endl;
     ASSERT_EQ(enhanced_schedule.chargingSchedulePeriod.size(), 1);
@@ -671,7 +671,7 @@ TEST_F(ProfileTestsB, stack_absolute_delay) {
     EXPECT_EQ(absoluteA, valid_profiles[0]);
     EXPECT_EQ(absoluteB, valid_profiles[1]);
 
-    auto schedule = handler.calculate_composite_schedule(valid_profiles, start_time, end_time, 1, std::nullopt);
+    auto schedule = handler.calculate_composite_schedule(start_time, end_time, 1, ChargingRateUnit::A, false, true);
     // std::cout << "schedule:" << schedule << std::endl;
     // expecting two periods
     ASSERT_GE(schedule.chargingSchedulePeriod.size(), 2);
@@ -682,7 +682,7 @@ TEST_F(ProfileTestsB, stack_absolute_delay) {
     EXPECT_EQ(schedule.chargingSchedulePeriod[1].limit, absoluteB.chargingSchedule.chargingSchedulePeriod[0].limit);
 
     auto enhanced_schedule =
-        handler.calculate_enhanced_composite_schedule(valid_profiles, start_time, end_time, 1, std::nullopt);
+        handler.calculate_enhanced_composite_schedule(start_time, end_time, 1, ChargingRateUnit::A, false, true);
     // std::cout << "schedule:" << enhanced_schedule << std::endl;
     // expecting two periods
     ASSERT_EQ(enhanced_schedule.chargingSchedulePeriod.size(), 2);
@@ -722,7 +722,7 @@ TEST_F(ProfileTestsB, stack_absolute_delay_overlap) {
     EXPECT_EQ(profileStackA, valid_profiles[0]);
     EXPECT_EQ(absoluteB, valid_profiles[1]);
 
-    auto schedule = handler.calculate_composite_schedule(valid_profiles, start_time, end_time, 1, std::nullopt);
+    auto schedule = handler.calculate_composite_schedule(start_time, end_time, 1, ChargingRateUnit::A, false, true);
     // std::cout << "schedule:" << schedule << std::endl;
     // expecting two periods
     ASSERT_EQ(schedule.chargingSchedulePeriod.size(), 2);
@@ -733,7 +733,7 @@ TEST_F(ProfileTestsB, stack_absolute_delay_overlap) {
     EXPECT_EQ(schedule.chargingSchedulePeriod[1].limit, absoluteB.chargingSchedule.chargingSchedulePeriod[0].limit);
 
     auto enhanced_schedule =
-        handler.calculate_enhanced_composite_schedule(valid_profiles, start_time, end_time, 1, std::nullopt);
+        handler.calculate_enhanced_composite_schedule(start_time, end_time, 1, ChargingRateUnit::A, false, true);
     // std::cout << "schedule:" << enhanced_schedule << std::endl;
     // expecting two periods
     ASSERT_EQ(enhanced_schedule.chargingSchedulePeriod.size(), 2);
@@ -777,7 +777,7 @@ TEST_F(ProfileTestsB, stack_relative) {
     }
 
     auto schedule =
-        handler.calculate_enhanced_composite_schedule(valid_profiles, start_time, end_time, 1, std::nullopt);
+        handler.calculate_enhanced_composite_schedule(start_time, end_time, 1, ChargingRateUnit::A, false, true);
     // std::cout << "chargingSchedule:" << profileNoCharge.chargingSchedule << std::endl;
     // std::cout << "schedule:" << schedule.chargingSchedulePeriod << std::endl;
     EXPECT_EQ(relativeB.chargingSchedule, schedule);
