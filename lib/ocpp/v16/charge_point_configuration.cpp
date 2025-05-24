@@ -2589,7 +2589,7 @@ std::optional<KeyValue> ChargePointConfiguration::getPriceNumberOfDecimalsForCos
     return kv_opt;
 }
 
-std::optional<std::string> ChargePointConfiguration::getDefaultPriceText(const std::string& language) {
+std::optional<std::string> ChargePointConfiguration::getDefaultPriceText(const std::optional<std::string>& language) {
     if (this->config.contains("CostAndPrice") and this->config.at("CostAndPrice").contains("DefaultPriceText")) {
         bool found = false;
         json result = json::object();
@@ -2617,6 +2617,46 @@ std::optional<std::string> ChargePointConfiguration::getDefaultPriceText(const s
     }
 
     return std::nullopt;
+}
+
+TariffMessage ChargePointConfiguration::getTariffMessageWithDefaultPriceText() {
+    TariffMessage tariff_message;
+    if (this->config.contains("CostAndPrice") and this->config.at("CostAndPrice").contains("DefaultPriceText")) {
+        json& default_tariff = this->config["CostAndPrice"]["DefaultPriceText"];
+
+        if (!default_tariff.contains("priceTexts")) {
+            return tariff_message;
+        }
+
+        for (auto& tariff_message_item : default_tariff.at("priceTexts").items()) {
+            DisplayMessageContent content;
+            content.language = tariff_message_item.value().at("language");
+            content.message = tariff_message_item.value().at("priceText");
+            tariff_message.message.push_back(content);
+        }
+    }
+    return tariff_message;
+}
+
+TariffMessage ChargePointConfiguration::getTariffMessageWithDefaultPriceTextOffline() {
+    TariffMessage tariff_message;
+    if (this->config.contains("CostAndPrice") and this->config.at("CostAndPrice").contains("DefaultPriceText")) {
+        json& default_tariff = this->config["CostAndPrice"]["DefaultPriceText"];
+
+        if (!default_tariff.contains("priceTexts")) {
+            return tariff_message;
+        }
+
+        for (auto& tariff_message_item : default_tariff.at("priceTexts").items()) {
+            DisplayMessageContent content;
+            content.language = tariff_message_item.value().at("language");
+            if (tariff_message_item.value().contains("priceTextOffline")) {
+                content.message = tariff_message_item.value().at("priceTextOffline");
+                tariff_message.message.push_back(content);
+            }
+        }
+    }
+    return tariff_message;
 }
 
 ConfigurationStatus ChargePointConfiguration::setDefaultPriceText(const CiString<50>& key, const CiString<500>& value) {
