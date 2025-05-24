@@ -3421,6 +3421,14 @@ EnhancedIdTagInfo ChargePointImpl::authorize_id_token(CiString<20> idTag, const 
                 if (auth_list_entry_opt.has_value()) {
                     EVLOG_info << "Found id_tag " << idTag.get() << " in AuthorizationList";
                     enhanced_id_tag_info.id_tag_info = auth_list_entry_opt.value();
+
+                    if (enhanced_id_tag_info.id_tag_info.status == AuthorizationStatus::Accepted and
+                        this->configuration->getCustomDisplayCostAndPriceEnabled()) {
+                        enhanced_id_tag_info.tariff_message =
+                            this->websocket->is_connected()
+                                ? this->configuration->getTariffMessageWithDefaultPriceText()
+                                : this->configuration->getTariffMessageWithDefaultPriceTextOffline();
+                    }
                     return enhanced_id_tag_info;
                 }
             } catch (const QueryExecutionException& e) {
@@ -3434,6 +3442,13 @@ EnhancedIdTagInfo ChargePointImpl::authorize_id_token(CiString<20> idTag, const 
             if (this->validate_against_cache_entries(idTag)) {
                 EVLOG_info << "Found valid id_tag " << idTag.get() << " in AuthorizationCache";
                 enhanced_id_tag_info.id_tag_info = this->database_handler->get_authorization_cache_entry(idTag).value();
+                if (this->configuration->getCustomDisplayCostAndPriceEnabled()) {
+                    enhanced_id_tag_info.tariff_message =
+                        this->websocket->is_connected()
+                            ? this->configuration->getTariffMessageWithDefaultPriceText()
+                            : this->configuration->getTariffMessageWithDefaultPriceTextOffline();
+                }
+
                 return enhanced_id_tag_info;
             }
         }
@@ -3487,10 +3502,10 @@ EnhancedIdTagInfo ChargePointImpl::authorize_id_token(CiString<20> idTag, const 
                     this->tariff_messages_by_id_token.erase(tariff_it);
                 } else {
                     EVLOG_warning << "Tariff message was not received within timeout for idToken " << idTag.get();
+                    enhanced_id_tag_info.tariff_message = this->configuration->getTariffMessageWithDefaultPriceText();
                 }
                 this->user_price_cvs.erase(idTag.get());
             }
-
             return enhanced_id_tag_info;
         } catch (const std::exception& e) {
             EVLOG_warning << "Error processing AuthorizeResponse: " << e.what();
