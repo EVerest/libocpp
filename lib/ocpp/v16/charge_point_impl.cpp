@@ -3415,6 +3415,17 @@ EnhancedIdTagInfo ChargePointImpl::authorize_id_token(CiString<20> idTag, const 
          (this->websocket != nullptr && this->websocket->is_connected())) ||
         (this->configuration->getLocalAuthorizeOffline() &&
          (this->websocket == nullptr || !this->websocket->is_connected()))) {
+
+        const auto update_tariff_message_if_eligible = [this](EnhancedIdTagInfo& enhanced_id_tag_info) {
+            if (enhanced_id_tag_info.id_tag_info.status == AuthorizationStatus::Accepted &&
+                this->configuration->getCustomDisplayCostAndPriceEnabled()) {
+                enhanced_id_tag_info.tariff_message =
+                    this->websocket->is_connected()
+                        ? this->configuration->getTariffMessageWithDefaultPriceText()
+                        : this->configuration->getTariffMessageWithDefaultPriceTextOffline();
+            }
+        };
+
         if (this->configuration->getLocalAuthListEnabled()) {
             try {
                 const auto auth_list_entry_opt = this->database_handler->get_local_authorization_list_entry(idTag);
@@ -3422,13 +3433,7 @@ EnhancedIdTagInfo ChargePointImpl::authorize_id_token(CiString<20> idTag, const 
                     EVLOG_info << "Found id_tag " << idTag.get() << " in AuthorizationList";
                     enhanced_id_tag_info.id_tag_info = auth_list_entry_opt.value();
 
-                    if (enhanced_id_tag_info.id_tag_info.status == AuthorizationStatus::Accepted and
-                        this->configuration->getCustomDisplayCostAndPriceEnabled()) {
-                        enhanced_id_tag_info.tariff_message =
-                            this->websocket->is_connected()
-                                ? this->configuration->getTariffMessageWithDefaultPriceText()
-                                : this->configuration->getTariffMessageWithDefaultPriceTextOffline();
-                    }
+                    update_tariff_message_if_eligible(enhanced_id_tag_info);
                     return enhanced_id_tag_info;
                 }
             } catch (const QueryExecutionException& e) {
@@ -3442,13 +3447,7 @@ EnhancedIdTagInfo ChargePointImpl::authorize_id_token(CiString<20> idTag, const 
             if (this->validate_against_cache_entries(idTag)) {
                 EVLOG_info << "Found valid id_tag " << idTag.get() << " in AuthorizationCache";
                 enhanced_id_tag_info.id_tag_info = this->database_handler->get_authorization_cache_entry(idTag).value();
-                if (this->configuration->getCustomDisplayCostAndPriceEnabled()) {
-                    enhanced_id_tag_info.tariff_message =
-                        this->websocket->is_connected()
-                            ? this->configuration->getTariffMessageWithDefaultPriceText()
-                            : this->configuration->getTariffMessageWithDefaultPriceTextOffline();
-                }
-
+                update_tariff_message_if_eligible(enhanced_id_tag_info);
                 return enhanced_id_tag_info;
             }
         }
