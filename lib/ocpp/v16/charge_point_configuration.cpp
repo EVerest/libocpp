@@ -2628,11 +2628,16 @@ TariffMessage ChargePointConfiguration::getTariffMessageWithDefaultPriceText() {
             return tariff_message;
         }
 
-        for (auto& tariff_message_item : default_tariff.at("priceTexts").items()) {
+        for (auto& item : default_tariff.at("priceTexts").items()) {
+            const auto tariff_message_item = item.value();
             DisplayMessageContent content;
-            content.language = tariff_message_item.value().at("language");
-            content.message = tariff_message_item.value().at("priceText");
-            tariff_message.message.push_back(content);
+            if (tariff_message_item.contains("language")) {
+                content.language = tariff_message_item.at("language");
+            }
+            if (tariff_message_item.contains("priceText")) {
+                content.message = tariff_message_item.at("priceText");
+                tariff_message.message.push_back(content);
+            }
         }
     }
     return tariff_message;
@@ -2647,11 +2652,14 @@ TariffMessage ChargePointConfiguration::getTariffMessageWithDefaultPriceTextOffl
             return tariff_message;
         }
 
-        for (auto& tariff_message_item : default_tariff.at("priceTexts").items()) {
+        for (auto& item : default_tariff.at("priceTexts").items()) {
             DisplayMessageContent content;
-            content.language = tariff_message_item.value().at("language");
-            if (tariff_message_item.value().contains("priceTextOffline")) {
-                content.message = tariff_message_item.value().at("priceTextOffline");
+            const auto tariff_message_item = item.value();
+            if (tariff_message_item.contains("language")) {
+                content.language = tariff_message_item.at("language");
+            }
+            if (tariff_message_item.contains("priceTextOffline")) {
+                content.message = tariff_message_item.at("priceTextOffline");
                 tariff_message.message.push_back(content);
             }
         }
