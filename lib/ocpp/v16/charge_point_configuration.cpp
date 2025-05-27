@@ -2630,12 +2630,10 @@ TariffMessage ChargePointConfiguration::getTariffMessageWithDefaultPriceText() {
 
         for (auto& item : default_tariff.at("priceTexts").items()) {
             const auto tariff_message_item = item.value();
-            DisplayMessageContent content;
-            if (tariff_message_item.contains("language")) {
-                content.language = tariff_message_item.at("language");
-            }
-            if (tariff_message_item.contains("priceText")) {
+            if (tariff_message_item.contains("priceText") and tariff_message_item.contains("language")) {
+                DisplayMessageContent content;
                 content.message = tariff_message_item.at("priceText");
+                content.language = tariff_message_item.at("language");
                 tariff_message.message.push_back(content);
             }
         }
@@ -2653,13 +2651,11 @@ TariffMessage ChargePointConfiguration::getTariffMessageWithDefaultPriceTextOffl
         }
 
         for (auto& item : default_tariff.at("priceTexts").items()) {
-            DisplayMessageContent content;
             const auto tariff_message_item = item.value();
-            if (tariff_message_item.contains("language")) {
-                content.language = tariff_message_item.at("language");
-            }
-            if (tariff_message_item.contains("priceTextOffline")) {
+            if (tariff_message_item.contains("priceTextOffline") and tariff_message_item.contains("language")) {
+                DisplayMessageContent content;
                 content.message = tariff_message_item.at("priceTextOffline");
+                content.language = tariff_message_item.at("language");
                 tariff_message.message.push_back(content);
             }
         }
