@@ -125,41 +125,7 @@
       "default": "5",
       "type": "integer"
     },
-    "NetworkConfigurationPriority": {
-      "variable_name": "NetworkConfigurationPriority",
-      "characteristics": {
-        "valuesList": "1,2",
-        "supportsMonitoring": true,
-        "dataType": "SequenceList"
-      },
-      "attributes": [
-        {
-          "type": "Actual",
-          "mutability": "ReadWrite",
-          "value": 1
-        }
-      ],
-      "description": "A comma separated ordered list of the priority of the possible Network Connection Profiles.",
-      "default": "1",
-      "type": "string"
-    },
-    "NetworkProfileConnectionAttempts": {
-      "variable_name": "NetworkProfileConnectionAttempts",
-      "characteristics": {
-        "supportsMonitoring": true,
-        "dataType": "integer"
-      },
-      "attributes": [
-        {
-          "type": "Actual",
-          "mutability": "ReadWrite",
-          "value": 3
-        }
-      ],
-      "description": "Specifies the number of connection attempts the Charging Station executes before switching to a different profile.",
-      "default": "3",
-      "type": "integer"
-    },
+
     "OfflineThreshold": {
       "variable_name": "OfflineThreshold",
       "characteristics": {
@@ -349,8 +315,6 @@
     "MessageAttemptInterval",
     "MessageAttempts",
     "MessageTimeout",
-    "NetworkConfigurationPriority",
-    "NetworkProfileConnectionAttempts",
     "OfflineThreshold",
     "ResetRetries",
     "RetryBackOffRandomRange",
