@@ -34,11 +34,11 @@ install(
 if (LIBOCPP_INSTALL_DEVICE_MODEL_DATABASE)
 
      if (NOT LIBOCPP_COMPONENT_CONFIG_PATH)
-          set(LIBOCPP_COMPONENT_CONFIG_PATH "${CMAKE_CURRENT_SOURCE_DIR}/component_config")
+          set(LIBOCPP_COMPONENT_CONFIG_PATH "${CMAKE_CURRENT_SOURCE_DIR}/component_config/standardized")
      endif()
 
      
      message(STATUS "Using ocpp v2 component config file path: ${LIBOCPP_COMPONENT_CONFIG_PATH}")
      
-     install(DIRECTORY ${LIBOCPP_COMPONENT_CONFIG_PATH} DESTINATION ${CMAKE_INSTALL_DATADIR}/everest/modules/OCPP201)
+     install(DIRECTORY ${LIBOCPP_COMPONENT_CONFIG_PATH} DESTINATION ${CMAKE_INSTALL_DATADIR}/everest/modules/OCPP201/component_config)
 endif()
