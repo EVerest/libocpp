@@ -230,8 +230,11 @@ const std::map<OperationModeEnum, LimitsSetpointsForOperationMode> limits_setpoi
     {OperationModeEnum::Idle, {{}, {}}}};
 
 SmartCharging::SmartCharging(const FunctionalBlockContext& functional_block_context,
-                             std::function<void()> set_charging_profiles_callback) :
-    context(functional_block_context), set_charging_profiles_callback(set_charging_profiles_callback) {
+                             std::function<void()> set_charging_profiles_callback,
+                             StopTransactionCallback stop_transaction_callback) :
+    context(functional_block_context),
+    set_charging_profiles_callback(set_charging_profiles_callback),
+    stop_transaction_callback(stop_transaction_callback) {
 }
 
 void SmartCharging::handle_message(const ocpp::EnhancedMessage<MessageType>& message) {
@@ -245,6 +248,8 @@ void SmartCharging::handle_message(const ocpp::EnhancedMessage<MessageType>& mes
         this->handle_get_charging_profiles_req(json_message);
     } else if (message.messageType == MessageType::GetCompositeSchedule) {
         this->handle_get_composite_schedule_req(json_message);
+    } else if (message.messageType == MessageType::NotifyEVChargingNeedsResponse) {
+        this->handle_notify_ev_charging_needs_response(message);
     } else {
         throw MessageTypeNotImplementedException(message.messageType);
     }
@@ -1148,6 +1153,36 @@ void SmartCharging::handle_get_charging_profiles_req(Call<GetChargingProfilesReq
     // requests_to_send are ready, send them and define tbc property
     for (const auto& request_to_send : requests_to_send) {
         this->report_charging_profile_req(request_to_send);
+    }
+}
+
+void SmartCharging::handle_notify_ev_charging_needs_response(const EnhancedMessage<MessageType>& call_result) {
+    CallResult<NotifyEVChargingNeedsResponse> response = call_result.message;
+    Call<NotifyEVChargingNeedsRequest> request = call_result.call_message;
+    EVLOG_debug << "Received NotifyEVChargingNeedsResponse: " << response.msg
+                << "\nwith messageId: " << response.uniqueId;
+    switch (response.msg.status) {
+    case NotifyEVChargingNeedsStatusEnum::Accepted:
+        // todo: Support HLC smart charging
+        // Wait for schedule
+        break;
+    case NotifyEVChargingNeedsStatusEnum::Rejected:
+        if (this->context.ocpp_version == OcppProtocolVersion::v201) {
+            // todo: Support HLC smart charging
+            // Start without waiting for schedule
+            [[fallthrough]];
+        } else {
+            // Start service renegotiation or Stop transaction based on OCPP version
+            // Also check ISO15118 version
+            // Service renegotiation should not technically be possible so stop transaction
+            stop_transaction_callback(request.msg.evseId, ReasonEnum::ReqEnergyTransferRejected);
+            break;
+        }
+    case NotifyEVChargingNeedsStatusEnum::Processing:
+    case NotifyEVChargingNeedsStatusEnum::NoChargingProfile:
+        // todo: Support HLC smart charging
+        // Start without waiting for schedule
+        break;
     }
 }
 

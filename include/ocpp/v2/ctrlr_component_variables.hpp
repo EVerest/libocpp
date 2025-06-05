@@ -302,6 +302,8 @@ extern const RequiredComponentVariable StopTxOnInvalidId;
 extern const ComponentVariable TxBeforeAcceptedEnabled;
 extern const RequiredComponentVariable TxStartPoint;
 extern const RequiredComponentVariable TxStopPoint;
+extern const ComponentVariable V2XChargingCtrlrEnabled;
+extern const ComponentVariable ISO15118CtrlrEnabled;
 } // namespace ControllerComponentVariables
 
 namespace EvseComponentVariables {
