@@ -161,6 +161,8 @@ public:
     std::unique_ptr<FunctionalBlockContext> functional_block_context;
     std::unique_ptr<DatabaseHandlerFake> database_handler;
     MockFunction<void()> set_charging_profiles_callback_mock;
+    MockFunction<RequestStartStopStatusEnum(const int32_t evse_id, const ReasonEnum& stop_reason)>
+        stop_transaction_callback_mock;
     std::unique_ptr<TestSmartCharging> handler;
     boost::uuids::random_generator uuid_generator;
     std::atomic<OcppProtocolVersion> ocpp_version = OcppProtocolVersion::v201;

@@ -230,8 +230,11 @@ const std::map<OperationModeEnum, LimitsSetpointsForOperationMode> limits_setpoi
     {OperationModeEnum::Idle, {{}, {}}}};
 
 SmartCharging::SmartCharging(const FunctionalBlockContext& functional_block_context,
-                             std::function<void()> set_charging_profiles_callback) :
-    context(functional_block_context), set_charging_profiles_callback(set_charging_profiles_callback) {
+                             std::function<void()> set_charging_profiles_callback,
+                             StopTransactionCallback stop_transaction_callback) :
+    context(functional_block_context),
+    set_charging_profiles_callback(set_charging_profiles_callback),
+    stop_transaction_callback(stop_transaction_callback) {
 }
 
 void SmartCharging::handle_message(const ocpp::EnhancedMessage<MessageType>& message) {
@@ -245,6 +248,8 @@ void SmartCharging::handle_message(const ocpp::EnhancedMessage<MessageType>& mes
         this->handle_get_charging_profiles_req(json_message);
     } else if (message.messageType == MessageType::GetCompositeSchedule) {
         this->handle_get_composite_schedule_req(json_message);
+    } else if (message.messageType == MessageType::NotifyEVChargingNeedsResponse) {
+        this->handle_notify_ev_charging_needs_response(message);
     } else {
         throw MessageTypeNotImplementedException(message.messageType);
     }
@@ -1148,6 +1153,53 @@ void SmartCharging::handle_get_charging_profiles_req(Call<GetChargingProfilesReq
     // requests_to_send are ready, send them and define tbc property
     for (const auto& request_to_send : requests_to_send) {
         this->report_charging_profile_req(request_to_send);
+    }
+}
+
+void SmartCharging::handle_notify_ev_charging_needs_response(const EnhancedMessage<MessageType>& call_result) {
+    CallResult<NotifyEVChargingNeedsResponse> response = call_result.message;
+    Call<NotifyEVChargingNeedsRequest> request = call_result.call_message;
+    EVLOG_debug << "Received NotifyEVChargingNeedsResponse: " << response.msg
+                << "\nwith messageId: " << response.uniqueId;
+    const bool is_15118_20 = request.msg.chargingNeeds.v2xChargingParameters.has_value();
+    switch (response.msg.status) {
+    case NotifyEVChargingNeedsStatusEnum::Accepted:
+        // K15.FR.03 - ISO15118-2
+        // K18.FR.03 - Scheduled Mode
+        // K19.FR.03 - Dynamic Mode
+        // TODO(mlitre) Support HLC smart charging
+        // Wait for schedule, aka SetChargingProfileRequest
+        break;
+    case NotifyEVChargingNeedsStatusEnum::Rejected:
+        // K18.FR.22 - Scheduled Mode
+        // K19.FR.15 - Dynamic Mode
+        if (this->context.ocpp_version == OcppProtocolVersion::v201 or !is_15118_20) {
+            // K15.FR.04 - ISO15118-2
+            // TODO(mlitre): Support HLC smart charging
+            // Start without waiting for schedule, equivalent to NoChargingProfile
+            [[fallthrough]];
+        } else {
+            // Start service renegotiation or Stop transaction based on OCPP version
+            // Also check ISO15118 version
+            // Service renegotiation should not technically be possible so stop transaction
+            // Q01.FR.06 - V2X Authorization
+            // K18.FR.23 - Scheduled Mode
+            // K19.FR.16 - Dynamic Mode
+            stop_transaction_callback(request.msg.evseId, ReasonEnum::ReqEnergyTransferRejected);
+            break;
+        }
+    case NotifyEVChargingNeedsStatusEnum::Processing:
+        // Q01.FR.07 should receive profile soon, but since it is V2X should we wait or just start and do service
+        // renegotiation after? It seems like we don't have to wait
+        // K15.FR.05 - ISO15118-2
+        // K18.FR.05 - Scheduled Mode
+        // K19.FR.05 - Dynamic Mode
+    case NotifyEVChargingNeedsStatusEnum::NoChargingProfile:
+        // K18.FR.04 - Scheduled Mode
+        // K19.FR.04 - Dynamic Mode
+        // TODO(mlitre): Support HLC smart charging
+        // Start without waiting for schedule, schedule renegotiation will be calculated as per use case K16
+        break;
     }
 }
 

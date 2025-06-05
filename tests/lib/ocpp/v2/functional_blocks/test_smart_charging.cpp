@@ -98,7 +98,8 @@ protected:
         const auto& ac_phase_switching_cv = ControllerComponentVariables::ACPhaseSwitchingSupported;
         device_model->set_value(ac_phase_switching_cv.component, ac_phase_switching_cv.variable.value(),
                                 AttributeEnum::Actual, ac_phase_switching_supported.value_or(""), "test", true);
-        return TestSmartCharging(*functional_block_context, set_charging_profiles_callback_mock.AsStdFunction());
+        return TestSmartCharging(*functional_block_context, set_charging_profiles_callback_mock.AsStdFunction(),
+                                 stop_transaction_callback_mock.AsStdFunction());
     }
     std::string uuid() {
         std::stringstream s;
@@ -142,6 +143,8 @@ protected:
     ocpp::EvseSecurityMock evse_security;
     ComponentStateManagerMock component_state_manager;
     MockFunction<void()> set_charging_profiles_callback_mock;
+    MockFunction<RequestStartStopStatusEnum(const int32_t evse_id, const ReasonEnum& stop_reason)>
+        stop_transaction_callback_mock;
     std::unique_ptr<FunctionalBlockContext> functional_block_context;
     TestSmartCharging smart_charging = create_smart_charging();
     boost::uuids::random_generator uuid_generator = boost::uuids::random_generator();

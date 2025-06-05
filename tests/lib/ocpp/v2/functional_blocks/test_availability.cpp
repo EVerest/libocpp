@@ -61,9 +61,9 @@ protected: // Functions
         evse_manager(2),
         component_state_manager(),
         ocpp_version(ocpp::OcppProtocolVersion::v201),
-        functional_block_context{this->mock_dispatcher,        *this->device_model,         this->connectivity_manager,
-                                 this->evse_manager,           this->database_handler_mock, this->evse_security,
-                                 this->component_state_manager, this->ocpp_version},
+        functional_block_context{
+            this->mock_dispatcher,       *this->device_model, this->connectivity_manager,    this->evse_manager,
+            this->database_handler_mock, this->evse_security, this->component_state_manager, this->ocpp_version},
         evse_1(evse_manager.get_mock(1)),
         evse_2(evse_manager.get_mock(2)),
         availability(std::make_unique<Availability>(functional_block_context, time_sync_callback.AsStdFunction(),
