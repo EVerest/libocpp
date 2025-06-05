@@ -446,7 +446,8 @@ CompositeScheduleTestFixtureV2::create_smart_charging_handler(const OcppProtocol
         this->mock_dispatcher, *this->device_model, this->connectivity_manager, *this->evse_manager,
         *this->database_handler, this->evse_security, this->component_state_manager, this->ocpp_version);
     return std::make_unique<TestSmartCharging>(*functional_block_context,
-                                               set_charging_profiles_callback_mock.AsStdFunction());
+                                               set_charging_profiles_callback_mock.AsStdFunction(),
+                                               stop_transaction_callback_mock.AsStdFunction());
 }
 
 void CompositeScheduleTestFixtureV2::reconfigure_for_nr_of_evses(int32_t nr_of_evses) {
@@ -455,7 +456,8 @@ void CompositeScheduleTestFixtureV2::reconfigure_for_nr_of_evses(int32_t nr_of_e
         this->mock_dispatcher, *this->device_model, this->connectivity_manager, *this->evse_manager,
         *this->database_handler, this->evse_security, this->component_state_manager, this->ocpp_version);
     this->handler = std::make_unique<TestSmartCharging>(*functional_block_context,
-                                                        set_charging_profiles_callback_mock.AsStdFunction());
+                                                        set_charging_profiles_callback_mock.AsStdFunction(),
+                                                        stop_transaction_callback_mock.AsStdFunction());
 }
 
 } // namespace ocpp::v2
