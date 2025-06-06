@@ -30,6 +30,8 @@
 #include <ocpp/v2/functional_blocks/tariff_and_cost.hpp>
 #include <ocpp/v2/functional_blocks/transaction.hpp>
 
+#include <ocpp/v21/functional_blocks/bidirectional.hpp>
+
 #include <ocpp/v2/messages/LogStatusNotification.hpp>
 #include <ocpp/v2/messages/RequestStopTransaction.hpp>
 #include <ocpp/v2/messages/TriggerMessage.hpp>
@@ -554,7 +556,8 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
     if (device_model->get_optional_value<bool>(ControllerComponentVariables::SmartChargingCtrlrAvailable)
             .value_or(false)) {
         this->smart_charging = std::make_unique<SmartCharging>(*this->functional_block_context,
-                                                               this->callbacks.set_charging_profiles_callback);
+                                                               this->callbacks.set_charging_profiles_callback,
+                                                               this->callbacks.stop_transaction_callback);
     }
 
     this->tariff_and_cost = std::make_unique<TariffAndCost>(
@@ -585,6 +588,11 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
         this->callbacks.unlock_connector_callback, this->callbacks.remote_start_transaction_callback,
         this->callbacks.stop_transaction_callback, this->registration_status, this->upload_log_status,
         this->upload_log_status_id);
+
+    if (device_model->get_optional_value<bool>(ControllerComponentVariables::V2XChargingCtrlrEnabled).value_or(false)) {
+        this->bidirectional = std::make_unique<Bidirectional>(
+            *this->functional_block_context, this->callbacks.update_allowed_energy_transfer_modes_callback);
+    }
 
     Component ocpp_comm_ctrlr = {"OCPPCommCtrlr"};
     Variable field_length = {"FieldLength"};
@@ -660,6 +668,7 @@ void ChargePoint::handle_message(const EnhancedMessage<v2::MessageType>& message
         case MessageType::ClearChargingProfile:
         case MessageType::GetChargingProfiles:
         case MessageType::GetCompositeSchedule:
+        case MessageType::NotifyEVChargingNeedsResponse:
             if (this->smart_charging != nullptr) {
                 this->smart_charging->handle_message(message);
             } else {
@@ -729,7 +738,6 @@ void ChargePoint::handle_message(const EnhancedMessage<v2::MessageType>& message
         case MessageType::NotifyDisplayMessages:
         case MessageType::NotifyDisplayMessagesResponse:
         case MessageType::NotifyEVChargingNeeds:
-        case MessageType::NotifyEVChargingNeedsResponse:
         case MessageType::NotifyEVChargingSchedule:
         case MessageType::NotifyEVChargingScheduleResponse:
         case MessageType::NotifyEvent:

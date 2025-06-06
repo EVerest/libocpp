@@ -26,6 +26,7 @@ const Component SecurityCtrlr = {"SecurityCtrlr"};
 const Component SmartChargingCtrlr = {"SmartChargingCtrlr"};
 const Component TariffCostCtrlr = {"TariffCostCtrlr"};
 const Component TxCtrlr = {"TxCtrlr"};
+const Component V2XChargingCtrlr = {"V2XChargingCtrlr"};
 } // namespace ControllerComponents
 
 namespace StandardizedVariables {
@@ -1198,6 +1199,20 @@ const RequiredComponentVariable TxStopPoint = {
     ControllerComponents::TxCtrlr,
     std::optional<Variable>({
         "TxStopPoint",
+    }),
+};
+
+const ComponentVariable V2XChargingCtrlrEnabled = {
+    ControllerComponents::V2XChargingCtrlr,
+    std::optional<Variable>({
+        "Enabled",
+    }),
+};
+
+const ComponentVariable ISO15118CtrlrEnabled = {
+    ControllerComponents::ISO15118Ctrlr,
+    std::optional<Variable>({
+        "Enabled",
     }),
 };
 
