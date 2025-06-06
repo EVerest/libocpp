@@ -2782,7 +2782,7 @@ void ChargePointImpl::update_ocsp_cache() {
         EVLOG_info << "Updating OCSP cache for V2G leaf certificates";
         const auto ocsp_request_data = this->evse_security->get_v2g_ocsp_request_data();
         for (const auto& ocsp_request_entry : ocsp_request_data) {
-            ocpp::v201::OCSPRequestData ocsp_request = ocpp::evse_security_conversions::to_ocpp_v2(ocsp_request_entry);
+            ocpp::v201::OCSPRequestData ocsp_request = ocpp::evse_security_conversions::to_ocpp_v201(ocsp_request_entry);
             this->data_transfer_pnc_get_certificate_status(ocsp_request);
         }
     } catch (const std::exception& e) {
@@ -3990,7 +3990,8 @@ void ChargePointImpl::handle_data_transfer_pnc_certificate_signed(Call<DataTrans
                                             std::optional<CiString<255>>(tech_info), true);
         } else {
             // update the OCSP cache in case a new certificate was installed
-            this->update_ocsp_cache();
+            this->ocsp_request_timer->stop();
+            this->ocsp_request_timer->timeout(std::chrono::seconds(0));
         }
     } catch (const json::exception& e) {
         EVLOG_warning << "Could not parse data of DataTransfer message CertificateSigned.req: " << e.what();
