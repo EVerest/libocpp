@@ -2706,7 +2706,7 @@ void ChargePoint::handle_costupdated_req(const Call<CostUpdatedRequest> call) {
         [this, evse_id](const std::vector<MeterValue>& meter_values) {
             this->meter_values_req(evse_id, meter_values, false);
         },
-        this->io_service);
+        this->io_context);
 }
 
 void ChargePoint::handle_set_charging_profile_req(Call<SetChargingProfileRequest> call) {
