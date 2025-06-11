@@ -159,7 +159,6 @@ void DeviceModel::check_required_variable(const RequiredComponentVariable& requi
 }
 
 void DeviceModel::check_required_variables() {
-    EVLOG_critical << "✅✅✅ PATCH FUNCTION CALLED ✅✅✅";
     const auto supported_versions = utils::get_ocpp_protocol_versions(
         this->get_value<std::string>(ControllerComponentVariables::SupportedOcppVersions));
 
@@ -209,7 +208,6 @@ void DeviceModel::check_required_variables() {
         for (const auto& err : missing_var_errors) {
             oss << " - " << err << "\n";
         }
-        EVLOG_critical << oss.str();
         throw DeviceModelError(oss.str());
     }
 }
