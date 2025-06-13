@@ -125,7 +125,7 @@
       "default": "5",
       "type": "integer"
     },
-    "NetworkConfigurationPriority": {
+     "NetworkConfigurationPriority": {
       "variable_name": "NetworkConfigurationPriority",
       "characteristics": {
         "valuesList": "1,2",
@@ -350,8 +350,6 @@
     "MessageAttemptInterval",
     "MessageAttempts",
     "MessageTimeout",
-    "NetworkConfigurationPriority",
-    "NetworkProfileConnectionAttempts",
     "OfflineThreshold",
     "ResetRetries",
     "RetryBackOffRandomRange",
