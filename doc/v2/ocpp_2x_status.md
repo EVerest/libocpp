@@ -8,7 +8,7 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | ------ | ------------------------------------------------------------------------------ |
 | ✅     | Satisfied                                                                      |
 | ❎     | Not applicable                                                                 |
-| ⛽️    | A functional requirement for other systems in the Charging Station             |
+| ⛽️     | A functional requirement for other systems in the Charging Station             |
 | 🌐     | A functional requirement for the CSMS                                          |
 | 💂     | Improper behavior by another actor is guarded against                          |
 | ❓     | Actor responsible for or status of requirement is unknown                      |
@@ -2590,35 +2590,35 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 | ID        | Status                                          | Remark |
 | --------- | ----------------------------------------------- | ------ |
 |           | AllowedEnergyTransfer / RequestedEnergyTransfer |        |
-| Q01.FR.01 |                                                 |        |
-| Q01.FR.02 |                                                 |        |
-| Q01.FR.03 |                                                 |        |
-| Q01.FR.04 |                                                 |        |
-| Q01.FR.05 |                                                 |        |
-| Q01.FR.06 |                                                 |        |
-| Q01.FR.07 |                                                 |        |
-| Q01.FR.08 |                                                 |        |
-| Q01.FR.09 |                                                 |        |
-|           | Device model                                    |        |
-| Q01.FR.30 |                                                 |        |
-| Q01.FR.31 |                                                 |        |
-| Q01.FR.32 |                                                 |        |
+| Q01.FR.01 |   ✅ / 🌐                                       |        |
+| Q01.FR.02 |   ⛽️                                            | This is handled in OCPP2 module in EVerest. |
+| Q01.FR.03 |   ✅ / ⛽️                                       | Information for the message is filled in the OCPP2 module and libocpp sends the message. |
+| Q01.FR.04 |   🌐                                            |        |
+| Q01.FR.05 |   ❎                                            | In principle it is a charging station requirement, but should never occur / is not really possible to renegotiate at this time.       |
+| Q01.FR.06 |   ✅                                            |        |
+| Q01.FR.07 |   🌐                                            |        |
+| Q01.FR.08 |   🌐                                            |        |
+| Q01.FR.09 |   ⛽️                                            | Information for the message is filled in the OCPP2 module and libocpp sends the message. |
+|           | Device model                                    | User should fill DM. |
+| Q01.FR.30 |   ⛽️                                            | User should fill DM. |
+| Q01.FR.31 |   ⛽️                                            | User should fill DM. |
+| Q01.FR.32 |   ⛽️                                            | User should fill DM. |
 | Q01.FR.33 |                                                 |        |
 | Q01.FR.34 |                                                 |        |
 | Q01.FR.35 |                                                 |        |
-| Q01.FR.36 |                                                 |        |
+| Q01.FR.36 |   ⛽️                                            | User should fill DM. |
 
 ## Bidirectional Power Transfer - Charging only (V2X control) before starting V2X (New in OCPP 2.1)
 
 | ID        | Status | Remark |
 | --------- | ------ | ------ |
-| Q02.FR.01 |        |        |
-| Q02.FR.02 |        |        |
-| Q02.FR.03 |        |        |
-| Q02.FR.04 |        |        |
-| Q02.FR.05 |        |        |
-| Q02.FR.06 |        |        |
-| Q02.FR.07 |        |        |
+| Q02.FR.01 |   🌐   |        |
+| Q02.FR.02 |   🌐   |        |
+| Q02.FR.03 |   🌐   |        |
+| Q02.FR.04 | ✅ / ⛽️|        |
+| Q02.FR.05 |   🌐   |        |
+| Q02.FR.06 |   ✅   |        |
+| Q02.FR.07 | ✅ / ⛽️|        |
 
 ## Bidirectional Power Transfer - Charging only (V2X control) before starting V2X (New in OCPP 2.1)
 

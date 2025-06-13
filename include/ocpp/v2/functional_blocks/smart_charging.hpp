@@ -11,6 +11,9 @@ namespace ocpp::v2 {
 struct FunctionalBlockContext;
 class SmartChargingHandlerInterface;
 
+typedef std::function<RequestStartStopStatusEnum(const int32_t evse_id, const ReasonEnum& stop_reason)>
+    StopTransactionCallback;
+
 struct LimitsSetpointsForOperationMode;
 
 struct GetChargingProfilesRequest;
@@ -22,6 +25,7 @@ struct ClearChargingProfileResponse;
 struct ClearChargingProfileRequest;
 struct ReportChargingProfilesRequest;
 struct NotifyEVChargingNeedsRequest;
+struct NotifyEVChargingNeedsResponse;
 
 /// \brief Different types of limits and setpoints, used in the limits_setpoints_per_operation_mode map.
 enum LimitSetpointType {
@@ -156,10 +160,12 @@ private: // Members
     const FunctionalBlockContext& context;
     std::function<void()> set_charging_profiles_callback;
     std::map<ChargingProfilePurposeEnum, DateTime> last_charging_profile_update;
+    StopTransactionCallback stop_transaction_callback;
 
 public:
     SmartCharging(const FunctionalBlockContext& functional_block_context,
-                  std::function<void()> set_charging_profiles_callback);
+                  std::function<void()> set_charging_profiles_callback,
+                  StopTransactionCallback stop_transaction_callback);
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
     GetCompositeScheduleResponse get_composite_schedule(const GetCompositeScheduleRequest& request) override;
     std::optional<CompositeSchedule> get_composite_schedule(int32_t evse_id, std::chrono::seconds duration,
@@ -265,6 +271,7 @@ private: // Functions
     void handle_clear_charging_profile_req(Call<ClearChargingProfileRequest> call);
     void handle_get_charging_profiles_req(Call<GetChargingProfilesRequest> call);
     void handle_get_composite_schedule_req(Call<GetCompositeScheduleRequest> call);
+    void handle_notify_ev_charging_needs_response(const EnhancedMessage<MessageType>& call_result);
 
     GetCompositeScheduleResponse get_composite_schedule_internal(const GetCompositeScheduleRequest& request,
                                                                  bool simulate_transaction_active = true);
