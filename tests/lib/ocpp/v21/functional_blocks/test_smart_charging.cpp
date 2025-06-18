@@ -61,7 +61,7 @@ protected:
 
     TestSmartCharging create_smart_charging() {
         std::unique_ptr<everest::db::sqlite::Connection> database_connection =
-        std::make_unique<everest::db::sqlite::Connection>(fs::path("/tmp/ocpp201") / "cp.db");
+            std::make_unique<everest::db::sqlite::Connection>(fs::path("/tmp/ocpp201") / "cp.db");
         database_handler =
             std::make_shared<DatabaseHandler>(std::move(database_connection), MIGRATION_FILES_LOCATION_V2);
         database_handler->open_connection();
@@ -69,7 +69,8 @@ protected:
         this->functional_block_context = std::make_unique<FunctionalBlockContext>(
             this->mock_dispatcher, *this->device_model, this->connectivity_manager, *this->evse_manager,
             *this->database_handler, this->evse_security, this->component_state_manager, this->ocpp_version);
-        return TestSmartCharging(*functional_block_context, set_charging_profiles_callback_mock.AsStdFunction());
+        return TestSmartCharging(*functional_block_context, set_charging_profiles_callback_mock.AsStdFunction(),
+                                 stop_transaction_callback_mock.AsStdFunction());
     }
 
     // Default values used within the tests
@@ -82,6 +83,8 @@ protected:
     ocpp::EvseSecurityMock evse_security;
     ComponentStateManagerMock component_state_manager;
     MockFunction<void()> set_charging_profiles_callback_mock;
+    MockFunction<RequestStartStopStatusEnum(const int32_t evse_id, const ReasonEnum& stop_reason)>
+        stop_transaction_callback_mock;
     std::unique_ptr<FunctionalBlockContext> functional_block_context;
     TestSmartCharging smart_charging = create_smart_charging();
     std::atomic<OcppProtocolVersion> ocpp_version = OcppProtocolVersion::v21;
