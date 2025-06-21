@@ -1,0 +1,28 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+!pragma teoz true
+participant csms order 10
+participant libocpp order 20
+participant core order 40
+database user_config.json order 30
+
+autonumber "<b><font color=red>"
+skinparam sequenceArrowThickness 2
+
+== SetVariables.req by CSMS ==
+csms->libocpp: ChangeConfiguration.req
+libocpp->libocpp: Internal validation
+alt request is valid
+    libocpp->user_config.json: update configuration key
+    libocpp->csms: respond with Accepted
+    libocpp->libocpp: handle change internally
+else
+    libocpp->csms: respond with Rejected
+end
+alt if request was accepted and custom callback registered for this configuration key
+    libocpp->core: configuration_key_changed_callback
+else if request was accepted and generic callback registered
+    libocpp->core: generic_configuration_key_changed_callback
+end
+
+@enduml
