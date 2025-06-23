@@ -55,7 +55,8 @@ InitDeviceModelDb::~InitDeviceModelDb() {
 }
 
 void InitDeviceModelDb::initialize_database(
-    const std::map<ComponentKey, std::vector<DeviceModelVariable>> component_configs, bool delete_db_if_exists = true) {
+    const std::map<ComponentKey, std::vector<DeviceModelVariable>>& component_configs,
+    bool delete_db_if_exists = true) {
     execute_init_sql(delete_db_if_exists);
 
     // Get existing components from the database.
@@ -109,6 +110,8 @@ void InitDeviceModelDb::execute_init_sql(const bool delete_db_if_exists) {
     open_connection();
 }
 
+namespace {
+
 std::vector<std::filesystem::path> get_component_config_from_directory(const std::filesystem::path& directory) {
     std::vector<std::filesystem::path> component_config_files;
     for (const auto& p : std::filesystem::directory_iterator(directory)) {
@@ -127,7 +130,7 @@ std::vector<std::filesystem::path> get_component_config_from_directory(const std
 ///
 std::vector<DeviceModelVariable> get_all_component_properties(const json& component_properties) {
     std::vector<DeviceModelVariable> variables;
-
+    variables.reserve(component_properties.size());
     for (const auto& variable : component_properties.items()) {
         DeviceModelVariable v = variable.value();
         const std::string variable_key_name = variable.key();
@@ -166,6 +169,8 @@ read_component_config(const std::vector<std::filesystem::path>& components_confi
 
     return components;
 }
+
+} // namespace
 
 std::map<ComponentKey, std::vector<DeviceModelVariable>>
 get_all_component_configs(const std::filesystem::path& directory) {

@@ -166,7 +166,7 @@ public:
     /// \throws std::filesystem::filesystem_error   If the component config path does not exist
     ///
     ///
-    void initialize_database(const std::map<ComponentKey, std::vector<DeviceModelVariable>> component_configs,
+    void initialize_database(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& component_configs,
                              const bool delete_db_if_exists);
 
 private: // Functions
