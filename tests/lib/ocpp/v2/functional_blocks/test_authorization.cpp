@@ -344,65 +344,109 @@ TEST_F(AuthorizationTest, is_auth_cache_ctrlr_enabled) {
     this->authorization = std::make_unique<Authorization>(context);
     EXPECT_FALSE(authorization->is_auth_cache_ctrlr_enabled());
 }
-
 TEST_F(AuthorizationTest, authorize_req_websocket_disconnected) {
-    // Try to do an authorize request when the websocket is disconnected.
+    // Test: Authorize request should return Unknown when WebSocket is offline
+    // Setup: Explicitly disable all local authorization options
+    this->set_local_pre_authorize(this->device_model, false);
+    this->set_local_authorize_offline(this->device_model, false);
+
+    // Simulate offline WebSocket connection
     ON_CALL(this->connectivity_manager, is_websocket_connected()).WillByDefault(Return(false));
+
     const AuthorizeResponse response = authorization->authorize_req(get_id_token(), std::nullopt, std::nullopt);
     EXPECT_EQ(response.idTokenInfo.status, AuthorizationStatusEnum::Unknown);
 }
 
 TEST_F(AuthorizationTest, authorize_req_wrong_future_message_type) {
-    // Try to do an authorize request with the websocket connected. The dispatch_call_async returns
-    // a wrong message type.
+    // Test: Response should be Unknown if dispatch_call_async returns wrong message type
+    // Setup: Disable local auth and simulate online WebSocket
+    this->set_local_pre_authorize(this->device_model, false);
+    this->set_local_authorize_offline(this->device_model, false);
+
     ON_CALL(this->connectivity_manager, is_websocket_connected()).WillByDefault(Return(true));
+
     ocpp::EnhancedMessage<MessageType> enhanced_message;
     enhanced_message.messageType = MessageType::GetDisplayMessages;
+
     EXPECT_CALL(mock_dispatcher, dispatch_call_async(_, _))
-        .WillOnce(Return(std::async(std::launch::deferred, [enhanced_message]() { return enhanced_message; })));
+        .WillOnce(Return(std::async(std::launch::deferred, [enhanced_message]() {
+            return enhanced_message;
+        })));
 
     const AuthorizeResponse response = authorization->authorize_req(get_id_token(), std::nullopt, std::nullopt);
     EXPECT_EQ(response.idTokenInfo.status, AuthorizationStatusEnum::Unknown);
 }
 
 TEST_F(AuthorizationTest, authorize_req_accepted) {
-    // Try to do an authorize request, which is accepted.
+    // Test: Authorize request returns Accepted when WebSocket is online and dispatcher responds positively
+    // Setup: Disable local auth, simulate online WebSocket, and mock Accepted response
+    this->set_local_pre_authorize(this->device_model, false);
+    this->set_local_authorize_offline(this->device_model, false);
+
     ON_CALL(this->connectivity_manager, is_websocket_connected()).WillByDefault(Return(true));
-    EXPECT_CALL(mock_dispatcher, dispatch_call_async(_, _)).WillOnce(Return(std::async(std::launch::deferred, [this]() {
-        return create_example_authorize_response(AuthorizeCertificateStatusEnum::Accepted,
-                                                 AuthorizationStatusEnum::Accepted);
-    })));
+
+    EXPECT_CALL(mock_dispatcher, dispatch_call_async(_, _))
+        .WillOnce(Return(std::async(std::launch::deferred, [this]() {
+            return create_example_authorize_response(
+                AuthorizeCertificateStatusEnum::Accepted,
+                AuthorizationStatusEnum::Accepted
+            );
+        })));
 
     const AuthorizeResponse response = authorization->authorize_req(get_id_token(), std::nullopt, std::nullopt);
     EXPECT_EQ(response.idTokenInfo.status, AuthorizationStatusEnum::Accepted);
 }
 
 TEST_F(AuthorizationTest, authorize_req_exception) {
-    // Try to do an authorize request, during which which an exception is thrown.
+    // Test: An exception in AuthorizationStatusEnum deserialization leads to Unknown response
+    // Setup: Disable local auth, simulate online WebSocket, and mock invalid status value
+    this->set_local_pre_authorize(this->device_model, false);
+    this->set_local_authorize_offline(this->device_model, false);
+
     ON_CALL(this->connectivity_manager, is_websocket_connected()).WillByDefault(Return(true));
-    EXPECT_CALL(mock_dispatcher, dispatch_call_async(_, _)).WillOnce(Return(std::async(std::launch::deferred, [this]() {
-        // Create authorize response with a wrong enum value, which will throw.
-        return create_example_authorize_response(AuthorizeCertificateStatusEnum::Accepted,
-                                                 static_cast<AuthorizationStatusEnum>(INT32_MAX));
-    })));
+
+    EXPECT_CALL(mock_dispatcher, dispatch_call_async(_, _))
+        .WillOnce(Return(std::async(std::launch::deferred, [this]() {
+            return create_example_authorize_response(
+                AuthorizeCertificateStatusEnum::Accepted,
+                static_cast<AuthorizationStatusEnum>(INT32_MAX) // invalid value triggers exception
+            );
+        })));
 
     const AuthorizeResponse response = authorization->authorize_req(get_id_token(), std::nullopt, std::nullopt);
     EXPECT_EQ(response.idTokenInfo.status, AuthorizationStatusEnum::Unknown);
 }
 
 TEST_F(AuthorizationTest, authorize_req_exception2) {
-    // Try to do an authorization request, an exception is thrown for the authorize response.
+    // Test: An exception in AuthorizeCertificateStatusEnum deserialization leads to Unknown response
+    // Setup: Disable local auth, simulate online WebSocket, and mock invalid certificate status
+    this->set_local_pre_authorize(this->device_model, false);
+    this->set_local_authorize_offline(this->device_model, false);
+
     ON_CALL(this->connectivity_manager, is_websocket_connected()).WillByDefault(Return(true));
-    EXPECT_CALL(mock_dispatcher, dispatch_call_async(_, _)).WillOnce(Return(std::async(std::launch::deferred, [this]() {
-        // Create authorize response with a from enum value for the authorize certificute status, which will
-        // cause an exception to be thrown.
-        return create_example_authorize_response(static_cast<AuthorizeCertificateStatusEnum>(INT32_MAX),
-                                                 AuthorizationStatusEnum::Accepted);
-    })));
+
+    EXPECT_CALL(mock_dispatcher, dispatch_call_async(_, _))
+        .WillOnce(Return(std::async(std::launch::deferred, [this]() {
+            return create_example_authorize_response(
+                static_cast<AuthorizeCertificateStatusEnum>(INT32_MAX), // invalid cert status
+                AuthorizationStatusEnum::Accepted
+            );
+        })));
 
     const AuthorizeResponse response = authorization->authorize_req(get_id_token(), std::nullopt, std::nullopt);
     EXPECT_EQ(response.idTokenInfo.status, AuthorizationStatusEnum::Unknown);
 }
+path
+CMake Error at /home/soresany/everest-cmake/3rd_party/CodeCoverage.cmake:237 (message):
+  lcov not found! Aborting...
+Call Stack (most recent call first):
+  /home/soresany/everest-workspace/liblog/CMakeLists.txt:84 (setup_target_for_coverage_lcov)
+
+
+-- Configuring incomplete, errors occurred!
+make: *** No targets specified and no makefile found.  Stop.
+Test project /home/soresany/everest-workspace/libocpp/build
+No tests were found!!!
 
 TEST_F(AuthorizationTest, update_authorization_cache_size) {
     // Test update authorization cache size and check in the device model if the cache size is indeed updated.
