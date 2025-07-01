@@ -1356,6 +1356,9 @@ int WebsocketLibwebsockets::process_callback(void* wsi_ptr, int callback_reason,
         break;
 
     case LWS_CALLBACK_CLIENT_RECEIVE_PONG: {
+        // Clear the ping when we receive the pong
+        ping_cleared.store(true);
+
         if (false == message_queue.empty()) {
             lws_callback_on_writable(data->get_conn());
         }
@@ -1502,7 +1505,6 @@ void WebsocketLibwebsockets::on_conn_connected(ConnectionData* conn_data) {
 
     this->connection_attempts = 1; // reset connection attempts
     this->m_is_connected = true;
-    this->reconnecting = false;
 
     this->set_websocket_ping_interval(this->connection_options.ping_interval_s);
 

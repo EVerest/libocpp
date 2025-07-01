@@ -14,9 +14,9 @@ WebsocketBase::WebsocketBase() :
     message_callback(nullptr),
     reconnect_timer(nullptr),
     connection_attempts(1),
+    ping_cleared(true),
     reconnect_backoff_ms(0),
-    shutting_down(false),
-    reconnecting(false) {
+    shutting_down(false) {
 
     set_connection_options_base(connection_options);
 
@@ -163,9 +163,29 @@ void WebsocketBase::set_websocket_ping_interval(int32_t interval_s) {
     if (this->ping_timer) {
         this->ping_timer->stop();
     }
+
     if (interval_s > 0) {
-        this->ping_timer->interval([this]() { this->ping(); }, std::chrono::seconds(interval_s));
+        this->ping_timer->interval(
+            [this]() {
+                if (false == ping_cleared.load()) {
+                    on_pong_timeout("Pong not received from server!");
+
+                    // Always clear ping value on a fail
+                    ping_cleared.store(true);
+
+                    // Clear the ping timer
+                    if (this->ping_timer) {
+                        this->ping_timer->stop();
+                    }
+                } else {
+                    // Set the ping flag before sending it out
+                    ping_cleared.store(false);
+                    this->ping();
+                }
+            },
+            std::chrono::seconds(interval_s));
     }
+
     this->connection_options.ping_interval_s = interval_s;
 }
 
@@ -174,11 +194,9 @@ void WebsocketBase::set_authorization_key(const std::string& authorization_key) 
 }
 
 void WebsocketBase::on_pong_timeout(std::string msg) {
-    if (!this->reconnecting) {
-        EVLOG_info << "Reconnecting because of a pong timeout after " << this->connection_options.pong_timeout_s << "s";
-        this->reconnecting = true;
-        this->close(WebsocketCloseReason::GoingAway, "Pong timeout");
-    }
+    EVLOG_info << "Reconnecting because of a pong timeout after " << this->connection_options.pong_timeout_s << "s"
+               << " and with reason: " << msg;
+    reconnect(1000);
 }
 
 } // namespace ocpp

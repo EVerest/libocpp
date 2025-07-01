@@ -54,12 +54,12 @@ protected:
     std::function<void(ConnectionFailedReason)> connection_failed_callback;
     std::shared_ptr<boost::asio::steady_timer> reconnect_timer;
     std::unique_ptr<Everest::SteadyTimer> ping_timer;
+    std::atomic_bool ping_cleared;
     std::mutex reconnect_mutex;
     std::mutex connection_mutex;
     std::atomic_int reconnect_backoff_ms;
     std::atomic_int connection_attempts;
     std::atomic_bool shutting_down;
-    std::atomic_bool reconnecting;
 
     /// \brief Indicates if the required callbacks are registered
     /// \returns true if the websocket is properly initialized
