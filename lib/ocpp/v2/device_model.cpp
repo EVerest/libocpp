@@ -8,7 +8,6 @@
 #include <ocpp/v2/device_model_storage_sqlite.hpp>
 #include <ocpp/v2/utils.hpp>
 
-
 namespace ocpp {
 
 namespace v2 {
@@ -211,7 +210,6 @@ void DeviceModel::check_required_variables() {
         throw DeviceModelError(oss.str());
     }
 }
-
 
 bool validate_value(const VariableCharacteristics& characteristics, const std::string& value, bool allow_zero) {
     switch (characteristics.dataType) {
