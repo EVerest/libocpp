@@ -369,9 +369,7 @@ TEST_F(AuthorizationTest, authorize_req_wrong_future_message_type) {
     enhanced_message.messageType = MessageType::GetDisplayMessages;
 
     EXPECT_CALL(mock_dispatcher, dispatch_call_async(_, _))
-        .WillOnce(Return(std::async(std::launch::deferred, [enhanced_message]() {
-            return enhanced_message;
-        })));
+        .WillOnce(Return(std::async(std::launch::deferred, [enhanced_message]() { return enhanced_message; })));
 
     const AuthorizeResponse response = authorization->authorize_req(get_id_token(), std::nullopt, std::nullopt);
     EXPECT_EQ(response.idTokenInfo.status, AuthorizationStatusEnum::Unknown);
@@ -385,13 +383,10 @@ TEST_F(AuthorizationTest, authorize_req_accepted) {
 
     ON_CALL(this->connectivity_manager, is_websocket_connected()).WillByDefault(Return(true));
 
-    EXPECT_CALL(mock_dispatcher, dispatch_call_async(_, _))
-        .WillOnce(Return(std::async(std::launch::deferred, [this]() {
-            return create_example_authorize_response(
-                AuthorizeCertificateStatusEnum::Accepted,
-                AuthorizationStatusEnum::Accepted
-            );
-        })));
+    EXPECT_CALL(mock_dispatcher, dispatch_call_async(_, _)).WillOnce(Return(std::async(std::launch::deferred, [this]() {
+        return create_example_authorize_response(AuthorizeCertificateStatusEnum::Accepted,
+                                                 AuthorizationStatusEnum::Accepted);
+    })));
 
     const AuthorizeResponse response = authorization->authorize_req(get_id_token(), std::nullopt, std::nullopt);
     EXPECT_EQ(response.idTokenInfo.status, AuthorizationStatusEnum::Accepted);
@@ -405,13 +400,12 @@ TEST_F(AuthorizationTest, authorize_req_exception) {
 
     ON_CALL(this->connectivity_manager, is_websocket_connected()).WillByDefault(Return(true));
 
-    EXPECT_CALL(mock_dispatcher, dispatch_call_async(_, _))
-        .WillOnce(Return(std::async(std::launch::deferred, [this]() {
-            return create_example_authorize_response(
-                AuthorizeCertificateStatusEnum::Accepted,
-                static_cast<AuthorizationStatusEnum>(INT32_MAX) // invalid value triggers exception
-            );
-        })));
+    EXPECT_CALL(mock_dispatcher, dispatch_call_async(_, _)).WillOnce(Return(std::async(std::launch::deferred, [this]() {
+        return create_example_authorize_response(
+            AuthorizeCertificateStatusEnum::Accepted,
+            static_cast<AuthorizationStatusEnum>(INT32_MAX) // invalid value triggers exception
+        );
+    })));
 
     const AuthorizeResponse response = authorization->authorize_req(get_id_token(), std::nullopt, std::nullopt);
     EXPECT_EQ(response.idTokenInfo.status, AuthorizationStatusEnum::Unknown);
@@ -425,28 +419,15 @@ TEST_F(AuthorizationTest, authorize_req_exception2) {
 
     ON_CALL(this->connectivity_manager, is_websocket_connected()).WillByDefault(Return(true));
 
-    EXPECT_CALL(mock_dispatcher, dispatch_call_async(_, _))
-        .WillOnce(Return(std::async(std::launch::deferred, [this]() {
-            return create_example_authorize_response(
-                static_cast<AuthorizeCertificateStatusEnum>(INT32_MAX), // invalid cert status
-                AuthorizationStatusEnum::Accepted
-            );
-        })));
+    EXPECT_CALL(mock_dispatcher, dispatch_call_async(_, _)).WillOnce(Return(std::async(std::launch::deferred, [this]() {
+        return create_example_authorize_response(
+            static_cast<AuthorizeCertificateStatusEnum>(INT32_MAX), // invalid cert status
+            AuthorizationStatusEnum::Accepted);
+    })));
 
     const AuthorizeResponse response = authorization->authorize_req(get_id_token(), std::nullopt, std::nullopt);
     EXPECT_EQ(response.idTokenInfo.status, AuthorizationStatusEnum::Unknown);
 }
-path
-CMake Error at /home/soresany/everest-cmake/3rd_party/CodeCoverage.cmake:237 (message):
-  lcov not found! Aborting...
-Call Stack (most recent call first):
-  /home/soresany/everest-workspace/liblog/CMakeLists.txt:84 (setup_target_for_coverage_lcov)
-
-
--- Configuring incomplete, errors occurred!
-make: *** No targets specified and no makefile found.  Stop.
-Test project /home/soresany/everest-workspace/libocpp/build
-No tests were found!!!
 
 TEST_F(AuthorizationTest, update_authorization_cache_size) {
     // Test update authorization cache size and check in the device model if the cache size is indeed updated.
@@ -559,6 +540,11 @@ TEST_F(AuthorizationTest, validate_token_local_auth_list_enabled_accepted) {
     // Local auth list is enabled.
     this->set_local_auth_list_ctrlr_enabled(this->device_model, true);
 
+    // Explicit config setup for test isolation
+    set_local_pre_authorize(false);
+    set_local_authorize_offline(false);
+    ON_CALL(this->connectivity_manager, is_websocket_connected()).WillByDefault(Return(true));
+
     IdTokenInfo id_token_info_result;
     id_token_info_result.status = AuthorizationStatusEnum::Accepted;
 
@@ -582,6 +568,11 @@ TEST_F(AuthorizationTest, validate_token_local_auth_list_enabled_unknown_no_remo
     // Disable remote authorization.
     this->disable_remote_authorization(this->device_model, true);
 
+    // Explicit config setup for test isolation
+    set_local_pre_authorize(false);
+    set_local_authorize_offline(false);
+    ON_CALL(this->connectivity_manager, is_websocket_connected()).WillByDefault(Return(true));
+
     IdTokenInfo id_token_info_result;
     id_token_info_result.status = AuthorizationStatusEnum::Invalid;
 
@@ -597,14 +588,19 @@ TEST_F(AuthorizationTest, validate_token_local_auth_list_enabled_unknown_no_remo
 }
 
 TEST_F(AuthorizationTest, validate_token_local_auth_list_enabled_unknown_websocket_disconnected) {
-    // Validate token with the local auth list: unknown the websocket is not connected and token info
+    // Validate token with the local auth list: unknown because the websocket is not connected and token info
     // status is not accepted. Set AuthCtrlr::Enabled to true
     this->set_auth_ctrlr_enabled(this->device_model, true);
     // Local auth list is enabled.
     this->set_local_auth_list_ctrlr_enabled(this->device_model, true);
     // Remote authorization is enabled.
     this->disable_remote_authorization(this->device_model, false);
-    // But the websocket is disconnected so it is not possible to authorize the request.
+
+    // Explicit config setup for test isolation
+    set_local_pre_authorize(false);
+    set_local_authorize_offline(false);
+
+    // WebSocket is disconnected for this test case
     EXPECT_CALL(this->connectivity_manager, is_websocket_connected()).WillRepeatedly(Return(false));
 
     IdTokenInfo id_token_info_result;
@@ -629,7 +625,12 @@ TEST_F(AuthorizationTest, validate_token_local_auth_list_enabled_connectivity_ma
     this->set_local_auth_list_ctrlr_enabled(this->device_model, true);
     // Remote authorization is enabled.
     this->disable_remote_authorization(this->device_model, false);
-    // But the websocket is connected so it is possible to authorize the request.
+
+    // Explicit config setup for test isolation
+    set_local_pre_authorize(false);
+    set_local_authorize_offline(false);
+
+    // WebSocket is connected
     EXPECT_CALL(this->connectivity_manager, is_websocket_connected()).WillRepeatedly(Return(true));
     // Authorize request returns 'Accepted'.
     EXPECT_CALL(mock_dispatcher, dispatch_call_async(_, _)).WillOnce(Return(std::async(std::launch::deferred, [this]() {
@@ -700,6 +701,10 @@ TEST_F(
     // And offline contract validation is not allowed.
     this->set_allow_contract_validation_offline(this->device_model, true);
     this->set_local_authorize_offline(this->device_model, false);
+
+    // Explicit config setup for test isolation
+    set_local_pre_authorize(false);
+
     ON_CALL(this->evse_security, verify_certificate(_, DEFAULT_LEAF_CERT_TYPE))
         .WillByDefault(Return(ocpp::CertificateValidationResult::Valid));
 
@@ -723,6 +728,10 @@ TEST_F(
     this->set_allow_contract_validation_offline(this->device_model, true);
     this->set_local_authorize_offline(this->device_model, true);
     this->set_local_auth_list_ctrlr_enabled(this->device_model, true);
+
+    // Explicit config setup for test isolation
+    set_local_pre_authorize(false);
+
     ON_CALL(this->evse_security, verify_certificate(_, DEFAULT_LEAF_CERT_TYPE))
         .WillByDefault(Return(ocpp::CertificateValidationResult::Valid));
 
@@ -749,6 +758,10 @@ TEST_F(AuthorizationTest,
     // And offline contract validation is not allowed.
     this->set_allow_contract_validation_offline(this->device_model, true);
     this->set_local_authorize_offline(this->device_model, false);
+
+    // Explicit config setup for test isolation
+    set_local_pre_authorize(false);
+
     std::vector<ocpp::LeafCertificateType> types({ocpp::LeafCertificateType::MO, ocpp::LeafCertificateType::V2G});
     ON_CALL(this->evse_security, verify_certificate(_, types))
         .WillByDefault(Return(ocpp::CertificateValidationResult::Expired));
@@ -1066,6 +1079,11 @@ TEST_F(AuthorizationTest, validate_token_auth_cache_lifetime_expired) {
     this->set_auth_cache_lifetime(this->device_model, 5000);
     // Allow remote authorization
     this->disable_remote_authorization(this->device_model, false);
+
+    // Explicit config setup for test isolation
+    set_local_pre_authorize(false);
+    set_local_authorize_offline(false);
+
     // The websocket is connected.
     EXPECT_CALL(this->connectivity_manager, is_websocket_connected()).WillRepeatedly(Return(true));
 
