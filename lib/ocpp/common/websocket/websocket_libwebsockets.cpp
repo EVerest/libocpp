@@ -396,6 +396,11 @@ void WebsocketLibwebsockets::set_connection_options(const WebsocketConnectionOpt
         throw std::invalid_argument("Ocpp_versions may not contain 'Unknown'");
     }
 
+    if (connection_options.pong_timeout_s > connection_options.ping_interval_s) {
+        EVLOG_warning << "Pong timeout of " << connection_options.pong_timeout_s
+                      << " s is larger than the ping interval of " << connection_options.ping_interval_s << " s";
+    }
+
     set_connection_options_base(connection_options);
 
     // Set secure URI only if it is in TLS mode
@@ -1506,7 +1511,8 @@ void WebsocketLibwebsockets::on_conn_connected(ConnectionData* conn_data) {
     this->connection_attempts = 1; // reset connection attempts
     this->m_is_connected = true;
 
-    this->set_websocket_ping_interval(this->connection_options.ping_interval_s);
+    this->set_websocket_ping_interval(this->connection_options.ping_interval_s,
+                                      this->connection_options.pong_timeout_s);
 
     // Stop any dangling reconnect
     {
