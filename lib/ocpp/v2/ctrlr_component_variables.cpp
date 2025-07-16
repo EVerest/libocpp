@@ -1333,7 +1333,6 @@ const Variable AvailabilityState = {"AvailabilityState"};
 const Variable SupplyPhases = {"SupplyPhases"};
 const Variable AllowReset = {"AllowReset"};
 const Variable Power = {"Power"};
-const Variable ISO15118EvseId = {"ISO15118EvseId"};
 const Variable DCInputPhaseControl = {"DCInputPhaseControl", std::nullopt, std::nullopt};
 const Variable ISO15118EvseId = {"ISO15118EvseId"};
 
