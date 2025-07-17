@@ -830,9 +830,11 @@ ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingPr
                     if (!this->has_dc_input_phase_control(evse_id)) {
                         // If 2.1 and DCInputPhaseControl is false or does not exist, then send rejected with reason
                         // code noPhaseForDC
+                        // K01.FR.44
                         return ProfileValidationResultEnum::ChargingSchedulePeriodNoPhaseForDC;
                     } else {
                         // K01.FR.54
+                        // TODO(mlitre): How to notify that this should be used for AC grid connection?
                     }
                 }
             }
