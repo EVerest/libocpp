@@ -87,8 +87,12 @@ bool Callbacks::all_callbacks_valid(std::shared_ptr<DeviceModel> device_model) c
             }
         }
 
-        if (device_model->get_optional_value<bool>(ControllerComponentVariables::V2XChargingCtrlrAvailable)
-                .value_or(false) and
+        const auto v2x_available_map = device_model->get_all_optional_values_for_each_evse<bool>(
+            "V2XChargingCtrlr", V2xComponentVariables::Available);
+        const bool v2x_available = !v2x_available_map.empty() and
+                                   std::find_if(v2x_available_map.cbegin(), v2x_available_map.cend(),
+                                                [](const auto& it) { return it.second; }) != v2x_available_map.cend();
+        if (v2x_available and
             device_model->get_optional_value<bool>(ControllerComponentVariables::ISO15118CtrlrAvailable)
                 .value_or(false)) {
             if (!this->update_allowed_energy_transfer_modes_callback.has_value() or

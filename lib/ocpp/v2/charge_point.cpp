@@ -589,16 +589,19 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
         this->callbacks.stop_transaction_callback, this->registration_status, this->upload_log_status,
         this->upload_log_status_id);
 
-    if (device_model->get_optional_value<bool>(ControllerComponentVariables::V2XChargingCtrlrAvailable)
-            .value_or(false)) {
+    const auto v2x_available_map =
+        device_model->get_all_optional_values_for_each_evse<bool>("V2XChargingCtrlr", V2xComponentVariables::Available);
+    const bool v2x_available = !v2x_available_map.empty() and
+                               std::find_if(v2x_available_map.cbegin(), v2x_available_map.cend(),
+                                            [](const auto& it) { return it.second; }) != v2x_available_map.cend();
+    if (v2x_available) {
         this->bidirectional = std::make_unique<Bidirectional>(
             *this->functional_block_context, this->callbacks.update_allowed_energy_transfer_modes_callback);
     }
 
-    Component ocpp_comm_ctrlr = {"OCPPCommCtrlr"};
     Variable field_length = {"FieldLength"};
     field_length.instance = "Get15118EVCertificateResponse.exiResponse";
-    this->device_model->set_value(ocpp_comm_ctrlr, field_length, AttributeEnum::Actual,
+    this->device_model->set_value(ControllerComponents::OCPPCommCtrlr, field_length, AttributeEnum::Actual,
                                   std::to_string(ISO15118_GET_EV_CERTIFICATE_EXI_RESPONSE_SIZE),
                                   VARIABLE_ATTRIBUTE_VALUE_SOURCE_INTERNAL, true);
 }

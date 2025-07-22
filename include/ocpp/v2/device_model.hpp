@@ -218,6 +218,30 @@ public:
         }
     }
 
+    /// \brief  Access to std::optional of a VariableAttribute for the given component, variable and attribute_enum.
+    /// \tparam T Type of the value that is requested
+    /// \param component_variable Combination of Component and Variable that identifies the Variable
+    /// \param attribute_enum
+    /// \return std::optional<T> if the combination of \p component_variable and \p attribute_enum could successfully
+    /// requested from the storage and a value is present for this combination, else std::nullopt .
+    template <typename T>
+    std::map<int, T>
+    get_all_optional_values_for_each_evse(const std::string& component_name, const Variable& variable,
+                                          const AttributeEnum& attribute_enum = AttributeEnum::Actual) const {
+        std::map<int, T> result{};
+        for (const auto& it : this->device_model_map) {
+            if (it.first.name == ocpp::CiString<50>(component_name, StringTooLarge::Truncate)) {
+                std::string value{};
+                const auto response = request_value_internal(it.first, variable, attribute_enum, value, true);
+                if (response == GetVariableStatusEnum::Accepted) {
+                    result.insert(
+                        std::make_pair(it.first.evse.has_value() ? it.first.evse->id : 0, to_specific_type<T>(value)));
+                }
+            }
+        }
+        return result;
+    }
+
     /// \brief Requests a value of a VariableAttribute specified by combination of \p component_id and \p variable_id
     /// from the device model
     /// \tparam T datatype of the value that is requested
