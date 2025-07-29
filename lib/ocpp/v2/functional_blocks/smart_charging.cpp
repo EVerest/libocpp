@@ -536,7 +536,7 @@ CompositeSchedule SmartCharging::calculate_composite_schedule(const ocpp::DateTi
         // Get the ChargingStationExternalConstraints and Combined Tx(Default)Profiles per evse
         std::vector<IntermediateProfile> evse_schedules{};
         for (int evse = 1; evse <= nr_of_evses; evse++) {
-
+            session_start.reset();
             auto& transaction = this->context.evse_manager.get_evse(evse).get_transaction();
             if (this->context.evse_manager.get_evse(evse).get_transaction() != nullptr) {
                 session_start = this->context.evse_manager.get_evse(evse).get_transaction()->start_time;
