@@ -334,6 +334,11 @@ public:
 
     // Core Profile end
 
+    // Firmware Management Profile
+
+    std::optional<std::string> getSupportedFileTransferProtocols();
+    std::optional<KeyValue> getSupportedFileTransferProtocolsKeyValue();
+
     // SmartCharging Profile
     int32_t getChargeProfileMaxStackLevel();
     KeyValue getChargeProfileMaxStackLevelKeyValue();

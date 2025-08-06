@@ -181,7 +181,7 @@
             "type": "boolean",
             "readOnly": false
         },
-        "WebsocketPingInterval": {
+        "WebSocketPingInterval": {
             "type": "integer",
             "readOnly": false,
             "minimum": 0
