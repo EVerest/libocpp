@@ -1870,15 +1870,15 @@ KeyValue ChargePointConfiguration::getUnlockConnectorOnEVSideDisconnectKeyValue(
 // Core Profile - optional
 std::optional<int32_t> ChargePointConfiguration::getWebsocketPingInterval() {
     std::optional<int32_t> websocket_ping_interval = std::nullopt;
-    if (this->config["Core"].contains("WebsocketPingInterval")) {
-        websocket_ping_interval.emplace(this->config["Core"]["WebsocketPingInterval"]);
+    if (this->config["Core"].contains("WebSocketPingInterval")) {
+        websocket_ping_interval.emplace(this->config["Core"]["WebSocketPingInterval"]);
     }
     return websocket_ping_interval;
 }
 void ChargePointConfiguration::setWebsocketPingInterval(int32_t websocket_ping_interval) {
     if (this->getWebsocketPingInterval() != std::nullopt) {
-        this->config["Core"]["WebsocketPingInterval"] = websocket_ping_interval;
-        this->setInUserConfig("Core", "WebsocketPingInterval", websocket_ping_interval);
+        this->config["Core"]["WebSocketPingInterval"] = websocket_ping_interval;
+        this->setInUserConfig("Core", "WebSocketPingInterval", websocket_ping_interval);
     }
 }
 std::optional<KeyValue> ChargePointConfiguration::getWebsocketPingIntervalKeyValue() {
@@ -1886,7 +1886,7 @@ std::optional<KeyValue> ChargePointConfiguration::getWebsocketPingIntervalKeyVal
     auto websocket_ping_interval = this->getWebsocketPingInterval();
     if (websocket_ping_interval != std::nullopt) {
         KeyValue kv;
-        kv.key = "WebsocketPingInterval";
+        kv.key = "WebSocketPingInterval";
         kv.readonly = false;
         kv.value.emplace(std::to_string(websocket_ping_interval.value()));
         websocket_ping_interval_kv.emplace(kv);
@@ -3423,7 +3423,7 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
     if (key == "UnlockConnectorOnEVSideDisconnect") {
         return this->getUnlockConnectorOnEVSideDisconnectKeyValue();
     }
-    if (key == "WebsocketPingInterval") {
+    if (key == "WebSocketPingInterval") {
         return this->getWebsocketPingIntervalKeyValue();
     }
 
@@ -3888,7 +3888,7 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
             return ConfigurationStatus::Rejected;
         }
     }
-    if (key == "WebsocketPingInterval") {
+    if (key == "WebSocketPingInterval") {
         if (this->getWebsocketPingInterval() == std::nullopt) {
             return ConfigurationStatus::NotSupported;
         }
