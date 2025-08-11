@@ -543,8 +543,8 @@ TEST_F(AuthorizationTest, validate_token_local_auth_list_enabled_accepted) {
     this->set_local_auth_list_ctrlr_enabled(this->device_model, true);
 
     // Explicit config setup for test isolation
-    set_local_pre_authorize(false);
-    set_local_authorize_offline(false);
+    set_local_pre_authorize(this->device_model, false);
+    set_local_authorize_offline(this->device_model, false);
     ON_CALL(this->connectivity_manager, is_websocket_connected()).WillByDefault(Return(true));
 
     IdTokenInfo id_token_info_result;
@@ -571,8 +571,8 @@ TEST_F(AuthorizationTest, validate_token_local_auth_list_enabled_unknown_no_remo
     this->disable_remote_authorization(this->device_model, true);
 
     // Explicit config setup for test isolation
-    set_local_pre_authorize(false);
-    set_local_authorize_offline(false);
+    set_local_pre_authorize(this->device_model, false);
+    set_local_authorize_offline(this->device_model, false);
     ON_CALL(this->connectivity_manager, is_websocket_connected()).WillByDefault(Return(true));
 
     IdTokenInfo id_token_info_result;
@@ -599,11 +599,12 @@ TEST_F(AuthorizationTest, validate_token_local_auth_list_enabled_unknown_websock
     this->disable_remote_authorization(this->device_model, false);
 
     // Explicit config setup for test isolation
-    set_local_pre_authorize(false);
-    set_local_authorize_offline(false);
+    set_local_pre_authorize(this->device_model, false);
+    set_local_authorize_offline(this->device_model, false);
 
     // WebSocket is disconnected for this test case
     EXPECT_CALL(this->connectivity_manager, is_websocket_connected()).WillRepeatedly(Return(false));
+
 
     IdTokenInfo id_token_info_result;
     id_token_info_result.status = AuthorizationStatusEnum::Invalid;
@@ -705,9 +706,10 @@ TEST_F(
     this->set_local_authorize_offline(this->device_model, false);
 
     // Explicit config setup for test isolation
-    set_local_pre_authorize(false);
+    set_local_pre_authorize(this->device_model, false);
 
     ON_CALL(this->evse_security, verify_certificate(_, DEFAULT_LEAF_CERT_TYPE))
+
         .WillByDefault(Return(ocpp::CertificateValidationResult::Valid));
 
     IdToken id_token;
@@ -732,9 +734,10 @@ TEST_F(
     this->set_local_auth_list_ctrlr_enabled(this->device_model, true);
 
     // Explicit config setup for test isolation
-    set_local_pre_authorize(false);
+    set_local_pre_authorize(this->device_model, false);
 
     ON_CALL(this->evse_security, verify_certificate(_, DEFAULT_LEAF_CERT_TYPE))
+
         .WillByDefault(Return(ocpp::CertificateValidationResult::Valid));
 
     IdTokenInfo id_token_info_result;
@@ -762,7 +765,7 @@ TEST_F(AuthorizationTest,
     this->set_local_authorize_offline(this->device_model, false);
 
     // Explicit config setup for test isolation
-    set_local_pre_authorize(false);
+    set_local_pre_authorize(this->device_model, false);
 
     std::vector<ocpp::LeafCertificateType> types({ocpp::LeafCertificateType::MO, ocpp::LeafCertificateType::V2G});
     ON_CALL(this->evse_security, verify_certificate(_, types))
@@ -1083,8 +1086,9 @@ TEST_F(AuthorizationTest, validate_token_auth_cache_lifetime_expired) {
     this->disable_remote_authorization(this->device_model, false);
 
     // Explicit config setup for test isolation
-    set_local_pre_authorize(false);
-    set_local_authorize_offline(false);
+    set_local_pre_authorize(this->device_model, false);
+    set_local_authorize_offline(this->device_model, false);
+
 
     // The websocket is connected.
     EXPECT_CALL(this->connectivity_manager, is_websocket_connected()).WillRepeatedly(Return(true));
