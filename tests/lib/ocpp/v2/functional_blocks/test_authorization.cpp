@@ -605,7 +605,6 @@ TEST_F(AuthorizationTest, validate_token_local_auth_list_enabled_unknown_websock
     // WebSocket is disconnected for this test case
     EXPECT_CALL(this->connectivity_manager, is_websocket_connected()).WillRepeatedly(Return(false));
 
-
     IdTokenInfo id_token_info_result;
     id_token_info_result.status = AuthorizationStatusEnum::Invalid;
 
@@ -630,8 +629,8 @@ TEST_F(AuthorizationTest, validate_token_local_auth_list_enabled_connectivity_ma
     this->disable_remote_authorization(this->device_model, false);
 
     // Explicit config setup for test isolation
-    set_local_pre_authorize(false);
-    set_local_authorize_offline(false);
+    set_local_pre_authorize(this->device_model, false);
+    set_local_authorize_offline(this->device_model, false);
 
     // WebSocket is connected
     EXPECT_CALL(this->connectivity_manager, is_websocket_connected()).WillRepeatedly(Return(true));
@@ -1088,7 +1087,6 @@ TEST_F(AuthorizationTest, validate_token_auth_cache_lifetime_expired) {
     // Explicit config setup for test isolation
     set_local_pre_authorize(this->device_model, false);
     set_local_authorize_offline(this->device_model, false);
-
 
     // The websocket is connected.
     EXPECT_CALL(this->connectivity_manager, is_websocket_connected()).WillRepeatedly(Return(true));
