@@ -152,7 +152,7 @@
             "default": true
         },
         "LogMessagesRaw": {
-            "$comment": "If messages are additionally supposed to be logged without parsing them first.",
+            "$comment": "If messages are additionally supposed to be logged without parsing them first. This can be useful to log and debug messages that violate the schema.",
             "type": "boolean",
             "readOnly": true,
             "default": false
