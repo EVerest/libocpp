@@ -30,7 +30,7 @@ libevse-security:
   git_tag: v0.9.9
 libwebsockets:
   git: https://github.com/warmcat/libwebsockets.git
-  git_tag: v4.3.6
+  git_tag: v4.4.1
   options:
     - CMAKE_POLICY_VERSION_MINIMUM 3.5
     - CMAKE_POLICY_DEFAULT_CMP0077 NEW
