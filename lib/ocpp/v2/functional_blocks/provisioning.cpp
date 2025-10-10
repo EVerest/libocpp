@@ -189,6 +189,10 @@ void Provisioning::handle_boot_notification_response(CallResult<BootNotification
         // set timers
         if (msg.interval > 0) {
             this->availability.set_heartbeat_timer_interval(std::chrono::seconds(msg.interval));
+            this->context.device_model.set_value(ControllerComponentVariables::HeartbeatInterval.component,
+                                                 ControllerComponentVariables::HeartbeatInterval.variable.value(),
+                                                 AttributeEnum::Actual, std::to_string(msg.interval),
+                                                 VARIABLE_ATTRIBUTE_VALUE_SOURCE_CSMS);
         }
 
         // in case the BootNotification.req was triggered by a TriggerMessage.req the timer might still run
